@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsAspireHost>true</IsAspireHost>
+    <UserSecretsId>78a33324-5add-4731-b2fc-e0fc06ef0564</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.AppHost" />
+    <PackageReference Include="Aspire.Hosting.Azure.Storage" />
+    <PackageReference Include="Aspire.Hosting.MongoDB" />
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" />
+    <PackageReference Include="Aspire.Hosting.RabbitMQ" />
+    <PackageReference Include="Aspire.Hosting.Redis" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BookWorm.Basket\BookWorm.Basket.csproj" />
+    <ProjectReference Include="..\BookWorm.Catalog\BookWorm.Catalog.csproj" />
+    <ProjectReference Include="..\BookWorm.Identity\BookWorm.Identity.csproj" />
+    <ProjectReference Include="..\BookWorm.Notification\BookWorm.Notification.csproj" />
+    <ProjectReference Include="..\BookWorm.Ordering\BookWorm.Ordering.csproj" />
+    <ProjectReference Include="..\BookWorm.Rating\BookWorm.Rating.csproj" />
+    <ProjectReference Include="..\BookWorm.StoreFront\BookWorm.StoreFront\BookWorm.StoreFront.csproj" />
+    <ProjectReference Include="..\BookWorm.Web.Bff\BookWorm.Web.Bff.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BookWorm.Swagger.Hosting\BookWorm.Swagger.Hosting.csproj"
+                      IsAspireProjectResource="false" />
+    <ProjectReference Include="..\BookWorm.HealthCheck.Hosting\BookWorm.HealthCheck.Hosting.csproj"
+                      IsAspireProjectResource="false" />
+    <ProjectReference Include="..\BookWorm.MailDev.Hosting\BookWorm.MailDev.Hosting.csproj"
+                      IsAspireProjectResource="false" />
+  </ItemGroup>
+
+</Project>
