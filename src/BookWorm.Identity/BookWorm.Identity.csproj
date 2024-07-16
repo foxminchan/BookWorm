@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Npgsql" />
+    <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Duende.IdentityServer.AspNetIdentity" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" />
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
+    <PackageReference Include="Microsoft.Web.LibraryManager.Build" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Shared\ActivityExtensions.cs" Link="Extensions\ActivityExtensions.cs" />
+    <Compile Include="..\Shared\MigrateDbContextExtensions.cs" Link="Extensions\MigrateDbContextExtensions.cs" />
+  </ItemGroup>
+
+</Project>

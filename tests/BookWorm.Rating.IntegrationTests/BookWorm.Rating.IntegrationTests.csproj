@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspirant.Hosting.Testing" />
+    <PackageReference Include="Aspirant.Hosting.Testing.xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\BookWorm.AppHost\BookWorm.AppHost.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Aspire.Hosting.Testing" />
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

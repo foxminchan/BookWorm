@@ -1,0 +1,88 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+    <AspireVersion>8.0.2</AspireVersion>
+    <AspirantVersion>0.0.4</AspirantVersion>
+    <MicrosoftExtensionsVersion>8.7.0</MicrosoftExtensionsVersion>
+    <AspnetVersion>8.0.7</AspnetVersion>
+    <EfCoreVersion>8.0.7</EfCoreVersion>
+    <XabarilVersion>8.0.1</XabarilVersion>
+    <ApiVersioningVersion>8.1.0</ApiVersioningVersion>
+    <PollyVersion>8.4.1</PollyVersion>
+    <AspireUnstablePackagesVersion>8.0.2-preview.1.24326.4</AspireUnstablePackagesVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Aspire -->
+    <PackageVersion Include="Aspire.Hosting" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Hosting.AppHost" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Hosting.MongoDB" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Hosting.Redis" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Npgsql" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Azure.AI.OpenAI" Version="$(AspireUnstablePackagesVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="$(MicrosoftExtensionsVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="$(AspireVersion)" />
+    <!-- Aspirant -->
+    <PackageVersion Include="Aspirant.Hosting.Testing" Version="$(AspirantVersion)" />
+    <PackageVersion Include="Aspirant.Hosting.Testing.xunit" Version="$(AspirantVersion)" />
+    <!-- ASP.NET Core -->
+    <PackageVersion Include="Asp.Versioning.Http" Version="$(ApiVersioningVersion)" />
+    <PackageVersion Include="Asp.Versioning.Mvc" Version="$(ApiVersioningVersion)" />
+    <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer" Version="$(ApiVersioningVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.Google" Version="$(AspnetVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="$(AspnetVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="$(AspnetVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.UI" Version="$(AspnetVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="$(AspnetVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="$(AspnetVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="$(AspnetVersion)" />
+    <!-- Entity Framework Core -->
+    <PackageVersion Include="Pgvector" Version="0.3.0" />
+    <PackageVersion Include="Pgvector.EntityFrameworkCore" Version="0.2.1" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="$(EfCoreVersion)" />
+    <PackageVersion Include="EFCore.NamingConventions" Version="8.0.3" />
+    <PackageVersion Include="EntityFrameworkCore.Exceptions.Common" Version="8.1.2" />
+    <PackageVersion Include="EntityFrameworkCore.Exceptions.PostgreSQL" Version="8.1.2" />
+    <!-- Semantic Kernel -->
+    <PackageVersion Include="Microsoft.SemanticKernel" Version="1.15.1" />
+    <!-- Polly -->
+    <PackageVersion Include="Polly" Version="$(PollyVersion)" />
+    <PackageVersion Include="Polly.Extensions" Version="$(PollyVersion)" />
+    <!-- Ardalis -->
+    <PackageVersion Include="Ardalis.GuardClauses" Version="4.5.0" />
+    <PackageVersion Include="Ardalis.Result.AspNetCore" Version="9.1.0" />
+    <PackageVersion Include="Ardalis.Specification" Version="8.0.0" />
+    <PackageVersion Include="Ardalis.Specification.EntityFrameworkCore" Version="8.0.0" />
+    <!-- OpenTelemetry -->
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.9.0" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.9.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.9.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.9.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.9.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.GrpcNetClient" Version="1.9.0-beta.1" />
+    <!-- Dunde -->
+    <PackageVersion Include="Duende.BFF.Yarp" Version="2.2.0" />
+    <PackageVersion Include="Duende.IdentityServer.AspNetIdentity" Version="7.0.5" />
+    <!-- Xabaril -->
+    <PackageVersion Include="AspNetCore.HealthChecks.UI" Version="$(XabarilVersion)" />
+    <PackageVersion Include="AspNetCore.HealthChecks.UI.Client" Version="$(XabarilVersion)" />
+    <!-- Testing -->
+    <PackageVersion Include="bunit" Version="1.29.5" />
+    <PackageVersion Include="xunit" Version="2.9.0" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.2" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
+    <!-- Miscellaneous -->
+    <PackageVersion Include="Scrutor" Version="4.2.2" />
+    <PackageVersion Include="MediatR" Version="12.3.0" />
+    <PackageVersion Include="MassTransit" Version="8.2.3" />
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageVersion Include="FluentValidation.AspNetCore" Version="11.3.0" />
+    <PackageVersion Include="Microsoft.Web.LibraryManager.Build" Version="2.1.175" />
+  </ItemGroup>
+</Project>
