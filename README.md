@@ -9,7 +9,6 @@ This is a pet project to demonstrate the practical use of .NET Aspire. The proje
 - **Order**: Display orders with pagination and search functionality.
 - **Identity**: Register, login, and manage user profile.
 - **Notification**: Send email notifications.
-- **Payment**: Process payment with Stripe.
 - **Rating**: Rate products.
 
 ## The Goals of the Project
@@ -30,7 +29,6 @@ This is a pet project to demonstrate the practical use of .NET Aspire. The proje
   - [ ] Using `Blazor` for the Storefront.
   - [ ] Using `Next.js` for the Admin Panel.
 - [ ] Add `MailDev` for local email testing.
-- [ ] Integrate `Stripe` for payment processing.
 - [ ] Output Caching, Response Caching and Distributed Caching with Redis
 - [ ] LLMs integration with `Semantic Kernel`
 - [ ] Deployment with `Aspirate` on `k3d`.

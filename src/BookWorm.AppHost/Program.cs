@@ -92,9 +92,6 @@ var notificationApi = builder.AddProject<Projects.BookWorm_Notification>("notifi
     .WithReference(notificationDb)
     .WithReference(smtpServer);
 
-var paymentApi = builder.AddProject<Projects.BookWorm_Payment>("payment-api")
-    .WithReference(rabbitMq);
-
 // Reverse proxy
 var bff = builder.AddProject<Projects.BookWorm_Web_Bff>("bff")
     .WithExternalHttpEndpoints()
@@ -123,7 +120,6 @@ builder.AddHealthChecksUi("healthchecksui")
     .WithReference(ratingApi)
     .WithReference(basketApi)
     .WithReference(notificationApi)
-    .WithReference(paymentApi)
     .WithReference(storeFront)
     .WithReference(bff)
     .WithExternalHttpEndpoints();
