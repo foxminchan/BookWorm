@@ -35,6 +35,7 @@
     <PackageVersion Include="Asp.Versioning.Mvc" Version="$(ApiVersioningVersion)" />
     <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer" Version="$(ApiVersioningVersion)" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.Google" Version="$(AspnetVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="$(AspnetVersion)" />
     <PackageVersion Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="$(AspnetVersion)" />
     <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="$(AspnetVersion)" />
     <PackageVersion Include="Microsoft.AspNetCore.Identity.UI" Version="$(AspnetVersion)" />
@@ -88,5 +89,6 @@
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     <PackageVersion Include="FluentValidation.AspNetCore" Version="11.3.0" />
     <PackageVersion Include="Microsoft.Web.LibraryManager.Build" Version="2.1.175" />
+    <PackageVersion Include="MicroElements.Swashbuckle.FluentValidation" Version="6.0.0" />
   </ItemGroup>
 </Project>

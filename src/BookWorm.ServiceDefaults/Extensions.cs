@@ -20,6 +20,8 @@ public static class Extensions
 {
     public static IHostApplicationBuilder AddServiceDefaults(this IHostApplicationBuilder builder)
     {
+        AppContext.SetSwitch("Microsoft.SemanticKernel.Experimental.GenAI.EnableOTelDiagnosticsSensitive", true);
+
         builder.ConfigureOpenTelemetry();
 
         builder.AddDefaultHealthChecks();

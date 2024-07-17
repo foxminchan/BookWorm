@@ -39,8 +39,8 @@ public sealed class Book : EntityBase, IAggregateRoot, ISoftDelete
     public Price? Price { get; private set; }
     public Status Status { get; private set; }
     public bool IsDeleted { get; set; }
-    public double AverageRating { get; set; }
-    public int TotalReviews { get; set; }
+    public double AverageRating { get; private set; }
+    public int TotalReviews { get; private set; }
     public Guid? CategoryId { get; private set; }
     public Category? Category { get; private set; }
     public Guid? PublisherId { get; private set; }
@@ -59,5 +59,27 @@ public sealed class Book : EntityBase, IAggregateRoot, ISoftDelete
     {
         AverageRating = Guard.Against.NegativeOrZero(averageRating);
         TotalReviews = Guard.Against.NegativeOrZero(totalReviews);
+    }
+
+    public void Update(
+        string name,
+        string? description,
+        string? imageUrl,
+        decimal price,
+        decimal priceSale,
+        Status status,
+        Guid categoryId,
+        Guid publisherId,
+        List<Guid> authorIds)
+    {
+        Name = Guard.Against.NullOrEmpty(name);
+        Description = Guard.Against.NullOrEmpty(description);
+        ImageUrl = imageUrl;
+        Price = new(price, priceSale);
+        Status = status;
+        CategoryId = categoryId;
+        PublisherId = publisherId;
+        _bookAuthors.Clear();
+        _bookAuthors.AddRange(authorIds.Select(authorId => new BookAuthor(authorId)));
     }
 }

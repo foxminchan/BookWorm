@@ -40,7 +40,7 @@ builder.Services.AddSingleton<QueryHandlerMetrics>();
 builder.AddVersioning();
 builder.AddEndpoints(typeof(Program));
 
-builder.Services.AddSwaggerGen();
+builder.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
 
 var app = builder.Build();
@@ -49,7 +49,7 @@ app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
+    app.UseOpenApi();
 }
 
 app.MapEndpoints();
