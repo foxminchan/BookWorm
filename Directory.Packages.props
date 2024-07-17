@@ -35,6 +35,7 @@
     <PackageVersion Include="Asp.Versioning.Mvc" Version="$(ApiVersioningVersion)" />
     <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer" Version="$(ApiVersioningVersion)" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.Google" Version="$(AspnetVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="$(AspnetVersion)" />
     <PackageVersion Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="$(AspnetVersion)" />
     <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="$(AspnetVersion)" />
     <PackageVersion Include="Microsoft.AspNetCore.Identity.UI" Version="$(AspnetVersion)" />
@@ -49,12 +50,12 @@
     <PackageVersion Include="EntityFrameworkCore.Exceptions.Common" Version="8.1.2" />
     <PackageVersion Include="EntityFrameworkCore.Exceptions.PostgreSQL" Version="8.1.2" />
     <!-- Semantic Kernel -->
-    <PackageVersion Include="Microsoft.SemanticKernel" Version="1.15.1" />
+    <PackageVersion Include="Microsoft.SemanticKernel" Version="1.16.0" />
     <!-- Polly -->
     <PackageVersion Include="Polly" Version="$(PollyVersion)" />
     <PackageVersion Include="Polly.Extensions" Version="$(PollyVersion)" />
     <!-- Ardalis -->
-    <PackageVersion Include="Ardalis.GuardClauses" Version="4.5.0" />
+    <PackageVersion Include="Ardalis.GuardClauses" Version="4.6.0" />
     <PackageVersion Include="Ardalis.Result.AspNetCore" Version="9.1.0" />
     <PackageVersion Include="Ardalis.Specification" Version="8.0.0" />
     <PackageVersion Include="Ardalis.Specification.EntityFrameworkCore" Version="8.0.0" />
@@ -77,6 +78,10 @@
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
+    <PackageVersion Include="Moq" Version="4.20.70" />
+    <PackageVersion Include="FluentAssertions" Version="7.0.0-alpha.4" />
+    <PackageVersion Include="ReportGenerator" Version="5.3.8" />
+    <PackageVersion Include="JUnitTestLogger" Version="1.1.0" />
     <!-- Miscellaneous -->
     <PackageVersion Include="Scrutor" Version="4.2.2" />
     <PackageVersion Include="MediatR" Version="12.3.0" />
@@ -84,5 +89,6 @@
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     <PackageVersion Include="FluentValidation.AspNetCore" Version="11.3.0" />
     <PackageVersion Include="Microsoft.Web.LibraryManager.Build" Version="2.1.175" />
+    <PackageVersion Include="MicroElements.Swashbuckle.FluentValidation" Version="6.0.0" />
   </ItemGroup>
 </Project>

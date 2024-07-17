@@ -1,4 +1,5 @@
 ﻿using BookWorm.Catalog.Domain;
+using BookWorm.Shared.Constants;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BookWorm.Catalog.Infrastructure.Data.Configurations;
@@ -10,7 +11,7 @@ public sealed class CategoryConfiguration : BaseConfiguration<Category>
         base.Configure(builder);
 
         builder.Property(p => p.Name)
-            .HasMaxLength(50)
+            .HasMaxLength(DataSchemaLength.Medium)
             .IsRequired();
 
         builder.HasIndex(e => e.Name)

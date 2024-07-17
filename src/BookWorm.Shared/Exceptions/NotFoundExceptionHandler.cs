@@ -18,7 +18,7 @@ public sealed class NotFoundExceptionHandler(ILogger<NotFoundExceptionHandler> l
         {
             Status = StatusCodes.Status404NotFound,
             Type = notFoundException.GetType().Name,
-            Title = "Query not found",
+            Title = "Entity was not found",
             Detail = notFoundException.Message
         };
 

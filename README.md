@@ -4,14 +4,6 @@
 
 This is a pet project to demonstrate the practical use of .NET Aspire. The project is a cloud-native application with applying Domain-Driven Design (DDD) and Vertical Slice Methodology. The project is a simple online bookstore with the following features:
 
-- **Catalog**: Display books with pagination and search functionality.
-- **Shopping Cart**: Add books to the shopping cart and place an order.
-- **Order**: Display orders with pagination and search functionality.
-- **Identity**: Register, login, and manage user profile.
-- **Notification**: Send email notifications.
-- **Payment**: Process payment with Stripe.
-- **Rating**: Rate products.
-
 ## The Goals of the Project
 
 - [x] Using `Vertical Slice Architecture` to organize the codebase.
@@ -30,11 +22,21 @@ This is a pet project to demonstrate the practical use of .NET Aspire. The proje
   - [ ] Using `Blazor` for the Storefront.
   - [ ] Using `Next.js` for the Admin Panel.
 - [ ] Add `MailDev` for local email testing.
-- [ ] Integrate `Stripe` for payment processing.
 - [ ] Output Caching, Response Caching and Distributed Caching with Redis
 - [ ] LLMs integration with `Semantic Kernel`
 - [ ] Deployment with `Aspirate` on `k3d`.
 - [ ] EDA document with `EventCatalog`
+
+## Domain Business & Bounded Contexts - Services Boundaries
+
+- **Catalog**: Display books with pagination and search functionality.
+- **Shopping Cart**: Add books to the shopping cart and place an order.
+- **Order**: Display orders with pagination and search functionality.
+- **Identity**: Register, login, and manage user profile.
+- **Notification**: Send email notifications.
+- **Rating**: Rate products.
+
+![Domain Business & Bounded Contexts](docs/architechture.png)
 
 ## License
 

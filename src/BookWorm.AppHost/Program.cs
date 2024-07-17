@@ -1,5 +1,6 @@
 ﻿using BookWorm.AppHost;
 using BookWorm.HealthCheck.Hosting;
+using BookWorm.MailDev.Hosting;
 using BookWorm.Swagger.Hosting;
 using Microsoft.Extensions.Hosting;
 
@@ -49,6 +50,8 @@ var rabbitMq = builder
     .AddRabbitMQ("eventbus", rabbitMqPassword)
     .WithManagementPlugin();
 
+var smtpServer = builder.AddMailDev("mailserver", httpPort: 1080);
+
 // Services
 var identityApi = builder.AddProject<Projects.BookWorm_Identity>("identity-api")
     .WithExternalHttpEndpoints()
@@ -63,7 +66,7 @@ var catalogApi = builder.AddProject<Projects.BookWorm_Catalog>("catalog-api")
     .WithReference(openAi)
     .WithEnvironment("Identity__Url", identityEndpoint)
     .WithEnvironment("AiOptions__OpenAi__EmbeddingName", "text-embedding-3-small")
-    .WithEnvironment("AzuriteSettings__ConnectionString", blobs.WithEndpoint())
+    .WithEnvironment("AzuriteOptions__ConnectionString", blobs.WithEndpoint())
     .WithSwaggerUi();
 
 var orderingApi = builder.AddProject<Projects.BookWorm_Ordering>("ordering-api")
@@ -86,10 +89,8 @@ var basketApi = builder.AddProject<Projects.BookWorm_Basket>("basket-api")
 
 var notificationApi = builder.AddProject<Projects.BookWorm_Notification>("notification-api")
     .WithReference(rabbitMq)
-    .WithReference(notificationDb);
-
-var paymentApi = builder.AddProject<Projects.BookWorm_Payment>("payment-api")
-    .WithReference(rabbitMq);
+    .WithReference(notificationDb)
+    .WithReference(smtpServer);
 
 // Reverse proxy
 var bff = builder.AddProject<Projects.BookWorm_Web_Bff>("bff")
@@ -119,7 +120,6 @@ builder.AddHealthChecksUi("healthchecksui")
     .WithReference(ratingApi)
     .WithReference(basketApi)
     .WithReference(notificationApi)
-    .WithReference(paymentApi)
     .WithReference(storeFront)
     .WithReference(bff)
     .WithExternalHttpEndpoints();

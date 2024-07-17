@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using BookWorm.Shared.Constants;
+using FluentValidation;
 
 namespace BookWorm.Catalog.Features.Books.Create;
 
@@ -8,14 +9,10 @@ public sealed class CreateBookValidator : AbstractValidator<CreateBookCommand>
     {
         RuleFor(x => x.Name)
             .NotEmpty()
-            .MaximumLength(50);
+            .MaximumLength(DataSchemaLength.Medium);
 
         RuleFor(x => x.Description)
-            .MaximumLength(200);
-
-        RuleFor(x => x.Description)
-            .NotEmpty()
-            .MaximumLength(500);
+            .MaximumLength(DataSchemaLength.SuperLarge);
 
         RuleFor(x => x.Price)
             .GreaterThan(0);
@@ -23,5 +20,8 @@ public sealed class CreateBookValidator : AbstractValidator<CreateBookCommand>
         RuleFor(x => x.PriceSale)
             .GreaterThan(0)
             .LessThanOrEqualTo(x => x.Price);
+
+        RuleFor(x => x.Status)
+            .IsInEnum();
     }
 }

@@ -1,4 +1,5 @@
 ﻿using BookWorm.Catalog.Domain.BookAggregate;
+using BookWorm.Shared.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -11,11 +12,11 @@ public sealed class BookConfiguration : BaseConfiguration<Book>
         base.Configure(builder);
 
         builder.Property(p => p.Name)
-            .HasMaxLength(50)
+            .HasMaxLength(DataSchemaLength.Medium)
             .IsRequired();
 
         builder.Property(p => p.Description)
-            .HasMaxLength(500)
+            .HasMaxLength(DataSchemaLength.SuperLarge)
             .IsRequired();
 
         builder.OwnsOne(
@@ -24,7 +25,7 @@ public sealed class BookConfiguration : BaseConfiguration<Book>
         );
 
         builder.Property(x => x.ImageUrl)
-            .HasMaxLength(500)
+            .HasMaxLength(DataSchemaLength.SuperLarge)
             .IsRequired();
 
         builder.Property(p => p.AverageRating)
@@ -34,7 +35,7 @@ public sealed class BookConfiguration : BaseConfiguration<Book>
             .HasDefaultValue(0);
 
         builder.Property(p => p.Embedding)
-            .HasColumnType("vector(384)");
+            .HasColumnType(VectorType.Type);
 
         builder.HasOne(x => x.Category)
             .WithMany()

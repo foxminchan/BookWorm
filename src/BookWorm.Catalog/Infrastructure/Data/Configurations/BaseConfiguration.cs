@@ -1,4 +1,5 @@
 ﻿using BookWorm.Core.SeedWork;
+using BookWorm.Shared.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -12,7 +13,7 @@ public abstract class BaseConfiguration<TEntity> : IEntityTypeConfiguration<TEnt
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.Id)
-            .HasDefaultValueSql("uuid_generate_v4()")
+            .HasDefaultValueSql(UniqueType.Algorithm)
             .ValueGeneratedOnAdd();
 
         builder.Property(e => e.CreatedDate)

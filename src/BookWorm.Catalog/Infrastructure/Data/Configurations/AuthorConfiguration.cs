@@ -1,4 +1,5 @@
 ﻿using BookWorm.Catalog.Domain;
+using BookWorm.Shared.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -11,7 +12,7 @@ public sealed class AuthorConfiguration : BaseConfiguration<Author>
         base.Configure(builder);
 
         builder.Property(p => p.Name)
-            .HasMaxLength(100)
+            .HasMaxLength(DataSchemaLength.Large)
             .IsRequired();
 
         builder.HasMany(x => x.BookAuthors)

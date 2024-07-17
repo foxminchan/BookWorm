@@ -20,6 +20,9 @@
   <ItemGroup>
     <PackageReference Include="AspNetCore.HealthChecks.UI" />
     <PackageReference Include="AspNetCore.HealthChecks.UI.Client" />
+    <PackageReference Include="Swashbuckle.AspNetCore" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="MicroElements.Swashbuckle.FluentValidation" />
   </ItemGroup>
 
   <ItemGroup>

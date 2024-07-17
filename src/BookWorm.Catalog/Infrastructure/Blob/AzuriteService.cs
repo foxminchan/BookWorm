@@ -28,26 +28,15 @@ public sealed class AzuriteService(AzuriteOptions azuriteSettings, ResiliencePip
                 cancellationToken: token),
             cancellationToken);
 
-        return blobName;
+        return blobClient.Uri.ToString();
     }
 
-    public async Task DeleteFileAsync(string fileName, CancellationToken cancellationToken = default)
+    public async Task DeleteFileAsync(string url, CancellationToken cancellationToken = default)
     {
-        var blobClient = _container.GetBlobClient(fileName);
+        var blobClient = new BlobClient(new(url));
 
         await _policy.ExecuteAsync(
-            async token =>
-                await blobClient.DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots, cancellationToken: token),
+            async token => await blobClient.DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots, cancellationToken: token),
             cancellationToken);
-    }
-
-    public string? GetFileUrl(string? fileName)
-    {
-        if (string.IsNullOrWhiteSpace(fileName))
-            return null;
-
-        var blobClient = _container.GetBlobClient(fileName);
-
-        return blobClient.Uri.ToString();
     }
 }

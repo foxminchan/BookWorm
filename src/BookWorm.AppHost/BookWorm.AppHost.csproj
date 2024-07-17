@@ -21,7 +21,6 @@
     <ProjectReference Include="..\BookWorm.Identity\BookWorm.Identity.csproj" />
     <ProjectReference Include="..\BookWorm.Notification\BookWorm.Notification.csproj" />
     <ProjectReference Include="..\BookWorm.Ordering\BookWorm.Ordering.csproj" />
-    <ProjectReference Include="..\BookWorm.Payment\BookWorm.Payment.csproj" />
     <ProjectReference Include="..\BookWorm.Rating\BookWorm.Rating.csproj" />
     <ProjectReference Include="..\BookWorm.StoreFront\BookWorm.StoreFront\BookWorm.StoreFront.csproj" />
     <ProjectReference Include="..\BookWorm.Web.Bff\BookWorm.Web.Bff.csproj" />
@@ -31,6 +30,8 @@
     <ProjectReference Include="..\BookWorm.Swagger.Hosting\BookWorm.Swagger.Hosting.csproj"
                       IsAspireProjectResource="false" />
     <ProjectReference Include="..\BookWorm.HealthCheck.Hosting\BookWorm.HealthCheck.Hosting.csproj"
+                      IsAspireProjectResource="false" />
+    <ProjectReference Include="..\BookWorm.MailDev.Hosting\BookWorm.MailDev.Hosting.csproj"
                       IsAspireProjectResource="false" />
   </ItemGroup>
 
