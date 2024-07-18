@@ -41,7 +41,7 @@ public sealed class CreateBookEndpoint : IEndpoint<Created<Guid>, CreateBookRequ
             .ProducesValidationProblem()
             .DisableAntiforgery()
             .WithTags(nameof(Book))
-            .WithName("Create Product")
+            .WithName("Create Book")
             .MapToApiVersion(new(1, 0));
     }
 

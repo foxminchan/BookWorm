@@ -1,4 +1,5 @@
-﻿using BookWorm.Catalog.Infrastructure.Ai;
+﻿using BookWorm.Catalog.Grpc;
+using BookWorm.Catalog.Infrastructure.Ai;
 using BookWorm.Catalog.Infrastructure.Blob;
 using BookWorm.Catalog.Infrastructure.Data;
 using BookWorm.ServiceDefaults;
@@ -15,6 +16,8 @@ using Microsoft.AspNetCore.Http.Json;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+
+builder.Services.AddGrpc();
 
 builder.Services.Configure<JsonOptions>(options =>
     options.SerializerOptions.Converters.Add(new StringTrimmerJsonConverter()));
@@ -61,5 +64,7 @@ app.UseOpenApi();
 app.MapEndpoints();
 
 app.MapDefaultEndpoints();
+
+app.MapGrpcService<BookService>();
 
 app.Run();
