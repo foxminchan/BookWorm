@@ -19,7 +19,7 @@ public static class Config
     {
         return
         [
-            new("orders", "Orders Service"),
+            new("Ordering", "Ordering Service"),
             new("basket", "Basket Service"),
             new("catalog", "Catalog Service"),
             new("rating", "Rating Service")
@@ -30,7 +30,7 @@ public static class Config
     {
         return
         [
-            new("orders", "Orders Service"),
+            new("ordering", "Ordering Service"),
             new("basket", "Basket Service"),
             new("catalog", "Catalog Service"),
             new("rating", "Rating Service")
@@ -41,6 +41,66 @@ public static class Config
     {
         return
         [
+            new()
+            {
+                ClientId = "catalogswaggerui",
+                ClientName = "Catalog Swagger UI",
+                AllowedGrantTypes = GrantTypes.Implicit,
+                AllowAccessTokensViaBrowser = true,
+
+                RedirectUris = { $"{service.Catalog}/swagger/catalog-api/oauth2-redirect.html" },
+                PostLogoutRedirectUris = { $"{service.Catalog}/swagger/" },
+
+                AllowedScopes =
+                {
+                    "catalog"
+                }
+            },
+            new()
+            {
+                ClientId = "orderingswaggerui",
+                ClientName = "Ordering Swagger UI",
+                AllowedGrantTypes = GrantTypes.Implicit,
+                AllowAccessTokensViaBrowser = true,
+
+                RedirectUris = { $"{service.Ordering}/swagger/ordering-api/oauth2-redirect.html" },
+                PostLogoutRedirectUris = { $"{service.Ordering}/swagger/" },
+
+                AllowedScopes =
+                {
+                    "ordering"
+                }
+            },
+            new()
+            {
+                ClientId = "basketswaggerui",
+                ClientName = "Basket Swagger UI",
+                AllowedGrantTypes = GrantTypes.Implicit,
+                AllowAccessTokensViaBrowser = true,
+
+                RedirectUris = { $"{service.Basket}/swagger/basket-api/oauth2-redirect.html" },
+                PostLogoutRedirectUris = { $"{service.Basket}/swagger/" },
+
+                AllowedScopes =
+                {
+                    "basket"
+                }
+            },
+            new()
+            {
+                ClientId = "ratingswaggerui",
+                ClientName = "Rating Swagger UI",
+                AllowedGrantTypes = GrantTypes.Implicit,
+                AllowAccessTokensViaBrowser = true,
+
+                RedirectUris = { $"{service.Rating}/swagger/rating-api/oauth2-redirect.html" },
+                PostLogoutRedirectUris = { $"{service.Rating}/swagger/" },
+
+                AllowedScopes =
+                {
+                    "rating"
+                }
+            },
             new()
             {
                 ClientId = "bff",
@@ -56,7 +116,7 @@ public static class Config
                 {
                     IdentityServerConstants.StandardScopes.OpenId,
                     IdentityServerConstants.StandardScopes.Profile,
-                    "orders",
+                    "ordering",
                     "basket",
                     "catalog",
                     "rating"

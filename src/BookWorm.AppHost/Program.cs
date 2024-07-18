@@ -68,7 +68,7 @@ var catalogApi = builder.AddProject<BookWorm_Catalog>("catalog-api")
     .WithEnvironment("Identity__Url", identityEndpoint)
     .WithEnvironment("AiOptions__OpenAi__EmbeddingName", "text-embedding-3-small")
     .WithEnvironment("AzuriteOptions__ConnectionString", blobs.WithEndpoint())
-    .WithSwaggerUi();
+    .WithSwaggerUi(endpointName: "https");
 
 var orderingApi = builder.AddProject<BookWorm_Ordering>("ordering-api")
     .WithReference(rabbitMq)
