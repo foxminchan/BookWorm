@@ -11,6 +11,8 @@
     <ApiVersioningVersion>8.1.0</ApiVersioningVersion>
     <PollyVersion>8.4.1</PollyVersion>
     <AspireUnstablePackagesVersion>8.0.2-preview.1.24326.4</AspireUnstablePackagesVersion>
+    <GrpcVersion>2.63.0</GrpcVersion>
+    <MassTransitVersion>8.2.3</MassTransitVersion>
   </PropertyGroup>
   <ItemGroup>
     <!-- Aspire -->
@@ -81,10 +83,16 @@
     <PackageVersion Include="FluentAssertions" Version="7.0.0-alpha.4" />
     <PackageVersion Include="ReportGenerator" Version="5.3.8" />
     <PackageVersion Include="JUnitTestLogger" Version="1.1.0" />
+    <!-- Grpc -->
+    <PackageVersion Include="Grpc.AspNetCore" Version="$(GrpcVersion)" />
+    <PackageVersion Include="Grpc.AspNetCore.Server.ClientFactory" Version="$(GrpcVersion)" />
+    <PackageVersion Include="Grpc.Tools" Version="$(GrpcVersion)" PrivateAssets="All" />
+    <!-- MassTransit -->
+    <PackageVersion Include="MassTransit" Version="$(MassTransitVersion)" />
+    <PackageVersion Include="MassTransit.RabbitMQ" Version="$(MassTransitVersion)" />
     <!-- Miscellaneous -->
     <PackageVersion Include="Scrutor" Version="4.2.2" />
     <PackageVersion Include="MediatR" Version="12.3.0" />
-    <PackageVersion Include="MassTransit" Version="8.2.3" />
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     <PackageVersion Include="FluentValidation.AspNetCore" Version="11.3.0" />
     <PackageVersion Include="Microsoft.Web.LibraryManager.Build" Version="2.1.175" />

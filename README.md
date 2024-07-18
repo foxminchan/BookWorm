@@ -2,7 +2,15 @@
 
 ## Introduction
 
-This is a pet project to demonstrate the practical use of .NET Aspire. The project is a cloud-native application with applying Domain-Driven Design (DDD) and Vertical Slice Methodology. The project is a simple online bookstore with the following features:
+<p align="justify">
+This is a pet project to demonstrate the practical use of .NET Aspire. The project is a cloud-native application with applying Domain-Driven Design (DDD) and Vertical Slice Methodology.
+</p>
+
+<div>
+  <a href="https://codespaces.new/foxminchan/BookWorm?quickstart=1">
+    <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg">
+  </a>
+</div>
 
 ## The Goals of the Project
 
@@ -37,6 +45,30 @@ This is a pet project to demonstrate the practical use of .NET Aspire. The proje
 - **Rating**: Rate products.
 
 ![Domain Business & Bounded Contexts](docs/architechture.png)
+
+## How to run the project
+
+### Prerequisites
+
+- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [Docker](https://www.docker.com/products/docker-desktop)
+
+### Running the project
+
+1. Clone the repository
+
+```bash
+git clone git@github.com:foxminchan/BookWorm.git
+```
+
+2. Run the project
+
+```bash
+dotnet run --project src/BookWorm.AppHost/BookWorm.AppHost.csproj
+```
+
+> [!NOTE]
+> Ensure that you have Docker running on your machine.
 
 ## License
 

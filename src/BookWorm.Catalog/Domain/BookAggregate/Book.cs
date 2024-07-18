@@ -43,9 +43,9 @@ public sealed class Book : EntityBase, IAggregateRoot, ISoftDelete
     public double AverageRating { get; private set; }
     public int TotalReviews { get; private set; }
     public Guid? CategoryId { get; private set; }
-    public Category? Category { get; }
+    public Category? Category { get; private set; } = default!;
     public Guid? PublisherId { get; private set; }
-    public Publisher? Publisher { get; }
+    public Publisher? Publisher { get; private set; } = default!;
     [JsonIgnore] public Vector? Embedding { get; private set; }
 
     public IReadOnlyCollection<BookAuthor> BookAuthors => _bookAuthors.AsReadOnly();
@@ -70,7 +70,6 @@ public sealed class Book : EntityBase, IAggregateRoot, ISoftDelete
     public void Update(
         string name,
         string? description,
-        string? imageUrl,
         decimal price,
         decimal priceSale,
         Status status,
@@ -80,12 +79,16 @@ public sealed class Book : EntityBase, IAggregateRoot, ISoftDelete
     {
         Name = Guard.Against.NullOrEmpty(name);
         Description = Guard.Against.NullOrEmpty(description);
-        ImageUrl = imageUrl;
         Price = new(price, priceSale);
         Status = status;
         CategoryId = categoryId;
         PublisherId = publisherId;
         _bookAuthors.Clear();
         _bookAuthors.AddRange(authorIds.Select(authorId => new BookAuthor(authorId)));
+    }
+
+    public void RemoveImage()
+    {
+        ImageUrl = null;
     }
 }

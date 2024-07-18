@@ -20,10 +20,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Grpc.AspNetCore" />
     <PackageReference Include="Microsoft.SemanticKernel" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
     <PackageReference Include="EFCore.NamingConventions" />
     <PackageReference Include="EntityFrameworkCore.Exceptions.PostgreSQL" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Protobuf Include="Proto\book.proto" GrpcServices="Server" />
   </ItemGroup>
 
   <ItemGroup>

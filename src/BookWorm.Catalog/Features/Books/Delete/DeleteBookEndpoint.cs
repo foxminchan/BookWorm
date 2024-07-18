@@ -9,7 +9,7 @@ public sealed class DeleteBookEndpoint : IEndpoint<NoContent, Guid, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapDelete("/books/{id}",
+        app.MapDelete("/books/{id:guid}",
                 async (Guid id, ISender sender) => await HandleAsync(id, sender))
             .Produces<NoContent>(StatusCodes.Status204NoContent)
             .ProducesValidationProblem()
