@@ -11,6 +11,8 @@ public static class SwaggerExtension
 {
     public static IHostApplicationBuilder AddOpenApi(this IHostApplicationBuilder builder)
     {
+        builder.Services.AddEndpointsApiExplorer();
+
         builder.Services
             .AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerGenOptions>()
             .AddFluentValidationRulesToSwagger()

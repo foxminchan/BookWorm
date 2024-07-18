@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
+using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
@@ -17,6 +18,13 @@ public sealed class ConfigureSwaggerGenOptions(IApiVersionDescriptionProvider pr
         foreach (var description in provider.ApiVersionDescriptions)
         {
             options.SwaggerDoc(description.GroupName, CreateInfoForApiVersion(description));
+            options.MapType<DateOnly>(() => new()
+            {
+                Type = "string",
+                Format = "date",
+                Example = new OpenApiString(DateTime.Today.ToString("yyyy-MM-dd"))
+            });
+            options.CustomSchemaIds(type => type.ToString());
         }
 
         ConfigureAuthorization(options);
@@ -24,14 +32,15 @@ public sealed class ConfigureSwaggerGenOptions(IApiVersionDescriptionProvider pr
 
     private OpenApiInfo CreateInfoForApiVersion(ApiVersionDescription description)
     {
-        var openApi = config.GetSection("OpenApi");
-        var document = openApi.GetRequiredSection("Document");
+        var openApi = config.GetSection(nameof(OpenApi)).Get<OpenApi>();
+
+        ArgumentNullException.ThrowIfNull(openApi);
 
         var info = new OpenApiInfo
         {
-            Title = document.GetValue<string>("Title"),
+            Title = openApi.Document.Title,
             Version = description.ApiVersion.ToString(),
-            Description = BuildDescription(description, document.GetValue<string>("Description")),
+            Description = BuildDescription(description, openApi.Document.Description),
             Contact = new()
             {
                 Name = "Nhan Nguyen",
@@ -68,10 +77,7 @@ public sealed class ConfigureSwaggerGenOptions(IApiVersionDescriptionProvider pr
             text.Append("This API version has been deprecated.");
         }
 
-        if (api.SunsetPolicy is not { } policy)
-        {
-            return text.ToString();
-        }
+        if (api.SunsetPolicy is not { } policy) return text.ToString();
 
         if (policy.Date is { } when)
         {
@@ -122,10 +128,12 @@ public sealed class ConfigureSwaggerGenOptions(IApiVersionDescriptionProvider pr
 
     private void ConfigureAuthorization(SwaggerGenOptions options)
     {
-        var identitySection = config.GetSection("Identity");
+        var identity = config.GetSection(nameof(Identity)).Get<Identity>();
 
-        var identityUrlExternal = identitySection.GetValue<string>("Url");
-        var scopes = identitySection.GetRequiredSection("Scopes").GetChildren().ToDictionary(p => p.Key, p => p.Value);
+        ArgumentNullException.ThrowIfNull(identity);
+
+        var identityUrlExternal = identity.Url;
+        var scopes = identity.Scopes;
 
         options.AddSecurityDefinition("oauth2",
             new()

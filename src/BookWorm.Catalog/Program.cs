@@ -3,16 +3,21 @@ using BookWorm.Catalog.Infrastructure.Blob;
 using BookWorm.Catalog.Infrastructure.Data;
 using BookWorm.ServiceDefaults;
 using BookWorm.Shared.ActivityScope;
+using BookWorm.Shared.Converters;
 using BookWorm.Shared.Endpoints;
 using BookWorm.Shared.Exceptions;
 using BookWorm.Shared.Metrics;
 using BookWorm.Shared.Pipelines;
 using BookWorm.Shared.Versioning;
 using FluentValidation;
+using Microsoft.AspNetCore.Http.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+
+builder.Services.Configure<JsonOptions>(options =>
+    options.SerializerOptions.Converters.Add(new StringTrimmerJsonConverter()));
 
 builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
 builder.Services.AddExceptionHandler<UniqueConstraintExceptionHandler>();
@@ -20,9 +25,10 @@ builder.Services.AddExceptionHandler<NotFoundExceptionHandler>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
-builder.AddStorage();
 builder.AddAi();
+builder.AddStorage();
 builder.AddPersistence();
+builder.AddDefaultAuthentication();
 builder.Services.AddMediatR(cfg =>
 {
     cfg.RegisterServicesFromAssemblyContaining<Program>();
@@ -41,16 +47,14 @@ builder.AddVersioning();
 builder.AddEndpoints(typeof(Program));
 
 builder.AddOpenApi();
-builder.Services.AddEndpointsApiExplorer();
 
 var app = builder.Build();
 
 app.UseExceptionHandler();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseOpenApi();
-}
+app.UseAuthorization();
+
+app.UseOpenApi();
 
 app.MapEndpoints();
 
