@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Net.Security;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Lifecycle;
@@ -16,7 +17,7 @@ namespace BookWorm.Swagger.Hosting;
 public static class SwaggerUiExtensions
 {
     public static IResourceBuilder<ProjectResource> WithSwaggerUi(this IResourceBuilder<ProjectResource> builder,
-        string[]? documentNames = null, string path = "swagger/v1/swagger.json", string endpointName = "http")
+        string[]? documentNames = null, string path = "swagger/v1/swagger.json", string endpointName = "https")
     {
         if (builder.ApplicationBuilder.Resources.OfType<SwaggerUiResource>().Any())
         {
@@ -79,7 +80,14 @@ public static class SwaggerUiExtensions
                 app.Urls.Add("http://127.0.0.1:0");
             }
 
-            var client = new HttpMessageInvoker(new SocketsHttpHandler());
+            var handler = new SocketsHttpHandler
+            {
+                SslOptions = new()
+                {
+                    RemoteCertificateValidationCallback = (_, _, _, _) => true
+                }
+            };
+            var client = new HttpMessageInvoker(handler);
 
             app.Map("/openapi/{resourceName}/{documentName}.json",
                 async (string resourceName, string documentName, IHttpForwarder forwarder, HttpContext context) =>

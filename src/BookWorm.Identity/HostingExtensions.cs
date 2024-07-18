@@ -2,7 +2,6 @@
 using BookWorm.Identity.Data.CompliedModels;
 using BookWorm.Identity.Models;
 using BookWorm.ServiceDefaults;
-using Duende.IdentityServer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -57,13 +56,7 @@ internal static class HostingExtensions
             identityServerBuilder.AddDeveloperSigningCredential();
         }
 
-        builder.Services.AddAuthentication()
-            .AddGoogle(options =>
-            {
-                options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
-                options.ClientId = "copy client ID from Google here";
-                options.ClientSecret = "copy client secret from Google here";
-            });
+        builder.Services.AddAuthentication();
 
         return builder.Build();
     }
