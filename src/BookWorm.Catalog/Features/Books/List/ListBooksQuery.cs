@@ -21,7 +21,8 @@ public sealed record ListBooksQuery(
 public sealed class ListBooksHandler(IAiService aiService, IReadRepository<Book> repository)
     : IQueryHandler<ListBooksQuery, PagedResult<IEnumerable<Book>>>
 {
-    public async Task<PagedResult<IEnumerable<Book>>> Handle(ListBooksQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<IEnumerable<Book>>> Handle(ListBooksQuery request,
+        CancellationToken cancellationToken)
     {
         Vector? vector = null;
         if (!string.IsNullOrWhiteSpace(request.Search))

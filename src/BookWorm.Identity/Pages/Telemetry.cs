@@ -31,7 +31,8 @@ public static class Telemetry
 
         private static readonly Counter<long> _consentCounter = _meter.CreateCounter<long>(Counters.Consent);
 
-        private static readonly Counter<long> _grantsRevokedCounter = _meter.CreateCounter<long>(Counters.GrantsRevoked);
+        private static readonly Counter<long>
+            _grantsRevokedCounter = _meter.CreateCounter<long>(Counters.GrantsRevoked);
 
         private static readonly Counter<long> _userLoginCounter = _meter.CreateCounter<long>(Counters.UserLogin);
 
@@ -78,14 +79,20 @@ public static class Telemetry
         ///     Helper method to increase the <see cref="Counters.GrantsRevoked" /> counter.
         /// </summary>
         /// <param name="clientId">Client id to revoke for, or null for all.</param>
-        public static void GrantsRevoked(string? clientId) => _grantsRevokedCounter.Add(1, tag: new(Tags.Client, clientId));
+        public static void GrantsRevoked(string? clientId)
+        {
+            _grantsRevokedCounter.Add(1, tag: new(Tags.Client, clientId));
+        }
 
         /// <summary>
         ///     Helper method to increase <see cref="Counters.UserLogin" /> counter.
         /// </summary>
         /// <param name="clientId">Client Id, if available</param>
         /// <param name="idp"></param>
-        public static void UserLogin(string? clientId, string idp) => _userLoginCounter.Add(1, new(Tags.Client, clientId), new(Tags.Idp, idp));
+        public static void UserLogin(string? clientId, string idp)
+        {
+            _userLoginCounter.Add(1, new(Tags.Client, clientId), new(Tags.Idp, idp));
+        }
 
         /// <summary>
         ///     Helper method to increase <see cref="Counters.UserLogin" /> counter on failure.
@@ -102,7 +109,10 @@ public static class Telemetry
         ///     Helper method to increase the <see cref="Counters.UserLogout" /> counter.
         /// </summary>
         /// <param name="idp">Idp/authentication scheme for external authentication, or "local" for built-in.</param>
-        public static void UserLogout(string? idp) => _userLogoutCounter.Add(1, tag: new(Tags.Idp, idp));
+        public static void UserLogout(string? idp)
+        {
+            _userLogoutCounter.Add(1, tag: new(Tags.Idp, idp));
+        }
 #pragma warning disable 1591
 
         /// <summary>

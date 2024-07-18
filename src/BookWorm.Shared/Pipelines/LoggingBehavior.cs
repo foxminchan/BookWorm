@@ -1,7 +1,7 @@
-﻿using MediatR;
-using Microsoft.Extensions.Logging;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Reflection;
+using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Shared.Pipelines;
 
@@ -41,8 +41,10 @@ public sealed class LoggingBehavior<TRequest, TResponse>(ILogger<LoggingBehavior
         var timeTaken = Stopwatch.GetElapsedTime(start);
 
         if (timeTaken.Seconds > 3)
+        {
             logger.LogWarning("[{Behavior}] The request {Request} took {TimeTaken} seconds.",
                 behavior, typeof(TRequest).FullName, timeTaken.Seconds);
+        }
 
         return response;
     }

@@ -8,7 +8,7 @@ public static class AuthorBuilder
 
     public static List<Author> WithDefaultValues()
     {
-        _authors = 
+        _authors =
         [
             new("Martin Fowler"),
             new("Eric Evans"),

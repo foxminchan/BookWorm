@@ -7,6 +7,8 @@ namespace BookWorm.Catalog.Domain.BookAggregate;
 
 public sealed class Book : EntityBase, IAggregateRoot, ISoftDelete
 {
+    private readonly List<BookAuthor> _bookAuthors = [];
+
     private Book()
     {
         // EF Core
@@ -38,22 +40,26 @@ public sealed class Book : EntityBase, IAggregateRoot, ISoftDelete
     public string? ImageUrl { get; private set; }
     public Price? Price { get; private set; }
     public Status Status { get; private set; }
-    public bool IsDeleted { get; set; }
     public double AverageRating { get; private set; }
     public int TotalReviews { get; private set; }
     public Guid? CategoryId { get; private set; }
-    public Category? Category { get; private set; }
+    public Category? Category { get; }
     public Guid? PublisherId { get; private set; }
-    public Publisher? Publisher { get; private set; }
+    public Publisher? Publisher { get; }
     [JsonIgnore] public Vector? Embedding { get; private set; }
 
-    private readonly List<BookAuthor> _bookAuthors = [];
-
     public IReadOnlyCollection<BookAuthor> BookAuthors => _bookAuthors.AsReadOnly();
+    public bool IsDeleted { get; set; }
 
-    public void Embed(Vector embedding) => Embedding = embedding;
+    public void Embed(Vector embedding)
+    {
+        Embedding = embedding;
+    }
 
-    public void Delete() => IsDeleted = true;
+    public void Delete()
+    {
+        IsDeleted = true;
+    }
 
     public void SetRating(double averageRating, int totalReviews)
     {

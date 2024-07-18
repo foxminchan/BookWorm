@@ -1,11 +1,11 @@
-﻿using BookWorm.Shared.ActivityScope;
+﻿using System.Text.Json;
+using BookWorm.Shared.ActivityScope;
+using BookWorm.Shared.OpenTelemetry;
+using BookWorm.Shared.Validator;
+using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System.Text.Json;
-using BookWorm.Shared.OpenTelemetry;
-using FluentValidation;
-using BookWorm.Shared.Validator;
 
 namespace BookWorm.Shared.Pipelines;
 
@@ -38,9 +38,11 @@ public sealed class ValidationBehavior<TRequest, TResponse>(
         var activityScope = serviceProvider.GetRequiredService<IActivityScope>();
 
         if (validators.Count != 0)
+        {
             await Task.WhenAll(
                 validators.Select(v => v.HandleValidationAsync(request))
             );
+        }
 
         var response = await next();
 
@@ -51,18 +53,10 @@ public sealed class ValidationBehavior<TRequest, TResponse>(
             {
                 Tags =
                 {
-                    {
-                        TelemetryTags.Validator.Validation, typeof(TRequest).Name
-                    },
-                    {
-                        TelemetryTags.Validator.ValidationRequest, JsonSerializer.Serialize(request)
-                    },
-                    {
-                        TelemetryTags.Validator.ValidationResponseType, typeof(TResponse).FullName
-                    },
-                    {
-                        TelemetryTags.Validator.ValidationValidators, JsonSerializer.Serialize(validators)
-                    }
+                    { TelemetryTags.Validator.Validation, typeof(TRequest).Name },
+                    { TelemetryTags.Validator.ValidationRequest, JsonSerializer.Serialize(request) },
+                    { TelemetryTags.Validator.ValidationResponseType, typeof(TResponse).FullName },
+                    { TelemetryTags.Validator.ValidationValidators, JsonSerializer.Serialize(validators) }
                 }
             },
             cancellationToken

@@ -13,7 +13,10 @@ public sealed class UniqueConstraintExceptionHandler(ILogger<UniqueConstraintExc
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception,
         CancellationToken cancellationToken)
     {
-        if (exception is not UniqueConstraintException uniqueConstraintException) return false;
+        if (exception is not UniqueConstraintException uniqueConstraintException)
+        {
+            return false;
+        }
 
         logger.LogError(uniqueConstraintException, "[{Handler}] Exception occurred: {Message}",
             nameof(UniqueConstraintExceptionHandler), uniqueConstraintException.Message);

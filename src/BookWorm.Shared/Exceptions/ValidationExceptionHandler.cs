@@ -12,7 +12,10 @@ public sealed class ValidationExceptionHandler(ILogger<ValidationExceptionHandle
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception,
         CancellationToken cancellationToken)
     {
-        if (exception is not ValidationException validationException) return false;
+        if (exception is not ValidationException validationException)
+        {
+            return false;
+        }
 
         logger.LogError(validationException, "[{Handler}] Exception occurred: {Message}",
             nameof(ValidationExceptionHandler), validationException.Message);

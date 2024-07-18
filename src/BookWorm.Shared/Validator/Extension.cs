@@ -1,6 +1,6 @@
 ﻿using FluentValidation;
-using Microsoft.Extensions.Options;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace BookWorm.Shared.Validator;
 
@@ -17,6 +17,9 @@ public static class Extension
     {
         var validationResult = await validator.ValidateAsync(request);
         var failures = validationResult.Errors;
-        if (failures.Count != 0) throw new ValidationException(failures);
+        if (failures.Count != 0)
+        {
+            throw new ValidationException(failures);
+        }
     }
 }

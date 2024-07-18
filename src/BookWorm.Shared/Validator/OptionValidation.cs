@@ -9,13 +9,19 @@ public sealed class OptionValidation<TOption>(IServiceProvider serviceProvider)
 {
     public ValidateOptionsResult Validate(string? name, TOption options)
     {
-        if (name is not null && name != Options.DefaultName) return ValidateOptionsResult.Skip;
+        if (name is not null && name != Options.DefaultName)
+        {
+            return ValidateOptionsResult.Skip;
+        }
 
         using var scope = serviceProvider.CreateScope();
 
         var result = scope.ServiceProvider.GetRequiredService<IValidator<TOption>>().Validate(options);
 
-        if (result.IsValid) return ValidateOptionsResult.Success;
+        if (result.IsValid)
+        {
+            return ValidateOptionsResult.Success;
+        }
 
         var type = options.GetType().Name;
 

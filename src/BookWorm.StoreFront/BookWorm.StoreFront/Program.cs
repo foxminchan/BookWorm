@@ -1,4 +1,5 @@
 ﻿using BookWorm.StoreFront.Components;
+using _Imports = BookWorm.StoreFront.Client._Imports;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,7 +15,7 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    app.UseExceptionHandler("/Error", true);
     app.UseHsts();
 }
 
@@ -26,6 +27,6 @@ app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddInteractiveWebAssemblyRenderMode()
-    .AddAdditionalAssemblies(typeof(BookWorm.StoreFront.Client._Imports).Assembly);
+    .AddAdditionalAssemblies(typeof(_Imports).Assembly);
 
 app.Run();

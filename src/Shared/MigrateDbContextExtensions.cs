@@ -8,7 +8,9 @@ internal static class MigrateDbContextExtensions
 
     public static IServiceCollection AddMigration<TContext>(this IServiceCollection services)
         where TContext : DbContext
-        => services.AddMigration<TContext>((_, _) => Task.CompletedTask);
+    {
+        return services.AddMigration<TContext>((_, _) => Task.CompletedTask);
+    }
 
     public static IServiceCollection AddMigration<TContext>(this IServiceCollection services,
         Func<TContext, IServiceProvider, Task> seeder)
@@ -84,11 +86,15 @@ internal static class MigrateDbContextExtensions
         Func<TContext, IServiceProvider, Task> seeder)
         : BackgroundService where TContext : DbContext
     {
-        public override Task StartAsync(CancellationToken cancellationToken) =>
-            serviceProvider.MigrateDbContextAsync(seeder);
+        public override Task StartAsync(CancellationToken cancellationToken)
+        {
+            return serviceProvider.MigrateDbContextAsync(seeder);
+        }
 
-        protected override Task ExecuteAsync(CancellationToken stoppingToken) =>
-            Task.CompletedTask;
+        protected override Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            return Task.CompletedTask;
+        }
     }
 }
 

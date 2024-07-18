@@ -40,7 +40,10 @@ internal static class HostingExtensions
                 options.Events.RaiseSuccessEvents = true;
                 options.EmitStaticAudienceClaim = true;
 
-                if (builder.Environment.IsDevelopment()) options.KeyManagement.Enabled = false;
+                if (builder.Environment.IsDevelopment())
+                {
+                    options.KeyManagement.Enabled = false;
+                }
             })
             .AddInMemoryIdentityResources(Config.GetResources())
             .AddInMemoryApiScopes(Config.GetApiScopes())
@@ -49,7 +52,10 @@ internal static class HostingExtensions
             .AddAspNetIdentity<ApplicationUser>();
 
         // not recommended for production - you need to store your key material somewhere secure
-        if (builder.Environment.IsDevelopment()) identityServerBuilder.AddDeveloperSigningCredential();
+        if (builder.Environment.IsDevelopment())
+        {
+            identityServerBuilder.AddDeveloperSigningCredential();
+        }
 
         builder.Services.AddAuthentication()
             .AddGoogle(options =>

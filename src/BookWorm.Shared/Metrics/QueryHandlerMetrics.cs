@@ -1,7 +1,7 @@
-﻿using BookWorm.Shared.ActivityScope;
-using BookWorm.Shared.OpenTelemetry;
+﻿using System.Diagnostics;
 using System.Diagnostics.Metrics;
-using System.Diagnostics;
+using BookWorm.Shared.ActivityScope;
+using BookWorm.Shared.OpenTelemetry;
 
 namespace BookWorm.Shared.Metrics;
 
@@ -37,18 +37,24 @@ public sealed class QueryHandlerMetrics : IDisposable
             "Measures the duration of inbound queries");
     }
 
+    public void Dispose()
+    {
+        _meter.Dispose();
+    }
+
     public long QueryHandlingStart(string queryType)
     {
-        var tags = new TagList
+        var tags = new TagList { { TelemetryTags.Queries.QueryType, queryType } };
+
+        if (_activeEventHandlingCounter.Enabled)
         {
-            {
-                TelemetryTags.Queries.QueryType, queryType
-            }
-        };
+            _activeEventHandlingCounter.Add(1, tags);
+        }
 
-        if (_activeEventHandlingCounter.Enabled) _activeEventHandlingCounter.Add(1, tags);
-
-        if (_totalCommandsNumber.Enabled) _totalCommandsNumber.Add(1, tags);
+        if (_totalCommandsNumber.Enabled)
+        {
+            _totalCommandsNumber.Add(1, tags);
+        }
 
         return _timeProvider.GetTimestamp();
     }
@@ -57,17 +63,18 @@ public sealed class QueryHandlerMetrics : IDisposable
     {
         var tags = _activeEventHandlingCounter.Enabled
                    || _eventHandlingDuration.Enabled
-            ? new TagList
-            {
-                {
-                    TelemetryTags.Queries.QueryType, queryType
-                }
-            }
+            ? new TagList { { TelemetryTags.Queries.QueryType, queryType } }
             : default;
 
-        if (_activeEventHandlingCounter.Enabled) _activeEventHandlingCounter.Add(-1, tags);
+        if (_activeEventHandlingCounter.Enabled)
+        {
+            _activeEventHandlingCounter.Add(-1, tags);
+        }
 
-        if (!_eventHandlingDuration.Enabled) return;
+        if (!_eventHandlingDuration.Enabled)
+        {
+            return;
+        }
 
         var elapsed = _timeProvider.GetElapsedTime(startingTimestamp);
 
@@ -75,6 +82,4 @@ public sealed class QueryHandlerMetrics : IDisposable
             elapsed.TotalSeconds,
             tags);
     }
-
-    public void Dispose() => _meter.Dispose();
 }

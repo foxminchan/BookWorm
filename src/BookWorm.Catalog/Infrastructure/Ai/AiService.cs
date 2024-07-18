@@ -1,5 +1,5 @@
-﻿using Microsoft.SemanticKernel.Embeddings;
-using System.Diagnostics;
+﻿using System.Diagnostics;
+using Microsoft.SemanticKernel.Embeddings;
 using Pgvector;
 
 namespace BookWorm.Catalog.Infrastructure.Ai;

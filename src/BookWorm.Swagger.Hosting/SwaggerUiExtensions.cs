@@ -42,7 +42,10 @@ public static class SwaggerUiExtensions
         {
             var openApiResource = appModel.Resources.OfType<SwaggerUiResource>().SingleOrDefault();
 
-            if (openApiResource is null) return;
+            if (openApiResource is null)
+            {
+                return;
+            }
 
             var builder = WebApplication.CreateSlimBuilder();
 
@@ -61,7 +64,10 @@ public static class SwaggerUiExtensions
 
             foreach (var r in appModel.Resources)
             {
-                if (!r.TryGetLastAnnotation<SwaggerUiAnnotation>(out var annotation)) continue;
+                if (!r.TryGetLastAnnotation<SwaggerUiAnnotation>(out var annotation))
+                {
+                    continue;
+                }
 
                 resourceToEndpoint[r.Name] = (annotation.EndpointReference.Url, annotation.Path);
 
@@ -116,7 +122,7 @@ public static class SwaggerUiExtensions
 
                 foreach (var p in paths)
                 {
-                    urls.Add(new(rawAddress, $"{rawAddress}/{p}", IsInternal: false));
+                    urls.Add(new(rawAddress, $"{rawAddress}/{p}", false));
                 }
             }
 
@@ -127,7 +133,10 @@ public static class SwaggerUiExtensions
 
     private sealed class ResourceLoggerProvider(ILogger logger) : ILoggerProvider
     {
-        public ILogger CreateLogger(string categoryName) => new ResourceLogger(logger);
+        public ILogger CreateLogger(string categoryName)
+        {
+            return new ResourceLogger(logger);
+        }
 
         public void Dispose()
         {
@@ -135,13 +144,21 @@ public static class SwaggerUiExtensions
 
         private class ResourceLogger(ILogger logger) : ILogger
         {
-            public IDisposable? BeginScope<TState>(TState state) where TState : notnull => logger.BeginScope(state);
+            public IDisposable? BeginScope<TState>(TState state) where TState : notnull
+            {
+                return logger.BeginScope(state);
+            }
 
-            public bool IsEnabled(LogLevel logLevel) => logger.IsEnabled(logLevel);
+            public bool IsEnabled(LogLevel logLevel)
+            {
+                return logger.IsEnabled(logLevel);
+            }
 
             public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
-                Func<TState, Exception?, string> formatter) =>
+                Func<TState, Exception?, string> formatter)
+            {
                 logger.Log(logLevel, eventId, state, exception, formatter);
+            }
         }
     }
 }

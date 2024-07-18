@@ -1,0 +1,19 @@
+﻿using Ardalis.Result;
+using BookWorm.Catalog.Domain;
+using BookWorm.Core.SharedKernel;
+
+namespace BookWorm.Catalog.Features.Publishers.List;
+
+public sealed record ListPublishersQuery : IQuery<Result<IEnumerable<Publisher>>>;
+
+public sealed class ListPublishersHandler(IRepository<Publisher> repository)
+    : IQueryHandler<ListPublishersQuery, Result<IEnumerable<Publisher>>>
+{
+    public async Task<Result<IEnumerable<Publisher>>> Handle(ListPublishersQuery request,
+        CancellationToken cancellationToken)
+    {
+        var publishers = await repository.ListAsync(cancellationToken);
+
+        return publishers;
+    }
+}
