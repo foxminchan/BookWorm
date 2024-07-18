@@ -3,7 +3,7 @@
 namespace BookWorm.Web.Bff;
 
 /// <summary>
-/// Configuration section
+///     Configuration section
 /// </summary>
 public class Configuration
 {
@@ -12,8 +12,8 @@ public class Configuration
     public string? ClientId { get; set; }
 
     /// <summary>
-    /// should be supplied as a command line argument or environment variable, e.g.
-    /// ./GenericBFF --BFF:ClientSecret=secret
+    ///     should be supplied as a command line argument or environment variable, e.g.
+    ///     ./GenericBFF --BFF:ClientSecret=secret
     /// </summary>
     public string? ClientSecret { get; set; }
 

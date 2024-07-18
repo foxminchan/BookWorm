@@ -10,7 +10,10 @@ public class BookAuthor : EntityBase
         // EF Core
     }
 
-    public BookAuthor(Guid authorId) => AuthorId = Guard.Against.Default(authorId);
+    public BookAuthor(Guid authorId)
+    {
+        AuthorId = Guard.Against.Default(authorId);
+    }
 
     public Guid AuthorId { get; private set; }
     public Author Author { get; private set; } = default!;

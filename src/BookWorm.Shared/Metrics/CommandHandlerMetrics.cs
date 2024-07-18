@@ -1,7 +1,7 @@
-﻿using BookWorm.Shared.ActivityScope;
-using BookWorm.Shared.OpenTelemetry;
+﻿using System.Diagnostics;
 using System.Diagnostics.Metrics;
-using System.Diagnostics;
+using BookWorm.Shared.ActivityScope;
+using BookWorm.Shared.OpenTelemetry;
 
 namespace BookWorm.Shared.Metrics;
 
@@ -37,13 +37,24 @@ public sealed class CommandHandlerMetrics : IDisposable
             "Measures the duration of inbound commands");
     }
 
+    public void Dispose()
+    {
+        _meter.Dispose();
+    }
+
     public long CommandHandlingStart(string commandType)
     {
         var tags = new TagList { { TelemetryTags.Commands.CommandType, commandType } };
 
-        if (_activeEventHandlingCounter.Enabled) _activeEventHandlingCounter.Add(1, tags);
+        if (_activeEventHandlingCounter.Enabled)
+        {
+            _activeEventHandlingCounter.Add(1, tags);
+        }
 
-        if (_totalCommandsNumber.Enabled) _totalCommandsNumber.Add(1, tags);
+        if (_totalCommandsNumber.Enabled)
+        {
+            _totalCommandsNumber.Add(1, tags);
+        }
 
         return _timeProvider.GetTimestamp();
     }
@@ -55,9 +66,15 @@ public sealed class CommandHandlerMetrics : IDisposable
             ? new TagList { { TelemetryTags.Commands.CommandType, commandType } }
             : default;
 
-        if (_activeEventHandlingCounter.Enabled) _activeEventHandlingCounter.Add(-1, tags);
+        if (_activeEventHandlingCounter.Enabled)
+        {
+            _activeEventHandlingCounter.Add(-1, tags);
+        }
 
-        if (!_eventHandlingDuration.Enabled) return;
+        if (!_eventHandlingDuration.Enabled)
+        {
+            return;
+        }
 
         var elapsed = _timeProvider.GetElapsedTime(startingTimestamp);
 
@@ -65,6 +82,4 @@ public sealed class CommandHandlerMetrics : IDisposable
             elapsed.TotalSeconds,
             tags);
     }
-
-    public void Dispose() => _meter.Dispose();
 }

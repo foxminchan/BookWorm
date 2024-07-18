@@ -25,7 +25,10 @@ public class MetricsBehavior<TRequest, TResponse>(
         var attr = requestHandler
             .GetType().GetCustomAttribute<IgnoreOTelOnHandlerAttribute>();
 
-        if (attr is not null) return await next();
+        if (attr is not null)
+        {
+            return await next();
+        }
 
         var handler = requestHandler.GetType().Name;
         var query = typeof(TRequest).Name;
@@ -43,24 +46,20 @@ public class MetricsBehavior<TRequest, TResponse>(
             return await activityScope.Run(
                 activityName,
                 async (_, _) => await next(),
-                new()
-                {
-                    Tags =
-                    {
-                        {
-                            tagName, query
-                        }
-                    }
-                },
+                new() { Tags = { { tagName, query } } },
                 cancellationToken
             );
         }
         finally
         {
             if (isQuery)
+            {
                 queryMetrics.QueryHandlingEnd(handler, startingTimestamp);
+            }
             else
+            {
                 commandMetrics.CommandHandlingEnd(handler, startingTimestamp);
+            }
         }
     }
 }

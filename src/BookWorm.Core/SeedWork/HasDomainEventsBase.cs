@@ -8,7 +8,18 @@ public abstract class HasDomainEventsBase
 
     [NotMapped] public IReadOnlyCollection<EventBase> DomainEvents => _domainEvents.AsReadOnly();
 
-    public void RegisterDomainEvent(EventBase domainEvent) => _domainEvents.Add(domainEvent);
-    public void RemoveDomainEvent(EventBase domainEvent) => _domainEvents.Remove(domainEvent);
-    public void ClearDomainEvents() => _domainEvents.Clear();
+    public void RegisterDomainEvent(EventBase domainEvent)
+    {
+        _domainEvents.Add(domainEvent);
+    }
+
+    public void RemoveDomainEvent(EventBase domainEvent)
+    {
+        _domainEvents.Remove(domainEvent);
+    }
+
+    public void ClearDomainEvents()
+    {
+        _domainEvents.Clear();
+    }
 }

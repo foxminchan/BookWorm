@@ -59,7 +59,8 @@ public class Callback(
         // this might be where you might initiate a custom workflow for user registration
         // in this sample we don't show how that would be done, as our sample implementation
         // simply auto-provisions new external user
-        var user = await userManager.FindByLoginAsync(provider, providerUserId) ?? await AutoProvisionUserAsync(provider, providerUserId, externalUser.Claims);
+        var user = await userManager.FindByLoginAsync(provider, providerUserId) ??
+                   await AutoProvisionUserAsync(provider, providerUserId, externalUser.Claims);
 
         // this allows us to collect any additional claims or properties
         // for the specific protocols used and store them in the local auth cookie.
@@ -88,10 +89,12 @@ public class Callback(
             return Redirect(returnUrl);
         }
 
-        return context.IsNativeClient() ?
+        return context.IsNativeClient()
+            ?
             // The client is native, so this change in how to
             // return the response is for better UX for the end user.
-            this.LoadingPage(returnUrl) : Redirect(returnUrl);
+            this.LoadingPage(returnUrl)
+            : Redirect(returnUrl);
     }
 
     [SuppressMessage("Performance", "CA1851:Possible multiple enumerations of 'IEnumerable' collection",

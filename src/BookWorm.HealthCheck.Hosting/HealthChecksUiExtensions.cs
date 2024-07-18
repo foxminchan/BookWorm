@@ -1,5 +1,5 @@
-﻿using Aspire.Hosting.ApplicationModel;
-using Aspire.Hosting;
+﻿using Aspire.Hosting;
+using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Lifecycle;
 
 namespace BookWorm.HealthCheck.Hosting;
@@ -20,7 +20,7 @@ public static class HealthChecksUiExtensions
             .WithImage(HealthChecksUiDefaults.ContainerImageName, HealthChecksUiDefaults.ContainerImageTag)
             .WithImageRegistry(HealthChecksUiDefaults.ContainerRegistry)
             .WithEnvironment(HealthChecksUiResource.KnownEnvVars.UiPath, "/")
-            .WithHttpEndpoint(port: port, targetPort: HealthChecksUiDefaults.ContainerPort);
+            .WithHttpEndpoint(port, HealthChecksUiDefaults.ContainerPort);
     }
 
     public static IResourceBuilder<HealthChecksUiResource> WithReference(
@@ -29,7 +29,7 @@ public static class HealthChecksUiExtensions
         string endpointName = HealthChecksUiDefaults.EndpointName,
         string probePath = HealthChecksUiDefaults.ProbePath)
     {
-        var monitoredProject = new MonitoredProject(project, endpointName: endpointName, probePath: probePath);
+        var monitoredProject = new MonitoredProject(project, endpointName, probePath);
         builder.Resource.MonitoredProjects.Add(monitoredProject);
 
         return builder;

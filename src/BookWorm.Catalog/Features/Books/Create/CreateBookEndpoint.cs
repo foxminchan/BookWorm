@@ -20,7 +20,8 @@ public sealed record CreateBookRequest(
 
 public sealed class CreateBookEndpoint : IEndpoint<Created<Guid>, CreateBookRequest, ISender>
 {
-    public void MapEndpoint(IEndpointRouteBuilder app) =>
+    public void MapEndpoint(IEndpointRouteBuilder app)
+    {
         app.MapPost("/books",
                 async ([FromForm] string name,
                         [FromForm] string? description,
@@ -37,11 +38,12 @@ public sealed class CreateBookEndpoint : IEndpoint<Created<Guid>, CreateBookRequ
                         sender))
             .AddEndpointFilter<FileValidationFilter>()
             .Produces<Created<Guid>>(StatusCodes.Status201Created)
-            .Produces<BadRequest<ProblemDetails>>(StatusCodes.Status400BadRequest)
+            .ProducesValidationProblem()
             .DisableAntiforgery()
             .WithTags(nameof(Book))
             .WithName("Create Product")
             .MapToApiVersion(new(1, 0));
+    }
 
     public async Task<Created<Guid>> HandleAsync(CreateBookRequest request, ISender sender,
         CancellationToken cancellationToken = default)

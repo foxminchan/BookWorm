@@ -25,10 +25,7 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
             Type = exception.GetType().Name,
             Title = title,
             Detail = "An error occurred while processing your request",
-            Extensions = new Dictionary<string, object?>
-            {
-                {"traceId",  traceId}
-            }
+            Extensions = new Dictionary<string, object?> { { "traceId", traceId } }
         };
 
         await TypedResults.Problem(problemDetails).ExecuteAsync(httpContext);

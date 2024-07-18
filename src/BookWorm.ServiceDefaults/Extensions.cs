@@ -88,11 +88,14 @@ public static class Extensions
     {
         var healthChecksConfiguration = builder.Configuration.GetSection("HealthChecks");
 
-        var healthChecksRequestTimeout = healthChecksConfiguration.GetValue<TimeSpan?>("RequestTimeout") ?? TimeSpan.FromSeconds(5);
+        var healthChecksRequestTimeout =
+            healthChecksConfiguration.GetValue<TimeSpan?>("RequestTimeout") ?? TimeSpan.FromSeconds(5);
         builder.Services.AddRequestTimeouts(timeouts => timeouts.AddPolicy("HealthChecks", healthChecksRequestTimeout));
 
-        var healthChecksExpireAfter = healthChecksConfiguration.GetValue<TimeSpan?>("ExpireAfter") ?? TimeSpan.FromSeconds(10);
-        builder.Services.AddOutputCache(caching => caching.AddPolicy("HealthChecks", policy => policy.Expire(healthChecksExpireAfter)));
+        var healthChecksExpireAfter =
+            healthChecksConfiguration.GetValue<TimeSpan?>("ExpireAfter") ?? TimeSpan.FromSeconds(10);
+        builder.Services.AddOutputCache(caching =>
+            caching.AddPolicy("HealthChecks", policy => policy.Expire(healthChecksExpireAfter)));
 
         builder.Services.AddHealthChecks()
             .AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
@@ -103,24 +106,25 @@ public static class Extensions
     public static WebApplication MapDefaultEndpoints(this WebApplication app)
     {
         if (!app.Environment.IsDevelopment())
+        {
             return app;
+        }
 
         var healthChecks = app.MapGroup("");
 
         healthChecks
-            .CacheOutput(policyName: "HealthChecks")
-            .WithRequestTimeout(policyName: "HealthChecks");
+            .CacheOutput("HealthChecks")
+            .WithRequestTimeout("HealthChecks");
 
         healthChecks.MapHealthChecks("/health");
 
-        healthChecks.MapHealthChecks("/alive", new()
-        {
-            Predicate = r => r.Tags.Contains("live")
-        });
+        healthChecks.MapHealthChecks("/alive", new() { Predicate = r => r.Tags.Contains("live") });
 
         var healthChecksUrls = app.Configuration["HEALTHCHECKSUI_URLS"];
         if (string.IsNullOrWhiteSpace(healthChecksUrls))
+        {
             return app;
+        }
 
         var pathToHostsMap = GetPathToHostsMap(healthChecksUrls);
 

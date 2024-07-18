@@ -7,12 +7,14 @@ namespace BookWorm.Shared.Endpoints;
 
 public static class Extension
 {
-    public static void AddEndpoints(this IHostApplicationBuilder builder, Type type) =>
+    public static void AddEndpoints(this IHostApplicationBuilder builder, Type type)
+    {
         builder.Services.Scan(scan => scan
             .FromAssembliesOf(type)
             .AddClasses(classes => classes.AssignableTo<IEndpoint>())
             .AsImplementedInterfaces()
             .WithScopedLifetime());
+    }
 
     public static IApplicationBuilder MapEndpoints(this WebApplication app)
     {
@@ -31,7 +33,10 @@ public static class Extension
             .MapGroup("/api/v{apiVersion:apiVersion}")
             .WithApiVersionSet(apiVersionSet);
 
-        foreach (var endpoint in endpoints) endpoint.MapEndpoint(builder);
+        foreach (var endpoint in endpoints)
+        {
+            endpoint.MapEndpoint(builder);
+        }
 
         return app;
     }

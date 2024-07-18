@@ -49,7 +49,9 @@ public sealed class CreateBookHandler(
     private async Task<string?> UploadProductImagesAsync(IFormFile? imageFile, CancellationToken cancellationToken)
     {
         if (imageFile is null)
+        {
             return null;
+        }
 
         var imageUrl = await azurite.UploadFileAsync(imageFile, cancellationToken);
 

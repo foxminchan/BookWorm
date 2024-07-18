@@ -14,7 +14,9 @@ public sealed class FileValidationFilter : IEndpointFilter
         var files = formCollection.Files;
 
         if (files.Count == 0)
+        {
             return await next(context);
+        }
 
         List<ValidationFailure> errors = [];
 
@@ -32,7 +34,10 @@ public sealed class FileValidationFilter : IEndpointFilter
 
             List<string> allowedContentTypes = ["image/jpeg", "image/png", "image/jpg"];
 
-            if (allowedContentTypes.Contains(file.ContentType)) continue;
+            if (allowedContentTypes.Contains(file.ContentType))
+            {
+                continue;
+            }
 
             errors.Add(
                 new("ContentType",
@@ -40,7 +45,9 @@ public sealed class FileValidationFilter : IEndpointFilter
         }
 
         if (errors.Count > 0)
+        {
             throw new ValidationException(errors.AsEnumerable());
+        }
 
         return await next(context);
     }

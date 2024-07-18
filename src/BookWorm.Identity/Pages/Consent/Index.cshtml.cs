@@ -184,8 +184,9 @@ public sealed class Index(
         return vm;
     }
 
-    private static ScopeViewModel CreateScopeViewModel(IdentityResource identity, bool check) =>
-        new()
+    private static ScopeViewModel CreateScopeViewModel(IdentityResource identity, bool check)
+    {
+        return new()
         {
             Name = identity.Name,
             Value = identity.Name,
@@ -195,6 +196,7 @@ public sealed class Index(
             Required = identity.Required,
             Checked = check || identity.Required
         };
+    }
 
     private static ScopeViewModel CreateScopeViewModel(ParsedScopeValue parsedScopeValue, ApiScope apiScope, bool check)
     {
@@ -216,8 +218,9 @@ public sealed class Index(
         };
     }
 
-    private static ScopeViewModel CreateOfflineAccessScope(bool check) =>
-        new()
+    private static ScopeViewModel CreateOfflineAccessScope(bool check)
+    {
+        return new()
         {
             Value = IdentityServerConstants.StandardScopes.OfflineAccess,
             DisplayName = ConsentOptions.OfflineAccessDisplayName,
@@ -225,4 +228,5 @@ public sealed class Index(
             Emphasize = true,
             Checked = check
         };
+    }
 }

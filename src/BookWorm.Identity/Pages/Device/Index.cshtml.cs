@@ -20,7 +20,6 @@ public sealed class Index(
     IDeviceFlowInteractionService interaction,
     IEventService eventService) : PageModel
 {
-
     public ViewModel View { get; set; } = default!;
 
     [BindProperty] public InputModel Input { get; set; } = default!;
@@ -47,7 +46,7 @@ public sealed class Index(
     {
         var request =
             await interaction.GetAuthorizationContextAsync(Input.UserCode ??
-                                                            throw new ArgumentNullException(nameof(Input.UserCode)));
+                                                           throw new ArgumentNullException(nameof(Input.UserCode)));
         if (request is null)
         {
             return RedirectToPage("/Home/Error/Index");
@@ -173,8 +172,9 @@ public sealed class Index(
         return vm;
     }
 
-    private static ScopeViewModel CreateScopeViewModel(IdentityResource identity, bool check) =>
-        new()
+    private static ScopeViewModel CreateScopeViewModel(IdentityResource identity, bool check)
+    {
+        return new()
         {
             Value = identity.Name,
             DisplayName = identity.DisplayName ?? identity.Name,
@@ -183,9 +183,11 @@ public sealed class Index(
             Required = identity.Required,
             Checked = check || identity.Required
         };
+    }
 
-    private static ScopeViewModel CreateScopeViewModel(ParsedScopeValue parsedScopeValue, ApiScope apiScope, bool check) =>
-        new()
+    private static ScopeViewModel CreateScopeViewModel(ParsedScopeValue parsedScopeValue, ApiScope apiScope, bool check)
+    {
+        return new()
         {
             Value = parsedScopeValue.RawValue,
             DisplayName = apiScope.DisplayName ?? apiScope.Name,
@@ -194,9 +196,11 @@ public sealed class Index(
             Required = apiScope.Required,
             Checked = check || apiScope.Required
         };
+    }
 
-    private static ScopeViewModel GetOfflineAccessScope(bool check) =>
-        new()
+    private static ScopeViewModel GetOfflineAccessScope(bool check)
+    {
+        return new()
         {
             Value = IdentityServerConstants.StandardScopes.OfflineAccess,
             DisplayName = DeviceOptions.OfflineAccessDisplayName,
@@ -204,4 +208,5 @@ public sealed class Index(
             Emphasize = true,
             Checked = check
         };
+    }
 }

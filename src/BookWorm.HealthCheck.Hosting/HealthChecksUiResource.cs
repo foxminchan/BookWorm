@@ -16,11 +16,15 @@ public sealed class HealthChecksUiResource(string name) : ContainerResource(name
         public const string HealthCheckName = "Name";
         public const string HealthCheckUri = "Uri";
 
-        internal static string GetHealthCheckNameKey(int index) =>
-            $"{HealthChecksConfigSection}__{index}__{HealthCheckName}";
+        internal static string GetHealthCheckNameKey(int index)
+        {
+            return $"{HealthChecksConfigSection}__{index}__{HealthCheckName}";
+        }
 
-        internal static string GetHealthCheckUriKey(int index) =>
-            $"{HealthChecksConfigSection}__{index}__{HealthCheckUri}";
+        internal static string GetHealthCheckUriKey(int index)
+        {
+            return $"{HealthChecksConfigSection}__{index}__{HealthCheckUri}";
+        }
     }
 }
 
@@ -36,7 +40,7 @@ public sealed class MonitoredProject(IResourceBuilder<ProjectResource> project, 
     public string Name
     {
         get => _name ?? Project.Resource.Name;
-        set { _name = value; }
+        set => _name = value;
     }
 
     public string ProbePath { get; set; } = probePath ?? throw new ArgumentNullException(nameof(probePath));
@@ -117,7 +121,7 @@ internal sealed class HealthChecksUiLifecycleHook(DistributedApplicationExecutio
 
         if (executionContext.IsPublishMode)
         {
-            ConfigureHealthChecksUiContainers(appModel.Resources, isPublishing: true);
+            ConfigureHealthChecksUiContainers(appModel.Resources, true);
         }
 
         return Task.CompletedTask;
@@ -126,7 +130,7 @@ internal sealed class HealthChecksUiLifecycleHook(DistributedApplicationExecutio
     public static Task AfterEndpointsAllocatedAsync(DistributedApplicationModel appModel,
         CancellationToken cancellationToken = default)
     {
-        ConfigureHealthChecksUiContainers(appModel.Resources, isPublishing: false);
+        ConfigureHealthChecksUiContainers(appModel.Resources, false);
 
         return Task.CompletedTask;
     }

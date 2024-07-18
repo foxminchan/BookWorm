@@ -1,17 +1,17 @@
 ﻿using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
-using Polly.Registry;
 using Polly;
+using Polly.Registry;
 
 namespace BookWorm.Catalog.Infrastructure.Blob;
 
 public sealed class AzuriteService(AzuriteOptions azuriteSettings, ResiliencePipelineProvider<string> pipeline)
     : IAzuriteService
 {
-    private readonly ResiliencePipeline _policy = pipeline.GetPipeline(nameof(Blob));
-
     private readonly BlobContainerClient _container = new(azuriteSettings.ConnectionString,
         azuriteSettings.ContainerName);
+
+    private readonly ResiliencePipeline _policy = pipeline.GetPipeline(nameof(Blob));
 
     public async Task<string> UploadFileAsync(IFormFile file, CancellationToken cancellationToken = default)
     {
@@ -24,7 +24,7 @@ public sealed class AzuriteService(AzuriteOptions azuriteSettings, ResiliencePip
         await _policy.ExecuteAsync(
             async token => await blobClient.UploadAsync(
                 file.OpenReadStream(),
-                new BlobHttpHeaders() { ContentType = file.ContentType },
+                new BlobHttpHeaders { ContentType = file.ContentType },
                 cancellationToken: token),
             cancellationToken);
 
@@ -36,7 +36,8 @@ public sealed class AzuriteService(AzuriteOptions azuriteSettings, ResiliencePip
         var blobClient = new BlobClient(new(url));
 
         await _policy.ExecuteAsync(
-            async token => await blobClient.DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots, cancellationToken: token),
+            async token =>
+                await blobClient.DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots, cancellationToken: token),
             cancellationToken);
     }
 }

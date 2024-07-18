@@ -63,10 +63,12 @@ public sealed class Index(
             await interaction.DenyAuthorizationAsync(context, AuthorizationError.AccessDenied);
 
             // we can trust model.ReturnUrl since GetAuthorizationContextAsync returned non-null
-            return context.IsNativeClient() ?
+            return context.IsNativeClient()
+                ?
                 // The client is native, so this change in how to
                 // return the response is for better UX for the end user.
-                this.LoadingPage(Input.ReturnUrl) : Redirect(Input.ReturnUrl ?? "~/");
+                this.LoadingPage(Input.ReturnUrl)
+                : Redirect(Input.ReturnUrl ?? "~/");
 
             // since we don't have a valid context, then we just go back to the home page
         }
@@ -87,10 +89,12 @@ public sealed class Index(
                     // This "can't happen", because if the ReturnUrl was null, then the context would be null
                     ArgumentNullException.ThrowIfNull(Input.ReturnUrl, nameof(Input.ReturnUrl));
 
-                    return context.IsNativeClient() ?
+                    return context.IsNativeClient()
+                        ?
                         // The client is native, so this change in how to
                         // return the response is for better UX for the end user.
-                        this.LoadingPage(Input.ReturnUrl) :
+                        this.LoadingPage(Input.ReturnUrl)
+                        :
                         // we can trust model.ReturnUrl since GetAuthorizationContextAsync returned non-null
                         Redirect(Input.ReturnUrl ?? "~/");
                 }

@@ -10,7 +10,10 @@ public sealed class ListAuthorHandlerTests
     private readonly Mock<IReadRepository<Author>> _authorRepositoryMock = new();
     private readonly ListAuthorsHandler _handler;
 
-    public ListAuthorHandlerTests() => _handler = new(_authorRepositoryMock.Object);
+    public ListAuthorHandlerTests()
+    {
+        _handler = new(_authorRepositoryMock.Object);
+    }
 
     [Fact]
     public async Task GivenRequest_ShouldReturnResult_WhenAuthorsIsNotEmpty()

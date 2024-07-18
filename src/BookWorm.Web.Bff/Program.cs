@@ -39,11 +39,7 @@ builder.Services.AddAuthentication(options =>
             options.Scope.Add(scope);
         }
 
-        options.TokenValidationParameters = new()
-        {
-            NameClaimType = "name",
-            RoleClaimType = "role"
-        };
+        options.TokenValidationParameters = new() { NameClaimType = "name", RoleClaimType = "role" };
     });
 
 

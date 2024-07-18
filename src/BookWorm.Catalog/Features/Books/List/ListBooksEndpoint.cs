@@ -3,7 +3,6 @@ using BookWorm.Catalog.Domain.BookAggregate;
 using BookWorm.Shared.Endpoints;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
 
 namespace BookWorm.Catalog.Features.Books.List;
 
@@ -24,7 +23,8 @@ public sealed record ListBooksResponse(
 
 public sealed class ListBooksEndpoint : IEndpoint<Ok<ListBooksResponse>, ListBooksRequest, ISender>
 {
-    public void MapEndpoint(IEndpointRouteBuilder app) =>
+    public void MapEndpoint(IEndpointRouteBuilder app)
+    {
         app.MapGet("/books",
                 async (ISender sender,
                     string? orderBy,
@@ -40,10 +40,11 @@ public sealed class ListBooksEndpoint : IEndpoint<Ok<ListBooksResponse>, ListBoo
                         search),
                     sender))
             .Produces<Ok<ListBooksResponse>>()
-            .Produces<BadRequest<ProblemDetails>>()
+            .ProducesValidationProblem()
             .WithTags(nameof(Book))
             .WithName("List Books")
             .MapToApiVersion(new(1, 0));
+    }
 
     public async Task<Ok<ListBooksResponse>> HandleAsync(ListBooksRequest request, ISender sender,
         CancellationToken cancellationToken = default)

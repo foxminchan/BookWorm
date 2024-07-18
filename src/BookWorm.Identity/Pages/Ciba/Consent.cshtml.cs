@@ -41,7 +41,7 @@ public sealed class Consent(
         // validate return url is still valid
         var request =
             await interaction.GetLoginRequestByInternalIdAsync(Input.Id ??
-                                                                throw new ArgumentNullException(nameof(Input.Id)));
+                                                               throw new ArgumentNullException(nameof(Input.Id)));
         if (request is null || request.Subject.GetSubjectId() != User.GetSubjectId())
         {
             logger.InvalidId(Input.Id);
@@ -170,8 +170,9 @@ public sealed class Consent(
         return vm;
     }
 
-    private static ScopeViewModel CreateScopeViewModel(IdentityResource identity, bool check) =>
-        new()
+    private static ScopeViewModel CreateScopeViewModel(IdentityResource identity, bool check)
+    {
+        return new()
         {
             Name = identity.Name,
             Value = identity.Name,
@@ -181,6 +182,7 @@ public sealed class Consent(
             Required = identity.Required,
             Checked = check || identity.Required
         };
+    }
 
     private static ScopeViewModel CreateScopeViewModel(ParsedScopeValue parsedScopeValue, ApiScope apiScope, bool check)
     {
@@ -202,8 +204,9 @@ public sealed class Consent(
         };
     }
 
-    private static ScopeViewModel GetOfflineAccessScope(bool check) =>
-        new()
+    private static ScopeViewModel GetOfflineAccessScope(bool check)
+    {
+        return new()
         {
             Value = IdentityServerConstants.StandardScopes.OfflineAccess,
             DisplayName = ConsentOptions.OfflineAccessDisplayName,
@@ -211,4 +214,5 @@ public sealed class Consent(
             Emphasize = true,
             Checked = check
         };
+    }
 }

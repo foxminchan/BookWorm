@@ -20,9 +20,7 @@ public sealed class ConfigureSwaggerGenOptions(IApiVersionDescriptionProvider pr
             options.SwaggerDoc(description.GroupName, CreateInfoForApiVersion(description));
             options.MapType<DateOnly>(() => new()
             {
-                Type = "string",
-                Format = "date",
-                Example = new OpenApiString(DateTime.Today.ToString("yyyy-MM-dd"))
+                Type = "string", Format = "date", Example = new OpenApiString(DateTime.Today.ToString("yyyy-MM-dd"))
             });
             options.CustomSchemaIds(type => type.ToString());
         }
@@ -77,7 +75,10 @@ public sealed class ConfigureSwaggerGenOptions(IApiVersionDescriptionProvider pr
             text.Append("This API version has been deprecated.");
         }
 
-        if (api.SunsetPolicy is not { } policy) return text.ToString();
+        if (api.SunsetPolicy is not { } policy)
+        {
+            return text.ToString();
+        }
 
         if (policy.Date is { } when)
         {
@@ -145,7 +146,7 @@ public sealed class ConfigureSwaggerGenOptions(IApiVersionDescriptionProvider pr
                     {
                         AuthorizationUrl = new($"{identityUrlExternal}/connect/authorize"),
                         TokenUrl = new($"{identityUrlExternal}/connect/token"),
-                        Scopes = scopes,
+                        Scopes = scopes
                     }
                 }
             });

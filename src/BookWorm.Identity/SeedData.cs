@@ -79,7 +79,7 @@ public sealed class SeedData(
         {
             smith = new()
             {
-                UserName = "smith", 
+                UserName = "smith",
                 Email = "smith@gmail.com",
                 FirstName = "John",
                 LastName = "Smith",

@@ -11,7 +11,10 @@ public sealed class AuthorizeCheckOperationFilter(string[] scopes) : IOperationF
     {
         var metadata = context.ApiDescription.ActionDescriptor.EndpointMetadata;
 
-        if (!metadata.OfType<IAuthorizeData>().Any()) return;
+        if (!metadata.OfType<IAuthorizeData>().Any())
+        {
+            return;
+        }
 
         operation.Responses.TryAdd(StatusCodes.Status401Unauthorized.ToString(),
             new() { Description = "Unauthorized" });

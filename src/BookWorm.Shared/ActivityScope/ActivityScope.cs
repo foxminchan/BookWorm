@@ -7,13 +7,14 @@ public sealed class ActivityScope : IActivityScope
 {
     public static readonly IActivityScope Instance = new ActivityScope();
 
-    public Activity? Start(string name, StartActivityOptions options) =>
-        options.Parent.HasValue
+    public Activity? Start(string name, StartActivityOptions options)
+    {
+        return options.Parent.HasValue
             ? ActivitySourceProvider.Instance
                 .CreateActivity(
                     $"{ActivitySourceProvider.DefaultSourceName}.{name}",
                     options.Kind,
-                    parentContext: options.Parent.Value,
+                    options.Parent.Value,
                     idFormat: ActivityIdFormat.W3C,
                     tags: options.Tags
                 )?.Start()
@@ -21,10 +22,11 @@ public sealed class ActivityScope : IActivityScope
                 .CreateActivity(
                     $"{ActivitySourceProvider.DefaultSourceName}.{name}",
                     options.Kind,
-                    parentId: options.ParentId ?? Activity.Current?.ParentId,
+                    options.ParentId ?? Activity.Current?.ParentId,
                     idFormat: ActivityIdFormat.W3C,
                     tags: options.Tags
                 )?.Start();
+    }
 
     public async Task Run(
         string name,
