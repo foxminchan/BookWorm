@@ -47,14 +47,9 @@ public static class Config
                 ClientName = "Catalog Swagger UI",
                 AllowedGrantTypes = GrantTypes.Implicit,
                 AllowAccessTokensViaBrowser = true,
-
                 RedirectUris = { $"{service.Catalog}/swagger/catalog-api/oauth2-redirect.html" },
                 PostLogoutRedirectUris = { $"{service.Catalog}/swagger/" },
-
-                AllowedScopes =
-                {
-                    "catalog"
-                }
+                AllowedScopes = { "catalog" }
             },
             new()
             {
@@ -62,14 +57,9 @@ public static class Config
                 ClientName = "Ordering Swagger UI",
                 AllowedGrantTypes = GrantTypes.Implicit,
                 AllowAccessTokensViaBrowser = true,
-
                 RedirectUris = { $"{service.Ordering}/swagger/ordering-api/oauth2-redirect.html" },
                 PostLogoutRedirectUris = { $"{service.Ordering}/swagger/" },
-
-                AllowedScopes =
-                {
-                    "ordering"
-                }
+                AllowedScopes = { "ordering" }
             },
             new()
             {
@@ -77,14 +67,9 @@ public static class Config
                 ClientName = "Basket Swagger UI",
                 AllowedGrantTypes = GrantTypes.Implicit,
                 AllowAccessTokensViaBrowser = true,
-
                 RedirectUris = { $"{service.Basket}/swagger/basket-api/oauth2-redirect.html" },
                 PostLogoutRedirectUris = { $"{service.Basket}/swagger/" },
-
-                AllowedScopes =
-                {
-                    "basket"
-                }
+                AllowedScopes = { "basket" }
             },
             new()
             {
@@ -92,14 +77,9 @@ public static class Config
                 ClientName = "Rating Swagger UI",
                 AllowedGrantTypes = GrantTypes.Implicit,
                 AllowAccessTokensViaBrowser = true,
-
                 RedirectUris = { $"{service.Rating}/swagger/rating-api/oauth2-redirect.html" },
                 PostLogoutRedirectUris = { $"{service.Rating}/swagger/" },
-
-                AllowedScopes =
-                {
-                    "rating"
-                }
+                AllowedScopes = { "rating" }
             },
             new()
             {

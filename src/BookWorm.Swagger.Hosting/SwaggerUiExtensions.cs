@@ -81,10 +81,7 @@ public static class SwaggerUiExtensions
 
             var handler = new SocketsHttpHandler
             {
-                SslOptions = new()
-                {
-                    RemoteCertificateValidationCallback = (_, _, _, _) => true
-                }
+                SslOptions = new() { RemoteCertificateValidationCallback = (_, _, _, _) => true }
             };
             var client = new HttpMessageInvoker(handler);
 

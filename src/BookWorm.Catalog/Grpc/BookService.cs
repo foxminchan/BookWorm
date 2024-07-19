@@ -39,7 +39,10 @@ public sealed class BookService(IReadRepository<Domain.BookAggregate.Book> repos
     }
 
     [DoesNotReturn]
-    private static void ThrowNotFound() => throw new RpcException(new(StatusCode.NotFound, "Book not found"));
+    private static void ThrowNotFound()
+    {
+        throw new RpcException(new(StatusCode.NotFound, "Book not found"));
+    }
 
     private static BookResponse MapToBookResponse(Domain.BookAggregate.Book book)
     {
@@ -50,7 +53,7 @@ public sealed class BookService(IReadRepository<Domain.BookAggregate.Book> repos
                 Id = book.Id.ToString(),
                 Name = book.Name,
                 Price = decimal.ToDouble(book.Price!.OriginalPrice),
-                PriceSale = decimal.ToDouble(book.Price.DiscountPrice ?? -1m),
+                PriceSale = decimal.ToDouble(book.Price.DiscountPrice ?? -1m)
             }
         };
     }

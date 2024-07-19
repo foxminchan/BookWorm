@@ -8,7 +8,8 @@ public sealed record CreateBasketRequest(Guid BookId, int Quantity);
 
 public sealed class CreateBasketEndpoint : IEndpoint<Created<Guid>, CreateBasketRequest, ISender>
 {
-    public void MapEndpoint(IEndpointRouteBuilder app) =>
+    public void MapEndpoint(IEndpointRouteBuilder app)
+    {
         app.MapPost("/baskets",
                 async (CreateBasketRequest request, ISender sender) => await HandleAsync(request, sender))
             .Produces<Created<Guid>>(StatusCodes.Status201Created)
@@ -17,6 +18,7 @@ public sealed class CreateBasketEndpoint : IEndpoint<Created<Guid>, CreateBasket
             .WithName("Create Basket")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization();
+    }
 
     public async Task<Created<Guid>> HandleAsync(CreateBasketRequest request, ISender sender,
         CancellationToken cancellationToken = default)
