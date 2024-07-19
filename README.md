@@ -3,7 +3,7 @@
 ## Introduction
 
 <p align="justify">
-This is a pet project to demonstrate the practical use of .NET Aspire. The project is a cloud-native application with applying Domain-Driven Design (DDD) and Vertical Slice Methodology.
+⭐ This is a pet project to demonstrate the practical use of .NET Aspire. The project is a cloud-native application with applying Domain-Driven Design (DDD) and Vertical Slice Methodology to organize the codebase.
 </p>
 
 <div>
@@ -50,8 +50,9 @@ This is a pet project to demonstrate the practical use of .NET Aspire. The proje
 
 ### Prerequisites
 
-- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-- [Docker](https://www.docker.com/products/docker-desktop)
+- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0): The project is built with .NET 8.0.
+- [Docker](https://www.docker.com/products/docker-desktop): The project uses Docker to run the infrastructure.
+- [Gitleaks](https://gitleaks.io/): The project uses Gitleaks to scan for secrets in the repository.
 
 ### Running the project
 
@@ -69,6 +70,13 @@ dotnet run --project src/BookWorm.AppHost/BookWorm.AppHost.csproj
 
 > [!NOTE]
 > Ensure that you have Docker running on your machine.
+
+## Contributing
+
+- Fork the repository
+- Create a new branch for your feature
+- Make your changes
+- Create a pull request
 
 ## License
 
