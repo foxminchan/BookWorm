@@ -1,8 +1,14 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
+    <PackageReference Include="Aspire.StackExchange.Redis" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
-    <PackageReference Include="Swashbuckle.AspNetCore" />
+    <PackageReference Include="Grpc.AspNetCore.Server.ClientFactory" />
+    <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Protobuf Include="..\BookWorm.Catalog\Proto\book.proto" GrpcServices="Client" />
   </ItemGroup>
 
   <ItemGroup>
