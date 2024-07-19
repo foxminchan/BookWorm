@@ -9,5 +9,4 @@ public interface IRedisService
     Task<IEnumerable<T>> HashGetAllAsync<T>(string key);
 
     Task HashRemoveAsync(string key, string hashKey);
-
 }

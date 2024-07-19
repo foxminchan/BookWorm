@@ -15,7 +15,8 @@ public sealed class CreateBasketEndpoint : IEndpoint<Created<Guid>, CreateBasket
             .ProducesValidationProblem()
             .WithTags(nameof(Basket))
             .WithName("Create Basket")
-            .MapToApiVersion(new(1, 0));
+            .MapToApiVersion(new(1, 0))
+            .RequireAuthorization();
 
     public async Task<Created<Guid>> HandleAsync(CreateBasketRequest request, ISender sender,
         CancellationToken cancellationToken = default)

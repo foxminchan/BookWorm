@@ -71,6 +71,6 @@ public sealed class RedisService(IConfiguration configuration) : IRedisService
     private static T GetByteToObject<T>(RedisValue value)
     {
         var result = JsonSerializer.Deserialize<T>(Encoding.UTF8.GetString(value!));
-        return result is null ? throw new InvalidOperationException("Deserialization failed.") : result;
+        return result is null ? throw new InvalidOperationException("Deserialization failed") : result;
     }
 }
