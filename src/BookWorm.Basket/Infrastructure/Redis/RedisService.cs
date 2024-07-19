@@ -1,7 +1,7 @@
-﻿using Ardalis.GuardClauses;
+﻿using System.Text;
 using System.Text.Json;
+using Ardalis.GuardClauses;
 using StackExchange.Redis;
-using System.Text;
 
 namespace BookWorm.Basket.Infrastructure.Redis;
 
@@ -66,11 +66,13 @@ public sealed class RedisService(IConfiguration configuration) : IRedisService
     }
 
     public async Task HashRemoveAsync(string key, string hashKey)
-        => await Database.HashDeleteAsync(key, hashKey.ToLower());
+    {
+        await Database.HashDeleteAsync(key, hashKey.ToLower());
+    }
 
     private static T GetByteToObject<T>(RedisValue value)
     {
         var result = JsonSerializer.Deserialize<T>(Encoding.UTF8.GetString(value!));
-        return result is null ? throw new InvalidOperationException("Deserialization failed.") : result;
+        return result is null ? throw new InvalidOperationException("Deserialization failed") : result;
     }
 }
