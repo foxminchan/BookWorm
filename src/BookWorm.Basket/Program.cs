@@ -1,4 +1,6 @@
-﻿using BookWorm.ServiceDefaults;
+﻿using BookWorm.Basket.Grpc;
+using BookWorm.Catalog.Grpc;
+using BookWorm.ServiceDefaults;
 using BookWorm.Shared.ActivityScope;
 using BookWorm.Shared.Endpoints;
 using BookWorm.Shared.Exceptions;
@@ -34,12 +36,21 @@ builder.AddVersioning();
 builder.AddEndpoints(typeof(Program));
 
 builder.AddOpenApi();
+builder.AddDefaultAuthentication();
+builder.Services.AddSingleton<BookService>();
+
+builder.Services.AddGrpcClient<Book.BookClient>(o =>
+{
+    o.Address = new("https+http://catalog-api");
+});
 
 var app = builder.Build();
 
 app.UseExceptionHandler();
 
 app.UseHttpsRedirection();
+
+app.UseAuthorization();
 
 app.UseOpenApi();
 

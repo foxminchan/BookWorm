@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using BookWorm.Catalog.Domain.BookAggregate.Specifications;
 using BookWorm.Core.SharedKernel;
 using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
@@ -10,7 +11,9 @@ public sealed class BookService(IReadRepository<Domain.BookAggregate.Book> repos
     [AllowAnonymous]
     public override async Task<BookResponse> GetBook(BookRequest request, ServerCallContext context)
     {
-        var book = await repository.GetByIdAsync(Guid.Parse(request.BookId));
+        BookFilterSpec spec = new(Guid.Parse(request.BookId));
+
+        var book = await repository.FirstOrDefaultAsync(spec);
 
         if (book is null)
         {
@@ -23,7 +26,9 @@ public sealed class BookService(IReadRepository<Domain.BookAggregate.Book> repos
     [AllowAnonymous]
     public override async Task<BookStatusResponse> GetBookStatus(BookStatusRequest request, ServerCallContext context)
     {
-        var book = await repository.GetByIdAsync(Guid.Parse(request.BookId));
+        BookFilterSpec spec = new(Guid.Parse(request.BookId));
+
+        var book = await repository.FirstOrDefaultAsync(spec);
 
         if (book is null)
         {
