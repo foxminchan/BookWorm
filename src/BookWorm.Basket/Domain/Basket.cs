@@ -3,7 +3,7 @@
 public sealed class Basket(Guid accountId, List<BasketItem> basketItems)
 {
     public Guid AccountId { get; private set; } = accountId;
-    public ICollection<BasketItem> BasketItems { get; private set; } = basketItems;
+    public ICollection<BasketItem> BasketItems { get; } = basketItems;
 
     public void AddItem(BasketItem item)
     {

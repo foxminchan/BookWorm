@@ -18,7 +18,8 @@ public sealed record UpdateBookRequest(
 
 public sealed class UpdateBookEndpoint : IEndpoint<Ok, UpdateBookRequest, ISender>
 {
-    public void MapEndpoint(IEndpointRouteBuilder app) =>
+    public void MapEndpoint(IEndpointRouteBuilder app)
+    {
         app.MapPut("/books",
                 async (UpdateBookRequest request, ISender sender) => await HandleAsync(request, sender))
             .Produces<Ok>()
@@ -27,6 +28,7 @@ public sealed class UpdateBookEndpoint : IEndpoint<Ok, UpdateBookRequest, ISende
             .WithTags(nameof(Book))
             .WithName("Update Book")
             .MapToApiVersion(new(1, 0));
+    }
 
     public async Task<Ok> HandleAsync(UpdateBookRequest request, ISender sender,
         CancellationToken cancellationToken = default)

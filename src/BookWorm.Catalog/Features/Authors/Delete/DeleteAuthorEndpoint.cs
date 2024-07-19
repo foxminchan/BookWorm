@@ -7,7 +7,8 @@ namespace BookWorm.Catalog.Features.Authors.Delete;
 
 public sealed class DeleteAuthorEndpoint : IEndpoint<NoContent, Guid, ISender>
 {
-    public void MapEndpoint(IEndpointRouteBuilder app) =>
+    public void MapEndpoint(IEndpointRouteBuilder app)
+    {
         app.MapDelete("/api/authors/{id}", async (Guid id, ISender sender) =>
                 await HandleAsync(id, sender))
             .Produces<NoContent>(StatusCodes.Status204NoContent)
@@ -16,6 +17,7 @@ public sealed class DeleteAuthorEndpoint : IEndpoint<NoContent, Guid, ISender>
             .WithTags(nameof(Author))
             .WithName("Delete Author")
             .MapToApiVersion(new(1, 0));
+    }
 
     public async Task<NoContent> HandleAsync(Guid id, ISender sender, CancellationToken cancellationToken = default)
     {
