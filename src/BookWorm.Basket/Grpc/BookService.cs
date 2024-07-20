@@ -4,7 +4,7 @@ using GrpcBookItem = BookWorm.Catalog.Grpc.BookItem;
 
 namespace BookWorm.Basket.Grpc;
 
-public class BookService(Book.BookClient bookClient)
+public sealed class BookService(Book.BookClient bookClient)
 {
     public async Task<BookStatus> GetBookStatus(Guid bookId)
     {
@@ -38,6 +38,6 @@ public class BookService(Book.BookClient bookClient)
     }
 }
 
-public record BookStatus(Guid Id, string Status);
+public sealed record BookStatus(Guid Id, string Status);
 
-public record BookItem(Guid Id, string Name, decimal Price, decimal PriceSale);
+public sealed record BookItem(Guid Id, string Name, decimal Price, decimal PriceSale);

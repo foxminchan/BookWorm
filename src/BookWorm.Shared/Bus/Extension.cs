@@ -7,9 +7,15 @@ namespace BookWorm.Shared.Bus;
 
 public static class Extension
 {
-    public static IHostApplicationBuilder AddRabbitMqEventBus(this IHostApplicationBuilder builder, Type type)
+    public static IHostApplicationBuilder AddRabbitMqEventBus(
+        this IHostApplicationBuilder builder, 
+        Type type, 
+        Action<IBusRegistrationConfigurator>? configure = null)
+
     {
         var messaging = builder.Configuration.GetConnectionString("eventbus");
+
+        ArgumentNullException.ThrowIfNull(messaging);
 
         builder.Services.AddMassTransit(config =>
         {
@@ -22,10 +28,12 @@ public static class Extension
 
             config.UsingRabbitMq((context, configurator) =>
             {
-                configurator.Host(new Uri(messaging!));
+                configurator.Host(new Uri(messaging));
                 configurator.ConfigureEndpoints(context);
                 configurator.UseMessageRetry(AddRetryConfiguration);
             });
+
+            configure?.Invoke(config);
         });
 
         return builder;

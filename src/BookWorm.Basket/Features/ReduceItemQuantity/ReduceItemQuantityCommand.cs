@@ -3,18 +3,17 @@ using Ardalis.GuardClauses;
 using Ardalis.Result;
 using BookWorm.Basket.Infrastructure.Redis;
 using BookWorm.Core.SharedKernel;
-using BookWorm.ServiceDefaults;
 
 namespace BookWorm.Basket.Features.ReduceItemQuantity;
 
 public sealed record ReduceItemQuantityCommand(Guid BookId) : ICommand<Result>;
 
-public sealed class UpdateBasketHandler(IRedisService redisService, ClaimsPrincipal principal)
+public sealed class UpdateBasketHandler(IRedisService redisService, IHttpContextAccessor httpContext)
     : ICommandHandler<ReduceItemQuantityCommand, Result>
 {
     public async Task<Result> Handle(ReduceItemQuantityCommand command, CancellationToken cancellationToken)
     {
-        var customerId = principal.GetUserId();
+        var customerId = httpContext.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier); ;
 
         Guard.Against.NullOrEmpty(customerId);
 

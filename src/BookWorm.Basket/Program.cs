@@ -1,4 +1,5 @@
 ﻿using BookWorm.Basket.Grpc;
+using BookWorm.Basket.Infrastructure.Redis;
 using BookWorm.Catalog.Grpc;
 using BookWorm.ServiceDefaults;
 using BookWorm.Shared.ActivityScope;
@@ -34,6 +35,8 @@ builder.Services.AddSingleton<QueryHandlerMetrics>();
 
 builder.AddVersioning();
 builder.AddEndpoints(typeof(Program));
+
+builder.AddRedisCache();
 
 builder.AddOpenApi();
 builder.AddDefaultAuthentication();
