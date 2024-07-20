@@ -1,6 +1,6 @@
-﻿using System.Security.Claims;
-using Ardalis.GuardClauses;
+﻿using Ardalis.GuardClauses;
 using Ardalis.Result;
+using BookWorm.Basket.Infrastructure.Identity;
 using BookWorm.Basket.Infrastructure.Redis;
 using BookWorm.Core.SharedKernel;
 
@@ -8,12 +8,12 @@ namespace BookWorm.Basket.Features.RemoveItem;
 
 public sealed record RemoveItemCommand(Guid BookId) : ICommand<Result>;
 
-public sealed class RemoveItemHandler(IRedisService redisService, IHttpContextAccessor httpContext)
+public sealed class RemoveItemHandler(IRedisService redisService, IIdentityService identityService)
     : ICommandHandler<RemoveItemCommand, Result>
 {
     public async Task<Result> Handle(RemoveItemCommand command, CancellationToken cancellationToken)
     {
-        var customerId = httpContext.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var customerId = identityService.GetUserIdentity();
 
         Guard.Against.NullOrEmpty(customerId);
 

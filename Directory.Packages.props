@@ -30,9 +30,11 @@
     <PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Azure.AI.OpenAI" Version="$(AspireUnstablePackagesVersion)" />
     <PackageVersion Include="Aspire.StackExchange.Redis" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.StackExchange.Redis.OutputCaching" Version="$(AspireVersion)" />
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="$(MicrosoftExtensionsVersion)" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="$(AspireVersion)" />
     <!-- Aspirant -->
+    <PackageVersion Include="Aspirant.Hosting" Version="$(AspirantVersion)" />
     <PackageVersion Include="Aspirant.Hosting.Testing" Version="$(AspirantVersion)" />
     <PackageVersion Include="Aspirant.Hosting.Testing.xunit" Version="$(AspirantVersion)" />
     <!-- ASP.NET Core -->
@@ -97,7 +99,9 @@
     <!-- Miscellaneous -->
     <PackageVersion Include="Scrutor" Version="4.2.2" />
     <PackageVersion Include="MediatR" Version="12.3.0" />
+    <PackageVersion Include="Marten.AspNetCore" Version="7.24.0" />
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageVersion Include="Quartz.Extensions.Hosting" Version="3.11.0" />
     <PackageVersion Include="FluentValidation.AspNetCore" Version="11.3.0" />
     <PackageVersion Include="Microsoft.Web.LibraryManager.Build" Version="2.1.175" />
     <PackageVersion Include="MicroElements.Swashbuckle.FluentValidation" Version="6.0.0" />

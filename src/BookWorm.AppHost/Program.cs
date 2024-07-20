@@ -1,4 +1,5 @@
-﻿using BookWorm.AppHost;
+﻿using Aspirant.Hosting;
+using BookWorm.AppHost;
 using BookWorm.HealthCheck.Hosting;
 using BookWorm.MailDev.Hosting;
 using BookWorm.Swagger.Hosting;
@@ -27,6 +28,7 @@ var mongodb = builder
     .WithDataBindMount("../../mnt/mongodb");
 
 var redis = builder.AddRedis("redis", 6379)
+    .WithRedisCommander()
     .WithDataBindMount("../../mnt/redis");
 
 var catalogDb = postgres.AddDatabase("catalogdb");
@@ -39,7 +41,8 @@ var storage = builder.AddAzureStorage("storage");
 
 if (builder.Environment.IsDevelopment())
 {
-    storage.RunAsEmulator(config => config.WithDataBindMount("../../mnt/azurite"));
+    storage.RunAsEmulator(
+        config => config.WithDataBindMount("../../mnt/azurite"));
 }
 
 var blobs = storage.AddBlobs("blobs");
@@ -54,8 +57,9 @@ var smtpServer = builder.AddMailDev("mailserver", 1080);
 
 // Services
 var identityApi = builder.AddProject<BookWorm_Identity>("identity-api")
-    .WithExternalHttpEndpoints()
-    .WithReference(identityDb);
+    .WithReference(identityDb)
+    .WithReference(redis)
+    .WithExternalHttpEndpoints();
 
 var identityEndpoint = identityApi.GetEndpoint(launchProfileName);
 
@@ -63,34 +67,50 @@ var catalogApi = builder.AddProject<BookWorm_Catalog>("catalog-api")
     .WithReference(blobs)
     .WithReference(rabbitMq)
     .WithReference(catalogDb)
+    .WithReference(redis)
     .WithReference(openAi)
+    .WaitFor(blobs)
+    .WaitFor(rabbitMq)
+    .WaitFor(catalogDb)
+    .WaitFor(redis)
     .WithEnvironment("Identity__Url", identityEndpoint)
     .WithEnvironment("AiOptions__OpenAi__EmbeddingName", "text-embedding-3-small")
     .WithEnvironment("AzuriteOptions__ConnectionString", blobs.WithEndpoint())
-    .WithSwaggerUi(endpointName: "https");
+    .WithSwaggerUi();
 
 var orderingApi = builder.AddProject<BookWorm_Ordering>("ordering-api")
     .WithReference(rabbitMq)
     .WithReference(orderingDb)
+    .WaitFor(rabbitMq)
+    .WaitFor(orderingDb)
     .WithEnvironment("Identity__Url", identityEndpoint)
     .WithSwaggerUi();
 
 var ratingApi = builder.AddProject<BookWorm_Rating>("rating-api")
     .WithReference(rabbitMq)
     .WithReference(ratingDb)
+    .WithReference(redis)
+    .WaitFor(rabbitMq)
+    .WaitFor(ratingDb)
+    .WaitFor(redis)
     .WithEnvironment("Identity__Url", identityEndpoint)
     .WithSwaggerUi();
 
 var basketApi = builder.AddProject<BookWorm_Basket>("basket-api")
     .WithReference(redis)
     .WithReference(rabbitMq)
+    .WaitFor(redis)
+    .WaitFor(rabbitMq)
     .WithEnvironment("Identity__Url", identityEndpoint)
     .WithSwaggerUi();
 
 var notificationApi = builder.AddProject<BookWorm_Notification>("notification-api")
     .WithReference(rabbitMq)
     .WithReference(notificationDb)
-    .WithReference(smtpServer);
+    .WithReference(smtpServer)
+    .WaitFor(rabbitMq)
+    .WaitFor(notificationDb)
+    .WaitFor(smtpServer);
 
 // Reverse proxy
 var bff = builder.AddProject<BookWorm_Web_Bff>("bff")

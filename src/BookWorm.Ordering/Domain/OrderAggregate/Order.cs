@@ -24,4 +24,6 @@ public sealed class Order : EntityBase, IAggregateRoot
     public Buyer? Buyer { get; private set; } = default!;
 
     public IReadOnlyCollection<OrderItem> OrderItems => _orderItems.AsReadOnly();
+
+    public decimal TotalPrice => OrderItems.Sum(oi => oi.Price * oi.Quantity);
 }

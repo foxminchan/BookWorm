@@ -15,12 +15,17 @@ using Microsoft.AspNetCore.Http.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.AddRedisOutputCache("cache");
+
 builder.AddServiceDefaults();
 
 builder.Services.AddGrpc();
 
 builder.Services.Configure<JsonOptions>(options =>
-    options.SerializerOptions.Converters.Add(new StringTrimmerJsonConverter()));
+{
+    options.SerializerOptions.PropertyNameCaseInsensitive = true;
+    options.SerializerOptions.Converters.Add(new StringTrimmerJsonConverter());
+});
 
 builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
 builder.Services.AddExceptionHandler<UniqueConstraintExceptionHandler>();
