@@ -22,7 +22,6 @@ builder.Services.Configure<JsonOptions>(options =>
     options.SerializerOptions.Converters.Add(new StringTrimmerJsonConverter()));
 
 builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
-builder.Services.AddExceptionHandler<UniqueConstraintExceptionHandler>();
 builder.Services.AddExceptionHandler<NotFoundExceptionHandler>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
@@ -40,7 +39,7 @@ builder.Services.AddMediatR(cfg =>
 builder.Services.AddValidatorsFromAssemblyContaining<Program>(includeInternalTypes: true);
 
 builder.AddRabbitMqEventBus(typeof(Program), cfg =>
-    cfg.AddEntityFrameworkOutbox<OrderContext>(o =>
+    cfg.AddEntityFrameworkOutbox<OrderingContext>(o =>
     {
         o.QueryDelay = TimeSpan.FromSeconds(1);
 
