@@ -15,7 +15,10 @@ public static class Extension
     {
         var messaging = builder.Configuration.GetConnectionString("eventbus");
 
-        ArgumentNullException.ThrowIfNull(messaging);
+        if (string.IsNullOrWhiteSpace(messaging))
+        {
+            return builder;
+        }
 
         builder.Services.AddMassTransit(config =>
         {

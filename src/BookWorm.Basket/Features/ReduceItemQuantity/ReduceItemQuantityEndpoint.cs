@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Basket.Features.ReduceItemQuantity;
 
-public sealed class UpdateBasketEndpoint : IEndpoint<Ok, Guid, ISender>
+public sealed class ReduceItemQuantityEndpoint : IEndpoint<Ok, Guid, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
