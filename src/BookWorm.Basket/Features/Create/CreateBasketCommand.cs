@@ -3,18 +3,17 @@ using Ardalis.GuardClauses;
 using Ardalis.Result;
 using BookWorm.Basket.Infrastructure.Redis;
 using BookWorm.Core.SharedKernel;
-using BookWorm.ServiceDefaults;
 
 namespace BookWorm.Basket.Features.Create;
 
 public sealed record CreateBasketCommand(Guid BookId, int Quantity) : ICommand<Result<Guid>>;
 
-public sealed class CreateBasketHandler(IRedisService redisService, ClaimsPrincipal principal)
+public sealed class CreateBasketHandler(IRedisService redisService, IHttpContextAccessor httpContext)
     : ICommandHandler<CreateBasketCommand, Result<Guid>>
 {
     public async Task<Result<Guid>> Handle(CreateBasketCommand command, CancellationToken cancellationToken)
     {
-        var customerId = principal.GetUserId();
+        var customerId = httpContext.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         Guard.Against.NullOrEmpty(customerId);
 

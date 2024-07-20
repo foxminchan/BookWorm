@@ -11,7 +11,6 @@ builder.AddForwardedHeaders();
 
 var postgresUser = builder.AddParameter("SqlUser", true);
 var postgresPassword = builder.AddParameter("SqlPassword", true);
-var rabbitMqPassword = builder.AddParameter("RabbitMqPassword", true);
 
 var launchProfileName = builder.Configuration["DOTNET_LAUNCH_PROFILE"] ?? "http";
 
@@ -48,7 +47,7 @@ var blobs = storage.AddBlobs("blobs");
 var openAi = builder.AddConnectionString("openai");
 
 var rabbitMq = builder
-    .AddRabbitMQ("eventbus", rabbitMqPassword)
+    .AddRabbitMQ("eventbus")
     .WithManagementPlugin();
 
 var smtpServer = builder.AddMailDev("mailserver", 1080);
@@ -108,7 +107,7 @@ var storeFront = builder.AddProject<BookWorm_StoreFront>("storefront")
     .WithEnvironment("BFF__Url", bff.GetEndpoint(launchProfileName));
 
 var backOffice = builder
-    .AddExecutable("backoffice", "bun", "../BookWorm.Backoffice", "dev")
+    .AddNpmApp("backoffice", "../BookWorm.Backoffice", "dev")
     .WithHttpEndpoint(3000, env: "PORT")
     .WithEnvironment("BROWSER", "none")
     .PublishAsDockerFile();
@@ -122,6 +121,7 @@ builder.AddHealthChecksUi("healthchecksui")
     .WithReference(basketApi)
     .WithReference(notificationApi)
     .WithReference(storeFront)
+    .WithReference(backOffice)
     .WithReference(bff)
     .WithExternalHttpEndpoints();
 
