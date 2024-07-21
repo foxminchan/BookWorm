@@ -1,4 +1,5 @@
 ﻿using BookWorm.Basket.Grpc;
+using BookWorm.Basket.Infrastructure.Identity;
 using BookWorm.Basket.Infrastructure.Redis;
 using BookWorm.Catalog.Grpc;
 using BookWorm.ServiceDefaults;
@@ -46,6 +47,8 @@ builder.Services.AddGrpcClient<Book.BookClient>(o =>
 {
     o.Address = new("https+http://catalog-api");
 });
+
+builder.Services.AddTransient<IIdentityService, IdentityService>();
 
 var app = builder.Build();
 

@@ -1,8 +1,9 @@
 ﻿using System.Collections.Immutable;
 using BookWorm.Core.SeedWork;
+using BookWorm.Ordering.Infrastructure.Data;
 using MediatR;
 
-namespace BookWorm.Ordering.Infrastructure.Data;
+namespace BookWorm.Ordering.Infrastructure.Mediator;
 
 public static class MediatorExtension
 {

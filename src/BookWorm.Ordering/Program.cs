@@ -1,6 +1,8 @@
 ﻿using BookWorm.Catalog.Grpc;
 using BookWorm.Ordering.Grpc;
 using BookWorm.Ordering.Infrastructure.Data;
+using BookWorm.Ordering.Infrastructure.Identity;
+using BookWorm.Ordering.Infrastructure.Redis;
 using BookWorm.ServiceDefaults;
 using BookWorm.Shared.ActivityScope;
 using BookWorm.Shared.Bus;
@@ -52,6 +54,8 @@ builder.Services.AddSingleton<IActivityScope, ActivityScope>();
 builder.Services.AddSingleton<CommandHandlerMetrics>();
 builder.Services.AddSingleton<QueryHandlerMetrics>();
 
+builder.AddRedisCache();
+
 builder.AddVersioning();
 builder.AddEndpoints(typeof(Program));
 
@@ -63,6 +67,8 @@ builder.Services.AddGrpcClient<Book.BookClient>(o =>
 {
     o.Address = new("https+http://catalog-api");
 });
+
+builder.Services.AddTransient<IIdentityService, IdentityService>();
 
 var app = builder.Build();
 
