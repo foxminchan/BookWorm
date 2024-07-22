@@ -14,25 +14,32 @@
 
 ## The Goals of the Project
 
-- [x] Using `Vertical Slice Architecture` to organize the codebase.
-- [x] Using `Domain-Driven Design` to design the domain model.
-- [x] Implement the `CQRS` pattern with `MediatR`.
-- [x] Using `RabbitMQ` on top `MassTransit` for messaging.
-- [x] Using `gRPC` for inter-service communication.
+- [x] Building a cloud-native application with .NET Aspire
+- [x] Using `Vertical Slice Architecture` to organize the codebase
+- [x] Using `Domain-Driven Design` to design the domain model
+- [x] Implement the `CQRS` pattern with `MediatR`
+- [x] Using `RabbitMQ` on top `MassTransit` for messaging
+- [x] Using `gRPC` for inter-service communication
 - [x] API versioning
 - [x] Health checks
 - [x] OpenAPI/Swagger
 - [x] AuthN/AuthZ
-  - [x] OAuth2 with `Duende IdentityServer`.
-  - [x] BFF with `Duende BFF`.
-- [x] Observability with `.NET Aspire`.
-- [ ] Implement `Frontend` for the application.
-  - [ ] Using `Blazor` for the Storefront.
-  - [ ] Using `Next.js` for the Admin Panel.
-- [ ] Add `MailDev` for local email testing.
+  - [x] OAuth2 with `Duende IdentityServer`
+  - [x] BFF with `Duende BFF`
+- [x] Observability with `.NET Aspire`
+- [x] Add `MailDev` for local email testing
+- [ ] CI/CD with `Azure DevOps`
+- [ ] Implement `Frontend` for the application
+  - [ ] Using `Blazor` for the Storefront
+  - [ ] Using `Next.js` for the Admin Panel
+- [ ] Testing
+  - [ ] Service unit tests
+  - [ ] Integration tests with `Aspire Testing` & `WireMock`
+  - [ ] Blazor unit tests with `bunit`
+  - [ ] New testing approach in `Next.js` with `SafeTest`
 - [ ] Output Caching, Response Caching and Distributed Caching with Redis
 - [ ] LLMs integration with `Semantic Kernel`
-- [ ] Deployment with `Aspirate` on `k3d`.
+- [ ] Deployment with `Aspirate` on `k3d`
 - [ ] EDA document with `EventCatalog`
 
 ## Domain Business & Bounded Contexts - Services Boundaries
@@ -50,9 +57,11 @@
 
 ### Prerequisites
 
-- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0): The project is built with .NET 8.0.
-- [Docker](https://www.docker.com/products/docker-desktop): The project uses Docker to run the infrastructure.
-- [Gitleaks](https://gitleaks.io/): The project uses Gitleaks to scan for secrets in the repository.
+- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [Docker](https://www.docker.com/products/docker-desktop)
+- [Gitleaks](https://gitleaks.io/)
+- [Node.js](https://nodejs.org/)
+- [Bun](https://bun.sh/)
 
 ### Running the project
 

@@ -13,6 +13,7 @@ public sealed class GetBookEndpoint : IEndpoint<Ok<BookDto>, Guid, ISender>
                 async (Guid id, ISender sender) => await HandleAsync(id, sender))
             .Produces<Ok<BookDto>>()
             .ProducesProblem(StatusCodes.Status404NotFound)
+            .CacheOutput(policy => policy.Expire(TimeSpan.FromMinutes(20)).SetVaryByRouteValue("id"))
             .WithTags(nameof(Book))
             .WithName("Get Book")
             .MapToApiVersion(new(1, 0));

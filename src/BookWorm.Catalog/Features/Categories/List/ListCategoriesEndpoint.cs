@@ -11,6 +11,7 @@ public sealed class ListCategoriesEndpoint : IEndpoint<Ok<List<CategoryDto>>, IS
     {
         app.MapGet("/categories", async (ISender sender) => await HandleAsync(sender))
             .Produces<Ok<List<CategoryDto>>>()
+            .CacheOutput(policy => policy.Expire(TimeSpan.FromHours(1)))
             .WithTags(nameof(Category))
             .WithName("List Categories")
             .MapToApiVersion(new(1, 0));

@@ -27,6 +27,7 @@ var mongodb = builder
     .WithDataBindMount("../../mnt/mongodb");
 
 var redis = builder.AddRedis("redis", 6379)
+    .WithRedisCommander()
     .WithDataBindMount("../../mnt/redis");
 
 var catalogDb = postgres.AddDatabase("catalogdb");
@@ -39,7 +40,8 @@ var storage = builder.AddAzureStorage("storage");
 
 if (builder.Environment.IsDevelopment())
 {
-    storage.RunAsEmulator(config => config.WithDataBindMount("../../mnt/azurite"));
+    storage.RunAsEmulator(
+        config => config.WithDataBindMount("../../mnt/azurite"));
 }
 
 var blobs = storage.AddBlobs("blobs");
@@ -63,11 +65,12 @@ var catalogApi = builder.AddProject<BookWorm_Catalog>("catalog-api")
     .WithReference(blobs)
     .WithReference(rabbitMq)
     .WithReference(catalogDb)
+    .WithReference(redis)
     .WithReference(openAi)
     .WithEnvironment("Identity__Url", identityEndpoint)
     .WithEnvironment("AiOptions__OpenAi__EmbeddingName", "text-embedding-3-small")
     .WithEnvironment("AzuriteOptions__ConnectionString", blobs.WithEndpoint())
-    .WithSwaggerUi(endpointName: "https");
+    .WithSwaggerUi();
 
 var orderingApi = builder.AddProject<BookWorm_Ordering>("ordering-api")
     .WithReference(rabbitMq)
@@ -78,6 +81,7 @@ var orderingApi = builder.AddProject<BookWorm_Ordering>("ordering-api")
 var ratingApi = builder.AddProject<BookWorm_Rating>("rating-api")
     .WithReference(rabbitMq)
     .WithReference(ratingDb)
+    .WithReference(redis)
     .WithEnvironment("Identity__Url", identityEndpoint)
     .WithSwaggerUi();
 
