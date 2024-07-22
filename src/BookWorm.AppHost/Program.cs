@@ -1,4 +1,5 @@
-﻿using BookWorm.AppHost;
+﻿using Aspirant.Hosting;
+using BookWorm.AppHost;
 using BookWorm.HealthCheck.Hosting;
 using BookWorm.MailDev.Hosting;
 using BookWorm.Swagger.Hosting;
@@ -56,8 +57,9 @@ var smtpServer = builder.AddMailDev("mailserver", 1080);
 
 // Services
 var identityApi = builder.AddProject<BookWorm_Identity>("identity-api")
-    .WithExternalHttpEndpoints()
-    .WithReference(identityDb);
+    .WithReference(identityDb)
+    .WithReference(redis)
+    .WithExternalHttpEndpoints();
 
 var identityEndpoint = identityApi.GetEndpoint(launchProfileName);
 
@@ -67,6 +69,11 @@ var catalogApi = builder.AddProject<BookWorm_Catalog>("catalog-api")
     .WithReference(catalogDb)
     .WithReference(redis)
     .WithReference(openAi)
+    .WaitFor(blobs)
+    .WaitFor(rabbitMq)
+    .WaitFor(catalogDb)
+    .WaitFor(redis)
+    .WaitFor(openAi)
     .WithEnvironment("Identity__Url", identityEndpoint)
     .WithEnvironment("AiOptions__OpenAi__EmbeddingName", "text-embedding-3-small")
     .WithEnvironment("AzuriteOptions__ConnectionString", blobs.WithEndpoint())
@@ -75,6 +82,8 @@ var catalogApi = builder.AddProject<BookWorm_Catalog>("catalog-api")
 var orderingApi = builder.AddProject<BookWorm_Ordering>("ordering-api")
     .WithReference(rabbitMq)
     .WithReference(orderingDb)
+    .WaitFor(rabbitMq)
+    .WaitFor(orderingDb)
     .WithEnvironment("Identity__Url", identityEndpoint)
     .WithSwaggerUi();
 
@@ -82,19 +91,27 @@ var ratingApi = builder.AddProject<BookWorm_Rating>("rating-api")
     .WithReference(rabbitMq)
     .WithReference(ratingDb)
     .WithReference(redis)
+    .WaitFor(rabbitMq)
+    .WaitFor(ratingDb)
+    .WaitFor(redis)
     .WithEnvironment("Identity__Url", identityEndpoint)
     .WithSwaggerUi();
 
 var basketApi = builder.AddProject<BookWorm_Basket>("basket-api")
     .WithReference(redis)
     .WithReference(rabbitMq)
+    .WaitFor(redis)
+    .WaitFor(rabbitMq)
     .WithEnvironment("Identity__Url", identityEndpoint)
     .WithSwaggerUi();
 
 var notificationApi = builder.AddProject<BookWorm_Notification>("notification-api")
     .WithReference(rabbitMq)
     .WithReference(notificationDb)
-    .WithReference(smtpServer);
+    .WithReference(smtpServer)
+    .WaitFor(rabbitMq)
+    .WaitFor(notificationDb)
+    .WaitFor(smtpServer);
 
 // Reverse proxy
 var bff = builder.AddProject<BookWorm_Web_Bff>("bff")
