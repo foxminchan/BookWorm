@@ -1,4 +1,5 @@
 ﻿using BookWorm.Core.SharedKernel;
+using BookWorm.Ordering.Infrastructure.Data.CompiledModels;
 using EntityFramework.Exceptions.PostgreSQL;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,6 +20,7 @@ public static class Extension
                         optionsBuilder.MigrationsAssembly(typeof(OrderingContext).Assembly.FullName);
                         optionsBuilder.EnableRetryOnFailure(15, TimeSpan.FromSeconds(30), null);
                     })
+                    .UseModel(OrderingContextModel.Instance)
                     .UseExceptionProcessor()
                     .UseSnakeCaseNamingConvention();
             });
