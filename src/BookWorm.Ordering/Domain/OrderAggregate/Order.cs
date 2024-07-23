@@ -17,13 +17,25 @@ public sealed class Order : EntityBase, IAggregateRoot
     {
         BuyerId = Guard.Against.Default(buyerId);
         Note = note;
+        Status = Status.Pending;
     }
 
     public string? Note { get; }
     public Guid BuyerId { get; }
+    public Status Status { get; private set; }
     public Buyer? Buyer { get; private set; } = default!;
 
     public IReadOnlyCollection<OrderItem> OrderItems => _orderItems.AsReadOnly();
 
     public decimal TotalPrice => OrderItems.Sum(oi => oi.Price * oi.Quantity);
+
+    public void MarkAsDelivered()
+    {
+        Status = Status.Delivered;
+    }
+
+    public void MarkAsCanceled()
+    {
+        Status = Status.Canceled;
+    }
 }
