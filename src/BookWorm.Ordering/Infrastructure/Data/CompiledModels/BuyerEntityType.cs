@@ -75,7 +75,7 @@ namespace BookWorm.Ordering.Infrastructure.Data.CompiledModels
                     (DateTime v) => v));
             createdDate.AddAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.None);
             createdDate.AddAnnotation("Relational:ColumnName", "created_date");
-            createdDate.AddAnnotation("Relational:DefaultValue", new DateTime(2024, 7, 22, 11, 37, 55, 670, DateTimeKind.Utc).AddTicks(4920));
+            createdDate.AddAnnotation("Relational:DefaultValue", new DateTime(2024, 7, 23, 16, 29, 40, 867, DateTimeKind.Utc).AddTicks(6113));
 
             var name = runtimeEntityType.AddProperty(
                 "Name",
@@ -127,7 +127,7 @@ namespace BookWorm.Ordering.Infrastructure.Data.CompiledModels
                 (Nullable<DateTime> v) => v.HasValue ? (Nullable<DateTime>)(DateTime)v : default(Nullable<DateTime>)));
         updateDate.AddAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.None);
         updateDate.AddAnnotation("Relational:ColumnName", "update_date");
-        updateDate.AddAnnotation("Relational:DefaultValue", new DateTime(2024, 7, 22, 11, 37, 55, 670, DateTimeKind.Utc).AddTicks(5175));
+        updateDate.AddAnnotation("Relational:DefaultValue", new DateTime(2024, 7, 23, 16, 29, 40, 868, DateTimeKind.Utc).AddTicks(3050));
 
         var version = runtimeEntityType.AddProperty(
             "Version",

@@ -197,6 +197,8 @@ namespace BookWorm.Ordering.Infrastructure.Data.CompiledModels
                 IsNullable = true
             };
             bookWormOrderingDomainOrderAggregateOrderTableBase.Columns.Add("note", noteColumnBase);
+            var statusColumnBase = new ColumnBase<ColumnMappingBase>("status", "smallint", bookWormOrderingDomainOrderAggregateOrderTableBase);
+            bookWormOrderingDomainOrderAggregateOrderTableBase.Columns.Add("status", statusColumnBase);
             var update_dateColumnBase0 = new ColumnBase<ColumnMappingBase>("update_date", "timestamp with time zone", bookWormOrderingDomainOrderAggregateOrderTableBase)
             {
                 IsNullable = true
@@ -212,6 +214,7 @@ namespace BookWorm.Ordering.Infrastructure.Data.CompiledModels
             RelationalModel.CreateColumnMapping((ColumnBase<ColumnMappingBase>)buyer_idColumnBase, order.FindProperty("BuyerId")!, bookWormOrderingDomainOrderAggregateOrderMappingBase);
             RelationalModel.CreateColumnMapping((ColumnBase<ColumnMappingBase>)created_dateColumnBase0, order.FindProperty("CreatedDate")!, bookWormOrderingDomainOrderAggregateOrderMappingBase);
             RelationalModel.CreateColumnMapping((ColumnBase<ColumnMappingBase>)noteColumnBase, order.FindProperty("Note")!, bookWormOrderingDomainOrderAggregateOrderMappingBase);
+            RelationalModel.CreateColumnMapping((ColumnBase<ColumnMappingBase>)statusColumnBase, order.FindProperty("Status")!, bookWormOrderingDomainOrderAggregateOrderMappingBase);
             RelationalModel.CreateColumnMapping((ColumnBase<ColumnMappingBase>)update_dateColumnBase0, order.FindProperty("UpdateDate")!, bookWormOrderingDomainOrderAggregateOrderMappingBase);
             RelationalModel.CreateColumnMapping((ColumnBase<ColumnMappingBase>)versionColumnBase0, order.FindProperty("Version")!, bookWormOrderingDomainOrderAggregateOrderMappingBase);
 
@@ -229,6 +232,8 @@ namespace BookWorm.Ordering.Infrastructure.Data.CompiledModels
                 IsNullable = true
             };
             ordersTable.Columns.Add("note", noteColumn);
+            var statusColumn = new Column("status", "smallint", ordersTable);
+            ordersTable.Columns.Add("status", statusColumn);
             var update_dateColumn0 = new Column("update_date", "timestamp with time zone", ordersTable)
             {
                 IsNullable = true
@@ -260,6 +265,7 @@ namespace BookWorm.Ordering.Infrastructure.Data.CompiledModels
             RelationalModel.CreateColumnMapping(buyer_idColumn, order.FindProperty("BuyerId")!, ordersTableMapping);
             RelationalModel.CreateColumnMapping(created_dateColumn0, order.FindProperty("CreatedDate")!, ordersTableMapping);
             RelationalModel.CreateColumnMapping(noteColumn, order.FindProperty("Note")!, ordersTableMapping);
+            RelationalModel.CreateColumnMapping(statusColumn, order.FindProperty("Status")!, ordersTableMapping);
             RelationalModel.CreateColumnMapping(update_dateColumn0, order.FindProperty("UpdateDate")!, ordersTableMapping);
             RelationalModel.CreateColumnMapping(versionColumn0, order.FindProperty("Version")!, ordersTableMapping);
 

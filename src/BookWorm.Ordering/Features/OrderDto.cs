@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Ordering.Features;
+﻿using BookWorm.Ordering.Domain.OrderAggregate;
+
+namespace BookWorm.Ordering.Features;
 
 public sealed record UserOrderDto(
     BuyerDto Buyer,
@@ -12,6 +14,7 @@ public sealed record UserOrderDetailDto(
 public sealed record OrderDto(
     Guid Id,
     string? Note,
+    Status Status,
     decimal TotalPrice);
 
 public sealed record BuyerDto(

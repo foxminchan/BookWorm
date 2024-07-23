@@ -9,6 +9,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.EntityFrameworkCore.Storage.Json;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.Mapping;
 
@@ -99,7 +101,7 @@ namespace BookWorm.Ordering.Infrastructure.Data.CompiledModels
                     (DateTime v) => v));
             createdDate.AddAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.None);
             createdDate.AddAnnotation("Relational:ColumnName", "created_date");
-            createdDate.AddAnnotation("Relational:DefaultValue", new DateTime(2024, 7, 22, 11, 37, 55, 672, DateTimeKind.Utc).AddTicks(3590));
+            createdDate.AddAnnotation("Relational:DefaultValue", new DateTime(2024, 7, 23, 16, 29, 40, 886, DateTimeKind.Utc).AddTicks(8879));
 
             var note = runtimeEntityType.AddProperty(
                 "Note",
@@ -128,6 +130,38 @@ namespace BookWorm.Ordering.Infrastructure.Data.CompiledModels
         note.AddAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.None);
         note.AddAnnotation("Relational:ColumnName", "note");
 
+        var status = runtimeEntityType.AddProperty(
+            "Status",
+            typeof(Status),
+            propertyInfo: typeof(Order).GetProperty("Status", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly),
+            fieldInfo: typeof(Order).GetField("<Status>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly));
+        status.TypeMapping = ByteTypeMapping.Default.Clone(
+            comparer: new ValueComparer<Status>(
+                (Status v1, Status v2) => object.Equals((object)v1, (object)v2),
+                (Status v) => v.GetHashCode(),
+                (Status v) => v),
+            keyComparer: new ValueComparer<Status>(
+                (Status v1, Status v2) => object.Equals((object)v1, (object)v2),
+                (Status v) => v.GetHashCode(),
+                (Status v) => v),
+            providerValueComparer: new ValueComparer<byte>(
+                (byte v1, byte v2) => v1 == v2,
+                (byte v) => (int)v,
+                (byte v) => v),
+            mappingInfo: new RelationalTypeMappingInfo(
+                storeTypeName: "smallint"),
+            converter: new ValueConverter<Status, byte>(
+                (Status value) => (byte)value,
+                (byte value) => (Status)value),
+            jsonValueReaderWriter: new JsonConvertedValueReaderWriter<Status, byte>(
+                JsonByteReaderWriter.Instance,
+                new ValueConverter<Status, byte>(
+                    (Status value) => (byte)value,
+                    (byte value) => (Status)value)));
+        status.SetSentinelFromProviderValue((byte)0);
+        status.AddAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.None);
+        status.AddAnnotation("Relational:ColumnName", "status");
+
         var updateDate = runtimeEntityType.AddProperty(
             "UpdateDate",
             typeof(DateTime?),
@@ -150,7 +184,7 @@ namespace BookWorm.Ordering.Infrastructure.Data.CompiledModels
                 (Nullable<DateTime> v) => v.HasValue ? (Nullable<DateTime>)(DateTime)v : default(Nullable<DateTime>)));
         updateDate.AddAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.None);
         updateDate.AddAnnotation("Relational:ColumnName", "update_date");
-        updateDate.AddAnnotation("Relational:DefaultValue", new DateTime(2024, 7, 22, 11, 37, 55, 672, DateTimeKind.Utc).AddTicks(3822));
+        updateDate.AddAnnotation("Relational:DefaultValue", new DateTime(2024, 7, 23, 16, 29, 40, 886, DateTimeKind.Utc).AddTicks(9250));
 
         var version = runtimeEntityType.AddProperty(
             "Version",
