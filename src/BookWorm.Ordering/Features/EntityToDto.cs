@@ -17,10 +17,10 @@ public static class EntityToDto
 
     public static OrderDto ToOrderDto(this Order order)
     {
-        return new(order.Id, order.Note, order.TotalPrice);
+        return new(order.Id, order.Note, order.Status, order.TotalPrice);
     }
 
-    public static List<OrderDto>? ToOrderDtos(this IEnumerable<Order> orders)
+    public static List<OrderDto> ToOrderDtos(this IEnumerable<Order> orders)
     {
         return orders.Select(ToOrderDto).ToList();
     }
