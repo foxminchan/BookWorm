@@ -2,7 +2,8 @@
 
 public sealed record BasketDto(
     Guid Id,
-    List<BasketItemDto> Items);
+    List<BasketItemDto> Items,
+    decimal TotalPrice);
 
 public sealed record BasketItemDto(
     Guid BookId,

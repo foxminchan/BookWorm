@@ -12,11 +12,10 @@ namespace BookWorm.Ordering.Infrastructure.Data;
 public sealed class OrderingContext(DbContextOptions<OrderingContext> options, IPublisher publisher)
     : DbContext(options)
 {
+    private readonly IPublisher _publisher = Guard.Against.Null(publisher);
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<Buyer> Buyers => Set<Buyer>();
-
-    private readonly IPublisher _publisher = Guard.Against.Null(publisher);
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

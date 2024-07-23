@@ -24,7 +24,7 @@ public sealed class GetBasketHandler(
 
         Guard.Against.NotFound(customerId, basket);
 
-        var basketDto = new BasketDto(basket.AccountId, []);
+        var basketDto = new BasketDto(basket.AccountId, [], 0.0m);
 
         foreach (var item in basket.BasketItems)
         {
@@ -32,6 +32,8 @@ public sealed class GetBasketHandler(
 
             basketDto.Items.Add(new(book.Id, book.Name, item.Quantity, book.Price, book.PriceSale));
         }
+
+        basketDto = basketDto with { TotalPrice = basketDto.Items.Sum(x => x.Price * x.Quantity) };
 
         return basketDto;
     }

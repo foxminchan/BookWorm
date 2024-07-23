@@ -15,13 +15,16 @@ public sealed class IdempotencyFilter(IRedisService redisService) : IEndpointFil
         var requestId = request.Headers[HeaderName.IdempotencyKey].FirstOrDefault();
 
         if (requestMethod is not "POST" and not "PATCH")
+        {
             return await next(context);
+        }
 
         List<ValidationFailure> errors = [];
 
         if (string.IsNullOrEmpty(requestId))
         {
-            errors.Add(new(HeaderName.IdempotencyKey, $"{HeaderName.IdempotencyKey} header is required for POST and PATCH requests."));
+            errors.Add(new(HeaderName.IdempotencyKey,
+                $"{HeaderName.IdempotencyKey} header is required for POST and PATCH requests."));
             throw new ValidationException(errors.AsEnumerable());
         }
 
