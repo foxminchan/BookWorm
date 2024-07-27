@@ -1,0 +1,60 @@
+api-version: 2024-02-02-preview
+location: {{ .Env.AZURE_LOCATION }}
+identity:
+  type: UserAssigned
+  userAssignedIdentities:
+    ? "{{ .Env.AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID }}"
+    : {}
+properties:
+  environmentId: {{ .Env.AZURE_CONTAINER_APPS_ENVIRONMENT_ID }}
+  configuration:
+    activeRevisionsMode: single
+    runtime:
+      dotnet:
+        autoConfigureDataProtection: true
+    ingress:
+      additionalPortMappings:
+        - targetPort: 8081
+          external: false
+      external: false
+      targetPort: {{ targetPortOrDefault 8080 }}
+      transport: http
+      allowInsecure: true
+    registries:
+      - server: {{ .Env.AZURE_CONTAINER_REGISTRY_ENDPOINT }}
+        identity: {{ .Env.AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID }}
+    secrets:
+      - name: connectionstrings--eventbus
+        value: amqp://guest:{{ securedParameter "eventbus_password" }}@eventbus:5672
+      - name: connectionstrings--orderingdb
+        value: Host=postgres;Port=5432;Username={{ securedParameter "SqlUser" }};Password={{ securedParameter "SqlPassword" }};Database=orderingdb
+  template:
+    containers:
+      - image: {{ .Image }}
+        name: ordering-api
+        env:
+          - name: AZURE_CLIENT_ID
+            value: {{ .Env.MANAGED_IDENTITY_CLIENT_ID }}
+          - name: ASPNETCORE_FORWARDEDHEADERS_ENABLED
+            value: "true"
+          - name: ASPNETCORE_HTTP_PORTS
+            value: 8080;8081
+          - name: HEALTHCHECKSUI_URLS
+            value: http://ordering-api:8081/healthz
+          - name: Identity__Url
+            value: https://identity-api.{{ .Env.AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN }}
+          - name: OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES
+            value: "true"
+          - name: OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES
+            value: "true"
+          - name: OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY
+            value: in_memory
+          - name: ConnectionStrings__eventbus
+            secretRef: connectionstrings--eventbus
+          - name: ConnectionStrings__orderingdb
+            secretRef: connectionstrings--orderingdb
+    scale:
+      minReplicas: 1
+tags:
+  azd-service-name: ordering-api
+  aspire-resource-name: ordering-api
