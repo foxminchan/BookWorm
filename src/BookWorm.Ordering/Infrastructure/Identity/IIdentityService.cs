@@ -5,4 +5,6 @@ public interface IIdentityService
     string? GetUserIdentity();
 
     string? GetUserName();
+
+    bool IsAdminRole();
 }
