@@ -6,6 +6,6 @@ namespace BookWorm.Ordering.Domain.OrderAggregate;
 public enum Status : byte
 {
     Pending = 0,
-    Delivered = 1,
+    Completed = 1,
     Canceled = 2
 }
