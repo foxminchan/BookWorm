@@ -29,9 +29,9 @@ public sealed class Order : EntityBase, IAggregateRoot
 
     public decimal TotalPrice => OrderItems.Sum(oi => oi.Price * oi.Quantity);
 
-    public void MarkAsDelivered()
+    public void MarkAsCompleted()
     {
-        Status = Status.Delivered;
+        Status = Status.Completed;
     }
 
     public void MarkAsCanceled()
