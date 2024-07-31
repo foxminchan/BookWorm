@@ -23,22 +23,14 @@
 - [x] API versioning
 - [x] Health checks
 - [x] OpenAPI/Swagger
-- [x] AuthN/AuthZ
-  - [x] OAuth2 with `Duende IdentityServer`
-  - [x] BFF with `Duende BFF`
+- [x] AuthN/AuthZ with `Duende IdentityServer`
 - [x] Observability with `.NET Aspire`
 - [x] Add `MailDev` for local email testing
 - [ ] CI/CD with `Azure DevOps`
-- [ ] Implement `Frontend` for the application
-  - [ ] Using `Blazor` for the Storefront
-  - [ ] Using `Next.js` for the Admin Panel
 - [ ] Testing
   - [ ] Service unit tests
   - [ ] Integration tests with `Aspire Testing` & `WireMock`
-  - [ ] Blazor unit tests with `bunit`
-  - [ ] New testing approach in `Next.js` with `SafeTest`
 - [ ] Output Caching, Response Caching and Distributed Caching with Redis
-- [ ] LLMs integration with `Semantic Kernel`
 - [ ] Deployment with `Aspirate` on `k3d`
 - [ ] EDA document with `EventCatalog`
 
@@ -60,8 +52,6 @@
 - [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 - [Docker](https://www.docker.com/products/docker-desktop)
 - [Gitleaks](https://gitleaks.io/)
-- [Node.js](https://nodejs.org/)
-- [Bun](https://bun.sh/)
 
 ### Running the project
 

@@ -51,16 +51,6 @@ properties:
             value: notification-api
           - name: HealthChecksUI__HealthChecks__5__Uri
             value: http://notification-api:8081/healthz
-          - name: HealthChecksUI__HealthChecks__6__Name
-            value: storefront
-          - name: HealthChecksUI__HealthChecks__6__Uri
-            value: http://storefront:8081/healthz
-          - name: HealthChecksUI__HealthChecks__7__Name
-            value: bff
-          - name: HealthChecksUI__HealthChecks__7__Uri
-            value: http://bff:8081/healthz
-          - name: services__backoffice__http__0
-            value: http://backoffice.internal.{{ .Env.AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN }}
           - name: ui_path
             value: /
     scale:
