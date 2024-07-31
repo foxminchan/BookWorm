@@ -13,8 +13,9 @@ public sealed class Buyer : EntityBase, IAggregateRoot
         // EF Core
     }
 
-    public Buyer(string name, Address address)
+    public Buyer(Guid id, string name, Address address)
     {
+        Id = Guard.Against.Default(id);
         Name = Guard.Against.NullOrEmpty(name);
         Address = Guard.Against.Null(address);
     }
@@ -23,4 +24,9 @@ public sealed class Buyer : EntityBase, IAggregateRoot
     public Address? Address { get; private set; }
 
     public IReadOnlyCollection<Order> Orders => _orders.AsReadOnly();
+
+    public void UpdateAddress(Address address)
+    {
+        Address = Guard.Against.Null(address);
+    }
 }

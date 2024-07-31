@@ -20,14 +20,19 @@ public sealed class Order : EntityBase, IAggregateRoot
         Status = Status.Pending;
     }
 
-    public string? Note { get; }
-    public Guid BuyerId { get; }
+    public string? Note { get; private set; }
+    public Guid BuyerId { get; private set; }
     public Status Status { get; private set; }
     public Buyer? Buyer { get; private set; } = default!;
 
     public IReadOnlyCollection<OrderItem> OrderItems => _orderItems.AsReadOnly();
 
     public decimal TotalPrice => OrderItems.Sum(oi => oi.Price * oi.Quantity);
+
+    public void AddOrderItem(Guid bookId, decimal price, int quantity)
+    {
+        _orderItems.Add(new(bookId, quantity, price));
+    }
 
     public void MarkAsCompleted()
     {

@@ -9,7 +9,7 @@ public class IdentityService(IHttpContextAccessor httpContext) : IIdentityServic
         return httpContext.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
     }
 
-    public string? GetUserName()
+    public string? GetFullName()
     {
         return httpContext.HttpContext?.User.FindFirstValue(ClaimTypes.Name);
     }
