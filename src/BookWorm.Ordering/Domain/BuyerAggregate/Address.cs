@@ -1,4 +1,5 @@
-﻿using BookWorm.Core.SeedWork;
+﻿using Ardalis.GuardClauses;
+using BookWorm.Core.SeedWork;
 
 namespace BookWorm.Ordering.Domain.BuyerAggregate;
 
@@ -6,16 +7,16 @@ public sealed class Address : ValueObject
 {
     private Address() { }
 
-    public Address(string street, string city, string province)
+    public Address(string? street, string? city, string? province)
     {
-        Street = street;
-        City = city;
-        Province = province;
+        Street = Guard.Against.NullOrEmpty(street);
+        City = Guard.Against.NullOrEmpty(city);
+        Province = Guard.Against.NullOrEmpty(province);
     }
 
-    public string? Street { get; }
-    public string? City { get; }
-    public string? Province { get; }
+    public string? Street { get; private set; }
+    public string? City { get; private set; }
+    public string? Province { get; private set; }
 
     public override string ToString()
     {

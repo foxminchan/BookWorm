@@ -1,5 +1,13 @@
-﻿namespace BookWorm.Ordering.Features.Orders.Create;
+﻿using BookWorm.Shared.Constants;
+using FluentValidation;
 
-public class CreateOrderValidator
+namespace BookWorm.Ordering.Features.Orders.Create;
+
+public sealed class CreateOrderValidator : AbstractValidator<CreateOrderCommand>
 {
+    public CreateOrderValidator()
+    {
+        RuleFor(x => x.Note)
+            .MaximumLength(DataSchemaLength.SuperLarge);
+    }
 }

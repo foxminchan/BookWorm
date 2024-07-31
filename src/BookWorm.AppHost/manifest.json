@@ -1,0 +1,429 @@
+{
+  "resources": {
+    "SqlUser": {
+      "type": "parameter.v0",
+      "value": "{SqlUser.inputs.value}",
+      "inputs": {
+        "value": {
+          "type": "string",
+          "secret": true
+        }
+      }
+    },
+    "SqlPassword": {
+      "type": "parameter.v0",
+      "value": "{SqlPassword.inputs.value}",
+      "inputs": {
+        "value": {
+          "type": "string",
+          "secret": true
+        }
+      }
+    },
+    "postgres": {
+      "type": "container.v0",
+      "connectionString": "Host={postgres.bindings.tcp.host};Port={postgres.bindings.tcp.port};Username={SqlUser.value};Password={SqlPassword.value}",
+      "image": "docker.io/ankane/pgvector:latest",
+      "bindMounts": [
+        {
+          "source": "../../mnt/postgres",
+          "target": "/var/lib/postgresql/data",
+          "readOnly": false
+        }
+      ],
+      "env": {
+        "POSTGRES_HOST_AUTH_METHOD": "scram-sha-256",
+        "POSTGRES_INITDB_ARGS": "--auth-host=scram-sha-256 --auth-local=scram-sha-256",
+        "POSTGRES_USER": "{SqlUser.value}",
+        "POSTGRES_PASSWORD": "{SqlPassword.value}"
+      },
+      "bindings": {
+        "tcp": {
+          "scheme": "tcp",
+          "protocol": "tcp",
+          "transport": "tcp",
+          "targetPort": 5432
+        }
+      }
+    },
+    "mongodb": {
+      "type": "container.v0",
+      "connectionString": "mongodb://{mongodb.bindings.tcp.host}:{mongodb.bindings.tcp.port}",
+      "image": "docker.io/library/mongo:7.0",
+      "bindMounts": [
+        {
+          "source": "../../mnt/mongodb",
+          "target": "/data/db",
+          "readOnly": false
+        }
+      ],
+      "bindings": {
+        "tcp": {
+          "scheme": "tcp",
+          "protocol": "tcp",
+          "transport": "tcp",
+          "targetPort": 27017
+        }
+      }
+    },
+    "redis": {
+      "type": "container.v0",
+      "connectionString": "{redis.bindings.tcp.host}:{redis.bindings.tcp.port}",
+      "image": "docker.io/library/redis:7.2",
+      "args": ["--save", "60", "1"],
+      "bindMounts": [
+        {
+          "source": "../../mnt/redis",
+          "target": "/data",
+          "readOnly": false
+        }
+      ],
+      "bindings": {
+        "tcp": {
+          "scheme": "tcp",
+          "protocol": "tcp",
+          "transport": "tcp",
+          "targetPort": 6379
+        }
+      }
+    },
+    "catalogdb": {
+      "type": "value.v0",
+      "connectionString": "{postgres.connectionString};Database=catalogdb"
+    },
+    "orderingdb": {
+      "type": "value.v0",
+      "connectionString": "{postgres.connectionString};Database=orderingdb"
+    },
+    "identitydb": {
+      "type": "value.v0",
+      "connectionString": "{postgres.connectionString};Database=identitydb"
+    },
+    "notificationdb": {
+      "type": "value.v0",
+      "connectionString": "{postgres.connectionString};Database=notificationdb"
+    },
+    "ratingdb": {
+      "type": "value.v0",
+      "connectionString": "{mongodb.connectionString}/ratingdb"
+    },
+    "storage": {
+      "type": "azure.bicep.v0",
+      "path": "storage.module.bicep",
+      "params": {
+        "principalId": "",
+        "principalType": ""
+      }
+    },
+    "blobs": {
+      "type": "value.v0",
+      "connectionString": "{storage.outputs.blobEndpoint}"
+    },
+    "openai": {
+      "type": "parameter.v0",
+      "connectionString": "{openai.value}",
+      "value": "{openai.inputs.value}",
+      "inputs": {
+        "value": {
+          "type": "string",
+          "secret": true
+        }
+      }
+    },
+    "eventbus": {
+      "type": "container.v0",
+      "connectionString": "amqp://guest:{eventbus-password.value}@{eventbus.bindings.tcp.host}:{eventbus.bindings.tcp.port}",
+      "image": "docker.io/library/rabbitmq:3.13-management",
+      "env": {
+        "RABBITMQ_DEFAULT_USER": "guest",
+        "RABBITMQ_DEFAULT_PASS": "{eventbus-password.value}"
+      },
+      "bindings": {
+        "tcp": {
+          "scheme": "tcp",
+          "protocol": "tcp",
+          "transport": "tcp",
+          "targetPort": 5672
+        },
+        "management": {
+          "scheme": "http",
+          "protocol": "tcp",
+          "transport": "http",
+          "targetPort": 15672
+        }
+      }
+    },
+    "mailserver": {
+      "type": "container.v0",
+      "connectionString": "smtp://{mailserver.bindings.smtp.host}:{mailserver.bindings.smtp.port}",
+      "image": "docker.io/maildev/maildev:2.0.2",
+      "bindings": {
+        "http": {
+          "scheme": "http",
+          "protocol": "tcp",
+          "transport": "http",
+          "targetPort": 1080
+        },
+        "smtp": {
+          "scheme": "tcp",
+          "protocol": "tcp",
+          "transport": "tcp",
+          "targetPort": 1025
+        }
+      }
+    },
+    "identity-api": {
+      "type": "project.v0",
+      "path": "../BookWorm.Identity/BookWorm.Identity.csproj",
+      "env": {
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES": "true",
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES": "true",
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY": "in_memory",
+        "ASPNETCORE_FORWARDEDHEADERS_ENABLED": "true",
+        "ConnectionStrings__identitydb": "{identitydb.connectionString}",
+        "ConnectionStrings__redis": "{redis.connectionString}",
+        "Services__Catalog": "{catalog-api.bindings.https.url}",
+        "Services__Ordering": "{ordering-api.bindings.https.url}",
+        "Services__Rating": "{rating-api.bindings.https.url}",
+        "Services__Basket": "{basket-api.bindings.https.url}",
+        "ASPNETCORE_HTTP_PORTS": "8080;{identity-api.bindings.healthchecks.targetPort}",
+        "HEALTHCHECKSUI_URLS": "{identity-api.bindings.healthchecks.url}/healthz"
+      },
+      "bindings": {
+        "http": {
+          "scheme": "http",
+          "protocol": "tcp",
+          "transport": "http",
+          "external": true
+        },
+        "https": {
+          "scheme": "https",
+          "protocol": "tcp",
+          "transport": "http",
+          "external": true
+        },
+        "healthchecks": {
+          "scheme": "http",
+          "protocol": "tcp",
+          "transport": "http",
+          "targetPort": 8081
+        }
+      }
+    },
+    "catalog-api": {
+      "type": "project.v0",
+      "path": "../BookWorm.Catalog/BookWorm.Catalog.csproj",
+      "env": {
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES": "true",
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES": "true",
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY": "in_memory",
+        "ASPNETCORE_FORWARDEDHEADERS_ENABLED": "true",
+        "ConnectionStrings__blobs": "{blobs.connectionString}",
+        "ConnectionStrings__eventbus": "{eventbus.connectionString}",
+        "ConnectionStrings__catalogdb": "{catalogdb.connectionString}",
+        "ConnectionStrings__redis": "{redis.connectionString}",
+        "ConnectionStrings__openai": "{openai.connectionString}",
+        "Identity__Url": "{identity-api.bindings.https.url}",
+        "AiOptions__OpenAi__EmbeddingName": "text-embedding-3-small",
+        "AzuriteOptions__ConnectionString": "{blobs.connectionString}",
+        "ASPNETCORE_HTTP_PORTS": "8080;{catalog-api.bindings.healthchecks.targetPort}",
+        "HEALTHCHECKSUI_URLS": "{catalog-api.bindings.healthchecks.url}/healthz"
+      },
+      "bindings": {
+        "http": {
+          "scheme": "http",
+          "protocol": "tcp",
+          "transport": "http"
+        },
+        "https": {
+          "scheme": "https",
+          "protocol": "tcp",
+          "transport": "http"
+        },
+        "healthchecks": {
+          "scheme": "http",
+          "protocol": "tcp",
+          "transport": "http",
+          "targetPort": 8081
+        }
+      }
+    },
+    "ordering-api": {
+      "type": "project.v0",
+      "path": "../BookWorm.Ordering/BookWorm.Ordering.csproj",
+      "env": {
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES": "true",
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES": "true",
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY": "in_memory",
+        "ASPNETCORE_FORWARDEDHEADERS_ENABLED": "true",
+        "ConnectionStrings__eventbus": "{eventbus.connectionString}",
+        "ConnectionStrings__orderingdb": "{orderingdb.connectionString}",
+        "Identity__Url": "{identity-api.bindings.https.url}",
+        "ASPNETCORE_HTTP_PORTS": "8080;{ordering-api.bindings.healthchecks.targetPort}",
+        "HEALTHCHECKSUI_URLS": "{ordering-api.bindings.healthchecks.url}/healthz"
+      },
+      "bindings": {
+        "http": {
+          "scheme": "http",
+          "protocol": "tcp",
+          "transport": "http"
+        },
+        "https": {
+          "scheme": "https",
+          "protocol": "tcp",
+          "transport": "http"
+        },
+        "healthchecks": {
+          "scheme": "http",
+          "protocol": "tcp",
+          "transport": "http",
+          "targetPort": 8081
+        }
+      }
+    },
+    "rating-api": {
+      "type": "project.v0",
+      "path": "../BookWorm.Rating/BookWorm.Rating.csproj",
+      "env": {
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES": "true",
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES": "true",
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY": "in_memory",
+        "ASPNETCORE_FORWARDEDHEADERS_ENABLED": "true",
+        "ConnectionStrings__eventbus": "{eventbus.connectionString}",
+        "ConnectionStrings__ratingdb": "{ratingdb.connectionString}",
+        "ConnectionStrings__redis": "{redis.connectionString}",
+        "Identity__Url": "{identity-api.bindings.https.url}",
+        "ASPNETCORE_HTTP_PORTS": "8080;{rating-api.bindings.healthchecks.targetPort}",
+        "HEALTHCHECKSUI_URLS": "{rating-api.bindings.healthchecks.url}/healthz"
+      },
+      "bindings": {
+        "http": {
+          "scheme": "http",
+          "protocol": "tcp",
+          "transport": "http"
+        },
+        "https": {
+          "scheme": "https",
+          "protocol": "tcp",
+          "transport": "http"
+        },
+        "healthchecks": {
+          "scheme": "http",
+          "protocol": "tcp",
+          "transport": "http",
+          "targetPort": 8081
+        }
+      }
+    },
+    "basket-api": {
+      "type": "project.v0",
+      "path": "../BookWorm.Basket/BookWorm.Basket.csproj",
+      "env": {
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES": "true",
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES": "true",
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY": "in_memory",
+        "ASPNETCORE_FORWARDEDHEADERS_ENABLED": "true",
+        "ConnectionStrings__redis": "{redis.connectionString}",
+        "ConnectionStrings__eventbus": "{eventbus.connectionString}",
+        "Identity__Url": "{identity-api.bindings.https.url}",
+        "ASPNETCORE_HTTP_PORTS": "8080;{basket-api.bindings.healthchecks.targetPort}",
+        "HEALTHCHECKSUI_URLS": "{basket-api.bindings.healthchecks.url}/healthz"
+      },
+      "bindings": {
+        "http": {
+          "scheme": "http",
+          "protocol": "tcp",
+          "transport": "http"
+        },
+        "https": {
+          "scheme": "https",
+          "protocol": "tcp",
+          "transport": "http"
+        },
+        "healthchecks": {
+          "scheme": "http",
+          "protocol": "tcp",
+          "transport": "http",
+          "targetPort": 8081
+        }
+      }
+    },
+    "notification-api": {
+      "type": "project.v0",
+      "path": "../BookWorm.Notification/BookWorm.Notification.csproj",
+      "env": {
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES": "true",
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES": "true",
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY": "in_memory",
+        "ASPNETCORE_FORWARDEDHEADERS_ENABLED": "true",
+        "ConnectionStrings__eventbus": "{eventbus.connectionString}",
+        "ConnectionStrings__notificationdb": "{notificationdb.connectionString}",
+        "ConnectionStrings__mailserver": "{mailserver.connectionString}",
+        "ASPNETCORE_HTTP_PORTS": "8080;{notification-api.bindings.healthchecks.targetPort}",
+        "HEALTHCHECKSUI_URLS": "{notification-api.bindings.healthchecks.url}/healthz"
+      },
+      "bindings": {
+        "http": {
+          "scheme": "http",
+          "protocol": "tcp",
+          "transport": "http"
+        },
+        "https": {
+          "scheme": "https",
+          "protocol": "tcp",
+          "transport": "http"
+        },
+        "healthchecks": {
+          "scheme": "http",
+          "protocol": "tcp",
+          "transport": "http",
+          "targetPort": 8081
+        }
+      }
+    },
+    "healthchecksui": {
+      "type": "container.v0",
+      "image": "docker.io/xabarilcoding/healthchecksui:5.0.0",
+      "env": {
+        "ui_path": "/",
+        "HealthChecksUI__HealthChecks__0__Name": "identity-api",
+        "HealthChecksUI__HealthChecks__0__Uri": "{identity-api.bindings.healthchecks.url}/healthz",
+        "HealthChecksUI__HealthChecks__1__Name": "catalog-api",
+        "HealthChecksUI__HealthChecks__1__Uri": "{catalog-api.bindings.healthchecks.url}/healthz",
+        "HealthChecksUI__HealthChecks__2__Name": "ordering-api",
+        "HealthChecksUI__HealthChecks__2__Uri": "{ordering-api.bindings.healthchecks.url}/healthz",
+        "HealthChecksUI__HealthChecks__3__Name": "rating-api",
+        "HealthChecksUI__HealthChecks__3__Uri": "{rating-api.bindings.healthchecks.url}/healthz",
+        "HealthChecksUI__HealthChecks__4__Name": "basket-api",
+        "HealthChecksUI__HealthChecks__4__Uri": "{basket-api.bindings.healthchecks.url}/healthz",
+        "HealthChecksUI__HealthChecks__5__Name": "notification-api",
+        "HealthChecksUI__HealthChecks__5__Uri": "{notification-api.bindings.healthchecks.url}/healthz"
+      },
+      "bindings": {
+        "http": {
+          "scheme": "http",
+          "protocol": "tcp",
+          "transport": "http",
+          "targetPort": 80,
+          "external": true
+        }
+      }
+    },
+    "eventbus-password": {
+      "type": "parameter.v0",
+      "value": "{eventbus-password.inputs.value}",
+      "inputs": {
+        "value": {
+          "type": "string",
+          "secret": true,
+          "default": {
+            "generate": {
+              "minLength": 22,
+              "special": false
+            }
+          }
+        }
+      }
+    }
+  }
+}

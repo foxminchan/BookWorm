@@ -33,7 +33,10 @@ public sealed class GetBasketHandler(
             basketDto.Items.Add(new(book.Id, book.Name, item.Quantity, book.Price, book.PriceSale));
         }
 
-        basketDto = basketDto with { TotalPrice = basketDto.Items.Sum(x => x.Price * x.Quantity) };
+        basketDto = basketDto with
+        {
+            TotalPrice = basketDto.Items.Sum(x => x.PriceSale > 0 ? x.PriceSale * x.Quantity : x.Price * x.Quantity)
+        };
 
         return basketDto;
     }

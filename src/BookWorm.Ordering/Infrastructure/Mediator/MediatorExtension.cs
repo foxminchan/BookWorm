@@ -7,7 +7,7 @@ namespace BookWorm.Ordering.Infrastructure.Mediator;
 
 public static class MediatorExtension
 {
-    public static async Task DispatchDomainEventsAsync(this IPublisher mediator, OrderingContext ctx)
+    public static async Task DispatchDomainEventsAsync(this IPublisher publisher, OrderingContext ctx)
     {
         var domainEntities = ctx.ChangeTracker
             .Entries<EntityBase>()
@@ -22,7 +22,7 @@ public static class MediatorExtension
 
         foreach (var domainEvent in domainEvents)
         {
-            await mediator.Publish(domainEvent);
+            await publisher.Publish(domainEvent);
         }
     }
 }

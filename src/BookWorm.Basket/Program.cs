@@ -1,7 +1,6 @@
 ﻿using BookWorm.Basket.Grpc;
 using BookWorm.Basket.Infrastructure.Identity;
 using BookWorm.Basket.Infrastructure.Redis;
-using BookWorm.Catalog.Grpc;
 using BookWorm.ServiceDefaults;
 using BookWorm.Shared.ActivityScope;
 using BookWorm.Shared.Endpoints;
@@ -10,6 +9,7 @@ using BookWorm.Shared.Metrics;
 using BookWorm.Shared.Pipelines;
 using BookWorm.Shared.Versioning;
 using FluentValidation;
+using GrpcBookClient = BookWorm.Catalog.Grpc.Book.BookClient;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,7 +43,9 @@ builder.AddOpenApi();
 builder.AddDefaultAuthentication();
 builder.Services.AddSingleton<BookService>();
 
-builder.Services.AddGrpcClient<Book.BookClient>(o =>
+builder.Services.AddGrpc();
+
+builder.Services.AddGrpcClient<GrpcBookClient>(o =>
 {
     o.Address = new("https+http://catalog-api");
 });
@@ -63,5 +65,7 @@ app.UseOpenApi();
 app.MapEndpoints();
 
 app.MapDefaultEndpoints();
+
+app.MapGrpcService<BasketService>();
 
 app.Run();

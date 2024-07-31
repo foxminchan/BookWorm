@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option csharp_namespace = "BookWorm.Basket.Grpc";
+
+package BasketApi;
+
+service Basket {
+    rpc GetBasket (BasketRequest) returns (BasketResponse);
+}
+
+message BasketRequest {
+    string basketId = 1;
+}
+
+message BasketResponse {
+    string basketId = 1;
+    repeated Book books = 2;
+    double totalPrice = 3;
+}
+
+message Book {
+    string id = 1;
+    string name = 2;
+    int32  quantity = 3;
+    double price = 4;
+    double priceSale = 5;
+}
