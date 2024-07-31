@@ -4,7 +4,7 @@ public interface IIdentityService
 {
     string? GetUserIdentity();
 
-    string? GetUserName();
+    string? GetFullName();
 
     bool IsAdminRole();
 }

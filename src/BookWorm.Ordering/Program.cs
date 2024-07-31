@@ -1,5 +1,4 @@
-﻿using BookWorm.Catalog.Grpc;
-using BookWorm.Ordering.Grpc;
+﻿using BookWorm.Ordering.Grpc;
 using BookWorm.Ordering.Infrastructure.Data;
 using BookWorm.Ordering.Infrastructure.Identity;
 using BookWorm.Ordering.Infrastructure.Redis;
@@ -15,6 +14,8 @@ using BookWorm.Shared.Versioning;
 using FluentValidation;
 using MassTransit;
 using Microsoft.AspNetCore.Http.Json;
+using GrpcBookClient = BookWorm.Catalog.Grpc.Book.BookClient;
+using GrpcBasketClient = BookWorm.Basket.Grpc.Basket.BasketClient;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -63,9 +64,16 @@ builder.AddOpenApi();
 
 builder.Services.AddSingleton<BookService>();
 
-builder.Services.AddGrpcClient<Book.BookClient>(o =>
+builder.Services.AddGrpcClient<GrpcBookClient>(o =>
 {
     o.Address = new("https+http://catalog-api");
+});
+
+builder.Services.AddSingleton<BasketService>();
+
+builder.Services.AddGrpcClient<GrpcBasketClient>(o =>
+{
+    o.Address = new("https+http://basket-api");
 });
 
 builder.Services.AddTransient<IIdentityService, IdentityService>();

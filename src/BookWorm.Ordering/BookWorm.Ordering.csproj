@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Protobuf Include="..\BookWorm.Basket\Proto\basket.proto" GrpcServices="Client" />
     <Protobuf Include="..\BookWorm.Catalog\Proto\book.proto" GrpcServices="Client" />
   </ItemGroup>
 

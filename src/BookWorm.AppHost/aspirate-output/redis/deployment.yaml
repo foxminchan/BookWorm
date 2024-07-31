@@ -1,0 +1,39 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  labels:
+    app: redis
+spec:
+  minReadySeconds: 60
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: redis
+          resources:
+            limits:
+              memory: 512Mi
+          image: docker.io/library/redis:7.2
+          imagePullPolicy: IfNotPresent
+          args:
+            - --save
+            - 60
+            - 1
+          ports:
+            - name: tcp
+              containerPort: 6379
+          envFrom:
+            - configMapRef:
+                name: redis-env
+      terminationGracePeriodSeconds: 180

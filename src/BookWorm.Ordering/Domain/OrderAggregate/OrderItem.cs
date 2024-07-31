@@ -17,11 +17,9 @@ public sealed class OrderItem : EntityBase
         Price = Guard.Against.NegativeOrZero(price);
     }
 
-    public int Quantity { get; }
-    public decimal Price { get; }
+    public int Quantity { get; private set; }
+    public decimal Price { get; private set; }
     public Guid BookId { get; private set; }
-    public Guid OrderId { get; }
+    public Guid OrderId { get; private set; } = default!;
     public Order? Order { get; private set; } = default!;
-
-    public decimal TotalPrice => Quantity * Price;
 }

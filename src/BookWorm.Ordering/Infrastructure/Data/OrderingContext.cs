@@ -33,4 +33,11 @@ public sealed class OrderingContext(DbContextOptions<OrderingContext> options, I
 
         return await base.SaveChangesAsync(cancellationToken);
     }
+
+    public override int SaveChanges()
+    {
+        _publisher.DispatchDomainEventsAsync(this).GetAwaiter().GetResult();
+
+        return base.SaveChanges();
+    }
 }
