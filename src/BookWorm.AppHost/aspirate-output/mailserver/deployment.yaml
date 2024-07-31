@@ -1,0 +1,37 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mailserver
+  labels:
+    app: mailserver
+spec:
+  minReadySeconds: 60
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mailserver
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mailserver
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: mailserver
+          resources:
+            limits:
+              memory: 512Mi
+          image: docker.io/maildev/maildev:2.0.2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 1080
+            - name: smtp
+              containerPort: 1025
+          envFrom:
+            - configMapRef:
+                name: mailserver-env
+      terminationGracePeriodSeconds: 180

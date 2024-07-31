@@ -1,0 +1,42 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: basket-api
+  labels:
+    app: basket-api
+spec:
+  automountServiceAccountToken: false
+  minReadySeconds: 60
+  replicas: 1
+  selector:
+    matchLabels:
+      app: basket-api
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: basket-api
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: basket-api
+          resources:
+            limits:
+              memory: 512Mi
+          image: basket-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: https
+              containerPort: 8443
+            - name: healthchecks
+              containerPort: 8081
+          envFrom:
+            - configMapRef:
+                name: basket-api-env
+            - secretRef:
+                name: basket-api-secrets
+      terminationGracePeriodSeconds: 180

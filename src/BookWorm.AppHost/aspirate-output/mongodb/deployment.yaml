@@ -1,0 +1,35 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb
+  labels:
+    app: mongodb
+spec:
+  minReadySeconds: 60
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: mongodb
+          resources:
+            limits:
+              memory: 512Mi
+          image: docker.io/library/mongo:7.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: tcp
+              containerPort: 27017
+          envFrom:
+            - configMapRef:
+                name: mongodb-env
+      terminationGracePeriodSeconds: 180

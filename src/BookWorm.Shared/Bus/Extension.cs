@@ -8,8 +8,8 @@ namespace BookWorm.Shared.Bus;
 public static class Extension
 {
     public static IHostApplicationBuilder AddRabbitMqEventBus(
-        this IHostApplicationBuilder builder, 
-        Type type, 
+        this IHostApplicationBuilder builder,
+        Type type,
         Action<IBusRegistrationConfigurator>? configure = null)
 
     {

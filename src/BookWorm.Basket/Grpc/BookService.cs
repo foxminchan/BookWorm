@@ -1,10 +1,10 @@
-﻿using BookWorm.Catalog.Grpc;
+﻿using GrpcBookItem = BookWorm.Catalog.Grpc.BookItem;
 using GrpcBookStatus = BookWorm.Catalog.Grpc.BookStatus;
-using GrpcBookItem = BookWorm.Catalog.Grpc.BookItem;
+using GrpcBookClient = BookWorm.Catalog.Grpc.Book.BookClient;
 
 namespace BookWorm.Basket.Grpc;
 
-public sealed class BookService(Book.BookClient bookClient)
+public sealed class BookService(GrpcBookClient bookClient)
 {
     public async Task<BookStatus> GetBookStatus(Guid bookId)
     {

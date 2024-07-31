@@ -1,0 +1,41 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-api
+  labels:
+    app: notification-api
+spec:
+  minReadySeconds: 60
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-api
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: notification-api
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: notification-api
+          resources:
+            limits:
+              memory: 512Mi
+          image: notification-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: https
+              containerPort: 8443
+            - name: healthchecks
+              containerPort: 8081
+          envFrom:
+            - configMapRef:
+                name: notification-api-env
+            - secretRef:
+                name: notification-api-secrets
+      terminationGracePeriodSeconds: 180
