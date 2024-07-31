@@ -14,7 +14,6 @@
     <PackageReference Include="Aspire.Hosting.PostgreSQL" />
     <PackageReference Include="Aspire.Hosting.RabbitMQ" />
     <PackageReference Include="Aspire.Hosting.Redis" />
-    <PackageReference Include="Aspire.Hosting.NodeJs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -24,8 +23,6 @@
     <ProjectReference Include="..\BookWorm.Notification\BookWorm.Notification.csproj" />
     <ProjectReference Include="..\BookWorm.Ordering\BookWorm.Ordering.csproj" />
     <ProjectReference Include="..\BookWorm.Rating\BookWorm.Rating.csproj" />
-    <ProjectReference Include="..\BookWorm.StoreFront\BookWorm.StoreFront\BookWorm.StoreFront.csproj" />
-    <ProjectReference Include="..\BookWorm.Web.Bff\BookWorm.Web.Bff.csproj" />
   </ItemGroup>
 
   <ItemGroup>
