@@ -1,5 +1,6 @@
 ﻿using BookWorm.Identity.Data;
 using BookWorm.Identity.Data.CompliedModels;
+using BookWorm.Identity.DataProtection;
 using BookWorm.Identity.Models;
 using BookWorm.ServiceDefaults;
 using Microsoft.AspNetCore.Identity;
@@ -16,6 +17,8 @@ internal static class HostingExtensions
         builder.Configuration.Bind(appSettings);
 
         builder.AddServiceDefaults();
+
+        builder.AddRedisDataProtection();
 
         builder.Services.AddRazorPages();
 

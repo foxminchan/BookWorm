@@ -71,6 +71,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Components", "Components", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BookWorm.MailDev.Hosting", "src\BookWorm.MailDev.Hosting\BookWorm.MailDev.Hosting.csproj", "{0C0E5158-F59D-45E0-A6C5-63198A3D0492}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookWorm.Gateway", "src\BookWorm.Gateway\BookWorm.Gateway.csproj", "{9AE80189-4D7D-44F0-84C8-127DA27D7AC8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -161,6 +163,10 @@ Global
 		{0C0E5158-F59D-45E0-A6C5-63198A3D0492}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0C0E5158-F59D-45E0-A6C5-63198A3D0492}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0C0E5158-F59D-45E0-A6C5-63198A3D0492}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9AE80189-4D7D-44F0-84C8-127DA27D7AC8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9AE80189-4D7D-44F0-84C8-127DA27D7AC8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9AE80189-4D7D-44F0-84C8-127DA27D7AC8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9AE80189-4D7D-44F0-84C8-127DA27D7AC8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -193,6 +199,7 @@ Global
 		{E34D1516-DD29-40D2-9FC1-1C3DE9F57F26} = {1A0E0FD4-396E-4DBA-B3F1-ED4ACCE50D1B}
 		{D1719092-035E-4E02-ACEC-782107CFE51C} = {1A0E0FD4-396E-4DBA-B3F1-ED4ACCE50D1B}
 		{0C0E5158-F59D-45E0-A6C5-63198A3D0492} = {1A0E0FD4-396E-4DBA-B3F1-ED4ACCE50D1B}
+		{9AE80189-4D7D-44F0-84C8-127DA27D7AC8} = {C50229F2-978B-4961-8865-83767C55E8FB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {233A9FBF-DCD1-40C1-A6A5-9D37C92557BB}
