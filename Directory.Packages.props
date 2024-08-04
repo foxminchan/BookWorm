@@ -33,7 +33,6 @@
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="$(AspireVersion)" />
     <!-- Aspirant -->
     <PackageVersion Include="Aspirant.Hosting" Version="$(AspirantVersion)" />
-    <PackageVersion Include="Aspirant.Hosting.Yarp" Version="$(AspirantVersion)" />
     <PackageVersion Include="Aspirant.Hosting.Testing" Version="$(AspirantVersion)" />
     <PackageVersion Include="Aspirant.Hosting.Testing.xunit" Version="$(AspirantVersion)" />
     <!-- ASP.NET Core -->
@@ -47,6 +46,7 @@
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="$(AspnetVersion)" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="$(AspnetVersion)" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="$(AspnetVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="$(AspnetVersion)" />
     <!-- Entity Framework Core -->
     <PackageVersion Include="Pgvector" Version="0.3.0" />
     <PackageVersion Include="Pgvector.EntityFrameworkCore" Version="0.2.1" />
@@ -72,6 +72,7 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.9.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.GrpcNetClient" Version="1.9.0-beta.1" />
     <!-- Dunde -->
+    <PackageVersion Include="Duende.BFF.Yarp" Version="2.2.0" />
     <PackageVersion Include="Duende.IdentityServer.AspNetIdentity" Version="7.0.5" />
     <!-- Xabaril -->
     <PackageVersion Include="AspNetCore.HealthChecks.UI" Version="$(XabarilVersion)" />
