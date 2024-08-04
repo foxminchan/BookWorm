@@ -1,0 +1,77 @@
+{
+  "projectPath": ".",
+  "outputPath": "aspirate-output",
+  "containerImageTags": ["latest"],
+  "imagePullPolicy": "IfNotPresent",
+  "containerBuilder": "docker",
+  "outputFormat": "kustomize",
+  "skipFinalKustomizeGeneration": false,
+  "privateRegistryEmail": "aspir8@aka.ms",
+  "includeDashboard": true,
+  "useCustomNamespace": false,
+  "secrets": {
+    "salt": "LHo8jIFq4nHVoqj\u002B",
+    "hash": "7kGjynhjh9fqQ6G67KyMqgTIzTrRZpnJ8oEzReTtOKY=",
+    "secrets": {
+      "eventbus-password": {
+        "value": "LHo8jIFq4nHVoqj\u002BRait4BCCOVvQNu/eYWRyauuoHL8XF9zhprM7sNkw1/1Xz\u002BpqARg="
+      },
+      "SqlUser": {
+        "value": "LHo8jIFq4nHVoqj\u002B6eUA3\u002BdOX9heI7VBo3NbQO60N5s3Hdj3"
+      },
+      "SqlPassword": {
+        "value": "LHo8jIFq4nHVoqj\u002BV1UdpWkhTZxjTVVR1S7sw9C6N4cECt7s17Fpxp0="
+      },
+      "openai": {
+        "value": "LHo8jIFq4nHVoqj\u002BKLnZYwy741bHfJBE/8Gf0tW\u002BPdIjBJD05ewz2eFc171\u002Bzts8fmSrEGvFxYntnm2zQ7c2fnZNI07dMFCn/cTCf8h3Jueyb3f1tnKYKg=="
+      },
+      "postgres": {
+        "POSTGRES_PASSWORD": "LHo8jIFq4nHVoqj\u002BV1UdpWkhTZxjTVVR1S7sw9C6N4cECt7s17Fpxp0="
+      },
+      "mongodb": {},
+      "redis": {},
+      "catalogdb": {},
+      "orderingdb": {},
+      "identitydb": {},
+      "notificationdb": {},
+      "ratingdb": {},
+      "blobs": {},
+      "eventbus": {},
+      "mailserver": {},
+      "identity-api": {
+        "ConnectionStrings__identitydb": "LHo8jIFq4nHVoqj\u002BZRk6S8VGOQAjO6RpL9MMMta0N5ttH9L34\u002BQrkdo/36ZJ35I4c2HUQlTVkcPLqjeiKvQbYWBBF2GXRWqlxf\u002BNYo8ld\u002B\u002BSLSz1i1CbMzuTfg2h319t7D48B5Al59npVPSp1G\u002BYow==",
+        "ConnectionStrings__redis": "LHo8jIFq4nHVoqj\u002Bj1Yviu4a3LssmVN2JRmxR\u002By\u002BIIYjVYu3oLo="
+      },
+      "catalog-api": {
+        "ConnectionStrings__blobs": "LHo8jIFq4nHVoqj\u002BV/nCtgfuUMVudQ2NmD6Z9uWoMIAiDtrhuewsgNlx\u002B7oVycNiJReIHXHJnd/Rtg==",
+        "ConnectionStrings__eventbus": "LHo8jIFq4nHVoqj\u002BCkPv\u002Bm2miuhTV6pKb1pAm/\u002B2NZ9qQJLj4uYqgJNx/JFr7NdsImPWG0XWwOmRpz6CcMI\u002BUnFQAGqQHE\u002B3jLnMOs8=",
+        "ConnectionStrings__catalogdb": "LHo8jIFq4nHVoqj\u002B9doa00rNgq8\u002BNupSoFul89a0N5ttH9L34\u002BQrkdo/36ZJ35I4c2HUQlTVkcPLqjeiKvQbYWBBF2GXRWqlxf\u002BNYo8ld\u002B\u002BSLSz1i1CbMzuTfg2h319t7D48B5Al7dz4W\u002Byvx3Ke",
+        "ConnectionStrings__redis": "LHo8jIFq4nHVoqj\u002Bj1Yviu4a3LssmVN2JRmxR\u002By\u002BIIYjVYu3oLo=",
+        "ConnectionStrings__openai": "LHo8jIFq4nHVoqj\u002BKLnZYwy741bHfJBE/8Gf0tW\u002BPdIjBJD05ewz2eFc171\u002Bzts8fmSrEGvFxYntnm2zQ7c2fnZNI07dMFCn/cTCf8h3Jueyb3f1tnKYKg=="
+      },
+      "ordering-api": {
+        "ConnectionStrings__eventbus": "LHo8jIFq4nHVoqj\u002BCkPv\u002Bm2miuhTV6pKb1pAm/\u002B2NZ9qQJLj4uYqgJNx/JFr7NdsImPWG0XWwOmRpz6CcMI\u002BUnFQAGqQHE\u002B3jLnMOs8=",
+        "ConnectionStrings__orderingdb": "LHo8jIFq4nHVoqj\u002B\u002Bz9AygYDic\u002BDVbfYhmiVPda0N5ttH9L34\u002BQrkdo/36ZJ35I4c2HUQlTVkcPLqjeiKvQbYWBBF2GXRWqlxf\u002BNYo8ld\u002B\u002BSLSz1i1CbMzuTfg2h319t7D48B5Al4c/oX/KpznGYow=="
+      },
+      "rating-api": {
+        "ConnectionStrings__eventbus": "LHo8jIFq4nHVoqj\u002BCkPv\u002Bm2miuhTV6pKb1pAm/\u002B2NZ9qQJLj4uYqgJNx/JFr7NdsImPWG0XWwOmRpz6CcMI\u002BUnFQAGqQHE\u002B3jLnMOs8=",
+        "ConnectionStrings__ratingdb": "LHo8jIFq4nHVoqj\u002BJ0kUI6IsFIChSrbS8c13mvO0Kog/C9\u002B\u002BuKw0m8dj4K1ZkZ06d2PRVnPHgNjLrD6l",
+        "ConnectionStrings__redis": "LHo8jIFq4nHVoqj\u002Bj1Yviu4a3LssmVN2JRmxR\u002By\u002BIIYjVYu3oLo="
+      },
+      "basket-api": {
+        "ConnectionStrings__redis": "LHo8jIFq4nHVoqj\u002Bj1Yviu4a3LssmVN2JRmxR\u002By\u002BIIYjVYu3oLo=",
+        "ConnectionStrings__eventbus": "LHo8jIFq4nHVoqj\u002BCkPv\u002Bm2miuhTV6pKb1pAm/\u002B2NZ9qQJLj4uYqgJNx/JFr7NdsImPWG0XWwOmRpz6CcMI\u002BUnFQAGqQHE\u002B3jLnMOs8="
+      },
+      "notification-api": {
+        "ConnectionStrings__eventbus": "LHo8jIFq4nHVoqj\u002BCkPv\u002Bm2miuhTV6pKb1pAm/\u002B2NZ9qQJLj4uYqgJNx/JFr7NdsImPWG0XWwOmRpz6CcMI\u002BUnFQAGqQHE\u002B3jLnMOs8=",
+        "ConnectionStrings__notificationdb": "LHo8jIFq4nHVoqj\u002B/ZWr9Gl4Mlj3duUBhF/AVNa0N5ttH9L34\u002BQrkdo/36ZJ35I4c2HUQlTVkcPLqjeiKvQbYWBBF2GXRWqlxf\u002BNYo8ld\u002B\u002BSLSz1i1CbMzuTfg2h319t7D48B5Al4NL4U\u002Bapw3eIqORR3iM=",
+        "ConnectionStrings__mailserver": "LHo8jIFq4nHVoqj\u002BZkWKBDq\u002B7k3bX9/PCPtL0u22MJ9qQJLp9uo1h8x2\u002BaxJkZ49dWc="
+      },
+      "gateway": {
+        "ConnectionStrings__redis": "LHo8jIFq4nHVoqj\u002Bj1Yviu4a3LssmVN2JRmxR\u002By\u002BIIYjVYu3oLo="
+      },
+      "healthchecksui": {}
+    }
+  },
+  "processAllComponents": true
+}
