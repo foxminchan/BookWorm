@@ -1,12 +1,11 @@
 api-version: 2024-02-02-preview
-location: {{ .Env.AZURE_LOCATION }}
+location: { { .Env.AZURE_LOCATION } }
 identity:
   type: UserAssigned
   userAssignedIdentities:
-    ? "{{ .Env.AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID }}"
-    : {}
+    "{{ .Env.AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID }}": {}
 properties:
-  environmentId: {{ .Env.AZURE_CONTAINER_APPS_ENVIRONMENT_ID }}
+  environmentId: { { .Env.AZURE_CONTAINER_APPS_ENVIRONMENT_ID } }
   configuration:
     activeRevisionsMode: single
     runtime:
@@ -21,18 +20,18 @@ properties:
       transport: http
       allowInsecure: true
     registries:
-      - server: {{ .Env.AZURE_CONTAINER_REGISTRY_ENDPOINT }}
-        identity: {{ .Env.AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID }}
+      - server: { { .Env.AZURE_CONTAINER_REGISTRY_ENDPOINT } }
+        identity: { { .Env.AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID } }
     secrets:
       - name: rabbitmq-default-pass
         value: '{{ securedParameter "eventbus_password" }}'
   template:
     containers:
-      - image: {{ .Image }}
+      - image: { { .Image } }
         name: eventbus
         env:
           - name: AZURE_CLIENT_ID
-            value: {{ .Env.MANAGED_IDENTITY_CLIENT_ID }}
+            value: { { .Env.MANAGED_IDENTITY_CLIENT_ID } }
           - name: RABBITMQ_DEFAULT_USER
             value: guest
           - name: RABBITMQ_DEFAULT_PASS
