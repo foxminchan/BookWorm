@@ -23,22 +23,12 @@ properties:
       - server: { { .Env.AZURE_CONTAINER_REGISTRY_ENDPOINT } }
         identity: { { .Env.AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID } }
     secrets:
-      - name: azuriteoptions--connectionstring
-        value: "{{ .Env.STORAGE_BLOBENDPOINT }}"
-      - name: connectionstrings--blobs
-        value: "{{ .Env.STORAGE_BLOBENDPOINT }}"
-      - name: connectionstrings--catalogdb
-        value: Host=postgres;Port=5432;Username={{ securedParameter "SqlUser" }};Password={{ securedParameter "SqlPassword" }};Database=catalogdb
-      - name: connectionstrings--eventbus
-        value: amqp://guest:{{ securedParameter "eventbus_password" }}@eventbus:5672
-      - name: connectionstrings--openai
-        value: '{{ securedParameter "openai" }}'
       - name: connectionstrings--redis
         value: redis:6379
   template:
     containers:
       - image: { { .Image } }
-        name: catalog-api
+        name: gateway
         env:
           - name: AZURE_CLIENT_ID
             value: { { .Env.MANAGED_IDENTITY_CLIENT_ID } }
@@ -46,32 +36,22 @@ properties:
             value: "true"
           - name: ASPNETCORE_HTTP_PORTS
             value: 8080;8081
-          - name: AiOptions__OpenAi__EmbeddingName
-            value: text-embedding-3-small
-          - name: HEALTHCHECKSUI_URLS
-            value: http://catalog-api:8081/healthz
-          - name: Identity__Url
+          - name: BFF__Api__RemoteUrl
+            value: https://catalog-api.internal.{{ .Env.AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN }}/api/v1/authors
+          - name: BFF__Authority
             value: https://identity-api.{{ .Env.AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN }}
+          - name: HEALTHCHECKSUI_URLS
+            value: http://gateway:8081/healthz
           - name: OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES
             value: "true"
           - name: OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES
             value: "true"
           - name: OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY
             value: in_memory
-          - name: AzuriteOptions__ConnectionString
-            secretRef: azuriteoptions--connectionstring
-          - name: ConnectionStrings__blobs
-            secretRef: connectionstrings--blobs
-          - name: ConnectionStrings__catalogdb
-            secretRef: connectionstrings--catalogdb
-          - name: ConnectionStrings__eventbus
-            secretRef: connectionstrings--eventbus
-          - name: ConnectionStrings__openai
-            secretRef: connectionstrings--openai
           - name: ConnectionStrings__redis
             secretRef: connectionstrings--redis
     scale:
       minReplicas: 1
 tags:
-  azd-service-name: catalog-api
-  aspire-resource-name: catalog-api
+  azd-service-name: gateway
+  aspire-resource-name: gateway
