@@ -14,9 +14,9 @@ public sealed class Address : ValueObject
         Province = Guard.Against.NullOrEmpty(province);
     }
 
-    public string? Street { get; private set; }
-    public string? City { get; private set; }
-    public string? Province { get; private set; }
+    public string? Street { get; }
+    public string? City { get; }
+    public string? Province { get; }
 
     public override string ToString()
     {
