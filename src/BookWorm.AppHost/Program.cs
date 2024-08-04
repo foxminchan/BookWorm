@@ -112,8 +112,13 @@ var notificationApi = builder.AddProject<BookWorm_Notification>("notification-ap
     .WaitFor(notificationDb)
     .WaitFor(smtpServer);
 
+var gateway = builder.AddProject<BookWorm_Gateway>("gateway")
+    .WithReference(redis)
+    .WaitFor(redis);
+
 // Health checks
 builder.AddHealthChecksUi("healthchecksui")
+    .WithReference(gateway)
     .WithReference(identityApi)
     .WithReference(catalogApi)
     .WithReference(orderingApi)
@@ -126,15 +131,11 @@ identityApi
     .WithEnvironment("Services__Catalog", catalogApi.GetEndpoint(launchProfileName))
     .WithEnvironment("Services__Ordering", orderingApi.GetEndpoint(launchProfileName))
     .WithEnvironment("Services__Rating", ratingApi.GetEndpoint(launchProfileName))
-    .WithEnvironment("Services__Basket", basketApi.GetEndpoint(launchProfileName));
+    .WithEnvironment("Services__Basket", basketApi.GetEndpoint(launchProfileName))
+    .WithEnvironment("Services__Gateway", gateway.GetEndpoint(launchProfileName));
 
-builder.AddYarp("ingress")
-    .WithEndpoint(scheme: launchProfileName, port: 80)
-    .WithReference(identityApi)
-    .WithReference(catalogApi)
-    .WithReference(orderingApi)
-    .WithReference(ratingApi)
-    .WithReference(basketApi)
-    .LoadFromConfiguration("ReverseProxy");
+gateway
+    .WithEnvironment("BFF__Authority", identityApi.GetEndpoint(launchProfileName))
+    .WithEnvironment("BFF__Api__RemoteUrl", $"{catalogApi.GetEndpoint(launchProfileName)}/api/v1/authors");
 
 builder.Build().Run();
