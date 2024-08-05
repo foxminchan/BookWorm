@@ -1,9 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Swashbuckle.AspNetCore" />
-  </ItemGroup>
+    <PackageReference Include="Aspire.MongoDB.Driver" />
+  </ItemGroup>    
 
   <ItemGroup>
     <ProjectReference Include="..\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj" />
