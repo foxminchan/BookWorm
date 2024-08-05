@@ -3,12 +3,14 @@ using BookWorm.Basket.Infrastructure.Identity;
 using BookWorm.Basket.Infrastructure.Redis;
 using BookWorm.ServiceDefaults;
 using BookWorm.Shared.ActivityScope;
+using BookWorm.Shared.Bus;
 using BookWorm.Shared.Endpoints;
 using BookWorm.Shared.Exceptions;
 using BookWorm.Shared.Metrics;
 using BookWorm.Shared.Pipelines;
 using BookWorm.Shared.Versioning;
 using FluentValidation;
+using MassTransit;
 using GrpcBookClient = BookWorm.Catalog.Grpc.Book.BookClient;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,6 +31,8 @@ builder.Services.AddMediatR(cfg =>
 });
 
 builder.Services.AddValidatorsFromAssemblyContaining<Program>(includeInternalTypes: true);
+
+builder.AddRabbitMqEventBus(typeof(Program), cfg => cfg.AddInMemoryInboxOutbox());
 
 builder.Services.AddSingleton<IActivityScope, ActivityScope>();
 builder.Services.AddSingleton<CommandHandlerMetrics>();

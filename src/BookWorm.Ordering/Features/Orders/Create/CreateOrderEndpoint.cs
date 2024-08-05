@@ -14,7 +14,7 @@ public sealed class CreateOrderEndpoint : IEndpoint<Created<Guid>, CreateOrderRe
         app.MapPost("/api/orders",
                 async (CreateOrderRequest request, ISender sender) => await HandleAsync(request, sender))
             .Produces<Created<Guid>>(StatusCodes.Status201Created)
-            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesValidationProblem()
             .WithTags(nameof(Order))
             .WithName("Create Order")
             .MapToApiVersion(new(1, 0))
