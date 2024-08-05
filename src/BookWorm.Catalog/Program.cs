@@ -4,6 +4,7 @@ using BookWorm.Catalog.Infrastructure.Blob;
 using BookWorm.Catalog.Infrastructure.Data;
 using BookWorm.ServiceDefaults;
 using BookWorm.Shared.ActivityScope;
+using BookWorm.Shared.Bus;
 using BookWorm.Shared.Converters;
 using BookWorm.Shared.Endpoints;
 using BookWorm.Shared.Exceptions;
@@ -11,6 +12,7 @@ using BookWorm.Shared.Metrics;
 using BookWorm.Shared.Pipelines;
 using BookWorm.Shared.Versioning;
 using FluentValidation;
+using MassTransit;
 using Microsoft.AspNetCore.Http.Json;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -50,6 +52,8 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>(includeInternalTyp
 builder.Services.AddSingleton<IActivityScope, ActivityScope>();
 builder.Services.AddSingleton<CommandHandlerMetrics>();
 builder.Services.AddSingleton<QueryHandlerMetrics>();
+
+builder.AddRabbitMqEventBus(typeof(Program), cfg => cfg.AddInMemoryInboxOutbox());
 
 builder.AddVersioning();
 builder.AddEndpoints(typeof(Program));

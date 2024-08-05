@@ -91,4 +91,10 @@ public sealed class Book : EntityBase, IAggregateRoot, ISoftDelete
     {
         ImageUrl = null;
     }
+
+    public void AddRating(int rating)
+    {
+        AverageRating = (AverageRating * TotalReviews + rating) / (TotalReviews + 1);
+        TotalReviews++;
+    }
 }
