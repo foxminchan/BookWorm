@@ -4,6 +4,7 @@ using BookWorm.Shared.Bus;
 using BookWorm.Shared.Converters;
 using BookWorm.Shared.Endpoints;
 using BookWorm.Shared.Exceptions;
+using BookWorm.Shared.Identity;
 using BookWorm.Shared.Metrics;
 using BookWorm.Shared.Pipelines;
 using BookWorm.Shared.Versioning;
@@ -51,6 +52,8 @@ builder.AddVersioning();
 builder.AddEndpoints(typeof(Program));
 
 builder.AddOpenApi();
+
+builder.Services.AddTransient<IIdentityService, IdentityService>();
 
 var app = builder.Build();
 

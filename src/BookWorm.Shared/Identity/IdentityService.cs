@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 
-namespace BookWorm.Ordering.Infrastructure.Identity;
+namespace BookWorm.Shared.Identity;
 
 public class IdentityService(IHttpContextAccessor httpContext) : IIdentityService
 {

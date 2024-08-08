@@ -6,7 +6,7 @@ using MongoDB.Bson;
 
 namespace BookWorm.Rating.Features.Create;
 
-public sealed record CreateFeedbackRequest(Guid BookId, int Rating, string? Comment);
+public sealed record CreateFeedbackRequest(Guid BookId, int Rating, string? Comment, Guid UserId);
 
 public sealed class CreateFeedbackEndpoint : IEndpoint<Created<ObjectId>, CreateFeedbackRequest, ISender>
 {
@@ -23,7 +23,7 @@ public sealed class CreateFeedbackEndpoint : IEndpoint<Created<ObjectId>, Create
     public async Task<Created<ObjectId>> HandleAsync(CreateFeedbackRequest request, ISender sender,
         CancellationToken cancellationToken = default)
     {
-        var command = new CreateFeedbackCommand(request.BookId, request.Rating, request.Comment);
+        var command = new CreateFeedbackCommand(request.BookId, request.Rating, request.Comment, request.UserId);
 
         var result = await sender.Send(command, cancellationToken);
 
