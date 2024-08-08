@@ -4,7 +4,7 @@ using BookWorm.Core.SharedKernel;
 using BookWorm.Ordering.Domain.OrderAggregate;
 using BookWorm.Ordering.Domain.OrderAggregate.Specifications;
 using BookWorm.Ordering.Grpc;
-using BookWorm.Ordering.Infrastructure.Identity;
+using BookWorm.Shared.Identity;
 
 namespace BookWorm.Ordering.Features.Orders.Get;
 
