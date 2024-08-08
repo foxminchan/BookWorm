@@ -1,6 +1,5 @@
 ﻿using BookWorm.Ordering.Grpc;
 using BookWorm.Ordering.Infrastructure.Data;
-using BookWorm.Ordering.Infrastructure.Identity;
 using BookWorm.Ordering.Infrastructure.Redis;
 using BookWorm.ServiceDefaults;
 using BookWorm.Shared.ActivityScope;
@@ -8,6 +7,7 @@ using BookWorm.Shared.Bus;
 using BookWorm.Shared.Converters;
 using BookWorm.Shared.Endpoints;
 using BookWorm.Shared.Exceptions;
+using BookWorm.Shared.Identity;
 using BookWorm.Shared.Metrics;
 using BookWorm.Shared.Pipelines;
 using BookWorm.Shared.Versioning;

@@ -1,11 +1,11 @@
 ﻿using BookWorm.Basket.Grpc;
-using BookWorm.Basket.Infrastructure.Identity;
 using BookWorm.Basket.Infrastructure.Redis;
 using BookWorm.ServiceDefaults;
 using BookWorm.Shared.ActivityScope;
 using BookWorm.Shared.Bus;
 using BookWorm.Shared.Endpoints;
 using BookWorm.Shared.Exceptions;
+using BookWorm.Shared.Identity;
 using BookWorm.Shared.Metrics;
 using BookWorm.Shared.Pipelines;
 using BookWorm.Shared.Versioning;
