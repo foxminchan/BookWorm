@@ -8,14 +8,15 @@ using MongoDB.Driver;
 
 namespace BookWorm.Rating.Features.Create;
 
-public sealed record CreateFeedbackCommand(Guid BookId, int Rating, string? Comment) : ICommand<Result<ObjectId>>;
+public sealed record CreateFeedbackCommand(Guid BookId, int Rating, string? Comment, Guid UserId)
+    : ICommand<Result<ObjectId>>;
 
 public sealed class CreateFeedbackHandler(IMongoCollection<Feedback> collection, IPublishEndpoint publishEndpoint)
     : ICommandHandler<CreateFeedbackCommand, Result<ObjectId>>
 {
     public async Task<Result<ObjectId>> Handle(CreateFeedbackCommand request, CancellationToken cancellationToken)
     {
-        var feedback = new Feedback(request.BookId, request.Rating, request.Comment);
+        var feedback = new Feedback(request.BookId, request.Rating, request.Comment, request.UserId);
 
         await collection.InsertOneAsync(feedback, cancellationToken: cancellationToken);
 

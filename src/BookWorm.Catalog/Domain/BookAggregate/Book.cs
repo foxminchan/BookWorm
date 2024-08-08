@@ -61,12 +61,6 @@ public sealed class Book : EntityBase, IAggregateRoot, ISoftDelete
         IsDeleted = true;
     }
 
-    public void SetRating(double averageRating, int totalReviews)
-    {
-        AverageRating = Guard.Against.NegativeOrZero(averageRating);
-        TotalReviews = Guard.Against.NegativeOrZero(totalReviews);
-    }
-
     public void Update(
         string name,
         string? description,
@@ -96,5 +90,11 @@ public sealed class Book : EntityBase, IAggregateRoot, ISoftDelete
     {
         AverageRating = (AverageRating * TotalReviews + rating) / (TotalReviews + 1);
         TotalReviews++;
+    }
+
+    public void RemoveRating(int rating)
+    {
+        AverageRating = (AverageRating * TotalReviews - rating) / (TotalReviews - 1);
+        TotalReviews--;
     }
 }

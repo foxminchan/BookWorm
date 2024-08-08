@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Ordering.Infrastructure.Identity;
+﻿namespace BookWorm.Shared.Identity;
 
 public interface IIdentityService
 {
