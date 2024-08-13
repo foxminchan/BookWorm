@@ -82,8 +82,6 @@ var app = builder.Build();
 
 app.UseExceptionHandler();
 
-app.UseHttpsRedirection();
-
 app.UseAuthorization();
 
 app.UseOpenApi();
