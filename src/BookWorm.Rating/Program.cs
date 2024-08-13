@@ -1,4 +1,5 @@
-﻿using BookWorm.ServiceDefaults;
+﻿using BookWorm.Rating.Domain;
+using BookWorm.ServiceDefaults;
 using BookWorm.Shared.ActivityScope;
 using BookWorm.Shared.Bus;
 using BookWorm.Shared.Converters;
@@ -11,6 +12,7 @@ using BookWorm.Shared.Versioning;
 using FluentValidation;
 using MassTransit;
 using Microsoft.AspNetCore.Http.Json;
+using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -48,6 +50,19 @@ builder.Services.AddSingleton<IActivityScope, ActivityScope>();
 builder.Services.AddSingleton<CommandHandlerMetrics>();
 builder.Services.AddSingleton<QueryHandlerMetrics>();
 
+builder.Services.AddSingleton(serviceProvider =>
+{
+    var settings = builder.Configuration.GetConnectionString("mongodb");
+    var client = serviceProvider.GetService<IMongoClient>();
+    return client!.GetDatabase(MongoUrl.Create(settings).DatabaseName);
+});
+
+builder.Services.AddScoped(serviceProvider =>
+{
+    var database = serviceProvider.GetService<IMongoDatabase>();
+    return database!.GetCollection<Feedback>("Feedback");
+});
+
 builder.AddVersioning();
 builder.AddEndpoints(typeof(Program));
 
@@ -58,8 +73,6 @@ builder.Services.AddTransient<IIdentityService, IdentityService>();
 var app = builder.Build();
 
 app.UseExceptionHandler();
-
-app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
