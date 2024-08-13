@@ -14,7 +14,8 @@ public sealed class ListFeedbackEndpoint : IEndpoint<Ok<ListFeedbackResponse>, L
 {
     public void MapEndpoint(IEndpointRouteBuilder app) =>
         app.MapGet("/feedbacks",
-                async (ListFeedbackRequest request, ISender sender) => await HandleAsync(request, sender))
+                async (Guid bookId, int pageIndex, int pageSize, ISender sender) =>
+                    await HandleAsync(new(bookId, pageIndex, pageSize), sender))
             .Produces<Ok<ListFeedbackResponse>>()
             .ProducesProblem(StatusCodes.Status404NotFound)
             .WithTags(nameof(Feedback))

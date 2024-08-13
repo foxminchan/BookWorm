@@ -53,6 +53,20 @@
 - [Docker](https://www.docker.com/products/docker-desktop)
 - [Gitleaks](https://gitleaks.io/)
 
+### Setting up user secrets
+
+1. Open a terminal
+2. Run the following command to set the user secrets for the `BookWorm.AppHost` project
+
+```bash
+dotnet user-secrets set "Parameters:SqlUser" "postgres"
+dotnet user-secrets set "Parameters:SqlPassword" "yourcomplexpassword"
+dotnet user-secrets set "ConnectionStrings:openai" "Key=yourapikey"
+```
+
+> [!NOTE]
+> You need and OpenAI API key to run the project. You can get one [here](https://platform.openai.com/).
+
 ### Running the project
 
 1. Clone the repository
