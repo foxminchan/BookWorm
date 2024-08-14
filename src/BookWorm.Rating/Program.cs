@@ -52,15 +52,15 @@ builder.Services.AddSingleton<QueryHandlerMetrics>();
 
 builder.Services.AddSingleton(serviceProvider =>
 {
-    var settings = builder.Configuration.GetConnectionString("mongodb");
+    var url = builder.Configuration.GetConnectionString("mongodb");
     var client = serviceProvider.GetService<IMongoClient>();
-    return client!.GetDatabase(MongoUrl.Create(settings).DatabaseName);
+    return client!.GetDatabase(MongoUrl.Create(url).DatabaseName);
 });
 
 builder.Services.AddScoped(serviceProvider =>
 {
     var database = serviceProvider.GetService<IMongoDatabase>();
-    return database!.GetCollection<Feedback>("Feedback");
+    return database!.GetCollection<Feedback>(nameof(Feedback));
 });
 
 builder.AddVersioning();
