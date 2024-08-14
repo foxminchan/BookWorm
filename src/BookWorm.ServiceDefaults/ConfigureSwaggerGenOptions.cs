@@ -18,19 +18,20 @@ public sealed class ConfigureSwaggerGenOptions(IApiVersionDescriptionProvider pr
         foreach (var description in provider.ApiVersionDescriptions)
         {
             options.SwaggerDoc(description.GroupName, CreateInfoForApiVersion(description));
-            options.MapType<DateOnly>(() => new()
-            {
-                Type = "string", Format = "date", Example = new OpenApiString(DateTime.Today.ToString("yyyy-MM-dd"))
-            });
-            options.CustomSchemaIds(type => type.ToString());
         }
+
+        options.MapType<DateOnly>(() => new()
+        {
+            Type = "string", Format = "date", Example = new OpenApiString(DateTime.Today.ToString("yyyy-MM-dd"))
+        });
+        options.CustomSchemaIds(type => type.ToString());
 
         ConfigureAuthorization(options);
     }
 
     private OpenApiInfo CreateInfoForApiVersion(ApiVersionDescription description)
     {
-        var openApi = config.GetSection(nameof(OpenApi)).Get<OpenApi>();
+        var openApi = config.GetRequiredSection(nameof(OpenApi)).Get<OpenApi>();
 
         ArgumentNullException.ThrowIfNull(openApi);
 
@@ -129,12 +130,20 @@ public sealed class ConfigureSwaggerGenOptions(IApiVersionDescriptionProvider pr
 
     private void ConfigureAuthorization(SwaggerGenOptions options)
     {
-        var identity = config.GetSection(nameof(Identity)).Get<Identity>();
+        var identitySection = config.GetSection(nameof(Identity));
+        var identity = identitySection.Get<Identity>();
 
-        ArgumentNullException.ThrowIfNull(identity);
+        if (identity is null)
+        {
+            return;
+        }
 
         var identityUrlExternal = identity.Url;
-        var scopes = identity.Scopes;
+
+        var scopes = identitySection
+            .GetRequiredSection("Scopes")
+            .GetChildren()
+            .ToDictionary(scope => scope.Key, scope => scope.Value);
 
         options.AddSecurityDefinition("oauth2",
             new()
@@ -142,7 +151,7 @@ public sealed class ConfigureSwaggerGenOptions(IApiVersionDescriptionProvider pr
                 Type = SecuritySchemeType.OAuth2,
                 Flows = new()
                 {
-                    Implicit = new()
+                    AuthorizationCode = new()
                     {
                         AuthorizationUrl = new($"{identityUrlExternal}/connect/authorize"),
                         TokenUrl = new($"{identityUrlExternal}/connect/token"),
