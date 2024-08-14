@@ -5,11 +5,11 @@ using Polly.Registry;
 
 namespace BookWorm.Catalog.Infrastructure.Blob;
 
-public sealed class AzuriteService(AzuriteOptions azuriteSettings, ResiliencePipelineProvider<string> pipeline)
+public sealed class AzuriteService(ResiliencePipelineProvider<string> pipeline, IConfiguration configuration)
     : IAzuriteService
 {
-    private readonly BlobContainerClient _container = new(azuriteSettings.ConnectionString,
-        azuriteSettings.ContainerName);
+    private readonly BlobContainerClient _container = new(configuration.GetConnectionString("blobs"),
+        nameof(Catalog));
 
     private readonly ResiliencePipeline _policy = pipeline.GetPipeline(nameof(Blob));
 

@@ -1,6 +1,4 @@
 ﻿using Azure;
-using BookWorm.Shared.Validator;
-using Microsoft.Extensions.Options;
 using Polly;
 
 namespace BookWorm.Catalog.Infrastructure.Blob;
@@ -9,12 +7,6 @@ public static class Extension
 {
     public static IHostApplicationBuilder AddStorage(this IHostApplicationBuilder builder)
     {
-        builder.Services.AddOptionsWithValidateOnStart<AzuriteOptions>()
-            .Bind(builder.Configuration.GetSection(nameof(AzuriteOptions)))
-            .ValidateFluentValidation();
-
-        builder.Services.AddSingleton(options => options.GetRequiredService<IOptions<AzuriteOptions>>().Value);
-
         builder.Services.AddResiliencePipeline(nameof(Blob), resiliencePipelineBuilder => resiliencePipelineBuilder
             .AddRetry(new()
             {
