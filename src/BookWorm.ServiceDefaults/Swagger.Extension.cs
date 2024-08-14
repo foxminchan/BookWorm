@@ -1,5 +1,7 @@
 ﻿using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -40,6 +42,39 @@ public static class SwaggerExtension
                 }
             ];
         }));
+
+        if (!app.Environment.IsDevelopment())
+        {
+            return app;
+        }
+
+        app.UseSwaggerUI(options =>
+        {
+            app.DescribeApiVersions()
+                .Select(desc => new
+                {
+                    url = $"/swagger/{desc.GroupName}/swagger.json",
+                    name = desc.GroupName.ToUpperInvariant()
+                })
+                .ToList()
+                .ForEach(endpoint => options.SwaggerEndpoint(endpoint.url, endpoint.name));
+
+            var auth = app.Configuration.GetSection(nameof(OpenApi)).Get<OpenApi>()?.Auth;
+
+            if (auth is null)
+            {
+                return;
+            }
+
+            options.DocumentTitle = auth.AppName;
+            options.OAuthClientId(auth.ClientId);
+            options.OAuthClientSecret(auth.ClientSecret);
+            options.OAuthAppName(auth.AppName);
+            options.OAuthUsePkce();
+            options.EnableValidator();
+        });
+
+        app.MapGet("/", () => Results.Redirect("/swagger")).ExcludeFromDescription();
 
         return app;
     }

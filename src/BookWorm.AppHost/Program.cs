@@ -2,7 +2,6 @@
 using BookWorm.AppHost;
 using BookWorm.HealthCheck.Hosting;
 using BookWorm.MailDev.Hosting;
-using BookWorm.Swagger.Hosting;
 using Microsoft.Extensions.Hosting;
 using Projects;
 
@@ -75,16 +74,14 @@ var catalogApi = builder.AddProject<BookWorm_Catalog>("catalog-api")
     .WaitFor(redis)
     .WithEnvironment("Identity__Url", identityEndpoint)
     .WithEnvironment("AiOptions__OpenAi__EmbeddingName", "text-embedding-3-small")
-    .WithEnvironment("AzuriteOptions__ConnectionString", blobs.WithEndpoint())
-    .WithSwaggerUi();
+    .WithEnvironment("AzuriteOptions__ConnectionString", blobs.WithEndpoint());
 
 var orderingApi = builder.AddProject<BookWorm_Ordering>("ordering-api")
     .WithReference(rabbitMq)
     .WithReference(orderingDb)
     .WaitFor(rabbitMq)
     .WaitFor(orderingDb)
-    .WithEnvironment("Identity__Url", identityEndpoint)
-    .WithSwaggerUi();
+    .WithEnvironment("Identity__Url", identityEndpoint);
 
 var ratingApi = builder.AddProject<BookWorm_Rating>("rating-api")
     .WithReference(rabbitMq)
@@ -93,16 +90,14 @@ var ratingApi = builder.AddProject<BookWorm_Rating>("rating-api")
     .WaitFor(rabbitMq)
     .WaitFor(ratingDb)
     .WaitFor(redis)
-    .WithEnvironment("Identity__Url", identityEndpoint)
-    .WithSwaggerUi();
+    .WithEnvironment("Identity__Url", identityEndpoint);
 
 var basketApi = builder.AddProject<BookWorm_Basket>("basket-api")
     .WithReference(redis)
     .WithReference(rabbitMq)
     .WaitFor(redis)
     .WaitFor(rabbitMq)
-    .WithEnvironment("Identity__Url", identityEndpoint)
-    .WithSwaggerUi();
+    .WithEnvironment("Identity__Url", identityEndpoint);
 
 var notificationApi = builder.AddProject<BookWorm_Notification>("notification-api")
     .WithReference(rabbitMq)
