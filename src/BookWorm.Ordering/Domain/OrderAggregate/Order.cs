@@ -1,6 +1,7 @@
 ﻿using Ardalis.GuardClauses;
 using BookWorm.Core.SeedWork;
 using BookWorm.Ordering.Domain.BuyerAggregate;
+using BookWorm.Ordering.Domain.OrderAggregate.Events;
 
 namespace BookWorm.Ordering.Domain.OrderAggregate;
 
@@ -18,6 +19,7 @@ public sealed class Order : EntityBase, IAggregateRoot
         BuyerId = Guard.Against.Default(buyerId);
         Note = note;
         Status = Status.Pending;
+        RegisterDomainEvent(new OrderCreatedEvent(Id));
     }
 
     public string? Note { get; private set; }
@@ -37,10 +39,12 @@ public sealed class Order : EntityBase, IAggregateRoot
     public void MarkAsCompleted()
     {
         Status = Status.Completed;
+        RegisterDomainEvent(new OrderCompletedEvent(Id));
     }
 
     public void MarkAsCanceled()
     {
         Status = Status.Canceled;
+        RegisterDomainEvent(new OrderCancelledEvent(Id));
     }
 }
