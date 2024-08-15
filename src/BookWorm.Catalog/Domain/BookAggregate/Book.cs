@@ -88,13 +88,13 @@ public sealed class Book : EntityBase, IAggregateRoot, ISoftDelete
 
     public void AddRating(int rating)
     {
-        AverageRating = (AverageRating * TotalReviews + rating) / (TotalReviews + 1);
+        AverageRating = ((AverageRating * TotalReviews) + rating) / (TotalReviews + 1);
         TotalReviews++;
     }
 
     public void RemoveRating(int rating)
     {
-        AverageRating = (AverageRating * TotalReviews - rating) / (TotalReviews - 1);
+        AverageRating = ((AverageRating * TotalReviews) - rating) / (TotalReviews - 1);
         TotalReviews--;
     }
 }

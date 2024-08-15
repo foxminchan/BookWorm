@@ -15,6 +15,11 @@ public class IdentityService(IHttpContextAccessor httpContext) : IIdentityServic
         return httpContext.HttpContext?.User.FindFirstValue(ClaimTypes.Name);
     }
 
+    public string? GetEmail()
+    {
+        return httpContext.HttpContext?.User.FindFirstValue(ClaimTypes.Email);
+    }
+
     public bool IsAdminRole()
     {
         return httpContext.HttpContext?.User.IsInRole("Admin") ?? false;

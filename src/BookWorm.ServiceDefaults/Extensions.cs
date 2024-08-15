@@ -57,6 +57,7 @@ public static class Extensions
                 metrics.AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
                     .AddRuntimeInstrumentation()
+                    .AddMeter("Marten")
                     .AddMeter(InstrumentationOptions.MeterName)
                     .AddMeter(ActivitySourceProvider.DefaultSourceName);
             })
@@ -65,6 +66,7 @@ public static class Extensions
                 tracing.AddAspNetCoreInstrumentation()
                     .AddGrpcClientInstrumentation()
                     .AddHttpClientInstrumentation()
+                    .AddSource("Marten")
                     .AddSource(DiagnosticHeaders.DefaultListenerName)
                     .AddSource(ActivitySourceProvider.DefaultSourceName);
             });
