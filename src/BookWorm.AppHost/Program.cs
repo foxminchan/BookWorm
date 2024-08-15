@@ -11,6 +11,7 @@ builder.AddForwardedHeaders();
 
 var postgresUser = builder.AddParameter("SqlUser", true);
 var postgresPassword = builder.AddParameter("SqlPassword", true);
+var fromEmail = builder.AddParameter("FromEmail", true);
 
 var launchProfileName = builder.Configuration["DOTNET_LAUNCH_PROFILE"] ?? "http";
 
@@ -105,7 +106,8 @@ var notificationApi = builder.AddProject<BookWorm_Notification>("notification-ap
     .WithReference(smtpServer)
     .WaitFor(rabbitMq)
     .WaitFor(notificationDb)
-    .WaitFor(smtpServer);
+    .WaitFor(smtpServer)
+    .WithEnvironment("Smtp__Email", fromEmail);
 
 var gateway = builder.AddProject<BookWorm_Gateway>("gateway")
     .WithReference(redis)

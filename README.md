@@ -61,6 +61,7 @@
 ```bash
 dotnet user-secrets set "Parameters:SqlUser" "postgres"
 dotnet user-secrets set "Parameters:SqlPassword" "yourcomplexpassword"
+dotnet user-secrets set "Parameters:FromEmail" "yourfromemail"
 dotnet user-secrets set "ConnectionStrings:openai" "Key=yourapikey"
 ```
 
