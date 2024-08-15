@@ -13,7 +13,7 @@ namespace BookWorm.Rating.Features.Delete;
 public sealed record DeleteFeedbackCommand(ObjectId Id) : ICommand<Result>;
 
 public sealed class DeleteFeedbackHandler(
-    IMongoCollection<Feedback> collection, 
+    IMongoCollection<Feedback> collection,
     IPublishEndpoint publishEndpoint,
     IIdentityService identityService) : ICommandHandler<DeleteFeedbackCommand, Result>
 {

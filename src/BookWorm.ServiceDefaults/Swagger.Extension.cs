@@ -53,8 +53,7 @@ public static class SwaggerExtension
             app.DescribeApiVersions()
                 .Select(desc => new
                 {
-                    url = $"/swagger/{desc.GroupName}/swagger.json",
-                    name = desc.GroupName.ToUpperInvariant()
+                    url = $"/swagger/{desc.GroupName}/swagger.json", name = desc.GroupName.ToUpperInvariant()
                 })
                 .ToList()
                 .ForEach(endpoint => options.SwaggerEndpoint(endpoint.url, endpoint.name));

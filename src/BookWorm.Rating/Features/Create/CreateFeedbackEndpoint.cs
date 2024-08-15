@@ -10,7 +10,8 @@ public sealed record CreateFeedbackRequest(Guid BookId, int Rating, string? Comm
 
 public sealed class CreateFeedbackEndpoint : IEndpoint<Created<ObjectId>, CreateFeedbackRequest, ISender>
 {
-    public void MapEndpoint(IEndpointRouteBuilder app) =>
+    public void MapEndpoint(IEndpointRouteBuilder app)
+    {
         app.MapPost("/feedbacks", async (CreateFeedbackRequest request, ISender sender) =>
                 await HandleAsync(request, sender))
             .Produces<Created<ObjectId>>(StatusCodes.Status201Created)
@@ -19,6 +20,7 @@ public sealed class CreateFeedbackEndpoint : IEndpoint<Created<ObjectId>, Create
             .WithName("Create Feedback")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization();
+    }
 
     public async Task<Created<ObjectId>> HandleAsync(CreateFeedbackRequest request, ISender sender,
         CancellationToken cancellationToken = default)

@@ -8,7 +8,8 @@ namespace BookWorm.Rating.Features.Hide;
 
 public sealed class HideFeedbackEndpoint : IEndpoint<Ok, ObjectId, ISender>
 {
-    public void MapEndpoint(IEndpointRouteBuilder app) =>
+    public void MapEndpoint(IEndpointRouteBuilder app)
+    {
         app.MapPatch("/feedbacks/{id}/hide",
                 async (ObjectId id, ISender sender) => await HandleAsync(id, sender))
             .Produces<Ok>()
@@ -17,6 +18,7 @@ public sealed class HideFeedbackEndpoint : IEndpoint<Ok, ObjectId, ISender>
             .WithName("Hide Feedback")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization();
+    }
 
     public async Task<Ok> HandleAsync(ObjectId id, ISender sender, CancellationToken cancellationToken = default)
     {

@@ -12,7 +12,8 @@ public sealed record ListFeedbackResponse(PagedInfo PagedInfo, List<Feedback> Fe
 
 public sealed class ListFeedbackEndpoint : IEndpoint<Ok<ListFeedbackResponse>, ListFeedbackRequest, ISender>
 {
-    public void MapEndpoint(IEndpointRouteBuilder app) =>
+    public void MapEndpoint(IEndpointRouteBuilder app)
+    {
         app.MapGet("/feedbacks",
                 async (Guid bookId, int pageIndex, int pageSize, ISender sender) =>
                     await HandleAsync(new(bookId, pageIndex, pageSize), sender))
@@ -22,6 +23,7 @@ public sealed class ListFeedbackEndpoint : IEndpoint<Ok<ListFeedbackResponse>, L
             .WithName("List Feedback")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization();
+    }
 
     public async Task<Ok<ListFeedbackResponse>> HandleAsync(ListFeedbackRequest request, ISender sender,
         CancellationToken cancellationToken = default)

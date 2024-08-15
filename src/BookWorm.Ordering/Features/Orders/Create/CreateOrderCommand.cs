@@ -36,7 +36,9 @@ public sealed class CreateOrderHandler(
 
         var result = await repository.AddAsync(order, cancellationToken);
 
-        var @event = new OrderCreatedIntegrationEvent(result.Id, basket.Id);
+        var email = identityService.GetEmail();
+
+        var @event = new OrderCreatedIntegrationEvent(result.Id, basket.Id, email);
 
         await publishEndpoint.Publish(@event, cancellationToken);
 

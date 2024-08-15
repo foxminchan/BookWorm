@@ -6,5 +6,7 @@ public interface IIdentityService
 
     string? GetFullName();
 
+    string? GetEmail();
+
     bool IsAdminRole();
 }

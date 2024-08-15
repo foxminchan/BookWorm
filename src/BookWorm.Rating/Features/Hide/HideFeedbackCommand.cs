@@ -1,5 +1,5 @@
-﻿using Ardalis.Result;
-using Ardalis.GuardClauses;
+﻿using Ardalis.GuardClauses;
+using Ardalis.Result;
 using BookWorm.Core.SharedKernel;
 using BookWorm.Rating.Domain;
 using MongoDB.Bson;
@@ -9,7 +9,8 @@ namespace BookWorm.Rating.Features.Hide;
 
 public sealed record HideFeedbackCommand(ObjectId Id) : ICommand<Result>;
 
-public sealed class HideFeedbackHandler(IMongoCollection<Feedback> collection) : ICommandHandler<HideFeedbackCommand, Result>
+public sealed class HideFeedbackHandler(IMongoCollection<Feedback> collection)
+    : ICommandHandler<HideFeedbackCommand, Result>
 {
     public async Task<Result> Handle(HideFeedbackCommand request, CancellationToken cancellationToken)
     {
