@@ -1,4 +1,7 @@
-﻿using BookWorm.Ordering.Grpc;
+﻿using Ardalis.GuardClauses;
+using BookWorm.Ordering.Domain.OrderAggregate;
+using BookWorm.Ordering.Features.Orders;
+using BookWorm.Ordering.Grpc;
 using BookWorm.Ordering.Infrastructure.Data;
 using BookWorm.Ordering.Infrastructure.Redis;
 using BookWorm.ServiceDefaults;
@@ -12,8 +15,13 @@ using BookWorm.Shared.Metrics;
 using BookWorm.Shared.Pipelines;
 using BookWorm.Shared.Versioning;
 using FluentValidation;
+using JasperFx.CodeGeneration;
+using Marten;
+using Marten.Events.Daemon.Resiliency;
+using Marten.Events.Projections;
 using MassTransit;
 using Microsoft.AspNetCore.Http.Json;
+using Weasel.Core;
 using GrpcBookClient = BookWorm.Catalog.Grpc.Book.BookClient;
 using GrpcBasketClient = BookWorm.Basket.Grpc.Basket.BasketClient;
 
@@ -50,6 +58,35 @@ builder.AddRabbitMqEventBus(typeof(Program), cfg =>
 
         o.UseBusOutbox();
     }));
+
+builder.Services.AddMarten(_ =>
+    {
+        var options = new StoreOptions();
+
+        var schemaName = Environment.GetEnvironmentVariable("SchemaName") ?? "order_state";
+        options.Events.DatabaseSchemaName = schemaName;
+        options.DatabaseSchemaName = schemaName;
+
+        var conn = builder.Configuration.GetConnectionString("orderingdb");
+
+        Guard.Against.NullOrEmpty(conn);
+
+        options.Connection(conn);
+
+        options.UseSystemTextJsonForSerialization(EnumStorage.AsString);
+
+        options.Projections.Errors.SkipApplyErrors = false;
+        options.Projections.Errors.SkipSerializationErrors = false;
+        options.Projections.Errors.SkipUnknownEvents = false;
+
+        options.Projections.LiveStreamAggregation<OrderState>();
+        options.Projections.Add<OrderProjection>(ProjectionLifecycle.Async);
+
+        return options;
+    })
+    .OptimizeArtifactWorkflow(TypeLoadMode.Static)
+    .UseLightweightSessions()
+    .AddAsyncDaemon(DaemonMode.Solo);
 
 builder.Services.AddSingleton<IActivityScope, ActivityScope>();
 builder.Services.AddSingleton<CommandHandlerMetrics>();
