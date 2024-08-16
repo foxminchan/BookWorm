@@ -1,7 +1,6 @@
 ﻿using System.Security.Claims;
 using Ardalis.GuardClauses;
 using Ardalis.Result;
-using BookWorm.Basket.Infrastructure.Redis;
 using BookWorm.Core.SharedKernel;
 
 namespace BookWorm.Basket.Features.Create;
