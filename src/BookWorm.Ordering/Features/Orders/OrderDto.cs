@@ -1,6 +1,4 @@
-﻿using BookWorm.Ordering.Domain.OrderAggregate;
-
-namespace BookWorm.Ordering.Features.Orders;
+﻿namespace BookWorm.Ordering.Features.Orders;
 
 public sealed record OrderDto(
     Guid Id,

@@ -139,30 +139,30 @@ namespace Marten.Generated.EventStore
         }
 
 
-        public const string SQL = "insert into order_state.mt_events (data, type, mt_dotnet_type, id, stream_id, version, timestamp, tenant_id, seq_id) values (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
 
         public override void ConfigureCommand(Weasel.Postgresql.ICommandBuilder builder, Marten.Internal.IMartenSession session)
         {
-            var parameters = builder.AppendWithParameters(SQL);
-            parameters[0].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Jsonb;
-            parameters[0].Value = session.Serializer.ToJson(Event.Data);
-            parameters[1].Value = Event.EventTypeName != null ? (object)Event.EventTypeName : System.DBNull.Value;
-            parameters[1].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text;
-            parameters[2].Value = Event.DotNetTypeName != null ? (object)Event.DotNetTypeName : System.DBNull.Value;
-            parameters[2].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text;
-            parameters[3].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Uuid;
-            parameters[3].Value = Event.Id;
-            parameters[4].Value = Stream.Id;
-            parameters[4].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Uuid;
-            parameters[5].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Bigint;
-            parameters[5].Value = Event.Version;
-            parameters[6].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.TimestampTz;
-            parameters[6].Value = Event.Timestamp;
-            parameters[7].Value = Stream.TenantId != null ? (object)Stream.TenantId : System.DBNull.Value;
-            parameters[7].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text;
-            parameters[8].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Bigint;
-            parameters[8].Value = Event.Sequence;
+            builder.Append("insert into order_state.mt_events (data, type, mt_dotnet_type, id, stream_id, version, timestamp, tenant_id, seq_id) values (");
+            var parameterBuilder = builder.CreateGroupedParameterBuilder(',');
+            var parameter0 = parameterBuilder.AppendParameter(session.Serializer.ToJson(Event.Data));
+            parameter0.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Jsonb;
+            var parameter1 = Event.EventTypeName != null ? parameterBuilder.AppendParameter(Event.EventTypeName) : parameterBuilder.AppendParameter<object>(System.DBNull.Value);
+            parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text;
+            var parameter2 = Event.DotNetTypeName != null ? parameterBuilder.AppendParameter(Event.DotNetTypeName) : parameterBuilder.AppendParameter<object>(System.DBNull.Value);
+            parameter2.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text;
+            var parameter3 = parameterBuilder.AppendParameter(Event.Id);
+            parameter3.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Uuid;
+            var parameter4 = parameterBuilder.AppendParameter(Stream.Id);
+            parameter4.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Uuid;
+            var parameter5 = parameterBuilder.AppendParameter(Event.Version);
+            parameter5.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Bigint;
+            var parameter6 = parameterBuilder.AppendParameter(Event.Timestamp);
+            parameter6.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.TimestampTz;
+            var parameter7 = Stream.TenantId != null ? parameterBuilder.AppendParameter(Stream.TenantId) : parameterBuilder.AppendParameter<object>(System.DBNull.Value);
+            parameter7.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text;
+            var parameter8 = parameterBuilder.AppendParameter(Event.Sequence);
+            parameter8.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Bigint;
+            builder.Append(')');
         }
 
     }
@@ -183,28 +183,29 @@ namespace Marten.Generated.EventStore
         }
 
 
-        public const string SQL = "insert into order_state.mt_events (data, type, mt_dotnet_type, id, stream_id, version, timestamp, tenant_id, seq_id) values (?, ?, ?, ?, ?, ?, ?, ?, nextval('order_state.mt_events_sequence'))";
-
 
         public override void ConfigureCommand(Weasel.Postgresql.ICommandBuilder builder, Marten.Internal.IMartenSession session)
         {
-            var parameters = builder.AppendWithParameters(SQL);
-            parameters[0].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Jsonb;
-            parameters[0].Value = session.Serializer.ToJson(Event.Data);
-            parameters[1].Value = Event.EventTypeName != null ? (object)Event.EventTypeName : System.DBNull.Value;
-            parameters[1].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text;
-            parameters[2].Value = Event.DotNetTypeName != null ? (object)Event.DotNetTypeName : System.DBNull.Value;
-            parameters[2].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text;
-            parameters[3].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Uuid;
-            parameters[3].Value = Event.Id;
-            parameters[4].Value = Stream.Id;
-            parameters[4].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Uuid;
-            parameters[5].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Bigint;
-            parameters[5].Value = Event.Version;
-            parameters[6].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.TimestampTz;
-            parameters[6].Value = Event.Timestamp;
-            parameters[7].Value = Stream.TenantId != null ? (object)Stream.TenantId : System.DBNull.Value;
-            parameters[7].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text;
+            builder.Append("insert into order_state.mt_events (data, type, mt_dotnet_type, id, stream_id, version, timestamp, tenant_id, seq_id) values (");
+            var parameterBuilder = builder.CreateGroupedParameterBuilder(',');
+            var parameter0 = parameterBuilder.AppendParameter(session.Serializer.ToJson(Event.Data));
+            parameter0.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Jsonb;
+            var parameter1 = Event.EventTypeName != null ? parameterBuilder.AppendParameter(Event.EventTypeName) : parameterBuilder.AppendParameter<object>(System.DBNull.Value);
+            parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text;
+            var parameter2 = Event.DotNetTypeName != null ? parameterBuilder.AppendParameter(Event.DotNetTypeName) : parameterBuilder.AppendParameter<object>(System.DBNull.Value);
+            parameter2.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text;
+            var parameter3 = parameterBuilder.AppendParameter(Event.Id);
+            parameter3.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Uuid;
+            var parameter4 = parameterBuilder.AppendParameter(Stream.Id);
+            parameter4.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Uuid;
+            var parameter5 = parameterBuilder.AppendParameter(Event.Version);
+            parameter5.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Bigint;
+            var parameter6 = parameterBuilder.AppendParameter(Event.Timestamp);
+            parameter6.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.TimestampTz;
+            var parameter7 = Stream.TenantId != null ? parameterBuilder.AppendParameter(Stream.TenantId) : parameterBuilder.AppendParameter<object>(System.DBNull.Value);
+            parameter7.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text;
+            builder.Append(",nextval('order_state.mt_events_sequence')");
+            builder.Append(')');
         }
 
     }
@@ -223,14 +224,14 @@ namespace Marten.Generated.EventStore
         }
 
 
-        public const string SQL = "select order_state.mt_quick_append_events(?, ?, ?, ?, ?, ?, ?)";
-
 
         public override void ConfigureCommand(Weasel.Postgresql.ICommandBuilder builder, Marten.Internal.IMartenSession session)
         {
-            var parameters = builder.AppendWithParameters(SQL);
-            writeId(parameters);
-            writeBasicParameters(parameters, session);
+            builder.Append("select order_state.mt_quick_append_events(");
+            var parameterBuilder = builder.CreateGroupedParameterBuilder(',');
+            writeId(parameterBuilder);
+            writeBasicParameters(parameterBuilder, session);
+            builder.Append(')');
         }
 
     }
@@ -249,20 +250,20 @@ namespace Marten.Generated.EventStore
         }
 
 
-        public const string SQL = "insert into order_state.mt_streams (id, type, version, tenant_id) values (?, ?, ?, ?)";
-
 
         public override void ConfigureCommand(Weasel.Postgresql.ICommandBuilder builder, Marten.Internal.IMartenSession session)
         {
-            var parameters = builder.AppendWithParameters(SQL);
-            parameters[0].Value = Stream.Id;
-            parameters[0].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Uuid;
-            parameters[1].Value = Stream.AggregateTypeName != null ? (object)Stream.AggregateTypeName : System.DBNull.Value;
-            parameters[1].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text;
-            parameters[2].Value = Stream.Version;
-            parameters[2].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Bigint;
-            parameters[3].Value = Stream.TenantId != null ? (object)Stream.TenantId : System.DBNull.Value;
-            parameters[3].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text;
+            builder.Append("insert into order_state.mt_streams (id, type, version, tenant_id) values (");
+            var parameterBuilder = builder.CreateGroupedParameterBuilder(',');
+            var parameter0 = parameterBuilder.AppendParameter(Stream.Id);
+            parameter0.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Uuid;
+            var parameter1 = Stream.AggregateTypeName != null ? parameterBuilder.AppendParameter(Stream.AggregateTypeName) : parameterBuilder.AppendParameter<object>(System.DBNull.Value);
+            parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text;
+            var parameter2 = parameterBuilder.AppendParameter(Stream.Version);
+            parameter2.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Bigint;
+            var parameter3 = Stream.TenantId != null ? parameterBuilder.AppendParameter(Stream.TenantId) : parameterBuilder.AppendParameter<object>(System.DBNull.Value);
+            parameter3.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text;
+            builder.Append(')');
         }
 
     }
@@ -281,14 +282,12 @@ namespace Marten.Generated.EventStore
         }
 
 
-        public const string SQL = "select id, version, type, timestamp, created as timestamp, is_archived from order_state.mt_streams where id = ?";
-
 
         public override void ConfigureCommand(Weasel.Postgresql.ICommandBuilder builder, Marten.Internal.IMartenSession session)
         {
-            var npgsqlParameterArray = builder.AppendWithParameters(SQL);
-            npgsqlParameterArray[0].Value = _streamId;
-            npgsqlParameterArray[0].DbType = System.Data.DbType.Guid;
+            builder.Append("select id, version, type, timestamp, created as timestamp, is_archived from order_state.mt_streams where id = ");
+            var parameter1 = builder.AppendParameter(_streamId);
+            parameter1.DbType = System.Data.DbType.Guid;
         }
 
 
@@ -343,18 +342,21 @@ namespace Marten.Generated.EventStore
         }
 
 
-        public const string SQL = "update order_state.mt_streams set version = ? where id = ? and version = ?";
-
 
         public override void ConfigureCommand(Weasel.Postgresql.ICommandBuilder builder, Marten.Internal.IMartenSession session)
         {
-            var parameters = builder.AppendWithParameters(SQL);
-            parameters[0].Value = Stream.Version;
-            parameters[0].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Bigint;
-            parameters[1].Value = Stream.Id;
-            parameters[1].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Uuid;
-            parameters[2].Value = Stream.ExpectedVersionOnServer;
-            parameters[2].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Bigint;
+            builder.Append("update order_state.mt_streams ");
+            var parameterBuilder = builder.CreateGroupedParameterBuilder();
+            builder.Append("set version = ");
+            var parameter0 = parameterBuilder.AppendParameter(Stream.Version);
+            parameter0.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Bigint;
+            builder.Append(" where id = ");
+            var parameter1 = parameterBuilder.AppendParameter(Stream.Id);
+            parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Uuid;
+            builder.Append(" and version = ");
+            var parameter2 = parameterBuilder.AppendParameter(Stream.ExpectedVersionOnServer);
+            parameter2.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Bigint;
+            builder.Append(" returning version");
         }
 
     }

@@ -1,5 +1,4 @@
-﻿using Ardalis.GuardClauses;
-using BookWorm.Core.SeedWork;
+﻿using BookWorm.Core.SeedWork;
 using BookWorm.Ordering.Domain.BuyerAggregate;
 using BookWorm.Ordering.Domain.OrderAggregate.Events;
 

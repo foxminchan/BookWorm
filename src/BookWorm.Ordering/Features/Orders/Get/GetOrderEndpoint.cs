@@ -1,6 +1,4 @@
-﻿using BookWorm.Ordering.Domain.OrderAggregate;
-using BookWorm.Shared.Endpoints;
-using MediatR;
+﻿using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Ordering.Features.Orders.Get;

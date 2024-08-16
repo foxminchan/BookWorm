@@ -1,9 +1,6 @@
-﻿using Ardalis.GuardClauses;
-using Ardalis.Result;
+﻿using Ardalis.Result;
 using BookWorm.Core.SharedKernel;
-using BookWorm.Ordering.Domain.OrderAggregate;
 using BookWorm.Ordering.Domain.OrderAggregate.Specifications;
-using BookWorm.Shared.Identity;
 
 namespace BookWorm.Ordering.Features.Orders.List;
 

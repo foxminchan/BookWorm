@@ -1,7 +1,5 @@
 ﻿using BookWorm.Ordering.Constants;
-using BookWorm.Ordering.Domain.OrderAggregate;
 using BookWorm.Ordering.Filters;
-using BookWorm.Shared.Endpoints;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;

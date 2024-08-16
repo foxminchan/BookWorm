@@ -1,9 +1,6 @@
-﻿using Ardalis.GuardClauses;
-using BookWorm.Ordering.Domain.BuyerAggregate;
-using BookWorm.Ordering.Domain.OrderAggregate;
+﻿using BookWorm.Ordering.Domain.BuyerAggregate;
 using BookWorm.Ordering.Infrastructure.Mediator;
 using BookWorm.Shared.Constants;
-using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 

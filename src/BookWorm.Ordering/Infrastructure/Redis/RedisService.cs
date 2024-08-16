@@ -1,6 +1,5 @@
 ﻿using System.Text;
 using System.Text.Json;
-using Ardalis.GuardClauses;
 using StackExchange.Redis;
 
 namespace BookWorm.Ordering.Infrastructure.Redis;

@@ -1,6 +1,4 @@
 ﻿using BookWorm.Ordering.Constants;
-using BookWorm.Ordering.Infrastructure.Redis;
-using FluentValidation;
 using FluentValidation.Results;
 
 namespace BookWorm.Ordering.Filters;
