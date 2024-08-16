@@ -1,0 +1,13 @@
+global using BookWorm.Basket.Grpc;
+global using BookWorm.Basket.Infrastructure.Redis;
+global using BookWorm.ServiceDefaults;
+global using BookWorm.Shared.ActivityScope;
+global using BookWorm.Shared.Bus;
+global using BookWorm.Shared.Endpoints;
+global using BookWorm.Shared.Exceptions;
+global using BookWorm.Shared.Identity;
+global using BookWorm.Shared.Metrics;
+global using BookWorm.Shared.Pipelines;
+global using BookWorm.Shared.Versioning;
+global using FluentValidation;
+global using MassTransit;

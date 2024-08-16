@@ -1,8 +1,6 @@
 ﻿using Ardalis.GuardClauses;
 using Ardalis.Result;
-using BookWorm.Basket.Infrastructure.Redis;
 using BookWorm.Core.SharedKernel;
-using BookWorm.Shared.Identity;
 
 namespace BookWorm.Basket.Features.ReduceItemQuantity;
 

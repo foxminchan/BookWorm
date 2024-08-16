@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using BookWorm.Basket.Infrastructure.Redis;
 using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
 
