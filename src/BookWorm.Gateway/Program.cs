@@ -57,10 +57,13 @@ builder.Services.AddAuthentication(options =>
         options.TokenValidationParameters.ValidateAudience = false;
     });
 
+builder.AddRateLimiting();
 
 var app = builder.Build();
 
 app.MapDefaultEndpoints();
+
+app.UseRateLimiter();
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
