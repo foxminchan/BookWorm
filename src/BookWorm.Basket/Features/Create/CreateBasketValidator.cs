@@ -1,7 +1,4 @@
-﻿using BookWorm.Basket.Grpc;
-using FluentValidation;
-
-namespace BookWorm.Basket.Features.Create;
+﻿namespace BookWorm.Basket.Features.Create;
 
 public sealed class CreateBasketValidator : AbstractValidator<CreateBasketCommand>
 {

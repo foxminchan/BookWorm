@@ -1,6 +1,4 @@
-﻿using BookWorm.Basket.Infrastructure.Redis;
-using BookWorm.Basket.IntegrationEvents.Events;
-using MassTransit;
+﻿using BookWorm.Basket.IntegrationEvents.Events;
 
 namespace BookWorm.Basket.IntegrationEvents.EventHandlers;
 
