@@ -86,6 +86,7 @@
     <PackageVersion Include="FluentAssertions" Version="7.0.0-alpha.4" />
     <PackageVersion Include="ReportGenerator" Version="5.3.8" />
     <PackageVersion Include="JUnitTestLogger" Version="1.1.0" />
+    <PackageVersion Include="WireMock.Net.Aspire" Version="0.0.1-preview-05" />
     <!-- Grpc -->
     <PackageVersion Include="Grpc.AspNetCore" Version="$(GrpcVersion)" />
     <PackageVersion Include="Grpc.AspNetCore.Server.ClientFactory" Version="$(GrpcVersion)" />
@@ -97,7 +98,7 @@
     <!-- Miscellaneous -->
     <PackageVersion Include="Scrutor" Version="4.2.2" />
     <PackageVersion Include="MediatR" Version="12.4.0" />
-    <PackageVersion Include="Marten.AspNetCore" Version="7.24.0" />
+    <PackageVersion Include="Marten.AspNetCore" Version="7.26.2" />
     <PackageVersion Include="FluentEmail.Mailtrap" Version="2.7.0" />
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.7.0" />
     <PackageVersion Include="FluentValidation.AspNetCore" Version="11.3.0" />

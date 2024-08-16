@@ -1,5 +1,4 @@
-﻿using BookWorm.Ordering.Domain.OrderAggregate;
-using BookWorm.Shared.Constants;
+﻿using BookWorm.Shared.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

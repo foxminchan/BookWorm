@@ -1,6 +1,4 @@
-﻿using BookWorm.Ordering.Domain.OrderAggregate;
-using BookWorm.Ordering.Domain.OrderAggregate.Events;
-using Marten;
+﻿using BookWorm.Ordering.Domain.OrderAggregate.Events;
 using MediatR;
 
 namespace BookWorm.Ordering.Features.Orders.EventHandlers;

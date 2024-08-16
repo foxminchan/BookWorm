@@ -1,8 +1,5 @@
-﻿using Ardalis.GuardClauses;
-using BookWorm.Core.SharedKernel;
-using BookWorm.Ordering.Domain.OrderAggregate;
+﻿using BookWorm.Core.SharedKernel;
 using BookWorm.Ordering.IntegrationEvents.Events;
-using MassTransit;
 
 namespace BookWorm.Ordering.IntegrationEvents.EventHandlers;
 
