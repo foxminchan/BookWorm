@@ -29,7 +29,7 @@ public sealed class Book : EntityBase, IAggregateRoot, ISoftDelete
         Description = Guard.Against.NullOrEmpty(description);
         ImageUrl = imageUrl;
         Price = new(price, priceSale);
-        Status = status;
+        Status = Guard.Against.EnumOutOfRange(status);
         CategoryId = categoryId;
         PublisherId = publisherId;
         _bookAuthors = [..authorIds.Select(authorId => new BookAuthor(authorId))];
@@ -74,7 +74,7 @@ public sealed class Book : EntityBase, IAggregateRoot, ISoftDelete
         Name = Guard.Against.NullOrEmpty(name);
         Description = Guard.Against.NullOrEmpty(description);
         Price = new(price, priceSale);
-        Status = status;
+        Status = Guard.Against.EnumOutOfRange(status);
         CategoryId = categoryId;
         PublisherId = publisherId;
         _bookAuthors.Clear();

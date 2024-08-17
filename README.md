@@ -26,7 +26,7 @@
 - [x] AuthN/AuthZ with `Duende IdentityServer`
 - [x] Observability with `.NET Aspire`
 - [x] Add `MailDev` for local email testing
-- [ ] CI/CD with `Azure DevOps`
+- [ ] CI/CD with `GitHub Actions`
 - [ ] Testing
   - [ ] Service unit tests
   - [ ] Integration tests with `Aspire Testing` & `WireMock`
