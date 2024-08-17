@@ -78,12 +78,12 @@
     <!-- Testing -->
     <PackageVersion Include="xunit" Version="2.9.0" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageVersion Include="Xunit.Combinatorial" Version="1.6.24" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
     <PackageVersion Include="Moq" Version="4.20.70" />
     <PackageVersion Include="FluentAssertions" Version="7.0.0-alpha.4" />
     <PackageVersion Include="ReportGenerator" Version="5.3.8" />
-    <PackageVersion Include="JUnitTestLogger" Version="1.1.0" />
     <PackageVersion Include="WireMock.Net.Aspire" Version="0.0.1-preview-05" />
     <!-- Grpc -->
     <PackageVersion Include="Grpc.AspNetCore" Version="$(GrpcVersion)" />
