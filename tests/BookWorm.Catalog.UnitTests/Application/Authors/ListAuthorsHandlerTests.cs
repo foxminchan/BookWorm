@@ -5,12 +5,12 @@ using BookWorm.Core.SharedKernel;
 
 namespace BookWorm.Catalog.UnitTests.Application.Authors;
 
-public sealed class ListAuthorHandlerTests
+public sealed class ListAuthorsHandlerTests
 {
     private readonly Mock<IReadRepository<Author>> _authorRepositoryMock = new();
     private readonly ListAuthorsHandler _handler;
 
-    public ListAuthorHandlerTests()
+    public ListAuthorsHandlerTests()
     {
         _handler = new(_authorRepositoryMock.Object);
     }
