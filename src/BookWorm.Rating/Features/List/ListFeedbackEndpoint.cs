@@ -1,6 +1,4 @@
 ﻿using Ardalis.Result;
-using BookWorm.Rating.Domain;
-using BookWorm.Shared.Endpoints;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 

@@ -10,10 +10,10 @@ namespace BookWorm.Catalog.UnitTests.Application.Books;
 
 public sealed class CreateBookHandlerTests
 {
-    private readonly Mock<IRepository<Book>> _repositoryMock;
-    private readonly Mock<IAzuriteService> _azuriteMock;
     private readonly Mock<IAiService> _aiServiceMock;
+    private readonly Mock<IAzuriteService> _azuriteMock;
     private readonly CreateBookHandler _handler;
+    private readonly Mock<IRepository<Book>> _repositoryMock;
 
     public CreateBookHandlerTests()
     {
@@ -147,7 +147,8 @@ public sealed class CreateBookHandlerTests
         _repositoryMock.Verify(r => r.AddAsync(It.IsAny<Book>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    [Theory, CombinatorialData]
+    [Theory]
+    [CombinatorialData]
     public void GivenInvalidCreateBookCommand_ShouldThrowArgumentException_WhenParameterIsInvalid(
         [CombinatorialValues(null, "", " ")] string name,
         [CombinatorialValues(null, "", " ")] string? description,
@@ -173,6 +174,5 @@ public sealed class CreateBookHandlerTests
 
         // Assert
         act.Should().ThrowAsync<ArgumentException>();
-        
     }
 }

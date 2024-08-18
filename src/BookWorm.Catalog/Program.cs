@@ -1,19 +1,4 @@
-﻿using BookWorm.Catalog.Grpc;
-using BookWorm.Catalog.Infrastructure.Ai;
-using BookWorm.Catalog.Infrastructure.Blob;
-using BookWorm.Catalog.Infrastructure.Data;
-using BookWorm.ServiceDefaults;
-using BookWorm.Shared.ActivityScope;
-using BookWorm.Shared.Bus;
-using BookWorm.Shared.Converters;
-using BookWorm.Shared.Endpoints;
-using BookWorm.Shared.Exceptions;
-using BookWorm.Shared.Metrics;
-using BookWorm.Shared.Pipelines;
-using BookWorm.Shared.Versioning;
-using FluentValidation;
-using MassTransit;
-using Microsoft.AspNetCore.Http.Json;
+﻿using GrpcBookServer = BookWorm.Catalog.Grpc.BookService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -72,6 +57,6 @@ app.MapEndpoints();
 
 app.MapDefaultEndpoints();
 
-app.MapGrpcService<BookService>();
+app.MapGrpcService<GrpcBookServer>();
 
 app.Run();

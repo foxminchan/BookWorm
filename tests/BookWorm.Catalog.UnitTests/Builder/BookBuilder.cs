@@ -10,11 +10,11 @@ public static class BookBuilder
     {
         _books =
         [
-            new("Refactoring", 
+            new("Refactoring",
                 "Improving the Design of Existing Code",
                 "http://example.com/image.jpg",
-                96m, 10m, 
-                Status.InStock, 
+                96m, 10m,
+                Status.InStock,
                 Guid.NewGuid(),
                 Guid.NewGuid(),
                 [Guid.NewGuid()]),

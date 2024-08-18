@@ -1,9 +1,6 @@
 ﻿using Ardalis.GuardClauses;
-using BookWorm.Rating.Domain;
 using BookWorm.Rating.IntegrationEvents.Events;
-using MassTransit;
 using MongoDB.Bson;
-using MongoDB.Driver;
 
 namespace BookWorm.Rating.IntegrationEvents.EventHandlers;
 

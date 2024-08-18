@@ -1,10 +1,7 @@
 ﻿using Ardalis.Result;
 using BookWorm.Core.SharedKernel;
-using BookWorm.Rating.Domain;
 using BookWorm.Rating.IntegrationEvents.Events;
-using MassTransit;
 using MongoDB.Bson;
-using MongoDB.Driver;
 
 namespace BookWorm.Rating.Features.Create;
 
