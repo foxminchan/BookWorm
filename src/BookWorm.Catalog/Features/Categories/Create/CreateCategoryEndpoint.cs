@@ -1,5 +1,4 @@
 ﻿using BookWorm.Catalog.Domain;
-using BookWorm.Shared.Endpoints;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -11,7 +10,7 @@ public sealed class CreateCategoryEndpoint : IEndpoint<Created<Guid>, CreateCate
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("/api/categories",
+        app.MapPost("/categories",
                 async (CreateCategoryRequest request, ISender sender) => await HandleAsync(request, sender))
             .Produces<Created<Guid>>(StatusCodes.Status201Created)
             .ProducesValidationProblem()

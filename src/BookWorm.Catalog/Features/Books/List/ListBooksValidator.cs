@@ -1,6 +1,4 @@
-﻿using FluentValidation;
-
-namespace BookWorm.Catalog.Features.Books.List;
+﻿namespace BookWorm.Catalog.Features.Books.List;
 
 public sealed class ListBooksValidator : AbstractValidator<ListBooksQuery>
 {

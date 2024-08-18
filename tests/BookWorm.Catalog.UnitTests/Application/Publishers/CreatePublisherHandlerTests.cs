@@ -6,8 +6,8 @@ namespace BookWorm.Catalog.UnitTests.Application.Publishers;
 
 public sealed class CreatePublisherHandlerTests
 {
-    private readonly Mock<IRepository<Publisher>> _repositoryMock;
     private readonly CreatePublisherHandler _handler;
+    private readonly Mock<IRepository<Publisher>> _repositoryMock;
 
     public CreatePublisherHandlerTests()
     {
@@ -36,7 +36,8 @@ public sealed class CreatePublisherHandlerTests
             r => r.AddAsync(It.Is<Publisher>(p => p.Name == command.Name), It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Theory, CombinatorialData]
+    [Theory]
+    [CombinatorialData]
     public void GivenNullOrEmptyPublisherName_ShouldThrowException([CombinatorialValues("", null)] string? name)
     {
         // Arrange

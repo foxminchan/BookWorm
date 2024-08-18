@@ -1,7 +1,6 @@
 ﻿using BookWorm.Catalog.Domain;
 using BookWorm.Catalog.Domain.BookAggregate.Specifications;
 using BookWorm.Core.SharedKernel;
-using FluentValidation;
 
 namespace BookWorm.Catalog.Features.Authors.Delete;
 

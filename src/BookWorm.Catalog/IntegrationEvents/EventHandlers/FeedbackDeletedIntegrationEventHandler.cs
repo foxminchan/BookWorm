@@ -1,7 +1,6 @@
 ﻿using BookWorm.Catalog.Domain.BookAggregate;
 using BookWorm.Catalog.IntegrationEvents.Events;
 using BookWorm.Core.SharedKernel;
-using MassTransit;
 
 namespace BookWorm.Catalog.IntegrationEvents.EventHandlers;
 

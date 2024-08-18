@@ -1,5 +1,4 @@
 ﻿using BookWorm.Catalog.Domain.BookAggregate;
-using BookWorm.Shared.Endpoints;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 

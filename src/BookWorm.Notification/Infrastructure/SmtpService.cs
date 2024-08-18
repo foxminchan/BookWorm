@@ -1,6 +1,4 @@
-﻿using BookWorm.Notification.Models;
-using FluentEmail.Core;
-using Polly.Registry;
+﻿using Polly.Registry;
 
 namespace BookWorm.Notification.Infrastructure;
 

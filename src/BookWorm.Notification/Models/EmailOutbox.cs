@@ -1,8 +1,10 @@
-﻿namespace BookWorm.Notification.Models;
+﻿using Marten.Schema;
+
+namespace BookWorm.Notification.Models;
 
 public sealed class EmailOutbox
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+    [Identity] public Guid Id { get; set; } = Guid.NewGuid();
     public string? Body { get; set; }
     public string? Subject { get; set; }
     public string? To { get; set; }

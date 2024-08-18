@@ -1,13 +1,4 @@
-﻿using Ardalis.GuardClauses;
-using BookWorm.Notification.Infrastructure;
-using BookWorm.ServiceDefaults;
-using BookWorm.Shared.Bus;
-using BookWorm.Shared.Exceptions;
-using FluentEmail.Core;
-using Marten;
-using Polly;
-
-var builder = WebApplication.CreateBuilder(args);
+﻿var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
@@ -34,11 +25,24 @@ builder.Services.AddResiliencePipeline(nameof(Email), resiliencePipelineBuilder 
     })
     .AddTimeout(TimeSpan.FromSeconds(10)));
 
-var dbConn = builder.Configuration.GetConnectionString("notificationdb");
+builder.Services.AddOpenTelemetry()
+    .WithMetrics(t => t.AddMeter("Smtp"))
+    .WithTracing(t => t.AddSource("Smtp"));
 
-Guard.Against.NullOrEmpty(dbConn);
+builder.Services.AddMarten(_ =>
+{
+    var options = new StoreOptions();
 
-builder.Services.AddMarten(dbConn).UseLightweightSessions();
+    var dbConn = builder.Configuration.GetConnectionString("notificationdb");
+    Guard.Against.NullOrEmpty(dbConn);
+    options.Connection(dbConn);
+
+    options.GeneratedCodeMode = TypeLoadMode.Auto;
+    options.AutoCreateSchemaObjects = AutoCreate.All;
+
+    options.Schema.For<EmailOutbox>().Identity(e => e.Id);
+    options.RegisterDocumentType<EmailOutbox>();
+}).UseLightweightSessions();
 
 builder.Services.AddScoped<ISmtpService, SmtpService>();
 

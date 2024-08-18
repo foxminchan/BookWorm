@@ -1,6 +1,4 @@
-﻿using BookWorm.Notification.Infrastructure;
-using BookWorm.Notification.IntegrationEvents.Events;
-using BookWorm.Notification.Models;
+﻿using BookWorm.Notification.IntegrationEvents.Events;
 using MassTransit;
 
 namespace BookWorm.Notification.IntegrationEvents.EventHandlers;

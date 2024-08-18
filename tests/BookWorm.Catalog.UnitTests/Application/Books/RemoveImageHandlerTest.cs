@@ -9,9 +9,9 @@ namespace BookWorm.Catalog.UnitTests.Application.Books;
 
 public sealed class RemoveBookImageHandlerTests
 {
-    private readonly Mock<IRepository<Book>> _repositoryMock;
     private readonly Mock<IAzuriteService> _azuriteMock;
     private readonly RemoveBookImageHandler _handler;
+    private readonly Mock<IRepository<Book>> _repositoryMock;
 
     public RemoveBookImageHandlerTests()
     {

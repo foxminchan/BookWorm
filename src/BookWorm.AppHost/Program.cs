@@ -1,11 +1,4 @@
-﻿using Aspirant.Hosting;
-using BookWorm.AppHost;
-using BookWorm.HealthCheck.Hosting;
-using BookWorm.MailDev.Hosting;
-using Microsoft.Extensions.Hosting;
-using Projects;
-
-var builder = DistributedApplication.CreateBuilder(args);
+﻿var builder = DistributedApplication.CreateBuilder(args);
 
 builder.AddForwardedHeaders();
 

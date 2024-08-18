@@ -52,7 +52,7 @@ public sealed class PublisherAggregatorTests
         string? newName = null;
 
         // Act
-        Action act = () => publisher.UpdateName(newName!);
+        var act = () => publisher.UpdateName(newName!);
 
         // Assert
         act.Should().Throw<ArgumentNullException>();

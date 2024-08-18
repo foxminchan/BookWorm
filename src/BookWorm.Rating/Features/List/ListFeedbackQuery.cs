@@ -1,7 +1,5 @@
 ﻿using Ardalis.Result;
 using BookWorm.Core.SharedKernel;
-using BookWorm.Rating.Domain;
-using MongoDB.Driver;
 
 namespace BookWorm.Rating.Features.List;
 
