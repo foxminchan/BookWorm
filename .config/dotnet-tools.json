@@ -4,9 +4,12 @@
   "tools": {
     "aspirate": {
       "version": "8.0.7",
-      "commands": [
-        "aspirate"
-      ],
+      "commands": ["aspirate"],
+      "rollForward": false
+    },
+    "dotnet-reportgenerator-globaltool": {
+      "version": "5.3.8",
+      "commands": ["reportgenerator"],
       "rollForward": false
     }
   }

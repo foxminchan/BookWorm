@@ -53,7 +53,7 @@ public sealed class AuthorAggregatorTests
         string? newName = null;
 
         // Act
-        Action act = () => author.UpdateName(newName!);
+        var act = () => author.UpdateName(newName!);
 
         // Assert
         act.Should().Throw<ArgumentNullException>();

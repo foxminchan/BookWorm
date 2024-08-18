@@ -1,5 +1,4 @@
 ﻿using BookWorm.Shared.Constants;
-using FluentValidation;
 
 namespace BookWorm.Rating.Features.Create;
 

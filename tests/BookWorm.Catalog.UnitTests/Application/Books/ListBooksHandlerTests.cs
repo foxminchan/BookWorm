@@ -10,9 +10,9 @@ namespace BookWorm.Catalog.UnitTests.Application.Books;
 
 public sealed class ListBooksHandlerTests
 {
-    private readonly Mock<IReadRepository<Book>> _repositoryMock;
     private readonly Mock<IAiService> _aiServiceMock;
     private readonly ListBooksHandler _handler;
+    private readonly Mock<IReadRepository<Book>> _repositoryMock;
 
     public ListBooksHandlerTests()
     {
@@ -112,7 +112,8 @@ public sealed class ListBooksHandlerTests
             Times.Once);
     }
 
-    [Theory, CombinatorialData]
+    [Theory]
+    [CombinatorialData]
     public void GivenInvalidQuery_WhenHandlingQuery_ThenShouldThrowException(
         [CombinatorialValues(-1, 0)] int pageIndex,
         [CombinatorialValues(-1, 0)] int pageSize,

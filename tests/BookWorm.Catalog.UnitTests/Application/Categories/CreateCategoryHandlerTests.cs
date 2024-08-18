@@ -6,8 +6,8 @@ namespace BookWorm.Catalog.UnitTests.Application.Categories;
 
 public sealed class CreateCategoryHandlerTests
 {
-    private readonly Mock<IRepository<Category>> _repositoryMock;
     private readonly CreateCategoryHandler _handler;
+    private readonly Mock<IRepository<Category>> _repositoryMock;
 
     public CreateCategoryHandlerTests()
     {
@@ -36,7 +36,8 @@ public sealed class CreateCategoryHandlerTests
             r => r.AddAsync(It.Is<Category>(c => c.Name == command.Name), It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Theory, CombinatorialData]
+    [Theory]
+    [CombinatorialData]
     public void GivenNullOrEmptyCategoryName_ShouldThrowException([CombinatorialValues("", null)] string? name)
     {
         // Arrange

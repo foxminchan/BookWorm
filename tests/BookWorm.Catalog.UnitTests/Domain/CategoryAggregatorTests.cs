@@ -52,7 +52,7 @@ public sealed class CategoryAggregatorTests
         string? newName = null;
 
         // Act
-        Action act = () => category.UpdateName(newName!);
+        var act = () => category.UpdateName(newName!);
 
         // Assert
         act.Should().Throw<ArgumentNullException>();

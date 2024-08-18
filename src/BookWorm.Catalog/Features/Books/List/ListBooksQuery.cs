@@ -1,7 +1,6 @@
 ﻿using Ardalis.Result;
 using BookWorm.Catalog.Domain.BookAggregate;
 using BookWorm.Catalog.Domain.BookAggregate.Specifications;
-using BookWorm.Catalog.Infrastructure.Ai;
 using BookWorm.Core.SharedKernel;
 using Pgvector;
 

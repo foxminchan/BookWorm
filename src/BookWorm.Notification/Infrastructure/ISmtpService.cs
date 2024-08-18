@@ -1,6 +1,4 @@
-﻿using BookWorm.Notification.Models;
-
-namespace BookWorm.Notification.Infrastructure;
+﻿namespace BookWorm.Notification.Infrastructure;
 
 public interface ISmtpService
 {

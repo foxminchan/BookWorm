@@ -8,8 +8,8 @@ namespace BookWorm.Catalog.UnitTests.Application.Authors;
 
 public sealed class DeleteAuthorHandlerTests
 {
-    private readonly Mock<IRepository<Author>> _repositoryMock;
     private readonly DeleteAuthorHandler _handler;
+    private readonly Mock<IRepository<Author>> _repositoryMock;
 
     public DeleteAuthorHandlerTests()
     {

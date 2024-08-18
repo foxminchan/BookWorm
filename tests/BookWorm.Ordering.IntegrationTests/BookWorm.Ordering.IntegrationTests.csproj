@@ -1,13 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPublishable>false</IsPublishable>
     <IsPackable>false</IsPackable>
-    <IsTestProject>true</IsTestProject>
+    <IsAspireHost>true</IsAspireHost>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Aspirant.Hosting.Testing" />
     <PackageReference Include="Aspirant.Hosting.Testing.xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
   </ItemGroup>
 
   <ItemGroup>

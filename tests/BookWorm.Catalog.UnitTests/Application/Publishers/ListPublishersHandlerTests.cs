@@ -8,8 +8,8 @@ namespace BookWorm.Catalog.UnitTests.Application.Publishers;
 
 public sealed class ListPublishersHandlerTests
 {
-    private readonly Mock<IReadRepository<Publisher>> _publisherRepositoryMock;
     private readonly ListPublishersHandler _handler;
+    private readonly Mock<IReadRepository<Publisher>> _publisherRepositoryMock;
 
     public ListPublishersHandlerTests()
     {

@@ -10,9 +10,9 @@ namespace BookWorm.Catalog.UnitTests.Application.Books;
 
 public sealed class UpdateBookHandlerTests
 {
-    private readonly Mock<IRepository<Book>> _repositoryMock;
     private readonly Mock<IAiService> _aiServiceMock;
     private readonly UpdateBookHandler _handler;
+    private readonly Mock<IRepository<Book>> _repositoryMock;
 
     public UpdateBookHandlerTests()
     {
@@ -80,7 +80,8 @@ public sealed class UpdateBookHandlerTests
         _repositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Book>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    [Theory, CombinatorialData]
+    [Theory]
+    [CombinatorialData]
     public async Task GivenInvalidUpdateBookCommand_ShouldThrowValidationException(
         [CombinatorialValues(null, "", " ")] string name,
         [CombinatorialValues(null, "", " ")] string? description,
@@ -100,7 +101,7 @@ public sealed class UpdateBookHandlerTests
             Guid.NewGuid(), [Guid.NewGuid()]);
 
         // Act
-        Func <Task> act = async () => await _handler.Handle(command, CancellationToken.None);
+        Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>();

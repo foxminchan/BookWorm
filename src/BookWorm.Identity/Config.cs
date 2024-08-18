@@ -19,7 +19,7 @@ public static class Config
     {
         return
         [
-            new("Ordering", "Ordering Service"),
+            new("ordering", "Ordering Service"),
             new("basket", "Basket Service"),
             new("catalog", "Catalog Service"),
             new("rating", "Rating Service")

@@ -1,7 +1,6 @@
 ﻿using Ardalis.GuardClauses;
 using BookWorm.Catalog.Domain.BookAggregate;
 using BookWorm.Core.SharedKernel;
-using FluentValidation;
 
 namespace BookWorm.Catalog.Features.Books.RemoveImage;
 

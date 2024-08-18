@@ -1,20 +1,4 @@
-﻿using BookWorm.Rating.Domain;
-using BookWorm.ServiceDefaults;
-using BookWorm.Shared.ActivityScope;
-using BookWorm.Shared.Bus;
-using BookWorm.Shared.Converters;
-using BookWorm.Shared.Endpoints;
-using BookWorm.Shared.Exceptions;
-using BookWorm.Shared.Identity;
-using BookWorm.Shared.Metrics;
-using BookWorm.Shared.Pipelines;
-using BookWorm.Shared.Versioning;
-using FluentValidation;
-using MassTransit;
-using Microsoft.AspNetCore.Http.Json;
-using MongoDB.Driver;
-
-var builder = WebApplication.CreateBuilder(args);
+﻿var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
