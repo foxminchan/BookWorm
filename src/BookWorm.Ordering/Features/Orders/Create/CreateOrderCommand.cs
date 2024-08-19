@@ -8,7 +8,7 @@ public sealed record CreateOrderCommand(string? Note) : ICommand<Result<Guid>>;
 
 public sealed class CreateOrderHandler(
     IRepository<Order> repository,
-    BasketService basketService,
+    IBasketService basketService,
     IIdentityService identityService,
     IPublishEndpoint publishEndpoint) : ICommandHandler<CreateOrderCommand, Result<Guid>>
 {
@@ -18,7 +18,7 @@ public sealed class CreateOrderHandler(
 
         Guard.Against.NullOrEmpty(buyerId);
 
-        var basket = await basketService.GetBasket(Guid.Parse(buyerId));
+        var basket = await basketService.GetBasketAsync(Guid.Parse(buyerId), cancellationToken);
 
         Guard.Against.Null(basket);
 

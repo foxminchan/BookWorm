@@ -4,11 +4,12 @@ using GrpcBasketClient = BookWorm.Basket.Grpc.Basket.BasketClient;
 
 namespace BookWorm.Ordering.Grpc;
 
-public sealed class BasketService(GrpcBasketClient basketClient)
+public sealed class BasketService(GrpcBasketClient basketClient) : IBasketService
 {
-    public async Task<Basket> GetBasket(Guid basketId)
+    public async Task<Basket> GetBasketAsync(Guid basketId, CancellationToken cancellationToken = default)
     {
-        var response = await basketClient.GetBasketAsync(new() { BasketId = basketId.ToString() });
+        var response = await basketClient.GetBasketAsync(new() { BasketId = basketId.ToString() },
+            cancellationToken: cancellationToken);
 
         return MapBasket(response);
     }

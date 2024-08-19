@@ -4,25 +4,28 @@ using GrpcBookClient = BookWorm.Catalog.Grpc.Book.BookClient;
 
 namespace BookWorm.Basket.Grpc;
 
-public sealed class BookService(GrpcBookClient bookClient)
+public sealed class BookService(GrpcBookClient bookClient) : IBookService
 {
-    public async Task<BookStatus> GetBookStatus(Guid bookId)
+    public async Task<BookStatus> GetBookStatusAsync(Guid bookId, CancellationToken cancellationToken = default)
     {
-        var response = await bookClient.GetBookStatusAsync(new() { BookId = bookId.ToString() });
+        var response = await bookClient.GetBookStatusAsync(new() { BookId = bookId.ToString() },
+            cancellationToken: cancellationToken);
 
         return MapBookStatus(response.BookStatus);
     }
 
-    public async Task<bool> IsBookExists(Guid bookId)
+    public async Task<bool> IsBookExistsAsync(Guid bookId, CancellationToken cancellationToken = default)
     {
-        var response = await bookClient.GetBookAsync(new() { BookId = bookId.ToString() });
+        var response = await bookClient.GetBookAsync(new() { BookId = bookId.ToString() },
+            cancellationToken: cancellationToken);
 
         return response.Book is not null;
     }
 
-    public async Task<BookItem> GetBook(Guid bookId)
+    public async Task<BookItem> GetBookAsync(Guid bookId, CancellationToken cancellationToken = default)
     {
-        var response = await bookClient.GetBookAsync(new() { BookId = bookId.ToString() });
+        var response = await bookClient.GetBookAsync(new() { BookId = bookId.ToString() },
+            cancellationToken: cancellationToken);
 
         return MapBookItem(response.Book);
     }
