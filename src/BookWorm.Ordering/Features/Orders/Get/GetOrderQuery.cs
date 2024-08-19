@@ -9,7 +9,7 @@ public sealed record GetOrderQuery(Guid OrderId) : ICommand<Result<OrderDetailDt
 public sealed class GetOrderHandler(
     IReadRepository<Order> repository,
     IIdentityService identityService,
-    BookService bookService) : ICommandHandler<GetOrderQuery, Result<OrderDetailDto>>
+    IBookService bookService) : ICommandHandler<GetOrderQuery, Result<OrderDetailDto>>
 {
     public async Task<Result<OrderDetailDto>> Handle(GetOrderQuery request, CancellationToken cancellationToken)
     {
@@ -34,7 +34,7 @@ public sealed class GetOrderHandler(
         List<OrderItemDto> orderItems = [];
         foreach (var item in order.OrderItems)
         {
-            var book = await bookService.GetBook(item.BookId);
+            var book = await bookService.GetBookAsync(item.BookId, cancellationToken);
             orderItems.Add(new(book.Id, book.Name, item.Quantity, item.Price));
         }
 

@@ -15,9 +15,9 @@ public sealed class CreateBasketValidator : AbstractValidator<CreateBasketComman
 
 public sealed class BookValidator : AbstractValidator<Guid>
 {
-    private readonly BookService _bookService;
+    private readonly IBookService _bookService;
 
-    public BookValidator(BookService bookService)
+    public BookValidator(IBookService bookService)
     {
         _bookService = bookService;
 
@@ -30,12 +30,12 @@ public sealed class BookValidator : AbstractValidator<Guid>
 
     private async Task<bool> Exist(Guid bookId, CancellationToken cancellationToken)
     {
-        return await _bookService.IsBookExists(bookId);
+        return await _bookService.IsBookExistsAsync(bookId, cancellationToken);
     }
 
     private async Task<bool> InStock(Guid bookId, CancellationToken cancellationToken)
     {
-        var bookStatus = await _bookService.GetBookStatus(bookId);
+        var bookStatus = await _bookService.GetBookStatusAsync(bookId, cancellationToken);
         return bookStatus.Status == nameof(InStock);
     }
 }

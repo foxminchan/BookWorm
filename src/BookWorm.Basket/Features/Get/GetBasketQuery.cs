@@ -9,7 +9,7 @@ public sealed record GetBasketQuery : IQuery<Result<BasketDto>>;
 public sealed class GetBasketHandler(
     IRedisService redisService,
     IIdentityService identityService,
-    BookService bookService) : IQueryHandler<GetBasketQuery, Result<BasketDto>>
+    IBookService bookService) : IQueryHandler<GetBasketQuery, Result<BasketDto>>
 {
     public async Task<Result<BasketDto>> Handle(GetBasketQuery query, CancellationToken cancellationToken)
     {
@@ -25,7 +25,7 @@ public sealed class GetBasketHandler(
 
         foreach (var item in basket.BasketItems)
         {
-            var book = await bookService.GetBook(item.Id);
+            var book = await bookService.GetBookAsync(item.Id, cancellationToken);
 
             basketDto.Items.Add(new(book.Id, book.Name, item.Quantity, book.Price, book.PriceSale));
         }
