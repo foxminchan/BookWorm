@@ -92,6 +92,11 @@ dotnet run --project src/BookWorm.AppHost/BookWorm.AppHost.csproj
 - Make your changes
 - Create a pull request
 
+## Project References
+
+- [eShop](https://github.com/dotnet/eShop)
+- [practical-dotnet-aspire](https://github.com/thangchung/practical-dotnet-aspire)
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

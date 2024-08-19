@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace BookWorm.Basket.Grpc;
 
-public sealed class BasketService(IRedisService redisService, BookService bookService) : Basket.BasketBase
+public sealed class BasketService(IRedisService redisService, IBookService bookService) : Basket.BasketBase
 {
     [AllowAnonymous]
     public override async Task<BasketResponse> GetBasket(BasketRequest request, ServerCallContext context)
@@ -31,7 +31,7 @@ public sealed class BasketService(IRedisService redisService, BookService bookSe
 
         foreach (var item in basket.BasketItems)
         {
-            var book = await bookService.GetBook(item.Id);
+            var book = await bookService.GetBookAsync(item.Id);
 
             response.Books.Add(new Book
             {
