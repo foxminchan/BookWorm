@@ -1,7 +1,5 @@
 ﻿using BookWorm.Catalog.Infrastructure.Data.CompiledModels;
-using BookWorm.Core.SharedKernel;
 using EntityFramework.Exceptions.PostgreSQL;
-using Microsoft.EntityFrameworkCore;
 
 namespace BookWorm.Catalog.Infrastructure.Data;
 
@@ -11,7 +9,7 @@ public static class Extension
     {
         builder.Services.AddMigration<CatalogContext>();
 
-        builder.AddNpgsqlDbContext<CatalogContext>("catalogdb", configureDbContextOptions:
+        builder.AddNpgsqlDbContext<CatalogContext>(ServiceName.Database.Catalog, configureDbContextOptions:
             dbContextOptionsBuilder =>
             {
                 dbContextOptionsBuilder

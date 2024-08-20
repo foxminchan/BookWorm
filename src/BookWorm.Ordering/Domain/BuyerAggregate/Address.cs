@@ -1,6 +1,4 @@
-﻿using BookWorm.Core.SeedWork;
-
-namespace BookWorm.Ordering.Domain.BuyerAggregate;
+﻿namespace BookWorm.Ordering.Domain.BuyerAggregate;
 
 public sealed class Address : ValueObject
 {

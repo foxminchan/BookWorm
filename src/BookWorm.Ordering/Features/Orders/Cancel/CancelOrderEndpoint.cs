@@ -1,10 +1,4 @@
-﻿using BookWorm.Ordering.Constants;
-using BookWorm.Ordering.Filters;
-using MediatR;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
-
-namespace BookWorm.Ordering.Features.Orders.Cancel;
+﻿namespace BookWorm.Ordering.Features.Orders.Cancel;
 
 public sealed class CancelOrderEndpoint : IEndpoint<Ok, Guid, ISender>
 {
@@ -12,8 +6,7 @@ public sealed class CancelOrderEndpoint : IEndpoint<Ok, Guid, ISender>
     {
         app.MapPatch("/orders/{orderId:guid}/cancel",
                 async (
-                    [FromHeader(Name = HeaderName.IdempotencyKey)]
-                    string key,
+                    [FromIdempotencyHeader] string key,
                     Guid orderId,
                     ISender sender) => await HandleAsync(orderId, sender))
             .AddEndpointFilter<IdempotencyFilter>()

@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-
-internal static class ActivityExtensions
+﻿internal static class ActivityExtensions
 {
     public static void SetExceptionTags(this Activity? activity, Exception ex)
     {

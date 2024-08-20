@@ -1,7 +1,4 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Http.HttpResults;
-
-namespace BookWorm.Basket.Features.RemoveItem;
+﻿namespace BookWorm.Basket.Features.RemoveItem;
 
 public sealed class RemoveItemEndpoint : IEndpoint<NoContent, Guid, ISender>
 {

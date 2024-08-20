@@ -1,8 +1,6 @@
-﻿using BookWorm.Shared.Constants;
+﻿namespace BookWorm.Ordering.Features.Orders.Create;
 
-namespace BookWorm.Ordering.Features.Orders.Create;
-
-public sealed class CreateOrderValidator : AbstractValidator<CreateOrderCommand>
+internal sealed class CreateOrderValidator : AbstractValidator<CreateOrderCommand>
 {
     public CreateOrderValidator()
     {

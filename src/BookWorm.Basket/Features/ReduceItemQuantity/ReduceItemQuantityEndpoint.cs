@@ -1,7 +1,4 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Http.HttpResults;
-
-namespace BookWorm.Basket.Features.ReduceItemQuantity;
+﻿namespace BookWorm.Basket.Features.ReduceItemQuantity;
 
 public sealed class ReduceItemQuantityEndpoint : IEndpoint<Ok, Guid, ISender>
 {

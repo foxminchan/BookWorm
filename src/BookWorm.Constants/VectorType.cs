@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Shared.Constants;
+﻿namespace BookWorm.Constants;
 
 public static class VectorType
 {

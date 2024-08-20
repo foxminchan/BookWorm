@@ -1,6 +1,4 @@
-﻿using Ardalis.Result;
-using BookWorm.Catalog.Domain.BookAggregate;
-using BookWorm.Core.SharedKernel;
+﻿using BookWorm.Catalog.Domain.BookAggregate;
 
 namespace BookWorm.Catalog.Features.Books.Create;
 

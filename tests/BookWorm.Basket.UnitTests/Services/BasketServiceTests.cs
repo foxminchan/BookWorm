@@ -1,21 +1,20 @@
-﻿using BookWorm.Basket.Grpc;
-using BookWorm.Basket.Infrastructure.Redis;
-using BookWorm.Basket.UnitTests.Helpers;
-using Grpc.Core;
+﻿using BookWorm.Basket.UnitTests.Helpers;
+using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Basket.UnitTests.Services;
 
 public sealed class BasketServiceTests
 {
-    private readonly Mock<IRedisService> _redisServiceMock;
-    private readonly Mock<IBookService> _bookServiceMock;
     private readonly BasketService _basketService;
+    private readonly Mock<IBookService> _bookServiceMock;
+    private readonly Mock<IRedisService> _redisServiceMock;
 
     public BasketServiceTests()
     {
         _redisServiceMock = new();
         _bookServiceMock = new();
-        _basketService = new(_redisServiceMock.Object, _bookServiceMock.Object);
+        Mock<ILogger<BasketService>> loggerMock = new();
+        _basketService = new(_redisServiceMock.Object, _bookServiceMock.Object, loggerMock.Object);
     }
 
     [Fact]

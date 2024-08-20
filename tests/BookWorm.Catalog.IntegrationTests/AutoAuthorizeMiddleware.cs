@@ -1,7 +1,4 @@
-﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Http;
-
-namespace BookWorm.Catalog.IntegrationTests;
+﻿namespace BookWorm.Catalog.IntegrationTests;
 
 public sealed class AutoAuthorizeMiddleware(RequestDelegate rd)
 {

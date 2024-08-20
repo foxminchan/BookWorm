@@ -1,7 +1,4 @@
-﻿using Ardalis.GuardClauses;
-using BookWorm.Core.SeedWork;
-
-namespace BookWorm.Catalog.Domain;
+﻿namespace BookWorm.Catalog.Domain;
 
 public sealed class Publisher : EntityBase, IAggregateRoot
 {

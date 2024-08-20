@@ -1,4 +1,5 @@
 ﻿using BookWorm.Basket.Domain;
+using BasketModel = BookWorm.Basket.Domain.Basket;
 
 namespace BookWorm.Basket.UnitTests.Domain;
 
@@ -12,7 +13,7 @@ public sealed class BasketTests
         var basketItems = new List<BasketItem>();
 
         // Act
-        var basket = new Basket.Domain.Basket(accountId, basketItems);
+        var basket = new BasketModel(accountId, basketItems);
 
         // Assert
         basket.AccountId.Should().Be(accountId);
@@ -23,7 +24,7 @@ public sealed class BasketTests
     public void GivenItem_ShouldContainItem_WhenAddedToBasket()
     {
         // Arrange
-        var basket = new Basket.Domain.Basket(Guid.NewGuid(), []);
+        var basket = new BasketModel(Guid.NewGuid(), []);
         var item = new BasketItem(Guid.NewGuid(), 1);
 
         // Act
@@ -38,7 +39,7 @@ public sealed class BasketTests
     {
         // Arrange
         var itemId = Guid.NewGuid();
-        var basket = new Basket.Domain.Basket(Guid.NewGuid(), [new(itemId, 1)]);
+        var basket = new BasketModel(Guid.NewGuid(), [new(itemId, 1)]);
         var item = new BasketItem(itemId, 2);
 
         // Act
@@ -53,7 +54,7 @@ public sealed class BasketTests
     {
         // Arrange
         var itemId = Guid.NewGuid();
-        var basket = new Basket.Domain.Basket(Guid.NewGuid(), [new(itemId, 1)]);
+        var basket = new BasketModel(Guid.NewGuid(), [new(itemId, 1)]);
 
         // Act
         basket.RemoveItem(itemId);
@@ -66,7 +67,7 @@ public sealed class BasketTests
     public void GivenNonExistingItem_ShouldDoNothing_WhenRemovedFromBasket()
     {
         // Arrange
-        var basket = new Basket.Domain.Basket(Guid.NewGuid(), [new(Guid.NewGuid(), 1)]);
+        var basket = new BasketModel(Guid.NewGuid(), [new(Guid.NewGuid(), 1)]);
         var nonExistingItemId = Guid.NewGuid();
 
         // Act
@@ -81,7 +82,7 @@ public sealed class BasketTests
     {
         // Arrange
         var itemId = Guid.NewGuid();
-        var basket = new Basket.Domain.Basket(Guid.NewGuid(), [new(itemId, 3)]);
+        var basket = new BasketModel(Guid.NewGuid(), [new(itemId, 3)]);
 
         // Act
         basket.ReduceItemQuantity(itemId, 2);
@@ -95,7 +96,7 @@ public sealed class BasketTests
     {
         // Arrange
         var itemId = Guid.NewGuid();
-        var basket = new Basket.Domain.Basket(Guid.NewGuid(), [new(itemId, 3)]);
+        var basket = new BasketModel(Guid.NewGuid(), [new(itemId, 3)]);
 
         // Act
         basket.ReduceItemQuantity(itemId, 3);
@@ -108,7 +109,7 @@ public sealed class BasketTests
     public void GivenNonExistingItem_ShouldDoNothing_WhenReducedQuantity()
     {
         // Arrange
-        var basket = new Basket.Domain.Basket(Guid.NewGuid(), [new(Guid.NewGuid(), 3)]);
+        var basket = new BasketModel(Guid.NewGuid(), [new(Guid.NewGuid(), 3)]);
         var nonExistingItemId = Guid.NewGuid();
 
         // Act

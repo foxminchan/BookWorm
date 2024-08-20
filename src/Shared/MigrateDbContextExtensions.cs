@@ -1,7 +1,4 @@
-﻿using System.Diagnostics;
-using Microsoft.EntityFrameworkCore;
-
-internal static class MigrateDbContextExtensions
+﻿internal static class MigrateDbContextExtensions
 {
     private const string ActivitySourceName = "DbMigrations";
     private static readonly ActivitySource _activitySource = new(ActivitySourceName);

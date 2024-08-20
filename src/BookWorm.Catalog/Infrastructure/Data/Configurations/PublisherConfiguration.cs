@@ -1,10 +1,8 @@
 ﻿using BookWorm.Catalog.Domain;
-using BookWorm.Shared.Constants;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BookWorm.Catalog.Infrastructure.Data.Configurations;
 
-public sealed class PublisherConfiguration : BaseConfiguration<Publisher>
+internal sealed class PublisherConfiguration : BaseConfiguration<Publisher>
 {
     public override void Configure(EntityTypeBuilder<Publisher> builder)
     {

@@ -1,10 +1,5 @@
 ﻿using BookWorm.Catalog.Domain.BookAggregate;
 using BookWorm.Catalog.Features.Books.Create;
-using BookWorm.Catalog.Infrastructure.Ai;
-using BookWorm.Catalog.Infrastructure.Blob;
-using BookWorm.Core.SharedKernel;
-using Microsoft.AspNetCore.Http;
-using Pgvector;
 
 namespace BookWorm.Catalog.UnitTests.Application.Books;
 

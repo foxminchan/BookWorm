@@ -1,6 +1,4 @@
 ﻿using Ardalis.Specification.EntityFrameworkCore;
-using BookWorm.Core.SeedWork;
-using BookWorm.Core.SharedKernel;
 
 namespace BookWorm.Ordering.Infrastructure.Data;
 

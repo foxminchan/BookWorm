@@ -1,6 +1,4 @@
-﻿using BookWorm.Identity.Models;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace BookWorm.Identity.Data;
 

@@ -1,6 +1,4 @@
-﻿using Ardalis.GuardClauses;
-using BookWorm.Catalog.Domain.BookAggregate;
-using BookWorm.Core.SeedWork;
+﻿using BookWorm.Catalog.Domain.BookAggregate;
 
 namespace BookWorm.Catalog.Domain;
 

@@ -1,9 +1,10 @@
-﻿using GrpcBookClient = BookWorm.Catalog.Grpc.Book.BookClient;
+﻿using BookWorm.Ordering.OpenTelemetry;
+using GrpcBookClient = BookWorm.Catalog.Grpc.Book.BookClient;
 using GrpcBasketClient = BookWorm.Basket.Grpc.Basket.BasketClient;
 
 namespace BookWorm.Ordering.Extensions;
 
-public static class Extensions
+internal static class Extensions
 {
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
     {
@@ -19,15 +20,15 @@ public static class Extensions
         builder.AddDefaultAuthentication();
         builder.Services.AddMediatR(cfg =>
         {
-            cfg.RegisterServicesFromAssemblyContaining<Program>();
+            cfg.RegisterServicesFromAssemblyContaining<global::Program>();
             cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
             cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
             cfg.AddOpenBehavior(typeof(MetricsBehavior<,>));
         });
 
-        builder.Services.AddValidatorsFromAssemblyContaining<Program>(includeInternalTypes: true);
+        builder.Services.AddValidatorsFromAssemblyContaining<global::Program>(includeInternalTypes: true);
 
-        builder.AddRabbitMqEventBus(typeof(Program), cfg =>
+        builder.AddRabbitMqEventBus(typeof(global::Program), cfg =>
             cfg.AddEntityFrameworkOutbox<OrderingContext>(o =>
             {
                 o.QueryDelay = TimeSpan.FromSeconds(1);
@@ -45,7 +46,7 @@ public static class Extensions
                 options.Events.DatabaseSchemaName = schemaName;
                 options.DatabaseSchemaName = schemaName;
 
-                var conn = builder.Configuration.GetConnectionString("orderingdb");
+                var conn = builder.Configuration.GetConnectionString(ServiceName.Database.Ordering);
 
                 Guard.Against.NullOrEmpty(conn);
 
@@ -66,6 +67,10 @@ public static class Extensions
             .UseLightweightSessions()
             .AddAsyncDaemon(DaemonMode.Solo);
 
+        builder.Services.AddOpenTelemetry()
+            .WithMetrics(t => t.AddMeter(MartenTelemetry.ActivityName))
+            .WithTracing(t => t.AddSource(MartenTelemetry.ActivityName));
+
         builder.Services.AddSingleton<IActivityScope, ActivityScope>();
         builder.Services.AddSingleton<CommandHandlerMetrics>();
         builder.Services.AddSingleton<QueryHandlerMetrics>();
@@ -73,7 +78,7 @@ public static class Extensions
         builder.AddRedisCache();
 
         builder.AddVersioning();
-        builder.AddEndpoints(typeof(Program));
+        builder.AddEndpoints(typeof(global::Program));
 
         builder.AddOpenApi();
 

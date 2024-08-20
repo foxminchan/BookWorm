@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Basket.Features.Create;
 
-public sealed class CreateBasketValidator : AbstractValidator<CreateBasketCommand>
+internal sealed class CreateBasketValidator : AbstractValidator<CreateBasketCommand>
 {
     public CreateBasketValidator(BookValidator bookValidator)
     {
@@ -13,7 +13,7 @@ public sealed class CreateBasketValidator : AbstractValidator<CreateBasketComman
     }
 }
 
-public sealed class BookValidator : AbstractValidator<Guid>
+internal sealed class BookValidator : AbstractValidator<Guid>
 {
     private readonly IBookService _bookService;
 

@@ -1,17 +1,21 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using BookWorm.Catalog.Domain.BookAggregate.Specifications;
-using BookWorm.Core.SharedKernel;
+﻿using BookWorm.Catalog.Domain.BookAggregate.Specifications;
 using Grpc.Core;
-using Microsoft.AspNetCore.Authorization;
+using GrpcBookServer = BookWorm.Catalog.Grpc.Book.BookBase;
+using BookModel = BookWorm.Catalog.Domain.BookAggregate.Book;
 
 namespace BookWorm.Catalog.Grpc;
 
-public sealed class BookService(IReadRepository<Domain.BookAggregate.Book> repository) : Book.BookBase
+public sealed class BookService(IReadRepository<BookModel> repository, ILogger<BookService> logger) : GrpcBookServer
 {
     [AllowAnonymous]
     public override async Task<BookResponse> GetBook(BookRequest request, ServerCallContext context)
     {
         BookFilterSpec spec = new(Guid.Parse(request.BookId));
+
+        if (logger.IsEnabled(LogLevel.Debug))
+        {
+            logger.LogDebug("[{Service}] - Getting book with id: {Id}", nameof(BookService), request.BookId);
+        }
 
         var book = await repository.FirstOrDefaultAsync(spec);
 
@@ -27,6 +31,11 @@ public sealed class BookService(IReadRepository<Domain.BookAggregate.Book> repos
     public override async Task<BookStatusResponse> GetBookStatus(BookStatusRequest request, ServerCallContext context)
     {
         BookFilterSpec spec = new(Guid.Parse(request.BookId));
+
+        if (logger.IsEnabled(LogLevel.Debug))
+        {
+            logger.LogDebug("[{Service}] - Getting book status with id: {Id}", nameof(BookService), request.BookId);
+        }
 
         var book = await repository.FirstOrDefaultAsync(spec);
 
@@ -44,7 +53,7 @@ public sealed class BookService(IReadRepository<Domain.BookAggregate.Book> repos
         throw new RpcException(new(StatusCode.NotFound, "Book not found"));
     }
 
-    private static BookResponse MapToBookResponse(Domain.BookAggregate.Book book)
+    private static BookResponse MapToBookResponse(BookModel book)
     {
         return new()
         {
@@ -58,7 +67,7 @@ public sealed class BookService(IReadRepository<Domain.BookAggregate.Book> repos
         };
     }
 
-    private static BookStatusResponse MapToBookStatusResponse(Domain.BookAggregate.Book book)
+    private static BookStatusResponse MapToBookStatusResponse(BookModel book)
     {
         return new() { BookStatus = new() { Id = book.Id.ToString(), Status = book.Status.ToString() } };
     }

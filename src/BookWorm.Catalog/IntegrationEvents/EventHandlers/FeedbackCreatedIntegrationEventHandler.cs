@@ -1,16 +1,21 @@
 ﻿using BookWorm.Catalog.Domain.BookAggregate;
-using BookWorm.Catalog.IntegrationEvents.Events;
-using BookWorm.Core.SharedKernel;
+using BookWorm.Contracts;
 
 namespace BookWorm.Catalog.IntegrationEvents.EventHandlers;
 
 public sealed class FeedbackCreatedIntegrationEventHandler(
     IRepository<Book> repository,
+    ILogger<FeedbackCreatedIntegrationEventHandler> logger,
     IPublishEndpoint publishEndpoint) : IConsumer<FeedbackCreatedIntegrationEvent>
 {
     public async Task Consume(ConsumeContext<FeedbackCreatedIntegrationEvent> context)
     {
         var @event = context.Message;
+
+        logger.LogInformation("[{Consumer}] - Adding rating {Rating} to book {BookId}",
+            nameof(FeedbackCreatedIntegrationEventHandler),
+            @event.Rating,
+            @event.BookId);
 
         var book = await repository.GetByIdAsync(@event.BookId);
 
@@ -35,5 +40,15 @@ public sealed class FeedbackCreatedIntegrationEventHandler(
     private async Task PublishFeedbackCreatedFailed(string feedbackId)
     {
         await publishEndpoint.Publish(new FeedbackCreatedFailedIntegrationEvent(feedbackId));
+    }
+}
+
+internal sealed class FeedbackCreatedIntegrationEventHandlerDefinition
+    : ConsumerDefinition<FeedbackCreatedIntegrationEventHandler>
+{
+    public FeedbackCreatedIntegrationEventHandlerDefinition()
+    {
+        Endpoint(x => x.Name = "feedback-created");
+        ConcurrentMessageLimit = 1;
     }
 }

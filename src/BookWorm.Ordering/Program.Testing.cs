@@ -1,6 +1,6 @@
-﻿namespace BookWorm.Ordering;
+﻿using System.Diagnostics.CodeAnalysis;
 
-public class Program
-{
-    
-}
+namespace BookWorm.Ordering;
+
+[ExcludeFromCodeCoverage]
+public class Program;

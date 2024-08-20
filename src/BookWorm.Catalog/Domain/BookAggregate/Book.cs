@@ -1,9 +1,4 @@
-﻿using System.Text.Json.Serialization;
-using Ardalis.GuardClauses;
-using BookWorm.Core.SeedWork;
-using Pgvector;
-
-namespace BookWorm.Catalog.Domain.BookAggregate;
+﻿namespace BookWorm.Catalog.Domain.BookAggregate;
 
 public sealed class Book : EntityBase, IAggregateRoot, ISoftDelete
 {

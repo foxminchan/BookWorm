@@ -1,6 +1,5 @@
 ﻿using BookWorm.Catalog.Domain;
 using BookWorm.Catalog.Features.Publishers.Create;
-using BookWorm.Core.SharedKernel;
 
 namespace BookWorm.Catalog.UnitTests.Application.Publishers;
 

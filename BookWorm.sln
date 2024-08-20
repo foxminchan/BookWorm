@@ -15,6 +15,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BookWorm.Basket", "src\Book
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{243E715E-804B-4E7E-BB46-96B0A4B9CC79}"
 	ProjectSection(SolutionItems) = preProject
+		CodeCoverage.runsettings = CodeCoverage.runsettings
 		Directory.Build.props = Directory.Build.props
 		Directory.Packages.props = Directory.Packages.props
 	EndProjectSection
@@ -70,6 +71,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BookWorm.MailDev.Hosting", "src\BookWorm.MailDev.Hosting\BookWorm.MailDev.Hosting.csproj", "{0C0E5158-F59D-45E0-A6C5-63198A3D0492}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BookWorm.Gateway", "src\BookWorm.Gateway\BookWorm.Gateway.csproj", "{9AE80189-4D7D-44F0-84C8-127DA27D7AC8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookWorm.Constants", "src\BookWorm.Constants\BookWorm.Constants.csproj", "{C7663D58-F93F-466E-8A93-A6E30396C6B6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -161,6 +164,10 @@ Global
 		{9AE80189-4D7D-44F0-84C8-127DA27D7AC8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9AE80189-4D7D-44F0-84C8-127DA27D7AC8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9AE80189-4D7D-44F0-84C8-127DA27D7AC8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C7663D58-F93F-466E-8A93-A6E30396C6B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C7663D58-F93F-466E-8A93-A6E30396C6B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C7663D58-F93F-466E-8A93-A6E30396C6B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C7663D58-F93F-466E-8A93-A6E30396C6B6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -193,6 +200,7 @@ Global
 		{D1719092-035E-4E02-ACEC-782107CFE51C} = {1A0E0FD4-396E-4DBA-B3F1-ED4ACCE50D1B}
 		{0C0E5158-F59D-45E0-A6C5-63198A3D0492} = {1A0E0FD4-396E-4DBA-B3F1-ED4ACCE50D1B}
 		{9AE80189-4D7D-44F0-84C8-127DA27D7AC8} = {C50229F2-978B-4961-8865-83767C55E8FB}
+		{C7663D58-F93F-466E-8A93-A6E30396C6B6} = {5E13A8D9-B0C4-4388-A99D-AEF14B63CA8C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {233A9FBF-DCD1-40C1-A6A5-9D37C92557BB}

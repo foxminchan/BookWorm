@@ -1,6 +1,4 @@
-﻿using BookWorm.Core.SeedWork;
-
-namespace BookWorm.Ordering.Domain.OrderAggregate.Events;
+﻿namespace BookWorm.Ordering.Domain.OrderAggregate.Events;
 
 public sealed class OrderCompletedEvent(Guid id) : EventBase
 {

@@ -1,5 +1,4 @@
 ﻿using BookWorm.Catalog.Domain.BookAggregate;
-using Pgvector;
 
 namespace BookWorm.Catalog.UnitTests.Domain;
 

@@ -1,8 +1,4 @@
-﻿using Ardalis.GuardClauses;
-using BookWorm.Core.SeedWork;
-using MongoDB.Bson;
-
-namespace BookWorm.Rating.Domain;
+﻿namespace BookWorm.Rating.Domain;
 
 public sealed class Feedback(Guid bookId, int rating, string? comment, Guid userId) : IAggregateRoot
 {

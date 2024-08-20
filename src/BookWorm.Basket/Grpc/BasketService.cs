@@ -1,15 +1,21 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using Grpc.Core;
-using Microsoft.AspNetCore.Authorization;
+﻿using GrpcBasketBase = BookWorm.Basket.Grpc.Basket.BasketBase;
+using BasketModel = BookWorm.Basket.Domain.Basket;
 
 namespace BookWorm.Basket.Grpc;
 
-public sealed class BasketService(IRedisService redisService, IBookService bookService) : Basket.BasketBase
+public sealed class BasketService(IRedisService redisService, IBookService bookService, ILogger<BasketService> logger)
+    : GrpcBasketBase
 {
     [AllowAnonymous]
     public override async Task<BasketResponse> GetBasket(BasketRequest request, ServerCallContext context)
     {
-        var basket = await redisService.HashGetAsync<Domain.Basket?>(nameof(Basket), request.BasketId);
+        if (logger.IsEnabled(LogLevel.Debug))
+        {
+            logger.LogDebug("[{Service}] - - Begin grpc call {Method} with {BasketId}",
+                nameof(BasketService), nameof(GetBasket), request.BasketId);
+        }
+
+        var basket = await redisService.HashGetAsync<BasketModel?>(nameof(Basket), request.BasketId);
 
         if (basket is null)
         {
@@ -25,7 +31,7 @@ public sealed class BasketService(IRedisService redisService, IBookService bookS
         throw new RpcException(new(StatusCode.NotFound, "Basket not found"));
     }
 
-    private async Task<BasketResponse> MapToBasketResponse(Domain.Basket basket)
+    private async Task<BasketResponse> MapToBasketResponse(BasketModel basket)
     {
         var response = new BasketResponse { BasketId = basket.AccountId.ToString(), TotalPrice = 0.0 };
 

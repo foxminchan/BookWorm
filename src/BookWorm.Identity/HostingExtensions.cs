@@ -1,12 +1,4 @@
-﻿using BookWorm.Identity.Data;
-using BookWorm.Identity.Data.CompliedModels;
-using BookWorm.Identity.DataProtection;
-using BookWorm.Identity.Models;
-using BookWorm.ServiceDefaults;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-
-namespace BookWorm.Identity;
+﻿namespace BookWorm.Identity;
 
 internal static class HostingExtensions
 {
@@ -24,7 +16,7 @@ internal static class HostingExtensions
 
         builder.Services.AddMigration<ApplicationDbContext, SeedData>();
 
-        builder.AddNpgsqlDbContext<ApplicationDbContext>("identitydb",
+        builder.AddNpgsqlDbContext<ApplicationDbContext>(ServiceName.Database.Identity,
             configureDbContextOptions: dbContextOptionsBuilder => dbContextOptionsBuilder.UseNpgsql()
                 .UseModel(ApplicationDbContextModel.Instance));
 

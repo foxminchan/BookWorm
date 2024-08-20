@@ -1,15 +1,11 @@
-﻿using Ardalis.GuardClauses;
-using Ardalis.Result;
-using BookWorm.Core.SharedKernel;
-using BookWorm.Rating.IntegrationEvents.Events;
-using MongoDB.Bson;
+﻿using BookWorm.Contracts;
 
 namespace BookWorm.Rating.Features.Delete;
 
 public sealed record DeleteFeedbackCommand(ObjectId Id) : ICommand<Result>;
 
 public sealed class DeleteFeedbackHandler(
-    IMongoCollection<Feedback> collection,
+    IRatingRepository repository,
     IPublishEndpoint publishEndpoint,
     IIdentityService identityService) : ICommandHandler<DeleteFeedbackCommand, Result>
 {
@@ -28,11 +24,11 @@ public sealed class DeleteFeedbackHandler(
             filter = Builders<Feedback>.Filter.Eq(x => x.Id, request.Id);
         }
 
-        var feedback = await collection.FindOneAndDeleteAsync(filter, cancellationToken: cancellationToken);
+        var feedback = await repository.GetAsync(filter, cancellationToken);
 
         Guard.Against.NotFound(request.Id, feedback);
 
-        await collection.DeleteOneAsync(filter, cancellationToken);
+        await repository.DeleteAsync(filter, cancellationToken);
 
         var @event = new FeedbackDeletedIntegrationEvent(feedback.Id.ToString(), feedback.BookId, feedback.Rating);
 

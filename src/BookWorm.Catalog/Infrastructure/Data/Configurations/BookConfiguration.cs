@@ -1,11 +1,8 @@
 ﻿using BookWorm.Catalog.Domain.BookAggregate;
-using BookWorm.Shared.Constants;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BookWorm.Catalog.Infrastructure.Data.Configurations;
 
-public sealed class BookConfiguration : BaseConfiguration<Book>
+internal sealed class BookConfiguration : BaseConfiguration<Book>
 {
     public override void Configure(EntityTypeBuilder<Book> builder)
     {

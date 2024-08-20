@@ -1,7 +1,4 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Http.HttpResults;
-
-namespace BookWorm.Ordering.Features.Orders.Get;
+﻿namespace BookWorm.Ordering.Features.Orders.Get;
 
 public sealed class GetOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, ISender>
 {

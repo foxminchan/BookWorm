@@ -1,8 +1,6 @@
-﻿using BookWorm.Shared.Constants;
+﻿namespace BookWorm.Catalog.Features.Categories.Create;
 
-namespace BookWorm.Catalog.Features.Categories.Create;
-
-public sealed class CreateCategoryValidator : AbstractValidator<CreateCategoryCommand>
+internal sealed class CreateCategoryValidator : AbstractValidator<CreateCategoryCommand>
 {
     public CreateCategoryValidator()
     {

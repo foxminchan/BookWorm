@@ -1,6 +1,4 @@
 ﻿using BookWorm.Identity.Options;
-using Duende.IdentityServer;
-using Duende.IdentityServer.Models;
 
 namespace BookWorm.Identity;
 

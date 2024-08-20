@@ -1,10 +1,8 @@
 ﻿using System.Collections.Immutable;
-using BookWorm.Core.SeedWork;
-using MediatR;
 
 namespace BookWorm.Ordering.Infrastructure.Mediator;
 
-public static class MediatorExtension
+internal static class MediatorExtension
 {
     public static async Task DispatchDomainEventsAsync(this IPublisher publisher, OrderingContext ctx)
     {

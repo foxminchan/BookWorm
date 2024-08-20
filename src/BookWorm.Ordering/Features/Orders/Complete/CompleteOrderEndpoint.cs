@@ -1,10 +1,4 @@
-﻿using BookWorm.Ordering.Constants;
-using BookWorm.Ordering.Filters;
-using MediatR;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
-
-namespace BookWorm.Ordering.Features.Orders.Complete;
+﻿namespace BookWorm.Ordering.Features.Orders.Complete;
 
 public sealed class CompleteOrderEndpoint : IEndpoint<Ok, Guid, ISender>
 {
@@ -12,8 +6,7 @@ public sealed class CompleteOrderEndpoint : IEndpoint<Ok, Guid, ISender>
     {
         app.MapPatch("/orders/{orderId:guid}/complete",
                 async (
-                    [FromHeader(Name = HeaderName.IdempotencyKey)]
-                    string key,
+                    [FromIdempotencyHeader] string key,
                     Guid orderId,
                     ISender sender) => await HandleAsync(orderId, sender))
             .AddEndpointFilter<IdempotencyFilter>()

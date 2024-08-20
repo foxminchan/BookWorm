@@ -1,6 +1,4 @@
-﻿using Ardalis.Result;
-using BookWorm.Core.SharedKernel;
-using BookWorm.Ordering.Domain.BuyerAggregate;
+﻿using BookWorm.Ordering.Domain.BuyerAggregate;
 
 namespace BookWorm.Ordering.Features.Buyers.Create;
 

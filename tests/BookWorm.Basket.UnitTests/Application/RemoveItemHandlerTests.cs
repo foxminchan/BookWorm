@@ -1,8 +1,6 @@
-﻿using Ardalis.GuardClauses;
-using BookWorm.Basket.Domain;
+﻿using BookWorm.Basket.Domain;
 using BookWorm.Basket.Features.RemoveItem;
-using BookWorm.Basket.Infrastructure.Redis;
-using BookWorm.Shared.Identity;
+using BasketModel = BookWorm.Basket.Domain.Basket;
 
 namespace BookWorm.Basket.UnitTests.Application;
 
@@ -40,8 +38,8 @@ public sealed class RemoveItemHandlerTests
         var command = new RemoveItemCommand(Guid.NewGuid());
         var customerId = Guid.NewGuid().ToString();
         _mockIdentityService.Setup(x => x.GetUserIdentity()).Returns(customerId);
-        _mockRedisService.Setup(x => x.HashGetAsync<Basket.Domain.Basket?>(nameof(Basket), customerId))
-            .ReturnsAsync((Basket.Domain.Basket?)null);
+        _mockRedisService.Setup(x => x.HashGetAsync<BasketModel?>(nameof(Basket), customerId))
+            .ReturnsAsync((BasketModel?)null);
 
         // Act
         Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
@@ -57,9 +55,9 @@ public sealed class RemoveItemHandlerTests
         var command = new RemoveItemCommand(Guid.NewGuid());
         var customerId = Guid.NewGuid().ToString();
         var basketItems = new List<BasketItem> { new(command.BookId, 2) };
-        var basket = new Basket.Domain.Basket(Guid.Parse(customerId), basketItems);
+        var basket = new BasketModel(Guid.Parse(customerId), basketItems);
         _mockIdentityService.Setup(x => x.GetUserIdentity()).Returns(customerId);
-        _mockRedisService.Setup(x => x.HashGetAsync<Basket.Domain.Basket?>(nameof(Basket), customerId))
+        _mockRedisService.Setup(x => x.HashGetAsync<BasketModel?>(nameof(Basket), customerId))
             .ReturnsAsync(basket);
 
         // Act
@@ -78,9 +76,9 @@ public sealed class RemoveItemHandlerTests
         var command = new RemoveItemCommand(Guid.NewGuid());
         var customerId = Guid.NewGuid().ToString();
         var basketItems = new List<BasketItem> { new(Guid.NewGuid(), 2) };
-        var basket = new Basket.Domain.Basket(Guid.Parse(customerId), basketItems);
+        var basket = new BasketModel(Guid.Parse(customerId), basketItems);
         _mockIdentityService.Setup(x => x.GetUserIdentity()).Returns(customerId);
-        _mockRedisService.Setup(x => x.HashGetAsync<Basket.Domain.Basket?>(nameof(Basket), customerId))
+        _mockRedisService.Setup(x => x.HashGetAsync<BasketModel?>(nameof(Basket), customerId))
             .ReturnsAsync(basket);
 
         // Act

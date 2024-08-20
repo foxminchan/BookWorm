@@ -1,9 +1,7 @@
-﻿using Ardalis.GuardClauses;
-using BookWorm.Catalog.Domain.BookAggregate;
+﻿using BookWorm.Catalog.Domain.BookAggregate;
 using BookWorm.Catalog.Domain.BookAggregate.Specifications;
 using BookWorm.Catalog.Features.Books.Get;
 using BookWorm.Catalog.UnitTests.Builder;
-using BookWorm.Core.SharedKernel;
 
 namespace BookWorm.Catalog.UnitTests.Application.Books;
 

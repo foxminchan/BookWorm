@@ -26,9 +26,9 @@
 - [x] AuthN/AuthZ with `Duende IdentityServer`
 - [x] Observability with `.NET Aspire`
 - [x] Add `MailDev` for local email testing
-- [ ] CI/CD with `GitHub Actions`
-- [ ] Testing
-  - [ ] Service unit tests
+- [x] CI/CD with `GitHub Actions`
+- [x] Testing
+  - [x] Service unit tests
   - [ ] Integration tests with `Aspire Testing` & `WireMock`
 - [ ] Output Caching, Response Caching and Distributed Caching with Redis
 - [ ] Deployment with `Aspirate` on `k3d`

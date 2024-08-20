@@ -1,10 +1,6 @@
-﻿using BookWorm.Shared.Constants;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
+﻿namespace BookWorm.Ordering.Infrastructure.Data.Configuration;
 
-namespace BookWorm.Ordering.Infrastructure.Data.Configuration;
-
-public sealed class OrderConfiguration : BaseConfiguration<Order>
+internal sealed class OrderConfiguration : BaseConfiguration<Order>
 {
     public override void Configure(EntityTypeBuilder<Order> builder)
     {

@@ -3,11 +3,11 @@ using StackExchange.Redis;
 
 namespace BookWorm.Identity.DataProtection;
 
-public static class Extension
+internal static class Extension
 {
     public static IHostApplicationBuilder AddRedisDataProtection(this IHostApplicationBuilder builder)
     {
-        var conn = builder.Configuration.GetConnectionString("redis");
+        var conn = builder.Configuration.GetConnectionString(ServiceName.Redis);
 
         if (string.IsNullOrWhiteSpace(conn))
         {

@@ -1,10 +1,10 @@
 ﻿namespace BookWorm.Catalog.Extensions;
 
-public static class Extensions
+internal static class Extensions
 {
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
     {
-        builder.AddRedisOutputCache("cache");
+        builder.AddRedisOutputCache(ServiceName.Redis);
 
         builder.Services.AddGrpc();
 
@@ -38,7 +38,10 @@ public static class Extensions
         builder.Services.AddSingleton<CommandHandlerMetrics>();
         builder.Services.AddSingleton<QueryHandlerMetrics>();
 
-        builder.AddRabbitMqEventBus(typeof(global::Program), cfg => cfg.AddInMemoryInboxOutbox());
+        builder.AddRabbitMqEventBus(typeof(global::Program), cfg =>
+        {
+            cfg.AddInMemoryInboxOutbox();
+        });
 
         builder.AddVersioning();
         builder.AddEndpoints(typeof(global::Program));

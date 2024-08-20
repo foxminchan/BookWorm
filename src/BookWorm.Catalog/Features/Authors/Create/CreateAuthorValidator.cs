@@ -1,8 +1,6 @@
-﻿using BookWorm.Shared.Constants;
+﻿namespace BookWorm.Catalog.Features.Authors.Create;
 
-namespace BookWorm.Catalog.Features.Authors.Create;
-
-public sealed class CreateAuthorValidator : AbstractValidator<CreateAuthorCommand>
+internal sealed class CreateAuthorValidator : AbstractValidator<CreateAuthorCommand>
 {
     public CreateAuthorValidator()
     {

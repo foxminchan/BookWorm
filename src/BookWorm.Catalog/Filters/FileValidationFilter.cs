@@ -1,4 +1,4 @@
-﻿using FluentValidation.Results;
+﻿using System.Net.Mime;
 
 namespace BookWorm.Catalog.Filters;
 
@@ -24,23 +24,23 @@ public sealed class FileValidationFilter : IEndpointFilter
             switch (file.Length)
             {
                 case 0:
-                    errors.Add(new("Length", "File is empty"));
+                    errors.Add(new(nameof(file.Length), "File is empty"));
                     break;
                 case > MaxFileSize:
-                    errors.Add(new("Length", $"File size is too large. Max file size is {MaxFileSize / 1024} KB"));
+                    errors.Add(new(nameof(file.Length),
+                        $"File size is too large. Max file size is {MaxFileSize / 1024} KB"));
                     break;
             }
 
-            List<string> allowedContentTypes = ["image/jpeg", "image/png", "image/jpg"];
+            List<string> allowedContentTypes = [MediaTypeNames.Image.Jpeg, MediaTypeNames.Image.Png];
 
             if (allowedContentTypes.Contains(file.ContentType))
             {
                 continue;
             }
 
-            errors.Add(
-                new("ContentType",
-                    $"File type is not allowed. Allowed file types are {string.Join(", ", allowedContentTypes)}"));
+            errors.Add(new(nameof(ContentType),
+                $"File type is not allowed. Allowed file types are {string.Join(", ", allowedContentTypes)}"));
         }
 
         if (errors.Count > 0)

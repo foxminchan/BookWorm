@@ -1,6 +1,4 @@
-﻿using Pgvector;
-
-namespace BookWorm.Catalog.Infrastructure.Ai;
+﻿namespace BookWorm.Catalog.Infrastructure.Ai;
 
 public interface IAiService
 {

@@ -27,6 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\BookWorm.Constants\BookWorm.Constants.csproj" IsAspireProjectResource="false" />
     <ProjectReference Include="..\BookWorm.HealthCheck.Hosting\BookWorm.HealthCheck.Hosting.csproj"
                       IsAspireProjectResource="false" />
     <ProjectReference Include="..\BookWorm.MailDev.Hosting\BookWorm.MailDev.Hosting.csproj"

@@ -1,7 +1,4 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Http.HttpResults;
-
-namespace BookWorm.Ordering.Features.Orders.Create;
+﻿namespace BookWorm.Ordering.Features.Orders.Create;
 
 public sealed record CreateOrderRequest(string? Note);
 
@@ -10,7 +7,10 @@ public sealed class CreateOrderEndpoint : IEndpoint<Created<Guid>, CreateOrderRe
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapPost("/api/orders",
-                async (CreateOrderRequest request, ISender sender) => await HandleAsync(request, sender))
+                async (
+                    [FromIdempotencyHeader] string key,
+                    CreateOrderRequest request, ISender sender) => await HandleAsync(request, sender))
+            .AddEndpointFilter<IdempotencyFilter>()
             .Produces<Created<Guid>>(StatusCodes.Status201Created)
             .ProducesValidationProblem()
             .WithTags(nameof(Order))

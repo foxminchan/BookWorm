@@ -1,11 +1,6 @@
-﻿using BookWorm.Core.SeedWork;
-using BookWorm.Shared.Constants;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
+﻿namespace BookWorm.Ordering.Infrastructure.Data.Configuration;
 
-namespace BookWorm.Ordering.Infrastructure.Data.Configuration;
-
-public abstract class BaseConfiguration<TEntity> : IEntityTypeConfiguration<TEntity>
+internal abstract class BaseConfiguration<TEntity> : IEntityTypeConfiguration<TEntity>
     where TEntity : EntityBase
 {
     public virtual void Configure(EntityTypeBuilder<TEntity> builder)

@@ -93,13 +93,14 @@ public sealed class BuyerAggregateTests
         var buyer = new Buyer(id, name, initialAddress);
 
         // Act
-        Action act = () => buyer.UpdateAddress(null!);
+        var act = () => buyer.UpdateAddress(null!);
 
         // Assert
         act.Should().Throw<ArgumentNullException>();
     }
 
-    [Theory, CombinatorialData]
+    [Theory]
+    [CombinatorialData]
     public void GivenInvalidAddress_ShouldThrowArgumentException_WhenCreatingAddress(
         [CombinatorialValues(null, "")] string street,
         [CombinatorialValues(null, "")] string city,

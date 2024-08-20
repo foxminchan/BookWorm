@@ -1,5 +1,4 @@
-﻿using BookWorm.Core.SeedWork;
-using BookWorm.Ordering.Domain.BuyerAggregate;
+﻿using BookWorm.Ordering.Domain.BuyerAggregate;
 using BookWorm.Ordering.Domain.OrderAggregate.Events;
 
 namespace BookWorm.Ordering.Domain.OrderAggregate;
