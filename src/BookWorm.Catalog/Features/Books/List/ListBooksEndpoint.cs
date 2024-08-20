@@ -1,7 +1,4 @@
-﻿using Ardalis.Result;
-using BookWorm.Catalog.Domain.BookAggregate;
-using MediatR;
-using Microsoft.AspNetCore.Http.HttpResults;
+﻿using BookWorm.Catalog.Domain.BookAggregate;
 
 namespace BookWorm.Catalog.Features.Books.List;
 

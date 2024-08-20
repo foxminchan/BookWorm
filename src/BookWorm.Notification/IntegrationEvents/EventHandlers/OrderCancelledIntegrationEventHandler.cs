@@ -1,23 +1,38 @@
-﻿using BookWorm.Notification.IntegrationEvents.Events;
-using MassTransit;
+﻿using BookWorm.Contracts;
 
 namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
 
-public sealed class OrderCancelledIntegrationEventHandler(ISmtpService smtpService)
-    : IConsumer<OrderCancelledIntegrationEvent>
+internal sealed class OrderCancelledIntegrationEventHandler(
+    ISmtpService smtpService,
+    ILogger<OrderCancelledIntegrationEventHandler> logger) : IConsumer<OrderCancelledIntegrationEvent>
 {
     public async Task Consume(ConsumeContext<OrderCancelledIntegrationEvent> context)
     {
-        if (context.Message.Email is null)
+        var @event = context.Message;
+
+        logger.LogInformation("[{Consumer}] Sending email to {Email} for order {OrderId}",
+            nameof(OrderCancelledIntegrationEventHandler), @event.Email, @event.OrderId);
+
+        if (@event.Email is null)
         {
             return;
         }
 
         var metadata = new EmailMetadata(
-            context.Message.Email,
+            @event.Email,
             "Order Cancelled",
-            $"Your order has been cancelled. Order ID: {context.Message.OrderId}");
+            $"Your order has been cancelled. Order ID: {@event.OrderId}");
 
         await smtpService.SendEmailAsync(metadata);
+    }
+}
+
+internal sealed class OrderCancelledIntegrationEventHandlerDefinition
+    : ConsumerDefinition<OrderCancelledIntegrationEventHandler>
+{
+    public OrderCancelledIntegrationEventHandlerDefinition()
+    {
+        Endpoint(x => x.Name = "order-cancelled");
+        ConcurrentMessageLimit = 1;
     }
 }

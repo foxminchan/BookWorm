@@ -1,8 +1,6 @@
-﻿using Ardalis.Result;
-using BookWorm.Catalog.Domain;
+﻿using BookWorm.Catalog.Domain;
 using BookWorm.Catalog.Features.Publishers.List;
 using BookWorm.Catalog.UnitTests.Builder;
-using BookWorm.Core.SharedKernel;
 
 namespace BookWorm.Catalog.UnitTests.Application.Publishers;
 

@@ -1,10 +1,7 @@
-﻿using Ardalis.GuardClauses;
-using BookWorm.Basket.Domain;
+﻿using BookWorm.Basket.Domain;
 using BookWorm.Basket.Features;
 using BookWorm.Basket.Features.Get;
-using BookWorm.Basket.Grpc;
-using BookWorm.Basket.Infrastructure.Redis;
-using BookWorm.Shared.Identity;
+using BasketModel = BookWorm.Basket.Domain.Basket;
 
 namespace BookWorm.Basket.UnitTests.Application;
 
@@ -29,13 +26,13 @@ public sealed class GetBasketHandlerTests
         // Arrange
         var customerId = Guid.NewGuid().ToString();
         var basketItems = new List<BasketItem> { new(Guid.NewGuid(), 2) };
-        var basket = new Basket.Domain.Basket(Guid.Parse(customerId), basketItems);
+        var basket = new BasketModel(Guid.Parse(customerId), basketItems);
         var book = new BookItem(basketItems.First().Id, "Test Book", 10.0m, 8.0m);
         var basketDto = new BasketDto(basket.AccountId,
             [new(book.Id, book.Name, basketItems.First().Quantity, book.Price, book.PriceSale)], 16.0m);
 
         _identityServiceMock.Setup(x => x.GetUserIdentity()).Returns(customerId);
-        _redisServiceMock.Setup(x => x.HashGetAsync<Basket.Domain.Basket?>(nameof(Basket), customerId))
+        _redisServiceMock.Setup(x => x.HashGetAsync<BasketModel?>(nameof(Basket), customerId))
             .ReturnsAsync(basket);
         _bookServiceMock.Setup(x => x.GetBookAsync(basketItems.First().Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(book);
@@ -54,8 +51,8 @@ public sealed class GetBasketHandlerTests
         var customerId = Guid.NewGuid().ToString();
 
         _identityServiceMock.Setup(x => x.GetUserIdentity()).Returns(customerId);
-        _redisServiceMock.Setup(x => x.HashGetAsync<Basket.Domain.Basket?>(nameof(Basket), customerId))
-            .ReturnsAsync((Basket.Domain.Basket?)null);
+        _redisServiceMock.Setup(x => x.HashGetAsync<BasketModel?>(nameof(Basket), customerId))
+            .ReturnsAsync((BasketModel?)null);
 
         // Act
         Func<Task> act = async () => await _handler.Handle(new(), CancellationToken.None);
@@ -83,10 +80,10 @@ public sealed class GetBasketHandlerTests
         // Arrange
         var customerId = Guid.NewGuid().ToString();
         var basketItems = new List<BasketItem> { new(Guid.NewGuid(), 2) };
-        var basket = new Basket.Domain.Basket(Guid.Parse(customerId), basketItems);
+        var basket = new BasketModel(Guid.Parse(customerId), basketItems);
 
         _identityServiceMock.Setup(x => x.GetUserIdentity()).Returns(customerId);
-        _redisServiceMock.Setup(x => x.HashGetAsync<Basket.Domain.Basket?>(nameof(Basket), customerId))
+        _redisServiceMock.Setup(x => x.HashGetAsync<BasketModel?>(nameof(Basket), customerId))
             .ReturnsAsync(basket);
         _bookServiceMock.Setup(x => x.GetBookAsync(basketItems.First().Id, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new("Book service error"));
@@ -103,11 +100,11 @@ public sealed class GetBasketHandlerTests
     {
         // Arrange
         var customerId = Guid.NewGuid().ToString();
-        var basket = new Basket.Domain.Basket(Guid.Parse(customerId), []);
+        var basket = new BasketModel(Guid.Parse(customerId), []);
         var basketDto = new BasketDto(basket.AccountId, [], 0.0m);
 
         _identityServiceMock.Setup(x => x.GetUserIdentity()).Returns(customerId);
-        _redisServiceMock.Setup(x => x.HashGetAsync<Basket.Domain.Basket?>(nameof(Basket), customerId))
+        _redisServiceMock.Setup(x => x.HashGetAsync<BasketModel?>(nameof(Basket), customerId))
             .ReturnsAsync(basket);
 
         // Act

@@ -1,7 +1,4 @@
-﻿using Ardalis.GuardClauses;
-using BookWorm.Core.SeedWork;
-
-namespace BookWorm.Basket.IntegrationEvents.Events;
+﻿namespace BookWorm.Contracts;
 
 public sealed class OrderCreatedIntegrationEvent(Guid orderId, Guid basketId, string? email) : IIntegrationEvent
 {

@@ -1,10 +1,8 @@
 ﻿using BookWorm.Catalog.Domain;
-using BookWorm.Shared.Constants;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BookWorm.Catalog.Infrastructure.Data.Configurations;
 
-public sealed class CategoryConfiguration : BaseConfiguration<Category>
+internal sealed class CategoryConfiguration : BaseConfiguration<Category>
 {
     public override void Configure(EntityTypeBuilder<Category> builder)
     {

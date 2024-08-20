@@ -1,8 +1,4 @@
-﻿using Ardalis.Result;
-using MediatR;
-using Microsoft.AspNetCore.Http.HttpResults;
-
-namespace BookWorm.Rating.Features.List;
+﻿namespace BookWorm.Rating.Features.List;
 
 public sealed record ListFeedbackRequest(Guid BookId, int PageIndex, int PageSize);
 

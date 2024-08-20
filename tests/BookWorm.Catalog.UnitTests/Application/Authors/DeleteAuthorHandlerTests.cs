@@ -1,8 +1,6 @@
-﻿using Ardalis.GuardClauses;
-using BookWorm.Catalog.Domain;
+﻿using BookWorm.Catalog.Domain;
 using BookWorm.Catalog.Features.Authors.Delete;
 using BookWorm.Catalog.UnitTests.Builder;
-using BookWorm.Core.SharedKernel;
 
 namespace BookWorm.Catalog.UnitTests.Application.Authors;
 

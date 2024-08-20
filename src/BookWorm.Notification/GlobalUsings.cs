@@ -1,4 +1,6 @@
+global using System.Diagnostics;
 global using Ardalis.GuardClauses;
+global using BookWorm.Core.SeedWork;
 global using BookWorm.Notification.Infrastructure;
 global using BookWorm.Notification.Models;
 global using BookWorm.ServiceDefaults;
@@ -7,5 +9,6 @@ global using BookWorm.Shared.Exceptions;
 global using FluentEmail.Core;
 global using JasperFx.CodeGeneration;
 global using Marten;
+global using MassTransit;
 global using Polly;
 global using Weasel.Core;

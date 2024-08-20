@@ -1,6 +1,4 @@
 ﻿using BookWorm.Ordering.Domain.BuyerAggregate;
-using MediatR;
-using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Ordering.Features.Buyers.Create;
 

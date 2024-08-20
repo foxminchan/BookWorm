@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Catalog.Features.Books.List;
 
-public sealed class ListBooksValidator : AbstractValidator<ListBooksQuery>
+internal sealed class ListBooksValidator : AbstractValidator<ListBooksQuery>
 {
     public ListBooksValidator()
     {

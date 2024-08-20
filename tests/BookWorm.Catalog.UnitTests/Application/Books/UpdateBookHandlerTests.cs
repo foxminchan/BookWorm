@@ -1,10 +1,6 @@
-﻿using Ardalis.GuardClauses;
-using BookWorm.Catalog.Domain.BookAggregate;
+﻿using BookWorm.Catalog.Domain.BookAggregate;
 using BookWorm.Catalog.Features.Books.Update;
-using BookWorm.Catalog.Infrastructure.Ai;
 using BookWorm.Catalog.UnitTests.Builder;
-using BookWorm.Core.SharedKernel;
-using Pgvector;
 
 namespace BookWorm.Catalog.UnitTests.Application.Books;
 

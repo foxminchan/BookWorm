@@ -20,33 +20,32 @@ var mongodb = builder
     .WithMongoExpress()
     .WithDataBindMount("../../mnt/mongodb");
 
-var redis = builder.AddRedis("redis", 6379)
+var redis = builder.AddRedis(ServiceName.Redis, 6379)
     .WithRedisCommander()
     .WithDataBindMount("../../mnt/redis");
 
-var catalogDb = postgres.AddDatabase("catalogdb");
-var orderingDb = postgres.AddDatabase("orderingdb");
-var identityDb = postgres.AddDatabase("identitydb");
-var notificationDb = postgres.AddDatabase("notificationdb");
-var ratingDb = mongodb.AddDatabase("ratingdb");
+var catalogDb = postgres.AddDatabase(ServiceName.Database.Catalog);
+var orderingDb = postgres.AddDatabase(ServiceName.Database.Ordering);
+var identityDb = postgres.AddDatabase(ServiceName.Database.Identity);
+var notificationDb = postgres.AddDatabase(ServiceName.Database.Notification);
+var ratingDb = mongodb.AddDatabase(ServiceName.Database.Rating);
 
 var storage = builder.AddAzureStorage("storage");
 
 if (builder.Environment.IsDevelopment())
 {
-    storage.RunAsEmulator(
-        config => config.WithDataBindMount("../../mnt/azurite"));
+    storage.RunAsEmulator(config => config.WithDataBindMount("../../mnt/azurite"));
 }
 
-var blobs = storage.AddBlobs("blobs");
+var blobs = storage.AddBlobs(ServiceName.Blob);
 
-var openAi = builder.AddConnectionString("openai");
+var openAi = builder.AddConnectionString(ServiceName.OpenAi);
 
 var rabbitMq = builder
-    .AddRabbitMQ("eventbus")
+    .AddRabbitMQ(ServiceName.EventBus)
     .WithManagementPlugin();
 
-var smtpServer = builder.AddMailDev("mailserver", 1080);
+var smtpServer = builder.AddMailDev(ServiceName.Mail, 1080);
 
 // Services
 var identityApi = builder.AddProject<BookWorm_Identity>("identity-api")
@@ -57,7 +56,6 @@ var identityApi = builder.AddProject<BookWorm_Identity>("identity-api")
 var identityEndpoint = identityApi.GetEndpoint(launchProfileName);
 
 var catalogApi = builder.AddProject<BookWorm_Catalog>("catalog-api")
-    .WithReference(blobs)
     .WithReference(rabbitMq)
     .WithReference(catalogDb)
     .WithReference(redis)

@@ -1,4 +1,9 @@
+﻿global using Ardalis.GuardClauses;
+global using Ardalis.Result;
+global using BookWorm.Core.SeedWork;
+global using BookWorm.Core.SharedKernel;
 global using BookWorm.Rating.Domain;
+global using BookWorm.Rating.Repositories;
 global using BookWorm.ServiceDefaults;
 global using BookWorm.Shared.ActivityScope;
 global using BookWorm.Shared.Bus;
@@ -11,5 +16,8 @@ global using BookWorm.Shared.Pipelines;
 global using BookWorm.Shared.Versioning;
 global using FluentValidation;
 global using MassTransit;
+global using MediatR;
+global using Microsoft.AspNetCore.Http.HttpResults;
 global using Microsoft.AspNetCore.Http.Json;
+global using MongoDB.Bson;
 global using MongoDB.Driver;

@@ -1,8 +1,4 @@
 ﻿using System.Security.Claims;
-using BookWorm.Identity.Data;
-using BookWorm.Identity.Models;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 namespace BookWorm.Identity;
 

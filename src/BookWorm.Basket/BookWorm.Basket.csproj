@@ -16,4 +16,9 @@
     <ProjectReference Include="..\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="BookWorm.Basket.UnitTests" />
+    <InternalsVisibleTo Include="BookWorm.Basket.IntegrationTests" />
+  </ItemGroup>
+
 </Project>

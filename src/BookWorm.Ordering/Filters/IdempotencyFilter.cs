@@ -1,18 +1,18 @@
 ﻿using BookWorm.Ordering.Constants;
-using FluentValidation.Results;
+using Microsoft.AspNetCore.Mvc;
 
 namespace BookWorm.Ordering.Filters;
 
-public sealed class IdempotencyFilter(IRedisService redisService) : IEndpointFilter
+internal sealed class IdempotencyFilter(IRedisService redisService) : IEndpointFilter
 {
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
         var request = context.HttpContext.Request;
         var requestMethod = request.Method;
         var requestPath = request.Path;
-        var requestId = request.Headers[HeaderName.IdempotencyKey].FirstOrDefault();
+        var requestId = request.Headers[Http.Idempotency].FirstOrDefault();
 
-        if (requestMethod is not "POST" and not "PATCH")
+        if (requestMethod is not Http.Methods.Post and not Http.Methods.Patch)
         {
             return await next(context);
         }
@@ -21,8 +21,8 @@ public sealed class IdempotencyFilter(IRedisService redisService) : IEndpointFil
 
         if (string.IsNullOrEmpty(requestId))
         {
-            errors.Add(new(HeaderName.IdempotencyKey,
-                $"{HeaderName.IdempotencyKey} header is required for POST and PATCH requests."));
+            errors.Add(new(Http.Idempotency,
+                $"{Http.Idempotency} header is required for {Http.Methods.Post} and {Http.Methods.Patch} requests."));
             throw new ValidationException(errors.AsEnumerable());
         }
 
@@ -47,4 +47,9 @@ public sealed class IdempotencyFilter(IRedisService redisService) : IEndpointFil
         public string Name { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
+}
+
+internal sealed class FromIdempotencyHeader : FromHeaderAttribute
+{
+    public new string Name => Http.Idempotency;
 }

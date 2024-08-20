@@ -34,4 +34,9 @@
     <Compile Include="..\Shared\MigrateDbContextExtensions.cs" Link="Extensions\MigrateDbContextExtensions.cs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="BookWorm.Ordering.UnitTests" />
+    <InternalsVisibleTo Include="BookWorm.Ordering.IntegrationTests" />
+  </ItemGroup>
+
 </Project>

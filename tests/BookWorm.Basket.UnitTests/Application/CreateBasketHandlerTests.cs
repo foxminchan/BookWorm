@@ -1,6 +1,5 @@
 ﻿using BookWorm.Basket.Features.Create;
-using BookWorm.Basket.Infrastructure.Redis;
-using BookWorm.Shared.Identity;
+using BasketModel = BookWorm.Basket.Domain.Basket;
 
 namespace BookWorm.Basket.UnitTests.Application;
 
@@ -38,12 +37,12 @@ public sealed class CreateBasketHandlerTests
         // Arrange
         var customerId = Guid.NewGuid().ToString();
         var command = new CreateBasketCommand(Guid.NewGuid(), 1);
-        var existingBasket = new Basket.Domain.Basket(Guid.Parse(customerId), [new(command.BookId, command.Quantity)]);
+        var existingBasket = new BasketModel(Guid.Parse(customerId), [new(command.BookId, command.Quantity)]);
 
         _mockIdentityService.Setup(x => x.GetUserIdentity())
             .Returns(customerId);
 
-        _mockRedisService.Setup(x => x.HashGetAsync<Basket.Domain.Basket?>(nameof(Basket), customerId))
+        _mockRedisService.Setup(x => x.HashGetAsync<BasketModel?>(nameof(Basket), customerId))
             .ReturnsAsync(existingBasket);
 
         // Act
@@ -60,13 +59,13 @@ public sealed class CreateBasketHandlerTests
         // Arrange
         var customerId = Guid.NewGuid().ToString();
         var command = new CreateBasketCommand(Guid.NewGuid(), 1);
-        var newBasket = new Basket.Domain.Basket(Guid.Parse(customerId), [new(command.BookId, command.Quantity)]);
+        var newBasket = new BasketModel(Guid.Parse(customerId), [new(command.BookId, command.Quantity)]);
 
         _mockIdentityService.Setup(x => x.GetUserIdentity())
             .Returns(customerId);
 
-        _mockRedisService.Setup(x => x.HashGetAsync<Basket.Domain.Basket?>(nameof(Basket), customerId))
-            .ReturnsAsync((Basket.Domain.Basket?)null);
+        _mockRedisService.Setup(x => x.HashGetAsync<BasketModel?>(nameof(Basket), customerId))
+            .ReturnsAsync((BasketModel?)null);
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);

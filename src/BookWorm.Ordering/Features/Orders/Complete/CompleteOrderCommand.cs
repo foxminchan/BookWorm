@@ -1,6 +1,4 @@
-﻿using Ardalis.Result;
-using BookWorm.Core.SharedKernel;
-using BookWorm.Ordering.IntegrationEvents.Events;
+﻿using BookWorm.Contracts;
 
 namespace BookWorm.Ordering.Features.Orders.Complete;
 

@@ -1,8 +1,5 @@
 ﻿using BookWorm.Ordering.Domain.BuyerAggregate;
 using BookWorm.Ordering.Infrastructure.Mediator;
-using BookWorm.Shared.Constants;
-using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace BookWorm.Ordering.Infrastructure.Data;
 

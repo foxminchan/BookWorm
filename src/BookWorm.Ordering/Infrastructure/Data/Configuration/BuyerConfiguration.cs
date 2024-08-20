@@ -1,11 +1,8 @@
 ﻿using BookWorm.Ordering.Domain.BuyerAggregate;
-using BookWorm.Shared.Constants;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BookWorm.Ordering.Infrastructure.Data.Configuration;
 
-public sealed class BuyerConfiguration : BaseConfiguration<Buyer>
+internal sealed class BuyerConfiguration : BaseConfiguration<Buyer>
 {
     public override void Configure(EntityTypeBuilder<Buyer> builder)
     {

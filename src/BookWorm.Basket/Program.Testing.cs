@@ -1,6 +1,4 @@
 ﻿namespace BookWorm.Basket;
 
-public class Program
-{
-    
-}
+[ExcludeFromCodeCoverage]
+public class Program;

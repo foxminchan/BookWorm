@@ -1,9 +1,6 @@
-﻿using System.Security.Claims;
-using System.Threading.RateLimiting;
+﻿namespace BookWorm.Gateway;
 
-namespace BookWorm.Gateway;
-
-public static class RateLimitExtensions
+internal static class RateLimitExtensions
 {
     private const string PerIpPolicy = "fixed-by-ip";
 

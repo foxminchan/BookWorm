@@ -1,9 +1,6 @@
-﻿using Azure;
-using Polly;
+﻿namespace BookWorm.Catalog.Infrastructure.Blob;
 
-namespace BookWorm.Catalog.Infrastructure.Blob;
-
-public static class Extension
+internal static class Extension
 {
     public static IHostApplicationBuilder AddStorage(this IHostApplicationBuilder builder)
     {

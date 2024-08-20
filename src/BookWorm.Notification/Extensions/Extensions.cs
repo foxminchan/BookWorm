@@ -1,6 +1,9 @@
-﻿namespace BookWorm.Notification.Extensions;
+﻿using BookWorm.Constants;
+using BookWorm.Notification.OpenTelemetry;
 
-public static class Extensions
+namespace BookWorm.Notification.Extensions;
+
+internal static class Extensions
 {
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
     {
@@ -9,7 +12,7 @@ public static class Extensions
 
         builder.AddRabbitMqEventBus(typeof(Program));
 
-        var emailConn = new UriBuilder(builder.Configuration.GetConnectionString("mailserver") ??
+        var emailConn = new UriBuilder(builder.Configuration.GetConnectionString(ServiceName.Mail) ??
                                        throw new InvalidOperationException());
 
         var defaultFromEmail = builder.Configuration["Smtp:Email"];
@@ -28,14 +31,18 @@ public static class Extensions
             .AddTimeout(TimeSpan.FromSeconds(10)));
 
         builder.Services.AddOpenTelemetry()
-            .WithMetrics(t => t.AddMeter("Smtp"))
-            .WithTracing(t => t.AddSource("Smtp"));
+            .WithMetrics(t => t
+                .AddMeter(SmtpTelemetry.ActivityName)
+                .AddMeter(MartenTelemetry.ActivityName))
+            .WithTracing(t => t
+                .AddSource(SmtpTelemetry.ActivityName)
+                .AddSource(MartenTelemetry.ActivityName));
 
         builder.Services.AddMarten(_ =>
         {
             var options = new StoreOptions();
 
-            var dbConn = builder.Configuration.GetConnectionString("notificationdb");
+            var dbConn = builder.Configuration.GetConnectionString(ServiceName.Database.Notification);
             Guard.Against.NullOrEmpty(dbConn);
             options.Connection(dbConn);
 

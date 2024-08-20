@@ -1,8 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
+﻿namespace BookWorm.Ordering.Infrastructure.Data.Configuration;
 
-namespace BookWorm.Ordering.Infrastructure.Data.Configuration;
-
-public sealed class OrderItemConfiguration : BaseConfiguration<OrderItem>
+internal sealed class OrderItemConfiguration : BaseConfiguration<OrderItem>
 {
     public override void Configure(EntityTypeBuilder<OrderItem> builder)
     {

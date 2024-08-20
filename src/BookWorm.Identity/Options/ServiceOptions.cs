@@ -11,8 +11,4 @@ public sealed class ServiceOptions
     public string Basket { get; set; } = string.Empty;
 
     public string Rating { get; set; } = string.Empty;
-
-    public string StoreFront { get; set; } = string.Empty;
-
-    public string BackOffice { get; set; } = string.Empty;
 }

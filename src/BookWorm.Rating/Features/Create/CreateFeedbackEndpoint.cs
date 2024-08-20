@@ -1,8 +1,4 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Http.HttpResults;
-using MongoDB.Bson;
-
-namespace BookWorm.Rating.Features.Create;
+﻿namespace BookWorm.Rating.Features.Create;
 
 public sealed record CreateFeedbackRequest(Guid BookId, int Rating, string? Comment, Guid UserId);
 
