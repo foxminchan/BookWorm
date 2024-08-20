@@ -1,15 +1,20 @@
 ﻿using BookWorm.Catalog.Domain.BookAggregate;
-using BookWorm.Catalog.IntegrationEvents.Events;
-using BookWorm.Core.SharedKernel;
+using BookWorm.Contracts;
 
 namespace BookWorm.Catalog.IntegrationEvents.EventHandlers;
 
-public sealed class FeedbackDeletedIntegrationEventHandler(IRepository<Book> repository)
-    : IConsumer<FeedbackDeletedIntegrationEvent>
+internal sealed class FeedbackDeletedIntegrationEventHandler(
+    IRepository<Book> repository,
+    ILogger<FeedbackDeletedIntegrationEventHandler> logger) : IConsumer<FeedbackDeletedIntegrationEvent>
 {
     public async Task Consume(ConsumeContext<FeedbackDeletedIntegrationEvent> context)
     {
         var @event = context.Message;
+
+        logger.LogInformation("[{Consumer}] - Removing rating {Rating} from book {BookId}",
+            nameof(FeedbackDeletedIntegrationEventHandler),
+            @event.Rating,
+            @event.BookId);
 
         var book = await repository.GetByIdAsync(@event.BookId);
 
@@ -21,5 +26,15 @@ public sealed class FeedbackDeletedIntegrationEventHandler(IRepository<Book> rep
         book.RemoveRating(@event.Rating);
 
         await repository.UpdateAsync(book);
+    }
+}
+
+internal sealed class FeedbackDeletedIntegrationEventHandlerDefinition
+    : ConsumerDefinition<FeedbackDeletedIntegrationEventHandler>
+{
+    public FeedbackDeletedIntegrationEventHandlerDefinition()
+    {
+        Endpoint(x => x.Name = "feedback-deleted");
+        ConcurrentMessageLimit = 1;
     }
 }

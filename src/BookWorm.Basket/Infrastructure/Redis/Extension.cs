@@ -1,10 +1,10 @@
 ﻿namespace BookWorm.Basket.Infrastructure.Redis;
 
-public static class Extension
+internal static class Extension
 {
     public static IHostApplicationBuilder AddRedisCache(this IHostApplicationBuilder builder)
     {
-        builder.AddRedisClient("redis");
+        builder.AddRedisClient(ServiceName.Redis);
 
         builder.Services.AddSingleton<IRedisService, RedisService>();
 

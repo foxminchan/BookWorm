@@ -1,8 +1,6 @@
-﻿using Aspire.Hosting.Lifecycle;
+﻿namespace BookWorm.AppHost;
 
-namespace BookWorm.AppHost;
-
-public static class Extension
+internal static class Extension
 {
     public static IDistributedApplicationBuilder AddForwardedHeaders(this IDistributedApplicationBuilder builder)
     {

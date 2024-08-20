@@ -1,8 +1,4 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Http.HttpResults;
-using MongoDB.Bson;
-
-namespace BookWorm.Rating.Features.Delete;
+﻿namespace BookWorm.Rating.Features.Delete;
 
 public sealed class DeleteFeedbackEndpoint : IEndpoint<NoContent, ObjectId, ISender>
 {

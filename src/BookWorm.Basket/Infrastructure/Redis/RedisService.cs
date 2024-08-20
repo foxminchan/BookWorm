@@ -1,17 +1,12 @@
-﻿using System.Text;
-using System.Text.Json;
-using Ardalis.GuardClauses;
-using StackExchange.Redis;
-
-namespace BookWorm.Basket.Infrastructure.Redis;
+﻿namespace BookWorm.Basket.Infrastructure.Redis;
 
 public sealed class RedisService(IConfiguration configuration) : IRedisService
 {
     private readonly SemaphoreSlim _connectionLock = new(1, 1);
 
     private readonly Lazy<ConnectionMultiplexer> _connectionMultiplexer = new(() =>
-        ConnectionMultiplexer.Connect(
-            configuration.GetConnectionString("redis") ?? throw new InvalidOperationException()));
+        ConnectionMultiplexer.Connect(configuration.GetConnectionString(ServiceName.Redis) ??
+                                      throw new InvalidOperationException()));
 
     private ConnectionMultiplexer ConnectionMultiplexer => _connectionMultiplexer.Value;
 

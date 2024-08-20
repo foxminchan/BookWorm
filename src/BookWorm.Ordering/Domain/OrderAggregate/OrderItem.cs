@@ -1,6 +1,4 @@
-﻿using BookWorm.Core.SeedWork;
-
-namespace BookWorm.Ordering.Domain.OrderAggregate;
+﻿namespace BookWorm.Ordering.Domain.OrderAggregate;
 
 public sealed class OrderItem : EntityBase
 {

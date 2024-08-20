@@ -1,6 +1,4 @@
-﻿using Grpc.Core;
-
-namespace BookWorm.Basket.UnitTests.Helpers;
+﻿namespace BookWorm.Basket.UnitTests.Helpers;
 
 public sealed class TestServerCallContext(
     Metadata? requestHeaders = null,
@@ -39,6 +37,8 @@ public sealed class TestServerCallContext(
         throw new NotImplementedException();
     }
 
-    protected override Task WriteResponseHeadersAsyncCore(Metadata responseHeaders) =>
-        Task.CompletedTask;
+    protected override Task WriteResponseHeadersAsyncCore(Metadata responseHeaders)
+    {
+        return Task.CompletedTask;
+    }
 }

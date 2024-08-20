@@ -1,6 +1,4 @@
-﻿using Ardalis.GuardClauses;
-using Ardalis.Result;
-using BookWorm.Core.SharedKernel;
+﻿using BasketModel = BookWorm.Basket.Domain.Basket;
 
 namespace BookWorm.Basket.Features.Create;
 
@@ -16,9 +14,9 @@ public sealed class CreateBasketHandler(
 
         Guard.Against.NullOrEmpty(customerId);
 
-        Domain.Basket basket = new(Guid.Parse(customerId), [new(command.BookId, command.Quantity)]);
+        BasketModel basket = new(Guid.Parse(customerId), [new(command.BookId, command.Quantity)]);
 
-        var existingBasket = await redisService.HashGetAsync<Domain.Basket?>(nameof(Basket), customerId);
+        var existingBasket = await redisService.HashGetAsync<BasketModel?>(nameof(Basket), customerId);
 
         if (existingBasket is not null)
         {

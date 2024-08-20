@@ -1,7 +1,4 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Http.HttpResults;
-
-namespace BookWorm.Basket.Features.Get;
+﻿namespace BookWorm.Basket.Features.Get;
 
 public sealed class GetBasketEndpoint : IEndpoint<Ok<BasketDto>, ISender>
 {

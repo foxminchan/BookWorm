@@ -1,8 +1,4 @@
-﻿using Ardalis.Specification;
-using Pgvector;
-using Pgvector.EntityFrameworkCore;
-
-namespace BookWorm.Catalog.Domain.BookAggregate.Specifications;
+﻿namespace BookWorm.Catalog.Domain.BookAggregate.Specifications;
 
 public sealed class BookFilterSpec : Specification<Book>
 {

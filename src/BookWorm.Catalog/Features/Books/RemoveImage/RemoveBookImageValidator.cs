@@ -1,10 +1,8 @@
-﻿using Ardalis.GuardClauses;
-using BookWorm.Catalog.Domain.BookAggregate;
-using BookWorm.Core.SharedKernel;
+﻿using BookWorm.Catalog.Domain.BookAggregate;
 
 namespace BookWorm.Catalog.Features.Books.RemoveImage;
 
-public sealed class RemoveBookImageValidator : AbstractValidator<RemoveBookImageCommand>
+internal sealed class RemoveBookImageValidator : AbstractValidator<RemoveBookImageCommand>
 {
     public RemoveBookImageValidator(BookValidator bookValidator)
     {
@@ -14,7 +12,7 @@ public sealed class RemoveBookImageValidator : AbstractValidator<RemoveBookImage
     }
 }
 
-public sealed class BookValidator : AbstractValidator<Guid>
+internal sealed class BookValidator : AbstractValidator<Guid>
 {
     private readonly IReadRepository<Book> _readRepository;
 

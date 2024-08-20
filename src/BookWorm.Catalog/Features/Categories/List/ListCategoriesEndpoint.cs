@@ -1,6 +1,4 @@
 ﻿using BookWorm.Catalog.Domain;
-using MediatR;
-using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Catalog.Features.Categories.List;
 

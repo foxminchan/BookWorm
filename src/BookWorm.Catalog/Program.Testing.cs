@@ -1,5 +1,4 @@
 ﻿namespace BookWorm.Catalog;
 
-public class Program
-{
-}
+[ExcludeFromCodeCoverage]
+public class Program;

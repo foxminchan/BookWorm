@@ -1,17 +1,15 @@
-﻿using BookWorm.Core.SharedKernel;
-using BookWorm.Ordering.Infrastructure.Data.CompiledModels;
+﻿using BookWorm.Ordering.Infrastructure.Data.CompiledModels;
 using EntityFramework.Exceptions.PostgreSQL;
-using Microsoft.EntityFrameworkCore;
 
 namespace BookWorm.Ordering.Infrastructure.Data;
 
-public static class Extension
+internal static class Extension
 {
     public static IHostApplicationBuilder AddPersistence(this IHostApplicationBuilder builder)
     {
         builder.Services.AddMigration<OrderingContext>();
 
-        builder.AddNpgsqlDbContext<OrderingContext>("orderingdb", configureDbContextOptions:
+        builder.AddNpgsqlDbContext<OrderingContext>(ServiceName.Database.Ordering, configureDbContextOptions:
             dbContextOptionsBuilder =>
             {
                 dbContextOptionsBuilder

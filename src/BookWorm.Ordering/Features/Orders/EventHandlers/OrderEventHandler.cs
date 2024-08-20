@@ -1,7 +1,6 @@
-﻿using System.Diagnostics;
-using BookWorm.Core.SeedWork;
-using BookWorm.Ordering.Domain.OrderAggregate.Events;
-using MediatR;
+﻿using BookWorm.Ordering.Domain.OrderAggregate.Events;
+using BookWorm.Ordering.Extensions;
+using BookWorm.Ordering.OpenTelemetry;
 
 namespace BookWorm.Ordering.Features.Orders.EventHandlers;
 
@@ -11,25 +10,25 @@ public sealed class OrderEventHandler(IDocumentSession documentSession, ILogger<
 {
     public async Task Handle(OrderCancelledEvent notification, CancellationToken cancellationToken)
     {
-        logger.LogInformation("[{Event}] - Handling {OrderId}", nameof(OrderCancelledEvent), notification.Id);
+        OrderingTrace.LogOrderCreated(logger, nameof(OrderCancelledEvent), notification.Id);
         await WriteToAggregateAsync(notification, cancellationToken);
     }
 
     public async Task Handle(OrderCompletedEvent notification, CancellationToken cancellationToken)
     {
-        logger.LogInformation("[{Event}] - Handling {OrderId}", nameof(OrderCompletedEvent), notification.Id);
+        OrderingTrace.LogOrderCompleted(logger, nameof(OrderCompletedEvent), notification.Id);
         await WriteToAggregateAsync(notification, cancellationToken);
     }
 
     public async Task Handle(OrderCreatedEvent notification, CancellationToken cancellationToken)
     {
-        logger.LogInformation("[{Event}] - Handling {OrderId}", nameof(OrderCreatedEvent), notification.Id);
+        OrderingTrace.LogOrderCreated(logger, nameof(OrderCreatedEvent), notification.Id);
         await WriteToAggregateAsync(notification, cancellationToken);
     }
 
     private async Task WriteToAggregateAsync(EventBase @event, CancellationToken cancellationToken)
     {
-        using var activity = new ActivitySource(nameof(Marten))
+        using var activity = new ActivitySource(MartenTelemetry.ActivityName)
             .StartActivity($"EventStore: {@event.GetType().Name}");
 
         if (activity is not null)

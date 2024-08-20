@@ -1,7 +1,4 @@
-﻿using Ardalis.GuardClauses;
-using BookWorm.Core.SeedWork;
-
-namespace BookWorm.Catalog.Domain.BookAggregate;
+﻿namespace BookWorm.Catalog.Domain.BookAggregate;
 
 public class BookAuthor : EntityBase
 {

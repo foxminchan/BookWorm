@@ -21,7 +21,8 @@ public sealed class OrderItemTests
         orderItem.Price.Should().Be(price);
     }
 
-    [Theory, CombinatorialData]
+    [Theory]
+    [CombinatorialData]
     public void GivenInvalidQuantity_ShouldThrowArgumentException_WhenCreatingOrderItem(
         [CombinatorialValues(0, -1)] int invalidQuantity)
     {
@@ -36,7 +37,8 @@ public sealed class OrderItemTests
         act.Should().Throw<ArgumentException>();
     }
 
-    [Theory, CombinatorialData]
+    [Theory]
+    [CombinatorialData]
     public void GivenInvalidPrice_ShouldThrowArgumentException_WhenCreatingOrderItem(
         [CombinatorialValues(0.0, -10.0)] decimal invalidPrice)
     {

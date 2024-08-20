@@ -1,7 +1,4 @@
-﻿using Ardalis.GuardClauses;
-using BookWorm.Core.SeedWork;
-
-namespace BookWorm.Catalog.IntegrationEvents.Events;
+﻿namespace BookWorm.Contracts;
 
 public sealed class FeedbackDeletedIntegrationEvent(string feedbackId, Guid bookId, int rating) : IIntegrationEvent
 {

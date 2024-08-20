@@ -1,6 +1,8 @@
-﻿namespace BookWorm.Rating.Extensions;
+﻿using BookWorm.Constants;
 
-public static class Extensions
+namespace BookWorm.Rating.Extensions;
+
+internal static class Extensions
 {
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
     {
@@ -16,18 +18,21 @@ public static class Extensions
         builder.Services.AddProblemDetails();
 
         builder.AddDefaultAuthentication();
-        builder.AddMongoDBClient("mongodb");
+        builder.AddMongoDBClient(ServiceName.Database.Rating);
         builder.Services.AddMediatR(cfg =>
         {
-            cfg.RegisterServicesFromAssemblyContaining<Program>();
+            cfg.RegisterServicesFromAssemblyContaining<global::Program>();
             cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
             cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
             cfg.AddOpenBehavior(typeof(MetricsBehavior<,>));
         });
 
-        builder.AddRabbitMqEventBus(typeof(Program), cfg => cfg.AddInMemoryInboxOutbox());
+        builder.AddRabbitMqEventBus(typeof(global::Program), cfg =>
+        {
+            cfg.AddInMemoryInboxOutbox();
+        });
 
-        builder.Services.AddValidatorsFromAssemblyContaining<Program>(includeInternalTypes: true);
+        builder.Services.AddValidatorsFromAssemblyContaining<global::Program>(includeInternalTypes: true);
 
         builder.Services.AddSingleton<IActivityScope, ActivityScope>();
         builder.Services.AddSingleton<CommandHandlerMetrics>();
@@ -35,7 +40,7 @@ public static class Extensions
 
         builder.Services.AddSingleton(serviceProvider =>
         {
-            var url = builder.Configuration.GetConnectionString("mongodb");
+            var url = builder.Configuration.GetConnectionString(ServiceName.Database.Rating);
             var client = serviceProvider.GetService<IMongoClient>();
             return client!.GetDatabase(MongoUrl.Create(url).DatabaseName);
         });
@@ -46,8 +51,10 @@ public static class Extensions
             return database!.GetCollection<Feedback>(nameof(Feedback));
         });
 
+        builder.Services.AddScoped<IRatingRepository, RatingRepository>();
+
         builder.AddVersioning();
-        builder.AddEndpoints(typeof(Program));
+        builder.AddEndpoints(typeof(global::Program));
 
         builder.AddOpenApi();
 

@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using BookWorm.Constants;
+using FluentValidation;
 using MassTransit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -13,7 +14,7 @@ public static class Extension
         Action<IBusRegistrationConfigurator>? configure = null)
 
     {
-        var messaging = builder.Configuration.GetConnectionString("eventbus");
+        var messaging = builder.Configuration.GetConnectionString(ServiceName.EventBus);
 
         if (string.IsNullOrWhiteSpace(messaging))
         {
@@ -25,15 +26,16 @@ public static class Extension
             config.SetKebabCaseEndpointNameFormatter();
 
             config.AddConsumers(type.Assembly);
-            config.AddSagaStateMachines(type.Assembly);
-            config.AddSagas(type.Assembly);
-            config.AddActivities(type.Assembly);
 
             config.UsingRabbitMq((context, configurator) =>
             {
                 configurator.Host(new Uri(messaging));
                 configurator.ConfigureEndpoints(context);
                 configurator.UseMessageRetry(AddRetryConfiguration);
+
+                configurator.UseSendFilter(typeof(SendFilter<>), context);
+                configurator.UsePublishFilter(typeof(PublishFilter<>), context);
+                configurator.UseConsumeFilter(typeof(ConsumeFilter<>), context);
             });
 
             configure?.Invoke(config);

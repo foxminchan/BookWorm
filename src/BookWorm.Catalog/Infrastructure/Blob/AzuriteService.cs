@@ -1,14 +1,9 @@
-﻿using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Models;
-using Polly;
-using Polly.Registry;
-
-namespace BookWorm.Catalog.Infrastructure.Blob;
+﻿namespace BookWorm.Catalog.Infrastructure.Blob;
 
 public sealed class AzuriteService(ResiliencePipelineProvider<string> pipeline, IConfiguration configuration)
     : IAzuriteService
 {
-    private readonly BlobContainerClient _container = new(configuration.GetConnectionString("blobs"),
+    private readonly BlobContainerClient _container = new(configuration.GetConnectionString(ServiceName.Blob),
         nameof(Catalog));
 
     private readonly ResiliencePipeline _policy = pipeline.GetPipeline(nameof(Blob));

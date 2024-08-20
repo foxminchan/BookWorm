@@ -1,6 +1,4 @@
-﻿using Duende.Bff;
-
-namespace BookWorm.Gateway;
+﻿namespace BookWorm.Gateway;
 
 /// <summary>
 ///     Configuration section

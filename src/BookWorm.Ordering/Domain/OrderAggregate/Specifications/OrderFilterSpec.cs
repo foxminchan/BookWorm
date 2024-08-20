@@ -1,6 +1,4 @@
-﻿using Ardalis.Specification;
-
-namespace BookWorm.Ordering.Domain.OrderAggregate.Specifications;
+﻿namespace BookWorm.Ordering.Domain.OrderAggregate.Specifications;
 
 public sealed class OrderFilterSpec : Specification<Order>
 {

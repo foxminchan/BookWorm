@@ -1,6 +1,4 @@
-﻿using BookWorm.Core.SeedWork;
-
-namespace BookWorm.Ordering.IntegrationEvents.Events;
+﻿namespace BookWorm.Contracts;
 
 public sealed class OrderCompletedIntegrationEvent(Guid orderId, string? email) : IIntegrationEvent
 {

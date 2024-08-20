@@ -1,6 +1,4 @@
 ﻿using BookWorm.Ordering.Domain.OrderAggregate.Events;
-using Marten.AspNetCore;
-using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Ordering.Features.Orders;
 

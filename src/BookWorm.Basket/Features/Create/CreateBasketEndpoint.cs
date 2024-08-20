@@ -1,7 +1,4 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Http.HttpResults;
-
-namespace BookWorm.Basket.Features.Create;
+﻿namespace BookWorm.Basket.Features.Create;
 
 public sealed record CreateBasketRequest(Guid BookId, int Quantity);
 

@@ -1,6 +1,4 @@
-﻿using Ardalis.Result;
-using BookWorm.Core.SharedKernel;
-using BookWorm.Ordering.Domain.OrderAggregate.Specifications;
+﻿using BookWorm.Ordering.Domain.OrderAggregate.Specifications;
 
 namespace BookWorm.Ordering.Features.Orders.Get;
 

@@ -1,17 +1,32 @@
-﻿using BookWorm.Core.SharedKernel;
-using BookWorm.Ordering.IntegrationEvents.Events;
+﻿using BookWorm.Contracts;
 
 namespace BookWorm.Ordering.IntegrationEvents.EventHandlers;
 
-public sealed class BasketCheckoutFailedIntegrationEventHandler(IRepository<Order> repository)
-    : IConsumer<BasketCheckoutFailedIntegrationEvent>
+internal sealed class BasketCheckoutFailedIntegrationEventHandler(
+    IRepository<Order> repository,
+    ILogger<BasketCheckoutFailedIntegrationEventHandler> logger) : IConsumer<BasketCheckoutFailedIntegrationEvent>
 {
     public async Task Consume(ConsumeContext<BasketCheckoutFailedIntegrationEvent> context)
     {
-        var order = await repository.GetByIdAsync(context.Message.OrderId);
+        var @event = context.Message;
 
-        Guard.Against.NotFound(context.Message.OrderId, order);
+        logger.LogInformation("[{Consumer}] - Rollback order with Id: {OrderId}",
+            nameof(BasketCheckoutFailedIntegrationEventHandler), @event.OrderId);
+
+        var order = await repository.GetByIdAsync(@event.OrderId);
+
+        Guard.Against.NotFound(@event.OrderId, order);
 
         await repository.DeleteAsync(order);
+    }
+}
+
+internal sealed class BasketCheckoutFailedIntegrationEventHandlerDefinition
+    : ConsumerDefinition<BasketCheckoutFailedIntegrationEventHandler>
+{
+    public BasketCheckoutFailedIntegrationEventHandlerDefinition()
+    {
+        Endpoint(x => x.Name = "basket-checkout-failed");
+        ConcurrentMessageLimit = 1;
     }
 }

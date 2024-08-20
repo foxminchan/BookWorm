@@ -1,6 +1,6 @@
-﻿namespace BookWorm.Rating;
+﻿using System.Diagnostics.CodeAnalysis;
 
-public class Program
-{
-    
-}
+namespace BookWorm.Rating;
+
+[ExcludeFromCodeCoverage]
+public class Program;

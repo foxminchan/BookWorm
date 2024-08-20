@@ -1,6 +1,4 @@
-﻿using Ardalis.GuardClauses;
-using Ardalis.Result;
-using BookWorm.Core.SharedKernel;
+﻿using BasketModel = BookWorm.Basket.Domain.Basket;
 
 namespace BookWorm.Basket.Features.ReduceItemQuantity;
 
@@ -15,7 +13,7 @@ public sealed class ReduceItemQuantityHandler(IRedisService redisService, IIdent
 
         Guard.Against.NullOrEmpty(customerId);
 
-        var basket = await redisService.HashGetAsync<Domain.Basket?>(nameof(Basket), customerId);
+        var basket = await redisService.HashGetAsync<BasketModel?>(nameof(Basket), customerId);
 
         Guard.Against.NotFound(customerId, basket);
 

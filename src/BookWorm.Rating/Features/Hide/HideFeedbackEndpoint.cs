@@ -1,8 +1,4 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Http.HttpResults;
-using MongoDB.Bson;
-
-namespace BookWorm.Rating.Features.Hide;
+﻿namespace BookWorm.Rating.Features.Hide;
 
 public sealed class HideFeedbackEndpoint : IEndpoint<Ok, ObjectId, ISender>
 {

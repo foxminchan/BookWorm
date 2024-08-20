@@ -4,10 +4,16 @@ using GrpcBookClient = BookWorm.Catalog.Grpc.Book.BookClient;
 
 namespace BookWorm.Basket.Grpc;
 
-public sealed class BookService(GrpcBookClient bookClient) : IBookService
+public sealed class BookService(GrpcBookClient bookClient, ILogger<BookService> logger) : IBookService
 {
     public async Task<BookStatus> GetBookStatusAsync(Guid bookId, CancellationToken cancellationToken = default)
     {
+        if (logger.IsEnabled(LogLevel.Debug))
+        {
+            logger.LogDebug("[{Service}] - Begin grpc call {Method} with {BookId}",
+                nameof(BookService), nameof(GetBookStatusAsync), bookId);
+        }
+
         var response = await bookClient.GetBookStatusAsync(new() { BookId = bookId.ToString() },
             cancellationToken: cancellationToken);
 
@@ -16,6 +22,12 @@ public sealed class BookService(GrpcBookClient bookClient) : IBookService
 
     public async Task<bool> IsBookExistsAsync(Guid bookId, CancellationToken cancellationToken = default)
     {
+        if (logger.IsEnabled(LogLevel.Debug))
+        {
+            logger.LogDebug("[{Service}] - Begin grpc call {Method} with {BookId}",
+                nameof(BookService), nameof(IsBookExistsAsync), bookId);
+        }
+
         var response = await bookClient.GetBookAsync(new() { BookId = bookId.ToString() },
             cancellationToken: cancellationToken);
 
@@ -24,6 +36,12 @@ public sealed class BookService(GrpcBookClient bookClient) : IBookService
 
     public async Task<BookItem> GetBookAsync(Guid bookId, CancellationToken cancellationToken = default)
     {
+        if (logger.IsEnabled(LogLevel.Debug))
+        {
+            logger.LogDebug("[{Service}] - Begin grpc call {Method} with {BookId}",
+                nameof(BookService), nameof(GetBookAsync), bookId);
+        }
+
         var response = await bookClient.GetBookAsync(new() { BookId = bookId.ToString() },
             cancellationToken: cancellationToken);
 

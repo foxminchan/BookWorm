@@ -1,6 +1,4 @@
-﻿using Ardalis.Specification;
-
-namespace BookWorm.Catalog.Domain.BookAggregate.Specifications;
+﻿namespace BookWorm.Catalog.Domain.BookAggregate.Specifications;
 
 public static class BookSpecExpression
 {

@@ -1,14 +1,5 @@
-﻿using BookWorm.Basket.IntegrationEvents.EventHandlers;
-using MassTransit;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Hosting;
-using Projects;
+﻿using Aspirant.Hosting;
+using BookWorm.Basket.IntegrationEvents.EventHandlers;
 
 namespace BookWorm.Basket.IntegrationTests;
 
@@ -34,9 +25,9 @@ public sealed class BasketApiFixture : WebApplicationFactory<Program>, IAsyncLif
             .WithReference(IdentityDb)
             .WithReference(Redis);
 
-        // TODO: Add gRPC service mock
-        CatalogApi = appBuilder.AddWireMock("catalog-api");
-            //.WithApiMappingBuilder();
+        CatalogApi = appBuilder.AddWireMock("catalog-api")
+            .RunAsHttp2Service()
+            .WithApiMappingBuilder(CatalogApiBuilder.BuildAsync);
 
         _app = appBuilder.Build();
     }

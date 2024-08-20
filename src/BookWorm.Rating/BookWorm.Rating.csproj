@@ -10,4 +10,9 @@
     <ProjectReference Include="..\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="BookWorm.Rating.UnitTests" />
+    <InternalsVisibleTo Include="BookWorm.Rating.IntegrationTests" />
+  </ItemGroup>
+
 </Project>

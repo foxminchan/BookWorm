@@ -1,7 +1,6 @@
 ﻿using BookWorm.Catalog.Domain;
 using BookWorm.Catalog.Features.Categories.List;
 using BookWorm.Catalog.UnitTests.Builder;
-using BookWorm.Core.SharedKernel;
 
 namespace BookWorm.Catalog.UnitTests.Application.Categories;
 
