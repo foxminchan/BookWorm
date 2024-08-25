@@ -18,7 +18,6 @@ internal static class Extensions
         builder.Services.AddProblemDetails();
 
         builder.AddDefaultAuthentication();
-        builder.AddMongoDBClient(ServiceName.Database.Rating);
         builder.Services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssemblyContaining<global::Program>();
@@ -27,9 +26,25 @@ internal static class Extensions
             cfg.AddOpenBehavior(typeof(MetricsBehavior<,>));
         });
 
+        var conn = builder.Configuration.GetConnectionString(ServiceName.Database.Rating);
+
+        builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(conn));
+
+        builder.Services.AddSingleton(provider =>
+            provider.GetService<IMongoClient>()!.GetDatabase(MongoUrl.Create(conn).DatabaseName));
+
+        builder.Services.AddScoped(provider =>
+            provider.GetService<IMongoDatabase>()!.GetCollection<Feedback>(nameof(Feedback)));
+
         builder.AddRabbitMqEventBus(typeof(global::Program), cfg =>
         {
-            cfg.AddInMemoryInboxOutbox();
+            cfg.AddMongoDbOutbox(o =>
+            {
+                o.DisableInboxCleanupService();
+                o.ClientFactory(provider => provider.GetRequiredService<IMongoClient>());
+                o.DatabaseFactory(provider => provider.GetRequiredService<IMongoDatabase>());
+                o.UseBusOutbox(bo => bo.DisableDeliveryService());
+            });
         });
 
         builder.Services.AddValidatorsFromAssemblyContaining<global::Program>(includeInternalTypes: true);
@@ -37,19 +52,6 @@ internal static class Extensions
         builder.Services.AddSingleton<IActivityScope, ActivityScope>();
         builder.Services.AddSingleton<CommandHandlerMetrics>();
         builder.Services.AddSingleton<QueryHandlerMetrics>();
-
-        builder.Services.AddSingleton(serviceProvider =>
-        {
-            var url = builder.Configuration.GetConnectionString(ServiceName.Database.Rating);
-            var client = serviceProvider.GetService<IMongoClient>();
-            return client!.GetDatabase(MongoUrl.Create(url).DatabaseName);
-        });
-
-        builder.Services.AddScoped(serviceProvider =>
-        {
-            var database = serviceProvider.GetService<IMongoDatabase>();
-            return database!.GetCollection<Feedback>(nameof(Feedback));
-        });
 
         builder.Services.AddScoped<IRatingRepository, RatingRepository>();
 
