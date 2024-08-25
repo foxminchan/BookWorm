@@ -29,6 +29,7 @@ internal static class Extensions
         builder.Services.AddValidatorsFromAssemblyContaining<global::Program>(includeInternalTypes: true);
 
         builder.AddRabbitMqEventBus(typeof(global::Program), cfg =>
+        {
             cfg.AddEntityFrameworkOutbox<OrderingContext>(o =>
             {
                 o.QueryDelay = TimeSpan.FromSeconds(1);
@@ -36,7 +37,8 @@ internal static class Extensions
                 o.UsePostgres();
 
                 o.UseBusOutbox();
-            }));
+            });
+        });
 
         builder.Services.AddMarten(_ =>
             {
