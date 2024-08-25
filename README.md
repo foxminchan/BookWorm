@@ -37,11 +37,11 @@
 ## Domain Business & Bounded Contexts - Services Boundaries
 
 - **Catalog**: Display books with pagination and search functionality.
-- **Shopping Cart**: Add books to the shopping cart and place an order.
-- **Order**: Display orders with pagination and search functionality.
+- **Basket**: Add books to the shopping cart and place an order.
+- **Ordering**: Display orders with pagination and search functionality.
 - **Identity**: Register, login, and manage user profile.
 - **Notification**: Send email notifications.
-- **Rating**: Rate products.
+- **Rating**: Rate books.
 
 ![Domain Business & Bounded Contexts](docs/architechture.png)
 
@@ -82,7 +82,7 @@ git clone git@github.com:foxminchan/BookWorm.git
 dotnet run --project src/BookWorm.AppHost/BookWorm.AppHost.csproj
 ```
 
-> [!NOTE]
+> [!WARNING]
 > Ensure that you have Docker running on your machine.
 
 ## Contributing
@@ -91,6 +91,9 @@ dotnet run --project src/BookWorm.AppHost/BookWorm.AppHost.csproj
 - Create a new branch for your feature
 - Make your changes
 - Create a pull request
+
+> [!CAUTION]
+> Do not change namespaces for `Integration Events` as it will break the messaging system.
 
 ## Project References
 
