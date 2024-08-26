@@ -50,6 +50,7 @@ public static class Config
                 AllowAccessTokensViaBrowser = true,
                 RedirectUris = { $"{service.Catalog}/swagger/oauth2-redirect.html" },
                 PostLogoutRedirectUris = { $"{service.Catalog}/swagger/" },
+                AllowedCorsOrigins = { service.Catalog },
                 AllowedScopes = { "catalog" }
             },
             new()
@@ -63,6 +64,7 @@ public static class Config
                 AllowAccessTokensViaBrowser = true,
                 RedirectUris = { $"{service.Ordering}/swagger/oauth2-redirect.html" },
                 PostLogoutRedirectUris = { $"{service.Ordering}/swagger/" },
+                AllowedCorsOrigins = { service.Ordering },
                 AllowedScopes = { "ordering" }
             },
             new()
@@ -76,6 +78,7 @@ public static class Config
                 AllowAccessTokensViaBrowser = true,
                 RedirectUris = { $"{service.Basket}/swagger/oauth2-redirect.html" },
                 PostLogoutRedirectUris = { $"{service.Basket}/swagger/" },
+                AllowedCorsOrigins = { service.Basket },
                 AllowedScopes = { "basket" }
             },
             new()
@@ -89,6 +92,7 @@ public static class Config
                 AllowAccessTokensViaBrowser = true,
                 RedirectUris = { $"{service.Rating}/swagger/oauth2-redirect.html" },
                 PostLogoutRedirectUris = { $"{service.Rating}/swagger/" },
+                AllowedCorsOrigins = { service.Rating },
                 AllowedScopes = { "rating" }
             },
             new()
