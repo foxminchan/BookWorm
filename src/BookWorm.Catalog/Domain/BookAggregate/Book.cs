@@ -18,7 +18,7 @@ public sealed class Book : EntityBase, IAggregateRoot, ISoftDelete
         Status status,
         Guid categoryId,
         Guid publisherId,
-        List<Guid> authorIds)
+        Guid[] authorIds)
     {
         Name = Guard.Against.NullOrEmpty(name);
         Description = Guard.Against.NullOrEmpty(description);

@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Catalog.Domain.BookAggregate;
 
-public class BookAuthor : EntityBase
+public sealed class BookAuthor : EntityBase
 {
     private BookAuthor()
     {
