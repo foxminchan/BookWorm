@@ -22,6 +22,8 @@ public static class Extensions
     {
         AppContext.SetSwitch("Microsoft.SemanticKernel.Experimental.GenAI.EnableOTelDiagnosticsSensitive", true);
 
+        builder.ConfigureCors();
+
         builder.ConfigureOpenTelemetry();
 
         builder.AddDefaultHealthChecks();
@@ -35,6 +37,19 @@ public static class Extensions
         });
 
         builder.Services.Configure<ServiceDiscoveryOptions>(options => options.AllowedSchemes = ["https"]);
+
+        return builder;
+    }
+
+    public static IHostApplicationBuilder ConfigureCors(this IHostApplicationBuilder builder)
+    {
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("AllowAll", policyBuilder => policyBuilder
+                .AllowAnyOrigin()
+                .AllowAnyMethod()
+                .AllowAnyHeader());
+        });
 
         return builder;
     }
@@ -109,6 +124,8 @@ public static class Extensions
         {
             return app;
         }
+
+        app.UseCors("AllowAll");
 
         var healthChecks = app.MapGroup("");
 
