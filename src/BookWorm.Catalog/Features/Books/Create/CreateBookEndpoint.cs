@@ -13,7 +13,7 @@ public sealed record CreateBookRequest(
     Status Status,
     Guid CategoryId,
     Guid PublisherId,
-    List<Guid> AuthorIds);
+    Guid[] AuthorIds);
 
 public sealed class CreateBookEndpoint : IEndpoint<Created<Guid>, CreateBookRequest, ISender>
 {
@@ -27,7 +27,7 @@ public sealed class CreateBookEndpoint : IEndpoint<Created<Guid>, CreateBookRequ
                         [FromForm] Status status,
                         [FromForm] Guid categoryId,
                         [FromForm] Guid publisherId,
-                        [FromForm] List<Guid> authorIds,
+                        [FromForm] Guid[] authorIds,
                         IFormFile? image,
                         ISender sender)
                     => await HandleAsync(

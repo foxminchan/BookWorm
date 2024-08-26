@@ -22,8 +22,7 @@ internal sealed class BookConfiguration : BaseConfiguration<Book>
         );
 
         builder.Property(x => x.ImageUrl)
-            .HasMaxLength(DataSchemaLength.SuperLarge)
-            .IsRequired();
+            .HasMaxLength(DataSchemaLength.SuperLarge);
 
         builder.Property(p => p.AverageRating)
             .HasDefaultValue(0.0);

@@ -16,7 +16,7 @@ public sealed class BookAggregatorTests
         const Status status = Status.InStock;
         var categoryId = Guid.NewGuid();
         var publisherId = Guid.NewGuid();
-        var authorIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
+        Guid[] authorIds = [Guid.NewGuid(), Guid.NewGuid()];
 
         // Act
         var book = new Book(name, description, imageUrl, price, priceSale, status, categoryId, publisherId, authorIds);
@@ -29,7 +29,7 @@ public sealed class BookAggregatorTests
         book.Status.Should().Be(status);
         book.CategoryId.Should().Be(categoryId);
         book.PublisherId.Should().Be(publisherId);
-        book.BookAuthors.Should().HaveCount(authorIds.Count);
+        book.BookAuthors.Should().HaveCount(authorIds.Count());
         book.BookAuthors.Should().OnlyContain(ba => authorIds.Contains(ba.AuthorId));
     }
 

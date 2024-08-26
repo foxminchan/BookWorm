@@ -11,7 +11,7 @@ public sealed record CreateBookCommand(
     Status Status,
     Guid CategoryId,
     Guid PublisherId,
-    List<Guid> AuthorIds) : ICommand<Result<Guid>>;
+    Guid[] AuthorIds) : ICommand<Result<Guid>>;
 
 public sealed class CreateBookHandler(
     IRepository<Book> repository,
