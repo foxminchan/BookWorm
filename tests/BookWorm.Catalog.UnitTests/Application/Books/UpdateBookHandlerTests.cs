@@ -45,7 +45,7 @@ public sealed class UpdateBookHandlerTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         _repositoryMock.Verify(r => r.GetByIdAsync(bookId, It.IsAny<CancellationToken>()), Times.Once);
-        _repositoryMock.Verify(r => r.UpdateAsync(book, It.IsAny<CancellationToken>()), Times.Once);
+        _repositoryMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 
         book.Name.Should().Be("Updated Name");
         book.Description.Should().Be("Updated Description");
@@ -73,7 +73,7 @@ public sealed class UpdateBookHandlerTests
         await act.Should().ThrowAsync<NotFoundException>();
 
         _repositoryMock.Verify(r => r.GetByIdAsync(bookId, It.IsAny<CancellationToken>()), Times.Once);
-        _repositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Book>(), It.IsAny<CancellationToken>()), Times.Never);
+        _repositoryMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Theory]

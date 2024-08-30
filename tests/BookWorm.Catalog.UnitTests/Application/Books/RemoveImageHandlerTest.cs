@@ -30,9 +30,6 @@ public sealed class RemoveBookImageHandlerTests
         _azuriteMock.Setup(a => a.DeleteFileAsync(book.ImageUrl!, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _repositoryMock.Setup(r => r.UpdateAsync(book, It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
         var command = new RemoveBookImageCommand(bookId);
 
         // Act
@@ -61,7 +58,7 @@ public sealed class RemoveBookImageHandlerTests
 
         _repositoryMock.Verify(r => r.GetByIdAsync(bookId, It.IsAny<CancellationToken>()), Times.Once);
         _azuriteMock.Verify(a => a.DeleteFileAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
-        _repositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Book>(), It.IsAny<CancellationToken>()), Times.Never);
+        _repositoryMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

@@ -37,7 +37,7 @@ public sealed class DeleteBookHandlerTest
             x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Once);
         _bookRepositoryMock.Verify(
-            x => x.UpdateAsync(It.IsAny<Book>(), It.IsAny<CancellationToken>()),
+            x => x.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -63,7 +63,7 @@ public sealed class DeleteBookHandlerTest
             x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Once);
         _bookRepositoryMock.Verify(
-            x => x.UpdateAsync(It.IsAny<Book>(), It.IsAny<CancellationToken>()),
+            x => x.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
 }

@@ -14,7 +14,7 @@ public sealed class DeleteBookHandler(IRepository<Book> repository) : ICommandHa
 
         book.Delete();
 
-        await repository.UpdateAsync(book, cancellationToken);
+        await repository.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
     }

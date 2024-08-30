@@ -29,7 +29,7 @@ public sealed class FeedbackCreatedIntegrationEventHandler(
 
         try
         {
-            await repository.UpdateAsync(book);
+            await repository.SaveChangesAsync();
         }
         catch (Exception)
         {

@@ -14,7 +14,7 @@ public class RemoveBookImageHandler(IRepository<Book> repository, IAzuriteServic
 
         await azurite.DeleteFileAsync(book.ImageUrl!, cancellationToken);
         book.RemoveImage();
-        await repository.UpdateAsync(book, cancellationToken);
+        await repository.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
     }
