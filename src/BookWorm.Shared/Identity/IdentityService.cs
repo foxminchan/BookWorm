@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace BookWorm.Shared.Identity;
 
-public class IdentityService(IHttpContextAccessor httpContext) : IIdentityService
+public sealed class IdentityService(IHttpContextAccessor httpContext) : IIdentityService
 {
     public string? GetUserIdentity()
     {
