@@ -25,7 +25,7 @@ internal sealed class FeedbackDeletedIntegrationEventHandler(
 
         book.RemoveRating(@event.Rating);
 
-        await repository.UpdateAsync(book);
+        await repository.SaveChangesAsync();
     }
 }
 

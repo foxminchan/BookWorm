@@ -39,7 +39,7 @@ public sealed class UpdateBookHandler(IRepository<Book> repository, IAiService a
             book.Embed(embedding);
         }
 
-        await repository.UpdateAsync(book, cancellationToken);
+        await repository.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
     }
