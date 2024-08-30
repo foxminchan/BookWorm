@@ -3,7 +3,7 @@ using Microsoft.Extensions.Diagnostics.Enrichment;
 
 namespace BookWorm.Shared.Logging;
 
-public class ApplicationEnricher(IHttpContextAccessor httpContextAccessor) : ILogEnricher
+public sealed class ApplicationEnricher(IHttpContextAccessor httpContextAccessor) : ILogEnricher
 {
     public void Enrich(IEnrichmentTagCollector collector)
     {

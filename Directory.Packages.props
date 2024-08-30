@@ -2,7 +2,7 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-    <AspireVersion>8.1.0</AspireVersion>
+    <AspireVersion>8.2.0</AspireVersion>
     <AspirantVersion>0.0.4</AspirantVersion>
     <MicrosoftExtensionsVersion>8.8.0</MicrosoftExtensionsVersion>
     <AspnetVersion>8.0.8</AspnetVersion>
@@ -74,7 +74,6 @@
     <PackageVersion Include="Duende.BFF.Yarp" Version="2.2.0" />
     <PackageVersion Include="Duende.IdentityServer.AspNetIdentity" Version="7.0.6" />
     <!-- Xabaril -->
-    <PackageVersion Include="AspNetCore.HealthChecks.UI" Version="$(XabarilVersion)" />
     <PackageVersion Include="AspNetCore.HealthChecks.UI.Client" Version="$(XabarilVersion)" />
     <!-- Testing -->
     <PackageVersion Include="xunit" Version="2.9.0" />
@@ -85,7 +84,7 @@
     <PackageVersion Include="Moq" Version="4.20.70" />
     <PackageVersion Include="FluentAssertions" Version="7.0.0-alpha.4" />
     <PackageVersion Include="ReportGenerator" Version="5.3.8" />
-    <PackageVersion Include="WireMock.Net.Aspire" Version="0.0.1-preview-05" />
+    <PackageVersion Include="WireMock.Net.Aspire" Version="1.6.1" />
     <!-- Grpc -->
     <PackageVersion Include="Grpc.AspNetCore" Version="$(GrpcVersion)" />
     <PackageVersion Include="Grpc.AspNetCore.Server.ClientFactory" Version="$(GrpcVersion)" />
@@ -98,9 +97,9 @@
     <!-- Miscellaneous -->
     <PackageVersion Include="Scrutor" Version="4.2.2" />
     <PackageVersion Include="MediatR" Version="12.4.0" />
-    <PackageVersion Include="Marten.AspNetCore" Version="7.26.3" />
+    <PackageVersion Include="Marten.AspNetCore" Version="7.26.4" />
     <PackageVersion Include="FluentEmail.Mailtrap" Version="2.7.0" />
-    <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.7.2" />
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.7.3" />
     <PackageVersion Include="FluentValidation.AspNetCore" Version="11.3.0" />
     <PackageVersion Include="Microsoft.Web.LibraryManager.Build" Version="2.1.175" />
     <PackageVersion Include="MicroElements.Swashbuckle.FluentValidation" Version="6.0.0" />

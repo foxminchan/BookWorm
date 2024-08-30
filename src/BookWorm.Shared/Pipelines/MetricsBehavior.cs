@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Shared.Pipelines;
 
-public class MetricsBehavior<TRequest, TResponse>(
+public sealed class MetricsBehavior<TRequest, TResponse>(
     IRequestHandler<TRequest, TResponse> requestHandler,
     IActivityScope activityScope,
     CommandHandlerMetrics commandMetrics,

@@ -123,7 +123,7 @@ identityApi
     .WithEnvironment("Services__Gateway", gateway.GetEndpoint(launchProfileName));
 
 gateway
-    .WithEnvironment("BFF__Authority", identityApi.GetEndpoint(launchProfileName))
+    .WithEnvironment("BFF__Authority", identityEndpoint)
     .WithEnvironment("BFF__Api__RemoteUrl", $"{catalogApi.GetEndpoint(launchProfileName)}/api/v1/authors");
 
 builder.Build().Run();
