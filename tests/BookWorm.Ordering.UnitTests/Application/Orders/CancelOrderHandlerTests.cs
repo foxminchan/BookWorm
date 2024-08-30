@@ -32,7 +32,7 @@ public sealed class CancelOrderHandlerTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         order.Status.Should().Be(Status.Canceled);
-        _repository.Verify(x => x.UpdateAsync(order, It.IsAny<CancellationToken>()), Times.Once);
+        _repository.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         _publishEndpoint.Verify(
             x => x.Publish(It.IsAny<OrderCancelledIntegrationEvent>(), It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -50,7 +50,7 @@ public sealed class CancelOrderHandlerTests
 
         // Assert
         await act.Should().ThrowAsync<NotFoundException>();
-        _repository.Verify(x => x.UpdateAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()), Times.Never);
+        _repository.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         _publishEndpoint.Verify(
             x => x.Publish(It.IsAny<OrderCancelledIntegrationEvent>(), It.IsAny<CancellationToken>()), Times.Never);
     }

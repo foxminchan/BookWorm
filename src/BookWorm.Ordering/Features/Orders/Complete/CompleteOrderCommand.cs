@@ -17,7 +17,7 @@ public sealed class CompleteOrderHandler(
 
         order.MarkAsCompleted();
 
-        await repository.UpdateAsync(order, cancellationToken);
+        await repository.SaveChangesAsync(cancellationToken);
 
         var email = identityService.GetEmail();
 
