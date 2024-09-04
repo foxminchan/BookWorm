@@ -34,7 +34,9 @@ var storage = builder.AddAzureStorage("storage");
 
 if (builder.Environment.IsDevelopment())
 {
-    storage.RunAsEmulator(config => config.WithDataBindMount("../../mnt/azurite"));
+    storage.RunAsEmulator(config => config
+        .WithImageTag("3.30.0")
+        .WithDataBindMount("../../mnt/azurite"));
 }
 
 var blobs = storage.AddBlobs(ServiceName.Blob);
