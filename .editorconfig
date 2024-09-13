@@ -23,6 +23,8 @@ charset = utf-8-bom
 # .NET Coding Conventions     #
 ###############################
 [*.{cs,vb}]
+# IDE0040: Accessibility modifiers required
+dotnet_diagnostic.IDE0040.severity = warning
 # Organize usings
 dotnet_sort_system_directives_first = true
 # this. preferences

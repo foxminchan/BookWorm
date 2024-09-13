@@ -1,14 +1,14 @@
-﻿using BookWorm.Constants;
-using BookWorm.Notification.OpenTelemetry;
-
-namespace BookWorm.Notification.Extensions;
+﻿namespace BookWorm.Notification.Extensions;
 
 internal static class Extensions
 {
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
     {
+        builder.AddServiceDefaults();
+
         builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
         builder.Services.AddProblemDetails();
+        builder.Services.AddHttpContextAccessor();
 
         builder.AddRabbitMqEventBus(typeof(Program));
 

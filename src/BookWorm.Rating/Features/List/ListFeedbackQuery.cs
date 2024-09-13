@@ -10,6 +10,7 @@ public sealed class ListFeedbackHandler(IRatingRepository repository)
         CancellationToken cancellationToken)
     {
         var filter = Builders<Feedback>.Filter.Eq(x => x.BookId, request.BookId);
+
         var feedbacks = await repository.ListAsync(filter, request.PageIndex, request.PageSize, cancellationToken);
 
         var totalRecords = await repository.CountAsync(filter, cancellationToken);

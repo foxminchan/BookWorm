@@ -78,7 +78,7 @@ public sealed class GetOrderHandlerTests
     }
 
     [Fact]
-    public async Task GivenNonExistentOrder_ShouldThrowNotFoundException()
+    public async Task GivenNonExistentOrder_ShouldBeReturnNull()
     {
         // Arrange
         _identityServiceMock.Setup(x => x.GetUserIdentity()).Returns(Guid.NewGuid().ToString());
@@ -89,10 +89,10 @@ public sealed class GetOrderHandlerTests
         var query = new GetOrderQuery(Guid.NewGuid());
 
         // Act
-        Func<Task> act = async () => await _handler.Handle(query, CancellationToken.None);
+        var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<NotFoundException>();
+        result.Value.Should().BeNull();
         _bookServiceMock.Verify(x => x.GetBookAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
         _repositoryMock.Verify(x => x.FirstOrDefaultAsync(It.IsAny<OrderFilterSpec>(), It.IsAny<CancellationToken>()),
             Times.Once);

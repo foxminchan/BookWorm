@@ -1,7 +1,5 @@
 ﻿using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
-using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace BookWorm.ServiceDefaults;
 

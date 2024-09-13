@@ -3,7 +3,7 @@
 namespace BookWorm.Rating.IntegrationEvents.EventHandlers;
 
 internal sealed class FeedbackCreatedFailedIntegrationEventHandler(
-    IMongoCollection<Feedback> collection,
+    IRatingRepository repository,
     ILogger<FeedbackCreatedFailedIntegrationEventHandler> logger) : IConsumer<FeedbackCreatedFailedIntegrationEvent>
 {
     public async Task Consume(ConsumeContext<FeedbackCreatedFailedIntegrationEvent> context)
@@ -15,11 +15,13 @@ internal sealed class FeedbackCreatedFailedIntegrationEventHandler(
 
         var id = ObjectId.Parse(@event.FeedbackId);
 
-        var feedback = await collection.Find(f => f.Id == id).FirstOrDefaultAsync();
+        var filter = Builders<Feedback>.Filter.Eq(x => x.Id, id);
+
+        var feedback = await repository.GetAsync(filter, context.CancellationToken);
 
         Guard.Against.NotFound(id, feedback);
 
-        await collection.DeleteOneAsync(f => f.Id == id);
+        await repository.DeleteAsync(filter, context.CancellationToken);
     }
 }
 

@@ -1,5 +1,4 @@
-﻿using BookWorm.Rating.Domain;
-using BookWorm.Rating.Features.Hide;
+﻿using BookWorm.Rating.Features.Hide;
 
 namespace BookWorm.Rating.UnitTests.Application;
 

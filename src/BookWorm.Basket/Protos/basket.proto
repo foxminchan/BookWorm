@@ -1,15 +1,13 @@
 syntax = "proto3";
 
+import "google/protobuf/empty.proto";
+
 option csharp_namespace = "BookWorm.Basket.Grpc";
 
 package BasketApi;
 
 service Basket {
-    rpc GetBasket (BasketRequest) returns (BasketResponse);
-}
-
-message BasketRequest {
-    string basketId = 1;
+    rpc GetBasket (google.protobuf.Empty) returns (BasketResponse);
 }
 
 message BasketResponse {

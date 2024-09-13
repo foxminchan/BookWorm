@@ -1,8 +1,10 @@
 ﻿global using Ardalis.GuardClauses;
 global using Ardalis.Result;
+global using BookWorm.Constants;
 global using BookWorm.Core.SeedWork;
 global using BookWorm.Core.SharedKernel;
 global using BookWorm.Rating.Domain;
+global using BookWorm.Rating.Extensions;
 global using BookWorm.Rating.Repositories;
 global using BookWorm.ServiceDefaults;
 global using BookWorm.Shared.ActivityScope;

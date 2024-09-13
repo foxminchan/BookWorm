@@ -1,56 +1,36 @@
-﻿using BookWorm.Catalog.Domain.BookAggregate.Specifications;
+﻿using BookWorm.Catalog.Features.Books.Get;
 using Grpc.Core;
 using GrpcBookServer = BookWorm.Catalog.Grpc.Book.BookBase;
 using BookModel = BookWorm.Catalog.Domain.BookAggregate.Book;
 
 namespace BookWorm.Catalog.Grpc;
 
-public sealed class BookService(IReadRepository<BookModel> repository, ILogger<BookService> logger) : GrpcBookServer
+public sealed class BookService(ISender sender, ILogger<BookService> logger) : GrpcBookServer
 {
     [AllowAnonymous]
     public override async Task<BookResponse> GetBook(BookRequest request, ServerCallContext context)
     {
-        BookFilterSpec spec = new(Guid.Parse(request.BookId));
-
         if (logger.IsEnabled(LogLevel.Debug))
         {
             logger.LogDebug("[{Service}] - Getting book with id: {Id}", nameof(BookService), request.BookId);
         }
 
-        var book = await repository.FirstOrDefaultAsync(spec);
+        var book = await sender.Send(new GetBookQuery(Guid.Parse(request.BookId)), context.CancellationToken);
 
-        if (book is null)
-        {
-            ThrowNotFound();
-        }
-
-        return MapToBookResponse(book);
+        return book.Value is not null ? MapToBookResponse(book.Value) : new();
     }
 
     [AllowAnonymous]
     public override async Task<BookStatusResponse> GetBookStatus(BookStatusRequest request, ServerCallContext context)
     {
-        BookFilterSpec spec = new(Guid.Parse(request.BookId));
-
         if (logger.IsEnabled(LogLevel.Debug))
         {
             logger.LogDebug("[{Service}] - Getting book status with id: {Id}", nameof(BookService), request.BookId);
         }
 
-        var book = await repository.FirstOrDefaultAsync(spec);
+        var book = await sender.Send(new GetBookQuery(Guid.Parse(request.BookId)), context.CancellationToken);
 
-        if (book is null)
-        {
-            ThrowNotFound();
-        }
-
-        return MapToBookStatusResponse(book);
-    }
-
-    [DoesNotReturn]
-    private static void ThrowNotFound()
-    {
-        throw new RpcException(new(StatusCode.NotFound, "Book not found"));
+        return book.Value is not null ? MapToBookStatusResponse(book.Value) : new();
     }
 
     private static BookResponse MapToBookResponse(BookModel book)

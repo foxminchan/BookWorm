@@ -1,7 +1,4 @@
-﻿using BookWorm.Shared.ActivityScope;
-using MassTransit;
-
-namespace BookWorm.Shared.Bus;
+﻿namespace BookWorm.Shared.Bus;
 
 public sealed class ConsumeFilter<T>(IActivityScope activityScope) : IFilter<ConsumeContext<T>> where T : class
 {

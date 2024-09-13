@@ -1,7 +1,4 @@
-﻿using System.Text.Json;
-using System.Text.Json.Serialization;
-
-namespace BookWorm.Shared.Converters;
+﻿namespace BookWorm.Shared.Converters;
 
 public sealed class StringTrimmerJsonConverter : JsonConverter<string>
 {

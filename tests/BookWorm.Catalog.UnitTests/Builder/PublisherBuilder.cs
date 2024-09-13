@@ -1,6 +1,4 @@
-﻿using BookWorm.Catalog.Domain;
-
-namespace BookWorm.Catalog.UnitTests.Builder;
+﻿namespace BookWorm.Catalog.UnitTests.Builder;
 
 public static class PublisherBuilder
 {

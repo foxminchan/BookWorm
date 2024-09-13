@@ -1,9 +1,10 @@
-﻿using Aspire.Hosting;
-using Aspire.Hosting.ApplicationModel;
-using Aspire.Hosting.Lifecycle;
+﻿using Aspire.Hosting.Lifecycle;
 
 namespace BookWorm.HealthCheck.Hosting;
 
+/// <summary>
+///     https://github.com/dotnet/aspire-samples/blob/main/samples/HealthChecksUI/HealthChecksUI.AppHost/HealthChecksUIExtensions.cs
+/// </summary>
 public static class HealthChecksUiExtensions
 {
     public static IResourceBuilder<HealthChecksUiResource> AddHealthChecksUi(

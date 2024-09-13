@@ -1,20 +1,4 @@
-﻿using BookWorm.Shared.ActivityScope;
-using BookWorm.Shared.Logging;
-using HealthChecks.UI.Client;
-using MassTransit.Logging;
-using MassTransit.Monitoring;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.ServiceDiscovery;
-using OpenTelemetry;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.Trace;
-
-namespace BookWorm.ServiceDefaults;
+﻿namespace BookWorm.ServiceDefaults;
 
 public static class Extensions
 {
@@ -36,8 +20,6 @@ public static class Extensions
             http.AddServiceDiscovery();
         });
 
-        builder.Services.Configure<ServiceDiscoveryOptions>(options => options.AllowedSchemes = ["https"]);
-
         return builder;
     }
 
@@ -56,7 +38,6 @@ public static class Extensions
 
     public static IHostApplicationBuilder ConfigureOpenTelemetry(this IHostApplicationBuilder builder)
     {
-        builder.Services.AddHttpContextAccessor();
         builder.Logging.EnableEnrichment();
         builder.Services.AddLogEnricher<ApplicationEnricher>();
 
@@ -73,15 +54,22 @@ public static class Extensions
                     .AddHttpClientInstrumentation()
                     .AddRuntimeInstrumentation()
                     .AddMeter(InstrumentationOptions.MeterName)
-                    .AddMeter(ActivitySourceProvider.DefaultSourceName);
+                    .AddMeter(ActivitySourceProvider.DefaultSourceName)
+                    .AddMeter("Microsoft.SemanticKernel*");
             })
             .WithTracing(tracing =>
             {
+                if (builder.Environment.IsDevelopment())
+                {
+                    tracing.SetSampler(new AlwaysOnSampler());
+                }
+
                 tracing.AddAspNetCoreInstrumentation()
                     .AddGrpcClientInstrumentation()
                     .AddHttpClientInstrumentation()
                     .AddSource(DiagnosticHeaders.DefaultListenerName)
-                    .AddSource(ActivitySourceProvider.DefaultSourceName);
+                    .AddSource(ActivitySourceProvider.DefaultSourceName)
+                    .AddSource("Microsoft.SemanticKernel*");
             });
 
         builder.AddOpenTelemetryExporters();
@@ -120,11 +108,6 @@ public static class Extensions
 
     public static WebApplication MapDefaultEndpoints(this WebApplication app)
     {
-        if (!app.Environment.IsDevelopment())
-        {
-            return app;
-        }
-
         app.UseCors("AllowAll");
 
         var healthChecks = app.MapGroup("");
@@ -138,6 +121,7 @@ public static class Extensions
         healthChecks.MapHealthChecks("/alive", new() { Predicate = r => r.Tags.Contains("live") });
 
         var healthChecksUrls = app.Configuration["HEALTHCHECKSUI_URLS"];
+
         if (string.IsNullOrWhiteSpace(healthChecksUrls))
         {
             return app;

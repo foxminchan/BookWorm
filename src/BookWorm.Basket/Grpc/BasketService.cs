@@ -1,43 +1,41 @@
-﻿using GrpcBasketBase = BookWorm.Basket.Grpc.Basket.BasketBase;
-using BasketModel = BookWorm.Basket.Domain.Basket;
+﻿using BookWorm.Basket.Features;
+using BookWorm.Basket.Features.Get;
+using Google.Protobuf.WellKnownTypes;
+using GrpcBasketBase = BookWorm.Basket.Grpc.Basket.BasketBase;
 
 namespace BookWorm.Basket.Grpc;
 
-public sealed class BasketService(IRedisService redisService, IBookService bookService, ILogger<BasketService> logger)
+public sealed class BasketService(ISender sender, IBookService bookService, ILogger<BasketService> logger)
     : GrpcBasketBase
 {
     [AllowAnonymous]
-    public override async Task<BasketResponse> GetBasket(BasketRequest request, ServerCallContext context)
+    public override async Task<BasketResponse> GetBasket(Empty request, ServerCallContext context)
     {
+        var userId = context.GetUserIdentity();
+
+        if (string.IsNullOrEmpty(userId))
+        {
+            return new();
+        }
+
         if (logger.IsEnabled(LogLevel.Debug))
         {
-            logger.LogDebug("[{Service}] - - Begin grpc call {Method} with {BasketId}",
-                nameof(BasketService), nameof(GetBasket), request.BasketId);
+            logger.LogDebug("[{Service}] - Begin grpc call {Method} with {BasketId}",
+                nameof(BasketService), nameof(GetBasket), userId);
         }
 
-        var basket = await redisService.HashGetAsync<BasketModel?>(nameof(Basket), request.BasketId);
+        var basket = await sender.Send(new GetBasketQuery());
 
-        if (basket is null)
-        {
-            ThrowNotFound();
-        }
-
-        return await MapToBasketResponse(basket);
+        return basket.Value is not null ? await MapToBasketResponse(basket.Value) : new();
     }
 
-    [DoesNotReturn]
-    private static void ThrowNotFound()
+    private async Task<BasketResponse> MapToBasketResponse(BasketDto basket)
     {
-        throw new RpcException(new(StatusCode.NotFound, "Basket not found"));
-    }
+        var response = new BasketResponse { BasketId = basket.Id.ToString(), TotalPrice = 0.0 };
 
-    private async Task<BasketResponse> MapToBasketResponse(BasketModel basket)
-    {
-        var response = new BasketResponse { BasketId = basket.AccountId.ToString(), TotalPrice = 0.0 };
-
-        foreach (var item in basket.BasketItems)
+        foreach (var item in basket.Items)
         {
-            var book = await bookService.GetBookAsync(item.Id);
+            var book = await bookService.GetBookAsync(item.BookId);
 
             response.Books.Add(new Book
             {

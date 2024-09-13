@@ -1,5 +1,4 @@
-﻿using BookWorm.Catalog.Domain;
-using BookWorm.Catalog.Features.Publishers.Create;
+﻿using BookWorm.Catalog.Features.Publishers.Create;
 
 namespace BookWorm.Catalog.UnitTests.Application.Publishers;
 

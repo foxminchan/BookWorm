@@ -11,7 +11,10 @@ public sealed class GetBookHandler(IReadRepository<Book> repository) : IQueryHan
     {
         var book = await repository.FirstOrDefaultAsync(new BookFilterSpec(request.Id), cancellationToken);
 
-        Guard.Against.NotFound(request.Id, book);
+        if (book is null)
+        {
+            return Result.NotFound();
+        }
 
         return book;
     }

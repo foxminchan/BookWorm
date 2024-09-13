@@ -1,11 +1,4 @@
-﻿using Ardalis.Result;
-using FluentValidation;
-using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-
-namespace BookWorm.Shared.Exceptions;
+﻿namespace BookWorm.Shared.Exceptions;
 
 public sealed class ValidationExceptionHandler(ILogger<ValidationExceptionHandler> logger) : IExceptionHandler
 {
@@ -30,14 +23,7 @@ public sealed class ValidationExceptionHandler(ILogger<ValidationExceptionHandle
 
         if (validationException.Errors is not null)
         {
-            problemDetails.Extensions["errors"] = Result.Invalid(validationException
-                .Errors
-                .Select(e => new ValidationError(
-                    e.PropertyName,
-                    e.ErrorMessage,
-                    StatusCodes.Status400BadRequest.ToString(),
-                    ValidationSeverity.Info
-                )).ToList());
+            problemDetails.Extensions["errors"] = validationException.Errors;
         }
 
         await TypedResults.BadRequest(problemDetails).ExecuteAsync(httpContext);

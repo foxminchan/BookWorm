@@ -1,7 +1,4 @@
-﻿using BookWorm.Shared.ActivityScope;
-using MassTransit;
-
-namespace BookWorm.Shared.Bus;
+﻿namespace BookWorm.Shared.Bus;
 
 public sealed class PublishFilter<T>(IActivityScope activityScope) : IFilter<PublishContext<T>> where T : class
 {

@@ -8,6 +8,7 @@ public sealed class Feedback(Guid bookId, int rating, string? comment, Guid user
     public string? Comment { get; private set; } = comment;
     public Guid UserId { get; private set; } = Guard.Against.Default(userId);
     public bool IsHidden { get; private set; }
+    public DateOnly CreatedAt { get; private set; } = DateOnly.FromDateTime(DateTime.UtcNow);
 
     public void Hide()
     {

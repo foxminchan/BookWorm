@@ -1,6 +1,4 @@
-﻿using BookWorm.Rating.Domain;
-
-namespace BookWorm.Rating.UnitTests.Domain;
+﻿namespace BookWorm.Rating.UnitTests.Domain;
 
 public sealed class FeedbackTests
 {

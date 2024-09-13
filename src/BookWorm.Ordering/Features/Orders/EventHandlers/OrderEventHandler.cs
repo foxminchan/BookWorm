@@ -1,6 +1,4 @@
 ﻿using BookWorm.Ordering.Domain.OrderAggregate.Events;
-using BookWorm.Ordering.Extensions;
-using BookWorm.Ordering.OpenTelemetry;
 
 namespace BookWorm.Ordering.Features.Orders.EventHandlers;
 

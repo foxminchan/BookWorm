@@ -44,7 +44,7 @@ public sealed class GetBookHandlerTests
     }
 
     [Fact]
-    public async Task GivenRequest_ShouldReturnNotFound_WhenBookDoesNotExist()
+    public async Task GivenRequest_ShouldReturnNull_WhenBookDoesNotExist()
     {
         // Arrange
         var id = Guid.NewGuid();
@@ -57,10 +57,10 @@ public sealed class GetBookHandlerTests
         var query = new GetBookQuery(id);
 
         // Act
-        Func<Task> act = async () => await _handler.Handle(query, CancellationToken.None);
+        var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<NotFoundException>();
+        result.Value.Should().BeNull();
         _bookRepositoryMock.Verify(
             x => x.FirstOrDefaultAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()),
             Times.Once);

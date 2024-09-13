@@ -126,7 +126,7 @@ namespace BookWorm.Catalog.Infrastructure.Data.CompiledModels
                     (DateTime v) => v));
             createdDate.AddAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.None);
             createdDate.AddAnnotation("Relational:ColumnName", "created_date");
-            createdDate.AddAnnotation("Relational:DefaultValue", new DateTime(2024, 7, 16, 10, 56, 58, 83, DateTimeKind.Utc).AddTicks(3865));
+            createdDate.AddAnnotation("Relational:DefaultValue", new DateTime(2024, 9, 13, 17, 15, 38, 422, DateTimeKind.Utc).AddTicks(1697));
 
             var description = runtimeEntityType.AddProperty(
                 "Description",
@@ -184,6 +184,7 @@ namespace BookWorm.Catalog.Infrastructure.Data.CompiledModels
             typeof(string),
             propertyInfo: typeof(Book).GetProperty("ImageUrl", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly),
             fieldInfo: typeof(Book).GetField("<ImageUrl>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly),
+            nullable: true,
             maxLength: 500);
         imageUrl.TypeMapping = NpgsqlStringTypeMapping.Default.Clone(
             comparer: new ValueComparer<string>(
@@ -357,7 +358,7 @@ updateDate.TypeMapping = NpgsqlTimestampTzTypeMapping.Default.Clone(
         (Nullable<DateTime> v) => v.HasValue ? (Nullable<DateTime>)(DateTime)v : default(Nullable<DateTime>)));
 updateDate.AddAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.None);
 updateDate.AddAnnotation("Relational:ColumnName", "update_date");
-updateDate.AddAnnotation("Relational:DefaultValue", new DateTime(2024, 7, 16, 10, 56, 58, 83, DateTimeKind.Utc).AddTicks(4193));
+updateDate.AddAnnotation("Relational:DefaultValue", new DateTime(2024, 9, 13, 17, 15, 38, 422, DateTimeKind.Utc).AddTicks(1999));
 
 var version = runtimeEntityType.AddProperty(
     "Version",

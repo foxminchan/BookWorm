@@ -1,9 +1,4 @@
-﻿using Ardalis.Result;
-using EntityFramework.Exceptions.Common;
-using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
+﻿using EntityFramework.Exceptions.Common;
 
 namespace BookWorm.Shared.Exceptions;
 
@@ -29,13 +24,8 @@ public sealed class UniqueConstraintExceptionHandler(ILogger<UniqueConstraintExc
             Detail = "There was a conflict with the unique constraint",
             Extensions =
             {
-                ["errors"] = Result.Invalid(
-                    new ValidationError(
-                        uniqueConstraintException.ConstraintName,
-                        uniqueConstraintException.Message,
-                        StatusCodes.Status409Conflict.ToString(),
-                        ValidationSeverity.Info
-                    ))
+                ["errors"] = new ConstraintViolation(uniqueConstraintException.ConstraintName,
+                    uniqueConstraintException.Message)
             }
         };
 
@@ -44,3 +34,5 @@ public sealed class UniqueConstraintExceptionHandler(ILogger<UniqueConstraintExc
         return true;
     }
 }
+
+internal record ConstraintViolation(string ConstraintName, string Message);

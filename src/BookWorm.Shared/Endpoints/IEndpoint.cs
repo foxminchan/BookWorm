@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Routing;
-
-namespace BookWorm.Shared.Endpoints;
+﻿namespace BookWorm.Shared.Endpoints;
 
 public interface IEndpoint
 {

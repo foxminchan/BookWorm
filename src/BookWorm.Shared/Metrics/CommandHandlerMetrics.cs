@@ -1,7 +1,4 @@
-﻿using System.Diagnostics;
-using System.Diagnostics.Metrics;
-using BookWorm.Shared.ActivityScope;
-using BookWorm.Shared.OpenTelemetry;
+﻿using System.Diagnostics.Metrics;
 
 namespace BookWorm.Shared.Metrics;
 
@@ -13,10 +10,7 @@ public sealed class CommandHandlerMetrics : IDisposable
     private readonly TimeProvider _timeProvider;
     private readonly Counter<long> _totalCommandsNumber;
 
-    public CommandHandlerMetrics(
-        IMeterFactory meterFactory,
-        TimeProvider timeProvider
-    )
+    public CommandHandlerMetrics(IMeterFactory meterFactory, TimeProvider timeProvider)
     {
         _timeProvider = timeProvider;
         _meter = meterFactory.Create(ActivitySourceProvider.DefaultSourceName);

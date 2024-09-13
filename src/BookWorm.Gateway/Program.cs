@@ -2,12 +2,15 @@
 
 builder.AddServiceDefaults();
 
+builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddBff()
     .AddRemoteApis()
     .AddServerSideSessions();
 
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
+    .AddServiceDiscoveryDestinationResolver()
     .AddBffExtensions();
 
 Configuration config = new();
@@ -61,7 +64,6 @@ app.UseRateLimiter();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
-app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseBff();
 app.UseRouting();

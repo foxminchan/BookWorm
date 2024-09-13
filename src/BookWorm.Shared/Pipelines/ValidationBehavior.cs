@@ -1,18 +1,9 @@
-﻿using System.Text.Json;
-using BookWorm.Shared.ActivityScope;
-using BookWorm.Shared.OpenTelemetry;
-using BookWorm.Shared.Validator;
-using FluentValidation;
-using MediatR;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-
-namespace BookWorm.Shared.Pipelines;
+﻿namespace BookWorm.Shared.Pipelines;
 
 public sealed class ValidationBehavior<TRequest, TResponse>(
-    IServiceProvider serviceProvider,
-    ILogger<ValidationBehavior<TRequest, TResponse>> logger)
-    : IPipelineBehavior<TRequest, TResponse>
+    IActivityScope activityScope,
+    IEnumerable<IValidator<TRequest>> validators,
+    ILogger<ValidationBehavior<TRequest, TResponse>> logger) : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
     where TResponse : notnull
 {
@@ -31,22 +22,21 @@ public sealed class ValidationBehavior<TRequest, TResponse>(
             "[{Behavior}] handle request={Request} with content={RequestData}",
             behavior, typeof(TRequest).FullName, JsonSerializer.Serialize(request));
 
-        var validators = serviceProvider
-                             .GetService<IEnumerable<IValidator<TRequest>>>()?.ToList()
-                         ?? throw new InvalidOperationException();
+        var context = new ValidationContext<TRequest>(request);
 
-        var activityScope = serviceProvider.GetRequiredService<IActivityScope>();
+        var validationResult = await Task.WhenAll(validators.Select(v => v.ValidateAsync(context, cancellationToken)));
 
-        if (validators.Count != 0)
+        var failures = validationResult.Select(
+            r => r.Errors.Select(e => new ValidationFailure(e.PropertyName, e.ErrorMessage)))
+            .SelectMany(f => f)
+            .ToList();
+
+        if (failures.Count != 0)
         {
-            await Task.WhenAll(
-                validators.Select(v => v.HandleValidationAsync(request))
-            );
+            throw new ValidationException(failures);
         }
 
-        var response = await next();
-
-        await activityScope.Run(
+        return await activityScope.Run(
             behavior,
             async (_, _) => await next(),
             new()
@@ -61,7 +51,5 @@ public sealed class ValidationBehavior<TRequest, TResponse>(
             },
             cancellationToken
         );
-
-        return response;
     }
 }

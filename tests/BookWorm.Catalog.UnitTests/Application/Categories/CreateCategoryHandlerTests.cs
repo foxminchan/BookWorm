@@ -1,5 +1,4 @@
-﻿using BookWorm.Catalog.Domain;
-using BookWorm.Catalog.Features.Categories.Create;
+﻿using BookWorm.Catalog.Features.Categories.Create;
 
 namespace BookWorm.Catalog.UnitTests.Application.Categories;
 

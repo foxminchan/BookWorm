@@ -1,6 +1,4 @@
-﻿using BookWorm.Constants;
-
-namespace BookWorm.Rating.Features.Create;
+﻿namespace BookWorm.Rating.Features.Create;
 
 internal sealed class CreateFeedbackValidator : AbstractValidator<CreateFeedbackCommand>
 {

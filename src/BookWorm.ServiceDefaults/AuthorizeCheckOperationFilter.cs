@@ -1,9 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.SwaggerGen;
-
-namespace BookWorm.ServiceDefaults;
+﻿namespace BookWorm.ServiceDefaults;
 
 public sealed class AuthorizeCheckOperationFilter(string[] scopes) : IOperationFilter
 {

@@ -1,7 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Diagnostics.Enrichment;
-
-namespace BookWorm.Shared.Logging;
+﻿namespace BookWorm.Shared.Logging;
 
 public sealed class ApplicationEnricher(IHttpContextAccessor httpContextAccessor) : ILogEnricher
 {

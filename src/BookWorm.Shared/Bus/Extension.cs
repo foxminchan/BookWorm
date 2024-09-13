@@ -1,10 +1,4 @@
-﻿using BookWorm.Constants;
-using FluentValidation;
-using MassTransit;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
-
-namespace BookWorm.Shared.Bus;
+﻿namespace BookWorm.Shared.Bus;
 
 public static class Extension
 {

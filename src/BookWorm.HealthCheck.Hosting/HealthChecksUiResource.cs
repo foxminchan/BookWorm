@@ -1,10 +1,12 @@
 ﻿using System.Diagnostics;
-using Aspire.Hosting;
-using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Lifecycle;
 
 namespace BookWorm.HealthCheck.Hosting;
 
+/// <summary>
+///     https://github.com/dotnet/aspire-samples/blob/main/samples/HealthChecksUI/HealthChecksUI.AppHost/HealthChecksUIResource.cs
+/// </summary>
+/// <param name="name"></param>
 public sealed class HealthChecksUiResource(string name) : ContainerResource(name), IResourceWithServiceDiscovery
 {
     public IList<MonitoredProject> MonitoredProjects { get; } = [];
@@ -51,7 +53,7 @@ internal sealed class HealthChecksUiLifecycleHook(DistributedApplicationExecutio
 {
     private const int DefaultAspNetCoreContainerPort = 8080;
     private const int DefaultHealthChecksPort = 8081;
-    private const string HealthChecksUiUrls = "HEALTHCHECKSUI_URLS";
+    private const string HealthchecksuiUrls = "HEALTHCHECKSUI_URLS";
     private const string AspnetcoreHttpPorts = "ASPNETCORE_HTTP_PORTS";
     private const string AspnetcoreHttpsPorts = "ASPNETCORE_HTTPS_PORTS";
 
@@ -114,7 +116,7 @@ internal sealed class HealthChecksUiLifecycleHook(DistributedApplicationExecutio
                         }
                     }
 
-                    context.EnvironmentVariables.Add(HealthChecksUiUrls, healthChecksEndpointsExpression);
+                    context.EnvironmentVariables.Add(HealthchecksuiUrls, healthChecksEndpointsExpression);
                 });
             }
         }
@@ -127,7 +129,7 @@ internal sealed class HealthChecksUiLifecycleHook(DistributedApplicationExecutio
         return Task.CompletedTask;
     }
 
-    public static Task AfterEndpointsAllocatedAsync(DistributedApplicationModel appModel,
+    public Task AfterEndpointsAllocatedAsync(DistributedApplicationModel appModel,
         CancellationToken cancellationToken = default)
     {
         ConfigureHealthChecksUiContainers(appModel.Resources, false);
@@ -147,11 +149,13 @@ internal sealed class HealthChecksUiLifecycleHook(DistributedApplicationExecutio
             {
                 var monitoredProject = monitoredProjects[i];
                 var healthChecksEndpoint = monitoredProject.Project.GetEndpoint(monitoredProject.EndpointName);
+
                 var nameEnvVarName = HealthChecksUiResource.KnownEnvVars.GetHealthCheckNameKey(i);
                 healthChecksUiResource.Annotations.Add(
                     new EnvironmentCallbackAnnotation(
                         nameEnvVarName,
                         () => monitoredProject.Name));
+
                 var probePath = monitoredProject.ProbePath.TrimStart('/');
                 var urlEnvVarName = HealthChecksUiResource.KnownEnvVars.GetHealthCheckUriKey(i);
 

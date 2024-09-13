@@ -1,6 +1,4 @@
-﻿using BookWorm.Basket.Domain;
-
-namespace BookWorm.Basket.UnitTests.Domain;
+﻿namespace BookWorm.Basket.UnitTests.Domain;
 
 public class BasketItemTests
 {

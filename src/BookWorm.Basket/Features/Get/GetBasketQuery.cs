@@ -17,7 +17,10 @@ public sealed class GetBasketHandler(
 
         var basket = await redisService.HashGetAsync<BasketModel?>(nameof(Basket), customerId);
 
-        Guard.Against.NotFound(customerId, basket);
+        if (basket is null)
+        {
+            return Result.NotFound();
+        }
 
         var basketDto = new BasketDto(basket.AccountId, [], 0.0m);
 

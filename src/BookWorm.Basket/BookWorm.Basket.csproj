@@ -8,8 +8,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Protobuf Include="Proto\basket.proto" GrpcServices="Server" />
-    <Protobuf Include="..\BookWorm.Catalog\Proto\book.proto" GrpcServices="Client" />
+    <Protobuf Include="Protos\basket.proto" GrpcServices="Server" />
+    <Protobuf Include="..\BookWorm.Catalog\Protos\book.proto" Link="Protos\book.proto" GrpcServices="Client" />
   </ItemGroup>
 
   <ItemGroup>

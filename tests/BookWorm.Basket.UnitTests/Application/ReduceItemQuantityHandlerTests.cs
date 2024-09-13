@@ -1,5 +1,4 @@
-﻿using BookWorm.Basket.Domain;
-using BookWorm.Basket.Features.ReduceItemQuantity;
+﻿using BookWorm.Basket.Features.ReduceItemQuantity;
 using BasketModel = BookWorm.Basket.Domain.Basket;
 
 namespace BookWorm.Basket.UnitTests.Application;

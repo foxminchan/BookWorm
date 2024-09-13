@@ -10,7 +10,6 @@ internal static class Extension
 
         builder.AddAzureOpenAIClient(ServiceName.OpenAi);
         builder.Services.AddOpenAITextEmbeddingGeneration(modelName);
-
         builder.Services.AddSingleton<IAiService, AiService>();
 
         return builder;

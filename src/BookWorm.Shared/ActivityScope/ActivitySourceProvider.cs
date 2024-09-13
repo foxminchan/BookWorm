@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-
-namespace BookWorm.Shared.ActivityScope;
+﻿namespace BookWorm.Shared.ActivityScope;
 
 public static class ActivitySourceProvider
 {

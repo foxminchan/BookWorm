@@ -7,7 +7,7 @@ public static class Extension
 {
     public static IHostApplicationBuilder AddPersistence(this IHostApplicationBuilder builder)
     {
-        builder.Services.AddMigration<CatalogContext>();
+        builder.Services.AddMigration<CatalogContext, CatalogContextSeed>();
 
         builder.AddNpgsqlDbContext<CatalogContext>(ServiceName.Database.Catalog, configureDbContextOptions:
             dbContextOptionsBuilder =>

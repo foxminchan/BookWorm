@@ -14,7 +14,7 @@ public sealed class BasketService(GrpcBasketClient basketClient, ILogger<BasketS
                 basketId);
         }
 
-        var response = await basketClient.GetBasketAsync(new() { BasketId = basketId.ToString() },
+        var response = await basketClient.GetBasketAsync(new(),
             cancellationToken: cancellationToken);
 
         return MapBasket(response);

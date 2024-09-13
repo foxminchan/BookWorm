@@ -1,6 +1,4 @@
-﻿using BookWorm.Contracts;
-using BookWorm.Rating.Domain;
-using BookWorm.Rating.Features.Create;
+﻿using BookWorm.Rating.Features.Create;
 
 namespace BookWorm.Rating.UnitTests.Application;
 
