@@ -39,7 +39,7 @@ public sealed class ListBooksHandler(IAiService aiService, IReadRepository<Book>
 
         var books = await repository.ListAsync(spec, cancellationToken);
 
-        var totalRecords = await repository.CountAsync(spec, cancellationToken);
+        var totalRecords = await repository.CountAsync(cancellationToken);
 
         var totalPages = (int)Math.Ceiling(totalRecords / (double)request.PageSize);
 

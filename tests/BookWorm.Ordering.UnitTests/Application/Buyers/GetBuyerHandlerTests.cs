@@ -59,7 +59,7 @@ public sealed class GetBuyerHandlerTests
     }
 
     [Fact]
-    public async Task GivenInvalidBuyerIdAndUserIsNotAdmin_ShouldReturnNotFound_WhenHandleAsync()
+    public async Task GivenInvalidBuyerIdAndUserIsNotAdmin_ShouldReturnNull_WhenHandleAsync()
     {
         // Arrange
         var buyerId = Guid.NewGuid();
@@ -70,17 +70,17 @@ public sealed class GetBuyerHandlerTests
         _identityServiceMock.Setup(x => x.GetUserIdentity()).Returns(buyerId.ToString());
 
         // Act
-        Func<Task> act = async () => await _handler.Handle(new(buyerId), CancellationToken.None);
+        var result = await _handler.Handle(new(buyerId), CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<NotFoundException>();
+        result.Value.Should().BeNull();
         _repositoryMock.Verify(x => x.GetByIdAsync(buyerId, It.IsAny<CancellationToken>()), Times.Once);
         _identityServiceMock.Verify(x => x.IsAdminRole(), Times.Once);
         _identityServiceMock.Verify(x => x.GetUserIdentity(), Times.Once);
     }
 
     [Fact]
-    public async Task GivenInvalidBuyerIdAndUserIsAdmin_ShouldReturnNotFound_WhenHandleAsync()
+    public async Task GivenInvalidBuyerIdAndUserIsAdmin_ShouldReturnNull_WhenHandleAsync()
     {
         // Arrange
         var buyerId = Guid.NewGuid();
@@ -90,10 +90,10 @@ public sealed class GetBuyerHandlerTests
         _identityServiceMock.Setup(x => x.IsAdminRole()).Returns(true);
 
         // Act
-        Func<Task> act = async () => await _handler.Handle(new(buyerId), CancellationToken.None);
+        var result = await _handler.Handle(new(buyerId), CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<NotFoundException>();
+        result.Value.Should().BeNull();
         _repositoryMock.Verify(x => x.GetByIdAsync(buyerId, It.IsAny<CancellationToken>()), Times.Once);
         _identityServiceMock.Verify(x => x.IsAdminRole(), Times.Once);
         _identityServiceMock.Verify(x => x.GetUserIdentity(), Times.Never);

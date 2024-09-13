@@ -38,7 +38,7 @@ namespace BookWorm.Catalog.Infrastructure.Data.CompiledModels
             PublisherEntityType.CreateAnnotations(publisher);
 
             AddAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
-            AddAnnotation("ProductVersion", "8.0.7");
+            AddAnnotation("ProductVersion", "8.0.8");
             AddAnnotation("Relational:MaxIdentifierLength", 63);
             AddRuntimeAnnotation("Relational:RelationalModel", CreateRelationalModel());
         }
@@ -132,7 +132,10 @@ namespace BookWorm.Catalog.Infrastructure.Data.CompiledModels
             bookWormCatalogDomainBookAggregateBookTableBase.Columns.Add("embedding", embeddingColumnBase);
             var idColumnBase0 = new ColumnBase<ColumnMappingBase>("id", "uuid", bookWormCatalogDomainBookAggregateBookTableBase);
             bookWormCatalogDomainBookAggregateBookTableBase.Columns.Add("id", idColumnBase0);
-            var image_urlColumnBase = new ColumnBase<ColumnMappingBase>("image_url", "character varying(500)", bookWormCatalogDomainBookAggregateBookTableBase);
+            var image_urlColumnBase = new ColumnBase<ColumnMappingBase>("image_url", "character varying(500)", bookWormCatalogDomainBookAggregateBookTableBase)
+            {
+                IsNullable = true
+            };
             bookWormCatalogDomainBookAggregateBookTableBase.Columns.Add("image_url", image_urlColumnBase);
             var is_deletedColumnBase = new ColumnBase<ColumnMappingBase>("is_deleted", "boolean", bookWormCatalogDomainBookAggregateBookTableBase);
             bookWormCatalogDomainBookAggregateBookTableBase.Columns.Add("is_deleted", is_deletedColumnBase);
@@ -194,7 +197,10 @@ namespace BookWorm.Catalog.Infrastructure.Data.CompiledModels
                 IsNullable = true
             };
             booksTable.Columns.Add("embedding", embeddingColumn);
-            var image_urlColumn = new Column("image_url", "character varying(500)", booksTable);
+            var image_urlColumn = new Column("image_url", "character varying(500)", booksTable)
+            {
+                IsNullable = true
+            };
             booksTable.Columns.Add("image_url", image_urlColumn);
             var is_deletedColumn = new Column("is_deleted", "boolean", booksTable);
             booksTable.Columns.Add("is_deleted", is_deletedColumn);

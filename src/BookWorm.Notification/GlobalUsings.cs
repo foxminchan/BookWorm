@@ -1,8 +1,10 @@
 global using System.Diagnostics;
 global using Ardalis.GuardClauses;
+global using BookWorm.Constants;
 global using BookWorm.Core.SeedWork;
 global using BookWorm.Notification.Infrastructure;
 global using BookWorm.Notification.Models;
+global using BookWorm.Notification.OpenTelemetry;
 global using BookWorm.ServiceDefaults;
 global using BookWorm.Shared.Bus;
 global using BookWorm.Shared.Exceptions;

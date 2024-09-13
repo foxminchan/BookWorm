@@ -1,7 +1,4 @@
-﻿using Aspire.Hosting;
-using Aspire.Hosting.ApplicationModel;
-
-namespace BookWorm.MailDev.Hosting;
+﻿namespace BookWorm.MailDev.Hosting;
 
 public static class MailDevResourceBuilderExtensions
 {

@@ -8,7 +8,6 @@ public sealed class GetBuyerEndpoint : IEndpoint<Ok<BuyerDto>, Guid, ISender>
     {
         app.MapGet("/buyers/{id:guid}", async (Guid id, ISender sender) => await HandleAsync(id, sender))
             .Produces<Ok<BuyerDto>>()
-            .ProducesProblem(StatusCodes.Status404NotFound)
             .WithTags(nameof(Buyer))
             .WithName("Get Buyer")
             .MapToApiVersion(new(1, 0))

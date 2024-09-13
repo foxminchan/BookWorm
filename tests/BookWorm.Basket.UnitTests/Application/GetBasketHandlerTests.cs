@@ -45,7 +45,7 @@ public sealed class GetBasketHandlerTests
     }
 
     [Fact]
-    public async Task GivenValidCustomerId_ShouldThrowNotFoundException_WhenBasketDoesNotExist()
+    public async Task GivenValidCustomerId_ShouldReturnNull_WhenBasketDoesNotExist()
     {
         // Arrange
         var customerId = Guid.NewGuid().ToString();
@@ -55,10 +55,10 @@ public sealed class GetBasketHandlerTests
             .ReturnsAsync((BasketModel?)null);
 
         // Act
-        Func<Task> act = async () => await _handler.Handle(new(), CancellationToken.None);
+        var result = await _handler.Handle(new(), CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<NotFoundException>();
+        result.Value.Should().BeNull();
     }
 
     [Fact]

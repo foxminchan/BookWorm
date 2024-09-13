@@ -3,8 +3,7 @@ using GrpcBookServer = BookWorm.Catalog.Grpc.BookService;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.AddServiceDefaults()
-    .AddApplicationServices();
+builder.AddApplicationServices();
 
 var app = builder.Build();
 

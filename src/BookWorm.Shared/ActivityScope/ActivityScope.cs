@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using OpenTelemetry.Trace;
+﻿using OpenTelemetry.Trace;
 
 namespace BookWorm.Shared.ActivityScope;
 

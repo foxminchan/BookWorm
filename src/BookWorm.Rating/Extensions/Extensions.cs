@@ -1,11 +1,11 @@
-﻿using BookWorm.Constants;
-
-namespace BookWorm.Rating.Extensions;
+﻿namespace BookWorm.Rating.Extensions;
 
 internal static class Extensions
 {
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
     {
+        builder.AddServiceDefaults();
+
         builder.Services.Configure<JsonOptions>(options =>
         {
             options.SerializerOptions.PropertyNameCaseInsensitive = true;
@@ -31,10 +31,10 @@ internal static class Extensions
         builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(conn));
 
         builder.Services.AddSingleton(provider =>
-            provider.GetService<IMongoClient>()!.GetDatabase(MongoUrl.Create(conn).DatabaseName));
+            provider.GetRequiredService<IMongoClient>().GetDatabase(MongoUrl.Create(conn).DatabaseName));
 
         builder.Services.AddScoped(provider =>
-            provider.GetService<IMongoDatabase>()!.GetCollection<Feedback>(nameof(Feedback)));
+            provider.GetRequiredService<IMongoDatabase>().GetCollection<Feedback>(nameof(Feedback)));
 
         builder.AddRabbitMqEventBus(typeof(global::Program), cfg =>
         {
@@ -53,6 +53,7 @@ internal static class Extensions
         builder.Services.AddSingleton<CommandHandlerMetrics>();
         builder.Services.AddSingleton<QueryHandlerMetrics>();
 
+        builder.Services.AddHttpContextAccessor();
         builder.Services.AddScoped<IRatingRepository, RatingRepository>();
 
         builder.AddVersioning();

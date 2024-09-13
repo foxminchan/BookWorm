@@ -1,12 +1,4 @@
-﻿using System.Text;
-using Asp.Versioning.ApiExplorer;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Primitives;
-using Microsoft.OpenApi.Any;
-using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.SwaggerGen;
+﻿using MongoDB.Bson;
 
 namespace BookWorm.ServiceDefaults;
 
@@ -24,6 +16,12 @@ public sealed class ConfigureSwaggerGenOptions(IApiVersionDescriptionProvider pr
         {
             Type = "string", Format = "date", Example = new OpenApiString(DateTime.Today.ToString("yyyy-MM-dd"))
         });
+
+        options.MapType<ObjectId>(() => new()
+        {
+            Type = "string", Format = "ObjectId", Example = new OpenApiString(ObjectId.GenerateNewId().ToString())
+        });
+
         options.CustomSchemaIds(type => type.ToString());
 
         ConfigureAuthorization(options);

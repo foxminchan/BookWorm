@@ -14,17 +14,5 @@ internal sealed class PublisherConfiguration : BaseConfiguration<Publisher>
 
         builder.HasIndex(e => e.Name)
             .IsUnique();
-
-        builder.HasData(GetSampleData());
-    }
-
-    private static IEnumerable<Publisher> GetSampleData()
-    {
-        yield return new("O'Reilly Media");
-        yield return new("Manning Publications");
-        yield return new("Packt Publishing");
-        yield return new("Apress");
-        yield return new("No Starch Press");
-        yield return new("Pragmatic Bookshelf");
     }
 }

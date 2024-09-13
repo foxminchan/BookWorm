@@ -6,7 +6,6 @@ public sealed class GetBasketEndpoint : IEndpoint<Ok<BasketDto>, ISender>
     {
         app.MapGet("/baskets", async (ISender sender) => await HandleAsync(sender))
             .Produces<Ok<BasketDto>>()
-            .ProducesProblem(StatusCodes.Status404NotFound)
             .WithTags(nameof(Basket))
             .WithName("Get Basket")
             .MapToApiVersion(new(1, 0))

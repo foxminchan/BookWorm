@@ -27,7 +27,10 @@ public sealed class GetOrderHandler(
 
         var order = await repository.FirstOrDefaultAsync(spec, cancellationToken);
 
-        Guard.Against.NotFound(customerId, order);
+        if (order is null)
+        {
+            return Result.NotFound();
+        }
 
         List<OrderItemDto> orderItems = [];
         foreach (var item in order.OrderItems)

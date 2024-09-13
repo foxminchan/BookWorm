@@ -1,6 +1,4 @@
-﻿using Aspire.Hosting.ApplicationModel;
-
-namespace BookWorm.MailDev.Hosting;
+﻿namespace BookWorm.MailDev.Hosting;
 
 public sealed class MailDevResource(string name) : ContainerResource(name), IResourceWithConnectionString
 {

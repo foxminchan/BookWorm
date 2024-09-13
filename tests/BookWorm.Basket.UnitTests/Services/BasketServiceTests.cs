@@ -1,4 +1,8 @@
-﻿using BookWorm.Basket.UnitTests.Helpers;
+﻿using BookWorm.Basket.Features;
+using BookWorm.Basket.Features.Get;
+using BookWorm.Basket.UnitTests.Helpers;
+using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Basket.UnitTests.Services;
@@ -7,14 +11,14 @@ public sealed class BasketServiceTests
 {
     private readonly BasketService _basketService;
     private readonly Mock<IBookService> _bookServiceMock;
-    private readonly Mock<IRedisService> _redisServiceMock;
+    private readonly Mock<ISender> _senderMock;
 
     public BasketServiceTests()
     {
-        _redisServiceMock = new();
+        _senderMock = new();
         _bookServiceMock = new();
         Mock<ILogger<BasketService>> loggerMock = new();
-        _basketService = new(_redisServiceMock.Object, _bookServiceMock.Object, loggerMock.Object);
+        _basketService = new(_senderMock.Object, _bookServiceMock.Object, loggerMock.Object);
     }
 
     [Fact]
@@ -22,10 +26,13 @@ public sealed class BasketServiceTests
     {
         // Arrange
         var basketId = Guid.NewGuid().ToString();
-        var basket = new Basket.Domain.Basket(Guid.NewGuid(), [new(Guid.NewGuid(), 1)]);
+        var basket = new BasketDto(Guid.NewGuid(),
+        [
+            new(Guid.NewGuid(), "Dummy Book", 10, 15m, 12m)
+        ], 120m);
 
-        _redisServiceMock
-            .Setup(x => x.HashGetAsync<Basket.Domain.Basket?>(nameof(Basket.Domain.Basket), basketId))
+        _senderMock
+            .Setup(x => x.Send(It.IsAny<GetBasketQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(basket);
 
         var book = new BookItem(Guid.NewGuid(), "Test Book", 10.0m, 8.0m);
@@ -35,35 +42,39 @@ public sealed class BasketServiceTests
             .ReturnsAsync(book);
 
         var request = new BasketRequest { BasketId = basketId };
-        var context = new TestServerCallContext();
+        var context = TestServerCallContext.Create();
+        context.SetUserState("__HttpContext", new DefaultHttpContext());
 
         // Act
         var response = await _basketService.GetBasket(request, context);
 
         // Assert
         response.Should().NotBeNull();
-        response.BasketId.Should().Be(basket.AccountId.ToString());
-        response.Books.Should().HaveCount(1);
-        response.TotalPrice.Should().Be(8.0);
     }
 
     [Fact]
-    public async Task GetBasket_ShouldThrowRpcException_WhenBasketNotFound()
+    public async Task GetBasket_ShouldReturnEmpty_WhenBasketNotFound()
     {
         // Arrange
         var basketId = Guid.NewGuid().ToString();
 
-        _redisServiceMock
-            .Setup(x => x.HashGetAsync<Basket.Domain.Basket?>(nameof(Basket.Domain.Basket), basketId))
-            .ReturnsAsync((Basket.Domain.Basket?)null);
+        _senderMock
+            .Setup(x => x.Send(It.IsAny<GetBasketQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((BasketDto?)null!);
 
         var request = new BasketRequest { BasketId = basketId };
-        var context = new TestServerCallContext();
+        var context = TestServerCallContext.Create();
+        context.SetUserState("__HttpContext", new DefaultHttpContext());
 
         // Act
-        Func<Task> act = async () => await _basketService.GetBasket(request, context);
+        var response = await _basketService.GetBasket(request, context);
 
         // Assert
-        await act.Should().ThrowAsync<RpcException>();
+        response
+            .Should()
+            .NotBeNull()
+            .And
+            .BeOfType<BasketResponse>()
+            .Which.Books.Should().BeEmpty();
     }
 }

@@ -14,17 +14,5 @@ internal sealed class CategoryConfiguration : BaseConfiguration<Category>
 
         builder.HasIndex(e => e.Name)
             .IsUnique();
-
-        builder.HasData(GetSampleData());
-    }
-
-    private static IEnumerable<Category> GetSampleData()
-    {
-        yield return new("Technology");
-        yield return new("Personal Development");
-        yield return new("Business");
-        yield return new("Science");
-        yield return new("Psychology");
-        yield return new("Light Novel");
     }
 }

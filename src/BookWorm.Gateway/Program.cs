@@ -2,6 +2,8 @@
 
 builder.AddServiceDefaults();
 
+builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddBff()
     .AddRemoteApis()
     .AddServerSideSessions();
@@ -61,7 +63,6 @@ app.UseRateLimiter();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
-app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseBff();
 app.UseRouting();

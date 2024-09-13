@@ -7,7 +7,6 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.Mapping;
 
 #pragma warning disable 219, 612, 618
 #nullable disable
@@ -45,48 +44,6 @@ namespace BookWorm.Catalog.Infrastructure.Data.CompiledModels
                 mappingInfo: new RelationalTypeMappingInfo(
                     storeTypeName: "uuid"));
             bookId.AddAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.None);
-
-            var discountPrice = runtimeEntityType.AddProperty(
-                "DiscountPrice",
-                typeof(decimal?),
-                propertyInfo: typeof(Price).GetProperty("DiscountPrice", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly),
-                fieldInfo: typeof(Price).GetField("<DiscountPrice>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly),
-                nullable: true);
-            discountPrice.TypeMapping = NpgsqlDecimalTypeMapping.Default.Clone(
-                comparer: new ValueComparer<decimal?>(
-                    (Nullable<decimal> v1, Nullable<decimal> v2) => v1.HasValue && v2.HasValue && (decimal)v1 == (decimal)v2 || !v1.HasValue && !v2.HasValue,
-                    (Nullable<decimal> v) => v.HasValue ? ((decimal)v).GetHashCode() : 0,
-                    (Nullable<decimal> v) => v.HasValue ? (Nullable<decimal>)(decimal)v : default(Nullable<decimal>)),
-                keyComparer: new ValueComparer<decimal?>(
-                    (Nullable<decimal> v1, Nullable<decimal> v2) => v1.HasValue && v2.HasValue && (decimal)v1 == (decimal)v2 || !v1.HasValue && !v2.HasValue,
-                    (Nullable<decimal> v) => v.HasValue ? ((decimal)v).GetHashCode() : 0,
-                    (Nullable<decimal> v) => v.HasValue ? (Nullable<decimal>)(decimal)v : default(Nullable<decimal>)),
-                providerValueComparer: new ValueComparer<decimal?>(
-                    (Nullable<decimal> v1, Nullable<decimal> v2) => v1.HasValue && v2.HasValue && (decimal)v1 == (decimal)v2 || !v1.HasValue && !v2.HasValue,
-                    (Nullable<decimal> v) => v.HasValue ? ((decimal)v).GetHashCode() : 0,
-                    (Nullable<decimal> v) => v.HasValue ? (Nullable<decimal>)(decimal)v : default(Nullable<decimal>)));
-            discountPrice.AddAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.None);
-
-            var originalPrice = runtimeEntityType.AddProperty(
-                "OriginalPrice",
-                typeof(decimal),
-                propertyInfo: typeof(Price).GetProperty("OriginalPrice", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly),
-                fieldInfo: typeof(Price).GetField("<OriginalPrice>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly),
-                sentinel: 0m);
-            originalPrice.TypeMapping = NpgsqlDecimalTypeMapping.Default.Clone(
-                comparer: new ValueComparer<decimal>(
-                    (decimal v1, decimal v2) => v1 == v2,
-                    (decimal v) => v.GetHashCode(),
-                    (decimal v) => v),
-                keyComparer: new ValueComparer<decimal>(
-                    (decimal v1, decimal v2) => v1 == v2,
-                    (decimal v) => v.GetHashCode(),
-                    (decimal v) => v),
-                providerValueComparer: new ValueComparer<decimal>(
-                    (decimal v1, decimal v2) => v1 == v2,
-                    (decimal v) => v.GetHashCode(),
-                    (decimal v) => v));
-            originalPrice.AddAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.None);
 
             var key = runtimeEntityType.AddKey(
                 new[] { bookId });

@@ -6,6 +6,8 @@ internal static class Extensions
 {
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
     {
+        builder.AddServiceDefaults();
+
         builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
         builder.Services.AddExceptionHandler<NotFoundExceptionHandler>();
         builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -40,12 +42,12 @@ internal static class Extensions
         builder.Services.AddSingleton<IBookService, BookService>();
 
         builder.Services.AddGrpc();
-
         builder.Services.AddGrpcClient<GrpcBookClient>(o =>
         {
             o.Address = new("https+http://catalog-api");
         });
 
+        builder.Services.AddHttpContextAccessor();
         builder.Services.AddTransient<IIdentityService, IdentityService>();
     }
 }

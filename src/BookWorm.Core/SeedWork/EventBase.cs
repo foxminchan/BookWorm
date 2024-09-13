@@ -1,6 +1,4 @@
-﻿using MediatR;
-
-namespace BookWorm.Core.SeedWork;
+﻿namespace BookWorm.Core.SeedWork;
 
 public abstract class EventBase : INotification
 {

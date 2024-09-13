@@ -1,9 +1,10 @@
-﻿using GrpcBasketBase = BookWorm.Basket.Grpc.Basket.BasketBase;
-using BasketModel = BookWorm.Basket.Domain.Basket;
+﻿using BookWorm.Basket.Features;
+using BookWorm.Basket.Features.Get;
+using GrpcBasketBase = BookWorm.Basket.Grpc.Basket.BasketBase;
 
 namespace BookWorm.Basket.Grpc;
 
-public sealed class BasketService(IRedisService redisService, IBookService bookService, ILogger<BasketService> logger)
+public sealed class BasketService(ISender sender, IBookService bookService, ILogger<BasketService> logger)
     : GrpcBasketBase
 {
     [AllowAnonymous]
@@ -15,29 +16,25 @@ public sealed class BasketService(IRedisService redisService, IBookService bookS
                 nameof(BasketService), nameof(GetBasket), request.BasketId);
         }
 
-        var basket = await redisService.HashGetAsync<BasketModel?>(nameof(Basket), request.BasketId);
+        var userId = context.GetUserIdentity();
 
-        if (basket is null)
+        if (string.IsNullOrEmpty(userId))
         {
-            ThrowNotFound();
+            return new();
         }
 
-        return await MapToBasketResponse(basket);
+        var basket = await sender.Send(new GetBasketQuery());
+
+        return basket.Value is not null ? await MapToBasketResponse(basket.Value) : new();
     }
 
-    [DoesNotReturn]
-    private static void ThrowNotFound()
+    private async Task<BasketResponse> MapToBasketResponse(BasketDto basket)
     {
-        throw new RpcException(new(StatusCode.NotFound, "Basket not found"));
-    }
+        var response = new BasketResponse { BasketId = basket.Id.ToString(), TotalPrice = 0.0 };
 
-    private async Task<BasketResponse> MapToBasketResponse(BasketModel basket)
-    {
-        var response = new BasketResponse { BasketId = basket.AccountId.ToString(), TotalPrice = 0.0 };
-
-        foreach (var item in basket.BasketItems)
+        foreach (var item in basket.Items)
         {
-            var book = await bookService.GetBookAsync(item.Id);
+            var book = await bookService.GetBookAsync(item.BookId);
 
             response.Books.Add(new Book
             {

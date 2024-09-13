@@ -1,6 +1,4 @@
-﻿using BookWorm.Shared.ActivityScope;
-
-namespace BookWorm.Shared.OpenTelemetry;
+﻿namespace BookWorm.Shared.OpenTelemetry;
 
 public static class TelemetryTags
 {

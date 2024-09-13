@@ -1,7 +1,4 @@
-﻿using BookWorm.Notification.Extensions;
-using BookWorm.Notification.OpenTelemetry;
-
-namespace BookWorm.Notification.Infrastructure;
+﻿namespace BookWorm.Notification.Infrastructure;
 
 public sealed class SmtpOutboxDecorator(
     ISmtpService smtpService,
@@ -10,8 +7,6 @@ public sealed class SmtpOutboxDecorator(
 {
     public async Task SendEmailAsync(EmailMetadata emailMetadata, CancellationToken cancellationToken = default)
     {
-        NotificationTrace.LogEmailSending(logger, nameof(SmtpOutboxDecorator), emailMetadata.To, emailMetadata.Subject);
-
         using var emailActivity = new ActivitySource(SmtpTelemetry.ActivityName)
             .StartActivity($"Sending email to {emailMetadata.To} with subject {emailMetadata.Subject}",
                 ActivityKind.Client);
@@ -32,12 +27,10 @@ public sealed class SmtpOutboxDecorator(
             await StoreEmailOutboxAsync(emailOutbox, martenActivity, cancellationToken);
             await SendEmailAndMarkAsSentAsync(emailMetadata, emailOutbox, emailActivity, cancellationToken);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             emailActivity?.SetStatus(ActivityStatusCode.Error);
             martenActivity?.SetStatus(ActivityStatusCode.Error);
-            NotificationTrace.LogEmailFailed(logger, nameof(SmtpOutboxDecorator), emailMetadata.To,
-                ex.Message);
         }
         finally
         {
