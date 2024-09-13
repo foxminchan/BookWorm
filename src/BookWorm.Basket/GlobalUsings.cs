@@ -3,6 +3,7 @@ global using System.Text;
 global using System.Text.Json;
 global using Ardalis.GuardClauses;
 global using Ardalis.Result;
+global using BookWorm.Basket.Extensions;
 global using BookWorm.Basket.Grpc;
 global using BookWorm.Basket.Infrastructure.Redis;
 global using BookWorm.Constants;

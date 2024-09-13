@@ -1,5 +1,4 @@
-﻿using BookWorm.Ordering.OpenTelemetry;
-using GrpcBookClient = BookWorm.Catalog.Grpc.Book.BookClient;
+﻿using GrpcBookClient = BookWorm.Catalog.Grpc.Book.BookClient;
 using GrpcBasketClient = BookWorm.Basket.Grpc.Basket.BasketClient;
 
 namespace BookWorm.Ordering.Extensions;
@@ -8,6 +7,8 @@ internal static class Extensions
 {
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
     {
+        builder.AddServiceDefaults();
+
         builder.Services.Configure<JsonOptions>(options =>
             options.SerializerOptions.Converters.Add(new StringTrimmerJsonConverter()));
 
@@ -15,6 +16,7 @@ internal static class Extensions
         builder.Services.AddExceptionHandler<NotFoundExceptionHandler>();
         builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
         builder.Services.AddProblemDetails();
+        builder.Services.AddHttpContextAccessor();
 
         builder.AddPersistence();
         builder.AddDefaultAuthentication();

@@ -36,7 +36,7 @@ namespace BookWorm.Catalog.Infrastructure.Data.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2024, 8, 26, 9, 27, 0, 675, DateTimeKind.Utc).AddTicks(2108))
+                        .HasDefaultValue(new DateTime(2024, 9, 13, 17, 14, 29, 326, DateTimeKind.Utc).AddTicks(1649))
                         .HasColumnName("created_date");
 
                     b.Property<string>("Name")
@@ -48,7 +48,7 @@ namespace BookWorm.Catalog.Infrastructure.Data.Migrations
                     b.Property<DateTime?>("UpdateDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2024, 8, 26, 9, 27, 0, 675, DateTimeKind.Utc).AddTicks(9852))
+                        .HasDefaultValue(new DateTime(2024, 9, 13, 17, 14, 29, 326, DateTimeKind.Utc).AddTicks(1945))
                         .HasColumnName("update_date");
 
                     b.Property<Guid>("Version")
@@ -60,50 +60,6 @@ namespace BookWorm.Catalog.Infrastructure.Data.Migrations
                         .HasName("pk_authors");
 
                     b.ToTable("authors", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("5cf81a1f-8dac-4314-b931-15135acd972a"),
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Martin Fowler",
-                            Version = new Guid("00000000-0000-0000-0000-000000000000")
-                        },
-                        new
-                        {
-                            Id = new Guid("dce74f6b-d0ff-4783-b667-e26ac38c581b"),
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Eric Evans",
-                            Version = new Guid("00000000-0000-0000-0000-000000000000")
-                        },
-                        new
-                        {
-                            Id = new Guid("69c788ea-3b24-4aeb-a643-5eef358f69c6"),
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Robert C. Martin",
-                            Version = new Guid("00000000-0000-0000-0000-000000000000")
-                        },
-                        new
-                        {
-                            Id = new Guid("82f4f535-f175-4404-b3ab-094be1db411b"),
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Kent Beck",
-                            Version = new Guid("00000000-0000-0000-0000-000000000000")
-                        },
-                        new
-                        {
-                            Id = new Guid("b4cf02dd-6afa-46df-a355-db4b206215f7"),
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Don Box",
-                            Version = new Guid("00000000-0000-0000-0000-000000000000")
-                        },
-                        new
-                        {
-                            Id = new Guid("c64a2de6-7604-4a4e-8a83-c96624223dad"),
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Joshua Bloch",
-                            Version = new Guid("00000000-0000-0000-0000-000000000000")
-                        });
                 });
 
             modelBuilder.Entity("BookWorm.Catalog.Domain.BookAggregate.Book", b =>
@@ -127,7 +83,7 @@ namespace BookWorm.Catalog.Infrastructure.Data.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2024, 8, 26, 9, 27, 0, 682, DateTimeKind.Utc).AddTicks(3415))
+                        .HasDefaultValue(new DateTime(2024, 9, 13, 17, 14, 29, 326, DateTimeKind.Utc).AddTicks(5074))
                         .HasColumnName("created_date");
 
                     b.Property<string>("Description")
@@ -172,7 +128,7 @@ namespace BookWorm.Catalog.Infrastructure.Data.Migrations
                     b.Property<DateTime?>("UpdateDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2024, 8, 26, 9, 27, 0, 682, DateTimeKind.Utc).AddTicks(3841))
+                        .HasDefaultValue(new DateTime(2024, 9, 13, 17, 14, 29, 326, DateTimeKind.Utc).AddTicks(5792))
                         .HasColumnName("update_date");
 
                     b.Property<Guid>("Version")
@@ -242,7 +198,7 @@ namespace BookWorm.Catalog.Infrastructure.Data.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2024, 8, 26, 9, 27, 0, 700, DateTimeKind.Utc).AddTicks(1848))
+                        .HasDefaultValue(new DateTime(2024, 9, 13, 17, 14, 29, 328, DateTimeKind.Utc).AddTicks(2869))
                         .HasColumnName("created_date");
 
                     b.Property<string>("Name")
@@ -254,7 +210,7 @@ namespace BookWorm.Catalog.Infrastructure.Data.Migrations
                     b.Property<DateTime?>("UpdateDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2024, 8, 26, 9, 27, 0, 700, DateTimeKind.Utc).AddTicks(2275))
+                        .HasDefaultValue(new DateTime(2024, 9, 13, 17, 14, 29, 328, DateTimeKind.Utc).AddTicks(3071))
                         .HasColumnName("update_date");
 
                     b.Property<Guid>("Version")
@@ -270,50 +226,6 @@ namespace BookWorm.Catalog.Infrastructure.Data.Migrations
                         .HasDatabaseName("ix_categories_name");
 
                     b.ToTable("categories", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("a4d7e88c-8aac-48c7-860d-78dee7985bef"),
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Technology",
-                            Version = new Guid("00000000-0000-0000-0000-000000000000")
-                        },
-                        new
-                        {
-                            Id = new Guid("02dc54d1-1736-47ee-9568-e6fe9f4ec5d3"),
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Personal Development",
-                            Version = new Guid("00000000-0000-0000-0000-000000000000")
-                        },
-                        new
-                        {
-                            Id = new Guid("20b91b32-0d04-418b-b4bd-93a0b2978e16"),
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Business",
-                            Version = new Guid("00000000-0000-0000-0000-000000000000")
-                        },
-                        new
-                        {
-                            Id = new Guid("fea069eb-07fd-42a5-adc3-0069ed0ad4e1"),
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Science",
-                            Version = new Guid("00000000-0000-0000-0000-000000000000")
-                        },
-                        new
-                        {
-                            Id = new Guid("9a4ab940-1c83-4cc3-ba74-915a8f2471f4"),
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Psychology",
-                            Version = new Guid("00000000-0000-0000-0000-000000000000")
-                        },
-                        new
-                        {
-                            Id = new Guid("115ebea2-4213-4172-88ed-48caf2adcd6b"),
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Light Novel",
-                            Version = new Guid("00000000-0000-0000-0000-000000000000")
-                        });
                 });
 
             modelBuilder.Entity("BookWorm.Catalog.Domain.Publisher", b =>
@@ -327,7 +239,7 @@ namespace BookWorm.Catalog.Infrastructure.Data.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2024, 8, 26, 9, 27, 0, 701, DateTimeKind.Utc).AddTicks(9973))
+                        .HasDefaultValue(new DateTime(2024, 9, 13, 17, 14, 29, 328, DateTimeKind.Utc).AddTicks(5073))
                         .HasColumnName("created_date");
 
                     b.Property<string>("Name")
@@ -339,7 +251,7 @@ namespace BookWorm.Catalog.Infrastructure.Data.Migrations
                     b.Property<DateTime?>("UpdateDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2024, 8, 26, 9, 27, 0, 702, DateTimeKind.Utc).AddTicks(366))
+                        .HasDefaultValue(new DateTime(2024, 9, 13, 17, 14, 29, 328, DateTimeKind.Utc).AddTicks(5268))
                         .HasColumnName("update_date");
 
                     b.Property<Guid>("Version")
@@ -355,50 +267,6 @@ namespace BookWorm.Catalog.Infrastructure.Data.Migrations
                         .HasDatabaseName("ix_publishers_name");
 
                     b.ToTable("publishers", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("bde437ec-3888-4779-b3b2-8a16a9b0aaf8"),
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "O'Reilly Media",
-                            Version = new Guid("00000000-0000-0000-0000-000000000000")
-                        },
-                        new
-                        {
-                            Id = new Guid("68b9511a-bc29-486d-892a-49fdcee7c976"),
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Manning Publications",
-                            Version = new Guid("00000000-0000-0000-0000-000000000000")
-                        },
-                        new
-                        {
-                            Id = new Guid("39de270c-48cd-4fe5-96de-124df9ec4b34"),
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Packt Publishing",
-                            Version = new Guid("00000000-0000-0000-0000-000000000000")
-                        },
-                        new
-                        {
-                            Id = new Guid("18c51962-0831-4b2f-b678-bc1a5bd48de5"),
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Apress",
-                            Version = new Guid("00000000-0000-0000-0000-000000000000")
-                        },
-                        new
-                        {
-                            Id = new Guid("6356a093-b89f-462a-bb5f-67f992cde060"),
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "No Starch Press",
-                            Version = new Guid("00000000-0000-0000-0000-000000000000")
-                        },
-                        new
-                        {
-                            Id = new Guid("87ed07db-dbcc-4488-8c92-b29a749c47bb"),
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Pragmatic Bookshelf",
-                            Version = new Guid("00000000-0000-0000-0000-000000000000")
-                        });
                 });
 
             modelBuilder.Entity("BookWorm.Catalog.Domain.BookAggregate.Book", b =>

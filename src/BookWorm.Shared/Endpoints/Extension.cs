@@ -1,9 +1,4 @@
-﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-
-namespace BookWorm.Shared.Endpoints;
+﻿namespace BookWorm.Shared.Endpoints;
 
 public static class Extension
 {

@@ -1,22 +1,21 @@
-﻿using BookWorm.Catalog.Domain.BookAggregate.Specifications;
+﻿using BookWorm.Catalog.Features.Books.Get;
 using BookWorm.Catalog.Grpc;
 using BookWorm.Catalog.UnitTests.Builder;
 using BookWorm.Catalog.UnitTests.Helpers;
-using Grpc.Core;
 using Book = BookWorm.Catalog.Domain.BookAggregate.Book;
 
 namespace BookWorm.Catalog.UnitTests.Services;
-
+        
 public sealed class BookServiceTests
 {
     private readonly BookService _bookService;
-    private readonly Mock<IReadRepository<Book>> _repositoryMock;
+    private readonly Mock<ISender> _senderMock;
 
     public BookServiceTests()
     {
-        _repositoryMock = new();
+        _senderMock = new();
         Mock<ILogger<BookService>> loggerMock = new();
-        _bookService = new(_repositoryMock.Object, loggerMock.Object);
+        _bookService = new(_senderMock.Object, loggerMock.Object);
     }
 
     [Fact]
@@ -26,8 +25,8 @@ public sealed class BookServiceTests
         var book = BookBuilder.WithDefaultValues()[0];
         var bookId = book.Id;
 
-        _repositoryMock
-            .Setup(x => x.FirstOrDefaultAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
+        _senderMock
+            .Setup(x => x.Send(It.IsAny<GetBookQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(book);
 
         var request = new BookRequest { BookId = bookId.ToString() };
@@ -46,23 +45,28 @@ public sealed class BookServiceTests
     }
 
     [Fact]
-    public async Task GetBook_ShouldThrowRpcException_WhenBookNotFound()
+    public async Task GetBook_ShouldReturnEmpty_WhenBookNotFound()
     {
         // Arrange
         var bookId = Guid.NewGuid().ToString();
 
-        _repositoryMock
-            .Setup(x => x.FirstOrDefaultAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Book?)null);
+        _senderMock
+            .Setup(x => x.Send(It.IsAny<GetBookQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Book?)null!);
 
         var request = new BookRequest { BookId = bookId };
         var context = new TestServerCallContext();
 
         // Act
-        Func<Task> act = async () => await _bookService.GetBook(request, context);
+        var response = await _bookService.GetBook(request, context);
 
         // Assert
-        await act.Should().ThrowAsync<RpcException>();
+        response
+            .Should()
+            .NotBeNull()
+            .And
+            .BeOfType<BookResponse>()
+            .Which.Book.Should().BeNull();
     }
 
     [Fact]
@@ -72,8 +76,8 @@ public sealed class BookServiceTests
         var book = BookBuilder.WithDefaultValues()[0];
         var bookId = book.Id;
 
-        _repositoryMock
-            .Setup(x => x.FirstOrDefaultAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
+        _senderMock
+            .Setup(x => x.Send(It.IsAny<GetBookQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(book);
 
         var request = new BookStatusRequest { BookId = bookId.ToString() };
@@ -90,22 +94,27 @@ public sealed class BookServiceTests
     }
 
     [Fact]
-    public async Task GetBookStatus_ShouldThrowRpcException_WhenBookNotFound()
+    public async Task GetBookStatus_ShouldReturnEmpty_WhenBookNotFound()
     {
         // Arrange
         var bookId = Guid.NewGuid().ToString();
 
-        _repositoryMock
-            .Setup(x => x.FirstOrDefaultAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Book?)null);
+        _senderMock
+            .Setup(x => x.Send(It.IsAny<GetBookQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Book?)null!);
 
         var request = new BookStatusRequest { BookId = bookId };
         var context = new TestServerCallContext();
 
         // Act
-        Func<Task> act = async () => await _bookService.GetBookStatus(request, context);
+        var response = await _bookService.GetBookStatus(request, context);
 
         // Assert
-        await act.Should().ThrowAsync<RpcException>();
+        response
+            .Should()
+            .NotBeNull()
+            .And
+            .BeOfType<BookStatusResponse>()
+            .Which.BookStatus.Should().BeNull();
     }
 }

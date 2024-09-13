@@ -24,6 +24,8 @@ public sealed class TestServerCallContext(
 
     protected override Status StatusCore { get; set; }
 
+    private readonly Dictionary<object, object> _userState = new();
+
     protected override WriteOptions? WriteOptionsCore
     {
         get => writeOptions;
@@ -31,6 +33,11 @@ public sealed class TestServerCallContext(
     }
 
     protected override AuthContext AuthContextCore { get; } = authContext ?? new AuthContext("anonymous", new());
+
+    protected override IDictionary<object, object> UserStateCore => _userState;
+
+    internal void SetUserState(object key, object value)
+        => _userState[key] = value;
 
     protected override ContextPropagationToken CreatePropagationTokenCore(ContextPropagationOptions? options)
     {
@@ -40,5 +47,10 @@ public sealed class TestServerCallContext(
     protected override Task WriteResponseHeadersAsyncCore(Metadata responseHeaders)
     {
         return Task.CompletedTask;
+    }
+
+    public static TestServerCallContext Create(Metadata? requestHeaders = null, CancellationToken cancellationToken = default)
+    {
+        return new(requestHeaders: [], cancellationToken);
     }
 }

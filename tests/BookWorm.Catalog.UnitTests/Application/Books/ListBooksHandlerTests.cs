@@ -37,7 +37,7 @@ public sealed class ListBooksHandlerTests
             .ReturnsAsync(books);
 
         _repositoryMock
-            .Setup(r => r.CountAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.CountAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
@@ -49,7 +49,7 @@ public sealed class ListBooksHandlerTests
         result.PagedInfo.TotalPages.Should().Be(1);
         _aiServiceMock.Verify(s => s.GetEmbeddingAsync(query.Search!, It.IsAny<CancellationToken>()), Times.Once);
         _repositoryMock.Verify(r => r.ListAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()), Times.Once);
-        _repositoryMock.Verify(r => r.CountAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()),
+        _repositoryMock.Verify(r => r.CountAsync(It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -66,7 +66,7 @@ public sealed class ListBooksHandlerTests
             .ReturnsAsync(books);
 
         _repositoryMock
-            .Setup(r => r.CountAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.CountAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
@@ -78,7 +78,7 @@ public sealed class ListBooksHandlerTests
         result.PagedInfo.TotalPages.Should().Be(1);
         _aiServiceMock.Verify(s => s.GetEmbeddingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _repositoryMock.Verify(r => r.ListAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()), Times.Once);
-        _repositoryMock.Verify(r => r.CountAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()),
+        _repositoryMock.Verify(r => r.CountAsync(It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -93,7 +93,7 @@ public sealed class ListBooksHandlerTests
             .ReturnsAsync([]);
 
         _repositoryMock
-            .Setup(r => r.CountAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.CountAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);
 
         // Act
@@ -105,7 +105,7 @@ public sealed class ListBooksHandlerTests
         result.PagedInfo.TotalPages.Should().Be(0);
         _aiServiceMock.Verify(s => s.GetEmbeddingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _repositoryMock.Verify(r => r.ListAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()), Times.Once);
-        _repositoryMock.Verify(r => r.CountAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()),
+        _repositoryMock.Verify(r => r.CountAsync(It.IsAny<CancellationToken>()),
             Times.Once);
     }
 

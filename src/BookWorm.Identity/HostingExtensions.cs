@@ -13,6 +13,7 @@ internal static class HostingExtensions
         builder.AddRedisDataProtection();
 
         builder.Services.AddRazorPages();
+        builder.Services.AddHttpContextAccessor();
 
         builder.Services.AddMigration<ApplicationDbContext, SeedData>();
 

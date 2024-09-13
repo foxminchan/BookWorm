@@ -14,7 +14,10 @@ public sealed class GetBuyerHandler(IReadRepository<Buyer> repository, IIdentity
         {
             buyer = await repository.GetByIdAsync(request.BuyerId, cancellationToken);
 
-            Guard.Against.NotFound(request.BuyerId, buyer);
+            if (buyer is null)
+            {
+                return Result.NotFound();
+            }
         }
         else
         {
@@ -22,7 +25,11 @@ public sealed class GetBuyerHandler(IReadRepository<Buyer> repository, IIdentity
             Guard.Against.NullOrEmpty(customerId);
 
             buyer = await repository.GetByIdAsync(Guid.Parse(customerId), cancellationToken);
-            Guard.Against.NotFound(Guid.Parse(customerId), buyer);
+
+            if (buyer is null)
+            {
+                return Result.NotFound();
+            }
         }
 
         return buyer;

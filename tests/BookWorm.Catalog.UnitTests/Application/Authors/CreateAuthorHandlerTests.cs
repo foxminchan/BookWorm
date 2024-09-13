@@ -1,5 +1,4 @@
-﻿using BookWorm.Catalog.Domain;
-using BookWorm.Catalog.Features.Authors.Create;
+﻿using BookWorm.Catalog.Features.Authors.Create;
 
 namespace BookWorm.Catalog.UnitTests.Application.Authors;
 

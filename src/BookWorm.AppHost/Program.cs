@@ -71,10 +71,12 @@ var catalogApi = builder.AddProject<BookWorm_Catalog>("catalog-api")
     .WithEnvironment("AiOptions__OpenAi__EmbeddingName", "text-embedding-3-small");
 
 var orderingApi = builder.AddProject<BookWorm_Ordering>("ordering-api")
+    .WithReference(redis)
     .WithReference(rabbitMq)
     .WithReference(orderingDb)
     .WaitFor(rabbitMq)
     .WaitFor(orderingDb)
+    .WaitFor(redis)
     .WithEnvironment("Identity__Url", identityEndpoint);
 
 var ratingApi = builder.AddProject<BookWorm_Rating>("rating-api")

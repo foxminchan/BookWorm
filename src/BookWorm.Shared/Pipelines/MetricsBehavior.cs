@@ -1,9 +1,4 @@
-﻿using System.Reflection;
-using BookWorm.Shared.ActivityScope;
-using BookWorm.Shared.Metrics;
-using BookWorm.Shared.OpenTelemetry;
-using MediatR;
-using Microsoft.Extensions.Logging;
+﻿using BookWorm.Shared.Metrics;
 
 namespace BookWorm.Shared.Pipelines;
 
