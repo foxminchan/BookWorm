@@ -1,6 +1,4 @@
-﻿using BookWorm.Notification.Extensions;
-
-var builder = WebApplication.CreateBuilder(args);
+﻿var builder = WebApplication.CreateBuilder(args);
 
 builder.AddApplicationServices();
 

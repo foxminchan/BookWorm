@@ -10,6 +10,7 @@ builder.Services.AddBff()
 
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
+    .AddServiceDiscoveryDestinationResolver()
     .AddBffExtensions();
 
 Configuration config = new();

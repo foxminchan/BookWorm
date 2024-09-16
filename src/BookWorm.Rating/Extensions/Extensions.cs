@@ -9,6 +9,7 @@ internal static class Extensions
         builder.Services.Configure<JsonOptions>(options =>
         {
             options.SerializerOptions.PropertyNameCaseInsensitive = true;
+            options.SerializerOptions.Converters.Add(new DateOnlyJsonConverter());
             options.SerializerOptions.Converters.Add(new StringTrimmerJsonConverter());
         });
 

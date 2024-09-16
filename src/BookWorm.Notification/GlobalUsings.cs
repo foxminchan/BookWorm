@@ -2,6 +2,7 @@ global using System.Diagnostics;
 global using Ardalis.GuardClauses;
 global using BookWorm.Constants;
 global using BookWorm.Core.SeedWork;
+global using BookWorm.Notification.Extensions;
 global using BookWorm.Notification.Infrastructure;
 global using BookWorm.Notification.Models;
 global using BookWorm.Notification.OpenTelemetry;

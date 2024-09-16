@@ -1,5 +1,10 @@
-global using Ardalis.GuardClauses;
+﻿global using Ardalis.GuardClauses;
+global using BookWorm.Basket.Domain;
 global using BookWorm.Basket.Grpc;
 global using BookWorm.Basket.Infrastructure.Redis;
 global using BookWorm.Shared.Identity;
+global using Google.Protobuf.WellKnownTypes;
 global using Grpc.Core;
+global using MediatR;
+global using Microsoft.AspNetCore.Http;
+global using Microsoft.Extensions.Logging;

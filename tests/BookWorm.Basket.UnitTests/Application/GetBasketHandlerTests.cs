@@ -1,5 +1,4 @@
-﻿using BookWorm.Basket.Domain;
-using BookWorm.Basket.Features;
+﻿using BookWorm.Basket.Features;
 using BookWorm.Basket.Features.Get;
 using BasketModel = BookWorm.Basket.Domain.Basket;
 

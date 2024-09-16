@@ -4,7 +4,7 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
     <AspireVersion>8.2.0</AspireVersion>
     <AspirantVersion>0.0.4</AspirantVersion>
-    <MicrosoftExtensionsVersion>8.8.0</MicrosoftExtensionsVersion>
+    <MicrosoftExtensionsVersion>8.9.1</MicrosoftExtensionsVersion>
     <AspnetVersion>8.0.8</AspnetVersion>
     <EfCoreVersion>8.0.8</EfCoreVersion>
     <XabarilVersion>8.0.1</XabarilVersion>
@@ -27,8 +27,9 @@
     <PackageVersion Include="Aspire.Azure.AI.OpenAI" Version="$(AspireUnstablePackagesVersion)" />
     <PackageVersion Include="Aspire.StackExchange.Redis" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.StackExchange.Redis.OutputCaching" Version="$(AspireVersion)" />
-    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="8.9.1" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="$(MicrosoftExtensionsVersion)" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="$(AspireVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery.Yarp" Version="$(AspireVersion)" />
     <!-- Aspirant -->
     <PackageVersion Include="Aspirant.Hosting" Version="$(AspirantVersion)" />
     <PackageVersion Include="Aspirant.Hosting.Testing" Version="$(AspirantVersion)" />
@@ -52,7 +53,7 @@
     <PackageVersion Include="EntityFrameworkCore.Exceptions.Common" Version="8.1.3" />
     <PackageVersion Include="EntityFrameworkCore.Exceptions.PostgreSQL" Version="8.1.3" />
     <!-- Semantic Kernel -->
-    <PackageVersion Include="Microsoft.SemanticKernel" Version="1.19.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel" Version="1.20.0" />
     <!-- Polly -->
     <PackageVersion Include="Polly" Version="$(PollyVersion)" />
     <PackageVersion Include="Polly.Extensions" Version="$(PollyVersion)" />
@@ -95,10 +96,11 @@
     <!-- Miscellaneous -->
     <PackageVersion Include="Scrutor" Version="4.2.2" />
     <PackageVersion Include="MediatR" Version="12.4.1" />
-    <PackageVersion Include="MongoDB.Bson" Version="2.28.0" />
-    <PackageVersion Include="Marten.AspNetCore" Version="7.27.0" />
+    <PackageVersion Include="MongoDB.Bson" Version="2.29.0" />
+    <PackageVersion Include="Marten.AspNetCore" Version="7.28.0" />
     <PackageVersion Include="FluentEmail.Mailtrap" Version="2.7.0" />
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.7.3" />
+    <PackageVersion Include="Swashbuckle.AspNetCore.ReDoc" Version="6.7.3" />
     <PackageVersion Include="FluentValidation.AspNetCore" Version="11.3.0" />
     <PackageVersion Include="Microsoft.Web.LibraryManager.Build" Version="2.1.175" />
     <PackageVersion Include="MicroElements.Swashbuckle.FluentValidation" Version="6.0.0" />

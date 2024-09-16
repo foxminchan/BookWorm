@@ -1,9 +1,6 @@
 ﻿using BookWorm.Basket.Features;
 using BookWorm.Basket.Features.Get;
 using BookWorm.Basket.UnitTests.Helpers;
-using MediatR;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Basket.UnitTests.Services;
 
@@ -25,7 +22,6 @@ public sealed class BasketServiceTests
     public async Task GetBasket_ShouldReturnBasketResponse_WhenBasketExists()
     {
         // Arrange
-        var basketId = Guid.NewGuid().ToString();
         var basket = new BasketDto(Guid.NewGuid(),
         [
             new(Guid.NewGuid(), "Dummy Book", 10, 15m, 12m)
@@ -41,7 +37,7 @@ public sealed class BasketServiceTests
             .Setup(x => x.GetBookAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(book);
 
-        var request = new BasketRequest { BasketId = basketId };
+        var request = new Empty();
         var context = TestServerCallContext.Create();
         context.SetUserState("__HttpContext", new DefaultHttpContext());
 
@@ -56,13 +52,11 @@ public sealed class BasketServiceTests
     public async Task GetBasket_ShouldReturnEmpty_WhenBasketNotFound()
     {
         // Arrange
-        var basketId = Guid.NewGuid().ToString();
-
         _senderMock
             .Setup(x => x.Send(It.IsAny<GetBasketQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((BasketDto?)null!);
 
-        var request = new BasketRequest { BasketId = basketId };
+        var request = new Empty();
         var context = TestServerCallContext.Create();
         context.SetUserState("__HttpContext", new DefaultHttpContext());
 

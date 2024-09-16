@@ -1,6 +1,4 @@
-﻿using BookWorm.Catalog.Domain;
-
-namespace BookWorm.Catalog.UnitTests.Domain;
+﻿namespace BookWorm.Catalog.UnitTests.Domain;
 
 public sealed class CategoryAggregatorTests
 {

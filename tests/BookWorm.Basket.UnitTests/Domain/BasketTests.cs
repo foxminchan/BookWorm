@@ -1,5 +1,4 @@
-﻿using BookWorm.Basket.Domain;
-using BasketModel = BookWorm.Basket.Domain.Basket;
+﻿using BasketModel = BookWorm.Basket.Domain.Basket;
 
 namespace BookWorm.Basket.UnitTests.Domain;
 

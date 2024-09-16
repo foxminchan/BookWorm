@@ -54,7 +54,8 @@ public static class Extensions
                     .AddHttpClientInstrumentation()
                     .AddRuntimeInstrumentation()
                     .AddMeter(InstrumentationOptions.MeterName)
-                    .AddMeter(ActivitySourceProvider.DefaultSourceName);
+                    .AddMeter(ActivitySourceProvider.DefaultSourceName)
+                    .AddMeter("Microsoft.SemanticKernel*");
             })
             .WithTracing(tracing =>
             {
@@ -67,7 +68,8 @@ public static class Extensions
                     .AddGrpcClientInstrumentation()
                     .AddHttpClientInstrumentation()
                     .AddSource(DiagnosticHeaders.DefaultListenerName)
-                    .AddSource(ActivitySourceProvider.DefaultSourceName);
+                    .AddSource(ActivitySourceProvider.DefaultSourceName)
+                    .AddSource("Microsoft.SemanticKernel*");
             });
 
         builder.AddOpenTelemetryExporters();

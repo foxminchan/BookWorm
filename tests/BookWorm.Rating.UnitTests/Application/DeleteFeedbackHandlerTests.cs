@@ -1,6 +1,4 @@
-﻿using BookWorm.Contracts;
-using BookWorm.Rating.Domain;
-using BookWorm.Rating.Features.Delete;
+﻿using BookWorm.Rating.Features.Delete;
 
 namespace BookWorm.Rating.UnitTests.Application;
 

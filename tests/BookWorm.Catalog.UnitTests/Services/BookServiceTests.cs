@@ -2,7 +2,6 @@
 using BookWorm.Catalog.Grpc;
 using BookWorm.Catalog.UnitTests.Builder;
 using BookWorm.Catalog.UnitTests.Helpers;
-using MediatR;
 using Book = BookWorm.Catalog.Domain.BookAggregate.Book;
 
 namespace BookWorm.Catalog.UnitTests.Services;

@@ -1,5 +1,8 @@
 ﻿namespace BookWorm.MailDev.Hosting;
 
+/// <summary>
+///     https://github.com/davidfowl/Build2024AspireDemo/blob/main/AppHost/MailDev/MailDevResourceBuilderExtensions.cs
+/// </summary>
 public static class MailDevResourceBuilderExtensions
 {
     public static IResourceBuilder<MailDevResource> AddMailDev(

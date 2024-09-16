@@ -1,5 +1,6 @@
 ﻿using BookWorm.Basket.Features;
 using BookWorm.Basket.Features.Get;
+using Google.Protobuf.WellKnownTypes;
 using GrpcBasketBase = BookWorm.Basket.Grpc.Basket.BasketBase;
 
 namespace BookWorm.Basket.Grpc;
@@ -8,19 +9,19 @@ public sealed class BasketService(ISender sender, IBookService bookService, ILog
     : GrpcBasketBase
 {
     [AllowAnonymous]
-    public override async Task<BasketResponse> GetBasket(BasketRequest request, ServerCallContext context)
+    public override async Task<BasketResponse> GetBasket(Empty request, ServerCallContext context)
     {
-        if (logger.IsEnabled(LogLevel.Debug))
-        {
-            logger.LogDebug("[{Service}] - - Begin grpc call {Method} with {BasketId}",
-                nameof(BasketService), nameof(GetBasket), request.BasketId);
-        }
-
         var userId = context.GetUserIdentity();
 
         if (string.IsNullOrEmpty(userId))
         {
             return new();
+        }
+
+        if (logger.IsEnabled(LogLevel.Debug))
+        {
+            logger.LogDebug("[{Service}] - Begin grpc call {Method} with {BasketId}",
+                nameof(BasketService), nameof(GetBasket), userId);
         }
 
         var basket = await sender.Send(new GetBasketQuery());

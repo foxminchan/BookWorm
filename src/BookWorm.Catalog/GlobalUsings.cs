@@ -32,6 +32,7 @@ global using System.Diagnostics;
 global using Azure;
 global using Azure.Storage.Blobs;
 global using Azure.Storage.Blobs.Models;
+global using BookWorm.Catalog.Extensions;
 global using BookWorm.Constants;
 global using Polly;
 global using Polly.Registry;
