@@ -7,9 +7,13 @@ public sealed record CancelOrderCommand(Guid OrderId) : ICommand<Result>;
 public sealed class CancelOrderHandler(
     IRepository<Order> repository,
     IPublishEndpoint publishEndpoint,
-    IIdentityService identityService) : ICommandHandler<CancelOrderCommand, Result>
+    IIdentityService identityService
+) : ICommandHandler<CancelOrderCommand, Result>
 {
-    public async Task<Result> Handle(CancelOrderCommand request, CancellationToken cancellationToken)
+    public async Task<Result> Handle(
+        CancelOrderCommand request,
+        CancellationToken cancellationToken
+    )
     {
         var order = await repository.GetByIdAsync(request.OrderId, cancellationToken);
 
@@ -21,7 +25,10 @@ public sealed class CancelOrderHandler(
 
         var email = identityService.GetEmail();
 
-        await publishEndpoint.Publish(new OrderCancelledIntegrationEvent(order.Id, email), cancellationToken);
+        await publishEndpoint.Publish(
+            new OrderCancelledIntegrationEvent(order.Id, email),
+            cancellationToken
+        );
 
         return Result.Success();
     }

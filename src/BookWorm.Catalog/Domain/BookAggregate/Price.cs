@@ -6,8 +6,18 @@ public sealed class Price : ValueObject
 
     public Price(decimal originalPrice, decimal? discountPrice)
     {
-        OriginalPrice = Guard.Against.OutOfRange(originalPrice, nameof(originalPrice), 0, decimal.MaxValue);
-        DiscountPrice = Guard.Against.OutOfRange(discountPrice ?? -1, nameof(discountPrice), -1, decimal.MaxValue);
+        OriginalPrice = Guard.Against.OutOfRange(
+            originalPrice,
+            nameof(originalPrice),
+            0,
+            decimal.MaxValue
+        );
+        DiscountPrice = Guard.Against.OutOfRange(
+            discountPrice ?? -1,
+            nameof(discountPrice),
+            -1,
+            decimal.MaxValue
+        );
     }
 
     public decimal OriginalPrice { get; }

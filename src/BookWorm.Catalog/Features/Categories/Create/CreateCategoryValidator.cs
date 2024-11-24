@@ -4,8 +4,6 @@ internal sealed class CreateCategoryValidator : AbstractValidator<CreateCategory
 {
     public CreateCategoryValidator()
     {
-        RuleFor(x => x.Name)
-            .NotEmpty()
-            .MaximumLength(DataSchemaLength.Medium);
+        RuleFor(x => x.Name).NotEmpty().MaximumLength(DataSchemaLength.Medium);
     }
 }

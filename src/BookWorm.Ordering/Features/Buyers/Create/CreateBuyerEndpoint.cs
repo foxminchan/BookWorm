@@ -2,28 +2,38 @@
 
 namespace BookWorm.Ordering.Features.Buyers.Create;
 
-public sealed record CreateBuyerRequest(string? Street, string? City, string? Province);
-
-public sealed class CreateBuyerEndpoint : IEndpoint<Created<Guid>, CreateBuyerRequest, ISender>
+public sealed class CreateBuyerEndpoint : IEndpoint<Created<Guid>, CreateBuyerCommand, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("/api/buyers",
-                async (CreateBuyerRequest request, ISender sender) => await HandleAsync(request, sender))
+        app.MapPost(
+                "/buyers",
+                async (CreateBuyerCommand command, ISender sender) =>
+                    await HandleAsync(command, sender)
+            )
             .Produces<Created<Guid>>(StatusCodes.Status201Created)
             .ProducesValidationProblem()
+            .WithOpenApi()
             .WithTags(nameof(Buyer))
-            .WithName("Create Buyer")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization();
     }
 
-    public async Task<Created<Guid>> HandleAsync(CreateBuyerRequest request, ISender sender,
-        CancellationToken cancellationToken = default)
+    public async Task<Created<Guid>> HandleAsync(
+        CreateBuyerCommand command,
+        ISender sender,
+        CancellationToken cancellationToken = default
+    )
     {
-        var result = await sender.Send(new CreateBuyerCommand(request.Street, request.City, request.Province),
-            cancellationToken);
+        var result = await sender.Send(command, cancellationToken);
 
-        return TypedResults.Created($"/api/v1/buyer/{result.Value}", result.Value);
+        return TypedResults.Created(
+            new UrlBuilder()
+                .WithVersion()
+                .WithResource(nameof(Buyers))
+                .WithId(result.Value)
+                .Build(),
+            result.Value
+        );
     }
 }

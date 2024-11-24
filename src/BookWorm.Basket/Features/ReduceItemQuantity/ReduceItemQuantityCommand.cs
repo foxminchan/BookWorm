@@ -4,10 +4,15 @@ namespace BookWorm.Basket.Features.ReduceItemQuantity;
 
 public sealed record ReduceItemQuantityCommand(Guid BookId) : ICommand<Result>;
 
-public sealed class ReduceItemQuantityHandler(IRedisService redisService, IIdentityService identityService)
-    : ICommandHandler<ReduceItemQuantityCommand, Result>
+public sealed class ReduceItemQuantityHandler(
+    IRedisService redisService,
+    IIdentityService identityService
+) : ICommandHandler<ReduceItemQuantityCommand, Result>
 {
-    public async Task<Result> Handle(ReduceItemQuantityCommand command, CancellationToken cancellationToken)
+    public async Task<Result> Handle(
+        ReduceItemQuantityCommand command,
+        CancellationToken cancellationToken
+    )
     {
         var customerId = identityService.GetUserIdentity();
 

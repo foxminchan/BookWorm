@@ -24,7 +24,8 @@ public sealed class CreateBuyerHandlerTests
         var command = new CreateBuyerCommand(address.Street, address.City, address.Province);
         _identityServiceMock.Setup(x => x.GetUserIdentity()).Returns(buyerId);
         _identityServiceMock.Setup(x => x.GetFullName()).Returns(fullName);
-        _repositoryMock.Setup(x => x.AddAsync(It.IsAny<Buyer>(), It.IsAny<CancellationToken>()))
+        _repositoryMock
+            .Setup(x => x.AddAsync(It.IsAny<Buyer>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Buyer(Guid.NewGuid(), fullName, address));
 
         // Act
@@ -39,7 +40,8 @@ public sealed class CreateBuyerHandlerTests
     public async Task GivenInvalidRequest_ShouldThrowArgumentNullException(
         [CombinatorialValues(null, "", " ")] string street,
         [CombinatorialValues(null, "", " ")] string city,
-        [CombinatorialValues(null, "", " ")] string province)
+        [CombinatorialValues(null, "", " ")] string province
+    )
     {
         // Arrange
         var command = new CreateBuyerCommand(street, city, province);

@@ -5,17 +5,15 @@ public sealed record OrderDto(
     string? Note,
     Status Status,
     decimal TotalPrice,
-    Guid BuyerId);
+    Guid BuyerId
+);
 
 public sealed record OrderDetailDto(
     Guid Id,
     string? Note,
     Status Status,
     decimal TotalPrice,
-    List<OrderItemDto> OrderItems);
+    List<OrderItemDto> OrderItems
+);
 
-public sealed record OrderItemDto(
-    Guid BookId,
-    string Name,
-    int Quantity,
-    decimal Price);
+public sealed record OrderItemDto(Guid BookId, string Name, int Quantity, decimal Price);

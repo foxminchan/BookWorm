@@ -22,8 +22,10 @@ public sealed class LoggedOut(IIdentityServerInteractionService interactionServi
         {
             AutomaticRedirectAfterSignOut = LogoutOptions.AutomaticRedirectAfterSignOut,
             PostLogoutRedirectUri = logout.PostLogoutRedirectUri,
-            ClientName = string.IsNullOrEmpty(logout.ClientName) ? logout.ClientId : logout.ClientName,
-            SignOutIframeUrl = logout.SignOutIFrameUrl
+            ClientName = string.IsNullOrEmpty(logout.ClientName)
+                ? logout.ClientId
+                : logout.ClientName,
+            SignOutIframeUrl = logout.SignOutIFrameUrl,
         };
     }
 }

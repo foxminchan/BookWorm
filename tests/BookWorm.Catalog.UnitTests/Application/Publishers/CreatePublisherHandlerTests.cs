@@ -31,12 +31,20 @@ public sealed class CreatePublisherHandlerTests
         // Assert
         result.Value.Should().Be(publisherId);
         _repositoryMock.Verify(
-            r => r.AddAsync(It.Is<Publisher>(p => p.Name == command.Name), It.IsAny<CancellationToken>()), Times.Once);
+            r =>
+                r.AddAsync(
+                    It.Is<Publisher>(p => p.Name == command.Name),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
     }
 
     [Theory]
     [CombinatorialData]
-    public void GivenNullOrEmptyPublisherName_ShouldThrowException([CombinatorialValues("", null)] string? name)
+    public void GivenNullOrEmptyPublisherName_ShouldThrowException(
+        [CombinatorialValues("", null)] string? name
+    )
     {
         // Arrange
         var command = new CreatePublisherCommand(name!);

@@ -4,8 +4,6 @@ internal sealed class CreateAuthorValidator : AbstractValidator<CreateAuthorComm
 {
     public CreateAuthorValidator()
     {
-        RuleFor(x => x.Name)
-            .NotEmpty()
-            .MaximumLength(DataSchemaLength.Large);
+        RuleFor(x => x.Name).NotEmpty().MaximumLength(DataSchemaLength.Large);
     }
 }

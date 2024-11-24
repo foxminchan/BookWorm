@@ -6,16 +6,19 @@ namespace BookWorm.Catalog.IntegrationEvents.EventHandlers;
 public sealed class FeedbackCreatedIntegrationEventHandler(
     IRepository<Book> repository,
     ILogger<FeedbackCreatedIntegrationEventHandler> logger,
-    IPublishEndpoint publishEndpoint) : IConsumer<FeedbackCreatedIntegrationEvent>
+    IPublishEndpoint publishEndpoint
+) : IConsumer<FeedbackCreatedIntegrationEvent>
 {
     public async Task Consume(ConsumeContext<FeedbackCreatedIntegrationEvent> context)
     {
         var @event = context.Message;
 
-        logger.LogInformation("[{Consumer}] - Adding rating {Rating} to book {BookId}",
+        logger.LogInformation(
+            "[{Consumer}] - Adding rating {Rating} to book {BookId}",
             nameof(FeedbackCreatedIntegrationEventHandler),
             @event.Rating,
-            @event.BookId);
+            @event.BookId
+        );
 
         var book = await repository.GetByIdAsync(@event.BookId);
 

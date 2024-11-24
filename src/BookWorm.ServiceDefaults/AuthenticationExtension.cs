@@ -5,7 +5,9 @@ namespace BookWorm.ServiceDefaults;
 
 public static class AuthenticationExtensions
 {
-    public static IHostApplicationBuilder AddDefaultAuthentication(this IHostApplicationBuilder builder)
+    public static IHostApplicationBuilder AddDefaultAuthentication(
+        this IHostApplicationBuilder builder
+    )
     {
         var configuration = builder.Configuration;
         var identity = configuration.GetSection(nameof(Identity)).Get<Identity>();
@@ -17,7 +19,8 @@ public static class AuthenticationExtensions
 
         JsonWebTokenHandler.DefaultInboundClaimTypeMap.Remove("sub");
 
-        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        builder
+            .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
                 options.Authority = identity.Url;

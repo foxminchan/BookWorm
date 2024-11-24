@@ -2,26 +2,38 @@
 
 namespace BookWorm.Catalog.Features.Publishers.Create;
 
-public sealed record CreatePublisherRequest(string Name);
-
-public sealed class CreatePublisherEndpoint : IEndpoint<Created<Guid>, CreatePublisherRequest, ISender>
+public sealed class CreatePublisherEndpoint
+    : IEndpoint<Created<Guid>, CreatePublisherCommand, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("/publishers",
-                async (CreatePublisherRequest request, ISender sender) => await HandleAsync(request, sender))
+        app.MapPost(
+                "/publishers",
+                async (CreatePublisherCommand command, ISender sender) =>
+                    await HandleAsync(command, sender)
+            )
             .Produces<Created<Guid>>(StatusCodes.Status201Created)
             .ProducesValidationProblem()
+            .WithOpenApi()
             .WithTags(nameof(Publisher))
-            .WithName("Create Publisher")
             .MapToApiVersion(new(1, 0));
     }
 
-    public async Task<Created<Guid>> HandleAsync(CreatePublisherRequest request, ISender sender,
-        CancellationToken cancellationToken = default)
+    public async Task<Created<Guid>> HandleAsync(
+        CreatePublisherCommand command,
+        ISender sender,
+        CancellationToken cancellationToken = default
+    )
     {
-        var result = await sender.Send(new CreatePublisherCommand(request.Name), cancellationToken);
+        var result = await sender.Send(command, cancellationToken);
 
-        return TypedResults.Created($"/api/v1/publishers/{result.Value}", result.Value);
+        return TypedResults.Created(
+            new UrlBuilder()
+                .WithVersion()
+                .WithResource(nameof(Publishers))
+                .WithId(result.Value)
+                .Build(),
+            result.Value
+        );
     }
 }

@@ -8,11 +8,8 @@ internal sealed class PublisherConfiguration : BaseConfiguration<Publisher>
     {
         base.Configure(builder);
 
-        builder.Property(p => p.Name)
-            .HasMaxLength(DataSchemaLength.Large)
-            .IsRequired();
+        builder.Property(p => p.Name).HasMaxLength(DataSchemaLength.Large).IsRequired();
 
-        builder.HasIndex(e => e.Name)
-            .IsUnique();
+        builder.HasIndex(e => e.Name).IsUnique();
     }
 }

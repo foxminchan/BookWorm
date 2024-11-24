@@ -9,13 +9,15 @@ namespace BookWorm.Identity.Pages.Ciba;
 
 [SecurityHeaders]
 [Authorize]
-public sealed class AllModel(IBackchannelAuthenticationInteractionService backchannelAuthenticationInteractionService)
-    : PageModel
+public sealed class AllModel(
+    IBackchannelAuthenticationInteractionService backchannelAuthenticationInteractionService
+) : PageModel
 {
     public IEnumerable<BackchannelUserLoginRequest> Logins { get; set; } = default!;
 
     public async Task OnGet()
     {
-        Logins = await backchannelAuthenticationInteractionService.GetPendingLoginRequestsForCurrentUserAsync();
+        Logins =
+            await backchannelAuthenticationInteractionService.GetPendingLoginRequestsForCurrentUserAsync();
     }
 }

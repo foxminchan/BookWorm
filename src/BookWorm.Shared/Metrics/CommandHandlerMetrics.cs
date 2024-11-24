@@ -18,17 +18,20 @@ public sealed class CommandHandlerMetrics : IDisposable
         _totalCommandsNumber = _meter.CreateCounter<long>(
             TelemetryTags.Commands.TotalCommandsNumber,
             "{command}",
-            "Total number of commands send to command handlers");
+            "Total number of commands send to command handlers"
+        );
 
         _activeEventHandlingCounter = _meter.CreateUpDownCounter<long>(
             TelemetryTags.Commands.ActiveCommandsNumber,
             "{command}",
-            "Number of commands currently being handled");
+            "Number of commands currently being handled"
+        );
 
         _eventHandlingDuration = _meter.CreateHistogram<double>(
             TelemetryTags.Commands.CommandHandlingDuration,
             "s",
-            "Measures the duration of inbound commands");
+            "Measures the duration of inbound commands"
+        );
     }
 
     public void Dispose()
@@ -55,10 +58,10 @@ public sealed class CommandHandlerMetrics : IDisposable
 
     public void CommandHandlingEnd(string commandType, long startingTimestamp)
     {
-        var tags = _activeEventHandlingCounter.Enabled
-                   || _eventHandlingDuration.Enabled
-            ? new TagList { { TelemetryTags.Commands.CommandType, commandType } }
-            : default;
+        var tags =
+            _activeEventHandlingCounter.Enabled || _eventHandlingDuration.Enabled
+                ? new TagList { { TelemetryTags.Commands.CommandType, commandType } }
+                : default;
 
         if (_activeEventHandlingCounter.Enabled)
         {
@@ -72,8 +75,6 @@ public sealed class CommandHandlerMetrics : IDisposable
 
         var elapsed = _timeProvider.GetElapsedTime(startingTimestamp);
 
-        _eventHandlingDuration.Record(
-            elapsed.TotalSeconds,
-            tags);
+        _eventHandlingDuration.Record(elapsed.TotalSeconds, tags);
     }
 }

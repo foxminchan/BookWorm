@@ -1,6 +1,7 @@
 ﻿namespace BookWorm.Shared.Bus;
 
-public sealed class SendFilter<T>(IActivityScope activityScope) : IFilter<SendContext<T>> where T : class
+public sealed class SendFilter<T>(IActivityScope activityScope) : IFilter<SendContext<T>>
+    where T : class
 {
     public async Task Send(SendContext<T> context, IPipe<SendContext<T>> next)
     {
@@ -17,8 +18,8 @@ public sealed class SendFilter<T>(IActivityScope activityScope) : IFilter<SendCo
                     ["message-type"] = context.Message.GetType().FullName,
                     ["destination-address"] = context.DestinationAddress?.ToString(),
                     ["source-address"] = context.SourceAddress?.ToString(),
-                    ["correlation-id"] = context.CorrelationId?.ToString()
-                }
+                    ["correlation-id"] = context.CorrelationId?.ToString(),
+                },
             },
             default
         );

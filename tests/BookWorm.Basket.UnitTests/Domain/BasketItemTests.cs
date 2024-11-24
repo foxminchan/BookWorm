@@ -20,8 +20,8 @@ public class BasketItemTests
     [Theory]
     [CombinatorialData]
     public void GivenValidQuantity_ShouldSetQuantity_WhenCreated(
-        [CombinatorialValues(1, 10, int.MaxValue)]
-        int quantity)
+        [CombinatorialValues(1, 10, int.MaxValue)] int quantity
+    )
     {
         // Arrange
         var id = Guid.NewGuid();
@@ -36,8 +36,8 @@ public class BasketItemTests
     [Theory]
     [CombinatorialData]
     public void GivenInvalidQuantity_ShouldThrowException_WhenCreated(
-        [CombinatorialValues(0, -1, int.MinValue)]
-        int quantity)
+        [CombinatorialValues(0, -1, int.MinValue)] int quantity
+    )
     {
         // Arrange
         var id = Guid.NewGuid();
@@ -66,8 +66,8 @@ public class BasketItemTests
     [Theory]
     [CombinatorialData]
     public void GivenInvalidQuantity_ShouldThrowException_WhenIncreaseQuantity(
-        [CombinatorialValues(0, -1, int.MinValue)]
-        int increaseBy)
+        [CombinatorialValues(0, -1, int.MinValue)] int increaseBy
+    )
     {
         // Arrange
         var item = new BasketItem(Guid.NewGuid(), 5);
@@ -82,8 +82,11 @@ public class BasketItemTests
     [Theory]
     [InlineData(5, 3, 8)]
     [InlineData(5, 1, 6)]
-    public void GivenItem_ShouldHaveExpectedQuantity_WhenIncreaseQuantity(int initialQuantity, int increaseBy,
-        int expectedQuantity)
+    public void GivenItem_ShouldHaveExpectedQuantity_WhenIncreaseQuantity(
+        int initialQuantity,
+        int increaseBy,
+        int expectedQuantity
+    )
     {
         // Arrange
         var item = new BasketItem(Guid.NewGuid(), initialQuantity);
@@ -127,8 +130,11 @@ public class BasketItemTests
     [InlineData(5, 3, 2)]
     [InlineData(5, 5, 0)]
     [InlineData(5, 6, 0)]
-    public void GivenItem_ShouldHaveExpectedQuantity_WhenReduceQuantity(int initialQuantity, int reduceBy,
-        int expectedQuantity)
+    public void GivenItem_ShouldHaveExpectedQuantity_WhenReduceQuantity(
+        int initialQuantity,
+        int reduceBy,
+        int expectedQuantity
+    )
     {
         // Arrange
         var item = new BasketItem(Guid.NewGuid(), initialQuantity);

@@ -4,13 +4,10 @@ internal sealed class CreateFeedbackValidator : AbstractValidator<CreateFeedback
 {
     public CreateFeedbackValidator()
     {
-        RuleFor(x => x.BookId)
-            .NotEmpty();
+        RuleFor(x => x.BookId).NotEmpty();
 
-        RuleFor(x => x.Rating)
-            .InclusiveBetween(0, 5);
+        RuleFor(x => x.Rating).InclusiveBetween(0, 5);
 
-        RuleFor(x => x.Comment)
-            .MaximumLength(DataSchemaLength.Max);
+        RuleFor(x => x.Comment).MaximumLength(DataSchemaLength.Max);
     }
 }

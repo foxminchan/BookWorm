@@ -1,27 +1,37 @@
 ﻿namespace BookWorm.Catalog.Infrastructure.Blob;
 
-public sealed class AzuriteService(ResiliencePipelineProvider<string> pipeline, IConfiguration configuration)
-    : IAzuriteService
+public sealed class AzuriteService(
+    ResiliencePipelineProvider<string> pipeline,
+    BlobServiceClient client
+) : IAzuriteService
 {
-    private readonly BlobContainerClient _container = new(configuration.GetConnectionString(ServiceName.Blob),
-        nameof(Catalog));
-
     private readonly ResiliencePipeline _policy = pipeline.GetPipeline(nameof(Blob));
 
-    public async Task<string> UploadFileAsync(IFormFile file, CancellationToken cancellationToken = default)
+    public async Task<string> UploadFileAsync(
+        IFormFile file,
+        CancellationToken cancellationToken = default
+    )
     {
-        await _container.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
+        var blobContainerClient = client.GetBlobContainerClient(nameof(Catalog));
 
-        var blobName = Guid.NewGuid().ToString();
+        await blobContainerClient.CreateIfNotExistsAsync(
+            PublicAccessType.BlobContainer,
+            cancellationToken: cancellationToken
+        );
 
-        var blobClient = _container.GetBlobClient(blobName);
+        var blobName = Guid.CreateVersion7().ToString();
+
+        var blobClient = blobContainerClient.GetBlobClient(blobName);
 
         await _policy.ExecuteAsync(
-            async token => await blobClient.UploadAsync(
-                file.OpenReadStream(),
-                new BlobHttpHeaders { ContentType = file.ContentType },
-                cancellationToken: token),
-            cancellationToken);
+            async token =>
+                await blobClient.UploadAsync(
+                    file.OpenReadStream(),
+                    new BlobHttpHeaders { ContentType = file.ContentType },
+                    cancellationToken: token
+                ),
+            cancellationToken
+        );
 
         return blobClient.Uri.ToString();
     }
@@ -32,7 +42,11 @@ public sealed class AzuriteService(ResiliencePipelineProvider<string> pipeline, 
 
         await _policy.ExecuteAsync(
             async token =>
-                await blobClient.DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots, cancellationToken: token),
-            cancellationToken);
+                await blobClient.DeleteIfExistsAsync(
+                    DeleteSnapshotsOption.IncludeSnapshots,
+                    cancellationToken: token
+                ),
+            cancellationToken
+        );
     }
 }

@@ -4,9 +4,13 @@ namespace BookWorm.Catalog.Features.Authors.Delete;
 
 public sealed record DeleteAuthorCommand(Guid Id) : ICommand<Result>;
 
-public sealed class DeleteAuthorHandler(IRepository<Author> repository) : ICommandHandler<DeleteAuthorCommand, Result>
+public sealed class DeleteAuthorHandler(IRepository<Author> repository)
+    : ICommandHandler<DeleteAuthorCommand, Result>
 {
-    public async Task<Result> Handle(DeleteAuthorCommand request, CancellationToken cancellationToken)
+    public async Task<Result> Handle(
+        DeleteAuthorCommand request,
+        CancellationToken cancellationToken
+    )
     {
         var author = await repository.GetByIdAsync(request.Id, cancellationToken);
 

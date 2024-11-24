@@ -14,13 +14,13 @@ namespace BookWorm.Identity.Pages.Device;
 
 [SecurityHeaders]
 [Authorize]
-public sealed class Index(
-    IDeviceFlowInteractionService interaction,
-    IEventService eventService) : PageModel
+public sealed class Index(IDeviceFlowInteractionService interaction, IEventService eventService)
+    : PageModel
 {
     public ViewModel View { get; set; } = default!;
 
-    [BindProperty] public InputModel Input { get; set; } = default!;
+    [BindProperty]
+    public InputModel Input { get; set; } = default!;
 
     public async Task<IActionResult> OnGet(string? userCode)
     {
@@ -42,9 +42,9 @@ public sealed class Index(
 
     public async Task<IActionResult> OnPost()
     {
-        var request =
-            await interaction.GetAuthorizationContextAsync(Input.UserCode ??
-                                                           throw new ArgumentNullException(nameof(Input.UserCode)));
+        var request = await interaction.GetAuthorizationContextAsync(
+            Input.UserCode ?? throw new ArgumentNullException(nameof(Input.UserCode))
+        );
         if (request is null)
         {
             return RedirectToPage("/Home/Error/Index");
@@ -59,10 +59,17 @@ public sealed class Index(
                 grantedConsent = new() { Error = AuthorizationError.AccessDenied };
 
                 // emit event
-                await eventService.RaiseAsync(new ConsentDeniedEvent(User.GetSubjectId(), request.Client.ClientId,
-                    request.ValidatedResources.RawScopeValues));
-                Telemetry.Metrics.ConsentDenied(request.Client.ClientId,
-                    request.ValidatedResources.ParsedScopes.Select(s => s.ParsedName));
+                await eventService.RaiseAsync(
+                    new ConsentDeniedEvent(
+                        User.GetSubjectId(),
+                        request.Client.ClientId,
+                        request.ValidatedResources.RawScopeValues
+                    )
+                );
+                Telemetry.Metrics.ConsentDenied(
+                    request.Client.ClientId,
+                    request.ValidatedResources.ParsedScopes.Select(s => s.ParsedName)
+                );
                 break;
             // user clicked 'yes' - validate the data
             // if the user consented to some scope, build the response model
@@ -71,23 +78,35 @@ public sealed class Index(
                 var scopes = Input.ScopesConsented;
                 if (ConsentOptions.EnableOfflineAccess == false)
                 {
-                    scopes = scopes.Where(x => x != IdentityServerConstants.StandardScopes.OfflineAccess);
+                    scopes = scopes.Where(x =>
+                        x != IdentityServerConstants.StandardScopes.OfflineAccess
+                    );
                 }
 
                 grantedConsent = new()
                 {
                     RememberConsent = Input.RememberConsent,
                     ScopesValuesConsented = scopes.ToArray(),
-                    Description = Input.Description
+                    Description = Input.Description,
                 };
 
                 // emit event
-                await eventService.RaiseAsync(new ConsentGrantedEvent(User.GetSubjectId(), request.Client.ClientId,
-                    request.ValidatedResources.RawScopeValues, grantedConsent.ScopesValuesConsented,
-                    grantedConsent.RememberConsent));
-                Telemetry.Metrics.ConsentGranted(request.Client.ClientId, grantedConsent.ScopesValuesConsented,
-                    grantedConsent.RememberConsent);
-                var denied = request.ValidatedResources.ParsedScopes.Select(s => s.ParsedName)
+                await eventService.RaiseAsync(
+                    new ConsentGrantedEvent(
+                        User.GetSubjectId(),
+                        request.Client.ClientId,
+                        request.ValidatedResources.RawScopeValues,
+                        grantedConsent.ScopesValuesConsented,
+                        grantedConsent.RememberConsent
+                    )
+                );
+                Telemetry.Metrics.ConsentGranted(
+                    request.Client.ClientId,
+                    grantedConsent.ScopesValuesConsented,
+                    grantedConsent.RememberConsent
+                );
+                var denied = request
+                    .ValidatedResources.ParsedScopes.Select(s => s.ParsedName)
                     .Except(grantedConsent.ScopesValuesConsented);
                 Telemetry.Metrics.ConsentDenied(request.Client.ClientId, denied);
                 break;
@@ -118,7 +137,6 @@ public sealed class Index(
         return Page();
     }
 
-
     private async Task<bool> SetViewModelAsync(string userCode)
     {
         var request = await interaction.GetAuthorizationContextAsync(userCode);
@@ -140,29 +158,42 @@ public sealed class Index(
             ClientUrl = request.Client.ClientUri,
             ClientLogoUrl = request.Client.LogoUri,
             AllowRememberConsent = request.Client.AllowRememberConsent,
-            IdentityScopes = request.ValidatedResources.Resources.IdentityResources.Select(x =>
-                CreateScopeViewModel(x, Input.ScopesConsented.Contains(x.Name))).ToArray()
+            IdentityScopes = request
+                .ValidatedResources.Resources.IdentityResources.Select(x =>
+                    CreateScopeViewModel(x, Input.ScopesConsented.Contains(x.Name))
+                )
+                .ToArray(),
         };
 
         var apiScopes = new List<ScopeViewModel>();
         foreach (var parsedScope in request.ValidatedResources.ParsedScopes)
         {
-            var apiScope = request.ValidatedResources.Resources.FindApiScope(parsedScope.ParsedName);
+            var apiScope = request.ValidatedResources.Resources.FindApiScope(
+                parsedScope.ParsedName
+            );
             if (apiScope is null)
             {
                 continue;
             }
 
-            var scopeVm = CreateScopeViewModel(parsedScope, apiScope,
-                Input is null || Input.ScopesConsented.Contains(parsedScope.RawValue));
+            var scopeVm = CreateScopeViewModel(
+                parsedScope,
+                apiScope,
+                Input is null || Input.ScopesConsented.Contains(parsedScope.RawValue)
+            );
             apiScopes.Add(scopeVm);
         }
 
         if (DeviceOptions.EnableOfflineAccess && request.ValidatedResources.Resources.OfflineAccess)
         {
-            apiScopes.Add(GetOfflineAccessScope(Input is null ||
-                                                Input.ScopesConsented.Contains(IdentityServerConstants.StandardScopes
-                                                    .OfflineAccess)));
+            apiScopes.Add(
+                GetOfflineAccessScope(
+                    Input is null
+                        || Input.ScopesConsented.Contains(
+                            IdentityServerConstants.StandardScopes.OfflineAccess
+                        )
+                )
+            );
         }
 
         vm.ApiScopes = apiScopes;
@@ -179,11 +210,15 @@ public sealed class Index(
             Description = identity.Description,
             Emphasize = identity.Emphasize,
             Required = identity.Required,
-            Checked = check || identity.Required
+            Checked = check || identity.Required,
         };
     }
 
-    private static ScopeViewModel CreateScopeViewModel(ParsedScopeValue parsedScopeValue, ApiScope apiScope, bool check)
+    private static ScopeViewModel CreateScopeViewModel(
+        ParsedScopeValue parsedScopeValue,
+        ApiScope apiScope,
+        bool check
+    )
     {
         return new()
         {
@@ -192,7 +227,7 @@ public sealed class Index(
             Description = apiScope.Description,
             Emphasize = apiScope.Emphasize,
             Required = apiScope.Required,
-            Checked = check || apiScope.Required
+            Checked = check || apiScope.Required,
         };
     }
 
@@ -204,7 +239,7 @@ public sealed class Index(
             DisplayName = DeviceOptions.OfflineAccessDisplayName,
             Description = DeviceOptions.OfflineAccessDescription,
             Emphasize = true,
-            Checked = check
+            Checked = check,
         };
     }
 }

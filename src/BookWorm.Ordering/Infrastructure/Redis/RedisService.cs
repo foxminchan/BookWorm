@@ -10,9 +10,13 @@ public sealed class RedisService(IConfiguration configuration) : IRedisService
 
     private readonly SemaphoreSlim _connectionLock = new(1, 1);
 
-    private readonly Lazy<ConnectionMultiplexer> _connectionMultiplexer = new(() =>
-        ConnectionMultiplexer.Connect(configuration.GetConnectionString(ServiceName.Redis) ??
-                                      throw new InvalidOperationException()));
+    private readonly Lazy<ConnectionMultiplexer> _connectionMultiplexer = new(
+        () =>
+            ConnectionMultiplexer.Connect(
+                configuration.GetConnectionString(ServiceName.Redis)
+                    ?? throw new InvalidOperationException()
+            )
+    );
 
     private ConnectionMultiplexer ConnectionMultiplexer => _connectionMultiplexer.Value;
 
@@ -61,14 +65,14 @@ public sealed class RedisService(IConfiguration configuration) : IRedisService
     {
         var cachedValue = await Database.StringGetAsync(key);
 
-        return !string.IsNullOrEmpty(cachedValue)
-            ? GetByteToObject<T>(cachedValue)
-            : default;
+        return !string.IsNullOrEmpty(cachedValue) ? GetByteToObject<T>(cachedValue) : default;
     }
 
     private static T GetByteToObject<T>(RedisValue value)
     {
         var result = JsonSerializer.Deserialize<T>(Encoding.UTF8.GetString(value!));
-        return result is null ? throw new InvalidOperationException("Deserialization failed.") : result;
+        return result is null
+            ? throw new InvalidOperationException("Deserialization failed.")
+            : result;
     }
 }

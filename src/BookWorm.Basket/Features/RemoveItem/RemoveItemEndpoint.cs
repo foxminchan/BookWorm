@@ -4,17 +4,23 @@ public sealed class RemoveItemEndpoint : IEndpoint<NoContent, Guid, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapDelete("/baskets/{id:guid}/items",
-                async (Guid id, ISender sender) => await HandleAsync(id, sender))
+        app.MapDelete(
+                "/baskets/{id:guid}/items",
+                async (Guid id, ISender sender) => await HandleAsync(id, sender)
+            )
             .Produces<NoContent>()
             .ProducesProblem(StatusCodes.Status404NotFound)
+            .WithOpenApi()
             .WithTags(nameof(Basket))
-            .WithName("Remove Item")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization();
     }
 
-    public async Task<NoContent> HandleAsync(Guid id, ISender sender, CancellationToken cancellationToken = default)
+    public async Task<NoContent> HandleAsync(
+        Guid id,
+        ISender sender,
+        CancellationToken cancellationToken = default
+    )
     {
         await sender.Send(new RemoveItemCommand(id), cancellationToken);
 

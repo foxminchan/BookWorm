@@ -23,9 +23,10 @@ public sealed class GetBookHandlerTests
         var book = BookBuilder.WithDefaultValues()[0];
         var id = book.Id;
 
-        _bookRepositoryMock.Setup(x => x.FirstOrDefaultAsync(
-                It.IsAny<BookFilterSpec>(),
-                It.IsAny<CancellationToken>()))
+        _bookRepositoryMock
+            .Setup(x =>
+                x.FirstOrDefaultAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>())
+            )
             .ReturnsAsync(book);
 
         var query = new GetBookQuery(id);
@@ -40,7 +41,8 @@ public sealed class GetBookHandlerTests
         result.Value.Description.Should().Be(book.Description);
         _bookRepositoryMock.Verify(
             x => x.FirstOrDefaultAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()),
-            Times.Once);
+            Times.Once
+        );
     }
 
     [Fact]
@@ -49,9 +51,10 @@ public sealed class GetBookHandlerTests
         // Arrange
         var id = Guid.NewGuid();
 
-        _bookRepositoryMock.Setup(x => x.FirstOrDefaultAsync(
-                It.IsAny<BookFilterSpec>(),
-                It.IsAny<CancellationToken>()))
+        _bookRepositoryMock
+            .Setup(x =>
+                x.FirstOrDefaultAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>())
+            )
             .ReturnsAsync((Book?)null);
 
         var query = new GetBookQuery(id);
@@ -63,6 +66,7 @@ public sealed class GetBookHandlerTests
         result.Value.Should().BeNull();
         _bookRepositoryMock.Verify(
             x => x.FirstOrDefaultAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()),
-            Times.Once);
+            Times.Once
+        );
     }
 }

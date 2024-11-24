@@ -6,7 +6,9 @@ public sealed class FeedbackTests
     [InlineData(1)]
     [InlineData(3)]
     [InlineData(5)]
-    public void GivenValidParameters_ShouldPropertiesShouldBeSetCorrectly_WhenCreatingFeedback(int rating)
+    public void GivenValidParameters_ShouldPropertiesShouldBeSetCorrectly_WhenCreatingFeedback(
+        int rating
+    )
     {
         // Arrange
         var bookId = Guid.NewGuid();
@@ -43,7 +45,9 @@ public sealed class FeedbackTests
     [Theory]
     [InlineData(-1)]
     [InlineData(6)]
-    public void GivenInvalidRating_ShouldThrowArgumentOutOfRangeException_WhenCreatingFeedback(int rating)
+    public void GivenInvalidRating_ShouldThrowArgumentOutOfRangeException_WhenCreatingFeedback(
+        int rating
+    )
     {
         // Arrange
         var bookId = Guid.NewGuid();
@@ -53,8 +57,7 @@ public sealed class FeedbackTests
         Func<Feedback> act = () => new(bookId, rating, null, userId);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>()
-            .WithMessage("*rating*");
+        act.Should().Throw<ArgumentOutOfRangeException>().WithMessage("*rating*");
     }
 
     [Fact]
@@ -74,9 +77,9 @@ public sealed class FeedbackTests
     [Theory]
     [CombinatorialData]
     public void GivenInvalidParameters_ShouldThrowArgumentException_WhenCreatingFeedback(
-        [CombinatorialValues("00000000-0000-0000-0000-000000000000")]
-        Guid invalidGuid,
-        [CombinatorialValues(-1, 6)] int invalidRating)
+        [CombinatorialValues("00000000-0000-0000-0000-000000000000")] Guid invalidGuid,
+        [CombinatorialValues(-1, 6)] int invalidRating
+    )
     {
         // Act
         Func<Feedback> actBookId = () => new(invalidGuid, 3, null, Guid.NewGuid());
@@ -84,11 +87,8 @@ public sealed class FeedbackTests
         Func<Feedback> actUserId = () => new(Guid.NewGuid(), 3, null, invalidGuid);
 
         // Assert
-        actBookId.Should().Throw<ArgumentException>()
-            .WithMessage("*bookId*");
-        actRating.Should().Throw<ArgumentOutOfRangeException>()
-            .WithMessage("*rating*");
-        actUserId.Should().Throw<ArgumentException>()
-            .WithMessage("*userId*");
+        actBookId.Should().Throw<ArgumentException>().WithMessage("*bookId*");
+        actRating.Should().Throw<ArgumentOutOfRangeException>().WithMessage("*rating*");
+        actUserId.Should().Throw<ArgumentException>().WithMessage("*userId*");
     }
 }

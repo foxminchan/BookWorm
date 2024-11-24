@@ -13,7 +13,7 @@ public static class CategoryBuilder
             new("Clean Code"),
             new("Refactoring"),
             new("Agile"),
-            new("Software Architecture")
+            new("Software Architecture"),
         ];
 
         return _categories;

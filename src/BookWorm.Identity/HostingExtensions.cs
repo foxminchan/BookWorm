@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Identity;
+﻿using Microsoft.AspNetCore.DataProtection;
+
+namespace BookWorm.Identity;
 
 internal static class HostingExtensions
 {
@@ -10,23 +12,27 @@ internal static class HostingExtensions
 
         builder.AddServiceDefaults();
 
-        builder.AddRedisDataProtection();
+        builder
+            .Services.AddDataProtection()
+            .SetDefaultKeyLifetime(TimeSpan.FromDays(14))
+            .SetApplicationName(nameof(BookWorm));
 
         builder.Services.AddRazorPages();
         builder.Services.AddHttpContextAccessor();
 
         builder.Services.AddMigration<ApplicationDbContext, SeedData>();
 
-        builder.AddNpgsqlDbContext<ApplicationDbContext>(ServiceName.Database.Identity,
-            configureDbContextOptions: dbContextOptionsBuilder => dbContextOptionsBuilder.UseNpgsql()
-                .UseModel(ApplicationDbContextModel.Instance));
+        builder.AddNpgsqlDbContext<ApplicationDbContext>(
+            ServiceName.Database.Identity,
+            configureDbContextOptions: dbContextOptionsBuilder => dbContextOptionsBuilder.UseNpgsql());
 
-        builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+        builder
+            .Services.AddIdentity<ApplicationUser, IdentityRole>()
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
 
-        var identityServerBuilder = builder.Services
-            .AddIdentityServer(options =>
+        var identityServerBuilder = builder
+            .Services.AddIdentityServer(options =>
             {
                 options.Authentication.CookieLifetime = TimeSpan.FromHours(2);
                 options.Events.RaiseErrorEvents = true;
@@ -72,8 +78,7 @@ internal static class HostingExtensions
         app.UseRouting();
         app.UseIdentityServer();
         app.UseAuthorization();
-        app.MapRazorPages()
-            .RequireAuthorization();
+        app.MapRazorPages().RequireAuthorization();
 
         return app;
     }

@@ -7,9 +7,13 @@ public sealed record GetBasketQuery : IQuery<Result<BasketDto>>;
 public sealed class GetBasketHandler(
     IRedisService redisService,
     IIdentityService identityService,
-    IBookService bookService) : IQueryHandler<GetBasketQuery, Result<BasketDto>>
+    IBookService bookService
+) : IQueryHandler<GetBasketQuery, Result<BasketDto>>
 {
-    public async Task<Result<BasketDto>> Handle(GetBasketQuery query, CancellationToken cancellationToken)
+    public async Task<Result<BasketDto>> Handle(
+        GetBasketQuery query,
+        CancellationToken cancellationToken
+    )
     {
         var customerId = identityService.GetUserIdentity();
 
@@ -33,7 +37,9 @@ public sealed class GetBasketHandler(
 
         basketDto = basketDto with
         {
-            TotalPrice = basketDto.Items.Sum(x => x.PriceSale > 0 ? x.PriceSale * x.Quantity : x.Price * x.Quantity)
+            TotalPrice = basketDto.Items.Sum(x =>
+                x.PriceSale > 0 ? x.PriceSale * x.Quantity : x.Price * x.Quantity
+            ),
         };
 
         return basketDto;

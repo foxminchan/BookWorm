@@ -14,7 +14,7 @@ public static class BuyerBuilder
             new(Guid.NewGuid(), "Jane Doe", new("456 Main St", "City", "Province")),
             new(Guid.NewGuid(), "Alice Doe", new("789 Main St", "City", "Province")),
             new(Guid.NewGuid(), "Bob Doe", new("101 Main St", "City", "Province")),
-            new(Guid.NewGuid(), "Charlie Doe", new("202 Main St", "City", "Province"))
+            new(Guid.NewGuid(), "Charlie Doe", new("202 Main St", "City", "Province")),
         ];
 
         return _buyers;

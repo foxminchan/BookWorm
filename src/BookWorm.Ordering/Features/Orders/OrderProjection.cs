@@ -6,9 +6,11 @@ public sealed class OrderStateEndpoint : IEndpoint<Ok, Guid, HttpContext, IQuery
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapGet("/orders/state",
+        app.MapGet(
+                "/orders/state",
                 async (HttpContext context, IQuerySession querySession, Guid id) =>
-                    await HandleAsync(id, context, querySession))
+                    await HandleAsync(id, context, querySession)
+            )
             .Produces<Ok>()
             .WithTags(nameof(Order))
             .WithName("Get Order State")
@@ -16,8 +18,12 @@ public sealed class OrderStateEndpoint : IEndpoint<Ok, Guid, HttpContext, IQuery
             .RequireAuthorization();
     }
 
-    public async Task<Ok> HandleAsync(Guid id, HttpContext context, IQuerySession querySession,
-        CancellationToken cancellationToken = default)
+    public async Task<Ok> HandleAsync(
+        Guid id,
+        HttpContext context,
+        IQuerySession querySession,
+        CancellationToken cancellationToken = default
+    )
     {
         await querySession.Json.WriteById<OrderQuery>(id, context);
         return TypedResults.Ok();

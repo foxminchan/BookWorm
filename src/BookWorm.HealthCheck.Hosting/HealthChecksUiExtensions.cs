@@ -10,7 +10,8 @@ public static class HealthChecksUiExtensions
     public static IResourceBuilder<HealthChecksUiResource> AddHealthChecksUi(
         this IDistributedApplicationBuilder builder,
         string name,
-        int? port = null)
+        int? port = null
+    )
     {
         builder.Services.TryAddLifecycleHook<HealthChecksUiLifecycleHook>();
 
@@ -18,7 +19,10 @@ public static class HealthChecksUiExtensions
 
         return builder
             .AddResource(resource)
-            .WithImage(HealthChecksUiDefaults.ContainerImageName, HealthChecksUiDefaults.ContainerImageTag)
+            .WithImage(
+                HealthChecksUiDefaults.ContainerImageName,
+                HealthChecksUiDefaults.ContainerImageTag
+            )
             .WithImageRegistry(HealthChecksUiDefaults.ContainerRegistry)
             .WithEnvironment(HealthChecksUiResource.KnownEnvVars.UiPath, "/")
             .WithHttpEndpoint(port, HealthChecksUiDefaults.ContainerPort);
@@ -28,7 +32,8 @@ public static class HealthChecksUiExtensions
         this IResourceBuilder<HealthChecksUiResource> builder,
         IResourceBuilder<ProjectResource> project,
         string endpointName = HealthChecksUiDefaults.EndpointName,
-        string probePath = HealthChecksUiDefaults.ProbePath)
+        string probePath = HealthChecksUiDefaults.ProbePath
+    )
     {
         var monitoredProject = new MonitoredProject(project, endpointName, probePath);
         builder.Resource.MonitoredProjects.Add(monitoredProject);

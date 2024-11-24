@@ -6,7 +6,8 @@ public sealed class TestServerCallContext(
     DateTime? deadline = null,
     Metadata? responseTrailers = null,
     WriteOptions? writeOptions = null,
-    AuthContext? authContext = null) : ServerCallContext
+    AuthContext? authContext = null
+) : ServerCallContext
 {
     protected override string MethodCore => "test";
 
@@ -32,14 +33,16 @@ public sealed class TestServerCallContext(
         set { }
     }
 
-    protected override AuthContext AuthContextCore { get; } = authContext ?? new AuthContext("anonymous", new());
+    protected override AuthContext AuthContextCore { get; } =
+        authContext ?? new AuthContext("anonymous", new());
 
     protected override IDictionary<object, object> UserStateCore => _userState;
 
-    internal void SetUserState(object key, object value)
-        => _userState[key] = value;
+    internal void SetUserState(object key, object value) => _userState[key] = value;
 
-    protected override ContextPropagationToken CreatePropagationTokenCore(ContextPropagationOptions? options)
+    protected override ContextPropagationToken CreatePropagationTokenCore(
+        ContextPropagationOptions? options
+    )
     {
         throw new NotImplementedException();
     }
@@ -49,7 +52,10 @@ public sealed class TestServerCallContext(
         return Task.CompletedTask;
     }
 
-    public static TestServerCallContext Create(Metadata? requestHeaders = null, CancellationToken cancellationToken = default)
+    public static TestServerCallContext Create(
+        Metadata? requestHeaders = null,
+        CancellationToken cancellationToken = default
+    )
     {
         return new(requestHeaders: [], cancellationToken);
     }

@@ -37,7 +37,8 @@ public sealed class ReduceItemQuantityHandlerTests
         var command = new ReduceItemQuantityCommand(Guid.NewGuid());
         var customerId = Guid.NewGuid().ToString();
         _mockIdentityService.Setup(x => x.GetUserIdentity()).Returns(customerId);
-        _mockRedisService.Setup(x => x.HashGetAsync<BasketModel?>(nameof(Basket), customerId))
+        _mockRedisService
+            .Setup(x => x.HashGetAsync<BasketModel?>(nameof(Basket), customerId))
             .ReturnsAsync((BasketModel?)null);
 
         // Act
@@ -56,7 +57,8 @@ public sealed class ReduceItemQuantityHandlerTests
         var basketItems = new List<BasketItem> { new(command.BookId, 2) };
         var basket = new BasketModel(Guid.Parse(customerId), basketItems);
         _mockIdentityService.Setup(x => x.GetUserIdentity()).Returns(customerId);
-        _mockRedisService.Setup(x => x.HashGetAsync<BasketModel?>(nameof(Basket), customerId))
+        _mockRedisService
+            .Setup(x => x.HashGetAsync<BasketModel?>(nameof(Basket), customerId))
             .ReturnsAsync(basket);
 
         // Act
@@ -65,7 +67,10 @@ public sealed class ReduceItemQuantityHandlerTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         basket.BasketItems.First().Quantity.Should().Be(1);
-        _mockRedisService.Verify(x => x.HashSetAsync(nameof(Basket), customerId, basket), Times.Once);
+        _mockRedisService.Verify(
+            x => x.HashSetAsync(nameof(Basket), customerId, basket),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -77,7 +82,8 @@ public sealed class ReduceItemQuantityHandlerTests
         var basketItems = new List<BasketItem> { new(command.BookId, 1) };
         var basket = new BasketModel(Guid.Parse(customerId), basketItems);
         _mockIdentityService.Setup(x => x.GetUserIdentity()).Returns(customerId);
-        _mockRedisService.Setup(x => x.HashGetAsync<BasketModel?>(nameof(Basket), customerId))
+        _mockRedisService
+            .Setup(x => x.HashGetAsync<BasketModel?>(nameof(Basket), customerId))
             .ReturnsAsync(basket);
 
         // Act
@@ -86,6 +92,9 @@ public sealed class ReduceItemQuantityHandlerTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         basket.BasketItems.Should().BeEmpty();
-        _mockRedisService.Verify(x => x.HashSetAsync(nameof(Basket), customerId, basket), Times.Once);
+        _mockRedisService.Verify(
+            x => x.HashSetAsync(nameof(Basket), customerId, basket),
+            Times.Once
+        );
     }
 }

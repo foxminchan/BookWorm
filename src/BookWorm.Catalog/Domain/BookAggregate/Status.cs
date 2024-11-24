@@ -5,5 +5,5 @@ public enum Status : byte
 {
     InStock = 1,
     OutOfStock = 2,
-    ComingSoon = 3
+    ComingSoon = 3,
 }

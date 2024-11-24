@@ -6,11 +6,7 @@ public static class Config
 {
     public static IEnumerable<IdentityResource> GetResources()
     {
-        return
-        [
-            new IdentityResources.OpenId(),
-            new IdentityResources.Profile()
-        ];
+        return [new IdentityResources.OpenId(), new IdentityResources.Profile()];
     }
 
     public static IEnumerable<ApiResource> GetApis()
@@ -20,7 +16,7 @@ public static class Config
             new("ordering", "Ordering Service"),
             new("basket", "Basket Service"),
             new("catalog", "Catalog Service"),
-            new("rating", "Rating Service")
+            new("rating", "Rating Service"),
         ];
     }
 
@@ -31,7 +27,7 @@ public static class Config
             new("ordering", "Ordering Service"),
             new("basket", "Basket Service"),
             new("catalog", "Catalog Service"),
-            new("rating", "Rating Service")
+            new("rating", "Rating Service"),
         ];
     }
 
@@ -51,7 +47,7 @@ public static class Config
                 RedirectUris = { $"{service.Catalog}/swagger/oauth2-redirect.html" },
                 PostLogoutRedirectUris = { $"{service.Catalog}/swagger/" },
                 AllowedCorsOrigins = { service.Catalog },
-                AllowedScopes = { "catalog" }
+                AllowedScopes = { "catalog" },
             },
             new()
             {
@@ -65,7 +61,7 @@ public static class Config
                 RedirectUris = { $"{service.Ordering}/swagger/oauth2-redirect.html" },
                 PostLogoutRedirectUris = { $"{service.Ordering}/swagger/" },
                 AllowedCorsOrigins = { service.Ordering },
-                AllowedScopes = { "ordering" }
+                AllowedScopes = { "ordering" },
             },
             new()
             {
@@ -79,7 +75,7 @@ public static class Config
                 RedirectUris = { $"{service.Basket}/swagger/oauth2-redirect.html" },
                 PostLogoutRedirectUris = { $"{service.Basket}/swagger/" },
                 AllowedCorsOrigins = { service.Basket },
-                AllowedScopes = { "basket" }
+                AllowedScopes = { "basket" },
             },
             new()
             {
@@ -93,7 +89,7 @@ public static class Config
                 RedirectUris = { $"{service.Rating}/swagger/oauth2-redirect.html" },
                 PostLogoutRedirectUris = { $"{service.Rating}/swagger/" },
                 AllowedCorsOrigins = { service.Rating },
-                AllowedScopes = { "rating" }
+                AllowedScopes = { "rating" },
             },
             new()
             {
@@ -115,11 +111,11 @@ public static class Config
                     "catalog",
                     "ordering",
                     "basket",
-                    "rating"
+                    "rating",
                 },
                 AccessTokenLifetime = 60 * 60 * 2,
-                IdentityTokenLifetime = 60 * 60 * 2
-            }
+                IdentityTokenLifetime = 60 * 60 * 2,
+            },
         ];
     }
 }

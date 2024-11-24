@@ -7,7 +7,10 @@ public sealed record CreateCategoryCommand(string Name) : ICommand<Result<Guid>>
 public sealed class CreateCategoryHandler(IRepository<Category> repository)
     : ICommandHandler<CreateCategoryCommand, Result<Guid>>
 {
-    public async Task<Result<Guid>> Handle(CreateCategoryCommand request, CancellationToken cancellationToken)
+    public async Task<Result<Guid>> Handle(
+        CreateCategoryCommand request,
+        CancellationToken cancellationToken
+    )
     {
         var result = await repository.AddAsync(new(request.Name), cancellationToken);
 

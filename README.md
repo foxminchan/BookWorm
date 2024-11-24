@@ -29,7 +29,7 @@
 - [x] CI/CD with `GitHub Actions`
 - [x] Testing
   - [x] Service unit tests
-  - [ ] Integration tests with `Aspire Testing` & `WireMock`
+  - [ ] Integration tests with `TestContainers`
 - [ ] Output Caching, Response Caching and Distributed Caching with Redis
 - [ ] Deployment with `Aspirate` on `k3d`
 - [ ] EDA document with `EventCatalog`
@@ -49,7 +49,7 @@
 
 ### Prerequisites
 
-- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
 - [Docker](https://www.docker.com/products/docker-desktop)
 - [Gitleaks](https://gitleaks.io/)
 
@@ -94,11 +94,6 @@ dotnet run --project src/BookWorm.AppHost/BookWorm.AppHost.csproj
 
 > [!CAUTION]
 > Do not change namespaces for `Integration Events` as it will break the messaging system.
-
-## Project References
-
-- [eShop](https://github.com/dotnet/eShop)
-- [practical-dotnet-aspire](https://github.com/thangchung/practical-dotnet-aspire)
 
 ## License
 

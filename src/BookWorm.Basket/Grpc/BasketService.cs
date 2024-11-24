@@ -5,8 +5,11 @@ using GrpcBasketBase = BookWorm.Basket.Grpc.Basket.BasketBase;
 
 namespace BookWorm.Basket.Grpc;
 
-public sealed class BasketService(ISender sender, IBookService bookService, ILogger<BasketService> logger)
-    : GrpcBasketBase
+public sealed class BasketService(
+    ISender sender,
+    IBookService bookService,
+    ILogger<BasketService> logger
+) : GrpcBasketBase
 {
     [AllowAnonymous]
     public override async Task<BasketResponse> GetBasket(Empty request, ServerCallContext context)
@@ -20,8 +23,12 @@ public sealed class BasketService(ISender sender, IBookService bookService, ILog
 
         if (logger.IsEnabled(LogLevel.Debug))
         {
-            logger.LogDebug("[{Service}] - Begin grpc call {Method} with {BasketId}",
-                nameof(BasketService), nameof(GetBasket), userId);
+            logger.LogDebug(
+                "[{Service}] - Begin grpc call {Method} with {BasketId}",
+                nameof(BasketService),
+                nameof(GetBasket),
+                userId
+            );
         }
 
         var basket = await sender.Send(new GetBasketQuery());
@@ -37,18 +44,21 @@ public sealed class BasketService(ISender sender, IBookService bookService, ILog
         {
             var book = await bookService.GetBookAsync(item.BookId);
 
-            response.Books.Add(new Book
-            {
-                Id = book.Id.ToString(),
-                Name = book.Name,
-                Price = (double)book.Price,
-                PriceSale = (double)book.PriceSale,
-                Quantity = item.Quantity
-            });
+            response.Books.Add(
+                new Book
+                {
+                    Id = book.Id.ToString(),
+                    Name = book.Name,
+                    Price = (double)book.Price,
+                    PriceSale = (double)book.PriceSale,
+                    Quantity = item.Quantity,
+                }
+            );
         }
 
-        response.TotalPrice =
-            response.Books.Sum(x => x.PriceSale > 0 ? x.PriceSale * x.Quantity : x.Price * x.Quantity);
+        response.TotalPrice = response.Books.Sum(x =>
+            x.PriceSale > 0 ? x.PriceSale * x.Quantity : x.Price * x.Quantity
+        );
 
         return response;
     }

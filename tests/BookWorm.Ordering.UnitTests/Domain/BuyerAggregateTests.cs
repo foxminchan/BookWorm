@@ -104,7 +104,8 @@ public sealed class BuyerAggregateTests
     public void GivenInvalidAddress_ShouldThrowArgumentException_WhenCreatingAddress(
         [CombinatorialValues(null, "")] string street,
         [CombinatorialValues(null, "")] string city,
-        [CombinatorialValues(null, "")] string province)
+        [CombinatorialValues(null, "")] string province
+    )
     {
         // Act
         Func<Address> act = () => new(street, city, province);

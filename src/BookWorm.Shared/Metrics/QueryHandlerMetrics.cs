@@ -18,17 +18,20 @@ public sealed class QueryHandlerMetrics : IDisposable
         _totalCommandsNumber = _meter.CreateCounter<long>(
             TelemetryTags.Queries.TotalQueriesNumber,
             "{query}",
-            "Total number of queries send to query handlers");
+            "Total number of queries send to query handlers"
+        );
 
         _activeEventHandlingCounter = _meter.CreateUpDownCounter<long>(
             TelemetryTags.Queries.ActiveQueriesNumber,
             "{query}",
-            "Number of queries currently being handled");
+            "Number of queries currently being handled"
+        );
 
         _eventHandlingDuration = _meter.CreateHistogram<double>(
             TelemetryTags.Queries.QueryHandlingDuration,
             "s",
-            "Measures the duration of inbound queries");
+            "Measures the duration of inbound queries"
+        );
     }
 
     public void Dispose()
@@ -55,10 +58,10 @@ public sealed class QueryHandlerMetrics : IDisposable
 
     public void QueryHandlingEnd(string queryType, long startingTimestamp)
     {
-        var tags = _activeEventHandlingCounter.Enabled
-                   || _eventHandlingDuration.Enabled
-            ? new TagList { { TelemetryTags.Queries.QueryType, queryType } }
-            : default;
+        var tags =
+            _activeEventHandlingCounter.Enabled || _eventHandlingDuration.Enabled
+                ? new TagList { { TelemetryTags.Queries.QueryType, queryType } }
+                : default;
 
         if (_activeEventHandlingCounter.Enabled)
         {
@@ -72,8 +75,6 @@ public sealed class QueryHandlerMetrics : IDisposable
 
         var elapsed = _timeProvider.GetElapsedTime(startingTimestamp);
 
-        _eventHandlingDuration.Record(
-            elapsed.TotalSeconds,
-            tags);
+        _eventHandlingDuration.Record(elapsed.TotalSeconds, tags);
     }
 }

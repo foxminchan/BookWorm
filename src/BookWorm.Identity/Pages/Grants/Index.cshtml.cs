@@ -17,11 +17,13 @@ public sealed class Index(
     IIdentityServerInteractionService interaction,
     IClientStore clients,
     IResourceStore resources,
-    IEventService events) : PageModel
+    IEventService events
+) : PageModel
 {
     public ViewModel View { get; set; } = default!;
 
-    [BindProperty] public string? ClientId { get; set; }
+    [BindProperty]
+    public string? ClientId { get; set; }
 
     public async Task OnGet()
     {
@@ -47,8 +49,10 @@ public sealed class Index(
                 Description = grant.Description,
                 Created = grant.CreationTime,
                 Expires = grant.Expiration,
-                IdentityGrantNames = resources1.IdentityResources.Select(x => x.DisplayName ?? x.Name).ToArray(),
-                ApiGrantNames = resources1.ApiScopes.Select(x => x.DisplayName ?? x.Name).ToArray()
+                IdentityGrantNames = resources1
+                    .IdentityResources.Select(x => x.DisplayName ?? x.Name)
+                    .ToArray(),
+                ApiGrantNames = resources1.ApiScopes.Select(x => x.DisplayName ?? x.Name).ToArray(),
             };
 
             list.Add(item);

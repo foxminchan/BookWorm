@@ -14,4 +14,5 @@ public sealed record BookDto(
     string? Publisher,
     List<string?> Authors,
     double AverageRating,
-    int RatingsCount);
+    int RatingsCount
+);

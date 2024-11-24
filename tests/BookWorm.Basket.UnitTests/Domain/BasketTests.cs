@@ -30,7 +30,9 @@ public sealed class BasketTests
         basket.AddItem(item);
 
         // Assert
-        basket.BasketItems.Should().ContainSingle(x => x.Id == item.Id && x.Quantity == item.Quantity);
+        basket
+            .BasketItems.Should()
+            .ContainSingle(x => x.Id == item.Id && x.Quantity == item.Quantity);
     }
 
     [Fact]

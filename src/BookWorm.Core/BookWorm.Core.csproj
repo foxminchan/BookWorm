@@ -6,7 +6,8 @@
 
   <ItemGroup>
     <PackageReference Include="MediatR" />
-    <PackageReference Include="MassTransit" />    
+    <PackageReference Include="MassTransit" />
+    <PackageReference Include="Ardalis.Result.AspNetCore" />
     <PackageReference Include="Ardalis.Specification" />
   </ItemGroup>
 
