@@ -5,16 +5,19 @@ namespace BookWorm.Catalog.IntegrationEvents.EventHandlers;
 
 internal sealed class FeedbackDeletedIntegrationEventHandler(
     IRepository<Book> repository,
-    ILogger<FeedbackDeletedIntegrationEventHandler> logger) : IConsumer<FeedbackDeletedIntegrationEvent>
+    ILogger<FeedbackDeletedIntegrationEventHandler> logger
+) : IConsumer<FeedbackDeletedIntegrationEvent>
 {
     public async Task Consume(ConsumeContext<FeedbackDeletedIntegrationEvent> context)
     {
         var @event = context.Message;
 
-        logger.LogInformation("[{Consumer}] - Removing rating {Rating} from book {BookId}",
+        logger.LogInformation(
+            "[{Consumer}] - Removing rating {Rating} from book {BookId}",
             nameof(FeedbackDeletedIntegrationEventHandler),
             @event.Rating,
-            @event.BookId);
+            @event.BookId
+        );
 
         var book = await repository.GetByIdAsync(@event.BookId);
 

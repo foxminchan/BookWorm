@@ -4,14 +4,19 @@ namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
 
 internal sealed class OrderCancelledIntegrationEventHandler(
     ISmtpService smtpService,
-    ILogger<OrderCancelledIntegrationEventHandler> logger) : IConsumer<OrderCancelledIntegrationEvent>
+    ILogger<OrderCancelledIntegrationEventHandler> logger
+) : IConsumer<OrderCancelledIntegrationEvent>
 {
     public async Task Consume(ConsumeContext<OrderCancelledIntegrationEvent> context)
     {
         var @event = context.Message;
 
-        logger.LogInformation("[{Consumer}] Sending email to {Email} for order {OrderId}",
-            nameof(OrderCancelledIntegrationEventHandler), @event.Email, @event.OrderId);
+        logger.LogInformation(
+            "[{Consumer}] Sending email to {Email} for order {OrderId}",
+            nameof(OrderCancelledIntegrationEventHandler),
+            @event.Email,
+            @event.OrderId
+        );
 
         if (@event.Email is null)
         {
@@ -21,7 +26,8 @@ internal sealed class OrderCancelledIntegrationEventHandler(
         var metadata = new EmailMetadata(
             @event.Email,
             "Order Cancelled",
-            $"Your order has been cancelled. Order ID: {@event.OrderId}");
+            $"Your order has been cancelled. Order ID: {@event.OrderId}"
+        );
 
         await smtpService.SendEmailAsync(metadata);
     }

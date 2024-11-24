@@ -20,7 +20,8 @@ public sealed class ListPublishersHandlerTests
         // Arrange
         var publishers = PublisherBuilder.WithDefaultValues();
 
-        _publisherRepositoryMock.Setup(x => x.ListAsync(It.IsAny<CancellationToken>()))
+        _publisherRepositoryMock
+            .Setup(x => x.ListAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(publishers);
 
         var query = new ListPublishersQuery();
@@ -31,6 +32,9 @@ public sealed class ListPublishersHandlerTests
         // Assert
         result.Status.Should().Be(ResultStatus.Ok);
         result.Value.Should().BeEquivalentTo(publishers);
-        _publisherRepositoryMock.Verify(x => x.ListAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _publisherRepositoryMock.Verify(
+            x => x.ListAsync(It.IsAny<CancellationToken>()),
+            Times.Once
+        );
     }
 }

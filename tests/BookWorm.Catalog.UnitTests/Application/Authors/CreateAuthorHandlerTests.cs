@@ -31,12 +31,20 @@ public sealed class CreateAuthorHandlerTests
         // Assert
         result.Value.Should().Be(authorId);
         _repositoryMock.Verify(
-            r => r.AddAsync(It.Is<Author>(a => a.Name == command.Name), It.IsAny<CancellationToken>()), Times.Once);
+            r =>
+                r.AddAsync(
+                    It.Is<Author>(a => a.Name == command.Name),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
     }
 
     [Theory]
     [CombinatorialData]
-    public void GivenNullOrEmptyAuthorName_ShouldThrowException([CombinatorialValues("", null)] string? name)
+    public void GivenNullOrEmptyAuthorName_ShouldThrowException(
+        [CombinatorialValues("", null)] string? name
+    )
     {
         // Arrange
         var command = new CreateAuthorCommand(name!);

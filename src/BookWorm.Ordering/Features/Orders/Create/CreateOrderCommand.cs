@@ -8,9 +8,13 @@ public sealed class CreateOrderHandler(
     IRepository<Order> repository,
     IBasketService basketService,
     IIdentityService identityService,
-    IPublishEndpoint publishEndpoint) : ICommandHandler<CreateOrderCommand, Result<Guid>>
+    IPublishEndpoint publishEndpoint
+) : ICommandHandler<CreateOrderCommand, Result<Guid>>
 {
-    public async Task<Result<Guid>> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
+    public async Task<Result<Guid>> Handle(
+        CreateOrderCommand request,
+        CancellationToken cancellationToken
+    )
     {
         var buyerId = identityService.GetUserIdentity();
 

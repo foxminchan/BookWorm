@@ -17,16 +17,19 @@ internal static class HostingExtensions
 
         builder.Services.AddMigration<ApplicationDbContext, SeedData>();
 
-        builder.AddNpgsqlDbContext<ApplicationDbContext>(ServiceName.Database.Identity,
-            configureDbContextOptions: dbContextOptionsBuilder => dbContextOptionsBuilder.UseNpgsql()
-                .UseModel(ApplicationDbContextModel.Instance));
+        builder.AddNpgsqlDbContext<ApplicationDbContext>(
+            ServiceName.Database.Identity,
+            configureDbContextOptions: dbContextOptionsBuilder =>
+                dbContextOptionsBuilder.UseNpgsql().UseModel(ApplicationDbContextModel.Instance)
+        );
 
-        builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+        builder
+            .Services.AddIdentity<ApplicationUser, IdentityRole>()
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
 
-        var identityServerBuilder = builder.Services
-            .AddIdentityServer(options =>
+        var identityServerBuilder = builder
+            .Services.AddIdentityServer(options =>
             {
                 options.Authentication.CookieLifetime = TimeSpan.FromHours(2);
                 options.Events.RaiseErrorEvents = true;
@@ -72,8 +75,7 @@ internal static class HostingExtensions
         app.UseRouting();
         app.UseIdentityServer();
         app.UseAuthorization();
-        app.MapRazorPages()
-            .RequireAuthorization();
+        app.MapRazorPages().RequireAuthorization();
 
         return app;
     }

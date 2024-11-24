@@ -9,49 +9,74 @@
 using System.Diagnostics.CodeAnalysis;
 
 // global/shared
-[assembly:
-    SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
-        Justification = "Consistent with the IdentityServer APIs")]
-[assembly:
-    SuppressMessage("Design", "CA1056:URI-like properties should not be strings",
-        Justification = "Consistent with the IdentityServer APIs")]
-[assembly:
-    SuppressMessage("Reliability", "CA2007:Consider calling ConfigureAwait on the awaited task",
-        Justification =
-            "No need for ConfigureAwait in ASP.NET Core application code, as there is no SynchronizationContext.")]
+[assembly: SuppressMessage(
+    "Design",
+    "CA1054:URI-like parameters should not be strings",
+    Justification = "Consistent with the IdentityServer APIs"
+)]
+[assembly: SuppressMessage(
+    "Design",
+    "CA1056:URI-like properties should not be strings",
+    Justification = "Consistent with the IdentityServer APIs"
+)]
+[assembly: SuppressMessage(
+    "Reliability",
+    "CA2007:Consider calling ConfigureAwait on the awaited task",
+    Justification = "No need for ConfigureAwait in ASP.NET Core application code, as there is no SynchronizationContext."
+)]
 
 // page specific
 [assembly:
 #pragma warning disable IDE0076
-    SuppressMessage("Design", "CA1002:Do not expose generic lists",
+SuppressMessage(
+    "Design",
+    "CA1002:Do not expose generic lists",
 #pragma warning restore IDE0076
-        Justification = "TestUsers are not designed to be extended", Scope = "member",
-        Target = "~P:BookWorm.Identity.TestUsers.Users")]
+    Justification = "TestUsers are not designed to be extended",
+    Scope = "member",
+    Target = "~P:BookWorm.Identity.TestUsers.Users"
+)]
 [assembly:
 #pragma warning disable IDE0076
-    SuppressMessage("Design", "CA1034:Nested types should not be visible",
+SuppressMessage(
+    "Design",
+    "CA1034:Nested types should not be visible",
 #pragma warning restore IDE0076
-        Justification = "ExternalProvider is nested by design", Scope = "type",
-        Target = "~T:BookWorm.Identity.Pages.Login.ViewModel.ExternalProvider")]
+    Justification = "ExternalProvider is nested by design",
+    Scope = "type",
+    Target = "~T:BookWorm.Identity.Pages.Login.ViewModel.ExternalProvider"
+)]
 [assembly:
 #pragma warning disable IDE0076
-    SuppressMessage("Naming", "CA1716:Identifiers should not match keywords",
+SuppressMessage(
+    "Naming",
+    "CA1716:Identifiers should not match keywords",
 #pragma warning restore IDE0076
-        Justification = "This namespace is just for organization, and won't be referenced elsewhere",
-        Scope = "namespace", Target = "~N:BookWorm.Identity.Pages.Error")]
-[assembly:
-    SuppressMessage("Naming", "CA1724:Type names should not match namespaces",
-        Justification =
-            "Namespaces of pages are not likely to be used elsewhere, so there is little chance of confusion",
-        Scope = "type", Target = "~T:BookWorm.Identity.Pages.Ciba.Consent")]
-[assembly:
-    SuppressMessage("Naming", "CA1724:Type names should not match namespaces",
-        Justification =
-            "Namespaces of pages are not likely to be used elsewhere, so there is little chance of confusion",
-        Scope = "type", Target = "~T:BookWorm.Identity.Pages.Extensions")]
+    Justification = "This namespace is just for organization, and won't be referenced elsewhere",
+    Scope = "namespace",
+    Target = "~N:BookWorm.Identity.Pages.Error"
+)]
+[assembly: SuppressMessage(
+    "Naming",
+    "CA1724:Type names should not match namespaces",
+    Justification = "Namespaces of pages are not likely to be used elsewhere, so there is little chance of confusion",
+    Scope = "type",
+    Target = "~T:BookWorm.Identity.Pages.Ciba.Consent"
+)]
+[assembly: SuppressMessage(
+    "Naming",
+    "CA1724:Type names should not match namespaces",
+    Justification = "Namespaces of pages are not likely to be used elsewhere, so there is little chance of confusion",
+    Scope = "type",
+    Target = "~T:BookWorm.Identity.Pages.Extensions"
+)]
 [assembly:
 #pragma warning disable IDE0076
-    SuppressMessage("Performance", "CA1805:Do not initialize unnecessarily",
+SuppressMessage(
+    "Performance",
+    "CA1805:Do not initialize unnecessarily",
 #pragma warning restore IDE0076
-        Justification = "This is for clarity and consistency with the surrounding code", Scope = "member",
-        Target = "~F:BookWorm.Identity.Pages.Logout.LogoutOptions.AutomaticRedirectAfterSignOut")]
+    Justification = "This is for clarity and consistency with the surrounding code",
+    Scope = "member",
+    Target = "~F:BookWorm.Identity.Pages.Logout.LogoutOptions.AutomaticRedirectAfterSignOut"
+)]

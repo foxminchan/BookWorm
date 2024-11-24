@@ -1,20 +1,30 @@
-﻿using GrpcBookItem = BookWorm.Catalog.Grpc.BookItem;
-using GrpcBookClient = BookWorm.Catalog.Grpc.Book.BookClient;
+﻿using GrpcBookClient = BookWorm.Catalog.Grpc.Book.BookClient;
+using GrpcBookItem = BookWorm.Catalog.Grpc.BookItem;
 
 namespace BookWorm.Ordering.Grpc;
 
-public sealed class BookService(GrpcBookClient bookClient, ILogger<BookService> logger) : IBookService
+public sealed class BookService(GrpcBookClient bookClient, ILogger<BookService> logger)
+    : IBookService
 {
-    public async Task<BookItem> GetBookAsync(Guid bookId, CancellationToken cancellationToken = default)
+    public async Task<BookItem> GetBookAsync(
+        Guid bookId,
+        CancellationToken cancellationToken = default
+    )
     {
         if (logger.IsEnabled(LogLevel.Debug))
         {
-            logger.LogDebug("[{Service}] - Begin grpc call {Method} with {BookId}",
-                nameof(BookService), nameof(GetBookAsync), bookId);
+            logger.LogDebug(
+                "[{Service}] - Begin grpc call {Method} with {BookId}",
+                nameof(BookService),
+                nameof(GetBookAsync),
+                bookId
+            );
         }
 
-        var response = await bookClient.GetBookAsync(new() { BookId = bookId.ToString() },
-            cancellationToken: cancellationToken);
+        var response = await bookClient.GetBookAsync(
+            new() { BookId = bookId.ToString() },
+            cancellationToken: cancellationToken
+        );
 
         return MapBookItem(response.Book);
     }

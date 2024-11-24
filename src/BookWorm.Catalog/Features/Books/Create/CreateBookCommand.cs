@@ -11,14 +11,19 @@ public sealed record CreateBookCommand(
     Status Status,
     Guid CategoryId,
     Guid PublisherId,
-    Guid[] AuthorIds) : ICommand<Result<Guid>>;
+    Guid[] AuthorIds
+) : ICommand<Result<Guid>>;
 
 public sealed class CreateBookHandler(
     IRepository<Book> repository,
     IAzuriteService azurite,
-    IAiService aiService) : ICommandHandler<CreateBookCommand, Result<Guid>>
+    IAiService aiService
+) : ICommandHandler<CreateBookCommand, Result<Guid>>
 {
-    public async Task<Result<Guid>> Handle(CreateBookCommand request, CancellationToken cancellationToken)
+    public async Task<Result<Guid>> Handle(
+        CreateBookCommand request,
+        CancellationToken cancellationToken
+    )
     {
         var imageUrl = await UploadProductImagesAsync(request.Image, cancellationToken);
 
@@ -31,9 +36,13 @@ public sealed class CreateBookHandler(
             request.Status,
             request.CategoryId,
             request.PublisherId,
-            request.AuthorIds);
+            request.AuthorIds
+        );
 
-        var vector = await aiService.GetEmbeddingAsync($"{book.Name} {book.Description}", cancellationToken);
+        var vector = await aiService.GetEmbeddingAsync(
+            $"{book.Name} {book.Description}",
+            cancellationToken
+        );
 
         book.Embed(vector);
 
@@ -42,7 +51,10 @@ public sealed class CreateBookHandler(
         return result.Id;
     }
 
-    private async Task<string?> UploadProductImagesAsync(IFormFile? imageFile, CancellationToken cancellationToken)
+    private async Task<string?> UploadProductImagesAsync(
+        IFormFile? imageFile,
+        CancellationToken cancellationToken
+    )
     {
         if (imageFile is null)
         {

@@ -19,7 +19,17 @@ public sealed class BookAggregatorTests
         Guid[] authorIds = [Guid.NewGuid(), Guid.NewGuid()];
 
         // Act
-        var book = new Book(name, description, imageUrl, price, priceSale, status, categoryId, publisherId, authorIds);
+        var book = new Book(
+            name,
+            description,
+            imageUrl,
+            price,
+            priceSale,
+            status,
+            categoryId,
+            publisherId,
+            authorIds
+        );
 
         // Assert
         book.Name.Should().Be(name);
@@ -37,8 +47,17 @@ public sealed class BookAggregatorTests
     public void GivenValidUpdateParameters_ShouldUpdateCorrectly_WhenUpdatingBook()
     {
         // Arrange
-        var book = new Book("Original Name", "Original Description", "http://example.com/image.jpg", 100m, 80m,
-            Status.InStock, Guid.NewGuid(), Guid.NewGuid(), [Guid.NewGuid()]);
+        var book = new Book(
+            "Original Name",
+            "Original Description",
+            "http://example.com/image.jpg",
+            100m,
+            80m,
+            Status.InStock,
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            [Guid.NewGuid()]
+        );
         const string newName = "Updated Name";
         const string newDescription = "Updated Description";
         const decimal newPrice = 120m;
@@ -49,8 +68,16 @@ public sealed class BookAggregatorTests
         var newAuthorIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
 
         // Act
-        book.Update(newName, newDescription, newPrice, newPriceSale, newStatus, newCategoryId, newPublisherId,
-            newAuthorIds);
+        book.Update(
+            newName,
+            newDescription,
+            newPrice,
+            newPriceSale,
+            newStatus,
+            newCategoryId,
+            newPublisherId,
+            newAuthorIds
+        );
 
         // Assert
         book.Name.Should().Be(newName);
@@ -67,9 +94,17 @@ public sealed class BookAggregatorTests
     public void GivenEmbedding_ShouldSetEmbedding_WhenEmbeddingBook()
     {
         // Arrange
-        var book = new Book("Test Book", "Test Description", "http://example.com/image.jpg", 100m, 80m, Status.InStock,
-            Guid.NewGuid(), Guid.NewGuid(),
-            [Guid.NewGuid()]);
+        var book = new Book(
+            "Test Book",
+            "Test Description",
+            "http://example.com/image.jpg",
+            100m,
+            80m,
+            Status.InStock,
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            [Guid.NewGuid()]
+        );
         var embedding = new Vector(new[] { 1.0f, 2.0f, 3.0f });
 
         // Act
@@ -83,8 +118,17 @@ public sealed class BookAggregatorTests
     public void GivenRating_ShouldUpdateAverageRatingAndTotalReviews_WhenAddingRating()
     {
         // Arrange
-        var book = new Book("Test Book", "Test Description", "http://example.com/image.jpg", 100m, 80m, Status.InStock,
-            Guid.NewGuid(), Guid.NewGuid(), [Guid.NewGuid()]);
+        var book = new Book(
+            "Test Book",
+            "Test Description",
+            "http://example.com/image.jpg",
+            100m,
+            80m,
+            Status.InStock,
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            [Guid.NewGuid()]
+        );
         const int rating = 4;
 
         // Act
@@ -107,8 +151,17 @@ public sealed class BookAggregatorTests
     public void GivenRating_ShouldUpdateAverageRatingAndTotalReviews_WhenRemovingRating()
     {
         // Arrange
-        var book = new Book("Test Book", "Test Description", "http://example.com/image.jpg", 100m, 80m, Status.InStock,
-            Guid.NewGuid(), Guid.NewGuid(), [Guid.NewGuid()]);
+        var book = new Book(
+            "Test Book",
+            "Test Description",
+            "http://example.com/image.jpg",
+            100m,
+            80m,
+            Status.InStock,
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            [Guid.NewGuid()]
+        );
         book.AddRating(4);
         book.AddRating(5);
 
@@ -124,8 +177,17 @@ public sealed class BookAggregatorTests
     public void GivenImageUrl_ShouldSetImageUrlToNull_WhenRemovingImage()
     {
         // Arrange
-        var book = new Book("Test Book", "Test Description", "http://example.com/image.jpg", 100m, 80m, Status.InStock,
-            Guid.NewGuid(), Guid.NewGuid(), [Guid.NewGuid()]);
+        var book = new Book(
+            "Test Book",
+            "Test Description",
+            "http://example.com/image.jpg",
+            100m,
+            80m,
+            Status.InStock,
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            [Guid.NewGuid()]
+        );
 
         // Act
         book.RemoveImage();
@@ -138,9 +200,17 @@ public sealed class BookAggregatorTests
     public void GivenDeletedBook_ShouldSetIsDeletedToTrue_WhenDeletingBook()
     {
         // Arrange
-        var book = new Book("Test Book", "Test Description", "http://example.com/image.jpg", 100m, 80m, Status.InStock,
-            Guid.NewGuid(), Guid.NewGuid(),
-            [Guid.NewGuid()]);
+        var book = new Book(
+            "Test Book",
+            "Test Description",
+            "http://example.com/image.jpg",
+            100m,
+            80m,
+            Status.InStock,
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            [Guid.NewGuid()]
+        );
 
         // Act
         book.Delete();

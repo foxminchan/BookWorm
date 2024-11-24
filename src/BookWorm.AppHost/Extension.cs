@@ -2,7 +2,9 @@
 
 internal static class Extension
 {
-    public static IDistributedApplicationBuilder AddForwardedHeaders(this IDistributedApplicationBuilder builder)
+    public static IDistributedApplicationBuilder AddForwardedHeaders(
+        this IDistributedApplicationBuilder builder
+    )
     {
         builder.Services.TryAddLifecycleHook<AddForwardHeadersHook>();
         return builder;
@@ -10,15 +12,20 @@ internal static class Extension
 
     internal sealed class AddForwardHeadersHook : IDistributedApplicationLifecycleHook
     {
-        public Task BeforeStartAsync(DistributedApplicationModel appModel,
-            CancellationToken cancellationToken = default)
+        public Task BeforeStartAsync(
+            DistributedApplicationModel appModel,
+            CancellationToken cancellationToken = default
+        )
         {
             foreach (var p in appModel.GetProjectResources())
             {
-                p.Annotations.Add(new EnvironmentCallbackAnnotation(context =>
-                {
-                    context.EnvironmentVariables["ASPNETCORE_FORWARDEDHEADERS_ENABLED"] = "true";
-                }));
+                p.Annotations.Add(
+                    new EnvironmentCallbackAnnotation(context =>
+                    {
+                        context.EnvironmentVariables["ASPNETCORE_FORWARDEDHEADERS_ENABLED"] =
+                            "true";
+                    })
+                );
             }
 
             return Task.CompletedTask;

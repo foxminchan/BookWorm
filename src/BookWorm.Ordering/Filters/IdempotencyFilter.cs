@@ -5,7 +5,10 @@ namespace BookWorm.Ordering.Filters;
 
 internal sealed class IdempotencyFilter(IRedisService redisService) : IEndpointFilter
 {
-    public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
+    public async ValueTask<object?> InvokeAsync(
+        EndpointFilterInvocationContext context,
+        EndpointFilterDelegate next
+    )
     {
         var request = context.HttpContext.Request;
         var requestMethod = request.Method;
@@ -21,8 +24,12 @@ internal sealed class IdempotencyFilter(IRedisService redisService) : IEndpointF
 
         if (string.IsNullOrEmpty(requestId))
         {
-            errors.Add(new(Http.Idempotency,
-                $"{Http.Idempotency} header is required for {Http.Methods.Post} and {Http.Methods.Patch} requests."));
+            errors.Add(
+                new(
+                    Http.Idempotency,
+                    $"{Http.Idempotency} header is required for {Http.Methods.Post} and {Http.Methods.Patch} requests."
+                )
+            );
             throw new ValidationException(errors.AsEnumerable());
         }
 

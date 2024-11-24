@@ -5,7 +5,9 @@ namespace BookWorm.Identity.DataProtection;
 
 internal static class Extension
 {
-    public static IHostApplicationBuilder AddRedisDataProtection(this IHostApplicationBuilder builder)
+    public static IHostApplicationBuilder AddRedisDataProtection(
+        this IHostApplicationBuilder builder
+    )
     {
         var conn = builder.Configuration.GetConnectionString(ServiceName.Redis);
 
@@ -14,10 +16,14 @@ internal static class Extension
             return builder;
         }
 
-        builder.Services.AddDataProtection()
+        builder
+            .Services.AddDataProtection()
             .SetDefaultKeyLifetime(TimeSpan.FromDays(14))
             .SetApplicationName(nameof(BookWorm))
-            .PersistKeysToStackExchangeRedis(ConnectionMultiplexer.Connect(conn), nameof(DataProtectionProvider));
+            .PersistKeysToStackExchangeRedis(
+                ConnectionMultiplexer.Connect(conn),
+                nameof(DataProtectionProvider)
+            );
 
         return builder;
     }

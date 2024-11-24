@@ -5,7 +5,8 @@ namespace BookWorm.Identity;
 public sealed class SeedData(
     ILogger<SeedData> logger,
     UserManager<ApplicationUser> userManager,
-    RoleManager<IdentityRole> roleManager) : IDbSeeder<ApplicationDbContext>
+    RoleManager<IdentityRole> roleManager
+) : IDbSeeder<ApplicationDbContext>
 {
     public async Task SeedAsync(ApplicationDbContext context)
     {
@@ -35,7 +36,7 @@ public sealed class SeedData(
                 LastName = "Nguyen",
                 EmailConfirmed = true,
                 PhoneNumber = "1234567890",
-                PhoneNumberConfirmed = true
+                PhoneNumberConfirmed = true,
             };
 
             var result = userManager.CreateAsync(nhan, "P@ssw0rd").Result;
@@ -47,14 +48,16 @@ public sealed class SeedData(
 
             await userManager.AddToRoleAsync(nhan, admin.Name!);
 
-            await userManager.AddClaimsAsync(nhan,
-            [
-                new(ClaimTypes.Name, $"{nhan.FirstName} {nhan.LastName}"),
-                new(ClaimTypes.GivenName, nhan.FirstName),
-                new(ClaimTypes.Surname, nhan.LastName),
-                new(ClaimTypes.Email, nhan.Email),
-                new(ClaimTypes.MobilePhone, nhan.PhoneNumber)
-            ]);
+            await userManager.AddClaimsAsync(
+                nhan,
+                [
+                    new(ClaimTypes.Name, $"{nhan.FirstName} {nhan.LastName}"),
+                    new(ClaimTypes.GivenName, nhan.FirstName),
+                    new(ClaimTypes.Surname, nhan.LastName),
+                    new(ClaimTypes.Email, nhan.Email),
+                    new(ClaimTypes.MobilePhone, nhan.PhoneNumber),
+                ]
+            );
 
             if (logger.IsEnabled(LogLevel.Debug))
             {
@@ -81,7 +84,7 @@ public sealed class SeedData(
                 LastName = "Smith",
                 EmailConfirmed = true,
                 PhoneNumber = "0987654321",
-                PhoneNumberConfirmed = true
+                PhoneNumberConfirmed = true,
             };
 
             var result = userManager.CreateAsync(smith, "P@ssw0rd").Result;
@@ -93,14 +96,16 @@ public sealed class SeedData(
 
             await userManager.AddToRoleAsync(smith, user.Name!);
 
-            await userManager.AddClaimsAsync(smith,
-            [
-                new(ClaimTypes.Name, $"{smith.FirstName} {smith.LastName}"),
-                new(ClaimTypes.GivenName, smith.FirstName),
-                new(ClaimTypes.Surname, smith.LastName),
-                new(ClaimTypes.Email, smith.Email),
-                new(ClaimTypes.MobilePhone, smith.PhoneNumber)
-            ]);
+            await userManager.AddClaimsAsync(
+                smith,
+                [
+                    new(ClaimTypes.Name, $"{smith.FirstName} {smith.LastName}"),
+                    new(ClaimTypes.GivenName, smith.FirstName),
+                    new(ClaimTypes.Surname, smith.LastName),
+                    new(ClaimTypes.Email, smith.Email),
+                    new(ClaimTypes.MobilePhone, smith.PhoneNumber),
+                ]
+            );
 
             if (logger.IsEnabled(LogLevel.Debug))
             {

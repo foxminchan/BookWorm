@@ -21,12 +21,17 @@ internal static class Extensions
             cfg.AddOpenBehavior(typeof(MetricsBehavior<,>));
         });
 
-        builder.Services.AddValidatorsFromAssemblyContaining<global::Program>(includeInternalTypes: true);
+        builder.Services.AddValidatorsFromAssemblyContaining<global::Program>(
+            includeInternalTypes: true
+        );
 
-        builder.AddRabbitMqEventBus(typeof(global::Program), cfg =>
-        {
-            cfg.AddInMemoryInboxOutbox();
-        });
+        builder.AddRabbitMqEventBus(
+            typeof(global::Program),
+            cfg =>
+            {
+                cfg.AddInMemoryInboxOutbox();
+            }
+        );
 
         builder.Services.AddSingleton<IActivityScope, ActivityScope>();
         builder.Services.AddSingleton<CommandHandlerMetrics>();

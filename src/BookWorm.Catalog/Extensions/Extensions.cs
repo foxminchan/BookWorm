@@ -34,7 +34,9 @@ internal static class Extensions
             cfg.AddOpenBehavior(typeof(MetricsBehavior<,>));
         });
 
-        builder.Services.AddValidatorsFromAssemblyContaining<global::Program>(includeInternalTypes: true);
+        builder.Services.AddValidatorsFromAssemblyContaining<global::Program>(
+            includeInternalTypes: true
+        );
 
         builder.Services.AddSingleton<IActivityScope, ActivityScope>();
         builder.Services.AddSingleton<CommandHandlerMetrics>();
@@ -42,10 +44,13 @@ internal static class Extensions
 
         builder.Services.AddHttpContextAccessor();
 
-        builder.AddRabbitMqEventBus(typeof(global::Program), cfg =>
-        {
-            cfg.AddInMemoryInboxOutbox();
-        });
+        builder.AddRabbitMqEventBus(
+            typeof(global::Program),
+            cfg =>
+            {
+                cfg.AddInMemoryInboxOutbox();
+            }
+        );
 
         builder.AddVersioning();
         builder.AddEndpoints(typeof(global::Program));

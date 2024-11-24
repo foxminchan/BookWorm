@@ -6,16 +6,22 @@ public sealed class GetBuyerEndpoint : IEndpoint<Ok<BuyerDto>, Guid, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapGet("/buyers/{id:guid}", async (Guid id, ISender sender) => await HandleAsync(id, sender))
+        app.MapGet(
+                "/buyers/{id:guid}",
+                async (Guid id, ISender sender) => await HandleAsync(id, sender)
+            )
             .Produces<Ok<BuyerDto>>()
+            .WithOpenApi()
             .WithTags(nameof(Buyer))
-            .WithName("Get Buyer")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization();
     }
 
-    public async Task<Ok<BuyerDto>> HandleAsync(Guid id, ISender sender,
-        CancellationToken cancellationToken = default)
+    public async Task<Ok<BuyerDto>> HandleAsync(
+        Guid id,
+        ISender sender,
+        CancellationToken cancellationToken = default
+    )
     {
         var result = await sender.Send(new GetBuyerQuery(id), cancellationToken);
 

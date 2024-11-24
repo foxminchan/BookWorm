@@ -6,7 +6,8 @@ public abstract class HasDomainEventsBase
 {
     private readonly List<EventBase> _domainEvents = [];
 
-    [NotMapped] public IReadOnlyCollection<EventBase> DomainEvents => _domainEvents.AsReadOnly();
+    [NotMapped]
+    public IReadOnlyCollection<EventBase> DomainEvents => _domainEvents.AsReadOnly();
 
     public void RegisterDomainEvent(EventBase domainEvent)
     {

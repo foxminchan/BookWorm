@@ -4,17 +4,30 @@
   "tools": {
     "aspirate": {
       "version": "8.0.7",
-      "commands": ["aspirate"],
+      "commands": [
+        "aspirate"
+      ],
       "rollForward": false
     },
     "dotnet-reportgenerator-globaltool": {
-      "version": "5.3.9",
-      "commands": ["reportgenerator"],
+      "version": "5.4.1",
+      "commands": [
+        "reportgenerator"
+      ],
       "rollForward": false
     },
     "husky": {
       "version": "0.7.1",
-      "commands": ["husky"],
+      "commands": [
+        "husky"
+      ],
+      "rollForward": false
+    },
+    "csharpier": {
+      "version": "0.30.2",
+      "commands": [
+        "dotnet-csharpier"
+      ],
       "rollForward": false
     }
   }

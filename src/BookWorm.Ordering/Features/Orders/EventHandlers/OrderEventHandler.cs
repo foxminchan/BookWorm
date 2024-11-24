@@ -2,8 +2,12 @@
 
 namespace BookWorm.Ordering.Features.Orders.EventHandlers;
 
-public sealed class OrderEventHandler(IDocumentSession documentSession, ILogger<OrderEventHandler> logger)
-    : INotificationHandler<OrderCreatedEvent>, INotificationHandler<OrderCompletedEvent>,
+public sealed class OrderEventHandler(
+    IDocumentSession documentSession,
+    ILogger<OrderEventHandler> logger
+)
+    : INotificationHandler<OrderCreatedEvent>,
+        INotificationHandler<OrderCompletedEvent>,
         INotificationHandler<OrderCancelledEvent>
 {
     public async Task Handle(OrderCancelledEvent notification, CancellationToken cancellationToken)
@@ -26,8 +30,9 @@ public sealed class OrderEventHandler(IDocumentSession documentSession, ILogger<
 
     private async Task WriteToAggregateAsync(EventBase @event, CancellationToken cancellationToken)
     {
-        using var activity = new ActivitySource(MartenTelemetry.ActivityName)
-            .StartActivity($"EventStore: {@event.GetType().Name}");
+        using var activity = new ActivitySource(MartenTelemetry.ActivityName).StartActivity(
+            $"EventStore: {@event.GetType().Name}"
+        );
 
         if (activity is not null)
         {
@@ -37,8 +42,14 @@ public sealed class OrderEventHandler(IDocumentSession documentSession, ILogger<
 
         try
         {
-            await documentSession.Events.WriteToAggregate<OrderState>(Guid.NewGuid(),
-                stream => { stream.AppendOne(@event); }, cancellationToken);
+            await documentSession.Events.WriteToAggregate<OrderState>(
+                Guid.NewGuid(),
+                stream =>
+                {
+                    stream.AppendOne(@event);
+                },
+                cancellationToken
+            );
         }
         catch (Exception e)
         {
@@ -50,7 +61,11 @@ public sealed class OrderEventHandler(IDocumentSession documentSession, ILogger<
                 activity.SetStatus(ActivityStatusCode.Error);
             }
 
-            logger.LogError(e, "[{Event}] - Failed to write event to aggregate", @event.GetType().Name);
+            logger.LogError(
+                e,
+                "[{Event}] - Failed to write event to aggregate",
+                @event.GetType().Name
+            );
         }
     }
 }

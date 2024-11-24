@@ -5,7 +5,9 @@ namespace BookWorm.Identity.Models;
 
 public class ApplicationUser : IdentityUser
 {
-    [PersonalData] public virtual string? FirstName { get; set; }
+    [PersonalData]
+    public virtual string? FirstName { get; set; }
 
-    [PersonalData] public virtual string? LastName { get; set; }
+    [PersonalData]
+    public virtual string? LastName { get; set; }
 }

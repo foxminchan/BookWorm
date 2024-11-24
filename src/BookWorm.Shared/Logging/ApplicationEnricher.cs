@@ -10,7 +10,7 @@ public sealed class ApplicationEnricher(IHttpContextAccessor httpContextAccessor
 
         if (httpContext is not null)
         {
-            collector.Add("IsAuthenticated", httpContext.User.Identity?.IsAuthenticated);
+            collector.Add("IsAuthenticated", httpContext.User.Identity?.IsAuthenticated!);
         }
     }
 }

@@ -8,11 +8,8 @@ internal sealed class CategoryConfiguration : BaseConfiguration<Category>
     {
         base.Configure(builder);
 
-        builder.Property(p => p.Name)
-            .HasMaxLength(DataSchemaLength.Medium)
-            .IsRequired();
+        builder.Property(p => p.Name).HasMaxLength(DataSchemaLength.Medium).IsRequired();
 
-        builder.HasIndex(e => e.Name)
-            .IsUnique();
+        builder.HasIndex(e => e.Name).IsUnique();
     }
 }

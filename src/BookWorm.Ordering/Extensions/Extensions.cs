@@ -1,5 +1,5 @@
-﻿using GrpcBookClient = BookWorm.Catalog.Grpc.Book.BookClient;
-using GrpcBasketClient = BookWorm.Basket.Grpc.Basket.BasketClient;
+﻿using GrpcBasketClient = BookWorm.Basket.Grpc.Basket.BasketClient;
+using GrpcBookClient = BookWorm.Catalog.Grpc.Book.BookClient;
 
 namespace BookWorm.Ordering.Extensions;
 
@@ -10,7 +10,8 @@ internal static class Extensions
         builder.AddServiceDefaults();
 
         builder.Services.Configure<JsonOptions>(options =>
-            options.SerializerOptions.Converters.Add(new StringTrimmerJsonConverter()));
+            options.SerializerOptions.Converters.Add(new StringTrimmerJsonConverter())
+        );
 
         builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
         builder.Services.AddExceptionHandler<NotFoundExceptionHandler>();
@@ -28,21 +29,27 @@ internal static class Extensions
             cfg.AddOpenBehavior(typeof(MetricsBehavior<,>));
         });
 
-        builder.Services.AddValidatorsFromAssemblyContaining<global::Program>(includeInternalTypes: true);
+        builder.Services.AddValidatorsFromAssemblyContaining<global::Program>(
+            includeInternalTypes: true
+        );
 
-        builder.AddRabbitMqEventBus(typeof(global::Program), cfg =>
-        {
-            cfg.AddEntityFrameworkOutbox<OrderingContext>(o =>
+        builder.AddRabbitMqEventBus(
+            typeof(global::Program),
+            cfg =>
             {
-                o.QueryDelay = TimeSpan.FromSeconds(1);
+                cfg.AddEntityFrameworkOutbox<OrderingContext>(o =>
+                {
+                    o.QueryDelay = TimeSpan.FromSeconds(1);
 
-                o.UsePostgres();
+                    o.UsePostgres();
 
-                o.UseBusOutbox();
-            });
-        });
+                    o.UseBusOutbox();
+                });
+            }
+        );
 
-        builder.Services.AddMarten(_ =>
+        builder
+            .Services.AddMarten(_ =>
             {
                 var options = new StoreOptions();
 
@@ -71,7 +78,8 @@ internal static class Extensions
             .UseLightweightSessions()
             .AddAsyncDaemon(DaemonMode.Solo);
 
-        builder.Services.AddOpenTelemetry()
+        builder
+            .Services.AddOpenTelemetry()
             .WithMetrics(t => t.AddMeter(MartenTelemetry.ActivityName))
             .WithTracing(t => t.AddSource(MartenTelemetry.ActivityName));
 

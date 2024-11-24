@@ -9,22 +9,24 @@ public sealed class ActivityScope : IActivityScope
     public Activity? Start(string name, StartActivityOptions options)
     {
         return options.Parent.HasValue
-            ? ActivitySourceProvider.Instance
-                .CreateActivity(
+            ? ActivitySourceProvider
+                .Instance.CreateActivity(
                     $"{ActivitySourceProvider.DefaultSourceName}.{name}",
                     options.Kind,
                     options.Parent.Value,
                     idFormat: ActivityIdFormat.W3C,
                     tags: options.Tags
-                )?.Start()
-            : ActivitySourceProvider.Instance
-                .CreateActivity(
+                )
+                ?.Start()
+            : ActivitySourceProvider
+                .Instance.CreateActivity(
                     $"{ActivitySourceProvider.DefaultSourceName}.{name}",
                     options.Kind,
                     options.ParentId ?? Activity.Current?.ParentId,
                     idFormat: ActivityIdFormat.W3C,
                     tags: options.Tags
-                )?.Start();
+                )
+                ?.Start();
     }
 
     public async Task Run(
@@ -45,7 +47,7 @@ public sealed class ActivityScope : IActivityScope
         catch (Exception ex)
         {
             activity?.SetStatus(ActivityStatusCode.Error);
-            activity?.RecordException(ex);
+            activity?.AddException(ex);
             throw;
         }
     }
@@ -69,7 +71,7 @@ public sealed class ActivityScope : IActivityScope
         }
         catch (Exception ex)
         {
-            activity?.RecordException(ex);
+            activity?.AddException(ex);
             activity?.SetStatus(ActivityStatusCode.Error);
             throw;
         }

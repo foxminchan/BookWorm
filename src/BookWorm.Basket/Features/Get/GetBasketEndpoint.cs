@@ -6,13 +6,16 @@ public sealed class GetBasketEndpoint : IEndpoint<Ok<BasketDto>, ISender>
     {
         app.MapGet("/baskets", async (ISender sender) => await HandleAsync(sender))
             .Produces<Ok<BasketDto>>()
+            .WithOpenApi()
             .WithTags(nameof(Basket))
-            .WithName("Get Basket")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization();
     }
 
-    public async Task<Ok<BasketDto>> HandleAsync(ISender sender, CancellationToken cancellationToken = default)
+    public async Task<Ok<BasketDto>> HandleAsync(
+        ISender sender,
+        CancellationToken cancellationToken = default
+    )
     {
         var result = await sender.Send(new GetBasketQuery(), cancellationToken);
 

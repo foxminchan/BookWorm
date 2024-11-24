@@ -31,12 +31,20 @@ public sealed class CreateCategoryHandlerTests
         // Assert
         result.Value.Should().Be(categoryId);
         _repositoryMock.Verify(
-            r => r.AddAsync(It.Is<Category>(c => c.Name == command.Name), It.IsAny<CancellationToken>()), Times.Once);
+            r =>
+                r.AddAsync(
+                    It.Is<Category>(c => c.Name == command.Name),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
     }
 
     [Theory]
     [CombinatorialData]
-    public void GivenNullOrEmptyCategoryName_ShouldThrowException([CombinatorialValues("", null)] string? name)
+    public void GivenNullOrEmptyCategoryName_ShouldThrowException(
+        [CombinatorialValues("", null)] string? name
+    )
     {
         // Arrange
         var command = new CreateCategoryCommand(name!);

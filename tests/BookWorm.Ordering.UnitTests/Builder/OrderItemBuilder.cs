@@ -14,7 +14,7 @@ public static class OrderItemBuilder
             new(Guid.NewGuid(), 2, 20.00m),
             new(Guid.NewGuid(), 3, 30.00m),
             new(Guid.NewGuid(), 4, 40.00m),
-            new(Guid.NewGuid(), 5, 50.00m)
+            new(Guid.NewGuid(), 5, 50.00m),
         ];
 
         return _orderItems;

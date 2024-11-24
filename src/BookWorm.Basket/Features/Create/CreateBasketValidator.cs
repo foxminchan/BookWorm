@@ -4,12 +4,9 @@ internal sealed class CreateBasketValidator : AbstractValidator<CreateBasketComm
 {
     public CreateBasketValidator(BookValidator bookValidator)
     {
-        RuleFor(x => x.BookId)
-            .NotEmpty()
-            .SetValidator(bookValidator);
+        RuleFor(x => x.BookId).NotEmpty().SetValidator(bookValidator);
 
-        RuleFor(x => x.Quantity)
-            .GreaterThan(0);
+        RuleFor(x => x.Quantity).GreaterThan(0);
     }
 }
 
