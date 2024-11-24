@@ -7,18 +7,25 @@ public sealed class MetricsBehavior<TRequest, TResponse>(
     IActivityScope activityScope,
     CommandHandlerMetrics commandMetrics,
     QueryHandlerMetrics queryMetrics,
-    ILogger<MetricsBehavior<TRequest, TResponse>> logger) : IPipelineBehavior<TRequest, TResponse>
+    ILogger<MetricsBehavior<TRequest, TResponse>> logger
+) : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
     where TResponse : notnull
 {
-    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next,
-        CancellationToken cancellationToken)
+    public async Task<TResponse> Handle(
+        TRequest request,
+        RequestHandlerDelegate<TResponse> next,
+        CancellationToken cancellationToken
+    )
     {
-        logger.LogInformation("[{Behavior}] handle request={RequestData} and response={ResponseData}",
-            nameof(MetricsBehavior<TRequest, TResponse>), typeof(TRequest).FullName, typeof(TResponse).FullName);
+        logger.LogInformation(
+            "[{Behavior}] handle request={RequestData} and response={ResponseData}",
+            nameof(MetricsBehavior<TRequest, TResponse>),
+            typeof(TRequest).FullName,
+            typeof(TResponse).FullName
+        );
 
-        var attr = requestHandler
-            .GetType().GetCustomAttribute<IgnoreOTelOnHandlerAttribute>();
+        var attr = requestHandler.GetType().GetCustomAttribute<IgnoreOTelOnHandlerAttribute>();
 
         if (attr is not null)
         {

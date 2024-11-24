@@ -4,10 +4,15 @@ namespace BookWorm.Ordering.Features.Buyers.Get;
 
 public sealed record GetBuyerQuery(Guid BuyerId) : IQuery<Result<Buyer>>;
 
-public sealed class GetBuyerHandler(IReadRepository<Buyer> repository, IIdentityService identityService)
-    : IQueryHandler<GetBuyerQuery, Result<Buyer>>
+public sealed class GetBuyerHandler(
+    IReadRepository<Buyer> repository,
+    IIdentityService identityService
+) : IQueryHandler<GetBuyerQuery, Result<Buyer>>
 {
-    public async Task<Result<Buyer>> Handle(GetBuyerQuery request, CancellationToken cancellationToken)
+    public async Task<Result<Buyer>> Handle(
+        GetBuyerQuery request,
+        CancellationToken cancellationToken
+    )
     {
         Buyer? buyer;
         if (identityService.IsAdminRole())

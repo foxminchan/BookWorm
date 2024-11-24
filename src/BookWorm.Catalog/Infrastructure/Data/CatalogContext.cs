@@ -14,7 +14,6 @@ public sealed class CatalogContext(DbContextOptions<CatalogContext> options) : D
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        modelBuilder.HasPostgresExtension(UniqueType.Extension);
         modelBuilder.HasPostgresExtension(VectorType.Extension);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(CatalogContext).Assembly);
     }

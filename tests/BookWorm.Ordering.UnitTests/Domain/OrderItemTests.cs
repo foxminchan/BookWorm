@@ -24,7 +24,8 @@ public sealed class OrderItemTests
     [Theory]
     [CombinatorialData]
     public void GivenInvalidQuantity_ShouldThrowArgumentException_WhenCreatingOrderItem(
-        [CombinatorialValues(0, -1)] int invalidQuantity)
+        [CombinatorialValues(0, -1)] int invalidQuantity
+    )
     {
         // Arrange
         var bookId = Guid.NewGuid();
@@ -40,7 +41,8 @@ public sealed class OrderItemTests
     [Theory]
     [CombinatorialData]
     public void GivenInvalidPrice_ShouldThrowArgumentException_WhenCreatingOrderItem(
-        [CombinatorialValues(0.0, -10.0)] decimal invalidPrice)
+        [CombinatorialValues(0.0, -10.0)] decimal invalidPrice
+    )
     {
         // Arrange
         var bookId = Guid.NewGuid();
@@ -81,13 +83,12 @@ public sealed class OrderItemTests
         var orderItem = new OrderItem(bookId, quantity, price);
 
         // Simulate EF Core setting the OrderId and Order reference
-        orderItem.GetType()
-            .GetProperty(nameof(OrderItem.OrderId))?
-            .SetValue(orderItem, orderId);
+        orderItem.GetType().GetProperty(nameof(OrderItem.OrderId))?.SetValue(orderItem, orderId);
 
-        orderItem.GetType()
-            .GetProperty(nameof(OrderItem.Order))?
-            .SetValue(orderItem, new Order(orderId, null!));
+        orderItem
+            .GetType()
+            .GetProperty(nameof(OrderItem.Order))
+            ?.SetValue(orderItem, new Order(orderId, null!));
 
         // Assert
         orderItem.OrderId.Should().Be(orderId);

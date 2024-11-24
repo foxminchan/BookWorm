@@ -23,7 +23,8 @@ public sealed class CancelOrderHandlerTests
         // Arrange
         var orderId = Guid.NewGuid();
         var order = OrderBuilder.WithDefaultValues()[0];
-        _repository.Setup(x => x.GetByIdAsync(orderId, It.IsAny<CancellationToken>()))
+        _repository
+            .Setup(x => x.GetByIdAsync(orderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(order);
 
         // Act
@@ -34,7 +35,13 @@ public sealed class CancelOrderHandlerTests
         order.Status.Should().Be(Status.Canceled);
         _repository.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         _publishEndpoint.Verify(
-            x => x.Publish(It.IsAny<OrderCancelledIntegrationEvent>(), It.IsAny<CancellationToken>()), Times.Once);
+            x =>
+                x.Publish(
+                    It.IsAny<OrderCancelledIntegrationEvent>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -42,7 +49,8 @@ public sealed class CancelOrderHandlerTests
     {
         // Arrange
         var orderId = Guid.NewGuid();
-        _repository.Setup(x => x.GetByIdAsync(orderId, It.IsAny<CancellationToken>()))
+        _repository
+            .Setup(x => x.GetByIdAsync(orderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Order?)null);
 
         // Act
@@ -52,6 +60,12 @@ public sealed class CancelOrderHandlerTests
         await act.Should().ThrowAsync<NotFoundException>();
         _repository.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         _publishEndpoint.Verify(
-            x => x.Publish(It.IsAny<OrderCancelledIntegrationEvent>(), It.IsAny<CancellationToken>()), Times.Never);
+            x =>
+                x.Publish(
+                    It.IsAny<OrderCancelledIntegrationEvent>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Never
+        );
     }
 }

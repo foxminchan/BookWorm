@@ -6,7 +6,8 @@ public static class EntityToDto
 {
     public static BookDto ToBookDto(this Book book)
     {
-        return new(book.Id,
+        return new(
+            book.Id,
             book.Name,
             book.Description,
             book.ImageUrl,
@@ -17,7 +18,8 @@ public static class EntityToDto
             book.Publisher?.Name,
             book.BookAuthors.Select(x => x.Author.Name).ToList(),
             book.AverageRating,
-            book.TotalReviews);
+            book.TotalReviews
+        );
     }
 
     public static List<BookDto> ToBookDtos(this IEnumerable<Book> books)

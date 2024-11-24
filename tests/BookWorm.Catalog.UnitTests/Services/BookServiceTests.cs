@@ -5,7 +5,7 @@ using BookWorm.Catalog.UnitTests.Helpers;
 using Book = BookWorm.Catalog.Domain.BookAggregate.Book;
 
 namespace BookWorm.Catalog.UnitTests.Services;
-        
+
 public sealed class BookServiceTests
 {
     private readonly BookService _bookService;
@@ -61,12 +61,7 @@ public sealed class BookServiceTests
         var response = await _bookService.GetBook(request, context);
 
         // Assert
-        response
-            .Should()
-            .NotBeNull()
-            .And
-            .BeOfType<BookResponse>()
-            .Which.Book.Should().BeNull();
+        response.Should().NotBeNull().And.BeOfType<BookResponse>().Which.Book.Should().BeNull();
     }
 
     [Fact]
@@ -113,8 +108,8 @@ public sealed class BookServiceTests
         response
             .Should()
             .NotBeNull()
-            .And
-            .BeOfType<BookStatusResponse>()
-            .Which.BookStatus.Should().BeNull();
+            .And.BeOfType<BookStatusResponse>()
+            .Which.BookStatus.Should()
+            .BeNull();
     }
 }

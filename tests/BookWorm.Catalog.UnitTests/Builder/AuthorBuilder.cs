@@ -13,7 +13,7 @@ public static class AuthorBuilder
             new("Robert C. Martin"),
             new("Kent Beck"),
             new("Don Box"),
-            new("Joshua Bloch")
+            new("Joshua Bloch"),
         ];
 
         return _authors;

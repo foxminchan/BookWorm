@@ -32,7 +32,8 @@ public sealed class CreateBookHandlerTests
             Status.InStock,
             Guid.NewGuid(),
             Guid.NewGuid(),
-            [Guid.NewGuid()]);
+            [Guid.NewGuid()]
+        );
 
         var vector = new Vector(new[] { 0.1f, 0.2f, 0.3f, 0.4f, 0.5f });
         var book = new Book(
@@ -44,7 +45,8 @@ public sealed class CreateBookHandlerTests
             command.Status,
             command.CategoryId,
             command.PublisherId,
-            command.AuthorIds);
+            command.AuthorIds
+        );
 
         _azuriteMock
             .Setup(a => a.UploadFileAsync(It.IsAny<IFormFile>(), It.IsAny<CancellationToken>()))
@@ -63,9 +65,18 @@ public sealed class CreateBookHandlerTests
 
         // Assert
         result.Value.Should().Be(book.Id);
-        _azuriteMock.Verify(a => a.UploadFileAsync(It.IsAny<IFormFile>(), It.IsAny<CancellationToken>()), Times.Once);
-        _aiServiceMock.Verify(a => a.GetEmbeddingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
-        _repositoryMock.Verify(r => r.AddAsync(It.IsAny<Book>(), It.IsAny<CancellationToken>()), Times.Once);
+        _azuriteMock.Verify(
+            a => a.UploadFileAsync(It.IsAny<IFormFile>(), It.IsAny<CancellationToken>()),
+            Times.Once
+        );
+        _aiServiceMock.Verify(
+            a => a.GetEmbeddingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Once
+        );
+        _repositoryMock.Verify(
+            r => r.AddAsync(It.IsAny<Book>(), It.IsAny<CancellationToken>()),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -81,7 +92,8 @@ public sealed class CreateBookHandlerTests
             Status.InStock,
             Guid.NewGuid(),
             Guid.NewGuid(),
-            [Guid.NewGuid()]);
+            [Guid.NewGuid()]
+        );
 
         var vector = new Vector(new[] { 0.1f, 0.2f, 0.3f, 0.4f, 0.5f });
         var book = new Book(
@@ -93,7 +105,8 @@ public sealed class CreateBookHandlerTests
             command.Status,
             command.CategoryId,
             command.PublisherId,
-            command.AuthorIds);
+            command.AuthorIds
+        );
 
         _aiServiceMock
             .Setup(a => a.GetEmbeddingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -108,9 +121,18 @@ public sealed class CreateBookHandlerTests
 
         // Assert
         result.Value.Should().Be(book.Id);
-        _azuriteMock.Verify(a => a.UploadFileAsync(It.IsAny<IFormFile>(), It.IsAny<CancellationToken>()), Times.Never);
-        _aiServiceMock.Verify(a => a.GetEmbeddingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
-        _repositoryMock.Verify(r => r.AddAsync(It.IsAny<Book>(), It.IsAny<CancellationToken>()), Times.Once);
+        _azuriteMock.Verify(
+            a => a.UploadFileAsync(It.IsAny<IFormFile>(), It.IsAny<CancellationToken>()),
+            Times.Never
+        );
+        _aiServiceMock.Verify(
+            a => a.GetEmbeddingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Once
+        );
+        _repositoryMock.Verify(
+            r => r.AddAsync(It.IsAny<Book>(), It.IsAny<CancellationToken>()),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -126,7 +148,8 @@ public sealed class CreateBookHandlerTests
             Status.InStock,
             Guid.NewGuid(),
             Guid.NewGuid(),
-            [Guid.NewGuid()]);
+            [Guid.NewGuid()]
+        );
 
         _aiServiceMock
             .Setup(a => a.GetEmbeddingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -137,9 +160,18 @@ public sealed class CreateBookHandlerTests
 
         // Assert
         await act.Should().ThrowAsync<Exception>().WithMessage("AI Service failure");
-        _azuriteMock.Verify(a => a.UploadFileAsync(It.IsAny<IFormFile>(), It.IsAny<CancellationToken>()), Times.Never);
-        _aiServiceMock.Verify(a => a.GetEmbeddingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
-        _repositoryMock.Verify(r => r.AddAsync(It.IsAny<Book>(), It.IsAny<CancellationToken>()), Times.Never);
+        _azuriteMock.Verify(
+            a => a.UploadFileAsync(It.IsAny<IFormFile>(), It.IsAny<CancellationToken>()),
+            Times.Never
+        );
+        _aiServiceMock.Verify(
+            a => a.GetEmbeddingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Once
+        );
+        _repositoryMock.Verify(
+            r => r.AddAsync(It.IsAny<Book>(), It.IsAny<CancellationToken>()),
+            Times.Never
+        );
     }
 
     [Theory]
@@ -149,8 +181,8 @@ public sealed class CreateBookHandlerTests
         [CombinatorialValues(null, "", " ")] string? description,
         [CombinatorialValues(-1, 0)] decimal price,
         [CombinatorialValues(-1, 0)] decimal priceSale,
-        [CombinatorialValues((Status)99, (Status)100)]
-        Status status)
+        [CombinatorialValues((Status)99, (Status)100)] Status status
+    )
     {
         // Arrange
         var command = new CreateBookCommand(
@@ -162,7 +194,8 @@ public sealed class CreateBookHandlerTests
             status,
             Guid.NewGuid(),
             Guid.NewGuid(),
-            [Guid.NewGuid()]);
+            [Guid.NewGuid()]
+        );
 
         // Act
         Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);

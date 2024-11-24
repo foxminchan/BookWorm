@@ -1,28 +1,34 @@
 ﻿namespace BookWorm.Rating.Features.Create;
 
-public sealed record CreateFeedbackRequest(Guid BookId, int Rating, string? Comment, Guid UserId);
-
-public sealed class CreateFeedbackEndpoint : IEndpoint<Created<ObjectId>, CreateFeedbackRequest, ISender>
+public sealed class CreateFeedbackEndpoint
+    : IEndpoint<Created<ObjectId>, CreateFeedbackCommand, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("/feedbacks", async (CreateFeedbackRequest request, ISender sender) =>
-                await HandleAsync(request, sender))
+        app.MapPost(
+                "/feedbacks",
+                async (CreateFeedbackCommand command, ISender sender) =>
+                    await HandleAsync(command, sender)
+            )
             .Produces<Created<ObjectId>>(StatusCodes.Status201Created)
             .ProducesValidationProblem()
+            .WithOpenApi()
             .WithTags(nameof(Feedback))
-            .WithName("Create Feedback")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization();
     }
 
-    public async Task<Created<ObjectId>> HandleAsync(CreateFeedbackRequest request, ISender sender,
-        CancellationToken cancellationToken = default)
+    public async Task<Created<ObjectId>> HandleAsync(
+        CreateFeedbackCommand command,
+        ISender sender,
+        CancellationToken cancellationToken = default
+    )
     {
-        var command = new CreateFeedbackCommand(request.BookId, request.Rating, request.Comment, request.UserId);
-
         var result = await sender.Send(command, cancellationToken);
 
-        return TypedResults.Created($"/api/v1/feedbacks/{result.Value}", result.Value);
+        return TypedResults.Created(
+            new UrlBuilder().WithVersion().WithResource("Feedbacks").WithId(result.Value).Build(),
+            result.Value
+        );
     }
 }

@@ -7,7 +7,10 @@ public sealed record RemoveBookImageCommand(Guid Id) : ICommand<Result>;
 public class RemoveBookImageHandler(IRepository<Book> repository, IAzuriteService azurite)
     : ICommandHandler<RemoveBookImageCommand, Result>
 {
-    public async Task<Result> Handle(RemoveBookImageCommand request, CancellationToken cancellationToken)
+    public async Task<Result> Handle(
+        RemoveBookImageCommand request,
+        CancellationToken cancellationToken
+    )
     {
         var book = await repository.GetByIdAsync(request.Id, cancellationToken);
         Guard.Against.NotFound(request.Id, book);

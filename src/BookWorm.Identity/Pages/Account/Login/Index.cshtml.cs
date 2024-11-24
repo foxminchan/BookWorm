@@ -19,11 +19,13 @@ public sealed class Index(
     IIdentityProviderStore identityProviderStore,
     IEventService events,
     UserManager<ApplicationUser> userManager,
-    SignInManager<ApplicationUser> signInManager) : PageModel
+    SignInManager<ApplicationUser> signInManager
+) : PageModel
 {
     public ViewModel View { get; set; } = default!;
 
-    [BindProperty] public InputModel Input { get; set; } = default!;
+    [BindProperty]
+    public InputModel Input { get; set; } = default!;
 
     public async Task<IActionResult> OnGet(string? returnUrl)
     {
@@ -31,7 +33,10 @@ public sealed class Index(
 
         if (View.IsExternalLoginOnly)
         {
-            return RedirectToPage("/ExternalLogin/Challenge", new { scheme = View.ExternalLoginScheme, returnUrl });
+            return RedirectToPage(
+                "/ExternalLogin/Challenge",
+                new { scheme = View.ExternalLoginScheme, returnUrl }
+            );
         }
 
         return Page();
@@ -53,7 +58,7 @@ public sealed class Index(
             // This "can't happen", because if the ReturnUrl was null, then the context would be null
             ArgumentNullException.ThrowIfNull(Input.ReturnUrl, nameof(Input.ReturnUrl));
 
-            // if the user cancels, send a result back into IdentityServer as if they 
+            // if the user cancels, send a result back into IdentityServer as if they
             // denied the consent (even if this client does not require consent).
             // this will send back access denied OIDC error response to the client.
             await interaction.DenyAuthorizationAsync(context, AuthorizationError.AccessDenied);
@@ -71,14 +76,27 @@ public sealed class Index(
 
         if (ModelState.IsValid)
         {
-            var result =
-                await signInManager.PasswordSignInAsync(Input.Username!, Input.Password!, Input.RememberLogin, true);
+            var result = await signInManager.PasswordSignInAsync(
+                Input.Username!,
+                Input.Password!,
+                Input.RememberLogin,
+                true
+            );
             if (result.Succeeded)
             {
                 var user = await userManager.FindByNameAsync(Input.Username!);
-                await events.RaiseAsync(new UserLoginSuccessEvent(user!.UserName, user.Id, user.UserName,
-                    clientId: context?.Client.ClientId));
-                Telemetry.Metrics.UserLogin(context?.Client.ClientId, IdentityServerConstants.LocalIdentityProvider);
+                await events.RaiseAsync(
+                    new UserLoginSuccessEvent(
+                        user!.UserName,
+                        user.Id,
+                        user.UserName,
+                        clientId: context?.Client.ClientId
+                    )
+                );
+                Telemetry.Metrics.UserLogin(
+                    context?.Client.ClientId,
+                    IdentityServerConstants.LocalIdentityProvider
+                );
 
                 if (context is not null)
                 {
@@ -111,10 +129,14 @@ public sealed class Index(
             }
 
             const string error = "invalid credentials";
-            await events.RaiseAsync(new UserLoginFailureEvent(Input.Username, error,
-                clientId: context?.Client.ClientId));
-            Telemetry.Metrics.UserLoginFailure(context?.Client.ClientId, IdentityServerConstants.LocalIdentityProvider,
-                error);
+            await events.RaiseAsync(
+                new UserLoginFailureEvent(Input.Username, error, clientId: context?.Client.ClientId)
+            );
+            Telemetry.Metrics.UserLoginFailure(
+                context?.Client.ClientId,
+                IdentityServerConstants.LocalIdentityProvider,
+                error
+            );
             ModelState.AddModelError(string.Empty, LoginOptions.InvalidCredentialsErrorMessage);
         }
 
@@ -128,7 +150,10 @@ public sealed class Index(
         Input = new() { ReturnUrl = returnUrl };
 
         var context = await interaction.GetAuthorizationContextAsync(returnUrl);
-        if (context?.IdP is not null && await schemeProvider.GetSchemeAsync(context.IdP) is not null)
+        if (
+            context?.IdP is not null
+            && await schemeProvider.GetSchemeAsync(context.IdP) is not null
+        )
         {
             var local = context.IdP == IdentityServerConstants.LocalIdentityProvider;
 
@@ -149,21 +174,13 @@ public sealed class Index(
 
         var providers = schemes
             .Where(x => x.DisplayName is not null)
-            .Select(x => new ViewModel.ExternalProvider
-            (
-                x.Name,
-                x.DisplayName ?? x.Name
-            )).ToList();
+            .Select(x => new ViewModel.ExternalProvider(x.Name, x.DisplayName ?? x.Name))
+            .ToList();
 
         var dynamicSchemes = (await identityProviderStore.GetAllSchemeNamesAsync())
             .Where(x => x.Enabled)
-            .Select(x => new ViewModel.ExternalProvider
-            (
-                x.Scheme,
-                x.DisplayName ?? x.Scheme
-            ));
+            .Select(x => new ViewModel.ExternalProvider(x.Scheme, x.DisplayName ?? x.Scheme));
         providers.AddRange(dynamicSchemes);
-
 
         var allowLocal = true;
         var client = context?.Client;
@@ -172,8 +189,11 @@ public sealed class Index(
             allowLocal = client.EnableLocalLogin;
             if (client.IdentityProviderRestrictions.Count != 0)
             {
-                providers = providers.Where(provider =>
-                    client.IdentityProviderRestrictions.Contains(provider.AuthenticationScheme)).ToList();
+                providers = providers
+                    .Where(provider =>
+                        client.IdentityProviderRestrictions.Contains(provider.AuthenticationScheme)
+                    )
+                    .ToList();
             }
         }
 
@@ -181,7 +201,7 @@ public sealed class Index(
         {
             AllowRememberLogin = LoginOptions.AllowRememberLogin,
             EnableLocalLogin = allowLocal && LoginOptions.AllowLocalLogin,
-            ExternalProviders = [.. providers]
+            ExternalProviders = [.. providers],
         };
     }
 }

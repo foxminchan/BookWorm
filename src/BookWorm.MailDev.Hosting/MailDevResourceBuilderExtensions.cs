@@ -9,22 +9,22 @@ public static class MailDevResourceBuilderExtensions
         this IDistributedApplicationBuilder builder,
         string name,
         int? httpPort = null,
-        int? smtpPort = null)
+        int? smtpPort = null
+    )
     {
         var resource = new MailDevResource(name);
 
-        return builder.AddResource(resource)
+        return builder
+            .AddResource(resource)
             .WithImage(MailDevContainerImageTags.Image)
             .WithImageRegistry(MailDevContainerImageTags.Registry)
             .WithImageTag(MailDevContainerImageTags.Tag)
             .WithHttpEndpoint(
                 targetPort: 1080,
                 port: httpPort,
-                name: MailDevResource.HttpEndpointName)
-            .WithEndpoint(
-                targetPort: 1025,
-                port: smtpPort,
-                name: MailDevResource.SmtpEndpointName);
+                name: MailDevResource.HttpEndpointName
+            )
+            .WithEndpoint(targetPort: 1025, port: smtpPort, name: MailDevResource.SmtpEndpointName);
     }
 }
 

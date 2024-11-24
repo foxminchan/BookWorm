@@ -6,9 +6,13 @@ public sealed record CreateBasketCommand(Guid BookId, int Quantity) : ICommand<R
 
 public sealed class CreateBasketHandler(
     IRedisService redisService,
-    IIdentityService identityService) : ICommandHandler<CreateBasketCommand, Result<Guid>>
+    IIdentityService identityService
+) : ICommandHandler<CreateBasketCommand, Result<Guid>>
 {
-    public async Task<Result<Guid>> Handle(CreateBasketCommand command, CancellationToken cancellationToken)
+    public async Task<Result<Guid>> Handle(
+        CreateBasketCommand command,
+        CancellationToken cancellationToken
+    )
     {
         var customerId = identityService.GetUserIdentity();
 
@@ -16,7 +20,10 @@ public sealed class CreateBasketHandler(
 
         BasketModel basket = new(Guid.Parse(customerId), [new(command.BookId, command.Quantity)]);
 
-        var existingBasket = await redisService.HashGetAsync<BasketModel?>(nameof(Basket), customerId);
+        var existingBasket = await redisService.HashGetAsync<BasketModel?>(
+            nameof(Basket),
+            customerId
+        );
 
         if (existingBasket is not null)
         {

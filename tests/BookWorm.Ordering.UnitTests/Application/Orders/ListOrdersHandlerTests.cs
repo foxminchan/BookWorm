@@ -21,8 +21,7 @@ public sealed class ListOrdersHandlerTests
         // Arrange
         _identityServiceMock.Setup(x => x.IsAdminRole()).Returns(true);
         _identityServiceMock.Setup(x => x.GetUserIdentity()).Returns(Guid.NewGuid().ToString());
-        _repositoryMock.Setup(x => x.ListAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync([]);
+        _repositoryMock.Setup(x => x.ListAsync(It.IsAny<CancellationToken>())).ReturnsAsync([]);
 
         var query = new ListOrdersQuery();
 
@@ -40,7 +39,8 @@ public sealed class ListOrdersHandlerTests
         // Arrange
         _identityServiceMock.Setup(x => x.IsAdminRole()).Returns(false);
         _identityServiceMock.Setup(x => x.GetUserIdentity()).Returns(Guid.NewGuid().ToString());
-        _repositoryMock.Setup(x => x.ListAsync(It.IsAny<OrderFilterSpec>(), It.IsAny<CancellationToken>()))
+        _repositoryMock
+            .Setup(x => x.ListAsync(It.IsAny<OrderFilterSpec>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
         var query = new ListOrdersQuery();
@@ -67,7 +67,9 @@ public sealed class ListOrdersHandlerTests
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>();
-        _repositoryMock.Verify(x => x.ListAsync(It.IsAny<OrderFilterSpec>(), It.IsAny<CancellationToken>()),
-            Times.Never);
+        _repositoryMock.Verify(
+            x => x.ListAsync(It.IsAny<OrderFilterSpec>(), It.IsAny<CancellationToken>()),
+            Times.Never
+        );
     }
 }

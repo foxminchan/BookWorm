@@ -24,10 +24,12 @@ public sealed class RemoveBookImageHandlerTests
         var book = BookBuilder.WithDefaultValues()[0];
         var bookId = book.Id;
 
-        _repositoryMock.Setup(r => r.GetByIdAsync(bookId, It.IsAny<CancellationToken>()))
+        _repositoryMock
+            .Setup(r => r.GetByIdAsync(bookId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(book);
 
-        _azuriteMock.Setup(a => a.DeleteFileAsync(book.ImageUrl!, It.IsAny<CancellationToken>()))
+        _azuriteMock
+            .Setup(a => a.DeleteFileAsync(book.ImageUrl!, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         var command = new RemoveBookImageCommand(bookId);
@@ -45,7 +47,8 @@ public sealed class RemoveBookImageHandlerTests
     {
         // Arrange
         var bookId = Guid.NewGuid();
-        _repositoryMock.Setup(r => r.GetByIdAsync(bookId, It.IsAny<CancellationToken>()))
+        _repositoryMock
+            .Setup(r => r.GetByIdAsync(bookId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Book?)null);
 
         var command = new RemoveBookImageCommand(bookId);
@@ -56,8 +59,14 @@ public sealed class RemoveBookImageHandlerTests
         // Assert
         await act.Should().ThrowAsync<NotFoundException>();
 
-        _repositoryMock.Verify(r => r.GetByIdAsync(bookId, It.IsAny<CancellationToken>()), Times.Once);
-        _azuriteMock.Verify(a => a.DeleteFileAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _repositoryMock.Verify(
+            r => r.GetByIdAsync(bookId, It.IsAny<CancellationToken>()),
+            Times.Once
+        );
+        _azuriteMock.Verify(
+            a => a.DeleteFileAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never
+        );
         _repositoryMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -68,7 +77,8 @@ public sealed class RemoveBookImageHandlerTests
         var book = BookBuilder.WithDefaultValues()[1];
         var bookId = book.Id;
 
-        _repositoryMock.Setup(r => r.GetByIdAsync(bookId, It.IsAny<CancellationToken>()))
+        _repositoryMock
+            .Setup(r => r.GetByIdAsync(bookId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(book);
 
         var command = new RemoveBookImageCommand(bookId);

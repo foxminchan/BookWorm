@@ -3,7 +3,8 @@
 public sealed class BasketItem(Guid id, int quantity)
 {
     public Guid Id { get; private set; } = id;
-    public int Quantity { get; private set; } = Guard.Against.OutOfRange(quantity, nameof(quantity), 1, int.MaxValue);
+    public int Quantity { get; private set; } =
+        Guard.Against.OutOfRange(quantity, nameof(quantity), 1, int.MaxValue);
 
     public void IncreaseQuantity(int quantity)
     {

@@ -8,15 +8,10 @@ internal sealed class AuthorConfiguration : BaseConfiguration<Author>
     {
         base.Configure(builder);
 
-        builder.Property(p => p.Name)
-            .HasMaxLength(DataSchemaLength.Large)
-            .IsRequired();
+        builder.Property(p => p.Name).HasMaxLength(DataSchemaLength.Large).IsRequired();
 
-        builder.HasMany(x => x.BookAuthors)
-            .WithOne(x => x.Author)
-            .HasForeignKey(x => x.AuthorId);
+        builder.HasMany(x => x.BookAuthors).WithOne(x => x.Author).HasForeignKey(x => x.AuthorId);
 
-        builder.Navigation(x => x.BookAuthors)
-            .UsePropertyAccessMode(PropertyAccessMode.Field);
+        builder.Navigation(x => x.BookAuthors).UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

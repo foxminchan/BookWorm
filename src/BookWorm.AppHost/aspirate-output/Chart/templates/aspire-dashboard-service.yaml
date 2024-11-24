@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: aspire-dashboard
+spec:
+  ports:
+  - name: dashboard-ui
+    port: 18888
+    protocol: TCP
+    targetPort: 18888
+  - name: otlp
+    port: 18889
+    protocol: TCP
+    targetPort: 18889
+  selector:
+    app: aspire-dashboard
+  type: ClusterIP

@@ -6,13 +6,10 @@ internal sealed class OrderItemConfiguration : BaseConfiguration<OrderItem>
     {
         base.Configure(builder);
 
-        builder.Property(e => e.BookId)
-            .IsRequired();
+        builder.Property(e => e.BookId).IsRequired();
 
-        builder.Property(e => e.Quantity)
-            .IsRequired();
+        builder.Property(e => e.Quantity).IsRequired();
 
-        builder.Property(e => e.Price)
-            .IsRequired();
+        builder.Property(e => e.Price).IsRequired();
     }
 }

@@ -6,18 +6,16 @@ internal sealed class OrderConfiguration : BaseConfiguration<Order>
     {
         base.Configure(builder);
 
-        builder.Property(e => e.BuyerId)
-            .IsRequired();
+        builder.Property(e => e.BuyerId).IsRequired();
 
-        builder.Property(e => e.Note)
-            .HasMaxLength(DataSchemaLength.SuperLarge);
+        builder.Property(e => e.Note).HasMaxLength(DataSchemaLength.SuperLarge);
 
-        builder.HasMany(e => e.OrderItems)
+        builder
+            .HasMany(e => e.OrderItems)
             .WithOne(e => e.Order)
             .HasForeignKey(e => e.OrderId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Navigation(x => x.OrderItems)
-            .AutoInclude();
+        builder.Navigation(x => x.OrderItems).AutoInclude();
     }
 }

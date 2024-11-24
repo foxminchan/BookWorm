@@ -18,7 +18,8 @@ public sealed class Book : EntityBase, IAggregateRoot, ISoftDelete
         Status status,
         Guid categoryId,
         Guid publisherId,
-        Guid[] authorIds)
+        Guid[] authorIds
+    )
     {
         Name = Guard.Against.NullOrEmpty(name);
         Description = Guard.Against.NullOrEmpty(description);
@@ -27,7 +28,7 @@ public sealed class Book : EntityBase, IAggregateRoot, ISoftDelete
         Status = Guard.Against.EnumOutOfRange(status);
         CategoryId = categoryId;
         PublisherId = publisherId;
-        _bookAuthors = [..authorIds.Select(authorId => new BookAuthor(authorId))];
+        _bookAuthors = [.. authorIds.Select(authorId => new BookAuthor(authorId))];
     }
 
     public string? Name { get; private set; }
@@ -41,7 +42,9 @@ public sealed class Book : EntityBase, IAggregateRoot, ISoftDelete
     public Category? Category { get; private set; } = default!;
     public Guid? PublisherId { get; private set; }
     public Publisher? Publisher { get; private set; } = default!;
-    [JsonIgnore] public Vector? Embedding { get; private set; }
+
+    [JsonIgnore]
+    public Vector? Embedding { get; private set; }
 
     public IReadOnlyCollection<BookAuthor> BookAuthors => _bookAuthors.AsReadOnly();
     public bool IsDeleted { get; set; }
@@ -64,7 +67,8 @@ public sealed class Book : EntityBase, IAggregateRoot, ISoftDelete
         Status status,
         Guid categoryId,
         Guid publisherId,
-        List<Guid> authorIds)
+        List<Guid> authorIds
+    )
     {
         Name = Guard.Against.NullOrEmpty(name);
         Description = Guard.Against.NullOrEmpty(description);

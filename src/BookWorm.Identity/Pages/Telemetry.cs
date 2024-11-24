@@ -4,6 +4,7 @@
 using System.Diagnostics.Metrics;
 
 namespace BookWorm.Identity.Pages;
+
 #pragma warning disable CA1034 // Nested types should not be visible
 #pragma warning disable CA1724 // Type names should not match namespaces
 
@@ -12,7 +13,9 @@ namespace BookWorm.Identity.Pages;
 /// </summary>
 public static class Telemetry
 {
-    private static readonly string _serviceVersion = typeof(Telemetry).Assembly.GetName().Version!.ToString();
+    private static readonly string _serviceVersion = typeof(Telemetry)
+        .Assembly.GetName()
+        .Version!.ToString();
 
     /// <summary>
     ///     Service name for telemetry.
@@ -29,14 +32,21 @@ public static class Telemetry
         /// </summary>
         private static readonly Meter _meter = new(ServiceName, _serviceVersion);
 
-        private static readonly Counter<long> _consentCounter = _meter.CreateCounter<long>(Counters.Consent);
+        private static readonly Counter<long> _consentCounter = _meter.CreateCounter<long>(
+            Counters.Consent
+        );
 
-        private static readonly Counter<long>
-            _grantsRevokedCounter = _meter.CreateCounter<long>(Counters.GrantsRevoked);
+        private static readonly Counter<long> _grantsRevokedCounter = _meter.CreateCounter<long>(
+            Counters.GrantsRevoked
+        );
 
-        private static readonly Counter<long> _userLoginCounter = _meter.CreateCounter<long>(Counters.UserLogin);
+        private static readonly Counter<long> _userLoginCounter = _meter.CreateCounter<long>(
+            Counters.UserLogin
+        );
 
-        private static readonly Counter<long> _userLogoutCounter = _meter.CreateCounter<long>(Counters.UserLogout);
+        private static readonly Counter<long> _userLogoutCounter = _meter.CreateCounter<long>(
+            Counters.UserLogout
+        );
 
         /// <summary>
         ///     Helper method to increase <see cref="Counters.Consent" /> counter. The scopes
@@ -45,17 +55,23 @@ public static class Telemetry
         /// <param name="clientId">Client id</param>
         /// <param name="scopes">Scope names. Each element is added on its own to the counter</param>
         /// <param name="remember"></param>
-        public static void ConsentGranted(string clientId, IEnumerable<string> scopes, bool remember)
+        public static void ConsentGranted(
+            string clientId,
+            IEnumerable<string> scopes,
+            bool remember
+        )
         {
             ArgumentNullException.ThrowIfNull(scopes);
 
             foreach (var scope in scopes)
             {
-                _consentCounter.Add(1,
+                _consentCounter.Add(
+                    1,
                     new(Tags.Client, clientId),
                     new(Tags.Scope, scope),
                     new(Tags.Remember, remember),
-                    new(Tags.Consent, TagValues.Granted));
+                    new(Tags.Consent, TagValues.Granted)
+                );
             }
         }
 
@@ -70,8 +86,12 @@ public static class Telemetry
             ArgumentNullException.ThrowIfNull(scopes);
             foreach (var scope in scopes)
             {
-                _consentCounter.Add(1, new(Tags.Client, clientId), new(Tags.Scope, scope),
-                    new(Tags.Consent, TagValues.Denied));
+                _consentCounter.Add(
+                    1,
+                    new(Tags.Client, clientId),
+                    new(Tags.Scope, scope),
+                    new(Tags.Consent, TagValues.Denied)
+                );
             }
         }
 
@@ -102,7 +122,12 @@ public static class Telemetry
         /// <param name="error">Error message</param>
         public static void UserLoginFailure(string? clientId, string idp, string error)
         {
-            _userLoginCounter.Add(1, new(Tags.Client, clientId), new(Tags.Idp, idp), new(Tags.Error, error));
+            _userLoginCounter.Add(
+                1,
+                new(Tags.Client, clientId),
+                new(Tags.Idp, idp),
+                new(Tags.Error, error)
+            );
         }
 
         /// <summary>

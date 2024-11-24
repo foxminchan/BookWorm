@@ -21,8 +21,7 @@ public sealed class CreateBasketHandlerTests
     {
         // Arrange
         var command = new CreateBasketCommand(Guid.NewGuid(), 1);
-        _mockIdentityService.Setup(x => x.GetUserIdentity())
-            .Returns((string?)null);
+        _mockIdentityService.Setup(x => x.GetUserIdentity()).Returns((string?)null);
 
         // Act
         Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
@@ -37,12 +36,15 @@ public sealed class CreateBasketHandlerTests
         // Arrange
         var customerId = Guid.NewGuid().ToString();
         var command = new CreateBasketCommand(Guid.NewGuid(), 1);
-        var existingBasket = new BasketModel(Guid.Parse(customerId), [new(command.BookId, command.Quantity)]);
+        var existingBasket = new BasketModel(
+            Guid.Parse(customerId),
+            [new(command.BookId, command.Quantity)]
+        );
 
-        _mockIdentityService.Setup(x => x.GetUserIdentity())
-            .Returns(customerId);
+        _mockIdentityService.Setup(x => x.GetUserIdentity()).Returns(customerId);
 
-        _mockRedisService.Setup(x => x.HashGetAsync<BasketModel?>(nameof(Basket), customerId))
+        _mockRedisService
+            .Setup(x => x.HashGetAsync<BasketModel?>(nameof(Basket), customerId))
             .ReturnsAsync(existingBasket);
 
         // Act
@@ -50,7 +52,10 @@ public sealed class CreateBasketHandlerTests
 
         // Assert
         result.Value.Should().Be(existingBasket.AccountId);
-        _mockRedisService.Verify(x => x.HashSetAsync(nameof(Basket), customerId, existingBasket), Times.Once);
+        _mockRedisService.Verify(
+            x => x.HashSetAsync(nameof(Basket), customerId, existingBasket),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -59,12 +64,15 @@ public sealed class CreateBasketHandlerTests
         // Arrange
         var customerId = Guid.NewGuid().ToString();
         var command = new CreateBasketCommand(Guid.NewGuid(), 1);
-        var newBasket = new BasketModel(Guid.Parse(customerId), [new(command.BookId, command.Quantity)]);
+        var newBasket = new BasketModel(
+            Guid.Parse(customerId),
+            [new(command.BookId, command.Quantity)]
+        );
 
-        _mockIdentityService.Setup(x => x.GetUserIdentity())
-            .Returns(customerId);
+        _mockIdentityService.Setup(x => x.GetUserIdentity()).Returns(customerId);
 
-        _mockRedisService.Setup(x => x.HashGetAsync<BasketModel?>(nameof(Basket), customerId))
+        _mockRedisService
+            .Setup(x => x.HashGetAsync<BasketModel?>(nameof(Basket), customerId))
             .ReturnsAsync((BasketModel?)null);
 
         // Act
@@ -78,7 +86,8 @@ public sealed class CreateBasketHandlerTests
     [CombinatorialData]
     public async Task GivenInvalidCommand_ShouldThrowArgumentNullException(
         [CombinatorialValues(null)] Guid bookId,
-        [CombinatorialValues(0, -1)] int quantity)
+        [CombinatorialValues(0, -1)] int quantity
+    )
     {
         // Arrange
         var command = new CreateBasketCommand(bookId, quantity);

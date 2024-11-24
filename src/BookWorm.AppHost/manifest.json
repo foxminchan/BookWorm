@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/aspire-8.0.json",
   "resources": {
     "SqlUser": {
       "type": "parameter.v0",
@@ -13,6 +14,16 @@
     "SqlPassword": {
       "type": "parameter.v0",
       "value": "{SqlPassword.inputs.value}",
+      "inputs": {
+        "value": {
+          "type": "string",
+          "secret": true
+        }
+      }
+    },
+    "FromEmail": {
+      "type": "parameter.v0",
+      "value": "{FromEmail.inputs.value}",
       "inputs": {
         "value": {
           "type": "string",
@@ -48,8 +59,8 @@
     },
     "mongodb": {
       "type": "container.v0",
-      "connectionString": "mongodb://{mongodb.bindings.tcp.host}:{mongodb.bindings.tcp.port}",
-      "image": "docker.io/library/mongo:7.0",
+      "connectionString": "mongodb://admin:{mongodb-password.value}@{mongodb.bindings.tcp.host}:{mongodb.bindings.tcp.port}?authSource=admin\u0026authMechanism=SCRAM-SHA-256",
+      "image": "docker.io/library/mongo:8.0",
       "bindMounts": [
         {
           "source": "../../mnt/mongodb",
@@ -57,6 +68,10 @@
           "readOnly": false
         }
       ],
+      "env": {
+        "MONGO_INITDB_ROOT_USERNAME": "admin",
+        "MONGO_INITDB_ROOT_PASSWORD": "{mongodb-password.value}"
+      },
       "bindings": {
         "tcp": {
           "scheme": "tcp",
@@ -69,8 +84,12 @@
     "redis": {
       "type": "container.v0",
       "connectionString": "{redis.bindings.tcp.host}:{redis.bindings.tcp.port}",
-      "image": "docker.io/library/redis:7.2",
-      "args": ["--save", "60", "1"],
+      "image": "docker.io/library/redis:7.4",
+      "args": [
+        "--save",
+        "60",
+        "1"
+      ],
       "bindMounts": [
         {
           "source": "../../mnt/redis",
@@ -105,7 +124,7 @@
     },
     "ratingdb": {
       "type": "value.v0",
-      "connectionString": "{mongodb.connectionString}/ratingdb"
+      "connectionString": "mongodb://admin:{mongodb-password.value}@{mongodb.bindings.tcp.host}:{mongodb.bindings.tcp.port}/ratingdb?authSource=admin\u0026authMechanism=SCRAM-SHA-256"
     },
     "storage": {
       "type": "azure.bicep.v0",
@@ -115,7 +134,7 @@
         "principalType": ""
       }
     },
-    "blobs": {
+    "blob": {
       "type": "value.v0",
       "connectionString": "{storage.outputs.blobEndpoint}"
     },
@@ -133,7 +152,7 @@
     "eventbus": {
       "type": "container.v0",
       "connectionString": "amqp://guest:{eventbus-password.value}@{eventbus.bindings.tcp.host}:{eventbus.bindings.tcp.port}",
-      "image": "docker.io/library/rabbitmq:3.13-management",
+      "image": "docker.io/library/rabbitmq:4.0-management",
       "env": {
         "RABBITMQ_DEFAULT_USER": "guest",
         "RABBITMQ_DEFAULT_PASS": "{eventbus-password.value}"
@@ -180,6 +199,7 @@
         "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES": "true",
         "OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY": "in_memory",
         "ASPNETCORE_FORWARDEDHEADERS_ENABLED": "true",
+        "HTTP_PORTS": "{identity-api.bindings.http.targetPort};{identity-api.bindings.healthchecks.targetPort}",
         "ConnectionStrings__identitydb": "{identitydb.connectionString}",
         "ConnectionStrings__redis": "{redis.connectionString}",
         "Services__Catalog": "{catalog-api.bindings.https.url}",
@@ -219,14 +239,14 @@
         "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES": "true",
         "OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY": "in_memory",
         "ASPNETCORE_FORWARDEDHEADERS_ENABLED": "true",
-        "ConnectionStrings__blobs": "{blobs.connectionString}",
+        "HTTP_PORTS": "{catalog-api.bindings.http.targetPort};{catalog-api.bindings.healthchecks.targetPort}",
         "ConnectionStrings__eventbus": "{eventbus.connectionString}",
         "ConnectionStrings__catalogdb": "{catalogdb.connectionString}",
         "ConnectionStrings__redis": "{redis.connectionString}",
         "ConnectionStrings__openai": "{openai.connectionString}",
+        "ConnectionStrings__blob": "{blob.connectionString}",
         "Identity__Url": "{identity-api.bindings.https.url}",
         "AiOptions__OpenAi__EmbeddingName": "text-embedding-3-small",
-        "AzuriteOptions__ConnectionString": "{blobs.connectionString}",
         "ASPNETCORE_HTTP_PORTS": "8080;{catalog-api.bindings.healthchecks.targetPort}",
         "HEALTHCHECKSUI_URLS": "{catalog-api.bindings.healthchecks.url}/healthz"
       },
@@ -257,6 +277,8 @@
         "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES": "true",
         "OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY": "in_memory",
         "ASPNETCORE_FORWARDEDHEADERS_ENABLED": "true",
+        "HTTP_PORTS": "{ordering-api.bindings.http.targetPort};{ordering-api.bindings.healthchecks.targetPort}",
+        "ConnectionStrings__redis": "{redis.connectionString}",
         "ConnectionStrings__eventbus": "{eventbus.connectionString}",
         "ConnectionStrings__orderingdb": "{orderingdb.connectionString}",
         "Identity__Url": "{identity-api.bindings.https.url}",
@@ -290,6 +312,7 @@
         "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES": "true",
         "OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY": "in_memory",
         "ASPNETCORE_FORWARDEDHEADERS_ENABLED": "true",
+        "HTTP_PORTS": "{rating-api.bindings.http.targetPort};{rating-api.bindings.healthchecks.targetPort}",
         "ConnectionStrings__eventbus": "{eventbus.connectionString}",
         "ConnectionStrings__ratingdb": "{ratingdb.connectionString}",
         "ConnectionStrings__redis": "{redis.connectionString}",
@@ -324,6 +347,7 @@
         "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES": "true",
         "OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY": "in_memory",
         "ASPNETCORE_FORWARDEDHEADERS_ENABLED": "true",
+        "HTTP_PORTS": "{basket-api.bindings.http.targetPort};{basket-api.bindings.healthchecks.targetPort}",
         "ConnectionStrings__redis": "{redis.connectionString}",
         "ConnectionStrings__eventbus": "{eventbus.connectionString}",
         "Identity__Url": "{identity-api.bindings.https.url}",
@@ -357,9 +381,11 @@
         "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES": "true",
         "OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY": "in_memory",
         "ASPNETCORE_FORWARDEDHEADERS_ENABLED": "true",
+        "HTTP_PORTS": "{notification-api.bindings.http.targetPort};{notification-api.bindings.healthchecks.targetPort}",
         "ConnectionStrings__eventbus": "{eventbus.connectionString}",
         "ConnectionStrings__notificationdb": "{notificationdb.connectionString}",
         "ConnectionStrings__mailserver": "{mailserver.connectionString}",
+        "Smtp__Email": "{FromEmail.value}",
         "ASPNETCORE_HTTP_PORTS": "8080;{notification-api.bindings.healthchecks.targetPort}",
         "HEALTHCHECKSUI_URLS": "{notification-api.bindings.healthchecks.url}/healthz"
       },
@@ -390,6 +416,7 @@
         "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES": "true",
         "OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY": "in_memory",
         "ASPNETCORE_FORWARDEDHEADERS_ENABLED": "true",
+        "HTTP_PORTS": "{gateway.bindings.http.targetPort};{gateway.bindings.healthchecks.targetPort}",
         "ConnectionStrings__redis": "{redis.connectionString}",
         "BFF__Authority": "{identity-api.bindings.https.url}",
         "BFF__Api__RemoteUrl": "{catalog-api.bindings.https.url}/api/v1/authors",
@@ -442,6 +469,22 @@
           "transport": "http",
           "targetPort": 80,
           "external": true
+        }
+      }
+    },
+    "mongodb-password": {
+      "type": "parameter.v0",
+      "value": "{mongodb-password.inputs.value}",
+      "inputs": {
+        "value": {
+          "type": "string",
+          "secret": true,
+          "default": {
+            "generate": {
+              "minLength": 22,
+              "special": false
+            }
+          }
         }
       }
     },

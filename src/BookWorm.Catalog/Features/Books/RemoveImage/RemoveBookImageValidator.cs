@@ -6,9 +6,7 @@ internal sealed class RemoveBookImageValidator : AbstractValidator<RemoveBookIma
 {
     public RemoveBookImageValidator(BookValidator bookValidator)
     {
-        RuleFor(x => x.Id)
-            .NotEmpty()
-            .SetValidator(bookValidator);
+        RuleFor(x => x.Id).NotEmpty().SetValidator(bookValidator);
     }
 }
 
@@ -20,9 +18,7 @@ internal sealed class BookValidator : AbstractValidator<Guid>
     {
         _readRepository = readRepository;
 
-        RuleFor(x => x)
-            .MustAsync(IsHasBookImage)
-            .WithMessage("Book does not have an image");
+        RuleFor(x => x).MustAsync(IsHasBookImage).WithMessage("Book does not have an image");
     }
 
     private async Task<bool> IsHasBookImage(Guid bookId, CancellationToken cancellationToken)

@@ -17,9 +17,11 @@ namespace BookWorm.Identity.Pages.Account.Logout;
 public sealed class Index(
     SignInManager<ApplicationUser> signInManager,
     IIdentityServerInteractionService interaction,
-    IEventService events) : PageModel
+    IEventService events
+) : PageModel
 {
-    [BindProperty] public string? LogoutId { get; set; }
+    [BindProperty]
+    public string? LogoutId { get; set; }
 
     public async Task<IActionResult> OnGet(string? logoutId)
     {
@@ -71,7 +73,9 @@ public sealed class Index(
         var idp = User.FindFirst(JwtClaimTypes.IdentityProvider)?.Value;
 
         // raise the logout event
-        await events.RaiseAsync(new UserLogoutSuccessEvent(User.GetSubjectId(), User.GetDisplayName()));
+        await events.RaiseAsync(
+            new UserLogoutSuccessEvent(User.GetSubjectId(), User.GetDisplayName())
+        );
         Telemetry.Metrics.UserLogout(idp);
 
         // if it's a local login we can ignore this workflow

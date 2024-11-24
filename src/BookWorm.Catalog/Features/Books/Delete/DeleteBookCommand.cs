@@ -4,7 +4,8 @@ namespace BookWorm.Catalog.Features.Books.Delete;
 
 public sealed record DeleteBookCommand(Guid Id) : ICommand<Result>;
 
-public sealed class DeleteBookHandler(IRepository<Book> repository) : ICommandHandler<DeleteBookCommand, Result>
+public sealed class DeleteBookHandler(IRepository<Book> repository)
+    : ICommandHandler<DeleteBookCommand, Result>
 {
     public async Task<Result> Handle(DeleteBookCommand request, CancellationToken cancellationToken)
     {

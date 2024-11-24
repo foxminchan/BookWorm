@@ -1,16 +1,12 @@
 ﻿namespace BookWorm.Shared.Logging;
 
-public sealed class ApplicationEnricher(IHttpContextAccessor httpContextAccessor) : ILogEnricher
+/// <summary>
+///    ref: https://andrewlock.net/customising-the-new-telemetry-logging-source-generator/
+/// </summary>
+public sealed class ApplicationEnricher : IStaticLogEnricher
 {
     public void Enrich(IEnrichmentTagCollector collector)
     {
         collector.Add("MachineName", Environment.MachineName);
-
-        var httpContext = httpContextAccessor.HttpContext;
-
-        if (httpContext is not null)
-        {
-            collector.Add("IsAuthenticated", httpContext.User.Identity?.IsAuthenticated);
-        }
     }
 }

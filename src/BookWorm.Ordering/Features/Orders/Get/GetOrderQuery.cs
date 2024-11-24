@@ -7,9 +7,13 @@ public sealed record GetOrderQuery(Guid OrderId) : ICommand<Result<OrderDetailDt
 public sealed class GetOrderHandler(
     IReadRepository<Order> repository,
     IIdentityService identityService,
-    IBookService bookService) : ICommandHandler<GetOrderQuery, Result<OrderDetailDto>>
+    IBookService bookService
+) : ICommandHandler<GetOrderQuery, Result<OrderDetailDto>>
 {
-    public async Task<Result<OrderDetailDto>> Handle(GetOrderQuery request, CancellationToken cancellationToken)
+    public async Task<Result<OrderDetailDto>> Handle(
+        GetOrderQuery request,
+        CancellationToken cancellationToken
+    )
     {
         var customerId = identityService.GetUserIdentity();
 
@@ -39,7 +43,13 @@ public sealed class GetOrderHandler(
             orderItems.Add(new(book.Id, book.Name, item.Quantity, item.Price));
         }
 
-        OrderDetailDto orderDetail = new(order.Id, order.Note, order.Status, order.TotalPrice, orderItems);
+        OrderDetailDto orderDetail = new(
+            order.Id,
+            order.Note,
+            order.Status,
+            order.TotalPrice,
+            orderItems
+        );
 
         return orderDetail;
     }
