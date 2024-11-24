@@ -21,7 +21,7 @@ internal static class Extensions
         builder.AddDefaultAuthentication();
         builder.Services.AddMediatR(cfg =>
         {
-            cfg.RegisterServicesFromAssemblyContaining<global::Program>();
+            cfg.RegisterServicesFromAssemblyContaining<Program>();
             cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
             cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
             cfg.AddOpenBehavior(typeof(MetricsBehavior<,>));
@@ -32,23 +32,30 @@ internal static class Extensions
         builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(conn));
 
         builder.Services.AddSingleton(provider =>
-            provider.GetRequiredService<IMongoClient>().GetDatabase(MongoUrl.Create(conn).DatabaseName));
+            provider
+                .GetRequiredService<IMongoClient>()
+                .GetDatabase(MongoUrl.Create(conn).DatabaseName)
+        );
 
         builder.Services.AddScoped(provider =>
-            provider.GetRequiredService<IMongoDatabase>().GetCollection<Feedback>(nameof(Feedback)));
+            provider.GetRequiredService<IMongoDatabase>().GetCollection<Feedback>(nameof(Feedback))
+        );
 
-        builder.AddRabbitMqEventBus(typeof(global::Program), cfg =>
-        {
-            cfg.AddMongoDbOutbox(o =>
+        builder.AddRabbitMqEventBus(
+            typeof(Program),
+            cfg =>
             {
-                o.DisableInboxCleanupService();
-                o.ClientFactory(provider => provider.GetRequiredService<IMongoClient>());
-                o.DatabaseFactory(provider => provider.GetRequiredService<IMongoDatabase>());
-                o.UseBusOutbox(bo => bo.DisableDeliveryService());
-            });
-        });
+                cfg.AddMongoDbOutbox(o =>
+                {
+                    o.DisableInboxCleanupService();
+                    o.ClientFactory(provider => provider.GetRequiredService<IMongoClient>());
+                    o.DatabaseFactory(provider => provider.GetRequiredService<IMongoDatabase>());
+                    o.UseBusOutbox(bo => bo.DisableDeliveryService());
+                });
+            }
+        );
 
-        builder.Services.AddValidatorsFromAssemblyContaining<global::Program>(includeInternalTypes: true);
+        builder.Services.AddValidatorsFromAssemblyContaining<Program>(includeInternalTypes: true);
 
         builder.Services.AddSingleton<IActivityScope, ActivityScope>();
         builder.Services.AddSingleton<CommandHandlerMetrics>();
@@ -58,7 +65,7 @@ internal static class Extensions
         builder.Services.AddScoped<IRatingRepository, RatingRepository>();
 
         builder.AddVersioning();
-        builder.AddEndpoints(typeof(global::Program));
+        builder.AddEndpoints(typeof(Program));
 
         builder.AddOpenApi();
 

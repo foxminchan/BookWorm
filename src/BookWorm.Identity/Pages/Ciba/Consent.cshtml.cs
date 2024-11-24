@@ -16,11 +16,13 @@ namespace BookWorm.Identity.Pages.Ciba;
 public sealed class Consent(
     IBackchannelAuthenticationInteractionService interaction,
     IEventService events,
-    ILogger<Consent> logger) : PageModel
+    ILogger<Consent> logger
+) : PageModel
 {
     public ViewModel View { get; set; } = default!;
 
-    [BindProperty] public InputModel Input { get; set; } = default!;
+    [BindProperty]
+    public InputModel Input { get; set; } = default!;
 
     public async Task<IActionResult> OnGet(string? id)
     {
@@ -37,9 +39,9 @@ public sealed class Consent(
     public async Task<IActionResult> OnPost()
     {
         // validate return url is still valid
-        var request =
-            await interaction.GetLoginRequestByInternalIdAsync(Input.Id ??
-                                                               throw new ArgumentNullException(nameof(Input.Id)));
+        var request = await interaction.GetLoginRequestByInternalIdAsync(
+            Input.Id ?? throw new ArgumentNullException(nameof(Input.Id))
+        );
         if (request is null || request.Subject.GetSubjectId() != User.GetSubjectId())
         {
             logger.InvalidId(Input.Id);
@@ -55,10 +57,17 @@ public sealed class Consent(
                 result = new(Input.Id);
 
                 // emit event
-                await events.RaiseAsync(new ConsentDeniedEvent(User.GetSubjectId(), request.Client.ClientId,
-                    request.ValidatedResources.RawScopeValues));
-                Telemetry.Metrics.ConsentDenied(request.Client.ClientId,
-                    request.ValidatedResources.ParsedScopes.Select(s => s.ParsedName));
+                await events.RaiseAsync(
+                    new ConsentDeniedEvent(
+                        User.GetSubjectId(),
+                        request.Client.ClientId,
+                        request.ValidatedResources.RawScopeValues
+                    )
+                );
+                Telemetry.Metrics.ConsentDenied(
+                    request.Client.ClientId,
+                    request.ValidatedResources.ParsedScopes.Select(s => s.ParsedName)
+                );
                 break;
             // user clicked 'yes' - validate the data
             // if the user consented to some scope, build the response model
@@ -67,16 +76,34 @@ public sealed class Consent(
                 var scopes = Input.ScopesConsented;
                 if (ConsentOptions.EnableOfflineAccess == false)
                 {
-                    scopes = scopes.Where(x => x != IdentityServerConstants.StandardScopes.OfflineAccess);
+                    scopes = scopes.Where(x =>
+                        x != IdentityServerConstants.StandardScopes.OfflineAccess
+                    );
                 }
 
-                result = new(Input.Id) { ScopesValuesConsented = scopes.ToArray(), Description = Input.Description };
+                result = new(Input.Id)
+                {
+                    ScopesValuesConsented = scopes.ToArray(),
+                    Description = Input.Description,
+                };
 
                 // emit event
-                await events.RaiseAsync(new ConsentGrantedEvent(User.GetSubjectId(), request.Client.ClientId,
-                    request.ValidatedResources.RawScopeValues, result.ScopesValuesConsented, false));
-                Telemetry.Metrics.ConsentGranted(request.Client.ClientId, result.ScopesValuesConsented, false);
-                var denied = request.ValidatedResources.ParsedScopes.Select(s => s.ParsedName)
+                await events.RaiseAsync(
+                    new ConsentGrantedEvent(
+                        User.GetSubjectId(),
+                        request.Client.ClientId,
+                        request.ValidatedResources.RawScopeValues,
+                        result.ScopesValuesConsented,
+                        false
+                    )
+                );
+                Telemetry.Metrics.ConsentGranted(
+                    request.Client.ClientId,
+                    result.ScopesValuesConsented,
+                    false
+                );
+                var denied = request
+                    .ValidatedResources.ParsedScopes.Select(s => s.ParsedName)
                     .Except(result.ScopesValuesConsented);
                 Telemetry.Metrics.ConsentDenied(request.Client.ClientId, denied);
                 break;
@@ -129,38 +156,59 @@ public sealed class Consent(
             ClientUrl = request.Client.ClientUri,
             ClientLogoUrl = request.Client.LogoUri,
             BindingMessage = request.BindingMessage,
-            IdentityScopes = request.ValidatedResources.Resources.IdentityResources
-                .Select(x => CreateScopeViewModel(x, Input.ScopesConsented.Contains(x.Name)))
-                .ToArray()
+            IdentityScopes = request
+                .ValidatedResources.Resources.IdentityResources.Select(x =>
+                    CreateScopeViewModel(x, Input.ScopesConsented.Contains(x.Name))
+                )
+                .ToArray(),
         };
 
         var resourceIndicators = request.RequestedResourceIndicators ?? [];
-        var apiResources =
-            request.ValidatedResources.Resources.ApiResources.Where(x => resourceIndicators.Contains(x.Name))
-                .ToArray();
+        var apiResources = request
+            .ValidatedResources.Resources.ApiResources.Where(x =>
+                resourceIndicators.Contains(x.Name)
+            )
+            .ToArray();
 
         var apiScopes = new List<ScopeViewModel>();
         foreach (var parsedScope in request.ValidatedResources.ParsedScopes)
         {
-            var apiScope = request.ValidatedResources.Resources.FindApiScope(parsedScope.ParsedName);
+            var apiScope = request.ValidatedResources.Resources.FindApiScope(
+                parsedScope.ParsedName
+            );
             if (apiScope is null)
             {
                 continue;
             }
 
-            var scopeVm = CreateScopeViewModel(parsedScope, apiScope,
-                Input is null || Input.ScopesConsented.Contains(parsedScope.RawValue));
-            scopeVm.Resources = apiResources.Where(x => x.Scopes.Contains(parsedScope.ParsedName))
-                .Select(x => new ResourceViewModel { Name = x.Name, DisplayName = x.DisplayName ?? x.Name })
+            var scopeVm = CreateScopeViewModel(
+                parsedScope,
+                apiScope,
+                Input is null || Input.ScopesConsented.Contains(parsedScope.RawValue)
+            );
+            scopeVm.Resources = apiResources
+                .Where(x => x.Scopes.Contains(parsedScope.ParsedName))
+                .Select(x => new ResourceViewModel
+                {
+                    Name = x.Name,
+                    DisplayName = x.DisplayName ?? x.Name,
+                })
                 .ToArray();
             apiScopes.Add(scopeVm);
         }
 
-        if (ConsentOptions.EnableOfflineAccess && request.ValidatedResources.Resources.OfflineAccess)
+        if (
+            ConsentOptions.EnableOfflineAccess && request.ValidatedResources.Resources.OfflineAccess
+        )
         {
-            apiScopes.Add(GetOfflineAccessScope(Input is null ||
-                                                Input.ScopesConsented.Contains(IdentityServerConstants.StandardScopes
-                                                    .OfflineAccess)));
+            apiScopes.Add(
+                GetOfflineAccessScope(
+                    Input is null
+                        || Input.ScopesConsented.Contains(
+                            IdentityServerConstants.StandardScopes.OfflineAccess
+                        )
+                )
+            );
         }
 
         vm.ApiScopes = apiScopes;
@@ -178,11 +226,15 @@ public sealed class Consent(
             Description = identity.Description,
             Emphasize = identity.Emphasize,
             Required = identity.Required,
-            Checked = check || identity.Required
+            Checked = check || identity.Required,
         };
     }
 
-    private static ScopeViewModel CreateScopeViewModel(ParsedScopeValue parsedScopeValue, ApiScope apiScope, bool check)
+    private static ScopeViewModel CreateScopeViewModel(
+        ParsedScopeValue parsedScopeValue,
+        ApiScope apiScope,
+        bool check
+    )
     {
         var displayName = apiScope.DisplayName ?? apiScope.Name;
         if (!string.IsNullOrWhiteSpace(parsedScopeValue.ParsedParameter))
@@ -198,7 +250,7 @@ public sealed class Consent(
             Description = apiScope.Description,
             Emphasize = apiScope.Emphasize,
             Required = apiScope.Required,
-            Checked = check || apiScope.Required
+            Checked = check || apiScope.Required,
         };
     }
 
@@ -210,7 +262,7 @@ public sealed class Consent(
             DisplayName = ConsentOptions.OfflineAccessDisplayName,
             Description = ConsentOptions.OfflineAccessDescription,
             Emphasize = true,
-            Checked = check
+            Checked = check,
         };
     }
 }

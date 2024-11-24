@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations: {}
+  labels:
+    app: notification-api
+  name: notification-api
+spec:
+  minReadySeconds: 60
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-api
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations: {}
+      labels:
+        app: notification-api
+    spec:
+      containers:
+      - args: []
+        envFrom:
+        - configMapRef:
+            name: notification-api
+        - secretRef:
+            name: notification-api
+        image: '{{ .Values.images.notificationapi }}'
+        imagePullPolicy: IfNotPresent
+        name: notification-api
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 8443
+          name: https
+        - containerPort: 8081
+          name: healthchecks
+      terminationGracePeriodSeconds: 180

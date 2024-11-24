@@ -7,8 +7,7 @@ internal sealed class DeleteAuthorValidator : AbstractValidator<DeleteAuthorComm
 {
     public DeleteAuthorValidator(AuthorValidator authorValidator)
     {
-        RuleFor(x => x.Id)
-            .SetValidator(authorValidator);
+        RuleFor(x => x.Id).SetValidator(authorValidator);
     }
 }
 
@@ -27,7 +26,10 @@ internal sealed class AuthorValidator : AbstractValidator<Guid>
 
     private async Task<bool> IsNotAuthorBook(Guid authorId, CancellationToken cancellationToken)
     {
-        var author = await _readRepository.FirstOrDefaultAsync(new BookAuthorFilterSpec(authorId), cancellationToken);
+        var author = await _readRepository.FirstOrDefaultAsync(
+            new BookAuthorFilterSpec(authorId),
+            cancellationToken
+        );
 
         return author is null;
     }

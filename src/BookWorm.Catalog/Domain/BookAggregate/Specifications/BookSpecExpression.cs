@@ -2,8 +2,11 @@
 
 public static class BookSpecExpression
 {
-    public static ISpecificationBuilder<Book> ApplyOrdering(this ISpecificationBuilder<Book> builder,
-        string? orderBy, bool isDescending)
+    public static ISpecificationBuilder<Book> ApplyOrdering(
+        this ISpecificationBuilder<Book> builder,
+        string? orderBy,
+        bool isDescending
+    )
     {
         return orderBy switch
         {
@@ -21,15 +24,16 @@ public static class BookSpecExpression
                 : builder.OrderBy(x => x.Status),
             _ => isDescending
                 ? builder.OrderByDescending(x => x.Name)
-                : builder.OrderBy(x => x.Name)
+                : builder.OrderBy(x => x.Name),
         };
     }
 
-    public static ISpecificationBuilder<Book> ApplyPaging(this ISpecificationBuilder<Book> builder,
-        int pageIndex, int pageSize)
+    public static ISpecificationBuilder<Book> ApplyPaging(
+        this ISpecificationBuilder<Book> builder,
+        int pageIndex,
+        int pageSize
+    )
     {
-        return builder
-            .Skip((pageIndex - 1) * pageSize)
-            .Take(pageSize);
+        return builder.Skip((pageIndex - 1) * pageSize).Take(pageSize);
     }
 }

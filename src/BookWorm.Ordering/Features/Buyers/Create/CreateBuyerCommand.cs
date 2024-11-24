@@ -5,10 +5,15 @@ namespace BookWorm.Ordering.Features.Buyers.Create;
 public sealed record CreateBuyerCommand(string? Street, string? City, string? Province)
     : ICommand<Result<Guid>>;
 
-public sealed class CreateBuyerHandler(IRepository<Buyer> repository, IIdentityService identityService)
-    : ICommandHandler<CreateBuyerCommand, Result<Guid>>
+public sealed class CreateBuyerHandler(
+    IRepository<Buyer> repository,
+    IIdentityService identityService
+) : ICommandHandler<CreateBuyerCommand, Result<Guid>>
 {
-    public async Task<Result<Guid>> Handle(CreateBuyerCommand request, CancellationToken cancellationToken)
+    public async Task<Result<Guid>> Handle(
+        CreateBuyerCommand request,
+        CancellationToken cancellationToken
+    )
     {
         var buyerId = identityService.GetUserIdentity();
 

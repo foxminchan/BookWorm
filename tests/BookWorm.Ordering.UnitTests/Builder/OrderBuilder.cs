@@ -14,7 +14,7 @@ public static class OrderBuilder
             new(Guid.NewGuid(), "Note 2"),
             new(Guid.NewGuid(), "Note 3"),
             new(Guid.NewGuid(), "Note 4"),
-            new(Guid.NewGuid(), "Note 5")
+            new(Guid.NewGuid(), "Note 5"),
         ];
 
         return _orders;

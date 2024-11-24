@@ -27,9 +27,7 @@ public static class TelemetryTags
     public static class Validator
     {
         public const string Validation = $"{ActivitySourceProvider.DefaultSourceName}.validator";
-        public const string ValidationResponse = $"{Validation}.response";
-        public const string ValidationResponseType = $"{Validation}.response.type";
-        public const string ValidationRequest = $"{Validation}.request";
-        public const string ValidationValidators = $"{Validation}.validators";
     }
+
+    public const string Stream = $"{ActivitySourceProvider.DefaultSourceName}.stream";
 }

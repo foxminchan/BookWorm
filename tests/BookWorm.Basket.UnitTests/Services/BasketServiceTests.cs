@@ -22,10 +22,11 @@ public sealed class BasketServiceTests
     public async Task GetBasket_ShouldReturnBasketResponse_WhenBasketExists()
     {
         // Arrange
-        var basket = new BasketDto(Guid.NewGuid(),
-        [
-            new(Guid.NewGuid(), "Dummy Book", 10, 15m, 12m)
-        ], 120m);
+        var basket = new BasketDto(
+            Guid.NewGuid(),
+            [new(Guid.NewGuid(), "Dummy Book", 10, 15m, 12m)],
+            120m
+        );
 
         _senderMock
             .Setup(x => x.Send(It.IsAny<GetBasketQuery>(), It.IsAny<CancellationToken>()))
@@ -67,8 +68,8 @@ public sealed class BasketServiceTests
         response
             .Should()
             .NotBeNull()
-            .And
-            .BeOfType<BasketResponse>()
-            .Which.Books.Should().BeEmpty();
+            .And.BeOfType<BasketResponse>()
+            .Which.Books.Should()
+            .BeEmpty();
     }
 }

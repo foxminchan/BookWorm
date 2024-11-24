@@ -18,7 +18,8 @@ public sealed class ListAuthorsHandlerTests
     {
         // Arrange
         var authors = AuthorBuilder.WithDefaultValues();
-        _authorRepositoryMock.Setup(x => x.ListAsync(It.IsAny<CancellationToken>()))
+        _authorRepositoryMock
+            .Setup(x => x.ListAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(authors);
 
         // Act

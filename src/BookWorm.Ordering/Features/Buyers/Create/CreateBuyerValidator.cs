@@ -4,16 +4,10 @@ internal sealed class CreateBuyerValidator : AbstractValidator<CreateBuyerComman
 {
     public CreateBuyerValidator()
     {
-        RuleFor(x => x.Street)
-            .NotEmpty()
-            .MaximumLength(DataSchemaLength.Medium);
+        RuleFor(x => x.Street).NotEmpty().MaximumLength(DataSchemaLength.Medium);
 
-        RuleFor(x => x.City)
-            .NotEmpty()
-            .MaximumLength(DataSchemaLength.Medium);
+        RuleFor(x => x.City).NotEmpty().MaximumLength(DataSchemaLength.Medium);
 
-        RuleFor(x => x.Province)
-            .NotEmpty()
-            .MaximumLength(DataSchemaLength.Medium);
+        RuleFor(x => x.Province).NotEmpty().MaximumLength(DataSchemaLength.Medium);
     }
 }

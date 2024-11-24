@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations: {}
+  labels:
+    app: gateway
+  name: gateway
+spec:
+  minReadySeconds: 60
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations: {}
+      labels:
+        app: gateway
+    spec:
+      containers:
+      - args: []
+        envFrom:
+        - configMapRef:
+            name: gateway
+        - secretRef:
+            name: gateway
+        image: '{{ .Values.images.gateway }}'
+        imagePullPolicy: IfNotPresent
+        name: gateway
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 8443
+          name: https
+        - containerPort: 8081
+          name: healthchecks
+      terminationGracePeriodSeconds: 180

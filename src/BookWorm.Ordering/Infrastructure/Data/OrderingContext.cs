@@ -17,7 +17,6 @@ public sealed class OrderingContext(DbContextOptions<OrderingContext> options, I
         modelBuilder.AddInboxStateEntity();
         modelBuilder.AddOutboxMessageEntity();
         modelBuilder.AddOutboxStateEntity();
-        modelBuilder.HasPostgresExtension(UniqueType.Extension);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(OrderingContext).Assembly);
     }
 

@@ -4,7 +4,6 @@ internal sealed class CreateOrderValidator : AbstractValidator<CreateOrderComman
 {
     public CreateOrderValidator()
     {
-        RuleFor(x => x.Note)
-            .MaximumLength(DataSchemaLength.SuperLarge);
+        RuleFor(x => x.Note).MaximumLength(DataSchemaLength.SuperLarge);
     }
 }

@@ -10,19 +10,23 @@ var launchProfileName = builder.Configuration["DOTNET_LAUNCH_PROFILE"] ?? "http"
 
 var postgres = builder
     .AddPostgres("postgres", postgresUser, postgresPassword, 5432)
-    .WithPgAdmin()
+    .WithPgWeb()
     .WithImage("ankane/pgvector")
     .WithImageTag("latest")
-    .WithDataBindMount("../../mnt/postgres");
+    .WithDataBindMount("../../mnt/postgres")
+    .WithLifetime(ContainerLifetime.Persistent);
 
 var mongodb = builder
     .AddMongoDB("mongodb", 27017)
     .WithMongoExpress()
-    .WithDataBindMount("../../mnt/mongodb");
+    .WithDataBindMount("../../mnt/mongodb")
+    .WithLifetime(ContainerLifetime.Persistent);
 
-var redis = builder.AddRedis(ServiceName.Redis, 6379)
-    .WithRedisCommander()
-    .WithDataBindMount("../../mnt/redis");
+var redis = builder
+    .AddRedis(ServiceName.Redis, 6379)
+    .WithRedisInsight()
+    .WithDataBindMount("../../mnt/redis")
+    .WithLifetime(ContainerLifetime.Persistent);
 
 var catalogDb = postgres.AddDatabase(ServiceName.Database.Catalog);
 var orderingDb = postgres.AddDatabase(ServiceName.Database.Ordering);
@@ -34,30 +38,28 @@ var storage = builder.AddAzureStorage("storage");
 
 if (builder.Environment.IsDevelopment())
 {
-    storage.RunAsEmulator(config => config
-        .WithImageTag("3.30.0")
-        .WithDataBindMount("../../mnt/azurite"));
+    storage.RunAsEmulator(config => config.WithDataBindMount("../../mnt/azurite"));
 }
 
 var blobs = storage.AddBlobs(ServiceName.Blob);
 
 var openAi = builder.AddConnectionString(ServiceName.OpenAi);
 
-var rabbitMq = builder
-    .AddRabbitMQ(ServiceName.EventBus)
-    .WithManagementPlugin();
+var rabbitMq = builder.AddRabbitMQ(ServiceName.EventBus).WithManagementPlugin();
 
 var smtpServer = builder.AddMailDev(ServiceName.Mail, 1080);
 
 // Services
-var identityApi = builder.AddProject<BookWorm_Identity>("identity-api")
+var identityApi = builder
+    .AddProject<BookWorm_Identity>("identity-api")
     .WithReference(identityDb)
     .WithReference(redis)
     .WithExternalHttpEndpoints();
 
 var identityEndpoint = identityApi.GetEndpoint(launchProfileName);
 
-var catalogApi = builder.AddProject<BookWorm_Catalog>("catalog-api")
+var catalogApi = builder
+    .AddProject<BookWorm_Catalog>("catalog-api")
     .WithReference(rabbitMq)
     .WithReference(catalogDb)
     .WithReference(redis)
@@ -70,7 +72,8 @@ var catalogApi = builder.AddProject<BookWorm_Catalog>("catalog-api")
     .WithEnvironment("Identity__Url", identityEndpoint)
     .WithEnvironment("AiOptions__OpenAi__EmbeddingName", "text-embedding-3-small");
 
-var orderingApi = builder.AddProject<BookWorm_Ordering>("ordering-api")
+var orderingApi = builder
+    .AddProject<BookWorm_Ordering>("ordering-api")
     .WithReference(redis)
     .WithReference(rabbitMq)
     .WithReference(orderingDb)
@@ -79,7 +82,8 @@ var orderingApi = builder.AddProject<BookWorm_Ordering>("ordering-api")
     .WaitFor(redis)
     .WithEnvironment("Identity__Url", identityEndpoint);
 
-var ratingApi = builder.AddProject<BookWorm_Rating>("rating-api")
+var ratingApi = builder
+    .AddProject<BookWorm_Rating>("rating-api")
     .WithReference(rabbitMq)
     .WithReference(ratingDb)
     .WithReference(redis)
@@ -88,14 +92,16 @@ var ratingApi = builder.AddProject<BookWorm_Rating>("rating-api")
     .WaitFor(redis)
     .WithEnvironment("Identity__Url", identityEndpoint);
 
-var basketApi = builder.AddProject<BookWorm_Basket>("basket-api")
+var basketApi = builder
+    .AddProject<BookWorm_Basket>("basket-api")
     .WithReference(redis)
     .WithReference(rabbitMq)
     .WaitFor(redis)
     .WaitFor(rabbitMq)
     .WithEnvironment("Identity__Url", identityEndpoint);
 
-var notificationApi = builder.AddProject<BookWorm_Notification>("notification-api")
+var notificationApi = builder
+    .AddProject<BookWorm_Notification>("notification-api")
     .WithReference(rabbitMq)
     .WithReference(notificationDb)
     .WithReference(smtpServer)
@@ -104,12 +110,11 @@ var notificationApi = builder.AddProject<BookWorm_Notification>("notification-ap
     .WaitFor(smtpServer)
     .WithEnvironment("Smtp__Email", fromEmail);
 
-var gateway = builder.AddProject<BookWorm_Gateway>("gateway")
-    .WithReference(redis)
-    .WaitFor(redis);
+var gateway = builder.AddProject<BookWorm_Gateway>("gateway").WithReference(redis).WaitFor(redis);
 
 // Health checks
-builder.AddHealthChecksUi("healthchecksui")
+builder
+    .AddHealthChecksUi("healthchecksui")
     .WithReference(gateway)
     .WithReference(identityApi)
     .WithReference(catalogApi)
@@ -128,6 +133,9 @@ identityApi
 
 gateway
     .WithEnvironment("BFF__Authority", identityEndpoint)
-    .WithEnvironment("BFF__Api__RemoteUrl", $"{catalogApi.GetEndpoint(launchProfileName)}/api/v1/authors");
+    .WithEnvironment(
+        "BFF__Api__RemoteUrl",
+        $"{catalogApi.GetEndpoint(launchProfileName)}/api/v1/authors"
+    );
 
 builder.Build().Run();

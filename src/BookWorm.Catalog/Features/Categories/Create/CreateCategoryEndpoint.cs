@@ -2,27 +2,39 @@
 
 namespace BookWorm.Catalog.Features.Categories.Create;
 
-public sealed record CreateCategoryRequest(string Name);
-
-public sealed class CreateCategoryEndpoint : IEndpoint<Created<Guid>, CreateCategoryRequest, ISender>
+public sealed class CreateCategoryEndpoint
+    : IEndpoint<Created<Guid>, CreateCategoryCommand, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("/categories",
-                async (CreateCategoryRequest request, ISender sender) => await HandleAsync(request, sender))
+        app.MapPost(
+                "/categories",
+                async (CreateCategoryCommand command, ISender sender) =>
+                    await HandleAsync(command, sender)
+            )
             .Produces<Created<Guid>>(StatusCodes.Status201Created)
-            .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesValidationProblem()
+            .WithOpenApi()
             .WithTags(nameof(Category))
-            .WithName("Create Category")
             .MapToApiVersion(new(1, 0));
     }
 
-    public async Task<Created<Guid>> HandleAsync(CreateCategoryRequest request, ISender sender,
-        CancellationToken cancellationToken = default)
+    public async Task<Created<Guid>> HandleAsync(
+        CreateCategoryCommand command,
+        ISender sender,
+        CancellationToken cancellationToken = default
+    )
     {
-        var result = await sender.Send(new CreateCategoryCommand(request.Name), cancellationToken);
+        var result = await sender.Send(command, cancellationToken);
 
-        return TypedResults.Created($"/api/v1/categories/{result.Value}", result.Value);
+        return TypedResults.Created(
+            new UrlBuilder()
+                .WithVersion()
+                .WithResource(nameof(Categories))
+                .WithId(result.Value)
+                .Build(),
+            result.Value
+        );
     }
 }

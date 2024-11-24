@@ -3,29 +3,43 @@
 public sealed class SmtpOutboxDecorator(
     ISmtpService smtpService,
     ILogger<SmtpOutboxDecorator> logger,
-    IDocumentSession session) : ISmtpService
+    IDocumentSession session
+) : ISmtpService
 {
-    public async Task SendEmailAsync(EmailMetadata emailMetadata, CancellationToken cancellationToken = default)
+    public async Task SendEmailAsync(
+        EmailMetadata emailMetadata,
+        CancellationToken cancellationToken = default
+    )
     {
-        using var emailActivity = new ActivitySource(SmtpTelemetry.ActivityName)
-            .StartActivity($"Sending email to {emailMetadata.To} with subject {emailMetadata.Subject}",
-                ActivityKind.Client);
+        using var emailActivity = new ActivitySource(SmtpTelemetry.ActivityName).StartActivity(
+            $"Sending email to {emailMetadata.To} with subject {emailMetadata.Subject}",
+            ActivityKind.Client
+        );
 
-        using var martenActivity = new ActivitySource(MartenTelemetry.ActivityName)
-            .StartActivity($"Storing email to {emailMetadata.To} with subject {emailMetadata.Subject}");
+        using var martenActivity = new ActivitySource(MartenTelemetry.ActivityName).StartActivity(
+            $"Storing email to {emailMetadata.To} with subject {emailMetadata.Subject}"
+        );
 
         emailActivity?.AddTag("mail.to", emailMetadata.To);
         emailActivity?.AddTag("mail.subject", emailMetadata.Subject);
 
         var emailOutbox = new EmailOutbox
         {
-            Body = emailMetadata.Body, Subject = emailMetadata.Subject, To = emailMetadata.To, IsSent = false
+            Body = emailMetadata.Body,
+            Subject = emailMetadata.Subject,
+            To = emailMetadata.To,
+            IsSent = false,
         };
 
         try
         {
             await StoreEmailOutboxAsync(emailOutbox, martenActivity, cancellationToken);
-            await SendEmailAndMarkAsSentAsync(emailMetadata, emailOutbox, emailActivity, cancellationToken);
+            await SendEmailAndMarkAsSentAsync(
+                emailMetadata,
+                emailOutbox,
+                emailActivity,
+                cancellationToken
+            );
         }
         catch (Exception)
         {
@@ -38,8 +52,11 @@ public sealed class SmtpOutboxDecorator(
         }
     }
 
-    private async Task StoreEmailOutboxAsync(EmailOutbox emailOutbox, Activity? martenActivity,
-        CancellationToken cancellationToken)
+    private async Task StoreEmailOutboxAsync(
+        EmailOutbox emailOutbox,
+        Activity? martenActivity,
+        CancellationToken cancellationToken
+    )
     {
         try
         {
@@ -55,8 +72,12 @@ public sealed class SmtpOutboxDecorator(
         }
     }
 
-    private async Task SendEmailAndMarkAsSentAsync(EmailMetadata emailMetadata, EmailOutbox emailOutbox,
-        Activity? emailActivity, CancellationToken cancellationToken)
+    private async Task SendEmailAndMarkAsSentAsync(
+        EmailMetadata emailMetadata,
+        EmailOutbox emailOutbox,
+        Activity? emailActivity,
+        CancellationToken cancellationToken
+    )
     {
         try
         {
@@ -72,8 +93,11 @@ public sealed class SmtpOutboxDecorator(
         }
     }
 
-    private async Task UpdateEmailOutboxAsync(EmailOutbox emailOutbox, Activity? martenActivity,
-        CancellationToken cancellationToken)
+    private async Task UpdateEmailOutboxAsync(
+        EmailOutbox emailOutbox,
+        Activity? martenActivity,
+        CancellationToken cancellationToken
+    )
     {
         try
         {
@@ -87,7 +111,11 @@ public sealed class SmtpOutboxDecorator(
                 TagException(ex, martenActivity);
             }
 
-            logger.LogError(ex, "[{Event}] - Failed to update email outbox", nameof(SmtpOutboxDecorator));
+            logger.LogError(
+                ex,
+                "[{Event}] - Failed to update email outbox",
+                nameof(SmtpOutboxDecorator)
+            );
         }
     }
 

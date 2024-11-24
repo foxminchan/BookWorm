@@ -4,8 +4,6 @@ internal sealed class CreatePublisherValidator : AbstractValidator<CreatePublish
 {
     public CreatePublisherValidator()
     {
-        RuleFor(x => x.Name)
-            .NotEmpty()
-            .MaximumLength(DataSchemaLength.Large);
+        RuleFor(x => x.Name).NotEmpty().MaximumLength(DataSchemaLength.Large);
     }
 }

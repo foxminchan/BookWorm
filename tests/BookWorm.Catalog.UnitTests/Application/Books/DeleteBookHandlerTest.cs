@@ -23,9 +23,8 @@ public sealed class DeleteBookHandlerTest
         var id = book.Id;
         var command = new DeleteBookCommand(id);
 
-        _bookRepositoryMock.Setup(x => x.GetByIdAsync(
-                It.IsAny<Guid>(),
-                It.IsAny<CancellationToken>()))
+        _bookRepositoryMock
+            .Setup(x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(book);
 
         // Act
@@ -35,10 +34,12 @@ public sealed class DeleteBookHandlerTest
         result.IsSuccess.Should().BeTrue();
         _bookRepositoryMock.Verify(
             x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
-            Times.Once);
+            Times.Once
+        );
         _bookRepositoryMock.Verify(
             x => x.SaveChangesAsync(It.IsAny<CancellationToken>()),
-            Times.Once);
+            Times.Once
+        );
     }
 
     [Fact]
@@ -47,9 +48,8 @@ public sealed class DeleteBookHandlerTest
         // Arrange
         var id = Guid.NewGuid();
 
-        _bookRepositoryMock.Setup(x => x.GetByIdAsync(
-                It.IsAny<Guid>(),
-                It.IsAny<CancellationToken>()))
+        _bookRepositoryMock
+            .Setup(x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Book?)null);
 
         var command = new DeleteBookCommand(id);
@@ -61,9 +61,11 @@ public sealed class DeleteBookHandlerTest
         await act.Should().ThrowAsync<NotFoundException>();
         _bookRepositoryMock.Verify(
             x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
-            Times.Once);
+            Times.Once
+        );
         _bookRepositoryMock.Verify(
             x => x.SaveChangesAsync(It.IsAny<CancellationToken>()),
-            Times.Never);
+            Times.Never
+        );
     }
 }
