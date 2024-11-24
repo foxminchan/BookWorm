@@ -5,9 +5,7 @@ namespace BookWorm.Identity.Pages.Home.Error;
 
 public sealed class ViewModel
 {
-    public ViewModel()
-    {
-    }
+    public ViewModel() { }
 
     public ViewModel(string error)
     {

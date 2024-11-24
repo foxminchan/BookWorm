@@ -1,28 +1,33 @@
 ﻿namespace BookWorm.Basket.Features.Create;
 
-public sealed record CreateBasketRequest(Guid BookId, int Quantity);
-
-public sealed class CreateBasketEndpoint : IEndpoint<Created<Guid>, CreateBasketRequest, ISender>
+public sealed class CreateBasketEndpoint : IEndpoint<Created<Guid>, CreateBasketCommand, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("/baskets",
-                async (CreateBasketRequest request, ISender sender) => await HandleAsync(request, sender))
+        app.MapPost(
+                "/baskets",
+                async (CreateBasketCommand command, ISender sender) =>
+                    await HandleAsync(command, sender)
+            )
             .Produces<Created<Guid>>(StatusCodes.Status201Created)
             .ProducesValidationProblem()
+            .WithOpenApi()
             .WithTags(nameof(Basket))
-            .WithName("Create Basket")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization();
     }
 
-    public async Task<Created<Guid>> HandleAsync(CreateBasketRequest request, ISender sender,
-        CancellationToken cancellationToken = default)
+    public async Task<Created<Guid>> HandleAsync(
+        CreateBasketCommand command,
+        ISender sender,
+        CancellationToken cancellationToken = default
+    )
     {
-        CreateBasketCommand command = new(request.BookId, request.Quantity);
-
         var result = await sender.Send(command, cancellationToken);
 
-        return TypedResults.Created($"/api/v1/baskets/{result.Value}", result.Value);
+        return TypedResults.Created(
+            new UrlBuilder().WithVersion().WithResource("Baskets").WithId(result.Value).Build(),
+            result.Value
+        );
     }
 }

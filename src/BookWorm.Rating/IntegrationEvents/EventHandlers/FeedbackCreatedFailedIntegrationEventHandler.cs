@@ -4,14 +4,18 @@ namespace BookWorm.Rating.IntegrationEvents.EventHandlers;
 
 internal sealed class FeedbackCreatedFailedIntegrationEventHandler(
     IRatingRepository repository,
-    ILogger<FeedbackCreatedFailedIntegrationEventHandler> logger) : IConsumer<FeedbackCreatedFailedIntegrationEvent>
+    ILogger<FeedbackCreatedFailedIntegrationEventHandler> logger
+) : IConsumer<FeedbackCreatedFailedIntegrationEvent>
 {
     public async Task Consume(ConsumeContext<FeedbackCreatedFailedIntegrationEvent> context)
     {
         var @event = context.Message;
 
-        logger.LogInformation("[{Consumer}] - Rollback feedback with Id: {FeedbackId}",
-            nameof(FeedbackCreatedFailedIntegrationEventHandler), @event.FeedbackId);
+        logger.LogInformation(
+            "[{Consumer}] - Rollback feedback with Id: {FeedbackId}",
+            nameof(FeedbackCreatedFailedIntegrationEventHandler),
+            @event.FeedbackId
+        );
 
         var id = ObjectId.Parse(@event.FeedbackId);
 

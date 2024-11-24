@@ -28,13 +28,13 @@ internal static class Extensions
         builder.AddDefaultAuthentication();
         builder.Services.AddMediatR(cfg =>
         {
-            cfg.RegisterServicesFromAssemblyContaining<global::Program>();
+            cfg.RegisterServicesFromAssemblyContaining<Program>();
             cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
             cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
             cfg.AddOpenBehavior(typeof(MetricsBehavior<,>));
         });
 
-        builder.Services.AddValidatorsFromAssemblyContaining<global::Program>(includeInternalTypes: true);
+        builder.Services.AddValidatorsFromAssemblyContaining<Program>(includeInternalTypes: true);
 
         builder.Services.AddSingleton<IActivityScope, ActivityScope>();
         builder.Services.AddSingleton<CommandHandlerMetrics>();
@@ -42,13 +42,16 @@ internal static class Extensions
 
         builder.Services.AddHttpContextAccessor();
 
-        builder.AddRabbitMqEventBus(typeof(global::Program), cfg =>
-        {
-            cfg.AddInMemoryInboxOutbox();
-        });
+        builder.AddRabbitMqEventBus(
+            typeof(Program),
+            cfg =>
+            {
+                cfg.AddInMemoryInboxOutbox();
+            }
+        );
 
         builder.AddVersioning();
-        builder.AddEndpoints(typeof(global::Program));
+        builder.AddEndpoints(typeof(Program));
 
         builder.AddOpenApi();
     }

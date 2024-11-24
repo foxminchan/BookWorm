@@ -1,18 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
-  </ItemGroup>
+  <PropertyGroup>
+    <SuppressCheckGrpcNetClientFactoryVersion>true</SuppressCheckGrpcNetClientFactoryVersion>
+  </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Aspire.StackExchange.Redis" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
     <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Marten.AspNetCore" />
-    <PackageReference Include="EFCore.NamingConventions" />
     <PackageReference Include="EntityFrameworkCore.Exceptions.PostgreSQL" />
     <PackageReference Include="MassTransit.EntityFrameworkCore" />
   </ItemGroup>

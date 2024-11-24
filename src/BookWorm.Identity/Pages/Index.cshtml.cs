@@ -12,10 +12,10 @@ namespace BookWorm.Identity.Pages;
 public class Index(IdentityServerLicense? license = null) : PageModel
 {
     public string Version =>
-        typeof(IdentityServerMiddleware).Assembly
-            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
-            ?.InformationalVersion.Split('+').First()
-        ?? "unavailable";
+        typeof(IdentityServerMiddleware)
+            .Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+            ?.InformationalVersion.Split('+')
+            .First() ?? "unavailable";
 
     public IdentityServerLicense? License { get; } = license;
 }

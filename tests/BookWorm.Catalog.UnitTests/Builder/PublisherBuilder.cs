@@ -12,7 +12,7 @@ public static class PublisherBuilder
             new("Manning"),
             new("O'Reilly"),
             new("Pragmatic Bookshelf"),
-            new("Packt")
+            new("Packt"),
         ];
 
         return _publishers;

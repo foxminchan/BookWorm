@@ -16,7 +16,11 @@ public sealed class GetBasketHandlerTests
         _redisServiceMock = new();
         _identityServiceMock = new();
         _bookServiceMock = new();
-        _handler = new(_redisServiceMock.Object, _identityServiceMock.Object, _bookServiceMock.Object);
+        _handler = new(
+            _redisServiceMock.Object,
+            _identityServiceMock.Object,
+            _bookServiceMock.Object
+        );
     }
 
     [Fact]
@@ -27,13 +31,18 @@ public sealed class GetBasketHandlerTests
         var basketItems = new List<BasketItem> { new(Guid.NewGuid(), 2) };
         var basket = new BasketModel(Guid.Parse(customerId), basketItems);
         var book = new BookItem(basketItems.First().Id, "Test Book", 10.0m, 8.0m);
-        var basketDto = new BasketDto(basket.AccountId,
-            [new(book.Id, book.Name, basketItems.First().Quantity, book.Price, book.PriceSale)], 16.0m);
+        var basketDto = new BasketDto(
+            basket.AccountId,
+            [new(book.Id, book.Name, basketItems.First().Quantity, book.Price, book.PriceSale)],
+            16.0m
+        );
 
         _identityServiceMock.Setup(x => x.GetUserIdentity()).Returns(customerId);
-        _redisServiceMock.Setup(x => x.HashGetAsync<BasketModel?>(nameof(Basket), customerId))
+        _redisServiceMock
+            .Setup(x => x.HashGetAsync<BasketModel?>(nameof(Basket), customerId))
             .ReturnsAsync(basket);
-        _bookServiceMock.Setup(x => x.GetBookAsync(basketItems.First().Id, It.IsAny<CancellationToken>()))
+        _bookServiceMock
+            .Setup(x => x.GetBookAsync(basketItems.First().Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(book);
 
         // Act
@@ -50,7 +59,8 @@ public sealed class GetBasketHandlerTests
         var customerId = Guid.NewGuid().ToString();
 
         _identityServiceMock.Setup(x => x.GetUserIdentity()).Returns(customerId);
-        _redisServiceMock.Setup(x => x.HashGetAsync<BasketModel?>(nameof(Basket), customerId))
+        _redisServiceMock
+            .Setup(x => x.HashGetAsync<BasketModel?>(nameof(Basket), customerId))
             .ReturnsAsync((BasketModel?)null);
 
         // Act
@@ -82,9 +92,11 @@ public sealed class GetBasketHandlerTests
         var basket = new BasketModel(Guid.Parse(customerId), basketItems);
 
         _identityServiceMock.Setup(x => x.GetUserIdentity()).Returns(customerId);
-        _redisServiceMock.Setup(x => x.HashGetAsync<BasketModel?>(nameof(Basket), customerId))
+        _redisServiceMock
+            .Setup(x => x.HashGetAsync<BasketModel?>(nameof(Basket), customerId))
             .ReturnsAsync(basket);
-        _bookServiceMock.Setup(x => x.GetBookAsync(basketItems.First().Id, It.IsAny<CancellationToken>()))
+        _bookServiceMock
+            .Setup(x => x.GetBookAsync(basketItems.First().Id, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new("Book service error"));
 
         // Act
@@ -103,7 +115,8 @@ public sealed class GetBasketHandlerTests
         var basketDto = new BasketDto(basket.AccountId, [], 0.0m);
 
         _identityServiceMock.Setup(x => x.GetUserIdentity()).Returns(customerId);
-        _redisServiceMock.Setup(x => x.HashGetAsync<BasketModel?>(nameof(Basket), customerId))
+        _redisServiceMock
+            .Setup(x => x.HashGetAsync<BasketModel?>(nameof(Basket), customerId))
             .ReturnsAsync(basket);
 
         // Act

@@ -7,17 +7,12 @@ internal abstract class BaseConfiguration<TEntity> : IEntityTypeConfiguration<TE
     {
         builder.HasKey(e => e.Id);
 
-        builder.Property(e => e.Id)
-            .HasDefaultValueSql(UniqueType.Algorithm)
-            .ValueGeneratedOnAdd();
+        builder.Property(e => e.Id).ValueGeneratedOnAdd();
 
-        builder.Property(e => e.CreatedDate)
-            .HasDefaultValue(DateTime.UtcNow);
+        builder.Property(e => e.CreatedDate).HasDefaultValue(DateTime.UtcNow);
 
-        builder.Property(e => e.UpdateDate)
-            .HasDefaultValue(DateTime.UtcNow);
+        builder.Property(e => e.UpdateDate).HasDefaultValue(DateTime.UtcNow);
 
-        builder.Property(e => e.Version)
-            .IsConcurrencyToken();
+        builder.Property(e => e.Version).IsConcurrencyToken();
     }
 }

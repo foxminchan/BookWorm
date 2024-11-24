@@ -22,7 +22,8 @@ public sealed class GetBuyerHandlerTests
         var buyer = BuyerBuilder.WithDefaultValues()[0];
         var buyerId = buyer.Id;
 
-        _repositoryMock.Setup(x => x.GetByIdAsync(buyerId, It.IsAny<CancellationToken>()))
+        _repositoryMock
+            .Setup(x => x.GetByIdAsync(buyerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(buyer);
         _identityServiceMock.Setup(x => x.IsAdminRole()).Returns(false);
         _identityServiceMock.Setup(x => x.GetUserIdentity()).Returns(buyerId.ToString());
@@ -32,7 +33,10 @@ public sealed class GetBuyerHandlerTests
 
         // Assert
         result.Value.Should().Be(buyer);
-        _repositoryMock.Verify(x => x.GetByIdAsync(buyerId, It.IsAny<CancellationToken>()), Times.Once);
+        _repositoryMock.Verify(
+            x => x.GetByIdAsync(buyerId, It.IsAny<CancellationToken>()),
+            Times.Once
+        );
         _identityServiceMock.Verify(x => x.IsAdminRole(), Times.Once);
         _identityServiceMock.Verify(x => x.GetUserIdentity(), Times.Once);
     }
@@ -44,7 +48,8 @@ public sealed class GetBuyerHandlerTests
         var buyer = BuyerBuilder.WithDefaultValues()[0];
         var buyerId = buyer.Id;
 
-        _repositoryMock.Setup(x => x.GetByIdAsync(buyerId, It.IsAny<CancellationToken>()))
+        _repositoryMock
+            .Setup(x => x.GetByIdAsync(buyerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(buyer);
         _identityServiceMock.Setup(x => x.IsAdminRole()).Returns(true);
 
@@ -53,7 +58,10 @@ public sealed class GetBuyerHandlerTests
 
         // Assert
         result.Value.Should().Be(buyer);
-        _repositoryMock.Verify(x => x.GetByIdAsync(buyerId, It.IsAny<CancellationToken>()), Times.Once);
+        _repositoryMock.Verify(
+            x => x.GetByIdAsync(buyerId, It.IsAny<CancellationToken>()),
+            Times.Once
+        );
         _identityServiceMock.Verify(x => x.IsAdminRole(), Times.Once);
         _identityServiceMock.Verify(x => x.GetUserIdentity(), Times.Never);
     }
@@ -64,7 +72,8 @@ public sealed class GetBuyerHandlerTests
         // Arrange
         var buyerId = Guid.NewGuid();
 
-        _repositoryMock.Setup(x => x.GetByIdAsync(buyerId, It.IsAny<CancellationToken>()))
+        _repositoryMock
+            .Setup(x => x.GetByIdAsync(buyerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Buyer?)null);
         _identityServiceMock.Setup(x => x.IsAdminRole()).Returns(false);
         _identityServiceMock.Setup(x => x.GetUserIdentity()).Returns(buyerId.ToString());
@@ -74,7 +83,10 @@ public sealed class GetBuyerHandlerTests
 
         // Assert
         result.Value.Should().BeNull();
-        _repositoryMock.Verify(x => x.GetByIdAsync(buyerId, It.IsAny<CancellationToken>()), Times.Once);
+        _repositoryMock.Verify(
+            x => x.GetByIdAsync(buyerId, It.IsAny<CancellationToken>()),
+            Times.Once
+        );
         _identityServiceMock.Verify(x => x.IsAdminRole(), Times.Once);
         _identityServiceMock.Verify(x => x.GetUserIdentity(), Times.Once);
     }
@@ -85,7 +97,8 @@ public sealed class GetBuyerHandlerTests
         // Arrange
         var buyerId = Guid.NewGuid();
 
-        _repositoryMock.Setup(x => x.GetByIdAsync(buyerId, It.IsAny<CancellationToken>()))
+        _repositoryMock
+            .Setup(x => x.GetByIdAsync(buyerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Buyer?)null);
         _identityServiceMock.Setup(x => x.IsAdminRole()).Returns(true);
 
@@ -94,7 +107,10 @@ public sealed class GetBuyerHandlerTests
 
         // Assert
         result.Value.Should().BeNull();
-        _repositoryMock.Verify(x => x.GetByIdAsync(buyerId, It.IsAny<CancellationToken>()), Times.Once);
+        _repositoryMock.Verify(
+            x => x.GetByIdAsync(buyerId, It.IsAny<CancellationToken>()),
+            Times.Once
+        );
         _identityServiceMock.Verify(x => x.IsAdminRole(), Times.Once);
         _identityServiceMock.Verify(x => x.GetUserIdentity(), Times.Never);
     }
@@ -113,7 +129,10 @@ public sealed class GetBuyerHandlerTests
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>();
-        _repositoryMock.Verify(x => x.GetByIdAsync(buyerId, It.IsAny<CancellationToken>()), Times.Never);
+        _repositoryMock.Verify(
+            x => x.GetByIdAsync(buyerId, It.IsAny<CancellationToken>()),
+            Times.Never
+        );
         _identityServiceMock.Verify(x => x.IsAdminRole(), Times.Once);
         _identityServiceMock.Verify(x => x.GetUserIdentity(), Times.Once);
     }

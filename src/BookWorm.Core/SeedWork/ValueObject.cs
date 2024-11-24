@@ -38,7 +38,10 @@ public abstract class ValueObject : IEquatable<ValueObject>
     public override int GetHashCode()
     {
         return GetEqualityComponents()
-            .Aggregate(default(int), (hashcode, value) => HashCode.Combine(hashcode, value.GetHashCode()));
+            .Aggregate(
+                default(int),
+                (hashcode, value) => HashCode.Combine(hashcode, value.GetHashCode())
+            );
     }
 
     private bool ValuesAreEqual(ValueObject valueObject)

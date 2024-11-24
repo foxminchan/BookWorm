@@ -6,15 +6,17 @@ public sealed class ListAuthorsEndpoint : IEndpoint<Ok<List<AuthorDto>>, ISender
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapGet("/authors",
-                async (ISender sender) => await HandleAsync(sender))
+        app.MapGet("/authors", async (ISender sender) => await HandleAsync(sender))
             .Produces<Ok<List<AuthorDto>>>()
+            .WithOpenApi()
             .WithTags(nameof(Author))
-            .WithName("List Authors")
             .MapToApiVersion(new(1, 0));
     }
 
-    public async Task<Ok<List<AuthorDto>>> HandleAsync(ISender sender, CancellationToken cancellationToken = default)
+    public async Task<Ok<List<AuthorDto>>> HandleAsync(
+        ISender sender,
+        CancellationToken cancellationToken = default
+    )
     {
         var result = await sender.Send(new ListAuthorsQuery(), cancellationToken);
 

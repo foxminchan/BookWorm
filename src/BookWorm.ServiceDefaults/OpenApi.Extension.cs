@@ -1,4 +1,4 @@
-﻿using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
+﻿using Scalar.AspNetCore;
 
 namespace BookWorm.ServiceDefaults;
 
@@ -6,78 +6,70 @@ public static class OpenApiExtension
 {
     public static IHostApplicationBuilder AddOpenApi(this IHostApplicationBuilder builder)
     {
-        builder.Services.AddEndpointsApiExplorer();
+        var openApi = builder.Configuration.GetSection(nameof(OpenApi)).Get<OpenApi>();
+        var identitySection = builder.Configuration.GetSection(nameof(Identity));
 
-        builder.Services
-            .AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerGenOptions>()
-            .AddFluentValidationRulesToSwagger()
-            .AddSwaggerGen(options => options.OperationFilter<OpenApiDefaultValues>());
+        var scopes = identitySection.Exists()
+            ? identitySection
+                .GetRequiredSection("Scopes")
+                .GetChildren()
+                .ToDictionary(p => p.Key, p => p.Value)
+            : [];
+
+        if (openApi is null)
+        {
+            return builder;
+        }
+
+        string[] versions = ["v1"];
+        foreach (var description in versions)
+        {
+            builder.Services.AddOpenApi(
+                description,
+                options =>
+                {
+                    options.ApplyApiVersionInfo(
+                        openApi.Document.Title,
+                        openApi.Document.Description
+                    );
+                    options.ApplyAuthorizationChecks([.. scopes.Keys]);
+                    options.ApplySecuritySchemeDefinitions();
+                    options.ApplyOperationDeprecatedStatus();
+                    options.ApplyApiVersionDescription();
+                    options.ApplySchemaNullableFalse();
+                    options.AddDocumentTransformer(
+                        (document, context, cancellationToken) =>
+                        {
+                            document.Servers = [];
+                            return Task.CompletedTask;
+                        }
+                    );
+                }
+            );
+        }
 
         return builder;
     }
 
-    public static WebApplication UseOpenApi(this WebApplication app)
+    public static IApplicationBuilder UseOpenApi(this WebApplication app)
     {
-        app.UseSwagger(c => c.PreSerializeFilters.Add((swagger, httpReq) =>
+        var configuration = app.Configuration;
+        var openApiSection = configuration.GetSection(nameof(OpenApi)).Get<OpenApi>();
+
+        if (openApiSection is null)
         {
-            ArgumentNullException.ThrowIfNull(httpReq);
+            return app;
+        }
 
-            swagger.Servers =
-            [
-                new()
-                {
-                    Url = $"{httpReq.Scheme}://{httpReq.Host.Value}",
-                    Description = string.Join(
-                        " ",
-                        Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? Environments.Production,
-                        nameof(Environment)
-                    )
-                }
-            ];
-        }));
-
-        app.UseReDoc(options =>
-        {
-            app.DescribeApiVersions()
-                .Select(desc => $"/swagger/{desc.GroupName}/swagger.json")
-                .ToList()
-                .ForEach(spec => options.SpecUrl(spec));
-
-            options.EnableUntrustedSpec();
-        });
+        app.MapOpenApi();
 
         if (app.Environment.IsDevelopment())
         {
-            app.UseSwaggerUI(options =>
+            app.MapScalarApiReference(options =>
             {
-                app.DescribeApiVersions()
-                    .Select(desc => new
-                    {
-                        url = $"/swagger/{desc.GroupName}/swagger.json", name = desc.GroupName.ToUpperInvariant()
-                    })
-                    .ToList()
-                    .ForEach(endpoint => options.SwaggerEndpoint(endpoint.url, endpoint.name));
-
-                var auth = app.Configuration.GetSection(nameof(OpenApi)).Get<OpenApi>()?.Auth;
-
-                if (auth is null)
-                {
-                    return;
-                }
-
-                options.DocumentTitle = auth.AppName;
-                options.OAuthClientId(auth.ClientId);
-                options.OAuthClientSecret(auth.ClientSecret);
-                options.OAuthAppName(auth.AppName);
-                options.OAuthUsePkce();
-                options.EnableValidator();
+                options.DefaultFonts = false;
             });
-
-            app.MapGet("/", () => Results.Redirect("/swagger")).ExcludeFromDescription();
-        }
-        else
-        {
-            app.MapGet("/", () => Results.Redirect("/api-docs")).ExcludeFromDescription();
+            app.MapGet("/", () => Results.Redirect("/scalar/v1")).ExcludeFromDescription();
         }
 
         return app;

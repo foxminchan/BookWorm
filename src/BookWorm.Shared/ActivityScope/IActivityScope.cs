@@ -9,11 +9,7 @@ public interface IActivityScope
 
     Activity? Start(string name, StartActivityOptions options);
 
-    Task Run(
-        string name,
-        Func<Activity?, CancellationToken, Task> run,
-        CancellationToken ct
-    )
+    Task Run(string name, Func<Activity?, CancellationToken, Task> run, CancellationToken ct)
     {
         return Run(name, run, new(), ct);
     }

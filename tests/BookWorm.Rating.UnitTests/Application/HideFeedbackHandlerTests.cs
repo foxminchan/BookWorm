@@ -20,10 +20,19 @@ public sealed class HideFeedbackHandlerTests
         var feedbackId = ObjectId.GenerateNewId();
         var feedback = new Feedback(Guid.NewGuid(), 5, "Great!", Guid.NewGuid());
 
-        _repositoryMock.Setup(x => x.GetAsync(It.IsAny<FilterDefinition<Feedback>>(), It.IsAny<CancellationToken>()))
+        _repositoryMock
+            .Setup(x =>
+                x.GetAsync(It.IsAny<FilterDefinition<Feedback>>(), It.IsAny<CancellationToken>())
+            )
             .ReturnsAsync(feedback);
-        _repositoryMock.Setup(x =>
-                x.UpdateAsync(It.IsAny<FilterDefinition<Feedback>>(), feedback, It.IsAny<CancellationToken>()))
+        _repositoryMock
+            .Setup(x =>
+                x.UpdateAsync(
+                    It.IsAny<FilterDefinition<Feedback>>(),
+                    feedback,
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .Returns(Task.CompletedTask);
 
         var command = new HideFeedbackCommand(feedbackId);
@@ -35,8 +44,14 @@ public sealed class HideFeedbackHandlerTests
         result.IsSuccess.Should().BeTrue();
         feedback.IsHidden.Should().BeTrue();
         _repositoryMock.Verify(
-            x => x.UpdateAsync(It.IsAny<FilterDefinition<Feedback>>(), feedback, It.IsAny<CancellationToken>()),
-            Times.Once);
+            x =>
+                x.UpdateAsync(
+                    It.IsAny<FilterDefinition<Feedback>>(),
+                    feedback,
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -45,7 +60,10 @@ public sealed class HideFeedbackHandlerTests
         // Arrange
         var feedbackId = ObjectId.GenerateNewId();
 
-        _repositoryMock.Setup(x => x.GetAsync(It.IsAny<FilterDefinition<Feedback>>(), It.IsAny<CancellationToken>()))
+        _repositoryMock
+            .Setup(x =>
+                x.GetAsync(It.IsAny<FilterDefinition<Feedback>>(), It.IsAny<CancellationToken>())
+            )
             .ReturnsAsync((Feedback?)null);
 
         var command = new HideFeedbackCommand(feedbackId);
@@ -56,8 +74,14 @@ public sealed class HideFeedbackHandlerTests
         // Assert
         await act.Should().ThrowAsync<NotFoundException>();
         _repositoryMock.Verify(
-            x => x.UpdateAsync(It.IsAny<FilterDefinition<Feedback>>(), It.IsAny<Feedback>(),
-                It.IsAny<CancellationToken>()), Times.Never);
+            x =>
+                x.UpdateAsync(
+                    It.IsAny<FilterDefinition<Feedback>>(),
+                    It.IsAny<Feedback>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Never
+        );
     }
 
     [Fact]
@@ -67,7 +91,10 @@ public sealed class HideFeedbackHandlerTests
         var feedbackId = ObjectId.GenerateNewId();
         var feedback = new Feedback(Guid.NewGuid(), 5, "Great!", Guid.NewGuid());
 
-        _repositoryMock.Setup(x => x.GetAsync(It.IsAny<FilterDefinition<Feedback>>(), It.IsAny<CancellationToken>()))
+        _repositoryMock
+            .Setup(x =>
+                x.GetAsync(It.IsAny<FilterDefinition<Feedback>>(), It.IsAny<CancellationToken>())
+            )
             .ReturnsAsync(feedback);
 
         var command = new HideFeedbackCommand(feedbackId);
@@ -79,7 +106,13 @@ public sealed class HideFeedbackHandlerTests
         result.IsSuccess.Should().BeTrue();
         feedback.IsHidden.Should().BeTrue();
         _repositoryMock.Verify(
-            x => x.UpdateAsync(It.IsAny<FilterDefinition<Feedback>>(), feedback, It.IsAny<CancellationToken>()),
-            Times.Once);
+            x =>
+                x.UpdateAsync(
+                    It.IsAny<FilterDefinition<Feedback>>(),
+                    feedback,
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
     }
 }

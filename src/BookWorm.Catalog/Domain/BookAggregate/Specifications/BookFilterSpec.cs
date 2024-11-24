@@ -11,7 +11,8 @@ public sealed class BookFilterSpec : Specification<Book>
         Guid[]? categoryId,
         Guid[]? publisherId,
         Guid[]? authorIds,
-        Vector? vector)
+        Vector? vector
+    )
     {
         Query.Where(x => !x.IsDeleted);
 

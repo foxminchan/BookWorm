@@ -1,5 +1,8 @@
-﻿using GrpcBookClient = BookWorm.Catalog.Grpc.Book.BookClient;
+﻿using BookWorm.Ordering.Infrastructure.Marten;
+using Microsoft.Extensions.Options;
+using static Microsoft.IO.RecyclableMemoryStreamManager;
 using GrpcBasketClient = BookWorm.Basket.Grpc.Basket.BasketClient;
+using GrpcBookClient = BookWorm.Catalog.Grpc.Book.BookClient;
 
 namespace BookWorm.Ordering.Extensions;
 
@@ -10,7 +13,8 @@ internal static class Extensions
         builder.AddServiceDefaults();
 
         builder.Services.Configure<JsonOptions>(options =>
-            options.SerializerOptions.Converters.Add(new StringTrimmerJsonConverter()));
+            options.SerializerOptions.Converters.Add(new StringTrimmerJsonConverter())
+        );
 
         builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
         builder.Services.AddExceptionHandler<NotFoundExceptionHandler>();
@@ -22,58 +26,55 @@ internal static class Extensions
         builder.AddDefaultAuthentication();
         builder.Services.AddMediatR(cfg =>
         {
-            cfg.RegisterServicesFromAssemblyContaining<global::Program>();
+            cfg.RegisterServicesFromAssemblyContaining<Program>();
             cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
             cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
             cfg.AddOpenBehavior(typeof(MetricsBehavior<,>));
         });
 
-        builder.Services.AddValidatorsFromAssemblyContaining<global::Program>(includeInternalTypes: true);
+        builder.Services.AddValidatorsFromAssemblyContaining<Program>(includeInternalTypes: true);
 
-        builder.AddRabbitMqEventBus(typeof(global::Program), cfg =>
-        {
-            cfg.AddEntityFrameworkOutbox<OrderingContext>(o =>
+        builder.AddRabbitMqEventBus(
+            typeof(Program),
+            cfg =>
             {
-                o.QueryDelay = TimeSpan.FromSeconds(1);
+                cfg.AddEntityFrameworkOutbox<OrderingContext>(o =>
+                {
+                    o.QueryDelay = TimeSpan.FromSeconds(1);
 
-                o.UsePostgres();
+                    o.UsePostgres();
 
-                o.UseBusOutbox();
-            });
-        });
+                    o.UseBusOutbox();
+                });
+            }
+        );
 
-        builder.Services.AddMarten(_ =>
+        var martenConfig = builder.Configuration.Get<MartenConfigs>() ?? new MartenConfigs();
+
+        builder.Services.AddNpgsqlDataSource(ServiceName.Database.Ordering);
+
+        builder
+            .Services.AddMarten(_ => 
             {
-                var options = new StoreOptions();
-
-                var schemaName = Environment.GetEnvironmentVariable("SchemaName") ?? "order_state";
-                options.Events.DatabaseSchemaName = schemaName;
-                options.DatabaseSchemaName = schemaName;
-
-                var conn = builder.Configuration.GetConnectionString(ServiceName.Database.Ordering);
-
-                Guard.Against.NullOrEmpty(conn);
-
-                options.Connection(conn);
-
-                options.UseSystemTextJsonForSerialization(EnumStorage.AsString);
-
-                options.Projections.Errors.SkipApplyErrors = false;
-                options.Projections.Errors.SkipSerializationErrors = false;
-                options.Projections.Errors.SkipUnknownEvents = false;
-
+                var options = StoreConfigs.SetStoreOptions(martenConfig);
                 options.Projections.LiveStreamAggregation<OrderState>();
                 options.Projections.Add<OrderProjection>(ProjectionLifecycle.Async);
 
-                return options;
             })
-            .OptimizeArtifactWorkflow(TypeLoadMode.Static)
+            .UseNpgsqlDataSource()
             .UseLightweightSessions()
-            .AddAsyncDaemon(DaemonMode.Solo);
+            .ApplyAllDatabaseChangesOnStartup()
+            .OptimizeArtifactWorkflow(TypeLoadMode.Static)
+            .AddAsyncDaemon(martenConfig.DaemonMode);
 
-        builder.Services.AddOpenTelemetry()
-            .WithMetrics(t => t.AddMeter(MartenTelemetry.ActivityName))
-            .WithTracing(t => t.AddSource(MartenTelemetry.ActivityName));
+        builder
+            .Services.AddOpenTelemetry()
+            .WithMetrics(t =>
+                t.AddMeter(MartenTelemetry.ActivityName, ActivitySourceProvider.DefaultSourceName)
+            )
+            .WithTracing(t =>
+                t.AddSource(MartenTelemetry.ActivityName, ActivitySourceProvider.DefaultSourceName)
+            );
 
         builder.Services.AddSingleton<IActivityScope, ActivityScope>();
         builder.Services.AddSingleton<CommandHandlerMetrics>();
@@ -88,17 +89,21 @@ internal static class Extensions
 
         builder.Services.AddSingleton<IBookService, BookService>();
 
-        builder.Services.AddGrpcClient<GrpcBookClient>(o =>
-        {
-            o.Address = new("https+http://catalog-api");
-        });
+        builder
+            .Services.AddGrpcClient<GrpcBookClient>(o =>
+            {
+                o.Address = new("https://catalog-api");
+            })
+            .AddStandardResilienceHandler();
 
         builder.Services.AddSingleton<IBasketService, BasketService>();
 
-        builder.Services.AddGrpcClient<GrpcBasketClient>(o =>
-        {
-            o.Address = new("https+http://basket-api");
-        });
+        builder
+            .Services.AddGrpcClient<GrpcBasketClient>(o =>
+            {
+                o.Address = new("https://basket-api");
+            })
+            .AddStandardResilienceHandler();
 
         builder.Services.AddTransient<IIdentityService, IdentityService>();
     }

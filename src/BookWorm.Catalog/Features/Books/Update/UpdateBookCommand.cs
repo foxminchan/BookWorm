@@ -11,7 +11,8 @@ public sealed record UpdateBookCommand(
     Status Status,
     Guid CategoryId,
     Guid PublisherId,
-    List<Guid> AuthorIds) : ICommand<Result>;
+    List<Guid> AuthorIds
+) : ICommand<Result>;
 
 public sealed class UpdateBookHandler(IRepository<Book> repository, IAiService aiService)
     : ICommandHandler<UpdateBookCommand, Result>
@@ -30,12 +31,22 @@ public sealed class UpdateBookHandler(IRepository<Book> repository, IAiService a
             request.Status,
             request.CategoryId,
             request.PublisherId,
-            request.AuthorIds);
+            request.AuthorIds
+        );
 
-        if (string.Compare(book.Name, request.Name, StringComparison.OrdinalIgnoreCase) != 0 ||
-            string.Compare(book.Description, request.Description, StringComparison.OrdinalIgnoreCase) != 0)
+        if (
+            string.Compare(book.Name, request.Name, StringComparison.OrdinalIgnoreCase) != 0
+            || string.Compare(
+                book.Description,
+                request.Description,
+                StringComparison.OrdinalIgnoreCase
+            ) != 0
+        )
         {
-            var embedding = await aiService.GetEmbeddingAsync($"{book.Name} {book.Description}", cancellationToken);
+            var embedding = await aiService.GetEmbeddingAsync(
+                $"{book.Name} {book.Description}",
+                cancellationToken
+            );
             book.Embed(embedding);
         }
 

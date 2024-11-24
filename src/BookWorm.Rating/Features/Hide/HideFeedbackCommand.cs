@@ -5,7 +5,10 @@ public sealed record HideFeedbackCommand(ObjectId Id) : ICommand<Result>;
 public sealed class HideFeedbackHandler(IRatingRepository repository)
     : ICommandHandler<HideFeedbackCommand, Result>
 {
-    public async Task<Result> Handle(HideFeedbackCommand request, CancellationToken cancellationToken)
+    public async Task<Result> Handle(
+        HideFeedbackCommand request,
+        CancellationToken cancellationToken
+    )
     {
         var filter = Builders<Feedback>.Filter.Eq(x => x.Id, request.Id);
 

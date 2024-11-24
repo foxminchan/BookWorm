@@ -35,8 +35,14 @@ public sealed class DeleteAuthorHandlerTests
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        _repositoryMock.Verify(r => r.GetByIdAsync(authorId, It.IsAny<CancellationToken>()), Times.Once);
-        _repositoryMock.Verify(r => r.DeleteAsync(author, It.IsAny<CancellationToken>()), Times.Once);
+        _repositoryMock.Verify(
+            r => r.GetByIdAsync(authorId, It.IsAny<CancellationToken>()),
+            Times.Once
+        );
+        _repositoryMock.Verify(
+            r => r.DeleteAsync(author, It.IsAny<CancellationToken>()),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -55,7 +61,13 @@ public sealed class DeleteAuthorHandlerTests
 
         // Assert
         await act.Should().ThrowAsync<NotFoundException>();
-        _repositoryMock.Verify(r => r.GetByIdAsync(authorId, It.IsAny<CancellationToken>()), Times.Once);
-        _repositoryMock.Verify(r => r.DeleteAsync(It.IsAny<Author>(), It.IsAny<CancellationToken>()), Times.Never);
+        _repositoryMock.Verify(
+            r => r.GetByIdAsync(authorId, It.IsAny<CancellationToken>()),
+            Times.Once
+        );
+        _repositoryMock.Verify(
+            r => r.DeleteAsync(It.IsAny<Author>(), It.IsAny<CancellationToken>()),
+            Times.Never
+        );
     }
 }

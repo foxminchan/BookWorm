@@ -19,7 +19,8 @@ public sealed class ListCategoriesHandlerTests
     {
         // Arrange
         var categories = CategoryBuilder.WithDefaultValues();
-        _categoryRepositoryMock.Setup(x => x.ListAsync(It.IsAny<CancellationToken>()))
+        _categoryRepositoryMock
+            .Setup(x => x.ListAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(categories);
 
         // Act

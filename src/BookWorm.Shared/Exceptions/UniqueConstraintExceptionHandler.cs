@@ -2,19 +2,27 @@
 
 namespace BookWorm.Shared.Exceptions;
 
-public sealed class UniqueConstraintExceptionHandler(ILogger<UniqueConstraintExceptionHandler> logger)
-    : IExceptionHandler
+public sealed class UniqueConstraintExceptionHandler(
+    ILogger<UniqueConstraintExceptionHandler> logger
+) : IExceptionHandler
 {
-    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception,
-        CancellationToken cancellationToken)
+    public async ValueTask<bool> TryHandleAsync(
+        HttpContext httpContext,
+        Exception exception,
+        CancellationToken cancellationToken
+    )
     {
         if (exception is not UniqueConstraintException uniqueConstraintException)
         {
             return false;
         }
 
-        logger.LogError(uniqueConstraintException, "[{Handler}] Exception occurred: {Message}",
-            nameof(UniqueConstraintExceptionHandler), uniqueConstraintException.Message);
+        logger.LogError(
+            uniqueConstraintException,
+            "[{Handler}] Exception occurred: {Message}",
+            nameof(UniqueConstraintExceptionHandler),
+            uniqueConstraintException.Message
+        );
 
         ProblemDetails problemDetails = new()
         {
@@ -24,9 +32,11 @@ public sealed class UniqueConstraintExceptionHandler(ILogger<UniqueConstraintExc
             Detail = "There was a conflict with the unique constraint",
             Extensions =
             {
-                ["errors"] = new ConstraintViolation(uniqueConstraintException.ConstraintName,
-                    uniqueConstraintException.Message)
-            }
+                ["errors"] = new ConstraintViolation(
+                    uniqueConstraintException.ConstraintName,
+                    uniqueConstraintException.Message
+                ),
+            },
         };
 
         await TypedResults.Conflict(problemDetails).ExecuteAsync(httpContext);
