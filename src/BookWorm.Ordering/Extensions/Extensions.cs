@@ -1,5 +1,6 @@
 ﻿using BookWorm.Ordering.Infrastructure.Marten;
 using Microsoft.Extensions.Options;
+using static Microsoft.IO.RecyclableMemoryStreamManager;
 using GrpcBasketClient = BookWorm.Basket.Grpc.Basket.BasketClient;
 using GrpcBookClient = BookWorm.Catalog.Grpc.Book.BookClient;
 
@@ -53,7 +54,13 @@ internal static class Extensions
         builder.Services.AddNpgsqlDataSource(ServiceName.Database.Ordering);
 
         builder
-            .Services.AddMarten(_ => StoreConfigs.SetStoreOptions(martenConfig))
+            .Services.AddMarten(_ => 
+            {
+                var options = StoreConfigs.SetStoreOptions(martenConfig);
+                options.Projections.LiveStreamAggregation<OrderState>();
+                options.Projections.Add<OrderProjection>(ProjectionLifecycle.Async);
+
+            })
             .UseNpgsqlDataSource()
             .UseLightweightSessions()
             .ApplyAllDatabaseChangesOnStartup()
