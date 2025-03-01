@@ -1,0 +1,51 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  labels:
+    app: redis
+spec:
+  serviceName: "redis"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: docker.io/library/redis:7.4
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--save"
+            - "60"
+            - "1"
+          ports:
+            - containerPort: 6379
+          envFrom:
+            - configMapRef:
+                name: redis-env
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1"
+              memory: "2Gi"
+          volumeMounts:
+            - name: bookworm-apphost-62fd53aa4e-redis-data
+              mountPath: /data
+  volumeClaimTemplates:
+    - metadata:
+        name: bookworm-apphost-62fd53aa4e-redis-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+          limits:
+            storage: 2Gi

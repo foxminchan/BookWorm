@@ -1,0 +1,23 @@
+namespace: bookworm
+
+resources:
+  - postgres
+  - redis
+  - vector-db
+  - queue
+  - keycloak
+  - mailpit
+  - bookworm-catalog
+  - bookworm-basket
+  - bookworm-notification
+  - bookworm-ordering
+  - bookworm-rating
+  - bookworm-finance
+  - bookworm-gateway
+  - ollama
+  - healthchecksui
+  - namespace.yaml
+  - dashboard.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true

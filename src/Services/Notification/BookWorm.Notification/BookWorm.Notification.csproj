@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <PackageReference Include="SendGrid"/>
+    <PackageReference Include="AspNetCore.HealthChecks.SendGrid"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj"/>
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,47 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ollama
+  labels:
+    app: ollama
+spec:
+  serviceName: "ollama"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+    spec:
+      containers:
+        - name: ollama
+          image: docker.io/ollama/ollama:0.5.9
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 11434
+          envFrom:
+            - configMapRef:
+                name: ollama-env
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1"
+              memory: "2Gi"
+          volumeMounts:
+            - name: bookworm-apphost-62fd53aa4e-ollama-ollama
+              mountPath: /root/.ollama
+  volumeClaimTemplates:
+    - metadata:
+        name: bookworm-apphost-62fd53aa4e-ollama-ollama
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+          limits:
+            storage: 2Gi

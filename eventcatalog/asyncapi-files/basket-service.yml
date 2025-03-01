@@ -1,0 +1,142 @@
+---
+asyncapi: 3.0.0
+info:
+  title: Basket Service
+  version: 1.0.0
+  description: |-
+    Basket API for BookWorm
+  contact:
+    name: Nhan Nguyen
+    url: "https://github.com/foxminchan"
+  license:
+    name: MIT
+    url: "https://opensource.org/licenses/MIT"
+defaultContentType: application/json
+servers:
+  rabbitmq:
+    host: localhost:5672
+    protocol: amqp
+    description: RabbitMQ server for development
+    security:
+      - type: userPassword
+channels:
+  basket-place-order:
+    address: basket-place-order
+    messages:
+      PlaceOrderCommand.message:
+        $ref: "#/components/messages/placeOrderCommand"
+  basket-checkout-complete:
+    address: basket-checkout-complete
+    messages:
+      PublishCompletedEvent.message:
+        $ref: "#/components/messages/basketDeletedFailedIntegrationEvent"
+  basket-checkout-failed:
+    address: basket-checkout-failed
+    messages:
+      PublishFailedEvent.message:
+        $ref: "#/components/messages/basketDeletedCompleteIntegrationEvent"
+operations:
+  PlaceOrderCommand:
+    action: receive
+    channel:
+      $ref: "#/channels/basket-place-order"
+    summary: Delete a basket
+    messages:
+      - $ref: "#/channels/basket-place-order/messages/PlaceOrderCommand.message"
+  PublishCompletedEvent:
+    action: send
+    channel:
+      $ref: "#/channels/basket-checkout-complete"
+    summary: ""
+    messages:
+      - $ref: >-
+          #/channels/basket-checkout-complete/messages/PublishCompletedEvent.message
+  PublishFailedEvent:
+    action: send
+    channel:
+      $ref: "#/channels/basket-checkout-failed"
+    summary: ""
+    messages:
+      - $ref: "#/channels/basket-checkout-failed/messages/PublishFailedEvent.message"
+components:
+  schemas:
+    placeOrderCommand:
+      id: placeOrderCommand
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            basketId:
+              type: string
+              format: guid
+            email:
+              type:
+                - "null"
+                - string
+            orderId:
+              type: string
+              format: guid
+            totalMoney:
+              type: number
+              format: decimal
+    integrationEvent:
+      id: integrationEvent
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: guid
+        creationDate:
+          type: string
+          format: date-time
+    basketDeletedFailedIntegrationEvent:
+      id: basketDeletedFailedIntegrationEvent
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            orderId:
+              type: string
+              format: guid
+            basketId:
+              type: string
+              format: guid
+            email:
+              type:
+                - "null"
+                - string
+            totalMoney:
+              type: number
+              format: decimal
+    basketDeletedCompleteIntegrationEvent:
+      id: basketDeletedCompleteIntegrationEvent
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            orderId:
+              type: string
+              format: guid
+            basketId:
+              type: string
+              format: guid
+            totalMoney:
+              type: number
+              format: decimal
+  messages:
+    placeOrderCommand:
+      payload:
+        $ref: "#/components/schemas/placeOrderCommand"
+      name: placeOrderCommand
+    basketDeletedFailedIntegrationEvent:
+      payload:
+        $ref: "#/components/schemas/basketDeletedFailedIntegrationEvent"
+      name: basketDeletedFailedIntegrationEvent
+    basketDeletedCompleteIntegrationEvent:
+      payload:
+        $ref: "#/components/schemas/basketDeletedCompleteIntegrationEvent"
+      name: basketDeletedCompleteIntegrationEvent

@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MediatR"/>
+    <PackageReference Include="MassTransit.RabbitMQ"/>
+    <PackageReference Include="FluentValidation.AspNetCore"/>
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol"/>
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting"/>
+    <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Asp.Versioning.Mvc"/>
+    <PackageReference Include="Asp.Versioning.Http.Client"/>
+    <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BookWorm.Constants\BookWorm.Constants.csproj"/>
+  </ItemGroup>
+
+</Project>

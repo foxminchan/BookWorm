@@ -3,7 +3,11 @@
   "ContainerSettings": {
     "Registry": null,
     "RepositoryPrefix": null,
-    "Tags": ["latest"],
-    "Builder": "docker"
+    "Tags": [
+      "latest"
+    ],
+    "Builder": "docker",
+    "BuildArgs": null,
+    "Context": null
   }
 }

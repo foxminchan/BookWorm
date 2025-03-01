@@ -1,0 +1,44 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bookworm-rating
+  labels:
+    app: bookworm-rating
+spec:
+  minReadySeconds: 60
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bookworm-rating
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: bookworm-rating
+    spec:
+      containers:
+        - name: bookworm-rating
+          image: bookworm-rating:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: https
+              containerPort: 8443
+            - name: healthchecks
+              containerPort: 8004
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+          envFrom:
+            - configMapRef:
+                name: bookworm-rating-env
+            - secretRef:
+                name: bookworm-rating-secrets
+      terminationGracePeriodSeconds: 180

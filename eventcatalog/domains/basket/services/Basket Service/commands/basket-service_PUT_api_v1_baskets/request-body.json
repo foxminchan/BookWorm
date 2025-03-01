@@ -1,0 +1,24 @@
+{
+  "required": ["items"],
+  "type": "object",
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "required": ["id", "quantity"],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the product to add to the basket"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The quantity of the product to add to the basket"
+          }
+        }
+      }
+    }
+  }
+}
