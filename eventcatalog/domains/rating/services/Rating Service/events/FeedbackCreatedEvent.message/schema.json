@@ -1,0 +1,42 @@
+{
+  "id": "feedbackCreatedEvent",
+  "allOf": [
+    {
+      "id": "domainEvent",
+      "type": "object",
+      "x-abstract": true,
+      "additionalProperties": false,
+      "properties": {
+        "dateOccurred": {
+          "type": "string",
+          "format": "date-time",
+          "x-parser-schema-id": "<anonymous-schema-5>"
+        }
+      },
+      "x-parser-schema-id": "domainEvent"
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "bookId": {
+          "type": "string",
+          "format": "guid",
+          "x-parser-schema-id": "<anonymous-schema-7>"
+        },
+        "rating": {
+          "type": "integer",
+          "format": "int32",
+          "x-parser-schema-id": "<anonymous-schema-8>"
+        },
+        "feedbackId": {
+          "type": "string",
+          "format": "guid",
+          "x-parser-schema-id": "<anonymous-schema-9>"
+        }
+      },
+      "x-parser-schema-id": "<anonymous-schema-6>"
+    }
+  ],
+  "x-parser-schema-id": "feedbackCreatedEvent"
+}

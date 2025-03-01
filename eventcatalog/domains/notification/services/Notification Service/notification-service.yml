@@ -1,0 +1,141 @@
+---
+asyncapi: 3.0.0
+info:
+  title: Notification Service
+  version: 1.0.0
+  description: |-
+    Notification Worker for BookWorm
+  contact:
+    name: Nhan Nguyen
+    url: "https://github.com/foxminchan"
+  license:
+    name: MIT
+    url: "https://opensource.org/licenses/MIT"
+defaultContentType: application/json
+servers:
+  rabbitmq:
+    host: localhost:5672
+    protocol: amqp
+    description: RabbitMQ server for development
+    security:
+      - type: userPassword
+channels:
+  notification-cancel-order:
+    address: notification-cancel-order
+    messages:
+      CancelOrderCommand.message:
+        $ref: "#/components/messages/cancelOrderCommand"
+  notification-complete-order:
+    address: notification-complete-order
+    messages:
+      CompleteOrderCommand.message:
+        $ref: "#/components/messages/completeOrderCommand"
+  notification-place-order:
+    address: notification-place-order
+    messages:
+      PlaceOrderCommand.message:
+        $ref: "#/components/messages/placeOrderCommand"
+operations:
+  CancelOrderCommand:
+    action: receive
+    channel:
+      $ref: "#/channels/notification-cancel-order"
+    summary: Cancel order notification
+    messages:
+      - $ref: >-
+          #/channels/notification-cancel-order/messages/CancelOrderCommand.message
+  CompleteOrderCommand:
+    action: receive
+    channel:
+      $ref: "#/channels/notification-complete-order"
+    summary: Complete order notification
+    messages:
+      - $ref: >-
+          #/channels/notification-complete-order/messages/CompleteOrderCommand.message
+  PlaceOrderCommand:
+    action: receive
+    channel:
+      $ref: "#/channels/notification-place-order"
+    summary: Place order notification
+    messages:
+      - $ref: "#/channels/notification-place-order/messages/PlaceOrderCommand.message"
+components:
+  schemas:
+    cancelOrderCommand:
+      id: cancelOrderCommand
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            orderId:
+              type: string
+              format: guid
+            email:
+              type:
+                - "null"
+                - string
+            totalMoney:
+              type: number
+              format: decimal
+    integrationEvent:
+      id: integrationEvent
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: guid
+        creationDate:
+          type: string
+          format: date-time
+    completeOrderCommand:
+      id: completeOrderCommand
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            orderId:
+              type: string
+              format: guid
+            email:
+              type:
+                - "null"
+                - string
+            totalMoney:
+              type: number
+              format: decimal
+    placeOrderCommand:
+      id: placeOrderCommand
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            basketId:
+              type: string
+              format: guid
+            email:
+              type:
+                - "null"
+                - string
+            orderId:
+              type: string
+              format: guid
+            totalMoney:
+              type: number
+              format: decimal
+  messages:
+    cancelOrderCommand:
+      payload:
+        $ref: "#/components/schemas/cancelOrderCommand"
+      name: cancelOrderCommand
+    completeOrderCommand:
+      payload:
+        $ref: "#/components/schemas/completeOrderCommand"
+      name: completeOrderCommand
+    placeOrderCommand:
+      payload:
+        $ref: "#/components/schemas/placeOrderCommand"
+      name: placeOrderCommand

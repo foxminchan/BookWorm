@@ -1,0 +1,130 @@
+---
+asyncapi: 3.0.0
+info:
+  title: Catalog Service
+  version: 1.0.0
+  description: |-
+    Catalog API for BookWorm
+  contact:
+    name: Nhan Nguyen
+    url: "https://github.com/foxminchan"
+  license:
+    name: MIT
+    url: "https://opensource.org/licenses/MIT"
+defaultContentType: application/json
+servers:
+  rabbitmq:
+    host: localhost:5672
+    protocol: amqp
+    description: RabbitMQ server for development
+    security:
+      - type: userPassword
+channels:
+  catalog-feedback-created:
+    address: catalog-feedback-created
+    messages:
+      FeedbackCreatedIntegrationEvent.message:
+        $ref: "#/components/messages/feedbackCreatedIntegrationEvent"
+  rating-book-updated-rating-failed:
+    address: rating-book-updated-rating-failed
+    messages:
+      BookUpdatedRatingFailedIntegrationEvent.message:
+        $ref: "#/components/messages/bookUpdatedRatingFailedIntegrationEvent"
+  catalog-feedback-deleted:
+    address: catalog-feedback-deleted
+    messages:
+      FeedbackDeletedIntegrationEvent.message:
+        $ref: "#/components/messages/feedbackDeletedIntegrationEvent"
+operations:
+  FeedbackCreatedIntegrationEvent:
+    action: receive
+    channel:
+      $ref: "#/channels/catalog-feedback-created"
+    summary: Update book rating
+    messages:
+      - $ref: >-
+          #/channels/catalog-feedback-created/messages/FeedbackCreatedIntegrationEvent.message
+  BookUpdatedRatingFailedIntegrationEvent:
+    action: send
+    channel:
+      $ref: "#/channels/rating-book-updated-rating-failed"
+    summary: ""
+    messages:
+      - $ref: >-
+          #/channels/rating-book-updated-rating-failed/messages/BookUpdatedRatingFailedIntegrationEvent.message
+  FeedbackDeletedIntegrationEvent:
+    action: receive
+    channel:
+      $ref: "#/channels/catalog-feedback-deleted"
+    summary: Update book rating
+    messages:
+      - $ref: >-
+          #/channels/catalog-feedback-deleted/messages/FeedbackDeletedIntegrationEvent.message
+components:
+  schemas:
+    feedbackCreatedIntegrationEvent:
+      id: feedbackCreatedIntegrationEvent
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            bookId:
+              type: string
+              format: guid
+            rating:
+              type: integer
+              format: int32
+            feedbackId:
+              type: string
+              format: guid
+    integrationEvent:
+      id: integrationEvent
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: guid
+        creationDate:
+          type: string
+          format: date-time
+    bookUpdatedRatingFailedIntegrationEvent:
+      id: bookUpdatedRatingFailedIntegrationEvent
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            feedbackId:
+              type: string
+              format: guid
+    feedbackDeletedIntegrationEvent:
+      id: feedbackDeletedIntegrationEvent
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            bookId:
+              type: string
+              format: guid
+            rating:
+              type: integer
+              format: int32
+            feedbackId:
+              type: string
+              format: guid
+  messages:
+    feedbackCreatedIntegrationEvent:
+      payload:
+        $ref: "#/components/schemas/feedbackCreatedIntegrationEvent"
+      name: feedbackCreatedIntegrationEvent
+    bookUpdatedRatingFailedIntegrationEvent:
+      payload:
+        $ref: "#/components/schemas/bookUpdatedRatingFailedIntegrationEvent"
+      name: bookUpdatedRatingFailedIntegrationEvent
+    feedbackDeletedIntegrationEvent:
+      payload:
+        $ref: "#/components/schemas/feedbackDeletedIntegrationEvent"
+      name: feedbackDeletedIntegrationEvent

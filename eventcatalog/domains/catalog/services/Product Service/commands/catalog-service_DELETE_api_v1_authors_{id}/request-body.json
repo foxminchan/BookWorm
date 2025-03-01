@@ -1,0 +1,15 @@
+{
+  "required": ["id", "name"],
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Author ID"
+    },
+    "name": {
+      "type": "string",
+      "description": "Author name"
+    }
+  }
+}

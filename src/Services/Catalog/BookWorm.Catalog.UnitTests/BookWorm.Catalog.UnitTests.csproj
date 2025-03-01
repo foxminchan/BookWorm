@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <ExcludeFromCodeCoverage>true</ExcludeFromCodeCoverage>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="TUnit"/>
+    <PackageReference Include="Shouldly"/>
+    <PackageReference Include="Moq"/>
+    <PackageReference Include="Bogus"/>
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage"/>
+    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BookWorm.Catalog\BookWorm.Catalog.csproj"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Moq"/>
+    <Using Include="Bogus"/>
+    <Using Include="Shouldly"/>
+  </ItemGroup>
+
+</Project>

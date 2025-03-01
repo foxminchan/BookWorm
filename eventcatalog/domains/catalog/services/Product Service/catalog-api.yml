@@ -1,0 +1,805 @@
+---
+openapi: 3.0.1
+info:
+  title: Catalog Service
+  version: 1.0.0
+  description: |-
+    Catalog API for BookWorm
+  contact:
+    name: Nhan Nguyen
+    url: https://github.com/foxminchan
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: http://127.0.0.1:54680
+paths:
+  "/api/v1/publishers/{id}":
+    put:
+      tags:
+        - Publisher
+      summary: Update a publisher
+      description: Update a publisher if it exists
+      x-eventcatalog-message-type: command
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/UpdatePublisherCommand"
+        required: true
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+  "/api/v1/publishers":
+    get:
+      tags:
+        - Publisher
+      summary: Get all publishers
+      description: Get all publishers in the system
+      x-eventcatalog-message-type: query
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/PublisherDto"
+    post:
+      tags:
+        - Publisher
+      summary: Create a publisher
+      description: Create a new publisher
+      x-eventcatalog-message-type: command
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreatePublisherCommand"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: string
+                format: uuid
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+  "/api/v1/categories/{id}":
+    put:
+      tags:
+        - Category
+      summary: Update a category
+      description: Update a category if it exists
+      x-eventcatalog-message-type: command
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/UpdateCategoryCommand"
+        required: true
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+  "/api/v1/categories":
+    get:
+      tags:
+        - Category
+      summary: Get all categories
+      description: Get all categories in the system
+      x-eventcatalog-message-type: query
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/CategoryDto"
+    post:
+      tags:
+        - Category
+      summary: Create a category
+      description: Create a new category in the system
+      x-eventcatalog-message-type: command
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreateCategoryCommand"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: string
+                format: uuid
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+        "409":
+          description: Conflict
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/api/v1/books/{id}":
+    put:
+      tags:
+        - Book
+      summary: Update a book
+      description: Update a book if it exists
+      x-eventcatalog-message-type: command
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              required:
+                - Name
+                - Description
+                - Price
+                - CategoryId
+                - PublisherId
+                - AuthorIds
+              type: object
+              allOf:
+                - type: object
+                  properties:
+                    Name:
+                      type: string
+                - type: object
+                  properties:
+                    Description:
+                      type: string
+                - type: object
+                  properties:
+                    Image:
+                      "$ref": "#/components/schemas/IFormFile"
+                - type: object
+                  properties:
+                    Price:
+                      type: number
+                      format: double
+                - type: object
+                  properties:
+                    PriceSale:
+                      type: number
+                      format: double
+                - type: object
+                  properties:
+                    CategoryId:
+                      type: string
+                      format: uuid
+                - type: object
+                  properties:
+                    PublisherId:
+                      type: string
+                      format: uuid
+                - type: object
+                  properties:
+                    AuthorIds:
+                      type: array
+                      items:
+                        type: string
+                        format: uuid
+                - type: object
+                  properties:
+                    IsRemoveImage:
+                      type: boolean
+                      default: false
+        required: true
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+    get:
+      tags:
+        - Book
+      summary: Get a book by ID
+      description: Get a book by ID
+      x-eventcatalog-message-type: query
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/BookDto"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+    delete:
+      tags:
+        - Book
+      summary: Delete a book
+      description: Delete a book if it exists
+      x-eventcatalog-message-type: command
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/api/v1/books":
+    get:
+      tags:
+        - Book
+      summary: Get all books
+      description: Get all books in the system
+      x-eventcatalog-message-type: query
+      parameters:
+        - name: PageIndex
+          in: query
+          description: Number of items to return in a single page of results
+          schema:
+            type: integer
+            format: int32
+            default: 1
+        - name: PageSize
+          in: query
+          description: Number of items to return in a single page of results
+          schema:
+            type: integer
+            format: int32
+            default: 20
+        - name: OrderBy
+          in: query
+          description: Property to order results by
+          schema:
+            type: string
+            default: Name
+        - name: IsDescending
+          in: query
+          description: Whether to order results in descending order
+          schema:
+            type: boolean
+            default: false
+        - name: Search
+          in: query
+          description: Search term to filter results by
+          schema:
+            type: string
+            default:
+        - name: MinPrice
+          in: query
+          description: Minimum price to filter results by
+          schema:
+            type: number
+            format: double
+            default:
+        - name: MaxPrice
+          in: query
+          description: Maximum price to filter results by
+          schema:
+            type: number
+            format: double
+            default:
+        - name: CategoryId
+          in: query
+          description: Category IDs to filter results by
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+            default:
+        - name: PublisherId
+          in: query
+          description: Publisher IDs to filter results by
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+            default:
+        - name: AuthorIds
+          in: query
+          description: Author IDs to filter results by
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+            default:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/PagedResultOfBookDto"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+    post:
+      tags:
+        - Book
+      summary: Create a book
+      description: Create a new book in the system
+      x-eventcatalog-message-type: command
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              required:
+                - Name
+                - Description
+                - Price
+                - CategoryId
+                - PublisherId
+                - AuthorIds
+              type: object
+              allOf:
+                - type: object
+                  properties:
+                    Name:
+                      type: string
+                - type: object
+                  properties:
+                    Description:
+                      type: string
+                - type: object
+                  properties:
+                    Image:
+                      "$ref": "#/components/schemas/IFormFile"
+                - type: object
+                  properties:
+                    Price:
+                      type: number
+                      format: double
+                - type: object
+                  properties:
+                    PriceSale:
+                      type: number
+                      format: double
+                - type: object
+                  properties:
+                    CategoryId:
+                      type: string
+                      format: uuid
+                - type: object
+                  properties:
+                    PublisherId:
+                      type: string
+                      format: uuid
+                - type: object
+                  properties:
+                    AuthorIds:
+                      type: array
+                      items:
+                        type: string
+                        format: uuid
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: string
+                format: uuid
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+  "/api/v1/authors/{id}":
+    put:
+      tags:
+        - Author
+      summary: Update an author
+      description: Update an author if it exists
+      x-eventcatalog-message-type: command
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/UpdateAuthorCommand"
+        required: true
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+    delete:
+      tags:
+        - Author
+      summary: Delete an author
+      description: Delete an author if it exists
+      x-eventcatalog-message-type: command
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/api/v1/authors":
+    get:
+      tags:
+        - Author
+      summary: Get all authors
+      description: Get all authors in the system
+      x-eventcatalog-message-type: query
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/AuthorDto"
+    post:
+      tags:
+        - Author
+      summary: Create an author
+      description: Create a new author in the system
+      x-eventcatalog-message-type: command
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreateAuthorCommand"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: string
+                format: uuid
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+components:
+  schemas:
+    AuthorDto:
+      required:
+        - id
+        - name
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          nullable: true
+    BookDto:
+      required:
+        - id
+        - name
+        - description
+        - imageUrl
+        - price
+        - priceSale
+        - status
+        - category
+        - publisher
+        - authors
+        - averageRating
+        - totalReviews
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        imageUrl:
+          type: string
+          nullable: true
+        price:
+          type: number
+          format: double
+        priceSale:
+          type: number
+          format: double
+          nullable: true
+        status:
+          "$ref": "#/components/schemas/Status"
+        category:
+          "$ref": "#/components/schemas/CategoryDto2"
+        publisher:
+          "$ref": "#/components/schemas/PublisherDto2"
+        authors:
+          type: array
+          items:
+            "$ref": "#/components/schemas/AuthorDto"
+        averageRating:
+          type: number
+          format: double
+        totalReviews:
+          type: integer
+          format: int32
+    CategoryDto:
+      required:
+        - id
+        - name
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          nullable: true
+    CategoryDto2:
+      required:
+        - id
+        - name
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          nullable: true
+      nullable: true
+    CreateAuthorCommand:
+      required:
+        - name
+      type: object
+      properties:
+        name:
+          type: string
+    CreateCategoryCommand:
+      required:
+        - name
+      type: object
+      properties:
+        name:
+          type: string
+    CreatePublisherCommand:
+      required:
+        - name
+      type: object
+      properties:
+        name:
+          type: string
+    HttpValidationProblemDetails:
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+        detail:
+          type: string
+        instance:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    IFormFile:
+      type: string
+      format: binary
+    PagedResultOfBookDto:
+      required:
+        - items
+        - pageIndex
+        - pageSize
+        - totalItems
+        - totalPages
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/BookDto"
+        pageIndex:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        totalItems:
+          type: integer
+          format: int64
+        totalPages:
+          type: number
+          format: double
+        hasPreviousPage:
+          type: boolean
+        hasNextPage:
+          type: boolean
+    ProblemDetails:
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+        detail:
+          type: string
+        instance:
+          type: string
+    PublisherDto:
+      required:
+        - id
+        - name
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          nullable: true
+    PublisherDto2:
+      required:
+        - id
+        - name
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          nullable: true
+      nullable: true
+    Status:
+      enum:
+        - InStock
+        - OutOfStock
+    UpdateAuthorCommand:
+      required:
+        - name
+      type: object
+      properties:
+        name:
+          type: string
+    UpdateCategoryCommand:
+      required:
+        - name
+      type: object
+      properties:
+        name:
+          type: string
+    UpdatePublisherCommand:
+      required:
+        - id
+        - name
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+tags:
+  - name: Publisher
+  - name: Category
+  - name: Book
+  - name: Author

@@ -1,0 +1,242 @@
+---
+openapi: 3.0.1
+info:
+  title: Rating Service
+  version: 1.0.0
+  description: |-
+    Rating API for BookWorm
+  contact:
+    name: Nhan Nguyen
+    url: https://github.com/foxminchan
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: http://127.0.0.1:54683
+paths:
+  "/api/v1/feedbacks":
+    get:
+      tags:
+        - Feedback
+      summary: Get feedbacks
+      description: Get feedbacks for a book
+      x-eventcatalog-message-type: query
+      parameters:
+        - name: BookId
+          in: query
+          description: The ID of the book to get feedback for
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: PageIndex
+          in: query
+          description: Number of items to return in a single page of results
+          schema:
+            type: integer
+            format: int32
+            default: 1
+        - name: PageSize
+          in: query
+          description: Number of items to return in a single page of results
+          schema:
+            type: integer
+            format: int32
+            default: 20
+        - name: OrderBy
+          in: query
+          description: Property to order results by
+          schema:
+            type: string
+            default: Rating
+        - name: IsDescending
+          in: query
+          description: Whether to order results in descending order
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/PagedResultOfFeedbackDto"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+    post:
+      tags:
+        - Feedback
+      summary: Create feedback
+      description: Create feedback for a book
+      x-eventcatalog-message-type: command
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreateFeedbackCommand"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: string
+                format: uuid
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+  "/api/v1/feedbacks/{id}":
+    delete:
+      tags:
+        - Feedback
+      summary: Delete feedback
+      description: Delete feedback for a book
+      x-eventcatalog-message-type: command
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+components:
+  schemas:
+    CreateFeedbackCommand:
+      required:
+        - bookId
+        - firstName
+        - lastName
+        - comment
+        - rating
+      type: object
+      properties:
+        bookId:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        comment:
+          type: string
+          nullable: true
+        rating:
+          type: integer
+          format: int32
+    FeedbackDto:
+      required:
+        - id
+        - firstName
+        - lastName
+        - comment
+        - rating
+        - bookId
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        comment:
+          type: string
+          nullable: true
+        rating:
+          type: integer
+          format: int32
+        bookId:
+          type: string
+          format: uuid
+    HttpValidationProblemDetails:
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+        detail:
+          type: string
+        instance:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    PagedResultOfFeedbackDto:
+      required:
+        - items
+        - pageIndex
+        - pageSize
+        - totalItems
+        - totalPages
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/FeedbackDto"
+        pageIndex:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        totalItems:
+          type: integer
+          format: int64
+        totalPages:
+          type: number
+          format: double
+        hasPreviousPage:
+          type: boolean
+        hasNextPage:
+          type: boolean
+    ProblemDetails:
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+        detail:
+          type: string
+        instance:
+          type: string
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+tags:
+  - name: Feedback

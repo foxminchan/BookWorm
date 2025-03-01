@@ -1,0 +1,139 @@
+---
+asyncapi: 3.0.0
+info:
+  title: Rating Service
+  version: 1.0.0
+  description: |-
+    Rating API for BookWorm
+  contact:
+    name: Nhan Nguyen
+    url: "https://github.com/foxminchan"
+  license:
+    name: MIT
+    url: "https://opensource.org/licenses/MIT"
+defaultContentType: application/json
+servers:
+  rabbitmq:
+    host: localhost:5672
+    protocol: amqp
+    description: RabbitMQ server for development
+    security:
+      - type: userPassword
+channels:
+  rating-book-updated-rating-failed:
+    address: rating-book-updated-rating-failed
+    messages:
+      BookUpdatedRatingFailedIntegrationEvent.message:
+        $ref: "#/components/messages/bookUpdatedRatingFailedIntegrationEvent"
+  catalog-feedback-created:
+    address: catalog-feedback-created
+    messages:
+      FeedbackCreatedEvent.message:
+        $ref: "#/components/messages/feedbackCreatedEvent"
+  catalog-feedback-deleted:
+    address: catalog-feedback-deleted
+    messages:
+      FeedbackDeletedEvent.message:
+        $ref: "#/components/messages/feedbackDeletedEvent"
+operations:
+  BookUpdatedRatingFailedIntegrationEvent:
+    action: receive
+    channel:
+      $ref: "#/channels/rating-book-updated-rating-failed"
+    summary: Book updated rating failed
+    messages:
+      - $ref: >-
+          #/channels/rating-book-updated-rating-failed/messages/BookUpdatedRatingFailedIntegrationEvent.message
+  FeedbackCreatedEvent:
+    action: send
+    channel:
+      $ref: "#/channels/catalog-feedback-created"
+    summary: ""
+    messages:
+      - $ref: >-
+          #/channels/catalog-feedback-created/messages/FeedbackCreatedEvent.message
+  FeedbackDeletedEvent:
+    action: send
+    channel:
+      $ref: "#/channels/catalog-feedback-deleted"
+    summary: ""
+    messages:
+      - $ref: >-
+          #/channels/catalog-feedback-deleted/messages/FeedbackDeletedEvent.message
+components:
+  schemas:
+    bookUpdatedRatingFailedIntegrationEvent:
+      id: bookUpdatedRatingFailedIntegrationEvent
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            feedbackId:
+              type: string
+              format: guid
+    integrationEvent:
+      id: integrationEvent
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: guid
+        creationDate:
+          type: string
+          format: date-time
+    feedbackCreatedEvent:
+      id: feedbackCreatedEvent
+      allOf:
+        - $ref: "#/components/schemas/domainEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            bookId:
+              type: string
+              format: guid
+            rating:
+              type: integer
+              format: int32
+            feedbackId:
+              type: string
+              format: guid
+    domainEvent:
+      id: domainEvent
+      type: object
+      x-abstract: true
+      additionalProperties: false
+      properties:
+        dateOccurred:
+          type: string
+          format: date-time
+    feedbackDeletedEvent:
+      id: feedbackDeletedEvent
+      allOf:
+        - $ref: "#/components/schemas/domainEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            bookId:
+              type: string
+              format: guid
+            rating:
+              type: integer
+              format: int32
+            feedbackId:
+              type: string
+              format: guid
+  messages:
+    bookUpdatedRatingFailedIntegrationEvent:
+      payload:
+        $ref: "#/components/schemas/bookUpdatedRatingFailedIntegrationEvent"
+      name: bookUpdatedRatingFailedIntegrationEvent
+    feedbackCreatedEvent:
+      payload:
+        $ref: "#/components/schemas/feedbackCreatedEvent"
+      name: feedbackCreatedEvent
+    feedbackDeletedEvent:
+      payload:
+        $ref: "#/components/schemas/feedbackDeletedEvent"
+      name: feedbackDeletedEvent

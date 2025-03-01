@@ -1,0 +1,37 @@
+﻿syntax = "proto3";
+
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "BookWorm.Catalog.Grpc.Services";
+
+package CatalogApi;
+
+service BookGrpcService {
+  rpc GetBook(BookRequest) returns (BookResponse);
+  rpc GetBooks(BooksRequest) returns (BooksResponse);
+}
+
+message BookRequest {
+  string bookId = 1;
+}
+
+message BookResponse {
+  string id = 1;
+  string name = 2;
+  double price = 3;
+  google.protobuf.DoubleValue priceSale = 4;
+  BookStatus status = 5;
+}
+
+message BooksRequest {
+  repeated string bookIds = 1;
+}
+
+message BooksResponse {
+  repeated BookResponse books = 1;
+}
+
+enum BookStatus {
+  InStock = 0;
+  OutOfStock = 1;
+}

@@ -1,0 +1,132 @@
+---
+id: "CreateOrder"
+name: "User Creates Order"
+version: "1.0.0"
+summary: "Flow for when a user creates an order"
+steps:
+  - id: "create_order_initiated"
+    title: "User Creates Order"
+    summary: "User creates an order"
+    actor:
+      name: "User"
+    next_step:
+      id: "create_order_request"
+      label: "Initiate order"
+
+  - id: "create_order_request"
+    title: "Make Order Request"
+    message:
+      id: "ordering-service_POST_api_v1_orders"
+      version: "1.0.0"
+    next_step:
+      id: "ordering_service"
+      label: "Proceed to checkout"
+
+  - id: "ordering_service"
+    title: "Ordering Service"
+    service:
+      id: "Ordering Service"
+      version: "1.0.0"
+    next_steps:
+      - id: "user_checked_out_event"
+        label: "Publish event"
+
+  - id: "user_checked_out_event"
+    title: "Publish User Checked Out Event"
+    message:
+      id: "usercheckedoutintegrationevent.message"
+      version: "1.0.0"
+    next_step:
+      id: "finance_service"
+      label: "Subscribe event"
+
+  - id: "finance_service"
+    title: "Finance Service"
+    service:
+      id: "Finance Service"
+      version: "1.0.0"
+    next_steps:
+      - id: "place_order_command"
+        label: "Publish event"
+      - id: "send_basked_delete_failed"
+        label: "Publish event when subscribe basked deleted failed"
+      - id: "send_basked_delete_complete"
+        label: "Publish event when subscribe basked deleted complete"
+
+  - id: "place_order_command"
+    title: "Reverse Basket"
+    message:
+      id: "placeordercommand.message"
+      version: "1.0.0"
+    next_step:
+      id: "basket_service"
+      label: "Subscribe event"
+
+  - id: "basket_service"
+    title: "Basket Service"
+    service:
+      id: "Basket Service"
+      version: "1.0.0"
+    next_steps:
+      - id: "check_status"
+        label: "Publish event when failed"
+
+  - id: "check_status"
+    title: "Check Basket Reverse Status"
+    type: node
+    next_steps:
+      - id: "basket_deleted_failed"
+        label: "Publish event when failed"
+      - id: "basket_deleted_complete"
+        label: "Publish event when complete"
+
+  - id: "basket_deleted_failed"
+    title: "Publish Basket Deleted Failed Event"
+    message:
+      id: "basketdeletedfailedintegrationevent.message"
+      version: "1.0.0"
+    next_step:
+      id: "finance_service"
+      label: "Subscribe event"
+
+  - id: "basket_deleted_complete"
+    title: "Publish Basket Deleted Complete Event"
+    message:
+      id: "basketdeletedcompleteintegrationevent.message"
+      version: "1.0.0"
+    next_step:
+      id: "finance_service"
+      label: "Subscribe event"
+
+  - id: "send_basked_delete_failed"
+    title: "Publish Basket Delete Command Failed"
+    message:
+      id: "deletebasketfailedcommand.message"
+      version: "1.0.0"
+    next_step:
+      id: "ordering_service"
+      label: "Subscribe event & Rollback order"
+
+  - id: "send_basked_delete_complete"
+    title: "Publish Basket Complete Command Failed"
+    message:
+      id: "deletebasketcompletecommand.message"
+      version: "1.0.0"
+    next_steps:
+      - id: "ordering_service"
+        label: "Subscribe event"
+      - id: "notification_service"
+        label: "Subscribe event"
+
+  - id: "notification_service"
+    title: "Notification Service"
+    service:
+      id: "Notification Service"
+      version: "1.0.0"
+---
+
+### Flow of feature
+
+This flow describes the process when a user creates an order.
+
+<NodeGraph />

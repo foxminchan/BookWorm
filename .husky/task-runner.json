@@ -2,10 +2,24 @@
   "$schema": "https://alirezanet.github.io/Husky.Net/schema.json",
   "tasks": [
     {
+      "name": "scan",
+      "command": "gitleaks",
+      "args": ["detect", "--source", ".", "--exit-code", "1"]
+    },
+    {
+      "name": "format",
+      "command": "dotnet",
+      "args": ["csharpier", ".", "--check"]
+    },
+    {
       "name": "style",
-      "group": "pre-commit",
       "command": "dotnet",
       "args": ["format", "style", ".", "--verify-no-changes"]
+    },
+    {
+      "name": "analyzers",
+      "command": "dotnet",
+      "args": ["format", "analyzers", ".", "--verify-no-changes"]
     }
   ]
 }

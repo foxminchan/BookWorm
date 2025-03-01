@@ -1,0 +1,13 @@
+﻿global using BookWorm.Constants;
+global using BookWorm.Finance.Infrastructure;
+global using BookWorm.Finance.Saga;
+global using BookWorm.ServiceDefaults;
+global using BookWorm.SharedKernel.EF;
+global using BookWorm.SharedKernel.Endpoints;
+global using BookWorm.SharedKernel.EventBus;
+global using BookWorm.SharedKernel.Exceptions;
+global using BookWorm.SharedKernel.Pipelines;
+global using BookWorm.SharedKernel.Versioning;
+global using MassTransit;
+global using Microsoft.EntityFrameworkCore;
+global using Saunter.Attributes;

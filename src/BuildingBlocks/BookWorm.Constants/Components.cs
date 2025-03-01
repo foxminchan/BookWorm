@@ -1,0 +1,20 @@
+﻿namespace BookWorm.Constants;
+
+public static class Components
+{
+    public const string Blob = "blob";
+    public const string Redis = "redis";
+    public const string VectorDb = "vector-db";
+    public const string KeyCloak = "keycloak";
+    public const string MailPit = "mailpit";
+    public const string Queue = "queue";
+    public const string Cosmos = "cosmos";
+
+    public static class Database
+    {
+        public const string Catalog = "catalogdb";
+        public const string Ordering = "orderingdb";
+        public const string Rating = "ratingdb";
+        public const string Finance = "financedb";
+    }
+}

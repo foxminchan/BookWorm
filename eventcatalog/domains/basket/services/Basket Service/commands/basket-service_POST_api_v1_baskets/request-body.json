@@ -1,0 +1,22 @@
+{
+  "required": ["items"],
+  "type": "object",
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "required": ["id", "quantity"],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      }
+    }
+  }
+}

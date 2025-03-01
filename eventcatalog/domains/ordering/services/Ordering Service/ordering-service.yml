@@ -1,0 +1,213 @@
+---
+asyncapi: 3.0.0
+info:
+  title: Ordering Service
+  version: 1.0.0
+  description: |-
+    Ordering API for BookWorm
+  contact:
+    name: Nhan Nguyen
+    url: "https://github.com/foxminchan"
+  license:
+    name: MIT
+    url: "https://opensource.org/licenses/MIT"
+defaultContentType: application/json
+servers:
+  rabbitmq:
+    host: localhost:5672
+    protocol: amqp
+    description: RabbitMQ server for development
+    security:
+      - type: userPassword
+channels:
+  basket-checkout-complete:
+    address: basket-checkout-complete
+    messages:
+      DeleteBasketCompleteCommand.message:
+        $ref: "#/components/messages/deleteBasketCompleteCommand"
+  basket-checkout-failed:
+    address: basket-checkout-failed
+    messages:
+      DeleteBasketFailedCommand.message:
+        $ref: "#/components/messages/deleteBasketFailedCommand"
+  "BookWorm.Contracts:UserCheckedOutIntegrationEvent":
+    address: "BookWorm.Contracts:UserCheckedOutIntegrationEvent"
+    messages:
+      UserCheckedOutIntegrationEvent.message:
+        $ref: "#/components/messages/userCheckedOutIntegrationEvent"
+  "BookWorm.Contracts:OrderStatusChangedToCompleteIntegrationEvent":
+    address: "BookWorm.Contracts:OrderStatusChangedToCompleteIntegrationEvent"
+    messages:
+      OrderStatusChangedToCompleteIntegrationEvent.message:
+        $ref: "#/components/messages/orderStatusChangedToCompleteIntegrationEvent"
+  "BookWorm.Contracts:OrderStatusChangedToCancelIntegrationEvent":
+    address: "BookWorm.Contracts:OrderStatusChangedToCancelIntegrationEvent"
+    messages:
+      OrderStatusChangedToCancelIntegrationEvent.message:
+        $ref: "#/components/messages/orderStatusChangedToCancelIntegrationEvent"
+operations:
+  DeleteBasketCompleteCommand:
+    action: receive
+    channel:
+      $ref: "#/channels/basket-checkout-complete"
+    summary: Delete basket complete
+    messages:
+      - $ref: >-
+          #/channels/basket-checkout-complete/messages/DeleteBasketCompleteCommand.message
+  DeleteBasketFailedCommand:
+    action: receive
+    channel:
+      $ref: "#/channels/basket-checkout-failed"
+    summary: Delete basket failed
+    messages:
+      - $ref: >-
+          #/channels/basket-checkout-failed/messages/DeleteBasketFailedCommand.message
+  UserCheckedOutIntegrationEvent:
+    action: send
+    channel:
+      $ref: "#/channels/BookWorm.Contracts:UserCheckedOutIntegrationEvent"
+    summary: ""
+    messages:
+      - $ref: >-
+          #/channels/BookWorm.Contracts:UserCheckedOutIntegrationEvent/messages/UserCheckedOutIntegrationEvent.message
+  OrderStatusChangedToCompleteIntegrationEvent:
+    action: send
+    channel:
+      $ref: >-
+        #/channels/BookWorm.Contracts:OrderStatusChangedToCompleteIntegrationEvent
+    summary: ""
+    messages:
+      - $ref: >-
+          #/channels/BookWorm.Contracts:OrderStatusChangedToCompleteIntegrationEvent/messages/OrderStatusChangedToCompleteIntegrationEvent.message
+  OrderStatusChangedToCancelIntegrationEvent:
+    action: send
+    channel:
+      $ref: "#/channels/BookWorm.Contracts:OrderStatusChangedToCancelIntegrationEvent"
+    summary: ""
+    messages:
+      - $ref: >-
+          #/channels/BookWorm.Contracts:OrderStatusChangedToCancelIntegrationEvent/messages/OrderStatusChangedToCancelIntegrationEvent.message
+components:
+  schemas:
+    deleteBasketCompleteCommand:
+      id: deleteBasketCompleteCommand
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            orderId:
+              type: string
+              format: guid
+            totalMoney:
+              type: number
+              format: decimal
+    integrationEvent:
+      id: integrationEvent
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: guid
+        creationDate:
+          type: string
+          format: date-time
+    deleteBasketFailedCommand:
+      id: deleteBasketFailedCommand
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            basketId:
+              type: string
+              format: guid
+            email:
+              type:
+                - "null"
+                - string
+            orderId:
+              type: string
+              format: guid
+    userCheckedOutIntegrationEvent:
+      id: userCheckedOutIntegrationEvent
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            orderId:
+              type: string
+              format: guid
+            basketId:
+              type: string
+              format: guid
+            email:
+              type:
+                - "null"
+                - string
+            totalMoney:
+              type: number
+              format: decimal
+    orderStatusChangedToCompleteIntegrationEvent:
+      id: orderStatusChangedToCompleteIntegrationEvent
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            orderId:
+              type: string
+              format: guid
+            basketId:
+              type: string
+              format: guid
+            email:
+              type:
+                - "null"
+                - string
+            totalMoney:
+              type: number
+              format: decimal
+    orderStatusChangedToCancelIntegrationEvent:
+      id: orderStatusChangedToCancelIntegrationEvent
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            orderId:
+              type: string
+              format: guid
+            basketId:
+              type: string
+              format: guid
+            email:
+              type:
+                - "null"
+                - string
+            totalMoney:
+              type: number
+              format: decimal
+  messages:
+    deleteBasketCompleteCommand:
+      payload:
+        $ref: "#/components/schemas/deleteBasketCompleteCommand"
+      name: deleteBasketCompleteCommand
+    deleteBasketFailedCommand:
+      payload:
+        $ref: "#/components/schemas/deleteBasketFailedCommand"
+      name: deleteBasketFailedCommand
+    userCheckedOutIntegrationEvent:
+      payload:
+        $ref: "#/components/schemas/userCheckedOutIntegrationEvent"
+      name: userCheckedOutIntegrationEvent
+    orderStatusChangedToCompleteIntegrationEvent:
+      payload:
+        $ref: "#/components/schemas/orderStatusChangedToCompleteIntegrationEvent"
+      name: orderStatusChangedToCompleteIntegrationEvent
+    orderStatusChangedToCancelIntegrationEvent:
+      payload:
+        $ref: "#/components/schemas/orderStatusChangedToCancelIntegrationEvent"
+      name: orderStatusChangedToCancelIntegrationEvent

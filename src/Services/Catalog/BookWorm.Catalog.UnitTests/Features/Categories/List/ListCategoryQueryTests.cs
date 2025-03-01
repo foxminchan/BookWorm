@@ -1,0 +1,72 @@
+﻿using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
+using BookWorm.Catalog.Features.Categories.List;
+using BookWorm.Catalog.UnitTests.Fakers;
+
+namespace BookWorm.Catalog.UnitTests.Features.Categories.List;
+
+public sealed class ListCategoryQueryTests
+{
+    private readonly CategoryFaker _faker;
+    private readonly ListCategoriesHandler _handler;
+    private readonly Mock<ICategoryRepository> _repositoryMock;
+
+    public ListCategoryQueryTests()
+    {
+        _repositoryMock = new();
+        _handler = new(_repositoryMock.Object);
+        _faker = new();
+    }
+
+    [Test]
+    public async Task GivenValidQuery_WhenHandlingListCategories_ThenShouldReturnCategoryDtos()
+    {
+        // Arrange
+        var categories = _faker.Generate();
+        _repositoryMock
+            .Setup(repo => repo.ListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(categories);
+
+        var query = new ListCategoriesQuery();
+
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.ShouldNotBeNull();
+        result.Count.ShouldBe(categories.Length);
+    }
+
+    [Test]
+    public async Task GivenEmptyCategories_WhenHandlingListCategories_ThenShouldReturnEmptyList()
+    {
+        // Arrange
+        _repositoryMock
+            .Setup(repo => repo.ListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        var query = new ListCategoriesQuery();
+
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.ShouldNotBeNull();
+        result.ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task GivenRepositoryThrowsException_WhenHandlingListCategories_ThenShouldThrowException()
+    {
+        // Arrange
+        _repositoryMock
+            .Setup(repo => repo.ListAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new("Database error"));
+
+        var query = new ListCategoriesQuery();
+
+        // Act & Assert
+        await Should.ThrowAsync<Exception>(
+            async () => await _handler.Handle(query, CancellationToken.None)
+        );
+    }
+}

@@ -1,0 +1,348 @@
+---
+asyncapi: 3.0.0
+info:
+  title: Finance Service
+  version: 1.0.0
+  description: |-
+    Finance API for BookWorm
+  contact:
+    name: Nhan Nguyen
+    url: "https://github.com/foxminchan"
+  license:
+    name: MIT
+    url: "https://opensource.org/licenses/MIT"
+defaultContentType: application/json
+servers:
+  rabbitmq:
+    host: localhost:5672
+    protocol: amqp
+    description: RabbitMQ server for development
+    security:
+      - type: userPassword
+channels:
+  notification-cancel-order:
+    address: notification-cancel-order
+    messages:
+      CancelOrderCommand.message:
+        $ref: "#/components/messages/CancelOrderCommand"
+  notification-complete-order:
+    address: notification-complete-order
+    messages:
+      CompleteOrderCommand.message:
+        $ref: "#/components/messages/CompleteOrderCommand"
+  basket-checkout-complete:
+    address: basket-checkout-complete
+    messages:
+      DeleteBasketCompleteCommand.message:
+        $ref: "#/components/messages/DeleteBasketCompleteCommand"
+  basket-checkout-failed:
+    address: basket-checkout-failed
+    messages:
+      DeleteBasketFailedCommand.message:
+        $ref: "#/components/messages/DeleteBasketFailedCommand"
+  basket-place-order:
+    address: basket-place-order
+    messages:
+      PlaceOrderCommand.message:
+        $ref: "#/components/messages/PlaceOrderCommand"
+  "BookWorm.Contracts:BasketDeletedCompleteIntegrationEvent":
+    address: "BookWorm.Contracts:BasketDeletedCompleteIntegrationEvent"
+    messages:
+      BasketDeletedCompleteIntegrationEvent.message:
+        $ref: "#/components/messages/BasketDeletedCompleteIntegrationEvent"
+  "BookWorm.Contracts:BasketDeletedFailedIntegrationEvent":
+    address: "BookWorm.Contracts:BasketDeletedFailedIntegrationEvent"
+    messages:
+      BasketDeletedFailedIntegrationEvent.message:
+        $ref: "#/components/messages/BasketDeletedFailedIntegrationEvent"
+  "BookWorm.Contracts:OrderStatusChangedToCancelIntegrationEvent":
+    address: "BookWorm.Contracts:OrderStatusChangedToCancelIntegrationEvent"
+    messages:
+      OrderStatusChangedToCancelIntegrationEvent.message:
+        $ref: "#/components/messages/OrderStatusChangedToCancelIntegrationEvent"
+  "BookWorm.Contracts:OrderStatusChangedToCompleteIntegrationEvent":
+    address: "BookWorm.Contracts:OrderStatusChangedToCompleteIntegrationEvent"
+    messages:
+      OrderStatusChangedToCompleteIntegrationEvent.message:
+        $ref: "#/components/messages/OrderStatusChangedToCompleteIntegrationEvent"
+  "BookWorm.Contracts:UserCheckedOutIntegrationEvent":
+    address: "BookWorm.Contracts:UserCheckedOutIntegrationEvent"
+    messages:
+      UserCheckedOutIntegrationEvent.message:
+        $ref: "#/components/messages/UserCheckedOutIntegrationEvent"
+operations:
+  CancelOrderCommand:
+    action: send
+    channel:
+      $ref: "#/channels/notification-cancel-order"
+    summary: Cancel order notification
+  CompleteOrderCommand:
+    action: send
+    channel:
+      $ref: "#/channels/notification-complete-order"
+    summary: Complete order notification
+  DeleteBasketCompleteCommand:
+    action: send
+    channel:
+      $ref: "#/channels/basket-checkout-complete"
+    summary: Delete basket complete
+  DeleteBasketFailedCommand:
+    action: send
+    channel:
+      $ref: "#/channels/basket-checkout-failed"
+    summary: Delete basket failed
+  PlaceOrderCommand:
+    action: send
+    channel:
+      $ref: "#/channels/basket-place-order"
+    summary: Delete a basket
+  BasketDeletedCompleteIntegrationEvent:
+    action: receive
+    channel:
+      $ref: "#/channels/BookWorm.Contracts:BasketDeletedCompleteIntegrationEvent"
+    summary: Basket deleted complete
+  BasketDeletedFailedIntegrationEvent:
+    action: receive
+    channel:
+      $ref: "#/channels/BookWorm.Contracts:BasketDeletedFailedIntegrationEvent"
+    summary: Basket deleted failed
+  OrderStatusChangedToCancelIntegrationEvent:
+    action: receive
+    channel:
+      $ref: "#/channels/BookWorm.Contracts:OrderStatusChangedToCancelIntegrationEvent"
+    summary: Order status changed to cancel
+  OrderStatusChangedToCompleteIntegrationEvent:
+    action: receive
+    channel:
+      $ref: >-
+        #/channels/BookWorm.Contracts:OrderStatusChangedToCompleteIntegrationEvent
+    summary: Order status changed to cancel
+  UserCheckedOutIntegrationEvent:
+    action: receive
+    channel:
+      $ref: "#/channels/BookWorm.Contracts:UserCheckedOutIntegrationEvent"
+    summary: Basket deleted failed
+components:
+  schemas:
+    integrationEvent:
+      id: integrationEvent
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: guid
+        creationDate:
+          type: string
+          format: date-time
+    CancelOrderCommand:
+      id: CancelOrderCommand
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            orderId:
+              type: string
+              format: guid
+            basketId:
+              type: string
+              format: guid
+            email:
+              type: string
+            totalMoney:
+              type: number
+              format: double
+    CompleteOrderCommand:
+      id: CompleteOrderCommand
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            orderId:
+              type: string
+              format: guid
+            email:
+              type: string
+            totalMoney:
+              type: number
+              format: double
+    DeleteBasketCompleteCommand:
+      id: BasketDeletedCompleteIntegrationEvent
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            orderId:
+              type: string
+              format: guid
+            totalMoney:
+              type: number
+              format: double
+    DeleteBasketFailedCommand:
+      id: BasketDeletedFailedIntegrationEvent
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            basketId:
+              type: string
+              format: guid
+            email:
+              type: string
+            orderId:
+              type: string
+              format: guid
+            totalMoney:
+              type: number
+              format: double
+    PlaceOrderCommand:
+      id: PlaceOrderCommand
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            basketId:
+              type: string
+              format: guid
+            email:
+              type: string
+            orderId:
+              type: string
+              format: guid
+            totalMoney:
+              type: number
+              format: double
+    BasketDeletedCompleteIntegrationEvent:
+      id: BasketDeletedCompleteIntegrationEvent
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            orderId:
+              type: string
+              format: guid
+            basketId:
+              type: string
+              format: guid
+            totalMoney:
+              type: number
+              format: double
+    BasketDeletedFailedIntegrationEvent:
+      id: BasketDeletedFailedIntegrationEvent
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            basketId:
+              type: string
+              format: guid
+            email:
+              type: string
+            orderId:
+              type: string
+              format: guid
+            totalMoney:
+              type: number
+              format: double
+    OrderStatusChangedToCancelIntegrationEvent:
+      id: OrderStatusChangedToCancelIntegrationEvent
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            basketId:
+              type: string
+              format: guid
+            email:
+              type: string
+            orderId:
+              type: string
+              format: guid
+            totalMoney:
+              type: number
+              format: double
+    OrderStatusChangedToCompleteIntegrationEvent:
+      id: OrderStatusChangedToCompleteIntegrationEvent
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            basketId:
+              type: string
+              format: guid
+            email:
+              type: string
+            orderId:
+              type: string
+              format: guid
+            totalMoney:
+              type: number
+              format: double
+    UserCheckedOutIntegrationEvent:
+      id: UserCheckedOutIntegrationEvent
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            basketId:
+              type: string
+              format: guid
+            email:
+              type: string
+            orderId:
+              type: string
+              format: guid
+            totalMoney:
+              type: number
+              format: double
+  messages:
+    CancelOrderCommand:
+      payload:
+        $ref: "#/components/schemas/CancelOrderCommand"
+      name: CancelOrderCommand
+    CompleteOrderCommand:
+      payload:
+        $ref: "#/components/schemas/CompleteOrderCommand"
+      name: CompleteOrderCommand
+    DeleteBasketCompleteCommand:
+      payload:
+        $ref: "#/components/schemas/DeleteBasketCompleteCommand"
+      name: DeleteBasketCompleteCommand
+    DeleteBasketFailedCommand:
+      payload:
+        $ref: "#/components/schemas/DeleteBasketFailedCommand"
+      name: DeleteBasketFailedCommand
+    PlaceOrderCommand:
+      payload:
+        $ref: "#/components/schemas/PlaceOrderCommand"
+      name: PlaceOrderCommand
+    BasketDeletedCompleteIntegrationEvent:
+      payload:
+        $ref: "#/components/schemas/BasketDeletedCompleteIntegrationEvent"
+      name: BasketDeletedCompleteIntegrationEvent
+    BasketDeletedFailedIntegrationEvent:
+      payload:
+        $ref: "#/components/schemas/BasketDeletedFailedIntegrationEvent"
+      name: BasketDeletedFailedIntegrationEvent
+    OrderStatusChangedToCancelIntegrationEvent:
+      payload:
+        $ref: "#/components/schemas/OrderStatusChangedToCancelIntegrationEvent"
+      name: OrderStatusChangedToCancelIntegrationEvent
+    OrderStatusChangedToCompleteIntegrationEvent:
+      payload:
+        $ref: "#/components/schemas/OrderStatusChangedToCompleteIntegrationEvent"
+      name: OrderStatusChangedToCompleteIntegrationEvent
+    UserCheckedOutIntegrationEvent:
+      payload:
+        $ref: "#/components/schemas/UserCheckedOutIntegrationEvent"
+      name: UserCheckedOutIntegrationEvent

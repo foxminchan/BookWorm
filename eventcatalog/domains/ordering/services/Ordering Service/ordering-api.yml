@@ -1,0 +1,586 @@
+---
+openapi: 3.0.1
+info:
+  title: Ordering Service
+  version: 1.0.0
+  description: |-
+    Ordering API for BookWorm
+  contact:
+    name: Nhan Nguyen
+    url: https://github.com/foxminchan
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: http://127.0.0.1:54682
+paths:
+  "/api/v1/orders/{id}/summary":
+    get:
+      tags:
+        - Order
+      summary: Get order summary
+      description: Get order summary from event store
+      x-eventcatalog-message-type: query
+      parameters:
+        - name: id
+          in: path
+          description: The order id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/OrderSummaryInfo"
+  "/api/v1/orders":
+    get:
+      tags:
+        - Order
+      summary: Get orders
+      description: Get orders in a paged format
+      x-eventcatalog-message-type: query
+      parameters:
+        - name: PageIndex
+          in: query
+          description: Number of items to return in a single page of results
+          schema:
+            type: integer
+            format: int32
+            default: 1
+        - name: PageSize
+          in: query
+          description: Number of items to return in a single page of results
+          schema:
+            type: integer
+            format: int32
+            default: 20
+        - name: Status
+          in: query
+          description: Status to filter results by
+          schema:
+            "$ref": "#/components/schemas/NullableOfStatus"
+        - name: BuyerId
+          in: query
+          description: Buyer ID to filter results by
+          schema:
+            type: string
+            format: uuid
+            default:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/PagedResultOfOrderDto"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+    post:
+      tags:
+        - Order
+      summary: Create order
+      description: Create a new order
+      x-eventcatalog-message-type: command
+      parameters:
+        - name: key
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: string
+                format: uuid
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/api/v1/orders/{id}":
+    get:
+      tags:
+        - Order
+      summary: Get order detail
+      description: Get order detail by order id
+      x-eventcatalog-message-type: query
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/OrderDetailDto"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+    delete:
+      tags:
+        - Order
+      summary: Delete order
+      description: Delete order by order id
+      x-eventcatalog-message-type: command
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/api/v1/orders/{orderId}/complete":
+    patch:
+      tags:
+        - Order
+      summary: Complete order
+      description: Complete order by order id
+      x-eventcatalog-message-type: command
+      parameters:
+        - name: key
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/OrderDetailDto"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/api/v1/orders/{orderId}/cancel":
+    patch:
+      tags:
+        - Order
+      summary: Cancel order
+      description: Cancel order by order id
+      x-eventcatalog-message-type: command
+      parameters:
+        - name: key
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/OrderDetailDto"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/api/v1/buyers/address":
+    patch:
+      tags:
+        - Buyer
+      summary: Update buyer address
+      description: Update buyer address by buyer id
+      x-eventcatalog-message-type: command
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/UpdateAddressCommand"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/BuyerDto"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/api/v1/buyers":
+    get:
+      tags:
+        - Buyer
+      summary: Get buyers
+      description: Get buyers in a paged format
+      x-eventcatalog-message-type: query
+      parameters:
+        - name: PageIndex
+          in: query
+          description: Number of items to return in a single page of results
+          schema:
+            type: integer
+            format: int32
+            default: 1
+        - name: PageSize
+          in: query
+          description: Number of items to return in a single page of results
+          schema:
+            type: integer
+            format: int32
+            default: 20
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/PagedResultOfBuyerDto"
+    post:
+      tags:
+        - Buyer
+      summary: Create buyer
+      description: Create a new buyer
+      x-eventcatalog-message-type: command
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreateBuyerCommand"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: string
+                format: uuid
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+  "/api/v1/buyers/me":
+    get:
+      tags:
+        - Buyer
+      summary: Get current buyer
+      description: Get current buyer
+      x-eventcatalog-message-type: query
+      parameters:
+        - name: Id
+          in: query
+          description: Only 'ADMIN' role can retrieve other users' data
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/BuyerDto"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/api/v1/buyers/{id}":
+    delete:
+      tags:
+        - Buyer
+      summary: Delete buyer
+      description: Delete buyer by buyer id
+      x-eventcatalog-message-type: command
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+components:
+  schemas:
+    BuyerDto:
+      required:
+        - id
+        - name
+        - address
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          nullable: true
+        address:
+          type: string
+          nullable: true
+    CreateBuyerCommand:
+      required:
+        - street
+        - city
+        - province
+      type: object
+      properties:
+        street:
+          type: string
+        city:
+          type: string
+        province:
+          type: string
+    HttpValidationProblemDetails:
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+        detail:
+          type: string
+        instance:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    NullableOfStatus:
+      enum:
+        - New
+        - Cancelled
+        - Completed
+        -
+      default:
+    OrderDetailDto:
+      required:
+        - orderId
+        - orderDate
+        - total
+        - orderItems
+      type: object
+      properties:
+        orderId:
+          type: string
+          format: uuid
+        orderDate:
+          type: string
+          format: date-time
+        total:
+          type: number
+          format: double
+        orderItems:
+          type: array
+          items:
+            "$ref": "#/components/schemas/OrderItemDto"
+    OrderDto:
+      required:
+        - orderId
+        - orderDate
+        - total
+        - status
+      type: object
+      properties:
+        orderId:
+          type: string
+          format: uuid
+        orderDate:
+          type: string
+          format: date-time
+        total:
+          type: number
+          format: double
+        status:
+          "$ref": "#/components/schemas/Status"
+    OrderItemDto:
+      required:
+        - id
+        - quantity
+        - price
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          format: int32
+        price:
+          type: number
+          format: double
+        name:
+          type: string
+    OrderSummaryInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          "$ref": "#/components/schemas/Status"
+        totalPrice:
+          type: number
+          format: double
+    PagedResultOfBuyerDto:
+      required:
+        - items
+        - pageIndex
+        - pageSize
+        - totalItems
+        - totalPages
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/BuyerDto"
+        pageIndex:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        totalItems:
+          type: integer
+          format: int64
+        totalPages:
+          type: number
+          format: double
+        hasPreviousPage:
+          type: boolean
+        hasNextPage:
+          type: boolean
+    PagedResultOfOrderDto:
+      required:
+        - items
+        - pageIndex
+        - pageSize
+        - totalItems
+        - totalPages
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/OrderDto"
+        pageIndex:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        totalItems:
+          type: integer
+          format: int64
+        totalPages:
+          type: number
+          format: double
+        hasPreviousPage:
+          type: boolean
+        hasNextPage:
+          type: boolean
+    ProblemDetails:
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+        detail:
+          type: string
+        instance:
+          type: string
+    Status:
+      enum:
+        - New
+        - Cancelled
+        - Completed
+    UpdateAddressCommand:
+      required:
+        - street
+        - city
+        - province
+      type: object
+      properties:
+        street:
+          type: string
+        city:
+          type: string
+        province:
+          type: string
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+tags:
+  - name: Order
+  - name: Buyer
