@@ -1,0 +1,17 @@
+{
+  "analyzers": {
+    "core": {
+      "rules": {
+        "secure-parameter-default": {
+          "level": "warning"
+        },
+        "no-unused-params": {
+          "level": "warning"
+        }
+      }
+    }
+  },
+  "experimentalFeaturesEnabled": {
+    "extensibility": true
+  }
+}

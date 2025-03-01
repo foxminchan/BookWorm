@@ -1,0 +1,44 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bookworm-finance
+  labels:
+    app: bookworm-finance
+spec:
+  minReadySeconds: 60
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bookworm-finance
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: bookworm-finance
+    spec:
+      containers:
+        - name: bookworm-finance
+          image: bookworm-finance:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: https
+              containerPort: 8443
+            - name: healthchecks
+              containerPort: 8005
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+          envFrom:
+            - configMapRef:
+                name: bookworm-finance-env
+            - secretRef:
+                name: bookworm-finance-secrets
+      terminationGracePeriodSeconds: 180

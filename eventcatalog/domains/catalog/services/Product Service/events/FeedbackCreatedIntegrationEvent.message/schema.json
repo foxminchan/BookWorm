@@ -1,0 +1,46 @@
+{
+  "id": "feedbackCreatedIntegrationEvent",
+  "allOf": [
+    {
+      "id": "integrationEvent",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "guid",
+          "x-parser-schema-id": "<anonymous-schema-1>"
+        },
+        "creationDate": {
+          "type": "string",
+          "format": "date-time",
+          "x-parser-schema-id": "<anonymous-schema-2>"
+        }
+      },
+      "x-parser-schema-id": "integrationEvent"
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "bookId": {
+          "type": "string",
+          "format": "guid",
+          "x-parser-schema-id": "<anonymous-schema-4>"
+        },
+        "rating": {
+          "type": "integer",
+          "format": "int32",
+          "x-parser-schema-id": "<anonymous-schema-5>"
+        },
+        "feedbackId": {
+          "type": "string",
+          "format": "guid",
+          "x-parser-schema-id": "<anonymous-schema-6>"
+        }
+      },
+      "x-parser-schema-id": "<anonymous-schema-3>"
+    }
+  ],
+  "x-parser-schema-id": "feedbackCreatedIntegrationEvent"
+}

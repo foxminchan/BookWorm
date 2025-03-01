@@ -1,0 +1,163 @@
+name: CI
+
+on: [push, pull_request, workflow_dispatch]
+
+env:
+  DOTNET_VERSION: "9.0.x"
+
+permissions:
+  checks: write
+  pull-requests: write
+
+jobs:
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install Tools
+        run: dotnet tool restore
+
+      - name: Configure Husky
+        run: dotnet husky install
+
+  scan:
+    name: Scan
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Gitleaks with Docker
+        run: |
+          docker run --rm -v $(pwd):/repo ghcr.io/gitleaks/gitleaks:latest detect --source=/repo --exit-code 1
+
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install Tools
+        run: dotnet tool restore
+
+      - name: Configure Husky
+        run: dotnet husky install
+
+      - name: Run Format Task
+        run: dotnet husky run --name format
+
+  style:
+    name: Style
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install Tools
+        run: dotnet tool restore
+
+      - name: Configure Husky
+        run: dotnet husky install
+
+      - name: Run Style Task
+        run: dotnet husky run --name style
+
+  analyzers:
+    name: Analyzers
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install Tools
+        run: dotnet tool restore
+
+      - name: Configure Husky
+        run: dotnet husky install
+
+      - name: Run Analyzers Task
+        run: dotnet husky run --name analyzers
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [setup, scan, format, style, analyzers]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Build & Restore
+        run: dotnet build
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: [setup, scan, format, style, analyzers]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install Tools
+        run: dotnet tool restore
+
+      - name: Test
+        run: dotnet test --configuration Release -- --report-trx --results-directory ./test-results --coverage --coverage-output-format cobertura
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: |
+            **/src/Services/**/**/test-results/*.trx
+
+      - name: Publish Coverage
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: src/Services/**/**/test-results/*.cobertura.xml
+          badge: true
+          format: markdown
+
+      - name: Add Coverage PR Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: github.event_name == 'pull_request'
+        with:
+          recreate: true
+          path: code-coverage-results.md

@@ -1,0 +1,44 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bookworm-basket
+  labels:
+    app: bookworm-basket
+spec:
+  minReadySeconds: 60
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bookworm-basket
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: bookworm-basket
+    spec:
+      containers:
+        - name: bookworm-basket
+          image: bookworm-basket:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: https
+              containerPort: 8443
+            - name: healthchecks
+              containerPort: 8001
+          envFrom:
+            - configMapRef:
+                name: bookworm-basket-env
+            - secretRef:
+                name: bookworm-basket-secrets
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+      terminationGracePeriodSeconds: 180

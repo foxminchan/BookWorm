@@ -1,36 +1,44 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  
-  <Sdk Name="Aspire.AppHost.Sdk" Version="9.0.0" />
-  
+
+  <Sdk Name="Aspire.AppHost.Sdk" Version="9.1.0"/>
+
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <IsAspireHost>true</IsAspireHost>
     <UserSecretsId>78a33324-5add-4731-b2fc-e0fc06ef0564</UserSecretsId>
+    <NoWarn>ASPIRECOSMOSDB001</NoWarn>
   </PropertyGroup>
-  
-  <ItemGroup>
-    <PackageReference Include="Aspire.Hosting.AppHost" />
-    <PackageReference Include="Aspire.Hosting.Azure.Storage" />
-    <PackageReference Include="Aspire.Hosting.MongoDB" />
-    <PackageReference Include="Aspire.Hosting.PostgreSQL" />
-    <PackageReference Include="Aspire.Hosting.RabbitMQ" />
-    <PackageReference Include="Aspire.Hosting.Redis" />
+
+  <ItemGroup Label="Aspire">
+    <PackageReference Include="Aspire.Hosting.AppHost"/>
+    <PackageReference Include="Aspire.Hosting.Azure.Storage"/>
+    <PackageReference Include="Aspire.Hosting.Azure.CosmosDB"/>
+    <PackageReference Include="Aspire.Hosting.RabbitMQ"/>
+    <PackageReference Include="Aspire.Hosting.Azure.PostgreSQL"/>
+    <PackageReference Include="Aspire.Hosting.Azure.Redis"/>
+    <PackageReference Include="Aspire.Hosting.Qdrant"/>
+    <PackageReference Include="Aspire.Hosting.Keycloak"/>
   </ItemGroup>
-  
-  <ItemGroup>
-    <ProjectReference Include="..\BookWorm.Basket\BookWorm.Basket.csproj" />
-    <ProjectReference Include="..\BookWorm.Catalog\BookWorm.Catalog.csproj" />
-    <ProjectReference Include="..\BookWorm.Gateway\BookWorm.Gateway.csproj" />
-    <ProjectReference Include="..\BookWorm.Identity\BookWorm.Identity.csproj" />
-    <ProjectReference Include="..\BookWorm.Notification\BookWorm.Notification.csproj" />
-    <ProjectReference Include="..\BookWorm.Ordering\BookWorm.Ordering.csproj" />
-    <ProjectReference Include="..\BookWorm.Rating\BookWorm.Rating.csproj" />
+
+  <ItemGroup Label="CommunityToolkit">
+    <PackageReference Include="CommunityToolkit.Aspire.Hosting.Ollama"/>
+    <PackageReference Include="CommunityToolkit.Aspire.Hosting.MailPit"/>
   </ItemGroup>
-  
-  <ItemGroup>
-    <ProjectReference Include="..\BookWorm.Constants\BookWorm.Constants.csproj" IsAspireProjectResource="false" />
-    <ProjectReference Include="..\BookWorm.HealthCheck.Hosting\BookWorm.HealthCheck.Hosting.csproj" IsAspireProjectResource="false" />
-    <ProjectReference Include="..\BookWorm.MailDev.Hosting\BookWorm.MailDev.Hosting.csproj" IsAspireProjectResource="false" />
+
+  <ItemGroup Label="Services">
+    <ProjectReference Include="..\BookWorm.Gateway\BookWorm.Gateway.csproj"/>
+    <ProjectReference Include="..\Services\Basket\BookWorm.Basket\BookWorm.Basket.csproj"/>
+    <ProjectReference Include="..\Services\Catalog\BookWorm.Catalog\BookWorm.Catalog.csproj"/>
+    <ProjectReference Include="..\Services\Finance\BookWorm.Finance\BookWorm.Finance.csproj"/>
+    <ProjectReference Include="..\Services\Notification\BookWorm.Notification\BookWorm.Notification.csproj"/>
+    <ProjectReference Include="..\Services\Ordering\BookWorm.Ordering\BookWorm.Ordering.csproj"/>
+    <ProjectReference Include="..\Services\Rating\BookWorm.Rating\BookWorm.Rating.csproj"/>
   </ItemGroup>
-  
+
+  <ItemGroup Label="Integrations">
+    <ProjectReference Include="..\BuildingBlocks\BookWorm.Constants\BookWorm.Constants.csproj" IsAspireProjectResource="false"/>
+    <ProjectReference Include="..\Integrations\BookWorm.Scalar\BookWorm.Scalar.csproj" IsAspireProjectResource="false"/>
+    <ProjectReference Include="..\Integrations\BookWorm.HealthChecksUI\BookWorm.HealthChecksUI.csproj" IsAspireProjectResource="false"/>
+  </ItemGroup>
+
 </Project>

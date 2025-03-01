@@ -1,0 +1,14 @@
+resources:
+  - statefulset.yaml
+  - service.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+  - name: vector-db-env
+    literals:
+      - QDRANT__SERVICE__API_KEY=muEN5VTwYkGqjc4Yn5lf1z
+      - QDRANT__SERVICE__ENABLE_STATIC_CONTENT=0
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://aspire-dashboard:18889
+      - OTEL_SERVICE_NAME=vector-db

@@ -1,0 +1,39 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: vector-db
+  labels:
+    app: vector-db
+spec:
+  serviceName: "vector-db"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vector-db
+  template:
+    metadata:
+      labels:
+        app: vector-db
+    spec:
+      containers:
+        - name: vector-db
+          image: docker.io/qdrant/qdrant:v1.12.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 6334
+            - containerPort: 6333
+          envFrom:
+            - configMapRef:
+                name: vector-db-env
+          volumeMounts:
+            - name: bookworm-apphost-62fd53aa4e-vector-db-data
+              mountPath: /qdrant/storage
+  volumeClaimTemplates:
+    - metadata:
+        name: bookworm-apphost-62fd53aa4e-vector-db-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi

@@ -1,0 +1,40 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: queue
+  labels:
+    app: queue
+spec:
+  minReadySeconds: 60
+  replicas: 1
+  selector:
+    matchLabels:
+      app: queue
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: queue
+    spec:
+      containers:
+        - name: queue
+          image: docker.io/library/rabbitmq:4.0-management
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: tcp
+              containerPort: 5672
+            - name: management
+              containerPort: 15672
+          resources:
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+          envFrom:
+            - configMapRef:
+                name: queue-env
+      terminationGracePeriodSeconds: 180

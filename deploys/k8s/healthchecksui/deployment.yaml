@@ -1,0 +1,38 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: healthchecksui
+  labels:
+    app: healthchecksui
+spec:
+  minReadySeconds: 60
+  replicas: 1
+  selector:
+    matchLabels:
+      app: healthchecksui
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: healthchecksui
+    spec:
+      containers:
+        - name: healthchecksui
+          image: docker.io/xabarilcoding/healthchecksui:5.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+          envFrom:
+            - configMapRef:
+                name: healthchecksui-env
+      terminationGracePeriodSeconds: 180

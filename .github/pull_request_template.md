@@ -1,31 +1,74 @@
-## Description
+# Pull Request Description
 
-Please include a summary of the change and which issue is fixed. Please also include relevant motivation and context. List any dependencies that are required for this change.
+## Overview
 
-Fixes # (issue) [Remove if not relevant]
+<!-- Provide a brief summary of the changes in this PR -->
 
-## Project
+## Related Issues
 
-- [ ] Service (please specify)
-- [ ] Other... (please describe)
+<!-- Reference any related issues (e.g., "Fixes #123", "Implements #456") -->
 
-## Type of change
+## Service Impact
 
-Please delete options that are not relevant.
+<!-- Which services/components are affected by this change? -->
 
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] This change requires a documentation update
-- [ ] Test (adding missing tests or fixing existing tests)
-- [ ] Other... (please describe)
+- [ ] BuildingBlocks
+  - [ ] Constants
+  - [ ] SharedKernel
+- [ ] Services
+  - [ ] Catalog
+  - [ ] Basket
+  - [ ] Ordering
+  - [ ] Notification
+  - [ ] Rating
+- [ ] Infrastructure
+  - [ ] AppHost
+  - [ ] Gateway
+- [ ] Integrations
+  - [ ] HealthChecksUI
+  - [ ] Scalar
+- [ ] Other (please describe)
 
-## How Has This Been Tested?
+## Type of Change
 
-Please describe the tests that you ran to verify your changes. Provide instructions so we can reproduce. Please also list any relevant details for your test configuration
+- [ ] New feature
+- [ ] Bug fix
+- [ ] Performance improvement
+- [ ] Refactoring
+- [ ] Documentation update
+- [ ] Other (please describe):
 
-- [ ] Unit Tests
-- [ ] Integration Tests
-- [ ] No tests needed
+## Test Coverage
 
-## Screenshots/Videos (if appropriate):
+<!-- Describe the testing you've done -->
+
+- [ ] Unit tests added/updated
+- [ ] Manual testing performed
+
+## Implementation Notes
+
+<!-- Any implementation details that reviewers should know about -->
+
+## Checklist
+
+- [ ] My code follows the DDD principles
+- [ ] I've used the latest C# features and idioms
+- [ ] I've added/updated unit tests for business logic
+- [ ] Service boundaries are maintained (no cross-service direct dependencies)
+- [ ] I've applied CQRS with MediatR where applicable
+- [ ] Repository pattern is used for data access
+- [ ] Domain Events are used for cross-service communication
+- [ ] I've registered new services in AppHost project (if applicable)
+- [ ] I've updated both entities and DTOs (if applicable)
+
+## Breaking Changes
+
+<!-- List any breaking changes and how consumers should migrate -->
+
+## Screenshots
+
+<!-- If applicable, add screenshots to help explain your changes -->
+
+## Additional Notes
+
+<!-- Any additional information that might be helpful -->

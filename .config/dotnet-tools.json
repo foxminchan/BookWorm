@@ -3,31 +3,33 @@
   "isRoot": true,
   "tools": {
     "aspirate": {
-      "version": "8.0.7",
-      "commands": [
-        "aspirate"
-      ],
-      "rollForward": false
-    },
-    "dotnet-reportgenerator-globaltool": {
-      "version": "5.4.2",
-      "commands": [
-        "reportgenerator"
-      ],
+      "version": "9.1.0",
+      "commands": ["aspirate"],
       "rollForward": false
     },
     "husky": {
       "version": "0.7.2",
-      "commands": [
-        "husky"
-      ],
+      "commands": ["husky"],
       "rollForward": false
     },
     "csharpier": {
-      "version": "0.30.3",
-      "commands": [
-        "dotnet-csharpier"
-      ],
+      "version": "0.30.6",
+      "commands": ["dotnet-csharpier"],
+      "rollForward": false
+    },
+    "dotnet-ef": {
+      "version": "9.0.2",
+      "commands": ["dotnet-ef"],
+      "rollForward": false
+    },
+    "dotnet-coverage": {
+      "version": "17.14.2",
+      "commands": ["dotnet-coverage"],
+      "rollForward": false
+    },
+    "dotnet-outdated-tool": {
+      "version": "4.6.7",
+      "commands": ["dotnet-outdated"],
       "rollForward": false
     }
   }

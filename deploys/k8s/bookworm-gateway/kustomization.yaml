@@ -1,0 +1,31 @@
+resources:
+  - deployment.yaml
+  - service.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+  - name: bookworm-gateway-env
+    literals:
+      - OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES=true
+      - OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES=true
+      - OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY=in_memory
+      - ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
+      - HTTP_PORTS=8080;8006
+      - services__bookworm-catalog__http__0=http://bookworm-catalog:8080
+      - services__bookworm-catalog__healthchecks__0=bookworm-catalog:8000
+      - services__bookworm-ordering__http__0=http://bookworm-ordering:8080
+      - services__bookworm-ordering__healthchecks__0=bookworm-ordering:8003
+      - services__bookworm-rating__http__0=http://bookworm-rating:8080
+      - services__bookworm-rating__healthchecks__0=bookworm-rating:8004
+      - services__bookworm-basket__http__0=http://bookworm-basket:8080
+      - services__bookworm-basket__healthchecks__0=bookworm-basket:8001
+      - services__bookworm-finance__http__0=http://bookworm-finance:8080
+      - services__bookworm-finance__healthchecks__0=bookworm-finance:8005
+      - services__keycloak__http__0=http://keycloak:8080
+      - services__keycloak__management__0=keycloak:9000
+      - HEALTHCHECKSUI_URLS=bookworm-gateway:8006/healthz
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://aspire-dashboard:18889
+      - OTEL_SERVICE_NAME=bookworm-gateway
+      - ASPNETCORE_URLS=http://+:8080;

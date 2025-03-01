@@ -1,5 +1,6 @@
 <Project>
   <PropertyGroup>
+    <Authors>Nhan Nguyen</Authors>
     <LangVersion>preview</LangVersion>
     <WarnOnPackingNonPackableProject>false</WarnOnPackingNonPackableProject>
     <TargetFramework>net9.0</TargetFramework>
@@ -10,6 +11,6 @@
     <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
     <InvariantGlobalization>false</InvariantGlobalization>
     <!-- Temporarily disable security warnings for transitive packages. -->
-    <NoWarn>NU1901;NU1902;NU1903;NU1904;NU1608</NoWarn>
+    <NoWarn>NU1506;NU1608</NoWarn>
   </PropertyGroup>
 </Project>

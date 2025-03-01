@@ -1,0 +1,26 @@
+resources:
+  - deployment.yaml
+  - service.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+  - name: bookworm-catalog-env
+    literals:
+      - OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES=true
+      - OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES=true
+      - OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY=in_memory
+      - ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
+      - HTTP_PORTS=8080;8000
+      - services__keycloak__http__0=http://keycloak:8080
+      - services__keycloak__management__0=keycloak:9000
+      - HEALTHCHECKSUI_URLS=bookworm-catalog:8000/healthz
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://aspire-dashboard:18889
+      - OTEL_SERVICE_NAME=bookworm-catalog
+      - ASPNETCORE_URLS=http://+:8080;
+
+secretGenerator:
+  - name: bookworm-catalog-secrets
+    envs:
+      - .bookworm-catalog.secrets

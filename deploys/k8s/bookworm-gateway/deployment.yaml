@@ -1,0 +1,42 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bookworm-gateway
+  labels:
+    app: bookworm-gateway
+spec:
+  minReadySeconds: 60
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bookworm-gateway
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: bookworm-gateway
+    spec:
+      containers:
+        - name: bookworm-gateway
+          image: bookworm-gateway:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: https
+              containerPort: 8443
+            - name: healthchecks
+              containerPort: 8006
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          envFrom:
+            - configMapRef:
+                name: bookworm-gateway-env
+      terminationGracePeriodSeconds: 180

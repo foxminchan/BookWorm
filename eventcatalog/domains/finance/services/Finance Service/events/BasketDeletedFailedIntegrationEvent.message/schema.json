@@ -1,0 +1,50 @@
+{
+  "id": "BasketDeletedFailedIntegrationEvent",
+  "allOf": [
+    {
+      "id": "integrationEvent",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "guid",
+          "x-parser-schema-id": "<anonymous-schema-1>"
+        },
+        "creationDate": {
+          "type": "string",
+          "format": "date-time",
+          "x-parser-schema-id": "<anonymous-schema-2>"
+        }
+      },
+      "x-parser-schema-id": "integrationEvent"
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "basketId": {
+          "type": "string",
+          "format": "guid",
+          "x-parser-schema-id": "<anonymous-schema-30>"
+        },
+        "email": {
+          "type": "string",
+          "x-parser-schema-id": "<anonymous-schema-31>"
+        },
+        "orderId": {
+          "type": "string",
+          "format": "guid",
+          "x-parser-schema-id": "<anonymous-schema-32>"
+        },
+        "totalMoney": {
+          "type": "number",
+          "format": "double",
+          "x-parser-schema-id": "<anonymous-schema-33>"
+        }
+      },
+      "x-parser-schema-id": "<anonymous-schema-29>"
+    }
+  ],
+  "x-parser-schema-id": "BasketDeletedFailedIntegrationEvent"
+}

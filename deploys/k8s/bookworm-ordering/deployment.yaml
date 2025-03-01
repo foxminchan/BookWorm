@@ -1,0 +1,44 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bookworm-ordering
+  labels:
+    app: bookworm-ordering
+spec:
+  minReadySeconds: 60
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bookworm-ordering
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: bookworm-ordering
+    spec:
+      containers:
+        - name: bookworm-ordering
+          image: bookworm-ordering:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: https
+              containerPort: 8443
+            - name: healthchecks
+              containerPort: 8003
+          envFrom:
+            - configMapRef:
+                name: bookworm-ordering-env
+            - secretRef:
+                name: bookworm-ordering-secrets
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      terminationGracePeriodSeconds: 180

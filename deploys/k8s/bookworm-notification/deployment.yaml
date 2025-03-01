@@ -1,0 +1,44 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bookworm-notification
+  labels:
+    app: bookworm-notification
+spec:
+  minReadySeconds: 60
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bookworm-notification
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: bookworm-notification
+    spec:
+      containers:
+        - name: bookworm-notification
+          image: bookworm-notification:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: https
+              containerPort: 8443
+            - name: healthchecks
+              containerPort: 8002
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          envFrom:
+            - configMapRef:
+                name: bookworm-notification-env
+            - secretRef:
+                name: bookworm-notification-secrets
+      terminationGracePeriodSeconds: 180
