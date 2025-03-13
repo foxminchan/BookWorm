@@ -17,7 +17,7 @@ RUN npm run build
 
 
 ## Stage 2: Serve app with httpd server
-FROM httpd:2.4
+FROM httpd:2.4.63-alpine3.21
 
 # Copy built app to serve
 COPY --from=build /app/dist /usr/local/apache2/htdocs
