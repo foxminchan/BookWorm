@@ -1,3 +1,6 @@
+[![CI](https://github.com/foxminchan/BookWorm/actions/workflows/ci.yaml/badge.svg)](https://github.com/foxminchan/BookWorm/actions/workflows/ci.yaml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
+
 # BookWorm: A Practical .NET Aspire Application
 
 ## Introduction
