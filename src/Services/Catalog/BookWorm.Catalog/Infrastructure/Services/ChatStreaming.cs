@@ -1,7 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
-using Microsoft.Extensions.AI;
 
 namespace BookWorm.Catalog.Infrastructure.Services;
 
