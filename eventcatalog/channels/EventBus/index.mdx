@@ -1,0 +1,76 @@
+---
+id: eventbus
+name: Event Bus Channel
+version: 1.0.0
+summary: |
+  Central event bus for all events in the system.
+owners:
+    - nhanxnguyen
+---
+
+### Overview
+
+The Event Bus Channel is a central event bus for all events in the system. It acts as a message broker that allows services to publish and subscribe to events. The Event Bus Channel is responsible for routing events to the appropriate consumers based on the event type and the consumer's subscription.
+
+<ChannelInformation />
+
+### Publishing a message using Masstransit
+
+To publish a message using Masstransit, you need to create a message class that implements the `IMessage` interface. The message class should contain the properties that you want to send as part of the message.
+
+```csharp
+public sealed record OrderCreatedIntegrationEvent(Guid OrderId, string BuyerId) : IntegrationEvent;
+```
+
+Next, you need to publish the message using the `IPublishEndpoint` interface.
+
+```csharp
+public sealed class OrderService(IPublishEndpoint publishEndpoint)
+{
+	public async Task CreateOrderAsync(Guid orderId, string buyerId)
+	{
+		var orderCreatedEvent = new OrderCreatedIntegrationEvent(orderId, buyerId);
+		await publishEndpoint.Publish(orderCreatedEvent);
+	}
+}
+```
+
+### Subscribing to a message using Masstransit
+
+To subscribe to a message using Masstransit, you need to create a consumer class that implements the `IConsumer` interface. The consumer class should contain the logic that you want to execute when the message is received.
+
+```csharp
+public sealed class OrderCreatedIntegrationEventConsumer : IConsumer<OrderCreatedIntegrationEvent>
+{
+	public async Task Consume(ConsumeContext<OrderCreatedIntegrationEvent> context)
+	{
+		var orderCreatedEvent = context.Message;
+		// Process the order created event
+	}
+}
+```
+
+Next, you need to register the consumer class using the `AddConsumer` method.
+
+```csharp
+services.AddMassTransit(x =>
+{
+	x.AddConsumer<OrderCreatedIntegrationEventConsumer>();
+});
+```
+
+Finally, you need to configure the consumer class to consume the message.
+
+```csharp
+services.AddMassTransit(x =>
+{
+	x.AddConsumer<OrderCreatedIntegrationEventConsumer>();
+	x.UsingRabbitMq((context, cfg) =>
+	{
+		cfg.ReceiveEndpoint("order-created-event-queue", e =>
+		{
+			e.ConfigureConsumer<OrderCreatedIntegrationEventConsumer>(context);
+		});
+	});
+});
+```

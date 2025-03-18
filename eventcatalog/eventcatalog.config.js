@@ -37,6 +37,12 @@ export default {
     max_tokens: 4096,
     similarityResults: 50,
   },
+  sidebar: [
+    {
+      id: "/chat",
+      visible: false,
+    },
+  ],
   generators: [
     [
       "@eventcatalog/generator-ai",
