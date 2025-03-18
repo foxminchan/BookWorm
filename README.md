@@ -1,7 +1,8 @@
 [![CI](https://github.com/foxminchan/BookWorm/actions/workflows/ci.yaml/badge.svg)](https://github.com/foxminchan/BookWorm/actions/workflows/ci.yaml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/ff82b0cb-bbb5-4d49-b326-e4792d673420/deploy-status)](https://app.netlify.com/sites/bookwormdev/deploys)
 
-# BookWorm: A Practical .NET Aspire Application
+# 📖 BookWorm: A Practical .NET Aspire Application
 
 ## Introduction
 
@@ -43,7 +44,6 @@
 - [x] Implement testing strategy
   - [x] Service unit tests
   - [ ] Integration tests
-- [ ] Create StoreFront & BackOffice with `Blazor`
 
 ## Project Architecture
 
@@ -68,6 +68,7 @@ BookWorm is structured as a microservices-based application with the following s
 - [Gitleaks](https://gitleaks.io/)
 - [Docker](https://www.docker.com/get-started) or [Podman](https://podman-desktop.io/)
 - [k3d](https://k3d.io/) & [k9s](https://k9scli.io/)
+- [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
 
 > [!NOTE]
 > In this project, we use [DeepSeek R1](https://ollama.com/library/deepseek-r1) & [Nomic Embed Text](https://ollama.com/library/nomic-embed-text). So, you need to have an Nvidia GPU to run the application.
@@ -135,6 +136,11 @@ dotnet user-secrets set "Parameters:sql-password" "postgres"
 
 > [!CAUTION]
 > Do not modify namespaces for `Integration Events` as it will disrupt the messaging system.
+
+## Support
+
+- If you like this project, please give it (⭐) a star.
+- If you have any issues or feature requests, please open an issue.
 
 ## License
 

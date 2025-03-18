@@ -1,0 +1,29 @@
+name: "Style"
+description: "Style the repository using Husky"
+
+inputs:
+  dotnet-version:
+    description: "The version of .NET Core to use"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ inputs.dotnet-version }}
+
+    - name: Install Tools
+      shell: bash
+      run: dotnet tool restore
+
+    - name: Configure Husky
+      shell: bash
+      if: success()
+      run: dotnet husky install
+
+    - name: Run Style Task
+      shell: bash
+      if: success()
+      run: dotnet husky run --name style

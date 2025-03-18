@@ -1,0 +1,30 @@
+name: "Build"
+description: "Build the project"
+
+inputs:
+  dotnet-version:
+    description: "The version of .NET Core to use"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Cache NuGet Packages
+      uses: actions/cache@v4
+      if: success()
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-dotnet-nuget
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ inputs.dotnet-version }}
+
+    - name: Install Tools
+      shell: bash
+      run: dotnet tool restore
+
+    - name: Build
+      shell: bash
+      run: dotnet build

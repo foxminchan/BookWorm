@@ -17,6 +17,29 @@ BookWorm is a microservices-based application with the following components:
 - Maintain service boundaries - avoid cross-service direct dependencies
 - Use spaces for indentation with four-spaces per level, unless it is a csproj file, then use two-spaces per level.
 - Prefer type declarations over `var` when the type isn't obvious.
+- Use `Primary Constructor` for classes with immutable properties.
+- Use `Expression-bodied members` for methods and properties.
+
+Example:
+
+```csharp
+public sealed class Book
+{
+	public string Title { get; private set; }
+	public string Author { get; private set; }
+
+	public Book(string title, string author)
+	{
+		Title = !string.IsNullOrWhiteSpace(title) ? title : throw new CatalogDomainException("Title cannot be empty.");
+		Author = !string.IsNullOrWhiteSpace(author) ? author : throw new CatalogDomainException("Author cannot be empty.");
+	}
+}
+
+public sealed class BookService
+{
+	public Book GetBook(string title, string author) => new Book(title, author);
+}
+```
 
 ## Service Descriptions
 

@@ -27,6 +27,33 @@ resource cosmos 'Microsoft.DocumentDB/databaseAccounts@2024-08-15' = {
   }
 }
 
+resource ratingdb 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2024-08-15' = {
+  name: 'ratingdb'
+  location: location
+  properties: {
+    resource: {
+      id: 'ratingdb'
+    }
+  }
+  parent: cosmos
+}
+
+resource Feedbacks 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2024-08-15' = {
+  name: 'Feedbacks'
+  location: location
+  properties: {
+    resource: {
+      id: 'Feedbacks'
+      partitionKey: {
+        paths: [
+          '/id'
+        ]
+      }
+    }
+  }
+  parent: ratingdb
+}
+
 resource cosmos_roleDefinition 'Microsoft.DocumentDB/databaseAccounts/sqlRoleDefinitions@2024-08-15' existing = {
   name: '00000000-0000-0000-0000-000000000002'
   parent: cosmos

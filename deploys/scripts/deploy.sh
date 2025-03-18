@@ -2,6 +2,11 @@
 
 set -e # Exit immediately if a command exits with a non-zero status
 
+# Check if bicep is installed (az bicep version)
+if ! az bicep version &> /dev/null; then
+  az bicep install
+fi
+
 # Set initial variables
 RESOURCE_GROUP="bookworm-rg"
 LOCATION="southeastasia"

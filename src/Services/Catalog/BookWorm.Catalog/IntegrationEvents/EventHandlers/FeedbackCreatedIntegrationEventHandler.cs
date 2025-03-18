@@ -1,5 +1,4 @@
 ﻿using BookWorm.Contracts;
-using MassTransit;
 using Saunter.Attributes;
 
 namespace BookWorm.Catalog.IntegrationEvents.EventHandlers;
