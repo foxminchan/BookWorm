@@ -1,6 +1,4 @@
-﻿using MassTransit;
-
-namespace BookWorm.Catalog.Extensions;
+﻿namespace BookWorm.Catalog.Extensions;
 
 public static class Extensions
 {
@@ -65,7 +63,7 @@ public static class Extensions
         // Configure AI
         services.AddSingleton<IAiService, AiService>();
         builder.AddOllamaApiClient("ollama-nomic-embed-text").AddEmbeddingGenerator();
-        builder.AddOllamaApiClient("ollama-deepseek-r1").AddChatClient();
+        builder.AddOllamaApiClient("ollama-deepseek-r1").AddChatClient().UseFunctionInvocation();
         services
             .AddOpenTelemetry()
             .WithMetrics(m => m.AddMeter("Experimental.Microsoft.Extensions.AI"))

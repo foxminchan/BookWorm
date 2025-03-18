@@ -5,13 +5,17 @@
     <ExcludeFromCodeCoverage>true</ExcludeFromCodeCoverage>
   </PropertyGroup>
 
-  <ItemGroup>
+  <ItemGroup Label="Unit Test">
     <PackageReference Include="TUnit"/>
     <PackageReference Include="Shouldly"/>
     <PackageReference Include="Moq"/>
     <PackageReference Include="Bogus"/>
+  </ItemGroup>
+
+  <ItemGroup Label="Test Platforms">
     <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage"/>
     <PackageReference Include="Microsoft.Testing.Extensions.TrxReport"/>
+    <PackageReference Include="Microsoft.Testing.Extensions.VSTestBridge"/>
   </ItemGroup>
 
   <ItemGroup>

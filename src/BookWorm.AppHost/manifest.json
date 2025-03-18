@@ -128,7 +128,7 @@
     "cosmos": {
       "type": "azure.bicep.v0",
       "connectionString": "{cosmos.outputs.connectionString}",
-      "path": "../../deploys/bicep/infra/cosmos.module.bicep",
+      "path": "cosmos.module.bicep",
       "params": {
         "principalType": "",
         "principalId": ""
@@ -136,11 +136,19 @@
     },
     "storage": {
       "type": "azure.bicep.v0",
-      "path": "../../deploys/bicep/infra/storage.module.bicep",
+      "path": "storage.module.bicep",
       "params": {
         "principalType": "",
         "principalId": ""
       }
+    },
+    "ratingdb": {
+      "type": "value.v0",
+      "connectionString": "{cosmos.outputs.connectionString}"
+    },
+    "Feedbacks": {
+      "type": "value.v0",
+      "connectionString": "{cosmos.outputs.connectionString}"
     },
     "blob": {
       "type": "value.v0",
@@ -235,6 +243,7 @@
         "ConnectionStrings__vector-db_http": "Endpoint={vector-db.bindings.http.url};Key={vector-db-Key.value}",
         "services__keycloak__http__0": "{keycloak.bindings.http.url}",
         "services__keycloak__management__0": "{keycloak.bindings.management.url}",
+        "ConnectionStrings__redis": "{redis.connectionString}",
         "ConnectionStrings__embedding": "{embedding.connectionString}",
         "ConnectionStrings__chat": "{chat.connectionString}",
         "HEALTHCHECKSUI_URLS": "{bookworm-catalog.bindings.healthchecks.url}/healthz"

@@ -7,6 +7,8 @@ builder.AddServiceDefaults();
 
 builder.AddDefaultAuthentication();
 
+builder.Services.AddHttpForwarderWithServiceDiscovery();
+
 builder.Services.AddRequestTimeouts(options =>
     options.AddPolicy("timeout-1-minute", TimeSpan.FromMinutes(1))
 );

@@ -1,6 +1,14 @@
-name: BookWorm CI
+name: BookWorm Pull Request Validation
 
-on: [push, workflow_dispatch]
+on:
+  pull_request:
+    paths-ignore:
+      - "**.md"
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "**.md"
 
 env:
   DOTNET_VERSION: "9.0.x"
@@ -8,10 +16,6 @@ env:
 permissions:
   checks: write
   pull-requests: write
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
-  cancel-in-progress: true
 
 jobs:
   setup:

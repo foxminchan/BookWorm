@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using Microsoft.Extensions.AI;
 
 namespace BookWorm.Catalog.Infrastructure.AI;
 
