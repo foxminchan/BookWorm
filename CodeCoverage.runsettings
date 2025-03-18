@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RunSettings>
+	<RunConfiguration>
+		<MaxCpuCount>10</MaxCpuCount>
+	</RunConfiguration>
+	<DataCollectionRunSettings>
+		<DataCollectors>
+			<DataCollector friendlyName="Code Coverage">
+				<Configuration>
+					<Format>cobertura,opencover</Format>
+					<ExcludeByFile>src/Services/**/**/Infrastructure/Migrations/*.cs,</ExcludeByFile>
+					<ExcludeByFile>src/Services/**/**/Internal/Generated/**/*.cs,</ExcludeByFile>
+					<CodeCoverage>
+						<UseVerifiableInstrumentation>True</UseVerifiableInstrumentation>
+						<AllowLowIntegrityProcesses>True</AllowLowIntegrityProcesses>
+						<CollectFromChildProcesses>True</CollectFromChildProcesses>
+						<CollectAspDotNet>False</CollectAspDotNet>
+					</CodeCoverage>
+					<SkipAutoProps>true</SkipAutoProps>
+				</Configuration>
+			</DataCollector>
+		</DataCollectors>
+	</DataCollectionRunSettings>
+</RunSettings>

@@ -6,7 +6,7 @@
     <AspireUnstableVersion>9.1.0-preview.1.25121.10</AspireUnstableVersion>
     <ApiVersioningVersion>8.1.0</ApiVersioningVersion>
     <GrpcVersion>2.70.0</GrpcVersion>
-    <MassTransitVersion>8.3.7</MassTransitVersion>
+    <MassTransitVersion>8.4.0</MassTransitVersion>
   </PropertyGroup>
   <ItemGroup>
     <!-- Aspire -->
@@ -59,7 +59,7 @@
     <!-- Grpc -->
     <PackageVersion Include="Grpc.AspNetCore" Version="$(GrpcVersion)"/>
     <PackageVersion Include="Grpc.AspNetCore.Server.ClientFactory" Version="$(GrpcVersion)"/>
-    <PackageVersion Include="Grpc.Tools" Version="$(GrpcVersion)" PrivateAssets="All"/>
+    <PackageVersion Include="Grpc.Tools" Version="2.71.0" PrivateAssets="All"/>
     <!-- MassTransit -->
     <PackageVersion Include="MassTransit.RabbitMQ" Version="$(MassTransitVersion)"/>
     <PackageVersion Include="MassTransit.StateMachineVisualizer" Version="$(MassTransitVersion)"/>

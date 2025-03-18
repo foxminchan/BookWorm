@@ -23,21 +23,21 @@ BookWorm is a microservices-based application with the following components:
 Example:
 
 ```csharp
-public class Book
+public sealed class Book
 {
-		public string Title { get; }
-		public string Author { get; }
+	public string Title { get; private set; }
+	public string Author { get; private set; }
 
-		public Book(string title, string author)
-		{
-				Title = title;
-				Author = author;
-		}
+	public Book(string title, string author)
+	{
+		Title = !string.IsNullOrWhiteSpace(title) ? title : throw new CatalogDomainException("Title cannot be empty.");
+		Author = !string.IsNullOrWhiteSpace(author) ? author : throw new CatalogDomainException("Author cannot be empty.");
+	}
 }
 
-public class BookService
+public sealed class BookService
 {
-		public Book GetBook(string title, string author) => new Book(title, author);
+	public Book GetBook(string title, string author) => new Book(title, author);
 }
 ```
 
