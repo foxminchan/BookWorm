@@ -1,5 +1,4 @@
 ﻿using BookWorm.Ordering.Helpers;
-using BookWorm.ServiceDefaults.Keycloak;
 using MediatR.Pipeline;
 
 namespace BookWorm.Ordering.Features.Orders.Create;

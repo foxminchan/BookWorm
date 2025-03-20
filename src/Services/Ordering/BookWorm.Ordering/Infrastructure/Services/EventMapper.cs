@@ -1,5 +1,4 @@
 ﻿using BookWorm.Contracts;
-using BookWorm.ServiceDefaults.Keycloak;
 
 namespace BookWorm.Ordering.Infrastructure.Services;
 

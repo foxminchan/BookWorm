@@ -1,12 +1,16 @@
 ﻿using System.Net.Mail;
 using BookWorm.Notification.Exceptions;
 using BookWorm.SharedKernel.OpenTelemetry;
+using Polly.Registry;
 using SendGrid.Helpers.Mail;
 
 namespace BookWorm.Notification.Infrastructure;
 
-public sealed class SendGridClient(ILogger<SendGridClient> logger, SendGirdOptions sendGirdOptions)
-    : ISmtpClient
+public sealed class SendGridClient(
+    ILogger<SendGridClient> logger,
+    SendGirdOptions sendGirdOptions,
+    ResiliencePipelineProvider<string> provider
+) : ISmtpClient
 {
     public async Task SendEmailAsync(
         MailMessage mailMessage,
@@ -25,7 +29,7 @@ public sealed class SendGridClient(ILogger<SendGridClient> logger, SendGirdOptio
         activity?.Propagate(mailMessage, InjectHeaderIntoMailMessage);
 
         var sendGridClient = new SendGrid.SendGridClient(sendGirdOptions.ApiKey);
-        var sendGridMessage = new SendGridMessage
+        var message = new SendGridMessage
         {
             From = new(sendGirdOptions.SenderEmail, sendGirdOptions.SenderName),
             Subject = mailMessage.Subject,
@@ -34,10 +38,15 @@ public sealed class SendGridClient(ILogger<SendGridClient> logger, SendGirdOptio
 
         foreach (var recipient in mailMessage.To)
         {
-            sendGridMessage.AddTo(new EmailAddress(recipient.Address));
+            message.AddTo(new EmailAddress(recipient.Address));
         }
 
-        var response = await sendGridClient.SendEmailAsync(sendGridMessage, cancellationToken);
+        var pipeline = provider.GetPipeline(nameof(Notification));
+
+        var response = await pipeline.ExecuteAsync(
+            async ct => await sendGridClient.SendEmailAsync(message, ct),
+            cancellationToken
+        );
 
         if (response.StatusCode != HttpStatusCode.OK)
         {

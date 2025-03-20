@@ -12,6 +12,7 @@ public static class StoreConfigs
     {
         var options = new StoreOptions();
         var schemaName = Environment.GetEnvironmentVariable("SchemaName");
+        options.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
 
         options.Events.DatabaseSchemaName = schemaName ?? martenConfig.WriteModelSchema;
         options.DatabaseSchemaName = schemaName ?? martenConfig.ReadModelSchema;

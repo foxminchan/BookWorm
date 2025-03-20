@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
 using BookWorm.Ordering.Helpers;
-using BookWorm.ServiceDefaults.Keycloak;
 using MediatR.Pipeline;
 
 namespace BookWorm.Ordering.Features.Orders.Get;

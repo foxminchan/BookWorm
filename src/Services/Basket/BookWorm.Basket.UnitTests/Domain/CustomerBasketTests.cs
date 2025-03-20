@@ -1,4 +1,5 @@
 ﻿using BookWorm.Basket.Domain;
+using BookWorm.Basket.Exceptions;
 
 namespace BookWorm.Basket.UnitTests.Domain;
 
@@ -64,5 +65,31 @@ public sealed class CustomerBasketTests
 
         // Assert
         basket.Items.ShouldBeEmpty();
+    }
+
+    [Test]
+    public void GivenNullId_WhenCreatingCustomerBasket_ThenShouldThrowException()
+    {
+        // Arrange
+        const string? id = null;
+        var items = new List<BasketItem> { new("book-1", 2), new("book-2", 1) };
+
+        // Act & Assert
+        Should
+            .Throw<BasketDomainException>(() => new CustomerBasket(id!, items))
+            .Message.ShouldBe("Customer ID cannot be null.");
+    }
+
+    [Test]
+    public void GivenEmptyItems_WhenCreatingCustomerBasket_ThenShouldThrowException()
+    {
+        // Arrange
+        const string id = "customer-123";
+        var items = new List<BasketItem>();
+
+        // Act & Assert
+        Should
+            .Throw<BasketDomainException>(() => new CustomerBasket(id, items))
+            .Message.ShouldBe("Basket must contain at least one item.");
     }
 }
