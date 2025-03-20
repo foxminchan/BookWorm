@@ -18,6 +18,7 @@ global using BookWorm.Ordering.Infrastructure.Idempotency;
 global using BookWorm.Ordering.Infrastructure.Repositories;
 global using BookWorm.Ordering.Infrastructure.Services;
 global using BookWorm.ServiceDefaults;
+global using BookWorm.ServiceDefaults.Keycloak;
 global using BookWorm.SharedKernel.ActivityScope;
 global using BookWorm.SharedKernel.Command;
 global using BookWorm.SharedKernel.EF;

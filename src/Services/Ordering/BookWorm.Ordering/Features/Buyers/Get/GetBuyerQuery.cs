@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel;
 using BookWorm.Ordering.Helpers;
-using BookWorm.ServiceDefaults.Keycloak;
 
 namespace BookWorm.Ordering.Features.Buyers.Get;
 
