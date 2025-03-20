@@ -1,8 +1,9 @@
 ﻿using BookWorm.Constants;
-using BookWorm.SharedKernel.EventBus.Filters;
 using FluentValidation;
 using MassTransit;
+using MassTransit.Logging;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace BookWorm.SharedKernel.EventBus;
@@ -32,23 +33,24 @@ public static class Extension
 
             config.AddActivities(type.Assembly);
 
+            config.AddRequestClient(type);
+
             config.UsingRabbitMq(
                 (context, configurator) =>
                 {
                     configurator.Host(new Uri(connectionString));
                     configurator.ConfigureEndpoints(context);
                     configurator.UseMessageRetry(AddRetryConfiguration);
-
-                    configurator.UseSendFilter(typeof(SendFilter<>), context);
-                    configurator.UsePublishFilter(typeof(PublishFilter<>), context);
-                    configurator.UseConsumeFilter(typeof(ConsumeFilter<>), context);
                 }
             );
 
-            config.AddRequestClient(type);
-
             configure?.Invoke(config);
         });
+
+        builder
+            .Services.AddOpenTelemetry()
+            .WithMetrics(b => b.AddMeter(DiagnosticHeaders.DefaultListenerName))
+            .WithTracing(p => p.AddSource(DiagnosticHeaders.DefaultListenerName));
     }
 
     private static void AddRetryConfiguration(IRetryConfigurator retryConfigurator)

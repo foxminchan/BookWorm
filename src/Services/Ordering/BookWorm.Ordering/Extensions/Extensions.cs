@@ -1,5 +1,4 @@
-﻿using BookWorm.ServiceDefaults.Keycloak;
-using BasketGrpcServiceClient = BookWorm.Basket.Grpc.Services.BasketGrpcService.BasketGrpcServiceClient;
+﻿using BasketGrpcServiceClient = BookWorm.Basket.Grpc.Services.BasketGrpcService.BasketGrpcServiceClient;
 using BookGrpcServiceClient = BookWorm.Catalog.Grpc.Services.BookGrpcService.BookGrpcServiceClient;
 
 namespace BookWorm.Ordering.Extensions;

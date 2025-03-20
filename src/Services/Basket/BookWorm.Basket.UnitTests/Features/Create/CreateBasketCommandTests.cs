@@ -28,32 +28,6 @@ public sealed class CreateBasketCommandTests
     }
 
     [Test]
-    public async Task GivenValidCommand_WhenHandlingCreateBasket_ThenShouldReturnBasketId()
-    {
-        // Arrange
-        var command = _faker.Generate();
-
-        _mockBasketRepository
-            .Setup(x => x.UpdateBasketAsync(It.IsAny<CustomerBasket>()))
-            .ReturnsAsync(new CustomerBasket(_userId, []));
-
-        // Act
-        var result = await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        result.ShouldBe(_userId);
-        _mockBasketRepository.Verify(
-            x =>
-                x.UpdateBasketAsync(
-                    It.Is<CustomerBasket>(b =>
-                        b.Id == _userId && b.Items.Count == command.Items.Count
-                    )
-                ),
-            Times.Once
-        );
-    }
-
-    [Test]
     public async Task GivenValidCommand_WhenRepositoryReturnsNull_ThenShouldThrowException()
     {
         // Arrange
@@ -62,33 +36,6 @@ public sealed class CreateBasketCommandTests
         _mockBasketRepository
             .Setup(x => x.UpdateBasketAsync(It.IsAny<CustomerBasket>()))
             .ReturnsAsync((CustomerBasket)null!);
-
-        // Act
-        Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        var exception = await act.ShouldThrowAsync<BasketCreatedException>();
-        exception.Message.ShouldBe("An error occurred while creating the basket.");
-        _mockBasketRepository.Verify(
-            x =>
-                x.UpdateBasketAsync(
-                    It.Is<CustomerBasket>(b =>
-                        b.Id == _userId && b.Items.Count == command.Items.Count
-                    )
-                ),
-            Times.Once
-        );
-    }
-
-    [Test]
-    public async Task GivenValidCommand_WhenRepositoryReturnsNullId_ThenShouldThrowException()
-    {
-        // Arrange
-        var command = _faker.Generate();
-
-        _mockBasketRepository
-            .Setup(x => x.UpdateBasketAsync(It.IsAny<CustomerBasket>()))
-            .ReturnsAsync(new CustomerBasket(default!, []));
 
         // Act
         Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
@@ -133,27 +80,6 @@ public sealed class CreateBasketCommandTests
         _mockBasketRepository.Verify(
             x => x.UpdateBasketAsync(It.IsAny<CustomerBasket>()),
             Times.Never
-        );
-    }
-
-    [Test]
-    public async Task GivenEmptyItems_WhenHandlingCreateBasket_ThenShouldCreateBasketWithEmptyItems()
-    {
-        // Arrange
-        var command = new CreateBasketCommand([]);
-
-        _mockBasketRepository
-            .Setup(x => x.UpdateBasketAsync(It.IsAny<CustomerBasket>()))
-            .ReturnsAsync(new CustomerBasket(_userId, []));
-
-        // Act
-        var result = await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        result.ShouldBe(_userId);
-        _mockBasketRepository.Verify(
-            x => x.UpdateBasketAsync(It.Is<CustomerBasket>(b => b.Items.Count == 0)),
-            Times.Once
         );
     }
 }

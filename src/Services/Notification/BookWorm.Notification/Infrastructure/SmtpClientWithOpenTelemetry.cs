@@ -1,12 +1,14 @@
 ﻿using System.Net.Mail;
 using BookWorm.Notification.Exceptions;
 using BookWorm.SharedKernel.OpenTelemetry;
+using Polly.Registry;
 
 namespace BookWorm.Notification.Infrastructure;
 
 public sealed class SmtpClientWithOpenTelemetry(
     ObjectPool<SmtpClient> clientPool,
-    ILogger<SmtpClientWithOpenTelemetry> logger
+    ILogger<SmtpClientWithOpenTelemetry> logger,
+    ResiliencePipelineProvider<string> provider
 ) : ISmtpClient
 {
     public async Task SendEmailAsync(
@@ -37,7 +39,12 @@ public sealed class SmtpClientWithOpenTelemetry(
 
             activity.Propagate(mailMessage, InjectHeaderIntoMailMessage);
 
-            await client.SendMailAsync(mailMessage, cancellationToken);
+            var pipeline = provider.GetPipeline(nameof(Notification));
+
+            await pipeline.ExecuteAsync(
+                async ct => await client.SendMailAsync(mailMessage, ct),
+                cancellationToken
+            );
 
             activity?.SetStatus(ActivityStatusCode.Ok);
         }

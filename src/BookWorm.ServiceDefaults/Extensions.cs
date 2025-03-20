@@ -1,7 +1,5 @@
 using BookWorm.SharedKernel.ActivityScope;
 using HealthChecks.UI.Client;
-using MassTransit.Logging;
-using MassTransit.Monitoring;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -59,7 +57,6 @@ public static class Extensions
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
                     .AddRuntimeInstrumentation()
-                    .AddMeter(InstrumentationOptions.MeterName)
                     .AddMeter(ActivitySourceProvider.DefaultSourceName);
             })
             .WithTracing(tracing =>
@@ -74,7 +71,6 @@ public static class Extensions
                     .AddAspNetCoreInstrumentation()
                     .AddGrpcClientInstrumentation()
                     .AddHttpClientInstrumentation()
-                    .AddSource(DiagnosticHeaders.DefaultListenerName)
                     .AddSource(ActivitySourceProvider.DefaultSourceName);
             });
 

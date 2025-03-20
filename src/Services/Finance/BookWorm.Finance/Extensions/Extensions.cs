@@ -1,6 +1,4 @@
-﻿using BookWorm.ServiceDefaults.Keycloak;
-
-namespace BookWorm.Finance.Extensions;
+﻿namespace BookWorm.Finance.Extensions;
 
 public static class Extensions
 {
