@@ -12,6 +12,26 @@ public static class Extensions
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails();
 
+        // Resilience pipeline for the notification service
+        services.AddResiliencePipeline(
+            nameof(Notification),
+            pipelineBuilder =>
+            {
+                pipelineBuilder
+                    .AddRetry(
+                        new()
+                        {
+                            ShouldHandle = new PredicateBuilder().Handle<Exception>(),
+                            BackoffType = DelayBackoffType.Exponential,
+                            MaxRetryAttempts = 3,
+                            Delay = TimeSpan.FromSeconds(2),
+                            UseJitter = true,
+                        }
+                    )
+                    .AddTimeout(TimeSpan.FromSeconds(45));
+            }
+        );
+
         // If the application is running in development mode, use the local SMTP server
         // Otherwise, use SendGrid for sending emails
         if (builder.Environment.IsDevelopment())

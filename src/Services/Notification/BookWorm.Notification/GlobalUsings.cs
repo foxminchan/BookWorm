@@ -12,4 +12,5 @@ global using HealthChecks.SendGrid;
 global using MassTransit;
 global using Microsoft.Extensions.Diagnostics.HealthChecks;
 global using Microsoft.Extensions.ObjectPool;
+global using Polly;
 global using Saunter.Attributes;
