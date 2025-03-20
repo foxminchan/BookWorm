@@ -10,16 +10,20 @@ registries:
     type: nuget-feed
     url: https://api.nuget.org/v3/index.json
 updates:
-  - package-ecosystem: "devcontainers"
+  - package-ecosystem: devcontainers
     directory: "/"
     schedule:
       interval: weekly
+    commit-message:
+      prefix: "Devcontainer"
   - package-ecosystem: nuget
     directory: "/"
     registries:
       - public-nuget
     schedule:
       interval: weekly
+    commit-message:
+      prefix: "NuGet"
     open-pull-requests-limit: 15
     groups:
       Aspire:
@@ -46,3 +50,11 @@ updates:
     directory: "/eventcatalog"
     schedule:
       interval: weekly
+    commit-message:
+      prefix: "NPM"
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "GitHub Actions"

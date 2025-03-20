@@ -12,9 +12,9 @@ COPY . .
 
 # Fix for Astro in Docker: https://github.com/withastro/astro/issues/2596
 ENV NODE_OPTIONS=--max_old_space_size=2048
+
 # Build the app
 RUN npm run build
-
 
 ## Stage 2: Serve app with httpd server
 FROM httpd:2.4.63-alpine3.21
