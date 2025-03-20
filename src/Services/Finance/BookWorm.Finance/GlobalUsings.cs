@@ -2,6 +2,7 @@
 global using BookWorm.Finance.Infrastructure;
 global using BookWorm.Finance.Saga;
 global using BookWorm.ServiceDefaults;
+global using BookWorm.ServiceDefaults.Keycloak;
 global using BookWorm.SharedKernel.EF;
 global using BookWorm.SharedKernel.Endpoints;
 global using BookWorm.SharedKernel.EventBus;
