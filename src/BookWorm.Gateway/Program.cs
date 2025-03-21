@@ -15,6 +15,8 @@ builder.Services.AddRequestTimeouts(options =>
 
 builder.Services.AddRateLimiter(options =>
 {
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
     options.AddPolicy(
         "fixed-by-ip",
         httpContext =>

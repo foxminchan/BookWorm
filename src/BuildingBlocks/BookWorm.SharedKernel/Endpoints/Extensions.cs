@@ -8,7 +8,7 @@ namespace BookWorm.SharedKernel.Endpoints;
 
 public static class Extensions
 {
-    public static IServiceCollection AddEndpoints(this IServiceCollection services, Type type)
+    public static void AddEndpoints(this IServiceCollection services, Type type)
     {
         var serviceDescriptors = type
             .Assembly.DefinedTypes.Where(typeInfo =>
@@ -21,14 +21,9 @@ public static class Extensions
             .ToArray();
 
         services.TryAddEnumerable(serviceDescriptors);
-
-        return services;
     }
 
-    public static IApplicationBuilder MapEndpoints(
-        this WebApplication app,
-        ApiVersionSet apiVersionSet
-    )
+    public static void MapEndpoints(this WebApplication app, ApiVersionSet apiVersionSet)
     {
         var scope = app.Services.CreateScope();
 
@@ -41,7 +36,5 @@ public static class Extensions
         {
             endpoint.MapEndpoint(builder);
         }
-
-        return app;
     }
 }

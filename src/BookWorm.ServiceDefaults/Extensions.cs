@@ -153,6 +153,16 @@ public static class Extensions
                 // https://learn.microsoft.com/aspnet/core/host-and-deploy/health-checks?view=aspnetcore-8.0#use-health-checks-routing
                 .RequireHost(pathToHostsMap[path]);
         }
+
+        // Redirect the root path to the health checks endpoint
+        healthChecks.MapGet(
+            "/",
+            async context =>
+            {
+                context.Response.Redirect("/health");
+                await Task.CompletedTask;
+            }
+        );
     }
 
     private static Dictionary<string, string[]> GetPathToHostsMap(string healthChecksUrls)
