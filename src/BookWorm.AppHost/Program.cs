@@ -66,6 +66,7 @@ var catalogApi = builder
     .WaitFor(keycloak)
     .WithReference(redis)
     .WaitFor(redis);
+
 qdrant.WithParentRelationship(catalogApi);
 
 var basketApi = builder
@@ -118,19 +119,13 @@ var financeApi = builder
 var gateway = builder
     .AddProject<BookWorm_Gateway>("bookworm-gateway")
     .WithReference(catalogApi)
-    .WaitFor(catalogApi)
     .WithReference(orderingApi)
-    .WaitFor(orderingApi)
     .WithReference(ratingApi)
-    .WaitFor(ratingApi)
     .WithReference(basketApi)
-    .WaitFor(basketApi)
     .WithReference(financeApi)
-    .WaitFor(financeApi)
-    .WithReference(keycloak)
-    .WaitFor(keycloak);
+    .WithReference(keycloak);
 
-builder.AddAi(catalogApi);
+builder.AddAi([catalogApi]);
 
 builder
     .AddHealthChecksUi("healthchecksui")
