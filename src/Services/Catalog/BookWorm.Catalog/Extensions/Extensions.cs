@@ -32,7 +32,14 @@ public static class Extensions
         });
         builder.EnrichNpgsqlDbContext<CatalogDbContext>();
 
-        services.AddMigration<CatalogDbContext>();
+        if (builder.Environment.IsDevelopment())
+        {
+            services.AddMigration<CatalogDbContext, CatalogDbContextSeed>();
+        }
+        else
+        {
+            services.AddMigration<CatalogDbContext>();
+        }
 
         builder.AddQdrantClient(Components.VectorDb);
 
@@ -62,8 +69,8 @@ public static class Extensions
 
         // Configure AI
         services.AddSingleton<IAiService, AiService>();
-        builder.AddOllamaApiClient("ollama-nomic-embed-text").AddEmbeddingGenerator();
-        builder.AddOllamaApiClient("ollama-deepseek-r1").AddChatClient().UseFunctionInvocation();
+        builder.AddOllamaApiClient(Components.Ollama.Embedding).AddEmbeddingGenerator();
+        builder.AddOllamaApiClient(Components.Ollama.Chat).AddChatClient().UseFunctionInvocation();
         services
             .AddOpenTelemetry()
             .WithMetrics(m => m.AddMeter("Experimental.Microsoft.Extensions.AI"))
