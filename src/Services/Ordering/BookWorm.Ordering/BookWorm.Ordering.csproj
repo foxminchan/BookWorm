@@ -1,10 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <ItemGroup>
+  <ItemGroup Label="Project">
     <PackageReference Include="Marten.AspNetCore"/>
     <PackageReference Include="Aspire.StackExchange.Redis"/>
     <PackageReference Include="Microsoft.FeatureManagement.AspNetCore"/>
-    <PackageReference Include="MassTransit.EntityFrameworkCore"/>
   </ItemGroup>
 
   <ItemGroup Label="Grpc">
@@ -17,6 +16,7 @@
     <PackageReference Include="Aspire.Npgsql"/>
     <PackageReference Include="EFCore.NamingConventions"/>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools"/>
+    <PackageReference Include="MassTransit.EntityFrameworkCore"/>
   </ItemGroup>
 
   <ItemGroup>

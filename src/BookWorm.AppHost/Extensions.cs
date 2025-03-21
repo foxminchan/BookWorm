@@ -12,11 +12,11 @@ public static class Extensions
     ///     Adds AI capabilities to the distributed application builder.
     /// </summary>
     /// <param name="builder">The distributed application builder.</param>
-    /// <param name="catalogApi">The resource builder for the project resource.</param>
+    /// <param name="resources">The resource builder for the project resource.</param>
     /// <returns>The updated distributed application builder.</returns>
     public static void AddAi(
         this IDistributedApplicationBuilder builder,
-        IResourceBuilder<ProjectResource> catalogApi
+        List<IResourceBuilder<ProjectResource>?> resources
     )
     {
         var ollama = builder
@@ -27,11 +27,18 @@ public static class Extensions
             .WithLifetime(ContainerLifetime.Persistent)
             .PublishAsContainer();
 
-        var embeddings = ollama.AddModel("embedding", "nomic-embed-text:latest");
+        var embeddings = ollama.AddModel(Components.Ollama.Embedding, "nomic-embed-text:latest");
 
-        var chat = ollama.AddModel("chat", "deepseek-r1:8b");
+        var chat = ollama.AddModel(Components.Ollama.Chat, "deepseek-r1:1.5b");
 
-        catalogApi.WithReference(embeddings).WithReference(chat).WaitFor(embeddings).WaitFor(chat);
+        foreach (var resource in resources.Where(x => x is not null))
+        {
+            resource
+                ?.WithReference(embeddings)
+                .WaitFor(embeddings)
+                .WithReference(chat)
+                .WaitFor(chat);
+        }
     }
 
     /// <summary>

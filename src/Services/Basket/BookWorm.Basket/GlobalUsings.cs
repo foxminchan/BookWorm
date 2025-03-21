@@ -14,7 +14,6 @@ global using BookWorm.SharedKernel.EventBus;
 global using BookWorm.SharedKernel.Exceptions;
 global using BookWorm.SharedKernel.Pipelines;
 global using BookWorm.SharedKernel.Query;
-global using BookWorm.SharedKernel.SeedWork.Model;
 global using BookWorm.SharedKernel.Versioning;
 global using FluentValidation;
 global using MediatR;

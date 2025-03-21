@@ -17,4 +17,10 @@ public static class Components
         public const string Rating = "ratingdb";
         public const string Finance = "financedb";
     }
+
+    public static class Ollama
+    {
+        public const string Chat = "chat";
+        public const string Embedding = "embedding";
+    }
 }

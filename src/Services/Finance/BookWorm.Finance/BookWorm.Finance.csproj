@@ -2,8 +2,8 @@
 
   <ItemGroup>
     <PackageReference Include="EFCore.NamingConventions"/>
-    <PackageReference Include="MassTransit.EntityFrameworkCore"/>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools"/>
+    <PackageReference Include="MassTransit.EntityFrameworkCore"/>
     <PackageReference Include="MassTransit.StateMachineVisualizer"/>
   </ItemGroup>
 

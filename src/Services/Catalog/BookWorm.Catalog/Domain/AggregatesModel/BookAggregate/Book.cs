@@ -60,6 +60,29 @@ public sealed class Book() : AuditableEntity, IAggregateRoot, ISoftDelete
     }
 
     /// <summary>
+    ///     Sets the metadata for the book.
+    /// </summary>
+    /// <param name="description">The description of the book.</param>
+    /// <param name="categoryId">The category ID of the book.</param>
+    /// <param name="publisherId">The publisher ID of the book.</param>
+    /// <param name="authorIds">The list of author IDs associated with the book.</param>
+    public void SetMetadata(
+        string? description,
+        Guid categoryId,
+        Guid publisherId,
+        Guid[] authorIds
+    )
+    {
+        Description = !string.IsNullOrWhiteSpace(description)
+            ? description
+            : throw new CatalogDomainException("Book description is required.");
+        CategoryId = categoryId;
+        PublisherId = publisherId;
+        _bookAuthors.AddRange(authorIds.Select(authorId => new BookAuthor(authorId)));
+        RegisterDomainEvent(new BookCreatedEvent(this));
+    }
+
+    /// <summary>
     ///     Updates the book details.
     /// </summary>
     /// <param name="name">The name of the book.</param>

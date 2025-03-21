@@ -56,7 +56,6 @@
     <PackageVersion Include="Bogus" Version="35.6.2"/>
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2"/>
     <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.6.3"/>
-    <PackageVersion Include="Microsoft.Testing.Extensions.VSTestBridge" Version="1.6.3"/>
     <!-- Grpc -->
     <PackageVersion Include="Grpc.AspNetCore" Version="$(GrpcVersion)"/>
     <PackageVersion Include="Grpc.AspNetCore.Server.ClientFactory" Version="$(GrpcVersion)"/>
@@ -67,7 +66,7 @@
     <PackageVersion Include="MassTransit.EntityFrameworkCore" Version="$(MassTransitVersion)"/>
     <!-- Miscellaneous -->
     <PackageVersion Include="MediatR" Version="12.4.1"/>
-    <PackageVersion Include="Marten.AspNetCore" Version="7.39.1"/>
+    <PackageVersion Include="Marten.AspNetCore" Version="7.39.3"/>
     <PackageVersion Include="Yarp.ReverseProxy" Version="2.3.0"/>
     <PackageVersion Include="APIWeaver.OpenApi" Version="2.7.0"/>
     <PackageVersion Include="Shouldly" Version="4.3.0"/>
