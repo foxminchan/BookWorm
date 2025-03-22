@@ -70,8 +70,8 @@ BookWorm is structured as a microservices-based application with the following s
 - [k3d](https://k3d.io/) & [k9s](https://k9scli.io/)
 - [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
 
-> [!NOTE]
-> In this project, we use [DeepSeek R1](https://ollama.com/library/deepseek-r1) & [Nomic Embed Text](https://ollama.com/library/nomic-embed-text). So, you need to have an Nvidia GPU to run the application.
+> [!IMPORTANT]
+> In this project, we use [DeepSeek R1](https://ollama.com/library/deepseek-r1) & [Nomic Embed Text](https://ollama.com/library/nomic-embed-text). So, you must have an Nvidia GPU to run the application.
 >
 > In Production, we use [SendGrid](https://sendgrid.com/) for email services. But, for local development, we use [Mailpit](https://mailpit.io/).
 
@@ -112,20 +112,25 @@ dotnet user-secrets set "Parameters:sql-password" "postgres"
 
 ### Deploy the Application
 
-- Deploy to `AKS`:
+There are two ways to deploy the application to a Kubernetes cluster using `Aspirate`:
+
+- **Method 1:** Deploy to `Azure Kubernetes Service (AKS)`:
 
   ```bash
   bash ./deploys/scripts/deploy.sh
   ```
 
-- Deploy to `k3d`:
+> [!NOTE]
+> Make sure you have Azure Subscription and Azure CLI installed on your machine before deploying the application to AKS.
+
+- **Method 2:** Deploy to `k3d`:
 
   ```bash
   dotnet aspire apply --non-interactive -p ./src/BookWorm.AppHost
   ```
 
 > [!NOTE]
-> Make sure you have created a `k3d` cluster before deploying the application.
+> Make sure you have created a `k3d` cluster before deploying the application if you are using `k3d`.
 
 ## Contributing
 
@@ -141,6 +146,10 @@ dotnet user-secrets set "Parameters:sql-password" "postgres"
 
 - If you like this project, please give it (⭐) a star.
 - If you have any issues or feature requests, please open an issue.
+
+## Contributions
+
+Please read [CONTRIBUTING.md](./.github/CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us. Thank you for contributing to BookWorm!
 
 ## License
 
