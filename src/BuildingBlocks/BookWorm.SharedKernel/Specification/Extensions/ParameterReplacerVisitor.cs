@@ -2,28 +2,17 @@
 
 namespace BookWorm.SharedKernel.Specification.Extensions;
 
-internal sealed class ParameterReplacerVisitor : ExpressionVisitor
+public sealed class ParameterReplacerVisitor(
+    ParameterExpression oldParameter,
+    Expression newExpression
+) : ExpressionVisitor
 {
-    private readonly Expression _newExpression;
-    private readonly ParameterExpression _oldParameter;
+    private ParameterExpression _oldParameter = oldParameter;
+    private Expression _newExpression = newExpression;
 
-    private ParameterReplacerVisitor(ParameterExpression oldParameter, Expression newExpression)
-    {
-        _oldParameter = oldParameter;
-        _newExpression = newExpression;
-    }
+    internal void Update(ParameterExpression oldParameter, Expression newExpression) =>
+        (_oldParameter, _newExpression) = (oldParameter, newExpression);
 
-    internal static Expression Replace(
-        Expression expression,
-        ParameterExpression oldParameter,
-        Expression newExpression
-    )
-    {
-        return new ParameterReplacerVisitor(oldParameter, newExpression).Visit(expression);
-    }
-
-    protected override Expression VisitParameter(ParameterExpression node)
-    {
-        return node == _oldParameter ? _newExpression : node;
-    }
+    protected override Expression VisitParameter(ParameterExpression node) =>
+        node == _oldParameter ? _newExpression : node;
 }
