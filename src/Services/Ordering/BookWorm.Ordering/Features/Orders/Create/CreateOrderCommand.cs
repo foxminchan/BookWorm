@@ -1,4 +1,5 @@
 ﻿using BookWorm.Ordering.Helpers;
+using Medallion.Threading;
 using MediatR.Pipeline;
 
 namespace BookWorm.Ordering.Features.Orders.Create;
@@ -40,8 +41,11 @@ public sealed class PreCreateOrderHandler([AsParameters] BasketMetadata basket)
     }
 }
 
-public sealed class CreateOrderHandler(IOrderRepository repository, ClaimsPrincipal claimsPrincipal)
-    : ICommandHandler<CreateOrderCommand, Guid>
+public sealed class CreateOrderHandler(
+    IOrderRepository repository,
+    ClaimsPrincipal claimsPrincipal,
+    IDistributedLockProvider lockProvider
+) : ICommandHandler<CreateOrderCommand, Guid>
 {
     public async Task<Guid> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
     {
@@ -49,7 +53,24 @@ public sealed class CreateOrderHandler(IOrderRepository repository, ClaimsPrinci
 
         var order = new Order(userId, null, request.Items);
 
-        var result = await repository.AddAsync(order, cancellationToken);
+        Order result;
+        await using (
+            var handle = await lockProvider.TryAcquireLockAsync(
+                userId.ToString(),
+                TimeSpan.FromMinutes(1),
+                cancellationToken: cancellationToken
+            )
+        )
+        {
+            if (handle is not null)
+            {
+                result = await repository.AddAsync(order, cancellationToken);
+            }
+            else
+            {
+                throw new InvalidOperationException("Other process is already creating an order");
+            }
+        }
 
         return result.Id;
     }
