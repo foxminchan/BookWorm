@@ -1,4 +1,6 @@
-﻿using BookWorm.SharedKernel.Specification.Extensions;
+﻿using System.Runtime.InteropServices;
+using BookWorm.SharedKernel.Specification.Expressions;
+using BookWorm.SharedKernel.Specification.Extensions;
 
 namespace BookWorm.SharedKernel.Specification.Evaluators;
 
@@ -11,8 +13,37 @@ public sealed class SearchEvaluator : IEvaluator
     public IQueryable<T> GetQuery<T>(IQueryable<T> query, ISpecification<T> specification)
         where T : class
     {
-        return specification
-            .SearchCriteria.GroupBy(x => x.SearchGroup)
-            .Aggregate(query, (current, searchCriteria) => current.Search(searchCriteria));
+        if (specification.SearchExpressions is not List<SearchExpression<T>> { Count: > 0 } list)
+        {
+            return query;
+        }
+
+        if (list.Count == 1)
+        {
+            return query.ApplySingleLike(list[0]);
+        }
+
+        var span = CollectionsMarshal.AsSpan(list);
+        return ApplyLike(query, span);
+    }
+
+    private static IQueryable<T> ApplyLike<T>(
+        IQueryable<T> source,
+        ReadOnlySpan<SearchExpression<T>> span
+    )
+        where T : class
+    {
+        var groupStart = 0;
+        for (var i = 1; i <= span.Length; i++)
+        {
+            if (i != span.Length && span[i].SearchGroup == span[groupStart].SearchGroup)
+            {
+                continue;
+            }
+
+            source = source.ApplyLikesAsOrGroup(span[groupStart..i]);
+            groupStart = i;
+        }
+        return source;
     }
 }

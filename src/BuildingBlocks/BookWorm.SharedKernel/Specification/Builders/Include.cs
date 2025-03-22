@@ -21,7 +21,7 @@ public static partial class SpecificationBuilderExtensions
     )
         where T : class
     {
-        var expr = new IncludeExpression(navigationSelector, typeof(T), typeof(TProperty));
+        var expr = new IncludeExpression(navigationSelector, IncludeType.Include);
         builder.Specification.Add(expr);
 
         var includeBuilder = new IncludeSpecificationBuilder<T, TProperty>(builder.Specification);
@@ -38,12 +38,7 @@ public static partial class SpecificationBuilderExtensions
     )
         where TEntity : class
     {
-        var expr = new IncludeExpression(
-            navigationSelector,
-            typeof(TEntity),
-            typeof(TProperty),
-            typeof(IEnumerable<TPreviousProperty>)
-        );
+        var expr = new IncludeExpression(navigationSelector, IncludeType.ThenInclude);
         builder.Specification.Add(expr);
 
         var includeBuilder = new IncludeSpecificationBuilder<TEntity, TProperty>(

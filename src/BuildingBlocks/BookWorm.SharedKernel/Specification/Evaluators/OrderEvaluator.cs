@@ -11,13 +11,13 @@ public sealed class OrderEvaluator : IEvaluator
     public IQueryable<T> GetQuery<T>(IQueryable<T> query, ISpecification<T> specification)
         where T : class
     {
-        if (specification.OrderBy is null)
+        if (specification.OrderExpressions is null)
         {
             return query;
         }
 
         if (
-            specification.OrderBy.Count(x =>
+            specification.OrderExpressions.Count(x =>
                 x.OrderType is OrderType.OrderBy or OrderType.OrderByDescending
             ) > 1
         )
@@ -27,20 +27,20 @@ public sealed class OrderEvaluator : IEvaluator
             );
         }
 
-        IOrderedQueryable<T>? orderedQuery = specification.OrderBy.Aggregate<
+        IOrderedQueryable<T>? orderedQuery = specification.OrderExpressions.Aggregate<
             OrderExpression<T>?,
             IOrderedQueryable<T>?
         >(
             null,
-            (current, orderExpression) =>
+            (queryable, orderExpression) =>
                 orderExpression!.OrderType switch
                 {
-                    OrderType.OrderBy => current!.OrderBy(orderExpression.KeySelector),
-                    OrderType.OrderByDescending => current!.OrderByDescending(
+                    OrderType.OrderBy => queryable?.OrderBy(orderExpression.KeySelector),
+                    OrderType.OrderByDescending => queryable?.OrderByDescending(
                         orderExpression.KeySelector
                     ),
-                    OrderType.ThenBy => current!.ThenBy(orderExpression.KeySelector),
-                    OrderType.ThenByDescending => current!.ThenByDescending(
+                    OrderType.ThenBy => queryable?.ThenBy(orderExpression.KeySelector),
+                    OrderType.ThenByDescending => queryable?.ThenByDescending(
                         orderExpression.KeySelector
                     ),
                     _ => throw new ArgumentOutOfRangeException(nameof(OrderType)),

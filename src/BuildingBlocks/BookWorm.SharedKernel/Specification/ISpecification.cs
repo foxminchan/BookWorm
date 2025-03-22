@@ -5,13 +5,13 @@ namespace BookWorm.SharedKernel.Specification;
 public interface ISpecification<T>
     where T : class
 {
-    IEnumerable<OrderExpression<T>>? OrderBy { get; }
+    IEnumerable<OrderExpression<T>>? OrderExpressions { get; }
 
-    IEnumerable<WhereExpression<T>>? Where { get; }
+    IEnumerable<WhereExpression<T>>? WhereExpressions { get; }
 
-    IEnumerable<SearchExpression<T>> SearchCriteria { get; }
+    IEnumerable<SearchExpression<T>> SearchExpressions { get; }
 
-    IEnumerable<IncludeExpression> IncludesExpression { get; }
+    IEnumerable<IncludeExpression> IncludeExpressions { get; }
 
     IEnumerable<string> IncludeStrings { get; }
 

@@ -14,7 +14,7 @@ public sealed class PaginationEvaluator : IEvaluator
             query = query.Skip(specification.Skip);
         }
 
-        if (specification.Take > 0)
+        if (specification.Take >= 0)
         {
             query = query.Take(specification.Take);
         }

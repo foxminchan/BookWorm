@@ -1,5 +1,4 @@
-﻿using System.Linq.Expressions;
-using BookWorm.SharedKernel.Specification.Builders;
+﻿using BookWorm.SharedKernel.Specification.Builders;
 using BookWorm.SharedKernel.Specification.Expressions;
 
 namespace BookWorm.SharedKernel.Specification;
@@ -7,66 +6,73 @@ namespace BookWorm.SharedKernel.Specification;
 public class Specification<T> : ISpecification<T>
     where T : class
 {
+    private const int DefaultCapacityWhere = 2;
+    private const int DefaultCapacitySearch = 2;
+    private const int DefaultCapacityOrder = 2;
+    private const int DefaultCapacityInclude = 2;
+    private const int DefaultCapacityIncludeString = 1;
+
+    private List<WhereExpression<T>>? _whereExpressions;
+    private List<SearchExpression<T>>? _searchExpressions;
+    private List<OrderExpression<T>>? _orderExpressions;
     private List<IncludeExpression>? _includeExpressions;
-    private List<Expression<Func<T, object>>>? _includes;
     private List<string>? _includeStrings;
-    private List<OrderExpression<T>>? _orderBy;
-    private List<SearchExpression<T>>? _searchCriteria;
-    private List<Expression<Func<T, object>>>? _thenIncludes;
-    private List<WhereExpression<T>>? _where;
 
     protected ISpecificationBuilder<T> Query => new SpecificationBuilder<T>(this);
-    public IEnumerable<OrderExpression<T>> OrderBy => _orderBy ?? [];
-    public IEnumerable<WhereExpression<T>> Where => _where ?? [];
-    public IEnumerable<SearchExpression<T>> SearchCriteria => _searchCriteria ?? [];
-    public IEnumerable<IncludeExpression> IncludesExpression => _includeExpressions ?? [];
+    public IEnumerable<WhereExpression<T>> WhereExpressions => _whereExpressions ?? [];
+    public IEnumerable<SearchExpression<T>> SearchExpressions => _searchExpressions ?? [];
+    public IEnumerable<OrderExpression<T>> OrderExpressions => _orderExpressions ?? [];
+    public IEnumerable<IncludeExpression> IncludeExpressions => _includeExpressions ?? [];
     public IEnumerable<string> IncludeStrings => _includeStrings ?? [];
 
     public int Take { get; set; }
     public int Skip { get; set; }
-    public bool AsNoTracking { get; internal set; } = false;
-    public bool AsSplitQuery { get; internal set; } = false;
-    public bool IgnoreQueryFilters { get; internal set; } = false;
+    public bool AsNoTracking { get; internal set; }
+    public bool AsSplitQuery { get; internal set; }
+    public bool IgnoreQueryFilters { get; internal set; }
+
+    internal void Add(WhereExpression<T> whereExpressions)
+    {
+        _whereExpressions ??= new(DefaultCapacityWhere);
+        _whereExpressions.Add(whereExpressions);
+    }
+
+    internal void Add(SearchExpression<T> searchExpressions)
+    {
+        if (_searchExpressions is null)
+        {
+            _searchExpressions = new(DefaultCapacitySearch) { searchExpressions };
+            return;
+        }
+
+        var index = _searchExpressions.FindIndex(x =>
+            x.SearchGroup > searchExpressions.SearchGroup
+        );
+        if (index == -1)
+        {
+            _searchExpressions.Add(searchExpressions);
+        }
+        else
+        {
+            _searchExpressions.Insert(index, searchExpressions);
+        }
+    }
 
     internal void Add(OrderExpression<T> orderExpression)
     {
-        _orderBy ??= new(2);
-        _orderBy.Add(orderExpression);
-    }
-
-    internal void Add(WhereExpression<T> whereExpression)
-    {
-        _where ??= new(2);
-        _where.Add(whereExpression);
-    }
-
-    internal void Add(SearchExpression<T> searchExpression)
-    {
-        _searchCriteria ??= new(2);
-        _searchCriteria.Add(searchExpression);
-    }
-
-    internal void Add(Expression<Func<T, object>> includeExpression)
-    {
-        _includes ??= new(2);
-        _includes.Add(includeExpression);
-    }
-
-    internal void ThenInclude(Expression<Func<T, object>> thenIncludeExpression)
-    {
-        _thenIncludes ??= new(2);
-        _thenIncludes.Add(thenIncludeExpression);
-    }
-
-    internal void Add(string includeString)
-    {
-        _includeStrings ??= new(2);
-        _includeStrings.Add(includeString);
+        _orderExpressions ??= new(DefaultCapacityOrder);
+        _orderExpressions.Add(orderExpression);
     }
 
     internal void Add(IncludeExpression includeExpression)
     {
-        _includeExpressions ??= new(2);
+        _includeExpressions ??= new(DefaultCapacityInclude);
         _includeExpressions.Add(includeExpression);
+    }
+
+    internal void Add(string includeString)
+    {
+        _includeStrings ??= new(DefaultCapacityIncludeString);
+        _includeStrings.Add(includeString);
     }
 }

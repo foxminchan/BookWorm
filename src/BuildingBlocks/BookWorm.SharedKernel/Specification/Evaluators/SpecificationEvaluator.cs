@@ -8,6 +8,7 @@ public sealed class SpecificationEvaluator
             [
                 WhereEvaluator.Instance,
                 SearchEvaluator.Instance,
+                IncludeStringEvaluator.Instance,
                 IncludeEvaluator.Instance,
                 OrderEvaluator.Instance,
                 PaginationEvaluator.Instance,
