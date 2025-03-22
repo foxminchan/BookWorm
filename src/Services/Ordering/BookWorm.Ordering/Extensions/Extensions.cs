@@ -1,4 +1,7 @@
-﻿using BasketGrpcServiceClient = BookWorm.Basket.Grpc.Services.BasketGrpcService.BasketGrpcServiceClient;
+﻿using Medallion.Threading;
+using Medallion.Threading.Redis;
+using StackExchange.Redis;
+using BasketGrpcServiceClient = BookWorm.Basket.Grpc.Services.BasketGrpcService.BasketGrpcServiceClient;
 using BookGrpcServiceClient = BookWorm.Catalog.Grpc.Services.BookGrpcService.BookGrpcServiceClient;
 
 namespace BookWorm.Ordering.Extensions;
@@ -100,6 +103,16 @@ public static class Extensions
             options.Projections.LiveStreamAggregation<OrderSummary>();
             options.Projections.Add<Projection>(ProjectionLifecycle.Async);
         });
+
+        // Configure Redis distributed lock
+        services.AddSingleton<IDistributedLockProvider>(
+            _ => new RedisDistributedSynchronizationProvider(
+                services
+                    .BuildServiceProvider()
+                    .GetRequiredService<IConnectionMultiplexer>()
+                    .GetDatabase()
+            )
+        );
 
         services.AddAsyncApiDocs([typeof(IOrderingApiMarker)], nameof(Ordering));
     }

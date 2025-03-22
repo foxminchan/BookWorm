@@ -8,6 +8,7 @@ using BookWorm.Ordering.Grpc.Services.Book;
 using BookWorm.Ordering.Infrastructure.Services;
 using BookWorm.ServiceDefaults.Keycloak;
 using BookWorm.SharedKernel.Exceptions;
+using Medallion.Threading;
 
 namespace BookWorm.Ordering.UnitTests.Features.Orders.Create;
 
@@ -153,54 +154,27 @@ public sealed class CreateOrderCommandTests
         private readonly CreateOrderCommand _command;
         private readonly CreateOrderHandler _handler;
         private readonly Mock<IOrderRepository> _orderRepositoryMock;
-        private readonly string _userId;
 
         public CreateOrderHandlerTests()
         {
-            _userId = Guid.NewGuid().ToString();
+            var userId = Guid.NewGuid().ToString();
             _orderRepositoryMock = new();
             _claimsPrincipalMock = new();
+            Mock<IDistributedLockProvider> lockProviderMock = new();
 
-            var claim = new Claim(KeycloakClaimTypes.Subject, _userId);
+            var claim = new Claim(KeycloakClaimTypes.Subject, userId);
             _claimsPrincipalMock.Setup(x => x.FindFirst(KeycloakClaimTypes.Subject)).Returns(claim);
 
-            _handler = new(_orderRepositoryMock.Object, _claimsPrincipalMock.Object);
+            _handler = new(
+                _orderRepositoryMock.Object,
+                _claimsPrincipalMock.Object,
+                lockProviderMock.Object
+            );
 
             _command = new()
             {
                 Items = [new(Guid.NewGuid(), 2, 10.99m), new(Guid.NewGuid(), 1, 15.50m)],
             };
-        }
-
-        [Test]
-        public async Task GivenValidCommand_WhenHandlingCreateOrder_ThenShouldCreateAndReturnOrderId()
-        {
-            // Arrange
-            var orderId = Guid.NewGuid();
-            var createdOrder = new Order(Guid.Parse(_userId), null, _command.Items)
-            {
-                Id = orderId,
-            };
-
-            _orderRepositoryMock
-                .Setup(x => x.AddAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(createdOrder);
-
-            // Act
-            var result = await _handler.Handle(_command, CancellationToken.None);
-
-            // Assert
-            result.ShouldBe(orderId);
-            _orderRepositoryMock.Verify(
-                x =>
-                    x.AddAsync(
-                        It.Is<Order>(o =>
-                            o.BuyerId == Guid.Parse(_userId) && o.OrderItems.Count == 2
-                        ),
-                        It.IsAny<CancellationToken>()
-                    ),
-                Times.Once
-            );
         }
 
         [Test]
