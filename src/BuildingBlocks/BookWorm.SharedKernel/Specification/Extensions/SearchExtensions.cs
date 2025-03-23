@@ -19,13 +19,13 @@ public static class SearchExtension
         )!
     );
 
-    private static MemberExpression StringAsExpression(string value) =>
-        Expression.Property(
+    private static MemberExpression StringAsExpression(string value)
+    {
+        return Expression.Property(
             Expression.Constant(new StringVar(value)),
             typeof(StringVar).GetProperty(nameof(StringVar.Format))!
         );
-
-    private record StringVar(string Format);
+    }
 
     public static IQueryable<T> ApplySingleLike<T>(
         this IQueryable<T> source,
@@ -89,4 +89,6 @@ public static class SearchExtension
             ? source
             : source.Where(Expression.Lambda<Func<T, bool>>(combinedExpr, mainParam));
     }
+
+    private record StringVar(string Format);
 }

@@ -2,6 +2,7 @@
 using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
 using BookWorm.Ordering.Features.Buyers.Create;
 using BookWorm.ServiceDefaults.Keycloak;
+using BookWorm.SharedKernel.Repository;
 using BookWorm.SharedKernel.SeedWork;
 
 namespace BookWorm.Ordering.UnitTests.Features.Buyers.Create;

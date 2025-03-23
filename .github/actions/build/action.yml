@@ -27,4 +27,4 @@ runs:
 
     - name: Build
       shell: bash
-      run: dotnet build
+      run: dotnet build --configuration Release

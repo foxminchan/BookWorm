@@ -1,5 +1,6 @@
 ﻿namespace BookWorm.Rating.Extensions;
 
+[ExcludeFromCodeCoverage]
 public static class Extensions
 {
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
@@ -46,7 +47,7 @@ public static class Extensions
         services.AddSingleton<CommandHandlerMetrics>();
         services.AddSingleton<QueryHandlerMetrics>();
 
-        services.AddScoped<IFeedbackRepository, FeedbackRepository>();
+        services.AddRepositories(typeof(IRatingApiMarker));
 
         services.AddScoped<IEventMapper, EventMapper>();
         services.AddScoped<IEventDispatcher, EventDispatcher>();

@@ -51,20 +51,14 @@ public sealed class IncludeEvaluator : IEvaluator
                     == typeof(Expression<>)
             );
 
-    private readonly record struct CacheKey(
-        Type EntityType,
-        Type PropertyType,
-        Type? PreviousReturnType
-    );
-
     private static readonly ConcurrentDictionary<
         CacheKey,
         Func<IQueryable, LambdaExpression, IQueryable>
     > _cache = new();
 
-    private IncludeEvaluator() { }
-
     public static readonly IncludeEvaluator Instance = new();
+
+    private IncludeEvaluator() { }
 
     public IQueryable<T> GetQuery<T>(IQueryable<T> query, ISpecification<T> specification)
         where T : class
@@ -190,4 +184,10 @@ public sealed class IncludeEvaluator : IEvaluator
         propertyType = type;
         return false;
     }
+
+    private readonly record struct CacheKey(
+        Type EntityType,
+        Type PropertyType,
+        Type? PreviousReturnType
+    );
 }

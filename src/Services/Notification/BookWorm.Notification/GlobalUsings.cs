@@ -1,5 +1,6 @@
 ﻿global using System.ComponentModel.DataAnnotations;
 global using System.Diagnostics;
+global using System.Diagnostics.CodeAnalysis;
 global using System.Net;
 global using BookWorm.Constants;
 global using BookWorm.Contracts;

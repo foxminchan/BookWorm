@@ -8,7 +8,7 @@ public abstract class AuditableEntity : Entity
 }
 
 public abstract class AuditableEntity<TId> : Entity<TId>
-    where TId : struct, IEquatable<TId>
+    where TId : IEquatable<TId>
 {
     public DateTime CreatedAt { get; set; }
     public DateTime? LastModifiedAt { get; set; }

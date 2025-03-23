@@ -1,9 +1,10 @@
 ﻿using BookWorm.Basket.Exceptions;
+using BookWorm.SharedKernel.SeedWork.Model;
 
 namespace BookWorm.Basket.Domain;
 
 [method: JsonConstructor]
-public sealed class CustomerBasket()
+public sealed class CustomerBasket() : AuditableEntity<string>
 {
     private readonly List<BasketItem> _basketItems = [];
 
@@ -16,8 +17,6 @@ public sealed class CustomerBasket()
                 ? items
                 : throw new BasketDomainException("Basket must contain at least one item.");
     }
-
-    public string? Id { get; private set; }
 
     public IReadOnlyCollection<BasketItem> Items => _basketItems.AsReadOnly();
 

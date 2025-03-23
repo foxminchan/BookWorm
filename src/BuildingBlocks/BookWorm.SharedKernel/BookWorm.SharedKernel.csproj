@@ -5,6 +5,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Scrutor"/>
     <PackageReference Include="MediatR"/>
     <PackageReference Include="MassTransit.RabbitMQ"/>
     <PackageReference Include="FluentValidation.AspNetCore"/>

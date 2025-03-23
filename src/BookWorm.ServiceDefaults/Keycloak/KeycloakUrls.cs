@@ -48,7 +48,7 @@ public sealed class KeycloakUrls(ServiceEndpointResolver serviceEndpointResolver
         CancellationToken cancellationToken = default
     )
     {
-        var serviceLookupName = "https+http://" + serviceName;
+        var serviceLookupName = $"https+http://{serviceName}";
         var serviceAddresses = (
             await serviceEndpointResolver.GetEndpointsAsync(serviceLookupName, cancellationToken)
         )

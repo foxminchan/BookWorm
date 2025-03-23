@@ -3,6 +3,7 @@ using BookGrpcServiceClient = BookWorm.Catalog.Grpc.Services.BookGrpcService.Boo
 
 namespace BookWorm.Basket.Grpc.Services.Book;
 
+[ExcludeFromCodeCoverage]
 public sealed class BookService(BookGrpcServiceClient service, ILogger<BookService> logger)
     : IBookService
 {

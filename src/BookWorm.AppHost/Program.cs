@@ -35,8 +35,9 @@ var queue = builder
 
 var cosmos = builder.AddAzureCosmosDB(Components.Cosmos);
 var storage = builder.AddAzureStorage("storage");
+var signalR = builder.AddAzureSignalR(Components.SignalR);
 
-builder.ConfigAzureResource(cosmos, storage);
+builder.ConfigAzureResource(cosmos, storage, signalR);
 
 var blobStorage = storage.AddBlobs(Components.Blob);
 var catalogDb = postgres.AddDatabase(Components.Database.Catalog);
@@ -51,7 +52,7 @@ var keycloak = builder
 var mailpit = builder.AddMailPit(Components.MailPit);
 
 var catalogApi = builder
-    .AddProject<BookWorm_Catalog>("bookworm-catalog")
+    .AddProject<BookWorm_Catalog>(Application.Catalog)
     .WithScalar()
     .WithReplicas(2)
     .WithReference(blobStorage)
@@ -65,29 +66,32 @@ var catalogApi = builder
     .WithReference(keycloak)
     .WaitFor(keycloak)
     .WithReference(redis)
-    .WaitFor(redis);
+    .WaitFor(redis)
+    .WithReference(signalR)
+    .WaitFor(signalR);
 
 qdrant.WithParentRelationship(catalogApi);
 
 var basketApi = builder
-    .AddProject<BookWorm_Basket>("bookworm-basket")
+    .AddProject<BookWorm_Basket>(Application.Basket)
     .WithScalar()
     .WithReference(redis)
     .WaitFor(redis)
     .WithReference(queue)
     .WaitFor(queue)
     .WithReference(keycloak)
-    .WaitFor(keycloak);
+    .WaitFor(keycloak)
+    .WithReference(catalogApi);
 
 var notificationApi = builder
-    .AddProject<BookWorm_Notification>("bookworm-notification")
+    .AddProject<BookWorm_Notification>(Application.Notification)
     .WithReference(queue)
     .WaitFor(queue);
 
 builder.ConfigureEmailProvider(notificationApi, mailpit);
 
 var orderingApi = builder
-    .AddProject<BookWorm_Ordering>("bookworm-ordering")
+    .AddProject<BookWorm_Ordering>(Application.Ordering)
     .WithScalar()
     .WithReference(orderingDb)
     .WaitFor(orderingDb)
@@ -96,10 +100,12 @@ var orderingApi = builder
     .WithReference(keycloak)
     .WaitFor(keycloak)
     .WithReference(redis)
-    .WaitFor(redis);
+    .WaitFor(redis)
+    .WithReference(catalogApi)
+    .WithReference(basketApi);
 
 var ratingApi = builder
-    .AddProject<BookWorm_Rating>("bookworm-rating")
+    .AddProject<BookWorm_Rating>(Application.Rating)
     .WithScalar()
     .WithReference(cosmos)
     .WaitFor(cosmos)
@@ -109,7 +115,7 @@ var ratingApi = builder
     .WaitFor(keycloak);
 
 var financeApi = builder
-    .AddProject<BookWorm_Finance>("bookworm-finance")
+    .AddProject<BookWorm_Finance>(Application.Finance)
     .WithScalar()
     .WithReference(financeDb)
     .WaitFor(financeDb)
@@ -117,13 +123,14 @@ var financeApi = builder
     .WaitFor(queue);
 
 var gateway = builder
-    .AddProject<BookWorm_Gateway>("bookworm-gateway")
+    .AddProject<BookWorm_Gateway>(Application.Gateway)
     .WithReference(catalogApi)
     .WithReference(orderingApi)
     .WithReference(ratingApi)
     .WithReference(basketApi)
     .WithReference(financeApi)
-    .WithReference(keycloak);
+    .WithReference(keycloak)
+    .WithExternalHttpEndpoints();
 
 builder.AddAi([catalogApi]);
 

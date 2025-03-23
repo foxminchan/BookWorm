@@ -1,6 +1,6 @@
 ﻿using BookWorm.SharedKernel.SeedWork.Model;
 
-namespace BookWorm.SharedKernel.SeedWork;
+namespace BookWorm.SharedKernel.Repository;
 
 public interface IRepository<T>
     where T : IAggregateRoot
