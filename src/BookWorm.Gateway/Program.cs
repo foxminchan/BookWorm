@@ -3,17 +3,19 @@ using BookWorm.ServiceDefaults;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var services = builder.Services;
+
 builder.AddServiceDefaults();
 
 builder.AddDefaultAuthentication();
 
-builder.Services.AddHttpForwarderWithServiceDiscovery();
+services.AddHttpForwarderWithServiceDiscovery();
 
-builder.Services.AddRequestTimeouts(options =>
+services.AddRequestTimeouts(options =>
     options.AddPolicy("timeout-1-minute", TimeSpan.FromMinutes(1))
 );
 
-builder.Services.AddRateLimiter(options =>
+services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
@@ -27,8 +29,8 @@ builder.Services.AddRateLimiter(options =>
     );
 });
 
-builder
-    .Services.AddReverseProxy()
+services
+    .AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
     .AddServiceDiscoveryDestinationResolver();
 

@@ -8,7 +8,7 @@ public abstract class Entity : HasDomainEventsBase
 }
 
 public abstract class Entity<TId> : Entity
-    where TId : struct, IEquatable<TId>
+    where TId : IEquatable<TId>
 {
-    public new TId Id { get; set; }
+    public new TId Id { get; set; } = default!;
 }

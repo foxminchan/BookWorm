@@ -1,5 +1,4 @@
 ﻿global using System.Security.Claims;
-global using System.Text.Json;
 global using System.Text.Json.Serialization;
 global using BookWorm.Basket.Domain;
 global using BookWorm.Basket.Grpc.Services.Book;
@@ -18,4 +17,3 @@ global using BookWorm.SharedKernel.Versioning;
 global using FluentValidation;
 global using MediatR;
 global using Microsoft.AspNetCore.Http.HttpResults;
-global using StackExchange.Redis;

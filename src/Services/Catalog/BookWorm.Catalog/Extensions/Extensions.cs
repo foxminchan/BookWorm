@@ -62,25 +62,10 @@ public static class Extensions
         services.AddSingleton<QueryHandlerMetrics>();
 
         // Configure repositories
-        services.AddScoped<ICategoryRepository, CategoryRepository>();
-        services.AddScoped<IAuthorRepository, AuthorRepository>();
-        services.AddScoped<IPublisherRepository, PublisherRepository>();
-        services.AddScoped<IBookRepository, BookRepository>();
+        services.AddRepositories(typeof(ICatalogApiMarker));
 
         // Configure AI
-        services.AddSingleton<IAiService, AiService>();
-        builder.AddOllamaApiClient(Components.Ollama.Embedding).AddEmbeddingGenerator();
-        builder.AddOllamaApiClient(Components.Ollama.Chat).AddChatClient().UseFunctionInvocation();
-        services
-            .AddOpenTelemetry()
-            .WithMetrics(m => m.AddMeter("Experimental.Microsoft.Extensions.AI"))
-            .WithTracing(t => t.AddSource("Experimental.Microsoft.Extensions.AI"));
-
-        // Configure Chat AI
-        services.AddSignalR();
-        services.AddSingleton<IChatStreaming, ChatStreaming>();
-        services.AddSingleton<IConversationState, RedisConversationState>();
-        services.AddSingleton<ICancellationManager, RedisCancellationManager>();
+        builder.AddOllamaClient();
 
         // Add Blob services
         builder.AddAzureBlobClient(Components.Blob);

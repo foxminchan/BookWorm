@@ -1,4 +1,4 @@
-﻿namespace BookWorm.SharedKernel.SeedWork;
+﻿namespace BookWorm.SharedKernel.Repository;
 
 public interface IUnitOfWork : IDisposable
 {

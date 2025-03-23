@@ -1,5 +1,4 @@
 ﻿using BookWorm.Ordering.Helpers;
-using Medallion.Threading;
 using MediatR.Pipeline;
 
 namespace BookWorm.Ordering.Features.Orders.Create;
@@ -58,7 +57,7 @@ public sealed class CreateOrderHandler(
             var handle = await lockProvider.TryAcquireLockAsync(
                 userId.ToString(),
                 TimeSpan.FromMinutes(1),
-                cancellationToken: cancellationToken
+                cancellationToken
             )
         )
         {

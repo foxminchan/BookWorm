@@ -25,7 +25,7 @@ public static class Extensions
 
         // Add database configuration
         builder.AddRedisClient(Components.Redis);
-        builder.Services.AddSingleton<IBasketRepository, BasketRepository>();
+        services.AddSingleton<IBasketRepository, BasketRepository>();
 
         // Configure MediatR
         services.AddMediatR(cfg =>
@@ -51,9 +51,8 @@ public static class Extensions
         services.AddGrpc();
         services
             .AddGrpcClient<BookGrpcServiceClient>(o =>
-            {
-                o.Address = new("http+https://bookworm-catalog");
-            })
+                o.Address = new("http+https://bookworm-catalog")
+            )
             .AddStandardResilienceHandler();
         services.AddSingleton<IBookService, BookService>();
 

@@ -46,7 +46,7 @@ public static class Extensions
         services.AddSingleton<CommandHandlerMetrics>();
         services.AddSingleton<QueryHandlerMetrics>();
 
-        services.AddScoped<IFeedbackRepository, FeedbackRepository>();
+        services.AddRepositories(typeof(IRatingApiMarker));
 
         services.AddScoped<IEventMapper, EventMapper>();
         services.AddScoped<IEventDispatcher, EventDispatcher>();

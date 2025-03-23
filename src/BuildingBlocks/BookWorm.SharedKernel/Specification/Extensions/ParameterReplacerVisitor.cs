@@ -7,12 +7,16 @@ public sealed class ParameterReplacerVisitor(
     Expression newExpression
 ) : ExpressionVisitor
 {
-    private ParameterExpression _oldParameter = oldParameter;
     private Expression _newExpression = newExpression;
+    private ParameterExpression _oldParameter = oldParameter;
 
-    internal void Update(ParameterExpression oldParameter, Expression newExpression) =>
+    internal void Update(ParameterExpression oldParameter, Expression newExpression)
+    {
         (_oldParameter, _newExpression) = (oldParameter, newExpression);
+    }
 
-    protected override Expression VisitParameter(ParameterExpression node) =>
-        node == _oldParameter ? _newExpression : node;
+    protected override Expression VisitParameter(ParameterExpression node)
+    {
+        return node == _oldParameter ? _newExpression : node;
+    }
 }
