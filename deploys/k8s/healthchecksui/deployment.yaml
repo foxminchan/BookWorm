@@ -18,6 +18,7 @@ spec:
       labels:
         app: healthchecksui
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: healthchecksui
           image: docker.io/xabarilcoding/healthchecksui:5.0.0
@@ -26,12 +27,14 @@ spec:
             - name: http
               containerPort: 80
           resources:
-            requests:
-              memory: "64Mi"
-              cpu: "100m"
             limits:
-              memory: "128Mi"
               cpu: "200m"
+              memory: "128Mi"
+              ephemeral-storage: "1Gi"
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+              ephemeral-storage: "512Mi"
           envFrom:
             - configMapRef:
                 name: healthchecksui-env

@@ -18,6 +18,7 @@ spec:
       labels:
         app: queue
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: queue
           image: docker.io/library/rabbitmq:4.0-management
@@ -28,12 +29,14 @@ spec:
             - name: management
               containerPort: 15672
           resources:
-            limits:
-              cpu: "1"
-              memory: "1Gi"
             requests:
+              cpu: "200m"
+              memory: "256Mi"
+              ephemeral-storage: "1Gi"
+            limits:
               cpu: "500m"
               memory: "512Mi"
+              ephemeral-storage: "2Gi"
           envFrom:
             - configMapRef:
                 name: queue-env

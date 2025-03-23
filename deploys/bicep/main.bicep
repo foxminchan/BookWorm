@@ -10,15 +10,6 @@ var nodeResourceGroupName = 'rg-${environmentName}-mc'
 var acrName = 'acr${replace(environmentName, '-', '')}'
 var aksClusterName = 'aks-${environmentName}'
 
-// Deploy Azure Container Registry
-module acrModule 'modules/acr.bicep' = {
-  name: 'acrDeployment'
-  params: {
-    acrName: acrName
-    location: location
-  }
-}
-
 // Deploy AKS Cluster
 module aksModule 'modules/aks.bicep' = {
   name: 'aksDeployment'
@@ -28,12 +19,8 @@ module aksModule 'modules/aks.bicep' = {
     nodeResourceGroup: nodeResourceGroupName
     acrName: acrName
   }
-  dependsOn: [
-    acrModule
-  ]
 }
 
 // Outputs
-output acrLoginServer string = acrModule.outputs.acrLoginServer
 output aksClusterName string = aksModule.outputs.clusterName
 output resourceGroupName string = resourceGroupName

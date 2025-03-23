@@ -1,4 +1,5 @@
-﻿global using BookWorm.Constants;
+﻿global using System.Diagnostics.CodeAnalysis;
+global using BookWorm.Constants;
 global using BookWorm.Finance.Infrastructure;
 global using BookWorm.Finance.Saga;
 global using BookWorm.ServiceDefaults;

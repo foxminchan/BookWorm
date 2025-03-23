@@ -9,6 +9,6 @@ configMapGenerator:
   - name: queue-env
     literals:
       - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=G8QS6f0Phps6VuAffWqkbi
+      - RABBITMQ_DEFAULT_PASS=LqjItMh1nnSJP9Sh4t1g1C
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://aspire-dashboard:18889
       - OTEL_SERVICE_NAME=queue

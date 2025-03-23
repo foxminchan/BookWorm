@@ -3,6 +3,7 @@ using BookGrpcServiceClient = BookWorm.Catalog.Grpc.Services.BookGrpcService.Boo
 
 namespace BookWorm.Basket.Extensions;
 
+[ExcludeFromCodeCoverage]
 public static class Extensions
 {
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
@@ -25,7 +26,7 @@ public static class Extensions
 
         // Add database configuration
         builder.AddRedisClient(Components.Redis);
-        builder.Services.AddSingleton<IBasketRepository, BasketRepository>();
+        services.AddSingleton<IBasketRepository, BasketRepository>();
 
         // Configure MediatR
         services.AddMediatR(cfg =>
@@ -51,9 +52,8 @@ public static class Extensions
         services.AddGrpc();
         services
             .AddGrpcClient<BookGrpcServiceClient>(o =>
-            {
-                o.Address = new("http+https://bookworm-catalog");
-            })
+                o.Address = new($"http+https://{Application.Catalog}")
+            )
             .AddStandardResilienceHandler();
         services.AddSingleton<IBookService, BookService>();
 

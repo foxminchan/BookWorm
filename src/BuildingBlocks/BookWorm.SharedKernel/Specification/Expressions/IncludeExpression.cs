@@ -4,10 +4,6 @@ namespace BookWorm.SharedKernel.Specification.Expressions;
 
 public class IncludeExpression
 {
-    public LambdaExpression LambdaExpression { get; }
-
-    public IncludeType Type { get; }
-
     public IncludeExpression(LambdaExpression expression, IncludeType includeType)
     {
         _ = expression ?? throw new ArgumentNullException(nameof(expression));
@@ -15,4 +11,8 @@ public class IncludeExpression
         LambdaExpression = expression;
         Type = includeType;
     }
+
+    public LambdaExpression LambdaExpression { get; }
+
+    public IncludeType Type { get; }
 }

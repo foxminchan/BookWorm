@@ -53,27 +53,15 @@ DEPLOYMENT_OUTPUT=$(az deployment group create \
   --output json)
 
 # Extract output values from the deployment
-ACR_LOGIN_SERVER=$(echo $DEPLOYMENT_OUTPUT | jq -r '.properties.outputs.acrLoginServer.value')
 AKS_CLUSTER_NAME=$(echo $DEPLOYMENT_OUTPUT | jq -r '.properties.outputs.aksClusterName.value')
 RESOURCE_GROUP_NAME=$(echo $DEPLOYMENT_OUTPUT | jq -r '.properties.outputs.resourceGroupName.value')
 
 echo "Deployment completed successfully!"
-echo "ACR Login Server: $ACR_LOGIN_SERVER"
 echo "AKS Cluster: $AKS_CLUSTER_NAME"
 
 # Get AKS credentials
 echo "Getting AKS credentials..."
 az aks get-credentials --resource-group $RESOURCE_GROUP --name $AKS_CLUSTER_NAME --overwrite-existing
-
-# Get ACR credentials
-echo "Getting ACR credentials..."
-ACR_CREDENTIALS=$(az acr credential show --name ${ACR_LOGIN_SERVER%%.*} --output json)
-ACR_USERNAME=$(echo $ACR_CREDENTIALS | jq -r '.username')
-ACR_PASSWORD=$(echo $ACR_CREDENTIALS | jq -r '.passwords[0].value')
-
-# Login to ACR
-echo "Logging into ACR..."
-echo $ACR_PASSWORD | docker login $ACR_LOGIN_SERVER --username $ACR_USERNAME --password-stdin
 
 # Deploy application using Aspire
 echo "Deploying BookWorm application to AKS..."

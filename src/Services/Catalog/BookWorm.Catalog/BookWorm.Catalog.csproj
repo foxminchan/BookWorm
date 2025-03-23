@@ -1,9 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
+  <PropertyGroup>
+    <EnableSdkContainerSupport>true</EnableSdkContainerSupport>
+    <ContainerRepository>foxminchan/bookworm/catalog</ContainerRepository>
+  </PropertyGroup>
+
   <ItemGroup Label="Project">
     <PackageReference Include="Grpc.AspNetCore"/>
     <PackageReference Include="EFCore.NamingConventions"/>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools"/>
+    <PackageReference Include="Microsoft.Azure.SignalR.Management"/>
   </ItemGroup>
 
   <ItemGroup Label="Aspire">

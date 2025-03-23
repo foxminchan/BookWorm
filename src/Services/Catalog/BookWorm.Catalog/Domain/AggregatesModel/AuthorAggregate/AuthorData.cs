@@ -1,6 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-
-namespace BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
+﻿namespace BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
 
 [ExcludeFromCodeCoverage]
 public sealed class AuthorData : List<Author>

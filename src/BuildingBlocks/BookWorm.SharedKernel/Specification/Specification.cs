@@ -11,12 +11,12 @@ public class Specification<T> : ISpecification<T>
     private const int DefaultCapacityOrder = 2;
     private const int DefaultCapacityInclude = 2;
     private const int DefaultCapacityIncludeString = 1;
-
-    private List<WhereExpression<T>>? _whereExpressions;
-    private List<SearchExpression<T>>? _searchExpressions;
-    private List<OrderExpression<T>>? _orderExpressions;
     private List<IncludeExpression>? _includeExpressions;
     private List<string>? _includeStrings;
+    private List<OrderExpression<T>>? _orderExpressions;
+    private List<SearchExpression<T>>? _searchExpressions;
+
+    private List<WhereExpression<T>>? _whereExpressions;
 
     protected ISpecificationBuilder<T> Query => new SpecificationBuilder<T>(this);
     public IEnumerable<WhereExpression<T>> WhereExpressions => _whereExpressions ?? [];

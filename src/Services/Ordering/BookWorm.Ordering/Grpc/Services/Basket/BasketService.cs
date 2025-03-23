@@ -2,6 +2,7 @@
 
 namespace BookWorm.Ordering.Grpc.Services.Basket;
 
+[ExcludeFromCodeCoverage]
 public sealed class BasketService(BasketGrpcServiceClient service, ILogger<BookService> logger)
     : IBasketService
 {

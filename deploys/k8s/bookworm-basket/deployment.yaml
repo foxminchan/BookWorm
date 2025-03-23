@@ -18,9 +18,10 @@ spec:
       labels:
         app: bookworm-basket
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: bookworm-basket
-          image: bookworm-basket:latest
+          image: ghcr.io/foxminchan/bookworm/basket:latest
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -29,16 +30,34 @@ spec:
               containerPort: 8443
             - name: healthchecks
               containerPort: 8001
+          livenessProbe:
+            httpGet:
+              path: /
+              port: healthchecks
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /alive
+              port: healthchecks
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            limits:
+              cpu: "1500m"
+              memory: "2Gi"
+              ephemeral-storage: "2Gi"
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+              ephemeral-storage: "1Gi"
           envFrom:
             - configMapRef:
                 name: bookworm-basket-env
             - secretRef:
                 name: bookworm-basket-secrets
-          resources:
-            limits:
-              cpu: "500m"
-              memory: "512Mi"
-            requests:
-              cpu: "200m"
-              memory: "256Mi"
       terminationGracePeriodSeconds: 180

@@ -7,7 +7,7 @@ public static partial class SpecificationBuilderExtensions
 {
     public static ISpecificationBuilder<T> Search<T>(
         this ISpecificationBuilder<T> builder,
-        Expression<Func<T, string>> keySelector,
+        Expression<Func<T, string?>> keySelector,
         string pattern,
         int group = 1
     )

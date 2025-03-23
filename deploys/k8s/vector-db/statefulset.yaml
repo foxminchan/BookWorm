@@ -16,6 +16,7 @@ spec:
       labels:
         app: vector-db
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: vector-db
           image: docker.io/qdrant/qdrant:v1.12.1
@@ -23,16 +24,18 @@ spec:
           ports:
             - containerPort: 6334
             - containerPort: 6333
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+              ephemeral-storage: 1Gi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+              ephemeral-storage: 2Gi
           envFrom:
             - configMapRef:
                 name: vector-db-env
-          resources:
-            requests:
-              cpu: "500m"
-              memory: "1Gi"
-            limits:
-              cpu: "1"
-              memory: "2Gi"
           volumeMounts:
             - name: bookworm-apphost-62fd53aa4e-vector-db-data
               mountPath: /qdrant/storage
@@ -43,6 +46,4 @@ spec:
         accessModes: ["ReadWriteOnce"]
         resources:
           requests:
-            storage: 1Gi
-          limits:
             storage: 2Gi

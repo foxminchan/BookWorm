@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace BookWorm.SharedKernel.Endpoints;
 
@@ -10,17 +9,16 @@ public static class Extensions
 {
     public static void AddEndpoints(this IServiceCollection services, Type type)
     {
-        var serviceDescriptors = type
-            .Assembly.DefinedTypes.Where(typeInfo =>
-                typeInfo is { IsAbstract: false, IsInterface: false }
-                && typeInfo.IsAssignableTo(typeof(IEndpoint))
-            )
-            .Select(implementationType =>
-                ServiceDescriptor.Transient(typeof(IEndpoint), implementationType)
-            )
-            .ToArray();
-
-        services.TryAddEnumerable(serviceDescriptors);
+        services.Scan(scan =>
+            scan.FromAssembliesOf(type)
+                .AddClasses(classes =>
+                    classes
+                        .AssignableTo<IEndpoint>()
+                        .Where(typeInfo => typeInfo is { IsAbstract: false, IsInterface: false })
+                )
+                .AsImplementedInterfaces()
+                .WithTransientLifetime()
+        );
     }
 
     public static void MapEndpoints(this WebApplication app, ApiVersionSet apiVersionSet)

@@ -16,24 +16,27 @@ spec:
       labels:
         app: postgres
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: postgres
           image: docker.io/library/postgres:17.2
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5432
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+              ephemeral-storage: 1Gi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+              ephemeral-storage: 2Gi
           envFrom:
             - configMapRef:
                 name: postgres-env
             - secretRef:
                 name: postgres-secrets
-          resources:
-            requests:
-              cpu: "500m"
-              memory: "1Gi"
-            limits:
-              cpu: "1"
-              memory: "2Gi"
           volumeMounts:
             - name: bookworm-apphost-62fd53aa4e-postgres-data
               mountPath: /var/lib/postgresql/data
@@ -44,6 +47,4 @@ spec:
         accessModes: ["ReadWriteOnce"]
         resources:
           requests:
-            storage: 1Gi
-          limits:
-            storage: 2Gi
+            storage: 4Gi

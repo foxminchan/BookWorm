@@ -3,8 +3,10 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
-# Ignore Output directory
+# Ignore Test Folders
 Output/
+coveragereport/
+test-results/
 
 # Secrets
 *.secrets

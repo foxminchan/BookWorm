@@ -44,6 +44,7 @@ public sealed class SearchEvaluator : IEvaluator
             source = source.ApplyLikesAsOrGroup(span[groupStart..i]);
             groupStart = i;
         }
+
         return source;
     }
 }
