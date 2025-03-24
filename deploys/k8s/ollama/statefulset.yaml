@@ -16,9 +16,10 @@ spec:
       labels:
         app: ollama
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: ollama
-          image: docker.io/ollama/ollama:0.5.9
+          image: docker.io/ollama/ollama:0.6.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 11434
@@ -27,11 +28,13 @@ spec:
                 name: ollama-env
           resources:
             requests:
-              cpu: "500m"
+              cpu: "1500m"
               memory: "1Gi"
+              ephemeral-storage: "2Gi"
             limits:
-              cpu: "1"
+              cpu: "2000m"
               memory: "2Gi"
+              ephemeral-storage: "4Gi"
           volumeMounts:
             - name: bookworm-apphost-62fd53aa4e-ollama-ollama
               mountPath: /root/.ollama
@@ -42,6 +45,4 @@ spec:
         accessModes: ["ReadWriteOnce"]
         resources:
           requests:
-            storage: 1Gi
-          limits:
-            storage: 2Gi
+            storage: 4Gi

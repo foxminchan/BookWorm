@@ -1,4 +1,5 @@
-﻿global using BookWorm.Constants;
+﻿global using System.Diagnostics.CodeAnalysis;
+global using BookWorm.Constants;
 global using BookWorm.Rating.Domain.FeedbackAggregator;
 global using BookWorm.Rating.Infrastructure;
 global using BookWorm.Rating.Infrastructure.Services;

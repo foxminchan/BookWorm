@@ -12,7 +12,7 @@ runs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
+        dotnet-version: ${{ inputs.dotnet-version }}
 
     - name: Install Tools
       shell: bash
@@ -21,7 +21,15 @@ runs:
     - name: Test
       shell: bash
       if: success()
-      run: dotnet test --configuration Release -- --report-trx --results-directory ./test-results --coverage --coverage-output-format cobertura
+      run: >
+        dotnet test
+        --configuration Release
+        --logger console --logger trx --logger html --logger GitHubActions
+        --
+        --report-trx
+        --results-directory ./test-results
+        --coverage
+        --coverage-output-format cobertura
 
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v2
@@ -36,6 +44,11 @@ runs:
         filename: src/Services/**/**/test-results/*.cobertura.xml
         badge: true
         format: markdown
+        hide_branch_rate: false
+        hide_complexity: true
+        indicators: true
+        output: both
+        thresholds: "60 80"
 
     - name: Add Coverage PR Comment
       uses: marocchino/sticky-pull-request-comment@v2
@@ -43,3 +56,7 @@ runs:
       with:
         recreate: true
         path: code-coverage-results.md
+
+    - name: Write to Job Summary
+      shell: bash
+      run: cat code-coverage-results.md >> GITHUB_STEP_SUMMARY

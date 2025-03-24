@@ -18,9 +18,10 @@ spec:
       labels:
         app: bookworm-notification
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: bookworm-notification
-          image: bookworm-notification:latest
+          image: ghcr.io/foxminchan/bookworm/notification:latest
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -29,13 +30,31 @@ spec:
               containerPort: 8443
             - name: healthchecks
               containerPort: 8002
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: healthchecks
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /alive
+              port: healthchecks
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
           resources:
-            requests:
-              cpu: "100m"
-              memory: "128Mi"
             limits:
               cpu: "500m"
+              memory: "512Mi"
+              ephemeral-storage: "2Gi"
+            requests:
+              cpu: "200m"
               memory: "256Mi"
+              ephemeral-storage: "1Gi"
           envFrom:
             - configMapRef:
                 name: bookworm-notification-env

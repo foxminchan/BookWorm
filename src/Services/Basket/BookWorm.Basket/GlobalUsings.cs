@@ -1,4 +1,5 @@
-﻿global using System.Security.Claims;
+﻿global using System.Diagnostics.CodeAnalysis;
+global using System.Security.Claims;
 global using System.Text.Json.Serialization;
 global using BookWorm.Basket.Domain;
 global using BookWorm.Basket.Grpc.Services.Book;

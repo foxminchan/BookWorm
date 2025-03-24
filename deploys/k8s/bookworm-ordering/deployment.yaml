@@ -18,9 +18,10 @@ spec:
       labels:
         app: bookworm-ordering
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: bookworm-ordering
-          image: bookworm-ordering:latest
+          image: ghcr.io/foxminchan/bookworm/ordering:latest
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -29,16 +30,34 @@ spec:
               containerPort: 8443
             - name: healthchecks
               containerPort: 8003
+          livenessProbe:
+            httpGet:
+              path: /
+              port: healthchecks
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /alive
+              port: healthchecks
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            limits:
+              cpu: "2000m"
+              memory: "1Gi"
+              ephemeral-storage: "2Gi"
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+              ephemeral-storage: "1Gi"
           envFrom:
             - configMapRef:
                 name: bookworm-ordering-env
             - secretRef:
                 name: bookworm-ordering-secrets
-          resources:
-            requests:
-              cpu: 100m
-              memory: 256Mi
-            limits:
-              cpu: 500m
-              memory: 512Mi
       terminationGracePeriodSeconds: 180

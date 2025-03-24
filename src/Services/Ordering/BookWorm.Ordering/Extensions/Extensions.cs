@@ -2,6 +2,7 @@
 
 namespace BookWorm.Ordering.Extensions;
 
+[ExcludeFromCodeCoverage]
 public static class Extensions
 {
     public static void AddApplicationServices(this IHostApplicationBuilder builder)

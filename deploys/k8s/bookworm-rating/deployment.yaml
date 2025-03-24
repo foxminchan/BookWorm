@@ -18,9 +18,10 @@ spec:
       labels:
         app: bookworm-rating
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: bookworm-rating
-          image: bookworm-rating:latest
+          image: ghcr.io/foxminchan/bookworm/rating:latest
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -29,13 +30,31 @@ spec:
               containerPort: 8443
             - name: healthchecks
               containerPort: 8004
+          livenessProbe:
+            httpGet:
+              path: /
+              port: healthchecks
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /alive
+              port: healthchecks
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
           resources:
             limits:
-              cpu: "500m"
-              memory: "512Mi"
+              cpu: "1000m"
+              memory: "1Gi"
+              ephemeral-storage: "2Gi"
             requests:
-              cpu: "200m"
-              memory: "256Mi"
+              cpu: "300m"
+              memory: "512Mi"
+              ephemeral-storage: "1Gi"
           envFrom:
             - configMapRef:
                 name: bookworm-rating-env

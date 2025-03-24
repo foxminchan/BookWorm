@@ -1,5 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
+  <PropertyGroup>
+    <EnableSdkContainerSupport>true</EnableSdkContainerSupport>
+    <ContainerRepository>foxminchan/bookworm/gateway</ContainerRepository>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Yarp.ReverseProxy"/>
     <PackageReference Include="Microsoft.Extensions.ServiceDiscovery.Yarp"/>

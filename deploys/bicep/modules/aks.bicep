@@ -27,10 +27,10 @@ resource acr 'Microsoft.ContainerRegistry/registries@2021-12-01-preview' existin
 resource aksCluster 'Microsoft.ContainerService/managedClusters@2022-05-02-preview' = {
   name: clusterName
   location: location
-  tags: tags
   identity: {
     type: 'SystemAssigned'
   }
+  tags: tags
   properties: {
     nodeResourceGroup: nodeResourceGroup
     dnsPrefix: clusterName
@@ -50,8 +50,8 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2022-05-02-previ
 
 // Grant AKS access to ACR
 resource aksAcrRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(aksCluster.id, acr.id, 'acrpull')
   scope: acr
+  name: guid(aksCluster.id, acr.id, 'acrpull')
   properties: {
     roleDefinitionId: subscriptionResourceId(
       'Microsoft.Authorization/roleDefinitions',
