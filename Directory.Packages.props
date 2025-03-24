@@ -19,6 +19,7 @@
     <PackageVersion Include="Aspire.Hosting.Azure.Redis" Version="$(AspireVersion)"/>
     <PackageVersion Include="Aspire.Hosting.Qdrant" Version="$(AspireVersion)"/>
     <PackageVersion Include="Aspire.Hosting.Keycloak" Version="$(AspireUnstableVersion)"/>
+    <PackageVersion Include="Aspire.Hosting.Azure.SignalR" Version="$(AspireUnstableVersion)"/>
     <PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="$(AspireVersion)"/>
     <PackageVersion Include="Aspire.Microsoft.EntityFrameworkCore.Cosmos" Version="$(AspireVersion)"/>
     <PackageVersion Include="Aspire.Npgsql" Version="$(AspireVersion)"/>
@@ -40,6 +41,7 @@
     <PackageVersion Include="Asp.Versioning.Mvc" Version="$(ApiVersioningVersion)"/>
     <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer" Version="$(ApiVersioningVersion)"/>
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.3"/>
+    <PackageVersion Include="Microsoft.Azure.SignalR.Management" Version="1.30.2"/>
     <!-- Entity Framework Core -->
     <PackageVersion Include="EFCore.NamingConventions" Version="9.0.0"/>
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.3"/>
@@ -57,6 +59,7 @@
     <PackageVersion Include="Shouldly" Version="4.3.0"/>
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2"/>
     <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.6.3"/>
+    <PackageVersion Include="GitHubActionsTestLogger" Version="2.4.1"/>
     <!-- Grpc -->
     <PackageVersion Include="Grpc.AspNetCore" Version="$(GrpcVersion)"/>
     <PackageVersion Include="Grpc.AspNetCore.Server.ClientFactory" Version="$(GrpcVersion)"/>

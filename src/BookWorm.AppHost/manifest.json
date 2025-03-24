@@ -142,6 +142,15 @@
         "principalId": ""
       }
     },
+    "signalr": {
+      "type": "azure.bicep.v0",
+      "connectionString": "Endpoint=https://{signalr.outputs.hostName};AuthType=azure",
+      "path": "signalr.module.bicep",
+      "params": {
+        "principalType": "",
+        "principalId": ""
+      }
+    },
     "ratingdb": {
       "type": "value.v0",
       "connectionString": "{cosmos.outputs.connectionString}"
@@ -244,6 +253,7 @@
         "services__keycloak__http__0": "{keycloak.bindings.http.url}",
         "services__keycloak__management__0": "{keycloak.bindings.management.url}",
         "ConnectionStrings__redis": "{redis.connectionString}",
+        "ConnectionStrings__signalr": "{signalr.connectionString}",
         "ConnectionStrings__embedding": "{embedding.connectionString}",
         "ConnectionStrings__chat": "{chat.connectionString}",
         "HEALTHCHECKSUI_URLS": "{bookworm-catalog.bindings.healthchecks.url}/healthz"
@@ -280,6 +290,9 @@
         "ConnectionStrings__queue": "{queue.connectionString}",
         "services__keycloak__http__0": "{keycloak.bindings.http.url}",
         "services__keycloak__management__0": "{keycloak.bindings.management.url}",
+        "services__bookworm-catalog__http__0": "{bookworm-catalog.bindings.http.url}",
+        "services__bookworm-catalog__https__0": "{bookworm-catalog.bindings.https.url}",
+        "services__bookworm-catalog__healthchecks__0": "{bookworm-catalog.bindings.healthchecks.url}",
         "HEALTHCHECKSUI_URLS": "{bookworm-basket.bindings.healthchecks.url}/healthz"
       },
       "bindings": {
@@ -379,6 +392,12 @@
         "services__keycloak__http__0": "{keycloak.bindings.http.url}",
         "services__keycloak__management__0": "{keycloak.bindings.management.url}",
         "ConnectionStrings__redis": "{redis.connectionString}",
+        "services__bookworm-catalog__http__0": "{bookworm-catalog.bindings.http.url}",
+        "services__bookworm-catalog__https__0": "{bookworm-catalog.bindings.https.url}",
+        "services__bookworm-catalog__healthchecks__0": "{bookworm-catalog.bindings.healthchecks.url}",
+        "services__bookworm-basket__http__0": "{bookworm-basket.bindings.http.url}",
+        "services__bookworm-basket__https__0": "{bookworm-basket.bindings.https.url}",
+        "services__bookworm-basket__healthchecks__0": "{bookworm-basket.bindings.healthchecks.url}",
         "HEALTHCHECKSUI_URLS": "{bookworm-ordering.bindings.healthchecks.url}/healthz"
       },
       "bindings": {
@@ -498,12 +517,14 @@
         "http": {
           "scheme": "http",
           "protocol": "tcp",
-          "transport": "http"
+          "transport": "http",
+          "external": true
         },
         "https": {
           "scheme": "https",
           "protocol": "tcp",
-          "transport": "http"
+          "transport": "http",
+          "external": true
         },
         "healthchecks": {
           "scheme": "http",
@@ -516,7 +537,7 @@
     "ollama": {
       "type": "container.v0",
       "connectionString": "Endpoint={ollama.bindings.http.scheme}://{ollama.bindings.http.host}:{ollama.bindings.http.port}",
-      "image": "docker.io/ollama/ollama:0.5.9",
+      "image": "docker.io/ollama/ollama:0.6.0",
       "volumes": [
         {
           "name": "bookworm.apphost-62fd53aa4e-ollama-ollama",
@@ -539,7 +560,7 @@
     },
     "chat": {
       "type": "value.v0",
-      "connectionString": "{ollama.connectionString};Model=deepseek-r1:8b"
+      "connectionString": "{ollama.connectionString};Model=deepseek-r1:1.5b"
     },
     "healthchecksui": {
       "type": "container.v0",

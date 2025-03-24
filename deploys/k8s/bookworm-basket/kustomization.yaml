@@ -15,6 +15,8 @@ configMapGenerator:
       - HTTP_PORTS=8080;8001
       - services__keycloak__http__0=http://keycloak:8080
       - services__keycloak__management__0=keycloak:9000
+      - services__bookworm-catalog__http__0=http://bookworm-catalog:8080
+      - services__bookworm-catalog__healthchecks__0=bookworm-catalog:8000
       - HEALTHCHECKSUI_URLS=bookworm-basket:8001/healthz
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://aspire-dashboard:18889
       - OTEL_SERVICE_NAME=bookworm-basket

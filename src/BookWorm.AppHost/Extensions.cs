@@ -76,10 +76,12 @@ public static class Extensions
     /// <param name="builder">The distributed application builder.</param>
     /// <param name="cosmos">The resource builder for Azure Cosmos DB.</param>
     /// <param name="storage">The resource builder for Azure Storage.</param>
+    /// <param name="signalR">The resource builder for Azure SignalR.</param>
     public static void ConfigAzureResource(
         this IDistributedApplicationBuilder builder,
         IResourceBuilder<AzureCosmosDBResource> cosmos,
-        IResourceBuilder<AzureStorageResource> storage
+        IResourceBuilder<AzureStorageResource> storage,
+        IResourceBuilder<AzureSignalRResource> signalR
     )
     {
         if (builder.Environment.IsDevelopment())
@@ -93,6 +95,7 @@ public static class Extensions
             storage.RunAsEmulator(config =>
                 config.WithDataVolume().WithLifetime(ContainerLifetime.Persistent)
             );
+            signalR.RunAsEmulator(config => config.WithLifetime(ContainerLifetime.Persistent));
         }
 
         cosmos.AddCosmosDatabase(Components.Database.Rating).AddContainer("Feedbacks", "/id");
@@ -107,7 +110,7 @@ public static class Extensions
             cosmosDbAccount.Kind = CosmosDBAccountKind.GlobalDocumentDB;
             cosmosDbAccount.ConsistencyPolicy = new()
             {
-                DefaultConsistencyLevel = DefaultConsistencyLevel.Strong,
+                DefaultConsistencyLevel = DefaultConsistencyLevel.Session,
             };
             cosmosDbAccount.Tags.Add(nameof(Environment), builder.Environment.EnvironmentName);
             cosmosDbAccount.Tags.Add("Project", nameof(BookWorm));
@@ -120,7 +123,7 @@ public static class Extensions
                 .OfType<StorageAccount>()
                 .Single();
 
-            storageAccount.AccessTier = StorageAccountAccessTier.Cool;
+            storageAccount.AccessTier = StorageAccountAccessTier.Hot;
             storageAccount.Sku = new() { Name = StorageSkuName.PremiumZrs };
             storageAccount.Tags.Add(nameof(Environment), builder.Environment.EnvironmentName);
             storageAccount.Tags.Add("Project", nameof(BookWorm));

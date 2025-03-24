@@ -51,7 +51,7 @@ public static class Extensions
         services.AddGrpc();
         services
             .AddGrpcClient<BookGrpcServiceClient>(o =>
-                o.Address = new("http+https://bookworm-catalog")
+                o.Address = new($"http+https://{Application.Catalog}")
             )
             .AddStandardResilienceHandler();
         services.AddSingleton<IBookService, BookService>();

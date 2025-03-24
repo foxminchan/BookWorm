@@ -9,6 +9,7 @@ public static class Components
     public const string MailPit = "mailpit";
     public const string Queue = "queue";
     public const string Cosmos = "cosmos";
+    public const string SignalR = "signalr";
 
     public static class Database
     {

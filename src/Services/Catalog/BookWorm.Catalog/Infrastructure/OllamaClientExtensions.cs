@@ -11,7 +11,7 @@ public static class OllamaClientExtensions
 
         services.AddSingleton<IAiService, AiService>();
 
-        services.AddSignalR();
+        services.AddSignalR().AddNamedAzureSignalR(Components.SignalR);
         services.AddSingleton<IChatStreaming, ChatStreaming>();
         services.AddSingleton<IConversationState, RedisConversationState>();
         services.AddSingleton<ICancellationManager, RedisCancellationManager>();

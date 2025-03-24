@@ -11,14 +11,14 @@ public static class Extensions
 
         services
             .AddGrpcClient<BookGrpcServiceClient>(o =>
-                o.Address = new("http+https://bookworm-catalog")
+                o.Address = new($"http+https://{Application.Catalog}")
             )
             .AddStandardResilienceHandler();
         services.AddSingleton<IBookService, BookService>();
 
         services
             .AddGrpcClient<BasketGrpcServiceClient>(o =>
-                o.Address = new("http+https://bookworm-basket")
+                o.Address = new($"http+https://{Application.Basket}")
             )
             .AddAuthToken()
             .AddStandardResilienceHandler();

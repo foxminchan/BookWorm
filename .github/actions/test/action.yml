@@ -21,7 +21,15 @@ runs:
     - name: Test
       shell: bash
       if: success()
-      run: dotnet test --configuration Release -- --report-trx --results-directory ./test-results --coverage --coverage-output-format cobertura
+      run: >
+        dotnet test
+        --configuration Release
+        --logger console --logger trx --logger html --logger GitHubActions
+        --
+        --report-trx
+        --results-directory ./test-results
+        --coverage
+        --coverage-output-format cobertura
 
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v2
