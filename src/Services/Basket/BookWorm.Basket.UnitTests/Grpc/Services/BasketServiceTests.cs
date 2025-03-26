@@ -27,10 +27,10 @@ public sealed class BasketServiceTests
         // Arrange
         var request = new Empty();
         var basket = new CustomerBasket(
-            Guid.NewGuid().ToString(),
+            Guid.CreateVersion7().ToString(),
             [
-                new BasketItem(Guid.NewGuid().ToString(), 10),
-                new BasketItem(Guid.NewGuid().ToString(), 20),
+                new BasketItem(Guid.CreateVersion7().ToString(), 10),
+                new BasketItem(Guid.CreateVersion7().ToString(), 20),
             ]
         );
 

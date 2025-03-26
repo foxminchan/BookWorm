@@ -1,5 +1,6 @@
 [![CI](https://github.com/foxminchan/BookWorm/actions/workflows/ci.yaml/badge.svg)](https://github.com/foxminchan/BookWorm/actions/workflows/ci.yaml)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=coverage)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
+[![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
 [![Netlify Status](https://api.netlify.com/api/v1/badges/ff82b0cb-bbb5-4d49-b326-e4792d673420/deploy-status)](https://app.netlify.com/sites/bookwormdev/deploys)
 
 # 📖 BookWorm: A Practical .NET Aspire Application

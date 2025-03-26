@@ -163,7 +163,10 @@ public sealed class MessageBuffer : IAsyncDisposable
                 Interlocked.Increment(ref _count);
             }
 
-            throw;
+            throw new InvalidOperationException(
+                "Error flushing fragments. Re-enqueued fragments.",
+                ex
+            );
         }
     }
 
@@ -183,9 +186,8 @@ public sealed class MessageBuffer : IAsyncDisposable
             (span, frags) =>
             {
                 var pos = 0;
-                foreach (var t in frags)
+                foreach (var text in frags.Select(t => t.Text))
                 {
-                    ReadOnlySpan<char> text = t.Text;
                     text.CopyTo(span[pos..]);
                     pos += text.Length;
                 }

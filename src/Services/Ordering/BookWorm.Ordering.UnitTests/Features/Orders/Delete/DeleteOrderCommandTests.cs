@@ -72,7 +72,7 @@ public sealed class DeleteOrderCommandTests
     public async Task GivenInvalidId_WhenHandlingDeleteCommand_ThenShouldThrowNotFoundException()
     {
         // Arrange
-        var invalidOrderId = Guid.NewGuid();
+        var invalidOrderId = Guid.CreateVersion7();
         _repositoryMock
             .Setup(r => r.GetByIdAsync(invalidOrderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Order)null!);

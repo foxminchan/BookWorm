@@ -18,7 +18,7 @@ public sealed class UpdateAddressCommandTests
 
     public UpdateAddressCommandTests()
     {
-        _userId = Guid.NewGuid();
+        _userId = Guid.CreateVersion7();
         _buyer = new BuyerFaker().Generate(1)[0];
 
         _buyerRepositoryMock = new();

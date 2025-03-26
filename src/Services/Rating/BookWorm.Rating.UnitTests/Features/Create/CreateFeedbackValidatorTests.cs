@@ -25,7 +25,13 @@ public sealed class CreateFeedbackValidatorTests
     public void GivenValidBookId_WhenValidating_ThenShouldNotHaveValidationError()
     {
         // Arrange
-        var command = new CreateFeedbackCommand(Guid.NewGuid(), "John", "Doe", "Great book!", 5);
+        var command = new CreateFeedbackCommand(
+            Guid.CreateVersion7(),
+            "John",
+            "Doe",
+            "Great book!",
+            5
+        );
 
         // Act
         var result = _validator.TestValidate(command);
@@ -38,7 +44,13 @@ public sealed class CreateFeedbackValidatorTests
     public void GivenEmptyFirstName_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = new CreateFeedbackCommand(Guid.NewGuid(), null, "Doe", "Great book!", 5);
+        var command = new CreateFeedbackCommand(
+            Guid.CreateVersion7(),
+            default,
+            "Doe",
+            "Great book!",
+            5
+        );
 
         // Act
         var result = _validator.TestValidate(command);
@@ -51,7 +63,13 @@ public sealed class CreateFeedbackValidatorTests
     public void GivenEmptyLastName_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = new CreateFeedbackCommand(Guid.NewGuid(), "John", null, "Great book!", 5);
+        var command = new CreateFeedbackCommand(
+            Guid.CreateVersion7(),
+            "John",
+            default,
+            "Great book!",
+            5
+        );
 
         // Act
         var result = _validator.TestValidate(command);
@@ -65,7 +83,13 @@ public sealed class CreateFeedbackValidatorTests
     {
         // Arrange
         var longComment = new string('A', DataSchemaLength.Max + 1);
-        var command = new CreateFeedbackCommand(Guid.NewGuid(), "John", "Doe", longComment, 5);
+        var command = new CreateFeedbackCommand(
+            Guid.CreateVersion7(),
+            "John",
+            "Doe",
+            longComment,
+            5
+        );
 
         // Act
         var result = _validator.TestValidate(command);
@@ -79,7 +103,13 @@ public sealed class CreateFeedbackValidatorTests
     {
         // Arrange
         var validComment = new string('A', DataSchemaLength.Max);
-        var command = new CreateFeedbackCommand(Guid.NewGuid(), "John", "Doe", validComment, 5);
+        var command = new CreateFeedbackCommand(
+            Guid.CreateVersion7(),
+            "John",
+            "Doe",
+            validComment,
+            5
+        );
 
         // Act
         var result = _validator.TestValidate(command);
@@ -97,7 +127,7 @@ public sealed class CreateFeedbackValidatorTests
     {
         // Arrange
         var command = new CreateFeedbackCommand(
-            Guid.NewGuid(),
+            Guid.CreateVersion7(),
             "John",
             "Doe",
             "Great book!",
@@ -121,7 +151,7 @@ public sealed class CreateFeedbackValidatorTests
     {
         // Arrange
         var command = new CreateFeedbackCommand(
-            Guid.NewGuid(),
+            Guid.CreateVersion7(),
             "John",
             "Doe",
             "Great book!",
@@ -139,7 +169,13 @@ public sealed class CreateFeedbackValidatorTests
     public void GivenValidCommand_WhenValidating_ThenShouldNotHaveAnyValidationErrors()
     {
         // Arrange
-        var command = new CreateFeedbackCommand(Guid.NewGuid(), "John", "Doe", "Great book!", 5);
+        var command = new CreateFeedbackCommand(
+            Guid.CreateVersion7(),
+            "John",
+            "Doe",
+            "Great book!",
+            5
+        );
 
         // Act
         var result = _validator.TestValidate(command);

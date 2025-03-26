@@ -4,6 +4,7 @@ using StackExchange.Redis;
 
 namespace BookWorm.Basket.Repositories;
 
+[ExcludeFromCodeCoverage]
 public sealed class BasketRepository(ILogger<BasketRepository> logger, IConnectionMultiplexer redis)
     : IBasketRepository
 {
@@ -37,7 +38,7 @@ public sealed class BasketRepository(ILogger<BasketRepository> logger, IConnecti
 
         if (created)
         {
-            return await GetBasketAsync(basket.Id!);
+            return await GetBasketAsync(basket.Id);
         }
 
         logger.LogError("[{Repository}] Failed to update basket", nameof(BasketRepository));

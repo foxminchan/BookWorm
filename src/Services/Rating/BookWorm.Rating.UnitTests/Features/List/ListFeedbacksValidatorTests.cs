@@ -11,7 +11,7 @@ public sealed class ListFeedbacksValidatorTests
     public void GivenValidQuery_WhenValidating_ThenShouldNotHaveValidationErrors()
     {
         // Arrange
-        var query = new ListFeedbacksQuery(Guid.NewGuid(), 1, 10);
+        var query = new ListFeedbacksQuery(Guid.CreateVersion7(), 1, 10);
 
         // Act
         var result = _validator.TestValidate(query);
@@ -24,7 +24,7 @@ public sealed class ListFeedbacksValidatorTests
     public void GivenNegativePageIndex_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var query = new ListFeedbacksQuery(Guid.NewGuid(), -1, 10);
+        var query = new ListFeedbacksQuery(Guid.CreateVersion7(), -1, 10);
 
         // Act
         var result = _validator.TestValidate(query);
@@ -40,7 +40,7 @@ public sealed class ListFeedbacksValidatorTests
     public void GivenInvalidPageSize_WhenValidating_ThenShouldHaveValidationError(int pageSize)
     {
         // Arrange
-        var query = new ListFeedbacksQuery(Guid.NewGuid(), 0, pageSize);
+        var query = new ListFeedbacksQuery(Guid.CreateVersion7(), 0, pageSize);
 
         // Act
         var result = _validator.TestValidate(query);
@@ -53,7 +53,7 @@ public sealed class ListFeedbacksValidatorTests
     public void GivenNullOrderBy_WhenValidating_ThenShouldUseDefaultValue()
     {
         // Arrange
-        var query = new ListFeedbacksQuery(Guid.NewGuid(), 0, 10, null);
+        var query = new ListFeedbacksQuery(Guid.CreateVersion7(), 0, 10, default);
 
         // Act
         var result = _validator.TestValidate(query);

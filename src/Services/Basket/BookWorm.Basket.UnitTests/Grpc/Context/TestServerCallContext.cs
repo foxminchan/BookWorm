@@ -31,7 +31,7 @@ public sealed class TestServerCallContext(
     protected override WriteOptions? WriteOptionsCore
     {
         get => writeOptions;
-        set { }
+        set => _ = value;
     }
 
     protected override AuthContext AuthContextCore { get; } =
@@ -58,9 +58,9 @@ public sealed class TestServerCallContext(
 
     public static TestServerCallContext Create(
         Metadata? requestHeaders = null,
-        CancellationToken cancellationToken = default
+        CancellationToken ct = default
     )
     {
-        return new([], cancellationToken);
+        return new([], ct);
     }
 }

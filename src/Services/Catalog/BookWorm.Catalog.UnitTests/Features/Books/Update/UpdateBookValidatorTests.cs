@@ -12,10 +12,10 @@ public sealed class UpdateBookValidatorTests
     private const string ValidDescription = "Test Description";
     private const decimal ValidPrice = 29.99m;
     private const decimal ValidPriceSale = 19.99m;
-    private readonly Guid[] _validAuthorIds = [Guid.NewGuid(), Guid.NewGuid()];
-    private readonly Guid _validCategoryId = Guid.NewGuid();
-    private readonly Guid _validId = Guid.NewGuid();
-    private readonly Guid _validPublisherId = Guid.NewGuid();
+    private readonly Guid[] _validAuthorIds = [Guid.CreateVersion7(), Guid.CreateVersion7()];
+    private readonly Guid _validCategoryId = Guid.CreateVersion7();
+    private readonly Guid _validId = Guid.CreateVersion7();
+    private readonly Guid _validPublisherId = Guid.CreateVersion7();
     private UpdateBookValidator _validator = default!;
 
     [Before(Test)]
