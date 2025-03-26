@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using System.Runtime.InteropServices;
-using BookWorm.Catalog.Domain.Events;
+﻿using BookWorm.Catalog.Domain.Events;
 
 namespace BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 
@@ -46,10 +44,6 @@ public sealed class Book() : AuditableEntity, IAggregateRoot, ISoftDelete
     public Category? Category { get; private set; } = default!;
     public Guid? PublisherId { get; private set; }
     public Publisher? Publisher { get; private set; } = default!;
-
-    [NotMapped]
-    [JsonConverter(typeof(EmbeddingJsonConverter))]
-    public ReadOnlyMemory<float> Embedding { get; init; }
 
     public IReadOnlyCollection<BookAuthor> BookAuthors => _bookAuthors.AsReadOnly();
     public bool IsDeleted { get; set; }
@@ -145,57 +139,5 @@ public sealed class Book() : AuditableEntity, IAggregateRoot, ISoftDelete
     {
         AverageRating = ((AverageRating * TotalReviews) - rating) / (TotalReviews - 1);
         TotalReviews--;
-    }
-
-    /// <summary>
-    ///     JSON converter for ReadOnlyMemory to handle embedding serialization and deserialization.
-    /// </summary>
-    internal class EmbeddingJsonConverter : JsonConverter<ReadOnlyMemory<float>>
-    {
-        /// <summary>
-        ///     Reads and converts the JSON to ReadOnlyMemory.
-        /// </summary>
-        /// <param name="reader">The reader.</param>
-        /// <param name="typeToConvert">The type to convert.</param>
-        /// <param name="options">The serializer options.</param>
-        /// <returns>The converted ReadOnlyMemory.</returns>
-        public override ReadOnlyMemory<float> Read(
-            ref Utf8JsonReader reader,
-            Type typeToConvert,
-            JsonSerializerOptions options
-        )
-        {
-            if (reader.TokenType == JsonTokenType.Null)
-            {
-                return null;
-            }
-
-            if (reader.TokenType != JsonTokenType.String)
-            {
-                throw new InvalidOperationException(
-                    $"JSON deserialization failed because the value type was {reader.TokenType} but should be {JsonTokenType.String}"
-                );
-            }
-
-            var bytes = reader.GetBytesFromBase64();
-            var floats = MemoryMarshal.Cast<byte, float>(bytes);
-            return floats.ToArray();
-        }
-
-        /// <summary>
-        ///     Writes the ReadOnlyMemory to JSON.
-        /// </summary>
-        /// <param name="writer">The writer.</param>
-        /// <param name="value">The value to write.</param>
-        /// <param name="options">The serializer options.</param>
-        public override void Write(
-            Utf8JsonWriter writer,
-            ReadOnlyMemory<float> value,
-            JsonSerializerOptions options
-        )
-        {
-            var bytes = MemoryMarshal.AsBytes(value.Span);
-            writer.WriteBase64StringValue(bytes);
-        }
     }
 }

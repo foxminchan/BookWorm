@@ -8,7 +8,7 @@ public sealed class CreateFeedbackCommandFaker : Faker<CreateFeedbackCommand>
     {
         CustomInstantiator(f =>
             new(
-                Guid.NewGuid(),
+                Guid.CreateVersion7(),
                 f.Name.FirstName(),
                 f.Name.LastName(),
                 f.Lorem.Sentence(),

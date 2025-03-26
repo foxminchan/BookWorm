@@ -12,7 +12,7 @@ public sealed class ListOrdersValidatorTests
     public void GivenValidQuery_WhenValidating_ThenShouldNotHaveErrors()
     {
         // Arrange
-        var query = new ListOrdersQuery(1, 10, Status.Completed, Guid.NewGuid());
+        var query = new ListOrdersQuery(1, 10, Status.Completed, Guid.CreateVersion7());
 
         // Act
         var result = _validator.TestValidate(query);

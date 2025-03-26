@@ -43,11 +43,11 @@ public sealed class CreateOrderCommandTests
             // Arrange
             var basketResponse = new BasketResponse
             {
-                Id = Guid.NewGuid().ToString(),
+                Id = Guid.CreateVersion7().ToString(),
                 Items =
                 {
-                    new Item { Id = Guid.NewGuid().ToString(), Quantity = 2 },
-                    new Item { Id = Guid.NewGuid().ToString(), Quantity = 1 },
+                    new Item { Id = Guid.CreateVersion7().ToString(), Quantity = 2 },
+                    new Item { Id = Guid.CreateVersion7().ToString(), Quantity = 1 },
                 },
             };
 
@@ -157,7 +157,7 @@ public sealed class CreateOrderCommandTests
 
         public CreateOrderHandlerTests()
         {
-            var userId = Guid.NewGuid().ToString();
+            var userId = Guid.CreateVersion7().ToString();
             _orderRepositoryMock = new();
             _claimsPrincipalMock = new();
             Mock<IDistributedLockProvider> lockProviderMock = new();
@@ -173,7 +173,11 @@ public sealed class CreateOrderCommandTests
 
             _command = new()
             {
-                Items = [new(Guid.NewGuid(), 2, 10.99m), new(Guid.NewGuid(), 1, 15.50m)],
+                Items =
+                [
+                    new(Guid.CreateVersion7(), 2, 10.99m),
+                    new(Guid.CreateVersion7(), 1, 15.50m),
+                ],
             };
         }
 

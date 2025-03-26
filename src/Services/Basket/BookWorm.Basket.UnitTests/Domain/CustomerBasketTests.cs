@@ -71,7 +71,7 @@ public sealed class CustomerBasketTests
     public void GivenNullId_WhenCreatingCustomerBasket_ThenShouldThrowException()
     {
         // Arrange
-        const string? id = null;
+        const string? id = default;
         var items = new List<BasketItem> { new("book-1", 2), new("book-2", 1) };
 
         // Act & Assert

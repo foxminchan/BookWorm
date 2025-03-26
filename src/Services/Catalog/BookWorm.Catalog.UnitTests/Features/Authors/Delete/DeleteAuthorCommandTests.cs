@@ -52,7 +52,7 @@ public sealed class DeleteAuthorCommandTests
     public async Task GivenInvalidCommand_WhenHandlingDeleteAuthor_ThenShouldThrowNotFoundException()
     {
         // Arrange
-        var command = new DeleteAuthorCommand(Guid.NewGuid());
+        var command = new DeleteAuthorCommand(Guid.CreateVersion7());
 
         _repositoryMock
             .Setup(r => r.GetByIdAsync(command.Id, It.IsAny<CancellationToken>()))

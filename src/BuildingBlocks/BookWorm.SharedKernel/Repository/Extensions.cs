@@ -1,5 +1,4 @@
-﻿using BookWorm.SharedKernel.SeedWork;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.SharedKernel.Repository;
 

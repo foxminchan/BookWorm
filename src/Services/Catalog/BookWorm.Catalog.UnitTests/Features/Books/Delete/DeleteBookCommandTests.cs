@@ -53,7 +53,7 @@ public sealed class DeleteBookCommandTests
     public void GivenNonExistingBookId_WhenHandlingDeleteBookCommand_ThenShouldThrowNotFoundException()
     {
         // Arrange
-        var bookId = Guid.NewGuid();
+        var bookId = Guid.CreateVersion7();
         var command = new DeleteBookCommand(bookId);
 
         _repositoryMock

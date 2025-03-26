@@ -57,7 +57,7 @@ public sealed class UpdatePublisherCommandTests
     public async Task GivenNonExistingPublisher_WhenHandlingUpdatePublisherCommand_ThenShouldThrowNotFoundException()
     {
         // Arrange
-        var publisherId = Guid.NewGuid();
+        var publisherId = Guid.CreateVersion7();
         var command = new UpdatePublisherCommand(publisherId, "Any Name");
 
         _repositoryMock

@@ -5,7 +5,7 @@ public static class TelemetryTags
     public const string ActivitySourceName = "Smtp";
     public static ActivitySource ActivitySource { get; } = new(ActivitySourceName);
 
-    public sealed class SmtpClient
+    public static class SmtpClient
     {
         public const string Recipient = "smtp.recipient";
         public const string Subject = "smtp.subject";

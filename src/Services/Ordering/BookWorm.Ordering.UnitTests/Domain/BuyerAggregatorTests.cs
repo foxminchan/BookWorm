@@ -9,7 +9,7 @@ public sealed class BuyerAggregateTests
     public void GivenValidParameters_WhenCreatingBuyer_ThenShouldCreateBuyerCorrectly()
     {
         // Arrange
-        var id = Guid.NewGuid();
+        var id = Guid.CreateVersion7();
         const string name = "John Doe";
         const string street = "123 Main St";
         const string city = "Bookville";
@@ -36,7 +36,7 @@ public sealed class BuyerAggregateTests
     )
     {
         // Arrange
-        var id = Guid.NewGuid();
+        var id = Guid.CreateVersion7();
         const string street = "123 Main St";
         const string city = "Bookville";
         const string province = "Readland";
@@ -91,7 +91,13 @@ public sealed class BuyerAggregateTests
     public void GivenValidParameters_WhenUpdatingAddress_ThenShouldUpdateAddressCorrectly()
     {
         // Arrange
-        var buyer = new Buyer(Guid.NewGuid(), "John Doe", "123 Main St", "Bookville", "Readland");
+        var buyer = new Buyer(
+            Guid.CreateVersion7(),
+            "John Doe",
+            "123 Main St",
+            "Bookville",
+            "Readland"
+        );
 
         const string newStreet = "456 Book Avenue";
         const string newCity = "Novel City";
@@ -114,7 +120,7 @@ public sealed class BuyerAggregateTests
         const string street = "123 Main St";
         const string city = "Bookville";
         const string province = "Readland";
-        var buyer = new Buyer(Guid.NewGuid(), "John Doe", street, city, province);
+        var buyer = new Buyer(Guid.CreateVersion7(), "John Doe", street, city, province);
 
         // Act
         var fullAddress = buyer.FullAddress;

@@ -2,6 +2,7 @@
 using BookWorm.Basket.Domain;
 using BookWorm.Basket.Exceptions;
 using BookWorm.Basket.Features.Create;
+using BookWorm.Basket.UnitTests.Fakers;
 using BookWorm.ServiceDefaults.Keycloak;
 
 namespace BookWorm.Basket.UnitTests.Features.Create;
@@ -64,7 +65,7 @@ public sealed class CreateBasketCommandTests
         // Return null when looking for the claim
         mockEmptyClaimsPrincipal
             .Setup(x => x.FindFirst(KeycloakClaimTypes.Subject))
-            .Returns((Claim)null!);
+            .Returns((Claim)default!);
 
         var handler = new CreateBasketHandler(
             _mockBasketRepository.Object,
@@ -80,6 +81,33 @@ public sealed class CreateBasketCommandTests
         _mockBasketRepository.Verify(
             x => x.UpdateBasketAsync(It.IsAny<CustomerBasket>()),
             Times.Never
+        );
+    }
+
+    [Test]
+    public async Task GivenValidCommand_WhenValidRequest_ThenShouldReturnBasketId()
+    {
+        // Arrange
+        var command = _faker.Generate();
+        var basket = new CustomerBasketFaker().Generate(1).First();
+
+        _mockBasketRepository
+            .Setup(x => x.UpdateBasketAsync(It.IsAny<CustomerBasket>()))
+            .ReturnsAsync(basket);
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.ShouldBe(basket.Id);
+        _mockBasketRepository.Verify(
+            x =>
+                x.UpdateBasketAsync(
+                    It.Is<CustomerBasket>(b =>
+                        b.Id == _userId && b.Items.Count == command.Items.Count
+                    )
+                ),
+            Times.Once
         );
     }
 }

@@ -47,11 +47,11 @@ public sealed class DeleteFeedbackCommandTests
     public async Task GivenNonExistingFeedback_WhenHandlingDeleteCommand_ThenShouldThrowNotFoundException()
     {
         // Arrange
-        var feedbackId = Guid.NewGuid();
+        var feedbackId = Guid.CreateVersion7();
         var command = new DeleteFeedbackCommand(feedbackId);
         _repositoryMock
             .Setup(x => x.GetByIdAsync(feedbackId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Feedback)null!);
+            .ReturnsAsync((Feedback)default!);
 
         // Act
         var act = async () => await _handler.Handle(command, CancellationToken.None);

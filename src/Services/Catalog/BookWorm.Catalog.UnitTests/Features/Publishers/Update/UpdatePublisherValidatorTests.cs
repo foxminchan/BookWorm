@@ -12,7 +12,7 @@ public sealed class UpdatePublisherValidatorTests
     public void GivenValidCommand_WhenValidating_ThenShouldNotHaveValidationErrors()
     {
         // Arrange
-        var command = new UpdatePublisherCommand(Guid.NewGuid(), "Valid Publisher Name");
+        var command = new UpdatePublisherCommand(Guid.CreateVersion7(), "Valid Publisher Name");
 
         // Act
         var result = _validator.TestValidate(command);
@@ -43,7 +43,7 @@ public sealed class UpdatePublisherValidatorTests
     )
     {
         // Arrange
-        var command = new UpdatePublisherCommand(Guid.NewGuid(), name!);
+        var command = new UpdatePublisherCommand(Guid.CreateVersion7(), name!);
 
         // Act
         var result = _validator.TestValidate(command);
@@ -57,7 +57,7 @@ public sealed class UpdatePublisherValidatorTests
     {
         // Arrange
         var command = new UpdatePublisherCommand(
-            Guid.NewGuid(),
+            Guid.CreateVersion7(),
             new('A', DataSchemaLength.Medium + 1)
         );
 

@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using Aspire.Hosting.Lifecycle;
+﻿using Aspire.Hosting.Lifecycle;
 
 namespace BookWorm.HealthChecksUI;
 
@@ -28,10 +27,6 @@ internal sealed class HealthChecksUiLifecycleHook(
                 if (!healthChecksEndpoint.Exists)
                 {
                     project.WithHttpEndpoint(name: monitoredProject.EndpointName);
-                    Debug.Assert(
-                        healthChecksEndpoint.Exists,
-                        "The health check endpoint should exist after adding it."
-                    );
                 }
 
                 // Set environment variable to configure the URLs the health check endpoint is accessible from

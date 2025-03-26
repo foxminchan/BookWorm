@@ -12,7 +12,7 @@ public sealed class UpdateAuthorValidatorTests
     public void GivenValidCommand_WhenValidating_ThenShouldNotHaveAnyValidationErrors()
     {
         // Arrange
-        var command = new UpdateAuthorCommand(Guid.NewGuid(), "Valid Author Name");
+        var command = new UpdateAuthorCommand(Guid.CreateVersion7(), "Valid Author Name");
 
         // Act
         var result = _validator.TestValidate(command);
@@ -41,7 +41,7 @@ public sealed class UpdateAuthorValidatorTests
     public void GivenEmptyOrNullName_WhenValidating_ThenShouldHaveValidationError(string? name)
     {
         // Arrange
-        var command = new UpdateAuthorCommand(Guid.NewGuid(), name!);
+        var command = new UpdateAuthorCommand(Guid.CreateVersion7(), name!);
 
         // Act
         var result = _validator.TestValidate(command);
@@ -55,7 +55,7 @@ public sealed class UpdateAuthorValidatorTests
     {
         // Arrange
         var longName = new string('a', DataSchemaLength.Large + 1);
-        var command = new UpdateAuthorCommand(Guid.NewGuid(), longName);
+        var command = new UpdateAuthorCommand(Guid.CreateVersion7(), longName);
 
         // Act
         var result = _validator.TestValidate(command);

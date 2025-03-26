@@ -87,7 +87,10 @@ public sealed class IncludeEvaluator : IEvaluator
                     break;
                 }
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    throw new ArgumentOutOfRangeException(
+                        nameof(includeExpression.Type),
+                        "Invalid include type."
+                    );
             }
         }
 
