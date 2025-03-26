@@ -4,11 +4,11 @@ namespace BookWorm.Catalog.UnitTests.Grpc.Context;
 
 public sealed class TestServerCallContext(
     Metadata? requestHeaders = null,
-    CancellationToken cancellationToken = default,
     DateTime? deadline = null,
     Metadata? responseTrailers = null,
     WriteOptions? writeOptions = null,
-    AuthContext? authContext = null
+    AuthContext? authContext = null,
+    CancellationToken cancellationToken = default
 ) : ServerCallContext
 {
     protected override string MethodCore => "test";

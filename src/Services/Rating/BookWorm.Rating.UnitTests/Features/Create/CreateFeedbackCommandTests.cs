@@ -35,7 +35,7 @@ public sealed class CreateFeedbackCommandTests
         );
 
         // Set a known ID for verification
-        var expectedId = Guid.NewGuid();
+        var expectedId = Guid.CreateVersion7();
 
         // Use reflection to set the ID since it's likely not directly settable
         typeof(Feedback).GetProperty("Id")?.SetValue(feedbackWithId, expectedId);
@@ -74,7 +74,7 @@ public sealed class CreateFeedbackCommandTests
     {
         // Arrange
         var command = _faker.Generate();
-        var expectedId = Guid.NewGuid();
+        var expectedId = Guid.CreateVersion7();
         var feedback = new Feedback(
             command.BookId,
             command.FirstName,

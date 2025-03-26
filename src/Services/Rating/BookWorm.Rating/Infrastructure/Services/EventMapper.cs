@@ -20,7 +20,7 @@ public sealed class EventMapper : IEventMapper
                 feedbackDeletedEvent.Rating,
                 feedbackDeletedEvent.FeedbackId
             ),
-            _ => throw new ArgumentOutOfRangeException(nameof(@event), @event, null),
+            _ => throw new ArgumentOutOfRangeException(nameof(@event), @event, default),
         };
     }
 }

@@ -16,7 +16,7 @@ public sealed class ListFeedbacksQueryTests
     {
         _repositoryMock = new();
         _handler = new(_repositoryMock.Object);
-        _bookId = Guid.NewGuid();
+        _bookId = Guid.CreateVersion7();
         _feedbacks = new FeedbackFaker().Generate();
     }
 
@@ -55,14 +55,21 @@ public sealed class ListFeedbacksQueryTests
     }
 
     [Test]
-    public async Task GivenValidQueryWithPagination_WhenHandlingListFeedbacks_ThenShouldApplyPagination()
+    [Arguments(nameof(Feedback.Rating), true)]
+    [Arguments(nameof(Feedback.Rating), false)]
+    [Arguments(nameof(Feedback.CreatedAt), true)]
+    [Arguments(nameof(Feedback.CreatedAt), false)]
+    public async Task GivenValidQueryWithPagination_WhenHandlingListFeedbacks_ThenShouldApplyPagination(
+        string? orderBy,
+        bool isDescending
+    )
     {
         // Arrange
         const int pageIndex = 1;
         const int pageSize = 5;
         const int totalItems = 15;
         const int totalPages = 3;
-        var query = new ListFeedbacksQuery(_bookId, pageIndex, pageSize);
+        var query = new ListFeedbacksQuery(_bookId, pageIndex, pageSize, orderBy, isDescending);
 
         var feedbacks = new FeedbackFaker().Generate(pageSize);
 

@@ -146,9 +146,10 @@ public sealed class ChatStreaming : IChatStreaming
                     await _conversationState.CompleteAsync(conversationId, assistantReplyId);
                 }
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException ex)
             {
-                _logger.LogInformation(
+                _logger.LogError(
+                    ex,
                     "Streaming message cancelled for conversation {ConversationId} {MessageId}",
                     conversationId,
                     assistantReplyId

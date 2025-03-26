@@ -21,7 +21,7 @@ public sealed class CreateCategoryCommandTests
     {
         // Arrange
         var command = _faker.Generate();
-        var categoryId = Guid.NewGuid();
+        var categoryId = Guid.CreateVersion7();
         var category = new Category(command.Name) { Id = categoryId };
 
         _repositoryMock

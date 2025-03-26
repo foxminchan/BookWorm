@@ -16,7 +16,7 @@ public sealed class ListOrdersQueryTests
 
     public ListOrdersQueryTests()
     {
-        var userId = Guid.NewGuid();
+        var userId = Guid.CreateVersion7();
         _orders = new OrderFaker().Generate();
 
         _repositoryMock = new();
@@ -67,7 +67,7 @@ public sealed class ListOrdersQueryTests
     public async Task GivenAdminUser_WhenListingOrders_ThenShouldNotReplaceBuyerId()
     {
         // Arrange
-        var buyerId = Guid.NewGuid();
+        var buyerId = Guid.CreateVersion7();
         var query = new ListOrdersQuery(1, 10, null, buyerId);
 
         // Setup admin role

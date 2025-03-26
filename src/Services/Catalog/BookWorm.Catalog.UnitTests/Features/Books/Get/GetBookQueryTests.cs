@@ -63,7 +63,7 @@ public sealed class GetBookQueryTests
     public async Task GivenNonExistentId_WhenGetBookQueryHandled_ThenShouldThrowNotFoundException()
     {
         // Arrange
-        var nonExistentId = Guid.NewGuid();
+        var nonExistentId = Guid.CreateVersion7();
         _repositoryMock
             .Setup(r => r.GetByIdAsync(nonExistentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Book)null!);

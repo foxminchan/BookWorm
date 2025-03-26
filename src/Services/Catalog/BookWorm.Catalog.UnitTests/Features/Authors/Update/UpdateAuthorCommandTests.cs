@@ -48,7 +48,7 @@ public sealed class UpdateAuthorCommandTests
     public async Task GivenInvalidAuthorId_WhenHandlingUpdateAuthor_ThenShouldThrowNotFoundException()
     {
         // Arrange
-        var command = new UpdateAuthorCommand(Guid.NewGuid(), "New Author Name");
+        var command = new UpdateAuthorCommand(Guid.CreateVersion7(), "New Author Name");
 
         _repositoryMock
             .Setup(r => r.GetByIdAsync(command.Id, It.IsAny<CancellationToken>()))

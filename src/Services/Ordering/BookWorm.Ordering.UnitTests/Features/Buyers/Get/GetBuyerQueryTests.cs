@@ -11,9 +11,9 @@ namespace BookWorm.Ordering.UnitTests.Features.Buyers.Get;
 public sealed class GetBuyerQueryTests
 {
     private readonly Mock<IBuyerRepository> _buyerRepositoryMock = new();
-    private readonly Guid _otherBuyerId = Guid.NewGuid();
+    private readonly Guid _otherBuyerId = Guid.CreateVersion7();
     private readonly Buyer _testBuyer = new BuyerFaker().Generate().First();
-    private readonly Guid _testBuyerId = Guid.NewGuid();
+    private readonly Guid _testBuyerId = Guid.CreateVersion7();
 
     [Test]
     public async Task GivenAdminUser_WhenGettingAnotherUsersBuyer_ThenShouldReturnBuyer()
@@ -102,7 +102,7 @@ public sealed class GetBuyerQueryTests
             .ReturnsAsync((Buyer)null!);
 
         var handler = new GetBuyerHandler(_buyerRepositoryMock.Object, claimsPrincipal);
-        var command = new GetBuyerQuery(Guid.NewGuid());
+        var command = new GetBuyerQuery(Guid.CreateVersion7());
 
         // Act
         var act = async () => await handler.Handle(command, CancellationToken.None);
@@ -122,7 +122,7 @@ public sealed class GetBuyerQueryTests
             .Returns((Claim)null!);
 
         var handler = new GetBuyerHandler(_buyerRepositoryMock.Object, claimsPrincipalMock.Object);
-        var command = new GetBuyerQuery(Guid.NewGuid());
+        var command = new GetBuyerQuery(Guid.CreateVersion7());
 
         // Act
         var act = async () => await handler.Handle(command, CancellationToken.None);

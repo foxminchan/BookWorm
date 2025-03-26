@@ -90,7 +90,7 @@ public sealed class ListBooksQueryTests
         // Arrange
         const string searchTerm = "fantasy novel";
         var query = new ListBooksQuery(Search: searchTerm);
-        var semanticSearchResults = new[] { Guid.NewGuid(), Guid.NewGuid() };
+        var semanticSearchResults = new[] { Guid.CreateVersion7(), Guid.CreateVersion7() };
 
         _mockSemanticSearch
             .Setup(s => s.FindBooksAsync(searchTerm, It.IsAny<CancellationToken>()))
@@ -152,7 +152,7 @@ public sealed class ListBooksQueryTests
     public async Task GivenCategoryFilter_WhenHandlingListBooksQuery_ThenShouldFilterByCategory()
     {
         // Arrange
-        var categoryIds = new[] { Guid.NewGuid(), Guid.NewGuid() };
+        var categoryIds = new[] { Guid.CreateVersion7(), Guid.CreateVersion7() };
         var query = new ListBooksQuery(CategoryId: categoryIds);
 
         _mockRepository
@@ -177,7 +177,7 @@ public sealed class ListBooksQueryTests
     public async Task GivenPublisherFilter_WhenHandlingListBooksQuery_ThenShouldFilterByPublisher()
     {
         // Arrange
-        var publisherIds = new[] { Guid.NewGuid(), Guid.NewGuid() };
+        var publisherIds = new[] { Guid.CreateVersion7(), Guid.CreateVersion7() };
         var query = new ListBooksQuery(PublisherId: publisherIds);
 
         _mockRepository
@@ -202,7 +202,7 @@ public sealed class ListBooksQueryTests
     public async Task GivenAuthorFilter_WhenHandlingListBooksQuery_ThenShouldFilterByAuthor()
     {
         // Arrange
-        var authorIds = new[] { Guid.NewGuid(), Guid.NewGuid() };
+        var authorIds = new[] { Guid.CreateVersion7(), Guid.CreateVersion7() };
         var query = new ListBooksQuery(AuthorIds: authorIds);
 
         _mockRepository

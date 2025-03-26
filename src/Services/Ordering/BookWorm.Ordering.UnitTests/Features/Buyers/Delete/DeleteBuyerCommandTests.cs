@@ -64,7 +64,7 @@ public sealed class DeleteBuyerCommandTests
     public async Task GivenNonExistingBuyer_WhenHandlingDeleteCommand_ThenShouldThrowNotFoundException()
     {
         // Arrange
-        var nonExistingId = Guid.NewGuid();
+        var nonExistingId = Guid.CreateVersion7();
         _repositoryMock
             .Setup(x => x.GetByIdAsync(nonExistingId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Buyer)default!);

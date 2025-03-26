@@ -15,9 +15,9 @@ public sealed class BookAggregatorTests
         const string image = "example.jpg";
         const decimal originalPrice = 44.99m;
         const decimal salePrice = 39.99m;
-        var categoryId = Guid.NewGuid();
-        var publisherId = Guid.NewGuid();
-        Guid[] authorIds = [Guid.NewGuid(), Guid.NewGuid()];
+        var categoryId = Guid.CreateVersion7();
+        var publisherId = Guid.CreateVersion7();
+        Guid[] authorIds = [Guid.CreateVersion7(), Guid.CreateVersion7()];
 
         // Act
         var book = new Book(
@@ -54,9 +54,9 @@ public sealed class BookAggregatorTests
         const string image = "test.jpg";
         const decimal price = 19.99m;
         decimal? priceSale = 15.99m;
-        var categoryId = Guid.NewGuid();
-        var publisherId = Guid.NewGuid();
-        Guid[] authorIds = [Guid.NewGuid()];
+        var categoryId = Guid.CreateVersion7();
+        var publisherId = Guid.CreateVersion7();
+        Guid[] authorIds = [Guid.CreateVersion7()];
 
         // Act & Assert
         Should
@@ -89,9 +89,9 @@ public sealed class BookAggregatorTests
         const string image = "test.jpg";
         const decimal price = 19.99m;
         decimal? priceSale = 15.99m;
-        var categoryId = Guid.NewGuid();
-        var publisherId = Guid.NewGuid();
-        Guid[] authorIds = [Guid.NewGuid()];
+        var categoryId = Guid.CreateVersion7();
+        var publisherId = Guid.CreateVersion7();
+        Guid[] authorIds = [Guid.CreateVersion7()];
 
         // Act & Assert
         Should
@@ -121,9 +121,9 @@ public sealed class BookAggregatorTests
             "original.jpg",
             19.99m,
             15.99m,
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            [Guid.NewGuid()]
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7()]
         );
 
         const string newName = "Updated Name";
@@ -131,9 +131,9 @@ public sealed class BookAggregatorTests
         const decimal newPrice = 29.99m;
         decimal? newPriceSale = 24.99m;
         const string newImage = "updated.jpg";
-        var newCategoryId = Guid.NewGuid();
-        var newPublisherId = Guid.NewGuid();
-        var newAuthorIds = new[] { Guid.NewGuid(), Guid.NewGuid() };
+        var newCategoryId = Guid.CreateVersion7();
+        var newPublisherId = Guid.CreateVersion7();
+        var newAuthorIds = new[] { Guid.CreateVersion7(), Guid.CreateVersion7() };
 
         // Act
         book.Update(
@@ -172,9 +172,9 @@ public sealed class BookAggregatorTests
             "original.jpg",
             19.99m,
             15.99m,
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            [Guid.NewGuid()]
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7()]
         );
 
         // Act & Assert
@@ -187,9 +187,9 @@ public sealed class BookAggregatorTests
                         29.99m,
                         24.99m,
                         "updated.jpg",
-                        Guid.NewGuid(),
-                        Guid.NewGuid(),
-                        [Guid.NewGuid()]
+                        Guid.CreateVersion7(),
+                        Guid.CreateVersion7(),
+                        [Guid.CreateVersion7()]
                     )
             )
             .Message.ShouldBe("Book name is required.");
@@ -210,9 +210,9 @@ public sealed class BookAggregatorTests
             "original.jpg",
             19.99m,
             15.99m,
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            [Guid.NewGuid()]
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7()]
         );
 
         // Act & Assert
@@ -225,9 +225,9 @@ public sealed class BookAggregatorTests
                         29.99m,
                         24.99m,
                         "updated.jpg",
-                        Guid.NewGuid(),
-                        Guid.NewGuid(),
-                        [Guid.NewGuid()]
+                        Guid.CreateVersion7(),
+                        Guid.CreateVersion7(),
+                        [Guid.CreateVersion7()]
                     )
             )
             .Message.ShouldBe("Book description is required.");
@@ -243,9 +243,9 @@ public sealed class BookAggregatorTests
             "test.jpg",
             19.99m,
             15.99m,
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            [Guid.NewGuid()]
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7()]
         );
 
         // Act
@@ -271,9 +271,9 @@ public sealed class BookAggregatorTests
             "test.jpg",
             19.99m,
             15.99m,
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            [Guid.NewGuid()]
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7()]
         );
 
         // Add some ratings
@@ -298,9 +298,9 @@ public sealed class BookAggregatorTests
             "test.jpg",
             19.99m,
             15.99m,
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            [Guid.NewGuid()]
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7()]
         );
 
         // Act
