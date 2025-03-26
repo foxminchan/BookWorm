@@ -1,4 +1,5 @@
 using BookWorm.SharedKernel.ActivityScope;
+using BookWorm.SharedKernel.Logging;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
@@ -28,8 +29,6 @@ public static class Extensions
 
         builder.Services.AddServiceDiscovery();
 
-        builder.Services.AddHttpContextAccessor();
-
         builder.Services.ConfigureHttpClientDefaults(http =>
         {
             // Turn on resilience by default
@@ -43,6 +42,10 @@ public static class Extensions
     private static void ConfigureOpenTelemetry<TBuilder>(this TBuilder builder)
         where TBuilder : IHostApplicationBuilder
     {
+        builder.Logging.EnableEnrichment();
+        builder.Services.AddHttpContextAccessor();
+        builder.Services.AddLogEnricher<ApplicationEnricher>();
+
         builder.Logging.AddOpenTelemetry(logging =>
         {
             logging.IncludeFormattedMessage = true;
