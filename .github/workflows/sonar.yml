@@ -46,7 +46,7 @@ jobs:
         run: dotnet tool restore
 
       - name: Sonarqube Begin
-        run: dotnet dotnet-sonarscanner begin /k:"foxminchan_BookWorm" /o:"foxminchan" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /s:$GITHUB_WORKSPACE/SonarQube.Analysis.xml
+        run: dotnet dotnet-sonarscanner begin /k:"foxminchan_BookWorm" /o:"foxminchan" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /s:$GITHUB_WORKSPACE/SonarQube.Analysis.xml
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
@@ -65,6 +65,6 @@ jobs:
           --coverage-output-format xml
 
       - name: Sonarqube End
-        run: dotnet dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+        run: dotnet dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

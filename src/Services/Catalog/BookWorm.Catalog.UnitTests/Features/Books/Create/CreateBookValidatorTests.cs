@@ -205,9 +205,9 @@ public sealed class CreateBookValidatorTests
             null,
             29.99m,
             19.99m,
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            [Guid.NewGuid(), Guid.NewGuid()]
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7(), Guid.CreateVersion7()]
         );
     }
 

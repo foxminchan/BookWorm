@@ -9,7 +9,7 @@ public sealed class OrderAggregatorTests
     public void GivenValidParameters_WhenCreatingOrderItem_ThenShouldCreateSuccessfully()
     {
         // Arrange
-        var bookId = Guid.NewGuid();
+        var bookId = Guid.CreateVersion7();
         const int quantity = 2;
         const decimal price = 29.99m;
 
@@ -26,7 +26,7 @@ public sealed class OrderAggregatorTests
     public void GivenZeroQuantity_WhenCreatingOrderItem_ThenShouldThrowException()
     {
         // Arrange
-        var bookId = Guid.NewGuid();
+        var bookId = Guid.CreateVersion7();
         const int quantity = 0;
         const decimal price = 29.99m;
 
@@ -40,7 +40,7 @@ public sealed class OrderAggregatorTests
     public void GivenNegativeQuantity_WhenCreatingOrderItem_ThenShouldThrowException()
     {
         // Arrange
-        var bookId = Guid.NewGuid();
+        var bookId = Guid.CreateVersion7();
         const int quantity = -1;
         const decimal price = 29.99m;
 
@@ -54,7 +54,7 @@ public sealed class OrderAggregatorTests
     public void GivenNegativePrice_WhenCreatingOrderItem_ThenShouldThrowException()
     {
         // Arrange
-        var bookId = Guid.NewGuid();
+        var bookId = Guid.CreateVersion7();
         const int quantity = 1;
         const decimal price = -0.01m;
 
@@ -68,7 +68,7 @@ public sealed class OrderAggregatorTests
     public void GivenZeroPrice_WhenCreatingOrderItem_ThenShouldCreateSuccessfully()
     {
         // Arrange
-        var bookId = Guid.NewGuid();
+        var bookId = Guid.CreateVersion7();
         const int quantity = 1;
         const decimal price = 0m;
 
@@ -85,7 +85,7 @@ public sealed class OrderAggregatorTests
     public void GivenNewlyCreatedOrder_WhenCheckingStatus_ThenShouldBeNew()
     {
         // Arrange
-        var order = new Order(Guid.NewGuid(), null, []);
+        var order = new Order(Guid.CreateVersion7(), null, []);
 
         // Act
         var status = order.Status;
@@ -98,7 +98,7 @@ public sealed class OrderAggregatorTests
     public void GivenCompletedOrder_WhenCancelling_ThenShouldBeCanceled()
     {
         // Arrange
-        var order = new Order(Guid.NewGuid(), null, []);
+        var order = new Order(Guid.CreateVersion7(), null, []);
         order.MarkAsCompleted();
 
         // Act
@@ -112,7 +112,7 @@ public sealed class OrderAggregatorTests
     public void GivenNewOrder_WhenCompleting_ThenStatusShouldBeCompleted()
     {
         // Arrange
-        var order = new Order(Guid.NewGuid(), null, []);
+        var order = new Order(Guid.CreateVersion7(), null, []);
 
         // Act
         order.MarkAsCompleted();

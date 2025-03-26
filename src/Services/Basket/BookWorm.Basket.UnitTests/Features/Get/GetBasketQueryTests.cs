@@ -22,7 +22,7 @@ public static class GetBasketQueryTests
 
         public GetBasketHandlerTests()
         {
-            _userId = Guid.NewGuid().ToString();
+            _userId = Guid.CreateVersion7().ToString();
             _basket = new CustomerBasketFaker().Generate()[0];
             _claimsPrincipalMock = new();
             _repositoryMock = new();
@@ -39,10 +39,12 @@ public static class GetBasketQueryTests
         public async Task GivenValidUserId_WhenHandling_ThenShouldReturnBasket()
         {
             // Arrange
+            var query = new GetBasketQuery();
+
             _repositoryMock.Setup(r => r.GetBasketAsync(_userId)).ReturnsAsync(_basket);
 
             // Act
-            var result = await _handler.Handle(new(), CancellationToken.None);
+            var result = await _handler.Handle(query, CancellationToken.None);
 
             // Assert
             result.ShouldNotBeNull();
@@ -55,12 +57,14 @@ public static class GetBasketQueryTests
         public async Task GivenMissingUserId_WhenHandling_ThenShouldThrowNotFoundException()
         {
             // Arrange
+            var query = new GetBasketQuery();
+
             _claimsPrincipalMock
                 .Setup(x => x.FindFirst(KeycloakClaimTypes.Subject))
-                .Returns((Claim)null!);
+                .Returns((Claim)default!);
 
             // Act
-            var act = () => _handler.Handle(new(), CancellationToken.None);
+            var act = () => _handler.Handle(query, CancellationToken.None);
 
             // Assert
             var exception = await act.ShouldThrowAsync<UnauthorizedAccessException>();
@@ -72,12 +76,14 @@ public static class GetBasketQueryTests
         public async Task GivenNonExistentBasket_WhenHandling_ThenShouldThrowNotFoundException()
         {
             // Arrange
+            var query = new GetBasketQuery();
+
             _repositoryMock
                 .Setup(r => r.GetBasketAsync(_userId))
-                .ReturnsAsync((CustomerBasket)null!);
+                .ReturnsAsync((CustomerBasket)default!);
 
             // Act
-            var act = () => _handler.Handle(new(), CancellationToken.None);
+            var act = () => _handler.Handle(query, CancellationToken.None);
 
             // Assert
             var exception = await act.ShouldThrowAsync<NotFoundException>();
@@ -96,10 +102,10 @@ public static class GetBasketQueryTests
 
         public PostGetBasketHandlerTests()
         {
-            _bookIds = [Guid.NewGuid().ToString(), Guid.NewGuid().ToString()];
+            _bookIds = [Guid.CreateVersion7().ToString(), Guid.CreateVersion7().ToString()];
 
             _basketDto = new(
-                Guid.NewGuid().ToString(),
+                Guid.CreateVersion7().ToString(),
                 [new BasketItemDto(_bookIds[0], 2), new BasketItemDto(_bookIds[1], 1)]
             );
 
@@ -129,6 +135,8 @@ public static class GetBasketQueryTests
         public async Task GivenValidBasketWithItems_WhenProcessing_ThenShouldEnrichItemsWithBookDetails()
         {
             // Arrange
+            var query = new GetBasketQuery();
+
             for (var i = 0; i < _bookIds.Count; i++)
             {
                 var i1 = i;
@@ -138,7 +146,7 @@ public static class GetBasketQueryTests
             }
 
             // Act
-            await _handler.Process(new(), _basketDto, CancellationToken.None);
+            await _handler.Process(query, _basketDto, CancellationToken.None);
 
             // Assert
             // Verify each book was looked up
@@ -155,6 +163,8 @@ public static class GetBasketQueryTests
         public async Task GivenBasketItemWithNonExistentBookId_WhenProcessing_ThenShouldThrowNotFoundException()
         {
             // Arrange
+            var query = new GetBasketQuery();
+
             // First book exists
             _bookServiceMock
                 .Setup(x => x.GetBookByIdAsync(_bookIds[0], It.IsAny<CancellationToken>()))
@@ -163,10 +173,10 @@ public static class GetBasketQueryTests
             // Second book doesn't exist
             _bookServiceMock
                 .Setup(x => x.GetBookByIdAsync(_bookIds[1], It.IsAny<CancellationToken>()))
-                .ReturnsAsync((BookResponse)null!);
+                .ReturnsAsync((BookResponse)default!);
 
             // Act
-            var act = async () => await _handler.Process(new(), _basketDto, CancellationToken.None);
+            var act = async () => await _handler.Process(query, _basketDto, CancellationToken.None);
 
             // Assert
             var exception = await act.ShouldThrowAsync<NotFoundException>();

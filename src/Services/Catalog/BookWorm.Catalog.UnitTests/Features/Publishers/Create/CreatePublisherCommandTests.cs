@@ -21,7 +21,7 @@ public sealed class CreatePublisherCommandTests
     {
         // Arrange
         var command = _faker.Generate();
-        var expectedId = Guid.NewGuid();
+        var expectedId = Guid.CreateVersion7();
         var publisher = new Publisher(command.Name) { Id = expectedId };
 
         _repositoryMock

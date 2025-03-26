@@ -90,5 +90,5 @@ public static class SearchExtension
             : source.Where(Expression.Lambda<Func<T, bool>>(combinedExpr, mainParam));
     }
 
-    private record StringVar(string Format);
+    private sealed record StringVar(string Format);
 }

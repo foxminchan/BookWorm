@@ -1,4 +1,5 @@
 ﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
 using BookWorm.Catalog.Grpc.Services;
 using BookWorm.Catalog.UnitTests.Grpc.Context;
 using Microsoft.Extensions.Logging;
@@ -21,7 +22,7 @@ public sealed class BookServiceTests
     public async Task GivenValidBookId_WhenGetBookCalled_ThenShouldReturnBookResponse()
     {
         // Arrange
-        var bookId = Guid.NewGuid();
+        var bookId = Guid.CreateVersion7();
         var bookRequest = new BookRequest { BookId = bookId.ToString() };
         var context = new TestServerCallContext();
 
@@ -31,9 +32,9 @@ public sealed class BookServiceTests
             "test-image.jpg",
             29.99m,
             19.99m,
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            [Guid.NewGuid()]
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7()]
         );
         // Use reflection to set the id property since it's not settable directly
         typeof(Book).GetProperty("Id")!.SetValue(book, bookId);
@@ -63,7 +64,7 @@ public sealed class BookServiceTests
     public async Task GivenNonExistentBookId_WhenGetBookCalled_ThenShouldReturnEmptyResponse()
     {
         // Arrange
-        var nonExistentBookId = Guid.NewGuid();
+        var nonExistentBookId = Guid.CreateVersion7();
         var bookRequest = new BookRequest { BookId = nonExistentBookId.ToString() };
         var context = new TestServerCallContext();
 
@@ -89,7 +90,7 @@ public sealed class BookServiceTests
     public async Task GivenOutOfStockBook_WhenGetBookCalled_ThenShouldReturnOutOfStockStatus()
     {
         // Arrange
-        var bookId = Guid.NewGuid();
+        var bookId = Guid.CreateVersion7();
         var bookRequest = new BookRequest { BookId = bookId.ToString() };
         var context = new TestServerCallContext();
 
@@ -99,9 +100,9 @@ public sealed class BookServiceTests
             "test-image.jpg",
             29.99m,
             null,
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            [Guid.NewGuid()]
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7()]
         );
         // Use reflection to set the id and Status properties
         typeof(Book).GetProperty("Id")!.SetValue(book, bookId);
@@ -118,5 +119,68 @@ public sealed class BookServiceTests
         result.ShouldNotBeNull();
         result.Id.ShouldBe(bookId.ToString());
         result.Status.ShouldBe(BookStatus.OutOfStock);
+    }
+
+    [Test]
+    public async Task GivenValidBookIds_WhenGetBooksCalled_ThenShouldReturnBooksResponse()
+    {
+        // Arrange
+        var bookIds = new[] { Guid.CreateVersion7(), Guid.CreateVersion7() };
+        var booksRequest = new BooksRequest { BookIds = { bookIds.Select(id => id.ToString()) } };
+        var context = new TestServerCallContext();
+
+        var books = new List<Book>
+        {
+            new(
+                "Test Book 1",
+                "Test Description",
+                "test-image.jpg",
+                29.99m,
+                19.99m,
+                Guid.CreateVersion7(),
+                Guid.CreateVersion7(),
+                [Guid.CreateVersion7()]
+            ),
+            new(
+                "Test Book 2",
+                "Test Description",
+                "test-image.jpg",
+                29.99m,
+                19.99m,
+                Guid.CreateVersion7(),
+                Guid.CreateVersion7(),
+                [Guid.CreateVersion7()]
+            ),
+        };
+        // Use reflection to set the id properties since they're not settable directly
+        typeof(Book).GetProperty("Id")!.SetValue(books[0], bookIds[0]);
+        typeof(Book).GetProperty("Id")!.SetValue(books[1], bookIds[1]);
+
+        _bookRepositoryMock
+            .Setup(repo => repo.ListAsync(It.IsAny<BookFilterSpec>(), CancellationToken.None))
+            .ReturnsAsync(books);
+
+        // Act
+        var result = await _bookService.GetBooks(booksRequest, context);
+
+        // Assert
+        result.ShouldNotBeNull();
+        result.Books.Count.ShouldBe(2);
+        result.Books[0].Id.ShouldBe(bookIds[0].ToString());
+        result.Books[0].Name.ShouldBe("Test Book 1");
+        result.Books[0].Price.ShouldBe(29.99d);
+        result.Books[0].PriceSale.ShouldBe(19.99d);
+        result.Books[0].Status.ShouldBe(BookStatus.InStock);
+
+        result.Books[1].Id.ShouldBe(bookIds[1].ToString());
+        result.Books[1].Name.ShouldBe("Test Book 2");
+        result.Books[1].Price.ShouldBe(29.99d);
+        result.Books[1].PriceSale.ShouldBe(19.99d);
+        result.Books[1].Status.ShouldBe(BookStatus.InStock);
+
+        _bookRepositoryMock.Verify(
+            repo => repo.ListAsync(It.IsAny<BookFilterSpec>(), CancellationToken.None),
+            Times.Once
+        );
     }
 }

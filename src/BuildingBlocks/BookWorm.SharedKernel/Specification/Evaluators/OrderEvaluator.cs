@@ -43,7 +43,10 @@ public sealed class OrderEvaluator : IEvaluator
                     OrderType.ThenByDescending => queryable?.ThenByDescending(
                         orderExpression.KeySelector
                     ),
-                    _ => throw new ArgumentOutOfRangeException(nameof(OrderType)),
+                    _ => throw new ArgumentOutOfRangeException(
+                        nameof(OrderType),
+                        "Invalid order type."
+                    ),
                 }
         );
 

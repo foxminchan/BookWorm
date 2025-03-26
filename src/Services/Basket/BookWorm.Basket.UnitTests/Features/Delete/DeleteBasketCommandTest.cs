@@ -18,7 +18,7 @@ public sealed class DeleteBasketCommandTest
 
     public DeleteBasketCommandTest()
     {
-        _userId = Guid.NewGuid().ToString();
+        _userId = Guid.CreateVersion7().ToString();
         _customerBasket = new CustomerBasketFaker().Generate().First();
 
         _repositoryMock = new();
@@ -36,12 +36,14 @@ public sealed class DeleteBasketCommandTest
     public async Task GivenExistingBasket_WhenHandlingDeleteCommand_ThenShouldCallDeleteBasketAsync()
     {
         // Arrange
+        var command = new DeleteBasketCommand();
+
         _repositoryMock.Setup(x => x.GetBasketAsync(_userId)).ReturnsAsync(_customerBasket);
 
         _repositoryMock.Setup(x => x.DeleteBasketAsync(_userId)).ReturnsAsync(true);
 
         // Act
-        var result = await _handler.Handle(new(), CancellationToken.None);
+        var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
         result.ShouldBe(Unit.Value);
@@ -52,10 +54,12 @@ public sealed class DeleteBasketCommandTest
     public async Task GivenNonExistingBasket_WhenHandlingDeleteCommand_ThenShouldThrowNotFoundException()
     {
         // Arrange
+        var command = new DeleteBasketCommand();
+
         _repositoryMock.Setup(x => x.GetBasketAsync(_userId)).ReturnsAsync((CustomerBasket)null!);
 
         // Act
-        var act = async () => await _handler.Handle(new(), CancellationToken.None);
+        var act = async () => await _handler.Handle(command, CancellationToken.None);
 
         // Assert
         var exception = await act.ShouldThrowAsync<NotFoundException>();
@@ -67,12 +71,14 @@ public sealed class DeleteBasketCommandTest
     public async Task GivenEmptyUserId_WhenHandlingDeleteCommand_ThenShouldThrowNotFoundException()
     {
         // Arrange
+        var command = new DeleteBasketCommand();
+
         _claimsPrincipalMock
             .Setup(x => x.FindFirst(KeycloakClaimTypes.Subject))
-            .Returns((Claim)null!);
+            .Returns((Claim)default!);
 
         // Act
-        var act = async () => await _handler.Handle(new(), CancellationToken.None);
+        var act = async () => await _handler.Handle(command, CancellationToken.None);
 
         // Assert
         var exception = await act.ShouldThrowAsync<UnauthorizedAccessException>();

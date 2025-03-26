@@ -29,8 +29,8 @@ public sealed class GetOrderQueryTests
         _claimsPrincipalMock = new();
         _bookServiceMock = new();
 
-        _orderId = Guid.NewGuid();
-        _buyerId = Guid.NewGuid();
+        _orderId = Guid.CreateVersion7();
+        _buyerId = Guid.CreateVersion7();
 
         // Create a sample order using the faker
         var orderFaker = new OrderFaker();
@@ -100,7 +100,7 @@ public sealed class GetOrderQueryTests
     public async Task GivenRegularUser_WhenGettingOtherUserOrder_ThenShouldThrowNotFoundException()
     {
         // Arrange
-        SetupRegularUser(Guid.NewGuid().ToString()); // Different user ID
+        SetupRegularUser(Guid.CreateVersion7().ToString()); // Different user ID
         _orderRepositoryMock
             .Setup(r =>
                 r.FirstOrDefaultAsync(It.IsAny<OrderFilterSpec>(), It.IsAny<CancellationToken>())
@@ -134,8 +134,8 @@ public sealed class GetOrderQueryTests
     public async Task GivenOrderWithItems_WhenPostProcessing_ThenShouldFillInBookNames()
     {
         // Arrange
-        var bookId1 = Guid.NewGuid();
-        var bookId2 = Guid.NewGuid();
+        var bookId1 = Guid.CreateVersion7();
+        var bookId2 = Guid.CreateVersion7();
 
         var orderDetailDto = new OrderDetailDto(
             _orderId,
@@ -163,8 +163,8 @@ public sealed class GetOrderQueryTests
     public async Task GivenOrderWithItemsAndMissingBook_WhenPostProcessing_ThenShouldThrowNotFoundException()
     {
         // Arrange
-        var bookId1 = Guid.NewGuid();
-        var bookId2 = Guid.NewGuid();
+        var bookId1 = Guid.CreateVersion7();
+        var bookId2 = Guid.CreateVersion7();
 
         var orderDetailDto = new OrderDetailDto(
             _orderId,

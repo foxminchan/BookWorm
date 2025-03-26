@@ -54,7 +54,7 @@ public sealed class CompleteOrderCommandTests
     public async Task GivenNonExistingOrderId_WhenCompletingOrder_ThenShouldThrowNotFoundException()
     {
         // Arrange
-        var command = new CompleteOrderCommand(Guid.NewGuid());
+        var command = new CompleteOrderCommand(Guid.CreateVersion7());
 
         _orderRepositoryMock
             .Setup(r =>

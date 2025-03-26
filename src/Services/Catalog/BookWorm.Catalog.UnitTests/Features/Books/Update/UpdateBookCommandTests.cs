@@ -25,15 +25,15 @@ public sealed class UpdateBookCommandTests
             .ReturnsAsync(expectedImageUrl);
 
         var command = new UpdateBookCommand(
-            Guid.NewGuid(),
+            Guid.CreateVersion7(),
             "Test Book",
             "Description",
             formFile.Object,
             10.99m,
             null,
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            [Guid.NewGuid()]
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7()]
         );
 
         var handler = new PreUpdateBookHandler(blobService.Object);
@@ -56,15 +56,15 @@ public sealed class UpdateBookCommandTests
         var blobService = new Mock<IBlobService>();
 
         var command = new UpdateBookCommand(
-            Guid.NewGuid(),
+            Guid.CreateVersion7(),
             "Test Book",
             "Description",
             null,
             10.99m,
             null,
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            [Guid.NewGuid()]
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7()]
         );
 
         var handler = new PreUpdateBookHandler(blobService.Object);
@@ -106,9 +106,9 @@ public sealed class UpdateBookCommandTests
             null,
             19.99m,
             9.99m,
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            [Guid.NewGuid(), Guid.NewGuid()]
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7(), Guid.CreateVersion7()]
         );
 
         var handler = new UpdateBookHandler(repository.Object);
@@ -140,15 +140,15 @@ public sealed class UpdateBookCommandTests
             .ReturnsAsync((Book?)null);
 
         var command = new UpdateBookCommand(
-            Guid.NewGuid(),
+            Guid.CreateVersion7(),
             "Test Book",
             "Description",
             null,
             10.99m,
             null,
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            [Guid.NewGuid()]
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7()]
         );
 
         var handler = new UpdateBookHandler(repository.Object);
@@ -321,15 +321,15 @@ public sealed class UpdateBookCommandTests
         const string imageName = "image-to-delete.jpg";
 
         var command = new UpdateBookCommand(
-            Guid.NewGuid(),
+            Guid.CreateVersion7(),
             "Test Book",
             "Description",
             null,
             10.99m,
             null,
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            [Guid.NewGuid()],
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7()],
             true // IsRemoveImage = true
         )
         {
@@ -356,15 +356,15 @@ public sealed class UpdateBookCommandTests
         const string imageName = "image.jpg";
 
         var command = new UpdateBookCommand(
-            Guid.NewGuid(),
+            Guid.CreateVersion7(),
             "Test Book",
             "Description",
             null,
             10.99m,
             null,
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            [Guid.NewGuid()] // IsRemoveImage = false
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7()] // IsRemoveImage = false
         )
         {
             ImageName = imageName,
@@ -389,15 +389,15 @@ public sealed class UpdateBookCommandTests
         var blobService = new Mock<IBlobService>();
 
         var command = new UpdateBookCommand(
-            Guid.NewGuid(),
+            Guid.CreateVersion7(),
             "Test Book",
             "Description",
             null,
             10.99m,
             null,
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            [Guid.NewGuid()],
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7()],
             true // IsRemoveImage = true
         );
 

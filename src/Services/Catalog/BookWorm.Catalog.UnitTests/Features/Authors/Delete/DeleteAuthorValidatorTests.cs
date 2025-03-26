@@ -21,7 +21,7 @@ public sealed class DeleteAuthorValidatorTests
     public async Task GivenValidAuthorId_WhenValidating_ThenShouldPass()
     {
         // Arrange
-        var authorId = Guid.NewGuid();
+        var authorId = Guid.CreateVersion7();
         _repositoryMock
             .Setup(repo =>
                 repo.FirstOrDefaultAsync(
@@ -44,7 +44,7 @@ public sealed class DeleteAuthorValidatorTests
     public async Task GivenAuthorWithBooks_WhenValidating_ThenShouldFail()
     {
         // Arrange
-        var authorId = Guid.NewGuid();
+        var authorId = Guid.CreateVersion7();
         var authorFaker = new AuthorFaker();
         var author = authorFaker.Generate()[0];
 

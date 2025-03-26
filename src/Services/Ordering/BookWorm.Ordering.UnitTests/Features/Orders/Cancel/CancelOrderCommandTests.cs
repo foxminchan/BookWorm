@@ -54,7 +54,7 @@ public sealed class CancelOrderCommandTests
     public async Task GivenNonExistingOrderId_WhenCancellingOrder_ThenShouldThrowNotFoundException()
     {
         // Arrange
-        var command = new CancelOrderCommand(Guid.NewGuid());
+        var command = new CancelOrderCommand(Guid.CreateVersion7());
 
         _orderRepositoryMock
             .Setup(r =>

@@ -69,7 +69,7 @@ public sealed class CreateBookCommandTests
         var command = new CreateBookCommandFaker().Generate();
         command.ImageName = "test-image.jpg"; // Set image name as if pre-processor ran
 
-        var bookId = Guid.NewGuid();
+        var bookId = Guid.CreateVersion7();
 
         var mockRepo = new Mock<IBookRepository>();
         mockRepo

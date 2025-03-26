@@ -17,7 +17,7 @@ public sealed class UpdateBasketCommandTests
 
     public UpdateBasketCommandTests()
     {
-        _userId = Guid.NewGuid().ToString();
+        _userId = Guid.CreateVersion7().ToString();
         _customerBasket = new CustomerBasketFaker().Generate().First();
         _repositoryMock = new();
         Mock<ClaimsPrincipal> claimsPrincipalMock = new();
@@ -72,7 +72,7 @@ public sealed class UpdateBasketCommandTests
         // and ensure GetClaimValue extension method will work
         claimsPrincipalMock
             .Setup(x => x.FindFirst(KeycloakClaimTypes.Subject))
-            .Returns((Claim)null!);
+            .Returns((Claim)default!);
 
         var handler = new UpdateBasketHandler(_repositoryMock.Object, claimsPrincipalMock.Object);
 

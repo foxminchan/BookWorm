@@ -13,9 +13,9 @@ public sealed class CreateBookCommandFaker : Faker<CreateBookCommand>
                 null,
                 f.Finance.Amount(100),
                 f.Finance.Amount(1, 99),
-                Guid.NewGuid(),
-                Guid.NewGuid(),
-                [Guid.NewGuid()]
+                Guid.CreateVersion7(),
+                Guid.CreateVersion7(),
+                [Guid.CreateVersion7()]
             )
         );
     }

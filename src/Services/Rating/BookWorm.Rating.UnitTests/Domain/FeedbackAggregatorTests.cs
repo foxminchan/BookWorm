@@ -11,7 +11,7 @@ public sealed class FeedbackAggregatorTests
     public void GivenValidParameters_WhenCreatingFeedback_ThenShouldCreateSuccessfully()
     {
         // Arrange
-        var bookId = Guid.NewGuid();
+        var bookId = Guid.CreateVersion7();
         const string firstName = "John";
         const string lastName = "Doe";
         const string comment = "Great book!";
@@ -36,7 +36,7 @@ public sealed class FeedbackAggregatorTests
     )
     {
         // Arrange
-        var bookId = Guid.NewGuid();
+        var bookId = Guid.CreateVersion7();
         const string firstName = "John";
         const string lastName = "Doe";
         const string comment = "Great book!";
@@ -53,7 +53,7 @@ public sealed class FeedbackAggregatorTests
     public void GivenNewFeedback_WhenCreating_ThenShouldRegisterFeedbackCreatedEvent()
     {
         // Arrange
-        var bookId = Guid.NewGuid();
+        var bookId = Guid.CreateVersion7();
         const int rating = 4;
 
         // Act
@@ -74,7 +74,7 @@ public sealed class FeedbackAggregatorTests
     public void GivenExistingFeedback_WhenRemoved_ThenShouldRegisterFeedbackDeletedEvent()
     {
         // Arrange
-        var bookId = Guid.NewGuid();
+        var bookId = Guid.CreateVersion7();
         const int rating = 3;
         var feedback = new Feedback(bookId, "John", "Doe", "Decent book", rating);
 
@@ -99,7 +99,7 @@ public sealed class FeedbackAggregatorTests
     public void GivenFeedbackWithNullValues_WhenCreating_ThenShouldAcceptNullValues()
     {
         // Arrange
-        var bookId = Guid.NewGuid();
+        var bookId = Guid.CreateVersion7();
         const int rating = 2;
 
         // Act
@@ -117,7 +117,7 @@ public sealed class FeedbackAggregatorTests
     public void GivenExistingFeedback_WhenAccessingProperties_ThenShouldRespectImmutability()
     {
         // Arrange
-        var bookId = Guid.NewGuid();
+        var bookId = Guid.CreateVersion7();
         const string firstName = "John";
         const string lastName = "Doe";
         const string comment = "Great book!";

@@ -43,7 +43,7 @@ public sealed class ListBuyersQueryTests
         // Assert
         result.ShouldNotBeNull();
         result.Items.ShouldNotBeNull();
-        result.Items.Count().ShouldBe(_buyers.Length);
+        result.Items.Count.ShouldBe(_buyers.Length);
         result.PageIndex.ShouldBe(pageIndex);
         result.PageSize.ShouldBe(pageSize);
         result.TotalItems.ShouldBe(totalItems);
