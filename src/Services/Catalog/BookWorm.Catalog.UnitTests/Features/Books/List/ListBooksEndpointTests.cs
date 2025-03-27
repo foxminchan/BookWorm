@@ -27,7 +27,7 @@ public sealed class ListBooksEndpointTests
         var books = new List<BookDto>
         {
             new(
-                Guid.NewGuid(),
+                Guid.CreateVersion7(),
                 "Book 1",
                 "Description 1",
                 "image1.jpg",

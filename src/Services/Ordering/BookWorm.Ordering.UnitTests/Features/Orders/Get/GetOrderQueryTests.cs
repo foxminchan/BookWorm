@@ -86,6 +86,8 @@ public sealed class GetOrderQueryTests
         // Assert
         result.ShouldNotBeNull();
         result.OrderId.ShouldBe(_orderId);
+        result.OrderDate.ShouldBe(_order.CreatedAt);
+        result.Total.ShouldBe(_order.TotalPrice);
         _orderRepositoryMock.Verify(
             r => r.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()),
             Times.Never

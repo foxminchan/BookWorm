@@ -29,6 +29,7 @@ public sealed class BookUpdatedRatingFailedIntegrationEventHandler(IFeedbackRepo
     }
 }
 
+[ExcludeFromCodeCoverage]
 public sealed class BookUpdatedRatingFailedIntegrationEventHandlerDefinition
     : ConsumerDefinition<BookUpdatedRatingFailedIntegrationEventHandler>
 {

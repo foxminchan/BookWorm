@@ -11,9 +11,9 @@ public sealed class ListPublishersEndpointTests
 
     private readonly List<PublisherDto> _expectedPublishers =
     [
-        new(Guid.NewGuid(), "Publisher 1"),
-        new(Guid.NewGuid(), "Publisher 2"),
-        new(Guid.NewGuid(), "Publisher 3"),
+        new(Guid.CreateVersion7(), "Publisher 1"),
+        new(Guid.CreateVersion7(), "Publisher 2"),
+        new(Guid.CreateVersion7(), "Publisher 3"),
     ];
 
     private readonly Mock<ISender> _senderMock = new();

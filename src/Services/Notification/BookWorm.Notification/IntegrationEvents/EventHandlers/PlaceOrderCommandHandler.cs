@@ -34,6 +34,7 @@ public sealed class PlaceOrderCommandHandler(ISmtpClient smtpClient, EmailOption
     }
 }
 
+[ExcludeFromCodeCoverage]
 public sealed class PlaceOrderCommandHandlerDefinition
     : ConsumerDefinition<PlaceOrderCommandHandler>
 {

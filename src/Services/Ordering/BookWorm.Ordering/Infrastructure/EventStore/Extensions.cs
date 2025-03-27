@@ -1,5 +1,6 @@
 ﻿using BookWorm.Ordering.Infrastructure.EventStore.Configs;
 using JasperFx.CodeGeneration;
+using Marten.Events.Daemon;
 
 namespace BookWorm.Ordering.Infrastructure.EventStore;
 
@@ -35,6 +36,13 @@ public static class Extensions
             )
             .WithTracing(t =>
                 t.AddSource(TelemetryTags.ActivityName, ActivitySourceProvider.DefaultSourceName)
+            );
+
+        builder
+            .Services.AddHealthChecks()
+            .AddMartenAsyncDaemonHealthCheck(
+                maxEventLag: 500,
+                maxSameLagTime: TimeSpan.FromSeconds(30)
             );
     }
 }
