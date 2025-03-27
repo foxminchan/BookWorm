@@ -18,3 +18,4 @@ global using BookWorm.SharedKernel.Versioning;
 global using FluentValidation;
 global using MediatR;
 global using Microsoft.AspNetCore.Http.HttpResults;
+global using Microsoft.Extensions.Diagnostics.HealthChecks;

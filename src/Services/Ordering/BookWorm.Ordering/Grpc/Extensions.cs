@@ -10,19 +10,18 @@ public static class Extensions
     {
         services.AddGrpc();
 
-        services
-            .AddGrpcClient<BookGrpcServiceClient>(o =>
-                o.Address = new($"http+https://{Application.Catalog}")
-            )
-            .AddStandardResilienceHandler();
+        services.AddGrpcServiceReference<BookGrpcServiceClient>(
+            $"https://{Application.Catalog}",
+            HealthStatus.Degraded
+        );
         services.AddSingleton<IBookService, BookService>();
 
         services
-            .AddGrpcClient<BasketGrpcServiceClient>(o =>
-                o.Address = new($"http+https://{Application.Basket}")
+            .AddGrpcServiceReference<BasketGrpcServiceClient>(
+                $"https://{Application.Basket}",
+                HealthStatus.Degraded
             )
-            .AddAuthToken()
-            .AddStandardResilienceHandler();
+            .AddAuthToken();
         services.AddSingleton<IBasketService, BasketService>();
 
         services.AddScoped<BasketMetadata>();

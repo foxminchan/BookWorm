@@ -14,6 +14,8 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi"/>
     <PackageReference Include="AspNetCore.HealthChecks.UI.Client"/>
     <PackageReference Include="Aspire.Keycloak.Authentication"/>
+    <PackageReference Include="Grpc.HealthCheck"/>
+    <PackageReference Include="Grpc.AspNetCore.Server.ClientFactory"/>
   </ItemGroup>
 
   <ItemGroup>
