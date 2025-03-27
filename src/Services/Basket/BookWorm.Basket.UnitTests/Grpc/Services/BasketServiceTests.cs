@@ -37,7 +37,7 @@ public sealed class BasketServiceTests
         var context = TestServerCallContext.Create();
         var httpContext = new DefaultHttpContext
         {
-            User = new(new ClaimsIdentity([new(KeycloakClaimTypes.Subject, basket.Id!)])),
+            User = new(new ClaimsIdentity([new(KeycloakClaimTypes.Subject, basket.Id)])),
         };
         context.SetUserState("__HttpContext", httpContext);
 
@@ -103,5 +103,99 @@ public sealed class BasketServiceTests
         response.ShouldNotBeNull();
         response.Items.Count.ShouldBe(0);
         _basketRepositoryMock.Verify(repo => repo.GetBasketAsync(It.IsAny<string>()), Times.Once);
+    }
+
+    [Test]
+    public async Task GivenDebugLoggingEnabled_WhenGetBasketCalled_ThenShouldLogDebugMessage()
+    {
+        // Arrange
+        var request = new Empty();
+        var userId = Guid.CreateVersion7().ToString();
+        var basket = new CustomerBasket(
+            userId,
+            [new BasketItem(Guid.CreateVersion7().ToString(), 10)]
+        );
+
+        var context = TestServerCallContext.Create();
+        var httpContext = new DefaultHttpContext
+        {
+            User = new(new ClaimsIdentity([new(KeycloakClaimTypes.Subject, userId)])),
+        };
+        context.SetUserState("__HttpContext", httpContext);
+
+        var loggerMock = new Mock<ILogger<BasketService>>();
+        // Setup logger to return true for IsEnabled(LogLevel.Debug)
+        loggerMock.Setup(l => l.IsEnabled(LogLevel.Debug)).Returns(true);
+
+        var basketService = new BasketService(_basketRepositoryMock.Object, loggerMock.Object);
+
+        _basketRepositoryMock.Setup(repo => repo.GetBasketAsync(userId)).ReturnsAsync(basket);
+
+        // Act
+        var response = await basketService.GetBasket(request, context);
+
+        // Assert
+        // Verify logger.Log was called with Debug level
+        loggerMock.Verify(
+            l =>
+                l.Log(
+                    LogLevel.Debug,
+                    It.IsAny<EventId>(),
+                    It.IsAny<It.IsAnyType>(),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception, string>>()!
+                ),
+            Times.Once
+        );
+
+        response.ShouldNotBeNull();
+        response.Items.Count.ShouldBe(basket.Items.Count);
+    }
+
+    [Test]
+    public async Task GivenDebugLoggingDisabled_WhenGetBasketCalled_ThenShouldNotLogDebugMessage()
+    {
+        // Arrange
+        var request = new Empty();
+        var userId = Guid.CreateVersion7().ToString();
+        var basket = new CustomerBasket(
+            userId,
+            [new BasketItem(Guid.CreateVersion7().ToString(), 10)]
+        );
+
+        var context = TestServerCallContext.Create();
+        var httpContext = new DefaultHttpContext
+        {
+            User = new(new ClaimsIdentity([new(KeycloakClaimTypes.Subject, userId)])),
+        };
+        context.SetUserState("__HttpContext", httpContext);
+
+        var loggerMock = new Mock<ILogger<BasketService>>();
+        // Setup logger to return false for IsEnabled(LogLevel.Debug)
+        loggerMock.Setup(l => l.IsEnabled(LogLevel.Debug)).Returns(false);
+
+        var basketService = new BasketService(_basketRepositoryMock.Object, loggerMock.Object);
+
+        _basketRepositoryMock.Setup(repo => repo.GetBasketAsync(userId)).ReturnsAsync(basket);
+
+        // Act
+        var response = await basketService.GetBasket(request, context);
+
+        // Assert
+        // Verify logger.Log was NOT called with Debug level
+        loggerMock.Verify(
+            l =>
+                l.Log(
+                    LogLevel.Debug,
+                    It.IsAny<EventId>(),
+                    It.IsAny<It.IsAnyType>(),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception, string>>()!
+                ),
+            Times.Never
+        );
+
+        response.ShouldNotBeNull();
+        response.Items.Count.ShouldBe(basket.Items.Count);
     }
 }

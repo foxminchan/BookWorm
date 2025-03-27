@@ -257,11 +257,20 @@ public sealed class ListBooksQueryTests
     }
 
     [Test]
-    public async Task GivenCustomOrdering_WhenHandlingListBooksQuery_ThenShouldOrderCorrectly()
+    [MatrixDataSource]
+    public async Task GivenCustomOrdering_WhenHandlingListBooksQuery_ThenShouldOrderCorrectly(
+        [Matrix(
+            nameof(Book.Name),
+            nameof(Book.Price.OriginalPrice),
+            nameof(Book.Price.DiscountPrice),
+            nameof(Book.Status),
+            null
+        )]
+            string? orderBy,
+        [Matrix(false, true)] bool isDescending
+    )
     {
         // Arrange
-        const string orderBy = nameof(Book.Price.OriginalPrice);
-        const bool isDescending = true;
         var query = new ListBooksQuery(OrderBy: orderBy, IsDescending: isDescending);
 
         _mockRepository

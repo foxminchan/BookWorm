@@ -21,7 +21,7 @@ public sealed class GetBuyerEndpointTests
         _featureManagerMock = new();
         _endpoint = new();
 
-        var buyerId = Guid.NewGuid();
+        var buyerId = Guid.CreateVersion7();
         _buyerDto = new(buyerId, "Test Buyer", "123 Test Street");
         _query = new(buyerId);
     }

@@ -7,7 +7,7 @@ namespace BookWorm.Ordering.UnitTests.Features.Buyers.Delete;
 
 public sealed class DeleteBuyerEndpointTests
 {
-    private readonly Guid _buyerId = Guid.NewGuid();
+    private readonly Guid _buyerId = Guid.CreateVersion7();
     private readonly DeleteBuyerEndpoint _endpoint = new();
     private readonly Mock<ISender> _senderMock = new();
 

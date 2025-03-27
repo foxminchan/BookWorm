@@ -34,6 +34,7 @@ public sealed class CancelOrderCommandHandler(ISmtpClient smtpClient, EmailOptio
     }
 }
 
+[ExcludeFromCodeCoverage]
 public sealed class CancelOrderCommandHandlerDefinition
     : ConsumerDefinition<CancelOrderCommandHandler>
 {

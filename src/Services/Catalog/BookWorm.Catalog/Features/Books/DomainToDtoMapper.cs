@@ -33,6 +33,7 @@ public sealed class DomainToDtoMapper(IBlobService blobService) : IMapper<Book, 
     }
 }
 
+[ExcludeFromCodeCoverage]
 public static class Extensions
 {
     public static void AddBookDomainToDtoMapper(this IServiceCollection services)

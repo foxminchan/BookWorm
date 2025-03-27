@@ -34,6 +34,7 @@ public sealed class CompleteOrderCommandHandler(ISmtpClient smtpClient, EmailOpt
     }
 }
 
+[ExcludeFromCodeCoverage]
 public sealed class CompleteOrderCommandHandlerDefinition
     : ConsumerDefinition<CompleteOrderCommandHandler>
 {

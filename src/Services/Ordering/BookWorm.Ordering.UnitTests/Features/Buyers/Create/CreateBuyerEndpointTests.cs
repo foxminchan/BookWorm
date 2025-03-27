@@ -16,7 +16,7 @@ public sealed class CreateBuyerEndpointTests
     {
         // Arrange
         var command = new CreateBuyerCommand("123 Main St", "Seattle", "WA");
-        var buyerId = Guid.NewGuid();
+        var buyerId = Guid.CreateVersion7();
 
         _senderMock
             .Setup(s => s.Send(command, It.IsAny<CancellationToken>()))
@@ -36,7 +36,7 @@ public sealed class CreateBuyerEndpointTests
     public void GivenValidCommand_WhenBuildingUrl_ThenShouldConstructCorrectUrl()
     {
         // Arrange
-        var buyerId = Guid.NewGuid();
+        var buyerId = Guid.CreateVersion7();
 
         // Act
         var url = new UrlBuilder().WithResource(nameof(Buyer)).WithId(buyerId).Build();

@@ -18,7 +18,7 @@ public sealed class ListOrdersEndpointsTests
         // Arrange
         var query = new ListOrdersQuery(1, 10);
         var expectedResult = new PagedResult<OrderDto>(
-            new List<OrderDto> { new(Guid.NewGuid(), DateTime.UtcNow, 100.0m, Status.New) },
+            new List<OrderDto> { new(Guid.CreateVersion7(), DateTime.UtcNow, 100.0m, Status.New) },
             1,
             10,
             1,
@@ -116,7 +116,7 @@ public sealed class ListOrdersEndpointsTests
     public async Task GivenBuyerIdFilter_WhenHandlingRequest_ThenShouldPassFilterToSender()
     {
         // Arrange
-        var buyerId = Guid.NewGuid();
+        var buyerId = Guid.CreateVersion7();
         var query = new ListOrdersQuery(1, 10, null, buyerId);
 
         var expectedResult = new PagedResult<OrderDto>(new List<OrderDto>(), 1, 10, 0, 0);
@@ -152,7 +152,7 @@ public sealed class ListOrdersEndpointsTests
         var pageIndex = 2;
         var pageSize = 15;
         var status = Status.Completed;
-        var buyerId = Guid.NewGuid();
+        var buyerId = Guid.CreateVersion7();
 
         var query = new ListOrdersQuery(pageIndex, pageSize, status, buyerId);
 
