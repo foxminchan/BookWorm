@@ -183,4 +183,122 @@ public sealed class BookServiceTests
             Times.Once
         );
     }
+
+    [Test]
+    public async Task GivenDebugLoggingEnabled_WhenGetBookCalled_ThenShouldLogDebugMessage()
+    {
+        // Arrange
+        var bookId = Guid.CreateVersion7();
+        var bookRequest = new BookRequest { BookId = bookId.ToString() };
+        var context = new TestServerCallContext();
+
+        var loggerMock = new Mock<ILogger<BookService>>();
+
+        // Setup logger to return true for IsEnabled(LogLevel.Debug)
+        loggerMock.Setup(x => x.IsEnabled(LogLevel.Debug)).Returns(true);
+
+        var bookService = new BookService(_bookRepositoryMock.Object, loggerMock.Object);
+
+        var book = new Book(
+            "Test Book",
+            "Test Description",
+            "test-image.jpg",
+            29.99m,
+            19.99m,
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7()]
+        );
+        typeof(Book).GetProperty("Id")!.SetValue(book, bookId);
+
+        _bookRepositoryMock
+            .Setup(repo => repo.GetByIdAsync(bookId, CancellationToken.None))
+            .ReturnsAsync(book);
+
+        // Act
+        await bookService.GetBook(bookRequest, context);
+
+        // Assert
+        loggerMock.Verify(x => x.IsEnabled(LogLevel.Debug), Times.Once);
+
+        loggerMock.Verify(
+            x =>
+                x.Log(
+                    LogLevel.Debug,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>(
+                        (o, t) => o.ToString()!.Contains($"Getting book status with id: {bookId}")
+                    ),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+                ),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task GivenDebugLoggingEnabled_WhenGetBooksCalled_ThenShouldLogDebugMessage()
+    {
+        // Arrange
+        var bookIds = new[] { Guid.CreateVersion7(), Guid.CreateVersion7() };
+        var booksRequest = new BooksRequest { BookIds = { bookIds.Select(id => id.ToString()) } };
+        var context = new TestServerCallContext();
+
+        var loggerMock = new Mock<ILogger<BookService>>();
+
+        // Setup logger to return true for IsEnabled(LogLevel.Debug)
+        loggerMock.Setup(x => x.IsEnabled(LogLevel.Debug)).Returns(true);
+
+        var bookService = new BookService(_bookRepositoryMock.Object, loggerMock.Object);
+
+        var books = new List<Book>
+        {
+            new(
+                "Test Book 1",
+                "Test Description",
+                "test-image.jpg",
+                29.99m,
+                19.99m,
+                Guid.CreateVersion7(),
+                Guid.CreateVersion7(),
+                [Guid.CreateVersion7()]
+            ),
+            new(
+                "Test Book 2",
+                "Test Description",
+                "test-image.jpg",
+                29.99m,
+                19.99m,
+                Guid.CreateVersion7(),
+                Guid.CreateVersion7(),
+                [Guid.CreateVersion7()]
+            ),
+        };
+        typeof(Book).GetProperty("Id")!.SetValue(books[0], bookIds[0]);
+        typeof(Book).GetProperty("Id")!.SetValue(books[1], bookIds[1]);
+
+        _bookRepositoryMock
+            .Setup(repo => repo.ListAsync(It.IsAny<BookFilterSpec>(), CancellationToken.None))
+            .ReturnsAsync(books);
+
+        // Act
+        await bookService.GetBooks(booksRequest, context);
+
+        // Assert
+        loggerMock.Verify(x => x.IsEnabled(LogLevel.Debug), Times.Once);
+
+        loggerMock.Verify(
+            x =>
+                x.Log(
+                    LogLevel.Debug,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>(
+                        (o, t) => o.ToString()!.Contains("Getting book status with id")
+                    ),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+                ),
+            Times.Once
+        );
+    }
 }

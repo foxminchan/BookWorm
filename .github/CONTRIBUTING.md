@@ -34,25 +34,47 @@ Example:
 ```csharp
 public sealed class Book
 {
-    public string Title { get; private set; }
-    public string Author { get; private set; }
+   public string Title { get; private set; }
+   public string Author { get; private set; }
 
-    public Book(string title, string author)
-    {
-        Title = !string.IsNullOrWhiteSpace(title)
-					? title
-					: throw new CatalogDomainException("Title cannot be empty.");
-        Author = !string.IsNullOrWhiteSpace(author)
-				? author
-
-				: throw new CatalogDomainException("Author cannot be empty.");
-    }
+   public Book(string title, string author)
+   {
+      Title = !string.IsNullOrWhiteSpace(title)
+         ? title
+         : throw new CatalogDomainException("Title cannot be empty.");
+      Author = !string.IsNullOrWhiteSpace(author)
+         ? author
+         : throw new CatalogDomainException("Author cannot be empty.");
+   }
 }
 
 public sealed class BookService
 {
-    public Book GetBook(string title, string author) => new Book(title, author);
+   public Book GetBook(string title, string author) => new Book(title, author);
 }
+```
+
+# Integration Events Standards
+
+When working with integration events for cross-service communication:
+
+- Always use the `BookWorm.Contracts` namespace when declaring integration events
+- Follow the naming convention `[Action][Entity]IntegrationEvent` (e.g., `BookCreatedIntegrationEvent`)
+- Include only necessary data in integration events to minimize payload size
+- Implement proper serialization attributes for all event properties
+
+> [!CAUTION]
+> Do not modify namespaces for `Integration Events` as it will disrupt the messaging system. The event bus relies on consistent namespace conventions for proper routing.
+
+```csharp
+namespace BookWorm.Contracts;
+
+public sealed record UserCheckedOutIntegrationEvent(
+   Guid OrderId,
+   Guid BasketId,
+   string? Email,
+   decimal TotalMoney
+) : IntegrationEvent;
 ```
 
 # Design Patterns

@@ -119,9 +119,6 @@ There are two ways to deploy the application to a Kubernetes cluster using `Aspi
 
 Please read [CONTRIBUTING.md](./.github/CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us. Thank you for contributing to BookWorm!
 
-> [!CAUTION]
-> Do not modify namespaces for `Integration Events` as it will disrupt the messaging system.
-
 ## Support
 
 - If you like this project, please give it (⭐) a star.

@@ -24,8 +24,8 @@ public sealed class ListBuyersEndpointTests
 
         var buyers = new List<BuyerDto>
         {
-            new(Guid.NewGuid(), "John Doe", "123 Main St"),
-            new(Guid.NewGuid(), "Jane Smith", "456 Elm St"),
+            new(Guid.CreateVersion7(), "John Doe", "123 Main St"),
+            new(Guid.CreateVersion7(), "Jane Smith", "456 Elm St"),
         };
 
         _pagedResult = new(buyers, 1, 10, 2, 1);

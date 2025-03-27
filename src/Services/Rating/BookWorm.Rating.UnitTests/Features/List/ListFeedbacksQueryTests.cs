@@ -44,6 +44,16 @@ public sealed class ListFeedbacksQueryTests
         result.TotalItems.ShouldBe(_feedbacks.Length);
         result.TotalPages.ShouldBe(2);
 
+        foreach (var feedback in _feedbacks)
+        {
+            result.Items.ShouldContain(x => x.Id == feedback.Id);
+            result.Items.ShouldContain(x => x.FirstName == feedback.FirstName);
+            result.Items.ShouldContain(x => x.LastName == feedback.LastName);
+            result.Items.ShouldContain(x => x.Comment == feedback.Comment);
+            result.Items.ShouldContain(x => x.Rating == feedback.Rating);
+            result.Items.ShouldContain(x => x.BookId == feedback.BookId);
+        }
+
         _repositoryMock.Verify(
             x => x.ListAsync(It.IsAny<FeedbackFilterSpec>(), It.IsAny<CancellationToken>()),
             Times.Once
@@ -55,13 +65,10 @@ public sealed class ListFeedbacksQueryTests
     }
 
     [Test]
-    [Arguments(nameof(Feedback.Rating), true)]
-    [Arguments(nameof(Feedback.Rating), false)]
-    [Arguments(nameof(Feedback.CreatedAt), true)]
-    [Arguments(nameof(Feedback.CreatedAt), false)]
+    [MatrixDataSource]
     public async Task GivenValidQueryWithPagination_WhenHandlingListFeedbacks_ThenShouldApplyPagination(
-        string? orderBy,
-        bool isDescending
+        [Matrix(nameof(Feedback.Rating), nameof(Feedback.CreatedAt), null)] string? orderBy,
+        [Matrix(true, false)] bool isDescending
     )
     {
         // Arrange

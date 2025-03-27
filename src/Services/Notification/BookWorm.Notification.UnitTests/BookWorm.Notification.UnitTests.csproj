@@ -9,7 +9,6 @@
     <PackageReference Include="TUnit"/>
     <PackageReference Include="Shouldly"/>
     <PackageReference Include="Moq"/>
-    <PackageReference Include="Bogus"/>
     <PackageReference Include="GitHubActionsTestLogger"/>
     <PackageReference Include="MassTransit.TestFramework"/>
   </ItemGroup>
@@ -20,12 +19,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BookWorm.Ordering\BookWorm.Ordering.csproj"/>
+    <ProjectReference Include="..\BookWorm.Notification\BookWorm.Notification.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Using Include="Moq"/>
-    <Using Include="Bogus"/>
     <Using Include="Shouldly"/>
   </ItemGroup>
 

@@ -17,8 +17,8 @@ public sealed class CreateFeedbackEndpointTests
     {
         _senderMock = new();
         _endpoint = new();
-        var testBookId = Guid.NewGuid();
-        _resultId = Guid.NewGuid();
+        var testBookId = Guid.CreateVersion7();
+        _resultId = Guid.CreateVersion7();
 
         _validCommand = new(testBookId, "John", "Doe", "Great book!", 5);
     }

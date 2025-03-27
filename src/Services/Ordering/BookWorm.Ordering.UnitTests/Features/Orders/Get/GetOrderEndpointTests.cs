@@ -18,12 +18,12 @@ public sealed class GetOrderEndpointTests
         _endpoint = new();
 
         // Generate test data
-        _orderId = Guid.NewGuid();
+        _orderId = Guid.CreateVersion7();
 
         var faker = new Faker();
         var orderItems = new List<OrderItemDto>
         {
-            new(Guid.NewGuid(), faker.Random.Int(1, 10), faker.Random.Decimal(10, 100))
+            new(Guid.CreateVersion7(), faker.Random.Int(1, 10), faker.Random.Decimal(10, 100))
             {
                 Name = faker.Commerce.ProductName(),
             },
