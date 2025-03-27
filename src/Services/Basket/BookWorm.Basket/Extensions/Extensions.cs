@@ -50,11 +50,10 @@ public static class Extensions
 
         // Configure gRPC
         services.AddGrpc();
-        services
-            .AddGrpcClient<BookGrpcServiceClient>(o =>
-                o.Address = new($"http+https://{Application.Catalog}")
-            )
-            .AddStandardResilienceHandler();
+        services.AddGrpcServiceReference<BookGrpcServiceClient>(
+            $"https://{Application.Catalog}",
+            HealthStatus.Degraded
+        );
         services.AddSingleton<IBookService, BookService>();
 
         // Configure ClaimsPrincipal
