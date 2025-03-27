@@ -76,13 +76,6 @@ BookWorm is structured as a microservices-based application with the following s
 >
 > In Production, we use [SendGrid](https://sendgrid.com/) for email services. But, for local development, we use [Mailpit](https://mailpit.io/).
 
-### Configure User Secrets
-
-```bash
-dotnet user-secrets set "Parameters:sql-user" "postgres"
-dotnet user-secrets set "Parameters:sql-password" "postgres"
-```
-
 ### Run the Application
 
 1. Clone the repository
@@ -97,15 +90,10 @@ dotnet user-secrets set "Parameters:sql-password" "postgres"
    cd BookWorm
    ```
 
-3. Restore the dependencies
+3. Run the application
 
    ```bash
-   dotnet restore && dotnet tool restore
-   ```
-
-4. Start the application
-   ```bash
-   dotnet run --project src/BookWorm.AppHost/BookWorm.AppHost.csproj
+   make run
    ```
 
 > [!WARNING]
@@ -121,24 +109,15 @@ There are two ways to deploy the application to a Kubernetes cluster using `Aspi
   bash ./deploys/scripts/deploy.sh
   ```
 
-> [!NOTE]
-> Make sure you have Azure Subscription and Azure CLI installed on your machine before deploying the application to AKS.
-
 - **Method 2:** Deploy to `k3d`:
 
   ```bash
   dotnet aspire apply --non-interactive -p ./src/BookWorm.AppHost
   ```
 
-> [!NOTE]
-> Make sure you have created a `k3d` cluster before deploying the application if you are using `k3d`.
-
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Implement your changes
-4. Submit a pull request
+Please read [CONTRIBUTING.md](./.github/CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us. Thank you for contributing to BookWorm!
 
 > [!CAUTION]
 > Do not modify namespaces for `Integration Events` as it will disrupt the messaging system.
@@ -147,10 +126,6 @@ There are two ways to deploy the application to a Kubernetes cluster using `Aspi
 
 - If you like this project, please give it (⭐) a star.
 - If you have any issues or feature requests, please open an issue.
-
-## Contributions
-
-Please read [CONTRIBUTING.md](./.github/CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us. Thank you for contributing to BookWorm!
 
 ## License
 
