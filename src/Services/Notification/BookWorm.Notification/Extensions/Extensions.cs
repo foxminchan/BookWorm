@@ -68,7 +68,8 @@ public static class Extensions
             services
                 .AddOptions<EmailOptions>()
                 .BindConfiguration("Email")
-                .ValidateDataAnnotations();
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
 
             services.AddSingleton(emailOptions);
         }
@@ -86,7 +87,8 @@ public static class Extensions
             services
                 .AddOptions<SendGirdOptions>()
                 .BindConfiguration("SendGrid")
-                .ValidateDataAnnotations();
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
 
             services.AddSingleton(sendGirdOptions);
 
