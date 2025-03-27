@@ -15,7 +15,6 @@
   </ItemGroup>
 
   <ItemGroup Label="Grpc">
-    <PackageReference Include="Grpc.AspNetCore.Server.ClientFactory"/>
     <PackageReference Include="Grpc.Tools" PrivateAssets="All"/>
     <PackageReference Include="Google.Protobuf"/>
   </ItemGroup>
