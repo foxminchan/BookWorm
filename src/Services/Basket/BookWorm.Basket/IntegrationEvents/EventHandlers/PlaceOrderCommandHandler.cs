@@ -67,6 +67,7 @@ public sealed class PlaceOrderCommandHandler(
     }
 }
 
+[ExcludeFromCodeCoverage]
 public sealed class PlaceOrderCommandHandlerDefinition
     : ConsumerDefinition<PlaceOrderCommandHandler>
 {

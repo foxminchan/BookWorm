@@ -23,7 +23,7 @@ public sealed class CompleteOrderEndpointTests
             _orderId,
             DateTime.UtcNow,
             99.99m,
-            new List<OrderItemDto> { new(Guid.NewGuid(), 2, 49.99m) { Name = "Test Book" } }
+            new List<OrderItemDto> { new(Guid.CreateVersion7(), 2, 49.99m) { Name = "Test Book" } }
         );
     }
 

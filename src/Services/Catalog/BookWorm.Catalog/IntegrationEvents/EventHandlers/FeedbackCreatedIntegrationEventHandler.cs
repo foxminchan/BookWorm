@@ -43,6 +43,7 @@ public sealed class FeedbackCreatedIntegrationEventHandler(
     }
 }
 
+[ExcludeFromCodeCoverage]
 public sealed class FeedbackCreatedIntegrationEventHandlerDefinition
     : ConsumerDefinition<FeedbackCreatedIntegrationEventHandler>
 {

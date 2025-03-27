@@ -20,6 +20,7 @@ public sealed class DeleteBasketCompleteCommandHandler(IDocumentSession document
     }
 }
 
+[ExcludeFromCodeCoverage]
 public sealed class DeleteBasketCompleteCommandHandlerDefinition
     : ConsumerDefinition<DeleteBasketCompleteCommandHandler>
 {

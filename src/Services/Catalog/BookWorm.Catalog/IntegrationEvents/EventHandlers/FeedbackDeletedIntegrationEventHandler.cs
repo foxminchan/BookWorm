@@ -30,6 +30,7 @@ public sealed class FeedbackDeletedIntegrationEventHandler(IBookRepository repos
     }
 }
 
+[ExcludeFromCodeCoverage]
 public sealed class FeedbackDeletedIntegrationEventHandlerDefinition
     : ConsumerDefinition<FeedbackDeletedIntegrationEventHandler>
 {

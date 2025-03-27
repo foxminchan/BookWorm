@@ -24,9 +24,9 @@ public sealed class UpdateBookEndpointTests
             null,
             29.99m,
             24.99m,
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            [Guid.NewGuid(), Guid.NewGuid()]
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7(), Guid.CreateVersion7()]
         );
     }
 

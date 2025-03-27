@@ -30,6 +30,7 @@ public sealed class DeleteBasketFailedCommandHandler(IOrderRepository repository
     }
 }
 
+[ExcludeFromCodeCoverage]
 public sealed class DeleteBasketFailedCommandHandlerDefinition
     : ConsumerDefinition<DeleteBasketFailedCommandHandler>
 {

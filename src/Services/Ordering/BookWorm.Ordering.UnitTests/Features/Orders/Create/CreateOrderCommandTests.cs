@@ -5,6 +5,7 @@ using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Features.Orders.Create;
 using BookWorm.Ordering.Grpc.Services.Basket;
 using BookWorm.Ordering.Grpc.Services.Book;
+using BookWorm.Ordering.Helpers;
 using BookWorm.Ordering.Infrastructure.Services;
 using BookWorm.ServiceDefaults.Keycloak;
 using BookWorm.SharedKernel.Exceptions;
@@ -153,22 +154,24 @@ public sealed class CreateOrderCommandTests
         private readonly Mock<ClaimsPrincipal> _claimsPrincipalMock;
         private readonly CreateOrderCommand _command;
         private readonly CreateOrderHandler _handler;
-        private readonly Mock<IOrderRepository> _orderRepositoryMock;
+        private readonly Mock<IOrderRepository> _repositoryMock;
+        private readonly string _userId;
+        private readonly Mock<IDistributedLockProvider> _lockProviderMock;
 
         public CreateOrderHandlerTests()
         {
-            var userId = Guid.CreateVersion7().ToString();
-            _orderRepositoryMock = new();
+            _userId = Guid.CreateVersion7().ToString();
+            _repositoryMock = new();
             _claimsPrincipalMock = new();
-            Mock<IDistributedLockProvider> lockProviderMock = new();
+            _lockProviderMock = new();
 
-            var claim = new Claim(KeycloakClaimTypes.Subject, userId);
+            var claim = new Claim(KeycloakClaimTypes.Subject, _userId);
             _claimsPrincipalMock.Setup(x => x.FindFirst(KeycloakClaimTypes.Subject)).Returns(claim);
 
             _handler = new(
-                _orderRepositoryMock.Object,
+                _repositoryMock.Object,
                 _claimsPrincipalMock.Object,
-                lockProviderMock.Object
+                _lockProviderMock.Object
             );
 
             _command = new()
@@ -196,10 +199,32 @@ public sealed class CreateOrderCommandTests
             var exception = await act.ShouldThrowAsync<UnauthorizedAccessException>();
             exception.Message.ShouldBe("User is not authenticated");
 
-            _orderRepositoryMock.Verify(
+            _repositoryMock.Verify(
                 x => x.AddAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()),
                 Times.Never
             );
+        }
+
+        [Test]
+        public async Task GivenValidCommand_WhenOrderIsAlreadyLocked_ThenShouldThrowConcurrencyException()
+        {
+            // Arrange
+            var expectedOrder = new Order(_userId.ToBuyerId(), null, _command.Items);
+
+            _lockProviderMock
+                .Setup(x => x.CreateLock(It.IsAny<string>()))
+                .Returns(Mock.Of<IDistributedLock>());
+
+            _repositoryMock
+                .Setup(x => x.AddAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(expectedOrder);
+
+            // Act
+            var act = async () => await _handler.Handle(_command, CancellationToken.None);
+
+            // Assert
+            var exception = await act.ShouldThrowAsync<InvalidOperationException>();
+            exception.Message.ShouldBe("Other process is already creating an order");
         }
     }
 

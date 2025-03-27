@@ -1,5 +1,6 @@
 ﻿namespace BookWorm.Notification;
 
+[ExcludeFromCodeCoverage]
 public sealed class SendGirdOptions
 {
     [Required]
