@@ -1,0 +1,42 @@
+name: "Publish Artifact"
+description: "Publish the artifact to GitHub Container Registry"
+
+inputs:
+  dotnet-version:
+    description: "The version of .NET Core to use"
+    required: true
+  project-path:
+    description: "The path to the project file"
+    required: true
+  container-repository:
+    description: "The name of the container repository"
+    required: true
+  container-tag:
+    description: "The tag for the container image"
+    required: true
+    default: "latest"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ inputs.dotnet-version }}
+
+    - name: Build
+      shell: bash
+      run: |
+        dotnet build ${{ inputs.project-path }} --configuration Release
+
+    - name: Publish
+      shell: bash
+      run: >
+        dotnet publish ${{ inputs.project-path }}
+        -t:PublishContainer
+        --verbosity "quiet"
+        --nologo
+        -r "linux-x64"
+        -p:ContainerRegistry="ghcr.io"
+        -p:ContainerRepository="${{ inputs.container-repository }}"
+        -p:ContainerImageTag="${{ inputs.container-tag }}"
