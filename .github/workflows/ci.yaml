@@ -101,3 +101,75 @@ jobs:
         uses: ./.github/actions/test
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
+
+  publish:
+    name: Publish
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: [build, test]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GH_TOKEN }}
+
+      - name: Publish API Gateway
+        uses: ./.github/actions/publish
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          project-path: "src/BookWorm.Gateway/BookWorm.Gateway.csproj"
+          container-repository: "foxminchan/bookworm/gateway"
+          container-tag: "latest"
+
+      - name: Publish Basket Service
+        uses: ./.github/actions/publish
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          project-path: "src/Services/Basket/BookWorm.Basket/BookWorm.Basket.csproj"
+          container-repository: "foxminchan/bookworm/basket"
+          container-tag: "latest"
+
+      - name: Publish Catalog Service
+        uses: ./.github/actions/publish
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          project-path: "src/Services/Catalog/BookWorm.Catalog/BookWorm.Catalog.csproj"
+          container-repository: "foxminchan/bookworm/catalog"
+          container-tag: "latest"
+
+      - name: Publish Finance Service
+        uses: ./.github/actions/publish
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          project-path: "src/Services/Finance/BookWorm.Finance/BookWorm.Finance.csproj"
+          container-repository: "foxminchan/bookworm/finance"
+          container-tag: "latest"
+
+      - name: Publish Notification Service
+        uses: ./.github/actions/publish
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          project-path: "src/Services/Notification/BookWorm.Notification/BookWorm.Notification.csproj"
+          container-repository: "foxminchan/bookworm/notification"
+          container-tag: "latest"
+
+      - name: Publish Ordering Service
+        uses: ./.github/actions/publish
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          project-path: "src/Services/Ordering/BookWorm.Ordering/BookWorm.Ordering.csproj"
+          container-repository: "foxminchan/bookworm/ordering"
+          container-tag: "latest"
+
+      - name: Publish Rating Service
+        uses: ./.github/actions/publish
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          project-path: "src/Services/Rating/BookWorm.Rating/BookWorm.Rating.csproj"
+          container-repository: "foxminchan/bookworm/rating"
+          container-tag: "latest"
