@@ -1,5 +1,6 @@
 ﻿namespace BookWorm.Finance.Saga;
 
+[ExcludeFromCodeCoverage]
 public sealed class OrderStateMachineDefinition : SagaDefinition<OrderState>
 {
     public OrderStateMachineDefinition()
