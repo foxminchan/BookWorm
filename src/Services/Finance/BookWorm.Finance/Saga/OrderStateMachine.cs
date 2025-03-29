@@ -22,6 +22,7 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
             When(OrderPlaced)
                 .Then(context =>
                 {
+                    context.Saga.OrderId = context.Message.OrderId;
                     context.Saga.BasketId = context.Message.BasketId;
                     context.Saga.Email = context.Message.Email;
                     context.Saga.TotalMoney = context.Message.TotalMoney;
@@ -48,9 +49,10 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
             When(BasketDeletedFailed)
                 .Then(context =>
                 {
+                    context.Saga.OrderId = context.Message.OrderId;
                     context.Saga.BasketId = context.Message.BasketId;
                     context.Saga.Email = context.Message.Email;
-                    context.Saga.Email = context.Message.Email;
+                    context.Saga.TotalMoney = context.Message.TotalMoney;
 
                     logger.LogInformation(
                         "[{Event}] Basket deletion failed for {OrderId}",
@@ -70,6 +72,7 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
                 {
                     context.Saga.BasketId = context.Message.BasketId;
                     context.Saga.OrderId = context.Message.OrderId;
+                    context.Saga.TotalMoney = context.Message.TotalMoney;
 
                     logger.LogInformation(
                         "[{Event}] Basket deleted for {OrderId}",
@@ -145,15 +148,15 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
 
     public State Failed { get; set; } = default!;
 
-    public Event<UserCheckedOutIntegrationEvent> OrderPlaced { get; set; } = default!;
+    public Event<UserCheckedOutIntegrationEvent> OrderPlaced { get; init; } = default!;
 
-    public Event<OrderStatusChangedToCompleteIntegrationEvent> OrderCompleted { get; set; } =
+    public Event<OrderStatusChangedToCompleteIntegrationEvent> OrderCompleted { get; init; } =
         default!;
 
-    public Event<OrderStatusChangedToCancelIntegrationEvent> OrderCancelled { get; set; } =
+    public Event<OrderStatusChangedToCancelIntegrationEvent> OrderCancelled { get; init; } =
         default!;
 
-    public Event<BasketDeletedFailedIntegrationEvent> BasketDeletedFailed { get; set; } = default!;
+    public Event<BasketDeletedFailedIntegrationEvent> BasketDeletedFailed { get; init; } = default!;
 
-    public Event<BasketDeletedCompleteIntegrationEvent> BasketDeleted { get; set; } = default!;
+    public Event<BasketDeletedCompleteIntegrationEvent> BasketDeleted { get; init; } = default!;
 }

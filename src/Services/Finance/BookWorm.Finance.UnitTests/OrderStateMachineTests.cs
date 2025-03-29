@@ -1,290 +1,302 @@
 ﻿using BookWorm.Contracts;
+using BookWorm.Finance.Saga;
 using MassTransit;
 using MassTransit.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using Saunter.Attributes;
 
 namespace BookWorm.Finance.UnitTests;
 
 public sealed class OrderStateMachineTests
 {
-    [Test]
-    public async Task GivenCancelOrderCommand_WhenPublishingToMessageBus_ThenShouldBePublishedSuccessfully()
+    private const string? DefaultTestEmail = "example@email.com";
+    private ServiceProvider _provider = null!;
+    private ITestHarness _harness = null!;
+    private ISagaStateMachineTestHarness<OrderStateMachine, OrderState> _sagaHarness = null!;
+
+    [Before(Test)]
+    public async Task Setup()
     {
-        // Arrange
-        var orderId = Guid.CreateVersion7();
-        const string email = "test@example.com";
-        const decimal totalMoney = 123.45m;
-
-        var command = new CancelOrderCommand(orderId, email, totalMoney);
-
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness()
+        _provider = new ServiceCollection()
+            .AddMassTransitTestHarness(cfg =>
+                cfg.AddSagaStateMachine<OrderStateMachine, OrderState>()
+            )
             .BuildServiceProvider(true);
 
-        var harness = provider.GetRequiredService<ITestHarness>();
-        await harness.Start();
+        _harness = _provider.GetRequiredService<ITestHarness>();
+        await _harness.Start();
 
-        // Act
-        await harness.Bus.Publish(command);
-
-        // Assert
-        (await harness.Published.Any<CancelOrderCommand>()).ShouldBeTrue();
-
-        var publishedMessage = harness.Published.Select<CancelOrderCommand>().First();
-        publishedMessage.Context.Message.OrderId.ShouldBe(orderId);
-        publishedMessage.Context.Message.Email.ShouldBe(email);
-        publishedMessage.Context.Message.TotalMoney.ShouldBe(totalMoney);
-
-        await harness.Stop();
+        _sagaHarness = _harness.GetSagaStateMachineHarness<OrderStateMachine, OrderState>();
     }
 
-    [Test]
-    public void GivenCancelOrderCommand_WhenCheckingAsyncApiAttributes_ThenShouldHaveCorrectAttributes()
+    [After(Test)]
+    public async Task TearDown()
     {
-        // Arrange & Act
-        var type = typeof(CancelOrderCommand);
-
-        // Assert
-        var asyncApiAttribute = type.GetCustomAttributes(typeof(AsyncApiAttribute), false);
-        asyncApiAttribute.ShouldNotBeEmpty();
-
-        var channelAttribute = type.GetCustomAttributes(typeof(ChannelAttribute), false);
-        channelAttribute.ShouldNotBeEmpty();
-        ((ChannelAttribute)channelAttribute.First()).Name.ShouldBe("notification-cancel-order");
-
-        var subscribeOperation = type.GetCustomAttributes(
-            typeof(SubscribeOperationAttribute),
-            false
-        );
-        subscribeOperation.ShouldNotBeEmpty();
-        var operation = (SubscribeOperationAttribute)subscribeOperation.First();
-        operation.OperationId.ShouldBe(nameof(CancelOrderCommand));
-        operation.Summary.ShouldBe("Cancel order notification");
+        await _harness.Stop();
+        await _provider.DisposeAsync();
     }
 
-    [Test]
-    public void GivenCompleteOrderCommand_WhenCheckingAsyncApiAttributes_ThenShouldHaveCorrectAttributes()
+    private async Task InitializeSagaToPlacedState(
+        Guid? orderId = null,
+        Guid? basketId = null,
+        string? email = DefaultTestEmail,
+        decimal totalMoney = 100.0m
+    )
     {
-        // Arrange & Act
-        var type = typeof(CompleteOrderCommand);
+        orderId ??= Guid.CreateVersion7();
+        basketId ??= Guid.CreateVersion7();
 
-        // Assert
-        var asyncApiAttribute = type.GetCustomAttributes(typeof(AsyncApiAttribute), false);
-        asyncApiAttribute.ShouldNotBeEmpty();
-
-        var channelAttribute = type.GetCustomAttributes(typeof(ChannelAttribute), false);
-        channelAttribute.ShouldNotBeEmpty();
-        ((ChannelAttribute)channelAttribute.First()).Name.ShouldBe("notification-complete-order");
-
-        var subscribeOperation = type.GetCustomAttributes(
-            typeof(SubscribeOperationAttribute),
-            false
+        var checkoutEvent = new UserCheckedOutIntegrationEvent(
+            orderId.Value,
+            basketId.Value,
+            email,
+            totalMoney
         );
-        subscribeOperation.ShouldNotBeEmpty();
-        var operation = (SubscribeOperationAttribute)subscribeOperation.First();
-        operation.OperationId.ShouldBe(nameof(CompleteOrderCommand));
-        operation.Summary.ShouldBe("Complete order notification");
+
+        await _harness.Bus.Publish(checkoutEvent);
+
+        // Wait for the saga to be created and transition to Placed state
+        await _sagaHarness.Created.Any(x => x.CorrelationId == orderId);
+    }
+
+    private async Task AssertEventConsumed<TEvent>()
+        where TEvent : class
+    {
+        (await _harness.Consumed.Any<TEvent>()).ShouldBeTrue();
+        (await _sagaHarness.Consumed.Any<TEvent>()).ShouldBeTrue();
+    }
+
+    private OrderState AssertSagaInState(Guid orderId, State state)
+    {
+        var instance = _sagaHarness.Created.ContainsInState(
+            orderId,
+            _sagaHarness.StateMachine,
+            state
+        );
+
+        instance.ShouldNotBeNull();
+        instance.CurrentState.ShouldBe(state.Name);
+
+        return instance;
     }
 
     [Test]
-    public async Task GivenCompleteOrderCommand_WhenPublishingToMessageBus_ThenShouldBePublishedSuccessfully()
+    public async Task GivenUserCheckedOutIntegrationEvent_WhenConsuming_ThenShouldCreateOrderStateAndPublishPlaceOrderCommand()
     {
         // Arrange
         var orderId = Guid.CreateVersion7();
-        const string email = "test@example.com";
-        const decimal totalMoney = 123.45m;
-
-        var command = new CompleteOrderCommand(orderId, email, totalMoney);
-
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness()
-            .BuildServiceProvider(true);
-
-        var harness = provider.GetRequiredService<ITestHarness>();
-
-        await harness.Start();
-
-        // Act
-        await harness.Bus.Publish(command);
-
-        // Assert
-        (await harness.Published.Any<CompleteOrderCommand>()).ShouldBeTrue();
-
-        var publishedMessage = harness.Published.Select<CompleteOrderCommand>().First();
-        publishedMessage.Context.Message.OrderId.ShouldBe(orderId);
-        publishedMessage.Context.Message.Email.ShouldBe(email);
-        publishedMessage.Context.Message.TotalMoney.ShouldBe(totalMoney);
-
-        await harness.Stop();
-    }
-
-    [Test]
-    public void GivenDeleteBasketCompleteCommand_WhenCheckingAsyncApiAttributes_ThenShouldHaveCorrectAttributes()
-    {
-        // Arrange & Act
-        var type = typeof(DeleteBasketCompleteCommand);
-
-        // Assert
-        var asyncApiAttribute = type.GetCustomAttributes(typeof(AsyncApiAttribute), false);
-        asyncApiAttribute.ShouldNotBeEmpty();
-
-        var channelAttribute = type.GetCustomAttributes(typeof(ChannelAttribute), false);
-        channelAttribute.ShouldNotBeEmpty();
-        ((ChannelAttribute)channelAttribute.First()).Name.ShouldBe("basket-checkout-complete");
-
-        var subscribeOperation = type.GetCustomAttributes(
-            typeof(SubscribeOperationAttribute),
-            false
-        );
-        subscribeOperation.ShouldNotBeEmpty();
-        var operation = (SubscribeOperationAttribute)subscribeOperation.First();
-        operation.OperationId.ShouldBe(nameof(DeleteBasketCompleteCommand));
-        operation.Summary.ShouldBe("Delete basket complete");
-    }
-
-    [Test]
-    public async Task GivenDeleteBasketCompleteCommand_WhenPublishingToMessageBus_ThenShouldBePublishedSuccessfully()
-    {
-        // Arrange
-        var orderId = Guid.CreateVersion7();
-        const decimal totalMoney = 123.45m;
-
-        var command = new DeleteBasketCompleteCommand(orderId, totalMoney);
-
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness()
-            .BuildServiceProvider(true);
-
-        var harness = provider.GetRequiredService<ITestHarness>();
-
-        await harness.Start();
-
-        // Act
-        await harness.Bus.Publish(command);
-
-        // Assert
-        (await harness.Published.Any<DeleteBasketCompleteCommand>()).ShouldBeTrue();
-
-        var publishedMessage = harness.Published.Select<DeleteBasketCompleteCommand>().First();
-        publishedMessage.Context.Message.OrderId.ShouldBe(orderId);
-        publishedMessage.Context.Message.TotalMoney.ShouldBe(totalMoney);
-
-        await harness.Stop();
-    }
-
-    [Test]
-    public void GivenDeleteBasketFailedCommand_WhenCheckingAsyncApiAttributes_ThenShouldHaveCorrectAttributes()
-    {
-        // Arrange & Act
-        var type = typeof(DeleteBasketFailedCommand);
-
-        // Assert
-        var asyncApiAttribute = type.GetCustomAttributes(typeof(AsyncApiAttribute), false);
-        asyncApiAttribute.ShouldNotBeEmpty();
-
-        var channelAttribute = type.GetCustomAttributes(typeof(ChannelAttribute), false);
-        channelAttribute.ShouldNotBeEmpty();
-        ((ChannelAttribute)channelAttribute.First()).Name.ShouldBe("basket-checkout-failed");
-
-        var subscribeOperation = type.GetCustomAttributes(
-            typeof(SubscribeOperationAttribute),
-            false
-        );
-        subscribeOperation.ShouldNotBeEmpty();
-        var operation = (SubscribeOperationAttribute)subscribeOperation.First();
-        operation.OperationId.ShouldBe(nameof(DeleteBasketFailedCommand));
-        operation.Summary.ShouldBe("Delete basket failed");
-    }
-
-    [Test]
-    public async Task GivenDeleteBasketFailedCommand_WhenPublishingToMessageBus_ThenShouldBePublishedSuccessfully()
-    {
-        // Arrange
-        var orderId = Guid.CreateVersion7();
-        const string email = "test@example.com";
-        const decimal totalMoney = 123.45m;
         var basketId = Guid.CreateVersion7();
+        const decimal totalMoney = 100.0m;
 
-        var command = new DeleteBasketFailedCommand(basketId, email, orderId, totalMoney);
-
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness()
-            .BuildServiceProvider(true);
-
-        var harness = provider.GetRequiredService<ITestHarness>();
-
-        await harness.Start();
+        var @event = new UserCheckedOutIntegrationEvent(
+            orderId,
+            basketId,
+            DefaultTestEmail,
+            totalMoney
+        );
 
         // Act
-        await harness.Bus.Publish(command);
+        await _harness.Bus.Publish(@event);
 
         // Assert
-        (await harness.Published.Any<DeleteBasketFailedCommand>()).ShouldBeTrue();
+        await AssertEventConsumed<UserCheckedOutIntegrationEvent>();
+        (await _sagaHarness.Created.Any(x => x.CorrelationId == orderId)).ShouldBeTrue();
 
-        var publishedMessage = harness.Published.Select<DeleteBasketFailedCommand>().First();
-        publishedMessage.Context.Message.BasketId.ShouldBe(basketId);
-        publishedMessage.Context.Message.OrderId.ShouldBe(orderId);
-        publishedMessage.Context.Message.Email.ShouldBe(email);
-        publishedMessage.Context.Message.TotalMoney.ShouldBe(totalMoney);
+        var instance = AssertSagaInState(orderId, _sagaHarness.StateMachine.Placed);
 
-        await harness.Stop();
+        instance.OrderId.ShouldBe(orderId);
+        instance.BasketId.ShouldBe(basketId);
+        instance.Email.ShouldBe(DefaultTestEmail);
+        instance.TotalMoney.ShouldBe(totalMoney);
+        instance.Version.ShouldBeGreaterThanOrEqualTo(0);
+        instance.CurrentState.ShouldBe(_sagaHarness.StateMachine.Placed.Name);
+        instance.OrderPlacedDate.ShouldNotBe(DateTime.MinValue);
+
+        (await _harness.Published.Any<PlaceOrderCommand>()).ShouldBeTrue();
+
+        var publishedMessage = _harness.Published.Select<PlaceOrderCommand>().First();
+        var message = publishedMessage.Context.Message;
+        message.BasketId.ShouldBe(basketId);
+        message.OrderId.ShouldBe(orderId);
+        message.Email.ShouldBe(DefaultTestEmail);
+        message.TotalMoney.ShouldBe(totalMoney);
     }
 
     [Test]
-    public void GivenPlaceOrderCommand_WhenCheckingAsyncApiAttributes_ThenShouldHaveCorrectAttributes()
-    {
-        // Arrange & Act
-        var type = typeof(PlaceOrderCommand);
-
-        // Assert
-        var asyncApiAttribute = type.GetCustomAttributes(typeof(AsyncApiAttribute), false);
-        asyncApiAttribute.ShouldNotBeEmpty();
-
-        var channelAttribute = type.GetCustomAttributes(typeof(ChannelAttribute), false);
-        channelAttribute.ShouldNotBeEmpty();
-        ((ChannelAttribute)channelAttribute.First()).Name.ShouldBe("basket-place-order");
-
-        var subscribeOperation = type.GetCustomAttributes(
-            typeof(SubscribeOperationAttribute),
-            false
-        );
-        subscribeOperation.ShouldNotBeEmpty();
-        var operation = (SubscribeOperationAttribute)subscribeOperation.First();
-        operation.OperationId.ShouldBe(nameof(PlaceOrderCommand));
-        operation.Summary.ShouldBe("Delete a basket");
-    }
-
-    [Test]
-    public async Task GivenPlaceOrderCommand_WhenPublishingToMessageBus_ThenShouldBePublishedSuccessfully()
+    public async Task GivenBasketDeletedCompleteIntegrationEvent_WhenConsuming_ThenShouldPublishDeleteBasketCompleteCommand()
     {
         // Arrange
         var orderId = Guid.CreateVersion7();
-        const string email = "test@example.com";
-        const decimal totalMoney = 123.45m;
         var basketId = Guid.CreateVersion7();
+        const decimal totalMoney = 100.0m;
 
-        var command = new PlaceOrderCommand(basketId, email, orderId, totalMoney);
+        await InitializeSagaToPlacedState(orderId, basketId);
 
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness()
-            .BuildServiceProvider(true);
-
-        var harness = provider.GetRequiredService<ITestHarness>();
-
-        await harness.Start();
+        var @event = new BasketDeletedCompleteIntegrationEvent(orderId, basketId, totalMoney);
 
         // Act
-        await harness.Bus.Publish(command);
+        await _harness.Bus.Publish(@event);
 
         // Assert
-        (await harness.Published.Any<PlaceOrderCommand>()).ShouldBeTrue();
-        var publishedMessage = harness.Published.Select<PlaceOrderCommand>().First();
-        publishedMessage.Context.Message.BasketId.ShouldBe(basketId);
-        publishedMessage.Context.Message.OrderId.ShouldBe(orderId);
-        publishedMessage.Context.Message.Email.ShouldBe(email);
-        publishedMessage.Context.Message.TotalMoney.ShouldBe(totalMoney);
+        await AssertEventConsumed<BasketDeletedCompleteIntegrationEvent>();
 
-        await harness.Stop();
+        var instance = AssertSagaInState(orderId, _sagaHarness.StateMachine.Placed);
+
+        instance.OrderId.ShouldBe(orderId);
+        instance.BasketId.ShouldBe(basketId);
+        instance.TotalMoney.ShouldBe(totalMoney);
+        instance.Version.ShouldBeGreaterThanOrEqualTo(0);
+        instance.CurrentState.ShouldBe(_sagaHarness.StateMachine.Placed.Name);
+        instance.OrderPlacedDate.ShouldNotBe(DateTime.MinValue);
+
+        (await _harness.Published.Any<DeleteBasketCompleteCommand>()).ShouldBeTrue();
+        var publishedMessage = _harness.Published.Select<DeleteBasketCompleteCommand>().First();
+        var message = publishedMessage.Context.Message;
+        message.OrderId.ShouldBe(orderId);
+        message.TotalMoney.ShouldBe(totalMoney);
+    }
+
+    [Test]
+    public async Task GivenBasketDeletedFailedIntegrationEvent_WhenConsuming_ThenShouldPublishDeleteBasketFailedCommand()
+    {
+        // Arrange
+        var orderId = Guid.CreateVersion7();
+        var basketId = Guid.CreateVersion7();
+        const decimal totalMoney = 100.0m;
+
+        await InitializeSagaToPlacedState(orderId, basketId);
+
+        var @event = new BasketDeletedFailedIntegrationEvent(
+            orderId,
+            basketId,
+            DefaultTestEmail,
+            totalMoney
+        );
+
+        // Act
+        await _harness.Bus.Publish(@event);
+
+        // Assert
+        await AssertEventConsumed<BasketDeletedFailedIntegrationEvent>();
+
+        var instance = AssertSagaInState(orderId, _sagaHarness.StateMachine.Failed);
+
+        instance.OrderId.ShouldBe(orderId);
+        instance.BasketId.ShouldBe(basketId);
+        instance.TotalMoney.ShouldBe(totalMoney);
+        instance.Version.ShouldBeGreaterThanOrEqualTo(0);
+        instance.CurrentState.ShouldBe(_sagaHarness.StateMachine.Failed.Name);
+        instance.OrderPlacedDate.ShouldNotBe(DateTime.MinValue);
+
+        (await _harness.Published.Any<DeleteBasketFailedCommand>()).ShouldBeTrue();
+        var publishedMessage = _harness.Published.Select<DeleteBasketFailedCommand>().First();
+        var message = publishedMessage.Context.Message;
+        message.OrderId.ShouldBe(orderId);
+        message.BasketId.ShouldBe(basketId);
+        message.Email.ShouldBe(DefaultTestEmail);
+        message.TotalMoney.ShouldBe(totalMoney);
+    }
+
+    [Test]
+    [Arguments(DefaultTestEmail)]
+    [Arguments(null)]
+    public async Task GivenOrderCompletedEvent_WhenConsuming_ThenShouldPublishCompleteOrderCommandOnlyWithValidEmail(
+        string? email
+    )
+    {
+        // Arrange
+        var orderId = Guid.CreateVersion7();
+        var basketId = Guid.CreateVersion7();
+        const decimal totalMoney = 100.0m;
+
+        await InitializeSagaToPlacedState(orderId, basketId, email);
+
+        var @event = new OrderStatusChangedToCompleteIntegrationEvent(
+            orderId,
+            basketId,
+            email,
+            totalMoney
+        );
+
+        // Act
+        await _harness.Bus.Publish(@event);
+
+        // Assert
+        await AssertEventConsumed<OrderStatusChangedToCompleteIntegrationEvent>();
+
+        var instance = AssertSagaInState(orderId, _sagaHarness.StateMachine.Completed);
+
+        instance.OrderId.ShouldBe(orderId);
+        instance.BasketId.ShouldBe(basketId);
+        instance.TotalMoney.ShouldBe(totalMoney);
+        instance.Email.ShouldBe(email);
+        instance.Version.ShouldBeGreaterThanOrEqualTo(0);
+        instance.CurrentState.ShouldBe(_sagaHarness.StateMachine.Completed.Name);
+        instance.OrderPlacedDate.ShouldNotBe(DateTime.MinValue);
+
+        if (email is not null)
+        {
+            (await _harness.Published.Any<CompleteOrderCommand>()).ShouldBeTrue();
+            var publishedMessage = _harness.Published.Select<CompleteOrderCommand>().First();
+            var message = publishedMessage.Context.Message;
+            message.OrderId.ShouldBe(orderId);
+            message.Email.ShouldBe(email);
+            message.TotalMoney.ShouldBe(totalMoney);
+        }
+        else
+        {
+            (await _harness.Published.Any<CompleteOrderCommand>()).ShouldBeFalse();
+        }
+    }
+
+    [Test]
+    [Arguments(DefaultTestEmail)]
+    [Arguments(null)]
+    public async Task GivenOrderCancelledEvent_WhenConsuming_ThenShouldPublishCancelOrderCommandOnlyWithValidEmail(
+        string? email
+    )
+    {
+        // Arrange
+        var orderId = Guid.CreateVersion7();
+        var basketId = Guid.CreateVersion7();
+        const decimal totalMoney = 100.0m;
+
+        await InitializeSagaToPlacedState(orderId, basketId, email);
+
+        var @event = new OrderStatusChangedToCancelIntegrationEvent(
+            orderId,
+            basketId,
+            email,
+            totalMoney
+        );
+
+        // Act
+        await _harness.Bus.Publish(@event);
+
+        // Assert
+        await AssertEventConsumed<OrderStatusChangedToCancelIntegrationEvent>();
+
+        var instance = AssertSagaInState(orderId, _sagaHarness.StateMachine.Cancelled);
+
+        instance.OrderId.ShouldBe(orderId);
+        instance.BasketId.ShouldBe(basketId);
+        instance.TotalMoney.ShouldBe(totalMoney);
+        instance.Email.ShouldBe(email);
+        instance.Version.ShouldBeGreaterThanOrEqualTo(0);
+        instance.CurrentState.ShouldBe(_sagaHarness.StateMachine.Cancelled.Name);
+        instance.OrderPlacedDate.ShouldNotBe(DateTime.MinValue);
+
+        if (email is not null)
+        {
+            (await _harness.Published.Any<CancelOrderCommand>()).ShouldBeTrue();
+            var publishedMessage = _harness.Published.Select<CancelOrderCommand>().First();
+            var message = publishedMessage.Context.Message;
+            message.OrderId.ShouldBe(orderId);
+            message.Email.ShouldBe(email);
+            message.TotalMoney.ShouldBe(totalMoney);
+        }
+        else
+        {
+            (await _harness.Published.Any<CancelOrderCommand>()).ShouldBeFalse();
+        }
     }
 }
