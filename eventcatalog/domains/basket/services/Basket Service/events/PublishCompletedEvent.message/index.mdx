@@ -11,8 +11,38 @@ owners:
 
 ## Overview
 
-This message represents a domain event that is published when a reverse basket is completed. The `PublishCompletedEvent` is a domain event that signals the completion of a reverse basket in the system. It carries the necessary value objects including the reverse basket identity, customer identity, and basket item collection to create a valid reverse basket aggregate. This event adheres to the ubiquitous language of our domain and serves as the contract between the Basket and Ordering contexts, facilitating the transition from a transient basket to a persistent order.
+The `PublishCompletedEvent` is an integration event that signals the successful completion of a reverse basket operation in the system. This event serves as a confirmation mechanism between the Basket and Ordering contexts, indicating that a basket has been successfully deleted and the associated order has been processed. It carries essential information about the completed operation, including the order and basket identifiers.
+
+## Purpose
+
+This event serves several important purposes:
+- Confirms successful basket deletion operations
+- Maintains system consistency between Basket and Ordering contexts
+- Provides audit trail for completed operations
+- Facilitates proper state management in the system
+
+## Event Structure
+
+The event contains the following key information:
+- `OrderId`: Unique identifier for the associated order
+- `BasketId`: Identifier of the successfully deleted basket
+- `TotalMoney`: Total monetary value of the basket at the time of deletion
+
+## Usage
+
+This event is typically published when:
+- A basket deletion operation completes successfully
+- The system needs to confirm the transition from basket to order
+- Audit trails need to be maintained
 
 ## Architecture
 
 <NodeGraph />
+
+## Success Handling
+
+When this event is published, the system should:
+1. Log the successful completion
+2. Update relevant system states
+3. Trigger any necessary follow-up processes
+4. Maintain audit records

@@ -3,6 +3,13 @@ id: "CreateOrder"
 name: "User Creates Order"
 version: "1.0.0"
 summary: "Flow for when a user creates an order"
+badges:
+  - content: Order Lifecycle
+    textColor: green
+    backgroundColor: green
+  - content: Checkout
+    textColor: blue
+    backgroundColor: blue
 owners:
     - nhanxnguyen
 steps:
@@ -129,6 +136,55 @@ steps:
 
 ### Flow of feature
 
-This flow describes the process when a user creates an order.
+This flow describes the process when a user creates an order, including the steps that the system takes to validate the order and process the payment. The flow starts with the user initiating checkout with items in their basket. The system then validates the basket contents and availability, and if all is well, it publishes a `UserCheckedOutIntegrationEvent`. 
+
+This event is then picked up by the Ordering Service, which then sends a `PlaceOrderCommand` to the Finance Service. The Finance Service processes the order, checks the payment and inventory, and if all is well, it then publishes an `OrderPlacedIntegrationEvent`. This event is then picked up by the Notification Service, which sends a confirmation email to the customer with the order details.
 
 <NodeGraph />
+
+### Key Steps in the Order Creation Flow
+
+1. **Basket Checkout**
+   - User initiates checkout with items in their basket
+   - System validates basket contents and availability
+   - `UserCheckedOutIntegrationEvent` is published
+
+2. **Order Processing**
+   - Finance service receives checkout event
+   - Order state machine transitions to `Placed` state
+   - Basket deletion is requested via `PlaceOrderCommand`
+
+3. **Basket Cleanup**
+   - Basket service processes deletion request
+   - On success: `BasketDeletedCompleteIntegrationEvent` is published
+   - On failure: `BasketDeletedFailedIntegrationEvent` is published
+
+4. **Order Completion**
+   - Finance service processes basket deletion result
+   - Order state transitions to `Completed` or `Failed`
+   - Appropriate notifications are triggered
+
+### Error Handling
+
+The flow includes robust error handling mechanisms:
+
+- **Basket Deletion Failures**: Handled through the `Failed` state in the order state machine
+- **Transient Errors**: Automatic retry mechanisms are implemented
+- **Data Consistency**: Ensured through the saga pattern implementation
+
+### Business Rules
+
+The order creation process enforces several important business rules:
+
+- Orders must have valid payment information
+- Inventory must be available for all items
+- User must have a valid account
+- Order total must match basket total
+- Basket must be successfully deleted to complete the order
+
+### Performance Considerations
+
+- The order creation flow is designed for high throughput
+- Asynchronous processing ensures system responsiveness
+- Database operations are optimized for minimal contention
+- Event-driven architecture enables horizontal scaling

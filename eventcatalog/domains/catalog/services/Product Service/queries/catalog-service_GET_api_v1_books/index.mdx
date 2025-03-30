@@ -2,8 +2,7 @@
 id: catalog-service_GET_api_v1_books
 version: 1.0.0
 name: List Books
-summary: Get all books
-schemaPath: request-body.json
+summary: Get all books with advanced filtering and pagination
 badges:
   - content: GET
     textColor: blue
@@ -17,7 +16,7 @@ owners:
 
 ## Overview
 
-Get all books in the system with pagination support. This endpoint retrieves a collection of book aggregates from the Catalog bounded context, applying domain filters and returning DTOs that comply with our anti-corruption layer patterns.
+Get all books in the system with advanced filtering, sorting, and pagination support. This endpoint retrieves a collection of book aggregates from the Catalog bounded context, applying domain filters and returning DTOs that comply with our anti-corruption layer patterns.
 
 The endpoint respects the read model separation in our CQRS implementation, using dedicated read models optimized for query performance. Results can be filtered by various domain attributes including genre, author, and publication status.
 
@@ -29,18 +28,109 @@ Each book in the returned collection contains core domain properties while maint
 
 ## GET `(/api/v1/books)`
 
-### Parameters
+### Query Parameters
 
-- **id** (path) (required)
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| pageIndex | integer | No | 1 | The page number to retrieve (1-based) |
+| pageSize | integer | No | 10 | Number of items per page |
+| orderBy | string | No | Name | Property to sort results by. Valid values: `Name`, `OriginalPrice`, `DiscountPrice`, `Status` |
+| isDescending | boolean | No | false | Whether to sort results in descending order |
+| search | string | No | null | Search term to filter books by (uses semantic search) |
+| minPrice | decimal | No | null | Minimum price filter |
+| maxPrice | decimal | No | null | Maximum price filter |
+| categoryId | array[Guid] | No | null | Filter by specific category IDs |
+| publisherId | array[Guid] | No | null | Filter by specific publisher IDs |
+| authorIds | array[Guid] | No | null | Filter by specific author IDs |
 
-### Request Body
+### Examples Usage
 
-<SchemaViewer file="request-body.json" maxHeight="500" id="request-body" />
+#### Basic
+
+```bash title="Example Request"
+curl -X GET "https://api.bookworm.com/api/v1/books"
+```
+
+#### With Pagination
+
+```bash title="Example Request"
+curl -X GET "https://api.bookworm.com/api/v1/books?pageIndex=2&pageSize=20"
+```
+
+#### With Search and Filters
+
+```bash title="Example Request"
+curl -X GET "https://api.bookworm.com/api/v1/books?search=fantasy&minPrice=10&maxPrice=50&categoryId=123e4567-e89b-12d3-a456-426614174000"
+```
+
+#### With Sorting
+
+```bash title="Example Request"
+curl -X GET "https://api.bookworm.com/api/v1/books?orderBy=Price.OriginalPrice&isDescending=true"
+```
 
 ### Responses
 
 #### <span className="text-orange-500">400 Bad Request</span>
 
+When the request parameters are invalid:
+
 <SchemaViewer file="response-400.json" maxHeight="500" id="response-400" />
 
 #### <span className="text-green-500">200 OK</span>
+
+Returns a paged result containing the filtered books:
+
+<SchemaViewer file="response-200.json" maxHeight="500" id="response-200" />
+
+#### Example Response
+
+```json title="200 OK"
+{
+  "pageIndex": 1,
+  "pageSize": 10,
+  "totalItems": 20,
+  "totalPages": 2,
+  "hasNextPage": true,
+  "hasPreviousPage": false,
+  "items": [
+    {
+      "id": "0195e692-600b-715e-a17b-b3a8faf4ed07",
+      "name": "The Great Gatsby",
+      "description": "A classic novel by F. Scott Fitzgerald.",
+      "imageUrl": "URL_ADDRESS.com/great-gatsby.jpg",
+      "price": 10.99,
+      "discountPrice": 9.99,
+      "status": "InStock",
+      "authors": [
+        {
+          "id": "0195e692-600b-7290-a47f-982b9d7f15f3",
+          "name": "F. Scott Fitzgerald"
+        },
+        {
+          "id": "0195e692-600b-7d32-99b0-ae7abd82a863",
+          "name": "John Smith"
+        }
+      ],
+      "category": {
+        "id": "0195e692-600b-7424-a426-dac7227720fe",
+        "name": "Fiction"
+      },
+      "publisher": {
+        "id": "0195e692-600b-78b3-9b7f-3e342d9f2815",
+        "name": "Scribner"
+      },
+      "averageRating": 4.5,
+      "totalReviews": 100,
+    }
+  ]
+}
+```
+
+### Notes
+
+- The endpoint uses semantic search when a search term is provided
+- All filters can be combined to create complex queries
+- Results are always paginated to ensure optimal performance
+- The response includes metadata about the total number of items and pages
+- Books are returned with their related entities (authors, category, publisher) included

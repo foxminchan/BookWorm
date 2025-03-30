@@ -3,7 +3,6 @@ id: ordering-service_PATCH_api_v1_buyers_address
 version: 1.0.0
 name: Update Buyer Address
 summary: Update buyer address by buyer id if exists
-schemaPath: ""
 badges:
   - content: PATCH
     textColor: purple
@@ -11,24 +10,34 @@ badges:
   - content: "Buyer"
     textColor: yellow
     backgroundColor: yellow
+  - content: "Authenticated"
+    textColor: green
+    backgroundColor: green
 owners:
     - nhanxnguyen
 ---
 
 ## Overview
 
-This endpoint allows for the modification of a buyer's address information within the Ordering bounded context. In DDD terms, the Buyer is an aggregate root within the Ordering domain that contains Address as a value object.
+This endpoint allows authenticated users to update their address information within the Ordering bounded context. In DDD terms, the Buyer is an aggregate root within the Ordering domain that contains Address as a value object.
 
 The operation respects the invariants of the Buyer aggregate by ensuring that address changes are validated and consistently applied. Address updates are significant domain events as they can affect shipping options, tax calculations, and order fulfillment processes.
 
+## Implementation Details
+
 When a buyer's address is updated:
 
-1. The system verifies the buyer exists in the Ordering context
-2. Address validation rules are applied according to domain specifications
-3. If valid, the address value object is replaced with the new values
-4. The buyer aggregate is persisted, maintaining its consistency
+1. The system retrieves the buyer ID from the authenticated user's claims
+2. The buyer entity is fetched from the repository
+3. If the buyer doesn't exist, a `NotFoundException` is thrown
+4. The `UpdateAddress` method on the Buyer entity is called with the new address details
+5. Changes are persisted through the Unit of Work pattern
 
-This operation is particularly important for the order fulfillment process as shipping and tax calculations depend on accurate address information.
+## Validation Rules
+
+- Street is required (maximum length: 50 characters)
+- City is required (maximum length: 50 characters)
+- Province is required (maximum length: 50 characters)
 
 ## Architecture
 
@@ -36,12 +45,74 @@ This operation is particularly important for the order fulfillment process as sh
 
 ## PATCH `(/api/v1/buyers/address)`
 
-### Parameters
+### Request
 
-- **id** (path) (required): The order id
+<SchemaViewer file="request-body.json" maxHeight="500" id="request-body" />
+
+### Example Usage
+
+```bash
+curl -X PATCH "https://api.bookworm.com/api/v1/buyers/address" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer <your-jwt-token>" \
+    -d '{
+        "street": "123 Main Street",
+        "city": "New York",
+        "province": "NY"
+    }'
+```
 
 ### Responses
 
 #### <span className="text-green-500">200 OK</span>
 
+Return buyer details with updated address.
+
 <SchemaViewer file="response-200.json" maxHeight="500" id="response-200" />
+
+Example response:
+
+```json title="200 OK"
+{
+    "id": "123e4567-e89b-12d3-a456-426655440000",
+    "name": "John Doe",
+    "email": "john.doe@example.com",
+    "address": {
+        "street": "123 Main Street",
+        "city": "New York",
+        "province": "NY"
+    }
+}
+```
+
+#### <span className="text-red-500">400 Bad Request</span>
+
+Returned when the request validation fails.
+
+```json title="400 Bad Request"
+{
+  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+  "title": "Bad Request",
+  "status": 400,
+  "errors": {
+    "Street": ["The Street field is required."],
+    "City": ["The City field is required."],
+    "Province": ["The Province field is required."]
+  }
+}
+```
+
+#### <span className="text-red-500">404 Not Found</span>
+
+```json title="404 Not Found"
+{
+  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.4",
+  "title": "Not Found",
+  "status": 404,
+  "detail": "Buyer with id {id} not found."
+}
+```
+
+#### <span className="text-red-500">401 Unauthorized</span>
+
+Returned when the request lacks valid authentication credentials.

@@ -3,7 +3,6 @@ id: "ordering-service_DELETE_api_v1_orders_{id}"
 version: 1.0.0
 name: Delete Order
 summary: Delete order by order id if exists
-schemaPath: ""
 badges:
   - content: DELETE
     textColor: red
@@ -11,31 +10,35 @@ badges:
   - content: "Order"
     textColor: yellow
     backgroundColor: yellow
+  - content: "Admin Only"
+    textColor: red
+    backgroundColor: red
 owners:
     - nhanxnguyen
 ---
 
 ## Overview
 
-This endpoint allows authorized users to delete an order from the system. In alignment with Domain-Driven Design principles, order deletion is handled as a domain operation that respects the Order aggregate boundary.
+This endpoint allows administrators to delete an order from the system. In alignment with Domain-Driven Design principles, order deletion is handled as a domain operation that respects the Order aggregate boundary and implements a soft-delete pattern.
 
 ### Domain Considerations
 
-- **Deletion Constraints**: Orders can only be deleted if they are in certain states (typically only in draft/pending status)
-- **Aggregate Consistency**: The deletion operation ensures the entire Order aggregate (including order lines and related entities) is removed atomically
+- **Soft Delete Pattern**: The Order entity implements the `ISoftDelete` interface, setting a flag rather than physically removing records
+- **Aggregate Consistency**: The deletion operation ensures the entire Order aggregate maintains its consistency through the Unit of Work pattern
+- **Domain Events**: The operation may trigger domain events for cross-service communication
 
-### Business Rules
-
-- Orders that have already begun processing cannot be deleted, only canceled
-- Only orders owned by the requesting user or by administrators can be deleted
-- Deletion is a soft-delete operation that maintains data integrity for reporting purposes
-
-### Cross-Domain Effects
+### Implementation Details
 
 When an order is deleted:
 
-- Inventory items that were reserved may be released back to the Catalog service (via domain events)
-- The Basket service may be notified if the order originated from a saved basket
+1. The command handler retrieves the Order aggregate by ID
+2. If the order doesn't exist, a `NotFoundException` is thrown
+3. The `Delete()` method on the Order entity sets the `IsDeleted` flag to true
+4. Changes are persisted through the Unit of Work pattern
+
+### Security Considerations
+
+This endpoint is protected by the Admin authorization policy, ensuring that only administrators can delete orders. This is implemented through the `.RequireAuthorization(Authorization.Policies.Admin)` middleware.
 
 ## Architecture
 
@@ -45,10 +48,36 @@ When an order is deleted:
 
 ### Parameters
 
-- **id** (path) (required): The order id
+- **id** (path) (required): The order's unique identifier (GUID format)
+
+### Example Usage
+
+```bash
+curl -X DELETE "https://api.bookworm.com/api/v1/orders/{id}" \
+    -H "Authorization: Bearer <your-jwt-token>"
+```
 
 ### Responses
 
-#### <span className="text-green-500">200 OK</span>
+#### <span className="text-green-500">204 No Content</span>
 
-<SchemaViewer file="response-200.json" maxHeight="500" id="response-200" />
+The order was successfully deleted. No content is returned in the response body.
+
+#### <span className="text-red-500">404 Not Found</span>
+
+```json title="404 Not Found"
+{
+  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.4",
+  "title": "Not Found",
+  "status": 404,
+  "detail": "Order with id {id} not found."
+}
+```
+
+#### <span className="text-red-500">401 Unauthorized</span>
+
+Returned when the request lacks valid authentication credentials.
+
+#### <span className="text-red-500">403 Forbidden</span>
+
+Returned when the authenticated user does not have administrator privileges.

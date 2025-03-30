@@ -3,7 +3,6 @@ id: "ordering-service_GET_api_v1_orders_{id}_summary"
 version: 1.0.0
 name: Get Order Summary
 summary: Get order summary from event store
-schemaPath: ""
 badges:
   - content: GET
     textColor: green
@@ -11,6 +10,12 @@ badges:
   - content: "Order"
     textColor: yellow
     backgroundColor: yellow
+  - content: "Event Sourcing"
+    textColor: blue
+    backgroundColor: blue
+  - content: "Projection"
+    textColor: purple
+    backgroundColor: purple
 owners:
     - nhanxnguyen
 ---
@@ -19,13 +24,51 @@ owners:
 
 This endpoint retrieves the current state of an Order aggregate by replaying events from the event store, following our event sourcing pattern within the Ordering bounded context.
 
-The Order Summary represents a read model derived from domain events that captures the essential information about an order's current state, including:
+## Implementation Details
 
-- Order identification and metadata
-- Pricing information
-- Delivery information and status
+The Order Summary query is implemented using event sourcing and projections:
 
-This endpoint demonstrates the CQRS (Command Query Responsibility Segregation) principle by providing a dedicated read model optimized for client consumption. The Order aggregate rebuilds its state by sequentially applying all recorded domain events associated with the specified order ID.
+```mermaid
+sequenceDiagram
+    participant Client
+    participant SummaryOrderEndpoint
+    participant Marten
+    participant OrderSummaryInfo
+    participant EventStore
+    
+    Client->>SummaryOrderEndpoint: GET /api/v1/orders/{id}/summary
+    SummaryOrderEndpoint->>Marten: querySession.Json.WriteById<OrderSummaryInfo>(id)
+    Marten->>EventStore: Retrieve events for order ID
+    EventStore-->>Marten: Events (DeleteBasketComplete, OrderCancelled, OrderCompleted)
+    Marten->>OrderSummaryInfo: Apply events to build projection
+    alt DeleteBasketCompleteCommand event
+        OrderSummaryInfo->>OrderSummaryInfo: Set Status = New, Set TotalPrice
+    else OrderCancelledEvent event
+        OrderSummaryInfo->>OrderSummaryInfo: Set Status = Cancelled, Set TotalPrice
+    else OrderCompletedEvent event
+        OrderSummaryInfo->>OrderSummaryInfo: Set Status = Completed, Set TotalPrice
+    end
+    Marten-->>SummaryOrderEndpoint: OrderSummaryInfo projection
+    SummaryOrderEndpoint-->>Client: 200 OK with order summary
+```
+
+### Key Components
+
+1. **OrderSummaryInfo**: A lightweight projection model that captures essential order information
+2. **MultiStreamProjection**: Projects events from multiple streams into a single read model
+3. **Event Handlers**: Apply specific events to update the projection state
+4. **Marten**: Document database with event sourcing capabilities that manages the projection
+
+## Technical Implementation
+
+The Order Summary endpoint demonstrates several advanced patterns:
+
+1. **Event Sourcing**: The system stores all domain events and reconstructs state by replaying them
+2. **CQRS (Command Query Responsibility Segregation)**: Separate read and write models
+3. **Projections**: Transform event streams into optimized read models
+4. **Multi-Stream Aggregation**: Combine events from different streams to build a cohesive view
+
+This endpoint demonstrates the CQRS principle by providing a dedicated read model optimized for client consumption. The Order aggregate rebuilds its state by sequentially applying all recorded domain events associated with the specified order ID.
 
 ## Architecture
 
@@ -33,12 +76,22 @@ This endpoint demonstrates the CQRS (Command Query Responsibility Segregation) p
 
 ## GET `(/api/v1/orders/{id}/summary)`
 
-### Parameters
+### Path Parameters
 
-- **id** (path) (required): The order id
+- **id** (path) (required): The unique identifier of the order to retrieve summary for
+
+### Example Usage
+
+```bash
+curl -X GET "https://api.bookworm.com/api/v1/orders/{orderId}/summary"
+```
 
 ### Responses
 
 #### <span className="text-green-500">200 OK</span>
 
-<SchemaViewer file="response-200.json" maxHeight="500" id="response-200" />
+Returns a lightweight summary of the order's current state.
+
+#### <span className="text-red-500">404 Not Found</span>
+
+Returned when no events exist for the specified order ID.

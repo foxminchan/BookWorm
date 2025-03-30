@@ -34,16 +34,16 @@ The Ordering domain represents a strategic core domain within the BookWorm syste
 - **Aggregates and Entities**:
   - **Order** (aggregate root) - Controls the consistency boundaries for order operations
   - **OrderItem** (entity) - Books and quantities associated with an order
-  - **OrderStatus** (value object) - Immutable representation of order state
+  - **Buyer** (aggregate root) - Controls the consistency boundaries for buyer operations
   - **Address** (value object) - Immutable shipping details
 
 ### Domain Events
 
 The domain produces and consumes various events including:
 
-- `OrderCancelledEvent`
-- `OrderCompletedEvent`
-- `OrderPlacedEvent`
+- `OrderCancelledEvent`: Event raised when an order is cancelled
+- `OrderCompletedEvent`: Event raised when an order is completed
+- `OrderPlacedEvent`: Event raised when an order is placed
 
 ### Business Rules and Invariants
 
@@ -59,3 +59,31 @@ The domain handles complex business scenarios like partial fulfillment, order mo
 <NodeGraph />
 
 <MessageTable format="all" limit={4} />
+
+## Ordering process (sequence diagram)
+
+```mermaid
+sequenceDiagram
+    actor Customer
+    participant OrderingService
+    participant FinanceService
+    participant BasketService
+    participant NotificationService
+
+  Customer->>OrderingService: Place Order
+  OrderingService->>FinanceService: Create Order
+  FinanceService->>BasketService: Reserve Basket
+  alt Basket Reserved Successfully
+    BasketService->>FinanceService: Notify Basket Reserved
+    par
+      FinanceService->>OrderingService: Notify Order Placed
+    and
+      FinanceService->>NotificationService: Notify Customer
+    end
+    NotificationService-->>Customer: Order Placed Successfully
+  else Basket Reservation Failed
+    BasketService->>FinanceService: Notify Basket Reservation Failed
+    FinanceService->>OrderingService: Rollback Order Creation
+    OrderingService->>Customer: Order Placement Failed
+  end
+```

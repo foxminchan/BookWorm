@@ -2,8 +2,7 @@
 id: catalog-service_GET_api_v1_publishers
 version: 1.0.0
 name: List Publishers
-summary: Get all publishers
-schemaPath: request-body.json
+summary: List all publishers
 badges:
   - content: GET
     textColor: blue
@@ -27,18 +26,45 @@ The operation follows CQRS principles by using a dedicated read model query hand
 
 ## GET `(/api/v1/publishers)`
 
-### Parameters
+### Description
 
-- **id** (path) (required)
+This endpoint returns a list of all publishers in the system. It's designed to be fast and efficient, making it suitable for populating dropdowns, filters, and other UI elements that require publisher data.
+
+### Query Parameters
+
+None. This endpoint does not accept any query parameters.
 
 ### Request Body
 
-<SchemaViewer file="request-body.json" maxHeight="500" id="request-body" />
+No request body is required for this endpoint.
+
+### Example Usage
+
+```bash
+curl -X GET "https://api.bookworm.com/api/v1/publishers"
+```
 
 ### Responses
 
-#### <span className="text-orange-500">400 Bad Request</span>
-
-<SchemaViewer file="response-400.json" maxHeight="500" id="response-400" />
-
 #### <span className="text-green-500">200 OK</span>
+
+Returns a list of publishers with their details.
+
+<SchemaViewer file="response-200.json" maxHeight="500" id="response-200" />
+
+#### Example Response
+
+```json title="200 OK"
+{
+  "publishers": [
+    {
+      "id": "1",
+      "name": "Penguin Random House",
+    },
+    {
+      "id": "2",
+      "name": "HarperCollins",
+    }
+  ]
+}
+```

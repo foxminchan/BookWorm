@@ -1,13 +1,64 @@
 {
-  "required": ["id", "name"],
+  "required": [
+    "id",
+    "name",
+    "description",
+    "price",
+    "categoryId",
+    "publisherId",
+    "authorIds"
+  ],
   "type": "object",
   "properties": {
     "id": {
       "type": "string",
-      "format": "uuid"
+      "format": "uuid",
+      "description": "Product ID"
     },
     "name": {
-      "type": "string"
+      "type": "string",
+      "description": "Product name",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "description": {
+      "type": "string",
+      "description": "Product description",
+      "maxLength": 500
+    },
+    "price": {
+      "type": "number",
+      "description": "Product price",
+      "minimum": 0
+    },
+    "priceSale": {
+      "type": "number",
+      "description": "Product sale price",
+      "minimum": 0,
+      "maximum": "ref:price"
+    },
+    "categoryId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Category ID"
+    },
+    "publisherId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Publisher ID"
+    },
+    "authorIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Author ID"
+      }
+    },
+    "image": {
+      "type": "string",
+      "format": "binary",
+      "description": "Product image"
     }
   }
 }

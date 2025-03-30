@@ -2,7 +2,7 @@
 id: "catalog-service_PUT_api_v1_authors_{id}"
 version: 1.0.0
 name: Update Author
-summary: Update an author
+summary: Update an author's information
 schemaPath: request-body.json
 badges:
   - content: PUT
@@ -11,6 +11,9 @@ badges:
   - content: "Author"
     textColor: yellow
     backgroundColor: yellow
+  - content: "Admin Only"
+    textColor: red
+    backgroundColor: red
 owners:
     - nhanxnguyen
 ---
@@ -26,6 +29,26 @@ Update an existing author in the catalog domain. This endpoint adheres to Domain
 
 The operation is idempotent and will return appropriate error responses if the author ID does not exist or if business rules are violated. Updates will be propagated through domain events to maintain consistency across the system.
 
+## Security
+
+- Requires administrative privileges (Admin policy)
+- Authentication is required
+
+## Technical Details
+
+### Validation Rules
+
+- Author ID must be a valid GUID and cannot be empty
+- Author name is required
+- Author name must not exceed the large data schema length
+
+### Implementation Notes
+
+- Uses CQRS pattern with Mediator implementation
+- Performs optimistic concurrency control through unit of work
+- Implements proper domain event handling
+- Returns 204 No Content on successful update
+
 ## Architecture
 
 <NodeGraph />
@@ -35,15 +58,45 @@ The operation is idempotent and will return appropriate error responses if the a
 ### Parameters
 
 - **id** (path) (required)
+  - Format: GUID
+  - Description: Unique identifier of the author to update
 
 ### Request Body
 
 <SchemaViewer file="request-body.json" maxHeight="500" id="request-body" />
 
+### Example Usage
+
+```bash
+curl -X PUT "https://api.bookworm.com/api/v1/authors/{id}" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <admin-token>" \
+  -d '{"name": "Updated Author Name"}'
+```
+
 ### Responses
+
+#### <span className="text-green-500">204 No Content</span>
+
+Returned when the author is successfully updated.
 
 #### <span className="text-orange-500">400 Bad Request</span>
 
+Returned when:
+- The request body fails validation
+- The author name format is invalid
+- The author name exceeds maximum length
+
 <SchemaViewer file="response-400.json" maxHeight="500" id="response-400" />
 
-#### <span className="text-green-500">204 No Content</span>
+#### <span className="text-red-500">404 Not Found</span>
+
+Returned when the specified author ID does not exist in the system.
+
+#### <span className="text-red-500">401 Unauthorized</span>
+
+Returned when the request lacks valid authentication credentials.
+
+#### <span className="text-red-500">403 Forbidden</span>
+
+Returned when the authenticated user lacks administrative privileges.
