@@ -1,16 +1,27 @@
 {
-  "type": "object",
-  "properties": {
-    "id": {
-      "type": "string",
-      "format": "uuid"
-    },
-    "status": {
-      "enum": ["New", "Cancelled", "Completed"]
-    },
-    "totalPrice": {
-      "type": "number",
-      "format": "double"
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "The unique identifier of the order"
+      },
+      "status": {
+        "enum": ["New", "Cancelled", "Completed"],
+        "description": "The status of the order"
+      },
+      "total": {
+        "type": "number",
+        "format": "double",
+        "description": "The total amount of the order"
+      },
+      "date": {
+        "type": "string",
+        "format": "date-time",
+        "description": "The date of the order"
+      }
     }
   },
   "isSchema": true

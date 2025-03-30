@@ -3,10 +3,22 @@ title = "gitleaks config"
 [allowlist]
 description = "global allow lists"
 paths = [
-	'''gitleaks.toml''',
-	'''(.*?)(jpg|gif|doc|docx|zip|xls|pdf|bin|svg|socket|vsidx|v2|suo|wsuo|.dll|pdb|exe)$''',
-	'''node_modules''',
-	'''package-lock.json''',
-	'''Database.refactorlog''',
-	'''vendor''',
+  '''gitleaks.toml''',
+  '''(.*?)(jpg|gif|doc|docx|zip|xls|pdf|bin|svg|socket|vsidx|v2|suo|wsuo|.dll|pdb|exe)$''',
+  '''node_modules''',
+  '''package-lock.json''',
+  '''Database.refactorlog''',
+  '''vendor''',
 ]
+
+[[rules]]
+id = "sendgrid-api-key"
+description = "SendGrid API Key"
+regex = '''SG\.[\w_]{16,32}\.[\w_]{16,64}'''
+tags = ["key", "SendGrid"]
+
+[[rules]]
+id = "azure-storage-connection-string"
+description = "Azure Storage Connection String"
+regex = '''DefaultEndpointsProtocol=https;AccountName=[a-zA-Z0-9]+;AccountKey=[a-zA-Z0-9+/=]+;EndpointSuffix=core\.windows\.net'''
+tags = ["key", "Azure", "Storage"]

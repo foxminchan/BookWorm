@@ -1,4 +1,5 @@
-﻿using BookWorm.Ordering.Features.Orders;
+﻿using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
+using BookWorm.Ordering.Features.Orders;
 using BookWorm.Ordering.Features.Orders.Get;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -33,6 +34,7 @@ public sealed class GetOrderEndpointTests
             _orderId,
             faker.Date.Recent(),
             faker.Random.Decimal(50, 500),
+            (Status)faker.Random.Int(0, 2),
             orderItems
         );
     }

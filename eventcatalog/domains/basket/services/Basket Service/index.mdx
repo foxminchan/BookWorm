@@ -3,7 +3,16 @@ id: Basket Service
 name: Basket Service
 version: 1.0.0
 summary: Basket API for BookWorm
-badges: []
+badges:
+  - content: CQRS
+    textColor: blue
+    backgroundColor: blue
+  - content: Event-Driven
+    textColor: purple
+    backgroundColor: purple
+  - content: Redis
+    textColor: red
+    backgroundColor: red
 sends:
   - id: basketdeletedcompleteintegrationevent.message
     version: 1.0.0
@@ -40,15 +49,14 @@ repository:
 
 ## Overview
 
-The Basket Service is a domain-centric microservice within our bounded context that implements a RESTful API architecture to manage the transient state of customer shopping carts. This service encapsulates the complete lifecycle of a basket aggregate, from creation through modification to eventual checkout processing.
+The Basket Service is a domain-centric microservice within our bounded context that implements a gRPC-based API architecture to manage the transient state of customer shopping carts. This service encapsulates the complete lifecycle of a basket aggregate, from creation through modification to eventual checkout processing.
 
-As a core part of our Domain-Driven Design implementation, the Basket Service maintains its own dedicated persistence store, ensuring proper encapsulation of the basket domain model. It serves as the system of record for the shopping intent of customers before this intent is transformed into an order through domain events.
+As a core part of our Domain-Driven Design implementation, the Basket Service maintains its own dedicated Redis persistence store, ensuring proper encapsulation of the basket domain model. It serves as the system of record for the shopping intent of customers before this intent is transformed into an order through domain events.
 
 The service implements several key domain operations:
 
 - Adding/removing items to the basket
 - Updating quantities of basket items
-- Calculating totals with applied discounts and promotions
 - Managing the checkout process and transition to the Order bounded context
 
 Following tactical DDD patterns, the basket is modeled as an aggregate root with basket items as entities within its boundary, ensuring consistency through transactional integrity and proper domain invariants.
@@ -57,10 +65,10 @@ Following tactical DDD patterns, the basket is modeled as an aggregate root with
 
 | Feature                     | Description                                                                                                           |
 | --------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| **Add Item to Basket**      | Allows customers to add items to their basket, updating the basket's total price and item count.                      |
-| **Remove Item from Basket** | Enables customers to remove items from their basket, recalculating the basket's total price and item count.           |
-| **Update Item Quantity**    | Supports customers in updating the quantity of items in their basket, adjusting the basket's total price accordingly. |
-| **View Basket**             | Provides customers with the ability to view the contents of their basket, including item details and total price.     |
+| **Get Basket**             | Retrieves the current basket for an authenticated user, including all items and their quantities.                     |
+| **Add Item to Basket**      | Allows customers to add items to their basket, with validation ensuring quantities are greater than zero.              |
+| **Remove Item from Basket** | Enables customers to remove items from their basket, maintaining data consistency.                                    |
+| **Update Item Quantity**    | Supports customers in updating the quantity of items in their basket, with built-in validation.                       |
 
 ## Architecture diagram
 
@@ -72,10 +80,10 @@ Following tactical DDD patterns, the basket is modeled as an aggregate root with
 
 <AccordionGroup>
   <Accordion title="Basket">
-    The basket is the core domain entity representing a customer's shopping cart. It encapsulates the items added by the customer, their quantities, and the total price of the basket.
+    The basket is the core domain entity representing a customer's shopping cart. It is identified by a unique ID and contains a collection of basket items. The basket is stored in Redis for fast access and persistence.
   </Accordion>
   <Accordion title="Basket Item">
-    Basket items are the individual products added to the basket by the customer. They contain information such as the product ID, quantity, and price.
+    Basket items are the individual products added to the basket by the customer.
   </Accordion>
 </AccordionGroup>
 
@@ -87,10 +95,20 @@ The Basket Service is deployed as a containerized application within the BookWor
 architecture-beta
     group api(logos:microsoft-azure)[API]
 
-    service db(logos:redis)[Database] in api
-    service server(logos:docker-icon)[Server] in api
+    service db(logos:redis)[Redis Database] in api
+    service server(logos:docker-icon)[gRPC Server] in api
 
     db:L -- R:server
 ```
 
-The service is hosted on a cloud platform, utilizing managed services for database storage and container orchestration. This infrastructure setup enables seamless scaling and efficient resource utilization, supporting the dynamic demands of customer shopping activities.
+The service is hosted on a cloud platform, utilizing Redis for high-performance data storage and container orchestration. This infrastructure setup enables seamless scaling and efficient resource utilization, supporting the dynamic demands of customer shopping activities.
+
+## Technical Implementation
+
+The service is implemented in C# using:
+- gRPC for high-performance API communication
+- Redis for data persistence
+- Domain-Driven Design patterns for business logic
+- Built-in validation using Data Annotations
+- Dependency injection for loose coupling
+- Logging for observability and debugging

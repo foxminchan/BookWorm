@@ -1,12 +1,13 @@
 namespace BookWorm.Ordering.Features.Orders;
 
-public sealed record OrderDto(Guid OrderId, DateTime OrderDate, decimal Total, Status Status);
+public sealed record OrderDto(Guid Id, DateTime Date, decimal Total, Status Status);
 
 public sealed record OrderDetailDto(
-    Guid OrderId,
-    DateTime OrderDate,
+    Guid Id,
+    DateTime Date,
     decimal Total,
-    IReadOnlyList<OrderItemDto> OrderItems
+    Status Status,
+    IReadOnlyList<OrderItemDto> Items
 );
 
 public sealed record OrderItemDto(Guid Id, int Quantity, decimal Price)

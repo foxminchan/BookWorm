@@ -8,6 +8,7 @@ public static class DomainToDtoMapper
             model.Id,
             model.CreatedAt,
             model.TotalPrice,
+            model.Status,
             [.. model.OrderItems.Select(x => new OrderItemDto(x.Id, x.Quantity, x.Price))]
         );
     }

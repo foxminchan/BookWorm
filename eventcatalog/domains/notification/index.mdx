@@ -12,25 +12,67 @@ badges:
   - content: Transaction Script
     backgroundColor: blue
     textColor: blue
+  - content: Event-Driven
+    backgroundColor: green
+    textColor: green
 owners:
     - nhanxnguyen
 ---
 
 ## Overview
 
-The Notification domain is responsible for sending messages to external systems when an order is placed, completed, or canceled. It captures the necessary information about the order, including the order identity, the order date, and the customer information, to notify the system about the operation. This domain serves as the contract between the Notification and external systems, facilitating the transition from an order to a placed, completed, or canceled one.
+The Notification domain is responsible for sending transactional emails to customers at critical points in the order lifecycle. Acting as a supporting domain within the BookWorm ecosystem, it listens for integration events from other domains and transforms them into appropriate customer communications. The domain is designed with reliability and scalability in mind, implementing resilience patterns to ensure message delivery even in degraded network conditions.
 
 <Tiles >
     <Tile icon="UserGroupIcon" href="/docs/users/nhanxnguyen" title="Contact the author" description="Any questions? Feel free to contact the owners" />
     <Tile icon="RectangleGroupIcon" href={`/visualiser/domains/${frontmatter.id}/${frontmatter.version}`} title={`${frontmatter.services.length} services are in this domain`} description="This service sends messages to downstream consumers" />
 </Tiles>
 
-## Responsibilities
+## Technical Implementation
 
-- Send messages to external systems when an order is placed, completed, or canceled
-- Capture the necessary information about the order, including the order identity, the order date, and the customer information
-- Notify the system about the operation
-- Serve as the contract between the Notification and external systems
+The Notification domain is implemented using modern cloud-native practices:
+
+- **Event-Driven Architecture**: Consumes events from other domains using MassTransit
+- **Provider Abstraction**: Supports multiple email delivery mechanisms (SMTP, SendGrid)
+- **Resilience Patterns**: Implements retry policies, timeouts, and circuit breakers
+- **Observability**: Integrated with OpenTelemetry for distributed tracing
+- **Health Monitoring**: Includes health checks for external dependencies
+
+### Email Providers
+
+The service supports multiple email delivery mechanisms:
+
+- **Development Environment**: Uses local SMTP server (MailPit) for testing
+- **Production Environment**: Integrates with SendGrid for reliable email delivery
+- **Resilient Communication**: Implements exponential backoff retry policies
+
+## Key Responsibilities
+
+The Notification domain handles several critical communication touchpoints:
+
+- **Order Placement**: Sends order confirmation emails when a new order is placed
+- **Order Completion**: Notifies customers when their order has been successfully fulfilled
+- **Order Cancellation**: Provides cancellation notifications with relevant details
+- **Transactional Communication**: Focuses on operational messages rather than marketing content
+- **Delivery Reliability**: Ensures critical notifications reach customers even during system degradation
+
+## Event Handling
+
+The domain consumes the following integration events:
+
+| Event | Source | Purpose |
+|-------|--------|---------|
+| `PlaceOrderCommand` | Finance Service | Triggers order confirmation emails |
+| `CompleteOrderCommand` | Finance Service | Sends order completion notifications |
+| `CancelOrderCommand` | Finance Service | Delivers order cancellation notices |
+
+## Message Templates
+
+Each notification type follows a standardized template structure:
+
+- **Order Confirmation**: Includes order ID, items, total amount, and estimated delivery
+- **Order Completion**: Contains order ID, fulfillment details, and total amount
+- **Order Cancellation**: Provides order ID, cancellation reason, and refund information when applicable
 
 ## Bounded context
 

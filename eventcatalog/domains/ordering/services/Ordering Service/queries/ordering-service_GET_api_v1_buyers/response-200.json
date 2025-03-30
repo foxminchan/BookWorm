@@ -1,16 +1,54 @@
 {
   "type": "object",
   "properties": {
-    "id": {
-      "type": "string",
-      "format": "uuid"
+    "totalItems": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Total number of items in the collection"
     },
-    "status": {
-      "enum": ["New", "Cancelled", "Completed"]
+    "totalPages": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Total number of pages in the collection"
     },
-    "totalPrice": {
-      "type": "number",
-      "format": "double"
+    "pageIndex": {
+      "type": "integer",
+      "format": "int32",
+      "description": "The current page number"
+    },
+    "pageSize": {
+      "type": "integer",
+      "format": "int32",
+      "description": "The number of items per page"
+    },
+    "hasNextPage": {
+      "type": "boolean",
+      "description": "Indicates if there are more pages"
+    },
+    "hasPreviousPage": {
+      "type": "boolean",
+      "description": "Indicates if there are previous pages"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The unique identifier of the buyer"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the buyer"
+          },
+          "address": {
+            "type": "string",
+            "description": "The address of the buyer"
+          }
+        }
+      }
     }
   },
   "isSchema": true

@@ -6,7 +6,7 @@ const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 /** @type {import('@eventcatalog/core/bin/eventcatalog.config').Config} */
 export default {
   cId: "888dcc93-8c83-4052-beee-00a7ed6d71ae",
-  title: "BookWorm EventCatalog",
+  title: "BookWorm",
   tagline:
     "This internal platform provides a comprehensive view of our event-driven architecture across all systems. Use this portal to discover existing domains, explore services and their dependencies, and understand the message contracts that connect our infrastructure",
   organizationName: "BookWorm",
@@ -18,9 +18,9 @@ export default {
     iconPacks: ["logos"],
   },
   logo: {
-    alt: "EventCatalog Logo",
+    alt: "BookWorm",
     src: "/logo.png",
-    text: "EventCatalog",
+    text: "BookWorm",
   },
   rss: {
     enabled: true,
@@ -30,12 +30,6 @@ export default {
     sidebar: {
       type: "LIST_VIEW",
     },
-  },
-  chat: {
-    enabled: true,
-    model: "Hermes-3-Llama-3.2-3B-q4f16_1-MLC",
-    max_tokens: 4096,
-    similarityResults: 50,
   },
   sidebar: [
     {
