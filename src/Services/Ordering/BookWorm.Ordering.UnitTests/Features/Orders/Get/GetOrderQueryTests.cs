@@ -19,7 +19,7 @@ public sealed class GetOrderQueryTests
     private readonly Mock<ClaimsPrincipal> _claimsPrincipalMock;
     private readonly GetOrderHandler _handler;
     private readonly Order _order;
-    private readonly Guid _orderId;
+    private readonly Guid _id;
     private readonly Mock<IOrderRepository> _orderRepositoryMock;
     private readonly PostGetOrderHandler _postHandler;
 
@@ -29,7 +29,7 @@ public sealed class GetOrderQueryTests
         _claimsPrincipalMock = new();
         _bookServiceMock = new();
 
-        _orderId = Guid.CreateVersion7();
+        _id = Guid.CreateVersion7();
         _buyerId = Guid.CreateVersion7();
 
         // Create a sample order using the faker
@@ -37,7 +37,7 @@ public sealed class GetOrderQueryTests
         _order = orderFaker.Generate().First();
 
         // Replace with our specific IDs for testing
-        _order.GetType().GetProperty("Id")?.SetValue(_order, _orderId);
+        _order.GetType().GetProperty("Id")?.SetValue(_order, _id);
         _order.GetType().GetProperty("BuyerId")?.SetValue(_order, _buyerId);
 
         _handler = new(_orderRepositoryMock.Object, _claimsPrincipalMock.Object);
@@ -50,17 +50,17 @@ public sealed class GetOrderQueryTests
         // Arrange
         SetupAdminUser();
         _orderRepositoryMock
-            .Setup(r => r.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync(_id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_order);
 
         // Act
-        var result = await _handler.Handle(new(_orderId), CancellationToken.None);
+        var result = await _handler.Handle(new(_id), CancellationToken.None);
 
         // Assert
         result.ShouldNotBeNull();
-        result.OrderId.ShouldBe(_orderId);
+        result.Id.ShouldBe(_id);
         _orderRepositoryMock.Verify(
-            r => r.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()),
+            r => r.GetByIdAsync(_id, It.IsAny<CancellationToken>()),
             Times.Once
         );
         _orderRepositoryMock.Verify(
@@ -81,15 +81,15 @@ public sealed class GetOrderQueryTests
             .ReturnsAsync(_order);
 
         // Act
-        var result = await _handler.Handle(new(_orderId), CancellationToken.None);
+        var result = await _handler.Handle(new(_id), CancellationToken.None);
 
         // Assert
         result.ShouldNotBeNull();
-        result.OrderId.ShouldBe(_orderId);
-        result.OrderDate.ShouldBe(_order.CreatedAt);
+        result.Id.ShouldBe(_id);
+        result.Date.ShouldBe(_order.CreatedAt);
         result.Total.ShouldBe(_order.TotalPrice);
         _orderRepositoryMock.Verify(
-            r => r.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()),
+            r => r.GetByIdAsync(_id, It.IsAny<CancellationToken>()),
             Times.Never
         );
         _orderRepositoryMock.Verify(
@@ -110,7 +110,7 @@ public sealed class GetOrderQueryTests
             .ReturnsAsync((Order)null!);
 
         // Act
-        var act = () => _handler.Handle(new(_orderId), CancellationToken.None);
+        var act = () => _handler.Handle(new(_id), CancellationToken.None);
 
         // Assert
         await act.ShouldThrowAsync<NotFoundException>();
@@ -122,11 +122,11 @@ public sealed class GetOrderQueryTests
         // Arrange
         SetupAdminUser();
         _orderRepositoryMock
-            .Setup(r => r.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync(_id, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Order)null!);
 
         // Act
-        var act = () => _handler.Handle(new(_orderId), CancellationToken.None);
+        var act = () => _handler.Handle(new(_id), CancellationToken.None);
 
         // Assert
         await act.ShouldThrowAsync<NotFoundException>();
@@ -140,9 +140,10 @@ public sealed class GetOrderQueryTests
         var bookId2 = Guid.CreateVersion7();
 
         var orderDetailDto = new OrderDetailDto(
-            _orderId,
+            _id,
             DateTime.UtcNow,
             150.00m,
+            Status.New,
             new List<OrderItemDto> { new(bookId1, 2, 50.00m), new(bookId2, 1, 50.00m) }
         );
 
@@ -154,11 +155,11 @@ public sealed class GetOrderQueryTests
             .ReturnsAsync(new BookResponse { Name = "Book 2" });
 
         // Act
-        await _postHandler.Process(new(_orderId), orderDetailDto, CancellationToken.None);
+        await _postHandler.Process(new(_id), orderDetailDto, CancellationToken.None);
 
         // Assert
-        orderDetailDto.OrderItems.ShouldNotBeEmpty();
-        orderDetailDto.OrderItems.Count.ShouldBe(2);
+        orderDetailDto.Items.ShouldNotBeEmpty();
+        orderDetailDto.Items.Count.ShouldBe(2);
     }
 
     [Test]
@@ -169,9 +170,10 @@ public sealed class GetOrderQueryTests
         var bookId2 = Guid.CreateVersion7();
 
         var orderDetailDto = new OrderDetailDto(
-            _orderId,
+            _id,
             DateTime.UtcNow,
             150.00m,
+            Status.Cancelled,
             new List<OrderItemDto> { new(bookId1, 2, 50.00m), new(bookId2, 1, 50.00m) }
         );
 
@@ -183,7 +185,7 @@ public sealed class GetOrderQueryTests
             .ReturnsAsync((BookResponse)null!);
 
         // Act
-        var act = () => _postHandler.Process(new(_orderId), orderDetailDto, CancellationToken.None);
+        var act = () => _postHandler.Process(new(_id), orderDetailDto, CancellationToken.None);
 
         // Assert
         await act.ShouldThrowAsync<NotFoundException>();

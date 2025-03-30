@@ -4,10 +4,14 @@
   "properties": {
     "id": {
       "type": "string",
-      "format": "uuid"
+      "format": "uuid",
+      "description": "Author ID"
     },
     "name": {
-      "type": "string"
+      "type": "string",
+      "description": "Author name",
+      "minLength": 1,
+      "maxLength": 100
     }
   }
 }

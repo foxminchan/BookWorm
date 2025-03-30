@@ -3,7 +3,16 @@ id: Rating Service
 name: Rating Service
 version: 1.0.0
 summary: Rating API for BookWorm
-badges: []
+badges:
+  - content: CQRS
+    textColor: blue
+    backgroundColor: blue
+  - content: Event-Driven
+    textColor: purple
+    backgroundColor: purple
+  - content: Cosmos DB
+    textColor: teal
+    backgroundColor: teal
 sends:
   - id: feedbackcreatedintegrationevent.message
     version: 1.0.0
@@ -73,6 +82,69 @@ The service follows the CQRS pattern with separate command and query models, ena
 ## Architecture diagram
 
 <NodeGraph />
+
+## Technical Architecture
+
+The Rating Service is built on a modern, cloud-native architecture following these key design principles:
+
+### Command Query Responsibility Segregation (CQRS)
+
+```mermaid
+flowchart TB
+    subgraph Commands
+        CC[CreateFeedbackCommand]
+        DC[DeleteFeedbackCommand]
+    end
+    
+    subgraph Queries
+        LQ[ListFeedbackQuery]
+    end
+    
+    subgraph Domain
+        F[Feedback Aggregate]
+    end
+    
+    subgraph Infrastructure
+        DB[(Cosmos DB)]
+    end
+    
+    CC --> F
+    DC --> F
+    F --> DB
+    DB --> LQ
+```
+
+The service implements CQRS pattern with:
+
+- **Command Stack**: Handles write operations through commands like `CreateFeedbackCommand` and `DeleteFeedbackCommand`
+- **Query Stack**: Manages read operations with queries like `ListFeedbackQuery`
+- **MediatR Pipeline**: Processes commands and queries with cross-cutting concerns:
+  - Validation behavior
+  - Activity tracking for observability
+  - Logging behavior
+
+### Event-Driven Architecture
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Rating Service
+    participant Event Bus
+    participant Catalog Service
+    
+    Client->>Rating Service: POST /api/v1/feedbacks
+    Rating Service->>Rating Service: Create Feedback
+    Rating Service->>Event Bus: Publish FeedbackCreatedIntegrationEvent
+    Event Bus->>Catalog Service: Consume FeedbackCreatedIntegrationEvent
+    Catalog Service->>Catalog Service: Update Book Rating
+```
+
+The service publishes domain events that are transformed into integration events for cross-service communication:
+
+- **Domain Events**: `FeedbackCreatedEvent`, `FeedbackDeletedEvent`
+- **Integration Events**: `FeedbackCreatedIntegrationEvent`, `FeedbackDeletedIntegrationEvent`
+- **Event Bus**: Implemented with MassTransit for reliable message delivery
+- **Inbox/Outbox Pattern**: Ensures at-least-once delivery semantics
 
 ## Infrastructure
 

@@ -3,7 +3,6 @@ id: catalog-service_GET_api_v1_authors
 version: 1.0.0
 name: List Authors
 summary: Get all authors
-schemaPath: request-body.json
 badges:
   - content: GET
     textColor: blue
@@ -23,24 +22,72 @@ The query accesses the repository abstraction rather than directly querying the 
 
 This endpoint supports catalog bounded context operations that require author information, such as book browsing and filtering. It provides a paginated response to handle potentially large datasets efficiently.
 
+## Use Cases
+
+- Displaying author lists in the UI for book browsing
+- Populating author selection dropdowns in forms
+- Supporting author-based filtering and search functionality
+- Integration with other services requiring author information
+
 ## Architecture
 
 <NodeGraph />
 
 ## GET `(/api/v1/authors)`
 
-### Parameters
-
-- **id** (path) (required)
-
 ### Request Body
 
-<SchemaViewer file="request-body.json" maxHeight="500" id="request-body" />
+No request body required for this endpoint.
+
+### Example Usage
+
+```bash
+curl -X GET "https://api.bookworm.com/api/v1/authors"
+```
 
 ### Responses
 
-#### <span className="text-orange-500">400 Bad Request</span>
-
-<SchemaViewer file="response-400.json" maxHeight="500" id="response-400" />
-
 #### <span className="text-green-500">200 OK</span>
+
+<SchemaViewer file="response-200.json" maxHeight="500" id="response-200" />
+
+### Example Response
+
+```json title="200 OK"
+[
+  {
+    "id": "a1e1b3b4-1b1b-4b1b-9b1b-1b1b1b1b1b1b",
+    "name": "John Doe",
+  },
+  {
+    "id": "b1e1b3b4-1b1b-4b1b-9b1b-1b1b1b1b1b1b",
+    "name": "Jane Smith",
+  },
+  {
+    "id": "c1e1b3b4-1b1b-4b1b-9b1b-1b1b1b1b1b1b",
+    "name": "Alice Johnson",
+  }
+]
+```
+
+### Rate Limiting
+
+This endpoint is subject to standard API rate limiting. Please refer to the API documentation for specific rate limit details.
+
+### Error Handling
+
+The endpoint may return the following error responses:
+- 429 Too Many Requests: Rate limit exceeded
+- 500 Internal Server Error: Server-side processing error
+
+### Performance Considerations
+
+- The response is paginated to handle large datasets efficiently
+- Results are cached at the application level for improved performance
+- Response times may vary based on the total number of authors in the system
+
+### Security
+
+- Requires authentication
+- Implements proper authorization checks
+- Data is sanitized before transmission

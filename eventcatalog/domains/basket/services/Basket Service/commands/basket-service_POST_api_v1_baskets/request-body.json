@@ -9,11 +9,14 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "description": "Product ID"
           },
           "quantity": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "description": "Quantity of the product in the basket",
+            "minimum": 1
           }
         }
       }

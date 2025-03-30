@@ -3,7 +3,6 @@ id: rating-service_GET_api_v1_feedbacks
 version: 1.0.0
 name: List Feedbacks
 summary: Get feedbacks for a book
-schemaPath: ""
 badges:
   - content: GET
     textColor: blue
@@ -11,36 +10,155 @@ badges:
   - content: "Feedback"
     textColor: yellow
     backgroundColor: yellow
+  - content: "Paged"
+    textColor: green
+    backgroundColor: green
 owners:
     - nhanxnguyen
 ---
 
 ## Overview
 
-The Feedback retrieval endpoint is a core read operation within the Rating bounded context, responsible for fetching book feedback aggregates. This endpoint implements a query-side operation following CQRS principles, allowing clients to access feedback data without impacting the command-side of the Rating domain.
+The List Feedbacks endpoint is a core read operation within the Rating bounded context, responsible for fetching book feedback aggregates with pagination support. This endpoint implements a query-side operation following CQRS principles, allowing clients to access feedback data without impacting the command-side of the Rating domain.
 
-### Domain Context
+## Implementation Details
+
+The List Feedbacks operation is implemented using the CQRS pattern with a dedicated query handler:
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant ListFeedbacksEndpoint
+    participant ListFeedbacksValidator
+    participant ListFeedbacksQuery
+    participant FeedbackFilterSpec
+    participant FeedbackRepository
+    participant Database
+    
+    Client->>ListFeedbacksEndpoint: GET /api/v1/feedbacks?BookId={bookId}
+    ListFeedbacksEndpoint->>ListFeedbacksValidator: Validate query parameters
+    alt Validation fails
+        ListFeedbacksValidator-->>ListFeedbacksEndpoint: Return validation errors
+        ListFeedbacksEndpoint-->>Client: 400 Bad Request
+    else Validation passes
+        ListFeedbacksEndpoint->>ListFeedbacksQuery: Send(new ListFeedbacksQuery())
+        ListFeedbacksQuery->>FeedbackFilterSpec: Create filter specification
+        FeedbackFilterSpec->>FeedbackRepository: ListAsync(filterSpec)
+        FeedbackRepository->>Database: Query with filtering, ordering, and paging
+        Database-->>FeedbackRepository: Feedback entities
+        FeedbackRepository-->>ListFeedbacksQuery: Feedback entities
+        ListFeedbacksQuery->>FeedbackFilterSpec: Create count specification
+        FeedbackFilterSpec->>FeedbackRepository: CountAsync(countSpec)
+        FeedbackRepository->>Database: Count query with filtering
+        Database-->>FeedbackRepository: Total count
+        FeedbackRepository-->>ListFeedbacksQuery: Total count
+        ListFeedbacksQuery->>ListFeedbacksQuery: Calculate pagination metadata
+        ListFeedbacksQuery->>ListFeedbacksQuery: Map to FeedbackDto objects
+        ListFeedbacksQuery-->>ListFeedbacksEndpoint: PagedResult<FeedbackDto>
+        ListFeedbacksEndpoint-->>Client: 200 OK with paged result
+    end
+```
+
+### Key Components
+
+1. **ListFeedbacksQuery**: Implements `IQuery<PagedResult<FeedbackDto>>` with parameters for filtering, pagination, and ordering
+2. **ListFeedbacksHandler**: Processes the query using repository pattern and specification pattern
+3. **FeedbackFilterSpec**: Specification that encapsulates the query logic for filtering, ordering, and paging
+4. **ListFeedbacksValidator**: Validates the query parameters using FluentValidation
+5. **ListFeedbacksEndpoint**: Maps the HTTP GET request to the query handler
+
+## Domain Context
 
 In our domain model, `Feedback` represents a valuable domain concept that captures reader opinions and ratings for books in the catalog. Each feedback belongs to a specific book and contains:
 
-- Rating score (numerical evaluation)
-- Review content (textual feedback)
-- Metadata (submission date, reviewer information)
+- Unique identifier (Id)
+- Book reference (BookId)
+- Customer information (FirstName, LastName)
+- Review content (Comment)
+- Rating score (numerical evaluation on a scale of 0-5)
 
-### Implementation Details
+The List Feedbacks query is a read-only operation that:
 
-The endpoint leverages a repository pattern to fetch feedback entities and projects them into DTOs before returning to the client. The pagination functionality optimizes resource utilization and response time by limiting result sets to manageable chunks. The ordering capabilities allow clients to sort feedback based on domain-relevant properties (e.g., submission date, rating score).
+1. Filters feedbacks by BookId (required parameter)
+2. Applies pagination to limit the result set (default page size is configurable)
+3. Supports ordering by feedback properties (default is by Rating)
+4. Returns a consistent data structure with pagination metadata
 
-### Integration Points
+## Query Parameters
+
+| Parameter    | Type    | Required | Default       | Description                                      |
+|--------------|---------|----------|---------------|--------------------------------------------------|
+| BookId       | Guid    | Yes      | -             | The ID of the book to get feedback for           |
+| PageIndex    | int     | No       | 1             | The page number (1-based indexing)               |
+| PageSize     | int     | No       | 10            | Number of items per page                         |
+| OrderBy      | string  | No       | "Rating"      | Property to order results by                     |
+| IsDescending | boolean | No       | false         | Whether to order results in descending order     |
+
+## Technical Implementation
+
+The implementation uses several patterns and techniques:
+
+1. **Specification Pattern**: The `FeedbackFilterSpec` encapsulates the query logic, making it reusable and testable
+2. **Repository Pattern**: The `IFeedbackRepository` abstracts the data access layer
+3. **CQRS**: Separates the read model (query) from the write model (command)
+4. **Pagination**: Implements efficient data retrieval with `PagedResult<T>` return type
+5. **Minimal API**: Uses .NET's minimal API approach with endpoint mapping
+
+The query execution flow:
+1. The endpoint receives the HTTP GET request with query parameters
+2. Parameters are validated using FluentValidation
+3. A filter specification is created with the BookId, ordering, and pagination parameters
+4. The repository executes the query against the database using the specification
+5. A count query is executed to determine the total number of matching records
+6. Pagination metadata is calculated (total items, total pages)
+7. Feedback entities are mapped to DTOs
+8. A `PagedResult<FeedbackDto>` is returned with both data and pagination metadata
+
+## Integration Points
 
 This endpoint serves as an integration point for other bounded contexts within the BookWorm ecosystem:
 
 - The Catalog service may consume this data to display aggregated ratings
+- The UI components use this endpoint to display paginated feedback lists
 - The Recommendation engine might analyze feedback patterns to suggest books
 
-### Authorization
+## Example Usage
 
-Access to feedback data follows our domain authorization rules, ensuring that published feedback is available while respecting privacy constraints defined in our domain policies.
+```bash
+curl -X GET "https://api.bookworm.com/api/v1/feedbacks?BookId={bookId}&PageIndex=1&PageSize=10&OrderBy=Rating&IsDescending=true" \
+    -H "Content-Type: application/json"
+```
+
+## Example Response
+
+```json
+{
+  "items": [
+    {
+      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "firstName": "John",
+      "lastName": "Doe",
+      "comment": "Great book, highly recommended!",
+      "rating": 5,
+      "bookId": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+    },
+    {
+      "id": "4fa85f64-5717-4562-b3fc-2c963f66afa7",
+      "firstName": "Jane",
+      "lastName": "Smith",
+      "comment": "Interesting read but a bit slow in the middle.",
+      "rating": 4,
+      "bookId": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+    }
+  ],
+  "pageIndex": 1,
+  "pageSize": 10,
+  "totalCount": 2,
+  "totalPages": 1,
+  "hasNextPage": false,
+  "hasPreviousPage": false
+}
+```
 
 ## Architecture
 
@@ -51,17 +169,54 @@ Access to feedback data follows our domain authorization rules, ensuring that pu
 ### Parameters
 
 - **BookId** (query) (required): The ID of the book to get feedback for
-- **PageIndex** (query): Number of items to return in a single page of results
-- **PageSize** (query): Number of items to return in a single page of results
-- **OrderBy** (query): Property to order results by
-- **IsDescending** (query): Whether to order results in descending order
+- **PageIndex** (query) (optional, default: 1): The page number (1-based indexing)
+- **PageSize** (query) (optional, default: 10): Number of items per page
+- **OrderBy** (query) (optional, default: "Rating"): Property to order results by
+- **IsDescending** (query) (optional, default: false): Whether to order results in descending order
+
+### Validation Rules
+
+- PageIndex must be greater than 0
+- PageSize must be greater than 0
+- BookId must be a valid GUID
 
 ### Responses
 
 #### <span className="text-green-500">200 OK</span>
 
-<SchemaViewer file="response-200.json" maxHeight="500" id="response-200" />
+Returns a paged result of feedback items for the specified book.
+
+```json
+{
+  "items": [
+    {
+      "id": "string",
+      "firstName": "string",
+      "lastName": "string",
+      "comment": "string",
+      "rating": 0,
+      "bookId": "string"
+    }
+  ],
+  "pageIndex": 0,
+  "pageSize": 0,
+  "totalCount": 0,
+  "totalPages": 0
+}
+```
 
 #### <span className="text-orange-500">400 Bad Request</span>
 
-<SchemaViewer file="response-400.json" maxHeight="500" id="response-400" />
+Returned when validation fails for the provided parameters.
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+  "title": "Bad Request",
+  "status": 400,
+  "errors": {
+    "BookId": ["The BookId field is required."],
+    "PageIndex": ["PageIndex must be greater than 0."],
+    "PageSize": ["PageSize must be greater than 0."]
+  }
+}

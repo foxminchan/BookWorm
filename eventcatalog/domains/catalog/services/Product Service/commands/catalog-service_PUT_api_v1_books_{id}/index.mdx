@@ -11,6 +11,9 @@ badges:
   - content: "Book"
     textColor: yellow
     backgroundColor: yellow
+  - content: "Admin Only"
+    textColor: red
+    backgroundColor: red
 owners:
     - nhanxnguyen
 ---
@@ -29,16 +32,66 @@ This endpoint respects the domain boundaries of the Catalog service and enables 
 
 ### Parameters
 
-- **id** (path) (required)
+- **id** (path) (required) - The unique identifier of the book to update (GUID format)
 
 ### Request Body
 
+The request should be sent as `multipart/form-data` with the following fields:
+
 <SchemaViewer file="request-body.json" maxHeight="500" id="request-body" />
+
+### Example Usage
+
+```bash
+curl -X PUT "https://api.bookworm.com/api/v1/books/{id}" \
+  -H "Content-Type: multipart/form-data" \
+  -H "Authorization: Bearer <admin-token>" \
+  -F "name=Updated Book Name" \
+  -F "description=Updated Book Description" \
+  -F "price=19.99" \
+  -F "priceSale=14.99" \
+  -F "categoryId=123e4567-e89b-12d3-a456-426614174000" \
+  -F "publisherId=123e4567-e89b-12d3-a456-426614174000" \
+  -F "authorIds=123e4567-e89b-12d3-a456-426614174000,123e4567-e89b-12d3-a456-426614174001" \
+  -F "image=@/path/to/image.jpg"
+```
+
+### Validation Rules
+
+The following validation rules are applied to the request:
+
+- **Name**: Required, maximum length of 100 characters
+- **Description**: Optional, maximum length of 4000 characters
+- **Price**: Required, must be greater than 0
+- **PriceSale**: Optional, must be greater than 0 and less than or equal to the regular price
+- **CategoryId**: Required, must be a valid GUID
+- **PublisherId**: Required, must be a valid GUID
+- **AuthorIds**: Required, must be a non-empty array of valid GUIDs
+- **Image**: Optional, if provided:
+  - Maximum file size: 1MB (1048576 bytes)
+  - Allowed file types: JPEG and PNG only
 
 ### Responses
 
+#### <span className="text-green-500">204 No Content</span>
+The book was successfully updated. No content is returned in the response body.
+
 #### <span className="text-orange-500">400 Bad Request</span>
+The request is invalid. This can occur when:
+- Validation rules are violated
+- The provided data is in an incorrect format
+- The image file exceeds size limits or is of an unsupported type
 
 <SchemaViewer file="response-400.json" maxHeight="500" id="response-400" />
 
-#### <span className="text-green-500">204 No Content</span>
+#### <span className="text-red-500">404 Not Found</span>
+The book with the specified ID does not exist in the system.
+
+#### <span className="text-red-500">401 Unauthorized</span>
+The request is not authenticated. This endpoint requires admin privileges.
+
+### Domain Events
+
+Upon successful update, the following domain events are triggered:
+- `BookUpdatedEvent`: When the book's name or description is modified
+- The book's embedding in the vector database is automatically updated to reflect the changes

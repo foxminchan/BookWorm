@@ -7,6 +7,9 @@ badges:
   - content: Orchestrated
     textColor: orange
     backgroundColor: orange
+  - content: Notification
+    textColor: blue
+    backgroundColor: blue
 schemaPath: schema.json
 owners:
     - nhanxnguyen
@@ -14,8 +17,79 @@ owners:
 
 ## Overview
 
-This message represents a command to cancel an order in the system. The `CancelOrderCommand` is a domain event that captures the request to cancel an order in the Finance bounded context. It carries the necessary value objects including the order identity, the cancellation reason, and the total amount to notify the system about the cancellation operation. This message adheres to the ubiquitous language of our domain and serves as the contract between the Finance and external systems, facilitating the transition from an order to a cancelled one.
+The `CancelOrderCommand` is an integration event published by the Finance service when an order transitions to the Cancelled state. This command is part of the order processing saga and is used to notify other services about order cancellation, particularly for sending cancellation notifications to customers.
 
 ## Architecture
 
 <NodeGraph />
+
+## Message Structure
+
+The command contains the following properties:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `OrderId` | `Guid` | Unique identifier for the order being cancelled |
+| `Email` | `string?` | Customer's email address (optional) for notification purposes |
+| `TotalMoney` | `decimal` | Total monetary value of the cancelled order |
+
+## Workflow Context
+
+This command is published by the Order State Machine when the following conditions are met:
+
+1. The order is in the `Placed` state
+2. An `OrderStatusChangedToCancelIntegrationEvent` is received
+3. The order transitions to the `Cancelled` state
+4. The customer's email is available (not null)
+
+## Technical Implementation
+
+The `CancelOrderCommand` is implemented as follows:
+
+```csharp frame="terminal"
+[AsyncApi]
+[Channel("notification-cancel-order")]
+[SubscribeOperation(
+    typeof(CancelOrderCommand),
+    OperationId = nameof(CancelOrderCommand),
+    Summary = "Cancel order notification"
+)]
+public sealed record CancelOrderCommand(Guid OrderId, string? Email, decimal TotalMoney)
+    : IntegrationEvent;
+```
+
+Within the Order State Machine, the command is published during the state transition:
+
+```csharp
+When(OrderCancelled)
+    .Then(context =>
+    {
+        context.Saga.OrderId = context.Message.OrderId;
+        context.Saga.BasketId = context.Message.BasketId;
+        context.Saga.Email = context.Message.Email;
+        context.Saga.TotalMoney = context.Message.TotalMoney;
+
+        logger.LogInformation(
+            "[{Event}] Order cancelled for {OrderId}",
+            nameof(OrderCancelled),
+            context.Message.OrderId
+        );
+    })
+    .TransitionTo(Cancelled)
+    .If(
+        context => context.Saga.Email is not null,
+        x =>
+            x.Publish(context => new CancelOrderCommand(
+                context.Saga.OrderId,
+                context.Saga.Email,
+                context.Saga.TotalMoney.GetValueOrDefault(0.0M)
+            ))
+    )
+```
+
+## Consuming Services
+
+This command is typically consumed by:
+
+- **Notification Service**: To send cancellation emails to customers
+- **Ordering Service**: To update the order status in the database

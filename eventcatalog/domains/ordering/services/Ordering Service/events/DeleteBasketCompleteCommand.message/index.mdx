@@ -11,8 +11,79 @@ owners:
 
 ## Overview
 
-This event represents a successful integration event when deleting a basket in the system. The `DeleteBasketCompleteCommand` is a domain event that captures the deletion of a basket in the Ordering bounded context. It carries the necessary value objects including the basket identity, the customer identity, and the basket items to notify the system about the successful operation. This event adheres to the ubiquitous language of our domain and serves as the contract between the Ordering and external systems, facilitating the transition from a failed basket deletion to a successful one.
+The `DeleteBasketCompleteCommand` is an integration event published by the Finance service when a basket is successfully deleted during the order processing workflow. This command is part of the normal success flow in the order processing saga and is used to notify other services about the successful basket cleanup, allowing them to proceed with subsequent steps in the order fulfillment process.
 
 ## Architecture
 
 <NodeGraph />
+
+## Message Structure
+
+The command contains the following properties:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `OrderId` | `Guid` | Unique identifier for the associated order |
+| `TotalMoney` | `decimal` | Total monetary value of the order |
+
+## Workflow Context
+
+This command is published by the Order State Machine when the following conditions are met:
+
+1. The order is in the `Placed` state
+2. A `BasketDeletedCompleteIntegrationEvent` is received, indicating successful basket deletion
+3. The command is published to notify downstream services about the successful operation
+
+## Technical Implementation
+
+The `DeleteBasketCompleteCommand` is implemented as follows:
+
+```csharp frame="terminal"
+[AsyncApi]
+[Channel("basket-checkout-complete")]
+[SubscribeOperation(
+    typeof(DeleteBasketCompleteCommand),
+    OperationId = nameof(DeleteBasketCompleteCommand),
+    Summary = "Delete basket complete"
+)]
+public sealed record DeleteBasketCompleteCommand(Guid OrderId, decimal TotalMoney)
+    : IntegrationEvent;
+```
+
+Within the Order State Machine, the command is published when a basket deletion is confirmed:
+
+```csharp frame="terminal"
+When(BasketDeleted)
+    .Then(context =>
+    {
+        context.Saga.BasketId = context.Message.BasketId;
+        context.Saga.OrderId = context.Message.OrderId;
+        context.Saga.TotalMoney = context.Message.TotalMoney;
+
+        logger.LogInformation(
+            "[{Event}] Basket deleted for {OrderId}",
+            nameof(BasketDeleted),
+            context.Message.OrderId
+        );
+    })
+    .Publish(context => new DeleteBasketCompleteCommand(
+        context.Saga.OrderId,
+        context.Saga.TotalMoney.GetValueOrDefault(0.0M)
+    ))
+```
+
+## Success Flow
+
+This command plays an important role in the successful order processing flow:
+
+1. When a basket is successfully deleted, the `BasketDeletedCompleteIntegrationEvent` is received
+2. The state machine processes this event and publishes the `DeleteBasketCompleteCommand`
+3. This command signals to downstream services that the basket has been successfully cleaned up
+4. The order processing can continue to the next steps
+
+## Consuming Services
+
+This command is typically consumed by:
+
+- **Ordering Service**: To update the order status and store in event store
+- **Notification Service**: To send order confirmation to the customer

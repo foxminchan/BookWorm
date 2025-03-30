@@ -3,7 +3,6 @@ id: ordering-service_POST_api_v1_orders
 version: 1.0.0
 name: Create Order
 summary: Create order for a customer
-schemaPath: ""
 badges:
   - content: POST
     textColor: green
@@ -11,38 +10,84 @@ badges:
   - content: "Order"
     textColor: yellow
     backgroundColor: yellow
+  - content: "Authenticated"
+    textColor: blue
+    backgroundColor: blue
+  - content: "Idempotent"
+    textColor: purple
+    backgroundColor: purple
 owners:
     - nhanxnguyen
 ---
 
 ## Overview
 
-The Create Order endpoint represents a key aggregate root operation within the Ordering bounded context. This command follows the CQRS pattern and is responsible for initiating a new order in the system.
+The Create Order endpoint represents a key aggregate root operation within the Ordering bounded context. This command follows the CQRS pattern and is responsible for initiating a new order in the system based on the authenticated user's shopping basket.
 
-### Domain Concepts
+## Implementation Details
 
-- **Order Aggregate**: Central entity containing order items, delivery information, and payment details
-- **Order Items**: Value objects representing products with quantity and price information
-- **Customer Reference**: External identifier linking to the Customer bounded context
-- **Order Status**: State machine representing the lifecycle of an order (Created → Processing → Shipped → Delivered)
+The Create Order operation is implemented using the CQRS pattern with a command handler and pre-processor:
 
-### Business Rules
+```mermaid
+sequenceDiagram
+    participant Client
+    participant CreateOrderEndpoint
+    participant PreCreateOrderHandler
+    participant BasketService
+    participant BookService
+    participant CreateOrderHandler
+    participant LockProvider
+    participant OrderRepository
+    participant Order
+    
+    Client->>CreateOrderEndpoint: POST /api/v1/orders with Idempotency-Key
+    CreateOrderEndpoint->>PreCreateOrderHandler: Process(CreateOrderCommand)
+    PreCreateOrderHandler->>BasketService: GetBasket()
+    BasketService-->>PreCreateOrderHandler: BasketItems
+    PreCreateOrderHandler->>BookService: GetBooksByIdsAsync(bookIds)
+    BookService-->>PreCreateOrderHandler: BookDetails
+    PreCreateOrderHandler->>PreCreateOrderHandler: Create OrderItems from basket and book details
+    PreCreateOrderHandler-->>CreateOrderHandler: Populated CreateOrderCommand
+    CreateOrderHandler->>CreateOrderHandler: Extract user ID from claims
+    CreateOrderHandler->>LockProvider: TryAcquireLockAsync(userId)
+    LockProvider-->>CreateOrderHandler: Lock handle
+    CreateOrderHandler->>Order: new Order(userId, null, orderItems)
+    Order->>Order: Register OrderPlacedEvent
+    CreateOrderHandler->>OrderRepository: AddAsync(order)
+    OrderRepository-->>CreateOrderHandler: Order with ID
+    CreateOrderHandler-->>CreateOrderEndpoint: Order ID
+    CreateOrderEndpoint-->>Client: 201 Created with Order ID
+```
 
-- Orders must contain at least one valid order item
-- Orders must reference an existing customer
+### Key Components
+
+1. **CreateOrderCommand**: Implements `ICommand<Guid>` to create a new order and return its ID
+2. **PreCreateOrderHandler**: Pre-processes the command by retrieving basket items and book details
+3. **BasketService**: Provides the current user's basket items
+4. **BookService**: Provides book details for pricing information
+5. **Distributed Lock**: Ensures only one order can be created at a time for a given user
+6. **OrderPlacedEvent**: Domain event triggered when a new order is created
+
+## Business Rules
+
+- Orders are created automatically from the user's current basket
+- The buyer ID is automatically derived from the authenticated user's identity
+- Order items are created from basket items with pricing from the Catalog service
+- Each order item must have a quantity greater than zero
+- Each order item must have a price greater than or equal to zero
+- Initial order status is set to "New" upon creation
 - Total order value is calculated as the sum of all item prices multiplied by quantities
-- Initial order status is set to "Created" upon successful submission
-- Inventory verification happens asynchronously via domain events
+- Distributed locking prevents concurrent order creation for the same user
 
-### Domain Events
+## Domain Events
 
-Upon successful order creation, the following domain events are published:
+Upon successful order creation, the following domain event is published:
 
-- `OrderCreatedEvent`: Triggers inventory checks and payment processing
+- `OrderPlacedEvent`: Contains the complete order information for downstream processing
 
-### Implementation Notes
+## Idempotency
 
-The order creation process follows a two-phase commit pattern to ensure consistency across bounded contexts. The command handler validates input, creates the Order aggregate, and persists it to the database before publishing domain events.
+The Create Order endpoint supports idempotency through the use of an Idempotency-Key header. This ensures that retrying the same request will not create duplicate orders.
 
 ## Architecture
 
@@ -50,12 +95,38 @@ The order creation process follows a two-phase commit pattern to ensure consiste
 
 ## POST `(/api/v1/orders)`
 
-### Parameters
+### Request
 
-- **id** (path) (required): The order id
+This endpoint does not require a request body as it automatically uses the authenticated user's current basket.
+
+### Headers
+
+- **x-request-id** (required): A unique identifier for the request to ensure idempotency
+
+### Example Usage
+
+```bash
+curl -X POST "https://api.bookworm.com/api/v1/orders" \
+    -H "Authorization: Bearer <your-jwt-token>" \
+    -H "x-request-id: <unique-request-id>"
+```
 
 ### Responses
 
-#### <span className="text-green-500">200 OK</span>
+#### <span className="text-green-500">201 Created</span>
 
-<SchemaViewer file="response-200.json" maxHeight="500" id="response-200" />
+- Returns the ID of the newly created order
+- Location header includes a versioned URL to the newly created resource
+- Format: `/api/v1/orders/{guid}`
+
+#### <span className="text-red-500">400 Bad Request</span>
+
+Returned when the request validation fails or when the basket is empty.
+
+#### <span className="text-red-500">401 Unauthorized</span>
+
+Returned when the request lacks valid authentication credentials.
+
+#### <span className="text-red-500">409 Conflict</span>
+
+Returned when another process is already creating an order for the same user or when a request with the same Idempotency-Key has already been processed.

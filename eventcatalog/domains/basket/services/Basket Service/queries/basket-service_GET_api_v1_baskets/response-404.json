@@ -16,15 +16,6 @@
     },
     "instance": {
       "type": "string"
-    },
-    "errors": {
-      "type": "object",
-      "additionalProperties": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        }
-      }
     }
   },
   "isSchema": true
