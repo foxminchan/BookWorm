@@ -420,37 +420,39 @@ components:
       default:
     OrderDetailDto:
       required:
-        - orderId
-        - orderDate
+        - id
+        - date
         - total
-        - orderItems
+        - items
       type: object
       properties:
-        orderId:
+        id:
           type: string
           format: uuid
-        orderDate:
+        date:
           type: string
           format: date-time
         total:
           type: number
           format: double
-        orderItems:
+        status:
+          "$ref": "#/components/schemas/Status"
+        items:
           type: array
           items:
             "$ref": "#/components/schemas/OrderItemDto"
     OrderDto:
       required:
-        - orderId
-        - orderDate
+        - id
+        - date
         - total
         - status
       type: object
       properties:
-        orderId:
+        id:
           type: string
           format: uuid
-        orderDate:
+        date:
           type: string
           format: date-time
         total:

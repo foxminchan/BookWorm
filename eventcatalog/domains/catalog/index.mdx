@@ -16,6 +16,11 @@ owners:
     - nhanxnguyen
 ---
 
+<Tiles >
+    <Tile icon="UserGroupIcon" href="/docs/users/nhanxnguyen" title="Contact the author" description="Any questions? Feel free to contact the owners" />
+    <Tile icon="RectangleGroupIcon" href={`/visualiser/domains/${frontmatter.id}/${frontmatter.version}`} title={`${frontmatter.services.length} services are in this domain`} description="This service sends messages to downstream consumers" />
+</Tiles>
+
 ## Overview
 
 The Catalog domain is responsible for managing the products that are available for purchase in the BookWorm platform. It serves as the central repository for all book-related information including metadata, inventory status, pricing, and categorization.
@@ -28,13 +33,59 @@ For administrators, the Catalog domain offers inventory management tools, allowi
 
 As a core domain in the BookWorm ecosystem, Catalog integrates with other services like the Basket domain for purchasing flows, the Rating domain for customer reviews, and the Ordering domain for inventory verification during checkout processes.
 
-<Tiles >
-    <Tile icon="UserGroupIcon" href="/docs/users/nhanxnguyen" title="Contact the author" description="Any questions? Feel free to contact the owners" />
-    <Tile icon="RectangleGroupIcon" href={`/visualiser/domains/${frontmatter.id}/${frontmatter.version}`} title={`${frontmatter.services.length} services are in this domain`} description="This service sends messages to downstream consumers" />
-</Tiles>
+## Architecture
+
+The Catalog service is built using a clean architecture approach with the following key components:
+
+- **Domain Layer**: Contains the core business logic and domain models
+  - Aggregates: Book, Publisher, Author, and Category
+  - Domain Events and Event Handlers
+  - Domain Exceptions
+- **Infrastructure Layer**: Handles data persistence and external service integration
+- **Features**: Implements specific use cases and business operations
+- **gRPC**: Provides service-to-service communication
+- **Integration Events**: Manages cross-service event communication
+
+## Domain Model
+
+The Catalog domain is structured around four main aggregates:
+
+1. **Book Aggregate**
+   - Core entity representing books in the catalog
+   - Manages book metadata, pricing, and inventory
+   - Handles relationships with authors, publishers, and categories
+
+2. **Publisher Aggregate**
+   - Manages publisher information and relationships
+   - Handles publisher-specific metadata and branding
+
+3. **Author Aggregate**
+   - Manages author information and bibliographies
+   - Handles author-specific metadata and relationships with books
+
+4. **Category Aggregate**
+   - Manages book categorization and classification
+   - Handles hierarchical category structures
+
+Each aggregate maintains its own consistency boundary and encapsulates its business rules and invariants.
 
 ## Bounded context
 
 <NodeGraph />
 
 <MessageTable format="all" limit={4} />
+
+## Domain Events
+
+The Catalog domain produces and consumes various events including:
+
+- `BookCreatedEvent`: Event raised when a new book is created
+- `BookUpdatedEvent`: Event raised when a book is updated
+
+## Business Rules and Invariants
+
+- Books must have at least one author
+- Books must have a valid category
+- Books must have a valid publisher
+- Books must have a valid price
+- Books must have a valid inventory status

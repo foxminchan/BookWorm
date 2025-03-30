@@ -1,4 +1,5 @@
-﻿using BookWorm.Ordering.Features.Orders;
+﻿using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
+using BookWorm.Ordering.Features.Orders;
 using BookWorm.Ordering.Features.Orders.Complete;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -23,6 +24,7 @@ public sealed class CompleteOrderEndpointTests
             _orderId,
             DateTime.UtcNow,
             99.99m,
+            Status.Completed,
             new List<OrderItemDto> { new(Guid.CreateVersion7(), 2, 49.99m) { Name = "Test Book" } }
         );
     }

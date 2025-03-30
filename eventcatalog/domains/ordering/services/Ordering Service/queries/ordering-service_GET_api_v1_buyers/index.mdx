@@ -3,7 +3,6 @@ id: ordering-service_GET_api_v1_buyers
 version: 1.0.0
 name: List Buyers
 summary: Get buyers in a paged format
-schemaPath: ""
 badges:
   - content: GET
     textColor: green
@@ -11,16 +10,55 @@ badges:
   - content: "Buyer"
     textColor: yellow
     backgroundColor: yellow
+  - content: "Feature Flag"
+    textColor: blue
+    backgroundColor: blue
 owners:
     - nhanxnguyen
 ---
 
 ## Overview
 
-Get buyers in a paged format
-This endpoint is part of the Buyer aggregate in the Ordering bounded context. In our domain model, a Buyer represents a customer who can place orders within the system.
+This endpoint retrieves a paginated list of buyers from the Ordering bounded context. In our domain model, a Buyer represents a customer who can place orders within the system.
 
-### Domain Context
+## Implementation Details
+
+The List Buyers operation is implemented using the CQRS pattern with a dedicated query handler:
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant ListBuyersEndpoint
+    participant ListBuyersValidator
+    participant ListBuyersQuery
+    participant BuyerRepository
+    participant BuyerFilterSpec
+    
+    Client->>ListBuyersEndpoint: GET /api/v1/buyers?pageIndex=1&pageSize=10
+    ListBuyersEndpoint->>ListBuyersValidator: Validate query parameters
+    ListBuyersValidator-->>ListBuyersEndpoint: Validation result
+    ListBuyersEndpoint->>ListBuyersQuery: Send(query)
+    ListBuyersQuery->>BuyerRepository: ListAsync(BuyerFilterSpec)
+    BuyerRepository->>BuyerFilterSpec: Apply specification
+    BuyerFilterSpec-->>BuyerRepository: Filtered, paginated query
+    BuyerRepository-->>ListBuyersQuery: Buyer entities
+    ListBuyersQuery->>BuyerRepository: CountAsync()
+    BuyerRepository-->>ListBuyersQuery: Total count
+    ListBuyersQuery->>ListBuyersQuery: Map to BuyerDto objects
+    ListBuyersQuery->>ListBuyersQuery: Create PagedResult
+    ListBuyersQuery-->>ListBuyersEndpoint: PagedResult<BuyerDto>
+    ListBuyersEndpoint-->>Client: 200 OK with paged result
+```
+
+### Key Components
+
+1. **ListBuyersQuery**: Implements `IQuery<PagedResult<BuyerDto>>` to retrieve a paginated list of buyers
+2. **ListBuyersValidator**: Validates the pagination parameters
+3. **BuyerFilterSpec**: Specification pattern implementation for filtering and pagination
+4. **BuyerDto**: Lightweight projection of the Buyer aggregate for read operations
+5. **PagedResult**: Generic container for paginated data with metadata
+
+## Domain Context
 
 Within the Ordering bounded context, Buyers are important aggregate roots that encapsulate order history, payment methods, and delivery preferences. The paged query approach respects the query optimization patterns in DDD by:
 
@@ -28,13 +66,15 @@ Within the Ordering bounded context, Buyers are important aggregate roots that e
 - Using pagination to maintain performance with potentially large datasets
 - Exposing only the relevant Buyer attributes needed for listing scenarios
 
-### Implementation Details
+## Technical Implementation
 
 This query is implemented using CQRS pattern:
 
 - **Command/Query Separation**: This read-only endpoint uses a dedicated query handler
 - **Materialized View**: Returns a lightweight DTO projection optimized for reads
 - **Repository Pattern**: Abstracts the underlying data access concerns
+- **Specification Pattern**: Uses a dedicated specification class for filtering and pagination
+- **Feature Flag**: Protected by a feature flag for controlled rollout
 
 The pagination follows DDD best practices by treating page size and number as domain concepts rather than technical implementation details, allowing business rules to dictate appropriate limits.
 
@@ -44,12 +84,68 @@ The pagination follows DDD best practices by treating page size and number as do
 
 ## GET `(/api/v1/buyers)`
 
-### Parameters
+### Query Parameters
 
-- **id** (path) (required): The order id
+- **pageIndex** (query) (optional): The page number to retrieve (default: 1)
+- **pageSize** (query) (optional): The number of items per page (default: 10)
+
+### Validation Rules
+
+- **pageIndex**: Must be greater than 0
+- **pageSize**: Must be greater than 0
+
+### Example Usage
+
+```bash
+curl -X GET "https://api.bookworm.com/api/v1/buyers?pageIndex=2&pageSize=15" \
+    -H "Content-Type: application/json"
+```
 
 ### Responses
 
 #### <span className="text-green-500">200 OK</span>
 
+Returns a paginated list of buyers with metadata about the pagination.
+
 <SchemaViewer file="response-200.json" maxHeight="500" id="response-200" />
+
+#### Example Response
+
+```json title="200 OK"
+{
+  "pageIndex": 2,
+  "pageSize": 15,
+  "totalItems": 45,
+  "totalPages": 3,
+  "hasNextPage": false,
+  "hasPreviousPage": true,
+  "items": [
+    {
+      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "name": "John Doe",
+      "address": "123 Main St, New York, NY"
+    },
+    {
+      "id": "8a1b6a9c-7d3e-4f5a-9b2c-1d3e5f7a9b2c",
+      "name": "Jane Smith",
+      "address": "456 Oak Ave, San Francisco, CA"
+    }
+  ]
+}
+```
+
+#### <span className="text-red-500">400 Bad Request</span>
+
+Returned when the request validation fails.
+
+```json title="400 Bad Request"
+{
+  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+  "title": "Bad Request",
+  "status": 400,
+  "errors": {
+    "PageIndex": ["The field PageIndex must be greater than 0."],
+    "PageSize": ["The field PageSize must be greater than 0."]
+  }
+}
+```

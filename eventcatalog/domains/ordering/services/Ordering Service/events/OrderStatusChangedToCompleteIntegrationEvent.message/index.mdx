@@ -3,7 +3,13 @@ id: orderstatuschangedtocompleteintegrationevent.message
 version: 1.0.0
 name: Changed Order Status To Complete
 summary: Represents an integration event when an order status is changed to complete
-badges: []
+badges:
+  - content: Order Lifecycle
+    textColor: green
+    backgroundColor: green
+  - content: Status Change
+    textColor: blue
+    backgroundColor: blue
 schemaPath: schema.json
 owners:
     - nhanxnguyen
@@ -16,3 +22,52 @@ This event represents an integration event when an order status is changed to co
 ## Architecture
 
 <NodeGraph />
+
+## Event Structure
+
+The event contains the following key properties:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `OrderId` | `Guid` | Unique identifier for the order being completed |
+| `BasketId` | `Guid` | Identifier of the basket associated with the order |
+| `Email` | `string?` | Customer's email address (optional) for notifications |
+| `TotalMoney` | `decimal` | Total monetary value of the completed order |
+
+## Technical Implementation
+
+The `OrderStatusChangedToCompleteIntegrationEvent` is implemented as a simple record in C#:
+
+```csharp frame="terminal"
+public sealed record OrderStatusChangedToCompleteIntegrationEvent(
+    Guid OrderId,
+    Guid BasketId,
+    string? Email,
+    decimal TotalMoney
+) : IntegrationEvent;
+```
+
+## Workflow Context
+
+This event plays an important role in the order completion workflow:
+
+1. It is published by the Ordering service when an order is successfully completed
+2. The Finance service receives this event and updates the order state machine
+3. The event triggers the transition to the Completed state in the Finance service
+4. It may initiate follow-up processes like customer notifications or analytics updates
+
+## Cross-Service Communication
+
+This event facilitates communication between several bounded contexts:
+
+- **Ordering → Finance**: Notifies about order completion
+- **Finance → Notification**: May trigger completion notifications to customers
+
+## Business Impact
+
+From a business perspective, this event represents several important aspects:
+
+- Successful completion of the order fulfillment process
+- Opportunity to gather customer satisfaction metrics
+- Trigger for post-purchase marketing activities
+- Signal for financial reconciliation and reporting

@@ -11,8 +11,39 @@ owners:
 
 ## Overview
 
-This event represents a failed basket deletion event in the system. The `BasketDeletedFailedIntegrationEvent` is a domain event that captures the failed deletion of a basket in the Finance bounded context. It carries the necessary value objects including the basket identity, the failed reason, and the total amount to notify the system about the failed operation. This event adheres to the ubiquitous language of our domain and serves as the contract between the Finance and external systems, facilitating the transition from a basket deletion to a failed one.
+The `BasketDeletedIntegrationEvent` is an integration event that signals the failure of a reverse basket operation in the system. This event plays a crucial role in the error handling and recovery mechanisms between the Basket and Ordering contexts. It carries essential information about the failed operation, including the reverse basket identity, customer identity, and basket item collection.
+
+## Purpose
+
+This event serves several important purposes:
+- Notifies the system about failed basket deletion attempts
+- Provides necessary data for error recovery and retry mechanisms
+- Maintains consistency between the Basket and Ordering contexts
+- Facilitates proper error handling and logging
+
+## Event Structure
+
+The event contains the following key information:
+- `OrderId`: Unique identifier for the associated order
+- `BasketId`: Identifier of the basket that failed to delete
+- `Email`: Customer's email address (optional)
+- `TotalMoney`: Total monetary value of the basket
+
+## Usage
+
+This event is typically published when:
+- A basket deletion operation fails due to system errors
+- There are issues with the integration between Basket and Ordering contexts
+- Recovery mechanisms need to be triggered
 
 ## Architecture
 
 <NodeGraph />
+
+## Error Handling
+
+When this event is published, the system should:
+1. Log the failure details
+2. Attempt to recover the failed operation
+3. Notify relevant stakeholders if necessary
+4. Update system state accordingly

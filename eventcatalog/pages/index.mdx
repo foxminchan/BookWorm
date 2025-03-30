@@ -2,46 +2,59 @@
 id: index
 ---
 
-# **BookWorm**
+# **Welcome to BookWorm**
 
-## Overview
+BookWorm is an open-source, cloud-native e-commerce platform built with .NET Aspire, showcasing a microservices architecture. It provides a comprehensive set of features for book enthusiasts, including book inventory management, order processing, user authentication, and more.
 
-BookWorm is a comprehensive microservices-based e-commerce platform for book enthusiasts. The application provides the following core functionalities:
+<Tiles columns={2}>
+  <Tile icon="BookOpenIcon" iconColor="text-green-500" href="https://github.com/foxminchan/BookWorm" title="Explore the source code" description="Explore the source code of BookWorm" />
+  <Tile icon="StarIcon"  iconColor="text-yellow-500" href="https://github.com/foxminchan/BookWorm/stargazers" title="Star BookWorm on GitHub" description="If you like the project, please star it on GitHub to show your support ❤️" />
+</Tiles>
 
-### Catalog Service
+## About This Documentation
 
-- Browse extensive book collections organized by categories
-- View detailed book information including title, author, publisher, and synopsis
-- Filter books by genre, author, publisher, and price range
-- Search functionality with advanced filtering options
+This documentation serves as a comprehensive guide to the BookWorm microservices ecosystem. It provides detailed information about the events, commands, and queries that flow between services, helping developers understand the system's architecture and behavior.
 
-### Basket Service
+### What You'll Find Here
 
-- Add books to personal shopping basket
-- Manage quantities and view total prices
-- Save items for later purchase
-- Seamless checkout process
+- **Domain Documentation**: Explore each bounded context and its responsibilities
+- **Service Catalogs**: Detailed documentation of each microservice's API endpoints
+- **Event Flows**: Visual representations of how events propagate through the system
+- **Command & Query Specifications**: Detailed specifications for all commands and queries
 
-### Order Management
+## Core Domains
 
-- Place and track orders
-- View order history and status
-- Support for multiple payment methods
-- Order notifications and updates
+BookWorm is structured around several key domains, each responsible for a specific aspect of the e-commerce experience:
 
-### User Features
+<Tiles columns={3}>
+  <Tile icon="ShoppingCartIcon" iconColor="text-blue-500" href="/docs/domains/basket/1.0.0" title="Basket" description="Shopping cart management and checkout process" />
+  <Tile icon="RectangleGroupIcon" iconColor="text-purple-500" href="/docs/domains/catalog/1.0.0" title="Catalog" description="Book inventory, categories, and search functionality" />
+  <Tile icon="TruckIcon" iconColor="text-green-500" href="/docs/domains/ordering/1.0.0" title="Ordering" description="Order processing, payment, and fulfillment" />
+  <Tile icon="StarIcon" iconColor="text-yellow-500" href="/docs/domains/rating/1.0.0" title="Rating" description="Book reviews and rating system" />
+  <Tile icon="CurrencyDollarIcon" iconColor="text-red-500" href="/docs/domains/finance/1.0.0" title="Finance" description="Ordering finance transactions" />
+  <Tile icon="BellIcon" iconColor="text-orange-500" href="/docs/domains/notification/1.0.0" title="Notification" description="User notifications and alerts" />
+</Tiles>
 
-- Personal library to save favorite books
-- Rating and review system for books
-- View recommendations based on reading preferences
-- Discover books from other users' collections
+## Architecture Overview
 
-### Rating and Review System
+BookWorm follows a microservices architecture with event-driven communication between services. The system is built on the following principles:
 
-- Rate books on a scale of 1 to 5 stars
-- Write reviews and share opinions with other users
-- View average ratings and reviews for each book
-- Sort books by popularity and user ratings
-- Receive personalized recommendations based on reading history
+- **Domain-Driven Design**: Services are organized around business capabilities
+- **CQRS Pattern**: Separation of command and query responsibilities
+- **Event Sourcing**: Using events as the source of truth for system state
+- **API-First Design**: Well-defined APIs with comprehensive documentation
 
-Built using modern .NET technologies and following Domain-Driven Design principles, BookWorm delivers a robust and scalable book shopping experience.
+<img loading="lazy" src="https://raw.githubusercontent.com/foxminchan/BookWorm/refs/heads/main/assets/architechture.png" alt="BookWorm Architecture Overview" className="my-6 rounded-lg shadow-md" />
+
+## Getting Started
+
+To get started with BookWorm development:
+
+1. Clone the [repository](https://github.com/foxminchan/BookWorm)
+2. Follow the setup instructions in the README
+3. Explore this documentation to understand the system architecture
+4. Check out the API documentation for each service
+
+## License
+
+BookWorm is released under the MIT License.

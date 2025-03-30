@@ -11,8 +11,79 @@ owners:
 
 ## Overview
 
-This message represents a command to complete an order. The `CompleteOrderCommand` is a domain event that captures the completion operation in the Notification bounded context. It carries the necessary value objects including the order identity, the completion date, and the customer information to notify the system about the completion operation. This message adheres to the ubiquitous language of our domain and serves as the contract between the Notification and external systems, facilitating the transition from an order to a completed one.
+The `CompleteOrderCommand` is an integration event published by the Finance service when an order transitions to the Completed state. This command is part of the order processing saga and is used to notify other services about order completion, particularly for sending confirmation notifications to customers.
 
 ## Architecture
 
 <NodeGraph />
+
+## Message Structure
+
+The command contains the following properties:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `OrderId` | `Guid` | Unique identifier for the order being completed |
+| `Email` | `string?` | Customer's email address (optional) for notification purposes |
+| `TotalMoney` | `decimal` | Total monetary value of the completed order |
+
+## Workflow Context
+
+This command is published by the Order State Machine when the following conditions are met:
+
+1. The order is in the `Placed` state
+2. An `OrderStatusChangedToCompleteIntegrationEvent` is received
+3. The order transitions to the `Completed` state
+4. The customer's email is available (not null)
+
+## Technical Implementation
+
+The `CompleteOrderCommand` is implemented as follows:
+
+```csharp frame="terminal"
+[AsyncApi]
+[Channel("notification-complete-order")]
+[SubscribeOperation(
+    typeof(CompleteOrderCommand),
+    OperationId = nameof(CompleteOrderCommand),
+    Summary = "Complete order notification"
+)]
+public sealed record CompleteOrderCommand(Guid OrderId, string? Email, decimal TotalMoney)
+    : IntegrationEvent;
+```
+
+Within the Order State Machine, the command is published during the state transition:
+
+```csharp frame="terminal"
+When(OrderCompleted)
+    .Then(context =>
+    {
+        context.Saga.OrderId = context.Message.OrderId;
+        context.Saga.BasketId = context.Message.BasketId;
+        context.Saga.Email = context.Message.Email;
+        context.Saga.TotalMoney = context.Message.TotalMoney;
+
+      logger.LogInformation(
+          "[{Event}] Order completed for {OrderId}",
+          nameof(OrderCompleted),
+          context.Message.OrderId
+      );
+  })
+  .TransitionTo(Completed)
+  .If(
+      context => context.Saga.Email is not null,
+      x =>
+          x.Publish(context => new CompleteOrderCommand(
+              context.Saga.OrderId,
+              context.Saga.Email,
+              context.Saga.TotalMoney.GetValueOrDefault(0.0M)
+          ))
+  )
+```
+
+## Consuming Services
+
+This command is typically consumed by:
+
+- **Notification Service**: To send order completion emails to customers
+- **Ordering Service**: To update the order status in the database

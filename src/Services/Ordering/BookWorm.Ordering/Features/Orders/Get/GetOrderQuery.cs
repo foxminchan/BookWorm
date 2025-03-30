@@ -50,7 +50,7 @@ public sealed class PostGetOrderHandler(IBookService bookService)
         CancellationToken cancellationToken
     )
     {
-        var items = response.OrderItems;
+        var items = response.Items;
 
         var bookTasks = items
             .Select(item => bookService.GetBookByIdAsync(item.Id.ToString(), cancellationToken))
@@ -73,6 +73,6 @@ public sealed class PostGetOrderHandler(IBookService bookService)
             updatedItems.Add(updatedItem);
         }
 
-        _ = response with { OrderItems = updatedItems };
+        _ = response with { Items = updatedItems };
     }
 }

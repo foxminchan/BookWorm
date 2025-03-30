@@ -121,8 +121,8 @@ Please read [CONTRIBUTING.md](./.github/CONTRIBUTING.md) for details on our code
 
 ## Support
 
-- If you like this project, please give it (⭐) a star.
-- If you have any issues or feature requests, please open an issue.
+- If you like this project, please give it a ⭐ star.
+- If you have any issues or feature requests, please [create an issue](https://github.com/foxminchan/BookWorm/issues/new/choose).
 
 ## License
 

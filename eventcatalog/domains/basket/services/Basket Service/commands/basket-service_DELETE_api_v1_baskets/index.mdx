@@ -3,7 +3,6 @@ id: basket-service_DELETE_api_v1_baskets
 version: 1.0.0
 name: Delete Basket
 summary: Delete a basket by its unique identifier
-schemaPath: request-body.json
 badges:
   - content: DELETE
     textColor: red
@@ -22,12 +21,66 @@ This endpoint allows you to delete a shopping basket by its unique identifier. T
 ### Business Rules
 
 - Basket must exist to be deleted
-- Only the owner of the basket or an administrator can delete a basket
+- Only the authenticated owner of the basket can delete their own basket
 - Deleting a basket will permanently remove all items within it
+- The basket ID is automatically derived from the authenticated user's ID
+
+### Authentication
+
+This endpoint requires authentication. The user's identity is verified using Keycloak authentication:
+- A valid authentication token must be provided
+- The user's ID is extracted from the `sub` claim in the JWT token
+- Unauthorized access will result in a 401 Unauthorized response
 
 ### Implementation Details
 
-The delete operation is handled by the `DeleteBasketCommandHandler` which enforces the domain rules and publishes appropriate events through our event bus to maintain system consistency.
+The delete operation is handled by the `DeleteBasketCommandHandler` which:
+- Validates user authentication
+- Verifies basket ownership
+- Removes the basket from the repository
+- Uses the user's ID from claims as the basket identifier
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant DeleteBasketEndpoint
+    participant DeleteBasketCommand
+    participant ClaimsPrincipal
+    participant BasketRepository
+    participant Redis
+    
+    Client->>DeleteBasketEndpoint: DELETE /api/v1/baskets
+    Note over Client,DeleteBasketEndpoint: Authorization: Bearer {jwt-token}
+    
+    DeleteBasketEndpoint->>DeleteBasketCommand: Send(new DeleteBasketCommand())
+    DeleteBasketCommand->>ClaimsPrincipal: GetClaimValue(KeycloakClaimTypes.Subject)
+    
+    alt User not authenticated
+        ClaimsPrincipal-->>DeleteBasketCommand: null or empty userId
+        DeleteBasketCommand-->>DeleteBasketEndpoint: Throw UnauthorizedAccessException
+        DeleteBasketEndpoint-->>Client: 401 Unauthorized
+    else User authenticated
+        ClaimsPrincipal-->>DeleteBasketCommand: userId
+        DeleteBasketCommand->>BasketRepository: GetBasketAsync(userId)
+        BasketRepository->>Redis: Get basket data
+        
+        alt Basket not found
+            Redis-->>BasketRepository: null
+            BasketRepository-->>DeleteBasketCommand: null
+            DeleteBasketCommand-->>DeleteBasketEndpoint: Throw NotFoundException
+            DeleteBasketEndpoint-->>Client: 404 Not Found
+        else Basket exists
+            Redis-->>BasketRepository: Basket data
+            BasketRepository-->>DeleteBasketCommand: CustomerBasket
+            DeleteBasketCommand->>BasketRepository: DeleteBasketAsync(userId)
+            BasketRepository->>Redis: Remove basket data
+            Redis-->>BasketRepository: Operation result
+            BasketRepository-->>DeleteBasketCommand: true
+            DeleteBasketCommand-->>DeleteBasketEndpoint: Unit.Value
+            DeleteBasketEndpoint-->>Client: 204 No Content
+        end
+    end
+```
 
 ## Architecture
 
@@ -35,23 +88,56 @@ The delete operation is handled by the `DeleteBasketCommandHandler` which enforc
 
 ## DELETE `(/api/v1/baskets)`
 
-### Request Body
+### Request
 
-<SchemaViewer file="request-body.json" maxHeight="500" id="request-body" />
+No request body is required. The basket ID is automatically determined from the authenticated user's identity.
 
-### Payload Example
+### Example Usage
 
-```json title="Payload example"
-{
-  "id": "b1e1b3b4-1b1b-4b1b-9b1b-1b1b1b1b1b1b",
-  "quantity": 1
-}
+```bash
+curl -X DELETE https://api.bookworm.com/api/v1/baskets/{basketId} \
+  -H "Authorization: Bearer <your-jwt-token>"
 ```
 
 ### Responses
 
-#### <span className="text-orange-500">400 Bad Request</span>
-
-<SchemaViewer file="response-400.json" maxHeight="500" id="response-400" />
-
 #### <span className="text-green-500">204 No Content</span>
+
+Successful deletion of the basket.
+
+#### <span className="text-red-500">401 Unauthorized</span>
+
+Returned when:
+- No authentication token is provided
+- Invalid authentication token
+- Token has expired
+
+#### <span className="text-orange-500">404 Not Found</span>
+
+Returned when:
+- The basket does not exist for the authenticated user
+
+### Error Examples
+
+<Tabs>
+  <TabItem title="401 Unauthorized">
+    ```json title="401 Unauthorized"
+    {
+      "type": "https://tools.ietf.org/html/rfc7235#section-3.1",
+      "title": "Unauthorized",
+      "status": 401,
+      "detail": "User is not authenticated."
+    }
+    ```
+  </TabItem>
+  <TabItem title="404 Not Found">
+    ```json title="404 Not Found"
+    {
+      "type": "https://tools.ietf.org/html/rfc7231#section-6.5.4",
+      "title": "Not Found",
+      "status": 404,
+      "detail": "Basket with id {userId} not found."
+    }
+    ```
+  </TabItem>
+</Tabs>
