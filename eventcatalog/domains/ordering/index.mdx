@@ -34,16 +34,97 @@ The Ordering domain represents a strategic core domain within the BookWorm syste
 - **Aggregates and Entities**:
   - **Order** (aggregate root) - Controls the consistency boundaries for order operations
   - **OrderItem** (entity) - Books and quantities associated with an order
-  - **OrderStatus** (value object) - Immutable representation of order state
+  - **Buyer** (aggregate root) - Controls the consistency boundaries for buyer operations
   - **Address** (value object) - Immutable shipping details
+
+### Entity Relational Diagram
+
+```mermaid
+erDiagram
+  direction LR
+  ORDER {
+      Guid Id PK
+      int Status
+      string Note
+      Guid BuyerId FK
+      bool IsDeleted
+      DateTime CreatedAt
+      DateTime UpdatedAt
+      decimal TotalPrice
+  }
+
+  ORDER_ITEM {
+      Guid Id PK
+      Guid OrderId FK
+      Guid BookId
+      int Quantity
+      decimal Price
+  }
+
+  BUYER {
+      Guid Id PK
+      string Name
+      string Email
+      string Street
+      string City
+      string Province
+  }
+
+  ORDER ||--o{ ORDER_ITEM : contains
+  BUYER ||--o{ ORDER : places
+```
+
+#### <ins>Table: Order</ins>
+
+| Column | Type | Description |
+|--------|------|-------------|
+| Id | Guid | The unique identifier for the order |
+| Status | int | The status of the order |
+| Note | string | The note for the order |
+| BuyerId | Guid | The buyer id |
+| IsDeleted | bool | Whether the order is deleted |
+| CreatedAt | DateTime | The date and time the order was created |
+| UpdatedAt | DateTime | The date and time the order was updated |
+| TotalPrice | decimal | The total price of the order |
+
+#### <ins>Table: OrderItem</ins>
+
+| Column | Type | Description |
+|--------|------|-------------|
+| Id | Guid | The unique identifier for the order item |
+| OrderId | Guid | The order id |
+| BookId | Guid | The book id |
+| Quantity | int | The quantity of the book |
+| Price | decimal | The price of the book |
+
+#### <ins>Table: Buyer</ins>
+
+| Column | Type | Description |
+|--------|------|-------------|
+| Id | Guid | The unique identifier for the buyer |
+| Name | string | The name of the buyer |
+| Email | string | The email of the buyer |
+| Street | string | The street of the buyer |
+| City | string | The city of the buyer |
+| Province | string | The province of the buyer |
+
+:::info
+
+Lists of order status:
+
+- `New (0)`: Initial state when an order is first created
+- `Cancelled (1)`: Order has been cancelled by the buyer or system
+- `Completed (2)`: Order has been successfully fulfilled and delivered
+
+:::
 
 ### Domain Events
 
 The domain produces and consumes various events including:
 
-- `OrderCancelledEvent`
-- `OrderCompletedEvent`
-- `OrderPlacedEvent`
+- `OrderCancelledEvent`: Event raised when an order is cancelled
+- `OrderCompletedEvent`: Event raised when an order is completed
+- `OrderPlacedEvent`: Event raised when an order is placed
 
 ### Business Rules and Invariants
 
@@ -59,3 +140,31 @@ The domain handles complex business scenarios like partial fulfillment, order mo
 <NodeGraph />
 
 <MessageTable format="all" limit={4} />
+
+## Ordering process (sequence diagram)
+
+```mermaid
+sequenceDiagram
+    actor Customer
+    participant OrderingService
+    participant FinanceService
+    participant BasketService
+    participant NotificationService
+
+  Customer->>OrderingService: Place Order
+  OrderingService->>FinanceService: Create Order
+  FinanceService->>BasketService: Reserve Basket
+  alt Basket Reserved Successfully
+    BasketService->>FinanceService: Notify Basket Reserved
+    par
+      FinanceService->>OrderingService: Notify Order Placed
+    and
+      FinanceService->>NotificationService: Notify Customer
+    end
+    NotificationService-->>Customer: Order Placed Successfully
+  else Basket Reservation Failed
+    BasketService->>FinanceService: Notify Basket Reservation Failed
+    FinanceService->>OrderingService: Rollback Order Creation
+    OrderingService->>Customer: Order Placement Failed
+  end
+```

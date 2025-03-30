@@ -1,0 +1,18 @@
+{
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "The unique identifier for the author"
+      },
+      "name": {
+        "type": "string",
+        "description": "The full name of the author"
+      }
+    }
+  },
+  "isSchema": true
+}

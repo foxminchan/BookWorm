@@ -3,7 +3,6 @@ id: rating-service_POST_api_v1_feedbacks
 version: 1.0.0
 name: Create Feedback
 summary: Create feedback for a book
-schemaPath: ""
 badges:
   - content: POST
     textColor: green
@@ -19,25 +18,126 @@ owners:
 
 The `Create Feedback` endpoint allows users to submit reviews and ratings for books within the BookWorm ecosystem. This operation is part of the Rating domain's bounded context, responsible for managing user feedback and book evaluations.
 
-### Domain Significance
+## Implementation Details
+
+The Create Feedback operation is implemented using the CQRS pattern with a dedicated command handler:
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant CreateFeedbackEndpoint
+    participant CreateFeedbackValidator
+    participant CreateFeedbackCommand
+    participant FeedbackRepository
+    participant Feedback
+    participant FeedbackCreatedEvent
+    participant EventDispatcher
+    
+    Client->>CreateFeedbackEndpoint: POST /api/v1/feedbacks
+    CreateFeedbackEndpoint->>CreateFeedbackValidator: Validate command
+    alt Validation fails
+        CreateFeedbackValidator-->>CreateFeedbackEndpoint: Return validation errors
+        CreateFeedbackEndpoint-->>Client: 400 Bad Request
+    else Validation passes
+        CreateFeedbackEndpoint->>CreateFeedbackCommand: Send(command)
+        CreateFeedbackCommand->>Feedback: new Feedback(bookId, firstName, lastName, comment, rating)
+        Feedback->>Feedback: RegisterDomainEvent(new FeedbackCreatedEvent())
+        CreateFeedbackCommand->>FeedbackRepository: AddAsync(feedback)
+        CreateFeedbackCommand->>FeedbackRepository: SaveEntitiesAsync()
+        FeedbackRepository->>FeedbackCreatedEvent: Publish event
+        FeedbackCreatedEvent->>EventDispatcher: Dispatch to catalog
+        FeedbackRepository-->>CreateFeedbackCommand: Return feedback.Id
+        CreateFeedbackCommand-->>CreateFeedbackEndpoint: Return feedback.Id
+        CreateFeedbackEndpoint-->>Client: 201 Created with Location header
+    end
+```
+
+### Key Components
+
+1. **CreateFeedbackCommand**: Implements `ICommand<Guid>` to create a new feedback
+2. **CreateFeedbackHandler**: Processes the command using repository pattern
+3. **CreateFeedbackValidator**: Validates the command parameters using FluentValidation
+4. **CreateFeedbackEndpoint**: Maps the HTTP POST request to the command handler
+5. **Feedback Entity**: Domain entity that encapsulates feedback data and business rules
+6. **FeedbackCreatedEvent**: Domain event raised when feedback is created
+
+## Domain Context
 
 In our domain model, `Feedback` represents a core aggregate that encapsulates:
 
-- User evaluations (ratings on a defined scale)
-- Textual reviews with content moderation rules
-- Metadata about the feedback creator and timestamp
-- Relationships to the Catalog domain via BookId
+- Unique identifier (Id)
+- Book reference (BookId)
+- Customer information (FirstName, LastName)
+- Review content (Comment)
+- Rating score (numerical evaluation on a scale of 0-5)
 
-### Business Rules
+The Create Feedback command is a write operation that:
 
-- Users can only provide feedback for published books
-- Feedback must include either a rating, a review, or both
-- A user can submit only one feedback per book (subsequent submissions update existing feedback)
-- Ratings must fall within the designated scale (1-5 stars)
+1. Validates the input parameters
+2. Creates a new Feedback entity
+3. Registers a FeedbackCreatedEvent domain event
+4. Persists the entity to the repository
+5. Returns the unique identifier of the created feedback
 
-### Integration Points
+## Business Rules
 
-This endpoint interacts with the Catalog service to validate book existence and status before accepting feedback. The Rating service maintains its own projection of book data to minimize cross-service dependencies.
+- BookId must be provided and valid
+- FirstName and LastName are required
+- Comment is optional but has a maximum length constraint
+- Rating must be between 0 and 5 (inclusive)
+- The operation raises a domain event that can trigger side effects in other bounded contexts
+
+## Technical Implementation
+
+The implementation uses several patterns and techniques:
+
+1. **CQRS**: Separates the write model (command) from the read model (query)
+2. **Repository Pattern**: The `IFeedbackRepository` abstracts the data access layer
+3. **Domain-Driven Design**: Uses domain entities and events to encapsulate business logic
+4. **Minimal API**: Uses .NET's minimal API approach with endpoint mapping
+5. **FluentValidation**: Validates the command parameters
+
+The command execution flow:
+1. The endpoint receives the HTTP POST request with the feedback data
+2. The validator ensures all business rules are satisfied
+3. The command handler creates a new Feedback entity
+4. The entity registers a domain event
+5. The repository persists the entity and publishes domain events
+6. The endpoint returns a 201 Created response with the feedback ID and location header
+
+## Integration Points
+
+This endpoint interacts with other bounded contexts through domain events:
+
+- The Catalog service receives the FeedbackCreatedEvent to update book ratings
+- The UI components use this endpoint to submit user reviews
+- The Recommendation engine may analyze new feedback to update recommendations
+
+## Request Body
+
+```json title="Payload Example"
+{
+  "bookId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "firstName": "John",
+  "lastName": "Doe",
+  "comment": "Great book, highly recommended!",
+  "rating": 5
+}
+```
+
+## Example Usage
+
+```bash
+curl -X POST "https://api.bookworm.com/api/v1/feedbacks" \
+    -H "Content-Type: application/json" \
+    -d '{
+        "bookId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        "firstName": "John",
+        "lastName": "Doe",
+        "comment": "Great book, highly recommended!",
+        "rating": 5
+    }'
+```
 
 ## Architecture
 
@@ -45,20 +145,47 @@ This endpoint interacts with the Catalog service to validate book existence and 
 
 ## POST `(/api/v1/feedbacks)`
 
-### Parameters
+### Request Body
 
-- **BookId** (query) (required): The ID of the book to get feedback for
-- **PageIndex** (query): Number of items to return in a single page of results
-- **PageSize** (query): Number of items to return in a single page of results
-- **OrderBy** (query): Property to order results by
-- **IsDescending** (query): Whether to order results in descending order
+| Field     | Type   | Required | Description                                |
+|-----------|--------|----------|--------------------------------------------|
+| bookId    | Guid   | Yes      | The ID of the book to create feedback for  |
+| firstName | string | Yes      | The first name of the reviewer             |
+| lastName  | string | Yes      | The last name of the reviewer              |
+| comment   | string | No       | The feedback comment text                  |
+| rating    | int    | Yes      | The rating score (0-5)                     |
+
+<SchemaViewer file="request-body.json" maxHeight="500" id="request-body" />
+
+### Validation Rules
+
+- bookId must not be empty
+- firstName must not be empty
+- lastName must not be empty
+- comment must not exceed the maximum length
+- rating must be between 0 and 5 (inclusive)
 
 ### Responses
 
-#### <span className="text-green-500">200 OK</span>
+#### <span className="text-green-500">201 Created</span>
 
-<SchemaViewer file="response-200.json" maxHeight="500" id="response-200" />
+- Returns the ID of the newly created feedback.
+- Location header includes a versioned URL to the newly created resource
+- Format: `/api/v1/feedbacks/{guid}`
 
 #### <span className="text-orange-500">400 Bad Request</span>
 
-<SchemaViewer file="response-400.json" maxHeight="500" id="response-400" />
+Returned when validation fails for the provided parameters.
+
+```json title="400 Bad Request"
+{
+  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+  "title": "Bad Request",
+  "status": 400,
+  "errors": {
+    "bookId": ["The BookId field is required."],
+    "firstName": ["The FirstName field is required."],
+    "lastName": ["The LastName field is required."],
+    "rating": ["The Rating field must be between 0 and 5."]
+  }
+}

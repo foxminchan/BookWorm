@@ -3,14 +3,16 @@
   "properties": {
     "id": {
       "type": "string",
-      "format": "uuid"
+      "format": "uuid",
+      "description": "The unique identifier of the buyer"
     },
-    "status": {
-      "enum": ["New", "Cancelled", "Completed"]
+    "name": {
+      "type": "string",
+      "description": "The name of the buyer"
     },
-    "totalPrice": {
-      "type": "number",
-      "format": "double"
+    "address": {
+      "type": "string",
+      "description": "The address of the buyer"
     }
   },
   "isSchema": true

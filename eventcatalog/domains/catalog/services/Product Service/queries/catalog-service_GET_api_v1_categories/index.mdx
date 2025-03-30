@@ -3,7 +3,6 @@ id: catalog-service_GET_api_v1_categories
 version: 1.0.0
 name: List Categories
 summary: Get all categories
-schemaPath: request-body.json
 badges:
   - content: GET
     textColor: blue
@@ -27,20 +26,45 @@ This operation is idempotent and cacheable as it performs no state mutations.
 
 <NodeGraph />
 
-## GET `(/api/v1/categories)`
+## GET `/api/v1/categories`
+
+### Description
+
+Retrieves a list of all categories in the system. The response is paginated and includes basic category information.
 
 ### Parameters
 
-- **id** (path) (required)
+None. This endpoint does not require any parameters.
 
 ### Request Body
 
-<SchemaViewer file="request-body.json" maxHeight="500" id="request-body" />
+No request body is required for this endpoint.
+
+### Example Usage
+
+```bash
+curl -X GET 'https://api.bookworm.com/api/v1/categories'
+```
 
 ### Responses
 
-#### <span className="text-orange-500">400 Bad Request</span>
-
-<SchemaViewer file="response-400.json" maxHeight="500" id="response-400" />
-
 #### <span className="text-green-500">200 OK</span>
+
+Returns a list of categories.
+
+<SchemaViewer file="response-200.json" maxHeight="500" id="response-200" />
+
+### Example Response
+
+```json title="200 OK"
+[
+  {
+    "id": "cat_123",
+    "name": "Fiction",
+  },
+  {
+    "id": "cat_456",
+    "name": "Science Fiction",
+  }
+]
+```

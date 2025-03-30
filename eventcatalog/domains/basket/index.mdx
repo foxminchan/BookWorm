@@ -43,3 +43,54 @@ The domain uses an Active Record pattern for simplicity and performance, as bask
 <NodeGraph />
 
 <MessageTable format="all" limit={4} />
+
+## Data Model
+
+The Basket domain uses a simple data model optimized for Redis storage with the following structure:
+
+### Customer Basket
+
+```json title="Basket"
+{
+  "id": "string",
+  "items": [
+    {
+      "id": "string",
+      "quantity": "number"
+    }
+  ],
+  "createdAt": "datetime",
+  "updatedAt": "datetime"
+}
+```
+
+### Storage Details
+
+- **Storage Type**: Redis Hash
+- **Key Pattern**: `/basket`
+- **Hash Field**: Customer ID
+- **Value**: Serialized CustomerBasket object
+
+### Key Properties
+
+- `id`: Unique identifier for the customer's basket
+- `items`: Collection of basket items
+- `createdAt`: Timestamp of basket creation
+- `updatedAt`: Timestamp of last update
+
+### BasketItem Properties
+
+- `id`: Product identifier
+- `quantity`: Number of items (must be greater than 0)
+
+### Validation Rules
+
+- Customer ID cannot be null
+- Basket must contain at least one item
+- Item quantity must be greater than zero
+
+### Serialization
+
+- Uses System.Text.Json with camelCase naming policy
+- Case-insensitive property matching
+- Optimized serialization context for performance
