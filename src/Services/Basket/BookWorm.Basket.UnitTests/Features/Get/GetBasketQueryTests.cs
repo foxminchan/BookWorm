@@ -7,6 +7,7 @@ using BookWorm.Basket.UnitTests.Fakers;
 using BookWorm.Catalog.Grpc.Services;
 using BookWorm.ServiceDefaults.Keycloak;
 using BookWorm.SharedKernel.Exceptions;
+using BookWorm.SharedKernel.Query;
 
 namespace BookWorm.Basket.UnitTests.Features.Get;
 
@@ -33,6 +34,18 @@ public static class GetBasketQueryTests
             _claimsPrincipalMock.Setup(x => x.FindFirst(KeycloakClaimTypes.Subject)).Returns(claim);
 
             _handler = new(_repositoryMock.Object, _claimsPrincipalMock.Object);
+        }
+
+        [Test]
+        public void GivenGetBasketQuery_WhenCreating_ThenShouldBeOfCorrectType()
+        {
+            // Act
+            var query = new GetBasketQuery();
+
+            // Assert
+            query.ShouldNotBeNull();
+            query.ShouldBeOfType<GetBasketQuery>();
+            query.ShouldBeAssignableTo<IQuery<CustomerBasketDto>>();
         }
 
         [Test]

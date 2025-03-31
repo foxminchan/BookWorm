@@ -23,7 +23,7 @@ public sealed class UpdatePublisherCommandTests
     public async Task GivenExistingPublisher_WhenHandlingUpdatePublisherCommand_ThenShouldUpdateNameAndSaveChanges()
     {
         // Arrange
-        var publisher = _faker.Generate(1).First();
+        var publisher = _faker.Generate(1)[0];
         var publisherId = publisher.Id;
         const string newName = "Updated Publisher Name";
 

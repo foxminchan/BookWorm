@@ -7,9 +7,6 @@ param location string
 @description('The resource group name for the AKS node pools')
 param nodeResourceGroup string
 
-@description('The name of the ACR to attach to the AKS cluster')
-param acrName string
-
 @description('The VM size for the default node pool')
 param nodeVmSize string = 'Standard_B2s'
 
@@ -18,10 +15,6 @@ param tags object = {
   environment: 'dev'
   application: 'BookWorm'
   service: 'aks'
-}
-
-resource acr 'Microsoft.ContainerRegistry/registries@2021-12-01-preview' existing = {
-  name: acrName
 }
 
 resource aksCluster 'Microsoft.ContainerService/managedClusters@2022-05-02-preview' = {
@@ -45,20 +38,6 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2022-05-02-previ
         mode: 'System'
       }
     ]
-  }
-}
-
-// Grant AKS access to ACR
-resource aksAcrRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  scope: acr
-  name: guid(aksCluster.id, acr.id, 'acrpull')
-  properties: {
-    roleDefinitionId: subscriptionResourceId(
-      'Microsoft.Authorization/roleDefinitions',
-      '7f951dda-4ed3-4680-a7ca-43fe172d538d'
-    ) // AcrPull role
-    principalId: aksCluster.identity.principalId
-    principalType: 'ServicePrincipal'
   }
 }
 

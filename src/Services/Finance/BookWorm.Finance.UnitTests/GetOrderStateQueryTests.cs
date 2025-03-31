@@ -1,4 +1,5 @@
 ﻿using BookWorm.Finance.Feature;
+using BookWorm.SharedKernel.Query;
 using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Finance.UnitTests;
@@ -12,6 +13,18 @@ public sealed class GetOrderStateQueryTests
     {
         _loggerFactoryMock = new();
         _handler = new(_loggerFactoryMock.Object);
+    }
+
+    [Test]
+    public void GivenGetOrderStateQuery_WhenCreating_ThenShouldBeOfCorrectType()
+    {
+        // Act
+        var query = new GetOrderStateQuery();
+
+        // Assert
+        query.ShouldNotBeNull();
+        query.ShouldBeOfType<GetOrderStateQuery>();
+        query.ShouldBeAssignableTo<IQuery<string>>();
     }
 
     [Test]

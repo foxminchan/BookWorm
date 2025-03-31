@@ -1,6 +1,8 @@
 ﻿using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
+using BookWorm.Catalog.Features.Categories;
 using BookWorm.Catalog.Features.Categories.List;
 using BookWorm.Catalog.UnitTests.Fakers;
+using BookWorm.SharedKernel.Query;
 
 namespace BookWorm.Catalog.UnitTests.Features.Categories.List;
 
@@ -15,6 +17,18 @@ public sealed class ListCategoryQueryTests
         _repositoryMock = new();
         _handler = new(_repositoryMock.Object);
         _faker = new();
+    }
+
+    [Test]
+    public void GivenListCategoriesQuery_WhenCreating_ThenShouldBeOfCorrectType()
+    {
+        // Act
+        var query = new ListCategoriesQuery();
+
+        // Assert
+        query.ShouldNotBeNull();
+        query.ShouldBeOfType<ListCategoriesQuery>();
+        query.ShouldBeAssignableTo<IQuery<IReadOnlyList<CategoryDto>>>();
     }
 
     [Test]

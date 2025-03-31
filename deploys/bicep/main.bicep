@@ -7,7 +7,6 @@ param location string = resourceGroup().location
 // Resource naming variables
 var resourceGroupName = 'rg-${environmentName}'
 var nodeResourceGroupName = 'rg-${environmentName}-mc'
-var acrName = 'acr${replace(environmentName, '-', '')}'
 var aksClusterName = 'aks-${environmentName}'
 
 // Deploy AKS Cluster
@@ -17,7 +16,6 @@ module aksModule 'modules/aks.bicep' = {
     clusterName: aksClusterName
     location: location
     nodeResourceGroup: nodeResourceGroupName
-    acrName: acrName
   }
 }
 

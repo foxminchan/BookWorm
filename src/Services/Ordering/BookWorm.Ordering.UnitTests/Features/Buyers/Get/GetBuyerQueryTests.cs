@@ -12,7 +12,7 @@ public sealed class GetBuyerQueryTests
 {
     private readonly Mock<IBuyerRepository> _buyerRepositoryMock = new();
     private readonly Guid _otherBuyerId = Guid.CreateVersion7();
-    private readonly Buyer _testBuyer = new BuyerFaker().Generate().First();
+    private readonly Buyer _testBuyer = new BuyerFaker().Generate()[0];
     private readonly Guid _testBuyerId = Guid.CreateVersion7();
 
     [Test]

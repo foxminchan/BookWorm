@@ -1,4 +1,5 @@
 ﻿using BookWorm.Catalog.Features.Chat;
+using BookWorm.Catalog.Features.Chat.Stream;
 using BookWorm.Catalog.Infrastructure.ConversationState.Abstractions;
 using BookWorm.Catalog.Infrastructure.Services;
 
@@ -245,5 +246,128 @@ public sealed class ChatStreamHubTests
         // Assert
         result.ShouldBe(expectedMessageId);
         _chatStreamingMock.Verify(x => x.AddStreamingMessage(prompt.Text), Times.Once);
+    }
+
+    [Test]
+    public async Task GivenValidParameters_WhenStreaming_ThenShouldForwardToStreamingService()
+    {
+        // Arrange
+        var hub = new ChatStreamHub();
+        var streamContext = new StreamContext(
+            _messageFragments[0].Id,
+            _messageFragments[1].FragmentId
+        );
+        var cancellationToken = CancellationToken.None;
+
+        _chatStreamingMock
+            .Setup(x =>
+                x.GetMessageStream(
+                    _conversationId,
+                    streamContext.LastMessageId,
+                    streamContext.LastFragmentId,
+                    cancellationToken
+                )
+            )
+            .Returns(_messageFragments.ToAsyncEnumerable());
+
+        // Act
+        var result = await hub.Stream(
+                _conversationId,
+                streamContext,
+                _chatStreamingMock.Object,
+                cancellationToken
+            )
+            .ToListAsync(cancellationToken);
+
+        // Assert
+        result.Count.ShouldBe(3);
+        result.ShouldBe(_messageFragments);
+        _chatStreamingMock.Verify(
+            x =>
+                x.GetMessageStream(
+                    _conversationId,
+                    streamContext.LastMessageId,
+                    streamContext.LastFragmentId,
+                    cancellationToken
+                ),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task GivenCancellationRequested_WhenStreaming_ThenShouldPropagateCancellation()
+    {
+        // Arrange
+        var hub = new ChatStreamHub();
+        var streamContext = new StreamContext(
+            _messageFragments[0].Id,
+            _messageFragments[1].FragmentId
+        );
+        var cancellationTokenSource = new CancellationTokenSource();
+        await cancellationTokenSource.CancelAsync();
+
+        _chatStreamingMock
+            .Setup(x =>
+                x.GetMessageStream(
+                    _conversationId,
+                    streamContext.LastMessageId,
+                    streamContext.LastFragmentId,
+                    cancellationTokenSource.Token
+                )
+            )
+            .Throws<OperationCanceledException>();
+
+        // Act
+        Func<Task> act = async () =>
+            await hub.Stream(
+                    _conversationId,
+                    streamContext,
+                    _chatStreamingMock.Object,
+                    cancellationTokenSource.Token
+                )
+                .ToListAsync(cancellationTokenSource.Token);
+
+        // Assert
+        await act.ShouldThrowAsync<OperationCanceledException>();
+        _chatStreamingMock.Verify(
+            x =>
+                x.GetMessageStream(
+                    _conversationId,
+                    streamContext.LastMessageId,
+                    streamContext.LastFragmentId,
+                    cancellationTokenSource.Token
+                ),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task GivenEmptyStreamContext_WhenStreaming_ThenShouldUseNullParameters()
+    {
+        // Arrange
+        var hub = new ChatStreamHub();
+        var streamContext = new StreamContext(null, null);
+        var cancellationToken = CancellationToken.None;
+
+        _chatStreamingMock
+            .Setup(x => x.GetMessageStream(_conversationId, null, null, cancellationToken))
+            .Returns(_messageFragments.ToAsyncEnumerable());
+
+        // Act
+        var result = await hub.Stream(
+                _conversationId,
+                streamContext,
+                _chatStreamingMock.Object,
+                cancellationToken
+            )
+            .ToListAsync(cancellationToken);
+
+        // Assert
+        result.Count.ShouldBe(3);
+        result.ShouldBe(_messageFragments);
+        _chatStreamingMock.Verify(
+            x => x.GetMessageStream(_conversationId, null, null, cancellationToken),
+            Times.Once
+        );
     }
 }
