@@ -36,6 +36,14 @@ export default {
       id: "/chat",
       visible: false,
     },
+    {
+      id: "/docs/custom",
+      visible: false,
+    },
+    {
+      id: "/pro",
+      visible: false,
+    },
   ],
   generators: [
     [
