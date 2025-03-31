@@ -34,7 +34,7 @@ public sealed class GetOrderQueryTests
 
         // Create a sample order using the faker
         var orderFaker = new OrderFaker();
-        _order = orderFaker.Generate().First();
+        _order = orderFaker.Generate()[0];
 
         // Replace with our specific IDs for testing
         _order.GetType().GetProperty("Id")?.SetValue(_order, _id);
@@ -88,6 +88,7 @@ public sealed class GetOrderQueryTests
         result.Id.ShouldBe(_id);
         result.Date.ShouldBe(_order.CreatedAt);
         result.Total.ShouldBe(_order.TotalPrice);
+        result.Status.ShouldBe(_order.Status);
         _orderRepositoryMock.Verify(
             r => r.GetByIdAsync(_id, It.IsAny<CancellationToken>()),
             Times.Never

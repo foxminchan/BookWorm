@@ -14,7 +14,7 @@ public sealed class DeleteFeedbackCommandTests
 
     public DeleteFeedbackCommandTests()
     {
-        _feedback = new FeedbackFaker().Generate().First();
+        _feedback = new FeedbackFaker().Generate()[0];
         _repositoryMock = new();
         _handler = new(_repositoryMock.Object);
     }

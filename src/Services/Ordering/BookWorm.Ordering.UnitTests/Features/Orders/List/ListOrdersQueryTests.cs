@@ -27,7 +27,7 @@ public sealed class ListOrdersQueryTests
         _claimsPrincipalMock.Setup(x => x.FindFirst(KeycloakClaimTypes.Subject)).Returns(claim);
         _claimsPrincipalMock
             .Setup(x => x.FindAll(ClaimTypes.Role))
-            .Returns([new(ClaimTypes.Role, "User")]);
+            .Returns([new(ClaimTypes.Role, Authorization.Roles.User)]);
     }
 
     [Test]
@@ -95,7 +95,7 @@ public sealed class ListOrdersQueryTests
     public async Task GivenStatusFilter_WhenListingOrders_ThenShouldApplyStatusFilter()
     {
         // Arrange
-        var status = Status.Completed;
+        const Status status = Status.Completed;
         var query = new ListOrdersQuery(1, 10, status);
         var handler = new ListOrdersHandler(_repositoryMock.Object, _claimsPrincipalMock.Object);
 

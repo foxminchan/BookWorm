@@ -23,7 +23,7 @@ public sealed class DeleteBookCommandTests
     public async Task GivenExistingBookId_WhenHandlingDeleteBookCommand_ThenShouldDeleteBookAndSaveChanges()
     {
         // Arrange
-        var book = _faker.Generate(1).First();
+        var book = _faker.Generate(1)[0];
         var command = new DeleteBookCommand(book.Id);
 
         _repositoryMock

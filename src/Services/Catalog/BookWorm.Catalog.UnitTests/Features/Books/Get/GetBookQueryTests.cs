@@ -25,7 +25,7 @@ public sealed class GetBookQueryTests
     {
         // Arrange
         var bookFaker = new BookFaker();
-        var book = bookFaker.Generate(1).First();
+        var book = bookFaker.Generate(1)[0];
         var expectedBookDto = new BookDto(
             book.Id,
             book.Name,

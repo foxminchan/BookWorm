@@ -15,7 +15,7 @@ public sealed class DeleteOrderCommandTests
 
     public DeleteOrderCommandTests()
     {
-        _order = new OrderFaker().Generate().First();
+        _order = new OrderFaker().Generate()[0];
         _orderId = _order.Id;
 
         _repositoryMock = new();

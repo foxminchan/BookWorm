@@ -13,6 +13,6 @@ public sealed class CreateBuyerCommandFaker : Faker<CreateBuyerCommand>
 
     public CreateBuyerCommand Generate()
     {
-        return Generate(1).First();
+        return Generate(1)[0];
     }
 }

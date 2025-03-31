@@ -89,7 +89,7 @@ public sealed class CreateBasketCommandTests
     {
         // Arrange
         var command = _faker.Generate();
-        var basket = new CustomerBasketFaker().Generate(1).First();
+        var basket = new CustomerBasketFaker().Generate(1)[0];
 
         _mockBasketRepository
             .Setup(x => x.UpdateBasketAsync(It.IsAny<CustomerBasket>()))

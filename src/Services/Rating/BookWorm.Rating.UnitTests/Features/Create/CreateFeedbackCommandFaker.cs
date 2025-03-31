@@ -19,6 +19,6 @@ public sealed class CreateFeedbackCommandFaker : Faker<CreateFeedbackCommand>
 
     public CreateFeedbackCommand Generate()
     {
-        return Generate(1).First();
+        return Generate(1)[0];
     }
 }
