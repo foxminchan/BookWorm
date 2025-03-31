@@ -1,6 +1,8 @@
 ﻿using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
+using BookWorm.Catalog.Features.Authors;
 using BookWorm.Catalog.Features.Authors.List;
 using BookWorm.Catalog.UnitTests.Fakers;
+using BookWorm.SharedKernel.Query;
 
 namespace BookWorm.Catalog.UnitTests.Features.Authors.List;
 
@@ -15,6 +17,18 @@ public sealed class ListAuthorsQueryTests
         _repositoryMock = new();
         _handler = new(_repositoryMock.Object);
         _faker = new();
+    }
+
+    [Test]
+    public void GivenListAuthorsQuery_WhenCreating_ThenShouldBeOfCorrectType()
+    {
+        // Act
+        var query = new ListAuthorsQuery();
+
+        // Assert
+        query.ShouldNotBeNull();
+        query.ShouldBeOfType<ListAuthorsQuery>();
+        query.ShouldBeAssignableTo<IQuery<IReadOnlyList<AuthorDto>>>();
     }
 
     [Test]

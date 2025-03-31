@@ -22,6 +22,6 @@ public sealed class CreateBookCommandFaker : Faker<CreateBookCommand>
 
     public CreateBookCommand Generate()
     {
-        return Generate(1).First();
+        return Generate(1)[0];
     }
 }

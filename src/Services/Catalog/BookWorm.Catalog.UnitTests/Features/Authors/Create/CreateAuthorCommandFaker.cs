@@ -11,6 +11,6 @@ public sealed class CreateAuthorCommandFaker : Faker<CreateAuthorCommand>
 
     public CreateAuthorCommand Generate()
     {
-        return Generate(1).First();
+        return Generate(1)[0];
     }
 }

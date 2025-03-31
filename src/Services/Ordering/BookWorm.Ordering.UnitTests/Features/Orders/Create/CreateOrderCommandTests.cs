@@ -8,6 +8,7 @@ using BookWorm.Ordering.Grpc.Services.Book;
 using BookWorm.Ordering.Helpers;
 using BookWorm.Ordering.Infrastructure.Services;
 using BookWorm.ServiceDefaults.Keycloak;
+using BookWorm.SharedKernel.Command;
 using BookWorm.SharedKernel.Exceptions;
 using Medallion.Threading;
 
@@ -185,12 +186,24 @@ public sealed class CreateOrderCommandTests
         }
 
         [Test]
+        public void GivenCreateOrderCommand_WhenCreating_ThenShouldBeOfCorrectType()
+        {
+            // Act
+            var command = new CreateOrderCommand();
+
+            // Assert
+            command.ShouldNotBeNull();
+            command.ShouldBeOfType<CreateOrderCommand>();
+            command.ShouldBeAssignableTo<ICommand<Guid>>();
+        }
+
+        [Test]
         public async Task GivenUnauthenticatedUser_WhenHandlingCreateOrder_ThenShouldThrowUnauthorizedException()
         {
             // Arrange
             _claimsPrincipalMock
                 .Setup(x => x.FindFirst(KeycloakClaimTypes.Subject))
-                .Returns((Claim)null!);
+                .Returns((Claim)default!);
 
             // Act
             var act = async () => await _handler.Handle(_command, CancellationToken.None);

@@ -1,4 +1,7 @@
-﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
+﻿using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
 using BookWorm.Catalog.Domain.Events;
 using BookWorm.Catalog.Domain.Exceptions;
 
@@ -346,5 +349,37 @@ public sealed class BookAggregatorTests
                 $"Book should contain author with ID {authorId}"
             );
         }
+    }
+
+    [Test]
+    public void GivenBookAndBookAuthor_WhenInitialized_ThenNavigationPropertiesShouldBeSet()
+    {
+        // Arrange
+        var book = new Book(
+            "Test Book",
+            "Test Description",
+            "test.jpg",
+            19.99m,
+            15.99m,
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7()]
+        );
+
+        var bookAuthor = new BookAuthor(Guid.CreateVersion7());
+
+        // Act
+        // Note: In a real scenario, these would be set by EF Core
+        typeof(Book).GetProperty("Category")?.SetValue(book, new Category());
+        typeof(Book).GetProperty("Publisher")?.SetValue(book, new Publisher());
+        typeof(BookAuthor).GetProperty("Author")?.SetValue(bookAuthor, new Author());
+        typeof(BookAuthor).GetProperty("Book")?.SetValue(bookAuthor, book);
+
+        // Assert
+        book.Category.ShouldNotBeNull();
+        book.Publisher.ShouldNotBeNull();
+        bookAuthor.Author.ShouldNotBeNull();
+        bookAuthor.Book.ShouldNotBeNull();
+        bookAuthor.Book.ShouldBe(book);
     }
 }
