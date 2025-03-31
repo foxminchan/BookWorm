@@ -1,4 +1,5 @@
 ﻿using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
+using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Domain.Exceptions;
 
 namespace BookWorm.Ordering.UnitTests.Domain;
@@ -150,5 +151,26 @@ public sealed class BuyerAggregateTests
 
         // Act & Assert
         address1.ShouldNotBe(address2);
+    }
+
+    [Test]
+    public void GivenNewBuyer_WhenGettingOrders_ThenShouldReturnEmptyReadOnlyCollection()
+    {
+        // Arrange
+        var buyer = new Buyer(
+            Guid.CreateVersion7(),
+            "John Doe",
+            "123 Main St",
+            "Bookville",
+            "Readland"
+        );
+
+        // Act
+        var orders = buyer.Orders;
+
+        // Assert
+        orders.ShouldNotBeNull();
+        orders.ShouldBeEmpty();
+        orders.ShouldBeAssignableTo<IReadOnlyCollection<Order>>();
     }
 }

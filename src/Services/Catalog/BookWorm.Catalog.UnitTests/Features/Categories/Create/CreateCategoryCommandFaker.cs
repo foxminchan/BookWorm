@@ -11,6 +11,6 @@ public sealed class CreateCategoryCommandFaker : Faker<CreateCategoryCommand>
 
     public CreateCategoryCommand Generate()
     {
-        return Generate(1).First();
+        return Generate(1)[0];
     }
 }

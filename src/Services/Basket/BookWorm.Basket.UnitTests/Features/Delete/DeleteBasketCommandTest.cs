@@ -3,6 +3,7 @@ using BookWorm.Basket.Domain;
 using BookWorm.Basket.Features.Delete;
 using BookWorm.Basket.UnitTests.Fakers;
 using BookWorm.ServiceDefaults.Keycloak;
+using BookWorm.SharedKernel.Command;
 using BookWorm.SharedKernel.Exceptions;
 using MediatR;
 
@@ -19,7 +20,7 @@ public sealed class DeleteBasketCommandTest
     public DeleteBasketCommandTest()
     {
         _userId = Guid.CreateVersion7().ToString();
-        _customerBasket = new CustomerBasketFaker().Generate().First();
+        _customerBasket = new CustomerBasketFaker().Generate()[0];
 
         _repositoryMock = new();
         _claimsPrincipalMock = new();
@@ -30,6 +31,18 @@ public sealed class DeleteBasketCommandTest
         _claimsPrincipalMock.Setup(x => x.FindFirst(KeycloakClaimTypes.Subject)).Returns(claim);
 
         _handler = new(_repositoryMock.Object, _claimsPrincipalMock.Object);
+    }
+
+    [Test]
+    public void GivenDeleteBasketCommand_WhenCreating_ThenShouldBeOfCorrectType()
+    {
+        // Act
+        var command = new DeleteBasketCommand();
+
+        // Assert
+        command.ShouldNotBeNull();
+        command.ShouldBeOfType<DeleteBasketCommand>();
+        command.ShouldBeAssignableTo<ICommand<Unit>>();
     }
 
     [Test]

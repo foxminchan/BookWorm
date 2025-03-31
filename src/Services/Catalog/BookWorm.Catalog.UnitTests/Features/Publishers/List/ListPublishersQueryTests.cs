@@ -1,6 +1,8 @@
 ﻿using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
+using BookWorm.Catalog.Features.Publishers;
 using BookWorm.Catalog.Features.Publishers.List;
 using BookWorm.Catalog.UnitTests.Fakers;
+using BookWorm.SharedKernel.Query;
 
 namespace BookWorm.Catalog.UnitTests.Features.Publishers.List;
 
@@ -15,6 +17,18 @@ public sealed class ListPublishersQueryTests
         _repositoryMock = new();
         _handler = new(_repositoryMock.Object);
         _faker = new();
+    }
+
+    [Test]
+    public void GivenListPublishersQuery_WhenCreating_ThenShouldBeOfCorrectType()
+    {
+        // Act
+        var query = new ListPublishersQuery();
+
+        // Assert
+        query.ShouldNotBeNull();
+        query.ShouldBeOfType<ListPublishersQuery>();
+        query.ShouldBeAssignableTo<IQuery<IReadOnlyList<PublisherDto>>>();
     }
 
     [Test]

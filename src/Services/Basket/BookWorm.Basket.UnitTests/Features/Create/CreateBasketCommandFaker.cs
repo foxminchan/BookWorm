@@ -21,6 +21,6 @@ public sealed class CreateBasketCommandFaker : Faker<CreateBasketCommand>
 
     public CreateBasketCommand Generate()
     {
-        return Generate(1).First();
+        return Generate(1)[0];
     }
 }

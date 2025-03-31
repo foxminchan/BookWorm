@@ -27,6 +27,6 @@ public sealed class ListBooksQueryFaker : Faker<ListBooksQuery>
 
     public ListBooksQuery Generate()
     {
-        return Generate(1).First();
+        return Generate(1)[0];
     }
 }

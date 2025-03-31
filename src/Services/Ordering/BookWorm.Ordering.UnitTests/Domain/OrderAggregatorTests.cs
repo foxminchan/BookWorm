@@ -1,4 +1,5 @@
 ﻿using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
+using BookWorm.Ordering.Domain.Events;
 using BookWorm.Ordering.Domain.Exceptions;
 
 namespace BookWorm.Ordering.UnitTests.Domain;
@@ -119,5 +120,53 @@ public sealed class OrderAggregatorTests
 
         // Assert
         order.Status.ShouldBe(Status.Completed);
+    }
+
+    [Test]
+    public void GivenNewOrder_WhenCreating_ThenShouldRegisterOrderPlacedEvent()
+    {
+        // Arrange
+        var buyerId = Guid.CreateVersion7();
+        const string note = "Test order";
+        var orderItems = new List<OrderItem> { new(Guid.CreateVersion7(), 1, 29.99m) };
+
+        // Act
+        var order = new Order(buyerId, note, orderItems);
+
+        // Assert
+        order.DomainEvents.ShouldNotBeEmpty();
+        order.DomainEvents.First().ShouldBeOfType<OrderPlacedEvent>();
+        var orderPlacedEvent = (OrderPlacedEvent)order.DomainEvents.First();
+        orderPlacedEvent.Order.ShouldBe(order);
+    }
+
+    [Test]
+    public void GivenOrderWithItems_WhenCreating_ThenShouldSetOrderItemNavigationProperties()
+    {
+        // Arrange
+        var bookId = Guid.CreateVersion7();
+        const int quantity = 1;
+        const decimal price = 29.99m;
+
+        // Act
+        var orderItem = new OrderItem(bookId, quantity, price);
+
+        // Assert
+        orderItem.Order.ShouldBeNull();
+        orderItem.OrderId.ShouldBe(Guid.Empty);
+    }
+
+    [Test]
+    public void GivenOrder_WhenCreating_ThenShouldInitializeBuyerProperty()
+    {
+        // Arrange
+        var buyerId = Guid.CreateVersion7();
+
+        // Act
+        var order = new Order(buyerId, null, []);
+
+        // Assert
+        order.Buyer.ShouldBeNull();
+        order.BuyerId.ShouldBe(buyerId);
     }
 }

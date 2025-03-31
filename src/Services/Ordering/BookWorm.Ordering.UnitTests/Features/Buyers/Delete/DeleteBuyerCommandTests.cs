@@ -15,7 +15,7 @@ public sealed class DeleteBuyerCommandTests
 
     public DeleteBuyerCommandTests()
     {
-        _buyer = new BuyerFaker().Generate().First();
+        _buyer = new BuyerFaker().Generate()[0];
         _buyerId = _buyer.Id;
 
         _repositoryMock = new();

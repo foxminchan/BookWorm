@@ -18,7 +18,7 @@ public sealed class UpdateBasketCommandTests
     public UpdateBasketCommandTests()
     {
         _userId = Guid.CreateVersion7().ToString();
-        _customerBasket = new CustomerBasketFaker().Generate().First();
+        _customerBasket = new CustomerBasketFaker().Generate()[0];
         _repositoryMock = new();
         Mock<ClaimsPrincipal> claimsPrincipalMock = new();
 
