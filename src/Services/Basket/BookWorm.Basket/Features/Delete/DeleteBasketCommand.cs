@@ -9,19 +9,13 @@ public sealed class DeleteBasketHandler(
 {
     public async Task<Unit> Handle(DeleteBasketCommand request, CancellationToken cancellationToken)
     {
-        var userId = claimsPrincipal.GetClaimValue(KeycloakClaimTypes.Subject);
+        var sub = claimsPrincipal.GetClaimValue(KeycloakClaimTypes.Subject);
 
-        if (string.IsNullOrWhiteSpace(userId))
-        {
-            throw new UnauthorizedAccessException("User is not authenticated.");
-        }
+        var userId = Guard.Against.NotAuthenticated(sub);
 
         var basket = await basketRepository.GetBasketAsync(userId);
 
-        if (basket is null)
-        {
-            throw new NotFoundException($"Basket with id {userId} not found.");
-        }
+        Guard.Against.NotFound(basket, $"Basket with id {userId} not found.");
 
         await basketRepository.DeleteBasketAsync(userId);
 

@@ -12,10 +12,7 @@ public sealed class UpdatePublisherHandler(IPublisherRepository repository)
     {
         var publisher = await repository.GetByIdAsync(request.Id, cancellationToken);
 
-        if (publisher is null)
-        {
-            throw new NotFoundException($"Publisher with id {request.Id} not found.");
-        }
+        Guard.Against.NotFound(publisher, $"Publisher with id {request.Id} not found.");
 
         publisher.UpdateName(request.Name);
 

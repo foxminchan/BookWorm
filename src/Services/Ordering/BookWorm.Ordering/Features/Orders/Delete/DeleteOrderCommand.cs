@@ -9,12 +9,10 @@ public sealed class DeleteOrderHandler(IOrderRepository repository)
     {
         var order = await repository.GetByIdAsync(request.Id, cancellationToken);
 
-        if (order is null)
-        {
-            throw new NotFoundException($"Order with id {request.Id} not found.");
-        }
+        Guard.Against.NotFound(order, $"Order with id {request.Id} not found.");
 
         order.Delete();
+
         await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
 
         return Unit.Value;

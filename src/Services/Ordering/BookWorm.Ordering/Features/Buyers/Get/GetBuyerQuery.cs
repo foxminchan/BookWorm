@@ -14,22 +14,13 @@ public sealed class GetBuyerHandler(
 {
     public async Task<BuyerDto> Handle(GetBuyerQuery request, CancellationToken cancellationToken)
     {
-        Guid buyerId;
-        if (claimsPrincipal.GetRoles().Contains(Authorization.Roles.Admin))
-        {
-            buyerId = request.Id;
-        }
-        else
-        {
-            buyerId = claimsPrincipal.GetClaimValue(KeycloakClaimTypes.Subject).ToBuyerId();
-        }
+        var buyerId = claimsPrincipal.GetRoles().Contains(Authorization.Roles.Admin)
+            ? request.Id
+            : claimsPrincipal.GetClaimValue(KeycloakClaimTypes.Subject).ToBuyerId();
 
         var result = await buyerRepository.GetByIdAsync(buyerId, cancellationToken);
 
-        if (result is null)
-        {
-            throw new NotFoundException($"Buyer with id {buyerId} not found");
-        }
+        Guard.Against.NotFound(result, $"Buyer with id {buyerId} not found.");
 
         return result.ToBuyerDto();
     }

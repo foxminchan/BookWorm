@@ -14,17 +14,11 @@ public sealed class CreateBasketHandler(
         CancellationToken cancellationToken
     )
     {
-        var userId = claimsPrincipal.GetClaimValue(KeycloakClaimTypes.Subject);
+        var sub = claimsPrincipal.GetClaimValue(KeycloakClaimTypes.Subject);
 
-        if (string.IsNullOrWhiteSpace(userId))
-        {
-            throw new UnauthorizedAccessException("User is not authenticated.");
-        }
+        var userId = Guard.Against.NotAuthenticated(sub);
 
-        var basket = new CustomerBasket(
-            userId,
-            [.. request.Items.Select(i => new BasketItem(i.Id, i.Quantity))]
-        );
+        var basket = new CustomerBasket(userId, request.Items.ToBasketItem());
 
         var result = await basketRepository.UpdateBasketAsync(basket);
 
