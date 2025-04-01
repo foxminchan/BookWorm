@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Rating.Features.Delete;
+﻿using BookWorm.SharedKernel.Guards;
+
+namespace BookWorm.Rating.Features.Delete;
 
 public sealed record DeleteFeedbackCommand(Guid Id) : ICommand;
 
@@ -11,10 +13,8 @@ public sealed class DeleteFeedbackHandler(IFeedbackRepository repository)
     )
     {
         var feedback = await repository.GetByIdAsync(request.Id, cancellationToken);
-        if (feedback is null)
-        {
-            throw new NotFoundException($"Feedback with ID {request.Id} not found.");
-        }
+
+        Guard.Against.NotFound(feedback, $"Feedback with id {request.Id} not found.");
 
         feedback.Remove();
 

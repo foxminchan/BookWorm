@@ -9,10 +9,7 @@ public sealed class DeleteBookHandler(IBookRepository repository)
     {
         var book = await repository.GetByIdAsync(request.Id, cancellationToken);
 
-        if (book is null)
-        {
-            throw new NotFoundException($"Book with id {request.Id} not found.");
-        }
+        Guard.Against.NotFound(book, $"Book with id {request.Id} not found.");
 
         book.Delete();
 

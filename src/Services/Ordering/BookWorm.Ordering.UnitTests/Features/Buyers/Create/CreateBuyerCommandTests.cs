@@ -108,7 +108,7 @@ public sealed class CreateBuyerCommandTests
 
         // Assert
         var exception = await act.ShouldThrowAsync<UnauthorizedAccessException>();
-        exception.Message.ShouldBe("User is not authenticated");
+        exception.Message.ShouldBe("User is not authenticated.");
         _buyerRepositoryMock.Verify(
             x => x.AddAsync(It.IsAny<Buyer>(), It.IsAny<CancellationToken>()),
             Times.Never

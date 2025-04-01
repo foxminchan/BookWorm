@@ -109,7 +109,7 @@ public sealed class GetBuyerQueryTests
 
         // Assert
         var exception = await act.ShouldThrowAsync<NotFoundException>();
-        exception.Message.ShouldBe($"Buyer with id {_testBuyerId} not found");
+        exception.Message.ShouldBe($"Buyer with id {_testBuyerId} not found.");
     }
 
     [Test]
@@ -129,7 +129,7 @@ public sealed class GetBuyerQueryTests
 
         // Assert
         var exception = await act.ShouldThrowAsync<UnauthorizedAccessException>();
-        exception.Message.ShouldBe("User is not authenticated");
+        exception.Message.ShouldBe("User is not authenticated.");
         _buyerRepositoryMock.Verify(
             repo => repo.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never

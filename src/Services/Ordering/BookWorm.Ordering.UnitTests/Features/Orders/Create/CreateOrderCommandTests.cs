@@ -142,7 +142,7 @@ public sealed class CreateOrderCommandTests
 
             // Assert
             var exception = await act.ShouldThrowAsync<NotFoundException>();
-            exception.Message.ShouldBe("Book with id book1 not found");
+            exception.Message.ShouldBe("Book with id book1 not found.");
         }
     }
 
@@ -210,7 +210,7 @@ public sealed class CreateOrderCommandTests
 
             // Assert
             var exception = await act.ShouldThrowAsync<UnauthorizedAccessException>();
-            exception.Message.ShouldBe("User is not authenticated");
+            exception.Message.ShouldBe("User is not authenticated.");
 
             _repositoryMock.Verify(
                 x => x.AddAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()),

@@ -9,10 +9,7 @@ public sealed class DeleteBuyerHandler(IBuyerRepository repository)
     {
         var buyer = await repository.GetByIdAsync(request.Id, cancellationToken);
 
-        if (buyer is null)
-        {
-            throw new NotFoundException($"Buyer with ID {request.Id} not found.");
-        }
+        Guard.Against.NotFound(buyer, $"Buyer with id {request.Id} not found.");
 
         repository.Delete(buyer);
 

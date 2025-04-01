@@ -9,23 +9,15 @@ public sealed class UpdateBasketHandler(
 {
     public async Task<Unit> Handle(UpdateBasketCommand request, CancellationToken cancellationToken)
     {
-        var userId = claimsPrincipal.GetClaimValue(KeycloakClaimTypes.Subject);
+        var sub = claimsPrincipal.GetClaimValue(KeycloakClaimTypes.Subject);
 
-        if (string.IsNullOrWhiteSpace(userId))
-        {
-            throw new UnauthorizedAccessException("User is not authenticated.");
-        }
+        var userId = Guard.Against.NotAuthenticated(sub);
 
         var basket = await basketRepository.GetBasketAsync(userId);
 
-        if (basket is null)
-        {
-            throw new NotFoundException($"Basket with id {userId} not found.");
-        }
+        Guard.Against.NotFound(basket, $"Basket with id {userId} not found.");
 
-        basket.Update(
-            request.Items.Select(item => new BasketItem(item.Id, item.Quantity)).ToList()
-        );
+        basket.Update(request.Items.ToBasketItem());
 
         await basketRepository.UpdateBasketAsync(basket);
 

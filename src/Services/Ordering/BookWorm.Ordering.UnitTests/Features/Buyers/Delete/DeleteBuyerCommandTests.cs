@@ -74,7 +74,7 @@ public sealed class DeleteBuyerCommandTests
 
         // Assert
         var exception = await act.ShouldThrowAsync<NotFoundException>();
-        exception.Message.ShouldBe($"Buyer with ID {nonExistingId} not found.");
+        exception.Message.ShouldBe($"Buyer with id {nonExistingId} not found.");
         _repositoryMock.Verify(x => x.Delete(It.IsAny<Buyer>()), Times.Never);
         _repositoryMock.Verify(
             x => x.UnitOfWork.SaveEntitiesAsync(It.IsAny<CancellationToken>()),

@@ -4,10 +4,8 @@ using Saunter.Attributes;
 namespace BookWorm.Catalog.IntegrationEvents.EventHandlers;
 
 [AsyncApi]
-public sealed class FeedbackCreatedIntegrationEventHandler(
-    IBookRepository bookRepository,
-    IPublishEndpoint publishEndpoint
-) : IConsumer<FeedbackCreatedIntegrationEvent>
+public sealed class FeedbackCreatedIntegrationEventHandler(IBookRepository bookRepository)
+    : IConsumer<FeedbackCreatedIntegrationEvent>
 {
     [Channel("catalog-feedback-created")]
     [PublishOperation(
@@ -23,7 +21,7 @@ public sealed class FeedbackCreatedIntegrationEventHandler(
 
         if (book is null)
         {
-            await PublishFailedEvent(@event.FeedbackId);
+            await PublishFailedEvent(context, @event.FeedbackId);
             return;
         }
 
@@ -37,9 +35,12 @@ public sealed class FeedbackCreatedIntegrationEventHandler(
         typeof(BookUpdatedRatingFailedIntegrationEvent),
         OperationId = nameof(BookUpdatedRatingFailedIntegrationEvent)
     )]
-    private async Task PublishFailedEvent(Guid feedbackId)
+    private static async Task PublishFailedEvent(
+        ConsumeContext<FeedbackCreatedIntegrationEvent> context,
+        Guid feedbackId
+    )
     {
-        await publishEndpoint.Publish(new BookUpdatedRatingFailedIntegrationEvent(feedbackId));
+        await context.Publish(new BookUpdatedRatingFailedIntegrationEvent(feedbackId));
     }
 }
 

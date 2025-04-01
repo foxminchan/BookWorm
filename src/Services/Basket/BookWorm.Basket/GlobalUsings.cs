@@ -12,6 +12,7 @@ global using BookWorm.SharedKernel.Command;
 global using BookWorm.SharedKernel.Endpoints;
 global using BookWorm.SharedKernel.EventBus;
 global using BookWorm.SharedKernel.Exceptions;
+global using BookWorm.SharedKernel.Guards;
 global using BookWorm.SharedKernel.Pipelines;
 global using BookWorm.SharedKernel.Query;
 global using BookWorm.SharedKernel.Versioning;

@@ -5,10 +5,8 @@ using Saunter.Attributes;
 namespace BookWorm.Basket.IntegrationEvents.EventHandlers;
 
 [AsyncApi]
-public sealed class PlaceOrderCommandHandler(
-    IBasketRepository repository,
-    IPublishEndpoint publishEndpoint
-) : IConsumer<PlaceOrderCommand>
+public sealed class PlaceOrderCommandHandler(IBasketRepository repository)
+    : IConsumer<PlaceOrderCommand>
 {
     [Channel("basket-place-order")]
     [PublishOperation(
@@ -25,6 +23,7 @@ public sealed class PlaceOrderCommandHandler(
         if (!basketDeleted)
         {
             await PublishFailedEvent(
+                context,
                 command.OrderId,
                 command.BasketId,
                 command.Email,
@@ -33,7 +32,12 @@ public sealed class PlaceOrderCommandHandler(
         }
         else
         {
-            await PublishCompletedEvent(command.OrderId, command.BasketId, command.TotalMoney);
+            await PublishCompletedEvent(
+                context,
+                command.OrderId,
+                command.BasketId,
+                command.TotalMoney
+            );
         }
     }
 
@@ -42,9 +46,14 @@ public sealed class PlaceOrderCommandHandler(
         typeof(BasketDeletedFailedIntegrationEvent),
         OperationId = nameof(BasketDeletedFailedIntegrationEvent)
     )]
-    private async Task PublishCompletedEvent(Guid orderId, Guid basketId, decimal totalMoney)
+    private static async Task PublishCompletedEvent(
+        ConsumeContext<PlaceOrderCommand> context,
+        Guid orderId,
+        Guid basketId,
+        decimal totalMoney
+    )
     {
-        await publishEndpoint.Publish(
+        await context.Publish(
             new BasketDeletedCompleteIntegrationEvent(orderId, basketId, totalMoney)
         );
     }
@@ -54,14 +63,15 @@ public sealed class PlaceOrderCommandHandler(
         typeof(BasketDeletedCompleteIntegrationEvent),
         OperationId = nameof(BasketDeletedCompleteIntegrationEvent)
     )]
-    private async Task PublishFailedEvent(
+    private static async Task PublishFailedEvent(
+        ConsumeContext<PlaceOrderCommand> context,
         Guid orderId,
         Guid basketId,
         string? email,
         decimal totalMoney
     )
     {
-        await publishEndpoint.Publish(
+        await context.Publish(
             new BasketDeletedFailedIntegrationEvent(orderId, basketId, email, totalMoney)
         );
     }

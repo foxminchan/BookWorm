@@ -35,6 +35,7 @@ public sealed class ListFeedbacksHandler(IFeedbackRepository repository)
             request.PageIndex,
             request.PageSize
         );
+
         var feedbacks = await repository.ListAsync(filterSpec, cancellationToken);
 
         var countSpec = new FeedbackFilterSpec(

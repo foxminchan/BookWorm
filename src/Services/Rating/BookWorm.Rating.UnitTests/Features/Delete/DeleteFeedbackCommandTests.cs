@@ -58,7 +58,7 @@ public sealed class DeleteFeedbackCommandTests
 
         // Assert
         var exception = await act.ShouldThrowAsync<NotFoundException>();
-        exception.Message.ShouldBe($"Feedback with ID {feedbackId} not found.");
+        exception.Message.ShouldBe($"Feedback with id {feedbackId} not found.");
         _repositoryMock.Verify(x => x.Delete(It.IsAny<Feedback>()), Times.Never);
         _repositoryMock.Verify(
             x => x.UnitOfWork.SaveEntitiesAsync(It.IsAny<CancellationToken>()),

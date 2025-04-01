@@ -9,10 +9,7 @@ public sealed class DeleteAuthorHandler(IAuthorRepository repository)
     {
         var author = await repository.GetByIdAsync(request.Id, cancellationToken);
 
-        if (author is null)
-        {
-            throw new NotFoundException($"Author with id {request.Id} not found.");
-        }
+        Guard.Against.NotFound(author, $"Author with id {request.Id} not found.");
 
         repository.Delete(author);
 

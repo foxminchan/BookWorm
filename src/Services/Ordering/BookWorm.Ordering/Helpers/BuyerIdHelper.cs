@@ -4,10 +4,7 @@ public static class BuyerIdHelper
 {
     public static Guid ToBuyerId(this string? userId)
     {
-        if (string.IsNullOrWhiteSpace(userId))
-        {
-            throw new UnauthorizedAccessException("User is not authenticated");
-        }
+        userId = Guard.Against.NotAuthenticated(userId);
 
         if (!Guid.TryParse(userId, out var buyerId))
         {

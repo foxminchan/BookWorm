@@ -40,10 +40,7 @@ public sealed class UpdateBookHandler(IBookRepository repository)
     {
         var book = await repository.GetByIdAsync(request.Id, cancellationToken);
 
-        if (book is null)
-        {
-            throw new NotFoundException($"Book with id {request.Id} not found.");
-        }
+        Guard.Against.NotFound(book, $"Book with id {request.Id} not found.");
 
         var imageName = request.IsRemoveImage ? null : request.ImageName ?? book.Image;
 

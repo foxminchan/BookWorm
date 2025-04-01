@@ -32,10 +32,7 @@ public sealed class GetOrderHandler(IOrderRepository repository, ClaimsPrincipal
             );
         }
 
-        if (order is null)
-        {
-            throw new NotFoundException($"Order with id {request.Id} not found");
-        }
+        Guard.Against.NotFound(order, $"Order with id {request.Id} not found.");
 
         return order.ToOrderDetailDto();
     }
@@ -63,10 +60,8 @@ public sealed class PostGetOrderHandler(IBookService bookService)
         for (var i = 0; i < items.Count; i++)
         {
             var bookResponse = bookResponses[i];
-            if (bookResponse is null)
-            {
-                throw new NotFoundException($"Book with id {items[i].Id} not found");
-            }
+
+            Guard.Against.NotFound(bookResponse, $"Book with id {items[i].Id} not found.");
 
             var updatedItem = items[i] with { Name = bookResponse.Name };
 
