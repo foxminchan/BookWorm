@@ -112,7 +112,7 @@ public sealed class UpdateAddressCommandTests
 
         // Assert
         var exception = await act.ShouldThrowAsync<UnauthorizedAccessException>();
-        exception.Message.ShouldBe("User is not authenticated");
+        exception.Message.ShouldBe("User is not authenticated.");
         _buyerRepositoryMock.Verify(
             x => x.UnitOfWork.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
             Times.Never

@@ -9,10 +9,7 @@ public sealed class GetBookHandler(IBookRepository repository, IMapper<Book, Boo
     {
         var book = await repository.GetByIdAsync(request.Id, cancellationToken);
 
-        if (book is null)
-        {
-            throw new NotFoundException($"Book with id {request.Id} not found.");
-        }
+        Guard.Against.NotFound(book, $"Book with id {request.Id} not found.");
 
         return mapper.MapToDto(book);
     }
