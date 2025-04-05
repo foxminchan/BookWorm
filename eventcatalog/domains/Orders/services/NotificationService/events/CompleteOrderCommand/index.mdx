@@ -1,0 +1,55 @@
+---
+id: CompleteOrderCommand
+version: 1.0.0
+name: Completed Order
+summary: Receive a message when an order is completed
+channels:
+  - id: notification.{env}.events
+badges:
+  - content: Orchestrated
+    textColor: orange
+    backgroundColor: orange
+  - content: Notification
+    textColor: blue
+    backgroundColor: blue
+  - content: Channel:amqp
+    backgroundColor: green
+    textColor: white
+schemaPath: schema.json
+owners:
+    - nhanxnguyen
+---
+
+## Overview
+
+The `CompleteOrderCommand` is an integration event published by the Finance service when an order transitions to the Completed state. This command is part of the order processing saga and is used to notify other services about order completion, particularly for sending confirmation notifications to customers.
+
+## Architecture
+
+<NodeGraph />
+
+## Message Structure
+
+The command contains the following properties:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `OrderId` | `Guid` | Unique identifier for the order being completed |
+| `Email` | `string?` | Customer's email address (optional) for notification purposes |
+| `TotalMoney` | `decimal` | Total monetary value of the completed order |
+
+## Workflow Context
+
+This command is published by the Order State Machine when the following conditions are met:
+
+1. The order is in the `Placed` state
+2. An `OrderStatusChangedToCompleteIntegrationEvent` is received
+3. The order transitions to the `Completed` state
+4. The customer's email is available (not null)
+
+## Consuming Services
+
+This command is typically consumed by:
+
+- **Notification Service**: To send order completion emails to customers
+- **Ordering Service**: To update the order status in the database

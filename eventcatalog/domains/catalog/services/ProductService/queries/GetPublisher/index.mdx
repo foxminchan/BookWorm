@@ -1,0 +1,70 @@
+---
+id: GetPublisherQuery
+version: 1.0.0
+name: List Publishers
+summary: List all publishers
+badges:
+  - content: GET
+    textColor: blue
+    backgroundColor: blue
+  - content: "Publisher"
+    textColor: blue
+    backgroundColor: blue
+owners:
+    - nhanxnguyen
+---
+
+## Overview
+
+Get all publishers in the system. This endpoint retrieves a comprehensive list of book publishers from our catalog domain. Publishers represent important aggregate roots in our domain model that have relationships with multiple book entities. This query operation implements the Repository pattern to efficiently fetch publisher data while maintaining domain boundaries.
+
+The operation follows CQRS principles by using a dedicated read model query handler that optimizes for performance when retrieving this frequently accessed reference data. The response includes essential publisher metadata while maintaining proper encapsulation of internal domain concepts.
+
+## Architecture
+
+<NodeGraph />
+
+## GET `(/api/v1/publishers)`
+
+### Description
+
+This endpoint returns a list of all publishers in the system. It's designed to be fast and efficient, making it suitable for populating dropdowns, filters, and other UI elements that require publisher data.
+
+### Query Parameters
+
+None. This endpoint does not accept any query parameters.
+
+### Request Body
+
+No request body is required for this endpoint.
+
+### Example Usage
+
+```bash
+curl -X GET "https://api.bookworm.com/api/v1/publishers"
+```
+
+### Responses
+
+#### <span className="text-green-500">200 OK</span>
+
+Returns a list of publishers with their details.
+
+<SchemaViewer file="response-200.json" maxHeight="500" id="response-200" />
+
+#### Example Response
+
+```json title="200 OK"
+{
+  "publishers": [
+    {
+      "id": "1",
+      "name": "Penguin Random House",
+    },
+    {
+      "id": "2",
+      "name": "HarperCollins",
+    }
+  ]
+}
+```

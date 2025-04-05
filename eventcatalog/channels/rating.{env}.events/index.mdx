@@ -1,0 +1,29 @@
+---
+id: rating.{env}.events
+name: Rating Events Channel
+version: 1.0.0
+summary: |
+  A specialized messaging conduit for managing all rating-related activities within the BookWorm e-commerce platform.
+owners:
+  - nhanxnguyen
+address: rating.{env}.events
+protocols:
+  - amqp
+parameters:
+  env:
+    enum:
+      - dev
+      - stg
+      - prod
+    description: 'Environment to use for the channel'
+---
+
+## Overview
+
+The Rating Events Channel serves as a specialized conduit for managing all rating-related activities within the BookWorm e-commerce platform. It enables seamless interaction between the Rating Service and various other components, handling key events like rating creation, updates, and deletions. This channel ensures dependable message delivery and upholds the eventual consistency across the rating domain.
+
+<ChannelInformation />
+
+## Event Types
+
+**BookUpdatedRatingFailed**: Indicates that the rating update for a book has failed.

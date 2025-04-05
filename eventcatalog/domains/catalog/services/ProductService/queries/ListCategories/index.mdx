@@ -1,0 +1,70 @@
+---
+id: ListCategoriesQuery
+version: 1.0.0
+name: List Categories
+summary: Get all categories
+badges:
+  - content: GET
+    textColor: blue
+    backgroundColor: blue
+  - content: "Category"
+    textColor: yellow
+    backgroundColor: yellow
+owners:
+    - nhanxnguyen
+---
+
+## Overview
+
+Get all categories in the system. This query endpoint retrieves the complete collection of categories from the Catalog bounded context without filtering. Categories represent a core domain concept within the catalog taxonomy and are used for organizing book inventory.
+
+The endpoint follows the CQRS pattern, implementing a read-only query that returns a denormalized view of category data optimized for client consumption. Categories are aggregates within the catalog domain model and this endpoint preserves their encapsulation by returning only the necessary projection data.
+
+This operation is idempotent and cacheable as it performs no state mutations.
+
+## Architecture
+
+<NodeGraph />
+
+## GET `/api/v1/categories`
+
+### Description
+
+Retrieves a list of all categories in the system. The response is paginated and includes basic category information.
+
+### Parameters
+
+None. This endpoint does not require any parameters.
+
+### Request Body
+
+No request body is required for this endpoint.
+
+### Example Usage
+
+```bash
+curl -X GET 'https://api.bookworm.com/api/v1/categories'
+```
+
+### Responses
+
+#### <span className="text-green-500">200 OK</span>
+
+Returns a list of categories.
+
+<SchemaViewer file="response-200.json" maxHeight="500" id="response-200" />
+
+### Example Response
+
+```json title="200 OK"
+[
+  {
+    "id": "cat_123",
+    "name": "Fiction",
+  },
+  {
+    "id": "cat_456",
+    "name": "Science Fiction",
+  }
+]
+```

@@ -9,12 +9,10 @@ dictionary:
       - Title and subtitle
       - Author(s)
       - Publisher
-      - ISBN (International Standard Book Number)
-      - Publication date
-      - Edition and format (e.g., hardcover, paperback, eBook)
       - Description and synopsis
       - Cover image
       - Price and availability
+      - Ratings and reviews
 
       Books are the core entity in the catalog and are organized by categories, authors, and publishers.
     icon: BookOpen
@@ -62,19 +60,6 @@ dictionary:
       Authors help build the identity and appeal of the catalog.
     icon: User
 
-  - id: ISBN
-    name: ISBN
-    summary: "International Standard Book Number - A unique identifier for books."
-    description: |
-      The ISBN is a critical identifier for books, ensuring uniqueness and traceability. It includes:
-
-      - A 10- or 13-digit code
-      - Publisher and title information encoded within the number
-      - Used for inventory management, ordering, and sales tracking
-
-      ISBNs are essential for managing large catalogs and ensuring accurate book identification.
-    icon: Hash
-
   - id: Catalog
     name: Catalog
     summary: "The complete collection of books available in the BookWorm system."
@@ -85,6 +70,7 @@ dictionary:
       - Categorization by genre, author, and publisher
       - Metadata for each book (e.g., price, availability, ratings)
       - Integration with inventory and fulfillment systems
+      - Rating and review system
 
       The catalog is the primary interface for customers to explore and select books.
     icon: Library
@@ -97,7 +83,7 @@ dictionary:
 
       - Full-text search across titles, authors, and descriptions
       - Filters by category, price range, format, and availability
-      - Sorting options (e.g., by relevance, price, publication date)
+      - Sorting options (e.g., by relevance, price, publication date, rating)
       - Autocomplete and suggestions
 
       A robust search system enhances the user experience and drives sales.
@@ -114,6 +100,7 @@ dictionary:
       - Related books (e.g., by the same author or in the same category)
       - Reading level or age group
       - Awards and bestseller status
+      - User-generated content and feedback
 
       Metadata improves discoverability and helps customers make informed decisions.
     icon: FileText
@@ -128,6 +115,7 @@ dictionary:
       - Updating existing book details (e.g., price, availability)
       - Removing discontinued or out-of-stock books
       - Syncing with publisher feeds or inventory systems
+      - Managing rating and review updates
 
       Regular updates keep the catalog relevant and engaging for customers.
     icon: RefreshCw
@@ -142,7 +130,42 @@ dictionary:
       - Popular or trending books
       - Similar authors or categories
       - Collaborative filtering algorithms
+      - Rating and review data
+      - User preferences and reading history
 
       Recommendations drive engagement and increase sales.
     icon: ThumbsUp
+
+  - id: Rating
+    name: Rating
+    summary: "A numerical or qualitative assessment of a book's quality by users."
+    description: |
+      Ratings provide valuable feedback about books in the catalog. Key aspects include:
+
+      - Numerical rating (e.g., 1-5 stars)
+      - Written reviews and comments
+      - User verification status
+      - Rating statistics and aggregations
+      - Impact on book recommendations
+      - Moderation and quality control
+
+      Ratings help customers make informed decisions and provide social proof.
+    icon: Star
+
+  - id: Review
+    name: Review
+    summary: "A detailed written evaluation of a book by a user."
+    description: |
+      Reviews provide in-depth feedback about books. They include:
+
+      - Written content and analysis
+      - User rating
+      - Date and time
+      - User verification status
+      - Helpful votes
+      - Moderation status
+      - Response from authors or publishers
+
+      Reviews contribute to the book's reputation and help other readers.
+    icon: MessageSquare
 ---

@@ -1,0 +1,69 @@
+---
+id: PlaceOrderCommand
+version: 1.0.0
+name: Order Placed
+summary: Represents a command to notify the system about the placement of an order
+channels:
+  - id: basket.{env}.events
+badges:
+  - content: Orchestrated
+    textColor: orange
+    backgroundColor: orange
+  - content: Channel:amqp
+    backgroundColor: green
+    textColor: white
+schemaPath: schema.json
+owners:
+    - nhanxnguyen
+---
+
+## Overview
+
+The `PlaceOrderCommand` is a critical domain command that initiates the order creation process in the BookWorm e-commerce system. This command serves as the bridge between the Basket and Ordering bounded contexts, facilitating the transition from a transient shopping basket to a persistent order.
+
+## Architecture
+
+<NodeGraph />
+
+### Purpose
+- Initiates the order creation process
+- Transfers basket data to the ordering system
+- Triggers the deletion of the original basket
+- Ensures atomic transaction between basket deletion and order creation
+
+### Command Structure
+
+```json title="Event Message"
+{
+  "basketId": "Guid",
+  "email": "string?",
+  "orderId": "Guid",
+  "totalMoney": "decimal"
+}
+```
+
+### Behavior
+When this command is processed:
+1. The system attempts to delete the specified basket
+2. Upon successful deletion, a `BasketDeletedCompleteIntegrationEvent` is published
+3. If deletion fails, a `BasketDeletedFailedIntegrationEvent` is published
+4. The command handler ensures concurrent message processing is limited to 1 message at a time
+
+### Integration Points
+- **Channel**: `basket-place-order`
+- **Concurrency**: Limited to 1 concurrent message
+- **Related Events**:
+  - `BasketDeletedCompleteIntegrationEvent`
+  - `BasketDeletedFailedIntegrationEvent`
+
+### Usage Context
+This command is typically triggered when:
+- A customer completes their shopping cart
+- The checkout process is initiated
+- The system needs to transition from basket to order state
+
+### Error Handling
+The command includes built-in error handling:
+- Tracks failed basket deletions
+- Maintains order creation state
+- Provides feedback through integration events
