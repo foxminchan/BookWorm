@@ -1,0 +1,31 @@
+---
+id: notification.{env}.events
+name: Notification Events Channel
+version: 1.0.0
+summary: |
+  A dedicated message channel that handles all notification-related events in the BookWorm e-commerce system.
+owners:
+  - nhanxnguyen
+address: notification.{env}.events
+protocols:
+  - amqp
+parameters:
+  env:
+    enum:
+      - dev
+      - stg
+      - prod
+    description: 'Environment to use for the channel'
+---
+
+## Overview
+
+The Notification Events Channel serves as a specialized conduit for managing all notification-related activities within the BookWorm e-commerce platform. It enables seamless communication between the Notification Service and other components, handling events like email, SMS, and push notifications. This channel ensures reliable message delivery and upholds the eventual consistency across the notification domain.
+
+<ChannelInformation />
+
+## Event Types
+
+**PlaceOrderCommand**: Initiates the process of creating a new order.
+**CancelOrderCommand**: Indicates that an order has been cancelled.
+**CompleteOrderCommand**: Indicates that an order has been completed.

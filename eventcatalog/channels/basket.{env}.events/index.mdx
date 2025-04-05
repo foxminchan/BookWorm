@@ -1,0 +1,30 @@
+---
+id: basket.{env}.events
+name: Basket Events Channel
+version: 1.0.0
+summary: |
+  A dedicated message channel that handles all basket-related events in the BookWorm e-commerce system.
+owners:
+  - nhanxnguyen
+address: basket.{env}.events
+protocols:
+  - amqp
+  - grpc
+parameters:
+  env:
+    enum:
+      - dev
+      - stg
+      - prod
+    description: 'Environment to use for the channel'
+---
+
+## Overview
+
+The Basket Events Channel serves as a specialized conduit for managing all basket-related activities within the BookWorm e-commerce platform. It enables seamless interaction between the Basket Service and various other components, handling key events like basket initialization, modifications, removals, and the initiation of order placement. This channel guarantees dependable message transmission and upholds the eventual consistency across the basket domain.
+
+<ChannelInformation />
+
+## Event Types
+
+- **PlaceOrderCommand**: Triggers the process of placing an order from the basket.

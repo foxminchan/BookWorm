@@ -40,10 +40,6 @@ export default {
       id: "/docs/custom",
       visible: false,
     },
-    {
-      id: "/pro",
-      visible: false,
-    },
   ],
   generators: [
     [

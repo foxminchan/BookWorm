@@ -1,0 +1,31 @@
+---
+id: catalog.{env}.events
+name: Catalog Events Channel
+version: 1.0.0
+summary: |
+  A specialized messaging conduit for managing all catalog-related activities within the BookWorm e-commerce platform.
+owners:
+  - nhanxnguyen
+address: catalog.{env}.events
+protocols:
+  - amqp
+  - grpc
+parameters:
+  env:
+    enum:
+      - dev
+      - stg
+      - prod
+    description: 'Environment to use for the channel'
+---
+
+## Overview
+
+The Catalog Events Channel serves as a specialized conduit for managing all catalog-related activities within the BookWorm e-commerce platform. It enables seamless interaction between the Catalog Service and various other components, handling key events such as product creation, updates, deletions, and inventory adjustments. This channel guarantees dependable message transmission and upholds the eventual consistency across the catalog domain.
+
+<ChannelInformation />
+
+## Event Types
+
+- **FeedbackCreated**: Initiates the creation of a new feedback entry.
+- **FeedbackDeleted**: Removes an existing feedback entry.

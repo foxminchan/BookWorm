@@ -1,0 +1,83 @@
+---
+id: DeleteOrderCommand
+version: 1.0.0
+name: Delete Order
+summary: Delete order by order id if exists
+badges:
+  - content: DELETE
+    textColor: red
+    backgroundColor: red
+  - content: "Order"
+    textColor: yellow
+    backgroundColor: yellow
+  - content: "Admin Only"
+    textColor: red
+    backgroundColor: red
+owners:
+    - nhanxnguyen
+---
+
+## Overview
+
+This endpoint allows administrators to delete an order from the system. In alignment with Domain-Driven Design principles, order deletion is handled as a domain operation that respects the Order aggregate boundary and implements a soft-delete pattern.
+
+### Domain Considerations
+
+- **Soft Delete Pattern**: The Order entity implements the `ISoftDelete` interface, setting a flag rather than physically removing records
+- **Aggregate Consistency**: The deletion operation ensures the entire Order aggregate maintains its consistency through the Unit of Work pattern
+- **Domain Events**: The operation may trigger domain events for cross-service communication
+
+### Implementation Details
+
+When an order is deleted:
+
+1. The command handler retrieves the Order aggregate by ID
+2. If the order doesn't exist, a `NotFoundException` is thrown
+3. The `Delete()` method on the Order entity sets the `IsDeleted` flag to true
+4. Changes are persisted through the Unit of Work pattern
+
+### Security Considerations
+
+This endpoint is protected by the Admin authorization policy, ensuring that only administrators can delete orders. This is implemented through the `.RequireAuthorization(Authorization.Policies.Admin)` middleware.
+
+## Architecture
+
+<NodeGraph />
+
+## DELETE `(/api/v1/orders/{id})`
+
+### Parameters
+
+- **id** (path) (required): The order's unique identifier (GUID format)
+
+### Example Usage
+
+```bash
+curl -X DELETE "https://api.bookworm.com/api/v1/orders/{id}" \
+    -H "Authorization: Bearer <your-jwt-token>"
+```
+
+### Responses
+
+#### <span className="text-green-500">204 No Content</span>
+
+The order was successfully deleted. No content is returned in the response body.
+
+#### <span className="text-red-500">404 Not Found</span>
+
+```json title="404 Not Found"
+{
+  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.4",
+  "title": "Not Found",
+  "status": 404,
+  "detail": "Order with id {id} not found."
+}
+```
+
+#### <span className="text-red-500">401 Unauthorized</span>
+
+Returned when the request lacks valid authentication credentials.
+
+#### <span className="text-red-500">403 Forbidden</span>
+
+Returned when the authenticated user does not have administrator privileges.

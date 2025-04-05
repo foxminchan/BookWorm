@@ -1,0 +1,122 @@
+---
+id: GetBookQuery
+version: 1.0.0
+name: Get Book
+summary: Get a book by ID
+badges:
+  - content: GET
+    textColor: blue
+    backgroundColor: blue
+  - content: "Book"
+    textColor: yellow
+    backgroundColor: yellow
+owners:
+    - nhanxnguyen
+---
+
+## Overview
+
+This endpoint follows Domain-Driven Design principles to retrieve a specific Book aggregate root from the Catalog bounded context by its unique identifier. The operation is implemented as a query that doesn't modify state, adhering to CQRS patterns.
+
+The query handler maps the domain entity to a BookDto response through an auto-mapper profile, ensuring that domain implementation details remain encapsulated. The endpoint respects the aggregate boundaries and only exposes data appropriate for the presentation layer.
+
+If the requested book doesn't exist, the service returns a Not Found response rather than a null object, following the Fail Fast principle.
+
+This endpoint is also integrated with our distributed caching strategy to optimize read-heavy operations and reduce database load.
+
+## Architecture
+
+<NodeGraph />
+
+## Behavior
+
+The endpoint implements the following behavior:
+
+1. Validates the provided GUID format for the book ID
+2. Queries the book repository to fetch the book entity
+3. If the book is not found, returns a 404 Not Found response
+4. Maps the domain entity to a DTO using the configured auto-mapper
+5. Returns the book data with a 200 OK status code
+
+## Implementation Details
+
+The endpoint is implemented using:
+
+- CQRS pattern with a dedicated query handler
+- Domain-Driven Design principles
+- Repository pattern for data access
+- Auto-mapping for entity-to-DTO conversion
+- Proper error handling with domain-specific exceptions
+
+## GET `(/api/v1/books/{id})`
+
+### Parameters
+
+- **id** (path) (required) - The unique identifier (GUID) of the book to retrieve
+
+### Request Body
+
+No request body is required for this endpoint.
+
+### Example Usage
+
+```bash
+curl -X GET "https://api.bookworm.com/api/v1/books/0195e692-600b-715e-a17b-b3a8faf4ed07"
+```
+
+### Responses
+
+#### <span className="text-green-500">200 OK</span>
+
+<SchemaViewer file="response-200.json" maxHeight="500" id="response-200" />
+
+#### <span className="text-red-500">404 Not Found</span>
+
+Returns when the requested book ID does not exist in the system.
+
+<SchemaViewer file="response-404.json" maxHeight="500" id="response-404" />
+
+### Success Response
+
+```json title="200 OK"
+{
+  "id": "0195e692-600b-715e-a17b-b3a8faf4ed07",
+  "name": "The Great Gatsby",
+  "description": "A classic novel by F. Scott Fitzgerald.",
+  "imageUrl": "URL_ADDRESS.com/great-gatsby.jpg",
+  "price": 10.99,
+  "discountPrice": 9.99,
+  "status": "InStock",
+  "authors": [
+    {
+      "id": "0195e692-600b-7290-a47f-982b9d7f15f3",
+      "name": "F. Scott Fitzgerald"
+    },
+    {
+      "id": "0195e692-600b-7d32-99b0-ae7abd82a863",
+      "name": "John Smith"
+    }
+  ],
+  "category": {
+    "id": "0195e692-600b-7424-a426-dac7227720fe",
+    "name": "Fiction"
+  },
+  "publisher": {
+    "id": "0195e692-600b-78b3-9b7f-3e342d9f2815",
+    "name": "Scribner"
+  },
+  "averageRating": 4.5,
+  "totalReviews": 100,
+}
+```
+
+### Error Response
+
+```json title="404 Not Found"
+{
+  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.4",
+  "title": "Not Found",
+  "status": 404,
+  "detail": "Book with id 123e4567-e89b-12d3-a456-426614174000 not found."
+}
+```

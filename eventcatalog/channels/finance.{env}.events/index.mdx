@@ -1,0 +1,33 @@
+---
+id: finance.{env}.events
+name: Finance Events Channel
+version: 1.0.0
+summary: |
+  An orchestration channel for managing all ordering processes in the BookWorm e-commerce platform.
+owners:
+  - nhanxnguyen
+address: finance.{env}.events
+protocols:
+  - amqp
+parameters:
+  env:
+    enum:
+      - dev
+      - stg
+      - prod
+    description: 'Environment to use for the channel'
+---
+
+## Overview
+
+The Finance Events Channel serves as a specialized conduit for managing all finance-related activities within the BookWorm e-commerce platform. It enables seamless interaction between the Finance Service and other components, handling key events like payment processing, invoice generation, and financial reporting. This channel ensures dependable message delivery and upholds the eventual consistency across the finance domain.
+
+<ChannelInformation />
+
+## Event Types
+
+**BasketDeletedComplete**: Indicates that a basket has been successfully removed.
+**BasketDeletedFailed**: Notifies that an attempt to delete a basket has failed.
+**UserCheckedOut**: Starts the process of creating a new order.
+**OrderStatusChangedToCancel**: Shows that an order has been cancelled.
+**OrderStatusChangedToComplete**: Shows that an order has been completed.

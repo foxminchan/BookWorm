@@ -1,0 +1,105 @@
+---
+id: orders
+name: Orders
+summary: Manages the lifecycle of customer orders in the BookWorm e-commerce system
+version: 1.0.0
+services:
+  - id: OrderingService
+    version: 1.0.0
+  - id: BasketService
+    version: 1.0.0
+  - id: FinanceService
+    version: 1.0.0
+  - id: NotificationService
+    version: 1.0.0
+badges:
+  - content: Ordering
+    backgroundColor: blue
+    textColor: white
+  - content: Basket
+    backgroundColor: green
+    textColor: white
+  - content: Finance
+    backgroundColor: orange
+    textColor: white
+  - content: Notification
+    backgroundColor: red
+    textColor: white
+owners:
+    - nhanxnguyen
+---
+
+## Overview
+
+The Ordering domain represents a strategic core domain within the BookWorm system, responsible for managing the complete lifecycle of customer orders from creation through fulfillment. As a core domain, it embodies critical business capabilities that directly impact the organization's competitive advantage.
+
+<Tiles >
+    <Tile icon="UserGroupIcon" href="/docs/users/nhanxnguyen" title="Contact the author" description="Any questions? Feel free to contact the owners" />
+    <Tile icon="RectangleGroupIcon" href={`/visualiser/domains/${frontmatter.id}/${frontmatter.version}`} title={`${frontmatter.services.length} services are in this domain`} description="This domain contains Ordering, Basket, Finance, and Notification services" />
+</Tiles>
+
+### Domain Characteristics
+
+- **Bounded Context**: The Ordering domain has a well-defined boundary with explicit integration points between its constituent services (Ordering, Basket, Finance, and Notification) through gRPC communication.
+
+- **Service Architecture**: The domain is composed of four specialized services:
+  - **Ordering Service**: Core service managing order lifecycle and state
+  - **Basket Service**: Handles shopping cart and item management
+  - **Finance Service**: Manages payment processing and financial transactions
+  - **Notification Service**: Handles customer communications and alerts
+
+- **Event Sourcing**: The domain implements event sourcing as its persistence mechanism, storing the complete history of order-related events rather than just the current state. This approach provides a comprehensive audit trail and enables temporal queries and state reconstruction at any point in time.
+
+### Event Storming Session
+
+The event storming session for the Ordering domain was conducted to identify key events, commands, and aggregates. The session included stakeholders from various teams, including business analysts, developers, and product owners. The following key events were identified:
+
+<Miro boardId="uXjVIG4lIr0=/" moveToWidget="3458764623724229202" edit={false} />
+
+### Business Rules and Invariants
+
+- Orders must contain at least one item to be submitted
+- Order status transitions follow a predefined state machine (e.g., Placed -> Completed or Cancelled)
+- Cancellation is only permitted before the "Shipped" status
+- Price calculations and summaries are validated against business rules
+- Basket items must be reserved before order confirmation
+- Financial transactions must be atomic and consistent
+
+The domain handles complex business scenarios like partial fulfillment, order modifications, and cancellations while maintaining consistency and enforcing business rules throughout the order lifecycle.
+
+## Architecture diagram
+
+<NodeGraph />
+
+<MessageTable format="all" limit={4} />
+
+## Ordering process (sequence diagram)
+
+```mermaid
+sequenceDiagram
+    actor Customer
+    participant OrderingService
+    participant FinanceService
+    participant BasketService
+    participant NotificationService
+
+    Customer->>OrderingService: Place Order
+    OrderingService->>BasketService: Get Basket Items
+    BasketService-->>OrderingService: Return Basket Items
+    OrderingService->>FinanceService: Process Payment
+    FinanceService->>BasketService: Reserve Basket Items
+    alt Basket Reserved Successfully
+        BasketService->>FinanceService: Confirm Reservation
+        FinanceService->>OrderingService: Confirm Payment
+        par
+            OrderingService->>NotificationService: Send Order Confirmation
+            NotificationService-->>Customer: Order Placed Successfully
+        and
+            OrderingService->>BasketService: Clear Basket
+        end
+    else Basket Reservation Failed
+        BasketService->>FinanceService: Reservation Failed
+        FinanceService->>OrderingService: Payment Failed
+        OrderingService->>Customer: Order Placement Failed
+    end
+```

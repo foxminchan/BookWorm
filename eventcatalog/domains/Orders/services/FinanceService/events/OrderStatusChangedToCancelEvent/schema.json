@@ -1,0 +1,50 @@
+{
+  "id": "OrderStatusChangedToCancelEvent",
+  "allOf": [
+    {
+      "id": "integrationEvent",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "guid",
+          "x-parser-schema-id": "<anonymous-schema-1>"
+        },
+        "creationDate": {
+          "type": "string",
+          "format": "date-time",
+          "x-parser-schema-id": "<anonymous-schema-2>"
+        }
+      },
+      "x-parser-schema-id": "integrationEvent"
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "basketId": {
+          "type": "string",
+          "format": "guid",
+          "x-parser-schema-id": "<anonymous-schema-35>"
+        },
+        "email": {
+          "type": "string",
+          "x-parser-schema-id": "<anonymous-schema-36>"
+        },
+        "orderId": {
+          "type": "string",
+          "format": "guid",
+          "x-parser-schema-id": "<anonymous-schema-37>"
+        },
+        "totalMoney": {
+          "type": "number",
+          "format": "double",
+          "x-parser-schema-id": "<anonymous-schema-38>"
+        }
+      },
+      "x-parser-schema-id": "<anonymous-schema-34>"
+    }
+  ],
+  "x-parser-schema-id": "OrderStatusChangedToCancelIntegrationEvent"
+}

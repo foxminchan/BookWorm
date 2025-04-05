@@ -1,0 +1,55 @@
+---
+id: CancelOrderCommand
+version: 1.0.0
+name: Cancelled Order
+summary: Receive a message when an order is canceled
+channels:
+  - id: notification.{env}.events
+badges:
+  - content: Orchestrated
+    textColor: orange
+    backgroundColor: orange
+  - content: Notification
+    textColor: blue
+    backgroundColor: blue
+  - content: Channel:amqp
+    backgroundColor: green
+    textColor: white
+schemaPath: schema.json
+owners:
+    - nhanxnguyen
+---
+
+## Overview
+
+The `CancelOrderCommand` is an integration event published by the Finance service when an order transitions to the Cancelled state. This command is part of the order processing saga and is used to notify other services about order cancellation, particularly for sending cancellation notifications to customers.
+
+## Architecture
+
+<NodeGraph />
+
+## Message Structure
+
+The command contains the following properties:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `OrderId` | `Guid` | Unique identifier for the order being cancelled |
+| `Email` | `string?` | Customer's email address (optional) for notification purposes |
+| `TotalMoney` | `decimal` | Total monetary value of the cancelled order |
+
+## Workflow Context
+
+This command is published by the Order State Machine when the following conditions are met:
+
+1. The order is in the `Placed` state
+2. An `OrderStatusChangedToCancelIntegrationEvent` is received
+3. The order transitions to the `Cancelled` state
+4. The customer's email is available (not null)
+
+## Consuming Services
+
+This command is typically consumed by:
+
+- **Notification Service**: To send cancellation emails to customers
+- **Ordering Service**: To update the order status in the database

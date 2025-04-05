@@ -1,0 +1,101 @@
+---
+id: UpdateCategoryCommand
+version: 1.0.0
+name: Update Category
+summary: Update a category
+schemaPath: request-body.json
+badges:
+  - content: PUT
+    textColor: orange
+    backgroundColor: orange
+  - content: "Category"
+    textColor: yellow
+    backgroundColor: yellow
+  - content: "Admin Only"
+    textColor: red
+    backgroundColor: red
+owners:
+    - nhanxnguyen
+---
+
+## Overview
+
+This endpoint allows modification of an existing category entity within the Catalog domain. It follows Domain-Driven Design principles by ensuring that the category update operation maintains domain integrity and business rules.
+
+The operation performs the following:
+
+1. Validates the incoming category update command against domain invariants
+2. Retrieves the existing category aggregate from the repository
+3. Updates the category properties while preserving aggregate consistency
+4. Persists changes through the repository pattern
+
+Note that this endpoint enforces proper domain authorization and validation rules. The operation is transactional and will either succeed completely or fail without partial updates.
+
+## Authentication & Authorization
+
+This endpoint requires authentication and admin-level authorization. The request must include a valid authentication token with admin privileges.
+
+## Architecture
+
+<NodeGraph />
+
+## PUT `(/api/v1/categories/{id})`
+
+### Parameters
+
+- **id** (path) (required) - The unique identifier (GUID) of the category to update
+
+### Request Body
+
+<SchemaViewer file="request-body.json" maxHeight="500" id="request-body" />
+
+### Example Usage
+
+```bash
+curl -X PUT "https://api.bookworm.com/api/v1/categories/{id}" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <admin-token>" \
+  -d '{"name": "Updated Category Name"}'
+```
+
+### Validation Rules
+
+The following validation rules are applied to the request:
+
+- Category ID must not be empty
+- Category name must not be empty
+- Category name must not exceed the maximum length (Medium)
+
+### Responses
+
+#### <span className="text-orange-500">400 Bad Request</span>
+
+Returned when the request body fails validation or contains invalid data.
+
+<SchemaViewer file="response-400.json" maxHeight="500" id="response-400" />
+
+#### <span className="text-red-500">404 Not Found</span>
+
+Returned when the specified category ID does not exist in the system.
+
+#### <span className="text-red-500">401 Unauthorized</span>
+
+Returned when the request lacks valid authentication credentials.
+
+#### <span className="text-red-500">403 Forbidden</span>
+
+Returned when the authenticated user does not have admin privileges.
+
+#### <span className="text-green-500">204 No Content</span>
+
+Returned when the category is successfully updated.
+
+## Error Handling
+
+The endpoint implements proper error handling for various scenarios:
+
+- Invalid input data is rejected with appropriate validation messages
+- Non-existent categories return a 404 error
+- Unauthorized access attempts are rejected
+- Database errors are handled gracefully
+- All operations are wrapped in a transaction to ensure data consistency
