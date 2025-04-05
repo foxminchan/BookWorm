@@ -1,0 +1,68 @@
+---
+id: BookUpdatedRatingFailedEvent
+version: 1.0.0
+name: Book Updated Rating Fail
+summary: Represents a failed integration event when updating a book's rating in the system
+channels:
+  - id: rating.{env}.events
+badges:
+  - content: Channel:amqp
+    backgroundColor: green
+    textColor: white
+schemaPath: schema.json
+owners:
+    - nhanxnguyen
+---
+
+## Overview
+
+This event represents a failed integration event when updating a book's rating in the system. The `BookUpdatedRatingFailedIntegrationEvent` is a domain event that captures the failure to update a book's rating in the Catalog bounded context. It carries the necessary value objects including the book identity, the failed rating value, and the error message to notify the system about the failed operation. This event adheres to the ubiquitous language of our domain and serves as the contract between the Catalog and external systems, facilitating the transition from a successful rating update to a failed one.
+
+## Architecture
+
+<NodeGraph />
+
+## Purpose
+
+The `BookUpdatedRatingFailedIntegrationEvent` serves several important purposes in the system:
+
+1. **Error Handling**: It provides a mechanism to handle cases where a book rating update fails, ensuring system consistency.
+2. **Compensation**: It enables the Rating service to clean up any partially created feedback when the book rating update fails.
+3. **System Resilience**: It helps maintain system integrity by allowing services to roll back or clean up failed operations.
+
+## Usage
+
+This event is typically published in the following scenarios:
+
+1. When attempting to update a book's rating but the book doesn't exist in the Catalog service
+2. When there's a failure in the rating update process in the Catalog service
+3. When the integration between Rating and Catalog services fails
+
+### Event Flow
+
+1. The Rating service creates a new feedback
+2. The Catalog service attempts to update the book's rating
+3. If the update fails, this event is published
+4. The Rating service receives the event and deletes the associated feedback
+
+## Event Structure
+
+The event contains the following key information:
+
+- `FeedbackId`: The unique identifier of the feedback that needs to be deleted
+- `Timestamp`: When the failure occurred
+
+## Consumer Behavior
+
+The `BookUpdatedRatingFailedIntegrationEventHandler` in the Rating service:
+
+1. Receives the event
+2. Retrieves the feedback by ID
+3. If the feedback exists:
+   - Deletes the feedback
+   - Saves the changes to the database
+4. If the feedback doesn't exist, gracefully returns without taking action
+
+## Related Events
+
+- `FeedbackCreatedIntegrationEvent`: The event that triggers the rating update process

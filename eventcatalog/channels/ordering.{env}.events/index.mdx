@@ -1,0 +1,30 @@
+---
+id: ordering.{env}.events
+name: Ordering Events Channel
+version: 1.0.0
+summary: |
+  A channel for handling all ordering activities in the BookWorm e-commerce platform.
+owners:
+  - nhanxnguyen
+address: ordering.{env}.events
+protocols:
+  - amqp
+parameters:
+  env:
+    enum:
+      - dev
+      - stg
+      - prod
+    description: 'Environment to use for the channel'
+---
+
+## Overview
+
+The Ordering Events Channel serves as a specialized conduit for managing all ordering-related activities within the BookWorm e-commerce platform. It enables seamless interaction between the Ordering Service and various other components, handling key events like order creation, updates, and deletions. This channel ensures dependable message delivery and upholds the eventual consistency across the ordering domain.
+
+<ChannelInformation />
+
+## Event Types
+
+**DeleteBasketCompleteCommand**: Signals that a basket has been successfully deleted.
+**DeleteBasketFailedCommand**: Signals that an attempt to delete a basket has failed.
