@@ -30,18 +30,21 @@
 - [x] Implement `Outbox Pattern` and `Inbox Pattern` for messaging
 - [x] Support API versioning
 - [x] Implement comprehensive health checks
-- [x] Provide `OpenAPI/Scalar` documentation
 - [x] Enable feature flags to control application behavior
 - [x] Implement AuthN/AuthZ with `Keycloak`
 - [x] Enable observability with `.NET Aspire`
 - [x] Integrate `Mailpit` for local email testing
-- [x] Integrate with `DeepSeek R1` & `Nomic Embed Text`
+- [x] Integrate with AI components
   - [x] Text embedding with `Nomic Embed Text`
   - [x] Support hybrid search with `Qdrant`
   - [x] Chatbot integration with `DeepSeek R1`
-- [x] Create EDA documentation with `EventCatalog` and `AsyncAPI`
 - [x] Configure CI/CD with `GitHub Actions`
 - [x] Deploy with `Aspirate` on `k3d`
+- [x] Create documentation for the project
+  - [x] Use `OpenAPI/Scalar` for REST API documentation
+  - [x] Provide `AsyncAPI` for event-driven endpoints
+  - [x] Use `EventCatalog` for event inventory and discovery
+  - [ ] Integrate `Backstage` for developer portal experience
 - [x] Implement testing strategy
   - [x] Service unit tests
   - [ ] Integration tests
@@ -50,15 +53,14 @@
 
 BookWorm is structured as a microservices-based application with the following services:
 
-- **Catalog**: Book inventory management with search and pagination
-- **Basket**: Shopping cart functionality
-- **Ordering**: Order processing and fulfillment
-- **Identity**: User authentication and profile management
-- **Notification**: Email notification services (Worker Service)
-- **Rating**: Book review and rating system
-- **Finance**: Orchestration service for basket reservation and order processing
+- **Catalog**: Book inventory and metadata management.
+- **Basket**: Shopping cart functionality.
+- **Ordering**: Order processing and fulfillment.
+- **Notification**: Handles email notifications as a Worker Service.
+- **Rating**: Book review and rating system.
+- **Finance**: Orchestration service for basket reservation and order processing.
 
-![Domain Architecture](assets/architechture.png)
+![Domain Architecture](assets/architecture.png)
 
 ## Getting Started
 
@@ -71,10 +73,12 @@ BookWorm is structured as a microservices-based application with the following s
 - [k3d](https://k3d.io/) & [k9s](https://k9scli.io/)
 - [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
 
+### System Requirements
+
 > [!IMPORTANT]
-> In this project, we use [DeepSeek R1](https://ollama.com/library/deepseek-r1) & [Nomic Embed Text](https://ollama.com/library/nomic-embed-text). So, you must have an Nvidia GPU to run the application.
 >
-> In Production, we use [SendGrid](https://sendgrid.com/) for email services. But, for local development, we use [Mailpit](https://mailpit.io/).
+> - **AI Components**: This project uses [DeepSeek R1](https://ollama.com/library/deepseek-r1) for chatbot integration and [Nomic Embed Text](https://ollama.com/library/nomic-embed-text) for text embedding, requiring an **Nvidia GPU** for local development.
+> - **Email Services**: Production uses [SendGrid](https://sendgrid.com/), while local development uses [Mailpit](https://mailpit.axllent.org/) for email testing.
 
 ### Run the Application
 
