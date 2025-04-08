@@ -10,11 +10,11 @@ namespace BookWorm.Notification.UnitTests.Consumers;
 
 public sealed class CompleteOrderConsumerTests
 {
+    private const decimal TotalMoney = 150.99m;
+    private const string ValidEmail = "customer@example.com";
     private readonly EmailOptions _emailOptions = new() { From = "store@bookworm.com" };
     private readonly Guid _orderId = Guid.CreateVersion7();
     private readonly Mock<ISmtpClient> _smtpClientMock = new();
-    private const decimal TotalMoney = 150.99m;
-    private const string ValidEmail = "customer@example.com";
 
     [Test]
     public async Task GivenValidCompleteOrderCommand_WhenHandling_ThenShouldSendEmail()

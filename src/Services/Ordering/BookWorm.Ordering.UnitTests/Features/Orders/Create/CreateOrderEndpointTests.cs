@@ -1,12 +1,14 @@
 ﻿using BookWorm.Ordering.Features.Orders.Create;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Routing;
 
 namespace BookWorm.Ordering.UnitTests.Features.Orders.Create;
 
 public sealed class CreateOrderEndpointTests
 {
     private readonly CreateOrderEndpoint _endpoint = new();
+    private readonly LinkGenerator _linkGenerator = Mock.Of<LinkGenerator>();
     private readonly Guid _orderId = Guid.CreateVersion7();
     private readonly Mock<ISender> _senderMock = new();
 
@@ -19,7 +21,11 @@ public sealed class CreateOrderEndpointTests
             .ReturnsAsync(_orderId);
 
         // Act
-        var result = await _endpoint.HandleAsync(_senderMock.Object, CancellationToken.None);
+        var result = await _endpoint.HandleAsync(
+            _senderMock.Object,
+            _linkGenerator,
+            CancellationToken.None
+        );
 
         // Assert
         result.ShouldBeOfType<Created<Guid>>();
@@ -47,7 +53,7 @@ public sealed class CreateOrderEndpointTests
 
         // Act
         var act = async () =>
-            await _endpoint.HandleAsync(_senderMock.Object, CancellationToken.None);
+            await _endpoint.HandleAsync(_senderMock.Object, _linkGenerator, CancellationToken.None);
 
         // Assert
         var exception = await act.ShouldThrowAsync<InvalidOperationException>();

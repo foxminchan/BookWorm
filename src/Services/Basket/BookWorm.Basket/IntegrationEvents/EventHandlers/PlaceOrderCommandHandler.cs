@@ -44,7 +44,9 @@ public sealed class PlaceOrderCommandHandler(IBasketRepository repository)
     [Channel("basket-checkout-complete")]
     [SubscribeOperation(
         typeof(BasketDeletedFailedIntegrationEvent),
-        OperationId = nameof(BasketDeletedFailedIntegrationEvent)
+        OperationId = nameof(BasketDeletedFailedIntegrationEvent),
+        Summary = "Notify successful checkout",
+        Description = "Signals that the basket has been successfully processed and the order is ready for fulfillment"
     )]
     private static async Task PublishCompletedEvent(
         ConsumeContext<PlaceOrderCommand> context,
@@ -61,7 +63,9 @@ public sealed class PlaceOrderCommandHandler(IBasketRepository repository)
     [Channel("basket-checkout-failed")]
     [SubscribeOperation(
         typeof(BasketDeletedCompleteIntegrationEvent),
-        OperationId = nameof(BasketDeletedCompleteIntegrationEvent)
+        OperationId = nameof(BasketDeletedCompleteIntegrationEvent),
+        Summary = "Notify checkout failure",
+        Description = "Signals that there was an error processing the basket checkout"
     )]
     private static async Task PublishFailedEvent(
         ConsumeContext<PlaceOrderCommand> context,

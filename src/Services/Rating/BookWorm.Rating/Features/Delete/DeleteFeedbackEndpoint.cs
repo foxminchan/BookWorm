@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
-
-namespace BookWorm.Rating.Features.Delete;
+﻿namespace BookWorm.Rating.Features.Delete;
 
 public sealed class DeleteFeedbackEndpoint : IEndpoint<NoContent, Guid, ISender>
 {
@@ -8,12 +6,17 @@ public sealed class DeleteFeedbackEndpoint : IEndpoint<NoContent, Guid, ISender>
     {
         app.MapDelete(
                 "/feedbacks/{id:guid}",
-                async (Guid id, ISender sender) => await HandleAsync(id, sender)
+                async (
+                    [Description("The unique identifier of the feedback to be deleted")] Guid id,
+                    ISender sender
+                ) => await HandleAsync(id, sender)
             )
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status404NotFound)
-            .WithOpenApi()
             .WithTags(nameof(Feedback))
+            .WithName(nameof(DeleteFeedbackEndpoint))
+            .WithSummary("Delete Feedback")
+            .WithDescription("Delete a feedback if it exists")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization(Authorization.Policies.Admin);
     }

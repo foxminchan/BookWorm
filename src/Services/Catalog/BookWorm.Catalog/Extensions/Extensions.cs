@@ -11,7 +11,9 @@ public static class Extensions
 
         services.AddGrpc();
 
-        services.AddDefaultOpenApi();
+        builder.AddDefaultOpenApi();
+
+        services.AddFeatureManagement();
 
         builder.AddDefaultAuthentication().AddKeycloakClaimsTransformation();
 
@@ -83,6 +85,6 @@ public static class Extensions
         // Configure EventBus
         builder.AddEventBus(typeof(ICatalogApiMarker), cfg => cfg.AddInMemoryInboxOutbox());
 
-        services.AddAsyncApiDocs([typeof(ICatalogApiMarker)], nameof(Catalog));
+        builder.AddAsyncApiDocs([typeof(ICatalogApiMarker)]);
     }
 }

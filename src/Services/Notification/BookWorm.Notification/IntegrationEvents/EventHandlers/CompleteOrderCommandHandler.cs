@@ -10,7 +10,8 @@ public sealed class CompleteOrderCommandHandler(ISmtpClient smtpClient, EmailOpt
     [PublishOperation(
         typeof(CompleteOrderCommand),
         OperationId = nameof(CompleteOrderCommand),
-        Summary = "Complete order notification"
+        Summary = "Complete order notification",
+        Description = "Represents a successful integration event when a user completes an order"
     )]
     public async Task Consume(ConsumeContext<CompleteOrderCommand> context)
     {

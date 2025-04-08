@@ -6,14 +6,22 @@ public sealed class CompleteOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, 
     {
         app.MapPatch(
                 "/orders/{orderId:guid}/complete",
-                async ([FromIdempotencyHeader] string key, Guid orderId, ISender sender) =>
-                    await HandleAsync(orderId, sender)
+                async (
+                    [FromIdempotencyHeader]
+                    [Description("The idempotency key of the order to be completed")]
+                        string key,
+                    [Description("The unique identifier of the order to be completed")]
+                        Guid orderId,
+                    ISender sender
+                ) => await HandleAsync(orderId, sender)
             )
             .Produces<OrderDetailDto>()
             .ProducesProblem(StatusCodes.Status404NotFound)
             .WithIdempotency()
-            .WithOpenApi()
             .WithTags(nameof(Order))
+            .WithName(nameof(CompleteOrderEndpoint))
+            .WithSummary("Complete Order")
+            .WithDescription("Complete an order")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization();
     }

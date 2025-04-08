@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Catalog.Features.Authors.Update;
 
-public sealed record UpdateAuthorCommand([property: JsonIgnore] Guid Id, string Name) : ICommand;
+public sealed record UpdateAuthorCommand(Guid Id, string Name) : ICommand;
 
 public sealed class UpdateAuthorHandler(IAuthorRepository repository)
     : ICommandHandler<UpdateAuthorCommand>

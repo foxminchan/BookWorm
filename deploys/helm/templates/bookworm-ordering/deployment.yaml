@@ -1,0 +1,42 @@
+---
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "bookworm-ordering-deployment"
+spec:
+  template:
+    metadata:
+      labels:
+        app: "aspire"
+        component: "bookworm-ordering"
+    spec:
+      containers:
+        - image: "{{ .Values.parameters.bookworm-ordering.bookworm_ordering_image }}"
+          name: "bookworm-ordering"
+          envFrom:
+            - configMapRef:
+                name: "bookworm-ordering-config"
+            - secretRef:
+                name: "bookworm-ordering-secrets"
+          ports:
+            - name: "http"
+              protocol: "TCP"
+              containerPort: "{{ .Values.parameters.bookworm-ordering.port_http }}"
+            - name: "https"
+              protocol: "TCP"
+              containerPort: "{{ .Values.parameters.bookworm-ordering.port_https }}"
+            - name: "healthchecks"
+              protocol: "TCP"
+              containerPort: "{{ .Values.parameters.bookworm-ordering.port_healthchecks }}"
+          imagePullPolicy: "IfNotPresent"
+  selector:
+    matchLabels:
+      app: "aspire"
+      component: "bookworm-ordering"
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: "RollingUpdate"

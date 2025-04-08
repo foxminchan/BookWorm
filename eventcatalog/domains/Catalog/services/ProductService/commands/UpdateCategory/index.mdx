@@ -52,10 +52,13 @@ This endpoint requires authentication and admin-level authorization. The request
 ### Example Usage
 
 ```bash
-curl -X PUT "https://api.bookworm.com/api/v1/categories/{id}" \
+curl -X PUT "https://api.bookworm.com/api/v1/categories" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <admin-token>" \
-  -d '{"name": "Updated Category Name"}'
+  -d '{
+    "id": "01961eb4-668d-7e7e-ae25-0fab379614f7",
+    "name": "Updated Category Name"
+  }'
 ```
 
 ### Validation Rules

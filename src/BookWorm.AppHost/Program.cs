@@ -2,42 +2,36 @@ using BookWorm.AppHost;
 using BookWorm.Constants;
 using BookWorm.HealthChecksUI;
 using BookWorm.Scalar;
+using Microsoft.Extensions.Hosting;
 using Projects;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-var postgresUser = builder.AddParameter("sql-user", true);
-var postgresPassword = builder.AddParameter("sql-password", true);
+builder.AddProjectPublisher();
 
-var postgres = builder
-    .AddPostgres("postgres", postgresUser, postgresPassword, 5432)
-    .WithPgAdmin()
-    .WithDataVolume()
-    .WithLifetime(ContainerLifetime.Persistent);
+var postgres = builder.AddAzurePostgresFlexibleServer(Components.Postgres);
 
-var redis = builder
-    .AddRedis(Components.Redis, 6379)
-    .WithRedisInsight()
-    .WithDataVolume()
-    .WithLifetime(ContainerLifetime.Persistent);
+var redis = builder.AddAzureRedis(Components.Redis);
 
 var qdrant = builder
     .AddQdrant(Components.VectorDb)
     .WithDataVolume()
+    .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent);
 
 var queue = builder
     .AddRabbitMQ(Components.Queue)
     .WithManagementPlugin()
+    .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent)
     .WithEndpoint("tcp", e => e.Port = 5672)
     .WithEndpoint("management", e => e.Port = 15672);
 
 var cosmos = builder.AddAzureCosmosDB(Components.Cosmos);
-var storage = builder.AddAzureStorage("storage");
+var storage = builder.AddAzureStorage(Components.Storage);
 var signalR = builder.AddAzureSignalR(Components.SignalR);
 
-builder.ConfigAzureResource(cosmos, storage, signalR);
+builder.ConfigAzureResource(cosmos, storage, signalR, postgres, redis);
 
 var blobStorage = storage.AddBlobs(Components.Blob);
 var catalogDb = postgres.AddDatabase(Components.Database.Catalog);
@@ -47,7 +41,13 @@ var financeDb = postgres.AddDatabase(Components.Database.Finance);
 var keycloak = builder
     .AddKeycloak(Components.KeyCloak, 8084)
     .WithDataVolume()
-    .WithRealmImport("./realm-export.json");
+    .WithImagePullPolicy(ImagePullPolicy.Always)
+    .WithLifetime(ContainerLifetime.Persistent);
+
+if (builder.Environment.IsDevelopment())
+{
+    keycloak.WithRealmImport("./realm-export.json");
+}
 
 var mailpit = builder.AddMailPit(Components.MailPit);
 
@@ -135,7 +135,7 @@ var gateway = builder
 builder.AddAi([catalogApi]);
 
 builder
-    .AddHealthChecksUi("healthchecksui")
+    .AddHealthChecksUi()
     .WithReference(gateway)
     .WithReference(catalogApi)
     .WithReference(orderingApi)

@@ -1,0 +1,42 @@
+---
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "bookworm-basket-deployment"
+spec:
+  template:
+    metadata:
+      labels:
+        app: "aspire"
+        component: "bookworm-basket"
+    spec:
+      containers:
+        - image: "{{ .Values.parameters.bookworm-basket.bookworm_basket_image }}"
+          name: "bookworm-basket"
+          envFrom:
+            - configMapRef:
+                name: "bookworm-basket-config"
+            - secretRef:
+                name: "bookworm-basket-secrets"
+          ports:
+            - name: "http"
+              protocol: "TCP"
+              containerPort: "{{ .Values.parameters.bookworm-basket.port_http }}"
+            - name: "https"
+              protocol: "TCP"
+              containerPort: "{{ .Values.parameters.bookworm-basket.port_https }}"
+            - name: "healthchecks"
+              protocol: "TCP"
+              containerPort: "{{ .Values.parameters.bookworm-basket.port_healthchecks }}"
+          imagePullPolicy: "IfNotPresent"
+  selector:
+    matchLabels:
+      app: "aspire"
+      component: "bookworm-basket"
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: "RollingUpdate"

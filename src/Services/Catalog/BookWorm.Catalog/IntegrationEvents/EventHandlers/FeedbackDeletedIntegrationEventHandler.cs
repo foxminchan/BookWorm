@@ -11,7 +11,8 @@ public sealed class FeedbackDeletedIntegrationEventHandler(IBookRepository repos
     [PublishOperation(
         typeof(FeedbackDeletedIntegrationEvent),
         OperationId = nameof(FeedbackDeletedIntegrationEvent),
-        Summary = "Update book rating"
+        Summary = "Update book rating",
+        Description = "Represents a successful integration event when deleting a feedback in the system"
     )]
     public async Task Consume(ConsumeContext<FeedbackDeletedIntegrationEvent> context)
     {

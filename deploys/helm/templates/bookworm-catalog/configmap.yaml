@@ -1,0 +1,24 @@
+---
+apiVersion: "v1"
+kind: "ConfigMap"
+metadata:
+  name: "bookworm-catalog-config"
+  labels:
+    app: "aspire"
+    component: "bookworm-catalog"
+data:
+  ASPNETCORE_URLS: "{{ .Values.config.bookworm-catalog.ASPNETCORE_URLS }}"
+  OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "{{ .Values.config.bookworm-catalog.OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES }}"
+  OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "{{ .Values.config.bookworm-catalog.OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES }}"
+  OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "{{ .Values.config.bookworm-catalog.OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY }}"
+  ASPNETCORE_FORWARDEDHEADERS_ENABLED: "{{ .Values.config.bookworm-catalog.ASPNETCORE_FORWARDEDHEADERS_ENABLED }}"
+  HTTP_PORTS: "{{ .Values.config.bookworm-catalog.HTTP_PORTS }}"
+  ConnectionStrings__blob: "{{ .Values.config.bookworm-catalog.ConnectionStrings__blob }}"
+  ConnectionStrings__catalogdb: "{{ .Values.config.bookworm-catalog.ConnectionStrings__catalogdb }}"
+  services__keycloak__http__0: "{{ .Values.config.bookworm-catalog.services__keycloak__http__0 }}"
+  services__keycloak__management__0: "{{ .Values.config.bookworm-catalog.services__keycloak__management__0 }}"
+  ConnectionStrings__redis: "{{ .Values.config.bookworm-catalog.ConnectionStrings__redis }}"
+  ConnectionStrings__signalr: "{{ .Values.config.bookworm-catalog.ConnectionStrings__signalr }}"
+  ConnectionStrings__embedding: "{{ .Values.config.bookworm-catalog.ConnectionStrings__embedding }}"
+  ConnectionStrings__chat: "{{ .Values.config.bookworm-catalog.ConnectionStrings__chat }}"
+  HEALTHCHECKSUI_URLS: "{{ .Values.config.bookworm-catalog.HEALTHCHECKSUI_URLS }}"

@@ -1,9 +1,6 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
+﻿namespace BookWorm.Rating.Features.Create;
 
-namespace BookWorm.Rating.Features.Create;
-
-public sealed class CreateFeedbackEndpoint
-    : IEndpoint<Created<Guid>, CreateFeedbackCommand, ISender>
+public sealed class CreateFeedbackEndpoint : IEndpoint<Ok<Guid>, CreateFeedbackCommand, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
@@ -12,14 +9,16 @@ public sealed class CreateFeedbackEndpoint
                 async (CreateFeedbackCommand command, ISender sender) =>
                     await HandleAsync(command, sender)
             )
-            .Produces<Guid>(StatusCodes.Status201Created)
+            .Produces<Guid>()
             .ProducesValidationProblem()
-            .WithOpenApi()
             .WithTags(nameof(Feedback))
+            .WithName(nameof(CreateFeedbackEndpoint))
+            .WithSummary("Create Feedback")
+            .WithDescription("Create a new feedback")
             .MapToApiVersion(new(1, 0));
     }
 
-    public async Task<Created<Guid>> HandleAsync(
+    public async Task<Ok<Guid>> HandleAsync(
         CreateFeedbackCommand command,
         ISender sender,
         CancellationToken cancellationToken = default
@@ -27,9 +26,6 @@ public sealed class CreateFeedbackEndpoint
     {
         var result = await sender.Send(command, cancellationToken);
 
-        return TypedResults.Created(
-            new UrlBuilder().WithVersion().WithResource(nameof(Feedback)).WithId(result).Build(),
-            result
-        );
+        return TypedResults.Ok(result);
     }
 }

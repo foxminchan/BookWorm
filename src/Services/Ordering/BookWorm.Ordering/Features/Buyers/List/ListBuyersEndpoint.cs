@@ -12,8 +12,10 @@ public sealed class ListBuyersEndpoint
             )
             .Produces<PagedResult<BuyerDto>>()
             .WithFeatureFlag(nameof(ListBuyersEndpoint))
-            .WithOpenApi()
             .WithTags(nameof(Buyer))
+            .WithName(nameof(ListBuyersEndpoint))
+            .WithSummary("List Buyers")
+            .WithDescription("List all buyers with pagination options")
             .MapToApiVersion(new(1, 0));
     }
 

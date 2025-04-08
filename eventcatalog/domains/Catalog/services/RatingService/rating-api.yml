@@ -1,68 +1,88 @@
 ---
-openapi: 3.0.1
+openapi: 3.1.1
 info:
-  title: Rating Service
-  version: 1.0.0
-  description: |-
-    Rating API for BookWorm
+  title: Rating Service API
+  description: Handles the collection, storage, and aggregation of user feedback and
+    ratings for books on the BookWorm platform
   contact:
     name: Nhan Nguyen
     url: https://github.com/foxminchan
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
+  version: '1.0'
 servers:
-  - url: http://127.0.0.1:54683
+  - url: https://dev.rating.bookworm.com
+    description: Development
+  - url: https://stg.rating.bookworm.com
+    description: Staging
+  - url: https://qa.rating.bookworm.com
+    description: QA
+  - url: https://rating.bookworm.com
+    description: Production
 paths:
   "/api/v1/feedbacks":
     get:
       tags:
-        - Feedback
-      summary: Get feedbacks
-      description: Get feedbacks for a book
+      - Feedback
+      summary: List Feedbacks
+      description: List feedbacks for a book with pagination and filtering
       x-eventcatalog-message-type: query
+      operationId: ListFeedbacksEndpoint
       parameters:
-        - name: BookId
-          in: query
-          description: The ID of the book to get feedback for
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: PageIndex
-          in: query
-          description: Number of items to return in a single page of results
-          schema:
-            type: integer
-            format: int32
-            default: 1
-        - name: PageSize
-          in: query
-          description: Number of items to return in a single page of results
-          schema:
-            type: integer
-            format: int32
-            default: 20
-        - name: OrderBy
-          in: query
-          description: Property to order results by
-          schema:
-            type: string
-            default: Rating
-        - name: IsDescending
-          in: query
+      - name: BookId
+        in: query
+        description: The ID of the book to get feedback for
+        required: true
+        schema:
+          type: string
+          format: uuid
+          description: The unique identifier of the book
+          example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+      - name: PageIndex
+        in: query
+        description: Number of items to return in a single page of results
+        schema:
+          type: integer
+          format: int32
+          default: 1
+          description: The page index to return
+          minimum: 1
+          example: 1
+      - name: PageSize
+        in: query
+        description: Number of items to return in a single page of results
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          description: The page size to return
+          minimum: 1
+          example: 20
+      - name: OrderBy
+        in: query
+        description: Property to order results by
+        schema:
+          type: string
+          default: Rating
+          description: The property to order results by
+          example: Rating
+      - name: IsDescending
+        in: query
+        description: Whether to order results in descending order
+        schema:
+          type: boolean
+          default: false
           description: Whether to order results in descending order
-          schema:
-            type: boolean
-            default: false
+          example: false
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 "$ref": "#/components/schemas/PagedResultOfFeedbackDto"
-        "400":
+        '400':
           description: Bad Request
           content:
             application/problem+json:
@@ -70,10 +90,11 @@ paths:
                 "$ref": "#/components/schemas/HttpValidationProblemDetails"
     post:
       tags:
-        - Feedback
-      summary: Create feedback
-      description: Create feedback for a book
+      - Feedback
+      summary: Create Feedback
+      description: Create a new feedback
       x-eventcatalog-message-type: command
+      operationId: CreateFeedbackEndpoint
       requestBody:
         content:
           application/json:
@@ -81,14 +102,16 @@ paths:
               "$ref": "#/components/schemas/CreateFeedbackCommand"
         required: true
       responses:
-        "201":
-          description: Created
+        '200':
+          description: OK
           content:
             application/json:
               schema:
                 type: string
                 format: uuid
-        "400":
+                description: The unique identifier of the feedback
+                example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+        '400':
           description: Bad Request
           content:
             application/problem+json:
@@ -97,21 +120,27 @@ paths:
   "/api/v1/feedbacks/{id}":
     delete:
       tags:
-        - Feedback
-      summary: Delete feedback
-      description: Delete feedback for a book
+      - Feedback
+      summary: Delete Feedback
+      description: Delete a feedback if it exists
       x-eventcatalog-message-type: command
+      operationId: DeleteFeedbackEndpoint
+      security:
+        - BearerAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      - name: id
+        in: path
+        description: The unique identifier of the feedback to be deleted
+        required: true
+        schema:
+          type: string
+          format: uuid
+          description: The unique identifier of the feedback to be deleted
+          example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
       responses:
-        "204":
+        '204':
           description: No Content
-        "404":
+        '404':
           description: Not Found
           content:
             application/problem+json:
@@ -121,84 +150,141 @@ components:
   schemas:
     CreateFeedbackCommand:
       required:
-        - bookId
-        - firstName
-        - lastName
-        - comment
-        - rating
+      - bookId
+      - firstName
+      - lastName
+      - rating
       type: object
+      writeOnly: true
+      description: The command to create a new feedback
       properties:
         bookId:
           type: string
           format: uuid
+          description: The unique identifier of the book
+          example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
         firstName:
           type: string
           nullable: true
+          description: The first name of the user
+          maxLength: 50
+          example: "John"
         lastName:
           type: string
-          nullable: true
+          description: The last name of the user
+          maxLength: 50
+          example: "Doe"
         comment:
-          type: string
-          nullable: true
+          type:
+            - "string"
+            - "null"
+          description: The comment of the user
+          maxLength: 1000
+          example: "This is a comment"
         rating:
           type: integer
           format: int32
+          description: The rating of the user
+          minimum: 1
+          maximum: 5
+          example: 5
     FeedbackDto:
-      required:
-        - id
-        - firstName
-        - lastName
-        - comment
-        - rating
-        - bookId
       type: object
+      readOnly: true
+      description: The feedback of the user
       properties:
         id:
           type: string
           format: uuid
+          description: The unique identifier of the feedback
+          example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
         firstName:
           type: string
-          nullable: true
+          description: The first name of the user
+          example: "John"
         lastName:
           type: string
-          nullable: true
+          description: The last name of the user
+          example: "Doe"
         comment:
-          type: string
-          nullable: true
+          type:
+            - "string"
+            - "null"
+          description: The comment of the user
+          example: "This is a comment"
         rating:
           type: integer
           format: int32
+          description: The rating of the user
+          example: 5
         bookId:
           type: string
           format: uuid
+          description: The unique identifier of the book
+          example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
     HttpValidationProblemDetails:
       type: object
+      readOnly: true
+      description: The problem details for validation errors
       properties:
         type:
           type: string
+          description: The type of the problem
+          example: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
         title:
           type: string
+          description: The title of the problem
+          example: "Validation failed"
         status:
           type: integer
           format: int32
+          description: The status code of the problem
+          example: 400
         detail:
           type: string
-        instance:
-          type: string
+          description: The detail of the problem
+          example: "One or more validation errors has occurred"
         errors:
-          type: object
-          additionalProperties:
-            type: array
-            items:
-              type: string
+          type: array
+          description: The validation errors
+          items:
+            type: object
+            properties:
+              propertyName:
+                type: string
+                description: The name of the property that failed validation
+                example: "FirstName"
+              errorMessage:
+                type: string
+                description: The error message describing the validation failure
+                example: "'FirstName' must not be empty."
+              attemptedValue:
+                type: object
+                description: The value that was attempted
+                example: null
+              customState:
+                type: object
+                description: Custom state information
+                example: null
+              severity:
+                type: integer
+                format: int32
+                description: The severity level of the error
+                example: 0
+              errorCode:
+                type:
+                  - "string"
+                  - "null"
+                description: The error code
+                example: null
+              formattedMessagePlaceholderValues:
+                type: object
+                description: Placeholder values for the formatted message
+                example: null
     PagedResultOfFeedbackDto:
-      required:
-        - items
-        - pageIndex
-        - pageSize
-        - totalItems
-        - totalPages
       type: object
+      readOnly: true
+      description: The paged result of the feedback
       properties:
         items:
           type: array
@@ -207,36 +293,54 @@ components:
         pageIndex:
           type: integer
           format: int32
+          description: The page index
+          example: 1
         pageSize:
           type: integer
           format: int32
+          description: The page size
+          example: 20
         totalItems:
           type: integer
           format: int64
+          description: The total number of items
+          example: 100
         totalPages:
           type: number
           format: double
+          description: The total number of pages
+          example: 5
         hasPreviousPage:
           type: boolean
+          description: Whether there is a previous page
+          example: true
         hasNextPage:
           type: boolean
+          description: Whether there is a next page
+          example: true
     ProblemDetails:
       type: object
+      readOnly: true
+      description: The problem details
       properties:
         type:
           type: string
+          description: The type of the problem
         title:
           type: string
+          description: The title of the problem
         status:
           type: integer
           format: int32
+          description: The status code of the problem
         detail:
           type: string
-        instance:
-          type: string
+          description: The detail of the problem
   securitySchemes:
     BearerAuth:
       type: http
-      scheme: bearer
+      scheme: Bearer
+      description: The Bearer token for the user
 tags:
-  - name: Feedback
+- name: Feedback
+  description: Endpoints for managing user ratings and feedback for books on the BookWorm platform

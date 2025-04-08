@@ -1,5 +1,4 @@
-﻿using System.ComponentModel;
-using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
+﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
 
 namespace BookWorm.Catalog.Features.Books.List;
 

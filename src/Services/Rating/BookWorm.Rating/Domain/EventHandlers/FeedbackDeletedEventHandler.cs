@@ -11,7 +11,9 @@ public sealed class FeedbackDeletedEventHandler(IEventDispatcher eventDispatcher
     [Channel("catalog-feedback-deleted")]
     [SubscribeOperation(
         typeof(FeedbackDeletedIntegrationEvent),
-        OperationId = nameof(FeedbackDeletedIntegrationEvent)
+        OperationId = nameof(FeedbackDeletedIntegrationEvent),
+        Summary = "Feedback deleted event",
+        Description = "Represents a successful integration event when a feedback is deleted"
     )]
     public async Task Handle(FeedbackDeletedEvent notification, CancellationToken cancellationToken)
     {

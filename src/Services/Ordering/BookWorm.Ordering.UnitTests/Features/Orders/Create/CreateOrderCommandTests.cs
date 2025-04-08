@@ -155,9 +155,9 @@ public sealed class CreateOrderCommandTests
         private readonly Mock<ClaimsPrincipal> _claimsPrincipalMock;
         private readonly CreateOrderCommand _command;
         private readonly CreateOrderHandler _handler;
+        private readonly Mock<IDistributedLockProvider> _lockProviderMock;
         private readonly Mock<IOrderRepository> _repositoryMock;
         private readonly string _userId;
-        private readonly Mock<IDistributedLockProvider> _lockProviderMock;
 
         public CreateOrderHandlerTests()
         {

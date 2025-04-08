@@ -1,19 +1,27 @@
-﻿namespace BookWorm.Catalog.Features.Books.Create;
+﻿using BookWorm.Catalog.Features.Books.Get;
 
-public sealed class CreateBookEndpoint : IEndpoint<Created<Guid>, CreateBookCommand, ISender>
+namespace BookWorm.Catalog.Features.Books.Create;
+
+public sealed class CreateBookEndpoint
+    : IEndpoint<Created<Guid>, CreateBookCommand, ISender, LinkGenerator>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapPost(
                 "/books",
-                async ([AsParameters] CreateBookCommand command, ISender sender) =>
-                    await HandleAsync(command, sender)
+                async (
+                    [AsParameters] CreateBookCommand command,
+                    ISender sender,
+                    LinkGenerator linker
+                ) => await HandleAsync(command, sender, linker)
             )
+            .Accepts<CreateBookCommand>(MediaTypeNames.Multipart.FormData)
             .Produces<Guid>(StatusCodes.Status201Created)
             .ProducesValidationProblem()
-            .DisableAntiforgery()
-            .WithOpenApi()
             .WithTags(nameof(Book))
+            .WithName(nameof(CreateBookEndpoint))
+            .WithSummary("Create Book")
+            .WithDescription("Create a book")
             .WithFormOptions(true)
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization(Authorization.Policies.Admin);
@@ -22,14 +30,14 @@ public sealed class CreateBookEndpoint : IEndpoint<Created<Guid>, CreateBookComm
     public async Task<Created<Guid>> HandleAsync(
         CreateBookCommand command,
         ISender sender,
+        LinkGenerator linker,
         CancellationToken cancellationToken = default
     )
     {
         var result = await sender.Send(command, cancellationToken);
 
-        return TypedResults.Created(
-            new UrlBuilder().WithVersion().WithResource(nameof(Books)).WithId(result).Build(),
-            result
-        );
+        var path = linker.GetPathByName(nameof(GetBookEndpoint), new { id = result });
+
+        return TypedResults.Created(path, result);
     }
 }

@@ -1,68 +1,123 @@
 ---
 asyncapi: 3.0.0
 info:
-  title: Notification Service
+  title: Notification Service API
   version: 1.0.0
-  description: |-
-    Notification Worker for BookWorm
+  description: Transactional Email Service for BookWorm
   contact:
     name: Nhan Nguyen
     url: "https://github.com/foxminchan"
   license:
     name: MIT
     url: "https://opensource.org/licenses/MIT"
-defaultContentType: application/json
+defaultContentType: application/vnd.masstransit+json
 servers:
-  rabbitmq:
-    host: localhost:5672
+  development:
+    host: dev.eventbus:5672
     protocol: amqp
-    description: RabbitMQ server for development
+    protocolVersion: 0.9.1
+    summary: RabbitMQ server for development environment
+    description: RabbitMQ server for development environment
     security:
       - type: userPassword
+        description: An authentication method for the server
+    tags:
+      - name: env:development
+        description: >-
+          Development environment configuration for local testing and debugging
+  staging:
+    host: stg.eventbus:5672
+    protocol: amqp
+    protocolVersion: 0.9.1
+    summary: RabbitMQ server for staging environment
+    description: RabbitMQ server for staging environment
+    security:
+      - type: userPassword
+        description: An authentication method for the server
+    tags:
+      - name: env:staging
+        description: >-
+          Staging environment configuration for testing and debugging
+  qa:
+    host: qa.eventbus:5672
+    protocol: amqp
+    protocolVersion: 0.9.1
+    summary: RabbitMQ server for QA environment
+    description: RabbitMQ server for QA environment
+    security:
+      - type: userPassword
+        description: An authentication method for the server
+    tags:
+      - name: env:qa
+        description: >-
+          QA environment configuration for testing and debugging
+  production:
+    host: prod.eventbus:5672
+    protocol: amqp
+    protocolVersion: 0.9.1
+    summary: RabbitMQ server for production environment
+    description: RabbitMQ server for production environment
+    security:
+      - type: userPassword
+        description: An authentication method for the server
+    tags:
+      - name: env:production
+        description: >-
+          Production environment configuration for production
 channels:
   notification-cancel-order:
     address: notification-cancel-order
+    description: Event emitted when a user cancels an order
     messages:
       CancelOrderCommand.message:
         $ref: "#/components/messages/cancelOrderCommand"
   notification-complete-order:
     address: notification-complete-order
+    description: Event emitted when a user completes an order
     messages:
       CompleteOrderCommand.message:
         $ref: "#/components/messages/completeOrderCommand"
   notification-place-order:
     address: notification-place-order
+    description: Event emitted when a user places an order
     messages:
       PlaceOrderCommand.message:
         $ref: "#/components/messages/placeOrderCommand"
 operations:
   CancelOrderCommand:
+    title: Cancel order notification
+    summary: Cancel order notification
+    description: Represents a successful integration event when a user cancels an order
     action: receive
     channel:
       $ref: "#/channels/notification-cancel-order"
-    summary: Cancel order notification
     messages:
       - $ref: >-
           #/channels/notification-cancel-order/messages/CancelOrderCommand.message
   CompleteOrderCommand:
+    title: Complete order notification
+    summary: Complete order notification
+    description: Represents a successful integration event when a user completes an order
     action: receive
     channel:
       $ref: "#/channels/notification-complete-order"
-    summary: Complete order notification
     messages:
       - $ref: >-
           #/channels/notification-complete-order/messages/CompleteOrderCommand.message
   PlaceOrderCommand:
+    title: Place order notification
+    summary: Place order notification
+    description: Represents a successful integration event when a user places an order
     action: receive
     channel:
       $ref: "#/channels/notification-place-order"
-    summary: Place order notification
     messages:
       - $ref: "#/channels/notification-place-order/messages/PlaceOrderCommand.message"
 components:
   schemas:
     cancelOrderCommand:
       id: cancelOrderCommand
+      description: Represents a successful integration event when a user cancels an order
       allOf:
         - $ref: "#/components/schemas/integrationEvent"
         - type: object
@@ -71,26 +126,40 @@ components:
             orderId:
               type: string
               format: guid
+              description: The unique identifier of the order
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
             email:
               type:
                 - "null"
                 - string
+              pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+              description: The email of the user
+              example: "test@test.com"
             totalMoney:
               type: number
               format: decimal
+              description: The total amount of money in the order
+              minimum: 0
+              example: 100.00
     integrationEvent:
       id: integrationEvent
       type: object
+      description: Base event structure containing common metadata for all integration events in the system
       additionalProperties: false
       properties:
         id:
           type: string
           format: guid
+          description: The unique identifier of the integration event
+          example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
         creationDate:
           type: string
           format: date-time
+          description: The creation date of the integration event
+          example: "2021-01-01T00:00:00Z"
     completeOrderCommand:
       id: completeOrderCommand
+      description: Represents a successful integration event when a user completes an order
       allOf:
         - $ref: "#/components/schemas/integrationEvent"
         - type: object
@@ -99,15 +168,24 @@ components:
             orderId:
               type: string
               format: guid
+              description: The unique identifier of the order
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
             email:
               type:
                 - "null"
                 - string
+              pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+              description: The email of the user
+              example: "test@test.com"
             totalMoney:
               type: number
               format: decimal
+              description: The total amount of money in the order
+              minimum: 0
+              example: 100.00
     placeOrderCommand:
       id: placeOrderCommand
+      description: Represents a successful integration event when a user places an order
       allOf:
         - $ref: "#/components/schemas/integrationEvent"
         - type: object
@@ -116,16 +194,26 @@ components:
             basketId:
               type: string
               format: guid
+              description: The unique identifier of the basket
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
             email:
               type:
                 - "null"
                 - string
+              pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+              description: The email of the user
+              example: "test@test.com"
             orderId:
               type: string
               format: guid
+              description: The unique identifier of the order
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
             totalMoney:
               type: number
               format: decimal
+              description: The total amount of money in the basket
+              minimum: 0
+              example: 100.00
   messages:
     cancelOrderCommand:
       payload:

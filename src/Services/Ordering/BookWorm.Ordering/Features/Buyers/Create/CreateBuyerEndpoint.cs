@@ -1,18 +1,23 @@
-﻿namespace BookWorm.Ordering.Features.Buyers.Create;
+﻿using BookWorm.Ordering.Features.Buyers.Get;
 
-public sealed class CreateBuyerEndpoint : IEndpoint<Created<Guid>, CreateBuyerCommand, ISender>
+namespace BookWorm.Ordering.Features.Buyers.Create;
+
+public sealed class CreateBuyerEndpoint
+    : IEndpoint<Created<Guid>, CreateBuyerCommand, ISender, LinkGenerator>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapPost(
                 "/buyers",
-                async (CreateBuyerCommand command, ISender sender) =>
-                    await HandleAsync(command, sender)
+                async (CreateBuyerCommand command, ISender sender, LinkGenerator linker) =>
+                    await HandleAsync(command, sender, linker)
             )
             .Produces<Guid>(StatusCodes.Status201Created)
             .ProducesValidationProblem()
-            .WithOpenApi()
             .WithTags(nameof(Buyer))
+            .WithName(nameof(CreateBuyerEndpoint))
+            .WithSummary("Create Buyer")
+            .WithDescription("Create a new buyer in the system")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization();
     }
@@ -20,14 +25,14 @@ public sealed class CreateBuyerEndpoint : IEndpoint<Created<Guid>, CreateBuyerCo
     public async Task<Created<Guid>> HandleAsync(
         CreateBuyerCommand command,
         ISender sender,
+        LinkGenerator linker,
         CancellationToken cancellationToken = default
     )
     {
         var result = await sender.Send(command, cancellationToken);
 
-        return TypedResults.Created(
-            new UrlBuilder().WithResource(nameof(Buyer)).WithId(result).Build(),
-            result
-        );
+        var path = linker.GetPathByName(nameof(GetBuyerEndpoint), new { id = result });
+
+        return TypedResults.Created(path, result);
     }
 }

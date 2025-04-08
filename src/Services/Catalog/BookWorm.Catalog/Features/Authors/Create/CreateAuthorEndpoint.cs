@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Catalog.Features.Authors.Create;
 
-public sealed class CreateAuthorEndpoint : IEndpoint<Created<Guid>, CreateAuthorCommand, ISender>
+public sealed class CreateAuthorEndpoint : IEndpoint<Ok<Guid>, CreateAuthorCommand, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
@@ -9,15 +9,17 @@ public sealed class CreateAuthorEndpoint : IEndpoint<Created<Guid>, CreateAuthor
                 async (CreateAuthorCommand command, ISender sender) =>
                     await HandleAsync(command, sender)
             )
-            .Produces<Guid>(StatusCodes.Status201Created)
+            .Produces<Guid>()
             .ProducesValidationProblem()
-            .WithOpenApi()
             .WithTags(nameof(Author))
+            .WithName(nameof(CreateAuthorEndpoint))
+            .WithSummary("Create Author")
+            .WithDescription("Create a new author in the catalog system")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization(Authorization.Policies.Admin);
     }
 
-    public async Task<Created<Guid>> HandleAsync(
+    public async Task<Ok<Guid>> HandleAsync(
         CreateAuthorCommand command,
         ISender sender,
         CancellationToken cancellationToken = default
@@ -25,9 +27,6 @@ public sealed class CreateAuthorEndpoint : IEndpoint<Created<Guid>, CreateAuthor
     {
         var result = await sender.Send(command, cancellationToken);
 
-        return TypedResults.Created(
-            new UrlBuilder().WithVersion().WithResource(nameof(Authors)).WithId(result).Build(),
-            result
-        );
+        return TypedResults.Ok(result);
     }
 }
