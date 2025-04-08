@@ -21,9 +21,7 @@ public sealed class Book() : AuditableEntity, IAggregateRoot, ISoftDelete
         Name = !string.IsNullOrWhiteSpace(name)
             ? name
             : throw new CatalogDomainException("Book name is required.");
-        Description = !string.IsNullOrWhiteSpace(description)
-            ? description
-            : throw new CatalogDomainException("Book description is required.");
+        Description = description;
         Image = image;
         Price = new(price, priceSale);
         Status = Status.InStock;
@@ -105,9 +103,7 @@ public sealed class Book() : AuditableEntity, IAggregateRoot, ISoftDelete
         Name = !string.IsNullOrWhiteSpace(name)
             ? name
             : throw new CatalogDomainException("Book name is required.");
-        Description = !string.IsNullOrWhiteSpace(description)
-            ? description
-            : throw new CatalogDomainException("Book description is required.");
+        Description = description;
         Price = new(price, priceSale);
         CategoryId = categoryId;
         PublisherId = publisherId;

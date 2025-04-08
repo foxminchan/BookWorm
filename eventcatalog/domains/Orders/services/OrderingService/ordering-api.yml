@@ -1,36 +1,48 @@
 ---
-openapi: 3.0.1
+openapi: 3.1.1
 info:
-  title: Ordering Service
-  version: 1.0.0
-  description: |-
-    Ordering API for BookWorm
+  title: Ordering Service API
+  description: Orchestrates the entire order lifecycle, from creation to completion
+    or cancellation, for the BookWorm platform
   contact:
     name: Nhan Nguyen
     url: https://github.com/foxminchan
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
+  version: '1.0'
 servers:
-  - url: http://127.0.0.1:54682
+  - url: https://dev.ordering.bookworm.com
+    description: Development
+  - url: https://stg.ordering.bookworm.com
+    description: Staging
+  - url: https://qa.ordering.bookworm.com
+    description: QA
+  - url: https://ordering.bookworm.com
+    description: Production
 paths:
   "/api/v1/orders/{id}/summary":
     get:
       tags:
-        - Order
-      summary: Get order summary
-      description: Get order summary from event store
+      - Order
+      summary: Get Order Summary
+      description: Get an order summary if it exists
       x-eventcatalog-message-type: query
+      operationId: SummaryOrderEndpoint
+      security:
+        - BearerAuth: []
       parameters:
-        - name: id
-          in: path
-          description: The order id
-          required: true
-          schema:
-            type: string
-            format: uuid
+      - name: id
+        in: path
+        description: The unique identifier of the order to be retrieved
+        required: true
+        schema:
+          type: string
+          format: uuid
+          description: The unique identifier of the order to be retrieved
+          example: "019622cf-6bd5-7499-bc18-31f71acbad44"
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -39,45 +51,58 @@ paths:
   "/api/v1/orders":
     get:
       tags:
-        - Order
-      summary: Get orders
-      description: Get orders in a paged format
+      - Order
+      summary: List Orders
+      description: List orders with pagination and filtering
       x-eventcatalog-message-type: query
+      operationId: ListOrdersEndpoint
+      security:
+        - BearerAuth: []
       parameters:
-        - name: PageIndex
-          in: query
-          description: Number of items to return in a single page of results
-          schema:
-            type: integer
-            format: int32
-            default: 1
-        - name: PageSize
-          in: query
-          description: Number of items to return in a single page of results
-          schema:
-            type: integer
-            format: int32
-            default: 20
-        - name: Status
-          in: query
-          description: Status to filter results by
-          schema:
-            "$ref": "#/components/schemas/NullableOfStatus"
-        - name: BuyerId
-          in: query
-          description: Buyer ID to filter results by
-          schema:
-            type: string
-            format: uuid
-            default:
+      - name: PageIndex
+        in: query
+        description: Number of items to return in a single page of results
+        schema:
+          type: integer
+          format: int32
+          default: 1
+          description: The page index to return
+          minimum: 1
+          example: 1
+      - name: PageSize
+        in: query
+        description: Number of items to return in a single page of results
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          description: The page size to return
+          minimum: 1
+          example: 20
+      - name: Status
+        in: query
+        description: Status to filter results by
+        schema:
+          "$ref": "#/components/schemas/NullableOfStatus"
+      - name: BuyerId
+        in: query
+        description: Buyer ID to filter results by
+        schema:
+          type:
+            - string
+            - "null"
+          format: uuid
+          default: null
+          description: The unique identifier of the buyer to be retrieved
+          example: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 "$ref": "#/components/schemas/PagedResultOfOrderDto"
-        "400":
+        '400':
           description: Bad Request
           content:
             application/problem+json:
@@ -85,25 +110,33 @@ paths:
                 "$ref": "#/components/schemas/HttpValidationProblemDetails"
     post:
       tags:
-        - Order
-      summary: Create order
+      - Order
+      summary: Create Order
       description: Create a new order
       x-eventcatalog-message-type: command
+      operationId: CreateOrderEndpoint
+      security:
+        - BearerAuth: []
       parameters:
-        - name: key
-          in: header
-          required: true
-          schema:
-            type: string
+      - name: x-request-id
+        in: header
+        description: The idempotency key of the order to be created
+        required: true
+        schema:
+          type: string
+          description: The idempotency key of the order to be created
+          example: "019622d1-014e-7bb7-b279-42a43ab74347"
       responses:
-        "201":
+        '201':
           description: Created
           content:
             application/json:
               schema:
                 type: string
                 format: uuid
-        "400":
+                description: The unique identifier of the order to be created
+                example: "019622d1-3613-737e-8d58-af7db6317153"
+        '400':
           description: Bad Request
           content:
             application/problem+json:
@@ -112,25 +145,31 @@ paths:
   "/api/v1/orders/{id}":
     get:
       tags:
-        - Order
-      summary: Get order detail
-      description: Get order detail by order id
+      - Order
+      summary: Get Order
+      description: Get an order if it exists
       x-eventcatalog-message-type: query
+      operationId: GetOrderEndpoint
+      security:
+        - BearerAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      - name: id
+        in: path
+        description: The unique identifier of the order to be retrieved
+        required: true
+        schema:
+          type: string
+          format: uuid
+          description: The unique identifier of the order to be retrieved
+          example: "019622d1-89ba-791c-a11c-f1821326441b"
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 "$ref": "#/components/schemas/OrderDetailDto"
-        "404":
+        '404':
           description: Not Found
           content:
             application/problem+json:
@@ -138,21 +177,24 @@ paths:
                 "$ref": "#/components/schemas/ProblemDetails"
     delete:
       tags:
-        - Order
-      summary: Delete order
-      description: Delete order by order id
-      x-eventcatalog-message-type: command
+      - Order
+      summary: Delete Order
+      description: Delete an order if it exists
+      operationId: DeleteOrderEndpoint
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      - name: id
+        in: path
+        description: The unique identifier of the order to be deleted
+        required: true
+        schema:
+          type: string
+          format: uuid
+          description: The unique identifier of the order to be deleted
+          example: "019622d1-c7df-7d66-82fe-8124d493cb1d"
       responses:
-        "204":
+        '204':
           description: No Content
-        "404":
+        '404':
           description: Not Found
           content:
             application/problem+json:
@@ -161,30 +203,39 @@ paths:
   "/api/v1/orders/{orderId}/complete":
     patch:
       tags:
-        - Order
-      summary: Complete order
-      description: Complete order by order id
+      - Order
+      summary: Complete Order
+      description: Complete an order
       x-eventcatalog-message-type: command
+      operationId: CompleteOrderEndpoint
+      security:
+        - BearerAuth: []
       parameters:
-        - name: key
-          in: header
-          required: true
-          schema:
-            type: string
-        - name: orderId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      - name: x-request-id
+        in: header
+        description: The idempotency key of the order to be completed
+        required: true
+        schema:
+          type: string
+          description: The idempotency key of the order to be completed
+          example: "019622d1-014e-7bb7-b279-42a43ab74347"
+      - name: orderId
+        in: path
+        description: The unique identifier of the order to be completed
+        required: true
+        schema:
+          type: string
+          format: uuid
+          description: The unique identifier of the order to be completed
+          example: "019622d1-89ba-791c-a11c-f1821326441b"
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 "$ref": "#/components/schemas/OrderDetailDto"
-        "404":
+        '404':
           description: Not Found
           content:
             application/problem+json:
@@ -193,30 +244,39 @@ paths:
   "/api/v1/orders/{orderId}/cancel":
     patch:
       tags:
-        - Order
-      summary: Cancel order
-      description: Cancel order by order id
+      - Order
+      summary: Cancel Order
+      description: Cancel an order
       x-eventcatalog-message-type: command
+      operationId: CancelOrderEndpoint
+      security:
+        - BearerAuth: []
       parameters:
-        - name: key
-          in: header
-          required: true
-          schema:
-            type: string
-        - name: orderId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      - name: x-request-id
+        in: header
+        description: The idempotency key of the order to be cancelled
+        required: true
+        schema:
+          type: string
+          description: The idempotency key of the order to be cancelled
+          example: "019622d1-014e-7bb7-b279-42a43ab74347"
+      - name: orderId
+        in: path
+        description: The unique identifier of the order to be cancelled
+        required: true
+        schema:
+          type: string
+          format: uuid
+          description: The unique identifier of the order to be cancelled
+          example: "019622d1-89ba-791c-a11c-f1821326441b"
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 "$ref": "#/components/schemas/OrderDetailDto"
-        "404":
+        '404':
           description: Not Found
           content:
             application/problem+json:
@@ -225,10 +285,13 @@ paths:
   "/api/v1/buyers/address":
     patch:
       tags:
-        - Buyer
-      summary: Update buyer address
-      description: Update buyer address by buyer id
+      - Buyer
+      summary: Update Buyer Address
+      description: Update the current buyer's address
       x-eventcatalog-message-type: command
+      operationId: UpdateAddressEndpoint
+      security:
+        - BearerAuth: []
       requestBody:
         content:
           application/json:
@@ -236,19 +299,19 @@ paths:
               "$ref": "#/components/schemas/UpdateAddressCommand"
         required: true
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 "$ref": "#/components/schemas/BuyerDto"
-        "400":
+        '400':
           description: Bad Request
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/HttpValidationProblemDetails"
-        "404":
+        '404':
           description: Not Found
           content:
             application/problem+json:
@@ -257,27 +320,36 @@ paths:
   "/api/v1/buyers":
     get:
       tags:
-        - Buyer
-      summary: Get buyers
-      description: Get buyers in a paged format
+      - Buyer
+      summary: List Buyers
+      description: List all buyers with pagination options
       x-eventcatalog-message-type: query
+      operationId: ListBuyersEndpoint
+      security:
+        - BearerAuth: []
       parameters:
-        - name: PageIndex
-          in: query
-          description: Number of items to return in a single page of results
-          schema:
-            type: integer
-            format: int32
-            default: 1
-        - name: PageSize
-          in: query
-          description: Number of items to return in a single page of results
-          schema:
-            type: integer
-            format: int32
-            default: 20
+      - name: PageIndex
+        in: query
+        description: Number of items to return in a single page of results
+        schema:
+          type: integer
+          format: int32
+          default: 1
+          description: The page index to return
+          minimum: 1
+          example: 1
+      - name: PageSize
+        in: query
+        description: Number of items to return in a single page of results
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          description: The page size to return
+          minimum: 1
+          example: 20
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -285,10 +357,13 @@ paths:
                 "$ref": "#/components/schemas/PagedResultOfBuyerDto"
     post:
       tags:
-        - Buyer
-      summary: Create buyer
-      description: Create a new buyer
+      - Buyer
+      summary: Create Buyer
+      description: Create a new buyer in the system
       x-eventcatalog-message-type: command
+      operationId: CreateBuyerEndpoint
+      security:
+        - BearerAuth: []
       requestBody:
         content:
           application/json:
@@ -296,14 +371,16 @@ paths:
               "$ref": "#/components/schemas/CreateBuyerCommand"
         required: true
       responses:
-        "201":
+        '201':
           description: Created
           content:
             application/json:
               schema:
                 type: string
                 format: uuid
-        "400":
+                description: The unique identifier of the buyer to be created
+                example: "019622d6-d8ae-7512-9b28-3f5591426db8"
+        '400':
           description: Bad Request
           content:
             application/problem+json:
@@ -312,26 +389,28 @@ paths:
   "/api/v1/buyers/me":
     get:
       tags:
-        - Buyer
-      summary: Get current buyer
-      description: Get current buyer
-      x-eventcatalog-message-type: query
+      - Buyer
+      summary: Get Buyer
+      description: Get the current buyer's information
+      operationId: GetBuyerEndpoint
       parameters:
-        - name: Id
-          in: query
-          description: Only 'ADMIN' role can retrieve other users' data
-          required: true
-          schema:
-            type: string
-            format: uuid
+      - name: Id
+        in: query
+        description: Only 'ADMIN' role can retrieve other users' data
+        required: true
+        schema:
+          type: string
+          format: uuid
+          description: The unique identifier of the buyer to be retrieved
+          example: "019622d7-313a-777a-9077-4323b9f59fb9"
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 "$ref": "#/components/schemas/BuyerDto"
-        "404":
+        '404':
           description: Not Found
           content:
             application/problem+json:
@@ -340,21 +419,24 @@ paths:
   "/api/v1/buyers/{id}":
     delete:
       tags:
-        - Buyer
-      summary: Delete buyer
-      description: Delete buyer by buyer id
-      x-eventcatalog-message-type: command
+      - Buyer
+      summary: Delete Buyer
+      description: Delete a buyer by ID if it exists
+      operationId: DeleteBuyerEndpoint
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      - name: id
+        in: path
+        description: The unique identifier of the buyer to be deleted
+        required: true
+        schema:
+          type: string
+          format: uuid
+          description: The unique identifier of the buyer to be deleted
+          example: "019622d7-6ba8-7edc-9340-8c93524c3819"
       responses:
-        "204":
+        '204':
           description: No Content
-        "404":
+        '404':
           description: Not Found
           content:
             application/problem+json:
@@ -363,140 +445,218 @@ paths:
 components:
   schemas:
     BuyerDto:
-      required:
-        - id
-        - name
-        - address
       type: object
+      readOnly: true
+      description: The buyer details
       properties:
         id:
           type: string
           format: uuid
+          description: The unique identifier of the buyer
+          example: "019622d7-e45c-7ccb-868f-509b69559883"
         name:
-          type: string
-          nullable: true
+          type:
+            - "string"
+            - "null"
+          description: The name of the buyer
+          example: "John Doe"
         address:
-          type: string
-          nullable: true
+          type:
+            - "string"
+            - "null"
+          description: The address of the buyer
+          example: "123 Main St, Anytown, USA"
     CreateBuyerCommand:
       required:
-        - street
-        - city
-        - province
+      - street
+      - city
+      - province
       type: object
+      writeOnly: true
+      description: The command to create a buyer
       properties:
         street:
           type: string
+          description: The street of the buyer
+          maxLength: 50
+          example: "123 Main St"
         city:
           type: string
+          description: The city of the buyer
+          maxLength: 50
+          example: "Anytown"
         province:
           type: string
+          description: The province of the buyer
+          maxLength: 50
+          example: "CA"
     HttpValidationProblemDetails:
       type: object
+      readOnly: true
+      description: The problem details for validation errors
       properties:
         type:
           type: string
+          description: The type of the problem
+          example: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
         title:
           type: string
+          description: The title of the problem
+          example: "Validation failed"
         status:
           type: integer
           format: int32
+          description: The status code of the problem
+          example: 400
         detail:
           type: string
-        instance:
-          type: string
+          description: The detail of the problem
+          example: "One or more validation errors has occurred"
         errors:
-          type: object
-          additionalProperties:
-            type: array
-            items:
-              type: string
+          type: array
+          description: The validation errors
+          items:
+            type: object
+            properties:
+              propertyName:
+                type: string
+                description: The name of the property that failed validation
+                example: "Street"
+              errorMessage:
+                type: string
+                description: The error message describing the validation failure
+                example: "'Street' must not be empty."
+              attemptedValue:
+                type: object
+                description: The value that was attempted
+                example: null
+              customState:
+                type: object
+                description: Custom state information
+                example: null
+              severity:
+                type: integer
+                format: int32
+                description: The severity level of the error
+                example: 0
+              errorCode:
+                type:
+                  - "string"
+                  - "null"
+                description: The error code
+                example: null
+              formattedMessagePlaceholderValues:
+                type: object
+                description: Placeholder values for the formatted message
+                example: null
     NullableOfStatus:
+      description: The status of the order
       enum:
-        - New
-        - Cancelled
-        - Completed
-        -
-      default:
+      - New
+      - Cancelled
+      - Completed
+      - 
+      default: 
     OrderDetailDto:
-      required:
-        - id
-        - date
-        - total
-        - items
       type: object
+      readOnly: true
+      description: The order details
       properties:
         id:
           type: string
           format: uuid
+          description: The unique identifier of the order
+          example: "019622e7-87ac-7bd1-aa9c-35803d8a1e50"
         date:
           type: string
           format: date-time
+          description: The date of the order
+          example: "2021-01-01T00:00:00Z"
         total:
           type: number
           format: double
+          description: The total price of the order
+          example: 100.00
         status:
           "$ref": "#/components/schemas/Status"
+          description: The status of the order
+          example: "New"
         items:
           type: array
+          description: The items of the order
           items:
             "$ref": "#/components/schemas/OrderItemDto"
     OrderDto:
-      required:
-        - id
-        - date
-        - total
-        - status
       type: object
+      readOnly: true
+      description: The order summary
       properties:
         id:
           type: string
           format: uuid
+          description: The unique identifier of the order
+          example: "019622e7-87ac-7bd1-aa9c-35803d8a1e50"
         date:
           type: string
           format: date-time
+          description: The date of the order
+          example: "2021-01-01T00:00:00Z"
         total:
           type: number
           format: double
+          description: The total price of the order
+          example: 100.00
         status:
           "$ref": "#/components/schemas/Status"
+          description: The status of the order
+          example: "New"
     OrderItemDto:
-      required:
-        - id
-        - quantity
-        - price
       type: object
+      readOnly: true
+      description: The order item details
       properties:
         id:
           type: string
           format: uuid
+          description: The unique identifier of the order item
+          example: "019622e7-87ac-7bd1-aa9c-35803d8a1e50"
         quantity:
           type: integer
           format: int32
+          description: The quantity of the order item
+          example: 1
         price:
           type: number
           format: double
+          description: The price of the order item
+          example: 100.00
         name:
           type: string
+          description: The name of the order item
+          example: "Book"
     OrderSummaryInfo:
       type: object
+      readOnly: true
+      description: The order summary information
       properties:
         id:
           type: string
           format: uuid
+          description: The unique identifier of the order
+          example: "019622e7-87ac-7bd1-aa9c-35803d8a1e50"
         status:
           "$ref": "#/components/schemas/Status"
+          description: The status of the order
+          example: "New"
         totalPrice:
           type: number
           format: double
+          description: The total price of the order
+          example: 100.00
     PagedResultOfBuyerDto:
-      required:
-        - items
-        - pageIndex
-        - pageSize
-        - totalItems
-        - totalPages
       type: object
+      readOnly: true
+      description: The paged result of the buyer
       properties:
         items:
           type: array
@@ -505,27 +665,35 @@ components:
         pageIndex:
           type: integer
           format: int32
+          description: The page index
+          example: 1
         pageSize:
           type: integer
           format: int32
+          description: The page size
+          example: 10
         totalItems:
           type: integer
           format: int64
+          description: The total items
+          example: 100
         totalPages:
           type: number
           format: double
+          description: The total pages
+          example: 10
         hasPreviousPage:
           type: boolean
+          description: The has previous page
+          example: true
         hasNextPage:
           type: boolean
+          description: The has next page
+          example: true
     PagedResultOfOrderDto:
-      required:
-        - items
-        - pageIndex
-        - pageSize
-        - totalItems
-        - totalPages
       type: object
+      readOnly: true
+      description: The paged result of the order
       properties:
         items:
           type: array
@@ -534,55 +702,86 @@ components:
         pageIndex:
           type: integer
           format: int32
+          description: The page index
+          example: 1
         pageSize:
           type: integer
           format: int32
+          description: The page size
+          example: 10
         totalItems:
           type: integer
           format: int64
+          description: The total items
+          example: 100
         totalPages:
           type: number
           format: double
+          description: The total pages
+          example: 10
         hasPreviousPage:
           type: boolean
+          description: The has previous page
+          example: true
         hasNextPage:
           type: boolean
+          description: The has next page
+          example: true
     ProblemDetails:
       type: object
+      readOnly: true
+      description: The problem details
       properties:
         type:
           type: string
+          description: The type of the problem
         title:
           type: string
+          description: The title of the problem
         status:
           type: integer
           format: int32
+          description: The status code of the problem
         detail:
           type: string
-        instance:
-          type: string
+          description: The detail of the problem
     Status:
+      description: The status of the order
       enum:
-        - New
-        - Cancelled
-        - Completed
+      - New
+      - Cancelled
+      - Completed
     UpdateAddressCommand:
       required:
-        - street
-        - city
-        - province
+      - street
+      - city
+      - province
       type: object
+      writeOnly: true
+      description: The command to update the address of the buyer
       properties:
         street:
           type: string
+          description: The street of the buyer
+          maxLength: 50
+          example: "123 Main St"
         city:
           type: string
+          description: The city of the buyer
+          maxLength: 50
+          example: "Anytown"
         province:
           type: string
+          description: The province of the buyer
+          maxLength: 50
+          example: "CA"
   securitySchemes:
     BearerAuth:
       type: http
-      scheme: bearer
+      scheme: Bearer
+      description: The Bearer token for the user
 tags:
-  - name: Order
-  - name: Buyer
+- name: Order
+  description: Endpoints for managing orders, including creation, retrieval, updating status, and cancellation of orders in the BookWorm e-commerce platform
+- name: Buyer
+  description: Endpoints for managing buyer information, including profile details, shipping addresses, and purchase history for customers of the BookWorm platform

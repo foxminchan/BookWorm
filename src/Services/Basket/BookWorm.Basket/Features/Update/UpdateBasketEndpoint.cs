@@ -11,8 +11,10 @@ public sealed class UpdateBasketEndpoint : IEndpoint<NoContent, UpdateBasketComm
             )
             .Produces(StatusCodes.Status204NoContent)
             .ProducesValidationProblem()
-            .WithOpenApi()
             .WithTags(nameof(Basket))
+            .WithName(nameof(UpdateBasketEndpoint))
+            .WithSummary("Update Basket")
+            .WithDescription("Update a basket by its unique identifier")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization();
     }

@@ -1,6 +1,4 @@
-﻿using System.Net.Mime;
-
-namespace BookWorm.Catalog.Features.Books.Update;
+﻿namespace BookWorm.Catalog.Features.Books.Update;
 
 public sealed class UpdateBookValidator : AbstractValidator<UpdateBookCommand>
 {

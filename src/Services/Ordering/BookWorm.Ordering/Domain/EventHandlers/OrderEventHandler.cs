@@ -18,7 +18,9 @@ public sealed class OrderEventHandler(
     [Channel($"{nameof(BookWorm)}.{nameof(Contracts)}:{nameof(UserCheckedOutIntegrationEvent)}")]
     [SubscribeOperation(
         typeof(UserCheckedOutIntegrationEvent),
-        OperationId = nameof(UserCheckedOutIntegrationEvent)
+        OperationId = nameof(UserCheckedOutIntegrationEvent),
+        Summary = "User checked out",
+        Description = "Represents a successful integration event when a user checks out"
     )]
     public async Task Handle(OrderCancelledEvent notification, CancellationToken cancellationToken)
     {
@@ -36,7 +38,9 @@ public sealed class OrderEventHandler(
     )]
     [SubscribeOperation(
         typeof(OrderStatusChangedToCompleteIntegrationEvent),
-        OperationId = nameof(OrderStatusChangedToCompleteIntegrationEvent)
+        OperationId = nameof(OrderStatusChangedToCompleteIntegrationEvent),
+        Summary = "Order status changed to complete",
+        Description = "Represents a successful integration event when an order status changes to complete"
     )]
     public async Task Handle(OrderCompletedEvent notification, CancellationToken cancellationToken)
     {
@@ -54,7 +58,9 @@ public sealed class OrderEventHandler(
     )]
     [SubscribeOperation(
         typeof(OrderStatusChangedToCancelIntegrationEvent),
-        OperationId = nameof(OrderStatusChangedToCancelIntegrationEvent)
+        OperationId = nameof(OrderStatusChangedToCancelIntegrationEvent),
+        Summary = "Order status changed to cancel",
+        Description = "Represents a successful integration event when an order status changes to cancel"
     )]
     public async Task Handle(OrderPlacedEvent notification, CancellationToken cancellationToken)
     {

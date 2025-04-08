@@ -6,8 +6,10 @@ public sealed class ListAuthorsEndpoint : IEndpoint<Ok<IReadOnlyList<AuthorDto>>
     {
         app.MapGet("/authors", async (ISender sender) => await HandleAsync(sender))
             .Produces<IReadOnlyList<AuthorDto>>()
-            .WithOpenApi()
             .WithTags(nameof(Author))
+            .WithName(nameof(ListAuthorsEndpoint))
+            .WithSummary("List Authors")
+            .WithDescription("List all authors")
             .MapToApiVersion(new(1, 0));
     }
 

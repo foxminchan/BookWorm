@@ -1,46 +1,97 @@
 ---
 asyncapi: 3.0.0
 info:
-  title: Catalog Service
+  title: Catalog Service API
   version: 1.0.0
   description: |-
-    Catalog API for BookWorm
+    Manages the catalog of products for the BookWorm platform, including books, authors, and categories
   contact:
     name: Nhan Nguyen
     url: "https://github.com/foxminchan"
   license:
     name: MIT
     url: "https://opensource.org/licenses/MIT"
-defaultContentType: application/json
+defaultContentType: application/vnd.masstransit+json
 servers:
-  rabbitmq:
-    host: localhost:5672
+  development:
+    host: dev.eventbus:5672
     protocol: amqp
-    description: RabbitMQ server for development
+    protocolVersion: 0.9.1
+    summary: RabbitMQ server for development environment
+    description: RabbitMQ server for development environment
     security:
       - type: userPassword
+        description: An authentication method for the server
+    tags:
+      - name: env:development
+        description: >-
+          Development environment configuration for local testing and debugging
+  staging:
+    host: stg.eventbus:5672
+    protocol: amqp
+    protocolVersion: 0.9.1
+    summary: RabbitMQ server for staging environment
+    description: RabbitMQ server for staging environment
+    security:
+      - type: userPassword
+        description: An authentication method for the server
+    tags:
+      - name: env:staging
+        description: >-
+          Staging environment configuration for testing and debugging
+  qa:
+    host: qa.eventbus:5672
+    protocol: amqp
+    protocolVersion: 0.9.1
+    summary: RabbitMQ server for QA environment
+    description: RabbitMQ server for QA environment
+    security:
+      - type: userPassword
+        description: An authentication method for the server
+    tags:
+      - name: env:qa
+        description: >-
+          QA environment configuration for testing and debugging
+  production:
+    host: prod.eventbus:5672
+    protocol: amqp
+    protocolVersion: 0.9.1
+    summary: RabbitMQ server for production environment
+    description: RabbitMQ server for production environment
+    security:
+      - type: userPassword
+        description: An authentication method for the server
+    tags:
+      - name: env:production
+        description: >-
+          Production environment configuration for production
 channels:
   catalog-feedback-created:
     address: catalog-feedback-created
+    description: Event emitted when a new feedback is successfully created
     messages:
       FeedbackCreatedIntegrationEvent.message:
         $ref: "#/components/messages/feedbackCreatedIntegrationEvent"
   rating-book-updated-rating-failed:
     address: rating-book-updated-rating-failed
+    description: Event emitted when updating a book's rating fails
     messages:
       BookUpdatedRatingFailedIntegrationEvent.message:
         $ref: "#/components/messages/bookUpdatedRatingFailedIntegrationEvent"
   catalog-feedback-deleted:
     address: catalog-feedback-deleted
+    description: Event emitted when a feedback is successfully deleted
     messages:
       FeedbackDeletedIntegrationEvent.message:
         $ref: "#/components/messages/feedbackDeletedIntegrationEvent"
 operations:
   FeedbackCreatedIntegrationEvent:
+    title: Feedback Created
+    summary: Update book rating
+    description: Represents a successful integration event when creating a feedback in the system
     action: receive
     channel:
       $ref: "#/channels/catalog-feedback-created"
-    summary: Update book rating
     messages:
       - $ref: >-
           #/channels/catalog-feedback-created/messages/FeedbackCreatedIntegrationEvent.message
@@ -64,6 +115,7 @@ components:
   schemas:
     feedbackCreatedIntegrationEvent:
       id: feedbackCreatedIntegrationEvent
+      description: Event consumed when a feedback is successfully created, containing details about the feedback
       allOf:
         - $ref: "#/components/schemas/integrationEvent"
         - type: object
@@ -72,25 +124,39 @@ components:
             bookId:
               type: string
               format: guid
+              description: The ID of the book
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
             rating:
               type: integer
               format: int32
+              description: The rating of the book
+              example: 4
+              minimum: 1
+              maximum: 5
             feedbackId:
               type: string
               format: guid
+              description: The ID of the feedback
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
     integrationEvent:
       id: integrationEvent
       type: object
+      description: Base event structure containing common metadata for all integration events in the system
       additionalProperties: false
       properties:
         id:
           type: string
           format: guid
+          description: The ID of the integration event
+          example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
         creationDate:
           type: string
           format: date-time
+          description: The creation date of the integration event
+          example: "2021-01-01T00:00:00Z"
     bookUpdatedRatingFailedIntegrationEvent:
       id: bookUpdatedRatingFailedIntegrationEvent
+      description: Event published when updating a book's rating fails, containing details about the failed transaction
       allOf:
         - $ref: "#/components/schemas/integrationEvent"
         - type: object
@@ -99,8 +165,11 @@ components:
             feedbackId:
               type: string
               format: guid
+              description: The ID of the feedback
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
     feedbackDeletedIntegrationEvent:
       id: feedbackDeletedIntegrationEvent
+      description: Event published when a feedback is successfully deleted, containing details about the deleted feedback
       allOf:
         - $ref: "#/components/schemas/integrationEvent"
         - type: object
@@ -109,12 +178,20 @@ components:
             bookId:
               type: string
               format: guid
+              description: The ID of the book
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
             rating:
               type: integer
               format: int32
+              description: The rating of the book
+              example: 4
+              minimum: 1
+              maximum: 5
             feedbackId:
               type: string
               format: guid
+              description: The ID of the feedback
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
   messages:
     feedbackCreatedIntegrationEvent:
       payload:

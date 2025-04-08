@@ -1,67 +1,124 @@
 ---
 asyncapi: 3.0.0
 info:
-  title: Basket Service
+  title: Basket Service API
   version: 1.0.0
   description: |-
-    Basket API for BookWorm
+    This service handles all shopping basket operations for the BookWorm e-commerce platform,
+    including creating, updating, and processing customer baskets.
   contact:
     name: Nhan Nguyen
     url: "https://github.com/foxminchan"
   license:
     name: MIT
     url: "https://opensource.org/licenses/MIT"
-defaultContentType: application/json
+defaultContentType: application/vnd.masstransit+json
 servers:
-  rabbitmq:
-    host: localhost:5672
+  development:
+    host: dev.eventbus:5672
     protocol: amqp
-    description: RabbitMQ server for development
+    protocolVersion: 0.9.1
+    summary: RabbitMQ server for development environment
+    description: RabbitMQ server for development environment
     security:
       - type: userPassword
+        description: An authentication method for the server
+    tags:
+      - name: env:development
+        description: >-
+          Development environment configuration for local testing and debugging
+  staging:
+    host: stg.eventbus:5672
+    protocol: amqp
+    protocolVersion: 0.9.1
+    summary: RabbitMQ server for staging environment
+    description: RabbitMQ server for staging environment
+    security:
+      - type: userPassword
+        description: An authentication method for the server
+    tags:
+      - name: env:staging
+        description: >-
+          Staging environment configuration for testing and debugging
+  qa:
+    host: qa.eventbus:5672
+    protocol: amqp
+    protocolVersion: 0.9.1
+    summary: RabbitMQ server for QA environment
+    description: RabbitMQ server for QA environment
+    security:
+      - type: userPassword
+        description: An authentication method for the server
+    tags:
+      - name: env:qa
+        description: >-
+          QA environment configuration for testing and debugging
+  production:
+    host: prod.eventbus:5672
+    protocol: amqp
+    protocolVersion: 0.9.1
+    summary: RabbitMQ server for production environment
+    description: RabbitMQ server for production environment
+    security:
+      - type: userPassword
+        description: An authentication method for the server
+    tags:
+      - name: env:production
+        description: >-
+          Production environment configuration for production
 channels:
   basket-place-order:
     address: basket-place-order
+    description: Triggered when a customer submits their basket for order processing
     messages:
       PlaceOrderCommand.message:
         $ref: "#/components/messages/placeOrderCommand"
   basket-checkout-complete:
     address: basket-checkout-complete
+    description: Published when a basket has been successfully processed and the order is ready for fulfillment
     messages:
       PublishCompletedEvent.message:
         $ref: "#/components/messages/basketDeletedFailedIntegrationEvent"
   basket-checkout-failed:
     address: basket-checkout-failed
+    description: Published when there was an error processing the basket checkout
     messages:
       PublishFailedEvent.message:
         $ref: "#/components/messages/basketDeletedCompleteIntegrationEvent"
 operations:
   PlaceOrderCommand:
+    title: Place Order
+    summary: Process a new order
+    description: Handles the submission of a customer's basket for order processing
     action: receive
     channel:
       $ref: "#/channels/basket-place-order"
-    summary: Delete a basket
     messages:
       - $ref: "#/channels/basket-place-order/messages/PlaceOrderCommand.message"
   PublishCompletedEvent:
+    title: Publish Completed Event
+    summary: Notify successful checkout
+    description: Signals that the basket has been successfully processed and the order is ready for fulfillment
     action: send
     channel:
       $ref: "#/channels/basket-checkout-complete"
-    summary: ""
     messages:
       - $ref: >-
           #/channels/basket-checkout-complete/messages/PublishCompletedEvent.message
   PublishFailedEvent:
+    title: Publish Failed Event
+    summary: Notify checkout failure
+    description: Signals that there was an error processing the basket checkout
     action: send
     channel:
       $ref: "#/channels/basket-checkout-failed"
-    summary: ""
     messages:
       - $ref: "#/channels/basket-checkout-failed/messages/PublishFailedEvent.message"
 components:
   schemas:
     placeOrderCommand:
       id: placeOrderCommand
+      description: Command message that initiates the order placement process, containing all necessary information to process a customer's basket
       allOf:
         - $ref: "#/components/schemas/integrationEvent"
         - type: object
@@ -70,29 +127,45 @@ components:
             basketId:
               type: string
               format: guid
+              description: The unique identifier of the basket
+              example: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
             email:
               type:
                 - "null"
                 - string
+              description: The email address of the customer
+              pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+              example: "john.doe@example.com"
             orderId:
               type: string
               format: guid
+              description: The unique identifier of the order
+              example: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
             totalMoney:
               type: number
               format: decimal
+              description: The total amount of money in the basket
+              minimum: 0
+              example: 100.00
     integrationEvent:
       id: integrationEvent
       type: object
+      description: Base event structure containing common metadata for all integration events in the system
       additionalProperties: false
       properties:
         id:
           type: string
           format: guid
+          description: The unique identifier of the event
+          example: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
         creationDate:
           type: string
           format: date-time
+          description: The date and time the event was created
+          example: "2021-01-01T00:00:00Z"
     basketDeletedFailedIntegrationEvent:
       id: basketDeletedFailedIntegrationEvent
+      description: Event published when the system fails to process a basket checkout, containing details about the failed transaction
       allOf:
         - $ref: "#/components/schemas/integrationEvent"
         - type: object
@@ -101,18 +174,29 @@ components:
             orderId:
               type: string
               format: guid
+              description: The unique identifier of the order
+              example: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
             basketId:
               type: string
               format: guid
+              description: The unique identifier of the basket
+              example: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
             email:
               type:
                 - "null"
                 - string
+              description: The email address of the customer
+              pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+              example: "john.doe@example.com"
             totalMoney:
               type: number
               format: decimal
+              description: The total amount of money in the basket
+              minimum: 0
+              example: 100.00
     basketDeletedCompleteIntegrationEvent:
       id: basketDeletedCompleteIntegrationEvent
+      description: Event published when a basket is successfully processed and the order is ready for fulfillment
       allOf:
         - $ref: "#/components/schemas/integrationEvent"
         - type: object
@@ -121,12 +205,19 @@ components:
             orderId:
               type: string
               format: guid
+              description: The unique identifier of the order
+              example: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
             basketId:
               type: string
               format: guid
+              description: The unique identifier of the basket
+              example: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
             totalMoney:
               type: number
               format: decimal
+              description: The total amount of money in the basket
+              minimum: 0
+              example: 100.00
   messages:
     placeOrderCommand:
       payload:

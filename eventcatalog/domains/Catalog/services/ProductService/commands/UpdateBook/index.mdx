@@ -43,9 +43,10 @@ The request should be sent as `multipart/form-data` with the following fields:
 ### Example Usage
 
 ```bash
-curl -X PUT "https://api.bookworm.com/api/v1/books/{id}" \
+curl -X PUT "https://api.bookworm.com/api/v1/books" \
   -H "Content-Type: multipart/form-data" \
   -H "Authorization: Bearer <admin-token>" \
+  -F "Id=01961eb4-668d-7e7e-ae25-0fab379614f7" \
   -F "name=Updated Book Name" \
   -F "description=Updated Book Description" \
   -F "price=19.99" \

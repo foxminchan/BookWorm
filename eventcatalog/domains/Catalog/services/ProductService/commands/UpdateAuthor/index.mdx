@@ -68,10 +68,13 @@ The operation is idempotent and will return appropriate error responses if the a
 ### Example Usage
 
 ```bash
-curl -X PUT "https://api.bookworm.com/api/v1/authors/{id}" \
+curl -X PUT "https://api.bookworm.com/api/v1/authors" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <admin-token>" \
-  -d '{"name": "Updated Author Name"}'
+  -d '{
+    "id": "01961eb4-668d-7e7e-ae25-0fab379614f7",
+    "name": "Updated Author Name"
+  }'
 ```
 
 ### Responses

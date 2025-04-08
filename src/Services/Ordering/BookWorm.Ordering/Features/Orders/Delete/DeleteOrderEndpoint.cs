@@ -6,12 +6,17 @@ public sealed class DeleteOrderEndpoint : IEndpoint<NoContent, Guid, ISender>
     {
         app.MapDelete(
                 "/orders/{id:guid}",
-                async (Guid id, ISender sender) => await HandleAsync(id, sender)
+                async (
+                    [Description("The unique identifier of the order to be deleted")] Guid id,
+                    ISender sender
+                ) => await HandleAsync(id, sender)
             )
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status404NotFound)
-            .WithOpenApi()
             .WithTags(nameof(Order))
+            .WithName(nameof(DeleteOrderEndpoint))
+            .WithSummary("Delete Order")
+            .WithDescription("Delete an order if it exists")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization(Authorization.Policies.Admin);
     }

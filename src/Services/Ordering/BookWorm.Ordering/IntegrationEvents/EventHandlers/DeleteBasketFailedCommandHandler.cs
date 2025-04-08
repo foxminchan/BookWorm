@@ -11,7 +11,8 @@ public sealed class DeleteBasketFailedCommandHandler(IOrderRepository repository
     [PublishOperation(
         typeof(DeleteBasketFailedCommand),
         OperationId = nameof(DeleteBasketFailedCommand),
-        Summary = "Delete basket failed"
+        Summary = "Delete basket failed",
+        Description = "Represents a failed integration event when deleting a basket in the system"
     )]
     public async Task Consume(ConsumeContext<DeleteBasketFailedCommand> context)
     {

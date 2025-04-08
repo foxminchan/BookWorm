@@ -1,0 +1,56 @@
+---
+id: CreateChatCommand
+version: 1.0.0
+name: Create Chat
+summary: Create a new chat in the catalog system
+schemaPath: request-body.json
+badges:
+  - content: POST
+    textColor: green
+    backgroundColor: green
+  - content: "Chat"
+    textColor: yellow
+    backgroundColor: yellow
+owners:
+  - nhanxnguyen
+---
+
+## Overview
+
+The Create Chat endpoint enables users to initiate a new chat session with the system. This endpoint accepts a text prompt and returns a unique identifier for the chat session. It's designed to facilitate interactive conversations and queries within the BookWorm platform.
+
+## Architecture
+
+<NodeGraph />
+
+## POST `/api/v1/chats`
+
+Creates a new chat in the catalog system and returns the chat's unique identifier.
+
+### Request Body
+
+<SchemaViewer file="request-body.json" maxHeight="500" id="request-body" />
+
+### Example Usage
+
+```bash
+curl -X POST https://api.bookworm.com/api/v1/chats \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "What is the best selling book in BookWorm?"
+  }'
+```
+
+### Response
+
+#### <span className="text-green-500">200 Ok</span>
+
+Returns the newly created chat's GUID in the response body.
+
+```json
+"123e4567-e89b-12d3-a456-426614174000"
+```
+
+### API Version
+
+This endpoint is available in API version 1.0.

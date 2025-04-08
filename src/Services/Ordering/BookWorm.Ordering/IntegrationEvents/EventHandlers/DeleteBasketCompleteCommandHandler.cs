@@ -12,7 +12,8 @@ public sealed class DeleteBasketCompleteCommandHandler(IDocumentSession document
     [PublishOperation(
         typeof(DeleteBasketCompleteCommand),
         OperationId = nameof(DeleteBasketCompleteCommand),
-        Summary = "Delete basket complete"
+        Summary = "Delete basket complete",
+        Description = "Represents a domain event that is published when reverse basket is completed"
     )]
     public async Task Consume(ConsumeContext<DeleteBasketCompleteCommand> context)
     {

@@ -9,6 +9,7 @@ public sealed class ChatStreamHubTests
 {
     private readonly Mock<IChatStreaming> _chatStreamingMock = new();
     private readonly Guid _conversationId = Guid.CreateVersion7();
+
     private readonly List<ClientMessageFragment> _messageFragments =
     [
         new(Guid.CreateVersion7(), "system", "Hello", Guid.CreateVersion7()),
@@ -167,7 +168,7 @@ public sealed class ChatStreamHubTests
         Func<Task> act = async () =>
             await _chatStreamingMock
                 .Object.GetMessageStream(_conversationId, null, null, cancellationTokenSource.Token)
-                .ToListAsync(cancellationToken: cancellationTokenSource.Token);
+                .ToListAsync(cancellationTokenSource.Token);
 
         // Assert
         act.ShouldThrowAsync<OperationCanceledException>();

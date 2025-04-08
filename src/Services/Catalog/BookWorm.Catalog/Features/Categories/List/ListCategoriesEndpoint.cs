@@ -6,8 +6,10 @@ public sealed class ListCategoriesEndpoint : IEndpoint<Ok<IReadOnlyList<Category
     {
         app.MapGet("/categories", async (ISender sender) => await HandleAsync(sender))
             .Produces<IReadOnlyList<CategoryDto>>()
-            .WithOpenApi()
             .WithTags(nameof(Category))
+            .WithName(nameof(ListCategoriesEndpoint))
+            .WithSummary("List Categories")
+            .WithDescription("List all categories")
             .MapToApiVersion(new(1, 0));
     }
 

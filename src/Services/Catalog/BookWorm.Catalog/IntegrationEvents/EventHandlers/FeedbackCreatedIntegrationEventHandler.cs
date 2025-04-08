@@ -11,7 +11,8 @@ public sealed class FeedbackCreatedIntegrationEventHandler(IBookRepository bookR
     [PublishOperation(
         typeof(FeedbackCreatedIntegrationEvent),
         OperationId = nameof(FeedbackCreatedIntegrationEvent),
-        Summary = "Update book rating"
+        Summary = "Update book rating",
+        Description = "Represents a successful integration event when creating a feedback in the system"
     )]
     public async Task Consume(ConsumeContext<FeedbackCreatedIntegrationEvent> context)
     {
@@ -33,7 +34,9 @@ public sealed class FeedbackCreatedIntegrationEventHandler(IBookRepository bookR
     [Channel("rating-book-updated-rating-failed")]
     [SubscribeOperation(
         typeof(BookUpdatedRatingFailedIntegrationEvent),
-        OperationId = nameof(BookUpdatedRatingFailedIntegrationEvent)
+        OperationId = nameof(BookUpdatedRatingFailedIntegrationEvent),
+        Summary = "Update book rating",
+        Description = "Represents a failed integration event when updating a book's rating in the system"
     )]
     private static async Task PublishFailedEvent(
         ConsumeContext<FeedbackCreatedIntegrationEvent> context,

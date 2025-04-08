@@ -1,10 +1,9 @@
 ---
-openapi: 3.0.1
+openapi: 3.1.1
 info:
-  title: Finance Service
+  title: Finance Service API
   version: 1.0.0
-  description: |-
-    Finance API for BookWorm
+  description: Orchestrates order processing and financial transactions for BookWorm
   contact:
     name: Nhan Nguyen
     url: https://github.com/foxminchan
@@ -12,14 +11,24 @@ info:
     name: MIT
     url: https://opensource.org/licenses/MIT
 servers:
-  - url: http://127.0.0.1:54684
+  - url: http://dev.finance.bookworm.com
+    description: Development
+  - url: http://stg.finance.bookworm.com
+    description: Staging
+  - url: http://qa.finance.bookworm.com
+    description: QA
+  - url: http://finance.bookworm.com
+    description: Production
 paths:
   "/api/v1/order-state-machine":
     get:
       tags:
         - OrderState
-      summary: Get order state machine
-      description: Get order state machine from orchestrator
+      summary: Get Order State Machine
+      description: Get the order state machine definition
+      operationId: GetOrderStateEndpoint
+      security:
+        - BearerAuth: []
       x-eventcatalog-message-type: query
       responses:
         "200":
@@ -28,10 +37,30 @@ paths:
             application/json:
               schema:
                 type: string
+                description: The order state machine definition
+                example: |-
+                  digraph {
+                    graph [layout=dot rankdir=LR]
+                    node [shape=circle]
+
+                    Initial [shape=diamond]
+                    Placed [shape=circle]
+                    Completed [shape=circle]
+                    Cancelled [shape=circle]
+                    Failed [shape=circle]
+
+                    Initial -> Placed [label="OrderPlaced"]
+                    Placed -> Failed [label="BasketDeletedFailed"]
+                    Placed -> Completed [label="OrderCompleted"]
+                    Placed -> Cancelled [label="OrderCancelled"]
+                  }
+
 components:
   securitySchemes:
     BearerAuth:
       type: http
-      scheme: bearer
+      scheme: Bearer
+      description: The Bearer token for the user
 tags:
   - name: OrderState
+    description: Operations related to order state management

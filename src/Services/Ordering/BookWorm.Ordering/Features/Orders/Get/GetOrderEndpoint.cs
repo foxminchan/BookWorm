@@ -6,12 +6,17 @@ public sealed class GetOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, ISend
     {
         app.MapGet(
                 "/orders/{id:guid}",
-                async (Guid id, ISender sender) => await HandleAsync(id, sender)
+                async (
+                    [Description("The unique identifier of the order to be retrieved")] Guid id,
+                    ISender sender
+                ) => await HandleAsync(id, sender)
             )
             .Produces<OrderDetailDto>()
             .ProducesProblem(StatusCodes.Status404NotFound)
-            .WithOpenApi()
             .WithTags(nameof(Order))
+            .WithName(nameof(GetOrderEndpoint))
+            .WithSummary("Get Order")
+            .WithDescription("Get an order if it exists")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization();
     }

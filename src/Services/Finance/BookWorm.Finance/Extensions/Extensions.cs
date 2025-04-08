@@ -9,7 +9,7 @@ public static class Extensions
 
         services.AddDefaultCors();
 
-        services.AddDefaultOpenApi();
+        builder.AddDefaultOpenApi();
 
         builder.AddDefaultAuthentication().AddKeycloakClaimsTransformation();
 
@@ -75,6 +75,6 @@ public static class Extensions
         services.AddVersioning();
         services.AddEndpoints(typeof(IFinanceApiMarker));
 
-        services.AddAsyncApiDocs([typeof(IFinanceApiMarker)], nameof(Finance));
+        builder.AddAsyncApiDocs([typeof(IFinanceApiMarker)]);
     }
 }

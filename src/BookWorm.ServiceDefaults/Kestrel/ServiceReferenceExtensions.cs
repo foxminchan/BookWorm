@@ -2,7 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
-namespace BookWorm.ServiceDefaults;
+namespace BookWorm.ServiceDefaults.Kestrel;
 
 public static class ServiceReferenceExtensions
 {

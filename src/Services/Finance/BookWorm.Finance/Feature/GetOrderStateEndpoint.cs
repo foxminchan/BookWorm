@@ -9,8 +9,10 @@ public sealed class GetOrderStateEndpoint : IEndpoint<Ok<string>, ISender>
     {
         app.MapGet("/order-state-machine", async (ISender sender) => await HandleAsync(sender))
             .Produces<string>()
-            .WithOpenApi()
             .WithTags(nameof(OrderState))
+            .WithName(nameof(GetOrderStateEndpoint))
+            .WithSummary("Get Order State Machine")
+            .WithDescription("Get the order state machine definition")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization(Authorization.Policies.Admin);
     }

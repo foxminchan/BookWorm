@@ -5,7 +5,8 @@ namespace BookWorm.Catalog.Infrastructure;
 
 public sealed partial class CatalogDbContextSeed(
     IChatClient chatClient,
-    ILogger<CatalogDbContextSeed> logger
+    ILogger<CatalogDbContextSeed> logger,
+    IFeatureManager featureManager
 ) : IDbSeeder<CatalogDbContext>
 {
     public async Task SeedAsync(CatalogDbContext context)
@@ -34,7 +35,11 @@ public sealed partial class CatalogDbContextSeed(
             await context.SaveChangesAsync();
         }
 
-        if (!await context.Books.AnyAsync())
+        var isEnableSeeding = await featureManager.IsEnabledAsync(
+            nameof(FeatureFlags.EnableAiSeeding)
+        );
+
+        if (!await context.Books.AnyAsync() && isEnableSeeding)
         {
             logger.LogInformation("Seeding books");
             var authorIds = await context.Authors.Select(a => a.Id).ToListAsync();
@@ -42,9 +47,9 @@ public sealed partial class CatalogDbContextSeed(
             var categoryIds = await context.Categories.Select(c => c.Id).ToListAsync();
 
             var random = Random.Shared;
-            var books = new BookData();
+            var booksList = new List<Book>(new BookData());
 
-            foreach (var book in books)
+            foreach (var book in booksList)
             {
                 var prompts = $"""
                     You are a professional book metadata writer.
@@ -86,7 +91,7 @@ public sealed partial class CatalogDbContextSeed(
                 );
             }
 
-            context.Books.AddRange(books);
+            context.Books.AddRange(booksList);
             await context.SaveChangesAsync();
         }
     }

@@ -9,7 +9,7 @@ public static class Extensions
 
         services.AddDefaultCors();
 
-        services.AddDefaultOpenApi();
+        builder.AddDefaultOpenApi();
 
         builder.AddDefaultAuthentication().AddKeycloakClaimsTransformation();
 
@@ -59,6 +59,6 @@ public static class Extensions
         // Configure EventBus
         builder.AddEventBus(typeof(IRatingApiMarker), cfg => cfg.AddInMemoryInboxOutbox());
 
-        services.AddAsyncApiDocs([typeof(IRatingApiMarker)], nameof(Rating));
+        builder.AddAsyncApiDocs([typeof(IRatingApiMarker)]);
     }
 }

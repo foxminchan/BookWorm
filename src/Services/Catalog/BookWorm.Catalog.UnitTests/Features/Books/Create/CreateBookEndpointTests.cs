@@ -1,8 +1,8 @@
 ﻿using BookWorm.Catalog.Features.Books.Create;
-using BookWorm.SharedKernel.SeedWork;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Routing;
 
 namespace BookWorm.Catalog.UnitTests.Features.Books.Create;
 
@@ -11,6 +11,7 @@ public sealed class CreateBookEndpointTests
     private readonly CreateBookCommand _command;
     private readonly CreateBookEndpoint _endpoint;
     private readonly Guid _expectedId;
+    private readonly LinkGenerator _linkGenerator;
     private readonly Mock<ISender> _senderMock;
 
     public CreateBookEndpointTests()
@@ -18,6 +19,7 @@ public sealed class CreateBookEndpointTests
         _senderMock = new();
         _endpoint = new();
         _expectedId = Guid.CreateVersion7();
+        _linkGenerator = new Mock<LinkGenerator>().Object;
 
         // Create a mock IFormFile for the image
         var imageMock = new Mock<IFormFile>();
@@ -44,7 +46,7 @@ public sealed class CreateBookEndpointTests
             .ReturnsAsync(_expectedId);
 
         // Act
-        await _endpoint.HandleAsync(_command, _senderMock.Object);
+        await _endpoint.HandleAsync(_command, _senderMock.Object, _linkGenerator);
 
         // Assert
         _senderMock.Verify(s => s.Send(_command, It.IsAny<CancellationToken>()), Times.Once);
@@ -59,32 +61,11 @@ public sealed class CreateBookEndpointTests
             .ReturnsAsync(_expectedId);
 
         // Act
-        var result = await _endpoint.HandleAsync(_command, _senderMock.Object);
+        var result = await _endpoint.HandleAsync(_command, _senderMock.Object, _linkGenerator);
 
         // Assert
         result.ShouldBeOfType<Created<Guid>>();
         result.Value.ShouldBe(_expectedId);
-    }
-
-    [Test]
-    public async Task GivenValidCommand_WhenHandlingCreateBook_ThenShouldReturnCreatedWithCorrectUrl()
-    {
-        // Arrange
-        _senderMock
-            .Setup(s => s.Send(It.IsAny<CreateBookCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_expectedId);
-
-        // Act
-        var result = await _endpoint.HandleAsync(_command, _senderMock.Object);
-
-        // Assert
-        var expectedUrl = new UrlBuilder()
-            .WithVersion()
-            .WithResource("Books")
-            .WithId(_expectedId)
-            .Build();
-
-        result.Location.ShouldBe(expectedUrl);
     }
 
     [Test]
@@ -97,7 +78,8 @@ public sealed class CreateBookEndpointTests
             .ThrowsAsync(expectedException);
 
         // Act
-        var act = async () => await _endpoint.HandleAsync(_command, _senderMock.Object);
+        var act = async () =>
+            await _endpoint.HandleAsync(_command, _senderMock.Object, _linkGenerator);
 
         // Assert
         var exception = await act.ShouldThrowAsync<InvalidOperationException>();

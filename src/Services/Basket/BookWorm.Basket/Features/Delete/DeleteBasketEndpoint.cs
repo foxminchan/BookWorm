@@ -7,8 +7,10 @@ public sealed class DeleteBasketEndpoint : IEndpoint<NoContent, ISender>
         app.MapDelete("/baskets", async (ISender sender) => await HandleAsync(sender))
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status404NotFound)
-            .WithOpenApi()
             .WithTags(nameof(Basket))
+            .WithName(nameof(DeleteBasketEndpoint))
+            .WithSummary("Delete Basket")
+            .WithDescription("Delete a basket by its unique identifier")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization();
     }

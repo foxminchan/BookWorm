@@ -6,13 +6,18 @@ public sealed class DeleteAuthorEndpoint : IEndpoint<NoContent, Guid, ISender>
     {
         app.MapDelete(
                 "/authors/{id:guid}",
-                async (Guid id, ISender sender) => await HandleAsync(id, sender)
+                async (
+                    [Description("The unique identifier of the author to be deleted")] Guid id,
+                    ISender sender
+                ) => await HandleAsync(id, sender)
             )
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesValidationProblem()
-            .WithOpenApi()
             .WithTags(nameof(Author))
+            .WithName(nameof(DeleteAuthorEndpoint))
+            .WithSummary("Delete Author")
+            .WithDescription("Delete an author from the catalog system")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization(Authorization.Policies.Admin);
     }

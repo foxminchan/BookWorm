@@ -13,7 +13,7 @@ public static class Extensions
 
         services.AddFeatureManagement();
 
-        services.AddDefaultOpenApi();
+        builder.AddDefaultOpenApi();
 
         builder.AddDefaultAuthentication().AddKeycloakClaimsTransformation();
 
@@ -110,6 +110,6 @@ public static class Extensions
             )
         );
 
-        services.AddAsyncApiDocs([typeof(IOrderingApiMarker)], nameof(Ordering));
+        builder.AddAsyncApiDocs([typeof(IOrderingApiMarker)]);
     }
 }

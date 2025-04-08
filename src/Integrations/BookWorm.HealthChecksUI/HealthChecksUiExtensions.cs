@@ -14,7 +14,7 @@ public static class HealthChecksUiExtensions
     /// <returns>The resource builder.</returns>
     public static IResourceBuilder<HealthChecksUiResource> AddHealthChecksUi(
         this IDistributedApplicationBuilder builder,
-        string name,
+        string name = "health-checks-ui",
         int? port = null,
         string tag = HealthChecksUiDefaults.ContainerImageTag
     )
@@ -25,10 +25,7 @@ public static class HealthChecksUiExtensions
 
         return builder
             .AddResource(resource)
-            .WithImage(
-                HealthChecksUiDefaults.ContainerImageName,
-                HealthChecksUiDefaults.ContainerImageTag
-            )
+            .WithImage(HealthChecksUiDefaults.ContainerImageName, tag)
             .WithImageRegistry(HealthChecksUiDefaults.ContainerRegistry)
             .WithEnvironment(HealthChecksUiResource.KnownEnvVars.UiPath, "/")
             .WithHttpEndpoint(port, HealthChecksUiDefaults.ContainerPort);

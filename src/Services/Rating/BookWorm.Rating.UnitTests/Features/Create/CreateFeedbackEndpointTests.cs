@@ -1,6 +1,4 @@
-﻿using BookWorm.Rating.Domain.FeedbackAggregator;
-using BookWorm.Rating.Features.Create;
-using BookWorm.SharedKernel.SeedWork;
+﻿using BookWorm.Rating.Features.Create;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -35,38 +33,16 @@ public sealed class CreateFeedbackEndpointTests
         var result = await _endpoint.HandleAsync(_validCommand, _senderMock.Object);
 
         // Assert
-        result.ShouldBeOfType<Created<Guid>>();
+        result.ShouldBeOfType<Ok<Guid>>();
         result.Value.ShouldBe(_resultId);
-        result.Location.ShouldBe($"/api/1/feedbacks/{_resultId}");
         _senderMock.Verify(x => x.Send(_validCommand, It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Test]
-    public async Task GivenValidCommand_WhenHandleAsync_ThenShouldCreateCorrectUrl()
-    {
-        // Arrange
-        _senderMock
-            .Setup(x => x.Send(_validCommand, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_resultId);
-
-        // Act
-        var result = await _endpoint.HandleAsync(_validCommand, _senderMock.Object);
-
-        // Assert
-        var expectedUrl = new UrlBuilder()
-            .WithVersion()
-            .WithResource(nameof(Feedback))
-            .WithId(_resultId)
-            .Build();
-
-        result.Location.ShouldBe(expectedUrl);
     }
 
     [Test]
     public async Task GivenCommand_WhenHandleAsync_ThenShouldPassCancellationToken()
     {
         // Arrange
-        var cancellationToken = new CancellationToken();
+        var cancellationToken = CancellationToken.None;
 
         _senderMock.Setup(x => x.Send(_validCommand, cancellationToken)).ReturnsAsync(_resultId);
 

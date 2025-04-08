@@ -1,5 +1,4 @@
-﻿using System.ComponentModel;
-using Marten.AspNetCore;
+﻿using Marten.AspNetCore;
 
 namespace BookWorm.Ordering.Features.Orders.Summary;
 
@@ -12,12 +11,14 @@ public sealed class SummaryOrderEndpoint : IEndpoint
                 (
                     HttpContext context,
                     IQuerySession querySession,
-                    [Description("The order id")] Guid id
+                    [Description("The unique identifier of the order to be retrieved")] Guid id
                 ) => querySession.Json.WriteById<OrderSummaryInfo>(id, context)
             )
             .Produces<OrderSummaryInfo>()
-            .WithOpenApi()
             .WithTags(nameof(Order))
+            .WithName(nameof(SummaryOrderEndpoint))
+            .WithSummary("Get Order Summary")
+            .WithDescription("Get an order summary if it exists")
             .MapToApiVersion(new(1, 0));
     }
 }

@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace BookWorm.ServiceDefaults;
+namespace BookWorm.ServiceDefaults.Kestrel;
 
 public static class CorsExtensions
 {

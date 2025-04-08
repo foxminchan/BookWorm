@@ -7,8 +7,8 @@ namespace BookWorm.Ordering.UnitTests.Domain;
 
 public sealed class OrderProjectionTests
 {
-    private readonly Projection _projection;
     private readonly Faker<Order> _orderFaker;
+    private readonly Projection _projection;
 
     public OrderProjectionTests()
     {

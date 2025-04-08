@@ -10,7 +10,8 @@ public sealed class CancelOrderCommandHandler(ISmtpClient smtpClient, EmailOptio
     [PublishOperation(
         typeof(CancelOrderCommand),
         OperationId = nameof(CancelOrderCommand),
-        Summary = "Cancel order notification"
+        Summary = "Cancel order notification",
+        Description = "Represents a successful integration event when a user cancels an order"
     )]
     public async Task Consume(ConsumeContext<CancelOrderCommand> context)
     {

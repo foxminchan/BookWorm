@@ -5,14 +5,16 @@ public sealed class UpdateCategoryEndpoint : IEndpoint<NoContent, UpdateCategory
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapPut(
-                "/categories/{id:guid}",
-                async (Guid id, UpdateCategoryCommand command, ISender sender) =>
-                    await HandleAsync(command with { Id = id }, sender)
+                "/categories",
+                async (UpdateCategoryCommand command, ISender sender) =>
+                    await HandleAsync(command, sender)
             )
             .Produces(StatusCodes.Status204NoContent)
             .ProducesValidationProblem()
-            .WithOpenApi()
             .WithTags(nameof(Category))
+            .WithName(nameof(UpdateCategoryEndpoint))
+            .WithSummary("Update Category")
+            .WithDescription("Update a category if it exists")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization(Authorization.Policies.Admin);
     }

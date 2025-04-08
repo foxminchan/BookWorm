@@ -2,11 +2,6 @@
   "version": 1,
   "isRoot": true,
   "tools": {
-    "aspirate": {
-      "version": "9.1.0",
-      "commands": ["aspirate"],
-      "rollForward": false
-    },
     "husky": {
       "version": "0.7.2",
       "commands": ["husky"],
@@ -25,6 +20,11 @@
     "dotnet-sonarscanner": {
       "version": "10.1.0",
       "commands": ["dotnet-sonarscanner"],
+      "rollForward": false
+    },
+    "aspire.cli": {
+      "version": "9.2.0-preview.1.25209.2",
+      "commands": ["aspire"],
       "rollForward": false
     }
   }

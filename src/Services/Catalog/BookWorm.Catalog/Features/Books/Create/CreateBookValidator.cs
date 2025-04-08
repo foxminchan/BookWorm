@@ -1,6 +1,4 @@
-﻿using System.Net.Mime;
-
-namespace BookWorm.Catalog.Features.Books.Create;
+﻿namespace BookWorm.Catalog.Features.Books.Create;
 
 public sealed class CreateBookValidator : AbstractValidator<CreateBookCommand>
 {

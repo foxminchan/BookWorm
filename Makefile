@@ -8,13 +8,7 @@ restore:
     dotnet restore
     dotnet tool restore
 
-# Setup user secrets for the application
-setup-secrets:
-    cd src/BookWorm.AppHost && \
-    dotnet user-secrets set "Parameters:sql-user" "postgres" && \
-    dotnet user-secrets set "Parameters:sql-password" "postgres"
-
 # Run the application
-run: restore setup-secrets
+run: restore
     cd src/BookWorm.AppHost && \
     dotnet run --project BookWorm.AppHost.csproj

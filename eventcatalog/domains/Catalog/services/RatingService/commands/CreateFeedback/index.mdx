@@ -11,7 +11,7 @@ badges:
     textColor: yellow
     backgroundColor: yellow
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 ---
 
 ## Overview
@@ -98,6 +98,7 @@ The implementation uses several patterns and techniques:
 5. **FluentValidation**: Validates the command parameters
 
 The command execution flow:
+
 1. The endpoint receives the HTTP POST request with the feedback data
 2. The validator ensures all business rules are satisfied
 3. The command handler creates a new Feedback entity
@@ -147,13 +148,13 @@ curl -X POST "https://api.bookworm.com/api/v1/feedbacks" \
 
 ### Request Body
 
-| Field     | Type   | Required | Description                                |
-|-----------|--------|----------|--------------------------------------------|
-| bookId    | Guid   | Yes      | The ID of the book to create feedback for  |
-| firstName | string | Yes      | The first name of the reviewer             |
-| lastName  | string | Yes      | The last name of the reviewer              |
-| comment   | string | No       | The feedback comment text                  |
-| rating    | int    | Yes      | The rating score (0-5)                     |
+| Field     | Type   | Required | Description                               |
+| --------- | ------ | -------- | ----------------------------------------- |
+| bookId    | Guid   | Yes      | The ID of the book to create feedback for |
+| firstName | string | Yes      | The first name of the reviewer            |
+| lastName  | string | Yes      | The last name of the reviewer             |
+| comment   | string | No       | The feedback comment text                 |
+| rating    | int    | Yes      | The rating score (0-5)                    |
 
 <SchemaViewer file="request-body.json" maxHeight="500" id="request-body" />
 
@@ -167,25 +168,10 @@ curl -X POST "https://api.bookworm.com/api/v1/feedbacks" \
 
 ### Responses
 
-#### <span className="text-green-500">201 Created</span>
+#### <span className="text-green-500">200 Ok</span>
 
 - Returns the ID of the newly created feedback.
-- Location header includes a versioned URL to the newly created resource
-- Format: `/api/v1/feedbacks/{guid}`
 
 #### <span className="text-orange-500">400 Bad Request</span>
 
 Returned when validation fails for the provided parameters.
-
-```json title="400 Bad Request"
-{
-  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
-  "title": "Bad Request",
-  "status": 400,
-  "errors": {
-    "bookId": ["The BookId field is required."],
-    "firstName": ["The FirstName field is required."],
-    "lastName": ["The LastName field is required."],
-    "rating": ["The Rating field must be between 0 and 5."]
-  }
-}

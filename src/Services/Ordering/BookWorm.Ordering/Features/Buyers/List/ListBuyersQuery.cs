@@ -1,5 +1,4 @@
-﻿using System.ComponentModel;
-using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate.Specifications;
+﻿using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate.Specifications;
 
 namespace BookWorm.Ordering.Features.Buyers.List;
 

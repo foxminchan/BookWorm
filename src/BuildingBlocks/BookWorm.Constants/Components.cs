@@ -4,10 +4,12 @@ public static class Components
 {
     public const string Blob = "blob";
     public const string Redis = "redis";
+    public const string Postgres = "postgres";
     public const string VectorDb = "vector-db";
     public const string KeyCloak = "keycloak";
     public const string MailPit = "mailpit";
     public const string Queue = "queue";
+    public const string Storage = "storage";
     public const string Cosmos = "cosmos";
     public const string SignalR = "signalr";
 

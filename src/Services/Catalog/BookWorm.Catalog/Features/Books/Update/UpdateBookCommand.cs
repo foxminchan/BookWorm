@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace BookWorm.Catalog.Features.Books.Update;
 
 public sealed record UpdateBookCommand(
-    [property: JsonIgnore] Guid Id,
+    [FromForm] Guid Id,
     [FromForm] string Name,
     [FromForm] string Description,
     IFormFile? Image,

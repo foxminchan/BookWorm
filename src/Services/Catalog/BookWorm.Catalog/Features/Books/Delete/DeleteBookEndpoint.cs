@@ -6,12 +6,17 @@ public sealed class DeleteBookEndpoint : IEndpoint<NoContent, Guid, ISender>
     {
         app.MapDelete(
                 "/books/{id:guid}",
-                async (Guid id, ISender sender) => await HandleAsync(id, sender)
+                async (
+                    [Description("The unique identifier of the book to be deleted")] Guid id,
+                    ISender sender
+                ) => await HandleAsync(id, sender)
             )
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status404NotFound)
-            .WithOpenApi()
             .WithTags(nameof(Book))
+            .WithName(nameof(DeleteBookEndpoint))
+            .WithSummary("Delete Book")
+            .WithDescription("Delete a book if it exists")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization(Authorization.Policies.Admin);
     }

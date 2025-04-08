@@ -1,20 +1,23 @@
-﻿using BookWorm.SharedKernel.SeedWork;
+﻿using BookWorm.Basket.Features.Get;
 
 namespace BookWorm.Basket.Features.Create;
 
-public sealed class CreateBasketEndpoint : IEndpoint<Created<string>, CreateBasketCommand, ISender>
+public sealed class CreateBasketEndpoint
+    : IEndpoint<Created<string>, CreateBasketCommand, ISender, LinkGenerator>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapPost(
                 "/baskets",
-                async (CreateBasketCommand command, ISender sender) =>
-                    await HandleAsync(command, sender)
+                async (CreateBasketCommand command, ISender sender, LinkGenerator linker) =>
+                    await HandleAsync(command, sender, linker)
             )
             .Produces<string>(StatusCodes.Status201Created)
             .ProducesValidationProblem()
-            .WithOpenApi()
             .WithTags(nameof(Basket))
+            .WithName(nameof(CreateBasketEndpoint))
+            .WithSummary("Create Basket")
+            .WithDescription("Create a new basket for a user")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization();
     }
@@ -22,14 +25,14 @@ public sealed class CreateBasketEndpoint : IEndpoint<Created<string>, CreateBask
     public async Task<Created<string>> HandleAsync(
         CreateBasketCommand command,
         ISender sender,
+        LinkGenerator linker,
         CancellationToken cancellationToken = default
     )
     {
         var result = await sender.Send(command, cancellationToken);
 
-        return TypedResults.Created(
-            new UrlBuilder().WithResource(nameof(Basket)).WithId(result).Build(),
-            result
-        );
+        var path = linker.GetPathByName(nameof(GetBasketEndpoint), new { id = result });
+
+        return TypedResults.Created(path, result);
     }
 }

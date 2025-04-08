@@ -7,6 +7,7 @@ global using BookWorm.Contracts;
 global using BookWorm.Notification.Helpers;
 global using BookWorm.Notification.Infrastructure;
 global using BookWorm.ServiceDefaults;
+global using BookWorm.ServiceDefaults.ApiSpecification.AsyncApi;
 global using BookWorm.SharedKernel.EventBus;
 global using BookWorm.SharedKernel.Exceptions;
 global using HealthChecks.SendGrid;

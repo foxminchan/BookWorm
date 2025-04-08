@@ -1,5 +1,6 @@
 ﻿using System.Threading.RateLimiting;
 using BookWorm.ServiceDefaults;
+using BookWorm.ServiceDefaults.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
 

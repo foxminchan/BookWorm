@@ -6,12 +6,17 @@ public sealed class DeleteBuyerEndpoint : IEndpoint<NoContent, Guid, ISender>
     {
         app.MapDelete(
                 "/buyers/{id:guid}",
-                async (Guid id, ISender sender) => await HandleAsync(id, sender)
+                async (
+                    [Description("The unique identifier of the buyer to be deleted")] Guid id,
+                    ISender sender
+                ) => await HandleAsync(id, sender)
             )
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status404NotFound)
-            .WithOpenApi()
             .WithTags(nameof(Buyer))
+            .WithName(nameof(DeleteBuyerEndpoint))
+            .WithSummary("Delete Buyer")
+            .WithDescription("Delete a buyer by ID if it exists")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization(Authorization.Policies.Admin);
     }

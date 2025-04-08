@@ -15,8 +15,10 @@ public sealed class GetBuyerEndpoint
             )
             .Produces<BuyerDto>()
             .ProducesProblem(StatusCodes.Status404NotFound)
-            .WithOpenApi()
             .WithTags(nameof(Buyer))
+            .WithName(nameof(GetBuyerEndpoint))
+            .WithSummary("Get Buyer")
+            .WithDescription("Get the current buyer's information")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization();
     }
