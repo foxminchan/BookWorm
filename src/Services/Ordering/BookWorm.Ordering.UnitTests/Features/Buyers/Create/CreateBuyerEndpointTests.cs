@@ -1,14 +1,14 @@
-﻿using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
-using BookWorm.Ordering.Features.Buyers.Create;
-using BookWorm.SharedKernel.SeedWork;
+﻿using BookWorm.Ordering.Features.Buyers.Create;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Routing;
 
 namespace BookWorm.Ordering.UnitTests.Features.Buyers.Create;
 
 public sealed class CreateBuyerEndpointTests
 {
     private readonly CreateBuyerEndpoint _endpoint = new();
+    private readonly Mock<LinkGenerator> _linkGeneratorMock = new();
     private readonly Mock<ISender> _senderMock = new();
 
     [Test]
@@ -23,25 +23,15 @@ public sealed class CreateBuyerEndpointTests
             .ReturnsAsync(buyerId);
 
         // Act
-        var result = await _endpoint.HandleAsync(command, _senderMock.Object);
+        var result = await _endpoint.HandleAsync(
+            command,
+            _senderMock.Object,
+            _linkGeneratorMock.Object
+        );
 
         // Assert
         result.ShouldBeOfType<Created<Guid>>();
         result.Value.ShouldBe(buyerId);
-        result.Location.ShouldBe($"/api/buyers/{buyerId}");
         _senderMock.Verify(s => s.Send(command, It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Test]
-    public void GivenValidCommand_WhenBuildingUrl_ThenShouldConstructCorrectUrl()
-    {
-        // Arrange
-        var buyerId = Guid.CreateVersion7();
-
-        // Act
-        var url = new UrlBuilder().WithResource(nameof(Buyer)).WithId(buyerId).Build();
-
-        // Assert
-        url.ShouldBe($"/api/buyers/{buyerId}");
     }
 }

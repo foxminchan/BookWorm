@@ -1,21 +1,17 @@
 ﻿using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Saunter;
 
-namespace BookWorm.ServiceDefaults;
+namespace BookWorm.ServiceDefaults.ApiSpecification.AsyncApi;
 
 public static class AsyncApiExtensions
 {
-    public static void AddAsyncApiDocs(
-        this IServiceCollection services,
-        IList<Type> types,
-        string serviceName
-    )
+    public static void AddAsyncApiDocs(this IHostApplicationBuilder builder, IList<Type> types)
     {
-        if (!serviceName.EndsWith("Service"))
-        {
-            serviceName += "Service";
-        }
+        var services = builder.Services;
+
+        var document = builder.Configuration.GetSection(nameof(Document)).Get<Document>();
 
         services.AddAsyncApiSchemaGeneration(options =>
         {
@@ -27,7 +23,7 @@ public static class AsyncApiExtensions
             {
                 options.AsyncApi = new()
                 {
-                    Info = new(serviceName, version)
+                    Info = new(document?.Title, version)
                     {
                         License = new("MIT") { Url = new("https://opensource.org/licenses/MIT") },
                         Contact = new()

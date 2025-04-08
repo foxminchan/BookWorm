@@ -12,7 +12,7 @@ public static class Extensions
 
         services.AddDefaultCors();
 
-        services.AddDefaultOpenApi();
+        builder.AddDefaultOpenApi();
 
         builder.AddDefaultAuthentication().AddKeycloakClaimsTransformation();
 
@@ -64,6 +64,6 @@ public static class Extensions
         // Configure EventBus
         builder.AddEventBus(typeof(IBasketApiMarker), cfg => cfg.AddInMemoryInboxOutbox());
 
-        services.AddAsyncApiDocs([typeof(IBasketApiMarker)], nameof(Basket));
+        builder.AddAsyncApiDocs([typeof(IBasketApiMarker)]);
     }
 }

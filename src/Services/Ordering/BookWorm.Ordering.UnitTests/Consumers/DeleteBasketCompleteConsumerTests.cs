@@ -149,7 +149,7 @@ public sealed class DeleteBasketCompleteConsumerTests
             await harness.Published.Any<Fault<DeleteBasketCompleteCommand>>(CancellationToken.None)
         ).ShouldBeTrue();
 
-        await harness.Stop(cancellationToken: cancellationTokenSource.Token);
+        await harness.Stop(cancellationTokenSource.Token);
     }
 
     [Test]

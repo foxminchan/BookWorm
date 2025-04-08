@@ -5,16 +5,18 @@ public sealed class UpdateBookEndpoint : IEndpoint<NoContent, UpdateBookCommand,
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapPut(
-                "/books/{id:guid}",
-                async (Guid id, [AsParameters] UpdateBookCommand command, ISender sender) =>
-                    await HandleAsync(command with { Id = id }, sender)
+                "/books",
+                async ([AsParameters] UpdateBookCommand command, ISender sender) =>
+                    await HandleAsync(command, sender)
             )
+            .Accepts<UpdateBookCommand>(MediaTypeNames.Multipart.FormData)
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesValidationProblem()
-            .DisableAntiforgery()
-            .WithOpenApi()
             .WithTags(nameof(Book))
+            .WithName(nameof(UpdateBookEndpoint))
+            .WithSummary("Update Book")
+            .WithDescription("Update a book if it exists")
             .WithFormOptions(true)
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization(Authorization.Policies.Admin);

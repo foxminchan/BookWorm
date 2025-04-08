@@ -5,14 +5,16 @@ public sealed class UpdatePublisherEndpoint : IEndpoint<NoContent, UpdatePublish
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapPut(
-                "/publishers/{id:guid}",
-                async (Guid id, UpdatePublisherCommand command, ISender sender) =>
-                    await HandleAsync(command with { Id = id }, sender)
+                "/publishers",
+                async (UpdatePublisherCommand command, ISender sender) =>
+                    await HandleAsync(command, sender)
             )
             .Produces(StatusCodes.Status204NoContent)
             .ProducesValidationProblem()
-            .WithOpenApi()
             .WithTags(nameof(Publisher))
+            .WithName(nameof(UpdatePublisherCommand))
+            .WithSummary("Update Publisher")
+            .WithDescription("Updates publisher if it exists")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization(Authorization.Policies.Admin);
     }

@@ -6,11 +6,16 @@ public sealed class CancelChatEndpoint : IEndpoint<NoContent, Guid, ICancellatio
     {
         app.MapDelete(
                 "/chats/{id:guid}/cancel",
-                async (Guid id, ICancellationManager manager) => await HandleAsync(id, manager)
+                async (
+                    [Description("The unique identifier of the chat to be cancelled")] Guid id,
+                    ICancellationManager manager
+                ) => await HandleAsync(id, manager)
             )
             .Produces(StatusCodes.Status204NoContent)
-            .WithOpenApi()
             .WithTags(nameof(Chat))
+            .WithName(nameof(CancelChatEndpoint))
+            .WithSummary("Cancel Chat")
+            .WithDescription("Cancel a chat if it exists")
             .MapToApiVersion(new(1, 0));
     }
 

@@ -3,6 +3,8 @@
 [ExcludeFromCodeCoverage]
 public sealed class SendGirdOptions
 {
+    public const string ConfigurationSection = "SendGrid";
+
     [Required]
     public string ApiKey { get; set; } = string.Empty;
 

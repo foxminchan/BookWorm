@@ -1,5 +1,4 @@
 ﻿using BookWorm.SharedKernel.SeedWork.Model;
-using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Rating.Features.List;
 
@@ -15,8 +14,10 @@ public sealed class ListFeedbacksEndpoint
             )
             .Produces<PagedResult<FeedbackDto>>()
             .ProducesValidationProblem()
-            .WithOpenApi()
             .WithTags(nameof(Feedback))
+            .WithName(nameof(ListFeedbacksEndpoint))
+            .WithSummary("List Feedbacks")
+            .WithDescription("List feedbacks for a book with pagination and filtering")
             .MapToApiVersion(new(1, 0));
     }
 

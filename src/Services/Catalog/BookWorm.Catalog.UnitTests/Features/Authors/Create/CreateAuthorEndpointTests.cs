@@ -1,7 +1,5 @@
 ﻿using BookWorm.Catalog.Features.Authors.Create;
-using BookWorm.SharedKernel.SeedWork;
 using MediatR;
-using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Catalog.UnitTests.Features.Authors.Create;
 
@@ -25,44 +23,6 @@ public sealed class CreateAuthorEndpointTests
 
         // Assert
         _senderMock.Verify(x => x.Send(_command, It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Test]
-    public async Task GivenValidCommand_WhenHandleAsyncCalled_ThenShouldReturnCreatedWithCorrectUrl()
-    {
-        // Arrange
-        _senderMock
-            .Setup(x => x.Send(_command, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_authorId);
-
-        var expectedUrl = new UrlBuilder()
-            .WithVersion()
-            .WithResource(nameof(Authors))
-            .WithId(_authorId)
-            .Build();
-
-        // Act
-        var result = await _endpoint.HandleAsync(_command, _senderMock.Object);
-
-        // Assert
-        result.ShouldBeOfType<Created<Guid>>();
-        result.Location.ShouldBe(expectedUrl);
-        result.Value.ShouldBe(_authorId);
-    }
-
-    [Test]
-    public async Task GivenValidCommand_WhenHandleAsyncCalled_ThenShouldUseCorrectUrlFormat()
-    {
-        // Arrange
-        _senderMock
-            .Setup(x => x.Send(_command, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_authorId);
-
-        // Act
-        var result = await _endpoint.HandleAsync(_command, _senderMock.Object);
-
-        // Assert
-        result.Location.ShouldBe($"/api/1/authors/{_authorId}");
     }
 
     [Test]

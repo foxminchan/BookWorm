@@ -18,8 +18,8 @@ public sealed class GetOrderQueryTests
     private readonly Guid _buyerId;
     private readonly Mock<ClaimsPrincipal> _claimsPrincipalMock;
     private readonly GetOrderHandler _handler;
-    private readonly Order _order;
     private readonly Guid _id;
+    private readonly Order _order;
     private readonly Mock<IOrderRepository> _orderRepositoryMock;
     private readonly PostGetOrderHandler _postHandler;
 

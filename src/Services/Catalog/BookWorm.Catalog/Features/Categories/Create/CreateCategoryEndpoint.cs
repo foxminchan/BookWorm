@@ -1,7 +1,6 @@
 ﻿namespace BookWorm.Catalog.Features.Categories.Create;
 
-public sealed class CreateCategoryEndpoint
-    : IEndpoint<Created<Guid>, CreateCategoryCommand, ISender>
+public sealed class CreateCategoryEndpoint : IEndpoint<Ok<Guid>, CreateCategoryCommand, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
@@ -10,16 +9,18 @@ public sealed class CreateCategoryEndpoint
                 async (CreateCategoryCommand command, ISender sender) =>
                     await HandleAsync(command, sender)
             )
-            .Produces<Guid>(StatusCodes.Status201Created)
+            .Produces<Guid>()
             .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesValidationProblem()
-            .WithOpenApi()
             .WithTags(nameof(Category))
+            .WithName(nameof(CreateCategoryEndpoint))
+            .WithSummary("Create Category")
+            .WithDescription("Create a new category in the catalog system")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization(Authorization.Policies.Admin);
     }
 
-    public async Task<Created<Guid>> HandleAsync(
+    public async Task<Ok<Guid>> HandleAsync(
         CreateCategoryCommand command,
         ISender sender,
         CancellationToken cancellationToken = default
@@ -27,9 +28,6 @@ public sealed class CreateCategoryEndpoint
     {
         var result = await sender.Send(command, cancellationToken);
 
-        return TypedResults.Created(
-            new UrlBuilder().WithVersion().WithResource(nameof(Categories)).WithId(result).Build(),
-            result
-        );
+        return TypedResults.Ok(result);
     }
 }

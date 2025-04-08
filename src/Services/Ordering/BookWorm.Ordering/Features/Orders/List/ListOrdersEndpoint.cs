@@ -12,8 +12,10 @@ public sealed class ListOrdersEndpoint
             )
             .Produces<PagedResult<OrderDto>>()
             .ProducesValidationProblem()
-            .WithOpenApi()
             .WithTags(nameof(Order))
+            .WithName(nameof(ListOrdersEndpoint))
+            .WithSummary("List Orders")
+            .WithDescription("List orders with pagination and filtering")
             .MapToApiVersion(new(1, 0));
     }
 

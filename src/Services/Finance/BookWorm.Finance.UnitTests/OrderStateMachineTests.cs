@@ -9,8 +9,8 @@ namespace BookWorm.Finance.UnitTests;
 public sealed class OrderStateMachineTests
 {
     private const string? DefaultTestEmail = "example@email.com";
-    private ServiceProvider _provider = null!;
     private ITestHarness _harness = null!;
+    private ServiceProvider _provider = null!;
     private ISagaStateMachineTestHarness<OrderStateMachine, OrderState> _sagaHarness = null!;
 
     [Before(Test)]

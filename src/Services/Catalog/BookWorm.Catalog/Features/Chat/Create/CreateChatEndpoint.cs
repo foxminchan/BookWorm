@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Catalog.Features.Chat.Create;
 
-public sealed class CreateChatEndpoint : IEndpoint<Created<Guid>, Prompt, IChatStreaming>
+public sealed class CreateChatEndpoint : IEndpoint<Ok<Guid>, Prompt, IChatStreaming>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
@@ -8,13 +8,15 @@ public sealed class CreateChatEndpoint : IEndpoint<Created<Guid>, Prompt, IChatS
                 "/chats",
                 async (Prompt prompt, IChatStreaming chat) => await HandleAsync(prompt, chat)
             )
-            .Produces<Guid>(StatusCodes.Status201Created)
-            .WithOpenApi()
+            .Produces<Guid>()
             .WithTags(nameof(Chat))
+            .WithName(nameof(CreateChatEndpoint))
+            .WithSummary("Create Chat")
+            .WithDescription("Create a new chat in the catalog system")
             .MapToApiVersion(new(1, 0));
     }
 
-    public async Task<Created<Guid>> HandleAsync(
+    public async Task<Ok<Guid>> HandleAsync(
         Prompt prompt,
         IChatStreaming chat,
         CancellationToken cancellationToken = default
@@ -22,9 +24,6 @@ public sealed class CreateChatEndpoint : IEndpoint<Created<Guid>, Prompt, IChatS
     {
         var result = await chat.AddStreamingMessage(prompt.Text);
 
-        return TypedResults.Created(
-            new UrlBuilder().WithVersion().WithResource(nameof(Chat)).WithId(result).Build(),
-            result
-        );
+        return TypedResults.Ok(result);
     }
 }

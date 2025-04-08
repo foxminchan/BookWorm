@@ -6,14 +6,22 @@ public sealed class CancelOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, IS
     {
         app.MapPatch(
                 "/orders/{orderId:guid}/cancel",
-                async ([FromIdempotencyHeader] string key, Guid orderId, ISender sender) =>
-                    await HandleAsync(orderId, sender)
+                async (
+                    [FromIdempotencyHeader]
+                    [Description("The idempotency key of the order to be cancelled")]
+                        string key,
+                    [Description("The unique identifier of the order to be cancelled")]
+                        Guid orderId,
+                    ISender sender
+                ) => await HandleAsync(orderId, sender)
             )
             .Produces<OrderDetailDto>()
             .ProducesProblem(StatusCodes.Status404NotFound)
             .WithIdempotency()
-            .WithOpenApi()
             .WithTags(nameof(Order))
+            .WithName(nameof(CancelOrderEndpoint))
+            .WithSummary("Cancel Order")
+            .WithDescription("Cancel an order")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization();
     }

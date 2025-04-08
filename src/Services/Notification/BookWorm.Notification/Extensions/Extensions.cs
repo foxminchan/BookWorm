@@ -1,4 +1,5 @@
 ﻿using System.Net.Mail;
+using SendGridClient = BookWorm.Notification.Infrastructure.SendGridClient;
 
 namespace BookWorm.Notification.Extensions;
 
@@ -66,10 +67,9 @@ public static class Extensions
             var emailOptions = new EmailOptions { From = string.Empty };
 
             services
-                .AddOptions<EmailOptions>()
-                .BindConfiguration("Email")
-                .ValidateDataAnnotations()
-                .ValidateOnStart();
+                .AddOptionsWithValidateOnStart<EmailOptions>()
+                .BindConfiguration(EmailOptions.ConfigurationSection)
+                .ValidateDataAnnotations();
 
             services.AddSingleton(emailOptions);
         }
@@ -85,10 +85,9 @@ public static class Extensions
             };
 
             services
-                .AddOptions<SendGirdOptions>()
-                .BindConfiguration("SendGrid")
-                .ValidateDataAnnotations()
-                .ValidateOnStart();
+                .AddOptionsWithValidateOnStart<SendGirdOptions>()
+                .BindConfiguration(SendGirdOptions.ConfigurationSection)
+                .ValidateDataAnnotations();
 
             services.AddSingleton(sendGirdOptions);
 
@@ -101,6 +100,6 @@ public static class Extensions
 
         builder.AddEventBus(typeof(INotificationApiMarker), cfg => cfg.AddInMemoryInboxOutbox());
 
-        services.AddAsyncApiDocs([typeof(INotificationApiMarker)], nameof(Notification));
+        builder.AddAsyncApiDocs([typeof(INotificationApiMarker)]);
     }
 }
