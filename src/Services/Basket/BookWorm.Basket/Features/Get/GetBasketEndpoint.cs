@@ -11,8 +11,10 @@ public sealed class GetBasketEndpoint : IEndpoint<Ok<CustomerBasketDto>, ISender
             )
             .Produces<CustomerBasketDto>()
             .ProducesProblem(StatusCodes.Status404NotFound)
-            .WithOpenApi()
             .WithTags(nameof(Basket))
+            .WithName(nameof(GetBasketEndpoint))
+            .WithSummary("Get Basket")
+            .WithDescription("Get a basket by user")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization();
     }

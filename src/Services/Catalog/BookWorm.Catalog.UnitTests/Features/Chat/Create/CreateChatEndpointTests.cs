@@ -37,28 +37,10 @@ public sealed class CreateChatEndpointTests
 
         // Assert
         result.ShouldNotBeNull();
-        result.ShouldBeOfType<Created<Guid>>();
+        result.ShouldBeOfType<Ok<Guid>>();
         result.Value.ShouldBe(_expectedGuid);
 
         // Verify chat streaming was called with correct prompt
         _chatStreamingMock.Verify(x => x.AddStreamingMessage(_prompt.Text), Times.Once);
-    }
-
-    [Test]
-    public async Task GivenValidPrompt_WhenHandlingCreateChat_ThenShouldReturnCorrectLocationHeader()
-    {
-        // Arrange
-        var expectedUrl = $"/api/1/chats/{_expectedGuid}";
-
-        // Act
-        var result = await _endpoint.HandleAsync(
-            _prompt,
-            _chatStreamingMock.Object,
-            CancellationToken.None
-        );
-
-        // Assert
-        result.ShouldNotBeNull();
-        result.Location.ShouldBe(expectedUrl);
     }
 }

@@ -11,8 +11,10 @@ public sealed class ListBooksEndpoint : IEndpoint<Ok<PagedResult<BookDto>>, List
             )
             .Produces<PagedResult<BookDto>>()
             .ProducesValidationProblem()
-            .WithOpenApi()
             .WithTags(nameof(Book))
+            .WithName(nameof(ListBooksEndpoint))
+            .WithSummary("List Books")
+            .WithDescription("List all books with advanced filtering and pagination")
             .MapToApiVersion(new(1, 0));
     }
 

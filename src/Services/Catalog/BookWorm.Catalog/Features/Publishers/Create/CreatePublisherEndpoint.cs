@@ -1,7 +1,6 @@
 ﻿namespace BookWorm.Catalog.Features.Publishers.Create;
 
-public sealed class CreatePublisherEndpoint
-    : IEndpoint<Created<Guid>, CreatePublisherCommand, ISender>
+public sealed class CreatePublisherEndpoint : IEndpoint<Ok<Guid>, CreatePublisherCommand, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
@@ -10,15 +9,17 @@ public sealed class CreatePublisherEndpoint
                 async (CreatePublisherCommand command, ISender sender) =>
                     await HandleAsync(command, sender)
             )
-            .Produces<Guid>(StatusCodes.Status201Created)
+            .Produces<Guid>()
             .ProducesValidationProblem()
-            .WithOpenApi()
             .WithTags(nameof(Publisher))
+            .WithName(nameof(CreatePublisherCommand))
+            .WithSummary("Create Publisher")
+            .WithDescription("Creates a new publisher")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization(Authorization.Policies.Admin);
     }
 
-    public async Task<Created<Guid>> HandleAsync(
+    public async Task<Ok<Guid>> HandleAsync(
         CreatePublisherCommand command,
         ISender sender,
         CancellationToken cancellationToken = default
@@ -26,9 +27,6 @@ public sealed class CreatePublisherEndpoint
     {
         var result = await sender.Send(command, cancellationToken);
 
-        return TypedResults.Created(
-            new UrlBuilder().WithVersion().WithResource(nameof(Publishers)).WithId(result).Build(),
-            result
-        );
+        return TypedResults.Ok(result);
     }
 }

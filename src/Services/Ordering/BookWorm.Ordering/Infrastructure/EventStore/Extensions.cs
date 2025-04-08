@@ -40,9 +40,6 @@ public static class Extensions
 
         builder
             .Services.AddHealthChecks()
-            .AddMartenAsyncDaemonHealthCheck(
-                maxEventLag: 500,
-                maxSameLagTime: TimeSpan.FromSeconds(30)
-            );
+            .AddMartenAsyncDaemonHealthCheck(500, TimeSpan.FromSeconds(30));
     }
 }

@@ -1,5 +1,4 @@
-﻿using System.ComponentModel;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
 
 namespace BookWorm.Catalog.Infrastructure.Services;

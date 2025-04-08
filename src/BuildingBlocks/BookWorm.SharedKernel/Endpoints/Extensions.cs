@@ -1,7 +1,7 @@
 ﻿using Asp.Versioning.Builder;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace BookWorm.SharedKernel.Endpoints;
 
@@ -27,8 +27,12 @@ public static class Extensions
 
         var endpoints = scope.ServiceProvider.GetRequiredService<IEnumerable<IEndpoint>>();
 
-        IEndpointRouteBuilder builder = app.MapGroup("/api/v{version:apiVersion}")
-            .WithApiVersionSet(apiVersionSet);
+        var builder = app.MapGroup("/api/v{version:apiVersion}").WithApiVersionSet(apiVersionSet);
+
+        if (app.Environment.IsDevelopment())
+        {
+            builder.DisableAntiforgery();
+        }
 
         foreach (var endpoint in endpoints)
         {

@@ -6,12 +6,17 @@ public sealed class GetBookEndpoint : IEndpoint<Ok<BookDto>, Guid, ISender>
     {
         app.MapGet(
                 "/books/{id:guid}",
-                async (Guid id, ISender sender) => await HandleAsync(id, sender)
+                async (
+                    [Description("The unique identifier of the book to be retrieved")] Guid id,
+                    ISender sender
+                ) => await HandleAsync(id, sender)
             )
             .Produces<BookDto>()
             .ProducesProblem(StatusCodes.Status404NotFound)
-            .WithOpenApi()
             .WithTags(nameof(Book))
+            .WithName(nameof(GetBookEndpoint))
+            .WithSummary("Get Book")
+            .WithDescription("Get a book by identifier")
             .MapToApiVersion(new(1, 0));
     }
 

@@ -2,7 +2,7 @@
 using System.Security.Claims;
 using System.Text.Json.Nodes;
 
-namespace BookWorm.ServiceDefaults;
+namespace BookWorm.ServiceDefaults.Auth;
 
 public static class ClaimsPrincipalExtensions
 {

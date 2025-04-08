@@ -12,8 +12,10 @@ public sealed class UpdateAddressEndpoint : IEndpoint<Ok<BuyerDto>, UpdateAddres
             .Produces<BuyerDto>()
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesValidationProblem()
-            .WithOpenApi()
             .WithTags(nameof(Buyer))
+            .WithName(nameof(UpdateAddressEndpoint))
+            .WithSummary("Update Buyer Address")
+            .WithDescription("Update the current buyer's address")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization();
     }
