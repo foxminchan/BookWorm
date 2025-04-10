@@ -1,0 +1,17 @@
+---
+apiVersion: "v1"
+kind: "ConfigMap"
+metadata:
+  name: "bookworm-finance-config"
+  labels:
+    app: "aspire"
+    component: "bookworm-finance"
+data:
+  ASPNETCORE_URLS: "{{ .Values.config.bookworm-finance.ASPNETCORE_URLS }}"
+  OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "{{ .Values.config.bookworm-finance.OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES }}"
+  OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "{{ .Values.config.bookworm-finance.OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES }}"
+  OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "{{ .Values.config.bookworm-finance.OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY }}"
+  ASPNETCORE_FORWARDEDHEADERS_ENABLED: "{{ .Values.config.bookworm-finance.ASPNETCORE_FORWARDEDHEADERS_ENABLED }}"
+  HTTP_PORTS: "{{ .Values.config.bookworm-finance.HTTP_PORTS }}"
+  ConnectionStrings__financedb: "{{ .Values.config.bookworm-finance.ConnectionStrings__financedb }}"
+  HEALTHCHECKSUI_URLS: "{{ .Values.config.bookworm-finance.HEALTHCHECKSUI_URLS }}"

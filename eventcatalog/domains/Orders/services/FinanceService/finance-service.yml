@@ -1,142 +1,217 @@
 ---
 asyncapi: 3.0.0
 info:
-  title: Finance Service
+  title: Finance Service API
   version: 1.0.0
   description: |-
-    Finance API for BookWorm
+    Orchestrates order processing and financial transactions for BookWorm
   contact:
     name: Nhan Nguyen
     url: "https://github.com/foxminchan"
   license:
     name: MIT
     url: "https://opensource.org/licenses/MIT"
-defaultContentType: application/json
+defaultContentType: application/vnd.masstransit+json
 servers:
-  rabbitmq:
-    host: localhost:5672
+  development:
+    host: dev.eventbus:5672
     protocol: amqp
-    description: RabbitMQ server for development
+    protocolVersion: 0.9.1
+    summary: RabbitMQ server for development environment
+    description: RabbitMQ server for development environment
     security:
       - type: userPassword
+        description: An authentication method for the server
+    tags:
+      - name: env:development
+        description: >-
+          Development environment configuration for local testing and debugging
+  staging:
+    host: stg.eventbus:5672
+    protocol: amqp
+    protocolVersion: 0.9.1
+    summary: RabbitMQ server for staging environment
+    description: RabbitMQ server for staging environment
+    security:
+      - type: userPassword
+        description: An authentication method for the server
+    tags:
+      - name: env:staging
+        description: >-
+          Staging environment configuration for testing and debugging
+  qa:
+    host: qa.eventbus:5672
+    protocol: amqp
+    protocolVersion: 0.9.1
+    summary: RabbitMQ server for QA environment
+    description: RabbitMQ server for QA environment
+    security:
+      - type: userPassword
+        description: An authentication method for the server
+    tags:
+      - name: env:qa
+        description: >-
+          QA environment configuration for testing and debugging
+  production:
+    host: prod.eventbus:5672
+    protocol: amqp
+    protocolVersion: 0.9.1
+    summary: RabbitMQ server for production environment
+    description: RabbitMQ server for production environment
+    security:
+      - type: userPassword
+        description: An authentication method for the server
+    tags:
+      - name: env:production
+        description: >-
+          Production environment configuration for production
 channels:
   notification-cancel-order:
     address: notification-cancel-order
+    description: Event emitted when a user cancels an order
     messages:
       CancelOrderCommand.message:
         $ref: "#/components/messages/CancelOrderCommand"
   notification-complete-order:
     address: notification-complete-order
+    description: Event emitted when a user completes an order
     messages:
       CompleteOrderCommand.message:
         $ref: "#/components/messages/CompleteOrderCommand"
   basket-checkout-complete:
     address: basket-checkout-complete
+    description: Event emitted when a user completes a basket checkout
     messages:
       DeleteBasketCompleteCommand.message:
         $ref: "#/components/messages/DeleteBasketCompleteCommand"
   basket-checkout-failed:
     address: basket-checkout-failed
+    description: Event emitted when a user fails to complete a basket checkout
     messages:
       DeleteBasketFailedCommand.message:
         $ref: "#/components/messages/DeleteBasketFailedCommand"
   basket-place-order:
     address: basket-place-order
+    description: Event emitted when a user places an order
     messages:
       PlaceOrderCommand.message:
         $ref: "#/components/messages/PlaceOrderCommand"
   "BookWorm.Contracts:BasketDeletedCompleteIntegrationEvent":
     address: "BookWorm.Contracts:BasketDeletedCompleteIntegrationEvent"
+    description: Event emitted when a basket is deleted and the order is complete
     messages:
       BasketDeletedCompleteIntegrationEvent.message:
         $ref: "#/components/messages/BasketDeletedCompleteIntegrationEvent"
   "BookWorm.Contracts:BasketDeletedFailedIntegrationEvent":
     address: "BookWorm.Contracts:BasketDeletedFailedIntegrationEvent"
+    description: Event emitted when a basket is deleted and the order fails
     messages:
       BasketDeletedFailedIntegrationEvent.message:
         $ref: "#/components/messages/BasketDeletedFailedIntegrationEvent"
   "BookWorm.Contracts:OrderStatusChangedToCancelIntegrationEvent":
     address: "BookWorm.Contracts:OrderStatusChangedToCancelIntegrationEvent"
+    description: Event emitted when the order status is changed to cancel
     messages:
       OrderStatusChangedToCancelIntegrationEvent.message:
         $ref: "#/components/messages/OrderStatusChangedToCancelIntegrationEvent"
   "BookWorm.Contracts:OrderStatusChangedToCompleteIntegrationEvent":
     address: "BookWorm.Contracts:OrderStatusChangedToCompleteIntegrationEvent"
+    description: Event emitted when the order status is changed to complete
     messages:
       OrderStatusChangedToCompleteIntegrationEvent.message:
         $ref: "#/components/messages/OrderStatusChangedToCompleteIntegrationEvent"
   "BookWorm.Contracts:UserCheckedOutIntegrationEvent":
     address: "BookWorm.Contracts:UserCheckedOutIntegrationEvent"
+    description: Event emitted when a user checks out
     messages:
       UserCheckedOutIntegrationEvent.message:
         $ref: "#/components/messages/UserCheckedOutIntegrationEvent"
 operations:
   CancelOrderCommand:
+    title: Cancel Order
+    summary: Cancel order notification
+    description: Represents a successful integration event when cancelling an order in the system
     action: send
     channel:
       $ref: "#/channels/notification-cancel-order"
-    summary: Cancel order notification
   CompleteOrderCommand:
+    title: Complete Order
+    summary: Complete order notification
+    description: Represents a successful integration event when completing an order in the system
     action: send
     channel:
       $ref: "#/channels/notification-complete-order"
-    summary: Complete order notification
   DeleteBasketCompleteCommand:
+    title: Delete Basket Complete
+    summary: Delete basket complete
+    description: Represents a successful integration event when deleting a basket in the system
     action: send
     channel:
       $ref: "#/channels/basket-checkout-complete"
-    summary: Delete basket complete
   DeleteBasketFailedCommand:
+    title: Delete Basket Failed
+    summary: Delete basket failed
+    description: Represents a failed integration event when deleting a basket in the system
     action: send
     channel:
       $ref: "#/channels/basket-checkout-failed"
-    summary: Delete basket failed
   PlaceOrderCommand:
+    title: Place Order
+    summary: Place order notification
+    description: Represents a successful integration event when placing an order in the system
     action: send
     channel:
       $ref: "#/channels/basket-place-order"
-    summary: Delete a basket
   BasketDeletedCompleteIntegrationEvent:
+    title: Basket Deleted Complete
+    summary: Basket deleted complete
+    description: Represents a successful integration event when deleting a basket in the system
     action: receive
     channel:
       $ref: "#/channels/BookWorm.Contracts:BasketDeletedCompleteIntegrationEvent"
-    summary: Basket deleted complete
   BasketDeletedFailedIntegrationEvent:
+    title: Basket Deleted Failed
+    summary: Basket deleted failed
+    description: Represents a failed integration event when deleting a basket in the system
     action: receive
     channel:
       $ref: "#/channels/BookWorm.Contracts:BasketDeletedFailedIntegrationEvent"
-    summary: Basket deleted failed
   OrderStatusChangedToCancelIntegrationEvent:
-    action: receive
-    channel:
-      $ref: "#/channels/BookWorm.Contracts:OrderStatusChangedToCancelIntegrationEvent"
+    title: Order Status Changed To Cancel
     summary: Order status changed to cancel
-  OrderStatusChangedToCompleteIntegrationEvent:
+    description: Represents a successful integration event when the order status is changed to cancel in the system
     action: receive
     channel:
       $ref: >-
         #/channels/BookWorm.Contracts:OrderStatusChangedToCompleteIntegrationEvent
-    summary: Order status changed to cancel
   UserCheckedOutIntegrationEvent:
+    title: User Checked Out
+    summary: User checked out
+    description: Represents a successful integration event when a user checks out in the system
     action: receive
     channel:
       $ref: "#/channels/BookWorm.Contracts:UserCheckedOutIntegrationEvent"
-    summary: Basket deleted failed
 components:
   schemas:
     integrationEvent:
       id: integrationEvent
       type: object
+      description: Base event structure containing common metadata for all integration events in the system
       additionalProperties: false
       properties:
         id:
           type: string
           format: guid
+          description: The unique identifier of the integration event
+          example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
         creationDate:
           type: string
           format: date-time
+          description: The creation date of the integration event
+          example: "2021-01-01T00:00:00Z"
     CancelOrderCommand:
       id: CancelOrderCommand
+      description: Event published when a user cancels an order, containing details about the order
       allOf:
         - $ref: "#/components/schemas/integrationEvent"
         - type: object
@@ -145,16 +220,27 @@ components:
             orderId:
               type: string
               format: guid
+              description: The unique identifier of the order
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
             basketId:
               type: string
               format: guid
+              description: The unique identifier of the basket
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
             email:
               type: string
+              description: The email of the user
+              pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+              example: "test@test.com"
             totalMoney:
               type: number
               format: double
+              description: The total amount of money in the basket
+              minimum: 0
+              example: 100.00
     CompleteOrderCommand:
       id: CompleteOrderCommand
+      description: Event published when a user completes an order, containing details about the order
       allOf:
         - $ref: "#/components/schemas/integrationEvent"
         - type: object
@@ -163,13 +249,22 @@ components:
             orderId:
               type: string
               format: guid
+              description: The unique identifier of the order
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
             email:
               type: string
+              description: The email of the user
+              pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+              example: "test@test.com"
             totalMoney:
               type: number
               format: double
+              description: The total amount of money in the order
+              example: 100.00
+              minimum: 0
     DeleteBasketCompleteCommand:
-      id: BasketDeletedCompleteIntegrationEvent
+      id: DeleteBasketCompleteCommand
+      description: Event published when a basket is deleted and the order is complete, containing details about the order
       allOf:
         - $ref: "#/components/schemas/integrationEvent"
         - type: object
@@ -178,11 +273,17 @@ components:
             orderId:
               type: string
               format: guid
+              description: The unique identifier of the order
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
             totalMoney:
               type: number
               format: double
+              description: The total amount of money in the order
+              example: 100.00
+              minimum: 0
     DeleteBasketFailedCommand:
-      id: BasketDeletedFailedIntegrationEvent
+      id: DeleteBasketFailedCommand
+      description: Event published when a basket is deleted and the order fails, containing details about the order
       allOf:
         - $ref: "#/components/schemas/integrationEvent"
         - type: object
@@ -191,16 +292,27 @@ components:
             basketId:
               type: string
               format: guid
+              description: The unique identifier of the basket
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
             email:
               type: string
+              description: The email of the user
+              pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+              example: "test@test.com"
             orderId:
               type: string
               format: guid
+              description: The unique identifier of the order
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
             totalMoney:
               type: number
               format: double
+              description: The total amount of money in the order
+              example: 100.00
+              minimum: 0
     PlaceOrderCommand:
       id: PlaceOrderCommand
+      description: Event published when a user places an order, containing details about the order
       allOf:
         - $ref: "#/components/schemas/integrationEvent"
         - type: object
@@ -209,16 +321,27 @@ components:
             basketId:
               type: string
               format: guid
+              description: The unique identifier of the basket
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
             email:
               type: string
+              description: The email of the user
+              example: "test@test.com"
+              pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
             orderId:
               type: string
               format: guid
+              description: The unique identifier of the order
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
             totalMoney:
               type: number
               format: double
+              description: The total amount of money in the order
+              example: 100.00
+              minimum: 0
     BasketDeletedCompleteIntegrationEvent:
       id: BasketDeletedCompleteIntegrationEvent
+      description: Event consumed when a basket is deleted and the order is complete, containing details about the order
       allOf:
         - $ref: "#/components/schemas/integrationEvent"
         - type: object
@@ -227,14 +350,22 @@ components:
             orderId:
               type: string
               format: guid
+              description: The unique identifier of the order
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
             basketId:
               type: string
               format: guid
+              description: The unique identifier of the basket
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
             totalMoney:
               type: number
               format: double
+              description: The total amount of money in the order
+              example: 100.00
+              minimum: 0
     BasketDeletedFailedIntegrationEvent:
       id: BasketDeletedFailedIntegrationEvent
+      description: Event consumed when a basket is deleted and the order fails, containing details about the order
       allOf:
         - $ref: "#/components/schemas/integrationEvent"
         - type: object
@@ -243,16 +374,27 @@ components:
             basketId:
               type: string
               format: guid
+              description: The unique identifier of the basket
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
             email:
               type: string
+              description: The email of the user
+              example: "test@test.com"
+              pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
             orderId:
               type: string
               format: guid
+              description: The unique identifier of the order
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
             totalMoney:
               type: number
               format: double
+              description: The total amount of money in the order
+              example: 100.00
+              minimum: 0
     OrderStatusChangedToCancelIntegrationEvent:
       id: OrderStatusChangedToCancelIntegrationEvent
+      description: Event consumed when the order status is changed to cancel, containing details about the order
       allOf:
         - $ref: "#/components/schemas/integrationEvent"
         - type: object
@@ -261,16 +403,27 @@ components:
             basketId:
               type: string
               format: guid
+              description: The unique identifier of the basket
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
             email:
               type: string
+              description: The email of the user
+              pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+              example: "test@test.com"
             orderId:
               type: string
               format: guid
+              description: The unique identifier of the order
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
             totalMoney:
               type: number
               format: double
+              description: The total amount of money in the order
+              example: 100.00
+              minimum: 0
     OrderStatusChangedToCompleteIntegrationEvent:
       id: OrderStatusChangedToCompleteIntegrationEvent
+      description: Event consumed when the order status is changed to complete, containing details about the order
       allOf:
         - $ref: "#/components/schemas/integrationEvent"
         - type: object
@@ -279,16 +432,27 @@ components:
             basketId:
               type: string
               format: guid
+              description: The unique identifier of the basket
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
             email:
               type: string
+              description: The email of the user
+              example: "test@test.com"
+              pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
             orderId:
               type: string
               format: guid
+              description: The unique identifier of the order
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
             totalMoney:
               type: number
               format: double
+              description: The total amount of money in the order
+              example: 100.00
+              minimum: 0
     UserCheckedOutIntegrationEvent:
       id: UserCheckedOutIntegrationEvent
+      description: Event consumed when a user checks out, containing details about the order
       allOf:
         - $ref: "#/components/schemas/integrationEvent"
         - type: object
@@ -297,14 +461,24 @@ components:
             basketId:
               type: string
               format: guid
+              description: The unique identifier of the basket
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
             email:
               type: string
+              description: The email of the user
+              example: "test@test.com"
+              pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
             orderId:
               type: string
               format: guid
+              description: The unique identifier of the order
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
             totalMoney:
               type: number
               format: double
+              description: The total amount of money in the order
+              example: 100.00
+              minimum: 0
   messages:
     CancelOrderCommand:
       payload:

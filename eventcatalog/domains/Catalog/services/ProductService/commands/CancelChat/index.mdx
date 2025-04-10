@@ -1,0 +1,47 @@
+---
+id: CancelChatCommand
+version: 1.0.0
+name: Cancel Chat
+summary: Cancel a chat
+badges:
+  - content: DELETE
+    textColor: red
+    backgroundColor: red
+  - content: "Chat"
+    textColor: yellow
+    backgroundColor: yellow
+owners:
+  - nhanxnguyen
+---
+
+## Overview
+
+The Cancel Chat endpoint allows users to terminate an active chat session in the BookWorm platform. This endpoint accepts a chat's unique identifier (GUID) and cancels the associated chat session if it exists. It's designed to provide users with the ability to gracefully end chat interactions when needed.
+
+The endpoint follows RESTful principles and returns a 204 No Content response upon successful cancellation, indicating that the request was processed successfully but no content needs to be returned.
+
+## Architecture
+
+<NodeGraph />
+
+## DELETE `/api/v1/chats/{id:guid}/cancel`
+
+Cancels a chat session by its unique identifier.
+
+### Path Parameters
+
+| Name | Type   | Description                          |
+|------|--------|--------------------------------------|
+| id   | GUID   | The unique identifier of the chat to be cancelled |
+
+### Example Usage
+
+```bash
+curl -X DELETE https://api.bookworm.com/api/v1/chats/{id}/cancel
+```
+
+### Response
+
+#### <span className="text-green-500">204 No Content</span>
+
+Returns a 204 No Content response if the chat is successfully cancelled. This indicates that the request was processed successfully but there is no content to return.

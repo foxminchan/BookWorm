@@ -1,0 +1,23 @@
+---
+apiVersion: "v1"
+kind: "Service"
+metadata:
+  name: "bookworm-rating-service"
+spec:
+  type: "ClusterIP"
+  selector:
+    app: "aspire"
+    component: "bookworm-rating"
+  ports:
+    - name: "http"
+      protocol: "TCP"
+      port: "{{ .Values.parameters.bookworm-rating.port_http }}"
+      targetPort: "{{ .Values.parameters.bookworm-rating.port_http }}"
+    - name: "https"
+      protocol: "TCP"
+      port: "{{ .Values.parameters.bookworm-rating.port_https }}"
+      targetPort: "{{ .Values.parameters.bookworm-rating.port_https }}"
+    - name: "healthchecks"
+      protocol: "TCP"
+      port: "{{ .Values.parameters.bookworm-rating.port_healthchecks }}"
+      targetPort: "{{ .Values.parameters.bookworm-rating.port_healthchecks }}"

@@ -1,33 +1,37 @@
 ---
-openapi: 3.0.1
+openapi: 3.1.1
 info:
-  title: Catalog Service
-  version: 1.0.0
-  description: |-
-    Catalog API for BookWorm
+  title: Catalog Service API
+  description:
+    Manages the catalog of products for the BookWorm platform, including
+    books, authors, and categories
   contact:
     name: Nhan Nguyen
     url: https://github.com/foxminchan
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
+  version: "1.0"
 servers:
-  - url: http://127.0.0.1:54680
+  - url: https://dev.catalog.bookworm.com
+    description: Development
+  - url: https://stg.catalog.bookworm.com
+    description: Staging
+  - url: https://qa.catalog.bookworm.com
+    description: QA
+  - url: https://catalog.bookworm.com
+    description: Production
 paths:
-  "/api/v1/publishers/{id}":
+  "/api/v1/publishers":
     put:
       tags:
         - Publisher
-      summary: Update a publisher
-      description: Update a publisher if it exists
+      summary: Update Publisher
+      description: Updates publisher if it exists
       x-eventcatalog-message-type: command
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      operationId: UpdatePublisherEndpoint
+      security:
+        - BearerAuth: []
       requestBody:
         content:
           application/json:
@@ -43,13 +47,13 @@ paths:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/HttpValidationProblemDetails"
-  "/api/v1/publishers":
     get:
       tags:
         - Publisher
-      summary: Get all publishers
-      description: Get all publishers in the system
+      summary: List Publishers
+      description: Lists all publishers
       x-eventcatalog-message-type: query
+      operationId: ListPublishersEndpoint
       responses:
         "200":
           description: OK
@@ -62,9 +66,12 @@ paths:
     post:
       tags:
         - Publisher
-      summary: Create a publisher
-      description: Create a new publisher
+      summary: Create Publisher
+      description: Creates a new publisher
       x-eventcatalog-message-type: command
+      operationId: CreatePublisherEndpoint
+      security:
+        - BearerAuth: []
       requestBody:
         content:
           application/json:
@@ -72,33 +79,76 @@ paths:
               "$ref": "#/components/schemas/CreatePublisherCommand"
         required: true
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           content:
             application/json:
               schema:
                 type: string
                 format: uuid
+                description: The unique identifier of the publisher
+                example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
         "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/HttpValidationProblemDetails"
-  "/api/v1/categories/{id}":
-    put:
+  "/api/v1/chats":
+    post:
       tags:
-        - Category
-      summary: Update a category
-      description: Update a category if it exists
+        - Chat
+      summary: Create Chat
+      description: Create a new chat in the catalog system
       x-eventcatalog-message-type: command
+      operationId: CreateChatEndpoint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/Prompt"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: string
+                format: uuid
+                description: The unique identifier of the chat
+                example: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
+  "/api/v1/chats/{id}/cancel":
+    delete:
+      tags:
+        - Chat
+      summary: Cancel Chat
+      description: Cancel a chat if it exists
+      x-eventcatalog-message-type: command
+      operationId: CancelChatEndpoint
       parameters:
         - name: id
           in: path
+          description: The unique identifier of the chat to be cancelled
           required: true
           schema:
             type: string
             format: uuid
+            description: The unique identifier of the chat to be cancelled
+            example: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
+      responses:
+        "204":
+          description: No Content
+  "/api/v1/categories":
+    put:
+      tags:
+        - Category
+      summary: Update Category
+      description: Update a category if it exists
+      x-eventcatalog-message-type: command
+      operationId: UpdateCategoryEndpoint
+      security:
+        - BearerAuth: []
       requestBody:
         content:
           application/json:
@@ -114,13 +164,13 @@ paths:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/HttpValidationProblemDetails"
-  "/api/v1/categories":
     get:
       tags:
         - Category
-      summary: Get all categories
-      description: Get all categories in the system
+      summary: List Categories
+      description: List all categories
       x-eventcatalog-message-type: query
+      operationId: ListCategoriesEndpoint
       responses:
         "200":
           description: OK
@@ -133,9 +183,12 @@ paths:
     post:
       tags:
         - Category
-      summary: Create a category
-      description: Create a new category in the system
+      summary: Create Category
+      description: Create a new category in the catalog system
       x-eventcatalog-message-type: command
+      operationId: CreateCategoryEndpoint
+      security:
+        - BearerAuth: []
       requestBody:
         content:
           application/json:
@@ -143,46 +196,38 @@ paths:
               "$ref": "#/components/schemas/CreateCategoryCommand"
         required: true
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           content:
             application/json:
               schema:
                 type: string
                 format: uuid
+                description: The unique identifier of the category
+                example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
         "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/HttpValidationProblemDetails"
-        "409":
-          description: Conflict
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
-  "/api/v1/books/{id}":
+  "/api/v1/books":
     put:
       tags:
         - Book
-      summary: Update a book
+      summary: Update Book
       description: Update a book if it exists
       x-eventcatalog-message-type: command
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      operationId: UpdateBookEndpoint
+      security:
+        - BearerAuth: []
       requestBody:
         content:
           multipart/form-data:
             schema:
               required:
+                - Id
                 - Name
-                - Description
                 - Price
                 - CategoryId
                 - PublisherId
@@ -191,12 +236,25 @@ paths:
               allOf:
                 - type: object
                   properties:
+                    Id:
+                      type: string
+                      format: uuid
+                      description: The unique identifier of the book
+                      example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+                - type: object
+                  properties:
                     Name:
                       type: string
+                      description: The name of the book
+                      example: "Software Architecture: The Hard Parts"
+                      maxLength: 50
                 - type: object
                   properties:
                     Description:
                       type: string
+                      description: The description of the book
+                      example: 'When two of your authors, Neal and Mark, were writing the book Fundamentals of Software Architecture, we kept coming across complex examples in architecture that we wanted to cover but that were too difficult. Each one offered no easy solutions but rather a collection of messy trade-offs. We set those examples aside into a pile we called "The Hard Parts." Once that book was finished, we looked at the now gigantic pile of hard parts and tried to figure out: why are these problems so difficult to solve in modern architectures?'
+                      maxLength: 500
                 - type: object
                   properties:
                     Image:
@@ -206,21 +264,32 @@ paths:
                     Price:
                       type: number
                       format: double
+                      description: The price of the book
+                      example: 43.99
+                      minimum: 0
                 - type: object
                   properties:
                     PriceSale:
                       type: number
                       format: double
+                      description: The sale price of the book
+                      example: 39.86
+                      minimum: 0
+                      maximum: 100
                 - type: object
                   properties:
                     CategoryId:
                       type: string
                       format: uuid
+                      description: The category of the book
+                      example: "01961eb2-5a5b-749f-b494-1063d73c96a3"
                 - type: object
                   properties:
                     PublisherId:
                       type: string
                       format: uuid
+                      description: The publisher of the book
+                      example: "01961eb7-be10-7235-bed8-2fea41c28c02"
                 - type: object
                   properties:
                     AuthorIds:
@@ -228,11 +297,17 @@ paths:
                       items:
                         type: string
                         format: uuid
+                        description: The authors of the book
+                        example:
+                          - - "01961eb4-0c29-799f-ab78-ad3e2beaa54a"
+                          - - "01961ebd-2bc1-7de2-aa90-639662d9259e"
                 - type: object
                   properties:
                     IsRemoveImage:
                       type: boolean
                       default: false
+                      description: Whether to remove the image of the book
+                      example: false
         required: true
       responses:
         "204":
@@ -252,58 +327,10 @@ paths:
     get:
       tags:
         - Book
-      summary: Get a book by ID
-      description: Get a book by ID
+      summary: List Books
+      description: List all books with advanced filtering and pagination
       x-eventcatalog-message-type: query
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/BookDto"
-        "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
-    delete:
-      tags:
-        - Book
-      summary: Delete a book
-      description: Delete a book if it exists
-      x-eventcatalog-message-type: command
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        "204":
-          description: No Content
-        "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
-  "/api/v1/books":
-    get:
-      tags:
-        - Book
-      summary: Get all books
-      description: Get all books in the system
-      x-eventcatalog-message-type: query
+      operationId: ListBooksEndpoint
       parameters:
         - name: PageIndex
           in: query
@@ -312,6 +339,8 @@ paths:
             type: integer
             format: int32
             default: 1
+            example: 1
+            minimum: 1
         - name: PageSize
           in: query
           description: Number of items to return in a single page of results
@@ -319,24 +348,29 @@ paths:
             type: integer
             format: int32
             default: 20
+            example: 20
+            minimum: 1
         - name: OrderBy
           in: query
           description: Property to order results by
           schema:
             type: string
             default: Name
+            example: "Name"
         - name: IsDescending
           in: query
           description: Whether to order results in descending order
           schema:
             type: boolean
             default: false
+            example: false
         - name: Search
           in: query
           description: Search term to filter results by
           schema:
             type: string
             default:
+            example: "Software"
         - name: MinPrice
           in: query
           description: Minimum price to filter results by
@@ -344,6 +378,7 @@ paths:
             type: number
             format: double
             default:
+            example: 10
         - name: MaxPrice
           in: query
           description: Maximum price to filter results by
@@ -351,6 +386,7 @@ paths:
             type: number
             format: double
             default:
+            example: 100
         - name: CategoryId
           in: query
           description: Category IDs to filter results by
@@ -360,6 +396,9 @@ paths:
               type: string
               format: uuid
             default:
+            example:
+              - - "01961eb2-5a5b-749f-b494-1063d73c96a3"
+              - - "01961eb4-668d-7e7e-ae25-0fab379614f7"
         - name: PublisherId
           in: query
           description: Publisher IDs to filter results by
@@ -369,6 +408,9 @@ paths:
               type: string
               format: uuid
             default:
+            example:
+              - - "01961eb7-be10-7235-bed8-2fea41c28c02"
+              - - "01961ebd-2bc1-7de2-aa90-639662d9259e"
         - name: AuthorIds
           in: query
           description: Author IDs to filter results by
@@ -378,6 +420,9 @@ paths:
               type: string
               format: uuid
             default:
+            example:
+              - - "01961eb4-0c29-799f-ab78-ad3e2beaa54a"
+              - - "01961ebd-ba46-75c6-8834-ff51cc0ff650"
       responses:
         "200":
           description: OK
@@ -394,16 +439,18 @@ paths:
     post:
       tags:
         - Book
-      summary: Create a book
-      description: Create a new book in the system
+      summary: Create Book
+      description: Create a book
       x-eventcatalog-message-type: command
+      operationId: CreateBookEndpoint
+      security:
+        - BearerAuth: []
       requestBody:
         content:
           multipart/form-data:
             schema:
               required:
                 - Name
-                - Description
                 - Price
                 - CategoryId
                 - PublisherId
@@ -414,34 +461,52 @@ paths:
                   properties:
                     Name:
                       type: string
+                      description: The name of the book
+                      example: "Software Architecture: The Hard Parts"
+                      maxLength: 50
                 - type: object
                   properties:
                     Description:
                       type: string
+                      description: The description of the book
+                      example: 'When two of your authors, Neal and Mark, were writing the book Fundamentals of Software Architecture, we kept coming across complex examples in architecture that we wanted to cover but that were too difficult. Each one offered no easy solutions but rather a collection of messy trade-offs. We set those examples aside into a pile we called "The Hard Parts." Once that book was finished, we looked at the now gigantic pile of hard parts and tried to figure out: why are these problems so difficult to solve in modern architectures?'
+                      maxLength: 500
                 - type: object
                   properties:
                     Image:
                       "$ref": "#/components/schemas/IFormFile"
+                      description: The image of the book
                 - type: object
                   properties:
                     Price:
                       type: number
                       format: double
+                      description: The price of the book
+                      example: 43.99
+                      minimum: 0
                 - type: object
                   properties:
                     PriceSale:
                       type: number
                       format: double
+                      description: The sale price of the book
+                      example: 39.86
+                      minimum: 0
+                      maximum: 100
                 - type: object
                   properties:
                     CategoryId:
                       type: string
                       format: uuid
+                      description: The category of the book
+                      example: "01961eb2-5a5b-749f-b494-1063d73c96a3"
                 - type: object
                   properties:
                     PublisherId:
                       type: string
                       format: uuid
+                      description: The publisher of the book
+                      example: "01961eb7-be10-7235-bed8-2fea41c28c02"
                 - type: object
                   properties:
                     AuthorIds:
@@ -449,6 +514,10 @@ paths:
                       items:
                         type: string
                         format: uuid
+                      description: The authors of the book
+                      example:
+                        - - "01961eb4-0c29-799f-ab78-ad3e2beaa54a"
+                        - - "01961ebd-2bc1-7de2-aa90-639662d9259e"
         required: true
       responses:
         "201":
@@ -458,26 +527,82 @@ paths:
               schema:
                 type: string
                 format: uuid
+                description: The unique identifier of the book
+                example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
         "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/HttpValidationProblemDetails"
-  "/api/v1/authors/{id}":
-    put:
+  "/api/v1/books/{id}":
+    get:
       tags:
-        - Author
-      summary: Update an author
-      description: Update an author if it exists
-      x-eventcatalog-message-type: command
+        - Book
+      summary: Get Book
+      description: Get a book by identifier
+      x-eventcatalog-message-type: query
+      operationId: GetBookEndpoint
       parameters:
         - name: id
           in: path
+          description: The unique identifier of the book to be retrieved
           required: true
           schema:
             type: string
             format: uuid
+            description: The unique identifier of the book to be retrieved
+            example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/BookDto"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+    delete:
+      tags:
+        - Book
+      summary: Delete Book
+      description: Delete a book if it exists
+      x-eventcatalog-message-type: command
+      operationId: DeleteBookEndpoint
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: The unique identifier of the book to be deleted
+          required: true
+          schema:
+            type: string
+            format: uuid
+            description: The unique identifier of the book to be deleted
+            example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/api/v1/authors":
+    put:
+      tags:
+        - Author
+      summary: Update Author
+      description: Update an author if it exists
+      operationId: UpdateAuthorEndpoint
+      security:
+        - BearerAuth: []
       requestBody:
         content:
           application/json:
@@ -493,19 +618,73 @@ paths:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/HttpValidationProblemDetails"
+    get:
+      tags:
+        - Author
+      summary: List Authors
+      description: List all authors
+      x-eventcatalog-message-type: query
+      operationId: ListAuthorsEndpoint
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/AuthorDto"
+    post:
+      tags:
+        - Author
+      summary: Create Author
+      description: Create a new author in the catalog system
+      x-eventcatalog-message-type: command
+      operationId: CreateAuthorEndpoint
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreateAuthorCommand"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: string
+                format: uuid
+                description: The unique identifier of the author
+                example: "01961eb4-0c29-799f-ab78-ad3e2beaa54a"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+  "/api/v1/authors/{id}":
     delete:
       tags:
         - Author
-      summary: Delete an author
-      description: Delete an author if it exists
+      summary: Delete Author
+      description: Delete an author from the catalog system
       x-eventcatalog-message-type: command
+      operationId: DeleteAuthorEndpoint
+      security:
+        - BearerAuth: []
       parameters:
         - name: id
           in: path
+          description: The unique identifier of the author to be deleted
           required: true
           schema:
             type: string
             format: uuid
+            description: The unique identifier of the author to be deleted
+            example: "01961eb4-0c29-799f-ab78-ad3e2beaa54a"
       responses:
         "204":
           description: No Content
@@ -521,182 +700,215 @@ paths:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
-  "/api/v1/authors":
-    get:
-      tags:
-        - Author
-      summary: Get all authors
-      description: Get all authors in the system
-      x-eventcatalog-message-type: query
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  "$ref": "#/components/schemas/AuthorDto"
-    post:
-      tags:
-        - Author
-      summary: Create an author
-      description: Create a new author in the system
-      x-eventcatalog-message-type: command
-      requestBody:
-        content:
-          application/json:
-            schema:
-              "$ref": "#/components/schemas/CreateAuthorCommand"
-        required: true
-      responses:
-        "201":
-          description: Created
-          content:
-            application/json:
-              schema:
-                type: string
-                format: uuid
-        "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/HttpValidationProblemDetails"
 components:
   schemas:
     AuthorDto:
-      required:
-        - id
-        - name
       type: object
+      readOnly: true
+      description: The author of the book
       properties:
         id:
           type: string
           format: uuid
+          description: The unique identifier of the author
+          example: "01961eb4-0c29-799f-ab78-ad3e2beaa54a"
         name:
-          type: string
-          nullable: true
+          type:
+            - "string"
+            - "null"
+          description: The name of the author
+          example: "Neal Ford"
     BookDto:
-      required:
-        - id
-        - name
-        - description
-        - imageUrl
-        - price
-        - priceSale
-        - status
-        - category
-        - publisher
-        - authors
-        - averageRating
-        - totalReviews
       type: object
+      readOnly: true
+      description: The book of the catalog
       properties:
         id:
           type: string
           format: uuid
+          description: The unique identifier of the book
+          example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
         name:
-          type: string
-          nullable: true
+          type:
+            - "string"
+            - "null"
+          description: The name of the book
+          example: "Software Architecture: The Hard Parts"
         description:
-          type: string
-          nullable: true
+          type:
+            - "string"
+            - "null"
+          description: The description of the book
+          example: 'When two of your authors, Neal and Mark, were writing the book Fundamentals of Software Architecture, we kept coming across complex examples in architecture that we wanted to cover but that were too difficult. Each one offered no easy solutions but rather a collection of messy trade-offs. We set those examples aside into a pile we called "The Hard Parts." Once that book was finished, we looked at the now gigantic pile of hard parts and tried to figure out: why are these problems so difficult to solve in modern architectures?'
         imageUrl:
-          type: string
-          nullable: true
+          type:
+            - "string"
+            - "null"
+          description: The image URL of the book
+          example: "https://azure.blob.core.windows.net/bookworm/software-architecture-the-hard-parts.jpg"
         price:
           type: number
           format: double
+          description: The price of the book
+          example: 43.99
         priceSale:
-          type: number
+          type:
+            - "number"
+            - "null"
           format: double
-          nullable: true
+          description: The sale price of the book
+          example: 39.86
         status:
           "$ref": "#/components/schemas/Status"
+          description: The status of the book
+          example: "InStock"
         category:
-          "$ref": "#/components/schemas/CategoryDto2"
+          "$ref": "#/components/schemas/CategoryDto"
+          description: The category of the book
         publisher:
-          "$ref": "#/components/schemas/PublisherDto2"
+          "$ref": "#/components/schemas/PublisherDto"
+          description: The publisher of the book
         authors:
           type: array
           items:
             "$ref": "#/components/schemas/AuthorDto"
+          description: The authors of the book
+          example:
+            - - id: "01961eb4-0c29-799f-ab78-ad3e2beaa54a"
+                name: "Neal Ford"
+            - - id: "01961ebd-2bc1-7de2-aa90-639662d9259e"
+                name: "Mark Richards"
+            - - id: "01961ebd-ba46-75c6-8834-ff51cc0ff650"
+                name: "Pramod Sadalage"
+            - - id: "01961ebe-1001-7cf6-8071-94b6a622e1a4"
+                name: "Zhamak Dehghani"
         averageRating:
           type: number
           format: double
+          description: The average rating of the book
+          example: 4.5
         totalReviews:
           type: integer
           format: int32
+          description: The total number of reviews of the book
+          example: 591
     CategoryDto:
-      required:
-        - id
-        - name
       type: object
+      readOnly: true
+      description: The category of the book
       properties:
         id:
           type: string
           format: uuid
+          description: The unique identifier of the category
+          example: "01961eb2-5a5b-749f-b494-1063d73c96a3"
         name:
-          type: string
-          nullable: true
-    CategoryDto2:
-      required:
-        - id
-        - name
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-          nullable: true
-      nullable: true
+          type:
+            - "string"
+            - "null"
+          description: The name of the category
+          example: "Technology"
     CreateAuthorCommand:
       required:
         - name
       type: object
+      writeOnly: true
+      description: The command to create an author
       properties:
         name:
           type: string
+          description: The name of the author
+          example: "Neal Ford"
+          maxLength: 50
     CreateCategoryCommand:
       required:
         - name
       type: object
+      writeOnly: true
+      description: The command to create a category
       properties:
         name:
           type: string
+          description: The name of the category
+          example: "Technology"
+          maxLength: 50
     CreatePublisherCommand:
       required:
         - name
       type: object
+      writeOnly: true
+      description: The command to create a publisher
       properties:
         name:
           type: string
+          description: The name of the publisher
+          example: "O'Reilly Media, Inc."
+          maxLength: 50
     HttpValidationProblemDetails:
       type: object
+      readOnly: true
+      description: The problem details for validation errors
       properties:
         type:
           type: string
+          description: The type of the problem
+          example: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
         title:
           type: string
+          description: The title of the problem
+          example: "Validation failed"
         status:
           type: integer
           format: int32
+          description: The status code of the problem
+          example: 400
         detail:
           type: string
-        instance:
-          type: string
+          description: The detail of the problem
+          example: "One or more validation errors has occurred"
         errors:
-          type: object
-          additionalProperties:
-            type: array
-            items:
-              type: string
+          type: array
+          description: The validation errors
+          items:
+            type: object
+            properties:
+              propertyName:
+                type: string
+                description: The name of the property that failed validation
+                example: "Name"
+              errorMessage:
+                type: string
+                description: The error message describing the validation failure
+                example: "'Name' must not be empty."
+              attemptedValue:
+                type: object
+                description: The value that was attempted
+                example: null
+              customState:
+                type: object
+                description: Custom state information
+                example: null
+              severity:
+                type: integer
+                format: int32
+                description: The severity level of the error
+                example: 0
+              errorCode:
+                type:
+                  - "string"
+                  - "null"
+                description: The error code
+                example: null
+              formattedMessagePlaceholderValues:
+                type: object
+                description: Placeholder values for the formatted message
+                example: null
     IFormFile:
       type: string
-      format: binary
+      description: The file to be uploaded
+      contentMediaType:
+        - image/png
+        - image/jpeg
     PagedResultOfBookDto:
       required:
         - items
@@ -705,6 +917,8 @@ components:
         - totalItems
         - totalPages
       type: object
+      readOnly: true
+      description: The paged result of books
       properties:
         items:
           type: array
@@ -713,93 +927,146 @@ components:
         pageIndex:
           type: integer
           format: int32
+          description: The index of the page
+          example: 1
         pageSize:
           type: integer
           format: int32
+          description: The size of the page
+          example: 20
         totalItems:
           type: integer
           format: int64
+          description: The total number of items
+          example: 100
         totalPages:
           type: number
           format: double
+          description: The total number of pages
+          example: 5
         hasPreviousPage:
           type: boolean
+          description: Whether the page has a previous page
+          example: true
         hasNextPage:
           type: boolean
+          description: Whether the page has a next page
+          example: true
     ProblemDetails:
       type: object
+      readOnly: true
+      description: The problem details
       properties:
         type:
           type: string
+          description: The type of the problem
         title:
           type: string
+          description: The title of the problem
         status:
           type: integer
           format: int32
+          description: The status code of the problem
         detail:
           type: string
-        instance:
+          description: The detail of the problem
+    Prompt:
+      required:
+        - text
+      type: object
+      writeOnly: true
+      properties:
+        text:
           type: string
+          description: The text of the prompt
+          example: "What is the best book in the world?"
     PublisherDto:
-      required:
-        - id
-        - name
       type: object
+      readOnly: true
+      description: The publisher of the book
       properties:
         id:
           type: string
           format: uuid
+          description: The unique identifier of the publisher
+          example: "01961eb7-be10-7235-bed8-2fea41c28c02"
         name:
-          type: string
-          nullable: true
-    PublisherDto2:
-      required:
-        - id
-        - name
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-          nullable: true
-      nullable: true
+          type:
+            - "string"
+            - "null"
+          example: "O'Reilly Media, Inc."
     Status:
+      description: The status of the book
       enum:
         - InStock
         - OutOfStock
     UpdateAuthorCommand:
       required:
+        - id
         - name
       type: object
+      writeOnly: true
+      description: The command to update an author
       properties:
+        id:
+          type: string
+          format: uuid
+          description: The unique identifier of the author
+          example: "01961eb4-0c29-799f-ab78-ad3e2beaa54a"
         name:
           type: string
+          description: The name of the author
+          example: "Neal Ford"
+          maxLength: 50
     UpdateCategoryCommand:
       required:
+        - id
         - name
       type: object
+      writeOnly: true
+      description: The command to update a category
       properties:
+        id:
+          type: string
+          format: uuid
+          description: The unique identifier of the category
+          example: "01961eb2-5a5b-749f-b494-1063d73c96a3"
         name:
           type: string
+          description: The name of the category
+          example: "Technology"
+          maxLength: 50
     UpdatePublisherCommand:
       required:
         - id
         - name
       type: object
+      writeOnly: true
+      description: The command to update a publisher
       properties:
         id:
           type: string
           format: uuid
+          description: The unique identifier of the publisher
+          example: "01961eb7-be10-7235-bed8-2fea41c28c02"
         name:
           type: string
+          description: The name of the publisher
+          example: "O'Reilly Media, Inc."
+          maxLength: 50
   securitySchemes:
     BearerAuth:
       type: http
-      scheme: bearer
+      scheme: Bearer
+      description: The Bearer token for the user
 tags:
   - name: Publisher
+    description: Operations related to managing book publishers, including creating, updating, and retrieving publisher information
+  - name: Chat
+    description: Endpoints for handling book-related discussions and user interactions in chat format
   - name: Category
+    description: Management of book categories and genres, allowing for organization and classification of books
   - name: Book
+    description: Core operations for managing books in the catalog, including creation, updates, and retrieval of book details
   - name: Author
+    description: Operations for managing book authors, including author profiles, book associations, and biographical information

@@ -11,7 +11,9 @@ public sealed class FeedbackCreatedEventHandler(IEventDispatcher eventDispatcher
     [Channel("catalog-feedback-created")]
     [SubscribeOperation(
         typeof(FeedbackCreatedIntegrationEvent),
-        OperationId = nameof(FeedbackCreatedIntegrationEvent)
+        OperationId = nameof(FeedbackCreatedIntegrationEvent),
+        Summary = "Feedback created event",
+        Description = "Represents a successful integration event when a feedback is created"
     )]
     public async Task Handle(FeedbackCreatedEvent notification, CancellationToken cancellationToken)
     {

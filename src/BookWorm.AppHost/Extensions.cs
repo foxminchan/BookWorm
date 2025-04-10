@@ -1,8 +1,11 @@
 ﻿using Aspire.Hosting.Azure;
 using Azure.Provisioning.CosmosDB;
+using Azure.Provisioning.PostgreSql;
+using Azure.Provisioning.Redis;
 using Azure.Provisioning.Storage;
 using BookWorm.Constants;
 using Microsoft.Extensions.Hosting;
+using RedisResource = Azure.Provisioning.Redis.RedisResource;
 
 namespace BookWorm.AppHost;
 
@@ -24,6 +27,7 @@ public static class Extensions
             .WithDataVolume()
             .WithGPUSupport()
             .WithOpenWebUI()
+            .WithImagePullPolicy(ImagePullPolicy.Always)
             .WithLifetime(ContainerLifetime.Persistent)
             .PublishAsContainer();
 
@@ -77,44 +81,77 @@ public static class Extensions
     /// <param name="cosmos">The resource builder for Azure Cosmos DB.</param>
     /// <param name="storage">The resource builder for Azure Storage.</param>
     /// <param name="signalR">The resource builder for Azure SignalR.</param>
+    /// <param name="postgres">The resource builder for Azure Postgres.</param>
+    /// <param name="redis">The resource builder for Azure Redis.</param>
     public static void ConfigAzureResource(
         this IDistributedApplicationBuilder builder,
         IResourceBuilder<AzureCosmosDBResource> cosmos,
         IResourceBuilder<AzureStorageResource> storage,
-        IResourceBuilder<AzureSignalRResource> signalR
+        IResourceBuilder<AzureSignalRResource> signalR,
+        IResourceBuilder<AzurePostgresFlexibleServerResource> postgres,
+        IResourceBuilder<AzureRedisCacheResource> redis
     )
     {
+        const string project = "Project";
+
         if (builder.Environment.IsDevelopment())
         {
             cosmos.RunAsPreviewEmulator(config =>
                 config
                     .WithDataExplorer()
                     .WithDataVolume()
+                    .WithImagePullPolicy(ImagePullPolicy.Always)
                     .WithLifetime(ContainerLifetime.Persistent)
             );
+
             storage.RunAsEmulator(config =>
-                config.WithDataVolume().WithLifetime(ContainerLifetime.Persistent)
+                config
+                    .WithDataVolume()
+                    .WithImagePullPolicy(ImagePullPolicy.Always)
+                    .WithLifetime(ContainerLifetime.Persistent)
             );
-            signalR.RunAsEmulator(config => config.WithLifetime(ContainerLifetime.Persistent));
+
+            signalR.RunAsEmulator(config =>
+                config
+                    .WithImagePullPolicy(ImagePullPolicy.Always)
+                    .WithLifetime(ContainerLifetime.Persistent)
+            );
+
+            postgres.RunAsContainer(cfg =>
+                cfg.WithPgAdmin()
+                    .WithDataVolume()
+                    .WithImagePullPolicy(ImagePullPolicy.Always)
+                    .WithLifetime(ContainerLifetime.Persistent)
+            );
+
+            redis.RunAsContainer(config =>
+                config
+                    .WithRedisInsight()
+                    .WithDataVolume()
+                    .WithImagePullPolicy(ImagePullPolicy.Always)
+                    .WithLifetime(ContainerLifetime.Persistent)
+            );
         }
 
-        cosmos.AddCosmosDatabase(Components.Database.Rating).AddContainer("Feedbacks", "/id");
+        cosmos.AddCosmosDatabase(Components.Database.Rating);
 
-        cosmos.ConfigureInfrastructure(infra =>
-        {
-            var cosmosDbAccount = infra
-                .GetProvisionableResources()
-                .OfType<CosmosDBAccount>()
-                .Single();
-
-            cosmosDbAccount.Kind = CosmosDBAccountKind.GlobalDocumentDB;
-            cosmosDbAccount.ConsistencyPolicy = new()
+        cosmos
+            .WithAccessKeyAuthentication()
+            .ConfigureInfrastructure(infra =>
             {
-                DefaultConsistencyLevel = DefaultConsistencyLevel.Session,
-            };
-            cosmosDbAccount.Tags.Add(nameof(Environment), builder.Environment.EnvironmentName);
-            cosmosDbAccount.Tags.Add("Project", nameof(BookWorm));
-        });
+                var cosmosDbAccount = infra
+                    .GetProvisionableResources()
+                    .OfType<CosmosDBAccount>()
+                    .Single();
+
+                cosmosDbAccount.Kind = CosmosDBAccountKind.GlobalDocumentDB;
+                cosmosDbAccount.ConsistencyPolicy = new()
+                {
+                    DefaultConsistencyLevel = DefaultConsistencyLevel.Session,
+                };
+                cosmosDbAccount.Tags.Add(nameof(Environment), builder.Environment.EnvironmentName);
+                cosmosDbAccount.Tags.Add(project, nameof(BookWorm));
+            });
 
         storage.ConfigureInfrastructure(infra =>
         {
@@ -126,7 +163,50 @@ public static class Extensions
             storageAccount.AccessTier = StorageAccountAccessTier.Hot;
             storageAccount.Sku = new() { Name = StorageSkuName.PremiumZrs };
             storageAccount.Tags.Add(nameof(Environment), builder.Environment.EnvironmentName);
-            storageAccount.Tags.Add("Project", nameof(BookWorm));
+            storageAccount.Tags.Add(project, nameof(BookWorm));
         });
+
+        postgres
+            .WithPasswordAuthentication()
+            .ConfigureInfrastructure(infra =>
+            {
+                var flexibleServer = infra
+                    .GetProvisionableResources()
+                    .OfType<PostgreSqlFlexibleServer>()
+                    .Single();
+
+                flexibleServer.Sku = new()
+                {
+                    Tier = PostgreSqlFlexibleServerSkuTier.GeneralPurpose,
+                };
+                flexibleServer.Tags.Add(nameof(Environment), builder.Environment.EnvironmentName);
+                flexibleServer.Tags.Add(project, nameof(BookWorm));
+            });
+
+        redis
+            .WithAccessKeyAuthentication()
+            .ConfigureInfrastructure(infra =>
+            {
+                var resource = infra.GetProvisionableResources().OfType<RedisResource>().Single();
+
+                resource.Sku = new()
+                {
+                    Family = RedisSkuFamily.BasicOrStandard,
+                    Name = RedisSkuName.Basic,
+                    Capacity = 1,
+                };
+                resource.Tags.Add(nameof(Environment), builder.Environment.EnvironmentName);
+                resource.Tags.Add(project, nameof(BookWorm));
+            });
+    }
+
+    /// <summary>
+    ///     Adds the project publisher to the distributed application builder.
+    /// </summary>
+    /// <param name="builder">The distributed application builder.</param>
+    public static void AddProjectPublisher(this IDistributedApplicationBuilder builder)
+    {
+        builder.AddAzurePublisher();
+        builder.AddKubernetesPublisher();
     }
 }

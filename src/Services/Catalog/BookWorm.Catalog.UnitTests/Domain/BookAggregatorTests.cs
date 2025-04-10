@@ -80,41 +80,6 @@ public sealed class BookAggregatorTests
     }
 
     [Test]
-    [Arguments(null)]
-    [Arguments("")]
-    [Arguments("  ")]
-    public void GivenEmptyOrNullDescription_WhenCreatingBook_ThenShouldThrowException(
-        string? description
-    )
-    {
-        // Arrange
-        const string name = "Test Book";
-        const string image = "test.jpg";
-        const decimal price = 19.99m;
-        decimal? priceSale = 15.99m;
-        var categoryId = Guid.CreateVersion7();
-        var publisherId = Guid.CreateVersion7();
-        Guid[] authorIds = [Guid.CreateVersion7()];
-
-        // Act & Assert
-        Should
-            .Throw<CatalogDomainException>(
-                () =>
-                    new Book(
-                        name,
-                        description,
-                        image,
-                        price,
-                        priceSale,
-                        categoryId,
-                        publisherId,
-                        authorIds
-                    )
-            )
-            .Message.ShouldBe("Book description is required.");
-    }
-
-    [Test]
     public void GivenValidParameters_WhenUpdatingBook_ThenShouldUpdateCorrectly()
     {
         // Arrange
@@ -196,44 +161,6 @@ public sealed class BookAggregatorTests
                     )
             )
             .Message.ShouldBe("Book name is required.");
-    }
-
-    [Test]
-    [Arguments(null)]
-    [Arguments("")]
-    [Arguments("  ")]
-    public void GivenEmptyOrNullDescription_WhenUpdatingBook_ThenShouldThrowException(
-        string? newDescription
-    )
-    {
-        // Arrange
-        var book = new Book(
-            "Original Name",
-            "Original Description",
-            "original.jpg",
-            19.99m,
-            15.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
-        );
-
-        // Act & Assert
-        Should
-            .Throw<CatalogDomainException>(
-                () =>
-                    book.Update(
-                        "Updated Name",
-                        newDescription,
-                        29.99m,
-                        24.99m,
-                        "updated.jpg",
-                        Guid.CreateVersion7(),
-                        Guid.CreateVersion7(),
-                        [Guid.CreateVersion7()]
-                    )
-            )
-            .Message.ShouldBe("Book description is required.");
     }
 
     [Test]

@@ -12,7 +12,7 @@ public sealed class CreatePublisherEndpoint : IEndpoint<Ok<Guid>, CreatePublishe
             .Produces<Guid>()
             .ProducesValidationProblem()
             .WithTags(nameof(Publisher))
-            .WithName(nameof(CreatePublisherCommand))
+            .WithName(nameof(CreatePublisherEndpoint))
             .WithSummary("Create Publisher")
             .WithDescription("Creates a new publisher")
             .MapToApiVersion(new(1, 0))

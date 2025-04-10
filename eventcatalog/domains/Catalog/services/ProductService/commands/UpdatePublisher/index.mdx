@@ -43,10 +43,13 @@ This endpoint supports the catalog domain's business capability to manage publis
 ### Example Usage
 
 ```bash
-curl -X PUT "https://api.bookworm.com/api/v1/publishers/{id}" \
+curl -X PUT "https://api.bookworm.com/api/v1/publishers" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <admin-token>" \
-  -d '{"name": "Updated Publisher Name"}'
+  -d '{
+    "id": "01961eb4-668d-7e7e-ae25-0fab379614f7",
+    "name": "Updated Publisher Name"
+  }'
 ```
 
 ### Authorization

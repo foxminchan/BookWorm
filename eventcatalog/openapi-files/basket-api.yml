@@ -1,26 +1,36 @@
 ---
-openapi: 3.0.1
+openapi: 3.1.1
 info:
-  title: Basket Service
-  version: 1.0.0
-  description: |-
-    Basket API for BookWorm
+  title: Basket Service API
+  description: Manages the lifecycle of customer shopping baskets in the BookWorm
+    e-commerce system
   contact:
     name: Nhan Nguyen
     url: https://github.com/foxminchan
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
+  version: '1.0'
 servers:
-  - url: http://127.0.0.1:54681
+  - url: https://dev.basket.bookworm.com
+    description: Development
+  - url: https://stg.basket.bookworm.com
+    description: Staging
+  - url: https://qa.basket.bookworm.com
+    description: QA
+  - url: https://basket.bookworm.com
+    description: Production
 paths:
   "/api/v1/baskets":
     put:
       tags:
-        - Basket
-      summary: Update a basket
-      description: Update a basket if exists, otherwise create a new one
+      - Basket
+      summary: Update Basket
+      description: Update a basket by its unique identifier
       x-eventcatalog-message-type: command
+      operationId: UpdateBasketEndpoint
+      security:
+        - BearerAuth: []
       requestBody:
         content:
           application/json:
@@ -28,9 +38,9 @@ paths:
               "$ref": "#/components/schemas/UpdateBasketCommand"
         required: true
       responses:
-        "204":
+        '204':
           description: No Content
-        "400":
+        '400':
           description: Bad Request
           content:
             application/problem+json:
@@ -38,18 +48,19 @@ paths:
                 "$ref": "#/components/schemas/HttpValidationProblemDetails"
     get:
       tags:
-        - Basket
-      summary: Get a basket
-      description: Get a basket by id
+      - Basket
+      summary: Get Basket
+      description: Get a basket by user
       x-eventcatalog-message-type: query
+      operationId: GetBasketEndpoint
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 "$ref": "#/components/schemas/CustomerBasketDto"
-        "404":
+        '404':
           description: Not Found
           content:
             application/problem+json:
@@ -57,14 +68,17 @@ paths:
                 "$ref": "#/components/schemas/ProblemDetails"
     delete:
       tags:
-        - Basket
-      summary: Delete a basket
-      description: Delete a basket by id
+      - Basket
+      summary: Delete Basket
+      description: Delete a basket by its unique identifier
       x-eventcatalog-message-type: command
+      operationId: DeleteBasketEndpoint
+      security:
+        - BearerAuth: []
       responses:
-        "204":
+        '204':
           description: No Content
-        "404":
+        '404':
           description: Not Found
           content:
             application/problem+json:
@@ -72,10 +86,13 @@ paths:
                 "$ref": "#/components/schemas/ProblemDetails"
     post:
       tags:
-        - Basket
-      summary: Create a basket
-      description: Create a new basket
+      - Basket
+      summary: Create Basket
+      description: Create a new basket for a user
       x-eventcatalog-message-type: command
+      operationId: CreateBasketEndpoint
+      security:
+        - BearerAuth: []
       requestBody:
         content:
           application/json:
@@ -83,13 +100,15 @@ paths:
               "$ref": "#/components/schemas/CreateBasketCommand"
         required: true
       responses:
-        "201":
+        '201':
           description: Created
           content:
             application/json:
               schema:
                 type: string
-        "400":
+                description: The unique identifier of the basket
+                example: "019622af-19dd-73dd-9420-9e9d401ad85b"
+        '400':
           description: Bad Request
           content:
             application/problem+json:
@@ -98,96 +117,158 @@ paths:
 components:
   schemas:
     BasketItemDto:
-      required:
-        - id
-        - quantity
       type: object
+      readOnly: true
+      description: The basket item details
       properties:
         id:
-          type: string
-          nullable: true
+          type:
+            - string
+          description: The unique identifier of the basket item
+          example: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
         quantity:
           type: integer
           format: int32
+          description: The quantity of the basket item
+          example: 16
         name:
           type: string
+          description: The name of the basket item
+          example: "Designing Data-Intensive Applications"
         price:
           type: number
           format: double
+          description: The price of the basket item
+          example: 46.67
         priceSale:
           type: number
           format: double
+          description: The sale price of the basket item
+          example: 41.89
     BasketItemRequest:
       required:
-        - id
-        - quantity
+      - id
+      - quantity
       type: object
+      writeOnly: true
+      description: The basket item request
       properties:
         id:
           type: string
+          description: The unique identifier of the basket item
+          example: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
         quantity:
           type: integer
           format: int32
+          description: The quantity of the basket item
+          minimum: 1
+          example: 16
     CreateBasketCommand:
       required:
-        - items
+      - items
       type: object
+      writeOnly: true
+      description: The command to create a basket
       properties:
         items:
           type: array
           items:
             "$ref": "#/components/schemas/BasketItemRequest"
     CustomerBasketDto:
-      required:
-        - id
-        - items
       type: object
+      readOnly: true
+      description: The customer basket details
       properties:
         id:
-          type: string
-          nullable: true
+          type:
+            - string
+          description: The unique identifier of the basket
+          example: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
         items:
           type: array
           items:
             "$ref": "#/components/schemas/BasketItemDto"
     HttpValidationProblemDetails:
       type: object
+      description: The problem details for validation errors
       properties:
         type:
           type: string
+          description: The type of the problem
+          example: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
         title:
           type: string
+          description: The title of the problem
+          example: "Validation failed"
         status:
           type: integer
           format: int32
+          description: The status code of the problem
+          example: 400
         detail:
           type: string
-        instance:
-          type: string
+          description: The detail of the problem
+          example: "One or more validation errors has occurred"
         errors:
-          type: object
-          additionalProperties:
-            type: array
-            items:
-              type: string
+          type: array
+          description: The validation errors
+          items:
+            type: object
+            properties:
+              propertyName:
+                type: string
+                description: The name of the property that failed validation
+                example: "Quantity"
+              errorMessage:
+                type: string
+                description: The error message describing the validation failure
+                example: "'Quantity' must be greater than 0."
+              attemptedValue:
+                type: object
+                description: The value that was attempted
+                example: null
+              customState:
+                type: object
+                description: Custom state information
+                example: null
+              severity:
+                type: integer
+                format: int32
+                description: The severity level of the error
+                example: 0
+              errorCode:
+                type:
+                  - "string"
+                  - "null"
+                description: The error code
+                example: null
+              formattedMessagePlaceholderValues:
+                type: object
+                description: Placeholder values for the formatted message
+                example: null
     ProblemDetails:
       type: object
+      description: The problem details
       properties:
         type:
           type: string
+          description: The type of the problem
         title:
           type: string
+          description: The title of the problem
         status:
           type: integer
           format: int32
+          description: The status code of the problem
         detail:
           type: string
-        instance:
-          type: string
+          description: The detail of the problem
     UpdateBasketCommand:
       required:
-        - items
+      - items
       type: object
+      writeOnly: true
+      description: The command to update a basket
       properties:
         items:
           type: array
@@ -196,6 +277,8 @@ components:
   securitySchemes:
     BearerAuth:
       type: http
-      scheme: bearer
+      scheme: Bearer
+      description: The Bearer token for the user
 tags:
-  - name: Basket
+- name: Basket
+  description: Manages shopping baskets for customers, allowing them to add, update, and remove items before checkout

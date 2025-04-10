@@ -10,7 +10,8 @@ public sealed class PlaceOrderCommandHandler(ISmtpClient smtpClient, EmailOption
     [PublishOperation(
         typeof(PlaceOrderCommand),
         OperationId = nameof(PlaceOrderCommand),
-        Summary = "Place order notification"
+        Summary = "Place order notification",
+        Description = "Represents a successful integration event when a user places an order"
     )]
     public async Task Consume(ConsumeContext<PlaceOrderCommand> context)
     {

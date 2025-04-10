@@ -12,7 +12,7 @@ public sealed class UpdatePublisherEndpoint : IEndpoint<NoContent, UpdatePublish
             .Produces(StatusCodes.Status204NoContent)
             .ProducesValidationProblem()
             .WithTags(nameof(Publisher))
-            .WithName(nameof(UpdatePublisherCommand))
+            .WithName(nameof(UpdatePublisherEndpoint))
             .WithSummary("Update Publisher")
             .WithDescription("Updates publisher if it exists")
             .MapToApiVersion(new(1, 0))

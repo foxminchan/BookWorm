@@ -10,7 +10,6 @@ public sealed class CreateCategoryEndpoint : IEndpoint<Ok<Guid>, CreateCategoryC
                     await HandleAsync(command, sender)
             )
             .Produces<Guid>()
-            .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesValidationProblem()
             .WithTags(nameof(Category))
             .WithName(nameof(CreateCategoryEndpoint))

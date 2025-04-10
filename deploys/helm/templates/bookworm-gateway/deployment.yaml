@@ -1,0 +1,40 @@
+---
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "bookworm-gateway-deployment"
+spec:
+  template:
+    metadata:
+      labels:
+        app: "aspire"
+        component: "bookworm-gateway"
+    spec:
+      containers:
+        - image: "{{ .Values.parameters.bookworm-gateway.bookworm_gateway_image }}"
+          name: "bookworm-gateway"
+          envFrom:
+            - configMapRef:
+                name: "bookworm-gateway-config"
+          ports:
+            - name: "http"
+              protocol: "TCP"
+              containerPort: "{{ .Values.parameters.bookworm-gateway.port_http }}"
+            - name: "https"
+              protocol: "TCP"
+              containerPort: "{{ .Values.parameters.bookworm-gateway.port_https }}"
+            - name: "healthchecks"
+              protocol: "TCP"
+              containerPort: "{{ .Values.parameters.bookworm-gateway.port_healthchecks }}"
+          imagePullPolicy: "IfNotPresent"
+  selector:
+    matchLabels:
+      app: "aspire"
+      component: "bookworm-gateway"
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: "RollingUpdate"

@@ -13,6 +13,8 @@ public static class Extensions
 
         builder.AddDefaultOpenApi();
 
+        services.AddFeatureManagement();
+
         builder.AddDefaultAuthentication().AddKeycloakClaimsTransformation();
 
         // Add exception handlers

@@ -16,4 +16,3 @@ global using BookWorm.SharedKernel.Pipelines;
 global using BookWorm.SharedKernel.Versioning;
 global using MassTransit;
 global using Microsoft.EntityFrameworkCore;
-global using Saunter.Attributes;

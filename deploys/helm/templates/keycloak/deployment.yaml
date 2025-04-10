@@ -1,0 +1,48 @@
+---
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "keycloak-deployment"
+spec:
+  template:
+    metadata:
+      labels:
+        app: "aspire"
+        component: "keycloak"
+    spec:
+      containers:
+        - image: "quay.io/keycloak/keycloak:26.1"
+          name: "keycloak"
+          envFrom:
+            - configMapRef:
+                name: "keycloak-config"
+            - secretRef:
+                name: "keycloak-secrets"
+          args:
+            - "start"
+            - "--import-realm"
+          ports:
+            - name: "http"
+              protocol: "TCP"
+              containerPort: "8080"
+            - name: "management"
+              protocol: "TCP"
+              containerPort: "9000"
+          volumeMounts:
+            - name: "bookworm.apphost-62fd53aa4e-keycloak-data"
+              mountPath: "/opt/keycloak/data"
+          imagePullPolicy: "IfNotPresent"
+      volumes:
+        - name: "bookworm.apphost-62fd53aa4e-keycloak-data"
+          emptyDir: {}
+  selector:
+    matchLabels:
+      app: "aspire"
+      component: "keycloak"
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: "RollingUpdate"
