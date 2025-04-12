@@ -10,15 +10,18 @@
 
   <ItemGroup Label="Aspire">
     <PackageReference Include="Aspire.Hosting.AppHost"/>
+    <PackageReference Include="Aspire.Hosting.RabbitMQ"/>
+    <PackageReference Include="Aspire.Hosting.Qdrant"/>
+    <PackageReference Include="Aspire.Hosting.Keycloak"/>
+    <PackageReference Include="Aspire.Hosting.Kubernetes"/>
+  </ItemGroup>
+
+  <ItemGroup Label="Azure">
     <PackageReference Include="Aspire.Hosting.Azure.Storage"/>
     <PackageReference Include="Aspire.Hosting.Azure.CosmosDB"/>
     <PackageReference Include="Aspire.Hosting.Azure.PostgreSQL"/>
     <PackageReference Include="Aspire.Hosting.Azure.Redis"/>
     <PackageReference Include="Aspire.Hosting.Azure.SignalR"/>
-    <PackageReference Include="Aspire.Hosting.RabbitMQ"/>
-    <PackageReference Include="Aspire.Hosting.Qdrant"/>
-    <PackageReference Include="Aspire.Hosting.Keycloak"/>
-    <PackageReference Include="Aspire.Hosting.Kubernetes"/>
     <PackageReference Include="Aspire.Hosting.Azure.AppContainers"/>
   </ItemGroup>
 
