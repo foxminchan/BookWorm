@@ -37,7 +37,7 @@ resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
   tags: {
     'aspire-resource-name': 'postgres'
     Environment: 'Development'
-    Project: 'BookWorm'
+    Projects: 'BookWorm'
   }
 }
 

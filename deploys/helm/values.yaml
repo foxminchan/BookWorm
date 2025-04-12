@@ -35,7 +35,7 @@ parameters:
     port_healthchecks: "8080"
     bookworm_gateway_image: "bookworm-gateway:latest"
 secrets:
-  vector-db:
+  vectordb:
     QDRANT__SERVICE__API_KEY: ""
   queue:
     RABBITMQ_DEFAULT_PASS: ""
@@ -46,7 +46,7 @@ secrets:
     SendGrid__SenderEmail: ""
     SendGrid__SenderName: ""
 config:
-  vector-db:
+  vectordb:
     QDRANT__SERVICE__ENABLE_STATIC_CONTENT: "0"
   queue:
     RABBITMQ_DEFAULT_USER: "guest"
@@ -59,21 +59,21 @@ config:
     OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
     OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
     ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
-    ConnectionStrings__blob: "{storage.outputs.blobEndpoint}"
-    ConnectionStrings__catalogdb: "{postgres.outputs.connectionString};Database=catalogdb"
-    services__keycloak__http__0: "http://keycloak:8080"
-    services__keycloak__management__0: "http://keycloak:9000"
-    ConnectionStrings__redis: "{redis.outputs.connectionString}"
-    ConnectionStrings__signalr: "Endpoint=https://{signalr.outputs.hostName};AuthType=azure"
     ConnectionStrings__embedding: "Endpoint=http://ollama:11434;Model=nomic-embed-text:latest"
     ConnectionStrings__chat: "Endpoint=http://ollama:11434;Model=deepseek-r1:1.5b"
+    ConnectionStrings__blob: "{storage.outputs.blobEndpoint}"
+    ConnectionStrings__catalogdb: "{postgres-kv.secrets.connectionstrings--catalogdb}"
+    services__keycloak__http__0: "http://keycloak:8080"
+    services__keycloak__management__0: "http://keycloak:9000"
+    ConnectionStrings__redis: "{redis-kv.secrets.connectionstrings--redis}"
+    ConnectionStrings__signalr: "Endpoint=https://{signalr.outputs.hostName};AuthType=azure"
   bookworm-basket:
     ASPNETCORE_URLS: "http://+:$8080"
     OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "true"
     OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
     OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
     ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
-    ConnectionStrings__redis: "{redis.outputs.connectionString}"
+    ConnectionStrings__redis: "{redis-kv.secrets.connectionstrings--redis}"
     services__keycloak__http__0: "http://keycloak:8080"
     services__keycloak__management__0: "http://keycloak:9000"
   bookworm-notification:
@@ -88,17 +88,17 @@ config:
     OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
     OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
     ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
-    ConnectionStrings__orderingdb: "{postgres.outputs.connectionString};Database=orderingdb"
+    ConnectionStrings__orderingdb: "{postgres-kv.secrets.connectionstrings--orderingdb}"
     services__keycloak__http__0: "http://keycloak:8080"
     services__keycloak__management__0: "http://keycloak:9000"
-    ConnectionStrings__redis: "{redis.outputs.connectionString}"
+    ConnectionStrings__redis: "{redis-kv.secrets.connectionstrings--redis}"
   bookworm-rating:
     ASPNETCORE_URLS: "http://+:$8080"
     OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "true"
     OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
     OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
     ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
-    ConnectionStrings__cosmos: "{cosmos.outputs.connectionString}"
+    ConnectionStrings__ratingdb: "{cosmos-kv.secrets.connectionstrings--ratingdb}"
     services__keycloak__http__0: "http://keycloak:8080"
     services__keycloak__management__0: "http://keycloak:9000"
   bookworm-finance:
@@ -107,7 +107,7 @@ config:
     OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
     OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
     ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
-    ConnectionStrings__financedb: "{postgres.outputs.connectionString};Database=financedb"
+    ConnectionStrings__financedb: "{postgres-kv.secrets.connectionstrings--financedb}"
   bookworm-gateway:
     ASPNETCORE_URLS: "http://+:$8080"
     OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "true"

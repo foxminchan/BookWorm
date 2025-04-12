@@ -23,7 +23,7 @@ resource cosmos 'Microsoft.DocumentDB/databaseAccounts@2024-08-15' = {
   tags: {
     'aspire-resource-name': 'cosmos'
     Environment: 'Development'
-    Project: 'BookWorm'
+    Projects: 'BookWorm'
   }
 }
 

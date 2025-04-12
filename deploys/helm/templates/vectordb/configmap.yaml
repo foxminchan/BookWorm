@@ -1,0 +1,10 @@
+---
+apiVersion: "v1"
+kind: "ConfigMap"
+metadata:
+  name: "vectordb-config"
+  labels:
+    app: "aspire"
+    component: "vectordb"
+data:
+  QDRANT__SERVICE__ENABLE_STATIC_CONTENT: "{{ .Values.config.vectordb.QDRANT__SERVICE__ENABLE_STATIC_CONTENT }}"

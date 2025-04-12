@@ -19,7 +19,7 @@ resource storage 'Microsoft.Storage/storageAccounts@2024-01-01' = {
   tags: {
     'aspire-resource-name': 'storage'
     Environment: 'Development'
-    Project: 'BookWorm'
+    Projects: 'BookWorm'
   }
 }
 
