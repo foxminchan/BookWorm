@@ -70,8 +70,6 @@ BookWorm is structured as a microservices-based application with the following s
 - [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
 - [Gitleaks](https://gitleaks.io/)
 - [Docker](https://www.docker.com/get-started) or [Podman](https://podman-desktop.io/)
-- [k3d](https://k3d.io/) & [k9s](https://k9scli.io/) & [helm](https://helm.sh/)
-- [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
 
 ### System Requirements
 
@@ -102,6 +100,10 @@ BookWorm is structured as a microservices-based application with the following s
 
 > [!WARNING]
 > Docker must be running on your machine before starting the application.
+
+### Deploy the application
+
+Please refer to the [Deployment Guide](./deploys/README.md) for detailed deployment instructions.
 
 ## Contributing
 

@@ -1,17 +1,20 @@
-using BookWorm.AppHost;
+using Azure.Provisioning.SignalR;
+using Azure.Provisioning.Storage;
+using BookWorm.AppHost.Extensions;
 using BookWorm.Constants;
 using BookWorm.HealthChecksUI;
-using BookWorm.Scalar;
-using Microsoft.Extensions.Hosting;
 using Projects;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
 builder.AddProjectPublisher();
 
-var postgres = builder.AddAzurePostgresFlexibleServer(Components.Postgres);
+var postgres = builder
+    .AddAzurePostgresFlexibleServer(Components.Postgres)
+    .RunAsContainer()
+    .ProvisionAsService();
 
-var redis = builder.AddAzureRedis(Components.Redis);
+var redis = builder.AddAzureRedis(Components.Redis).RunAsContainer().ProvisionAsService();
 
 var qdrant = builder
     .AddQdrant(Components.VectorDb)
@@ -24,37 +27,36 @@ var queue = builder
     .WithManagementPlugin()
     .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent)
-    .WithEndpoint("tcp", e => e.Port = 5672)
-    .WithEndpoint("management", e => e.Port = 15672);
+    .WithEndpoint("tcp", e => e.Port = 5672);
 
-var cosmos = builder.AddAzureCosmosDB(Components.Cosmos);
-var storage = builder.AddAzureStorage(Components.Storage);
-var signalR = builder.AddAzureSignalR(Components.SignalR);
+var cosmos = builder.AddAzureCosmosDB(Components.Cosmos).RunAsContainer().ProvisionAsService();
 
-builder.ConfigAzureResource(cosmos, storage, signalR, postgres, redis);
+var storage = builder.AddAzureStorage(Components.Storage).RunAsContainer().ProvisionAsService();
+
+var signalR = builder.AddAzureSignalR(Components.SignalR).RunAsContainer();
 
 var blobStorage = storage.AddBlobs(Components.Blob);
 var catalogDb = postgres.AddDatabase(Components.Database.Catalog);
 var orderingDb = postgres.AddDatabase(Components.Database.Ordering);
 var financeDb = postgres.AddDatabase(Components.Database.Finance);
+var ratingDb = cosmos.AddCosmosDatabase(Components.Database.Rating);
 
 var keycloak = builder
-    .AddKeycloak(Components.KeyCloak, 8084)
+    .AddKeycloak(Components.KeyCloak)
     .WithDataVolume()
     .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent);
 
-if (builder.Environment.IsDevelopment())
+if (builder.ExecutionContext.IsRunMode)
 {
     keycloak.WithRealmImport("./realm-export.json");
 }
 
-var mailpit = builder.AddMailPit(Components.MailPit);
-
 var catalogApi = builder
     .AddProject<BookWorm_Catalog>(Application.Catalog)
-    .WithScalar()
     .WithReplicas(2)
+    .WithScalarApiClient()
+    .RunAsOllama()
     .WithReference(blobStorage)
     .WaitFor(blobStorage)
     .WithReference(queue)
@@ -68,13 +70,15 @@ var catalogApi = builder
     .WithReference(redis)
     .WaitFor(redis)
     .WithReference(signalR)
-    .WaitFor(signalR);
+    .WaitFor(signalR)
+    .WithRoleAssignments(storage, StorageBuiltInRole.StorageBlobDataContributor)
+    .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor);
 
 qdrant.WithParentRelationship(catalogApi);
 
 var basketApi = builder
     .AddProject<BookWorm_Basket>(Application.Basket)
-    .WithScalar()
+    .WithScalarApiClient()
     .WithReference(redis)
     .WaitFor(redis)
     .WithReference(queue)
@@ -85,14 +89,13 @@ var basketApi = builder
 
 var notificationApi = builder
     .AddProject<BookWorm_Notification>(Application.Notification)
+    .WithEmailProvider()
     .WithReference(queue)
     .WaitFor(queue);
 
-builder.ConfigureEmailProvider(notificationApi, mailpit);
-
 var orderingApi = builder
     .AddProject<BookWorm_Ordering>(Application.Ordering)
-    .WithScalar()
+    .WithScalarApiClient()
     .WithReference(orderingDb)
     .WaitFor(orderingDb)
     .WithReference(queue)
@@ -106,9 +109,9 @@ var orderingApi = builder
 
 var ratingApi = builder
     .AddProject<BookWorm_Rating>(Application.Rating)
-    .WithScalar()
-    .WithReference(cosmos)
-    .WaitFor(cosmos)
+    .WithScalarApiClient()
+    .WithReference(ratingDb)
+    .WaitFor(ratingDb)
     .WithReference(queue)
     .WaitFor(queue)
     .WithReference(keycloak)
@@ -116,7 +119,7 @@ var ratingApi = builder
 
 var financeApi = builder
     .AddProject<BookWorm_Finance>(Application.Finance)
-    .WithScalar()
+    .WithScalarApiClient()
     .WithReference(financeDb)
     .WaitFor(financeDb)
     .WithReference(queue)
@@ -124,25 +127,23 @@ var financeApi = builder
 
 var gateway = builder
     .AddProject<BookWorm_Gateway>(Application.Gateway)
+    .WithExternalHttpEndpoints()
     .WithReference(catalogApi)
     .WithReference(orderingApi)
     .WithReference(ratingApi)
     .WithReference(basketApi)
     .WithReference(financeApi)
-    .WithReference(keycloak)
-    .WithExternalHttpEndpoints();
-
-builder.AddAi([catalogApi]);
+    .WithReference(keycloak);
 
 builder
     .AddHealthChecksUi()
+    .WithExternalHttpEndpoints()
     .WithReference(gateway)
     .WithReference(catalogApi)
     .WithReference(orderingApi)
     .WithReference(ratingApi)
     .WithReference(basketApi)
     .WithReference(notificationApi)
-    .WithReference(financeApi)
-    .WithExternalHttpEndpoints();
+    .WithReference(financeApi);
 
 builder.Build().Run();
