@@ -25,4 +25,22 @@ public sealed class CreatePublisherEndpointTests
         var exception = await act.ShouldThrowAsync<InvalidOperationException>();
         exception.Message.ShouldBe(expectedException.Message);
     }
+
+    [Test]
+    public async Task GivenValidCommand_WhenHandlingCreatePublisher_ThenShouldReturnOkWithPublisherId()
+    {
+        // Arrange
+        var expectedPublisherId = Guid.NewGuid();
+        _senderMock
+            .Setup(s => s.Send(_validCommand, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedPublisherId);
+
+        // Act
+        var result = await _endpoint.HandleAsync(_validCommand, _senderMock.Object);
+
+        // Assert
+        result.ShouldNotBeNull();
+        result.Value.ShouldBe(expectedPublisherId);
+        _senderMock.Verify(s => s.Send(_validCommand, It.IsAny<CancellationToken>()), Times.Once);
+    }
 }
