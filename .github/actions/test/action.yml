@@ -5,6 +5,14 @@ inputs:
   dotnet-version:
     description: "The version of the .NET SDK to use"
     required: true
+  testHangTimeout:
+    description: "The timeout for the test"
+    required: false
+    default: "7m"
+  testSessionTimeout:
+    description: "The timeout for the test session"
+    required: false
+    default: "15m"
 
 runs:
   using: "composite"
@@ -28,6 +36,9 @@ runs:
         --
         --report-trx
         --results-directory ./test-results
+        --hangdump --hangdump-timeout ${{ inputs.testHangTimeout }}
+        --crashdump
+        --timeout ${{ inputs.testSessionTimeout }}
 
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v2

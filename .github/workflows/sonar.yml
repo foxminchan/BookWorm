@@ -63,6 +63,9 @@ jobs:
           --results-directory ./test-results
           --coverage
           --coverage-output-format xml
+          --hangdump --hangdump-timeout 7m
+          --crashdump
+          --timeout 15m
 
       - name: Sonarqube End
         run: dotnet dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
