@@ -8,6 +8,7 @@ info:
   contact:
     name: Nhan Nguyen
     url: https://github.com/foxminchan
+    email: nguyenxuannhan407@gmail.com
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
@@ -33,10 +34,14 @@ paths:
       security:
         - BearerAuth: []
       requestBody:
+        description: The command to update the publisher
         content:
           application/json:
             schema:
               "$ref": "#/components/schemas/UpdatePublisherCommand"
+            example:
+              id: "01961eb7-be10-7235-bed8-2fea41c28c02"
+              name: "O'Reilly Media, Inc."
         required: true
       responses:
         "204":
@@ -47,6 +52,29 @@ paths:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/HttpValidationProblemDetails"
+              examples:
+                empty-publisher-id:
+                  summary: Empty publisher ID
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "Id"
+                        errorMessage: "'Id' must not be empty."
+                        severity: 0
+                publisher-too-long:
+                  summary: Publisher name too long
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "Name"
+                        errorMessage: "'Name' must be at most 50 characters."
+                        severity: 0
     get:
       tags:
         - Publisher
@@ -63,6 +91,22 @@ paths:
                 type: array
                 items:
                   "$ref": "#/components/schemas/PublisherDto"
+              examples:
+                publishers-empty:
+                  summary: No publishers found
+                  value: []
+                publishers-single:
+                  summary: Single publisher
+                  value:
+                    - id: "01961eb7-be10-7235-bed8-2fea41c28c02"
+                      name: "O'Reilly Media, Inc."
+                publishers-multiple:
+                  summary: Multiple publishers
+                  value:
+                    - id: "01961eb7-be10-7235-bed8-2fea41c28c02"
+                      name: "O'Reilly Media, Inc."
+                    - id: "01961eb8-be10-7235-bed8-2fea41c28c03"
+                      name: "Addison-Wesley Professional"
     post:
       tags:
         - Publisher
@@ -73,10 +117,13 @@ paths:
       security:
         - BearerAuth: []
       requestBody:
+        description: The command to create a publisher
         content:
           application/json:
             schema:
               "$ref": "#/components/schemas/CreatePublisherCommand"
+            example:
+              name: "O'Reilly Media, Inc."
         required: true
       responses:
         "200":
@@ -94,6 +141,29 @@ paths:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/HttpValidationProblemDetails"
+              examples:
+                empty-publisher-name:
+                  summary: Empty publisher name
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "Name"
+                        errorMessage: "'Name' must not be empty."
+                        severity: 0
+                publisher-name-too-long:
+                  summary: Publisher name too long
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "Name"
+                        errorMessage: "'Name' must be at most 50 characters."
+                        severity: 0
   "/api/v1/chats":
     post:
       tags:
@@ -103,10 +173,13 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CreateChatEndpoint
       requestBody:
+        description: The command to create a chat
         content:
           application/json:
             schema:
               "$ref": "#/components/schemas/Prompt"
+            example:
+              text: "What is best book in the BookWorm platform?"
         required: true
       responses:
         "200":
@@ -150,10 +223,14 @@ paths:
       security:
         - BearerAuth: []
       requestBody:
+        description: The command to update the category
         content:
           application/json:
             schema:
               "$ref": "#/components/schemas/UpdateCategoryCommand"
+            example:
+              id: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+              name: "Programming"
         required: true
       responses:
         "204":
@@ -164,6 +241,29 @@ paths:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/HttpValidationProblemDetails"
+              examples:
+                empty-category-id:
+                  summary: Empty category ID
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "Id"
+                        errorMessage: "'Id' must not be empty."
+                        severity: 0
+                category-too-long:
+                  summary: Category name too long
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "Name"
+                        errorMessage: "'Name' must be at most 50 characters."
+                        severity: 0
     get:
       tags:
         - Category
@@ -180,6 +280,22 @@ paths:
                 type: array
                 items:
                   "$ref": "#/components/schemas/CategoryDto"
+              examples:
+                categories-empty:
+                  summary: No categories found
+                  value: []
+                categories-single:
+                  summary: Single category
+                  value:
+                    - id: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+                      name: "Programming"
+                categories-multiple:
+                  summary: Multiple categories
+                  value:
+                    - id: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+                      name: "Programming"
+                    - id: "01961eb5-668d-7e7e-ae25-0fab379614f7"
+                      name: "Romance & Love"
     post:
       tags:
         - Category
@@ -190,10 +306,13 @@ paths:
       security:
         - BearerAuth: []
       requestBody:
+        description: The command to create a category
         content:
           application/json:
             schema:
               "$ref": "#/components/schemas/CreateCategoryCommand"
+            example:
+              name: "Programming"
         required: true
       responses:
         "200":
@@ -211,6 +330,29 @@ paths:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/HttpValidationProblemDetails"
+              examples:
+                empty-category-name:
+                  summary: Empty category name
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "Name"
+                        errorMessage: "'Name' must not be empty."
+                        severity: 0
+                category-name-too-long:
+                  summary: Category name too long
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "Name"
+                        errorMessage: "'Name' must be at most 50 characters."
+                        severity: 0
   "/api/v1/books":
     put:
       tags:
@@ -222,6 +364,7 @@ paths:
       security:
         - BearerAuth: []
       requestBody:
+        description: The command to update the book
         content:
           multipart/form-data:
             schema:
@@ -253,7 +396,7 @@ paths:
                     Description:
                       type: string
                       description: The description of the book
-                      example: 'When two of your authors, Neal and Mark, were writing the book Fundamentals of Software Architecture, we kept coming across complex examples in architecture that we wanted to cover but that were too difficult. Each one offered no easy solutions but rather a collection of messy trade-offs. We set those examples aside into a pile we called "The Hard Parts." Once that book was finished, we looked at the now gigantic pile of hard parts and tried to figure out: why are these problems so difficult to solve in modern architectures?'
+                      example: "When two of your authors, Neal and Mark, were writing the book    Fundamentals of Software Architecture, we kept coming across complex examples in    architecture that we wanted to cover but that were too difficult."
                       maxLength: 500
                 - type: object
                   properties:
@@ -298,9 +441,9 @@ paths:
                         type: string
                         format: uuid
                         description: The authors of the book
-                        example:
-                          - - "01961eb4-0c29-799f-ab78-ad3e2beaa54a"
-                          - - "01961ebd-2bc1-7de2-aa90-639662d9259e"
+                        examples:
+                          - "01961eb4-0c29-799f-ab78-ad3e2beaa54a"
+                          - "01961ebd-2bc1-7de2-aa90-639662d9259e"
                 - type: object
                   properties:
                     IsRemoveImage:
@@ -308,6 +451,19 @@ paths:
                       default: false
                       description: Whether to remove the image of the book
                       example: false
+              example:
+                Id: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+                Name: "Software Architecture: The Hard Parts"
+                Description: "When two of your authors, Neal and Mark, were writing the book    Fundamentals of Software Architecture, we kept coming across complex examples in    architecture that we wanted to cover but that were too difficult."
+                Image: "image.jpg"
+                Price: 43.99
+                PriceSale: 39.86
+                CategoryId: "01961eb2-5a5b-749f-b494-1063d73c96a3"
+                PublisherId: "01961eb7-be10-7235-bed8-2fea41c28c02"
+                AuthorIds:
+                  - "01961eb4-0c29-799f-ab78-ad3e2beaa54a"
+                  - "01961ebd-2bc1-7de2-aa90-639662d9259e"
+                IsRemoveImage: false
         required: true
       responses:
         "204":
@@ -318,12 +474,51 @@ paths:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/HttpValidationProblemDetails"
+              examples:
+                empty-book-id:
+                  summary: Empty book ID
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "Id"
+                        errorMessage: "'Id' must not be empty."
+                        severity: 0
+                empty-book-name:
+                  summary: Empty book name
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "Name"
+                        errorMessage: "'Name' must not be empty."
+                        severity: 0
+                book-name-too-long:
+                  summary: Book name too long
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "Name"
+                        errorMessage: "'Name' must be at most 50 characters."
+                        severity: 0
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                title: "Not Found"
+                status: 404
+                detail: "Book with id 01961eb4-668d-7e7e-ae25-0fab379614f7 not found."
     get:
       tags:
         - Book
@@ -397,8 +592,8 @@ paths:
               format: uuid
             default:
             example:
-              - - "01961eb2-5a5b-749f-b494-1063d73c96a3"
-              - - "01961eb4-668d-7e7e-ae25-0fab379614f7"
+              - "01961eb2-5a5b-749f-b494-1063d73c96a3"
+              - "01961eb4-668d-7e7e-ae25-0fab379614f7"
         - name: PublisherId
           in: query
           description: Publisher IDs to filter results by
@@ -409,8 +604,8 @@ paths:
               format: uuid
             default:
             example:
-              - - "01961eb7-be10-7235-bed8-2fea41c28c02"
-              - - "01961ebd-2bc1-7de2-aa90-639662d9259e"
+              - "01961eb7-be10-7235-bed8-2fea41c28c02"
+              - "01961ebd-2bc1-7de2-aa90-639662d9259e"
         - name: AuthorIds
           in: query
           description: Author IDs to filter results by
@@ -421,8 +616,8 @@ paths:
               format: uuid
             default:
             example:
-              - - "01961eb4-0c29-799f-ab78-ad3e2beaa54a"
-              - - "01961ebd-ba46-75c6-8834-ff51cc0ff650"
+              - "01961eb4-0c29-799f-ab78-ad3e2beaa54a"
+              - "01961ebd-ba46-75c6-8834-ff51cc0ff650"
       responses:
         "200":
           description: OK
@@ -430,12 +625,126 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/PagedResultOfBookDto"
+              examples:
+                books-empty:
+                  summary: No books found
+                  value:
+                    items: []
+                    pageIndex: 1
+                    pageSize: 20
+                    totalItems: 0
+                    totalPages: 0
+                    hasPreviousPage: false
+                    hasNextPage: false
+                books-single:
+                  summary: Single book
+                  value:
+                    items:
+                      - id: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+                        name: "Software Architecture: The Hard Parts"
+                        description: "When two of your authors, Neal and Mark, were writing the book    Fundamentals of Software Architecture, we kept coming across complex examples in    architecture that we wanted to cover but that were too difficult."
+                        image: "https://azure.blob.core.windows.net/bookworm/software-architecture-the-hard-parts.jpg"
+                        price: 43.99
+                        priceSale: 39.86
+                        status: "InStock"
+                        category:
+                          id: "01961eb2-5a5b-749f-b494-1063d73c96a3"
+                          name: "Programming"
+                        publisher:
+                          id: "01961eb7-be10-7235-bed8-2fea41c28c02"
+                          name: "O'Reilly Media, Inc."
+                        authors:
+                          - id: "01961eb4-0c29-799f-ab78-ad3e2beaa54a"
+                            name: "Neal Ford"
+                          - id: "01961ebd-2bc1-7de2-aa90-639662d9259e"
+                            name: "Mark Richards"
+                        averageRating: 4.5
+                        totalReviews: 591
+                    pageIndex: 1
+                    pageSize: 20
+                    totalItems: 1
+                    totalPages: 1
+                    hasPreviousPage: false
+                    hasNextPage: false
+                books-multiple:
+                  summary: Multiple books
+                  value:
+                    items:
+                      - id: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+                        name: "Software Architecture: The Hard Parts"
+                        description: "When two of your authors, Neal and Mark, were writing the book    Fundamentals of Software Architecture, we kept coming across complex examples in    architecture that we wanted to cover but that were too difficult."
+                        image: "https://azure.blob.core.windows.net/bookworm/software-architecture-the-hard-parts.jpg"
+                        price: 43.99
+                        priceSale: 39.86
+                        status: "InStock"
+                        category:
+                          id: "01961eb2-5a5b-749f-b494-1063d73c96a3"
+                          name: "Programming"
+                        publisher:
+                          id: "01961eb7-be10-7235-bed8-2fea41c28c02"
+                          name: "O'Reilly Media, Inc."
+                        authors:
+                          - id: "01961eb4-0c29-799f-ab78-ad3e2beaa54a"
+                            name: "Neal Ford"
+                          - id: "01961ebd-2bc1-7de2-aa90-639662d9259e"
+                            name: "Mark Richards"
+                        averageRating: 4.5
+                        totalReviews: 591
+                      - id: "01961eb5-668d-7e7e-ae25-0fab379614f7"
+                        name: "The Pragmatic Programmer: From Journeyman to Master"
+                        description: "The Pragmatic Programmer is a guide to the practice of programming - the art of building effective systems and the craft of creating great code. It offers advice on how to deal with the complexity of real-world software development, and the latest thinking on programming language design. The book is packed with concrete advice that you can use immediately to make your code better."
+                        image: "https://azure.blob.core.windows.net/bookworm/the-pragmatic-programmer.jpg"
+                        price: 43.99
+                        priceSale: 39.86
+                        status: "InStock"
+                        category:
+                          id: "01961eb2-5a5b-749f-b494-1063d73c96a3"
+                          name: "Programming"
+                        publisher:
+                          id: "01961eb7-be10-7235-bed8-2fea41c28c02"
+                          name: "O'Reilly Media, Inc."
+                        authors:
+                          - id: "01961eb4-0c29-799f-ab78-ad3e2beaa54a"
+                            name: "Andrew Hunt"
+                          - id: "01961ebd-2bc1-7de2-aa90-639662d9259e"
+                            name: "David Thomas"
+                        averageRating: 4.5
+                        totalReviews: 591
+                    pageIndex: 1
+                    pageSize: 20
+                    totalItems: 2
+                    totalPages: 1
+                    hasPreviousPage: false
+                    hasNextPage: true
         "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/HttpValidationProblemDetails"
+              examples:
+                invalid-page-index:
+                  summary: Invalid page index
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "PageIndex"
+                        errorMessage: "'PageIndex' must be greater than 0."
+                        severity: 0
+                invalid-page-size:
+                  summary: Invalid page size
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "PageSize"
+                        errorMessage: "'PageSize' must be greater than 0."
+                        severity: 0
     post:
       tags:
         - Book
@@ -446,6 +755,7 @@ paths:
       security:
         - BearerAuth: []
       requestBody:
+        description: The command to create a book
         content:
           multipart/form-data:
             schema:
@@ -469,7 +779,7 @@ paths:
                     Description:
                       type: string
                       description: The description of the book
-                      example: 'When two of your authors, Neal and Mark, were writing the book Fundamentals of Software Architecture, we kept coming across complex examples in architecture that we wanted to cover but that were too difficult. Each one offered no easy solutions but rather a collection of messy trade-offs. We set those examples aside into a pile we called "The Hard Parts." Once that book was finished, we looked at the now gigantic pile of hard parts and tried to figure out: why are these problems so difficult to solve in modern architectures?'
+                      example: "When two of your authors, Neal and Mark, were writing the book    Fundamentals of Software Architecture, we kept coming across complex examples in    architecture that we wanted to cover but that were too difficult."
                       maxLength: 500
                 - type: object
                   properties:
@@ -516,8 +826,19 @@ paths:
                         format: uuid
                       description: The authors of the book
                       example:
-                        - - "01961eb4-0c29-799f-ab78-ad3e2beaa54a"
-                        - - "01961ebd-2bc1-7de2-aa90-639662d9259e"
+                        - "01961eb4-0c29-799f-ab78-ad3e2beaa54a"
+                        - "01961ebd-2bc1-7de2-aa90-639662d9259e"
+            example:
+              Name: "Software Architecture: The Hard Parts"
+              Description: "When two of your authors, Neal and Mark, were writing the book    Fundamentals of Software Architecture, we kept coming across complex examples in    architecture that we wanted to cover but that were too difficult."
+              Image: "https://azure.blob.core.windows.net/bookworm/   software-architecture-the-hard-parts.jpg"
+              Price: 43.99
+              PriceSale: 39.86
+              CategoryId: "01961eb2-5a5b-749f-b494-1063d73c96a3"
+              PublisherId: "01961eb7-be10-7235-bed8-2fea41c28c02"
+              AuthorIds:
+                - "01961eb4-0c29-799f-ab78-ad3e2beaa54a"
+                - "01961ebd-2bc1-7de2-aa90-639662d9259e"
         required: true
       responses:
         "201":
@@ -535,6 +856,29 @@ paths:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/HttpValidationProblemDetails"
+              examples:
+                invalid-name:
+                  summary: Invalid name
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "Name"
+                        errorMessage: "'Name' must not be empty."
+                        severity: 0
+                invalid-price:
+                  summary: Invalid price
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "Price"
+                        errorMessage: "'Price' must be greater than 0."
+                        severity: 0
   "/api/v1/books/{id}":
     get:
       tags:
@@ -560,12 +904,37 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/BookDto"
+              example:
+                id: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+                name: "Software Architecture: The Hard Parts"
+                description: "When two of your authors, Neal and Mark, were writing the book    Fundamentals of Software Architecture, we kept coming across complex examples in    architecture that we wanted to cover but that were too difficult."
+                image: "https://azure.blob.core.windows.net/bookworm/software-architecture-the-hard-parts.jpg"
+                price: 43.99
+                priceSale: 39.86
+                category:
+                  id: "01961eb2-5a5b-749f-b494-1063d73c96a3"
+                  name: "Programming"
+                publisher:
+                  id: "01961eb7-be10-7235-bed8-2fea41c28c02"
+                  name: "O'Reilly Media, Inc."
+                authors:
+                  - id: "01961eb4-0c29-799f-ab78-ad3e2beaa54a"
+                    name: "Neal Ford"
+                  - id: "01961ebd-2bc1-7de2-aa90-639662d9259e"
+                    name: "Mark Richards"
+                averageRating: 4.5
+                totalReviews: 591
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                title: "Not Found"
+                status: 404
+                detail: "Book with id 01961eb4-668d-7e7e-ae25-0fab379614f7 not found."
     delete:
       tags:
         - Book
@@ -594,6 +963,11 @@ paths:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                title: "Not Found"
+                status: 404
+                detail: "Book with id 01961eb4-668d-7e7e-ae25-0fab379614f7 not found."
   "/api/v1/authors":
     put:
       tags:
@@ -604,10 +978,14 @@ paths:
       security:
         - BearerAuth: []
       requestBody:
+        description: The command to update the author
         content:
           application/json:
             schema:
               "$ref": "#/components/schemas/UpdateAuthorCommand"
+            example:
+              id: "01961eb4-0c29-799f-ab78-ad3e2beaa54a"
+              name: "Neal Ford"
         required: true
       responses:
         "204":
@@ -618,6 +996,18 @@ paths:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/HttpValidationProblemDetails"
+              examples:
+                invalid-name:
+                  summary: Invalid name
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "Name"
+                        errorMessage: "'Name' must not be empty."
+                        severity: 0
     get:
       tags:
         - Author
@@ -634,6 +1024,22 @@ paths:
                 type: array
                 items:
                   "$ref": "#/components/schemas/AuthorDto"
+              examples:
+                authors-empty:
+                  summary: No authors found
+                  value: []
+                authors-single:
+                  summary: Single author
+                  value:
+                    - id: "01961eb4-0c29-799f-ab78-ad3e2beaa54a"
+                      name: "Neal Ford"
+                authors-multiple:
+                  summary: Multiple authors
+                  value:
+                    - id: "01961eb4-0c29-799f-ab78-ad3e2beaa54a"
+                      name: "Neal Ford"
+                    - id: "01961ebd-2bc1-7de2-aa90-639662d9259e"
+                      name: "Mark Richards"
     post:
       tags:
         - Author
@@ -644,10 +1050,13 @@ paths:
       security:
         - BearerAuth: []
       requestBody:
+        description: The command to create an author
         content:
           application/json:
             schema:
               "$ref": "#/components/schemas/CreateAuthorCommand"
+            example:
+              name: "Neal Ford"
         required: true
       responses:
         "200":
@@ -665,6 +1074,29 @@ paths:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/HttpValidationProblemDetails"
+              examples:
+                empty-name:
+                  summary: Empty name
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "Name"
+                        errorMessage: "'Name' must not be empty."
+                        severity: 0
+                name-too-long:
+                  summary: Name too long
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "Name"
+                        errorMessage: "'Name' must be at most 50 characters."
+                        severity: 0
   "/api/v1/authors/{id}":
     delete:
       tags:
@@ -694,12 +1126,26 @@ paths:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/HttpValidationProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                title: "Validation failed"
+                status: 400
+                detail: "One or more validation errors has occurred"
+                errors:
+                  - propertyName: "Id"
+                    errorMessage: "Author has books and cannot be deleted"
+                    severity: 0
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                title: "Not Found"
+                status: 404
+                detail: "Author with id 01961eb4-0c29-799f-ab78-ad3e2beaa54a not found."
 components:
   schemas:
     AuthorDto:
@@ -739,7 +1185,7 @@ components:
             - "string"
             - "null"
           description: The description of the book
-          example: 'When two of your authors, Neal and Mark, were writing the book Fundamentals of Software Architecture, we kept coming across complex examples in architecture that we wanted to cover but that were too difficult. Each one offered no easy solutions but rather a collection of messy trade-offs. We set those examples aside into a pile we called "The Hard Parts." Once that book was finished, we looked at the now gigantic pile of hard parts and tried to figure out: why are these problems so difficult to solve in modern architectures?'
+          example: "When two of your authors, Neal and Mark, were writing the book    Fundamentals of Software Architecture, we kept coming across complex examples in    architecture that we wanted to cover but that were too difficult."
         imageUrl:
           type:
             - "string"
@@ -760,28 +1206,24 @@ components:
           example: 39.86
         status:
           "$ref": "#/components/schemas/Status"
-          description: The status of the book
-          example: "InStock"
         category:
           "$ref": "#/components/schemas/CategoryDto"
-          description: The category of the book
         publisher:
           "$ref": "#/components/schemas/PublisherDto"
-          description: The publisher of the book
         authors:
           type: array
           items:
             "$ref": "#/components/schemas/AuthorDto"
           description: The authors of the book
           example:
-            - - id: "01961eb4-0c29-799f-ab78-ad3e2beaa54a"
-                name: "Neal Ford"
-            - - id: "01961ebd-2bc1-7de2-aa90-639662d9259e"
-                name: "Mark Richards"
-            - - id: "01961ebd-ba46-75c6-8834-ff51cc0ff650"
-                name: "Pramod Sadalage"
-            - - id: "01961ebe-1001-7cf6-8071-94b6a622e1a4"
-                name: "Zhamak Dehghani"
+            - id: "01961eb4-0c29-799f-ab78-ad3e2beaa54a"
+              name: "Neal Ford"
+            - id: "01961ebd-2bc1-7de2-aa90-639662d9259e"
+              name: "Mark Richards"
+            - id: "01961ebd-ba46-75c6-8834-ff51cc0ff650"
+              name: "Pramod Sadalage"
+            - id: "01961ebe-1001-7cf6-8071-94b6a622e1a4"
+              name: "Zhamak Dehghani"
         averageRating:
           type: number
           format: double
@@ -869,6 +1311,10 @@ components:
         errors:
           type: array
           description: The validation errors
+          example:
+            - propertyName: "Name"
+              errorMessage: "'Name' must not be empty."
+              severity: 0
           items:
             type: object
             properties:
@@ -975,6 +1421,7 @@ components:
         - text
       type: object
       writeOnly: true
+      description: The prompt for creating a chat in the catalog system
       properties:
         text:
           type: string
@@ -1060,13 +1507,13 @@ components:
       scheme: Bearer
       description: The Bearer token for the user
 tags:
-  - name: Publisher
-    description: Operations related to managing book publishers, including creating, updating, and retrieving publisher information
+  - name: Author
+    description: Operations for managing book authors, including author profiles, book associations, and biographical information
+  - name: Book
+    description: Core operations for managing books in the catalog, including creation, updates, and retrieval of book details
   - name: Chat
     description: Endpoints for handling book-related discussions and user interactions in chat format
   - name: Category
     description: Management of book categories and genres, allowing for organization and classification of books
-  - name: Book
-    description: Core operations for managing books in the catalog, including creation, updates, and retrieval of book details
-  - name: Author
-    description: Operations for managing book authors, including author profiles, book associations, and biographical information
+  - name: Publisher
+    description: Operations related to managing book publishers, including creating, updating, and retrieving publisher information

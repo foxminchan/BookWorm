@@ -17,7 +17,6 @@ public sealed class CreateOrderEndpoint : IEndpoint<Created<Guid>, ISender, Link
                 ) => await HandleAsync(sender, linker)
             )
             .Produces<Guid>(StatusCodes.Status201Created)
-            .ProducesProblem(StatusCodes.Status400BadRequest)
             .WithIdempotency()
             .WithTags(nameof(Order))
             .WithName(nameof(CreateOrderEndpoint))

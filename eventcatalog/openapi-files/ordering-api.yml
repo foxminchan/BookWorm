@@ -2,15 +2,17 @@
 openapi: 3.1.1
 info:
   title: Ordering Service API
-  description: Orchestrates the entire order lifecycle, from creation to completion
+  description:
+    Orchestrates the entire order lifecycle, from creation to completion
     or cancellation, for the BookWorm platform
   contact:
     name: Nhan Nguyen
     url: https://github.com/foxminchan
+    email: nguyenxuannhan407@gmail.com
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
-  version: '1.0'
+  version: "1.0"
 servers:
   - url: https://dev.ordering.bookworm.com
     description: Development
@@ -24,7 +26,7 @@ paths:
   "/api/v1/orders/{id}/summary":
     get:
       tags:
-      - Order
+        - Order
       summary: Get Order Summary
       description: Get an order summary if it exists
       x-eventcatalog-message-type: query
@@ -32,26 +34,30 @@ paths:
       security:
         - BearerAuth: []
       parameters:
-      - name: id
-        in: path
-        description: The unique identifier of the order to be retrieved
-        required: true
-        schema:
-          type: string
-          format: uuid
+        - name: id
+          in: path
           description: The unique identifier of the order to be retrieved
-          example: "019622cf-6bd5-7499-bc18-31f71acbad44"
+          required: true
+          schema:
+            type: string
+            format: uuid
+            description: The unique identifier of the order to be retrieved
+            example: "019622cf-6bd5-7499-bc18-31f71acbad44"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 "$ref": "#/components/schemas/OrderSummaryInfo"
+              example:
+                id: "019622cf-6bd5-7499-bc18-31f71acbad44"
+                status: "New"
+                totalPrice: 100.00
   "/api/v1/orders":
     get:
       tags:
-      - Order
+        - Order
       summary: List Orders
       description: List orders with pagination and filtering
       x-eventcatalog-message-type: query
@@ -59,58 +65,124 @@ paths:
       security:
         - BearerAuth: []
       parameters:
-      - name: PageIndex
-        in: query
-        description: Number of items to return in a single page of results
-        schema:
-          type: integer
-          format: int32
-          default: 1
-          description: The page index to return
-          minimum: 1
-          example: 1
-      - name: PageSize
-        in: query
-        description: Number of items to return in a single page of results
-        schema:
-          type: integer
-          format: int32
-          default: 20
-          description: The page size to return
-          minimum: 1
-          example: 20
-      - name: Status
-        in: query
-        description: Status to filter results by
-        schema:
-          "$ref": "#/components/schemas/NullableOfStatus"
-      - name: BuyerId
-        in: query
-        description: Buyer ID to filter results by
-        schema:
-          type:
-            - string
-            - "null"
-          format: uuid
-          default: null
-          description: The unique identifier of the buyer to be retrieved
-          example: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
+        - name: PageIndex
+          in: query
+          description: Number of items to return in a single page of results
+          schema:
+            type: integer
+            format: int32
+            default: 1
+            description: The page index to return
+            minimum: 1
+            example: 1
+        - name: PageSize
+          in: query
+          description: Number of items to return in a single page of results
+          schema:
+            type: integer
+            format: int32
+            default: 20
+            description: The page size to return
+            minimum: 1
+            example: 20
+        - name: Status
+          in: query
+          description: Status to filter results by
+          schema:
+            "$ref": "#/components/schemas/NullableOfStatus"
+        - name: BuyerId
+          in: query
+          description: Buyer ID to filter results by
+          schema:
+            type:
+              - string
+              - "null"
+            format: uuid
+            default: null
+            description: The unique identifier of the buyer to be retrieved
+            example: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 "$ref": "#/components/schemas/PagedResultOfOrderDto"
-        '400':
+              examples:
+                orders-empty:
+                  summary: No orders found
+                  value:
+                    items: []
+                    pageIndex: 1
+                    pageSize: 20
+                    totalItems: 0
+                    totalPages: 0
+                    hasPreviousPage: false
+                    hasNextPage: false
+                orders-single:
+                  summary: Single order
+                  value:
+                    items:
+                      - id: "019622cf-6bd5-7499-bc18-31f71acbad44"
+                        date: "2021-01-01T00:00:00Z"
+                        status: "New"
+                        total: 100.00
+                    pageIndex: 1
+                    pageSize: 20
+                    totalItems: 1
+                    totalPages: 1
+                    hasPreviousPage: false
+                    hasNextPage: false
+                orders-multiple:
+                  summary: Multiple orders
+                  value:
+                    items:
+                      - id: "019622cf-6bd5-7499-bc18-31f71acbad44"
+                        date: "2021-01-01T00:00:00Z"
+                        status: "New"
+                        total: 100.00
+                      - id: "019622d1-3613-737e-8d58-af7db6317153"
+                        date: "2021-01-02T00:00:00Z"
+                        status: "Completed"
+                        total: 200.00
+                    pageIndex: 1
+                    pageSize: 20
+                    totalItems: 2
+                    totalPages: 1
+                    hasPreviousPage: false
+                    hasNextPage: false
+        "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/HttpValidationProblemDetails"
+              examples:
+                invalid-page-index:
+                  summary: Invalid page index
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "PageIndex"
+                        errorMessage: "'PageIndex' must be greater than 0."
+                        severity: 0
+                invalid-page-size:
+                  summary: Invalid page size
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "PageSize"
+                        errorMessage: "'PageSize' must be greater than 0."
+                        severity: 0
     post:
       tags:
-      - Order
+        - Order
       summary: Create Order
       description: Create a new order
       x-eventcatalog-message-type: command
@@ -118,16 +190,16 @@ paths:
       security:
         - BearerAuth: []
       parameters:
-      - name: x-request-id
-        in: header
-        description: The idempotency key of the order to be created
-        required: true
-        schema:
-          type: string
+        - name: x-request-id
+          in: header
           description: The idempotency key of the order to be created
-          example: "019622d1-014e-7bb7-b279-42a43ab74347"
+          required: true
+          schema:
+            type: string
+            description: The idempotency key of the order to be created
+            example: "019622d1-014e-7bb7-b279-42a43ab74347"
       responses:
-        '201':
+        "201":
           description: Created
           content:
             application/json:
@@ -136,16 +208,10 @@ paths:
                 format: uuid
                 description: The unique identifier of the order to be created
                 example: "019622d1-3613-737e-8d58-af7db6317153"
-        '400':
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
   "/api/v1/orders/{id}":
     get:
       tags:
-      - Order
+        - Order
       summary: Get Order
       description: Get an order if it exists
       x-eventcatalog-message-type: query
@@ -153,57 +219,91 @@ paths:
       security:
         - BearerAuth: []
       parameters:
-      - name: id
-        in: path
-        description: The unique identifier of the order to be retrieved
-        required: true
-        schema:
-          type: string
-          format: uuid
+        - name: id
+          in: path
           description: The unique identifier of the order to be retrieved
-          example: "019622d1-89ba-791c-a11c-f1821326441b"
+          required: true
+          schema:
+            type: string
+            format: uuid
+            description: The unique identifier of the order to be retrieved
+            example: "019622d1-89ba-791c-a11c-f1821326441b"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 "$ref": "#/components/schemas/OrderDetailDto"
-        '404':
+              example:
+                id: "019622d1-89ba-791c-a11c-f1821326441b"
+                date: "2021-01-01T00:00:00Z"
+                status: "New"
+                total: 100.00
+                items:
+                  - id: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
+                    name: "AI Engineering"
+                    quantity: 1
+                    price: 100.00
+                  - id: "029622a4-a3ae-7705-a11b-a08f2a2ca622"
+                    name: "Software Architecture: The Hard Parts"
+                    quantity: 1
+                    price: 56.00
+                  - id: "039622a5-a3ae-7705-a11b-a08f2a2ca623"
+                    name: "The Pragmatic Programmer: From Journeyman to Master"
+                    quantity: 1
+                    price: 45.00
+        "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
+              examples:
+                order-not-found:
+                  summary: Order not found
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Not Found"
+                    status: 404
+                    detail: "Order with id 019622d1-89ba-791c-a11c-f1821326441b not found."
     delete:
       tags:
-      - Order
+        - Order
       summary: Delete Order
       description: Delete an order if it exists
       operationId: DeleteOrderEndpoint
       parameters:
-      - name: id
-        in: path
-        description: The unique identifier of the order to be deleted
-        required: true
-        schema:
-          type: string
-          format: uuid
+        - name: id
+          in: path
           description: The unique identifier of the order to be deleted
-          example: "019622d1-c7df-7d66-82fe-8124d493cb1d"
+          required: true
+          schema:
+            type: string
+            format: uuid
+            description: The unique identifier of the order to be deleted
+            example: "019622d1-c7df-7d66-82fe-8124d493cb1d"
       responses:
-        '204':
+        "204":
           description: No Content
-        '404':
+        "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
+              examples:
+                order-not-found:
+                  summary: Order not found
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Not Found"
+                    status: 404
+                    detail: "Order with id 019622d1-c7df-7d66-82fe-8124d493cb1d not found."
   "/api/v1/orders/{orderId}/complete":
     patch:
       tags:
-      - Order
+        - Order
       summary: Complete Order
       description: Complete an order
       x-eventcatalog-message-type: command
@@ -211,40 +311,68 @@ paths:
       security:
         - BearerAuth: []
       parameters:
-      - name: x-request-id
-        in: header
-        description: The idempotency key of the order to be completed
-        required: true
-        schema:
-          type: string
+        - name: x-request-id
+          in: header
           description: The idempotency key of the order to be completed
-          example: "019622d1-014e-7bb7-b279-42a43ab74347"
-      - name: orderId
-        in: path
-        description: The unique identifier of the order to be completed
-        required: true
-        schema:
-          type: string
-          format: uuid
+          required: true
+          schema:
+            type: string
+            description: The idempotency key of the order to be completed
+            example: "019622d1-014e-7bb7-b279-42a43ab74347"
+        - name: orderId
+          in: path
           description: The unique identifier of the order to be completed
-          example: "019622d1-89ba-791c-a11c-f1821326441b"
+          required: true
+          schema:
+            type: string
+            format: uuid
+            description: The unique identifier of the order to be completed
+            example: "019622d1-89ba-791c-a11c-f1821326441b"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 "$ref": "#/components/schemas/OrderDetailDto"
-        '404':
+              examples:
+                order-detail:
+                  summary: Order detail
+                  value:
+                    id: "019622d1-89ba-791c-a11c-f1821326441b"
+                    date: "2021-01-01T00:00:00Z"
+                    status: "Completed"
+                    total: 100.00
+                    items:
+                      - id: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
+                        name: "AI Engineering"
+                        quantity: 1
+                        price: 100.00
+                      - id: "029622a4-a3ae-7705-a11b-a08f2a2ca622"
+                        name: "Software Architecture: The Hard Parts"
+                        quantity: 1
+                        price: 56.00
+                      - id: "039622a5-a3ae-7705-a11b-a08f2a2ca623"
+                        name: "The Pragmatic Programmer: From Journeyman to Master"
+                        quantity: 1
+        "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
+              examples:
+                order-not-found:
+                  summary: Order not found
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Not Found"
+                    status: 404
+                    detail: "Order with id 019622d1-89ba-791c-a11c-f1821326441b not found."
   "/api/v1/orders/{orderId}/cancel":
     patch:
       tags:
-      - Order
+        - Order
       summary: Cancel Order
       description: Cancel an order
       x-eventcatalog-message-type: command
@@ -252,40 +380,69 @@ paths:
       security:
         - BearerAuth: []
       parameters:
-      - name: x-request-id
-        in: header
-        description: The idempotency key of the order to be cancelled
-        required: true
-        schema:
-          type: string
+        - name: x-request-id
+          in: header
           description: The idempotency key of the order to be cancelled
-          example: "019622d1-014e-7bb7-b279-42a43ab74347"
-      - name: orderId
-        in: path
-        description: The unique identifier of the order to be cancelled
-        required: true
-        schema:
-          type: string
-          format: uuid
+          required: true
+          schema:
+            type: string
+            description: The idempotency key of the order to be cancelled
+            example: "019622d1-014e-7bb7-b279-42a43ab74347"
+        - name: orderId
+          in: path
           description: The unique identifier of the order to be cancelled
-          example: "019622d1-89ba-791c-a11c-f1821326441b"
+          required: true
+          schema:
+            type: string
+            format: uuid
+            description: The unique identifier of the order to be cancelled
+            example: "019622d1-89ba-791c-a11c-f1821326441b"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 "$ref": "#/components/schemas/OrderDetailDto"
-        '404':
+              examples:
+                order-detail:
+                  summary: Order detail
+                  value:
+                    id: "019622d1-89ba-791c-a11c-f1821326441b"
+                    date: "2021-01-01T00:00:00Z"
+                    status: "Cancelled"
+                    total: 100.00
+                    items:
+                      - id: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
+                        name: "AI Engineering"
+                        quantity: 1
+                        price: 100.00
+                      - id: "029622a4-a3ae-7705-a11b-a08f2a2ca622"
+                        name: "Software Architecture: The Hard Parts"
+                        quantity: 1
+                        price: 56.00
+                      - id: "039622a5-a3ae-7705-a11b-a08f2a2ca623"
+                        name: "The Pragmatic Programmer: From Journeyman to Master"
+                        quantity: 1
+                        price: 45.00
+        "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
+              examples:
+                order-not-found:
+                  summary: Order not found
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Not Found"
+                    status: 404
+                    detail: "Order with id 019622d1-89ba-791c-a11c-f1821326441b not found."
   "/api/v1/buyers/address":
     patch:
       tags:
-      - Buyer
+        - Buyer
       summary: Update Buyer Address
       description: Update the current buyer's address
       x-eventcatalog-message-type: command
@@ -293,34 +450,85 @@ paths:
       security:
         - BearerAuth: []
       requestBody:
+        description: The command to update the current buyer's address
         content:
           application/json:
             schema:
               "$ref": "#/components/schemas/UpdateAddressCommand"
+            example:
+              street: "123 Main St"
+              city: "Anytown"
+              province: "CA"
         required: true
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 "$ref": "#/components/schemas/BuyerDto"
-        '400':
+              examples:
+                buyer-detail:
+                  summary: Buyer detail
+                  value:
+                    id: "019622d7-e45c-7ccb-868f-509b69559883"
+                    name: "John Doe"
+                    address: "123 Main St, Anytown, USA"
+        "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/HttpValidationProblemDetails"
-        '404':
+              examples:
+                empty-street:
+                  summary: Empty street
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "Street"
+                        errorMessage: "'Street' must not be empty."
+                        severity: 0
+                empty-city:
+                  summary: Empty city
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "City"
+                        errorMessage: "'City' must not be empty."
+                        severity: 0
+                empty-province:
+                  summary: Empty province
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "Province"
+                        errorMessage: "'Province' must not be empty."
+                        severity: 0
+        "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                title: "Not Found"
+                status: 404
+                detail: "Buyer with id 019622d7-e45c-7ccb-868f-509b69559883 not found."
   "/api/v1/buyers":
     get:
       tags:
-      - Buyer
+        - Buyer
       summary: List Buyers
       description: List all buyers with pagination options
       x-eventcatalog-message-type: query
@@ -328,36 +536,76 @@ paths:
       security:
         - BearerAuth: []
       parameters:
-      - name: PageIndex
-        in: query
-        description: Number of items to return in a single page of results
-        schema:
-          type: integer
-          format: int32
-          default: 1
-          description: The page index to return
-          minimum: 1
-          example: 1
-      - name: PageSize
-        in: query
-        description: Number of items to return in a single page of results
-        schema:
-          type: integer
-          format: int32
-          default: 20
-          description: The page size to return
-          minimum: 1
-          example: 20
+        - name: PageIndex
+          in: query
+          description: Number of items to return in a single page of results
+          schema:
+            type: integer
+            format: int32
+            default: 1
+            description: The page index to return
+            minimum: 1
+            example: 1
+        - name: PageSize
+          in: query
+          description: Number of items to return in a single page of results
+          schema:
+            type: integer
+            format: int32
+            default: 20
+            description: The page size to return
+            minimum: 1
+            example: 20
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 "$ref": "#/components/schemas/PagedResultOfBuyerDto"
+              examples:
+                buyers-empty:
+                  summary: No buyers found
+                  value:
+                    items: []
+                    pageIndex: 1
+                    pageSize: 20
+                    totalItems: 0
+                    totalPages: 0
+                    hasPreviousPage: false
+                    hasNextPage: false
+                buyers-single:
+                  summary: Single buyer
+                  value:
+                    items:
+                      - id: "019622d7-e45c-7ccb-868f-509b69559883"
+                        name: "John Doe"
+                        address: "123 Main St, Anytown, USA"
+                    pageIndex: 1
+                    pageSize: 20
+                    totalItems: 1
+                    totalPages: 1
+                    hasPreviousPage: false
+                    hasNextPage: false
+                buyers-multiple:
+                  summary: Multiple buyers
+                  value:
+                    items:
+                      - id: "019622d7-e45c-7ccb-868f-509b69559883"
+                        name: "John Doe"
+                        address: "123 Main St, Anytown, USA"
+                      - id: "029622d8-e45c-7ccb-868f-509b69559884"
+                        name: "Jane Smith"
+                        address: "456 Maple Ave, Anytown, USA"
+                    pageIndex: 1
+                    pageSize: 20
+                    totalItems: 2
+                    totalPages: 1
+                    hasPreviousPage: false
+                    hasNextPage: false
     post:
       tags:
-      - Buyer
+        - Buyer
       summary: Create Buyer
       description: Create a new buyer in the system
       x-eventcatalog-message-type: command
@@ -365,13 +613,18 @@ paths:
       security:
         - BearerAuth: []
       requestBody:
+        description: The command to create a new buyer
         content:
           application/json:
             schema:
               "$ref": "#/components/schemas/CreateBuyerCommand"
+            example:
+              street: "123 Main St"
+              city: "Anytown"
+              province: "CA"
         required: true
       responses:
-        '201':
+        "201":
           description: Created
           content:
             application/json:
@@ -380,68 +633,119 @@ paths:
                 format: uuid
                 description: The unique identifier of the buyer to be created
                 example: "019622d6-d8ae-7512-9b28-3f5591426db8"
-        '400':
+        "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/HttpValidationProblemDetails"
+              examples:
+                empty-street:
+                  summary: Empty street
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "Street"
+                        errorMessage: "'Street' must not be empty."
+                        severity: 0
+                empty-city:
+                  summary: Empty city
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "City"
+                        errorMessage: "'City' must not be empty."
+                        severity: 0
+                empty-province:
+                  summary: Empty province
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "Province"
+                        errorMessage: "'Province' must not be empty."
+                        severity: 0
   "/api/v1/buyers/me":
     get:
       tags:
-      - Buyer
+        - Buyer
       summary: Get Buyer
       description: Get the current buyer's information
       operationId: GetBuyerEndpoint
       parameters:
-      - name: Id
-        in: query
-        description: Only 'ADMIN' role can retrieve other users' data
-        required: true
-        schema:
-          type: string
-          format: uuid
-          description: The unique identifier of the buyer to be retrieved
-          example: "019622d7-313a-777a-9077-4323b9f59fb9"
+        - name: Id
+          in: query
+          description: Only 'ADMIN' role can retrieve other users' data
+          required: true
+          schema:
+            type: string
+            format: uuid
+            description: The unique identifier of the buyer to be retrieved
+            example: "019622d7-313a-777a-9077-4323b9f59fb9"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 "$ref": "#/components/schemas/BuyerDto"
-        '404':
+              examples:
+                buyer-detail:
+                  summary: Buyer detail
+                  value:
+                    id: "019622d7-e45c-7ccb-868f-509b69559883"
+                    name: "John Doe"
+                    address: "123 Main St, Anytown, USA"
+        "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                title: "Not Found"
+                status: 404
+                detail: "Buyer with id 019622d7-e45c-7ccb-868f-509b69559883 not found."
   "/api/v1/buyers/{id}":
     delete:
       tags:
-      - Buyer
+        - Buyer
       summary: Delete Buyer
       description: Delete a buyer by ID if it exists
       operationId: DeleteBuyerEndpoint
       parameters:
-      - name: id
-        in: path
-        description: The unique identifier of the buyer to be deleted
-        required: true
-        schema:
-          type: string
-          format: uuid
+        - name: id
+          in: path
           description: The unique identifier of the buyer to be deleted
-          example: "019622d7-6ba8-7edc-9340-8c93524c3819"
+          required: true
+          schema:
+            type: string
+            format: uuid
+            description: The unique identifier of the buyer to be deleted
+            example: "019622d7-6ba8-7edc-9340-8c93524c3819"
       responses:
-        '204':
+        "204":
           description: No Content
-        '404':
+        "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                title: "Not Found"
+                status: 404
+                detail: "Buyer with id 019622d7-e45c-7ccb-868f-509b69559883 not found."
 components:
   schemas:
     BuyerDto:
@@ -468,9 +772,9 @@ components:
           example: "123 Main St, Anytown, USA"
     CreateBuyerCommand:
       required:
-      - street
-      - city
-      - province
+        - street
+        - city
+        - province
       type: object
       writeOnly: true
       description: The command to create a buyer
@@ -515,6 +819,10 @@ components:
         errors:
           type: array
           description: The validation errors
+          example:
+            - propertyName: "Street"
+              errorMessage: "'Street' must not be empty."
+              severity: 0
           items:
             type: object
             properties:
@@ -552,11 +860,11 @@ components:
     NullableOfStatus:
       description: The status of the order
       enum:
-      - New
-      - Cancelled
-      - Completed
-      - 
-      default: 
+        - New
+        - Cancelled
+        - Completed
+        -
+      default:
     OrderDetailDto:
       type: object
       readOnly: true
@@ -579,8 +887,6 @@ components:
           example: 100.00
         status:
           "$ref": "#/components/schemas/Status"
-          description: The status of the order
-          example: "New"
         items:
           type: array
           description: The items of the order
@@ -608,8 +914,6 @@ components:
           example: 100.00
         status:
           "$ref": "#/components/schemas/Status"
-          description: The status of the order
-          example: "New"
     OrderItemDto:
       type: object
       readOnly: true
@@ -646,8 +950,6 @@ components:
           example: "019622e7-87ac-7bd1-aa9c-35803d8a1e50"
         status:
           "$ref": "#/components/schemas/Status"
-          description: The status of the order
-          example: "New"
         totalPrice:
           type: number
           format: double
@@ -735,27 +1037,31 @@ components:
         type:
           type: string
           description: The type of the problem
+          example: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
         title:
           type: string
           description: The title of the problem
+          example: "Not Found"
         status:
           type: integer
           format: int32
           description: The status code of the problem
+          example: 404
         detail:
           type: string
           description: The detail of the problem
+          example: "Buyer with id 019622d7-e45c-7ccb-868f-509b69559883 not found."
     Status:
       description: The status of the order
       enum:
-      - New
-      - Cancelled
-      - Completed
+        - New
+        - Cancelled
+        - Completed
     UpdateAddressCommand:
       required:
-      - street
-      - city
-      - province
+        - street
+        - city
+        - province
       type: object
       writeOnly: true
       description: The command to update the address of the buyer
@@ -781,7 +1087,7 @@ components:
       scheme: Bearer
       description: The Bearer token for the user
 tags:
-- name: Order
-  description: Endpoints for managing orders, including creation, retrieval, updating status, and cancellation of orders in the BookWorm e-commerce platform
-- name: Buyer
-  description: Endpoints for managing buyer information, including profile details, shipping addresses, and purchase history for customers of the BookWorm platform
+  - name: Buyer
+    description: Endpoints for managing buyer information, including profile details, shipping addresses, and purchase history for customers of the BookWorm platform
+  - name: Order
+    description: Endpoints for managing orders, including creation, retrieval, updating status, and cancellation of orders in the BookWorm e-commerce platform
