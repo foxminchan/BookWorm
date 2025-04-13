@@ -2,15 +2,17 @@
 openapi: 3.1.1
 info:
   title: Rating Service API
-  description: Handles the collection, storage, and aggregation of user feedback and
+  description:
+    Handles the collection, storage, and aggregation of user feedback and
     ratings for books on the BookWorm platform
   contact:
     name: Nhan Nguyen
     url: https://github.com/foxminchan
+    email: nguyenxuannhan407@gmail.com
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
-  version: '1.0'
+  version: "1.0"
 servers:
   - url: https://dev.rating.bookworm.com
     description: Development
@@ -24,85 +26,164 @@ paths:
   "/api/v1/feedbacks":
     get:
       tags:
-      - Feedback
+        - Feedback
       summary: List Feedbacks
       description: List feedbacks for a book with pagination and filtering
       x-eventcatalog-message-type: query
       operationId: ListFeedbacksEndpoint
       parameters:
-      - name: BookId
-        in: query
-        description: The ID of the book to get feedback for
-        required: true
-        schema:
-          type: string
-          format: uuid
-          description: The unique identifier of the book
-          example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
-      - name: PageIndex
-        in: query
-        description: Number of items to return in a single page of results
-        schema:
-          type: integer
-          format: int32
-          default: 1
-          description: The page index to return
-          minimum: 1
-          example: 1
-      - name: PageSize
-        in: query
-        description: Number of items to return in a single page of results
-        schema:
-          type: integer
-          format: int32
-          default: 20
-          description: The page size to return
-          minimum: 1
-          example: 20
-      - name: OrderBy
-        in: query
-        description: Property to order results by
-        schema:
-          type: string
-          default: Rating
-          description: The property to order results by
-          example: Rating
-      - name: IsDescending
-        in: query
-        description: Whether to order results in descending order
-        schema:
-          type: boolean
-          default: false
+        - name: BookId
+          in: query
+          description: The ID of the book to get feedback for
+          required: true
+          schema:
+            type: string
+            format: uuid
+            description: The unique identifier of the book
+            example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+        - name: PageIndex
+          in: query
+          description: Number of items to return in a single page of results
+          schema:
+            type: integer
+            format: int32
+            default: 1
+            description: The page index to return
+            minimum: 1
+            example: 1
+        - name: PageSize
+          in: query
+          description: Number of items to return in a single page of results
+          schema:
+            type: integer
+            format: int32
+            default: 20
+            description: The page size to return
+            minimum: 1
+            example: 20
+        - name: OrderBy
+          in: query
+          description: Property to order results by
+          schema:
+            type: string
+            default: Rating
+            description: The property to order results by
+            example: Rating
+        - name: IsDescending
+          in: query
           description: Whether to order results in descending order
-          example: false
+          schema:
+            type: boolean
+            default: false
+            description: Whether to order results in descending order
+            example: false
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 "$ref": "#/components/schemas/PagedResultOfFeedbackDto"
-        '400':
+              examples:
+                feedbacks-empty:
+                  summary: No feedbacks found
+                  value:
+                    items: []
+                    pageIndex: 1
+                    pageSize: 20
+                    totalItems: 0
+                    totalPages: 0
+                    hasPreviousPage: false
+                    hasNextPage: false
+                feedbacks-single:
+                  summary: Single feedback
+                  value:
+                    items:
+                      - id: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+                        firstName: "John"
+                        lastName: "Doe"
+                        comment: "This is a comment"
+                        rating: 5
+                        bookId: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+                    pageIndex: 1
+                    pageSize: 20
+                    totalItems: 1
+                    totalPages: 1
+                    hasPreviousPage: false
+                    hasNextPage: false
+                feedbacks-multiple:
+                  summary: Multiple feedbacks
+                  value:
+                    items:
+                      - id: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+                        firstName: "John"
+                        lastName: "Doe"
+                        comment: "This is a comment"
+                        rating: 5
+                        bookId: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+                      - id: "01961eb4-668d-7e7e-ae25-0fab379614f8"
+                        firstName: "Jane"
+                        lastName: "Doe"
+                        comment: "This is another comment"
+                        rating: 4
+                        bookId: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+                    pageIndex: 1
+                    pageSize: 20
+                    totalItems: 2
+                    totalPages: 1
+                    hasPreviousPage: false
+                    hasNextPage: false
+        "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/HttpValidationProblemDetails"
+              examples:
+                invalid-page-index:
+                  summary: Invalid page index
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "PageIndex"
+                        errorMessage: "'PageIndex' must be greater than 0."
+                        severity: 0
+                invalid-page-size:
+                  summary: Invalid page size
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "PageSize"
+                        errorMessage: "'PageSize' must be greater than 0."
+                        severity: 0
     post:
       tags:
-      - Feedback
+        - Feedback
       summary: Create Feedback
       description: Create a new feedback
       x-eventcatalog-message-type: command
       operationId: CreateFeedbackEndpoint
       requestBody:
+        description: The command to create a new feedback
         content:
           application/json:
             schema:
               "$ref": "#/components/schemas/CreateFeedbackCommand"
+            example:
+              bookId: "02f1e2d3-4567-890a-bcde-f1234567890a"
+              firstName: "John"
+              lastName: "Doe"
+              comment: "This is a comment"
+              rating: 5
         required: true
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
@@ -111,16 +192,50 @@ paths:
                 format: uuid
                 description: The unique identifier of the feedback
                 example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
-        '400':
+        "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/HttpValidationProblemDetails"
+              examples:
+                empty-book-id:
+                  summary: Empty book ID
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "BookId"
+                        errorMessage: "'BookId' must not be empty."
+                        severity: 0
+                empty-first-name:
+                  summary: Empty first name
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "FirstName"
+                        errorMessage: "'FirstName' must not be empty."
+                        severity: 0
+                empty-last-name:
+                  summary: Empty last name
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "LastName"
+                        errorMessage: "'LastName' must not be empty."
+                        severity: 0
   "/api/v1/feedbacks/{id}":
     delete:
       tags:
-      - Feedback
+        - Feedback
       summary: Delete Feedback
       description: Delete a feedback if it exists
       x-eventcatalog-message-type: command
@@ -128,35 +243,49 @@ paths:
       security:
         - BearerAuth: []
       parameters:
-      - name: id
-        in: path
-        description: The unique identifier of the feedback to be deleted
-        required: true
-        schema:
-          type: string
-          format: uuid
+        - name: id
+          in: path
           description: The unique identifier of the feedback to be deleted
-          example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+          required: true
+          schema:
+            type: string
+            format: uuid
+            description: The unique identifier of the feedback to be deleted
+            example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
       responses:
-        '204':
+        "204":
           description: No Content
-        '404':
+        "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
+              examples:
+                feedback-not-found:
+                  summary: Feedback not found
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Not found"
+                    status: 404
+                    detail: "Feedback with id 01961eb4-668d-7e7e-ae25-0fab379614f7 not found."
 components:
   schemas:
     CreateFeedbackCommand:
       required:
-      - bookId
-      - firstName
-      - lastName
-      - rating
+        - bookId
+        - firstName
+        - lastName
+        - rating
       type: object
       writeOnly: true
       description: The command to create a new feedback
+      example:
+        bookId: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+        firstName: "John"
+        lastName: "Doe"
+        comment: "This is a comment"
+        rating: 5
       properties:
         bookId:
           type: string
@@ -247,6 +376,10 @@ components:
         errors:
           type: array
           description: The validation errors
+          example:
+            - propertyName: "FirstName"
+              errorMessage: "'FirstName' must not be empty."
+              severity: 0
           items:
             type: object
             properties:
@@ -342,5 +475,5 @@ components:
       scheme: Bearer
       description: The Bearer token for the user
 tags:
-- name: Feedback
-  description: Endpoints for managing user ratings and feedback for books on the BookWorm platform
+  - name: Feedback
+    description: Endpoints for managing user ratings and feedback for books on the BookWorm platform

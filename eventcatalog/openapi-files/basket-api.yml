@@ -2,15 +2,17 @@
 openapi: 3.1.1
 info:
   title: Basket Service API
-  description: Manages the lifecycle of customer shopping baskets in the BookWorm
+  description:
+    Manages the lifecycle of customer shopping baskets in the BookWorm
     e-commerce system
   contact:
     name: Nhan Nguyen
     url: https://github.com/foxminchan
+    email: nguyenxuannhan407@gmail.com
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
-  version: '1.0'
+  version: "1.0"
 servers:
   - url: https://dev.basket.bookworm.com
     description: Development
@@ -24,7 +26,7 @@ paths:
   "/api/v1/baskets":
     put:
       tags:
-      - Basket
+        - Basket
       summary: Update Basket
       description: Update a basket by its unique identifier
       x-eventcatalog-message-type: command
@@ -32,43 +34,111 @@ paths:
       security:
         - BearerAuth: []
       requestBody:
+        description: The command to update the basket with new items
         content:
           application/json:
             schema:
               "$ref": "#/components/schemas/UpdateBasketCommand"
+            examples:
+              single-item:
+                summary: Update basket with a single item
+                value:
+                  items:
+                    - id: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
+                      quantity: 2
+              multiple-items:
+                summary: Update basket with multiple items
+                value:
+                  items:
+                    - id: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
+                      quantity: 2
+                    - id: "019622a4-a3ae-7705-a11b-a08f2a2ca622"
+                      quantity: 1
         required: true
       responses:
-        '204':
+        "204":
           description: No Content
-        '400':
+        "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/HttpValidationProblemDetails"
+              examples:
+                invalid-quantity:
+                  summary: Invalid quantity provided
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "Quantity"
+                        errorMessage: "'Quantity' must be greater than 0."
+                        severity: 0
+                empty-item-id:
+                  summary: Invalid item ID format
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "Id"
+                        errorMessage: "'Id' must not be empty."
+                        severity: 0
     get:
       tags:
-      - Basket
+        - Basket
       summary: Get Basket
       description: Get a basket by user
       x-eventcatalog-message-type: query
       operationId: GetBasketEndpoint
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 "$ref": "#/components/schemas/CustomerBasketDto"
-        '404':
+              examples:
+                empty-basket:
+                  summary: Empty basket response
+                  value:
+                    id: "019622af-19dd-73dd-9420-9e9d401ad85b"
+                    items: []
+                basket-with-items:
+                  summary: Basket with multiple items
+                  value:
+                    id: "019622af-19dd-73dd-9420-9e9d401ad85b"
+                    items:
+                      - id: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
+                        quantity: 2
+                        name: "Designing Data-Intensive Applications"
+                        price: 46.67
+                        priceSale: 41.89
+                      - id: "019622a4-a3ae-7705-a11b-a08f2a2ca622"
+                        quantity: 1
+                        name: "Clean Code"
+                        price: 39.99
+                        priceSale: 35.99
+        "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
+              example:
+                basket-not-found:
+                  summary: Basket not found
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.5"
+                    title: "Not Found"
+                    status: 404
+                    detail: "Basket with id 01962e92-02ed-7b23-8af6-95b267a97e44 not found."
     delete:
       tags:
-      - Basket
+        - Basket
       summary: Delete Basket
       description: Delete a basket by its unique identifier
       x-eventcatalog-message-type: command
@@ -76,17 +146,25 @@ paths:
       security:
         - BearerAuth: []
       responses:
-        '204':
+        "204":
           description: No Content
-        '404':
+        "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
+              example:
+                basket-not-found:
+                  summary: Basket not found
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.5"
+                    title: "Not Found"
+                    status: 404
+                    detail: "Basket with id 01962e92-02ed-7b23-8af6-95b267a97e44 not found."
     post:
       tags:
-      - Basket
+        - Basket
       summary: Create Basket
       description: Create a new basket for a user
       x-eventcatalog-message-type: command
@@ -94,13 +172,29 @@ paths:
       security:
         - BearerAuth: []
       requestBody:
+        description: A command to create a basket with the specified items
         content:
           application/json:
             schema:
               "$ref": "#/components/schemas/CreateBasketCommand"
+            examples:
+              single-item:
+                summary: Create basket with a single item
+                value:
+                  items:
+                    - id: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
+                      quantity: 2
+              multiple-items:
+                summary: Create basket with multiple items
+                value:
+                  items:
+                    - id: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
+                      quantity: 2
+                    - id: "019622a4-a3ae-7705-a11b-a08f2a2ca622"
+                      quantity: 1
         required: true
       responses:
-        '201':
+        "201":
           description: Created
           content:
             application/json:
@@ -108,12 +202,35 @@ paths:
                 type: string
                 description: The unique identifier of the basket
                 example: "019622af-19dd-73dd-9420-9e9d401ad85b"
-        '400':
+        "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/HttpValidationProblemDetails"
+              examples:
+                invalid-quantity:
+                  summary: Invalid quantity provided
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "Quantity"
+                        errorMessage: "'Quantity' must be greater than 0."
+                        severity: 0
+                empty-item-id:
+                  summary: Invalid item ID format
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "Id"
+                        errorMessage: "'Id' must not be empty."
+                        severity: 0
 components:
   schemas:
     BasketItemDto:
@@ -147,8 +264,8 @@ components:
           example: 41.89
     BasketItemRequest:
       required:
-      - id
-      - quantity
+        - id
+        - quantity
       type: object
       writeOnly: true
       description: The basket item request
@@ -165,12 +282,18 @@ components:
           example: 16
     CreateBasketCommand:
       required:
-      - items
+        - items
       type: object
       writeOnly: true
       description: The command to create a basket
       properties:
         items:
+          description: An array of basket items to be included in the basket
+          example:
+            - id: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
+              quantity: 2
+            - id: "019622a4-a3ae-7705-a11b-a08f2a2ca622"
+              quantity: 1
           type: array
           items:
             "$ref": "#/components/schemas/BasketItemRequest"
@@ -178,6 +301,19 @@ components:
       type: object
       readOnly: true
       description: The customer basket details
+      example:
+        id: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
+        items:
+          - id: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
+            quantity: 2
+            name: "Designing Data-Intensive Applications"
+            price: 46.67
+            priceSale: 41.89
+          - id: "019622a4-a3ae-7705-a11b-a08f2a2ca622"
+            quantity: 1
+            name: "Clean Code"
+            price: 39.99
+            priceSale: 35.99
       properties:
         id:
           type:
@@ -212,6 +348,10 @@ components:
         errors:
           type: array
           description: The validation errors
+          example:
+            - propertyName: "Quantity"
+              errorMessage: "'Quantity' must be greater than 0."
+              severity: 0
           items:
             type: object
             properties:
@@ -253,25 +393,35 @@ components:
         type:
           type: string
           description: The type of the problem
+          example: "https://tools.ietf.org/html/rfc9110#section-15.5.5"
         title:
           type: string
           description: The title of the problem
+          example: "Not Found"
         status:
           type: integer
           format: int32
           description: The status code of the problem
+          example: 404
         detail:
           type: string
           description: The detail of the problem
+          example: "Basket with id 01962e92-02ed-7b23-8af6-95b267a97e44 not found."
     UpdateBasketCommand:
       required:
-      - items
+        - items
       type: object
       writeOnly: true
       description: The command to update a basket
       properties:
         items:
           type: array
+          description: An array of basket items to be included in the basket
+          example:
+            - id: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
+              quantity: 2
+            - id: "019622a4-a3ae-7705-a11b-a08f2a2ca622"
+              quantity: 1
           items:
             "$ref": "#/components/schemas/BasketItemRequest"
   securitySchemes:
@@ -280,5 +430,5 @@ components:
       scheme: Bearer
       description: The Bearer token for the user
 tags:
-- name: Basket
-  description: Manages shopping baskets for customers, allowing them to add, update, and remove items before checkout
+  - name: Basket
+    description: Manages shopping baskets for customers, allowing them to add, update, and remove items before checkout
