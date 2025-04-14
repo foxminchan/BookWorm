@@ -29,7 +29,7 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
 
         var start = Stopwatch.GetTimestamp();
 
-        var response = await next();
+        var response = await next(cancellationToken);
 
         logger.LogInformation(
             "[{Behavior}] The request handled {RequestName} with {Response} in {ElapsedMilliseconds} ms",

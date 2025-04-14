@@ -1,4 +1,5 @@
 ﻿using APIWeaver;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -27,5 +28,15 @@ public static class OpenApiExtensions
                 }
             );
         }
+    }
+
+    public static void UseDefaultOpenApi(this WebApplication app)
+    {
+        if (!app.Environment.IsDevelopment())
+        {
+            return;
+        }
+
+        app.MapOpenApi();
     }
 }

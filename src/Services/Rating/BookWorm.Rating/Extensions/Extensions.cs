@@ -56,6 +56,6 @@ public static class Extensions
         // Configure EventBus
         builder.AddEventBus(typeof(IRatingApiMarker), cfg => cfg.AddInMemoryInboxOutbox());
 
-        builder.AddAsyncApiDocs([typeof(IRatingApiMarker)]);
+        builder.AddDefaultAsyncApi([typeof(IRatingApiMarker)]);
     }
 }

@@ -8,10 +8,8 @@ builder.AddApplicationServices();
 
 var app = builder.Build();
 
-app.UseExceptionHandler();
-
 app.MapDefaultEndpoints();
 
-app.MapAsyncApi();
+app.UseDefaultAsyncApi();
 
 app.Run();

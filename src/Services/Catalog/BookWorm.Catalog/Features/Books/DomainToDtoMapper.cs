@@ -32,12 +32,3 @@ public sealed class DomainToDtoMapper(IBlobService blobService) : IMapper<Book, 
         return [.. models.Select(MapToDto)];
     }
 }
-
-[ExcludeFromCodeCoverage]
-public static class Extensions
-{
-    public static void AddBookDomainToDtoMapper(this IServiceCollection services)
-    {
-        services.AddScoped<IMapper<Book, BookDto>, DomainToDtoMapper>();
-    }
-}

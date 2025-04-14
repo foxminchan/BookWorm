@@ -96,10 +96,12 @@ public static class Extensions
                 .AddCheck<SendGridHealthCheck>(nameof(SendGridHealthCheck), HealthStatus.Degraded);
         }
 
+        services.AddDefaultCors();
+
         services.AddOpenTelemetry().WithTracing(t => t.AddSource(TelemetryTags.ActivitySourceName));
 
         builder.AddEventBus(typeof(INotificationApiMarker), cfg => cfg.AddInMemoryInboxOutbox());
 
-        builder.AddAsyncApiDocs([typeof(INotificationApiMarker)]);
+        builder.AddDefaultAsyncApi([typeof(INotificationApiMarker)]);
     }
 }

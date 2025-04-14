@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Routing;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Saunter;
@@ -7,7 +7,7 @@ namespace BookWorm.ServiceDefaults.ApiSpecification.AsyncApi;
 
 public static class AsyncApiExtensions
 {
-    public static void AddAsyncApiDocs(this IHostApplicationBuilder builder, IList<Type> types)
+    public static void AddDefaultAsyncApi(this IHostApplicationBuilder builder, IList<Type> types)
     {
         var services = builder.Services;
 
@@ -30,6 +30,7 @@ public static class AsyncApiExtensions
                         {
                             Name = "Nhan Nguyen",
                             Url = new("https://github.com/foxminchan"),
+                            Email = "nguyenxuannhan407@gmail.com",
                         },
                     },
                 };
@@ -37,9 +38,14 @@ public static class AsyncApiExtensions
         });
     }
 
-    public static void MapAsyncApi(this IEndpointRouteBuilder endpoints)
+    public static void UseDefaultAsyncApi(this WebApplication app)
     {
-        endpoints.MapAsyncApiDocuments();
-        endpoints.MapAsyncApiUi();
+        if (!app.Environment.IsDevelopment())
+        {
+            return;
+        }
+
+        app.MapAsyncApiDocuments();
+        app.MapAsyncApiUi();
     }
 }

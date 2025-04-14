@@ -1,3 +1,4 @@
+using BookWorm.ServiceDefaults.Kestrel;
 using BookWorm.SharedKernel.ActivityScope;
 using BookWorm.SharedKernel.Logging;
 using HealthChecks.UI.Client;
@@ -121,6 +122,14 @@ public static class Extensions
 
     public static void MapDefaultEndpoints(this WebApplication app)
     {
+        // Map default middleware for the app
+        app.UseExceptionHandler();
+
+        app.UseStatusCodePages();
+
+        app.UseDefaultCors();
+
+        // Configure the health checks
         var healthChecks = app.MapGroup("");
 
         // Configure health checks endpoints to use the configured request timeouts and cache policies

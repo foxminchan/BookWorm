@@ -110,6 +110,6 @@ public static class Extensions
             )
         );
 
-        builder.AddAsyncApiDocs([typeof(IOrderingApiMarker)]);
+        builder.AddDefaultAsyncApi([typeof(IOrderingApiMarker)]);
     }
 }
