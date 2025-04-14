@@ -21,12 +21,16 @@ public static class Extensions
         // Add database configuration
         services.AddDbContext<RatingDbContext>(options =>
         {
-            options.UseCosmos(
-                builder.Configuration.GetConnectionString(Components.Conatainer.Feedbacks)!,
-                Components.Database.Rating
-            );
+            options
+                .UseNpgsql(builder.Configuration.GetConnectionString(Components.Database.Rating))
+                .UseSnakeCaseNamingConvention()
+                .ConfigureWarnings(warnings =>
+                    warnings.Ignore(RelationalEventId.PendingModelChangesWarning)
+                );
         });
-        builder.EnrichCosmosDbContext<RatingDbContext>();
+        builder.EnrichAzureNpgsqlDbContext<RatingDbContext>();
+
+        services.AddMigration<RatingDbContext>();
 
         // Configure MediatR
         services.AddMediatR(cfg =>
@@ -46,15 +50,16 @@ public static class Extensions
 
         services.AddRepositories(typeof(IRatingApiMarker));
 
+        // Configure EventBus first
+        builder.AddEventBus(typeof(IRatingApiMarker), cfg => cfg.AddInMemoryInboxOutbox());
+
+        // Then register event-related services
         services.AddScoped<IEventMapper, EventMapper>();
         services.AddScoped<IEventDispatcher, EventDispatcher>();
 
         // Configure endpoints
         services.AddVersioning();
         services.AddEndpoints(typeof(IRatingApiMarker));
-
-        // Configure EventBus
-        builder.AddEventBus(typeof(IRatingApiMarker), cfg => cfg.AddInMemoryInboxOutbox());
 
         builder.AddDefaultAsyncApi([typeof(IRatingApiMarker)]);
     }

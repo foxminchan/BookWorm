@@ -7,7 +7,7 @@ param bookworm_rating_identity_outputs_clientid string
 
 param bookworm_rating_containerport string
 
-param cosmos_kv_outputs_name string
+param postgres_kv_outputs_name string
 
 @secure()
 param queue_password_value string
@@ -22,13 +22,13 @@ param bookworm_outputs_azure_container_registry_managed_identity_id string
 
 param bookworm_rating_containerimage string
 
-resource cosmos_kv_outputs_name_kv 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
-  name: cosmos_kv_outputs_name
+resource postgres_kv_outputs_name_kv 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
+  name: postgres_kv_outputs_name
 }
 
-resource cosmos_kv_outputs_name_kv_connectionstrings__feedbacks 'Microsoft.KeyVault/vaults/secrets@2023-07-01' existing = {
-  name: 'connectionstrings--feedbacks'
-  parent: cosmos_kv_outputs_name_kv
+resource postgres_kv_outputs_name_kv_connectionstrings__ratingdb 'Microsoft.KeyVault/vaults/secrets@2023-07-01' existing = {
+  name: 'connectionstrings--ratingdb'
+  parent: postgres_kv_outputs_name_kv
 }
 
 resource bookworm_rating 'Microsoft.App/containerApps@2024-03-01' = {
@@ -38,9 +38,9 @@ resource bookworm_rating 'Microsoft.App/containerApps@2024-03-01' = {
     configuration: {
       secrets: [
         {
-          name: 'connectionstrings--feedbacks'
+          name: 'connectionstrings--ratingdb'
           identity: bookworm_rating_identity_outputs_id
-          keyVaultUrl: cosmos_kv_outputs_name_kv_connectionstrings__feedbacks.properties.secretUri
+          keyVaultUrl: postgres_kv_outputs_name_kv_connectionstrings__ratingdb.properties.secretUri
         }
         {
           name: 'connectionstrings--queue'
@@ -88,8 +88,8 @@ resource bookworm_rating 'Microsoft.App/containerApps@2024-03-01' = {
               value: bookworm_rating_containerport
             }
             {
-              name: 'ConnectionStrings__feedbacks'
-              secretRef: 'connectionstrings--feedbacks'
+              name: 'ConnectionStrings__ratingdb'
+              secretRef: 'connectionstrings--ratingdb'
             }
             {
               name: 'ConnectionStrings__queue'

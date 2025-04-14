@@ -65,6 +65,11 @@ resource financedb 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2024-08-
   parent: postgres
 }
 
+resource ratingdb 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2024-08-01' = {
+  name: 'ratingdb'
+  parent: postgres
+}
+
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
   name: keyVaultName
 }
@@ -97,6 +102,14 @@ resource financedb_connectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-0
   name: 'connectionstrings--financedb'
   properties: {
     value: 'Host=${postgres.properties.fullyQualifiedDomainName};Username=${administratorLogin};Password=${administratorLoginPassword};Database=financedb'
+  }
+  parent: keyVault
+}
+
+resource ratingdb_connectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  name: 'connectionstrings--ratingdb'
+  properties: {
+    value: 'Host=${postgres.properties.fullyQualifiedDomainName};Username=${administratorLogin};Password=${administratorLoginPassword};Database=ratingdb'
   }
   parent: keyVault
 }

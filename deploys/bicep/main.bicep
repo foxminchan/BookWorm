@@ -6,7 +6,7 @@ param location string
 
 param principalId string
 
-param postgres_username string = 'NNaaSGCrJD'
+param postgres_username string = 'vYwvzwJtYJ'
 
 @secure()
 param postgres_password string
@@ -60,23 +60,6 @@ module redis 'redis/redis.bicep' = {
 
 module redis_kv 'redis-kv/redis-kv.bicep' = {
   name: 'redis-kv'
-  scope: rg
-  params: {
-    location: location
-  }
-}
-
-module cosmos 'cosmos/cosmos.bicep' = {
-  name: 'cosmos'
-  scope: rg
-  params: {
-    location: location
-    keyVaultName: cosmos_kv.outputs.name
-  }
-}
-
-module cosmos_kv 'cosmos-kv/cosmos-kv.bicep' = {
-  name: 'cosmos-kv'
   scope: rg
   params: {
     location: location
@@ -201,12 +184,12 @@ module bookworm_rating_identity 'bookworm-rating-identity/bookworm-rating-identi
   }
 }
 
-module bookworm_rating_roles_cosmos_kv 'bookworm-rating-roles-cosmos-kv/bookworm-rating-roles-cosmos-kv.bicep' = {
-  name: 'bookworm-rating-roles-cosmos-kv'
+module bookworm_rating_roles_postgres_kv 'bookworm-rating-roles-postgres-kv/bookworm-rating-roles-postgres-kv.bicep' = {
+  name: 'bookworm-rating-roles-postgres-kv'
   scope: rg
   params: {
     location: location
-    cosmos_kv_outputs_name: cosmos_kv.outputs.name
+    postgres_kv_outputs_name: postgres_kv.outputs.name
     principalId: bookworm_rating_identity.outputs.principalId
   }
 }
@@ -270,10 +253,6 @@ output bookworm_ordering_identity_clientId string = bookworm_ordering_identity.o
 output bookworm_rating_identity_id string = bookworm_rating_identity.outputs.id
 
 output bookworm_rating_identity_clientId string = bookworm_rating_identity.outputs.clientId
-
-output cosmos_kv_name string = cosmos_kv.outputs.name
-
-output cosmos_kv_vaultUri string = cosmos_kv.outputs.vaultUri
 
 output bookworm_finance_identity_id string = bookworm_finance_identity.outputs.id
 

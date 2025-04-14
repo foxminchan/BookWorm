@@ -1,5 +1,4 @@
 ﻿using Aspire.Hosting.Azure;
-using Azure.Provisioning.CosmosDB;
 using Azure.Provisioning.PostgreSql;
 using Azure.Provisioning.Redis;
 using Azure.Provisioning.SignalR;
@@ -10,37 +9,6 @@ namespace BookWorm.AppHost.Extensions;
 
 public static partial class AzureExtensions
 {
-    /// <summary>
-    ///     Configures the Azure Cosmos DB resource to be provisioned as a service with specific infrastructure settings.
-    /// </summary>
-    /// <param name="builder">The resource builder for Azure Cosmos DB.</param>
-    /// <returns>The updated resource builder.</returns>
-    public static IResourceBuilder<AzureCosmosDBResource> ProvisionAsService(
-        this IResourceBuilder<AzureCosmosDBResource> builder
-    )
-    {
-        builder.ConfigureInfrastructure(infra =>
-        {
-            var cosmosDbAccount = infra
-                .GetProvisionableResources()
-                .OfType<CosmosDBAccount>()
-                .Single();
-
-            cosmosDbAccount.Kind = CosmosDBAccountKind.GlobalDocumentDB;
-            cosmosDbAccount.ConsistencyPolicy = new()
-            {
-                DefaultConsistencyLevel = DefaultConsistencyLevel.Session,
-            };
-            cosmosDbAccount.Tags.Add(
-                nameof(Environment),
-                builder.ApplicationBuilder.Environment.EnvironmentName
-            );
-            cosmosDbAccount.Tags.Add(nameof(Projects), nameof(BookWorm));
-        });
-
-        return builder;
-    }
-
     /// <summary>
     ///     Configures the Azure Storage resource to be provisioned as a service with specific infrastructure settings.
     /// </summary>
