@@ -16,14 +16,16 @@ resource signalr 'Microsoft.SignalRService/signalR@2024-03-01' = {
         value: 'Default'
       }
     ]
+    publicNetworkAccess: 'Enabled'
   }
   kind: 'SignalR'
   sku: {
-    name: 'Free_F1'
-    capacity: 1
+    name: 'Premium_P1'
+    capacity: 10
   }
   tags: {
     'aspire-resource-name': 'signalr'
+    Projects: 'BookWorm'
   }
 }
 

@@ -26,4 +26,9 @@ public static class Components
         public const string Chat = "chat";
         public const string Embedding = "embedding";
     }
+
+    public static class Conatainer
+    {
+        public const string Feedbacks = "feedbacks";
+    }
 }

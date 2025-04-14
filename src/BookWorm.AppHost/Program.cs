@@ -30,16 +30,22 @@ var queue = builder
     .WithEndpoint("tcp", e => e.Port = 5672);
 
 var cosmos = builder.AddAzureCosmosDB(Components.Cosmos).RunAsContainer().ProvisionAsService();
-
 var storage = builder.AddAzureStorage(Components.Storage).RunAsContainer().ProvisionAsService();
-
-var signalR = builder.AddAzureSignalR(Components.SignalR).RunAsContainer();
+var signalR = builder.AddAzureSignalR(Components.SignalR).RunAsContainer().ProvisionAsService();
 
 var blobStorage = storage.AddBlobs(Components.Blob);
 var catalogDb = postgres.AddDatabase(Components.Database.Catalog);
 var orderingDb = postgres.AddDatabase(Components.Database.Ordering);
 var financeDb = postgres.AddDatabase(Components.Database.Finance);
+
 var ratingDb = cosmos.AddCosmosDatabase(Components.Database.Rating);
+var ratingContainer = ratingDb.AddContainer(Components.Conatainer.Feedbacks, "/id");
+
+var models = new Dictionary<string, string>
+{
+    { Components.Ollama.Embedding, "nomic-embed-text:latest" },
+    { Components.Ollama.Chat, "deepseek-r1:1.5b" },
+};
 
 var keycloak = builder
     .AddKeycloak(Components.KeyCloak)
@@ -56,7 +62,7 @@ var catalogApi = builder
     .AddProject<BookWorm_Catalog>(Application.Catalog)
     .WithReplicas(2)
     .WithScalarApiClient()
-    .RunAsOllama()
+    .RunAsOllama(models)
     .WithReference(blobStorage)
     .WaitFor(blobStorage)
     .WithReference(queue)
@@ -110,8 +116,8 @@ var orderingApi = builder
 var ratingApi = builder
     .AddProject<BookWorm_Rating>(Application.Rating)
     .WithScalarApiClient()
-    .WithReference(ratingDb)
-    .WaitFor(ratingDb)
+    .WithReference(ratingContainer)
+    .WaitFor(ratingContainer)
     .WithReference(queue)
     .WaitFor(queue)
     .WithReference(keycloak)

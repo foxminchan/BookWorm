@@ -38,6 +38,22 @@ resource ratingdb 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2024-08-15
   parent: cosmos
 }
 
+resource feedbacks 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2024-08-15' = {
+  name: 'feedbacks'
+  location: location
+  properties: {
+    resource: {
+      id: 'feedbacks'
+      partitionKey: {
+        paths: [
+          '/id'
+        ]
+      }
+    }
+  }
+  parent: ratingdb
+}
+
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
   name: keyVaultName
 }
@@ -54,6 +70,14 @@ resource ratingdb_connectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-01
   name: 'connectionstrings--ratingdb'
   properties: {
     value: 'AccountEndpoint=${cosmos.properties.documentEndpoint};AccountKey=${cosmos.listKeys().primaryMasterKey};Database=ratingdb'
+  }
+  parent: keyVault
+}
+
+resource feedbacks_connectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  name: 'connectionstrings--feedbacks'
+  properties: {
+    value: 'AccountEndpoint=${cosmos.properties.documentEndpoint};AccountKey=${cosmos.listKeys().primaryMasterKey};Database=ratingdb;Container=feedbacks'
   }
   parent: keyVault
 }

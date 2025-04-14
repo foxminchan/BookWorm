@@ -13,7 +13,7 @@ data:
   OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "{{ .Values.config.bookworm-rating.OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY }}"
   ASPNETCORE_FORWARDEDHEADERS_ENABLED: "{{ .Values.config.bookworm-rating.ASPNETCORE_FORWARDEDHEADERS_ENABLED }}"
   HTTP_PORTS: "{{ .Values.config.bookworm-rating.HTTP_PORTS }}"
-  ConnectionStrings__ratingdb: "{{ .Values.config.bookworm-rating.ConnectionStrings__ratingdb }}"
+  ConnectionStrings__feedbacks: "{{ .Values.config.bookworm-rating.ConnectionStrings__feedbacks }}"
   services__keycloak__http__0: "{{ .Values.config.bookworm-rating.services__keycloak__http__0 }}"
   services__keycloak__management__0: "{{ .Values.config.bookworm-rating.services__keycloak__management__0 }}"
   HEALTHCHECKSUI_URLS: "{{ .Values.config.bookworm-rating.HEALTHCHECKSUI_URLS }}"

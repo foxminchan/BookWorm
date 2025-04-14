@@ -26,8 +26,8 @@ resource cosmos_kv_outputs_name_kv 'Microsoft.KeyVault/vaults@2023-07-01' existi
   name: cosmos_kv_outputs_name
 }
 
-resource cosmos_kv_outputs_name_kv_connectionstrings__ratingdb 'Microsoft.KeyVault/vaults/secrets@2023-07-01' existing = {
-  name: 'connectionstrings--ratingdb'
+resource cosmos_kv_outputs_name_kv_connectionstrings__feedbacks 'Microsoft.KeyVault/vaults/secrets@2023-07-01' existing = {
+  name: 'connectionstrings--feedbacks'
   parent: cosmos_kv_outputs_name_kv
 }
 
@@ -38,9 +38,9 @@ resource bookworm_rating 'Microsoft.App/containerApps@2024-03-01' = {
     configuration: {
       secrets: [
         {
-          name: 'connectionstrings--ratingdb'
+          name: 'connectionstrings--feedbacks'
           identity: bookworm_rating_identity_outputs_id
-          keyVaultUrl: cosmos_kv_outputs_name_kv_connectionstrings__ratingdb.properties.secretUri
+          keyVaultUrl: cosmos_kv_outputs_name_kv_connectionstrings__feedbacks.properties.secretUri
         }
         {
           name: 'connectionstrings--queue'
@@ -88,8 +88,8 @@ resource bookworm_rating 'Microsoft.App/containerApps@2024-03-01' = {
               value: bookworm_rating_containerport
             }
             {
-              name: 'ConnectionStrings__ratingdb'
-              secretRef: 'connectionstrings--ratingdb'
+              name: 'ConnectionStrings__feedbacks'
+              secretRef: 'connectionstrings--feedbacks'
             }
             {
               name: 'ConnectionStrings__queue'

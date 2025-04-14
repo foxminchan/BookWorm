@@ -2,41 +2,14 @@
 using Azure.Provisioning.CosmosDB;
 using Azure.Provisioning.PostgreSql;
 using Azure.Provisioning.Redis;
+using Azure.Provisioning.SignalR;
 using Azure.Provisioning.Storage;
 using RedisResource = Azure.Provisioning.Redis.RedisResource;
 
 namespace BookWorm.AppHost.Extensions;
 
-public static class AzureExtensions
+public static partial class AzureExtensions
 {
-    /// <summary>
-    ///     Configures the Azure Cosmos DB resource to run as a container or use access key authentication based on the
-    ///     execution context.
-    /// </summary>
-    /// <param name="builder">The resource builder for Azure Cosmos DB.</param>
-    /// <returns>The updated resource builder.</returns>
-    public static IResourceBuilder<AzureCosmosDBResource> RunAsContainer(
-        this IResourceBuilder<AzureCosmosDBResource> builder
-    )
-    {
-        if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
-        {
-            builder.RunAsPreviewEmulator(config =>
-                config
-                    .WithDataExplorer()
-                    .WithDataVolume()
-                    .WithImagePullPolicy(ImagePullPolicy.Always)
-                    .WithLifetime(ContainerLifetime.Persistent)
-            );
-        }
-        else
-        {
-            builder.WithAccessKeyAuthentication();
-        }
-
-        return builder;
-    }
-
     /// <summary>
     ///     Configures the Azure Cosmos DB resource to be provisioned as a service with specific infrastructure settings.
     /// </summary>
@@ -64,28 +37,6 @@ public static class AzureExtensions
             );
             cosmosDbAccount.Tags.Add(nameof(Projects), nameof(BookWorm));
         });
-
-        return builder;
-    }
-
-    /// <summary>
-    ///     Configures the Azure Storage resource to run as a container in the execution context.
-    /// </summary>
-    /// <param name="builder">The resource builder for Azure Storage.</param>
-    /// <returns>The updated resource builder.</returns>
-    public static IResourceBuilder<AzureStorageResource> RunAsContainer(
-        this IResourceBuilder<AzureStorageResource> builder
-    )
-    {
-        if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
-        {
-            builder.RunAsEmulator(config =>
-                config
-                    .WithDataVolume()
-                    .WithImagePullPolicy(ImagePullPolicy.Always)
-                    .WithLifetime(ContainerLifetime.Persistent)
-            );
-        }
 
         return builder;
     }
@@ -119,49 +70,26 @@ public static class AzureExtensions
     }
 
     /// <summary>
-    ///     Configures the Azure SignalR resource to run as a container in the execution context.
+    ///     Configures the Azure SignalR resource to be provisioned as a service with specific infrastructure settings.
     /// </summary>
     /// <param name="builder">The resource builder for Azure SignalR.</param>
     /// <returns>The updated resource builder.</returns>
-    public static IResourceBuilder<AzureSignalRResource> RunAsContainer(
+    public static IResourceBuilder<AzureSignalRResource> ProvisionAsService(
         this IResourceBuilder<AzureSignalRResource> builder
     )
     {
-        if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
+        builder.ConfigureInfrastructure(infra =>
         {
-            builder.RunAsEmulator(config =>
-                config
-                    .WithImagePullPolicy(ImagePullPolicy.Always)
-                    .WithLifetime(ContainerLifetime.Persistent)
-            );
-        }
+            var signalRService = infra
+                .GetProvisionableResources()
+                .OfType<SignalRService>()
+                .Single();
 
-        return builder;
-    }
-
-    /// <summary>
-    ///     Configures the Azure PostgreSQL Flexible Server resource to run as a container or use password authentication based
-    ///     on the execution context.
-    /// </summary>
-    /// <param name="builder">The resource builder for Azure PostgreSQL Flexible Server.</param>
-    /// <returns>The updated resource builder.</returns>
-    public static IResourceBuilder<AzurePostgresFlexibleServerResource> RunAsContainer(
-        this IResourceBuilder<AzurePostgresFlexibleServerResource> builder
-    )
-    {
-        if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
-        {
-            builder.RunAsContainer(cfg =>
-                cfg.WithPgAdmin()
-                    .WithDataVolume()
-                    .WithImagePullPolicy(ImagePullPolicy.Always)
-                    .WithLifetime(ContainerLifetime.Persistent)
-            );
-        }
-        else
-        {
-            builder.WithPasswordAuthentication();
-        }
+            signalRService.Sku.Name = "Premium_P1";
+            signalRService.Sku.Capacity = 10;
+            signalRService.PublicNetworkAccess = "Enabled";
+            signalRService.Tags.Add(nameof(Projects), nameof(BookWorm));
+        });
 
         return builder;
     }
@@ -190,34 +118,6 @@ public static class AzureExtensions
             );
             flexibleServer.Tags.Add(nameof(Projects), nameof(BookWorm));
         });
-
-        return builder;
-    }
-
-    /// <summary>
-    ///     Configures the Azure Redis Cache resource to run as a container or use access key authentication based on the
-    ///     execution context.
-    /// </summary>
-    /// <param name="builder">The resource builder for Azure Redis Cache.</param>
-    /// <returns>The updated resource builder.</returns>
-    public static IResourceBuilder<AzureRedisCacheResource> RunAsContainer(
-        this IResourceBuilder<AzureRedisCacheResource> builder
-    )
-    {
-        if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
-        {
-            builder.RunAsContainer(config =>
-                config
-                    .WithRedisInsight()
-                    .WithDataVolume()
-                    .WithImagePullPolicy(ImagePullPolicy.Always)
-                    .WithLifetime(ContainerLifetime.Persistent)
-            );
-        }
-        else
-        {
-            builder.WithAccessKeyAuthentication();
-        }
 
         return builder;
     }

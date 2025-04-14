@@ -22,10 +22,7 @@ public static class Extensions
         services.AddDbContext<RatingDbContext>(options =>
         {
             options.UseCosmos(
-                builder.Configuration.GetConnectionString(Components.Cosmos)
-                    ?? throw new InvalidOperationException(
-                        "Cosmos DB connection string is not configured."
-                    ),
+                builder.Configuration.GetConnectionString(Components.Conatainer.Feedbacks)!,
                 Components.Database.Rating
             );
         });
