@@ -5,34 +5,6 @@ namespace BookWorm.AppHost.Extensions;
 public static partial class AzureExtensions
 {
     /// <summary>
-    ///     Configures the Azure Cosmos DB resource to run as a container or use access key authentication based on the
-    ///     execution context.
-    /// </summary>
-    /// <param name="builder">The resource builder for Azure Cosmos DB.</param>
-    /// <returns>The updated resource builder.</returns>
-    public static IResourceBuilder<AzureCosmosDBResource> RunAsContainer(
-        this IResourceBuilder<AzureCosmosDBResource> builder
-    )
-    {
-        if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
-        {
-            builder.RunAsPreviewEmulator(config =>
-                config
-                    .WithDataExplorer()
-                    .WithDataVolume()
-                    .WithImagePullPolicy(ImagePullPolicy.Always)
-                    .WithLifetime(ContainerLifetime.Persistent)
-            );
-        }
-        else
-        {
-            builder.WithAccessKeyAuthentication();
-        }
-
-        return builder;
-    }
-
-    /// <summary>
     ///     Configures the Azure Storage resource to run as a container in the execution context.
     /// </summary>
     /// <param name="builder">The resource builder for Azure Storage.</param>

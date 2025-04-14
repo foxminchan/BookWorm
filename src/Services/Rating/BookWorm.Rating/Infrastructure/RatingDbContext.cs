@@ -25,6 +25,7 @@ public sealed class RatingDbContext : DbContext, IUnitOfWork
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Feedback>().HasPartitionKey(x => x.Id).ToContainer(nameof(Feedbacks));
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(RatingDbContext).Assembly);
     }
 }

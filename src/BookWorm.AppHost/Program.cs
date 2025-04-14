@@ -29,7 +29,6 @@ var queue = builder
     .WithLifetime(ContainerLifetime.Persistent)
     .WithEndpoint("tcp", e => e.Port = 5672);
 
-var cosmos = builder.AddAzureCosmosDB(Components.Cosmos).RunAsContainer().ProvisionAsService();
 var storage = builder.AddAzureStorage(Components.Storage).RunAsContainer().ProvisionAsService();
 var signalR = builder.AddAzureSignalR(Components.SignalR).RunAsContainer().ProvisionAsService();
 
@@ -37,9 +36,7 @@ var blobStorage = storage.AddBlobs(Components.Blob);
 var catalogDb = postgres.AddDatabase(Components.Database.Catalog);
 var orderingDb = postgres.AddDatabase(Components.Database.Ordering);
 var financeDb = postgres.AddDatabase(Components.Database.Finance);
-
-var ratingDb = cosmos.AddCosmosDatabase(Components.Database.Rating);
-var ratingContainer = ratingDb.AddContainer(Components.Conatainer.Feedbacks, "/id");
+var ratingDb = postgres.AddDatabase(Components.Database.Rating);
 
 var models = new Dictionary<string, string>
 {
@@ -116,8 +113,8 @@ var orderingApi = builder
 var ratingApi = builder
     .AddProject<BookWorm_Rating>(Application.Rating)
     .WithScalarApiClient()
-    .WithReference(ratingContainer)
-    .WaitFor(ratingContainer)
+    .WithReference(ratingDb)
+    .WaitFor(ratingDb)
     .WithReference(queue)
     .WaitFor(queue)
     .WithReference(keycloak)

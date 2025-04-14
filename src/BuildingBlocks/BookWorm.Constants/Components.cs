@@ -10,7 +10,6 @@ public static class Components
     public const string MailPit = "mailpit";
     public const string Queue = "queue";
     public const string Storage = "storage";
-    public const string Cosmos = "cosmos";
     public const string SignalR = "signalr";
 
     public static class Database
@@ -25,10 +24,5 @@ public static class Components
     {
         public const string Chat = "chat";
         public const string Embedding = "embedding";
-    }
-
-    public static class Conatainer
-    {
-        public const string Feedbacks = "feedbacks";
     }
 }
