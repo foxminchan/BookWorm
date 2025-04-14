@@ -6,7 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Microsoft.EntityFrameworkCore.Cosmos"/>
+    <PackageReference Include="EFCore.NamingConventions"/>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools"/>
   </ItemGroup>
 
   <ItemGroup>

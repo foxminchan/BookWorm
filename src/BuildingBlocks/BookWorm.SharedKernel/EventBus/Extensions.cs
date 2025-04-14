@@ -8,7 +8,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace BookWorm.SharedKernel.EventBus;
 
-public static class Extension
+public static class Extensions
 {
     public static void AddEventBus(
         this IHostApplicationBuilder builder,

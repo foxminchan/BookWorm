@@ -33,7 +33,7 @@ public static class Extensions
                     warnings.Ignore(RelationalEventId.PendingModelChangesWarning)
                 );
         });
-        builder.EnrichNpgsqlDbContext<CatalogDbContext>();
+        builder.EnrichAzureNpgsqlDbContext<CatalogDbContext>();
 
         if (builder.Environment.IsDevelopment())
         {

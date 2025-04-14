@@ -27,7 +27,7 @@ public static class Extensions
             cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
         });
 
-        builder.AddNpgsqlDbContext<FinanceDbContext>(
+        builder.AddAzureNpgsqlDbContext<FinanceDbContext>(
             Components.Database.Finance,
             configureDbContextOptions: options => options.UseSnakeCaseNamingConvention()
         );

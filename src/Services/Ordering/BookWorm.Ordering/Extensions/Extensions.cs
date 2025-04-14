@@ -37,7 +37,7 @@ public static class Extensions
                     warnings.Ignore(RelationalEventId.PendingModelChangesWarning)
                 );
         });
-        builder.EnrichNpgsqlDbContext<OrderingDbContext>();
+        builder.EnrichAzureNpgsqlDbContext<OrderingDbContext>();
 
         services.AddMigration<OrderingDbContext>();
 
