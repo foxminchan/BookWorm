@@ -1,4 +1,4 @@
-﻿using BookWorm.Constants;
+﻿using Microsoft.Extensions.Configuration;
 
 namespace BookWorm.AppHost.Extensions;
 
@@ -8,9 +8,11 @@ public static class ModelExtensions
     ///     Configures the builder to run as an Ollama instance with specific models and settings.
     /// </summary>
     /// <param name="builder">The resource builder to configure.</param>
+    /// <param name="models">A dictionary of model names and their corresponding Ollama model names.</param>
     /// <returns>The configured resource builder.</returns>
     public static IResourceBuilder<ProjectResource> RunAsOllama(
-        this IResourceBuilder<ProjectResource> builder
+        this IResourceBuilder<ProjectResource> builder,
+        Dictionary<string, string> models
     )
     {
         var ollama = builder
@@ -21,16 +23,24 @@ public static class ModelExtensions
             .WithLifetime(ContainerLifetime.Persistent)
             .PublishAsContainer();
 
-        if (!OperatingSystem.IsMacOS())
+        var enabledGraphics = builder.ApplicationBuilder.Configuration.GetValue<bool>(
+            "Ollama:GPUSupport"
+        );
+
+        if (!OperatingSystem.IsMacOS() && enabledGraphics)
         {
             ollama.WithGPUSupport();
         }
 
-        var embeddings = ollama.AddModel(Components.Ollama.Embedding, "nomic-embed-text:latest");
-
-        var chat = ollama.AddModel(Components.Ollama.Chat, "deepseek-r1:1.5b");
-
-        builder.WithReference(embeddings).WaitFor(embeddings).WithReference(chat).WaitFor(chat);
+        foreach (
+            var ollamaModel in from model in models
+            let name = model.Key
+            let modelName = model.Value
+            select ollama.AddModel(name, modelName)
+        )
+        {
+            builder.WithReference(ollamaModel).WaitFor(ollamaModel);
+        }
 
         return builder;
     }

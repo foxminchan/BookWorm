@@ -68,7 +68,6 @@
     <PackageVersion Include="Saunter" Version="0.13.0"/>
     <PackageVersion Include="DistributedLock.Redis" Version="1.0.3"/>
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0"/>
-    <PackageVersion Include="System.Linq.Async" Version="6.0.1"/>
     <PackageVersion Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0"/>
   </ItemGroup>
 
@@ -91,10 +90,11 @@
 
   <ItemGroup Label="Testing">
     <!-- Testing packages -->
-    <PackageVersion Include="TUnit" Version="0.19.64"/>
+    <PackageVersion Include="TUnit" Version="0.19.74"/>
     <PackageVersion Include="Moq" Version="4.20.72"/>
     <PackageVersion Include="Bogus" Version="35.6.3"/>
     <PackageVersion Include="Shouldly" Version="4.3.0"/>
+    <PackageVersion Include="System.Linq.Async" Version="6.0.1"/>
     <PackageVersion Include="Aspire.Hosting.Testing" Version="$(AspireVersion)"/>
     <PackageVersion Include="GitHubActionsTestLogger" Version="2.4.1"/>
     <!-- Testing Platform -->
