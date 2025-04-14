@@ -62,6 +62,6 @@ public static class Extensions
         // Configure EventBus
         builder.AddEventBus(typeof(IBasketApiMarker), cfg => cfg.AddInMemoryInboxOutbox());
 
-        builder.AddAsyncApiDocs([typeof(IBasketApiMarker)]);
+        builder.AddDefaultAsyncApi([typeof(IBasketApiMarker)]);
     }
 }

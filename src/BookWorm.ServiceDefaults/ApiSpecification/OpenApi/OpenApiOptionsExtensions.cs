@@ -40,6 +40,7 @@ internal static class OpenApiOptionsExtensions
                 {
                     Name = "Nhan Nguyen",
                     Url = new("https://github.com/foxminchan"),
+                    Email = "nguyenxuannhan407@gmail.com",
                 };
 
                 document.Info.Version = apiDescription.ApiVersion.ToString();

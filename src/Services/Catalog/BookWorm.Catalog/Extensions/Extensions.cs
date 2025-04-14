@@ -80,11 +80,11 @@ public static class Extensions
 
         // Other services
         services.AddScoped<IBookSemanticSearch, BookSemanticSearch>();
-        services.AddBookDomainToDtoMapper();
+        services.AddMapper(typeof(ICatalogApiMarker));
 
         // Configure EventBus
         builder.AddEventBus(typeof(ICatalogApiMarker), cfg => cfg.AddInMemoryInboxOutbox());
 
-        builder.AddAsyncApiDocs([typeof(ICatalogApiMarker)]);
+        builder.AddDefaultAsyncApi([typeof(ICatalogApiMarker)]);
     }
 }

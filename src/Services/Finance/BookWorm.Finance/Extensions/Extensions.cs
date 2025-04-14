@@ -75,6 +75,6 @@ public static class Extensions
         services.AddVersioning();
         services.AddEndpoints(typeof(IFinanceApiMarker));
 
-        builder.AddAsyncApiDocs([typeof(IFinanceApiMarker)]);
+        builder.AddDefaultAsyncApi([typeof(IFinanceApiMarker)]);
     }
 }

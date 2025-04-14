@@ -38,7 +38,7 @@ public sealed class ActivityBehavior<TRequest, TResponse>(
 
         if (attr is not null)
         {
-            return await next();
+            return await next(cancellationToken);
         }
 
         var handlerName = outerHandler.GetType().Name;
@@ -56,7 +56,7 @@ public sealed class ActivityBehavior<TRequest, TResponse>(
         {
             return await activityScope.Run(
                 activityName,
-                async (_, _) => await next(),
+                async (_, ct) => await next(ct),
                 new() { Tags = { { tagName, queryName } } },
                 cancellationToken
             );

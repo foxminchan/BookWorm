@@ -4,6 +4,7 @@ using BookWorm.Catalog.Features.Books;
 using BookWorm.Catalog.Features.Books.List;
 using BookWorm.Catalog.Infrastructure.Services;
 using BookWorm.Catalog.UnitTests.Fakers;
+using BookWorm.SharedKernel.Mapper;
 using BookWorm.SharedKernel.SeedWork;
 
 namespace BookWorm.Catalog.UnitTests.Features.Books.List;

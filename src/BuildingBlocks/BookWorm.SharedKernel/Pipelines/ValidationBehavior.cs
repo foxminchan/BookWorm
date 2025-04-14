@@ -56,7 +56,7 @@ public class ValidationBehavior<TRequest, TResponse>(
 
         return await activityScope.Run(
             activityName,
-            async (_, _) => await next(),
+            async (_, ct) => await next(ct),
             new() { Tags = { { TelemetryTags.Validator.Validation, queryName } } },
             cancellationToken
         );
