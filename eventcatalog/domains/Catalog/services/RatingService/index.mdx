@@ -155,7 +155,7 @@ architecture-beta
     group api(logos:microsoft-azure)[API]
 
     service server(logos:docker-icon)[Server] in api
-    service db(database)[Database] in api
+    service db(logos:postgresql)[Database] in api
 
     db:L -- R:server
 ```
