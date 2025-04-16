@@ -1,10 +1,11 @@
-﻿using System.Net.Mail;
-
-namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
+﻿namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
 
 [AsyncApi]
-public sealed class CancelOrderCommandHandler(ISmtpClient smtpClient, EmailOptions emailOptions)
-    : IConsumer<CancelOrderCommand>
+public sealed class CancelOrderCommandHandler(
+    ISender sender,
+    IRenderer renderer,
+    EmailOptions emailOptions
+) : IConsumer<CancelOrderCommand>
 {
     [Channel("notification-cancel-order")]
     [PublishOperation(
@@ -22,16 +23,16 @@ public sealed class CancelOrderCommandHandler(ISmtpClient smtpClient, EmailOptio
             return;
         }
 
-        const string subject = "Your order has been canceled";
-        var body =
-            $"Your order with ID {message.OrderId} has been canceled. Total amount: {message.TotalMoney:C}";
+        var order = message.ToOrder();
 
-        var mailMessage = new MailMessage(emailOptions.From, message.Email, subject, body)
-        {
-            IsBodyHtml = true,
-        };
+        var mailMessage = new OrderMimeMessageBuilder()
+            .WithFrom(emailOptions)
+            .WithTo(order.FullName, message.Email)
+            .WithSubject(order)
+            .WithBody(order, renderer)
+            .Build();
 
-        await smtpClient.SendEmailAsync(mailMessage);
+        await sender.SendAsync(mailMessage);
     }
 }
 

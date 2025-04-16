@@ -1,18 +1,15 @@
-﻿using System.Net.Mail;
-using BookWorm.Notification.Exceptions;
-using BookWorm.SharedKernel.OpenTelemetry;
-using Polly.Registry;
+﻿using Polly.Registry;
 
-namespace BookWorm.Notification.Infrastructure;
+namespace BookWorm.Notification.Infrastructure.Senders;
 
-public sealed class SmtpClientWithOpenTelemetry(
+public sealed class MailKitSender(
     ObjectPool<SmtpClient> clientPool,
-    ILogger<SmtpClientWithOpenTelemetry> logger,
+    ILogger<MailKitSender> logger,
     ResiliencePipelineProvider<string> provider
-) : ISmtpClient
+) : ISender
 {
-    public async Task SendEmailAsync(
-        MailMessage mailMessage,
+    public async Task SendAsync(
+        MimeMessage mailMessage,
         CancellationToken cancellationToken = default
     )
     {
@@ -21,12 +18,13 @@ public sealed class SmtpClientWithOpenTelemetry(
         try
         {
             using var activity = TelemetryTags.ActivitySource.StartActivity(
-                $"{nameof(SmtpClientWithOpenTelemetry)}/{nameof(SendEmailAsync)}",
+                $"{nameof(MailKitSender)}/{nameof(SendAsync)}",
                 ActivityKind.Client
             );
 
             activity?.SetTag(TelemetryTags.SmtpClient.Recipient, mailMessage.To.ToString());
             activity?.SetTag(TelemetryTags.SmtpClient.Subject, mailMessage.Subject);
+            activity?.SetTag(TelemetryTags.SmtpClient.EmailOperation, "Send");
             if (!string.IsNullOrEmpty(mailMessage.Headers["Message-ID"]))
             {
                 activity?.SetTag(
@@ -35,16 +33,14 @@ public sealed class SmtpClientWithOpenTelemetry(
                 );
             }
 
-            activity?.SetTag(TelemetryTags.SmtpClient.EmailOperation, "Send");
-
-            activity.Propagate(mailMessage, InjectHeaderIntoMailMessage);
-
             var pipeline = provider.GetPipeline(nameof(Notification));
 
             await pipeline.ExecuteAsync(
-                async ct => await client.SendMailAsync(mailMessage, ct),
+                async ct => await client.SendAsync(mailMessage, ct),
                 cancellationToken
             );
+
+            await client.DisconnectAsync(true, cancellationToken);
 
             activity?.SetStatus(ActivityStatusCode.Ok);
         }
@@ -61,18 +57,6 @@ public sealed class SmtpClientWithOpenTelemetry(
         finally
         {
             clientPool.Return(client);
-        }
-    }
-
-    private void InjectHeaderIntoMailMessage(MailMessage message, string key, string value)
-    {
-        try
-        {
-            message.Headers.Add(key, value);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to inject trace context header: {Key}", key);
         }
     }
 }
