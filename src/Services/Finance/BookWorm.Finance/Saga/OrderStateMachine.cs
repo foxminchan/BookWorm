@@ -26,6 +26,7 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
                     context.Saga.BasketId = context.Message.BasketId;
                     context.Saga.Email = context.Message.Email;
                     context.Saga.TotalMoney = context.Message.TotalMoney;
+                    context.Saga.FullName = context.Message.FullName;
                     context.Saga.OrderPlacedDate = DateTime.UtcNow;
 
                     logger.LogInformation(
@@ -37,6 +38,7 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
                 .TransitionTo(Placed)
                 .Publish(context => new PlaceOrderCommand(
                     context.Saga.BasketId,
+                    context.Saga.FullName,
                     context.Saga.Email,
                     context.Saga.OrderId,
                     context.Saga.TotalMoney.GetValueOrDefault(0.0M)
@@ -95,6 +97,7 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
                     context.Saga.OrderId = context.Message.OrderId;
                     context.Saga.BasketId = context.Message.BasketId;
                     context.Saga.Email = context.Message.Email;
+                    context.Saga.FullName = context.Message.FullName;
                     context.Saga.TotalMoney = context.Message.TotalMoney;
 
                     logger.LogInformation(
@@ -109,6 +112,7 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
                     x =>
                         x.Publish(context => new CompleteOrderCommand(
                             context.Saga.OrderId,
+                            context.Saga.FullName,
                             context.Saga.Email,
                             context.Saga.TotalMoney.GetValueOrDefault(0.0M)
                         ))
@@ -119,6 +123,7 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
                     context.Saga.OrderId = context.Message.OrderId;
                     context.Saga.BasketId = context.Message.BasketId;
                     context.Saga.Email = context.Message.Email;
+                    context.Saga.FullName = context.Message.FullName;
                     context.Saga.TotalMoney = context.Message.TotalMoney;
 
                     logger.LogInformation(
@@ -133,6 +138,7 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
                     x =>
                         x.Publish(context => new CancelOrderCommand(
                             context.Saga.OrderId,
+                            context.Saga.FullName,
                             context.Saga.Email,
                             context.Saga.TotalMoney.GetValueOrDefault(0.0M)
                         ))

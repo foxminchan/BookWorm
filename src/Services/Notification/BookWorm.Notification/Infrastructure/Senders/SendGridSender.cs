@@ -1,24 +1,21 @@
-﻿using System.Net.Mail;
-using BookWorm.Notification.Exceptions;
-using BookWorm.SharedKernel.OpenTelemetry;
-using Polly.Registry;
+﻿using Polly.Registry;
 using SendGrid.Helpers.Mail;
 
-namespace BookWorm.Notification.Infrastructure;
+namespace BookWorm.Notification.Infrastructure.Senders;
 
-public sealed class SendGridClient(
-    ILogger<SendGridClient> logger,
+public sealed class SendGridSender(
+    ILogger<SendGridSender> logger,
     SendGirdOptions sendGirdOptions,
     ResiliencePipelineProvider<string> provider
-) : ISmtpClient
+) : ISender
 {
-    public async Task SendEmailAsync(
-        MailMessage mailMessage,
+    public async Task SendAsync(
+        MimeMessage mailMessage,
         CancellationToken cancellationToken = default
     )
     {
         using var activity = TelemetryTags.ActivitySource.StartActivity(
-            $"{nameof(SmtpClientWithOpenTelemetry)}/{nameof(SendEmailAsync)}",
+            $"{nameof(MailKitSender)}/{nameof(SendAsync)}",
             ActivityKind.Client
         );
 
@@ -26,17 +23,16 @@ public sealed class SendGridClient(
         activity?.SetTag(TelemetryTags.SmtpClient.Subject, mailMessage.Subject);
         activity?.SetTag(TelemetryTags.SmtpClient.MessageId, mailMessage.Headers["Message-ID"]);
         activity?.SetTag(TelemetryTags.SmtpClient.EmailOperation, "Send");
-        activity?.Propagate(mailMessage, InjectHeaderIntoMailMessage);
 
         var sendGridClient = new SendGrid.SendGridClient(sendGirdOptions.ApiKey);
         var message = new SendGridMessage
         {
             From = new(sendGirdOptions.SenderEmail, sendGirdOptions.SenderName),
             Subject = mailMessage.Subject,
-            HtmlContent = mailMessage.Body,
+            HtmlContent = mailMessage.HtmlBody,
         };
 
-        foreach (var recipient in mailMessage.To)
+        foreach (var recipient in mailMessage.To.Mailboxes)
         {
             message.AddTo(new EmailAddress(recipient.Address));
         }
@@ -59,18 +55,6 @@ public sealed class SendGridClient(
             throw new NotificationException(
                 $"Failed to send email. Status code: {response.StatusCode}"
             );
-        }
-    }
-
-    private void InjectHeaderIntoMailMessage(MailMessage message, string key, string value)
-    {
-        try
-        {
-            message.Headers.Add(key, value);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to inject header into mail message");
         }
     }
 }

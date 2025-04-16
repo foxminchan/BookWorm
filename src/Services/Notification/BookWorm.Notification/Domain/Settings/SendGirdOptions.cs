@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Notification;
+﻿namespace BookWorm.Notification.Domain.Settings;
 
 [ExcludeFromCodeCoverage]
 public sealed class SendGirdOptions

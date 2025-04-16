@@ -6,25 +6,31 @@ public sealed class EventMapper(ClaimsPrincipal claimsPrincipal) : IEventMapper
 {
     public IntegrationEvent MapToIntegrationEvent(DomainEvent @event)
     {
+        var email = claimsPrincipal.GetClaimValue(KeycloakClaimTypes.Email);
+        var fullName = claimsPrincipal.GetClaimValue(KeycloakClaimTypes.Name);
+
         return @event switch
         {
             OrderPlacedEvent orderPlacedEvent => new UserCheckedOutIntegrationEvent(
                 orderPlacedEvent.Order.Id,
                 orderPlacedEvent.Order.BuyerId,
-                claimsPrincipal.GetClaimValue(KeycloakClaimTypes.Email),
+                fullName,
+                email,
                 orderPlacedEvent.Order.TotalPrice
             ),
             OrderCancelledEvent orderCancelledEvent =>
                 new OrderStatusChangedToCancelIntegrationEvent(
                     orderCancelledEvent.Order.Id,
                     orderCancelledEvent.Order.BuyerId,
-                    claimsPrincipal.GetClaimValue(KeycloakClaimTypes.Email),
+                    fullName,
+                    email,
                     orderCancelledEvent.Order.TotalPrice
                 ),
             OrderCompletedEvent completedEvent => new OrderStatusChangedToCompleteIntegrationEvent(
                 completedEvent.Order.Id,
                 completedEvent.Order.BuyerId,
-                claimsPrincipal.GetClaimValue(KeycloakClaimTypes.Email),
+                fullName,
+                email,
                 completedEvent.Order.TotalPrice
             ),
             _ => throw new ArgumentOutOfRangeException(nameof(@event), @event, null),
