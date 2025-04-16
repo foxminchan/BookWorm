@@ -1,0 +1,72 @@
+<mjml>
+  <mj-head>
+    <mj-title>Order Notification</mj-title>
+    <mj-font name="Roboto" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" />
+    <mj-attributes>
+      <mj-all font-family="Roboto, Arial, sans-serif" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f4f4f4">
+    <mj-section background-color="#ffffff" padding="20px 0">
+      <mj-column>
+        <mj-text align="center" font-size="24px" color="#333333" font-weight="bold">
+          Order Notification
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#ffffff" padding="20px 0">
+      <mj-column>
+        <mj-text font-size="16px" color="#333333">
+          Hello {{FullName}},
+        </mj-text>
+        <mj-text font-size="16px" color="#333333">
+          Thank you for your order. Here are your order details:
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#ffffff" padding="20px 0">
+      <mj-column>
+        <mj-table>
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #e0e0e0;"><strong>Order ID:</strong></td>
+            <td style="padding: 10px; border-bottom: 1px solid #e0e0e0;">{{Id}}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #e0e0e0;"><strong>Status:</strong></td>
+            <td style="padding: 10px; border-bottom: 1px solid #e0e0e0;">{{Status}}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #e0e0e0;"><strong>Total Amount:</strong></td>
+            <td style="padding: 10px; border-bottom: 1px solid #e0e0e0;">${{TotalMoney}}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px;"><strong>Order Date:</strong></td>
+            <td style="padding: 10px;">{{CreatedAt}}</td>
+          </tr>
+        </mj-table>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#ffffff" padding="20px 0">
+      <mj-column>
+        <mj-text font-size="16px" color="#333333">
+          If you have any questions about your order, please don't hesitate to contact us.
+        </mj-text>
+        <mj-text font-size="16px" color="#333333">
+          Best regards,<br/>
+          BookWorm Team
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#f4f4f4" padding="20px 0">
+      <mj-column>
+        <mj-text align="center" font-size="12px" color="#666666">
+          © {{Year}} BookWorm. All rights reserved.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

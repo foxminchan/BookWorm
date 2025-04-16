@@ -1,7 +1,4 @@
-﻿using System.Net.Mail;
-using SendGridClient = BookWorm.Notification.Infrastructure.SendGridClient;
-
-namespace BookWorm.Notification.Extensions;
+﻿namespace BookWorm.Notification.Extensions;
 
 [ExcludeFromCodeCoverage]
 public static class Extensions
@@ -34,11 +31,13 @@ public static class Extensions
             }
         );
 
-        // If the application is running in development mode, use the local SMTP server
-        // Otherwise, use SendGrid for sending emails
+        builder.Services.AddTransient<IRenderer, MjmlRenderer>();
+
+        // Register the mailkit sender for development
+        // and the sendgrid sender for other environments
         if (builder.Environment.IsDevelopment())
         {
-            services.AddSingleton<ISmtpClient, SmtpClientWithOpenTelemetry>();
+            services.AddSingleton<ISender, MailKitSender>();
 
             services.AddSingleton(sp =>
                 ObjectPool.Create(new DependencyInjectionObjectPoolPolicy<SmtpClient>(sp))
@@ -53,14 +52,16 @@ public static class Extensions
                         ?? throw new InvalidOperationException("SMTP URI is not configured.")
                 );
 
-                var smtpClient = new SmtpClient(smtpUri.Host, smtpUri.Port);
+                var smtpClient = new SmtpClient();
+
+                smtpClient.Connect(smtpUri.Host, smtpUri.Port);
 
                 if (!string.Equals(smtpUri.Host, "localhost", StringComparison.OrdinalIgnoreCase))
                 {
-                    smtpClient.EnableSsl = true;
+                    smtpClient.SslProtocols = SslProtocols.Tls13;
                 }
 
-                smtpClient.Credentials = new NetworkCredential(smtpUri.UserName, smtpUri.Password);
+                smtpClient.Authenticate(smtpUri.UserName, smtpUri.Password);
                 return smtpClient;
             });
 
@@ -75,8 +76,6 @@ public static class Extensions
         }
         else
         {
-            services.AddSingleton<ISmtpClient, SendGridClient>();
-
             var sendGirdOptions = new SendGirdOptions
             {
                 ApiKey = string.Empty,
@@ -90,6 +89,8 @@ public static class Extensions
                 .ValidateDataAnnotations();
 
             services.AddSingleton(sendGirdOptions);
+
+            services.AddSingleton<ISender, SendGridSender>();
 
             services
                 .AddHealthChecks()

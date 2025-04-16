@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Notification.Infrastructure;
+﻿namespace BookWorm.Notification.Infrastructure.Senders;
 
 public static class TelemetryTags
 {

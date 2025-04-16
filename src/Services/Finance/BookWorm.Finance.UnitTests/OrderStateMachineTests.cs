@@ -9,6 +9,7 @@ namespace BookWorm.Finance.UnitTests;
 public sealed class OrderStateMachineTests
 {
     private const string? DefaultTestEmail = "example@email.com";
+    private const string DefaultTestFullName = "John Doe";
     private ITestHarness _harness = null!;
     private ServiceProvider _provider = null!;
     private ISagaStateMachineTestHarness<OrderStateMachine, OrderState> _sagaHarness = null!;
@@ -39,6 +40,7 @@ public sealed class OrderStateMachineTests
         Guid? orderId = null,
         Guid? basketId = null,
         string? email = DefaultTestEmail,
+        string? fullName = DefaultTestFullName,
         decimal totalMoney = 100.0m
     )
     {
@@ -48,6 +50,7 @@ public sealed class OrderStateMachineTests
         var checkoutEvent = new UserCheckedOutIntegrationEvent(
             orderId.Value,
             basketId.Value,
+            fullName,
             email,
             totalMoney
         );
@@ -90,6 +93,7 @@ public sealed class OrderStateMachineTests
         var @event = new UserCheckedOutIntegrationEvent(
             orderId,
             basketId,
+            DefaultTestFullName,
             DefaultTestEmail,
             totalMoney
         );
@@ -117,6 +121,7 @@ public sealed class OrderStateMachineTests
         var message = publishedMessage.Context.Message;
         message.BasketId.ShouldBe(basketId);
         message.OrderId.ShouldBe(orderId);
+        message.FullName.ShouldBe(DefaultTestFullName);
         message.Email.ShouldBe(DefaultTestEmail);
         message.TotalMoney.ShouldBe(totalMoney);
     }
@@ -213,6 +218,7 @@ public sealed class OrderStateMachineTests
         var @event = new OrderStatusChangedToCompleteIntegrationEvent(
             orderId,
             basketId,
+            DefaultTestFullName,
             email,
             totalMoney
         );
@@ -239,6 +245,7 @@ public sealed class OrderStateMachineTests
             var publishedMessage = _harness.Published.Select<CompleteOrderCommand>().First();
             var message = publishedMessage.Context.Message;
             message.OrderId.ShouldBe(orderId);
+            message.FullName.ShouldBe(DefaultTestFullName);
             message.Email.ShouldBe(email);
             message.TotalMoney.ShouldBe(totalMoney);
         }
@@ -265,6 +272,7 @@ public sealed class OrderStateMachineTests
         var @event = new OrderStatusChangedToCancelIntegrationEvent(
             orderId,
             basketId,
+            DefaultTestFullName,
             email,
             totalMoney
         );
@@ -291,6 +299,7 @@ public sealed class OrderStateMachineTests
             var publishedMessage = _harness.Published.Select<CancelOrderCommand>().First();
             var message = publishedMessage.Context.Message;
             message.OrderId.ShouldBe(orderId);
+            message.FullName.ShouldBe(DefaultTestFullName);
             message.Email.ShouldBe(email);
             message.TotalMoney.ShouldBe(totalMoney);
         }

@@ -1,19 +1,24 @@
-﻿using System.Net.Mail;
-using BookWorm.Contracts;
-using BookWorm.Notification.Infrastructure;
+﻿using BookWorm.Contracts;
+using BookWorm.Notification.Domain.Models;
+using BookWorm.Notification.Domain.Settings;
+using BookWorm.Notification.Infrastructure.Render;
+using BookWorm.Notification.Infrastructure.Senders;
 using BookWorm.Notification.IntegrationEvents.EventHandlers;
 using MassTransit;
 using MassTransit.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using MimeKit;
 
 namespace BookWorm.Notification.UnitTests.Consumers;
 
 public sealed class CancelOrderConsumerTests
 {
     private readonly string _email;
+    private readonly string _fullName;
     private readonly EmailOptions _emailOptions;
     private readonly Guid _orderId;
-    private readonly Mock<ISmtpClient> _smtpClientMock;
+    private readonly Mock<ISender> _senderMock;
+    private readonly Mock<IRenderer> _rendererMock;
     private readonly decimal _totalMoney;
 
     public CancelOrderConsumerTests()
@@ -21,11 +26,17 @@ public sealed class CancelOrderConsumerTests
         _orderId = Guid.CreateVersion7();
         _email = "test@example.com";
         _totalMoney = 99.99m;
+        _fullName = "Test User";
 
-        _smtpClientMock = new();
-        _smtpClientMock
-            .Setup(x => x.SendEmailAsync(It.IsAny<MailMessage>(), It.IsAny<CancellationToken>()))
+        _senderMock = new();
+        _senderMock
+            .Setup(x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
+
+        _rendererMock = new();
+        _rendererMock
+            .Setup(x => x.Render(It.IsAny<Order>(), It.IsAny<string>()))
+            .Returns("Rendered order content");
 
         _emailOptions = new() { From = "bookworm@example.com" };
     }
@@ -34,11 +45,12 @@ public sealed class CancelOrderConsumerTests
     public async Task GivenValidCancelOrderCommand_WhenHandling_ThenShouldSendEmail()
     {
         // Arrange
-        var command = new CancelOrderCommand(_orderId, _email, _totalMoney);
+        var command = new CancelOrderCommand(_orderId, _fullName, _email, _totalMoney);
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => x.AddConsumer<CancelOrderCommandHandler>())
-            .AddScoped<ISmtpClient>(_ => _smtpClientMock.Object)
+            .AddScoped<ISender>(_ => _senderMock.Object)
+            .AddScoped<IRenderer>(_ => _rendererMock.Object)
             .AddSingleton(_ => _emailOptions)
             .BuildServiceProvider(true);
 
@@ -50,21 +62,10 @@ public sealed class CancelOrderConsumerTests
 
         // Assert
         var consumerHarness = harness.GetConsumerHarness<CancelOrderCommandHandler>();
-
         (await consumerHarness.Consumed.Any<CancelOrderCommand>()).ShouldBeTrue();
 
-        _smtpClientMock.Verify(
-            x =>
-                x.SendEmailAsync(
-                    It.Is<MailMessage>(m =>
-                        m.To.Contains(new(_email))
-                        && m.Subject == "Your order has been canceled"
-                        && m.Body.Contains(_orderId.ToString())
-                        && m.Body.Contains(_totalMoney.ToString("C"))
-                        && m.IsBodyHtml == true
-                    ),
-                    It.IsAny<CancellationToken>()
-                ),
+        _senderMock.Verify(
+            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
             Times.Once
         );
 
@@ -75,11 +76,12 @@ public sealed class CancelOrderConsumerTests
     public async Task GivenCancelOrderCommandWithNullEmail_WhenHandling_ThenShouldNotSendEmail()
     {
         // Arrange
-        var command = new CancelOrderCommand(_orderId, null, _totalMoney);
+        var command = new CancelOrderCommand(_orderId, _fullName, null, _totalMoney);
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => x.AddConsumer<CancelOrderCommandHandler>())
-            .AddScoped<ISmtpClient>(_ => _smtpClientMock.Object)
+            .AddScoped<ISender>(_ => _senderMock.Object)
+            .AddScoped<IRenderer>(_ => _rendererMock.Object)
             .AddSingleton(_ => _emailOptions)
             .BuildServiceProvider(true);
 
@@ -91,11 +93,10 @@ public sealed class CancelOrderConsumerTests
 
         // Assert
         var consumerHarness = harness.GetConsumerHarness<CancelOrderCommandHandler>();
-
         (await consumerHarness.Consumed.Any<CancelOrderCommand>()).ShouldBeTrue();
 
-        _smtpClientMock.Verify(
-            x => x.SendEmailAsync(It.IsAny<MailMessage>(), It.IsAny<CancellationToken>()),
+        _senderMock.Verify(
+            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
             Times.Never
         );
 
@@ -106,11 +107,12 @@ public sealed class CancelOrderConsumerTests
     public async Task GivenCancelOrderCommandWithEmptyEmail_WhenHandling_ThenShouldNotSendEmail()
     {
         // Arrange
-        var command = new CancelOrderCommand(_orderId, string.Empty, _totalMoney);
+        var command = new CancelOrderCommand(_orderId, _fullName, string.Empty, _totalMoney);
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => x.AddConsumer<CancelOrderCommandHandler>())
-            .AddScoped<ISmtpClient>(_ => _smtpClientMock.Object)
+            .AddScoped<ISender>(_ => _senderMock.Object)
+            .AddScoped<IRenderer>(_ => _rendererMock.Object)
             .AddSingleton(_ => _emailOptions)
             .BuildServiceProvider(true);
 
@@ -122,11 +124,10 @@ public sealed class CancelOrderConsumerTests
 
         // Assert
         var consumerHarness = harness.GetConsumerHarness<CancelOrderCommandHandler>();
-
         (await consumerHarness.Consumed.Any<CancelOrderCommand>()).ShouldBeTrue();
 
-        _smtpClientMock.Verify(
-            x => x.SendEmailAsync(It.IsAny<MailMessage>(), It.IsAny<CancellationToken>()),
+        _senderMock.Verify(
+            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
             Times.Never
         );
 

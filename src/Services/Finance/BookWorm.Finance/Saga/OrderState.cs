@@ -4,6 +4,7 @@ public sealed class OrderState : SagaStateMachineInstance, ISagaVersion
 {
     public Guid OrderId { get; set; }
     public Guid BasketId { get; set; }
+    public string? FullName { get; set; }
     public string? Email { get; set; }
     public string CurrentState { get; set; } = default!;
     public decimal? TotalMoney { get; set; }
