@@ -7,7 +7,7 @@ public static class Extensions
     {
         var services = builder.Services;
 
-        services.AddDefaultCors();
+        builder.AddDefaultCors();
 
         services.AddGrpc();
 

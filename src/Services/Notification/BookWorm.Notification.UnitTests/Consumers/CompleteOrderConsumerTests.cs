@@ -1,4 +1,6 @@
 ﻿using BookWorm.Contracts;
+using BookWorm.Notification.Domain.Builders;
+using BookWorm.Notification.Domain.Exceptions;
 using BookWorm.Notification.Domain.Models;
 using BookWorm.Notification.Domain.Settings;
 using BookWorm.Notification.Infrastructure.Render;
@@ -163,6 +165,47 @@ public sealed class CompleteOrderConsumerTests
         _senderMock.Verify(
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
             Times.Once
+        );
+
+        await harness.Stop();
+    }
+
+    [Test]
+    public async Task GivenOrderWithInvalidStatus_WhenHandling_ThenShouldThrowNotificationException()
+    {
+        // Arrange
+        const Status invalidStatus = (Status)99; // Invalid status value
+        var order = new Order(_orderId, FullName, TotalMoney, invalidStatus);
+
+        _rendererMock
+            .Setup(x => x.Render(It.Is<Order>(o => o.Status == invalidStatus), It.IsAny<string>()))
+            .Returns("Rendered order content");
+
+        await using var provider = new ServiceCollection()
+            .AddMassTransitTestHarness(x => x.AddConsumer<CompleteOrderCommandHandler>())
+            .AddScoped<ISender>(_ => _senderMock.Object)
+            .AddScoped<IRenderer>(_ => _rendererMock.Object)
+            .AddSingleton(_ => _emailOptions)
+            .BuildServiceProvider(true);
+
+        var harness = provider.GetRequiredService<ITestHarness>();
+        await harness.Start();
+
+        // Create a message builder and test it directly
+        var builder = OrderMimeMessageBuilder.Initialize();
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<NotificationException>(() =>
+        {
+            builder.WithSubject(order);
+            return Task.CompletedTask;
+        });
+
+        exception.Message.ShouldBe($"Invalid status: {invalidStatus}");
+
+        _senderMock.Verify(
+            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
+            Times.Never
         );
 
         await harness.Stop();

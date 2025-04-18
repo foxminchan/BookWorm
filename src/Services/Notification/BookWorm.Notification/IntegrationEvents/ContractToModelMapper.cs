@@ -8,34 +8,26 @@ public static class ContractToModelMapper
 
     public static Order ToOrder(this CancelOrderCommand command)
     {
-        return new()
-        {
-            Id = command.OrderId,
-            FullName = command.FullName ?? Customer,
-            TotalMoney = command.TotalMoney,
-            Status = Status.Canceled,
-        };
+        return new(
+            command.OrderId,
+            command.FullName ?? Customer,
+            command.TotalMoney,
+            Status.Canceled
+        );
     }
 
     public static Order ToOrder(this PlaceOrderCommand command)
     {
-        return new()
-        {
-            Id = command.OrderId,
-            FullName = command.FullName ?? Customer,
-            TotalMoney = command.TotalMoney,
-            Status = Status.New,
-        };
+        return new(command.OrderId, command.FullName ?? Customer, command.TotalMoney, Status.New);
     }
 
     public static Order ToOrder(this CompleteOrderCommand command)
     {
-        return new()
-        {
-            Id = command.OrderId,
-            FullName = command.FullName ?? Customer,
-            TotalMoney = command.TotalMoney,
-            Status = Status.Completed,
-        };
+        return new(
+            command.OrderId,
+            command.FullName ?? Customer,
+            command.TotalMoney,
+            Status.Completed
+        );
     }
 }

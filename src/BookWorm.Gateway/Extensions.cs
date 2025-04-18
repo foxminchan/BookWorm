@@ -12,11 +12,11 @@ public static class Extensions
         var services = builder.Services;
         const string proxySection = "ReverseProxy";
 
+        builder.AddDefaultCors();
+
         builder.AddDefaultAuthentication().AddKeycloakClaimsTransformation();
 
         services.AddProblemDetails();
-
-        services.AddDefaultCors();
 
         services.AddHttpForwarderWithServiceDiscovery();
 

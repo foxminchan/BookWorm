@@ -56,7 +56,13 @@ public static class Extensions
 
                 smtpClient.Connect(smtpUri.Host, smtpUri.Port);
 
-                if (!string.Equals(smtpUri.Host, "localhost", StringComparison.OrdinalIgnoreCase))
+                if (
+                    !string.Equals(
+                        smtpUri.Host,
+                        Restful.Host.Localhost,
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                )
                 {
                     smtpClient.SslProtocols = SslProtocols.Tls13;
                 }
@@ -97,7 +103,7 @@ public static class Extensions
                 .AddCheck<SendGridHealthCheck>(nameof(SendGridHealthCheck), HealthStatus.Degraded);
         }
 
-        services.AddDefaultCors();
+        builder.AddDefaultCors();
 
         services.AddOpenTelemetry().WithTracing(t => t.AddSource(TelemetryTags.ActivitySourceName));
 

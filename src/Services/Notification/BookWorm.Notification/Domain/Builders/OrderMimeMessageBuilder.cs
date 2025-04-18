@@ -6,10 +6,18 @@ namespace BookWorm.Notification.Domain.Builders;
 public sealed class OrderMimeMessageBuilder
 {
     private const string TemplatePath = "Templates/OrderEmail.mjml";
+
+    private OrderMimeMessageBuilder() { }
+
     private string Subject { get; set; } = string.Empty;
     private MimeEntity Body { get; set; } = new TextPart(TextFormat.Html) { Text = string.Empty };
     private MailboxAddress To { get; set; } = new(string.Empty, string.Empty);
     private MailboxAddress From { get; set; } = new(string.Empty, string.Empty);
+
+    public static OrderMimeMessageBuilder Initialize()
+    {
+        return new();
+    }
 
     public OrderMimeMessageBuilder WithTo(string fullName, string email)
     {

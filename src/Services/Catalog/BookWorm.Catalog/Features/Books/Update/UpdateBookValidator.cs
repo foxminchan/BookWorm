@@ -1,9 +1,9 @@
-﻿namespace BookWorm.Catalog.Features.Books.Update;
+﻿using BookWorm.Catalog.Features.Books.Shared;
+
+namespace BookWorm.Catalog.Features.Books.Update;
 
 public sealed class UpdateBookValidator : AbstractValidator<UpdateBookCommand>
 {
-    private const int MaxFileSize = 1048576;
-
     public UpdateBookValidator()
     {
         RuleFor(x => x.Id).NotEmpty();
@@ -22,28 +22,7 @@ public sealed class UpdateBookValidator : AbstractValidator<UpdateBookCommand>
 
         RuleFor(x => x.AuthorIds).NotEmpty();
 
-        When(
-            IsHasFiles,
-            () =>
-            {
-                RuleFor(x => x.Image!)
-                    .ChildRules(image =>
-                    {
-                        image
-                            .RuleFor(x => x.Length)
-                            .LessThanOrEqualTo(MaxFileSize)
-                            .WithMessage(
-                                $"The file size should not exceed {MaxFileSize / 1024} KB."
-                            );
-                        image
-                            .RuleFor(x => x.ContentType)
-                            .Must(x => x is MediaTypeNames.Image.Jpeg or MediaTypeNames.Image.Png)
-                            .WithMessage(
-                                "File type is not allowed. Allowed file types are JPEG and PNG."
-                            );
-                    });
-            }
-        );
+        When(IsHasFiles, () => RuleFor(x => x.Image!).SetValidator(new ImageValidator()));
     }
 
     private static bool IsHasFiles(UpdateBookCommand command)
