@@ -8,14 +8,17 @@ badges:
   - content: POST
     textColor: green
     backgroundColor: green
+    icon: PlusIcon
   - content: "Author"
     textColor: yellow
     backgroundColor: yellow
+    icon: UserIcon
   - content: "Admin Only"
     textColor: red
     backgroundColor: red
+    icon: LockClosedIcon
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 ---
 
 ## Overview
@@ -105,6 +108,7 @@ curl -X POST "https://api.bookworm.com/api/v1/authors/{id}" \
 #### <span className="text-orange-500">400 Bad Request</span>
 
 Returned when:
+
 - Author name is empty
 - Author name exceeds maximum length
 - Invalid request format

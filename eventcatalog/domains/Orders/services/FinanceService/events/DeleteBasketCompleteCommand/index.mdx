@@ -9,15 +9,18 @@ badges:
   - content: Orchestrated
     textColor: orange
     backgroundColor: orange
+    icon: CubeTransparentIcon
   - content: Success Flow
     textColor: green
     backgroundColor: green
+    icon: ArrowPathIcon
   - content: Channel:amqp
     backgroundColor: green
     textColor: white
+    icon: ArrowPathIcon
 schemaPath: schema.json
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 ---
 
 ## Overview
@@ -32,10 +35,10 @@ The `DeleteBasketCompleteCommand` is an integration event published by the Finan
 
 The command contains the following properties:
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `OrderId` | `Guid` | Unique identifier for the associated order |
-| `TotalMoney` | `decimal` | Total monetary value of the order |
+| Property     | Type      | Description                                |
+| ------------ | --------- | ------------------------------------------ |
+| `OrderId`    | `Guid`    | Unique identifier for the associated order |
+| `TotalMoney` | `decimal` | Total monetary value of the order          |
 
 ## Workflow Context
 

@@ -1,7 +1,7 @@
 ﻿using BookWorm.SharedKernel.SeedWork.Event;
 using MassTransit;
 
-namespace BookWorm.SharedKernel.SeedWork;
+namespace BookWorm.SharedKernel.EventBus;
 
 public sealed class EventDispatcher(IPublishEndpoint publishEndpoint, IEventMapper eventMapper)
     : IEventDispatcher

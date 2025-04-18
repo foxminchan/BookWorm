@@ -16,7 +16,8 @@ public sealed class ListBuyersEndpoint
             .WithName(nameof(ListBuyersEndpoint))
             .WithSummary("List Buyers")
             .WithDescription("List all buyers with pagination options")
-            .MapToApiVersion(new(1, 0));
+            .MapToApiVersion(new(1, 0))
+            .RequireAuthorization(Authorization.Policies.Admin);
     }
 
     public async Task<Ok<PagedResult<BuyerDto>>> HandleAsync(

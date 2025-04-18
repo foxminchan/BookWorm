@@ -8,14 +8,17 @@ badges:
   - content: PUT
     textColor: orange
     backgroundColor: orange
+    icon: PencilIcon
   - content: "Publisher"
     textColor: yellow
     backgroundColor: yellow
+    icon: BuildingOfficeIcon
   - content: "Admin Only"
     textColor: red
     backgroundColor: red
+    icon: LockClosedIcon
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 ---
 
 ## Overview
@@ -61,6 +64,7 @@ This endpoint requires admin-level authorization to access. The request must inc
 The following validation rules are applied to the request:
 
 1. Publisher ID:
+
    - Must not be empty
    - Must be a valid GUID format
 
@@ -73,6 +77,7 @@ The following validation rules are applied to the request:
 #### <span className="text-orange-500">400 Bad Request</span>
 
 Returned when the request validation fails. This includes:
+
 - Invalid publisher ID format
 - Empty or invalid publisher name
 - Name exceeds maximum length
@@ -94,6 +99,7 @@ Returned when the publisher is successfully updated. The response body is empty.
 ### Error Handling
 
 The endpoint implements proper error handling for various scenarios:
+
 - Validation errors are returned as 400 Bad Request
 - Authentication/Authorization errors return 401 Unauthorized
 - Non-existent publishers return 404 Not Found

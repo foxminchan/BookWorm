@@ -7,9 +7,11 @@ badges:
   - content: Saga
     textColor: blue
     backgroundColor: blue
+    icon: CubeTransparentIcon
   - content: Event-Driven
     textColor: purple
     backgroundColor: purple
+    icon: BoltIcon
 sends:
   - id: CancelOrderCommand
     version: 1.0.0
@@ -39,17 +41,37 @@ specifications:
   openapiPath: finance-api.yml
   asyncapiPath: finance-service.yml
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 repository:
   language: C#
   url: https://github.com/foxminchan/BookWorm
 ---
 
-<Tiles >
-    <Tile icon="DocumentIcon" href={`/docs/services/${frontmatter.id}/${frontmatter.version}/changelog`}  title="View the changelog" description="Want to know the history of this service? View the change logs" />
-    <Tile icon="UserGroupIcon" href="/docs/users/nhanxnguyen" title="Contact the author" description="Any questions? Feel free to contact the owners" />
-    <Tile icon="BoltIcon" href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`} title={`Sends ${frontmatter.sends.length} messages`} description="This service sends messages to downstream consumers" />
-    <Tile icon="BoltIcon"  href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`} title={`Receives ${frontmatter.receives.length} messages`} description="This service receives messages from other services" />
+<Tiles>
+  <Tile
+    icon="DocumentIcon"
+    href={`/docs/services/${frontmatter.id}/${frontmatter.version}/changelog`}
+    title="View the changelog"
+    description="Want to know the history of this service? View the change logs"
+  />
+  <Tile
+    icon="UserGroupIcon"
+    href="/docs/users/nhanxnguyen"
+    title="Contact the author"
+    description="Any questions? Feel free to contact the owners"
+  />
+  <Tile
+    icon="BoltIcon"
+    href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
+    title={`Sends ${frontmatter.sends.length} messages`}
+    description="This service sends messages to downstream consumers"
+  />
+  <Tile
+    icon="BoltIcon"
+    href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
+    title={`Receives ${frontmatter.receives.length} messages`}
+    description="This service receives messages from other services"
+  />
 </Tiles>
 
 ## Overview
@@ -65,6 +87,37 @@ The Finance service implements a sophisticated event-driven architecture using M
 - **Outbox Pattern**: Ensures reliable message delivery with transactional outbox
 - **Correlation**: Links related events using correlation IDs (OrderId)
 
+## Component Diagram
+
+```mermaid
+C4Component
+    title Component diagram for Finance Service
+
+    Container_Boundary(finance, "Finance Service") {
+        Component(sagaOrchestrator, "Saga Orchestrator", ".NET", "Coordinates distributed transactions")
+        ComponentDb(financeDb, "Finance DB", "PostgreSQL", "Stores financial records and transactions")
+    }
+
+    SystemQueue(eventBus, "RabbitMQ", "Handles async communication")
+    Container(orderService, "Order Service", ".NET", "Manages order processing")
+    Container(basketService, "Basket Service", ".NET", "Manages basket processing")
+    Container(notificationService, "Notification Service", ".NET", "Sends notifications")
+
+    Rel(sagaOrchestrator, financeDb, "Reads/Writes", "SQL")
+    Rel(sagaOrchestrator, eventBus, "Publishes events", "Async")
+    Rel(eventBus, sagaOrchestrator, "Subscribes to events", "Async")
+
+    Rel(eventBus, orderService, "Notifies", "Async")
+    Rel(eventBus, basketService, "Notifies", "Async")
+    Rel(eventBus, notificationService, "Notifies", "Async")
+
+    Rel(orderService, eventBus, "Notifies", "Async")
+    Rel(basketService, eventBus, "Notifies", "Async")
+    Rel(notificationService, eventBus, "Notifies", "Async")
+
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+```
+
 ### Technical Implementation
 
 The service is built with modern .NET technologies and patterns:
@@ -79,24 +132,27 @@ The service is built with modern .NET technologies and patterns:
 
 The Finance service implements a state machine with the following states:
 
-| State | Description |
-|-------|-------------|
-| **Placed** | Initial state when an order is placed via `UserCheckedOutIntegrationEvent` |
-| **Completed** | Final state for successfully processed orders |
-| **Cancelled** | State for orders that have been cancelled |
-| **Failed** | State for orders that encountered errors during processing |
+| State         | Description                                                                |
+| ------------- | -------------------------------------------------------------------------- |
+| **Placed**    | Initial state when an order is placed via `UserCheckedOutIntegrationEvent` |
+| **Completed** | Final state for successfully processed orders                              |
+| **Cancelled** | State for orders that have been cancelled                                  |
+| **Failed**    | State for orders that encountered errors during processing                 |
 
 ### State Transitions
 
 The state machine handles the following transitions:
 
 1. **Initially → Placed**: When `OrderPlaced` event is received
+
    - Publishes `PlaceOrderCommand`
 
 2. **Placed → Failed**: When `BasketDeletedFailed` event is received
+
    - Publishes `DeleteBasketFailedCommand`
 
 3. **Placed → Completed**: When `OrderCompleted` event is received
+
    - Publishes `CompleteOrderCommand` (if email is available)
 
 4. **Placed → Cancelled**: When `OrderCancelled` event is received
@@ -104,13 +160,13 @@ The state machine handles the following transitions:
 
 ## Core Features
 
-| Feature | Description |
-|---------|-------------|
-| **Order Processing** | Orchestrates the financial aspects of order processing, including payment authorization, capture, and settlement |
-| **Basket Cleanup** | Manages the deletion of baskets after order placement, with failure handling |
-| **Order State Tracking** | Maintains the state of orders throughout their lifecycle |
-| **Event-Driven Communication** | Publishes and subscribes to events for asynchronous processing |
-| **State Querying** | Provides API endpoints to retrieve current order state |
+| Feature                        | Description                                                                                                      |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| **Order Processing**           | Orchestrates the financial aspects of order processing, including payment authorization, capture, and settlement |
+| **Basket Cleanup**             | Manages the deletion of baskets after order placement, with failure handling                                     |
+| **Order State Tracking**       | Maintains the state of orders throughout their lifecycle                                                         |
+| **Event-Driven Communication** | Publishes and subscribes to events for asynchronous processing                                                   |
+| **State Querying**             | Provides API endpoints to retrieve current order state                                                           |
 
 ## Architecture diagram
 

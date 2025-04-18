@@ -25,6 +25,7 @@ public static class OpenApiExtensions
                     options.ApplySchemaNullableFalse();
                     options.ApplySecuritySchemeDefinitions();
                     options.ApplyOperationDeprecatedStatus();
+                    options.AddAuthResponse();
                 }
             );
         }

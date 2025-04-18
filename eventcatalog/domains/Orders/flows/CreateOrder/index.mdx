@@ -7,11 +7,13 @@ badges:
   - content: Order Lifecycle
     textColor: green
     backgroundColor: green
+    icon: ShoppingCartIcon
   - content: Checkout
     textColor: blue
     backgroundColor: blue
+    icon: CreditCardIcon
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 steps:
   - id: "create_order_initiated"
     title: "User Creates Order"
@@ -151,16 +153,19 @@ This event is then picked up by the Ordering Service, which then sends a `PlaceO
 ### Key Steps in the Order Creation Flow
 
 1. **Basket Checkout**
+
    - User initiates checkout with items in their basket
    - System validates basket contents and availability
    - `UserCheckedOutIntegrationEvent` is published
 
 2. **Order Processing**
+
    - Finance service receives checkout event
    - Order state machine transitions to `Placed` state
    - Basket deletion is requested via `PlaceOrderCommand`
 
 3. **Basket Cleanup**
+
    - Basket service processes deletion request
    - On success: `BasketDeletedCompleteIntegrationEvent` is published
    - On failure: `BasketDeletedFailedIntegrationEvent` is published

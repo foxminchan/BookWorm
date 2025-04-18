@@ -4,15 +4,14 @@ name: Ordering Service
 version: 1.0.0
 summary: Orchestrates the entire order lifecycle, from creation to completion or cancellation, for the BookWorm platform
 badges:
-  - content: CQRS
-    textColor: blue
-    backgroundColor: blue
   - content: Event-Driven
     textColor: purple
     backgroundColor: purple
+    icon: BoltIcon
   - content: Event Store
     textColor: green
     backgroundColor: green
+    icon: CubeTransparentIcon
 sends:
   - id: UserCheckedOutEvent
     version: 1.0.0
@@ -54,22 +53,72 @@ specifications:
   openapiPath: ordering-api.yml
   asyncapiPath: ordering-service.yml
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 repository:
   language: C#
   url: https://github.com/foxminchan/BookWorm
 ---
 
-<Tiles >
-    <Tile icon="DocumentIcon" href={`/docs/services/${frontmatter.id}/${frontmatter.version}/changelog`}  title="View the changelog" description="Want to know the history of this service? View the change logs" />
-    <Tile icon="UserGroupIcon" href="/docs/users/nhanxnguyen" title="Contact the author" description="Any questions? Feel free to contact the owners" />
-    <Tile icon="BoltIcon" href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`} title={`Sends ${frontmatter.sends.length} messages`} description="This service sends messages to downstream consumers" />
-    <Tile icon="BoltIcon"  href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`} title={`Receives ${frontmatter.receives.length} messages`} description="This service receives messages from other services" />
+<Tiles>
+  <Tile
+    icon="DocumentIcon"
+    href={`/docs/services/${frontmatter.id}/${frontmatter.version}/changelog`}
+    title="View the changelog"
+    description="Want to know the history of this service? View the change logs"
+  />
+  <Tile
+    icon="UserGroupIcon"
+    href="/docs/users/nhanxnguyen"
+    title="Contact the author"
+    description="Any questions? Feel free to contact the owners"
+  />
+  <Tile
+    icon="BoltIcon"
+    href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
+    title={`Sends ${frontmatter.sends.length} messages`}
+    description="This service sends messages to downstream consumers"
+  />
+  <Tile
+    icon="BoltIcon"
+    href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
+    title={`Receives ${frontmatter.receives.length} messages`}
+    description="This service receives messages from other services"
+  />
 </Tiles>
 
 ## Overview
 
 The Ordering Service is a core bounded context in the BookWorm ecosystem responsible for managing the complete order lifecycle. Implemented using Domain-Driven Design principles, this service encapsulates all business logic related to order processing, from creation to fulfillment or cancellation.
+
+## Component Diagram
+
+```mermaid
+C4Component
+    title Component diagram for Order Service
+
+    Container_Boundary(order, "Order Service") {
+        Component(api, "API Layer", "REST/gRPC", "Handles external requests and routing")
+        Component(orderEndpoint, "Order Endpoints", ".NET", "Manages order operations")
+        Component(orderManager, "Order Manager", ".NET", "Core business logic for order management")
+        Component(eventPublisher, "Event Publisher", ".NET", "Publishes order events")
+        ComponentDb(orderDb, "Order DB", "PostgreSQL", "Stores order information and history")
+    }
+
+    SystemQueue(eventBus, "RabbitMQ", "Handles async communication")
+    Container(catalogService, "Catalog Service", ".NET", "Provides book information")
+    Container(financeService, "Finance Service", ".NET", "Handles financial transactions")
+
+    Rel(api, orderEndpoint, "Uses", "REST/gRPC")
+    Rel(orderEndpoint, orderManager, "Uses", "Internal")
+    Rel(orderManager, eventPublisher, "Uses", "Internal")
+    Rel(orderManager, orderDb, "Reads/Writes", "SQL")
+
+    Rel(eventPublisher, eventBus, "Publishes events", "Async")
+    Rel(eventBus, financeService, "Notifies", "Async")
+    Rel(orderManager, catalogService, "Uses", "gRPC")
+
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+```
 
 ### Domain Model
 

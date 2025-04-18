@@ -8,14 +8,17 @@ badges:
   - content: POST
     textColor: green
     backgroundColor: green
+    icon: PlusIcon
   - content: "Book"
     textColor: yellow
     backgroundColor: yellow
+    icon: BookOpenIcon
   - content: "Admin Only"
     textColor: red
     backgroundColor: red
+    icon: LockClosedIcon
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 ---
 
 ## Overview
@@ -157,6 +160,7 @@ The endpoint enforces the following validation rules:
 ### File Upload
 
 The endpoint supports image uploads for books. Images are:
+
 - Processed asynchronously
 - Stored in blob storage
 - URL is saved with the book record

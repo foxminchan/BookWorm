@@ -4,15 +4,14 @@ name: Rating Service
 version: 1.0.0
 summary: Handles the collection, storage, and aggregation of user feedback and ratings for books on the BookWorm platform
 badges:
-  - content: CQRS
-    textColor: blue
-    backgroundColor: blue
   - content: Event-Driven
     textColor: purple
     backgroundColor: purple
-  - content: Cosmos DB
+    icon: BoltIcon
+  - content: PostgreSQL
     textColor: teal
     backgroundColor: teal
+    icon: CircleStackIcon
 sends:
   - id: FeedbackCreatedEvent
     version: 1.0.0
@@ -32,17 +31,37 @@ specifications:
   openapiPath: rating-api.yml
   asyncapiPath: rating-service.yml
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 repository:
   language: C#
   url: https://github.com/foxminchan/BookWorm
 ---
 
-<Tiles >
-    <Tile icon="DocumentIcon" href={`/docs/services/${frontmatter.id}/${frontmatter.version}/changelog`}  title="View the changelog" description="Want to know the history of this service? View the change logs" />
-    <Tile icon="UserGroupIcon" href="/docs/users/nhanxnguyen" title="Contact the author" description="Any questions? Feel free to contact the owners" />
-    <Tile icon="BoltIcon" href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`} title={`Sends ${frontmatter.sends.length} messages`} description="This service sends messages to downstream consumers" />
-    <Tile icon="BoltIcon"  href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`} title={`Receives ${frontmatter.receives.length} messages`} description="This service receives messages from other services" />
+<Tiles>
+  <Tile
+    icon="DocumentIcon"
+    href={`/docs/services/${frontmatter.id}/${frontmatter.version}/changelog`}
+    title="View the changelog"
+    description="Want to know the history of this service? View the change logs"
+  />
+  <Tile
+    icon="UserGroupIcon"
+    href="/docs/users/nhanxnguyen"
+    title="Contact the author"
+    description="Any questions? Feel free to contact the owners"
+  />
+  <Tile
+    icon="BoltIcon"
+    href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
+    title={`Sends ${frontmatter.sends.length} messages`}
+    description="This service sends messages to downstream consumers"
+  />
+  <Tile
+    icon="BoltIcon"
+    href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
+    title={`Receives ${frontmatter.receives.length} messages`}
+    description="This service receives messages from other services"
+  />
 </Tiles>
 
 ## Overview
@@ -55,6 +74,33 @@ The Rating Service represents a distinct bounded context within the BookWorm eco
 - Calculating aggregate rating metrics for books
 - Validating feedback content against business rules
 - Publishing domain events when feedback changes
+
+## Component Diagram
+
+```mermaid
+C4Component
+    title Component diagram for Rating Service
+
+    Container_Boundary(rating, "Rating Service") {
+        Component(api, "API Layer", "REST/gRPC", "Handles external requests and routing")
+        Component(ratingEndpoint, "Rating Endpoints", ".NET", "Manages feedback and rating operations")
+        Component(eventPublisher, "Event Publisher", ".NET", "Publishes feedback events")
+        Component(ratingManager, "Rating Manager", ".NET", "Core business logic for rating management")
+        ComponentDb(ratingDb, "Rating DB", "PostgreSQL", "Stores user feedback and ratings")
+    }
+
+    SystemQueue(eventBus, "RabbitMQ", "Handles async communication")
+    Container(catalogService, "Catalog Service", "Service", "Updates book ratings")
+
+    Rel(api, ratingEndpoint, "Uses", "REST/gRPC")
+    Rel(ratingEndpoint, ratingManager, "Uses", "Internal")
+    Rel(ratingManager, ratingDb, "Reads/Writes", "SQL")
+    Rel(eventBus, catalogService, "Notifies", "Async")
+    Rel(ratingManager, eventPublisher, "Uses", "Internal")
+    Rel(eventPublisher, eventBus, "Publishes events", "Async")
+
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+```
 
 ### Domain Events
 

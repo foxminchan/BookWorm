@@ -9,9 +9,10 @@ badges:
   - content: Channel:amqp
     backgroundColor: green
     textColor: white
+    icon: ArrowPathIcon
 schemaPath: schema.json
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 ---
 
 ## Overview
@@ -25,6 +26,7 @@ The `BasketDeletedIntegrationEvent` is an integration event that signals the fai
 ## Purpose
 
 This event serves several important purposes:
+
 - Notifies the system about failed basket deletion attempts
 - Provides necessary data for error recovery and retry mechanisms
 - Maintains consistency between the Basket and Ordering contexts
@@ -33,6 +35,7 @@ This event serves several important purposes:
 ## Event Structure
 
 The event contains the following key information:
+
 - `OrderId`: Unique identifier for the associated order
 - `BasketId`: Identifier of the basket that failed to delete
 - `Email`: Customer's email address (optional)
@@ -41,6 +44,7 @@ The event contains the following key information:
 ## Usage
 
 This event is typically published when:
+
 - A basket deletion operation fails due to system errors
 - There are issues with the integration between Basket and Ordering contexts
 - Recovery mechanisms need to be triggered
@@ -48,6 +52,7 @@ This event is typically published when:
 ## Error Handling
 
 When this event is published, the system should:
+
 1. Log the failure details
 2. Attempt to recover the failed operation
 3. Notify relevant stakeholders if necessary
