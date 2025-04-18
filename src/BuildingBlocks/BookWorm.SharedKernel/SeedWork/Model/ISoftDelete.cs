@@ -1,4 +1,4 @@
-﻿namespace BookWorm.SharedKernel.SeedWork;
+﻿namespace BookWorm.SharedKernel.SeedWork.Model;
 
 public interface ISoftDelete
 {

@@ -12,7 +12,7 @@ public sealed class ActivityScope : IActivityScope
             ? ActivitySourceProvider
                 .Instance.CreateActivity(
                     $"{ActivitySourceProvider.DefaultSourceName}.{name}",
-                    options.Kind,
+                    StartActivityOptions.Kind,
                     options.Parent.Value,
                     idFormat: ActivityIdFormat.W3C,
                     tags: options.Tags
@@ -21,7 +21,7 @@ public sealed class ActivityScope : IActivityScope
             : ActivitySourceProvider
                 .Instance.CreateActivity(
                     $"{ActivitySourceProvider.DefaultSourceName}.{name}",
-                    options.Kind,
+                    StartActivityOptions.Kind,
                     options.ParentId ?? Activity.Current?.ParentId,
                     idFormat: ActivityIdFormat.W3C,
                     tags: options.Tags
