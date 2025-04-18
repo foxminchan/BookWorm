@@ -13,15 +13,40 @@ info:
     name: MIT
     url: https://opensource.org/licenses/MIT
   version: "1.0"
+externalDocs:
+  description: Documentation
+  url: https://github.com/foxminchan/BookWorm
 servers:
-  - url: https://dev.basket.bookworm.com
+  - url: "{protocol}://dev.basket.bookworm.com"
     description: Development
-  - url: https://stg.basket.bookworm.com
+    variables:
+      protocol:
+        enum:
+          - https
+        default: https
+  - url: "{protocol}://stg.basket.bookworm.com"
     description: Staging
-  - url: https://qa.basket.bookworm.com
+    variables:
+      protocol:
+        enum:
+          - https
+        default: https
+  - url: "{protocol}://qa.basket.bookworm.com"
     description: QA
-  - url: https://basket.bookworm.com
+    variables:
+      protocol:
+        enum:
+          - https
+        default: https
+  - url: "{protocol}://basket.bookworm.com"
     description: Production
+    variables:
+      protocol:
+        enum:
+          - https
+        default: https
+security:
+  - bearerAuth: []
 paths:
   "/api/v1/baskets":
     put:
@@ -32,7 +57,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: UpdateBasketEndpoint
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       requestBody:
         description: The command to update the basket with new items
         content:
@@ -87,6 +112,8 @@ paths:
                       - propertyName: "Id"
                         errorMessage: "'Id' must not be empty."
                         severity: 0
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
     get:
       tags:
         - Basket
@@ -122,6 +149,8 @@ paths:
                         name: "Clean Code"
                         price: 39.99
                         priceSale: 35.99
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
         "404":
           description: Not Found
           content:
@@ -144,10 +173,12 @@ paths:
       x-eventcatalog-message-type: command
       operationId: DeleteBasketEndpoint
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
         "404":
           description: Not Found
           content:
@@ -170,7 +201,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CreateBasketEndpoint
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       requestBody:
         description: A command to create a basket with the specified items
         content:
@@ -231,6 +262,8 @@ paths:
                       - propertyName: "Id"
                         errorMessage: "'Id' must not be empty."
                         severity: 0
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
 components:
   schemas:
     BasketItemDto:
@@ -326,7 +359,9 @@ components:
             "$ref": "#/components/schemas/BasketItemDto"
     HttpValidationProblemDetails:
       type: object
-      description: The problem details for validation errors
+      readOnly: true
+      x-scalar-ignore: true
+      description: RFC 9110 (https://tools.ietf.org/html/rfc9110#section-15.5.1)
       properties:
         type:
           type: string
@@ -388,7 +423,9 @@ components:
                 example: null
     ProblemDetails:
       type: object
-      description: The problem details
+      readOnly: true
+      x-scalar-ignore: true
+      description: RFC 9110 (https://tools.ietf.org/html/rfc9110)
       properties:
         type:
           type: string
@@ -425,10 +462,10 @@ components:
           items:
             "$ref": "#/components/schemas/BasketItemRequest"
   securitySchemes:
-    BearerAuth:
+    bearerAuth:
       type: http
-      scheme: Bearer
-      description: The Bearer token for the user
+      scheme: bearer
+      description: JWT Bearer token authentication
 tags:
   - name: Basket
     description: Manages shopping baskets for customers, allowing them to add, update, and remove items before checkout
