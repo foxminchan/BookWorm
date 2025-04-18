@@ -25,7 +25,8 @@ public sealed class CompleteOrderCommandHandler(
 
         var order = message.ToOrder();
 
-        var mailMessage = new OrderMimeMessageBuilder()
+        var mailMessage = OrderMimeMessageBuilder
+            .Initialize()
             .WithFrom(emailOptions)
             .WithTo(order.FullName, message.Email)
             .WithSubject(order)

@@ -43,7 +43,6 @@
     <PackageVersion Include="Microsoft.FeatureManagement.AspNetCore" Version="4.0.0"/>
     <!-- ASP.NET Core -->
     <PackageVersion Include="Asp.Versioning.Http.Client" Version="$(ApiVersioningVersion)"/>
-    <PackageVersion Include="Asp.Versioning.Mvc" Version="$(ApiVersioningVersion)"/>
     <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer" Version="$(ApiVersioningVersion)"/>
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.4"/>
     <PackageVersion Include="Microsoft.Azure.SignalR.Management" Version="1.30.2"/>
@@ -94,7 +93,7 @@
     <PackageVersion Include="Moq" Version="4.20.72"/>
     <PackageVersion Include="Bogus" Version="35.6.3"/>
     <PackageVersion Include="Shouldly" Version="4.3.0"/>
-    <PackageVersion Include="System.Linq.Async" Version="6.0.1"/>
+    <PackageVersion Include="System.Linq.AsyncEnumerable" Version="10.0.0-preview.3.25171.5"/>
     <PackageVersion Include="Aspire.Hosting.Testing" Version="$(AspireVersion)"/>
     <PackageVersion Include="GitHubActionsTestLogger" Version="2.4.1"/>
     <!-- Testing Platform -->
