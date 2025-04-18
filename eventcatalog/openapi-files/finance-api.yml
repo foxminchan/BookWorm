@@ -2,7 +2,6 @@
 openapi: 3.1.1
 info:
   title: Finance Service API
-  version: 1.0.0
   description: Orchestrates order processing and financial transactions for BookWorm
   contact:
     name: Nhan Nguyen
@@ -11,15 +10,41 @@ info:
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
+  version: "1.0"
+externalDocs:
+  description: Documentation
+  url: https://github.com/foxminchan/BookWorm
 servers:
-  - url: http://dev.finance.bookworm.com
+  - url: "{protocol}://dev.finance.bookworm.com"
     description: Development
-  - url: http://stg.finance.bookworm.com
+    variables:
+      protocol:
+        enum:
+          - https
+        default: https
+  - url: "{protocol}://stg.finance.bookworm.com"
     description: Staging
-  - url: http://qa.finance.bookworm.com
+    variables:
+      protocol:
+        enum:
+          - https
+        default: https
+  - url: "{protocol}://qa.finance.bookworm.com"
     description: QA
-  - url: http://finance.bookworm.com
+    variables:
+      protocol:
+        enum:
+          - https
+        default: https
+  - url: "{protocol}://finance.bookworm.com"
     description: Production
+    variables:
+      protocol:
+        enum:
+          - https
+        default: https
+security:
+  - bearerAuth: []
 paths:
   "/api/v1/order-state-machine":
     get:
@@ -30,7 +55,7 @@ paths:
       x-eventcatalog-message-type: query
       operationId: GetOrderStateEndpoint
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       responses:
         "200":
           description: OK
@@ -55,13 +80,16 @@ paths:
                     Placed -> Completed [label="OrderCompleted"]
                     Placed -> Cancelled [label="OrderCancelled"]
                   }
-
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
+        "403":
+          description: Forbidden - The permission requirements are not met.
 components:
   securitySchemes:
-    BearerAuth:
+    bearerAuth:
       type: http
-      scheme: Bearer
-      description: The Bearer token for the user
+      scheme: bearer
+      description: JWT Bearer token authentication
 tags:
   - name: OrderState
     description: Operations related to order state management

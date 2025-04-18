@@ -8,11 +8,13 @@ badges:
   - content: PUT
     textColor: orange
     backgroundColor: orange
+    icon: PencilSquareIcon
   - content: "Basket"
     textColor: yellow
     backgroundColor: yellow
+    icon: ShoppingCartIcon
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 ---
 
 ## Overview
@@ -99,6 +101,7 @@ sequenceDiagram
 ### Technical Implementation
 
 The update operation follows these steps:
+
 1. **Authentication**: Extracts the user ID from the JWT token claims
 2. **Basket Retrieval**: Fetches the existing basket using the user ID as the key
 3. **Domain Update**: Calls the `Update` method on the `CustomerBasket` entity
@@ -106,6 +109,7 @@ The update operation follows these steps:
 5. **Response**: Returns a 204 No Content response on success
 
 The implementation enforces several key principles:
+
 - **Command Validation**: Ensures the request contains valid data before processing
 - **Domain Encapsulation**: The basket entity controls its own state changes
 - **Repository Abstraction**: Data access is abstracted behind a repository interface
@@ -118,6 +122,7 @@ This endpoint requires authentication. The user must be logged in with a valid J
 ## Validation Rules
 
 The following validation rules are enforced:
+
 - The basket items collection must not be empty
 - For each basket item:
   - Book ID must not be empty
@@ -168,6 +173,7 @@ Returned when the request validation fails.
 #### <span className="text-red-500">401 Unauthorized</span>
 
 Returned when:
+
 - The user is not authenticated
 - The authentication token is missing or invalid
 
@@ -178,6 +184,7 @@ Returned when the basket for the authenticated user cannot be found.
 ## Error Handling
 
 The service handles various error scenarios:
+
 1. **Validation Errors**: Returns 400 Bad Request with detailed validation messages
 2. **Authentication Errors**: Returns 401 Unauthorized if user is not properly authenticated
 3. **Not Found Errors**: Returns 404 if the basket doesn't exist

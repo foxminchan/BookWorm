@@ -13,15 +13,40 @@ info:
     name: MIT
     url: https://opensource.org/licenses/MIT
   version: "1.0"
+externalDocs:
+  description: Documentation
+  url: https://github.com/foxminchan/BookWorm
 servers:
-  - url: https://dev.rating.bookworm.com
+  - url: "{protocol}://dev.rating.bookworm.com"
     description: Development
-  - url: https://stg.rating.bookworm.com
+    variables:
+      protocol:
+        enum:
+          - https
+        default: https
+  - url: "{protocol}://stg.rating.bookworm.com"
     description: Staging
-  - url: https://qa.rating.bookworm.com
+    variables:
+      protocol:
+        enum:
+          - https
+        default: https
+  - url: "{protocol}://qa.rating.bookworm.com"
     description: QA
-  - url: https://rating.bookworm.com
+    variables:
+      protocol:
+        enum:
+          - https
+        default: https
+  - url: "{protocol}://rating.bookworm.com"
     description: Production
+    variables:
+      protocol:
+        enum:
+          - https
+        default: https
+security:
+  - bearerAuth: []
 paths:
   "/api/v1/feedbacks":
     get:
@@ -241,7 +266,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: DeleteFeedbackEndpoint
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -255,6 +280,10 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
+        "403":
+          description: Forbidden - The permission requirements are not met.
         "404":
           description: Not Found
           content:
@@ -354,7 +383,8 @@ components:
     HttpValidationProblemDetails:
       type: object
       readOnly: true
-      description: The problem details for validation errors
+      x-scalar-ignore: true
+      description: RFC 9110 (https://tools.ietf.org/html/rfc9110#section-15.5.1)
       properties:
         type:
           type: string
@@ -454,26 +484,31 @@ components:
     ProblemDetails:
       type: object
       readOnly: true
-      description: The problem details
+      x-scalar-ignore: true
+      description: RFC 9110 (https://tools.ietf.org/html/rfc9110)
       properties:
         type:
           type: string
           description: The type of the problem
+          example: "https://tools.ietf.org/html/rfc9110#section-15.5.5"
         title:
           type: string
           description: The title of the problem
+          example: "Not found"
         status:
           type: integer
           format: int32
           description: The status code of the problem
+          example: 404
         detail:
           type: string
           description: The detail of the problem
+          example: "Feedback with id 01961eb4-668d-7e7e-ae25-0fab379614f7 was not found."
   securitySchemes:
-    BearerAuth:
+    bearerAuth:
       type: http
-      scheme: Bearer
-      description: The Bearer token for the user
+      scheme: bearer
+      description: JWT Bearer token authentication
 tags:
   - name: Feedback
     description: Endpoints for managing user ratings and feedback for books on the BookWorm platform

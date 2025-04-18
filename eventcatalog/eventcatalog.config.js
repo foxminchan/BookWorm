@@ -19,7 +19,7 @@ export default {
   },
   logo: {
     alt: "BookWorm",
-    src: "/logo.png",
+    src: "/logo.svg",
     text: "BookWorm",
   },
   rss: {

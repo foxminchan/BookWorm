@@ -8,11 +8,13 @@ badges:
   - content: POST
     textColor: green
     backgroundColor: green
+    icon: PlusIcon
   - content: "Basket"
     textColor: yellow
     backgroundColor: yellow
+    icon: ShoppingCartIcon
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 ---
 
 ## Overview
@@ -95,11 +97,13 @@ sequenceDiagram
 ### Validation Rules
 
 The command validation enforces several business rules:
+
 - The items collection must not be empty
 - Each item must have a valid ID
 - Each item must have a quantity greater than zero
 
 The domain model enforces additional invariants:
+
 - Customer ID cannot be null
 - Basket must contain at least one item
 
@@ -150,6 +154,7 @@ Returned when the request validation fails.
 #### <span className="text-red-500">401 Unauthorized</span>
 
 Returned when:
+
 - The user is not authenticated
 - The authentication token is missing or invalid
 

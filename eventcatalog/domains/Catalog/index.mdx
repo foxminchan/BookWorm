@@ -9,22 +9,35 @@ services:
   - id: RatingService
     version: 1.0.0
 badges:
-  - content: Catalog
+  - content: Subdomain
     backgroundColor: blue
-    textColor: white
+    textColor: blue
+    icon: BoltIcon
   - content: Product Management
     backgroundColor: purple
     textColor: white
+    icon: BookOpenIcon
   - content: User Reviews
     backgroundColor: red
     textColor: white
+    icon: StarIcon
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 ---
 
-<Tiles >
-    <Tile icon="UserGroupIcon" href="/docs/users/nhanxnguyen" title="Contact the author" description="Any questions? Feel free to contact the owners" />
-    <Tile icon="RectangleGroupIcon" href={`/visualiser/domains/${frontmatter.id}/${frontmatter.version}`} title={`${frontmatter.services.length} services are in this domain`} description="This domain contains product catalog and rating functionality" />
+<Tiles>
+  <Tile
+    icon="UserGroupIcon"
+    href="/docs/users/nhanxnguyen"
+    title="Contact the author"
+    description="Any questions? Feel free to contact the owners"
+  />
+  <Tile
+    icon="RectangleGroupIcon"
+    href={`/visualiser/domains/${frontmatter.id}/${frontmatter.version}`}
+    title={`${frontmatter.services.length} services are in this domain`}
+    description="This domain contains product catalog and rating functionality"
+  />
 </Tiles>
 
 ## Overview
@@ -38,6 +51,7 @@ The Catalog domain is responsible for managing the products that are available f
 The domain provides robust management capabilities for product categories, series, collections, publishers, and user-generated content. It maintains relationships between books, such as series orders, related titles, author bibliographies, and user reviews.
 
 For administrators, the Catalog domain offers comprehensive management tools for both product information and user-generated content, allowing them to:
+
 - Add and update book information
 - Manage inventory levels
 - Control pricing and discounts
@@ -45,12 +59,6 @@ For administrators, the Catalog domain offers comprehensive management tools for
 - Generate reports on product performance and user feedback
 
 As a core domain in the BookWorm ecosystem, Catalog integrates with other services like the Basket domain for purchasing flows and the Ordering domain for inventory verification during checkout processes.
-
-## Event Storming Session
-
-The event storming session for the Catalog domain was conducted to identify key events, commands, and aggregates. The session included stakeholders from various teams, including business analysts, developers, and product owners. The following key events were identified:
-
-<Miro boardId="uXjVIG4lIr0=/" moveToWidget="3458764623724644744" edit={false} />
 
 ## Bounded context
 

@@ -9,9 +9,10 @@ badges:
   - content: Channel:amqp
     backgroundColor: green
     textColor: white
+    icon: ArrowPathIcon
 schemaPath: schema.json
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 ---
 
 ## Overview
@@ -25,6 +26,7 @@ The `PublishCompletedEvent` is an integration event that signals the successful 
 ## Purpose
 
 This event serves several important purposes:
+
 - Confirms successful basket deletion operations
 - Maintains system consistency between Basket and Ordering contexts
 - Provides audit trail for completed operations
@@ -33,6 +35,7 @@ This event serves several important purposes:
 ## Event Structure
 
 The event contains the following key information:
+
 - `OrderId`: Unique identifier for the associated order
 - `BasketId`: Identifier of the successfully deleted basket
 - `TotalMoney`: Total monetary value of the basket at the time of deletion
@@ -40,6 +43,7 @@ The event contains the following key information:
 ## Usage
 
 This event is typically published when:
+
 - A basket deletion operation completes successfully
 - The system needs to confirm the transition from basket to order
 - Audit trails need to be maintained
@@ -47,6 +51,7 @@ This event is typically published when:
 ## Success Handling
 
 When this event is published, the system should:
+
 1. Log the successful completion
 2. Update relevant system states
 3. Trigger any necessary follow-up processes

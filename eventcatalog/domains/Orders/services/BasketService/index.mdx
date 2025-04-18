@@ -4,15 +4,14 @@ name: Basket Service
 version: 1.0.0
 summary: Manages the lifecycle of customer shopping baskets in the BookWorm e-commerce system
 badges:
-  - content: CQRS
-    textColor: blue
-    backgroundColor: blue
   - content: Event-Driven
     textColor: purple
     backgroundColor: purple
+    icon: BoltIcon
   - content: Redis
     textColor: red
     backgroundColor: red
+    icon: CircleStackIcon
 sends:
   - id: BasketDeletedCompletedEvent
     version: 1.0.0
@@ -34,17 +33,37 @@ specifications:
   openapiPath: basket-api.yml
   asyncapiPath: basket-service.yml
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 repository:
   language: C#
   url: https://github.com/foxminchan/BookWorm
 ---
 
-<Tiles >
-    <Tile icon="DocumentIcon" href={`/docs/services/${frontmatter.id}/${frontmatter.version}/changelog`}  title="View the changelog" description="Want to know the history of this service? View the change logs" />
-    <Tile icon="UserGroupIcon" href="/docs/users/nhanxnguyen" title="Contact the author" description="Any questions? Feel free to contact the owners" />
-    <Tile icon="BoltIcon" href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`} title={`Sends ${frontmatter.sends.length} messages`} description="This service sends messages to downstream consumers" />
-    <Tile icon="BoltIcon"  href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`} title={`Receives ${frontmatter.receives.length} messages`} description="This service receives messages from other services" />
+<Tiles>
+  <Tile
+    icon="DocumentIcon"
+    href={`/docs/services/${frontmatter.id}/${frontmatter.version}/changelog`}
+    title="View the changelog"
+    description="Want to know the history of this service? View the change logs"
+  />
+  <Tile
+    icon="UserGroupIcon"
+    href="/docs/users/nhanxnguyen"
+    title="Contact the author"
+    description="Any questions? Feel free to contact the owners"
+  />
+  <Tile
+    icon="BoltIcon"
+    href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
+    title={`Sends ${frontmatter.sends.length} messages`}
+    description="This service sends messages to downstream consumers"
+  />
+  <Tile
+    icon="BoltIcon"
+    href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
+    title={`Receives ${frontmatter.receives.length} messages`}
+    description="This service receives messages from other services"
+  />
 </Tiles>
 
 ## Overview
@@ -61,14 +80,46 @@ The service implements several key domain operations:
 
 Following tactical DDD patterns, the basket is modeled as an aggregate root with basket items as entities within its boundary, ensuring consistency through transactional integrity and proper domain invariants.
 
+## Component Diagram
+
+```mermaid
+C4Component
+    title Component diagram for Basket Service
+
+    Container_Boundary(basket, "Basket Service") {
+        Component(api, "API Layer", "gRPC", "Handles external requests and routing")
+        Component(basketEndpoint, "Basket Endpoints", ".NET", "Manages basket operations")
+        Component(basketManager, "Basket Manager", ".NET", "Core business logic for basket management")
+        Component(cacheService, "Cache Service", ".NET", "Handles Redis caching operations")
+        Component(eventPublisher, "Event Publisher", ".NET", "Publishes basket events")
+        ComponentDb(basketDb, "Basket DB", "Redis", "Stores basket data")
+    }
+
+    SystemQueue(eventBus, "RabbitMQ", "Handles async communication")
+    Container(orderService, "Order Service", ".NET", "Processes orders")
+    Container(catalogService, "Catalog Service", ".NET", "Provides product information")
+
+    Rel(api, basketEndpoint, "Uses", "gRPC")
+    Rel(basketEndpoint, basketManager, "Uses", "Internal")
+    Rel(basketManager, cacheService, "Uses", "Internal")
+    Rel(basketManager, eventPublisher, "Uses", "Internal")
+
+    Rel(cacheService, basketDb, "Reads/Writes", "Redis Protocol")
+    Rel(basketManager, catalogService, "Validates products", "gRPC")
+    Rel(eventPublisher, eventBus, "Publishes events", "Async")
+    Rel(eventBus, orderService, "Notifies", "Async")
+
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+```
+
 ## Core Features
 
-| Feature                     | Description                                                                                                           |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| **Get Basket**             | Retrieves the current basket for an authenticated user, including all items and their quantities.                     |
-| **Add Item to Basket**      | Allows customers to add items to their basket, with validation ensuring quantities are greater than zero.              |
-| **Remove Item from Basket** | Enables customers to remove items from their basket, maintaining data consistency.                                    |
-| **Update Item Quantity**    | Supports customers in updating the quantity of items in their basket, with built-in validation.                       |
+| Feature                     | Description                                                                                               |
+| --------------------------- | --------------------------------------------------------------------------------------------------------- |
+| **Get Basket**              | Retrieves the current basket for an authenticated user, including all items and their quantities.         |
+| **Add Item to Basket**      | Allows customers to add items to their basket, with validation ensuring quantities are greater than zero. |
+| **Remove Item from Basket** | Enables customers to remove items from their basket, maintaining data consistency.                        |
+| **Update Item Quantity**    | Supports customers in updating the quantity of items in their basket, with built-in validation.           |
 
 ## Architecture diagram
 
@@ -80,10 +131,13 @@ Following tactical DDD patterns, the basket is modeled as an aggregate root with
 
 <AccordionGroup>
   <Accordion title="Basket">
-    The basket is the core domain entity representing a customer's shopping cart. It is identified by a unique ID and contains a collection of basket items. The basket is stored in Redis for fast access and persistence.
+    The basket is the core domain entity representing a customer's shopping
+    cart. It is identified by a unique ID and contains a collection of basket
+    items. The basket is stored in Redis for fast access and persistence.
   </Accordion>
   <Accordion title="Basket Item">
-    Basket items are the individual products added to the basket by the customer.
+    Basket items are the individual products added to the basket by the
+    customer.
   </Accordion>
 </AccordionGroup>
 
@@ -106,6 +160,7 @@ The service is hosted on a cloud platform, utilizing Redis for high-performance 
 ## Technical Implementation
 
 The service is implemented in C# using:
+
 - gRPC for high-performance API communication
 - Redis for data persistence
 - Domain-Driven Design patterns for business logic

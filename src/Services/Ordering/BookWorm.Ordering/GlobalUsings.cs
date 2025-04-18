@@ -35,7 +35,6 @@ global using BookWorm.SharedKernel.Guards;
 global using BookWorm.SharedKernel.Pipelines;
 global using BookWorm.SharedKernel.Query;
 global using BookWorm.SharedKernel.Repository;
-global using BookWorm.SharedKernel.SeedWork;
 global using BookWorm.SharedKernel.SeedWork.Event;
 global using BookWorm.SharedKernel.SeedWork.Model;
 global using BookWorm.SharedKernel.Versioning;

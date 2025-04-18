@@ -10,6 +10,7 @@ public sealed class UpdateCategoryEndpoint : IEndpoint<NoContent, UpdateCategory
                     await HandleAsync(command, sender)
             )
             .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesValidationProblem()
             .WithTags(nameof(Category))
             .WithName(nameof(UpdateCategoryEndpoint))

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using System.Net.Mime;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
@@ -22,6 +23,7 @@ public static class ScalarEndpointRouteBuilderExtensions
                             <title>{resourceName} - {documentName}</title>
                             <meta charset="utf-8" />
                             <meta name="viewport" content="width=device-width, initial-scale=1" />
+                            <link rel="shortcut icon" href="https://scalar.com/favicon.png">
                         </head>
                         <body>
                             <script id="api-reference" data-url="{openApiUrl}"></script>
@@ -29,7 +31,7 @@ public static class ScalarEndpointRouteBuilderExtensions
                         </body>
                         </html>
                         """,
-                        "text/html"
+                        MediaTypeNames.Text.Html
                     );
                 }
             )

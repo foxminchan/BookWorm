@@ -1,6 +1,6 @@
 ﻿using BookWorm.SharedKernel.SeedWork.Event;
 
-namespace BookWorm.SharedKernel.SeedWork;
+namespace BookWorm.SharedKernel.EventBus;
 
 public interface IEventDispatcher
 {

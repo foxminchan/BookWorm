@@ -1,0 +1,145 @@
+---
+id: store
+name: Store
+summary: The Store domain is responsible for managing the store's business capabilities and services
+version: 1.0.0
+owners:
+  - nhanxnguyen
+domains:
+  - id: orders
+  - id: catalog
+badges:
+  - content: Core domain
+    backgroundColor: blue
+    textColor: blue
+    icon: RectangleGroupIcon
+  - content: Business Critical`
+    backgroundColor: yellow
+    textColor: yellow
+    icon: ShieldCheckIcon
+---
+
+<Tiles>
+  <Tile
+    icon="UserGroupIcon"
+    href="/docs/users/nhanxnguyen"
+    title="Contact the author"
+    description="Any questions? Feel free to contact the owners"
+  />
+  <Tile
+    icon="RectangleGroupIcon"
+    href={`/visualiser/domains/${frontmatter.id}/${frontmatter.version}`}
+    title="Domain Architecture"
+    description="Explore our domain structure and service interactions"
+  />
+</Tiles>
+
+## Overview
+
+The Store domain is a strategic core domain within the BookWorm system, integrating functionalities from both the **Orders** and **Catalog** domains. It is responsible for managing the store's business capabilities and services, encompassing essential functionalities that directly impact the organization's competitive advantage and overall performance.
+
+## Subdomains
+
+The Store domain is composed of the following subdomains:
+
+- **Orders** - Manages the complete order lifecycle, from basket management to order fulfillment, payment processing, and customer notifications.
+- **Catalog** - Manages the product catalog, including book information, inventory, pricing, and user reviews. It provides the foundation for product discovery and browsing.
+
+## Event Storming
+
+We conducted an [event storming](https://www.eventstorming.com/) session for the Store domain to understand its complexities and subdomain interactions. This session helped us map key events, commands, and aggregates, aligning our technical implementation with business needs for robust functionality.
+
+<Miro boardId="uXjVIG4lIr0=/" moveToWidget="3458764623724644744" edit={false} />
+
+## High-level architecture
+
+To effectively visualize and understand the architecture of the BookWorm system, we will employ the [C4 model](https://c4model.com/). This model allows us to represent the system at various levels of abstraction, providing a comprehensive view of its structure and interactions.
+
+### System Context Diagram
+
+```mermaid
+C4Context
+    title System Context Diagram for BookWorm Store System
+
+    Person(customer, "Customer", "A user who wants to browse and purchase books")
+
+    System(bookworm, "BookWorm Store", "Allows customers to view the catalog, manage their cart, and place orders for books")
+
+    System_Ext(email, "Email Service", "Handles email notifications")
+    System_Ext(identity, "Identity Provider", "Handles user authentication")
+
+    Rel(customer, bookworm, "Uses", "HTTPS")
+    Rel(bookworm, email, "Sends emails", "SMTP")
+    Rel(bookworm, identity, "Authenticates users", "OAuth2")
+```
+
+### Container Diagram
+
+```mermaid
+C4Container
+    title Container Diagram for BookWorm Store System
+
+    Person(customer, "Customer", "A user who wants to browse and purchase books")
+
+    System_Boundary(bookworm, "BookWorm Store") {
+        Container(gateway, "API Gateway", ".NET", "Handles API routing and request/response transformation")
+        Container(catalog, "Catalog Service", ".NET", "Manages product catalog and inventory")
+        Container(order, "Order Service", ".NET", "Handles order processing")
+        Container(basket, "Basket Service", ".NET", "Manages shopping cart")
+        Container(finance, "Finance Service", ".NET", "Handles payment processing")
+        Container(rating, "Rating Service", ".NET", "Manages product ratings and reviews")
+        Container(notification, "Notification Service", ".NET", "Sends notifications to users")
+
+        ContainerDb(catalogDb, "Catalog DB", "PostgreSQL", "Stores product information")
+        ContainerDb(orderDb, "Order DB", "PostgreSQL", "Stores order information")
+        ContainerDb(basketDb, "Basket DB", "Redis", "Stores shopping cart data")
+        ContainerDb(financeDb, "Finance DB", "PostgreSQL", "Stores payment records")
+        ContainerDb(ratingDb, "Rating DB", "PostgreSQL", "Stores ratings and reviews")
+        ContainerDb(vectorDb, "Vector DB", "Qdrant", "Stores vector embeddings for search")
+
+        SystemQueue(eventBus, "RabbitMQ", "Handles asynchronous communication between services")
+    }
+
+    System_Ext(identity, "Identity Provider", "Handles user authentication")
+    System_Ext(email, "Email Service", "Handles email notifications")
+
+    Rel(customer, gateway, "Uses", "HTTPS")
+    Rel(gateway, catalog, "Routes requests", "HTTPS")
+    Rel(gateway, order, "Routes requests", "HTTPS")
+    Rel(gateway, basket, "Routes requests", "HTTPS")
+    Rel(gateway, finance, "Routes requests", "HTTPS")
+    Rel(gateway, rating, "Routes requests", "HTTPS")
+    Rel(gateway, identity, "Routes requests", "HTTPS")
+
+    Rel(catalog, catalogDb, "Reads/Writes", "TCP")
+    Rel(order, orderDb, "Reads/Writes", "TCP")
+    Rel(basket, basketDb, "Reads/Writes", "TCP")
+    Rel(finance, financeDb, "Reads/Writes", "TCP")
+    Rel(rating, ratingDb, "Reads/Writes", "TCP")
+    Rel(catalog, vectorDb, "Reads/Writes", "TCP")
+    Rel(notification, email, "Sends emails", "SMTP")
+
+    Rel(catalog, eventBus, "Publishes/Subscribes", "AMQP")
+    Rel(order, eventBus, "Publishes/Subscribes", "AMQP")
+    Rel(basket, eventBus, "Publishes/Subscribes", "AMQP")
+    Rel(finance, eventBus, "Publishes/Subscribes", "AMQP")
+    Rel(rating, eventBus, "Publishes/Subscribes", "AMQP")
+    Rel(notification, eventBus, "Subscribes", "AMQP")
+
+    Rel(basket, catalog, "Retrieves products", "gRPC")
+    Rel(order, catalog, "Retrieves products", "gRPC")
+```
+
+## Current Production Architecture
+
+Below is the interactive event-driven architecture diagram for the BookWorm Store system.
+
+<NodeGraph />
+
+## Service Level Agreements
+
+The following SLAs are defined for the Store domain:
+
+- **SLA-001**: The system must be available 99.9% of the time.
+- **SLA-002**: The system must respond to requests within 1 second.
+- **SLA-003**: The system must be able to handle 1000 requests per second.

@@ -13,15 +13,40 @@ info:
     name: MIT
     url: https://opensource.org/licenses/MIT
   version: "1.0"
+externalDocs:
+  description: Documentation
+  url: https://github.com/foxminchan/BookWorm
 servers:
-  - url: https://dev.ordering.bookworm.com
+  - url: "{protocol}://dev.ordering.bookworm.com"
     description: Development
-  - url: https://stg.ordering.bookworm.com
+    variables:
+      protocol:
+        enum:
+          - https
+        default: https
+  - url: "{protocol}://stg.ordering.bookworm.com"
     description: Staging
-  - url: https://qa.ordering.bookworm.com
+    variables:
+      protocol:
+        enum:
+          - https
+        default: https
+  - url: "{protocol}://qa.ordering.bookworm.com"
     description: QA
-  - url: https://ordering.bookworm.com
+    variables:
+      protocol:
+        enum:
+          - https
+        default: https
+  - url: "{protocol}://ordering.bookworm.com"
     description: Production
+    variables:
+      protocol:
+        enum:
+          - https
+        default: https
+security:
+  - bearerAuth: []
 paths:
   "/api/v1/orders/{id}/summary":
     get:
@@ -32,7 +57,7 @@ paths:
       x-eventcatalog-message-type: query
       operationId: SummaryOrderEndpoint
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -54,6 +79,8 @@ paths:
                 id: "019622cf-6bd5-7499-bc18-31f71acbad44"
                 status: "New"
                 totalPrice: 100.00
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
   "/api/v1/orders":
     get:
       tags:
@@ -63,7 +90,7 @@ paths:
       x-eventcatalog-message-type: query
       operationId: ListOrdersEndpoint
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - name: PageIndex
           in: query
@@ -180,6 +207,8 @@ paths:
                       - propertyName: "PageSize"
                         errorMessage: "'PageSize' must be greater than 0."
                         severity: 0
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
     post:
       tags:
         - Order
@@ -188,7 +217,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CreateOrderEndpoint
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - name: x-request-id
           in: header
@@ -208,6 +237,8 @@ paths:
                 format: uuid
                 description: The unique identifier of the order to be created
                 example: "019622d1-3613-737e-8d58-af7db6317153"
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
   "/api/v1/orders/{id}":
     get:
       tags:
@@ -217,7 +248,7 @@ paths:
       x-eventcatalog-message-type: query
       operationId: GetOrderEndpoint
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -253,6 +284,8 @@ paths:
                     name: "The Pragmatic Programmer: From Journeyman to Master"
                     quantity: 1
                     price: 45.00
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
         "404":
           description: Not Found
           content:
@@ -286,6 +319,8 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
         "404":
           description: Not Found
           content:
@@ -309,7 +344,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CompleteOrderEndpoint
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - name: x-request-id
           in: header
@@ -355,6 +390,8 @@ paths:
                       - id: "039622a5-a3ae-7705-a11b-a08f2a2ca623"
                         name: "The Pragmatic Programmer: From Journeyman to Master"
                         quantity: 1
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
         "404":
           description: Not Found
           content:
@@ -378,7 +415,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CancelOrderEndpoint
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - name: x-request-id
           in: header
@@ -425,6 +462,8 @@ paths:
                         name: "The Pragmatic Programmer: From Journeyman to Master"
                         quantity: 1
                         price: 45.00
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
         "404":
           description: Not Found
           content:
@@ -448,7 +487,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: UpdateAddressEndpoint
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       requestBody:
         description: The command to update the current buyer's address
         content:
@@ -514,6 +553,8 @@ paths:
                       - propertyName: "Province"
                         errorMessage: "'Province' must not be empty."
                         severity: 0
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
         "404":
           description: Not Found
           content:
@@ -534,7 +575,7 @@ paths:
       x-eventcatalog-message-type: query
       operationId: ListBuyersEndpoint
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - name: PageIndex
           in: query
@@ -603,6 +644,10 @@ paths:
                     totalPages: 1
                     hasPreviousPage: false
                     hasNextPage: false
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
+        "403":
+          description: Forbidden - The permission requirements are not met.
     post:
       tags:
         - Buyer
@@ -611,7 +656,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CreateBuyerEndpoint
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       requestBody:
         description: The command to create a new buyer
         content:
@@ -704,6 +749,8 @@ paths:
                     id: "019622d7-e45c-7ccb-868f-509b69559883"
                     name: "John Doe"
                     address: "123 Main St, Anytown, USA"
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
         "404":
           description: Not Found
           content:
@@ -735,6 +782,10 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
+        "403":
+          description: Forbidden - The permission requirements are not met.
         "404":
           description: Not Found
           content:
@@ -797,7 +848,8 @@ components:
     HttpValidationProblemDetails:
       type: object
       readOnly: true
-      description: The problem details for validation errors
+      x-scalar-ignore: true
+      description: RFC 9110 (https://tools.ietf.org/html/rfc9110#section-15.5.1)
       properties:
         type:
           type: string
@@ -859,6 +911,7 @@ components:
                 example: null
     NullableOfStatus:
       description: The status of the order
+      readOnly: true
       enum:
         - New
         - Cancelled
@@ -1032,7 +1085,8 @@ components:
     ProblemDetails:
       type: object
       readOnly: true
-      description: The problem details
+      x-scalar-ignore: true
+      description: RFC 9110 (https://tools.ietf.org/html/rfc9110)
       properties:
         type:
           type: string
@@ -1082,10 +1136,10 @@ components:
           maxLength: 50
           example: "CA"
   securitySchemes:
-    BearerAuth:
+    bearerAuth:
       type: http
-      scheme: Bearer
-      description: The Bearer token for the user
+      scheme: bearer
+      description: JWT Bearer token authentication
 tags:
   - name: Buyer
     description: Endpoints for managing buyer information, including profile details, shipping addresses, and purchase history for customers of the BookWorm platform

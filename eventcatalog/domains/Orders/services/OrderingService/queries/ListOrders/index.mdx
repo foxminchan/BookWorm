@@ -7,14 +7,17 @@ badges:
   - content: GET
     textColor: green
     backgroundColor: green
+    icon: MagnifyingGlassIcon
   - content: "Order"
     textColor: yellow
     backgroundColor: yellow
+    icon: ListBulletIcon
   - content: "Role-Based"
     textColor: blue
     backgroundColor: blue
+    icon: UserGroupIcon
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 ---
 
 ## Overview
@@ -153,7 +156,7 @@ Returns a paginated list of orders with metadata about the pagination.
     {
       "id": "8a1b6a9c-7d3e-4f5a-9b2c-1d3e5f7a9b2c",
       "date": "2025-03-29T10:15:22Z",
-      "total": 124.50,
+      "total": 124.5,
       "status": "New"
     }
   ]
@@ -172,7 +175,9 @@ Returned when the request validation fails.
   "errors": {
     "PageIndex": ["The field PageIndex must be greater than 0."],
     "PageSize": ["The field PageSize must be greater than 0."],
-    "Status": ["The field Status has a range of values which does not include '5'."]
+    "Status": [
+      "The field Status has a range of values which does not include '5'."
+    ]
   }
 }
 ```

@@ -30,7 +30,7 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
             .Problem(
                 title: title,
                 statusCode: statusCode,
-                extensions: new Dictionary<string, object?> { { "traceId", traceId } }
+                extensions: new Dictionary<string, object?> { { nameof(traceId), traceId } }
             )
             .ExecuteAsync(httpContext);
 

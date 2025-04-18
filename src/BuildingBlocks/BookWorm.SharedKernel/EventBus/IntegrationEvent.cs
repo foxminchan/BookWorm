@@ -3,7 +3,7 @@
 namespace BookWorm.SharedKernel.EventBus;
 
 [ExcludeFromTopology]
-public record IntegrationEvent
+public abstract record IntegrationEvent
 {
     public Guid Id { get; } = Guid.CreateVersion7();
 

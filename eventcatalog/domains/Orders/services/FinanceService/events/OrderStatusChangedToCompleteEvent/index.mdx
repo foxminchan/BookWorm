@@ -9,15 +9,18 @@ badges:
   - content: Order Lifecycle
     textColor: green
     backgroundColor: green
+    icon: CubeTransparentIcon
   - content: Status Change
     textColor: blue
     backgroundColor: blue
+    icon: SparklesIcon
   - content: Channel:amqp
     backgroundColor: green
     textColor: white
+    icon: ArrowPathIcon
 schemaPath: schema.json
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 ---
 
 ## Overview
@@ -32,12 +35,12 @@ This event represents an integration event when an order status is changed to co
 
 The event contains the following key properties:
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `OrderId` | `Guid` | Unique identifier for the order being completed |
-| `BasketId` | `Guid` | Identifier of the basket associated with the order |
-| `Email` | `string?` | Customer's email address (optional) for notifications |
-| `TotalMoney` | `decimal` | Total monetary value of the completed order |
+| Property     | Type      | Description                                           |
+| ------------ | --------- | ----------------------------------------------------- |
+| `OrderId`    | `Guid`    | Unique identifier for the order being completed       |
+| `BasketId`   | `Guid`    | Identifier of the basket associated with the order    |
+| `Email`      | `string?` | Customer's email address (optional) for notifications |
+| `TotalMoney` | `decimal` | Total monetary value of the completed order           |
 
 ## Workflow Context
 
