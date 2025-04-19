@@ -30,7 +30,7 @@ public static class StoreConfigs
             options.Events.MetadataConfig.HeadersEnabled = true;
         }
 
-        // Turn on Otel tracing for connection activity, and
+        // Turn on Otel tracing for connection activity and
         // also tag events to each span for all the Marten "write"
         // operations
         options.OpenTelemetry.TrackConnections = TrackLevel.Normal;
