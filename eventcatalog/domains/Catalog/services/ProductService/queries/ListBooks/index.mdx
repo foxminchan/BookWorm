@@ -7,11 +7,13 @@ badges:
   - content: GET
     textColor: blue
     backgroundColor: blue
+    icon: MagnifyingGlassIcon
   - content: "Book"
     textColor: yellow
     backgroundColor: yellow
+    icon: BookOpenIcon
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 ---
 
 ## Overview
@@ -30,18 +32,18 @@ Each book in the returned collection contains core domain properties while maint
 
 ### Query Parameters
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| pageIndex | integer | No | 1 | The page number to retrieve (1-based) |
-| pageSize | integer | No | 10 | Number of items per page |
-| orderBy | string | No | Name | Property to sort results by. Valid values: `Name`, `OriginalPrice`, `DiscountPrice`, `Status` |
-| isDescending | boolean | No | false | Whether to sort results in descending order |
-| search | string | No | null | Search term to filter books by (uses semantic search) |
-| minPrice | decimal | No | null | Minimum price filter |
-| maxPrice | decimal | No | null | Maximum price filter |
-| categoryId | array[Guid] | No | null | Filter by specific category IDs |
-| publisherId | array[Guid] | No | null | Filter by specific publisher IDs |
-| authorIds | array[Guid] | No | null | Filter by specific author IDs |
+| Parameter    | Type        | Required | Default | Description                                                                                   |
+| ------------ | ----------- | -------- | ------- | --------------------------------------------------------------------------------------------- |
+| pageIndex    | integer     | No       | 1       | The page number to retrieve (1-based)                                                         |
+| pageSize     | integer     | No       | 10      | Number of items per page                                                                      |
+| orderBy      | string      | No       | Name    | Property to sort results by. Valid values: `Name`, `OriginalPrice`, `DiscountPrice`, `Status` |
+| isDescending | boolean     | No       | false   | Whether to sort results in descending order                                                   |
+| search       | string      | No       | null    | Search term to filter books by (uses semantic search)                                         |
+| minPrice     | decimal     | No       | null    | Minimum price filter                                                                          |
+| maxPrice     | decimal     | No       | null    | Maximum price filter                                                                          |
+| categoryId   | array[Guid] | No       | null    | Filter by specific category IDs                                                               |
+| publisherId  | array[Guid] | No       | null    | Filter by specific publisher IDs                                                              |
+| authorIds    | array[Guid] | No       | null    | Filter by specific author IDs                                                                 |
 
 ### Examples Usage
 
@@ -121,7 +123,7 @@ Returns a paged result containing the filtered books:
         "name": "Scribner"
       },
       "averageRating": 4.5,
-      "totalReviews": 100,
+      "totalReviews": 100
     }
   ]
 }

@@ -7,12 +7,15 @@ badges:
   - content: Event Consumer
     textColor: blue
     backgroundColor: blue
+    icon: ArrowPathIcon
   - content: Email Delivery
     textColor: green
     backgroundColor: green
+    icon: EnvelopeIcon
   - content: Resilient
     textColor: orange
     backgroundColor: orange
+    icon: WrenchScrewdriverIcon
 sends: []
 receives:
   - id: CancelOrderCommand
@@ -25,7 +28,7 @@ schemaPath: notification-service.yml
 specifications:
   asyncapiPath: notification-service.yml
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 repository:
   language: C#
   url: https://github.com/foxminchan/BookWorm
@@ -35,11 +38,55 @@ repository:
 
 The Notification Service is a supporting service within BookWorm's microservices architecture, responsible for sending transactional emails to customers at critical points in the order lifecycle. Built using an event-driven approach, this service listens for integration events from other domains and transforms them into appropriate customer communications.
 
-<Tiles >
-    <Tile icon="DocumentIcon" href={`/docs/services/${frontmatter.id}/${frontmatter.version}/changelog`}  title="View the changelog" description="Want to know the history of this service? View the change logs" />
-    <Tile icon="UserGroupIcon" href="/docs/users/nhanxnguyen" title="Contact the author" description="Any questions? Feel free to contact the owners" />
-    <Tile icon="BoltIcon"  href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`} title={`Receives ${frontmatter.receives.length} messages`} description="This service receives messages from other services" />
+<Tiles>
+  <Tile
+    icon="DocumentIcon"
+    href={`/docs/services/${frontmatter.id}/${frontmatter.version}/changelog`}
+    title="View the changelog"
+    description="Want to know the history of this service? View the change logs"
+  />
+  <Tile
+    icon="UserGroupIcon"
+    href="/docs/users/nhanxnguyen"
+    title="Contact the author"
+    description="Any questions? Feel free to contact the owners"
+  />
+  <Tile
+    icon="BoltIcon"
+    href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
+    title={`Receives ${frontmatter.receives.length} messages`}
+    description="This service receives messages from other services"
+  />
 </Tiles>
+
+## Component Diagram
+
+```mermaid
+C4Component
+    title Component diagram for Notification Service
+
+    Container_Boundary(notification, "Notification Service") {
+        Component(emailService, "Email Service", ".NET", "Handles email composition and delivery")
+        Component(templateEngine, "Template Engine", ".NET", "Manages email templates")
+        Component(eventHandler, "Event Handler", ".NET", "Processes incoming events")
+        Component(notificationManager, "Notification Manager", ".NET", "Core business logic for notifications")
+        Component(smtpClient, "SMTP Client", ".NET", "Email delivery abstraction")
+    }
+
+    SystemQueue(eventBus, "Event Bus", "Handles async communication")
+    System_Ext(sendGrid, "SendGrid", "Production email provider")
+    System_Ext(mailPit, "MailPit", "Development email provider")
+
+    Rel(eventBus, eventHandler, "Events", "Async")
+    Rel(eventHandler, notificationManager, "Uses", "Internal")
+    Rel(notificationManager, emailService, "Uses", "Internal")
+    Rel(emailService, templateEngine, "Uses", "Internal")
+    Rel(emailService, smtpClient, "Uses", "Internal")
+    Rel(smtpClient, sendGrid, "Sends emails", "SMTP/API")
+    Rel(smtpClient, mailPit, "Sends emails (Dev)", "SMTP")
+
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+```
 
 ## Architecture diagram
 
@@ -61,11 +108,11 @@ The service supports multiple email delivery mechanisms through a clean abstract
 
 The Notification Service processes the following commands:
 
-| Command | Channel | Purpose |
-|---------|---------|---------|
-| `PlaceOrderCommand` | notification-place-order | Sends order confirmation emails |
+| Command                | Channel                     | Purpose                              |
+| ---------------------- | --------------------------- | ------------------------------------ |
+| `PlaceOrderCommand`    | notification-place-order    | Sends order confirmation emails      |
 | `CompleteOrderCommand` | notification-complete-order | Sends order completion notifications |
-| `CancelOrderCommand` | notification-cancel-order | Delivers order cancellation notices |
+| `CancelOrderCommand`   | notification-cancel-order   | Delivers order cancellation notices  |
 
 ## Email Templates
 

@@ -8,14 +8,17 @@ badges:
   - content: PUT
     textColor: orange
     backgroundColor: orange
+    icon: PencilIcon
   - content: "Book"
     textColor: yellow
     backgroundColor: yellow
+    icon: BookOpenIcon
   - content: "Admin Only"
     textColor: red
     backgroundColor: red
+    icon: LockClosedIcon
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 ---
 
 ## Overview
@@ -75,10 +78,13 @@ The following validation rules are applied to the request:
 ### Responses
 
 #### <span className="text-green-500">204 No Content</span>
+
 The book was successfully updated. No content is returned in the response body.
 
 #### <span className="text-orange-500">400 Bad Request</span>
+
 The request is invalid. This can occur when:
+
 - Validation rules are violated
 - The provided data is in an incorrect format
 - The image file exceeds size limits or is of an unsupported type
@@ -86,13 +92,16 @@ The request is invalid. This can occur when:
 <SchemaViewer file="response-400.json" maxHeight="500" id="response-400" />
 
 #### <span className="text-red-500">404 Not Found</span>
+
 The book with the specified ID does not exist in the system.
 
 #### <span className="text-red-500">401 Unauthorized</span>
+
 The request is not authenticated. This endpoint requires admin privileges.
 
 ### Domain Events
 
 Upon successful update, the following domain events are triggered:
+
 - `BookUpdatedEvent`: When the book's name or description is modified
 - The book's embedding in the vector database is automatically updated to reflect the changes

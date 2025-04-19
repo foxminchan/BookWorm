@@ -7,11 +7,13 @@ badges:
   - content: DELETE
     textColor: red
     backgroundColor: red
+    icon: XMarkIcon
   - content: "Basket"
     textColor: yellow
     backgroundColor: yellow
+    icon: ShoppingCartIcon
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 ---
 
 ## Overview
@@ -28,6 +30,7 @@ This endpoint allows you to delete a shopping basket by its unique identifier. T
 ### Authentication
 
 This endpoint requires authentication. The user's identity is verified using Keycloak authentication:
+
 - A valid authentication token must be provided
 - The user's ID is extracted from the `sub` claim in the JWT token
 - Unauthorized access will result in a 401 Unauthorized response
@@ -35,6 +38,7 @@ This endpoint requires authentication. The user's identity is verified using Key
 ### Implementation Details
 
 The delete operation is handled by the `DeleteBasketCommandHandler` which:
+
 - Validates user authentication
 - Verifies basket ownership
 - Removes the basket from the repository
@@ -108,6 +112,7 @@ Successful deletion of the basket.
 #### <span className="text-red-500">401 Unauthorized</span>
 
 Returned when:
+
 - No authentication token is provided
 - Invalid authentication token
 - Token has expired
@@ -115,6 +120,7 @@ Returned when:
 #### <span className="text-orange-500">404 Not Found</span>
 
 Returned when:
+
 - The basket does not exist for the authenticated user
 
 ### Error Examples

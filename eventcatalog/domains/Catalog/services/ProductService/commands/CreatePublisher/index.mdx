@@ -8,14 +8,17 @@ badges:
   - content: POST
     textColor: green
     backgroundColor: green
+    icon: PlusIcon
   - content: "Publisher"
     textColor: yellow
     backgroundColor: yellow
+    icon: BuildingOfficeIcon
   - content: "Admin Only"
     textColor: red
     backgroundColor: red
+    icon: LockClosedIcon
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 ---
 
 ## Overview
@@ -102,6 +105,7 @@ The implementation uses several patterns and techniques:
 5. **FluentValidation**: Validates the command parameters
 
 The command execution flow:
+
 1. The endpoint receives the HTTP POST request with the publisher data
 2. The validator ensures all business rules are satisfied
 3. The command handler creates a new Publisher entity
@@ -148,6 +152,7 @@ curl -X POST https://api.bookworm.com/api/v1/publisers \
 #### <span className="text-orange-500">400 Bad Request</span>
 
 Returned when:
+
 - The request body fails validation rules
 - The name field is missing or empty
 - The name exceeds the maximum length limit

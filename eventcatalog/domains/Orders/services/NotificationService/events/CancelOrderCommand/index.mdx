@@ -9,15 +9,18 @@ badges:
   - content: Orchestrated
     textColor: orange
     backgroundColor: orange
+    icon: CubeTransparentIcon
   - content: Notification
     textColor: blue
     backgroundColor: blue
+    icon: BellIcon
   - content: Channel:amqp
     backgroundColor: green
     textColor: white
+    icon: ArrowPathIcon
 schemaPath: schema.json
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 ---
 
 ## Overview
@@ -32,11 +35,11 @@ The `CancelOrderCommand` is an integration event published by the Finance servic
 
 The command contains the following properties:
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `OrderId` | `Guid` | Unique identifier for the order being cancelled |
-| `Email` | `string?` | Customer's email address (optional) for notification purposes |
-| `TotalMoney` | `decimal` | Total monetary value of the cancelled order |
+| Property     | Type      | Description                                                   |
+| ------------ | --------- | ------------------------------------------------------------- |
+| `OrderId`    | `Guid`    | Unique identifier for the order being cancelled               |
+| `Email`      | `string?` | Customer's email address (optional) for notification purposes |
+| `TotalMoney` | `decimal` | Total monetary value of the cancelled order                   |
 
 ## Workflow Context
 
