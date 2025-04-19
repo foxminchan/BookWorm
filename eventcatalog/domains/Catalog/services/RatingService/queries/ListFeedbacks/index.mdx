@@ -7,14 +7,17 @@ badges:
   - content: GET
     textColor: blue
     backgroundColor: blue
+    icon: MagnifyingGlassIcon
   - content: "Feedback"
     textColor: yellow
     backgroundColor: yellow
+    icon: StarIcon
   - content: "Paged"
     textColor: green
     backgroundColor: green
+    icon: TableCellsIcon
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 ---
 
 ## Overview
@@ -86,13 +89,13 @@ The List Feedbacks query is a read-only operation that:
 
 ## Query Parameters
 
-| Parameter    | Type    | Required | Default       | Description                                      |
-|--------------|---------|----------|---------------|--------------------------------------------------|
-| BookId       | Guid    | Yes      | -             | The ID of the book to get feedback for           |
-| PageIndex    | int     | No       | 1             | The page number (1-based indexing)               |
-| PageSize     | int     | No       | 10            | Number of items per page                         |
-| OrderBy      | string  | No       | "Rating"      | Property to order results by                     |
-| IsDescending | boolean | No       | false         | Whether to order results in descending order     |
+| Parameter    | Type    | Required | Default  | Description                                  |
+| ------------ | ------- | -------- | -------- | -------------------------------------------- |
+| BookId       | Guid    | Yes      | -        | The ID of the book to get feedback for       |
+| PageIndex    | int     | No       | 1        | The page number (1-based indexing)           |
+| PageSize     | int     | No       | 10       | Number of items per page                     |
+| OrderBy      | string  | No       | "Rating" | Property to order results by                 |
+| IsDescending | boolean | No       | false    | Whether to order results in descending order |
 
 ## Technical Implementation
 
@@ -105,6 +108,7 @@ The implementation uses several patterns and techniques:
 5. **Minimal API**: Uses .NET's minimal API approach with endpoint mapping
 
 The query execution flow:
+
 1. The endpoint receives the HTTP GET request with query parameters
 2. Parameters are validated using FluentValidation
 3. A filter specification is created with the BookId, ordering, and pagination parameters
@@ -220,3 +224,4 @@ Returned when validation fails for the provided parameters.
     "PageSize": ["PageSize must be greater than 0."]
   }
 }
+```

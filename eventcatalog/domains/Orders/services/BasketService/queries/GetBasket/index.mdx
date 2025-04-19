@@ -7,11 +7,13 @@ badges:
   - content: GET
     textColor: blue
     backgroundColor: blue
+    icon: MagnifyingGlassIcon
   - content: "Basket"
     textColor: yellow
     backgroundColor: yellow
+    icon: ShoppingCartIcon
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 ---
 
 ## Overview
@@ -85,6 +87,7 @@ sequenceDiagram
 ### Technical Implementation
 
 The query execution follows these steps:
+
 1. **Authentication**: Extracts the user ID from the JWT token claims
 2. **Basket Retrieval**: Fetches the basket from Redis using the user ID as the key
 3. **DTO Conversion**: Converts the domain entity to a DTO
@@ -92,6 +95,7 @@ The query execution follows these steps:
 5. **Response**: Returns the enriched basket DTO to the client
 
 The implementation includes several notable features:
+
 - **Cross-Service Data Enrichment**: Basket items are enriched with book details from the Catalog service
 - **gRPC Communication**: Uses gRPC for efficient inter-service communication
 - **Post-Processing**: Uses MediatR's post-processing pipeline for separation of concerns
@@ -176,6 +180,7 @@ The basket for the authenticated user was not found.
 ### Error Handling
 
 The endpoint handles the following error scenarios:
+
 - Missing or invalid authentication token
 - Basket not found for the user
 - Book information not found in the catalog service

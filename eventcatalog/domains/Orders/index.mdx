@@ -13,29 +13,47 @@ services:
   - id: NotificationService
     version: 1.0.0
 badges:
-  - content: Ordering
+  - content: Subdomain
     backgroundColor: blue
+    textColor: blue
+    icon: BoltIcon
+  - content: Order Management
+    backgroundColor: gray
     textColor: white
-  - content: Basket
+    icon: ListBulletIcon
+  - content: Shopping Cart
     backgroundColor: green
     textColor: white
-  - content: Finance
+    icon: ShoppingCartIcon
+  - content: Finance Processing
     backgroundColor: orange
     textColor: white
-  - content: Notification
+    icon: BanknotesIcon
+  - content: System Notifications
     backgroundColor: red
     textColor: white
+    icon: BellIcon
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 ---
 
 ## Overview
 
 The Ordering domain represents a strategic core domain within the BookWorm system, responsible for managing the complete lifecycle of customer orders from creation through fulfillment. As a core domain, it embodies critical business capabilities that directly impact the organization's competitive advantage.
 
-<Tiles >
-    <Tile icon="UserGroupIcon" href="/docs/users/nhanxnguyen" title="Contact the author" description="Any questions? Feel free to contact the owners" />
-    <Tile icon="RectangleGroupIcon" href={`/visualiser/domains/${frontmatter.id}/${frontmatter.version}`} title={`${frontmatter.services.length} services are in this domain`} description="This domain contains Ordering, Basket, Finance, and Notification services" />
+<Tiles>
+  <Tile
+    icon="UserGroupIcon"
+    href="/docs/users/nhanxnguyen"
+    title="Contact the author"
+    description="Any questions? Feel free to contact the owners"
+  />
+  <Tile
+    icon="RectangleGroupIcon"
+    href={`/visualiser/domains/${frontmatter.id}/${frontmatter.version}`}
+    title={`${frontmatter.services.length} services are in this domain`}
+    description="This domain contains Ordering, Basket, Finance, and Notification services"
+  />
 </Tiles>
 
 ### Domain Characteristics
@@ -43,18 +61,13 @@ The Ordering domain represents a strategic core domain within the BookWorm syste
 - **Bounded Context**: The Ordering domain has a well-defined boundary with explicit integration points between its constituent services (Ordering, Basket, Finance, and Notification) through gRPC communication.
 
 - **Service Architecture**: The domain is composed of four specialized services:
+
   - **Ordering Service**: Core service managing order lifecycle and state
   - **Basket Service**: Handles shopping cart and item management
   - **Finance Service**: Manages payment processing and financial transactions
   - **Notification Service**: Handles customer communications and alerts
 
 - **Event Sourcing**: The domain implements event sourcing as its persistence mechanism, storing the complete history of order-related events rather than just the current state. This approach provides a comprehensive audit trail and enables temporal queries and state reconstruction at any point in time.
-
-### Event Storming Session
-
-The event storming session for the Ordering domain was conducted to identify key events, commands, and aggregates. The session included stakeholders from various teams, including business analysts, developers, and product owners. The following key events were identified:
-
-<Miro boardId="uXjVIG4lIr0=/" moveToWidget="3458764623724229202" edit={false} />
 
 ### Business Rules and Invariants
 

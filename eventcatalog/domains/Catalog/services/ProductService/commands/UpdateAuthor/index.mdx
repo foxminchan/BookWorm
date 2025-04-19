@@ -8,14 +8,17 @@ badges:
   - content: PUT
     textColor: orange
     backgroundColor: orange
+    icon: PencilIcon
   - content: "Author"
     textColor: yellow
     backgroundColor: yellow
+    icon: UserIcon
   - content: "Admin Only"
     textColor: red
     backgroundColor: red
+    icon: LockClosedIcon
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 ---
 
 ## Overview
@@ -86,6 +89,7 @@ Returned when the author is successfully updated.
 #### <span className="text-orange-500">400 Bad Request</span>
 
 Returned when:
+
 - The request body fails validation
 - The author name format is invalid
 - The author name exceeds maximum length

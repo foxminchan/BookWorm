@@ -9,15 +9,18 @@ badges:
   - content: Checkout Flow
     textColor: green
     backgroundColor: green
+    icon: ShoppingCartIcon
   - content: Order Initiation
     textColor: blue
     backgroundColor: blue
+    icon: PlusCircleIcon
   - content: Channel:amqp
     backgroundColor: green
     textColor: white
+    icon: ArrowPathIcon
 schemaPath: schema.json
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 ---
 
 ## Overview
@@ -32,12 +35,12 @@ The `UserCheckedOutIntegrationEvent` is a critical integration event that signal
 
 The event contains the following key properties:
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `OrderId` | `Guid` | Unique identifier for the newly created order |
-| `BasketId` | `Guid` | Identifier of the basket being converted to an order |
-| `Email` | `string?` | Customer's email address (optional) for notifications and order association |
-| `TotalMoney` | `decimal` | Total monetary value of the order |
+| Property     | Type      | Description                                                                 |
+| ------------ | --------- | --------------------------------------------------------------------------- |
+| `OrderId`    | `Guid`    | Unique identifier for the newly created order                               |
+| `BasketId`   | `Guid`    | Identifier of the basket being converted to an order                        |
+| `Email`      | `string?` | Customer's email address (optional) for notifications and order association |
+| `TotalMoney` | `decimal` | Total monetary value of the order                                           |
 
 ## Workflow Context
 

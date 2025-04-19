@@ -9,15 +9,18 @@ badges:
   - content: Orchestrated
     textColor: orange
     backgroundColor: orange
+    icon: CubeTransparentIcon
   - content: Error Handling
     textColor: red
     backgroundColor: red
+    icon: ExclamationCircleIcon
   - content: Channel:amqp
     backgroundColor: green
     textColor: white
+    icon: ArrowPathIcon
 schemaPath: schema.json
 owners:
-    - nhanxnguyen
+  - nhanxnguyen
 ---
 
 ## Overview
@@ -32,12 +35,12 @@ The `DeleteBasketFailedCommand` is an integration event published by the Finance
 
 The command contains the following properties:
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `BasketId` | `Guid` | Unique identifier for the basket that failed to be deleted |
-| `Email` | `string?` | Customer's email address (optional) for notification purposes |
-| `OrderId` | `Guid` | Unique identifier for the associated order |
-| `TotalMoney` | `decimal` | Total monetary value of the basket/order |
+| Property     | Type      | Description                                                   |
+| ------------ | --------- | ------------------------------------------------------------- |
+| `BasketId`   | `Guid`    | Unique identifier for the basket that failed to be deleted    |
+| `Email`      | `string?` | Customer's email address (optional) for notification purposes |
+| `OrderId`    | `Guid`    | Unique identifier for the associated order                    |
+| `TotalMoney` | `decimal` | Total monetary value of the basket/order                      |
 
 ## Workflow Context
 
