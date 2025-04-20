@@ -1,6 +1,10 @@
 @description('The location for the resource(s) to be deployed.')
 param location string = resourceGroup().location
 
+param bookworm_notification_identity_outputs_id string
+
+param bookworm_notification_identity_outputs_clientid string
+
 param bookworm_notification_containerport string
 
 @secure()
@@ -14,6 +18,8 @@ param sender_name_value string
 
 @secure()
 param queue_password_value string
+
+param storage_outputs_tableendpoint string
 
 param bookworm_outputs_azure_container_apps_environment_default_domain string
 
@@ -104,6 +110,14 @@ resource bookworm_notification 'Microsoft.App/containerApps@2024-03-01' = {
               name: 'ConnectionStrings__queue'
               secretRef: 'connectionstrings--queue'
             }
+            {
+              name: 'ConnectionStrings__table'
+              value: storage_outputs_tableendpoint
+            }
+            {
+              name: 'AZURE_CLIENT_ID'
+              value: bookworm_notification_identity_outputs_clientid
+            }
           ]
         }
       ]
@@ -115,6 +129,7 @@ resource bookworm_notification 'Microsoft.App/containerApps@2024-03-01' = {
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
+      '${bookworm_notification_identity_outputs_id}': { }
       '${bookworm_outputs_azure_container_registry_managed_identity_id}': { }
     }
   }

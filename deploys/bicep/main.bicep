@@ -6,7 +6,7 @@ param location string
 
 param principalId string
 
-param postgres_username string = 'vYwvzwJtYJ'
+param postgres_username string = 'XqJbjjpuFD'
 
 @secure()
 param postgres_password string
@@ -148,6 +148,24 @@ module bookworm_basket_roles_redis_kv 'bookworm-basket-roles-redis-kv/bookworm-b
   }
 }
 
+module bookworm_notification_identity 'bookworm-notification-identity/bookworm-notification-identity.bicep' = {
+  name: 'bookworm-notification-identity'
+  scope: rg
+  params: {
+    location: location
+  }
+}
+
+module bookworm_notification_roles_storage 'bookworm-notification-roles-storage/bookworm-notification-roles-storage.bicep' = {
+  name: 'bookworm-notification-roles-storage'
+  scope: rg
+  params: {
+    location: location
+    storage_outputs_name: storage.outputs.name
+    principalId: bookworm_notification_identity.outputs.principalId
+  }
+}
+
 module bookworm_ordering_identity 'bookworm-ordering-identity/bookworm-ordering-identity.bicep' = {
   name: 'bookworm-ordering-identity'
   scope: rg
@@ -218,6 +236,8 @@ output bookworm_AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN string = bookwor
 
 output bookworm_AZURE_CONTAINER_APPS_ENVIRONMENT_ID string = bookworm.outputs.AZURE_CONTAINER_APPS_ENVIRONMENT_ID
 
+output bookworm_volumes_ollama_0 string = bookworm.outputs.volumes_ollama_0
+
 output bookworm_volumes_keycloak_0 string = bookworm.outputs.volumes_keycloak_0
 
 output bookworm_catalog_identity_id string = bookworm_catalog_identity.outputs.id
@@ -240,11 +260,15 @@ output bookworm_AZURE_CONTAINER_REGISTRY_ENDPOINT string = bookworm.outputs.AZUR
 
 output bookworm_AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID string = bookworm.outputs.AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID
 
-output bookworm_volumes_ollama_0 string = bookworm.outputs.volumes_ollama_0
-
 output bookworm_basket_identity_id string = bookworm_basket_identity.outputs.id
 
 output bookworm_basket_identity_clientId string = bookworm_basket_identity.outputs.clientId
+
+output bookworm_notification_identity_id string = bookworm_notification_identity.outputs.id
+
+output bookworm_notification_identity_clientId string = bookworm_notification_identity.outputs.clientId
+
+output storage_tableEndpoint string = storage.outputs.tableEndpoint
 
 output bookworm_ordering_identity_id string = bookworm_ordering_identity.outputs.id
 

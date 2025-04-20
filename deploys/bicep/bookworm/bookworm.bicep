@@ -119,28 +119,6 @@ resource managedStorage_volumes_vectordb_0 'Microsoft.App/managedEnvironments/st
   parent: bookworm
 }
 
-resource shares_volumes_keycloak_0 'Microsoft.Storage/storageAccounts/fileServices/shares@2024-01-01' = {
-  name: take('sharesvolumeskeycloak0-${uniqueString(resourceGroup().id)}', 63)
-  properties: {
-    enabledProtocols: 'SMB'
-    shareQuota: 1024
-  }
-  parent: storageVolumeFileService
-}
-
-resource managedStorage_volumes_keycloak_0 'Microsoft.App/managedEnvironments/storages@2024-03-01' = {
-  name: take('managedstoragevolumeskeycloak${uniqueString(resourceGroup().id)}', 24)
-  properties: {
-    azureFile: {
-      accountName: bookworm_storageVolume.name
-      accountKey: bookworm_storageVolume.listKeys().keys[0].value
-      accessMode: 'ReadWrite'
-      shareName: shares_volumes_keycloak_0.name
-    }
-  }
-  parent: bookworm
-}
-
 resource shares_volumes_ollama_0 'Microsoft.Storage/storageAccounts/fileServices/shares@2024-01-01' = {
   name: take('sharesvolumesollama0-${uniqueString(resourceGroup().id)}', 63)
   properties: {
@@ -163,11 +141,33 @@ resource managedStorage_volumes_ollama_0 'Microsoft.App/managedEnvironments/stor
   parent: bookworm
 }
 
+resource shares_volumes_keycloak_0 'Microsoft.Storage/storageAccounts/fileServices/shares@2024-01-01' = {
+  name: take('sharesvolumeskeycloak0-${uniqueString(resourceGroup().id)}', 63)
+  properties: {
+    enabledProtocols: 'SMB'
+    shareQuota: 1024
+  }
+  parent: storageVolumeFileService
+}
+
+resource managedStorage_volumes_keycloak_0 'Microsoft.App/managedEnvironments/storages@2024-03-01' = {
+  name: take('managedstoragevolumeskeycloak${uniqueString(resourceGroup().id)}', 24)
+  properties: {
+    azureFile: {
+      accountName: bookworm_storageVolume.name
+      accountKey: bookworm_storageVolume.listKeys().keys[0].value
+      accessMode: 'ReadWrite'
+      shareName: shares_volumes_keycloak_0.name
+    }
+  }
+  parent: bookworm
+}
+
 output volumes_vectordb_0 string = managedStorage_volumes_vectordb_0.name
 
-output volumes_keycloak_0 string = managedStorage_volumes_keycloak_0.name
-
 output volumes_ollama_0 string = managedStorage_volumes_ollama_0.name
+
+output volumes_keycloak_0 string = managedStorage_volumes_keycloak_0.name
 
 output MANAGED_IDENTITY_NAME string = bookworm_mi.name
 

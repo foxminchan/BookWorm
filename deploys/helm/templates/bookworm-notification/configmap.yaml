@@ -13,4 +13,5 @@ data:
   OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "{{ .Values.config.bookworm-notification.OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY }}"
   ASPNETCORE_FORWARDEDHEADERS_ENABLED: "{{ .Values.config.bookworm-notification.ASPNETCORE_FORWARDEDHEADERS_ENABLED }}"
   HTTP_PORTS: "{{ .Values.config.bookworm-notification.HTTP_PORTS }}"
+  ConnectionStrings__table: "{{ .Values.config.bookworm-notification.ConnectionStrings__table }}"
   HEALTHCHECKSUI_URLS: "{{ .Values.config.bookworm-notification.HEALTHCHECKSUI_URLS }}"

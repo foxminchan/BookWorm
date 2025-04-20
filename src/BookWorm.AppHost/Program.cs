@@ -29,10 +29,18 @@ var queue = builder
     .WithLifetime(ContainerLifetime.Persistent)
     .WithEndpoint("tcp", e => e.Port = 5672);
 
-var storage = builder.AddAzureStorage(Components.Storage).RunAsContainer().ProvisionAsService();
-var signalR = builder.AddAzureSignalR(Components.SignalR).RunAsContainer().ProvisionAsService();
+var storage = builder
+    .AddAzureStorage(Components.Azure.Storage.Resource)
+    .RunAsContainer()
+    .ProvisionAsService();
 
-var blobStorage = storage.AddBlobs(Components.Blob);
+var signalR = builder
+    .AddAzureSignalR(Components.Azure.SignalR)
+    .RunAsContainer()
+    .ProvisionAsService();
+
+var blobStorage = storage.AddBlobs(Components.Azure.Storage.Blob);
+var tableStorage = storage.AddTables(Components.Azure.Storage.Table);
 var catalogDb = postgres.AddDatabase(Components.Database.Catalog);
 var orderingDb = postgres.AddDatabase(Components.Database.Ordering);
 var financeDb = postgres.AddDatabase(Components.Database.Finance);
@@ -92,7 +100,9 @@ var notificationApi = builder
     .AddProject<BookWorm_Notification>(Application.Notification)
     .WithEmailProvider()
     .WithReference(queue)
-    .WaitFor(queue);
+    .WaitFor(queue)
+    .WithReference(tableStorage)
+    .WaitFor(tableStorage);
 
 var orderingApi = builder
     .AddProject<BookWorm_Ordering>(Application.Ordering)

@@ -95,6 +95,7 @@ C4Container
         ContainerDb(basketDb, "Basket DB", "Redis", "Stores shopping cart data")
         ContainerDb(financeDb, "Finance DB", "PostgreSQL", "Stores payment records")
         ContainerDb(ratingDb, "Rating DB", "PostgreSQL", "Stores ratings and reviews")
+        ContainerDb(notificationDb, "Notification DB", "PostgreSQL", "Stores notification records")
         ContainerDb(vectorDb, "Vector DB", "Qdrant", "Stores vector embeddings for search")
 
         SystemQueue(eventBus, "RabbitMQ", "Handles asynchronous communication between services")
@@ -117,6 +118,7 @@ C4Container
     Rel(finance, financeDb, "Reads/Writes", "TCP")
     Rel(rating, ratingDb, "Reads/Writes", "TCP")
     Rel(catalog, vectorDb, "Reads/Writes", "TCP")
+    Rel(notification, notificationDb, "Reads/Writes", "TCP")
     Rel(notification, email, "Sends emails", "SMTP")
 
     Rel(catalog, eventBus, "Publishes/Subscribes", "AMQP")
