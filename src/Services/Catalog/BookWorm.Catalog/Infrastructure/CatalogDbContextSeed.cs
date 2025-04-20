@@ -71,8 +71,7 @@ public sealed partial class CatalogDbContextSeed(
                     new() { Temperature = 0.6f, ResponseFormat = ChatResponseFormat.Text }
                 );
 
-                var description =
-                    response.Message.Text?.Trim('"', ' ', '\r', '\n', '\t') ?? string.Empty;
+                var description = response.Text.Trim('"', ' ', '\r', '\n', '\t');
 
                 description = RemoveExtraWhitespaceRegex().Replace(description, " ");
                 description = RemoveThinkTagsRegex().Replace(description, string.Empty);
