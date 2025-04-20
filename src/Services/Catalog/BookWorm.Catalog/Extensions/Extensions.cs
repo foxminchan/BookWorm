@@ -71,7 +71,7 @@ public static class Extensions
         builder.AddOllamaClient();
 
         // Add Blob services
-        builder.AddAzureBlobClient(Components.Blob);
+        builder.AddAzureBlobClient(Components.Azure.Storage.Blob);
         services.AddSingleton<IBlobService, BlobService>();
 
         // Configure endpoints

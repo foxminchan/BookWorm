@@ -103,6 +103,13 @@ public static class Extensions
                 .AddCheck<SendGridHealthCheck>(nameof(SendGridHealthCheck), HealthStatus.Degraded);
         }
 
+        builder.AddAzureTableClient(Components.Azure.Storage.Table);
+        services.AddScoped<ITableService, TableService>();
+        services.Decorate<ISender, OutboxSender>();
+
+        services.AddHostedService<ResendErrorEmailWorker>();
+        services.AddHostedService<CleanUpSentEmailWorker>();
+
         builder.AddDefaultCors();
 
         services.AddOpenTelemetry().WithTracing(t => t.AddSource(TelemetryTags.ActivitySourceName));
