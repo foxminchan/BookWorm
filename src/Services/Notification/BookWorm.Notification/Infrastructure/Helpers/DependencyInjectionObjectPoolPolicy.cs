@@ -1,6 +1,5 @@
-﻿namespace BookWorm.Notification.Helpers;
+﻿namespace BookWorm.Notification.Infrastructure.Helpers;
 
-[ExcludeFromCodeCoverage]
 public sealed class DependencyInjectionObjectPoolPolicy<T>(IServiceProvider sp)
     : IPooledObjectPolicy<T>
     where T : class, new()

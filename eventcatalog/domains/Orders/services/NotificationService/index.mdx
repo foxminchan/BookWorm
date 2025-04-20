@@ -71,6 +71,7 @@ C4Component
         Component(eventHandler, "Event Handler", ".NET", "Processes incoming events")
         Component(notificationManager, "Notification Manager", ".NET", "Core business logic for notifications")
         Component(smtpClient, "SMTP Client", ".NET", "Email delivery abstraction")
+        ContainerDb(notificationDb, "Notification DB", "Azure Table Storage", "Stores notification records")
     }
 
     SystemQueue(eventBus, "Event Bus", "Handles async communication")
@@ -84,6 +85,7 @@ C4Component
     Rel(emailService, smtpClient, "Uses", "Internal")
     Rel(smtpClient, sendGrid, "Sends emails", "SMTP/API")
     Rel(smtpClient, mailPit, "Sends emails (Dev)", "SMTP")
+    Rel(notificationManager, notificationDb, "Reads/Writes", "TCP")
 
     UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
 ```

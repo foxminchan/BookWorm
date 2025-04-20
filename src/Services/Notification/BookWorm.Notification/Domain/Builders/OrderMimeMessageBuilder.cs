@@ -43,10 +43,23 @@ public sealed class OrderMimeMessageBuilder
         return this;
     }
 
+    public OrderMimeMessageBuilder WithSubject(string subject)
+    {
+        Subject = subject;
+        return this;
+    }
+
     public OrderMimeMessageBuilder WithBody(Order order, IRenderer renderer)
     {
         var htmlBody = renderer.Render(order, TemplatePath);
         var bb = new BodyBuilder { HtmlBody = htmlBody };
+        Body = bb.ToMessageBody();
+        return this;
+    }
+
+    public OrderMimeMessageBuilder WithBody(string body)
+    {
+        var bb = new BodyBuilder { HtmlBody = body };
         Body = bb.ToMessageBody();
         return this;
     }
