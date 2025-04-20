@@ -2,6 +2,7 @@
 using BookWorm.ServiceDefaults.Auth;
 using BookWorm.ServiceDefaults.Kestrel;
 using BookWorm.ServiceDefaults.Keycloak;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 
 namespace BookWorm.Gateway;
 
@@ -26,34 +27,41 @@ public static class Extensions
 
         services.AddRateLimiter(options =>
         {
-            var window = TimeSpan.FromMinutes(1);
-            const int permitLimit = 10;
-            const int queueLimit = 0;
-
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
             options.OnRejected = async (context, cancellationToken) =>
             {
                 var httpContext = context.HttpContext;
 
-                httpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-                httpContext.Response.Headers.RetryAfter = window.Minutes.ToString();
-
-                await httpContext.Response.WriteAsync(
-                    "Rate limit exceeded. Try again in " + window.Minutes + " minutes.",
-                    cancellationToken
-                );
-
-                var logger = httpContext.RequestServices.GetRequiredService<ILogger<RateLimiter>>();
-
-                if (logger.IsEnabled(LogLevel.Warning))
+                if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
                 {
-                    logger.LogWarning(
-                        "Rate limit exceeded for {Path} from {IpAddress} by User {User}",
-                        httpContext.Request.Path,
-                        httpContext.Connection.RemoteIpAddress,
-                        httpContext.User.Identity?.Name
+                    httpContext.Response.Headers.RetryAfter = retryAfter.ToString();
+
+                    var problemDetailsFactory =
+                        httpContext.RequestServices.GetRequiredService<ProblemDetailsFactory>();
+
+                    var problemDetails = problemDetailsFactory.CreateProblemDetails(
+                        httpContext,
+                        StatusCodes.Status429TooManyRequests,
+                        "Rate limit exceeded",
+                        $"You have exceeded the rate limit. Try again in {retryAfter} minutes."
                     );
+
+                    await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
+
+                    var logger = httpContext.RequestServices.GetRequiredService<
+                        ILogger<RateLimiter>
+                    >();
+
+                    if (logger.IsEnabled(LogLevel.Warning))
+                    {
+                        logger.LogWarning(
+                            "Rate limit exceeded for {Path} from {IpAddress} by User {User}",
+                            httpContext.Request.Path,
+                            httpContext.Connection.RemoteIpAddress,
+                            httpContext.User.Identity?.Name
+                        );
+                    }
                 }
             };
 
@@ -66,9 +74,9 @@ public static class Extensions
                             new()
                             {
                                 AutoReplenishment = true,
-                                PermitLimit = permitLimit,
-                                QueueLimit = queueLimit,
-                                Window = window,
+                                PermitLimit = 10,
+                                QueueLimit = 0,
+                                Window = TimeSpan.FromMinutes(1),
                             }
                     )
             );

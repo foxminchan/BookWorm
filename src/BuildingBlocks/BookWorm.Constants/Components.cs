@@ -22,6 +22,7 @@ public static class Components
 
     public static class Ollama
     {
+        public const string Resource = "ollama";
         public const string Chat = "chat";
         public const string Embedding = "embedding";
     }
