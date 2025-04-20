@@ -32,7 +32,7 @@ public sealed class ChatStreaming : IChatStreaming
         {
             _logger.LogDebug(
                 "ChatModel: {model}",
-                chatClient.GetService<ChatClientMetadata>()?.ModelId
+                chatClient.GetService<ChatClientMetadata>()?.DefaultModelId
             );
         }
 
@@ -117,11 +117,6 @@ public sealed class ChatStreaming : IChatStreaming
                 )
                 {
                     tokenSource.CancelAfter(_defaultStreamItemTimeout);
-
-                    if (chatResponseUpdate.Text is null)
-                    {
-                        continue;
-                    }
 
                     fragment = new(
                         assistantReplyId,

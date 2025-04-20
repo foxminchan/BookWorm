@@ -8,6 +8,7 @@
     <GrpcVersion>2.70.0</GrpcVersion>
     <MassTransitVersion>8.4.0</MassTransitVersion>
     <MsTestVersion>1.6.3</MsTestVersion>
+    <ToolKitVersion>9.4.0</ToolKitVersion>
   </PropertyGroup>
   <ItemGroup Label="Aspire Packages">
     <!-- Aspire Hosting -->
@@ -29,9 +30,9 @@
     <PackageVersion Include="Aspire.Qdrant.Client" Version="$(AspireVersion)"/>
     <PackageVersion Include="Aspire.Keycloak.Authentication" Version="$(AspireUnstableVersion)"/>
     <!-- Community Toolkit -->
-    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.Ollama" Version="9.3.0"/>
-    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.MailPit" Version="9.3.0"/>
-    <PackageVersion Include="CommunityToolkit.Aspire.OllamaSharp" Version="9.3.0-preview.1.250319-0516"/>
+    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.Ollama" Version="$(ToolKitVersion)"/>
+    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.MailPit" Version="$(ToolKitVersion)"/>
+    <PackageVersion Include="CommunityToolkit.Aspire.OllamaSharp" Version="9.4.0-preview.1.250420-0640"/>
   </ItemGroup>
 
   <ItemGroup Label="Core Packages">
