@@ -38,6 +38,8 @@ var orderingDb = postgres.AddDatabase(Components.Database.Ordering);
 var financeDb = postgres.AddDatabase(Components.Database.Finance);
 var ratingDb = postgres.AddDatabase(Components.Database.Rating);
 
+builder.AddOllama();
+
 var models = new Dictionary<string, string>
 {
     { Components.Ollama.Embedding, "nomic-embed-text:latest" },
@@ -48,18 +50,14 @@ var keycloak = builder
     .AddKeycloak(Components.KeyCloak)
     .WithDataVolume()
     .WithImagePullPolicy(ImagePullPolicy.Always)
-    .WithLifetime(ContainerLifetime.Persistent);
-
-if (builder.ExecutionContext.IsRunMode)
-{
-    keycloak.WithRealmImport("./realm-export.json");
-}
+    .WithLifetime(ContainerLifetime.Persistent)
+    .WithSampleRealmImport(nameof(BookWorm).ToLower(), nameof(BookWorm));
 
 var catalogApi = builder
     .AddProject<BookWorm_Catalog>(Application.Catalog)
     .WithReplicas(2)
     .WithScalarApiClient()
-    .RunAsOllama(models)
+    .WithOllama(models)
     .WithReference(blobStorage)
     .WaitFor(blobStorage)
     .WithReference(queue)

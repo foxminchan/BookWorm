@@ -60,7 +60,7 @@ public static partial class AzureExtensions
         if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
         {
             builder.RunAsContainer(cfg =>
-                cfg.WithPgAdmin()
+                cfg.WithPgWeb()
                     .WithDataVolume()
                     .WithImagePullPolicy(ImagePullPolicy.Always)
                     .WithLifetime(ContainerLifetime.Persistent)

@@ -20,6 +20,8 @@ namespace BookWorm.ServiceDefaults;
 public static class Extensions
 {
     private const string HealthChecks = nameof(HealthChecks);
+    private const string HealthEndpointPath = "/health";
+    private const string AlivenessEndpointPath = "/alive";
 
     public static void AddServiceDefaults<TBuilder>(this TBuilder builder)
         where TBuilder : IHostApplicationBuilder
@@ -72,7 +74,16 @@ public static class Extensions
 
                 tracing
                     .AddSource(builder.Environment.ApplicationName)
-                    .AddAspNetCoreInstrumentation()
+                    .AddAspNetCoreInstrumentation(options =>
+                        // Don't trace requests to the health endpoint to avoid filling the dashboard with noise
+                        options.Filter = httpContext =>
+                            !(
+                                httpContext.Request.Path.StartsWithSegments(HealthEndpointPath)
+                                || httpContext.Request.Path.StartsWithSegments(
+                                    AlivenessEndpointPath
+                                )
+                            )
+                    )
                     .AddGrpcClientInstrumentation()
                     .AddHttpClientInstrumentation()
                     .AddSource(ActivitySourceProvider.DefaultSourceName);
@@ -136,10 +147,13 @@ public static class Extensions
         healthChecks.CacheOutput(HealthChecks).WithRequestTimeout(HealthChecks);
 
         // All health checks must pass for app to be considered ready to accept traffic after starting
-        healthChecks.MapHealthChecks("/health");
+        healthChecks.MapHealthChecks(HealthEndpointPath);
 
         // Only health checks tagged with the "live" tag must pass for app to be considered alive
-        healthChecks.MapHealthChecks("/alive", new() { Predicate = r => r.Tags.Contains("live") });
+        healthChecks.MapHealthChecks(
+            AlivenessEndpointPath,
+            new() { Predicate = r => r.Tags.Contains("live") }
+        );
 
         // Add the health checks endpoint for the HealthChecksUI
         var healthChecksUrls = app.Configuration["HEALTHCHECKSUI_URLS"];
@@ -171,7 +185,7 @@ public static class Extensions
             "/",
             async context =>
             {
-                context.Response.Redirect("/health");
+                context.Response.Redirect(HealthEndpointPath);
                 await Task.CompletedTask;
             }
         );
