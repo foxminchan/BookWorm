@@ -17,9 +17,27 @@ public static class ProjectExtensions
     /// </remarks>
     public static void AddProjectPublisher(this IDistributedApplicationBuilder builder)
     {
-        builder.AddAzureContainerAppEnvironment(nameof(BookWorm).ToLower());
         builder.AddAzurePublisher();
         builder.AddKubernetesPublisher();
+    }
+
+    /// <summary>
+    ///     Adds an Azure Container App Environment to the distributed application.
+    /// </summary>
+    /// <param name="builder">The distributed application builder to configure.</param>
+    /// <remarks>
+    ///     This method creates a container app environment with the current environment name,
+    ///     configures Azure Developer CLI (azd) compatible resource naming,
+    ///     and provisions it as a service in the application.
+    /// </remarks>
+    public static void AddAzureContainerAppEnvironment(this IDistributedApplicationBuilder builder)
+    {
+        var environmentName = $"{nameof(BookWorm).ToLower()}-aca";
+
+        builder
+            .AddAzureContainerAppEnvironment(environmentName)
+            .WithAzdResourceNaming()
+            .ProvisionAsService();
     }
 
     /// <summary>

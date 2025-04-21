@@ -3,13 +3,13 @@ param location string = resourceGroup().location
 
 param bookworm_gateway_containerport string
 
-param bookworm_outputs_azure_container_apps_environment_default_domain string
+param bookworm_aca_outputs_azure_container_apps_environment_default_domain string
 
-param bookworm_outputs_azure_container_apps_environment_id string
+param bookworm_aca_outputs_azure_container_apps_environment_id string
 
-param bookworm_outputs_azure_container_registry_endpoint string
+param bookworm_aca_outputs_azure_container_registry_endpoint string
 
-param bookworm_outputs_azure_container_registry_managed_identity_id string
+param bookworm_aca_outputs_azure_container_registry_managed_identity_id string
 
 param bookworm_gateway_containerimage string
 
@@ -26,12 +26,12 @@ resource bookworm_gateway 'Microsoft.App/containerApps@2024-03-01' = {
       }
       registries: [
         {
-          server: bookworm_outputs_azure_container_registry_endpoint
-          identity: bookworm_outputs_azure_container_registry_managed_identity_id
+          server: bookworm_aca_outputs_azure_container_registry_endpoint
+          identity: bookworm_aca_outputs_azure_container_registry_managed_identity_id
         }
       ]
     }
-    environmentId: bookworm_outputs_azure_container_apps_environment_id
+    environmentId: bookworm_aca_outputs_azure_container_apps_environment_id
     template: {
       containers: [
         {
@@ -60,47 +60,47 @@ resource bookworm_gateway 'Microsoft.App/containerApps@2024-03-01' = {
             }
             {
               name: 'services__bookworm-catalog__http__0'
-              value: 'http://bookworm-catalog.internal.${bookworm_outputs_azure_container_apps_environment_default_domain}'
+              value: 'http://bookworm-catalog.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'
             }
             {
               name: 'services__bookworm-catalog__https__0'
-              value: 'https://bookworm-catalog.internal.${bookworm_outputs_azure_container_apps_environment_default_domain}'
+              value: 'https://bookworm-catalog.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'
             }
             {
               name: 'services__bookworm-ordering__http__0'
-              value: 'http://bookworm-ordering.internal.${bookworm_outputs_azure_container_apps_environment_default_domain}'
+              value: 'http://bookworm-ordering.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'
             }
             {
               name: 'services__bookworm-ordering__https__0'
-              value: 'https://bookworm-ordering.internal.${bookworm_outputs_azure_container_apps_environment_default_domain}'
+              value: 'https://bookworm-ordering.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'
             }
             {
               name: 'services__bookworm-rating__http__0'
-              value: 'http://bookworm-rating.internal.${bookworm_outputs_azure_container_apps_environment_default_domain}'
+              value: 'http://bookworm-rating.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'
             }
             {
               name: 'services__bookworm-rating__https__0'
-              value: 'https://bookworm-rating.internal.${bookworm_outputs_azure_container_apps_environment_default_domain}'
+              value: 'https://bookworm-rating.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'
             }
             {
               name: 'services__bookworm-basket__http__0'
-              value: 'http://bookworm-basket.internal.${bookworm_outputs_azure_container_apps_environment_default_domain}'
+              value: 'http://bookworm-basket.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'
             }
             {
               name: 'services__bookworm-basket__https__0'
-              value: 'https://bookworm-basket.internal.${bookworm_outputs_azure_container_apps_environment_default_domain}'
+              value: 'https://bookworm-basket.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'
             }
             {
               name: 'services__bookworm-finance__http__0'
-              value: 'http://bookworm-finance.internal.${bookworm_outputs_azure_container_apps_environment_default_domain}'
+              value: 'http://bookworm-finance.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'
             }
             {
               name: 'services__bookworm-finance__https__0'
-              value: 'https://bookworm-finance.internal.${bookworm_outputs_azure_container_apps_environment_default_domain}'
+              value: 'https://bookworm-finance.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'
             }
             {
               name: 'services__keycloak__http__0'
-              value: 'http://keycloak.internal.${bookworm_outputs_azure_container_apps_environment_default_domain}'
+              value: 'http://keycloak.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'
             }
             {
               name: 'services__keycloak__management__0'
@@ -117,7 +117,7 @@ resource bookworm_gateway 'Microsoft.App/containerApps@2024-03-01' = {
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
-      '${bookworm_outputs_azure_container_registry_managed_identity_id}': { }
+      '${bookworm_aca_outputs_azure_container_registry_managed_identity_id}': { }
     }
   }
 }

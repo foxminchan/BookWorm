@@ -1,14 +1,14 @@
 @description('The location for the resource(s) to be deployed.')
 param location string = resourceGroup().location
 
-param bookworm_outputs_volumes_keycloak_0 string
+param bookworm_aca_outputs_volumes_keycloak_0 string
 
 @secure()
 param keycloak_password_value string
 
-param bookworm_outputs_azure_container_apps_environment_default_domain string
+param bookworm_aca_outputs_azure_container_apps_environment_default_domain string
 
-param bookworm_outputs_azure_container_apps_environment_id string
+param bookworm_aca_outputs_azure_container_apps_environment_id string
 
 resource keycloak 'Microsoft.App/containerApps@2024-03-01' = {
   name: 'keycloak'
@@ -34,7 +34,7 @@ resource keycloak 'Microsoft.App/containerApps@2024-03-01' = {
         ]
       }
     }
-    environmentId: bookworm_outputs_azure_container_apps_environment_id
+    environmentId: bookworm_aca_outputs_azure_container_apps_environment_id
     template: {
       containers: [
         {
@@ -73,7 +73,7 @@ resource keycloak 'Microsoft.App/containerApps@2024-03-01' = {
         {
           name: 'v0'
           storageType: 'AzureFile'
-          storageName: bookworm_outputs_volumes_keycloak_0
+          storageName: bookworm_aca_outputs_volumes_keycloak_0
         }
       ]
     }

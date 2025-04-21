@@ -21,13 +21,13 @@ param queue_password_value string
 
 param storage_outputs_tableendpoint string
 
-param bookworm_outputs_azure_container_apps_environment_default_domain string
+param bookworm_aca_outputs_azure_container_apps_environment_default_domain string
 
-param bookworm_outputs_azure_container_apps_environment_id string
+param bookworm_aca_outputs_azure_container_apps_environment_id string
 
-param bookworm_outputs_azure_container_registry_endpoint string
+param bookworm_aca_outputs_azure_container_registry_endpoint string
 
-param bookworm_outputs_azure_container_registry_managed_identity_id string
+param bookworm_aca_outputs_azure_container_registry_managed_identity_id string
 
 param bookworm_notification_containerimage string
 
@@ -62,12 +62,12 @@ resource bookworm_notification 'Microsoft.App/containerApps@2024-03-01' = {
       }
       registries: [
         {
-          server: bookworm_outputs_azure_container_registry_endpoint
-          identity: bookworm_outputs_azure_container_registry_managed_identity_id
+          server: bookworm_aca_outputs_azure_container_registry_endpoint
+          identity: bookworm_aca_outputs_azure_container_registry_managed_identity_id
         }
       ]
     }
-    environmentId: bookworm_outputs_azure_container_apps_environment_id
+    environmentId: bookworm_aca_outputs_azure_container_apps_environment_id
     template: {
       containers: [
         {
@@ -130,7 +130,7 @@ resource bookworm_notification 'Microsoft.App/containerApps@2024-03-01' = {
     type: 'UserAssigned'
     userAssignedIdentities: {
       '${bookworm_notification_identity_outputs_id}': { }
-      '${bookworm_outputs_azure_container_registry_managed_identity_id}': { }
+      '${bookworm_aca_outputs_azure_container_registry_managed_identity_id}': { }
     }
   }
 }

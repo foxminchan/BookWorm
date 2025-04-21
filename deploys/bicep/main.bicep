@@ -6,7 +6,7 @@ param location string
 
 param principalId string
 
-param postgres_username string = 'XqJbjjpuFD'
+param postgres_username string = 'SbVFWzrXyD'
 
 @secure()
 param postgres_password string
@@ -21,8 +21,8 @@ resource rg 'Microsoft.Resources/resourceGroups@2023-07-01' = {
   tags: tags
 }
 
-module bookworm 'bookworm/bookworm.bicep' = {
-  name: 'bookworm'
+module bookworm_aca 'bookworm-aca/bookworm-aca.bicep' = {
+  name: 'bookworm-aca'
   scope: rg
   params: {
     location: location
@@ -230,15 +230,15 @@ module bookworm_finance_roles_postgres_kv 'bookworm-finance-roles-postgres-kv/bo
   }
 }
 
-output bookworm_volumes_vectordb_0 string = bookworm.outputs.volumes_vectordb_0
+output bookworm_aca_volumes_vectordb_0 string = bookworm_aca.outputs.volumes_vectordb_0
 
-output bookworm_AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN string = bookworm.outputs.AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN
+output bookworm_aca_AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN string = bookworm_aca.outputs.AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN
 
-output bookworm_AZURE_CONTAINER_APPS_ENVIRONMENT_ID string = bookworm.outputs.AZURE_CONTAINER_APPS_ENVIRONMENT_ID
+output bookworm_aca_AZURE_CONTAINER_APPS_ENVIRONMENT_ID string = bookworm_aca.outputs.AZURE_CONTAINER_APPS_ENVIRONMENT_ID
 
-output bookworm_volumes_ollama_0 string = bookworm.outputs.volumes_ollama_0
+output bookworm_aca_volumes_ollama_0 string = bookworm_aca.outputs.volumes_ollama_0
 
-output bookworm_volumes_keycloak_0 string = bookworm.outputs.volumes_keycloak_0
+output bookworm_aca_volumes_keycloak_0 string = bookworm_aca.outputs.volumes_keycloak_0
 
 output bookworm_catalog_identity_id string = bookworm_catalog_identity.outputs.id
 
@@ -256,9 +256,9 @@ output redis_kv_vaultUri string = redis_kv.outputs.vaultUri
 
 output signalr_hostName string = signalr.outputs.hostName
 
-output bookworm_AZURE_CONTAINER_REGISTRY_ENDPOINT string = bookworm.outputs.AZURE_CONTAINER_REGISTRY_ENDPOINT
+output bookworm_aca_AZURE_CONTAINER_REGISTRY_ENDPOINT string = bookworm_aca.outputs.AZURE_CONTAINER_REGISTRY_ENDPOINT
 
-output bookworm_AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID string = bookworm.outputs.AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID
+output bookworm_aca_AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID string = bookworm_aca.outputs.AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID
 
 output bookworm_basket_identity_id string = bookworm_basket_identity.outputs.id
 

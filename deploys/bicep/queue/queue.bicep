@@ -4,9 +4,9 @@ param location string = resourceGroup().location
 @secure()
 param queue_password_value string
 
-param bookworm_outputs_azure_container_apps_environment_default_domain string
+param bookworm_aca_outputs_azure_container_apps_environment_default_domain string
 
-param bookworm_outputs_azure_container_apps_environment_id string
+param bookworm_aca_outputs_azure_container_apps_environment_id string
 
 resource queue 'Microsoft.App/containerApps@2024-03-01' = {
   name: 'queue'
@@ -32,7 +32,7 @@ resource queue 'Microsoft.App/containerApps@2024-03-01' = {
         ]
       }
     }
-    environmentId: bookworm_outputs_azure_container_apps_environment_id
+    environmentId: bookworm_aca_outputs_azure_container_apps_environment_id
     template: {
       containers: [
         {

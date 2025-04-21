@@ -1,11 +1,11 @@
 @description('The location for the resource(s) to be deployed.')
 param location string = resourceGroup().location
 
-param bookworm_outputs_volumes_ollama_0 string
+param bookworm_aca_outputs_volumes_ollama_0 string
 
-param bookworm_outputs_azure_container_apps_environment_default_domain string
+param bookworm_aca_outputs_azure_container_apps_environment_default_domain string
 
-param bookworm_outputs_azure_container_apps_environment_id string
+param bookworm_aca_outputs_azure_container_apps_environment_id string
 
 resource ollama 'Microsoft.App/containerApps@2024-03-01' = {
   name: 'ollama'
@@ -19,7 +19,7 @@ resource ollama 'Microsoft.App/containerApps@2024-03-01' = {
         transport: 'http'
       }
     }
-    environmentId: bookworm_outputs_azure_container_apps_environment_id
+    environmentId: bookworm_aca_outputs_azure_container_apps_environment_id
     template: {
       containers: [
         {
@@ -40,7 +40,7 @@ resource ollama 'Microsoft.App/containerApps@2024-03-01' = {
         {
           name: 'v0'
           storageType: 'AzureFile'
-          storageName: bookworm_outputs_volumes_ollama_0
+          storageName: bookworm_aca_outputs_volumes_ollama_0
         }
       ]
     }

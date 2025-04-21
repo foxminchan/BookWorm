@@ -1,4 +1,6 @@
 ﻿using Aspire.Hosting.Azure;
+using Aspire.Hosting.Azure.AppContainers;
+using Azure.Provisioning.AppContainers;
 using Azure.Provisioning.PostgreSql;
 using Azure.Provisioning.Redis;
 using Azure.Provisioning.SignalR;
@@ -114,6 +116,29 @@ public static partial class AzureExtensions
                 builder.ApplicationBuilder.Environment.EnvironmentName
             );
             resource.Tags.Add(nameof(Projects), nameof(BookWorm));
+        });
+
+        return builder;
+    }
+
+    /// <summary>
+    ///     Configures the Azure Container App Environment resource to be provisioned as a service with specific infrastructure
+    ///     settings.
+    /// </summary>
+    /// <param name="builder">The resource builder for Azure Container App Environment.</param>
+    /// <returns>The updated resource builder.</returns>
+    public static IResourceBuilder<AzureContainerAppEnvironmentResource> ProvisionAsService(
+        this IResourceBuilder<AzureContainerAppEnvironmentResource> builder
+    )
+    {
+        builder.ConfigureInfrastructure(infra =>
+        {
+            var resource = infra
+                .GetProvisionableResources()
+                .OfType<ContainerAppManagedEnvironment>()
+                .FirstOrDefault();
+
+            resource?.Tags.Add(nameof(Projects), nameof(BookWorm));
         });
 
         return builder;

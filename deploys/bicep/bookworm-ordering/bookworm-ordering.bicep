@@ -12,15 +12,15 @@ param postgres_kv_outputs_name string
 @secure()
 param queue_password_value string
 
-param bookworm_outputs_azure_container_apps_environment_default_domain string
+param bookworm_aca_outputs_azure_container_apps_environment_default_domain string
 
 param redis_kv_outputs_name string
 
-param bookworm_outputs_azure_container_apps_environment_id string
+param bookworm_aca_outputs_azure_container_apps_environment_id string
 
-param bookworm_outputs_azure_container_registry_endpoint string
+param bookworm_aca_outputs_azure_container_registry_endpoint string
 
-param bookworm_outputs_azure_container_registry_managed_identity_id string
+param bookworm_aca_outputs_azure_container_registry_managed_identity_id string
 
 param bookworm_ordering_containerimage string
 
@@ -71,12 +71,12 @@ resource bookworm_ordering 'Microsoft.App/containerApps@2024-03-01' = {
       }
       registries: [
         {
-          server: bookworm_outputs_azure_container_registry_endpoint
-          identity: bookworm_outputs_azure_container_registry_managed_identity_id
+          server: bookworm_aca_outputs_azure_container_registry_endpoint
+          identity: bookworm_aca_outputs_azure_container_registry_managed_identity_id
         }
       ]
     }
-    environmentId: bookworm_outputs_azure_container_apps_environment_id
+    environmentId: bookworm_aca_outputs_azure_container_apps_environment_id
     template: {
       containers: [
         {
@@ -113,7 +113,7 @@ resource bookworm_ordering 'Microsoft.App/containerApps@2024-03-01' = {
             }
             {
               name: 'services__keycloak__http__0'
-              value: 'http://keycloak.internal.${bookworm_outputs_azure_container_apps_environment_default_domain}'
+              value: 'http://keycloak.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'
             }
             {
               name: 'services__keycloak__management__0'
@@ -125,19 +125,19 @@ resource bookworm_ordering 'Microsoft.App/containerApps@2024-03-01' = {
             }
             {
               name: 'services__bookworm-catalog__http__0'
-              value: 'http://bookworm-catalog.internal.${bookworm_outputs_azure_container_apps_environment_default_domain}'
+              value: 'http://bookworm-catalog.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'
             }
             {
               name: 'services__bookworm-catalog__https__0'
-              value: 'https://bookworm-catalog.internal.${bookworm_outputs_azure_container_apps_environment_default_domain}'
+              value: 'https://bookworm-catalog.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'
             }
             {
               name: 'services__bookworm-basket__http__0'
-              value: 'http://bookworm-basket.internal.${bookworm_outputs_azure_container_apps_environment_default_domain}'
+              value: 'http://bookworm-basket.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'
             }
             {
               name: 'services__bookworm-basket__https__0'
-              value: 'https://bookworm-basket.internal.${bookworm_outputs_azure_container_apps_environment_default_domain}'
+              value: 'https://bookworm-basket.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'
             }
             {
               name: 'AZURE_CLIENT_ID'
@@ -155,7 +155,7 @@ resource bookworm_ordering 'Microsoft.App/containerApps@2024-03-01' = {
     type: 'UserAssigned'
     userAssignedIdentities: {
       '${bookworm_ordering_identity_outputs_id}': { }
-      '${bookworm_outputs_azure_container_registry_managed_identity_id}': { }
+      '${bookworm_aca_outputs_azure_container_registry_managed_identity_id}': { }
     }
   }
 }

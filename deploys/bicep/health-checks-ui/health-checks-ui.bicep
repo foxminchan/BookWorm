@@ -1,9 +1,9 @@
 @description('The location for the resource(s) to be deployed.')
 param location string = resourceGroup().location
 
-param bookworm_outputs_azure_container_apps_environment_default_domain string
+param bookworm_aca_outputs_azure_container_apps_environment_default_domain string
 
-param bookworm_outputs_azure_container_apps_environment_id string
+param bookworm_aca_outputs_azure_container_apps_environment_id string
 
 resource health_checks_ui 'Microsoft.App/containerApps@2024-03-01' = {
   name: 'health-checks-ui'
@@ -17,7 +17,7 @@ resource health_checks_ui 'Microsoft.App/containerApps@2024-03-01' = {
         transport: 'http'
       }
     }
-    environmentId: bookworm_outputs_azure_container_apps_environment_id
+    environmentId: bookworm_aca_outputs_azure_container_apps_environment_id
     template: {
       containers: [
         {
