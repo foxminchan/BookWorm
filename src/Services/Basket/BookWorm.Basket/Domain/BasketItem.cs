@@ -14,7 +14,7 @@ public sealed class BasketItem() : IValidatableObject
 
     public string? Id { get; private set; }
 
-    public int Quantity { get; private init; }
+    public int Quantity { get; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {

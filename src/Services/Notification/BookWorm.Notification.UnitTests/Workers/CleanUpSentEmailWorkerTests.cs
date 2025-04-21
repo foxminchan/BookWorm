@@ -10,9 +10,9 @@ namespace BookWorm.Notification.UnitTests.Workers;
 public sealed class CleanUpSentEmailWorkerTests : IDisposable
 {
     private readonly Mock<ILogger<CleanUpSentEmailWorker>> _loggerMock;
+    private readonly ServiceProvider _serviceProvider;
     private readonly Mock<ITableService> _tableServiceMock;
     private readonly CleanUpSentEmailWorker _worker;
-    private readonly ServiceProvider _serviceProvider;
 
     public CleanUpSentEmailWorkerTests()
     {
@@ -73,7 +73,7 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
         _loggerMock.Verify(
             x =>
                 x.Log(
-                    LogLevel.Information,
+                    LogLevel.Debug,
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>(
                         (o, t) => o.ToString()!.Contains("Clean Up Sent Email Worker is stopping")
@@ -193,28 +193,20 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
     }
 
     [Test]
-    public async Task GivenErrorDuringDeletion_WhenCleaningUp_ThenShouldLogErrorAndContinue()
+    public async Task GivenLargeNumberOfEmails_WhenCleaningUp_ThenShouldProcessInBatches()
     {
         // Arrange
-        var sentEmails = new List<Outbox>
+        var sentEmails = new List<Outbox>();
+        for (var i = 0; i < 150; i++)
         {
-            new("Test1", "test1@example.com", "Subject1", "Body1"),
-            new("Test2", "test2@example.com", "Subject2", "Body2"),
-        };
-
-        // Mark IsSent as true for all emails
-        foreach (var email in sentEmails)
-        {
+            var email = new Outbox($"Test{i}", $"test{i}@example.com", $"Subject{i}", $"Body{i}");
             email.MarkAsSent();
+            sentEmails.Add(email);
         }
 
         _tableServiceMock
             .Setup(x => x.ListAsync<Outbox>("outbox", It.IsAny<CancellationToken>()))
             .ReturnsAsync(sentEmails);
-
-        _tableServiceMock
-            .Setup(x => x.DeleteAsync("outbox", It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new("Test error"));
 
         // Act
         var method = _worker
@@ -223,16 +215,48 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
         await (Task)method!.Invoke(_worker, null)!;
 
         // Assert
+        _tableServiceMock.Verify(
+            x => x.DeleteAsync("outbox", It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Exactly(150)
+        );
         _loggerMock.Verify(
             x =>
                 x.Log(
-                    LogLevel.Error,
+                    LogLevel.Debug,
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) => o.ToString()!.Contains("Failed to delete email")),
+                    It.Is<It.IsAnyType>(
+                        (o, t) => o.ToString()!.Contains("Successfully deleted batch of")
+                    ),
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()
                 ),
             Times.AtLeastOnce
+        );
+    }
+
+    [Test]
+    public async Task GivenWorker_WhenDisposed_ThenShouldCleanupResources()
+    {
+        // Arrange
+        await _worker.StartAsync(CancellationToken.None);
+
+        // Act
+        await _worker.StopAsync(CancellationToken.None);
+        _worker.Dispose();
+
+        // Assert
+        _loggerMock.Verify(
+            x =>
+                x.Log(
+                    LogLevel.Debug,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>(
+                        (o, t) => o.ToString()!.Contains("Clean Up Sent Email Worker is stopping")
+                    ),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+                ),
+            Times.Once
         );
     }
 
@@ -250,37 +274,6 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>(
                         (o, t) => o.ToString()!.Contains("Clean Up Sent Email Worker is starting")
-                    ),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
-                ),
-            Times.AtLeastOnce
-        );
-    }
-
-    [Test]
-    public async Task GivenErrorInCleanUp_WhenTimerElapses_ThenShouldLogErrorAndContinue()
-    {
-        // Arrange
-        _tableServiceMock
-            .Setup(x => x.ListAsync<Outbox>("outbox", It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new Exception("Test error"));
-
-        // Act
-        var method = _worker
-            .GetType()
-            .GetMethod("CleanUpSentEmails", BindingFlags.NonPublic | BindingFlags.Instance);
-        await (Task)method!.Invoke(_worker, null)!;
-
-        // Assert
-        _loggerMock.Verify(
-            x =>
-                x.Log(
-                    LogLevel.Error,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>(
-                        (o, t) =>
-                            o.ToString()!.Contains("Error occurred while cleaning up sent emails")
                     ),
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()

@@ -1,14 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
-    <PackageReference Include="EFCore.NamingConventions"/>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools"/>
-    <PackageReference Include="MassTransit.EntityFrameworkCore"/>
-    <PackageReference Include="MassTransit.StateMachineVisualizer"/>
+    <PackageReference Include="EFCore.NamingConventions" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
+    <PackageReference Include="MassTransit.EntityFrameworkCore" />
+    <PackageReference Include="MassTransit.StateMachineVisualizer" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj"/>
+    <ProjectReference Include="..\..\..\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj" />
   </ItemGroup>
 
 </Project>

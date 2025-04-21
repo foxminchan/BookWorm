@@ -27,7 +27,7 @@ public sealed class OrderEvaluator : IEvaluator
             );
         }
 
-        IOrderedQueryable<T>? orderedQuery = specification.OrderExpressions.Aggregate<
+        var orderedQuery = specification.OrderExpressions.Aggregate<
             OrderExpression<T>?,
             IOrderedQueryable<T>?
         >(

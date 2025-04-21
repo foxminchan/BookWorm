@@ -6,27 +6,27 @@
   </PropertyGroup>
 
   <ItemGroup Label="Unit Test">
-    <PackageReference Include="TUnit"/>
-    <PackageReference Include="Shouldly"/>
-    <PackageReference Include="Moq"/>
-    <PackageReference Include="Bogus"/>
+    <PackageReference Include="TUnit" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="Bogus" />
   </ItemGroup>
 
   <ItemGroup Label="Test Platforms">
-    <PackageReference Include="Microsoft.Testing.Extensions.HangDump"/>
-    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport"/>
-    <PackageReference Include="Microsoft.Testing.Extensions.CrashDump"/>
-    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage"/>
+    <PackageReference Include="Microsoft.Testing.Extensions.HangDump" />
+    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CrashDump" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BookWorm.Basket\BookWorm.Basket.csproj"/>
+    <ProjectReference Include="..\BookWorm.Basket\BookWorm.Basket.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Using Include="Moq"/>
-    <Using Include="Bogus"/>
-    <Using Include="Shouldly"/>
+    <Using Include="Moq" />
+    <Using Include="Bogus" />
+    <Using Include="Shouldly" />
   </ItemGroup>
 
 </Project>

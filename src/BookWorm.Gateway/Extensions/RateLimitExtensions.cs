@@ -1,30 +1,12 @@
 ﻿using System.Threading.RateLimiting;
-using BookWorm.ServiceDefaults.Auth;
-using BookWorm.ServiceDefaults.Kestrel;
-using BookWorm.ServiceDefaults.Keycloak;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 
-namespace BookWorm.Gateway;
+namespace BookWorm.Gateway.Extensions;
 
-public static class Extensions
+public static class RateLimitExtensions
 {
-    public static void AddApplicationServices(this IHostApplicationBuilder builder)
+    public static void AddRateLimiting(this IServiceCollection services)
     {
-        var services = builder.Services;
-        const string proxySection = "ReverseProxy";
-
-        builder.AddDefaultCors();
-
-        builder.AddDefaultAuthentication().AddKeycloakClaimsTransformation();
-
-        services.AddProblemDetails();
-
-        services.AddHttpForwarderWithServiceDiscovery();
-
-        services.AddRequestTimeouts(options =>
-            options.AddPolicy("timeout-1-minute", TimeSpan.FromMinutes(1))
-        );
-
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -81,10 +63,5 @@ public static class Extensions
                     )
             );
         });
-
-        services
-            .AddReverseProxy()
-            .LoadFromConfig(builder.Configuration.GetSection(proxySection))
-            .AddServiceDiscoveryDestinationResolver();
     }
 }
