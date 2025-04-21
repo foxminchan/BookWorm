@@ -8,6 +8,7 @@ using Projects;
 var builder = DistributedApplication.CreateBuilder(args);
 
 builder.AddProjectPublisher();
+builder.AddAzureContainerAppEnvironment();
 
 var postgres = builder
     .AddAzurePostgresFlexibleServer(Components.Postgres)
@@ -102,7 +103,8 @@ var notificationApi = builder
     .WithReference(queue)
     .WaitFor(queue)
     .WithReference(tableStorage)
-    .WaitFor(tableStorage);
+    .WaitFor(tableStorage)
+    .WithRoleAssignments(storage, StorageBuiltInRole.StorageTableDataContributor);
 
 var orderingApi = builder
     .AddProject<BookWorm_Ordering>(Application.Ordering)
