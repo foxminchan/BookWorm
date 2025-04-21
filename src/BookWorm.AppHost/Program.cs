@@ -49,7 +49,7 @@ var ratingDb = postgres.AddDatabase(Components.Database.Rating);
 
 builder.AddOllama();
 
-var models = new Dictionary<string, string>
+var models = new Dictionary<string, string>(2)
 {
     { Components.Ollama.Embedding, "nomic-embed-text:latest" },
     { Components.Ollama.Chat, "deepseek-r1:1.5b" },
@@ -64,7 +64,7 @@ var keycloak = builder
 
 var catalogApi = builder
     .AddProject<BookWorm_Catalog>(Application.Catalog)
-    .WithReplicas(2)
+    .WithReplicas(builder.ExecutionContext.IsRunMode ? 1 : 2)
     .WithScalarApiClient()
     .WithOllama(models)
     .WithReference(blobStorage)

@@ -88,6 +88,6 @@ public sealed class PlaceOrderCommandHandlerDefinition
     public PlaceOrderCommandHandlerDefinition()
     {
         Endpoint(x => x.Name = "basket-place-order");
-        ConcurrentMessageLimit = 1;
+        ConcurrentMessageLimit = 8;
     }
 }

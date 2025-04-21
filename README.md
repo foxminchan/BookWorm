@@ -19,54 +19,38 @@
 
 ## Project Goals
 
-- [x] Build a cloud-native application with `.NET Aspire`
-- [x] Implement `Vertical Slice Architecture` for codebase organization
-- [x] Apply `Domain-Driven Design` principles
-- [x] Implement `CQRS` pattern with `MediatR`
-- [x] Utilize `RabbitMQ` with `MassTransit` for messaging
-- [x] Implement `gRPC` for service-to-service communication
-- [x] Implement `Saga` patterns (Orchestration & Choreography) with `MassTransit`
-- [x] Implement `Event Sourcing`
-- [x] Implement `Outbox Pattern` and `Inbox Pattern` for messaging
-- [x] Support API versioning
-- [x] Implement comprehensive health checks
-- [x] Enable feature flags to control application behavior
-- [x] Implement AuthN/AuthZ with `Keycloak`
-- [x] Enable observability with `.NET Aspire`
-- [x] Integrate `Mailpit` for local email testing
-- [x] Integrate with AI components
-  - [x] Text embedding with `Nomic Embed Text`
-  - [x] Support hybrid search with `Qdrant`
-  - [x] Chatbot integration with `DeepSeek R1`
-- [x] Configure CI/CD with `GitHub Actions`
-- [x] Deploy with `Aspirate` on `k3d`
-- [x] Create documentation for the project
-  - [x] Use `OpenAPI/Scalar` for REST API documentation
-  - [x] Provide `AsyncAPI` for event-driven endpoints
-  - [x] Use `EventCatalog` for event inventory and discovery
-  - [ ] Integrate `Backstage` for developer portal experience
-- [x] Implement testing strategy
-  - [x] Service unit tests
-  - [ ] Integration tests
+- [x] Developed a cloud-native application using .NET Aspire
+- [x] Organized the codebase with Vertical Slice Architecture
+- [x] Applied Domain-Driven Design & CQRS
+- [x] Enabled service-to-service communication with gRPC
+- [x] Implemented Saga patterns (Orchestration & Choreography)
+- [x] Integrated Event Sourcing
+- [x] Utilized Outbox and Inbox Patterns
+- [x] Supported API versioning
+- [x] Implemented caching with Hybrid Cache
+- [x] Enabled feature flags to manage application behavior
+- [x] Set up AuthN/AuthZ with Keycloak
+- [x] Incorporated AI components:
+  - [x] Text embedding with Nomic Embed Text
+  - [x] Enabled hybrid search with Qdrant
+  - [x] Integrated a chatbot using DeepSeek R1
+- [x] Configured CI/CD with GitHub Actions
+- [x] Created comprehensive documentation:
+  - [x] Used OpenAPI for REST API documentation
+  - [x] Provided AsyncAPI for event-driven endpoints
+  - [x] Utilized EventCatalog for centralized architecture documentation
+- [x] Established a testing strategy:
+  - [x] Conducted service unit tests
+  - [ ] Planned integration tests
 
 ## Project Architecture
 
-BookWorm is structured as a microservices-based application with the following services:
-
-- **Catalog**: Book inventory and metadata management.
-- **Basket**: Shopping cart functionality.
-- **Ordering**: Order processing and fulfillment.
-- **Notification**: Handles email notifications as a Worker Service.
-- **Rating**: Book review and rating system.
-- **Finance**: Orchestration service for basket reservation and order processing.
-
-![Domain Architecture](assets/architecture.png)
+![Project Architecture](assets/architecture.png)
 
 ## Getting Started
 
 ### Prerequisites
 
-- A device with an Nvidia GPU
 - [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
 - [Gitleaks](https://gitleaks.io/)
 - [Docker](https://www.docker.com/get-started) or [Podman](https://podman-desktop.io/)
@@ -103,7 +87,7 @@ BookWorm is structured as a microservices-based application with the following s
 
 ### Deploy the application
 
-Please refer to the [Deployment Guide](./deploys/README.md) for detailed deployment instructions.
+For detailed deployment instructions, please consult the [Deployment Guide](./deploys/README.md).
 
 ## Contributing
 
