@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <Sdk Name="Aspire.AppHost.Sdk" Version="$(AspireVersion)"/>
+  <Sdk Name="Aspire.AppHost.Sdk" Version="$(AspireVersion)" />
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -9,40 +9,40 @@
   </PropertyGroup>
 
   <ItemGroup Label="Aspire">
-    <PackageReference Include="Aspire.Hosting.AppHost"/>
-    <PackageReference Include="Aspire.Hosting.RabbitMQ"/>
-    <PackageReference Include="Aspire.Hosting.Qdrant"/>
-    <PackageReference Include="Aspire.Hosting.Keycloak"/>
-    <PackageReference Include="Aspire.Hosting.Kubernetes"/>
+    <PackageReference Include="Aspire.Hosting.AppHost" />
+    <PackageReference Include="Aspire.Hosting.RabbitMQ" />
+    <PackageReference Include="Aspire.Hosting.Qdrant" />
+    <PackageReference Include="Aspire.Hosting.Keycloak" />
+    <PackageReference Include="Aspire.Hosting.Kubernetes" />
   </ItemGroup>
 
   <ItemGroup Label="Azure">
-    <PackageReference Include="Aspire.Hosting.Azure.Storage"/>
-    <PackageReference Include="Aspire.Hosting.Azure.PostgreSQL"/>
-    <PackageReference Include="Aspire.Hosting.Azure.Redis"/>
-    <PackageReference Include="Aspire.Hosting.Azure.SignalR"/>
-    <PackageReference Include="Aspire.Hosting.Azure.AppContainers"/>
+    <PackageReference Include="Aspire.Hosting.Azure.Storage" />
+    <PackageReference Include="Aspire.Hosting.Azure.PostgreSQL" />
+    <PackageReference Include="Aspire.Hosting.Azure.Redis" />
+    <PackageReference Include="Aspire.Hosting.Azure.SignalR" />
+    <PackageReference Include="Aspire.Hosting.Azure.AppContainers" />
   </ItemGroup>
 
   <ItemGroup Label="CommunityToolkit">
-    <PackageReference Include="CommunityToolkit.Aspire.Hosting.Ollama"/>
-    <PackageReference Include="CommunityToolkit.Aspire.Hosting.MailPit"/>
+    <PackageReference Include="CommunityToolkit.Aspire.Hosting.Ollama" />
+    <PackageReference Include="CommunityToolkit.Aspire.Hosting.MailPit" />
   </ItemGroup>
 
   <ItemGroup Label="Services">
-    <ProjectReference Include="..\BookWorm.Gateway\BookWorm.Gateway.csproj"/>
-    <ProjectReference Include="..\Services\Basket\BookWorm.Basket\BookWorm.Basket.csproj"/>
-    <ProjectReference Include="..\Services\Catalog\BookWorm.Catalog\BookWorm.Catalog.csproj"/>
-    <ProjectReference Include="..\Services\Finance\BookWorm.Finance\BookWorm.Finance.csproj"/>
-    <ProjectReference Include="..\Services\Notification\BookWorm.Notification\BookWorm.Notification.csproj"/>
-    <ProjectReference Include="..\Services\Ordering\BookWorm.Ordering\BookWorm.Ordering.csproj"/>
-    <ProjectReference Include="..\Services\Rating\BookWorm.Rating\BookWorm.Rating.csproj"/>
+    <ProjectReference Include="..\BookWorm.Gateway\BookWorm.Gateway.csproj" />
+    <ProjectReference Include="..\Services\Basket\BookWorm.Basket\BookWorm.Basket.csproj" />
+    <ProjectReference Include="..\Services\Catalog\BookWorm.Catalog\BookWorm.Catalog.csproj" />
+    <ProjectReference Include="..\Services\Finance\BookWorm.Finance\BookWorm.Finance.csproj" />
+    <ProjectReference Include="..\Services\Notification\BookWorm.Notification\BookWorm.Notification.csproj" />
+    <ProjectReference Include="..\Services\Ordering\BookWorm.Ordering\BookWorm.Ordering.csproj" />
+    <ProjectReference Include="..\Services\Rating\BookWorm.Rating\BookWorm.Rating.csproj" />
   </ItemGroup>
 
   <ItemGroup Label="Integrations">
-    <ProjectReference Include="..\BuildingBlocks\BookWorm.Constants\BookWorm.Constants.csproj" IsAspireProjectResource="false"/>
-    <ProjectReference Include="..\Integrations\BookWorm.Scalar\BookWorm.Scalar.csproj" IsAspireProjectResource="false"/>
-    <ProjectReference Include="..\Integrations\BookWorm.HealthChecksUI\BookWorm.HealthChecksUI.csproj" IsAspireProjectResource="false"/>
+    <ProjectReference Include="..\BuildingBlocks\BookWorm.Constants\BookWorm.Constants.csproj" IsAspireProjectResource="false" />
+    <ProjectReference Include="..\Integrations\BookWorm.Scalar\BookWorm.Scalar.csproj" IsAspireProjectResource="false" />
+    <ProjectReference Include="..\Integrations\BookWorm.HealthChecksUI\BookWorm.HealthChecksUI.csproj" IsAspireProjectResource="false" />
   </ItemGroup>
 
 </Project>

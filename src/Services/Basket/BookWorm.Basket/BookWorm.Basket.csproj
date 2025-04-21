@@ -5,18 +5,18 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.StackExchange.Redis"/>
-    <PackageReference Include="Grpc.Tools" PrivateAssets="All"/>
-    <PackageReference Include="Google.Protobuf"/>
+    <PackageReference Include="Aspire.StackExchange.Redis" />
+    <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
+    <PackageReference Include="Google.Protobuf" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj"/>
+    <ProjectReference Include="..\..\..\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Protobuf Include="Grpc\Protos\basket.proto" GrpcServices="Server"/>
-    <Protobuf Include="..\..\Catalog\BookWorm.Catalog\Grpc\Protos\book.proto" Link="Grpc\Protos\book.proto" GrpcServices="Client"/>
+    <Protobuf Include="Grpc\Protos\basket.proto" GrpcServices="Server" />
+    <Protobuf Include="..\..\Catalog\BookWorm.Catalog\Grpc\Protos\book.proto" Link="Grpc\Protos\book.proto" GrpcServices="Client" />
   </ItemGroup>
 
 </Project>

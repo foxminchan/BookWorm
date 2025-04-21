@@ -9,6 +9,11 @@ public sealed class CleanUpSentEmailWorker(
 {
     private Timer? _timer;
 
+    public void Dispose()
+    {
+        _timer?.Dispose();
+    }
+
     public Task StartAsync(CancellationToken cancellationToken)
     {
         logger.LogInformation("Clean Up Sent Email Worker is starting.");
@@ -19,17 +24,21 @@ public sealed class CleanUpSentEmailWorker(
         var timeUntilMidnight = nextMidnight - now;
 
         _timer = new(
-            async void (_) =>
-            {
-                try
-                {
-                    await CleanUpSentEmails();
-                }
-                catch (Exception e)
-                {
-                    logger.LogError(e, "Error occurred while cleaning up sent emails");
-                }
-            },
+            _ =>
+                Task.Run(
+                    async () =>
+                    {
+                        try
+                        {
+                            await CleanUpSentEmails();
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogError(ex, "Error occurred in timer callback");
+                        }
+                    },
+                    cancellationToken
+                ),
             null,
             timeUntilMidnight,
             TimeSpan.FromDays(1) // Run every 24 hours
@@ -38,57 +47,46 @@ public sealed class CleanUpSentEmailWorker(
         return Task.CompletedTask;
     }
 
-    private async Task CleanUpSentEmails()
-    {
-        try
-        {
-            logger.LogDebug("Starting cleanup of sent emails...");
-
-            using var scope = scopeFactory.CreateScope();
-            var tableService = scope.ServiceProvider.GetRequiredService<ITableService>();
-
-            // Get all sent emails
-            var sentEmails = await tableService.ListAsync<Outbox>("outbox");
-            var emailsToDelete = sentEmails.Where(e => e.IsSent).ToList();
-
-            if (emailsToDelete.Count == 0)
-            {
-                logger.LogInformation("No sent emails found to delete.");
-                return;
-            }
-
-            logger.LogDebug("Found {Count} sent emails to delete.", emailsToDelete.Count);
-
-            foreach (var emailId in emailsToDelete.Select(email => email.Id).ToList())
-            {
-                try
-                {
-                    await tableService.DeleteAsync("outbox", emailId.ToString());
-                    logger.LogDebug("Successfully deleted email with ID {Id}", emailId);
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Failed to delete email with ID {Id}", emailId);
-                }
-            }
-
-            logger.LogDebug("Completed cleanup of sent emails.");
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error occurred while cleaning up sent emails");
-        }
-    }
-
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        logger.LogInformation("Clean Up Sent Email Worker is stopping.");
+        logger.LogDebug("Clean Up Sent Email Worker is stopping.");
         _timer?.Change(Timeout.Infinite, 0);
         return Task.CompletedTask;
     }
 
-    public void Dispose()
+    private async Task CleanUpSentEmails()
     {
-        _timer?.Dispose();
+        logger.LogDebug("Starting cleanup of sent emails...");
+
+        using var scope = scopeFactory.CreateScope();
+        var tableService = scope.ServiceProvider.GetRequiredService<ITableService>();
+
+        // Get all sent emails
+        var sentEmails = await tableService.ListAsync<Outbox>("outbox");
+        var emailsToDelete = sentEmails.Where(e => e.IsSent).ToList();
+
+        if (emailsToDelete.Count == 0)
+        {
+            logger.LogInformation("No sent emails found to delete.");
+            return;
+        }
+
+        logger.LogDebug("Found {Count} sent emails to delete.", emailsToDelete.Count);
+
+        // Process in batches to avoid memory issues
+        const int batchSize = 100;
+        var batches = emailsToDelete.Chunk(batchSize);
+
+        foreach (var batch in batches)
+        {
+            var tasks = batch.Select(email =>
+                tableService.DeleteAsync("outbox", email.Id.ToString())
+            );
+
+            await Task.WhenAll(tasks);
+            logger.LogDebug("Successfully deleted batch of {Count} emails", batch.Length);
+        }
+
+        logger.LogDebug("Completed cleanup of {Count} sent emails.", emailsToDelete.Count);
     }
 }

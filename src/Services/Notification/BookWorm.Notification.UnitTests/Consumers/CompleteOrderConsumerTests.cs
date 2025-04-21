@@ -20,8 +20,8 @@ public sealed class CompleteOrderConsumerTests
     private const string ValidEmail = "customer@example.com";
     private readonly EmailOptions _emailOptions = new() { From = "store@bookworm.com" };
     private readonly Guid _orderId = Guid.CreateVersion7();
-    private readonly Mock<ISender> _senderMock = new();
     private readonly Mock<IRenderer> _rendererMock = new();
+    private readonly Mock<ISender> _senderMock = new();
 
     public CompleteOrderConsumerTests()
     {

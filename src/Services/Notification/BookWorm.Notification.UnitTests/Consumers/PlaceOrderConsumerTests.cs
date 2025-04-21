@@ -13,14 +13,14 @@ namespace BookWorm.Notification.UnitTests.Consumers;
 
 public sealed class PlaceOrderConsumerTests
 {
+    private const string FullName = "Test User";
     private readonly Guid _basketId;
     private readonly string _email;
     private readonly EmailOptions _emailOptions;
     private readonly Guid _orderId;
-    private readonly Mock<ISender> _senderMock;
     private readonly Mock<IRenderer> _rendererMock;
+    private readonly Mock<ISender> _senderMock;
     private readonly decimal _totalMoney;
-    private const string FullName = "Test User";
 
     public PlaceOrderConsumerTests()
     {

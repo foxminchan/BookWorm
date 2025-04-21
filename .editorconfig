@@ -135,3 +135,9 @@ csharp_preserve_single_line_blocks = true
 [*.vb]
 # Modifier preferences
 visual_basic_preferred_modifier_order = Partial, Default, Private, Protected, Public, Friend, NotOverridable, Overridable, MustOverride, Overloads, Overrides, MustInherit, NotInheritable, Static, Shared, Shadows, ReadOnly, WriteOnly, Dim, Const, WithEvents, Widening, Narrowing, Custom, Async:suggestion
+
+###############################
+# HTML Coding Conventions     #
+###############################
+[*.{csproj,slnx,props,targets,config,nuspec,resx,vsixmanifest,vsct}]
+ij_xml_space_inside_empty_tag = true

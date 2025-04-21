@@ -26,13 +26,13 @@ public static class Components
 
     public static class Azure
     {
+        public const string SignalR = "signalr";
+
         public static class Storage
         {
             public const string Resource = "storage";
             public const string Blob = "blob";
             public const string Table = "table";
         }
-
-        public const string SignalR = "signalr";
     }
 }

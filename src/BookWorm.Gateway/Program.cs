@@ -1,4 +1,4 @@
-﻿using BookWorm.Gateway;
+﻿using BookWorm.Gateway.Extensions;
 using BookWorm.ServiceDefaults;
 
 var builder = WebApplication.CreateBuilder(args);

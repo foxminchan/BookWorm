@@ -4,7 +4,6 @@ using BookWorm.Catalog.Features.Books.Get;
 using BookWorm.Catalog.UnitTests.Fakers;
 using BookWorm.SharedKernel.Exceptions;
 using BookWorm.SharedKernel.Mapper;
-using BookWorm.SharedKernel.SeedWork;
 
 namespace BookWorm.Catalog.UnitTests.Features.Books.Get;
 

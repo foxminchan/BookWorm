@@ -14,11 +14,11 @@ namespace BookWorm.Notification.UnitTests.Consumers;
 public sealed class CancelOrderConsumerTests
 {
     private readonly string _email;
-    private readonly string _fullName;
     private readonly EmailOptions _emailOptions;
+    private readonly string _fullName;
     private readonly Guid _orderId;
-    private readonly Mock<ISender> _senderMock;
     private readonly Mock<IRenderer> _rendererMock;
+    private readonly Mock<ISender> _senderMock;
     private readonly decimal _totalMoney;
 
     public CancelOrderConsumerTests()

@@ -1,4 +1,5 @@
 ﻿using Polly.Registry;
+using SendGrid;
 using SendGrid.Helpers.Mail;
 
 namespace BookWorm.Notification.Infrastructure.Senders;
@@ -24,7 +25,7 @@ public sealed class SendGridSender(
         activity?.SetTag(TelemetryTags.SmtpClient.MessageId, mailMessage.Headers["Message-ID"]);
         activity?.SetTag(TelemetryTags.SmtpClient.EmailOperation, "Send");
 
-        var sendGridClient = new SendGrid.SendGridClient(sendGirdOptions.ApiKey);
+        var sendGridClient = new SendGridClient(sendGirdOptions.ApiKey);
         var message = new SendGridMessage
         {
             From = new(sendGirdOptions.SenderEmail, sendGirdOptions.SenderName),

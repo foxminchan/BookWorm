@@ -1,3 +1,4 @@
+using System.Globalization;
 using BookWorm.Notification.Domain.Models;
 
 namespace BookWorm.Notification.UnitTests.Domain;
@@ -30,10 +31,7 @@ public sealed class OrderTests
         var order = new Order(Guid.CreateVersion7(), "Test User", 99.99m, Status.New);
 
         // Act
-        var formattedMoney = order.TotalMoney.ToString(
-            "C",
-            new System.Globalization.CultureInfo("en-US")
-        );
+        var formattedMoney = order.TotalMoney.ToString("C", new CultureInfo("en-US"));
 
         // Assert
         formattedMoney.ShouldBe("$99.99");

@@ -16,7 +16,7 @@ public sealed class TableService(TableServiceClient client) : ITableService
     {
         var tableClient = client.GetTableClient(_tableName);
 
-        await tableClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
+        await tableClient.CreateIfNotExistsAsync(cancellationToken);
 
         var idProperty = typeof(T).GetProperty("Id");
 
@@ -41,9 +41,7 @@ public sealed class TableService(TableServiceClient client) : ITableService
         var tableClient = client.GetTableClient(_tableName);
 
         var tableEntity = tableClient.QueryAsync<TableEntity>(
-            filter: TableClient.CreateQueryFilter(
-                $"{nameof(TableEntity.PartitionKey)} eq {partitionKey}"
-            ),
+            TableClient.CreateQueryFilter($"{nameof(TableEntity.PartitionKey)} eq {partitionKey}"),
             cancellationToken: cancellationToken
         );
 
