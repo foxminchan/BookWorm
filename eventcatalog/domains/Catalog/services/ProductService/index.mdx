@@ -131,6 +131,15 @@ C4Component
             ComponentDb(storageSystem, "Storage System", "Azure Blob Storage", "Stores book files and resources")
             ComponentQueue(eventBus, "Event Bus", "RabbitMQ", "Handles async communication")
 
+            Container_Boundary(ai, "AI") {
+                Component(ollama, "Model Manager", "Ollama", "Get and run models")
+
+                Container_Boundary(model, "Model") {
+                    Component(chatModel, "Chat Model", "DeepSeek R1", "Handles chat interactions")
+                    Component(embeddingModel, "Embedding Model", "Nomic Embed Text", "Handles embedding operations")
+                }
+            }
+
             Container_Boundary(database, "Database") {
                 ComponentDb(catalogDb, "Catalog DB", "PostgreSQL", "Stores book metadata and catalog information")
                 ComponentDb(vectorDb, "Vector DB", "Qdrant", "Stores vector embeddings")
@@ -144,9 +153,13 @@ C4Component
     Rel(catalogFacade, vectorService, "Uses", "Internal")
     Rel(catalogFacade, llmService, "Uses", "Internal")
 
+    Rel(ollama, chatModel, "Uses", "Internal")
+    Rel(ollama, embeddingModel, "Uses", "Internal")
+
     Rel(catalogFacade, catalogDb, "Reads/Writes", "SQL")
     Rel(vectorService, vectorDb, "Reads/Writes", "API")
     Rel(llmService, vectorDb, "Reads/Writes", "API")
+    Rel(llmService, ollama, "Uses", "Internal")
     Rel(storageService, storageSystem, "Reads/Writes", "File I/O")
 
     BiRel(eventHandler, eventBus, "Publishes/Subscribes", "Async")
