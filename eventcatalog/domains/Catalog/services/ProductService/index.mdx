@@ -118,37 +118,39 @@ C4Component
     title Component diagram for Catalog Service
 
     Container_Boundary(catalog, "Catalog Service") {
-        Component(api, "API Layer", "REST/gRPC", "Handles external requests and routing")
-        Component(catalogEndpoint, "Catalog Endpoints", ".NET", "Manages book catalog operations")
-        Component(searchService, "Search Service", ".NET", "Handles book search and filtering")
-        Component(vectorService, "Vector Service", ".NET", "Manages vector embeddings for semantic search")
-        Component(llmService, "LLM Service", ".NET", "Handles AI-powered recommendations")
-        Component(storageService, "Storage Service", ".NET", "Manages book files and metadata")
-        Component(eventPublisher, "Event Publisher", ".NET", "Publishes catalog events")
-        Component(catalogManager, "Catalog Manager", ".NET", "Core business logic for catalog management")
+        Container_Boundary(application, "Application") {
+            Component(catalogEndpoint, "Catalog Endpoints", ".NET", "Manages book catalog operations")
+            Component(catalogFacade, "Catalog Facade", ".NET", "Core business logic for catalog management")
+            Component(vectorService, "Vector Service", ".NET", "Manages vector embeddings for semantic search")
+            Component(storageService, "Storage Service", ".NET", "Manages book files and metadata")
+            Component(llmService, "LLM Service", ".NET", "Handles AI-powered recommendations")
+            Component(eventHandler, "Event Handler", ".NET", "Handles event publishing/subscribing")
+        }
 
-        ComponentDb(catalogDb, "Catalog DB", "PostgreSQL", "Stores book metadata and catalog information")
-        ComponentDb(vectorDb, "Vector DB", "Qdrant", "Stores vector embeddings")
-        ComponentDb(storageSystem, "Azure Blob Storage", "File System", "Stores book files and resources")
+        Container_Boundary(infrastructure, "Infrastructure") {
+            ComponentDb(storageSystem, "Storage System", "Azure Blob Storage", "Stores book files and resources")
+            ComponentQueue(eventBus, "Event Bus", "RabbitMQ", "Handles async communication")
+
+            Container_Boundary(database, "Database") {
+                ComponentDb(catalogDb, "Catalog DB", "PostgreSQL", "Stores book metadata and catalog information")
+                ComponentDb(vectorDb, "Vector DB", "Qdrant", "Stores vector embeddings")
+            }
+        }
+
     }
 
-    SystemQueue(eventBus, "RabbitMQ", "Handles async communication")
-    Container(ratingService, "Rating Service", ".NET", "Manages book ratings and feedback")
+    Rel(catalogEndpoint, catalogFacade, "Uses", "Internal")
+    Rel(catalogFacade, storageService, "Uses", "Internal")
+    Rel(catalogFacade, vectorService, "Uses", "Internal")
+    Rel(catalogFacade, llmService, "Uses", "Internal")
 
-    Rel(api, catalogEndpoint, "Uses", "REST/gRPC")
-    Rel(catalogEndpoint, searchService, "Uses", "Internal")
-    Rel(catalogEndpoint, storageService, "Uses", "Internal")
-    Rel(searchService, vectorService, "Uses", "Internal")
-    Rel(searchService, llmService, "Uses", "Internal")
-    Rel(catalogManager, eventPublisher, "Uses", "Internal")
-    Rel(catalogEndpoint, catalogManager, "Uses", "Internal")
-
-    Rel(catalogManager, catalogDb, "Reads/Writes", "SQL")
+    Rel(catalogFacade, catalogDb, "Reads/Writes", "SQL")
     Rel(vectorService, vectorDb, "Reads/Writes", "API")
+    Rel(llmService, vectorDb, "Reads/Writes", "API")
     Rel(storageService, storageSystem, "Reads/Writes", "File I/O")
 
-    Rel(eventBus, ratingService, "Notifies", "Async")
-    Rel(eventPublisher, eventBus, "Publishes events", "Async")
+    BiRel(eventHandler, eventBus, "Publishes/Subscribes", "Async")
+    BiRel(catalogFacade, eventHandler, "Uses", "Internal")
     UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
 ```
 

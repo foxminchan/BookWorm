@@ -82,22 +82,22 @@ C4Component
     title Component diagram for Rating Service
 
     Container_Boundary(rating, "Rating Service") {
-        Component(api, "API Layer", "REST/gRPC", "Handles external requests and routing")
-        Component(ratingEndpoint, "Rating Endpoints", ".NET", "Manages feedback and rating operations")
-        Component(eventPublisher, "Event Publisher", ".NET", "Publishes feedback events")
-        Component(ratingManager, "Rating Manager", ".NET", "Core business logic for rating management")
-        ComponentDb(ratingDb, "Rating DB", "PostgreSQL", "Stores user feedback and ratings")
+        Container_Boundary(application, "Application") {
+            Component(ratingEndpoint, "Rating Endpoints", ".NET", "Manages feedback and rating operations")
+            Component(ratingFacade, "Rating Manager", ".NET", "Core business logic for rating management")
+            Component(eventHandler, "Event Handler", ".NET", "Handles event publishing/subscribing")
+        }
+
+        Container_Boundary(infrastructure, "Infrastructure") {
+            ComponentDb(ratingDb, "Rating DB", "PostgreSQL", "Stores user feedback and ratings")
+            ComponentQueue(eventBus, "Event Bus", "RabbitMQ", "Handles async communication")
+        }
     }
 
-    SystemQueue(eventBus, "RabbitMQ", "Handles async communication")
-    Container(catalogService, "Catalog Service", "Service", "Updates book ratings")
-
-    Rel(api, ratingEndpoint, "Uses", "REST/gRPC")
-    Rel(ratingEndpoint, ratingManager, "Uses", "Internal")
-    Rel(ratingManager, ratingDb, "Reads/Writes", "SQL")
-    Rel(eventBus, catalogService, "Notifies", "Async")
-    Rel(ratingManager, eventPublisher, "Uses", "Internal")
-    Rel(eventPublisher, eventBus, "Publishes events", "Async")
+    Rel(ratingEndpoint, ratingFacade, "Uses", "Internal")
+    Rel(ratingFacade, ratingDb, "Reads/Writes", "SQL")
+    Rel(ratingFacade, eventHandler, "Uses", "Internal")
+    BiRel(eventHandler, eventBus, "Publishes/Subscribes", "Async")
 
     UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
 ```

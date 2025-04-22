@@ -61,16 +61,31 @@ To effectively visualize and understand the architecture of the BookWorm system,
 C4Context
     title System Context Diagram for BookWorm Store System
 
-    Person(customer, "Customer", "A user who wants to browse and purchase books")
+    Enterprise_Boundary(bookworm, "BookWorm Store") {
+      Person(customer, "Customer", "A user who wants to browse and purchase books")
 
-    System(bookworm, "BookWorm Store", "Allows customers to view the catalog, manage their cart, and place orders for books")
+      System_Boundary(application, "Application") {
+        System(bookworm, "BookWorm Store", "Business critical system")
+      }
 
-    System_Ext(email, "Email Service", "Handles email notifications")
-    System_Ext(identity, "Identity Provider", "Handles user authentication")
+      System_Boundary(external, "External Systems") {
+        System_Ext(email, "Email Service", "Handles email notifications")
+        System_Ext(identity, "Identity Provider", "Handles user authentication")
+      }
 
-    Rel(customer, bookworm, "Uses", "HTTPS")
+      System_Boundary(infrastructure, "Infrastructure") {
+        ContainerDb(database, "Database", "Stores information")
+        SystemQueue(eventBus, "Event Bus", "Handles message passing between services")
+      }
+    }
+
+    Rel(customer, bookworm, "Makes requests", "HTTPS")
     Rel(bookworm, email, "Sends emails", "SMTP")
     Rel(bookworm, identity, "Authenticates users", "OAuth2")
+    Rel(bookworm, database, "Reads/Writes", "TCP")
+    Rel(bookworm, eventBus, "Publishes/Subscribes", "AMQP")
+
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="2")
 ```
 
 ### Container Diagram
@@ -79,32 +94,47 @@ C4Context
 C4Container
     title Container Diagram for BookWorm Store System
 
-    Person(customer, "Customer", "A user who wants to browse and purchase books")
+    Enterprise_Boundary(bookworm, "BookWorm Store") {
+      Person(customer, "Customer", "A user who wants to browse and purchase books")
 
-    System_Boundary(bookworm, "BookWorm Store") {
-        Container(gateway, "API Gateway", ".NET", "Handles API routing and request/response transformation")
-        Container(catalog, "Catalog Service", ".NET", "Manages product catalog and inventory")
-        Container(order, "Order Service", ".NET", "Handles order processing")
-        Container(basket, "Basket Service", ".NET", "Manages shopping cart")
-        Container(finance, "Finance Service", ".NET", "Handles payment processing")
-        Container(rating, "Rating Service", ".NET", "Manages product ratings and reviews")
-        Container(notification, "Notification Service", ".NET", "Sends notifications to users")
+      System_Boundary(application, "Application") {
+        Container(gateway, "API Gateway", ".NET", "Routes requests to the appropriate service")
 
-        ContainerDb(catalogDb, "Catalog DB", "PostgreSQL", "Stores product information")
-        ContainerDb(orderDb, "Order DB", "PostgreSQL", "Stores order information")
-        ContainerDb(basketDb, "Basket DB", "Redis", "Stores shopping cart data")
-        ContainerDb(financeDb, "Finance DB", "PostgreSQL", "Stores payment records")
-        ContainerDb(ratingDb, "Rating DB", "PostgreSQL", "Stores ratings and reviews")
-        ContainerDb(notificationDb, "Notification DB", "PostgreSQL", "Stores notification records")
-        ContainerDb(vectorDb, "Vector DB", "Qdrant", "Stores vector embeddings for search")
+        System_Boundary(catalog, "Catalog Domain") {
+          Container(catalog, "Catalog Service", ".NET", "Manages product catalog and inventory")
+          Container(rating, "Rating Service", ".NET", "Manages product ratings and reviews")
+        }
 
-        SystemQueue(eventBus, "RabbitMQ", "Handles asynchronous communication between services")
+        System_Boundary(order, "Order Domain") {
+          Container(order, "Order Service", ".NET", "Handles order processing")
+          Container(basket, "Basket Service", ".NET", "Manages shopping cart")
+          Container(finance, "Finance Service", ".NET", "Handles payment processing")
+          Container(notification, "Notification Service", ".NET", "Sends notifications to users")
+        }
+      }
+
+      System_Boundary(infrastructure, "Infrastructure") {
+        SystemQueue(eventBus, "Event Bus", "Handles message passing between services")
+
+        System_Boundary(database, "Database") {
+          ContainerDb(catalogDb, "Catalog DB", "SQL", "Stores product information")
+          ContainerDb(orderDb, "Order DB", "SQL", "Stores order information")
+          ContainerDb(basketDb, "Basket DB", "SQL", "Stores shopping cart data")
+          ContainerDb(financeDb, "Finance DB", "SQL", "Stores payment records")
+          ContainerDb(ratingDb, "Rating DB", "SQL", "Stores ratings and reviews")
+          ContainerDb(notificationDb, "Notification DB", "NoSQL", "Stores notification records")
+          ContainerDb(vectorDb, "Vector DB", "NoSQL", "Stores vector embeddings for search")
+        }
+      }
+
+      System_Boundary(external, "External Systems") {
+        System_Ext(identity, "Identity Provider", "Handles user authentication")
+        System_Ext(email, "Email Service", "Handles email notifications")
+      }
     }
 
-    System_Ext(identity, "Identity Provider", "Handles user authentication")
-    System_Ext(email, "Email Service", "Handles email notifications")
+    BiRel(customer, gateway, "Makes requests", "HTTPS")
 
-    Rel(customer, gateway, "Uses", "HTTPS")
     Rel(gateway, catalog, "Routes requests", "HTTPS")
     Rel(gateway, order, "Routes requests", "HTTPS")
     Rel(gateway, basket, "Routes requests", "HTTPS")
@@ -119,6 +149,7 @@ C4Container
     Rel(rating, ratingDb, "Reads/Writes", "TCP")
     Rel(catalog, vectorDb, "Reads/Writes", "TCP")
     Rel(notification, notificationDb, "Reads/Writes", "TCP")
+
     Rel(notification, email, "Sends emails", "SMTP")
 
     Rel(catalog, eventBus, "Publishes/Subscribes", "AMQP")
@@ -130,7 +161,17 @@ C4Container
 
     Rel(basket, catalog, "Retrieves products", "gRPC")
     Rel(order, catalog, "Retrieves products", "gRPC")
+
+    Rel(email, customer, "Delivers to", "SMTP")
+
+    UpdateLayoutConfig($c4ShapeInRow="4", $c4BoundaryInRow="2")
 ```
+
+## Interactive Architecture Diagram
+
+The following diagram provides an interactive view of the architecture of the BookWorm system. You can explore the components, their relationships, and the flow of data between them.
+
+<DrawIO url="https://viewer.diagrams.net/?tags=%7B%7D&lightbox=1&target=blank&highlight=0000ff&layers=1&nav=1&title=BookWorm&dark=0#Uhttps%3A%2F%2Fdrive.google.com%2Fuc%3Fid%3D14OKRv9-iGiyCvOu4qwSnh1Mk6e5f_XWg%26export%3Ddownload" />
 
 ## Current Production Architecture
 
