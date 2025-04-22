@@ -97,25 +97,23 @@ C4Component
     title Component diagram for Order Service
 
     Container_Boundary(order, "Order Service") {
-        Component(api, "API Layer", "REST/gRPC", "Handles external requests and routing")
-        Component(orderEndpoint, "Order Endpoints", ".NET", "Manages order operations")
-        Component(orderManager, "Order Manager", ".NET", "Core business logic for order management")
-        Component(eventPublisher, "Event Publisher", ".NET", "Publishes order events")
-        ComponentDb(orderDb, "Order DB", "PostgreSQL", "Stores order information and history")
+        Container_Boundary(application, "Application") {
+            Component(orderEndpoint, "Order Endpoints", ".NET", "Manages order operations")
+            Component(orderFacade, "Order Facade", ".NET", "Core business logic for order management")
+            Component(eventPublisher, "Event Publisher", ".NET", "Publishes order events")
+        }
+
+        Container_Boundary(infrastructure, "Infrastructure") {
+            ComponentDb(orderDb, "Order DB", "PostgreSQL", "Stores order information and history")
+            ComponentQueue(eventBus, "Event Bus", "RabbitMQ", "Handles async communication")
+        }
     }
 
-    SystemQueue(eventBus, "RabbitMQ", "Handles async communication")
-    Container(catalogService, "Catalog Service", ".NET", "Provides book information")
-    Container(financeService, "Finance Service", ".NET", "Handles financial transactions")
+    Rel(orderEndpoint, orderFacade, "Uses", "Internal")
+    BiRel(orderFacade, eventPublisher, "Uses", "Internal")
+    Rel(orderFacade, orderDb, "Reads/Writes", "SQL")
 
-    Rel(api, orderEndpoint, "Uses", "REST/gRPC")
-    Rel(orderEndpoint, orderManager, "Uses", "Internal")
-    Rel(orderManager, eventPublisher, "Uses", "Internal")
-    Rel(orderManager, orderDb, "Reads/Writes", "SQL")
-
-    Rel(eventPublisher, eventBus, "Publishes events", "Async")
-    Rel(eventBus, financeService, "Notifies", "Async")
-    Rel(orderManager, catalogService, "Uses", "gRPC")
+    BiRel(eventPublisher, eventBus, "Publishes/Subscribes", "Async")
 
     UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
 ```

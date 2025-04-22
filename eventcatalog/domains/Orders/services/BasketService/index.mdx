@@ -87,27 +87,23 @@ C4Component
     title Component diagram for Basket Service
 
     Container_Boundary(basket, "Basket Service") {
-        Component(api, "API Layer", "gRPC", "Handles external requests and routing")
+      Container_Boundary(application, "Application") {
         Component(basketEndpoint, "Basket Endpoints", ".NET", "Manages basket operations")
-        Component(basketManager, "Basket Manager", ".NET", "Core business logic for basket management")
-        Component(cacheService, "Cache Service", ".NET", "Handles Redis caching operations")
-        Component(eventPublisher, "Event Publisher", ".NET", "Publishes basket events")
+        Component(basketFacade, "Basket Facade", ".NET", "Core business logic for basket management")
+        Component(eventPublisher, "Event Handler", ".NET", "Publishes basket events")
+      }
+
+      Container_Boundary(infrastructure, "Infrastructure") {
         ComponentDb(basketDb, "Basket DB", "Redis", "Stores basket data")
+        ComponentQueue(eventBus, "Event Bus", "RabbitMQ", "Handles async communication")
+      }
     }
 
-    SystemQueue(eventBus, "RabbitMQ", "Handles async communication")
-    Container(orderService, "Order Service", ".NET", "Processes orders")
-    Container(catalogService, "Catalog Service", ".NET", "Provides product information")
+    Rel(basketEndpoint, basketFacade, "Uses", "Internal")
+    BiRel(basketFacade, eventPublisher, "Uses", "Internal")
 
-    Rel(api, basketEndpoint, "Uses", "gRPC")
-    Rel(basketEndpoint, basketManager, "Uses", "Internal")
-    Rel(basketManager, cacheService, "Uses", "Internal")
-    Rel(basketManager, eventPublisher, "Uses", "Internal")
-
-    Rel(cacheService, basketDb, "Reads/Writes", "Redis Protocol")
-    Rel(basketManager, catalogService, "Validates products", "gRPC")
-    Rel(eventPublisher, eventBus, "Publishes events", "Async")
-    Rel(eventBus, orderService, "Notifies", "Async")
+    Rel(basketFacade, basketDb, "Reads/Writes", "Redis Protocol")
+    BiRel(eventPublisher, eventBus, "Publishes/Subscribes", "Async")
 
     UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
 ```

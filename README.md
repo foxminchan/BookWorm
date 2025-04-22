@@ -27,7 +27,6 @@
 - [x] Integrated Event Sourcing
 - [x] Utilized Outbox and Inbox Patterns
 - [x] Supported API versioning
-- [x] Implemented caching with Hybrid Cache
 - [x] Enabled feature flags to manage application behavior
 - [x] Set up AuthN/AuthZ with Keycloak
 - [x] Incorporated AI components:

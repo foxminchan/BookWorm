@@ -94,26 +94,20 @@ C4Component
     title Component diagram for Finance Service
 
     Container_Boundary(finance, "Finance Service") {
-        Component(sagaOrchestrator, "Saga Orchestrator", ".NET", "Coordinates distributed transactions")
-        ComponentDb(financeDb, "Finance DB", "PostgreSQL", "Stores financial records and transactions")
+        Container_Boundary(application, "Application") {
+            Component(financeEndpoint, "Finance Endpoints", ".NET", "Get state machine")
+            Component(sagaOrchestrator, "Saga Orchestrator", ".NET", "Coordinates distributed transactions")
+        }
+
+        Container_Boundary(infrastructure, "Infrastructure") {
+            ComponentQueue(eventBus, "Event Bus", "RabbitMQ", "Handles async communication")
+            ComponentDb(financeDb, "Finance DB", "PostgreSQL", "Stores financial records and transactions")
+        }
     }
 
-    SystemQueue(eventBus, "RabbitMQ", "Handles async communication")
-    Container(orderService, "Order Service", ".NET", "Manages order processing")
-    Container(basketService, "Basket Service", ".NET", "Manages basket processing")
-    Container(notificationService, "Notification Service", ".NET", "Sends notifications")
-
+    Rel(financeEndpoint, sagaOrchestrator, "Uses", "Internal")
     Rel(sagaOrchestrator, financeDb, "Reads/Writes", "SQL")
-    Rel(sagaOrchestrator, eventBus, "Publishes events", "Async")
-    Rel(eventBus, sagaOrchestrator, "Subscribes to events", "Async")
-
-    Rel(eventBus, orderService, "Notifies", "Async")
-    Rel(eventBus, basketService, "Notifies", "Async")
-    Rel(eventBus, notificationService, "Notifies", "Async")
-
-    Rel(orderService, eventBus, "Notifies", "Async")
-    Rel(basketService, eventBus, "Notifies", "Async")
-    Rel(notificationService, eventBus, "Notifies", "Async")
+    BiRel(sagaOrchestrator, eventBus, "Publishes/Subscribes", "Async")
 
     UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
 ```
