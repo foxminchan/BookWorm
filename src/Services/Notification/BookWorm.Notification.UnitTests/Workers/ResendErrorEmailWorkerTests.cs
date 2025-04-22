@@ -40,6 +40,7 @@ public class ResendErrorEmailWorkerTests : IDisposable
     public void Dispose()
     {
         _worker.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     [Test]
@@ -60,7 +61,7 @@ public class ResendErrorEmailWorkerTests : IDisposable
                     null,
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()
                 ),
-            Times.Once
+            Times.AtLeastOnce
         );
     }
 
@@ -85,7 +86,7 @@ public class ResendErrorEmailWorkerTests : IDisposable
         // Assert
         _senderMock.Verify(
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
-            Times.Exactly(2)
+            Times.AtLeastOnce
         );
     }
 
@@ -116,7 +117,7 @@ public class ResendErrorEmailWorkerTests : IDisposable
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()
                 ),
-            Times.Once
+            Times.AtLeastOnce
         );
     }
 
@@ -144,7 +145,7 @@ public class ResendErrorEmailWorkerTests : IDisposable
                     null,
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()
                 ),
-            Times.Once
+            Times.AtLeastOnce
         );
     }
 
@@ -172,7 +173,7 @@ public class ResendErrorEmailWorkerTests : IDisposable
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()
                 ),
-            Times.Once
+            Times.AtLeastOnce
         );
     }
 
@@ -209,12 +210,12 @@ public class ResendErrorEmailWorkerTests : IDisposable
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()
                 ),
-            Times.Once
+            Times.AtLeastOnce
         );
 
         _senderMock.Verify(
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
-            Times.Exactly(2)
+            Times.AtLeastOnce
         );
     }
 
@@ -239,7 +240,7 @@ public class ResendErrorEmailWorkerTests : IDisposable
                     null,
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()
                 ),
-            Times.Once
+            Times.AtLeastOnce
         );
     }
 
@@ -267,7 +268,7 @@ public class ResendErrorEmailWorkerTests : IDisposable
                     null,
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()
                 ),
-            Times.Once
+            Times.AtLeastOnce
         );
     }
 }

@@ -5,7 +5,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <UserSecretsId>78a33324-5add-4731-b2fc-e0fc06ef0564</UserSecretsId>
-    <NoWarn>ASPIREAZURE001</NoWarn>
+    <NoWarn>ASPIREAZURE001,NU1603</NoWarn>
   </PropertyGroup>
 
   <ItemGroup Label="Aspire">
@@ -30,19 +30,19 @@
   </ItemGroup>
 
   <ItemGroup Label="Services">
-    <ProjectReference Include="..\BookWorm.Gateway\BookWorm.Gateway.csproj" />
-    <ProjectReference Include="..\Services\Basket\BookWorm.Basket\BookWorm.Basket.csproj" />
-    <ProjectReference Include="..\Services\Catalog\BookWorm.Catalog\BookWorm.Catalog.csproj" />
-    <ProjectReference Include="..\Services\Finance\BookWorm.Finance\BookWorm.Finance.csproj" />
-    <ProjectReference Include="..\Services\Notification\BookWorm.Notification\BookWorm.Notification.csproj" />
-    <ProjectReference Include="..\Services\Ordering\BookWorm.Ordering\BookWorm.Ordering.csproj" />
-    <ProjectReference Include="..\Services\Rating\BookWorm.Rating\BookWorm.Rating.csproj" />
+    <ProjectReference Include="..\..\BookWorm.Gateway\BookWorm.Gateway.csproj" />
+    <ProjectReference Include="..\..\Services\Basket\BookWorm.Basket\BookWorm.Basket.csproj" />
+    <ProjectReference Include="..\..\Services\Catalog\BookWorm.Catalog\BookWorm.Catalog.csproj" />
+    <ProjectReference Include="..\..\Services\Finance\BookWorm.Finance\BookWorm.Finance.csproj" />
+    <ProjectReference Include="..\..\Services\Notification\BookWorm.Notification\BookWorm.Notification.csproj" />
+    <ProjectReference Include="..\..\Services\Ordering\BookWorm.Ordering\BookWorm.Ordering.csproj" />
+    <ProjectReference Include="..\..\Services\Rating\BookWorm.Rating\BookWorm.Rating.csproj" />
   </ItemGroup>
 
   <ItemGroup Label="Integrations">
-    <ProjectReference Include="..\BuildingBlocks\BookWorm.Constants\BookWorm.Constants.csproj" IsAspireProjectResource="false" />
-    <ProjectReference Include="..\Integrations\BookWorm.Scalar\BookWorm.Scalar.csproj" IsAspireProjectResource="false" />
-    <ProjectReference Include="..\Integrations\BookWorm.HealthChecksUI\BookWorm.HealthChecksUI.csproj" IsAspireProjectResource="false" />
+    <ProjectReference Include="..\..\BuildingBlocks\BookWorm.Constants\BookWorm.Constants.csproj" IsAspireProjectResource="false" />
+    <ProjectReference Include="..\..\Integrations\BookWorm.Scalar\BookWorm.Scalar.csproj" IsAspireProjectResource="false" />
+    <ProjectReference Include="..\..\Integrations\BookWorm.HealthChecksUI\BookWorm.HealthChecksUI.csproj" IsAspireProjectResource="false" />
   </ItemGroup>
 
 </Project>

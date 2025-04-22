@@ -1,6 +1,9 @@
 <Solution>
+    <Folder Name="/Aspire/">
+        <Project Path="src/Aspire/BookWorm.AppHost/BookWorm.AppHost.csproj" />
+        <Project Path="src/Aspire/BookWorm.ServiceDefaults/BookWorm.ServiceDefaults.csproj" />
+    </Folder>
     <Folder Name="/BuildingBlocks/">
-        <Project Path="src/BookWorm.ServiceDefaults/BookWorm.ServiceDefaults.csproj" />
         <Project Path="src/BuildingBlocks/BookWorm.Constants/BookWorm.Constants.csproj" />
         <Project Path="src/BuildingBlocks/BookWorm.SharedKernel/BookWorm.SharedKernel.csproj" />
     </Folder>
@@ -22,9 +25,9 @@
         <Project Path="src/Services/Finance/BookWorm.Finance/BookWorm.Finance.csproj" />
     </Folder>
     <Folder Name="/Services/Notification/">
-        <Project Path="src/Services/Notification/BookWorm.Notification/BookWorm.Notification.csproj" />
         <Project
                 Path="src/Services/Notification/BookWorm.Notification.UnitTests/BookWorm.Notification.UnitTests.csproj" />
+        <Project Path="src/Services/Notification/BookWorm.Notification/BookWorm.Notification.csproj" />
     </Folder>
     <Folder Name="/Services/Ordering/">
         <Project Path="src/Services/Ordering/BookWorm.Ordering.UnitTests/BookWorm.Ordering.UnitTests.csproj" />
@@ -39,6 +42,5 @@
         <File Path="Directory.Packages.props" />
         <File Path=".editorconfig" />
     </Folder>
-    <Project Path="src/BookWorm.AppHost/BookWorm.AppHost.csproj" />
     <Project Path="src/BookWorm.Gateway/BookWorm.Gateway.csproj" />
 </Solution>
