@@ -97,6 +97,9 @@ C4Container
     Enterprise_Boundary(bookworm, "BookWorm Store") {
       Person(customer, "Customer", "A user who wants to browse and purchase books")
 
+      System_Ext(email, "Email Service", "Handles email notifications")
+      System_Ext(identity, "Identity Provider", "Handles user authentication")
+
       System_Boundary(application, "Application") {
         Container(gateway, "API Gateway", ".NET", "Routes requests to the appropriate service")
 
@@ -106,10 +109,10 @@ C4Container
         }
 
         System_Boundary(order, "Order Domain") {
+          Container(notification, "Notification Service", ".NET", "Sends notifications to users")
           Container(order, "Order Service", ".NET", "Handles order processing")
           Container(basket, "Basket Service", ".NET", "Manages shopping cart")
           Container(finance, "Finance Service", ".NET", "Handles payment processing")
-          Container(notification, "Notification Service", ".NET", "Sends notifications to users")
         }
       }
 
@@ -117,19 +120,14 @@ C4Container
         SystemQueue(eventBus, "Event Bus", "Handles message passing between services")
 
         System_Boundary(database, "Database") {
+          ContainerDb(notificationDb, "Notification DB", "NoSQL", "Stores notification records")
           ContainerDb(catalogDb, "Catalog DB", "SQL", "Stores product information")
+          ContainerDb(vectorDb, "Vector DB", "NoSQL", "Stores vector embeddings for search")
           ContainerDb(orderDb, "Order DB", "SQL", "Stores order information")
-          ContainerDb(basketDb, "Basket DB", "SQL", "Stores shopping cart data")
+          ContainerDb(basketDb, "Basket DB", "NoSQL", "Stores shopping cart data")
           ContainerDb(financeDb, "Finance DB", "SQL", "Stores payment records")
           ContainerDb(ratingDb, "Rating DB", "SQL", "Stores ratings and reviews")
-          ContainerDb(notificationDb, "Notification DB", "NoSQL", "Stores notification records")
-          ContainerDb(vectorDb, "Vector DB", "NoSQL", "Stores vector embeddings for search")
         }
-      }
-
-      System_Boundary(external, "External Systems") {
-        System_Ext(identity, "Identity Provider", "Handles user authentication")
-        System_Ext(email, "Email Service", "Handles email notifications")
       }
     }
 
@@ -152,19 +150,19 @@ C4Container
 
     Rel(notification, email, "Sends emails", "SMTP")
 
-    Rel(catalog, eventBus, "Publishes/Subscribes", "AMQP")
-    Rel(order, eventBus, "Publishes/Subscribes", "AMQP")
-    Rel(basket, eventBus, "Publishes/Subscribes", "AMQP")
-    Rel(finance, eventBus, "Publishes/Subscribes", "AMQP")
-    Rel(rating, eventBus, "Publishes/Subscribes", "AMQP")
-    Rel(notification, eventBus, "Subscribes", "AMQP")
+    BiRel(catalog, eventBus, "Publishes/Subscribes", "AMQP")
+    BiRel(order, eventBus, "Publishes/Subscribes", "AMQP")
+    BiRel(basket, eventBus, "Publishes/Subscribes", "AMQP")
+    BiRel(finance, eventBus, "Publishes/Subscribes", "AMQP")
+    BiRel(rating, eventBus, "Publishes/Subscribes", "AMQP")
+    Rel(eventBus, notification, "Subscribes", "AMQP")
 
     Rel(basket, catalog, "Retrieves products", "gRPC")
     Rel(order, catalog, "Retrieves products", "gRPC")
 
     Rel(email, customer, "Delivers to", "SMTP")
 
-    UpdateLayoutConfig($c4ShapeInRow="4", $c4BoundaryInRow="2")
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="2")
 ```
 
 ## Interactive Architecture Diagram
