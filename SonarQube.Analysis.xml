@@ -8,7 +8,7 @@
     eventcatalog/**,src/Services/**/**/Infrastructure/Migrations/**,src/Services/Ordering/BookWorm.Ordering/Internal/Generated/**
   </Property>
   <Property Name="sonar.coverage.exclusions">
-    src/Services/**/**/Infrastructure/**,src/Services/**/Program.cs,src/BuildingBlocks/**,src/Integrations/**,src/BookWorm.ServiceDefaults/**,src/BookWorm.AppHost/**,src/BookWorm.Gateway/**
+    src/Services/**/**/Infrastructure/**,src/Services/**/Program.cs,src/BuildingBlocks/**,src/Integrations/**,src/Aspire/**,src/BookWorm.Gateway/**
   </Property>
   <Property Name="sonar.cs.vstest.reportsPaths">src/Services/**/**/test-results/*.trx</Property>
   <Property Name="sonar.cs.vscoveragexml.reportsPaths">src/Services/**/**/test-results/*.xml</Property>

@@ -1,12 +1,27 @@
 <Project>
-  <PropertyGroup>
-    <WarnOnPackingNonPackableProject>false</WarnOnPackingNonPackableProject>
+  <PropertyGroup Label="Framework">
     <TargetFramework>net9.0</TargetFramework>
-    <LangVersion>preview</LangVersion>
-    <Nullable>enable</Nullable>
-    <DebugType>embedded</DebugType>
-    <DebugSymbols>true</DebugSymbols>
+    <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Product">
+    <Product>BookWorm</Product>
+    <Authors>Nhan Nguyen</Authors>
+    <PackageLicenseUrl>https://github.com/foxminchan/BookWorm/blob/main/LICENSE</PackageLicenseUrl>
+    <PackageReadmeFile>https://github.com/foxminchan/BookWorm/blob/main/README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/foxminchan/BookWorm</RepositoryUrl>
+    <RepositoryType>Git</RepositoryType>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Debug">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Build">
+    <WarnOnPackingNonPackableProject>false</WarnOnPackingNonPackableProject>
+    <Nullable>enable</Nullable>
     <!-- Temporarily disable security warnings for transitive packages. -->
     <NoWarn>NU1608</NoWarn>
   </PropertyGroup>
