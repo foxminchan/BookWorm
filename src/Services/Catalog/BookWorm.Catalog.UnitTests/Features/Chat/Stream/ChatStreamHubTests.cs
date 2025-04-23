@@ -1,7 +1,7 @@
 ﻿using BookWorm.Catalog.Features.Chat;
 using BookWorm.Catalog.Features.Chat.Stream;
-using BookWorm.Catalog.Infrastructure.ConversationState.Abstractions;
-using BookWorm.Catalog.Infrastructure.Services;
+using BookWorm.Catalog.Infrastructure.GenAi.ChatStreaming;
+using BookWorm.Catalog.Infrastructure.GenAi.ConversationState.Abstractions;
 
 namespace BookWorm.Catalog.UnitTests.Features.Chat.Stream;
 

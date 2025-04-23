@@ -1,6 +1,6 @@
 ﻿using BookWorm.Catalog.Features.Chat;
 using BookWorm.Catalog.Features.Chat.Create;
-using BookWorm.Catalog.Infrastructure.Services;
+using BookWorm.Catalog.Infrastructure.GenAi.ChatStreaming;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Catalog.UnitTests.Features.Chat.Create;

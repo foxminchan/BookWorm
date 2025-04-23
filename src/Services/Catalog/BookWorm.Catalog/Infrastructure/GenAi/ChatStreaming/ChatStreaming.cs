@@ -1,7 +1,10 @@
 ﻿using System.Runtime.CompilerServices;
 using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
+using BookWorm.Catalog.Infrastructure.GenAi.CancellationManager;
+using BookWorm.Catalog.Infrastructure.GenAi.ConversationState.Abstractions;
+using BookWorm.Catalog.Infrastructure.GenAi.SemanticSearch;
 
-namespace BookWorm.Catalog.Infrastructure.Services;
+namespace BookWorm.Catalog.Infrastructure.GenAi.ChatStreaming;
 
 public sealed class ChatStreaming : IChatStreaming
 {
@@ -236,9 +239,16 @@ public sealed class ChatStreaming : IChatStreaming
 
         var mapper = _serviceProvider.GetRequiredService<IMapper<Book, BookDto>>();
 
-        var semanticSearch = _serviceProvider.GetRequiredService<IBookSemanticSearch>();
+        var semanticSearch = _serviceProvider.GetRequiredService<ISemanticSearch>();
 
-        var ids = await semanticSearch.FindBooksAsync(description);
+        var response = await semanticSearch.FindAsync(description, nameof(Book).ToLower());
+
+        if (response.Count == 0)
+        {
+            return "We couldn't find any books matching your description. Please try again with a different description.";
+        }
+
+        var ids = response.Select(r => r.Id).ToArray();
 
         var books = await repository.ListAsync(new BookFilterSpec(ids));
 

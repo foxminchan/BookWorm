@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Catalog.Infrastructure.Services;
+﻿using BookWorm.Catalog.Infrastructure.GenAi.ConversationState.Abstractions;
+
+namespace BookWorm.Catalog.Infrastructure.GenAi.ChatStreaming;
 
 public interface IChatStreaming
 {

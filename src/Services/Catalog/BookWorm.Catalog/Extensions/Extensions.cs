@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Catalog.Extensions;
+﻿using BookWorm.Catalog.Infrastructure.GenAi;
+
+namespace BookWorm.Catalog.Extensions;
 
 [ExcludeFromCodeCoverage]
 public static class Extensions
@@ -68,7 +70,7 @@ public static class Extensions
         services.AddRepositories(typeof(ICatalogApiMarker));
 
         // Configure AI
-        builder.AddOllamaClient();
+        builder.AddGenAi();
 
         // Add Blob services
         builder.AddAzureBlobClient(Components.Azure.Storage.Blob);
@@ -79,7 +81,6 @@ public static class Extensions
         services.AddEndpoints(typeof(ICatalogApiMarker));
 
         // Other services
-        services.AddScoped<IBookSemanticSearch, BookSemanticSearch>();
         services.AddMapper(typeof(ICatalogApiMarker));
 
         // Configure EventBus
