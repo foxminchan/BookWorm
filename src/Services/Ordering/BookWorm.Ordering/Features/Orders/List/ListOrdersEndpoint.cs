@@ -16,7 +16,8 @@ public sealed class ListOrdersEndpoint
             .WithName(nameof(ListOrdersEndpoint))
             .WithSummary("List Orders")
             .WithDescription("List orders with pagination and filtering")
-            .MapToApiVersion(new(1, 0));
+            .MapToApiVersion(new(1, 0))
+            .RequireAuthorization();
     }
 
     public async Task<Ok<PagedResult<OrderDto>>> HandleAsync(

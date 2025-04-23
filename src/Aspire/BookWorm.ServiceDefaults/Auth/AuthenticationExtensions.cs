@@ -16,7 +16,11 @@ public static class AuthenticationExtensions
         var services = builder.Services;
 
         services
-            .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
             .AddKeycloakJwtBearer(
                 Components.KeyCloak,
                 realm,
@@ -34,11 +38,7 @@ public static class AuthenticationExtensions
                 policy => policy.RequireRole(Authorization.Roles.Admin)
             )
             .AddPolicy(Authorization.Policies.User, policy => policy.RequireAuthenticatedUser())
-            .SetDefaultPolicy(
-                new AuthorizationPolicyBuilder(Authorization.Policies.User)
-                    .RequireAuthenticatedUser()
-                    .Build()
-            );
+            .SetDefaultPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
 
         return builder;
     }
