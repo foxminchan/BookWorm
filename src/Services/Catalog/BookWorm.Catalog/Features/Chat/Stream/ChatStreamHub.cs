@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using BookWorm.Catalog.Infrastructure.GenAi.ChatStreaming;
+using BookWorm.Catalog.Infrastructure.GenAi.ConversationState.Abstractions;
+using Microsoft.AspNetCore.SignalR;
 
 namespace BookWorm.Catalog.Features.Chat.Stream;
 

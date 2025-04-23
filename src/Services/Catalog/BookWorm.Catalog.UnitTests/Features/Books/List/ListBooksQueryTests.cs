@@ -2,7 +2,8 @@
 using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
 using BookWorm.Catalog.Features.Books;
 using BookWorm.Catalog.Features.Books.List;
-using BookWorm.Catalog.Infrastructure.Services;
+using BookWorm.Catalog.Infrastructure.GenAi;
+using BookWorm.Catalog.Infrastructure.GenAi.SemanticSearch;
 using BookWorm.Catalog.UnitTests.Fakers;
 using BookWorm.SharedKernel.Mapper;
 
@@ -10,12 +11,14 @@ namespace BookWorm.Catalog.UnitTests.Features.Books.List;
 
 public sealed class ListBooksQueryTests
 {
+    private const int MaxResults = 20;
+    private readonly string _collectionName = nameof(Book).ToLower();
     private BookDto[] _bookDtos = null!;
     private List<Book> _books = null!;
     private ListBooksHandler _handler = null!;
     private Mock<IMapper<Book, BookDto>> _mockMapper = null!;
     private Mock<IBookRepository> _mockRepository = null!;
-    private Mock<IBookSemanticSearch> _mockSemanticSearch = null!;
+    private Mock<ISemanticSearch> _mockSemanticSearch = null!;
 
     [Before(Test)]
     public void Setup()
@@ -79,7 +82,13 @@ public sealed class ListBooksQueryTests
         result.TotalPages.ShouldBe(Math.Ceiling(expectedTotalItems / (double)query.PageSize));
 
         _mockSemanticSearch.Verify(
-            s => s.FindBooksAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            s =>
+                s.FindAsync(
+                    It.IsAny<string>(),
+                    _collectionName,
+                    MaxResults,
+                    It.IsAny<CancellationToken>()
+                ),
             Times.Never
         );
     }
@@ -90,10 +99,16 @@ public sealed class ListBooksQueryTests
         // Arrange
         const string searchTerm = "fantasy novel";
         var query = new ListBooksQuery(Search: searchTerm);
-        var semanticSearchResults = new[] { Guid.CreateVersion7(), Guid.CreateVersion7() };
+        var semanticSearchResults = new List<SemanticSearchRecord>
+        {
+            new() { Id = Guid.CreateVersion7(), Name = "Book 1" },
+            new() { Id = Guid.CreateVersion7(), Name = "Book 2" },
+        };
 
         _mockSemanticSearch
-            .Setup(s => s.FindBooksAsync(searchTerm, It.IsAny<CancellationToken>()))
+            .Setup(s =>
+                s.FindAsync(searchTerm, _collectionName, MaxResults, It.IsAny<CancellationToken>())
+            )
             .ReturnsAsync(semanticSearchResults);
 
         _mockRepository
@@ -111,7 +126,8 @@ public sealed class ListBooksQueryTests
         result.ShouldNotBeNull();
 
         _mockSemanticSearch.Verify(
-            s => s.FindBooksAsync(searchTerm, It.IsAny<CancellationToken>()),
+            s =>
+                s.FindAsync(searchTerm, _collectionName, MaxResults, It.IsAny<CancellationToken>()),
             Times.Once
         );
 

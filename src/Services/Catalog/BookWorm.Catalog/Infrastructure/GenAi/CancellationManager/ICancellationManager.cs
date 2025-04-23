@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Catalog.Infrastructure.CancellationManager;
+﻿namespace BookWorm.Catalog.Infrastructure.GenAi.CancellationManager;
 
 public interface ICancellationManager
 {

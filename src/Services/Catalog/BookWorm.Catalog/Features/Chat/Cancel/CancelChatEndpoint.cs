@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Catalog.Features.Chat.Cancel;
+﻿using BookWorm.Catalog.Infrastructure.GenAi.CancellationManager;
+
+namespace BookWorm.Catalog.Features.Chat.Cancel;
 
 public sealed class CancelChatEndpoint : IEndpoint<NoContent, Guid, ICancellationManager>
 {

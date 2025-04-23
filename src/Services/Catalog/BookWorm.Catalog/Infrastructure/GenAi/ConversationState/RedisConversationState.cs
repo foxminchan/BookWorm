@@ -1,9 +1,10 @@
 ﻿using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
+using BookWorm.Catalog.Infrastructure.GenAi.ConversationState.Abstractions;
 using StackExchange.Redis;
 
-namespace BookWorm.Catalog.Infrastructure.ConversationState;
+namespace BookWorm.Catalog.Infrastructure.GenAi.ConversationState;
 
 public sealed class RedisConversationState : IConversationState, IDisposable
 {

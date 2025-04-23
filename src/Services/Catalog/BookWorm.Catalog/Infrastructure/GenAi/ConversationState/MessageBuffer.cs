@@ -1,7 +1,8 @@
 ﻿using System.Collections.Concurrent;
+using BookWorm.Catalog.Infrastructure.GenAi.ConversationState.Abstractions;
 using StackExchange.Redis;
 
-namespace BookWorm.Catalog.Infrastructure.ConversationState;
+namespace BookWorm.Catalog.Infrastructure.GenAi.ConversationState;
 
 public sealed class MessageBuffer : IAsyncDisposable
 {

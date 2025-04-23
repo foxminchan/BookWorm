@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Catalog.Features.Chat.Create;
+﻿using BookWorm.Catalog.Infrastructure.GenAi.ChatStreaming;
+
+namespace BookWorm.Catalog.Features.Chat.Create;
 
 public sealed class CreateChatEndpoint : IEndpoint<Ok<Guid>, Prompt, IChatStreaming>
 {

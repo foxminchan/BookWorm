@@ -1,5 +1,5 @@
 ﻿using BookWorm.Catalog.Features.Chat.Cancel;
-using BookWorm.Catalog.Infrastructure.CancellationManager;
+using BookWorm.Catalog.Infrastructure.GenAi.CancellationManager;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Catalog.UnitTests.Features.Chat.Cancel;

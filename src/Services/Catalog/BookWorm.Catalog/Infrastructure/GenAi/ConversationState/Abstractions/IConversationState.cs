@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Catalog.Infrastructure.ConversationState.Abstractions;
+﻿namespace BookWorm.Catalog.Infrastructure.GenAi.ConversationState.Abstractions;
 
 public interface IConversationState
 {
