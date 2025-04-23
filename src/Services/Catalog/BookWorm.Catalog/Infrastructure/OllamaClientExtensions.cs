@@ -2,15 +2,24 @@
 
 public static class OllamaClientExtensions
 {
+    private const string ActivitySourceName = "Experimental.Microsoft.Extensions.AI";
+
     public static void AddOllamaClient(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;
 
-        builder.AddOllamaApiClient(Components.Ollama.Embedding).AddEmbeddingGenerator();
-        builder.AddOllamaApiClient(Components.Ollama.Chat).AddChatClient().UseFunctionInvocation();
+        builder
+            .AddOllamaApiClient(Components.Ollama.Embedding)
+            .AddEmbeddingGenerator()
+            .UseLogging();
+
+        builder
+            .AddOllamaApiClient(Components.Ollama.Chat)
+            .AddChatClient()
+            .UseFunctionInvocation()
+            .UseLogging();
 
         services.AddSingleton<IAiService, AiService>();
-
         services.AddSignalR().AddNamedAzureSignalR(Components.Azure.SignalR);
         services.AddSingleton<IChatStreaming, ChatStreaming>();
         services.AddSingleton<IConversationState, RedisConversationState>();
@@ -18,7 +27,7 @@ public static class OllamaClientExtensions
 
         services
             .AddOpenTelemetry()
-            .WithMetrics(m => m.AddMeter("Experimental.Microsoft.Extensions.AI"))
-            .WithTracing(t => t.AddSource("Experimental.Microsoft.Extensions.AI"));
+            .WithMetrics(m => m.AddMeter(ActivitySourceName))
+            .WithTracing(t => t.AddSource(ActivitySourceName));
     }
 }

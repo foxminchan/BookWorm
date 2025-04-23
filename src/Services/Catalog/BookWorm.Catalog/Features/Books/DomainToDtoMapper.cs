@@ -9,19 +9,21 @@ public sealed class DomainToDtoMapper(IBlobService blobService) : IMapper<Book, 
 {
     public BookDto MapToDto(Book book)
     {
-        var imageUrl = book.Image is not null ? blobService.GetFileUrl(book.Image) : null;
+        var imageUrl = book.Image is not null
+            ? blobService.GetFileUrl(book.Image).GetAwaiter().GetResult()
+            : null;
 
         return new(
             book.Id,
             book.Name,
             book.Description,
             imageUrl,
-            book.Price!.OriginalPrice,
-            book.Price!.DiscountPrice,
+            book.Price?.OriginalPrice ?? 0,
+            book.Price?.DiscountPrice,
             book.Status,
             book.Category?.ToCategoryDto(),
             book.Publisher?.ToPublisherDto(),
-            [.. book.BookAuthors.Select(x => x.Author.ToAuthorDto())],
+            book.BookAuthors.Select(x => x.Author.ToAuthorDto()).ToArray(),
             book.AverageRating,
             book.TotalReviews
         );
@@ -29,6 +31,6 @@ public sealed class DomainToDtoMapper(IBlobService blobService) : IMapper<Book, 
 
     public IReadOnlyList<BookDto> MapToDtos(IReadOnlyList<Book> models)
     {
-        return [.. models.Select(MapToDto)];
+        return models.Count == 0 ? [] : models.Select(MapToDto).ToArray();
     }
 }

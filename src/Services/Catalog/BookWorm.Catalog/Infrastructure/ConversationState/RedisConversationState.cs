@@ -10,7 +10,7 @@ public sealed class RedisConversationState : IConversationState, IDisposable
     private static readonly ConcurrentDictionary<
         Guid,
         List<Action<ClientMessageFragment>>
-    > GlobalSubscribers = new();
+    > _globalSubscribers = new();
 
     private readonly IDatabase _database;
     private readonly ILogger<RedisConversationState> _logger;
@@ -106,7 +106,7 @@ public sealed class RedisConversationState : IConversationState, IDisposable
         // Register a local callback BEFORE retrieving the backlog.
         void LocalCallback(ClientMessageFragment fragment)
         {
-            if (lastMessageId != null && fragment.Id <= lastMessageId)
+            if (lastMessageId is not null && fragment.Id <= lastMessageId)
             {
                 return;
             }
@@ -202,7 +202,7 @@ public sealed class RedisConversationState : IConversationState, IDisposable
             fragment.Id
         );
 
-        if (!GlobalSubscribers.TryGetValue(conversationId, out var subscribers))
+        if (!_globalSubscribers.TryGetValue(conversationId, out var subscribers))
         {
             return;
         }
@@ -221,7 +221,7 @@ public sealed class RedisConversationState : IConversationState, IDisposable
         Action<ClientMessageFragment> callback
     )
     {
-        if (!GlobalSubscribers.TryGetValue(conversationId, out var list))
+        if (!_globalSubscribers.TryGetValue(conversationId, out var list))
         {
             return;
         }
@@ -231,7 +231,7 @@ public sealed class RedisConversationState : IConversationState, IDisposable
             list.Remove(callback);
             if (list.Count == 0)
             {
-                GlobalSubscribers.TryRemove(conversationId, out _);
+                _globalSubscribers.TryRemove(conversationId, out _);
             }
         }
     }
@@ -241,7 +241,7 @@ public sealed class RedisConversationState : IConversationState, IDisposable
         Action<ClientMessageFragment> callback
     )
     {
-        var list = GlobalSubscribers.GetOrAdd(conversationId, _ => []);
+        var list = _globalSubscribers.GetOrAdd(conversationId, _ => []);
         lock (list)
         {
             list.Add(callback);
