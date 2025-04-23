@@ -17,7 +17,7 @@ public sealed class UpdateAddressEndpoint : IEndpoint<Ok<BuyerDto>, UpdateAddres
             .WithSummary("Update Buyer Address")
             .WithDescription("Update the current buyer's address")
             .MapToApiVersion(new(1, 0))
-            .RequireAuthorization();
+            .RequireAuthorization(Authorization.Policies.User);
     }
 
     public async Task<Ok<BuyerDto>> HandleAsync(
