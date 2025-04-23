@@ -1,11 +1,14 @@
 ﻿using System.Collections.Concurrent;
+using OllamaSharp;
 using StackExchange.Redis;
 
 namespace BookWorm.Catalog.Infrastructure.CancellationManager;
 
 public sealed class RedisCancellationManager : ICancellationManager, IDisposable
 {
-    private readonly RedisChannel _channelName = RedisChannel.Literal("chat-cancellation");
+    private readonly RedisChannel _channelName = RedisChannel.Literal(
+        $"{nameof(Chat).ToLower()}-{nameof(CancellationToken).ToLower()}"
+    );
     private readonly ILogger<RedisCancellationManager> _logger;
     private readonly ISubscriber _subscriber;
     private readonly ConcurrentDictionary<Guid, CancellationTokenSource> _tokens = [];

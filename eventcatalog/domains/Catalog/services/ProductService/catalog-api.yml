@@ -448,7 +448,7 @@ paths:
                     Description:
                       type: string
                       description: The description of the book
-                      example: "When two of your authors, Neal and Mark, were writing the book    Fundamentals of Software Architecture, we kept coming across complex examples in    architecture that we wanted to cover but that were too difficult."
+                      example: "When two of your authors, Neal and Mark, were writing the book Fundamentals of Software Architecture, we kept coming across complex examples in architecture that we wanted to cover but that were too difficult."
                       maxLength: 500
                 - type: object
                   properties:
@@ -506,7 +506,7 @@ paths:
               example:
                 Id: "01961eb4-668d-7e7e-ae25-0fab379614f7"
                 Name: "Software Architecture: The Hard Parts"
-                Description: "When two of your authors, Neal and Mark, were writing the book    Fundamentals of Software Architecture, we kept coming across complex examples in    architecture that we wanted to cover but that were too difficult."
+                Description: "When two of your authors, Neal and Mark, were writing the book Fundamentals of Software Architecture, we kept coming across complex examples in architecture that we wanted to cover but that were too difficult."
                 Image: "image.jpg"
                 Price: 43.99
                 PriceSale: 39.86
@@ -698,8 +698,8 @@ paths:
                     items:
                       - id: "01961eb4-668d-7e7e-ae25-0fab379614f7"
                         name: "Software Architecture: The Hard Parts"
-                        description: "When two of your authors, Neal and Mark, were writing the book    Fundamentals of Software Architecture, we kept coming across complex examples in    architecture that we wanted to cover but that were too difficult."
-                        image: "https://azure.blob.core.windows.net/bookworm/software-architecture-the-hard-parts.jpg"
+                        description: "When two of your authors, Neal and Mark, were writing the book Fundamentals of Software Architecture, we kept coming across complex examples in architecture that we wanted to cover but that were too difficult."
+                        image: "https://default.blob.core.windows.net/catalog/01961eb4-668d-7e7e-ae25-0fab379614f7-software-architecture-the-hard-parts.jpg?sv=2023-01-01&sr=b&st=2023-01-01T00%3A00%3A00Z&se=2023-01-01T01%3A00%3A00Z&sp=r&sig=XXXXX"
                         price: 43.99
                         priceSale: 39.86
                         status: "InStock"
@@ -728,8 +728,8 @@ paths:
                     items:
                       - id: "01961eb4-668d-7e7e-ae25-0fab379614f7"
                         name: "Software Architecture: The Hard Parts"
-                        description: "When two of your authors, Neal and Mark, were writing the book    Fundamentals of Software Architecture, we kept coming across complex examples in    architecture that we wanted to cover but that were too difficult."
-                        image: "https://azure.blob.core.windows.net/bookworm/software-architecture-the-hard-parts.jpg"
+                        description: "When two of your authors, Neal and Mark, were writing the book Fundamentals of Software Architecture, we kept coming across complex examples in architecture that we wanted to cover but that were too difficult."
+                        image: "https://default.blob.core.windows.net/catalog/01961eb4-668d-7e7e-ae25-0fab379614f7-software-architecture-the-hard-parts.jpg?sv=2023-01-01&sr=b&st=2023-01-01T00%3A00%3A00Z&se=2023-01-01T01%3A00%3A00Z&sp=r&sig=XXXXX"
                         price: 43.99
                         priceSale: 39.86
                         status: "InStock"
@@ -749,7 +749,7 @@ paths:
                       - id: "01961eb5-668d-7e7e-ae25-0fab379614f7"
                         name: "The Pragmatic Programmer: From Journeyman to Master"
                         description: "The Pragmatic Programmer is a guide to the practice of programming - the art of building effective systems and the craft of creating great code. It offers advice on how to deal with the complexity of real-world software development, and the latest thinking on programming language design. The book is packed with concrete advice that you can use immediately to make your code better."
-                        image: "https://azure.blob.core.windows.net/bookworm/the-pragmatic-programmer.jpg"
+                        image: "https://default.blob.core.windows.net/catalog/01961eb5-668d-7e7e-ae25-0fab379614f7-the-pragmatic-programmer.jpg?sv=2023-01-01&sr=b&st=2023-01-01T00%3A00%3A00Z&se=2023-01-01T01%3A00%3A00Z&sp=r&sig=XXXXX"
                         price: 43.99
                         priceSale: 39.86
                         status: "InStock"
@@ -835,7 +835,7 @@ paths:
                     Description:
                       type: string
                       description: The description of the book
-                      example: "When two of your authors, Neal and Mark, were writing the book    Fundamentals of Software Architecture, we kept coming across complex examples in    architecture that we wanted to cover but that were too difficult."
+                      example: "When two of your authors, Neal and Mark, were writing the book Fundamentals of Software Architecture, we kept coming across complex examples in architecture that we wanted to cover but that were too difficult."
                       maxLength: 500
                 - type: object
                   properties:
@@ -886,8 +886,8 @@ paths:
                         - "01961ebd-2bc1-7de2-aa90-639662d9259e"
             example:
               Name: "Software Architecture: The Hard Parts"
-              Description: "When two of your authors, Neal and Mark, were writing the book    Fundamentals of Software Architecture, we kept coming across complex examples in    architecture that we wanted to cover but that were too difficult."
-              Image: "https://azure.blob.core.windows.net/bookworm/   software-architecture-the-hard-parts.jpg"
+              Description: "When two of your authors, Neal and Mark, were writing the book Fundamentals of Software Architecture, we kept coming across complex examples in architecture that we wanted to cover but that were too difficult."
+              Image: "https://default.blob.core.windows.net/catalog/01961eb4-668d-7e7e-ae25-0fab379614f7-software-architecture-the-hard-parts.jpg?sv=2023-01-01&sr=b&st=2023-01-01T00%3A00%3A00Z&se=2023-01-01T01%3A00%3A00Z&sp=r&sig=XXXXX"
               Price: 43.99
               PriceSale: 39.86
               CategoryId: "01961eb2-5a5b-749f-b494-1063d73c96a3"
@@ -967,8 +967,8 @@ paths:
               example:
                 id: "01961eb4-668d-7e7e-ae25-0fab379614f7"
                 name: "Software Architecture: The Hard Parts"
-                description: "When two of your authors, Neal and Mark, were writing the book    Fundamentals of Software Architecture, we kept coming across complex examples in    architecture that we wanted to cover but that were too difficult."
-                image: "https://azure.blob.core.windows.net/bookworm/software-architecture-the-hard-parts.jpg"
+                description: "When two of your authors, Neal and Mark, were writing the book Fundamentals of Software Architecture, we kept coming across complex examples in architecture that we wanted to cover but that were too difficult."
+                image: "https://default.blob.core.windows.net/catalog/01961eb4-668d-7e7e-ae25-0fab379614f7-software-architecture-the-hard-parts.jpg?sv=2023-01-01&sr=b&st=2023-01-01T00%3A00%3A00Z&se=2023-01-01T01%3A00%3A00Z&sp=r&sig=XXXXX"
                 price: 43.99
                 priceSale: 39.86
                 category:
@@ -1276,13 +1276,13 @@ components:
             - "string"
             - "null"
           description: The description of the book
-          example: "When two of your authors, Neal and Mark, were writing the book    Fundamentals of Software Architecture, we kept coming across complex examples in    architecture that we wanted to cover but that were too difficult."
+          example: "When two of your authors, Neal and Mark, were writing the book Fundamentals of Software Architecture, we kept coming across complex examples in architecture that we wanted to cover but that were too difficult."
         imageUrl:
           type:
             - "string"
             - "null"
           description: The image URL of the book
-          example: "https://azure.blob.core.windows.net/bookworm/software-architecture-the-hard-parts.jpg"
+          example: "https://default.blob.core.windows.net/catalog/01961eb4-668d-7e7e-ae25-0fab379614f7-software-architecture-the-hard-parts.jpg?sv=2023-01-01&sr=b&st=2023-01-01T00%3A00%3A00Z&se=2023-01-01T01%3A00%3A00Z&sp=r&sig=XXXXX"
         price:
           type: number
           format: double
