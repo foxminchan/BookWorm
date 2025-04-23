@@ -5,7 +5,7 @@ using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Features.Orders.Create;
 using BookWorm.Ordering.Grpc.Services.Basket;
 using BookWorm.Ordering.Grpc.Services.Book;
-using BookWorm.Ordering.Helpers;
+using BookWorm.Ordering.Infrastructure.Helpers;
 using BookWorm.Ordering.Infrastructure.Services;
 using BookWorm.ServiceDefaults.Keycloak;
 using BookWorm.SharedKernel.Command;

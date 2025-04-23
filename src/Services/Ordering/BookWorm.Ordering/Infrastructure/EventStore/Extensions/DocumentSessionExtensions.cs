@@ -1,6 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
+using BookWorm.Ordering.Infrastructure.EventStore.Diagnostic;
 
-namespace BookWorm.Ordering.Infrastructure.EventStore.DocumentSession;
+namespace BookWorm.Ordering.Infrastructure.EventStore.Extensions;
 
 public static class DocumentSessionWithTelemetryExtensions
 {

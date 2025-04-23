@@ -1,6 +1,5 @@
 ﻿using BookWorm.Contracts;
 using BookWorm.Ordering.Extensions;
-using BookWorm.Ordering.Infrastructure.EventStore.DocumentSession;
 using Saunter.Attributes;
 
 namespace BookWorm.Ordering.Domain.EventHandlers;

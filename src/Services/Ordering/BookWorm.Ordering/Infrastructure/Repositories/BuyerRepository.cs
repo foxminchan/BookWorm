@@ -1,5 +1,5 @@
-﻿using BookWorm.SharedKernel.Specification.Evaluators;
-using ISpecification = BookWorm.SharedKernel.Specification.ISpecification<BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate.Buyer>;
+﻿using BookWorm.SharedKernel.Specification;
+using BookWorm.SharedKernel.Specification.Evaluators;
 
 namespace BookWorm.Ordering.Infrastructure.Repositories;
 
@@ -24,7 +24,7 @@ public sealed class BuyerRepository(OrderingDbContext context) : IBuyerRepositor
     }
 
     public async Task<IReadOnlyList<Buyer>> ListAsync(
-        ISpecification spec,
+        ISpecification<Buyer> spec,
         CancellationToken cancellationToken = default
     )
     {

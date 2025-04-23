@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Ordering.Helpers;
+﻿namespace BookWorm.Ordering.Infrastructure.Helpers;
 
 public static class BuyerIdHelper
 {

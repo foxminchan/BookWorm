@@ -1,4 +1,4 @@
-﻿using BookWorm.Ordering.Helpers;
+﻿using BookWorm.Ordering.Infrastructure.Helpers;
 
 namespace BookWorm.Ordering.Features.Buyers.UpdateAddress;
 

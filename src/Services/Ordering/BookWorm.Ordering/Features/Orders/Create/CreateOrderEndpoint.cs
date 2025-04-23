@@ -1,4 +1,5 @@
 ﻿using BookWorm.Ordering.Features.Orders.Get;
+using Microsoft.AspNetCore.Mvc;
 
 namespace BookWorm.Ordering.Features.Orders.Create;
 
@@ -9,7 +10,7 @@ public sealed class CreateOrderEndpoint : IEndpoint<Created<Guid>, ISender, Link
         app.MapPost(
                 "/orders",
                 async (
-                    [FromIdempotencyHeader]
+                    [FromHeader(Name = Restful.RequestIdHeader)]
                     [Description("The idempotency key of the order to be created")]
                         string key,
                     ISender sender,

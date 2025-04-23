@@ -1,4 +1,4 @@
-﻿using BookWorm.Ordering.Helpers;
+﻿using BookWorm.Ordering.Infrastructure.Helpers;
 using MediatR.Pipeline;
 
 namespace BookWorm.Ordering.Features.Orders.Create;

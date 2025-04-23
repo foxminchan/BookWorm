@@ -1,6 +1,6 @@
 ﻿using BookWorm.SharedKernel.OpenTelemetry;
 
-namespace BookWorm.Ordering.Infrastructure.EventStore.DocumentSession;
+namespace BookWorm.Ordering.Infrastructure.EventStore.Diagnostic;
 
 public static class DocumentSessionOpenTelemetryExtensions
 {

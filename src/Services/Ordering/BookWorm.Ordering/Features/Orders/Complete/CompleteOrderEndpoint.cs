@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Ordering.Features.Orders.Complete;
+﻿using Microsoft.AspNetCore.Mvc;
+
+namespace BookWorm.Ordering.Features.Orders.Complete;
 
 public sealed class CompleteOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, ISender>
 {
@@ -7,7 +9,7 @@ public sealed class CompleteOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, 
         app.MapPatch(
                 "/orders/{orderId:guid}/complete",
                 async (
-                    [FromIdempotencyHeader]
+                    [FromHeader(Name = Restful.RequestIdHeader)]
                     [Description("The idempotency key of the order to be completed")]
                         string key,
                     [Description("The unique identifier of the order to be completed")]
