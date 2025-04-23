@@ -219,7 +219,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - name: x-request-id
+        - name: X-Request-Id
           in: header
           description: The idempotency key of the order to be created
           required: true
@@ -346,7 +346,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - name: x-request-id
+        - name: X-Request-Id
           in: header
           description: The idempotency key of the order to be completed
           required: true
@@ -417,7 +417,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - name: x-request-id
+        - name: X-Request-Id
           in: header
           description: The idempotency key of the order to be cancelled
           required: true

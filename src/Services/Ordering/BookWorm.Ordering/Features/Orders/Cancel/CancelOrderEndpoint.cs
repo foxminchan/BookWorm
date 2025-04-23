@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Ordering.Features.Orders.Cancel;
+﻿using Microsoft.AspNetCore.Mvc;
+
+namespace BookWorm.Ordering.Features.Orders.Cancel;
 
 public sealed class CancelOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, ISender>
 {
@@ -7,7 +9,7 @@ public sealed class CancelOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, IS
         app.MapPatch(
                 "/orders/{orderId:guid}/cancel",
                 async (
-                    [FromIdempotencyHeader]
+                    [FromHeader(Name = Restful.RequestIdHeader)]
                     [Description("The idempotency key of the order to be cancelled")]
                         string key,
                     [Description("The unique identifier of the order to be cancelled")]

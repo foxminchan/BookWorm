@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Ordering.Infrastructure.EventStore;
+﻿namespace BookWorm.Ordering.Infrastructure.EventStore.Diagnostic;
 
 public static class TelemetryTags
 {

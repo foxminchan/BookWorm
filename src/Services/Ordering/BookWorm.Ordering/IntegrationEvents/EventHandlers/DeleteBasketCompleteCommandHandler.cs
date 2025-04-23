@@ -1,5 +1,4 @@
 ﻿using BookWorm.Contracts;
-using BookWorm.Ordering.Infrastructure.EventStore.DocumentSession;
 using Saunter.Attributes;
 
 namespace BookWorm.Ordering.IntegrationEvents.EventHandlers;
