@@ -1,6 +1,6 @@
 ﻿using BookWorm.Notification.Domain.Models;
 
-namespace BookWorm.Notification.Infrastructure.Senders;
+namespace BookWorm.Notification.Infrastructure.Senders.Providers;
 
 public sealed class OutboxSender(ITableService tableService, ISender sender) : ISender
 {

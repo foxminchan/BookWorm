@@ -13,8 +13,6 @@ public static class ServiceReferenceExtensions
     )
         where TClient : class
     {
-        ArgumentNullException.ThrowIfNull(services);
-
         if (!Uri.IsWellFormedUriString(address, UriKind.Absolute))
         {
             throw new ArgumentException("Address must be a valid absolute URI.", nameof(address));

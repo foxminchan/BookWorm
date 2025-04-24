@@ -2,11 +2,11 @@
 using SendGrid;
 using SendGrid.Helpers.Mail;
 
-namespace BookWorm.Notification.Infrastructure.Senders;
+namespace BookWorm.Notification.Infrastructure.Senders.Providers;
 
 public sealed class SendGridSender(
     ILogger<SendGridSender> logger,
-    SendGirdOptions sendGirdOptions,
+    SendGridOptions sendGridOptions,
     ResiliencePipelineProvider<string> provider
 ) : ISender
 {
@@ -25,10 +25,10 @@ public sealed class SendGridSender(
         activity?.SetTag(TelemetryTags.SmtpClient.MessageId, mailMessage.Headers["Message-ID"]);
         activity?.SetTag(TelemetryTags.SmtpClient.EmailOperation, "Send");
 
-        var sendGridClient = new SendGridClient(sendGirdOptions.ApiKey);
+        var sendGridClient = new SendGridClient(sendGridOptions.ApiKey);
         var message = new SendGridMessage
         {
-            From = new(sendGirdOptions.SenderEmail, sendGirdOptions.SenderName),
+            From = new(sendGridOptions.SenderEmail, sendGridOptions.SenderName),
             Subject = mailMessage.Subject,
             HtmlContent = mailMessage.HtmlBody,
         };
