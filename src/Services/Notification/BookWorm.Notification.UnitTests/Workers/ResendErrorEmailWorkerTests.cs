@@ -76,16 +76,26 @@ public class ResendErrorEmailWorkerTests : IDisposable
         };
 
         _tableServiceMock
-            .Setup(x => x.ListAsync<Outbox>("outbox", It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.ListAsync<Outbox>(nameof(Outbox).ToLower(), It.IsAny<CancellationToken>())
+            )
             .ReturnsAsync(failedEmails);
 
         // Act
         await _worker.StartAsync(CancellationToken.None);
-        await Task.Delay(100);
+
+        // Wait for the timer callback to execute
+        await Task.Delay(2000); // Increased wait time to 2 seconds
 
         // Assert
         _senderMock.Verify(
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
+            Times.Exactly(failedEmails.Count) // Verify the exact number of emails sent
+        );
+
+        // Verify that the table service was called at least once
+        _tableServiceMock.Verify(
+            x => x.ListAsync<Outbox>(nameof(Outbox).ToLower(), It.IsAny<CancellationToken>()),
             Times.AtLeastOnce
         );
     }
@@ -96,8 +106,10 @@ public class ResendErrorEmailWorkerTests : IDisposable
         // Arrange
         var failedEmail = new Outbox("Test User", "test@example.com", "Subject", "Body");
         _tableServiceMock
-            .Setup(x => x.ListAsync<Outbox>("outbox", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Outbox> { failedEmail });
+            .Setup(x =>
+                x.ListAsync<Outbox>(nameof(Outbox).ToLower(), It.IsAny<CancellationToken>())
+            )
+            .ReturnsAsync([failedEmail]);
 
         _senderMock
             .Setup(x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()))
@@ -126,12 +138,16 @@ public class ResendErrorEmailWorkerTests : IDisposable
     {
         // Arrange
         _tableServiceMock
-            .Setup(x => x.ListAsync<Outbox>("outbox", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Outbox>());
+            .Setup(x =>
+                x.ListAsync<Outbox>(nameof(Outbox).ToLower(), It.IsAny<CancellationToken>())
+            )
+            .ReturnsAsync([]);
 
         // Act
         await _worker.StartAsync(CancellationToken.None);
-        await Task.Delay(100);
+
+        // Wait for the timer callback to execute
+        await Task.Delay(2000); // Increased wait time to 2 seconds
 
         // Assert
         _loggerMock.Verify(
@@ -147,6 +163,12 @@ public class ResendErrorEmailWorkerTests : IDisposable
                 ),
             Times.AtLeastOnce
         );
+
+        // Verify that the table service was called at least once
+        _tableServiceMock.Verify(
+            x => x.ListAsync<Outbox>(nameof(Outbox).ToLower(), It.IsAny<CancellationToken>()),
+            Times.AtLeastOnce
+        );
     }
 
     [Test]
@@ -154,7 +176,9 @@ public class ResendErrorEmailWorkerTests : IDisposable
     {
         // Arrange
         _tableServiceMock
-            .Setup(x => x.ListAsync<Outbox>("outbox", It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.ListAsync<Outbox>(nameof(Outbox).ToLower(), It.IsAny<CancellationToken>())
+            )
             .ThrowsAsync(new("Table service error"));
 
         // Act
@@ -188,7 +212,9 @@ public class ResendErrorEmailWorkerTests : IDisposable
         };
 
         _tableServiceMock
-            .Setup(x => x.ListAsync<Outbox>("outbox", It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.ListAsync<Outbox>(nameof(Outbox).ToLower(), It.IsAny<CancellationToken>())
+            )
             .ReturnsAsync(failedEmails);
 
         _senderMock

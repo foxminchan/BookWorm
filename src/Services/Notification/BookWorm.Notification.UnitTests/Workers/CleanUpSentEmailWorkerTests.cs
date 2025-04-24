@@ -13,6 +13,7 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
     private readonly ServiceProvider _serviceProvider;
     private readonly Mock<ITableService> _tableServiceMock;
     private readonly CleanUpSentEmailWorker _worker;
+    private const string MethodName = "CleanUpSentEmails";
 
     public CleanUpSentEmailWorkerTests()
     {
@@ -89,15 +90,16 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
     public async Task GivenNoSentEmails_WhenCleaningUp_ThenShouldLogNoEmailsFound()
     {
         // Arrange
-        var emptyEmails = new List<Outbox>();
         _tableServiceMock
-            .Setup(x => x.ListAsync<Outbox>("outbox", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(emptyEmails);
+            .Setup(x =>
+                x.ListAsync<Outbox>(nameof(Outbox).ToLower(), It.IsAny<CancellationToken>())
+            )
+            .ReturnsAsync([]);
 
         // Act
         var method = _worker
             .GetType()
-            .GetMethod("CleanUpSentEmails", BindingFlags.NonPublic | BindingFlags.Instance);
+            .GetMethod(MethodName, BindingFlags.NonPublic | BindingFlags.Instance);
         await (Task)method!.Invoke(_worker, null)!;
 
         // Assert
@@ -133,20 +135,28 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
         }
 
         _tableServiceMock
-            .Setup(x => x.ListAsync<Outbox>("outbox", It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.ListAsync<Outbox>(nameof(Outbox).ToLower(), It.IsAny<CancellationToken>())
+            )
             .ReturnsAsync(sentEmails);
 
         // Act
         var method = _worker
             .GetType()
-            .GetMethod("CleanUpSentEmails", BindingFlags.NonPublic | BindingFlags.Instance);
+            .GetMethod(MethodName, BindingFlags.NonPublic | BindingFlags.Instance);
         await (Task)method!.Invoke(_worker, null)!;
 
         // Assert
         _tableServiceMock.Verify(
-            x => x.DeleteAsync("outbox", It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            x =>
+                x.DeleteAsync(
+                    nameof(Outbox).ToLower(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
+                ),
             Times.Exactly(2)
         );
+
         _loggerMock.Verify(
             x =>
                 x.Log(
@@ -176,18 +186,25 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
         emails[0].MarkAsSent();
 
         _tableServiceMock
-            .Setup(x => x.ListAsync<Outbox>("outbox", It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.ListAsync<Outbox>(nameof(Outbox).ToLower(), It.IsAny<CancellationToken>())
+            )
             .ReturnsAsync(emails);
 
         // Act
         var method = _worker
             .GetType()
-            .GetMethod("CleanUpSentEmails", BindingFlags.NonPublic | BindingFlags.Instance);
+            .GetMethod(MethodName, BindingFlags.NonPublic | BindingFlags.Instance);
         await (Task)method!.Invoke(_worker, null)!;
 
         // Assert
         _tableServiceMock.Verify(
-            x => x.DeleteAsync("outbox", It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            x =>
+                x.DeleteAsync(
+                    nameof(Outbox).ToLower(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
+                ),
             Times.Once
         );
     }
@@ -205,20 +222,28 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
         }
 
         _tableServiceMock
-            .Setup(x => x.ListAsync<Outbox>("outbox", It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.ListAsync<Outbox>(nameof(Outbox).ToLower(), It.IsAny<CancellationToken>())
+            )
             .ReturnsAsync(sentEmails);
 
         // Act
         var method = _worker
             .GetType()
-            .GetMethod("CleanUpSentEmails", BindingFlags.NonPublic | BindingFlags.Instance);
+            .GetMethod(MethodName, BindingFlags.NonPublic | BindingFlags.Instance);
         await (Task)method!.Invoke(_worker, null)!;
 
         // Assert
         _tableServiceMock.Verify(
-            x => x.DeleteAsync("outbox", It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            x =>
+                x.DeleteAsync(
+                    nameof(Outbox).ToLower(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
+                ),
             Times.Exactly(150)
         );
+
         _loggerMock.Verify(
             x =>
                 x.Log(

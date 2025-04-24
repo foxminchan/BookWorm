@@ -4,7 +4,7 @@ namespace BookWorm.Notification.Infrastructure.Senders;
 
 public sealed class OutboxSender(ITableService tableService, ISender sender) : ISender
 {
-    private const string PartitionKey = "outbox";
+    private readonly string _partitionKey = nameof(Outbox).ToLower();
 
     public async Task SendAsync(
         MimeMessage mailMessage,
@@ -18,12 +18,12 @@ public sealed class OutboxSender(ITableService tableService, ISender sender) : I
             mailMessage.HtmlBody
         );
 
-        await tableService.UpsertAsync(outbox, PartitionKey, cancellationToken);
+        await tableService.UpsertAsync(outbox, _partitionKey, cancellationToken);
 
         await sender.SendAsync(mailMessage, cancellationToken);
 
         outbox.MarkAsSent();
 
-        await tableService.UpsertAsync(outbox, PartitionKey, cancellationToken);
+        await tableService.UpsertAsync(outbox, _partitionKey, cancellationToken);
     }
 }
