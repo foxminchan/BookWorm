@@ -1,6 +1,6 @@
 ﻿using Polly.Registry;
 
-namespace BookWorm.Notification.Infrastructure.Senders;
+namespace BookWorm.Notification.Infrastructure.Senders.Providers;
 
 public sealed class MailKitSender(
     ObjectPool<SmtpClient> clientPool,

@@ -1,12 +1,15 @@
-﻿namespace BookWorm.Notification.Domain.Settings;
+﻿using Microsoft.Extensions.Options;
 
-[ExcludeFromCodeCoverage]
-public sealed class EmailOptions
+namespace BookWorm.Notification.Domain.Settings;
+
+[OptionsValidator]
+public sealed partial record EmailOptions : IValidateOptions<EmailOptions>
 {
     public const string ConfigurationSection = "Email";
 
     public string Name { get; set; } = nameof(BookWorm);
 
     [Required]
-    public required string From { get; set; }
+    [EmailAddress]
+    public string From { get; set; } = string.Empty;
 }
