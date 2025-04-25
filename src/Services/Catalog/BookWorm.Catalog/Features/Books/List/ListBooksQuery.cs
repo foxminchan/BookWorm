@@ -1,5 +1,5 @@
 ﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
-using BookWorm.Catalog.Infrastructure.GenAi.SemanticSearch;
+using BookWorm.Catalog.Infrastructure.GenAi.Search;
 
 namespace BookWorm.Catalog.Features.Books.List;
 
@@ -37,7 +37,7 @@ public sealed record ListBooksQuery(
 ) : IQuery<PagedResult<BookDto>>;
 
 public sealed class ListBooksHandler(
-    ISemanticSearch semanticSearch,
+    ISearch search,
     IBookRepository repository,
     IMapper<Book, BookDto> mapper
 ) : IQueryHandler<ListBooksQuery, PagedResult<BookDto>>
@@ -50,8 +50,9 @@ public sealed class ListBooksHandler(
         Guid[] ids = [];
         if (!string.IsNullOrWhiteSpace(request.Search))
         {
-            var response = await semanticSearch.FindAsync(
+            var response = await search.SearchAsync(
                 request.Search,
+                [nameof(Book), request.Search],
                 nameof(Book).ToLower(),
                 cancellationToken: cancellationToken
             );

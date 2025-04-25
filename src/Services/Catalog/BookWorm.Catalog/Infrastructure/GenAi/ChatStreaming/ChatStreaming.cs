@@ -2,7 +2,7 @@
 using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
 using BookWorm.Catalog.Infrastructure.GenAi.CancellationManager;
 using BookWorm.Catalog.Infrastructure.GenAi.ConversationState.Abstractions;
-using BookWorm.Catalog.Infrastructure.GenAi.SemanticSearch;
+using BookWorm.Catalog.Infrastructure.GenAi.Search;
 
 namespace BookWorm.Catalog.Infrastructure.GenAi.ChatStreaming;
 
@@ -239,9 +239,15 @@ public sealed class ChatStreaming : IChatStreaming
 
         var mapper = _serviceProvider.GetRequiredService<IMapper<Book, BookDto>>();
 
-        var semanticSearch = _serviceProvider.GetRequiredService<ISemanticSearch>();
+        var semanticSearch = _serviceProvider.GetRequiredService<ISearch>();
 
-        var response = await semanticSearch.FindAsync(description, nameof(Book).ToLower());
+        string[] keywords = [nameof(Book), nameof(Author), nameof(Publisher)];
+
+        var response = await semanticSearch.SearchAsync(
+            description,
+            keywords,
+            nameof(Book).ToLower()
+        );
 
         if (response.Count == 0)
         {
