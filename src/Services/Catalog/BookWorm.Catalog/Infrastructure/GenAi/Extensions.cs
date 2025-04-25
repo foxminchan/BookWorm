@@ -3,7 +3,7 @@ using BookWorm.Catalog.Infrastructure.GenAi.ChatStreaming;
 using BookWorm.Catalog.Infrastructure.GenAi.ConversationState;
 using BookWorm.Catalog.Infrastructure.GenAi.ConversationState.Abstractions;
 using BookWorm.Catalog.Infrastructure.GenAi.Ingestion;
-using BookWorm.Catalog.Infrastructure.GenAi.SemanticSearch;
+using BookWorm.Catalog.Infrastructure.GenAi.Search;
 using Microsoft.Extensions.VectorData;
 using Microsoft.SemanticKernel.Connectors.Qdrant;
 
@@ -33,7 +33,7 @@ public static class Extensions
         services.AddSingleton<ICancellationManager, RedisCancellationManager>();
 
         services.AddScoped<IIngestionSource<Book>, BookDataIngestor>();
-        services.AddScoped<ISemanticSearch, SemanticSearch.SemanticSearch>();
+        services.AddScoped<ISearch, HybridSearch>();
 
         services.AddSignalR().AddNamedAzureSignalR(Components.Azure.SignalR);
 

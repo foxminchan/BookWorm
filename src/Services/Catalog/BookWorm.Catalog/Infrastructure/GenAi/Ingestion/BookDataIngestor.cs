@@ -14,20 +14,20 @@ public sealed class BookDataIngestor(
         ArgumentException.ThrowIfNullOrEmpty(data.Name);
         ArgumentException.ThrowIfNullOrEmpty(data.Description);
 
-        var vectorCollection = vectorStore.GetCollection<Guid, SemanticSearchRecord>(
-            _collectionName
-        );
+        var vectorCollection = vectorStore.GetCollection<Guid, HybridSearchRecord>(_collectionName);
         await vectorCollection.CreateCollectionIfNotExistsAsync(cancellationToken);
 
+        var text = $"{data.Name} {data.Description}";
+
         var embeddings = await embeddingGenerator.GenerateEmbeddingVectorAsync(
-            $"{data.Name} {data.Description}",
+            text,
             cancellationToken: cancellationToken
         );
 
-        var record = new SemanticSearchRecord
+        var record = new HybridSearchRecord
         {
             Id = data.Id,
-            Name = data.Name,
+            Description = text,
             Vector = embeddings,
         };
 
