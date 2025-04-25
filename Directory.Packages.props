@@ -2,10 +2,10 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-    <AspireVersion>9.2.0</AspireVersion>
-    <AspireUnstableVersion>9.2.0-preview.1.25209.2</AspireUnstableVersion>
+    <AspireVersion>9.2.1</AspireVersion>
+    <AspireUnstableVersion>9.2.1-preview.1.25222.1</AspireUnstableVersion>
     <ApiVersioningVersion>8.1.0</ApiVersioningVersion>
-    <GrpcVersion>2.70.0</GrpcVersion>
+    <GrpcVersion>2.71.0</GrpcVersion>
     <MassTransitVersion>8.4.0</MassTransitVersion>
     <MsTestVersion>1.6.3</MsTestVersion>
     <ToolKitVersion>9.4.0</ToolKitVersion>
@@ -62,7 +62,7 @@
     <!-- Miscellaneous -->
     <PackageVersion Include="Scrutor" Version="6.0.1" />
     <PackageVersion Include="MediatR" Version="12.5.0" />
-    <PackageVersion Include="Marten.AspNetCore" Version="7.40.0" />
+    <PackageVersion Include="Marten.AspNetCore" Version="7.40.1" />
     <PackageVersion Include="Yarp.ReverseProxy" Version="2.3.0" />
     <PackageVersion Include="APIWeaver.OpenApi" Version="2.7.0" />
     <PackageVersion Include="Saunter" Version="0.13.0" />
