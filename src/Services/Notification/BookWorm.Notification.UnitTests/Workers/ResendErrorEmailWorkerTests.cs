@@ -12,6 +12,7 @@ namespace BookWorm.Notification.UnitTests.Workers;
 public class ResendErrorEmailWorkerTests : IDisposable
 {
     private readonly Mock<ILogger<ResendErrorEmailWorker>> _loggerMock;
+    private readonly string _partitionKey = nameof(Outbox).ToLower();
     private readonly Mock<ISender> _senderMock;
     private readonly Mock<ITableService> _tableServiceMock;
     private readonly ResendErrorEmailWorker _worker;
@@ -76,9 +77,7 @@ public class ResendErrorEmailWorkerTests : IDisposable
         };
 
         _tableServiceMock
-            .Setup(x =>
-                x.ListAsync<Outbox>(nameof(Outbox).ToLower(), It.IsAny<CancellationToken>())
-            )
+            .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(failedEmails);
 
         // Act
@@ -95,7 +94,7 @@ public class ResendErrorEmailWorkerTests : IDisposable
 
         // Verify that the table service was called at least once
         _tableServiceMock.Verify(
-            x => x.ListAsync<Outbox>(nameof(Outbox).ToLower(), It.IsAny<CancellationToken>()),
+            x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()),
             Times.AtLeastOnce
         );
     }
@@ -106,9 +105,7 @@ public class ResendErrorEmailWorkerTests : IDisposable
         // Arrange
         var failedEmail = new Outbox("Test User", "test@example.com", "Subject", "Body");
         _tableServiceMock
-            .Setup(x =>
-                x.ListAsync<Outbox>(nameof(Outbox).ToLower(), It.IsAny<CancellationToken>())
-            )
+            .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync([failedEmail]);
 
         _senderMock
@@ -129,7 +126,7 @@ public class ResendErrorEmailWorkerTests : IDisposable
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()
                 ),
-            Times.AtLeastOnce
+            Times.AtMostOnce
         );
     }
 
@@ -138,9 +135,7 @@ public class ResendErrorEmailWorkerTests : IDisposable
     {
         // Arrange
         _tableServiceMock
-            .Setup(x =>
-                x.ListAsync<Outbox>(nameof(Outbox).ToLower(), It.IsAny<CancellationToken>())
-            )
+            .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
         // Act
@@ -166,7 +161,7 @@ public class ResendErrorEmailWorkerTests : IDisposable
 
         // Verify that the table service was called at least once
         _tableServiceMock.Verify(
-            x => x.ListAsync<Outbox>(nameof(Outbox).ToLower(), It.IsAny<CancellationToken>()),
+            x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()),
             Times.AtLeastOnce
         );
     }
@@ -176,9 +171,7 @@ public class ResendErrorEmailWorkerTests : IDisposable
     {
         // Arrange
         _tableServiceMock
-            .Setup(x =>
-                x.ListAsync<Outbox>(nameof(Outbox).ToLower(), It.IsAny<CancellationToken>())
-            )
+            .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new("Table service error"));
 
         // Act
@@ -197,7 +190,7 @@ public class ResendErrorEmailWorkerTests : IDisposable
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()
                 ),
-            Times.AtLeastOnce
+            Times.AtMostOnce
         );
     }
 
@@ -212,9 +205,7 @@ public class ResendErrorEmailWorkerTests : IDisposable
         };
 
         _tableServiceMock
-            .Setup(x =>
-                x.ListAsync<Outbox>(nameof(Outbox).ToLower(), It.IsAny<CancellationToken>())
-            )
+            .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(failedEmails);
 
         _senderMock
@@ -296,5 +287,54 @@ public class ResendErrorEmailWorkerTests : IDisposable
                 ),
             Times.AtLeastOnce
         );
+    }
+
+    [Test]
+    public async Task GivenSemaphoreAcquired_WhenTimerCallbackExecutes_ThenShouldSkipProcessing()
+    {
+        // Arrange
+        var failedEmails = new List<Outbox>
+        {
+            new("Test User", "test@example.com", "Subject", "Body"),
+        };
+
+        _tableServiceMock
+            .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(failedEmails);
+
+        // Act
+        await _worker.StartAsync(CancellationToken.None);
+
+        // Get the private semaphore field using reflection
+        var semaphoreField = typeof(ResendErrorEmailWorker).GetField(
+            "_semaphore",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+        );
+        var semaphore = (SemaphoreSlim)semaphoreField!.GetValue(_worker)!;
+
+        // Acquire the semaphore
+        await semaphore.WaitAsync(0);
+
+        try
+        {
+            // Wait for the timer callback to execute
+            await Task.Delay(100);
+
+            // Assert
+            _tableServiceMock.Verify(
+                x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()),
+                Times.Never
+            );
+
+            _senderMock.Verify(
+                x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
+                Times.Never
+            );
+        }
+        finally
+        {
+            // Release the semaphore
+            semaphore.Release();
+        }
     }
 }

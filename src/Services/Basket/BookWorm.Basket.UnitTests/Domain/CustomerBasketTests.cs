@@ -1,5 +1,5 @@
 ﻿using BookWorm.Basket.Domain;
-using BookWorm.Basket.Exceptions;
+using BookWorm.Basket.Infrastructure.Exceptions;
 
 namespace BookWorm.Basket.UnitTests.Domain;
 

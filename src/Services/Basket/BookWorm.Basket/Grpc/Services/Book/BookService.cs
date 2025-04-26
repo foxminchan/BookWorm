@@ -4,24 +4,13 @@ using BookGrpcServiceClient = BookWorm.Catalog.Grpc.Services.BookGrpcService.Boo
 namespace BookWorm.Basket.Grpc.Services.Book;
 
 [ExcludeFromCodeCoverage]
-public sealed class BookService(BookGrpcServiceClient service, ILogger<BookService> logger)
-    : IBookService
+public sealed class BookService(BookGrpcServiceClient service) : IBookService
 {
     public async Task<BookResponse?> GetBookByIdAsync(
         string id,
         CancellationToken cancellationToken = default
     )
     {
-        if (logger.IsEnabled(LogLevel.Debug))
-        {
-            logger.LogDebug(
-                "[{Service}] - Begin grpc call {Method} with {BookId}",
-                nameof(BookService),
-                nameof(GetBookByIdAsync),
-                id
-            );
-        }
-
         var result = await service.GetBookAsync(
             new() { BookId = id },
             cancellationToken: cancellationToken
@@ -35,16 +24,6 @@ public sealed class BookService(BookGrpcServiceClient service, ILogger<BookServi
         CancellationToken cancellationToken = default
     )
     {
-        if (logger.IsEnabled(LogLevel.Debug))
-        {
-            logger.LogDebug(
-                "[{Service}] - Begin grpc call {Method} with {BookIds}",
-                nameof(BookService),
-                nameof(GetBooksByIdsAsync),
-                ids
-            );
-        }
-
         var result = await service.GetBooksAsync(
             new() { BookIds = { ids } },
             cancellationToken: cancellationToken

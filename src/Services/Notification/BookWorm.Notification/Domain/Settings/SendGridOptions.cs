@@ -3,7 +3,7 @@
 namespace BookWorm.Notification.Domain.Settings;
 
 [OptionsValidator]
-public sealed partial record SendGridOptions : IValidateOptions<SendGridOptions>
+public sealed partial class SendGridOptions : IValidateOptions<SendGridOptions>
 {
     public const string ConfigurationSection = "SendGrid";
 

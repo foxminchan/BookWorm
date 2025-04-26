@@ -1,19 +1,23 @@
 ﻿using System.Reflection;
 using BookWorm.Notification.Domain.Models;
+using BookWorm.Notification.Infrastructure.Senders;
 using BookWorm.Notification.Infrastructure.Table;
 using BookWorm.Notification.Workers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using MimeKit;
 
 namespace BookWorm.Notification.UnitTests.Workers;
 
 public sealed class CleanUpSentEmailWorkerTests : IDisposable
 {
+    private const string MethodName = "CleanUpSentEmails";
     private readonly Mock<ILogger<CleanUpSentEmailWorker>> _loggerMock;
+    private readonly string _partitionKey = nameof(Outbox).ToLower();
+    private readonly Mock<ISender> _senderMock = new();
     private readonly ServiceProvider _serviceProvider;
     private readonly Mock<ITableService> _tableServiceMock;
     private readonly CleanUpSentEmailWorker _worker;
-    private const string MethodName = "CleanUpSentEmails";
 
     public CleanUpSentEmailWorkerTests()
     {
@@ -91,9 +95,7 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
     {
         // Arrange
         _tableServiceMock
-            .Setup(x =>
-                x.ListAsync<Outbox>(nameof(Outbox).ToLower(), It.IsAny<CancellationToken>())
-            )
+            .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
         // Act
@@ -135,9 +137,7 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
         }
 
         _tableServiceMock
-            .Setup(x =>
-                x.ListAsync<Outbox>(nameof(Outbox).ToLower(), It.IsAny<CancellationToken>())
-            )
+            .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(sentEmails);
 
         // Act
@@ -148,12 +148,7 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
 
         // Assert
         _tableServiceMock.Verify(
-            x =>
-                x.DeleteAsync(
-                    nameof(Outbox).ToLower(),
-                    It.IsAny<string>(),
-                    It.IsAny<CancellationToken>()
-                ),
+            x => x.DeleteAsync(_partitionKey, It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Exactly(2)
         );
 
@@ -186,9 +181,7 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
         emails[0].MarkAsSent();
 
         _tableServiceMock
-            .Setup(x =>
-                x.ListAsync<Outbox>(nameof(Outbox).ToLower(), It.IsAny<CancellationToken>())
-            )
+            .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(emails);
 
         // Act
@@ -199,12 +192,7 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
 
         // Assert
         _tableServiceMock.Verify(
-            x =>
-                x.DeleteAsync(
-                    nameof(Outbox).ToLower(),
-                    It.IsAny<string>(),
-                    It.IsAny<CancellationToken>()
-                ),
+            x => x.DeleteAsync(_partitionKey, It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Once
         );
     }
@@ -222,9 +210,7 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
         }
 
         _tableServiceMock
-            .Setup(x =>
-                x.ListAsync<Outbox>(nameof(Outbox).ToLower(), It.IsAny<CancellationToken>())
-            )
+            .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(sentEmails);
 
         // Act
@@ -235,12 +221,7 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
 
         // Assert
         _tableServiceMock.Verify(
-            x =>
-                x.DeleteAsync(
-                    nameof(Outbox).ToLower(),
-                    It.IsAny<string>(),
-                    It.IsAny<CancellationToken>()
-                ),
+            x => x.DeleteAsync(_partitionKey, It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Exactly(150)
         );
 
@@ -304,6 +285,82 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()
                 ),
             Times.AtLeastOnce
+        );
+    }
+
+    [Test]
+    public async Task GivenTimerCallback_WhenExceptionOccurs_ThenShouldLogError()
+    {
+        // Arrange
+        _tableServiceMock
+            .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new("Table service error"));
+
+        // Act
+        await _worker.StartAsync(CancellationToken.None);
+
+        // Get the timer field using reflection
+        var timerField = typeof(CleanUpSentEmailWorker).GetField(
+            "_timer",
+            BindingFlags.NonPublic | BindingFlags.Instance
+        );
+        var timer = timerField?.GetValue(_worker) as Timer;
+        timer.ShouldNotBeNull("Timer is null");
+
+        // Change the timer to fire immediately
+        timer.Change(0, Timeout.Infinite);
+
+        // Wait for the timer to execute
+        await Task.Delay(100);
+
+        // Assert
+        _loggerMock.Verify(
+            x =>
+                x.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>(
+                        (o, t) => o.ToString()!.Contains("Error occurred in timer callback")
+                    ),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+                ),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task GivenSemaphoreAcquired_WhenTimerCallbackExecutes_ThenShouldSkipProcessing()
+    {
+        // Arrange
+        var failedEmails = new List<Outbox>
+        {
+            new("Test User", "test@example.com", "Subject", "Body"),
+        };
+
+        _tableServiceMock
+            .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(failedEmails);
+
+        // Act
+        await _worker.StartAsync(CancellationToken.None);
+
+        // Simulate semaphore being acquired by another operation
+        var semaphore = new SemaphoreSlim(0, 1);
+        await semaphore.WaitAsync(0);
+
+        // Wait for the timer callback to execute
+        await Task.Delay(100);
+
+        // Assert
+        _tableServiceMock.Verify(
+            x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()),
+            Times.Never
+        );
+
+        _senderMock.Verify(
+            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
+            Times.Never
         );
     }
 }

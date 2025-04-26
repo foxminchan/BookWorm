@@ -239,6 +239,93 @@ public sealed class CreateOrderCommandTests
             var exception = await act.ShouldThrowAsync<InvalidOperationException>();
             exception.Message.ShouldBe("Other process is already creating an order");
         }
+
+        [Test]
+        public async Task GivenValidCommand_WhenCreatingOrder_ThenShouldReturnOrderId()
+        {
+            // Arrange
+            var expectedOrder = new Order(_userId.ToBuyerId(), null, _command.Items);
+            var mockLock = new Mock<IDistributedSynchronizationHandle>();
+            mockLock.Setup(x => x.DisposeAsync()).Returns(ValueTask.CompletedTask).Verifiable();
+
+            var lockProvider = new TestDistributedLockProvider(mockLock.Object);
+            var handler = new CreateOrderHandler(
+                _repositoryMock.Object,
+                _claimsPrincipalMock.Object,
+                lockProvider
+            );
+
+            _repositoryMock
+                .Setup(x => x.AddAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(expectedOrder);
+
+            // Act
+            var result = await handler.Handle(_command, CancellationToken.None);
+
+            // Assert
+            result.ShouldBe(expectedOrder.Id);
+            _repositoryMock.Verify(
+                x =>
+                    x.AddAsync(
+                        It.Is<Order>(o =>
+                            o.BuyerId == _userId.ToBuyerId()
+                            && o.OrderItems.Count == _command.Items.Count
+                        ),
+                        It.IsAny<CancellationToken>()
+                    ),
+                Times.Once
+            );
+            mockLock.Verify(x => x.DisposeAsync(), Times.Once);
+        }
+
+        private sealed class TestDistributedLockProvider(IDistributedSynchronizationHandle handle)
+            : IDistributedLockProvider
+        {
+            public IDistributedLock CreateLock(string name)
+            {
+                return new TestDistributedLock(handle, name);
+            }
+
+            private sealed class TestDistributedLock(
+                IDistributedSynchronizationHandle handle,
+                string name
+            ) : IDistributedLock
+            {
+                public string Name { get; } = name;
+
+                public IDistributedSynchronizationHandle Acquire(
+                    TimeSpan? timeout = null,
+                    CancellationToken cancellationToken = default
+                )
+                {
+                    return handle;
+                }
+
+                public ValueTask<IDistributedSynchronizationHandle> AcquireAsync(
+                    TimeSpan? timeout = null,
+                    CancellationToken cancellationToken = default
+                )
+                {
+                    return ValueTask.FromResult(handle);
+                }
+
+                public IDistributedSynchronizationHandle TryAcquire(
+                    TimeSpan timeout = default,
+                    CancellationToken cancellationToken = default
+                )
+                {
+                    return handle;
+                }
+
+                public ValueTask<IDistributedSynchronizationHandle?> TryAcquireAsync(
+                    TimeSpan timeout = default,
+                    CancellationToken cancellationToken = default
+                )
+                {
+                    return ValueTask.FromResult(handle)!;
+                }
+            }
+        }
     }
 
     #endregion

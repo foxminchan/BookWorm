@@ -29,9 +29,6 @@ public sealed class ResendErrorEmailWorker(
                     {
                         if (!await _semaphore.WaitAsync(0, cancellationToken))
                         {
-                            logger.LogWarning(
-                                "Previous resend operation is still running, skipping this interval"
-                            );
                             return;
                         }
 
@@ -73,7 +70,7 @@ public sealed class ResendErrorEmailWorker(
         var tableService = scope.ServiceProvider.GetRequiredService<ITableService>();
         var sender = scope.ServiceProvider.GetRequiredService<ISender>();
 
-        var unsentEmails = await tableService.ListAsync<Outbox>("outbox");
+        var unsentEmails = await tableService.ListAsync<Outbox>(nameof(Outbox).ToLower());
         var failedEmails = unsentEmails.Where(e => !e.IsSent).ToList();
 
         if (failedEmails.Count == 0)

@@ -1,4 +1,4 @@
-﻿using BookWorm.Basket.Exceptions;
+﻿using BookWorm.Basket.Infrastructure.Exceptions;
 
 namespace BookWorm.Basket.Features.Create;
 

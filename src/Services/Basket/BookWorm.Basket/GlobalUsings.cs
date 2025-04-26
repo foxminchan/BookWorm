@@ -3,7 +3,7 @@ global using System.Security.Claims;
 global using System.Text.Json.Serialization;
 global using BookWorm.Basket.Domain;
 global using BookWorm.Basket.Grpc.Services.Book;
-global using BookWorm.Basket.Repositories;
+global using BookWorm.Basket.Infrastructure.Repositories;
 global using BookWorm.Constants;
 global using BookWorm.ServiceDefaults;
 global using BookWorm.ServiceDefaults.ApiSpecification.AsyncApi;

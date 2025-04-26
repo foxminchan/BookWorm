@@ -3,7 +3,7 @@
 namespace BookWorm.Notification.Domain.Settings;
 
 [OptionsValidator]
-public sealed partial record EmailOptions : IValidateOptions<EmailOptions>
+public sealed partial class EmailOptions : IValidateOptions<EmailOptions>
 {
     public const string ConfigurationSection = "Email";
 
