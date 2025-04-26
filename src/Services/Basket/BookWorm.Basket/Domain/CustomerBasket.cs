@@ -1,4 +1,4 @@
-﻿using BookWorm.Basket.Exceptions;
+﻿using BookWorm.Basket.Infrastructure.Exceptions;
 using BookWorm.SharedKernel.SeedWork.Model;
 
 namespace BookWorm.Basket.Domain;

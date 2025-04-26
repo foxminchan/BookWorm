@@ -7,6 +7,7 @@ public sealed class CleanUpSentEmailWorker(
     IServiceScopeFactory scopeFactory
 ) : IHostedService, IDisposable
 {
+    private readonly string _partitionKey = nameof(Outbox).ToLower();
     private Timer? _timer;
 
     public void Dispose()
@@ -62,7 +63,7 @@ public sealed class CleanUpSentEmailWorker(
         var tableService = scope.ServiceProvider.GetRequiredService<ITableService>();
 
         // Get all sent emails
-        var sentEmails = await tableService.ListAsync<Outbox>("outbox");
+        var sentEmails = await tableService.ListAsync<Outbox>(_partitionKey);
         var emailsToDelete = sentEmails.Where(e => e.IsSent).ToList();
 
         if (emailsToDelete.Count == 0)
@@ -80,7 +81,7 @@ public sealed class CleanUpSentEmailWorker(
         foreach (var batch in batches)
         {
             var tasks = batch.Select(email =>
-                tableService.DeleteAsync("outbox", email.Id.ToString())
+                tableService.DeleteAsync(_partitionKey, email.Id.ToString())
             );
 
             await Task.WhenAll(tasks);

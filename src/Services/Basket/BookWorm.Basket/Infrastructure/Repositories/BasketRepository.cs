@@ -2,9 +2,8 @@
 using System.Text.Json;
 using StackExchange.Redis;
 
-namespace BookWorm.Basket.Repositories;
+namespace BookWorm.Basket.Infrastructure.Repositories;
 
-[ExcludeFromCodeCoverage]
 public sealed class BasketRepository(ILogger<BasketRepository> logger, IConnectionMultiplexer redis)
     : IBasketRepository
 {

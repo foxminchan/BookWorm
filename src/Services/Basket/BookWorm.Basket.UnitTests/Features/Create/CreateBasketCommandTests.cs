@@ -1,7 +1,7 @@
 ﻿using System.Security.Claims;
 using BookWorm.Basket.Domain;
-using BookWorm.Basket.Exceptions;
 using BookWorm.Basket.Features.Create;
+using BookWorm.Basket.Infrastructure.Exceptions;
 using BookWorm.Basket.UnitTests.Fakers;
 using BookWorm.ServiceDefaults.Keycloak;
 
