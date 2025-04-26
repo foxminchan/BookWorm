@@ -1,35 +1,36 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-
   <PropertyGroup>
     <SuppressCheckGrpcNetClientFactoryVersion>true</SuppressCheckGrpcNetClientFactoryVersion>
   </PropertyGroup>
-
   <ItemGroup Label="Project">
     <PackageReference Include="Marten.AspNetCore" />
     <PackageReference Include="Aspire.StackExchange.Redis" />
     <PackageReference Include="DistributedLock.Redis" />
     <PackageReference Include="Microsoft.FeatureManagement.AspNetCore" />
   </ItemGroup>
-
   <ItemGroup Label="Grpc">
     <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
     <PackageReference Include="Google.Protobuf" />
   </ItemGroup>
-
   <ItemGroup Label="EF Core">
     <PackageReference Include="Aspire.Azure.Npgsql" />
     <PackageReference Include="EFCore.NamingConventions" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
     <PackageReference Include="MassTransit.EntityFrameworkCore" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\..\Aspire\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj" />
   </ItemGroup>
-
   <ItemGroup>
-    <Protobuf Include="..\..\Catalog\BookWorm.Catalog\Grpc\Protos\book.proto" Link="Grpc\Protos\book.proto" GrpcServices="Client" />
-    <Protobuf Include="..\..\Basket\BookWorm.Basket\Grpc\Protos\basket.proto" Link="Grpc\Protos\basket.proto" GrpcServices="Client" />
+    <Protobuf
+      Include="..\..\Catalog\BookWorm.Catalog\Grpc\Protos\book.proto"
+      Link="Grpc\Protos\book.proto"
+      GrpcServices="Client"
+    />
+    <Protobuf
+      Include="..\..\Basket\BookWorm.Basket\Grpc\Protos\basket.proto"
+      Link="Grpc\Protos\basket.proto"
+      GrpcServices="Client"
+    />
   </ItemGroup>
-
 </Project>

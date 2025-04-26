@@ -4,7 +4,6 @@
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
-
   <PropertyGroup Label="Product">
     <Product>BookWorm</Product>
     <Authors>Nhan Nguyen</Authors>
@@ -13,12 +12,10 @@
     <RepositoryUrl>https://github.com/foxminchan/BookWorm</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
   </PropertyGroup>
-
   <PropertyGroup Label="Debug">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
   </PropertyGroup>
-
   <PropertyGroup Label="Build">
     <WarnOnPackingNonPackableProject>false</WarnOnPackingNonPackableProject>
     <Nullable>enable</Nullable>

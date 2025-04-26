@@ -60,8 +60,8 @@ public sealed class CreateCategoryCommandTests
             .ThrowsAsync(new("Database error"));
 
         // Act & Assert
-        await Should.ThrowAsync<Exception>(
-            async () => await _handler.Handle(command, CancellationToken.None)
+        await Should.ThrowAsync<Exception>(async () =>
+            await _handler.Handle(command, CancellationToken.None)
         );
     }
 }

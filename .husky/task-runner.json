@@ -9,7 +9,7 @@
     {
       "name": "format",
       "command": "dotnet",
-      "args": ["csharpier", ".", "--check"]
+      "args": ["csharpier", "format", "."]
     },
     {
       "name": "style",

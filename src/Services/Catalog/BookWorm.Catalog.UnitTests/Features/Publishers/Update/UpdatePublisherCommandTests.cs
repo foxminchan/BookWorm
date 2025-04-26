@@ -65,8 +65,8 @@ public sealed class UpdatePublisherCommandTests
             .ReturnsAsync((Publisher)null!);
 
         // Act & Assert
-        var exception = await Should.ThrowAsync<NotFoundException>(
-            async () => await _handler.Handle(command, CancellationToken.None)
+        var exception = await Should.ThrowAsync<NotFoundException>(async () =>
+            await _handler.Handle(command, CancellationToken.None)
         );
 
         exception.Message.ShouldContain(publisherId.ToString());

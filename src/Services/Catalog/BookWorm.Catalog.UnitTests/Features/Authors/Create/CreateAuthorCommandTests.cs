@@ -58,8 +58,8 @@ public sealed class CreateAuthorCommandTests
             .ThrowsAsync(new("Repository error"));
 
         // Act & Assert
-        await Should.ThrowAsync<Exception>(
-            async () => await _handler.Handle(command, CancellationToken.None)
+        await Should.ThrowAsync<Exception>(async () =>
+            await _handler.Handle(command, CancellationToken.None)
         );
         _repositoryMock.Verify(
             r =>
