@@ -154,8 +154,8 @@ public sealed class UpdateBookCommandTests
         var handler = new UpdateBookHandler(repository.Object);
 
         // Act & Assert
-        Should.Throw<NotFoundException>(
-            async () => await handler.Handle(command, CancellationToken.None)
+        Should.Throw<NotFoundException>(async () =>
+            await handler.Handle(command, CancellationToken.None)
         );
 
         repository.Verify(

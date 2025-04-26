@@ -1,9 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Scrutor" />
     <PackageReference Include="MediatR" />
@@ -14,14 +12,11 @@
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
     <PackageReference Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Asp.Versioning.Http.Client" />
     <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\BookWorm.Constants\BookWorm.Constants.csproj" />
   </ItemGroup>
-
 </Project>

@@ -79,8 +79,8 @@ public sealed class ListCategoryQueryTests
         var query = new ListCategoriesQuery();
 
         // Act & Assert
-        await Should.ThrowAsync<Exception>(
-            async () => await _handler.Handle(query, CancellationToken.None)
+        await Should.ThrowAsync<Exception>(async () =>
+            await _handler.Handle(query, CancellationToken.None)
         );
     }
 }

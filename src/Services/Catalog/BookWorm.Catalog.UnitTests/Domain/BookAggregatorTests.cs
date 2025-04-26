@@ -63,18 +63,17 @@ public sealed class BookAggregatorTests
 
         // Act & Assert
         Should
-            .Throw<CatalogDomainException>(
-                () =>
-                    new Book(
-                        name!,
-                        description,
-                        image,
-                        price,
-                        priceSale,
-                        categoryId,
-                        publisherId,
-                        authorIds
-                    )
+            .Throw<CatalogDomainException>(() =>
+                new Book(
+                    name!,
+                    description,
+                    image,
+                    price,
+                    priceSale,
+                    categoryId,
+                    publisherId,
+                    authorIds
+                )
             )
             .Message.ShouldBe("Book name is required.");
     }
@@ -147,18 +146,17 @@ public sealed class BookAggregatorTests
 
         // Act & Assert
         Should
-            .Throw<CatalogDomainException>(
-                () =>
-                    book.Update(
-                        newName!,
-                        "Updated Description",
-                        29.99m,
-                        24.99m,
-                        "updated.jpg",
-                        Guid.CreateVersion7(),
-                        Guid.CreateVersion7(),
-                        [Guid.CreateVersion7()]
-                    )
+            .Throw<CatalogDomainException>(() =>
+                book.Update(
+                    newName!,
+                    "Updated Description",
+                    29.99m,
+                    24.99m,
+                    "updated.jpg",
+                    Guid.CreateVersion7(),
+                    Guid.CreateVersion7(),
+                    [Guid.CreateVersion7()]
+                )
             )
             .Message.ShouldBe("Book name is required.");
     }

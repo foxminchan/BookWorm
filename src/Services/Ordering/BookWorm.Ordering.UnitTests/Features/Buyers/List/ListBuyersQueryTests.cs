@@ -180,8 +180,8 @@ public sealed class ListBuyersQueryTests
             .ThrowsAsync(new OperationCanceledException(cancellationToken));
 
         // Act & Assert
-        await Should.ThrowAsync<OperationCanceledException>(
-            async () => await _handler.Handle(query, cancellationToken)
+        await Should.ThrowAsync<OperationCanceledException>(async () =>
+            await _handler.Handle(query, cancellationToken)
         );
 
         _buyerRepositoryMock.Verify(

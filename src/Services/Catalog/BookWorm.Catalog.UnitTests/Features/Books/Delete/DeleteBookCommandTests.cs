@@ -61,8 +61,8 @@ public sealed class DeleteBookCommandTests
             .ReturnsAsync((Book)null!);
 
         // Act & Assert
-        var exception = Should.Throw<NotFoundException>(
-            async () => await _handler.Handle(command, CancellationToken.None)
+        var exception = Should.Throw<NotFoundException>(async () =>
+            await _handler.Handle(command, CancellationToken.None)
         );
 
         exception.Message.ShouldContain(bookId.ToString());
