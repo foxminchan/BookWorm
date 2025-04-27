@@ -8,6 +8,7 @@ public static class Components
     public const string KeyCloak = "keycloak";
     public const string MailPit = "mailpit";
     public const string Queue = "queue";
+    public const string K6 = "k6";
 
     public static class Database
     {

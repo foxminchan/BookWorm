@@ -20,6 +20,7 @@
     <PackageReference Include="Aspire.Hosting.Azure.AppContainers" />
   </ItemGroup>
   <ItemGroup Label="CommunityToolkit">
+    <PackageReference Include="CommunityToolkit.Aspire.Hosting.k6" />
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.Ollama" />
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.MailPit" />
   </ItemGroup>

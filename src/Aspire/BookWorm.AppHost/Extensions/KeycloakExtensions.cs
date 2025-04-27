@@ -22,7 +22,7 @@ public static class KeycloakExtensions
         if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
         {
             builder
-                .WithRealmImport("realms", true)
+                .WithRealmImport("Container/realms", true)
                 .WithEnvironment("REALM_NAME", realmName)
                 .WithEnvironment("REALM_DISPLAY_NAME", displayName);
         }

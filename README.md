@@ -40,6 +40,7 @@
   - [x] Utilized EventCatalog for centralized architecture documentation
 - [x] Established a testing strategy:
   - [x] Conducted service unit tests
+  - [x] Performed load testing with k6
   - [ ] Planned integration tests
 
 ## Project Architecture

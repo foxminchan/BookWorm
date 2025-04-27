@@ -148,6 +148,8 @@ var gateway = builder
     .WithReference(financeApi)
     .WithReference(keycloak);
 
+builder.AddK6(gateway);
+
 builder
     .AddHealthChecksUi()
     .WithExternalHttpEndpoints()
