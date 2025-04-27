@@ -1,6 +1,4 @@
-﻿using BookWorm.Catalog.Infrastructure.GenAi;
-
-namespace BookWorm.Catalog.Extensions;
+﻿namespace BookWorm.Catalog.Extensions;
 
 [ExcludeFromCodeCoverage]
 public static class Extensions
@@ -46,6 +44,20 @@ public static class Extensions
         builder.AddQdrantClient(Components.VectorDb);
 
         builder.AddRedisClient(Components.Redis);
+
+        services.AddHybridCache(options =>
+        {
+            // Maximum size of cached items
+            options.MaximumPayloadBytes = 1024 * 1024 * 10; // 10MB
+            options.MaximumKeyLength = 512;
+
+            // Default timeouts
+            options.DefaultEntryOptions = new()
+            {
+                Expiration = TimeSpan.FromMinutes(30),
+                LocalCacheExpiration = TimeSpan.FromMinutes(30),
+            };
+        });
 
         // Configure MediatR
         services.AddMediatR(cfg =>

@@ -7,6 +7,7 @@
     <ApiVersioningVersion>8.1.0</ApiVersioningVersion>
     <GrpcVersion>2.71.0</GrpcVersion>
     <MassTransitVersion>8.4.0</MassTransitVersion>
+    <MsExtVersion>9.4.0</MsExtVersion>
     <MsTestVersion>1.6.3</MsTestVersion>
     <ToolKitVersion>9.4.0</ToolKitVersion>
   </PropertyGroup>
@@ -44,8 +45,9 @@
   </ItemGroup>
   <ItemGroup Label="Core Packages">
     <!-- Microsoft Extensions -->
-    <PackageVersion Include="Microsoft.Extensions.Telemetry" Version="9.4.0" />
-    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.4.0" />
+    <PackageVersion Include="Microsoft.Extensions.Telemetry" Version="$(MsExtVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Caching.Hybrid" Version="$(MsExtVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="$(MsExtVersion)" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="$(AspireVersion)" />
     <PackageVersion
       Include="Microsoft.Extensions.ServiceDiscovery.Yarp"

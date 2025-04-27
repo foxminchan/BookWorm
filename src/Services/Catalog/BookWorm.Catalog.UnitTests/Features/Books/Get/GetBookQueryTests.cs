@@ -2,6 +2,7 @@
 using BookWorm.Catalog.Features.Books;
 using BookWorm.Catalog.Features.Books.Get;
 using BookWorm.Catalog.UnitTests.Fakers;
+using BookWorm.Catalog.UnitTests.Mocks;
 using BookWorm.SharedKernel.Exceptions;
 using BookWorm.SharedKernel.Mapper;
 
@@ -17,7 +18,8 @@ public sealed class GetBookQueryTests
     {
         _repositoryMock = new();
         _mapperMock = new();
-        _handler = new(_repositoryMock.Object, _mapperMock.Object);
+        HybridCacheMock cacheMock = new();
+        _handler = new(_repositoryMock.Object, cacheMock, _mapperMock.Object);
     }
 
     [Test]

@@ -48,7 +48,16 @@ public static class Extensions
 
         builder.AddAzureTableClient(Components.Azure.Storage.Table);
         services.AddScoped<ITableService, TableService>();
-        services.Decorate<ISender, OutboxSender>();
+
+        // Replace the Decorate call with a factory registration
+        services.AddSingleton<ISender>(sp =>
+        {
+            var scopeFactory = sp.GetRequiredService<IServiceScopeFactory>();
+            var scope = scopeFactory.CreateScope();
+            var tableService = scope.ServiceProvider.GetRequiredService<ITableService>();
+            var sender = sp.GetRequiredService<ISender>();
+            return new OutboxSender(tableService, sender);
+        });
 
         services.AddHostedService<ResendErrorEmailWorker>();
         services.AddHostedService<CleanUpSentEmailWorker>();
