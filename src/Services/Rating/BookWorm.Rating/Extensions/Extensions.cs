@@ -19,18 +19,15 @@ public static class Extensions
         services.AddProblemDetails();
 
         // Add database configuration
-        services.AddDbContext<RatingDbContext>(options =>
-        {
-            options
-                .UseNpgsql(builder.Configuration.GetConnectionString(Components.Database.Rating))
-                .UseSnakeCaseNamingConvention()
-                .ConfigureWarnings(warnings =>
-                    warnings.Ignore(RelationalEventId.PendingModelChangesWarning)
-                );
-        });
-        builder.EnrichAzureNpgsqlDbContext<RatingDbContext>();
+        builder.AddAzurePostgresDbContext<RatingDbContext>(
+            Components.Database.Rating,
+            _ =>
+            {
+                services.AddMigration<RatingDbContext>();
 
-        services.AddMigration<RatingDbContext>();
+                services.AddRepositories(typeof(IRatingApiMarker));
+            }
+        );
 
         // Configure MediatR
         services.AddMediatR(cfg =>
@@ -47,8 +44,6 @@ public static class Extensions
         services.AddSingleton<IActivityScope, ActivityScope>();
         services.AddSingleton<CommandHandlerMetrics>();
         services.AddSingleton<QueryHandlerMetrics>();
-
-        services.AddRepositories(typeof(IRatingApiMarker));
 
         // Configure EventBus first
         builder.AddEventBus(typeof(IRatingApiMarker), cfg => cfg.AddInMemoryInboxOutbox());

@@ -26,25 +26,22 @@ public static class Extensions
         services.AddProblemDetails();
 
         // Add database configuration
-        services.AddDbContext<CatalogDbContext>(options =>
-        {
-            options
-                .UseNpgsql(builder.Configuration.GetConnectionString(Components.Database.Catalog))
-                .UseSnakeCaseNamingConvention()
-                .ConfigureWarnings(warnings =>
-                    warnings.Ignore(RelationalEventId.PendingModelChangesWarning)
-                );
-        });
-        builder.EnrichAzureNpgsqlDbContext<CatalogDbContext>();
+        builder.AddAzurePostgresDbContext<CatalogDbContext>(
+            Components.Database.Catalog,
+            app =>
+            {
+                if (app.Environment.IsDevelopment())
+                {
+                    services.AddMigration<CatalogDbContext, CatalogDbContextSeed>();
+                }
+                else
+                {
+                    services.AddMigration<CatalogDbContext>();
+                }
 
-        if (builder.Environment.IsDevelopment())
-        {
-            services.AddMigration<CatalogDbContext, CatalogDbContextSeed>();
-        }
-        else
-        {
-            services.AddMigration<CatalogDbContext>();
-        }
+                services.AddRepositories(typeof(ICatalogApiMarker));
+            }
+        );
 
         builder.AddQdrantClient(Components.VectorDb);
 
@@ -65,9 +62,6 @@ public static class Extensions
         services.AddSingleton<IActivityScope, ActivityScope>();
         services.AddSingleton<CommandHandlerMetrics>();
         services.AddSingleton<QueryHandlerMetrics>();
-
-        // Configure repositories
-        services.AddRepositories(typeof(ICatalogApiMarker));
 
         // Configure AI
         builder.AddGenAi();

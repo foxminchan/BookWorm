@@ -28,18 +28,15 @@ public static class Extensions
         services.AddProblemDetails();
 
         // Add database configuration
-        services.AddDbContext<OrderingDbContext>(options =>
-        {
-            options
-                .UseNpgsql(builder.Configuration.GetConnectionString(Components.Database.Ordering))
-                .UseSnakeCaseNamingConvention()
-                .ConfigureWarnings(warnings =>
-                    warnings.Ignore(RelationalEventId.PendingModelChangesWarning)
-                );
-        });
-        builder.EnrichAzureNpgsqlDbContext<OrderingDbContext>();
+        builder.AddAzurePostgresDbContext<OrderingDbContext>(
+            Components.Database.Ordering,
+            _ =>
+            {
+                services.AddMigration<OrderingDbContext>();
 
-        services.AddMigration<OrderingDbContext>();
+                services.AddRepositories(typeof(IOrderingApiMarker));
+            }
+        );
 
         // Configure MediatR
         services.AddMediatR(cfg =>
@@ -61,9 +58,6 @@ public static class Extensions
 
         services.AddScoped<IEventMapper, EventMapper>();
         services.AddScoped<IEventDispatcher, EventDispatcher>();
-
-        // Configure repositories
-        services.AddRepositories(typeof(IOrderingApiMarker));
 
         // Configure endpoints
         services.AddVersioning();
