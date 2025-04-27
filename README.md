@@ -29,6 +29,7 @@
 - [x] Supported API versioning
 - [x] Enabled feature flags to manage application behavior
 - [x] Set up AuthN/AuthZ with Keycloak
+- [x] Implemented caching with HybridCache
 - [x] Incorporated AI components:
   - [x] Text embedding with Nomic Embed Text
   - [x] Enabled hybrid search with Qdrant
