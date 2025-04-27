@@ -1,0 +1,42 @@
+---
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "notification-deployment"
+spec:
+  template:
+    metadata:
+      labels:
+        app: "aspire"
+        component: "notification"
+    spec:
+      containers:
+        - image: "{{ .Values.parameters.notification.notification_image }}"
+          name: "notification"
+          envFrom:
+            - configMapRef:
+                name: "notification-config"
+            - secretRef:
+                name: "notification-secrets"
+          ports:
+            - name: "http"
+              protocol: "TCP"
+              containerPort: "{{ .Values.parameters.notification.port_http }}"
+            - name: "https"
+              protocol: "TCP"
+              containerPort: "{{ .Values.parameters.notification.port_https }}"
+            - name: "healthchecks"
+              protocol: "TCP"
+              containerPort: "{{ .Values.parameters.notification.port_healthchecks }}"
+          imagePullPolicy: "IfNotPresent"
+  selector:
+    matchLabels:
+      app: "aspire"
+      component: "notification"
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: "RollingUpdate"

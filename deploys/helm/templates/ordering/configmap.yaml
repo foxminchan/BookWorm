@@ -1,0 +1,26 @@
+---
+apiVersion: "v1"
+kind: "ConfigMap"
+metadata:
+  name: "ordering-config"
+  labels:
+    app: "aspire"
+    component: "ordering"
+data:
+  ASPNETCORE_URLS: "{{ .Values.config.ordering.ASPNETCORE_URLS }}"
+  OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "{{ .Values.config.ordering.OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES }}"
+  OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "{{ .Values.config.ordering.OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES }}"
+  OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "{{ .Values.config.ordering.OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY }}"
+  ASPNETCORE_FORWARDEDHEADERS_ENABLED: "{{ .Values.config.ordering.ASPNETCORE_FORWARDEDHEADERS_ENABLED }}"
+  HTTP_PORTS: "{{ .Values.config.ordering.HTTP_PORTS }}"
+  ConnectionStrings__orderingdb: "{{ .Values.config.ordering.ConnectionStrings__orderingdb }}"
+  services__keycloak__http__0: "{{ .Values.config.ordering.services__keycloak__http__0 }}"
+  services__keycloak__management__0: "{{ .Values.config.ordering.services__keycloak__management__0 }}"
+  ConnectionStrings__redis: "{{ .Values.config.ordering.ConnectionStrings__redis }}"
+  services__catalog__http__0: "{{ .Values.config.ordering.services__catalog__http__0 }}"
+  services__catalog__https__0: "{{ .Values.config.ordering.services__catalog__https__0 }}"
+  services__catalog__healthchecks__0: "{{ .Values.config.ordering.services__catalog__healthchecks__0 }}"
+  services__basket__http__0: "{{ .Values.config.ordering.services__basket__http__0 }}"
+  services__basket__https__0: "{{ .Values.config.ordering.services__basket__https__0 }}"
+  services__basket__healthchecks__0: "{{ .Values.config.ordering.services__basket__healthchecks__0 }}"
+  HEALTHCHECKSUI_URLS: "{{ .Values.config.ordering.HEALTHCHECKSUI_URLS }}"

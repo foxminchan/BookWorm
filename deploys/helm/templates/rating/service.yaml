@@ -1,0 +1,23 @@
+---
+apiVersion: "v1"
+kind: "Service"
+metadata:
+  name: "rating-service"
+spec:
+  type: "ClusterIP"
+  selector:
+    app: "aspire"
+    component: "rating"
+  ports:
+    - name: "http"
+      protocol: "TCP"
+      port: "{{ .Values.parameters.rating.port_http }}"
+      targetPort: "{{ .Values.parameters.rating.port_http }}"
+    - name: "https"
+      protocol: "TCP"
+      port: "{{ .Values.parameters.rating.port_https }}"
+      targetPort: "{{ .Values.parameters.rating.port_https }}"
+    - name: "healthchecks"
+      protocol: "TCP"
+      port: "{{ .Values.parameters.rating.port_healthchecks }}"
+      targetPort: "{{ .Values.parameters.rating.port_healthchecks }}"

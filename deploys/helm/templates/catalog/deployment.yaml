@@ -1,0 +1,42 @@
+---
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "catalog-deployment"
+spec:
+  template:
+    metadata:
+      labels:
+        app: "aspire"
+        component: "catalog"
+    spec:
+      containers:
+        - image: "{{ .Values.parameters.catalog.catalog_image }}"
+          name: "catalog"
+          envFrom:
+            - configMapRef:
+                name: "catalog-config"
+            - secretRef:
+                name: "catalog-secrets"
+          ports:
+            - name: "http"
+              protocol: "TCP"
+              containerPort: "{{ .Values.parameters.catalog.port_http }}"
+            - name: "https"
+              protocol: "TCP"
+              containerPort: "{{ .Values.parameters.catalog.port_https }}"
+            - name: "healthchecks"
+              protocol: "TCP"
+              containerPort: "{{ .Values.parameters.catalog.port_healthchecks }}"
+          imagePullPolicy: "IfNotPresent"
+  selector:
+    matchLabels:
+      app: "aspire"
+      component: "catalog"
+  replicas: 2
+  revisionHistoryLimit: 3
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: "RollingUpdate"

@@ -1,0 +1,40 @@
+---
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "gateway-deployment"
+spec:
+  template:
+    metadata:
+      labels:
+        app: "aspire"
+        component: "gateway"
+    spec:
+      containers:
+        - image: "{{ .Values.parameters.gateway.gateway_image }}"
+          name: "gateway"
+          envFrom:
+            - configMapRef:
+                name: "gateway-config"
+          ports:
+            - name: "http"
+              protocol: "TCP"
+              containerPort: "{{ .Values.parameters.gateway.port_http }}"
+            - name: "https"
+              protocol: "TCP"
+              containerPort: "{{ .Values.parameters.gateway.port_https }}"
+            - name: "healthchecks"
+              protocol: "TCP"
+              containerPort: "{{ .Values.parameters.gateway.port_healthchecks }}"
+          imagePullPolicy: "IfNotPresent"
+  selector:
+    matchLabels:
+      app: "aspire"
+      component: "gateway"
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: "RollingUpdate"

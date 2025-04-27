@@ -6,7 +6,7 @@ param location string
 
 param principalId string
 
-param postgres_username string = 'SbVFWzrXyD'
+param postgres_username string = 'wYkSKPQHvq'
 
 @secure()
 param postgres_password string
@@ -82,151 +82,151 @@ module signalr 'signalr/signalr.bicep' = {
   }
 }
 
-module bookworm_catalog_identity 'bookworm-catalog-identity/bookworm-catalog-identity.bicep' = {
-  name: 'bookworm-catalog-identity'
+module catalog_identity 'catalog-identity/catalog-identity.bicep' = {
+  name: 'catalog-identity'
   scope: rg
   params: {
     location: location
   }
 }
 
-module bookworm_catalog_roles_storage 'bookworm-catalog-roles-storage/bookworm-catalog-roles-storage.bicep' = {
-  name: 'bookworm-catalog-roles-storage'
+module catalog_roles_storage 'catalog-roles-storage/catalog-roles-storage.bicep' = {
+  name: 'catalog-roles-storage'
   scope: rg
   params: {
     location: location
     storage_outputs_name: storage.outputs.name
-    principalId: bookworm_catalog_identity.outputs.principalId
+    principalId: catalog_identity.outputs.principalId
   }
 }
 
-module bookworm_catalog_roles_signalr 'bookworm-catalog-roles-signalr/bookworm-catalog-roles-signalr.bicep' = {
-  name: 'bookworm-catalog-roles-signalr'
+module catalog_roles_signalr 'catalog-roles-signalr/catalog-roles-signalr.bicep' = {
+  name: 'catalog-roles-signalr'
   scope: rg
   params: {
     location: location
     signalr_outputs_name: signalr.outputs.name
-    principalId: bookworm_catalog_identity.outputs.principalId
+    principalId: catalog_identity.outputs.principalId
   }
 }
 
-module bookworm_catalog_roles_postgres_kv 'bookworm-catalog-roles-postgres-kv/bookworm-catalog-roles-postgres-kv.bicep' = {
-  name: 'bookworm-catalog-roles-postgres-kv'
+module catalog_roles_postgres_kv 'catalog-roles-postgres-kv/catalog-roles-postgres-kv.bicep' = {
+  name: 'catalog-roles-postgres-kv'
   scope: rg
   params: {
     location: location
     postgres_kv_outputs_name: postgres_kv.outputs.name
-    principalId: bookworm_catalog_identity.outputs.principalId
+    principalId: catalog_identity.outputs.principalId
   }
 }
 
-module bookworm_catalog_roles_redis_kv 'bookworm-catalog-roles-redis-kv/bookworm-catalog-roles-redis-kv.bicep' = {
-  name: 'bookworm-catalog-roles-redis-kv'
+module catalog_roles_redis_kv 'catalog-roles-redis-kv/catalog-roles-redis-kv.bicep' = {
+  name: 'catalog-roles-redis-kv'
   scope: rg
   params: {
     location: location
     redis_kv_outputs_name: redis_kv.outputs.name
-    principalId: bookworm_catalog_identity.outputs.principalId
+    principalId: catalog_identity.outputs.principalId
   }
 }
 
-module bookworm_basket_identity 'bookworm-basket-identity/bookworm-basket-identity.bicep' = {
-  name: 'bookworm-basket-identity'
+module basket_identity 'basket-identity/basket-identity.bicep' = {
+  name: 'basket-identity'
   scope: rg
   params: {
     location: location
   }
 }
 
-module bookworm_basket_roles_redis_kv 'bookworm-basket-roles-redis-kv/bookworm-basket-roles-redis-kv.bicep' = {
-  name: 'bookworm-basket-roles-redis-kv'
+module basket_roles_redis_kv 'basket-roles-redis-kv/basket-roles-redis-kv.bicep' = {
+  name: 'basket-roles-redis-kv'
   scope: rg
   params: {
     location: location
     redis_kv_outputs_name: redis_kv.outputs.name
-    principalId: bookworm_basket_identity.outputs.principalId
+    principalId: basket_identity.outputs.principalId
   }
 }
 
-module bookworm_notification_identity 'bookworm-notification-identity/bookworm-notification-identity.bicep' = {
-  name: 'bookworm-notification-identity'
+module notification_identity 'notification-identity/notification-identity.bicep' = {
+  name: 'notification-identity'
   scope: rg
   params: {
     location: location
   }
 }
 
-module bookworm_notification_roles_storage 'bookworm-notification-roles-storage/bookworm-notification-roles-storage.bicep' = {
-  name: 'bookworm-notification-roles-storage'
+module notification_roles_storage 'notification-roles-storage/notification-roles-storage.bicep' = {
+  name: 'notification-roles-storage'
   scope: rg
   params: {
     location: location
     storage_outputs_name: storage.outputs.name
-    principalId: bookworm_notification_identity.outputs.principalId
+    principalId: notification_identity.outputs.principalId
   }
 }
 
-module bookworm_ordering_identity 'bookworm-ordering-identity/bookworm-ordering-identity.bicep' = {
-  name: 'bookworm-ordering-identity'
+module ordering_identity 'ordering-identity/ordering-identity.bicep' = {
+  name: 'ordering-identity'
   scope: rg
   params: {
     location: location
   }
 }
 
-module bookworm_ordering_roles_postgres_kv 'bookworm-ordering-roles-postgres-kv/bookworm-ordering-roles-postgres-kv.bicep' = {
-  name: 'bookworm-ordering-roles-postgres-kv'
+module ordering_roles_postgres_kv 'ordering-roles-postgres-kv/ordering-roles-postgres-kv.bicep' = {
+  name: 'ordering-roles-postgres-kv'
   scope: rg
   params: {
     location: location
     postgres_kv_outputs_name: postgres_kv.outputs.name
-    principalId: bookworm_ordering_identity.outputs.principalId
+    principalId: ordering_identity.outputs.principalId
   }
 }
 
-module bookworm_ordering_roles_redis_kv 'bookworm-ordering-roles-redis-kv/bookworm-ordering-roles-redis-kv.bicep' = {
-  name: 'bookworm-ordering-roles-redis-kv'
+module ordering_roles_redis_kv 'ordering-roles-redis-kv/ordering-roles-redis-kv.bicep' = {
+  name: 'ordering-roles-redis-kv'
   scope: rg
   params: {
     location: location
     redis_kv_outputs_name: redis_kv.outputs.name
-    principalId: bookworm_ordering_identity.outputs.principalId
+    principalId: ordering_identity.outputs.principalId
   }
 }
 
-module bookworm_rating_identity 'bookworm-rating-identity/bookworm-rating-identity.bicep' = {
-  name: 'bookworm-rating-identity'
+module rating_identity 'rating-identity/rating-identity.bicep' = {
+  name: 'rating-identity'
   scope: rg
   params: {
     location: location
   }
 }
 
-module bookworm_rating_roles_postgres_kv 'bookworm-rating-roles-postgres-kv/bookworm-rating-roles-postgres-kv.bicep' = {
-  name: 'bookworm-rating-roles-postgres-kv'
-  scope: rg
-  params: {
-    location: location
-    postgres_kv_outputs_name: postgres_kv.outputs.name
-    principalId: bookworm_rating_identity.outputs.principalId
-  }
-}
-
-module bookworm_finance_identity 'bookworm-finance-identity/bookworm-finance-identity.bicep' = {
-  name: 'bookworm-finance-identity'
-  scope: rg
-  params: {
-    location: location
-  }
-}
-
-module bookworm_finance_roles_postgres_kv 'bookworm-finance-roles-postgres-kv/bookworm-finance-roles-postgres-kv.bicep' = {
-  name: 'bookworm-finance-roles-postgres-kv'
+module rating_roles_postgres_kv 'rating-roles-postgres-kv/rating-roles-postgres-kv.bicep' = {
+  name: 'rating-roles-postgres-kv'
   scope: rg
   params: {
     location: location
     postgres_kv_outputs_name: postgres_kv.outputs.name
-    principalId: bookworm_finance_identity.outputs.principalId
+    principalId: rating_identity.outputs.principalId
+  }
+}
+
+module finance_identity 'finance-identity/finance-identity.bicep' = {
+  name: 'finance-identity'
+  scope: rg
+  params: {
+    location: location
+  }
+}
+
+module finance_roles_postgres_kv 'finance-roles-postgres-kv/finance-roles-postgres-kv.bicep' = {
+  name: 'finance-roles-postgres-kv'
+  scope: rg
+  params: {
+    location: location
+    postgres_kv_outputs_name: postgres_kv.outputs.name
+    principalId: finance_identity.outputs.principalId
   }
 }
 
@@ -240,9 +240,9 @@ output bookworm_aca_volumes_ollama_0 string = bookworm_aca.outputs.volumes_ollam
 
 output bookworm_aca_volumes_keycloak_0 string = bookworm_aca.outputs.volumes_keycloak_0
 
-output bookworm_catalog_identity_id string = bookworm_catalog_identity.outputs.id
+output catalog_identity_id string = catalog_identity.outputs.id
 
-output bookworm_catalog_identity_clientId string = bookworm_catalog_identity.outputs.clientId
+output catalog_identity_clientId string = catalog_identity.outputs.clientId
 
 output storage_blobEndpoint string = storage.outputs.blobEndpoint
 
@@ -260,24 +260,24 @@ output bookworm_aca_AZURE_CONTAINER_REGISTRY_ENDPOINT string = bookworm_aca.outp
 
 output bookworm_aca_AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID string = bookworm_aca.outputs.AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID
 
-output bookworm_basket_identity_id string = bookworm_basket_identity.outputs.id
+output basket_identity_id string = basket_identity.outputs.id
 
-output bookworm_basket_identity_clientId string = bookworm_basket_identity.outputs.clientId
+output basket_identity_clientId string = basket_identity.outputs.clientId
 
-output bookworm_notification_identity_id string = bookworm_notification_identity.outputs.id
+output notification_identity_id string = notification_identity.outputs.id
 
-output bookworm_notification_identity_clientId string = bookworm_notification_identity.outputs.clientId
+output notification_identity_clientId string = notification_identity.outputs.clientId
 
 output storage_tableEndpoint string = storage.outputs.tableEndpoint
 
-output bookworm_ordering_identity_id string = bookworm_ordering_identity.outputs.id
+output ordering_identity_id string = ordering_identity.outputs.id
 
-output bookworm_ordering_identity_clientId string = bookworm_ordering_identity.outputs.clientId
+output ordering_identity_clientId string = ordering_identity.outputs.clientId
 
-output bookworm_rating_identity_id string = bookworm_rating_identity.outputs.id
+output rating_identity_id string = rating_identity.outputs.id
 
-output bookworm_rating_identity_clientId string = bookworm_rating_identity.outputs.clientId
+output rating_identity_clientId string = rating_identity.outputs.clientId
 
-output bookworm_finance_identity_id string = bookworm_finance_identity.outputs.id
+output finance_identity_id string = finance_identity.outputs.id
 
-output bookworm_finance_identity_clientId string = bookworm_finance_identity.outputs.clientId
+output finance_identity_clientId string = finance_identity.outputs.clientId
