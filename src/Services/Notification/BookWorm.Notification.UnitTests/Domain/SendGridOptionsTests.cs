@@ -101,7 +101,7 @@ public sealed class SendGridOptionsTests
         {
             ApiKey = "valid-api-key",
             SenderEmail = "test@example.com",
-            SenderName = new string('a', DataSchemaLength.Medium + 1),
+            SenderName = new('a', DataSchemaLength.Medium + 1),
         };
 
         // Act

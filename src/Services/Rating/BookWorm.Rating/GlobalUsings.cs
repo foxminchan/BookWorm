@@ -25,4 +25,3 @@ global using MassTransit;
 global using MediatR;
 global using Microsoft.AspNetCore.Http.HttpResults;
 global using Microsoft.EntityFrameworkCore;
-global using Microsoft.EntityFrameworkCore.Diagnostics;

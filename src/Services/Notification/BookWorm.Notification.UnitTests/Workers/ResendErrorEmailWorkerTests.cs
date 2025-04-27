@@ -1,4 +1,5 @@
-﻿using BookWorm.Notification.Domain.Models;
+﻿using System.Reflection;
+using BookWorm.Notification.Domain.Models;
 using BookWorm.Notification.Domain.Settings;
 using BookWorm.Notification.Infrastructure.Senders;
 using BookWorm.Notification.Infrastructure.Table;
@@ -308,7 +309,7 @@ public class ResendErrorEmailWorkerTests : IDisposable
         // Get the private semaphore field using reflection
         var semaphoreField = typeof(ResendErrorEmailWorker).GetField(
             "_semaphore",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+            BindingFlags.NonPublic | BindingFlags.Instance
         );
         var semaphore = (SemaphoreSlim)semaphoreField!.GetValue(_worker)!;
 

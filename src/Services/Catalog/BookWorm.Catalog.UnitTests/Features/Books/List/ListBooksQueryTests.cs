@@ -12,6 +12,7 @@ namespace BookWorm.Catalog.UnitTests.Features.Books.List;
 public sealed class ListBooksQueryTests
 {
     private const int MaxResults = 20;
+    private static readonly string[] _defaultKeyword = [nameof(Book)];
     private readonly string _collectionName = nameof(Book).ToLower();
     private BookDto[] _bookDtos = null!;
     private List<Book> _books = null!;
@@ -19,7 +20,6 @@ public sealed class ListBooksQueryTests
     private Mock<IMapper<Book, BookDto>> _mockMapper = null!;
     private Mock<IBookRepository> _mockRepository = null!;
     private Mock<ISearch> _mockSemanticSearch = null!;
-    private static readonly string[] _defaultKeyword = [nameof(Book)];
 
     [Before(Test)]
     public void Setup()
