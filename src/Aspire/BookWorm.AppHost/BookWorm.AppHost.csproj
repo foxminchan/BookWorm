@@ -47,4 +47,7 @@
       IsAspireProjectResource="false"
     />
   </ItemGroup>
+  <Target Name="CreateContainerDistFolder" BeforeTargets="Build">
+    <MakeDir Directories="Container/dist" Condition="!Exists('Container/dist')" />
+  </Target>
 </Project>

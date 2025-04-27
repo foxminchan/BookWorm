@@ -84,7 +84,7 @@ public static class ProjectExtensions
                 .AddK6(Components.K6)
                 .WithImagePullPolicy(ImagePullPolicy.Always)
                 .WithBindMount("Container/scripts", "/scripts", true)
-                .WithBindMount("Container/reports", "/home/k6")
+                .WithBindMount("Container/dist", "/home/k6")
                 .WithScript("/scripts/main.js", Random.Shared.Next(10, 100))
                 .WithReference(entryPoint)
                 .WaitFor(entryPoint);

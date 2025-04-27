@@ -7,6 +7,7 @@ using BookWorm.Ordering.Grpc.Services.Basket;
 using BookWorm.Ordering.Grpc.Services.Book;
 using BookWorm.Ordering.Infrastructure.Helpers;
 using BookWorm.Ordering.Infrastructure.Services;
+using BookWorm.Ordering.UnitTests.Mocks;
 using BookWorm.ServiceDefaults.Keycloak;
 using BookWorm.SharedKernel.Command;
 using BookWorm.SharedKernel.Exceptions;
@@ -248,7 +249,7 @@ public sealed class CreateOrderCommandTests
             var mockLock = new Mock<IDistributedSynchronizationHandle>();
             mockLock.Setup(x => x.DisposeAsync()).Returns(ValueTask.CompletedTask).Verifiable();
 
-            var lockProvider = new TestDistributedLockProvider(mockLock.Object);
+            var lockProvider = new DistributedLockProviderMock(mockLock.Object);
             var handler = new CreateOrderHandler(
                 _repositoryMock.Object,
                 _claimsPrincipalMock.Object,
@@ -276,55 +277,6 @@ public sealed class CreateOrderCommandTests
                 Times.Once
             );
             mockLock.Verify(x => x.DisposeAsync(), Times.Once);
-        }
-
-        private sealed class TestDistributedLockProvider(IDistributedSynchronizationHandle handle)
-            : IDistributedLockProvider
-        {
-            public IDistributedLock CreateLock(string name)
-            {
-                return new TestDistributedLock(handle, name);
-            }
-
-            private sealed class TestDistributedLock(
-                IDistributedSynchronizationHandle handle,
-                string name
-            ) : IDistributedLock
-            {
-                public string Name { get; } = name;
-
-                public IDistributedSynchronizationHandle Acquire(
-                    TimeSpan? timeout = null,
-                    CancellationToken cancellationToken = default
-                )
-                {
-                    return handle;
-                }
-
-                public ValueTask<IDistributedSynchronizationHandle> AcquireAsync(
-                    TimeSpan? timeout = null,
-                    CancellationToken cancellationToken = default
-                )
-                {
-                    return ValueTask.FromResult(handle);
-                }
-
-                public IDistributedSynchronizationHandle TryAcquire(
-                    TimeSpan timeout = default,
-                    CancellationToken cancellationToken = default
-                )
-                {
-                    return handle;
-                }
-
-                public ValueTask<IDistributedSynchronizationHandle?> TryAcquireAsync(
-                    TimeSpan timeout = default,
-                    CancellationToken cancellationToken = default
-                )
-                {
-                    return ValueTask.FromResult(handle)!;
-                }
-            }
         }
     }
 
