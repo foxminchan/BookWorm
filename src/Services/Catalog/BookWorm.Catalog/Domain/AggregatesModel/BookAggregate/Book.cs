@@ -49,7 +49,7 @@ public sealed class Book() : AuditableEntity, IAggregateRoot, ISoftDelete
     public void Delete()
     {
         IsDeleted = true;
-        RegisterDomainEvent(new BookChangedEvent($"{nameof(Book).ToLower()}:{Id}"));
+        RegisterDomainEvent(new BookChangedEvent($"{nameof(Book).ToLowerInvariant()}:{Id}"));
     }
 
     /// <summary>
@@ -116,7 +116,7 @@ public sealed class Book() : AuditableEntity, IAggregateRoot, ISoftDelete
         {
             RegisterDomainEvent(new BookUpdatedEvent(this));
         }
-        RegisterDomainEvent(new BookChangedEvent($"{nameof(Book).ToLower()}:{Id}"));
+        RegisterDomainEvent(new BookChangedEvent($"{nameof(Book).ToLowerInvariant()}:{Id}"));
     }
 
     /// <summary>
@@ -127,7 +127,7 @@ public sealed class Book() : AuditableEntity, IAggregateRoot, ISoftDelete
     {
         AverageRating = ((AverageRating * TotalReviews) + rating) / (TotalReviews + 1);
         TotalReviews++;
-        RegisterDomainEvent(new BookChangedEvent($"{nameof(Book).ToLower()}:{Id}"));
+        RegisterDomainEvent(new BookChangedEvent($"{nameof(Book).ToLowerInvariant()}:{Id}"));
     }
 
     /// <summary>
@@ -138,6 +138,6 @@ public sealed class Book() : AuditableEntity, IAggregateRoot, ISoftDelete
     {
         AverageRating = ((AverageRating * TotalReviews) - rating) / (TotalReviews - 1);
         TotalReviews--;
-        RegisterDomainEvent(new BookChangedEvent($"{nameof(Book).ToLower()}:{Id}"));
+        RegisterDomainEvent(new BookChangedEvent($"{nameof(Book).ToLowerInvariant()}:{Id}"));
     }
 }

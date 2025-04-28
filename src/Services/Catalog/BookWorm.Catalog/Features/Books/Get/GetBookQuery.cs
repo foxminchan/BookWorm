@@ -12,7 +12,7 @@ public sealed class GetBookHandler(
 {
     public async Task<BookDto> Handle(GetBookQuery request, CancellationToken cancellationToken)
     {
-        var tag = nameof(Book).ToLower();
+        var tag = nameof(Book).ToLowerInvariant();
 
         var book = await cache.GetOrCreateAsync(
             $"{tag}:{request.Id}",

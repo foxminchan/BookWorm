@@ -7,7 +7,7 @@ namespace BookWorm.Catalog.Infrastructure.GenAi.CancellationManager;
 public sealed class RedisCancellationManager : ICancellationManager, IDisposable
 {
     private readonly RedisChannel _channelName = RedisChannel.Literal(
-        $"{nameof(Chat).ToLower()}-{nameof(CancellationToken).ToLower()}"
+        $"{nameof(Chat).ToLowerInvariant()}-{nameof(CancellationToken).ToLowerInvariant()}"
     );
 
     private readonly ILogger<RedisCancellationManager> _logger;

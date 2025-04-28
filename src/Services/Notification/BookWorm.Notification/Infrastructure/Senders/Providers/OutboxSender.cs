@@ -4,7 +4,7 @@ namespace BookWorm.Notification.Infrastructure.Senders.Providers;
 
 public sealed class OutboxSender(ITableService tableService, ISender sender) : ISender
 {
-    private readonly string _partitionKey = nameof(Outbox).ToLower();
+    private readonly string _partitionKey = nameof(Outbox).ToLowerInvariant();
 
     public async Task SendAsync(
         MimeMessage mailMessage,

@@ -33,7 +33,7 @@ public static class ProjectExtensions
     /// </remarks>
     public static void AddAzureContainerAppEnvironment(this IDistributedApplicationBuilder builder)
     {
-        var environmentName = $"{nameof(BookWorm).ToLower()}-aca";
+        var environmentName = $"{nameof(BookWorm).ToLowerInvariant()}-aca";
 
         builder
             .AddAzureContainerAppEnvironment(environmentName)

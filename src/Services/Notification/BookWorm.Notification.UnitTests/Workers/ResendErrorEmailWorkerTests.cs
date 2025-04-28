@@ -13,7 +13,7 @@ namespace BookWorm.Notification.UnitTests.Workers;
 public class ResendErrorEmailWorkerTests : IDisposable
 {
     private readonly Mock<ILogger<ResendErrorEmailWorker>> _loggerMock;
-    private readonly string _partitionKey = nameof(Outbox).ToLower();
+    private readonly string _partitionKey = nameof(Outbox).ToLowerInvariant();
     private readonly Mock<ISender> _senderMock;
     private readonly Mock<ITableService> _tableServiceMock;
     private readonly ResendErrorEmailWorker _worker;

@@ -7,7 +7,7 @@ public sealed class BookDataIngestor(
     IVectorStore vectorStore
 ) : IIngestionSource<Book>
 {
-    private readonly string _collectionName = nameof(Book).ToLower();
+    private readonly string _collectionName = nameof(Book).ToLowerInvariant();
 
     public async Task IngestDataAsync(Book data, CancellationToken cancellationToken = default)
     {

@@ -4,8 +4,8 @@ public static class Authorization
 {
     public static class Roles
     {
-        public const string Admin = "ADMIN";
-        public const string User = "USER";
+        public static readonly string Admin = nameof(Admin).ToUpperInvariant();
+        public static readonly string User = nameof(User).ToUpperInvariant();
     }
 
     public static class Policies

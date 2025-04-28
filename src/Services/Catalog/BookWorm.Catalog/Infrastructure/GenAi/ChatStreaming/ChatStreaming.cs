@@ -246,7 +246,7 @@ public sealed class ChatStreaming : IChatStreaming
         var response = await semanticSearch.SearchAsync(
             description,
             keywords,
-            nameof(Book).ToLower()
+            nameof(Book).ToLowerInvariant()
         );
 
         if (response.Count == 0)

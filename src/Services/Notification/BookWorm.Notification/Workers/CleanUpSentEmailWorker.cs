@@ -7,7 +7,7 @@ public sealed class CleanUpSentEmailWorker(
     IServiceScopeFactory scopeFactory
 ) : IHostedService, IDisposable
 {
-    private readonly string _partitionKey = nameof(Outbox).ToLower();
+    private readonly string _partitionKey = nameof(Outbox).ToLowerInvariant();
     private Timer? _timer;
 
     public void Dispose()

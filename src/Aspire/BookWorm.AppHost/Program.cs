@@ -60,7 +60,7 @@ var keycloak = builder
     .WithDataVolume()
     .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent)
-    .WithSampleRealmImport(nameof(BookWorm).ToLower(), nameof(BookWorm));
+    .WithSampleRealmImport(nameof(BookWorm).ToLowerInvariant(), nameof(BookWorm));
 
 var catalogApi = builder
     .AddProject<BookWorm_Catalog>(Application.Catalog)
