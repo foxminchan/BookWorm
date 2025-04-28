@@ -5,7 +5,7 @@ namespace BookWorm.Notification.Infrastructure.Table;
 
 public sealed class TableService(TableServiceClient client) : ITableService
 {
-    private readonly string _tableName = nameof(Notification).ToLower();
+    private readonly string _tableName = nameof(Notification).ToLowerInvariant();
 
     public async Task<Guid> UpsertAsync<T>(
         T entity,
@@ -24,7 +24,7 @@ public sealed class TableService(TableServiceClient client) : ITableService
 
         var tableEntity = new TableEntity(partitionKey, entityId.ToString())
         {
-            { nameof(T).ToLower(), JsonSerializer.Serialize(entity) },
+            { nameof(T).ToLowerInvariant(), JsonSerializer.Serialize(entity) },
         };
 
         await tableClient.UpsertEntityAsync(tableEntity, cancellationToken: cancellationToken);
@@ -49,7 +49,7 @@ public sealed class TableService(TableServiceClient client) : ITableService
 
         await foreach (var entity in tableEntity)
         {
-            var json = entity[nameof(T).ToLower()].ToString();
+            var json = entity[nameof(T).ToLowerInvariant()].ToString();
 
             if (json is null)
             {

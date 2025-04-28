@@ -6,16 +6,16 @@ public static class Restful
 
     public static class Methods
     {
-        public const string Post = "POST";
-        public const string Patch = "PATCH";
-        public const string Put = "PUT";
-        public const string Delete = "DELETE";
-        public const string Get = "GET";
-        public const string Options = "OPTIONS";
+        public static readonly string Post = nameof(Post).ToUpperInvariant();
+        public static readonly string Patch = nameof(Patch).ToUpperInvariant();
+        public static readonly string Put = nameof(Put).ToUpperInvariant();
+        public static readonly string Delete = nameof(Delete).ToUpperInvariant();
+        public static readonly string Get = nameof(Get).ToUpperInvariant();
+        public static readonly string Options = nameof(Options).ToUpperInvariant();
     }
 
     public static class Host
     {
-        public const string Localhost = "localhost";
+        public static readonly string Localhost = nameof(Localhost).ToLowerInvariant();
     }
 }

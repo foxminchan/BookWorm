@@ -69,7 +69,7 @@ public static class CorsExtensions
 
         builder.Append("https://");
 
-        environmentName = environmentName.ToLower();
+        environmentName = environmentName.ToLowerInvariant();
 
         if (
             !string.Equals(
@@ -87,7 +87,7 @@ public static class CorsExtensions
             builder.Append("admin.");
         }
 
-        builder.Append($"{nameof(BookWorm).ToLower()}.com");
+        builder.Append($"{nameof(BookWorm).ToLowerInvariant()}.com");
 
         return builder.ToString();
     }

@@ -7,7 +7,7 @@ namespace BookWorm.Catalog.Infrastructure.Blob;
 public sealed class BlobService(BlobServiceClient client) : IBlobService
 {
     private const int SasExpiryHours = 1;
-    private readonly string _container = nameof(Catalog).ToLower();
+    private readonly string _container = nameof(Catalog).ToLowerInvariant();
 
     public async Task<string> UploadFileAsync(
         IFormFile file,

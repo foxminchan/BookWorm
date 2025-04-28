@@ -13,7 +13,7 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
 {
     private const string MethodName = "CleanUpSentEmails";
     private readonly Mock<ILogger<CleanUpSentEmailWorker>> _loggerMock;
-    private readonly string _partitionKey = nameof(Outbox).ToLower();
+    private readonly string _partitionKey = nameof(Outbox).ToLowerInvariant();
     private readonly Mock<ISender> _senderMock = new();
     private readonly ServiceProvider _serviceProvider;
     private readonly Mock<ITableService> _tableServiceMock;

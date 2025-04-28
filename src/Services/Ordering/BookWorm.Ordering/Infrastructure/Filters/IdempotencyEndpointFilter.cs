@@ -17,7 +17,7 @@ public sealed class IdempotencyEndpointFilter : IEndpointFilter
         var requestManager =
             context.HttpContext.RequestServices.GetRequiredService<IRequestManager>();
 
-        if (requestMethod is not Restful.Methods.Post and not Restful.Methods.Patch)
+        if (requestMethod != Restful.Methods.Post && requestMethod != Restful.Methods.Patch)
         {
             return await next(context);
         }
