@@ -46,7 +46,7 @@ public sealed class CreateFeedbackValidatorTests
         // Arrange
         var command = new CreateFeedbackCommand(
             Guid.CreateVersion7(),
-            default,
+            null,
             "Doe",
             "Great book!",
             5
@@ -66,7 +66,7 @@ public sealed class CreateFeedbackValidatorTests
         var command = new CreateFeedbackCommand(
             Guid.CreateVersion7(),
             "John",
-            default,
+            null,
             "Great book!",
             5
         );

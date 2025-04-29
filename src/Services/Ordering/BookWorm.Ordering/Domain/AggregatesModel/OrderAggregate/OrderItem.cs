@@ -20,5 +20,5 @@ public sealed class OrderItem() : Entity
     public decimal Price { get; private set; }
     public Guid BookId { get; private set; }
     public Guid OrderId { get; private set; }
-    public Order? Order { get; private set; } = default!;
+    public Order? Order { get; private set; } = null!;
 }

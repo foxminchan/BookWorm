@@ -76,7 +76,7 @@ public sealed class FeedbackDeletedConsumerTests
         // Arrange
         _repositoryMock
             .Setup(x => x.GetByIdAsync(_bookId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Book)default!);
+            .ReturnsAsync((Book?)null);
 
         var integrationEvent = new FeedbackDeletedIntegrationEvent(_bookId, _rating, _feedbackId);
 

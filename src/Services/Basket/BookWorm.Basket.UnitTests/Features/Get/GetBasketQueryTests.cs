@@ -74,7 +74,7 @@ public static class GetBasketQueryTests
 
             _claimsPrincipalMock
                 .Setup(x => x.FindFirst(KeycloakClaimTypes.Subject))
-                .Returns((Claim)default!);
+                .Returns((Claim?)null);
 
             // Act
             var act = () => _handler.Handle(query, CancellationToken.None);
@@ -93,7 +93,7 @@ public static class GetBasketQueryTests
 
             _repositoryMock
                 .Setup(r => r.GetBasketAsync(_userId))
-                .ReturnsAsync((CustomerBasket)default!);
+                .ReturnsAsync((CustomerBasket?)null);
 
             // Act
             var act = () => _handler.Handle(query, CancellationToken.None);
@@ -186,7 +186,7 @@ public static class GetBasketQueryTests
             // Second book doesn't exist
             _bookServiceMock
                 .Setup(x => x.GetBookByIdAsync(_bookIds[1], It.IsAny<CancellationToken>()))
-                .ReturnsAsync((BookResponse)default!);
+                .ReturnsAsync((BookResponse?)null);
 
             // Act
             var act = async () => await _handler.Process(query, _basketDto, CancellationToken.None);

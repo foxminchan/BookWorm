@@ -65,7 +65,7 @@ public sealed class CreateBasketCommandTests
         // Return null when looking for the claim
         mockEmptyClaimsPrincipal
             .Setup(x => x.FindFirst(KeycloakClaimTypes.Subject))
-            .Returns((Claim)default!);
+            .Returns((Claim?)null);
 
         var handler = new CreateBasketHandler(
             _mockBasketRepository.Object,

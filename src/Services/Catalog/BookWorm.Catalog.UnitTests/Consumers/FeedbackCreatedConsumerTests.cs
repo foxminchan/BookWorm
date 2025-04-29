@@ -77,7 +77,7 @@ public sealed class FeedbackCreatedConsumerTests
         // Arrange
         _repositoryMock
             .Setup(x => x.GetByIdAsync(_bookId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Book)default!);
+            .ReturnsAsync((Book?)null);
 
         var integrationEvent = new FeedbackCreatedIntegrationEvent(_bookId, _rating, _feedbackId);
 
