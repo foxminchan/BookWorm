@@ -39,9 +39,9 @@ public sealed class Book() : AuditableEntity, IAggregateRoot, ISoftDelete
     public double AverageRating { get; private set; }
     public int TotalReviews { get; private set; }
     public Guid? CategoryId { get; private set; }
-    public Category? Category { get; private set; } = default!;
+    public Category? Category { get; private set; } = null!;
     public Guid? PublisherId { get; private set; }
-    public Publisher? Publisher { get; private set; } = default!;
+    public Publisher? Publisher { get; private set; } = null!;
 
     public IReadOnlyCollection<BookAuthor> BookAuthors => _bookAuthors.AsReadOnly();
     public bool IsDeleted { get; set; }

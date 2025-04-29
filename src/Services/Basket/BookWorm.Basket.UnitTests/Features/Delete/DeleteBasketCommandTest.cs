@@ -88,7 +88,7 @@ public sealed class DeleteBasketCommandTest
 
         _claimsPrincipalMock
             .Setup(x => x.FindFirst(KeycloakClaimTypes.Subject))
-            .Returns((Claim)default!);
+            .Returns((Claim?)null);
 
         // Act
         var act = async () => await _handler.Handle(command, CancellationToken.None);

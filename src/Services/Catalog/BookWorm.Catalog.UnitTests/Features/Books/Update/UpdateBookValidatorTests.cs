@@ -16,7 +16,7 @@ public sealed class UpdateBookValidatorTests
     private readonly Guid _validCategoryId = Guid.CreateVersion7();
     private readonly Guid _validId = Guid.CreateVersion7();
     private readonly Guid _validPublisherId = Guid.CreateVersion7();
-    private UpdateBookValidator _validator = default!;
+    private UpdateBookValidator _validator = null!;
 
     [Before(Test)]
     public void Setup()

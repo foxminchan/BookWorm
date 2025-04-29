@@ -8,7 +8,7 @@ namespace BookWorm.Catalog.UnitTests.Features.Books.Create;
 
 public sealed class CreateBookValidatorTests
 {
-    private CreateBookValidator _validator = default!;
+    private CreateBookValidator _validator = null!;
 
     [Before(Test)]
     public void SetUp()

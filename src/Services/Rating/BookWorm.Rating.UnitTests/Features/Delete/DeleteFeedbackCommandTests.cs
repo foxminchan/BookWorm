@@ -51,7 +51,7 @@ public sealed class DeleteFeedbackCommandTests
         var command = new DeleteFeedbackCommand(feedbackId);
         _repositoryMock
             .Setup(x => x.GetByIdAsync(feedbackId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Feedback)default!);
+            .ReturnsAsync((Feedback?)null);
 
         // Act
         var act = async () => await _handler.Handle(command, CancellationToken.None);

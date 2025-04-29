@@ -148,21 +148,20 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
         SetCompletedWhenFinalized();
     }
 
-    public State Placed { get; set; } = default!;
-    public State Completed { get; set; } = default!;
-    public State Cancelled { get; set; } = default!;
+    public State Placed { get; set; } = null!;
+    public State Completed { get; set; } = null!;
+    public State Cancelled { get; set; } = null!;
 
-    public State Failed { get; set; } = default!;
+    public State Failed { get; set; } = null!;
 
-    public Event<UserCheckedOutIntegrationEvent> OrderPlaced { get; init; } = default!;
+    public Event<UserCheckedOutIntegrationEvent> OrderPlaced { get; init; } = null!;
 
     public Event<OrderStatusChangedToCompleteIntegrationEvent> OrderCompleted { get; init; } =
-        default!;
+        null!;
 
-    public Event<OrderStatusChangedToCancelIntegrationEvent> OrderCancelled { get; init; } =
-        default!;
+    public Event<OrderStatusChangedToCancelIntegrationEvent> OrderCancelled { get; init; } = null!;
 
-    public Event<BasketDeletedFailedIntegrationEvent> BasketDeletedFailed { get; init; } = default!;
+    public Event<BasketDeletedFailedIntegrationEvent> BasketDeletedFailed { get; init; } = null!;
 
-    public Event<BasketDeletedCompleteIntegrationEvent> BasketDeleted { get; init; } = default!;
+    public Event<BasketDeletedCompleteIntegrationEvent> BasketDeleted { get; init; } = null!;
 }

@@ -19,7 +19,7 @@ public sealed class Order() : AuditableEntity, IAggregateRoot, ISoftDelete
     public Status Status { get; private set; }
     public string? Note { get; private set; }
     public Guid BuyerId { get; private set; }
-    public Buyer? Buyer { get; private set; } = default!;
+    public Buyer? Buyer { get; private set; } = null!;
 
     public IReadOnlyCollection<OrderItem> OrderItems => _orderItems.AsReadOnly();
 

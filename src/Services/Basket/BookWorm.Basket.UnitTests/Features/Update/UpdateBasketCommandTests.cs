@@ -72,7 +72,7 @@ public sealed class UpdateBasketCommandTests
         // and ensure GetClaimValue extension method will work
         claimsPrincipalMock
             .Setup(x => x.FindFirst(KeycloakClaimTypes.Subject))
-            .Returns((Claim)default!);
+            .Returns((Claim?)null);
 
         var handler = new UpdateBasketHandler(_repositoryMock.Object, claimsPrincipalMock.Object);
 

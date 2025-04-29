@@ -53,7 +53,7 @@ public sealed class ListFeedbacksValidatorTests
     public void GivenNullOrderBy_WhenValidating_ThenShouldUseDefaultValue()
     {
         // Arrange
-        var query = new ListFeedbacksQuery(Guid.CreateVersion7(), 0, 10, default);
+        var query = new ListFeedbacksQuery(Guid.CreateVersion7(), 0, 10, null);
 
         // Act
         var result = _validator.TestValidate(query);
