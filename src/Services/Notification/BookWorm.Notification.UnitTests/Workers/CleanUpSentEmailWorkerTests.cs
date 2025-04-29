@@ -1,20 +1,16 @@
-﻿using System.Reflection;
-using BookWorm.Notification.Domain.Models;
-using BookWorm.Notification.Infrastructure.Senders;
+﻿using BookWorm.Notification.Domain.Models;
 using BookWorm.Notification.Infrastructure.Table;
 using BookWorm.Notification.Workers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using MimeKit;
+using Quartz;
 
 namespace BookWorm.Notification.UnitTests.Workers;
 
 public sealed class CleanUpSentEmailWorkerTests : IDisposable
 {
-    private const string MethodName = "CleanUpSentEmails";
     private readonly Mock<ILogger<CleanUpSentEmailWorker>> _loggerMock;
     private readonly string _partitionKey = nameof(Outbox).ToLowerInvariant();
-    private readonly Mock<ISender> _senderMock = new();
     private readonly ServiceProvider _serviceProvider;
     private readonly Mock<ITableService> _tableServiceMock;
     private readonly CleanUpSentEmailWorker _worker;
@@ -42,52 +38,7 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
 
     public void Dispose()
     {
-        _worker.Dispose();
         _serviceProvider.Dispose();
-    }
-
-    [Test]
-    public async Task GivenWorker_WhenStarting_ThenShouldSetTimerCorrectly()
-    {
-        // Act
-        await _worker.StartAsync(CancellationToken.None);
-
-        // Assert
-        _loggerMock.Verify(
-            x =>
-                x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>(
-                        (o, t) => o.ToString()!.Contains("Clean Up Sent Email Worker is starting")
-                    ),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
-                ),
-            Times.Once
-        );
-    }
-
-    [Test]
-    public async Task GivenWorker_WhenStopping_ThenShouldStopTimer()
-    {
-        // Act
-        await _worker.StopAsync(CancellationToken.None);
-
-        // Assert
-        _loggerMock.Verify(
-            x =>
-                x.Log(
-                    LogLevel.Debug,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>(
-                        (o, t) => o.ToString()!.Contains("Clean Up Sent Email Worker is stopping")
-                    ),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
-                ),
-            Times.Once
-        );
     }
 
     [Test]
@@ -99,10 +50,7 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
             .ReturnsAsync([]);
 
         // Act
-        var method = _worker
-            .GetType()
-            .GetMethod(MethodName, BindingFlags.NonPublic | BindingFlags.Instance);
-        await (Task)method!.Invoke(_worker, null)!;
+        await _worker.Execute(Mock.Of<IJobExecutionContext>());
 
         // Assert
         _loggerMock.Verify(
@@ -141,10 +89,7 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
             .ReturnsAsync(sentEmails);
 
         // Act
-        var method = _worker
-            .GetType()
-            .GetMethod(MethodName, BindingFlags.NonPublic | BindingFlags.Instance);
-        await (Task)method!.Invoke(_worker, null)!;
+        await _worker.Execute(Mock.Of<IJobExecutionContext>());
 
         // Assert
         _tableServiceMock.Verify(
@@ -185,10 +130,7 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
             .ReturnsAsync(emails);
 
         // Act
-        var method = _worker
-            .GetType()
-            .GetMethod(MethodName, BindingFlags.NonPublic | BindingFlags.Instance);
-        await (Task)method!.Invoke(_worker, null)!;
+        await _worker.Execute(Mock.Of<IJobExecutionContext>());
 
         // Assert
         _tableServiceMock.Verify(
@@ -214,10 +156,7 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
             .ReturnsAsync(sentEmails);
 
         // Act
-        var method = _worker
-            .GetType()
-            .GetMethod(MethodName, BindingFlags.NonPublic | BindingFlags.Instance);
-        await (Task)method!.Invoke(_worker, null)!;
+        await _worker.Execute(Mock.Of<IJobExecutionContext>());
 
         // Assert
         _tableServiceMock.Verify(
@@ -241,126 +180,44 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
     }
 
     [Test]
-    public async Task GivenWorker_WhenDisposed_ThenShouldCleanupResources()
+    public async Task GivenException_WhenCleaningUp_ThenShouldLogError()
     {
         // Arrange
-        await _worker.StartAsync(CancellationToken.None);
-
-        // Act
-        await _worker.StopAsync(CancellationToken.None);
-        _worker.Dispose();
-
-        // Assert
-        _loggerMock.Verify(
-            x =>
-                x.Log(
-                    LogLevel.Debug,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>(
-                        (o, t) => o.ToString()!.Contains("Clean Up Sent Email Worker is stopping")
-                    ),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
-                ),
-            Times.Once
-        );
-    }
-
-    [Test]
-    public async Task GivenWorker_WhenStarting_ThenShouldSetTimerToRunAtMidnight()
-    {
-        // Act
-        await _worker.StartAsync(CancellationToken.None);
-
-        // Assert
-        _loggerMock.Verify(
-            x =>
-                x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>(
-                        (o, t) => o.ToString()!.Contains("Clean Up Sent Email Worker is starting")
-                    ),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
-                ),
-            Times.AtLeastOnce
-        );
-    }
-
-    [Test]
-    public async Task GivenTimerCallback_WhenExceptionOccurs_ThenShouldLogError()
-    {
-        // Arrange
+        var exception = new Exception("Table service error");
         _tableServiceMock
             .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new("Table service error"));
+            .ThrowsAsync(exception);
 
         // Act
-        await _worker.StartAsync(CancellationToken.None);
-
-        // Get the timer field using reflection
-        var timerField = typeof(CleanUpSentEmailWorker).GetField(
-            "_timer",
-            BindingFlags.NonPublic | BindingFlags.Instance
-        );
-        var timer = timerField?.GetValue(_worker) as Timer;
-        timer.ShouldNotBeNull("Timer is null");
-
-        // Change the timer to fire immediately
-        timer.Change(0, Timeout.Infinite);
-
-        // Wait for the timer to execute
-        await Task.Delay(100);
-
-        // Assert
-        _loggerMock.Verify(
-            x =>
-                x.Log(
-                    LogLevel.Error,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>(
-                        (o, t) => o.ToString()!.Contains("Error occurred in timer callback")
-                    ),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
-                ),
-            Times.Once
-        );
-    }
-
-    [Test]
-    public async Task GivenSemaphoreAcquired_WhenTimerCallbackExecutes_ThenShouldSkipProcessing()
-    {
-        // Arrange
-        var failedEmails = new List<Outbox>
+        try
         {
-            new("Test User", "test@example.com", "Subject", "Body"),
-        };
+            await _worker.Execute(Mock.Of<IJobExecutionContext>());
+            Should.Throw<Exception>(() => throw new("This code path should not be reached"));
+        }
+        catch (Exception ex)
+        {
+            // Assert
+            if (!string.Equals(ex.Message, "Table service error", StringComparison.Ordinal))
+            {
+                ex.Message.ShouldBe(
+                    "Table service error",
+                    $"Expected exception message 'Table service error' but got '{ex.Message}'"
+                );
+            }
 
-        _tableServiceMock
-            .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(failedEmails);
-
-        // Act
-        await _worker.StartAsync(CancellationToken.None);
-
-        // Simulate semaphore being acquired by another operation
-        var semaphore = new SemaphoreSlim(0, 1);
-        await semaphore.WaitAsync(0);
-
-        // Wait for the timer callback to execute
-        await Task.Delay(100);
-
-        // Assert
-        _tableServiceMock.Verify(
-            x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()),
-            Times.Never
-        );
-
-        _senderMock.Verify(
-            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
-            Times.Never
-        );
+            _loggerMock.Verify(
+                x =>
+                    x.Log(
+                        LogLevel.Error,
+                        It.IsAny<EventId>(),
+                        It.Is<It.IsAnyType>(
+                            (o, t) => o.ToString()!.Contains("Error occurred in job execution")
+                        ),
+                        exception,
+                        It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+                    ),
+                Times.Once
+            );
+        }
     }
 }

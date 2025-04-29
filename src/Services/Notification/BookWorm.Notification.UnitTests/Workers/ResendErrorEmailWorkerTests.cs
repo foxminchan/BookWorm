@@ -7,6 +7,7 @@ using BookWorm.Notification.Workers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MimeKit;
+using Quartz;
 
 namespace BookWorm.Notification.UnitTests.Workers;
 
@@ -41,30 +42,7 @@ public class ResendErrorEmailWorkerTests : IDisposable
 
     public void Dispose()
     {
-        _worker.Dispose();
         GC.SuppressFinalize(this);
-    }
-
-    [Test]
-    public async Task GivenWorker_WhenStarting_ThenShouldInitializeTimer()
-    {
-        // Act
-        await _worker.StartAsync(CancellationToken.None);
-
-        // Assert
-        _loggerMock.Verify(
-            x =>
-                x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>(
-                        (o, t) => o.ToString()!.Contains("Resend Error Email Service is starting")
-                    ),
-                    null,
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
-                ),
-            Times.AtLeastOnce
-        );
     }
 
     [Test]
@@ -82,21 +60,17 @@ public class ResendErrorEmailWorkerTests : IDisposable
             .ReturnsAsync(failedEmails);
 
         // Act
-        await _worker.StartAsync(CancellationToken.None);
-
-        // Wait for the timer callback to execute
-        await Task.Delay(2000); // Increased wait time to 2 seconds
+        await _worker.Execute(Mock.Of<IJobExecutionContext>());
 
         // Assert
         _senderMock.Verify(
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
-            Times.Exactly(failedEmails.Count) // Verify the exact number of emails sent
+            Times.Exactly(failedEmails.Count)
         );
 
-        // Verify that the table service was called at least once
         _tableServiceMock.Verify(
             x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()),
-            Times.AtLeastOnce
+            Times.Once
         );
     }
 
@@ -114,8 +88,7 @@ public class ResendErrorEmailWorkerTests : IDisposable
             .ThrowsAsync(new("Send failed"));
 
         // Act
-        await _worker.StartAsync(CancellationToken.None);
-        await Task.Delay(100);
+        await _worker.Execute(Mock.Of<IJobExecutionContext>());
 
         // Assert
         _loggerMock.Verify(
@@ -127,7 +100,7 @@ public class ResendErrorEmailWorkerTests : IDisposable
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()
                 ),
-            Times.AtMostOnce
+            Times.Once
         );
     }
 
@@ -140,10 +113,7 @@ public class ResendErrorEmailWorkerTests : IDisposable
             .ReturnsAsync([]);
 
         // Act
-        await _worker.StartAsync(CancellationToken.None);
-
-        // Wait for the timer callback to execute
-        await Task.Delay(2000); // Increased wait time to 2 seconds
+        await _worker.Execute(Mock.Of<IJobExecutionContext>());
 
         // Assert
         _loggerMock.Verify(
@@ -157,18 +127,17 @@ public class ResendErrorEmailWorkerTests : IDisposable
                     null,
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()
                 ),
-            Times.AtLeastOnce
+            Times.Once
         );
 
-        // Verify that the table service was called at least once
         _tableServiceMock.Verify(
             x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()),
-            Times.AtLeastOnce
+            Times.Once
         );
     }
 
     [Test]
-    public async Task GivenTimerCallback_WhenExceptionOccurs_ThenShouldLogError()
+    public async Task GivenException_WhenResending_ThenShouldLogError()
     {
         // Arrange
         _tableServiceMock
@@ -176,8 +145,7 @@ public class ResendErrorEmailWorkerTests : IDisposable
             .ThrowsAsync(new("Table service error"));
 
         // Act
-        await _worker.StartAsync(CancellationToken.None);
-        await Task.Delay(100);
+        await _worker.Execute(Mock.Of<IJobExecutionContext>());
 
         // Assert
         _loggerMock.Verify(
@@ -186,12 +154,12 @@ public class ResendErrorEmailWorkerTests : IDisposable
                     LogLevel.Error,
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>(
-                        (o, t) => o.ToString()!.Contains("Error occurred in timer callback")
+                        (o, t) => o.ToString()!.Contains("Error occurred in job execution")
                     ),
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()
                 ),
-            Times.AtMostOnce
+            Times.Once
         );
     }
 
@@ -215,8 +183,7 @@ public class ResendErrorEmailWorkerTests : IDisposable
             .Returns(Task.CompletedTask);
 
         // Act
-        await _worker.StartAsync(CancellationToken.None);
-        await Task.Delay(100);
+        await _worker.Execute(Mock.Of<IJobExecutionContext>());
 
         // Assert
         _loggerMock.Verify(
@@ -228,70 +195,17 @@ public class ResendErrorEmailWorkerTests : IDisposable
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()
                 ),
-            Times.AtLeastOnce
+            Times.Once
         );
 
         _senderMock.Verify(
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
-            Times.AtLeastOnce
+            Times.Exactly(2)
         );
     }
 
     [Test]
-    public async Task GivenWorker_WhenStopping_ThenShouldStopTimer()
-    {
-        // Arrange
-        await _worker.StartAsync(CancellationToken.None);
-
-        // Act
-        await _worker.StopAsync(CancellationToken.None);
-
-        // Assert
-        _loggerMock.Verify(
-            x =>
-                x.Log(
-                    LogLevel.Debug,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>(
-                        (o, t) => o.ToString()!.Contains("Resend Error Email Service is stopping")
-                    ),
-                    null,
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
-                ),
-            Times.AtLeastOnce
-        );
-    }
-
-    [Test]
-    public async Task GivenCancellationToken_WhenWaitingForSemaphore_ThenShouldRespectCancellation()
-    {
-        // Arrange
-        var cts = new CancellationTokenSource();
-        await cts.CancelAsync();
-
-        // Act
-        await _worker.StartAsync(cts.Token);
-        await Task.Delay(100, cts.Token);
-
-        // Assert
-        _loggerMock.Verify(
-            x =>
-                x.Log(
-                    LogLevel.Warning,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>(
-                        (o, t) =>
-                            o.ToString()!.Contains("Previous resend operation is still running")
-                    ),
-                    null,
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
-                ),
-            Times.AtLeastOnce
-        );
-    }
-
-    [Test]
-    public async Task GivenSemaphoreAcquired_WhenTimerCallbackExecutes_ThenShouldSkipProcessing()
+    public async Task GivenSemaphoreAcquired_WhenJobExecutes_ThenShouldSkipProcessing()
     {
         // Arrange
         var failedEmails = new List<Outbox>
@@ -302,9 +216,6 @@ public class ResendErrorEmailWorkerTests : IDisposable
         _tableServiceMock
             .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(failedEmails);
-
-        // Act
-        await _worker.StartAsync(CancellationToken.None);
 
         // Get the private semaphore field using reflection
         var semaphoreField = typeof(ResendErrorEmailWorker).GetField(
@@ -318,8 +229,8 @@ public class ResendErrorEmailWorkerTests : IDisposable
 
         try
         {
-            // Wait for the timer callback to execute
-            await Task.Delay(100);
+            // Act
+            await _worker.Execute(Mock.Of<IJobExecutionContext>());
 
             // Assert
             _tableServiceMock.Verify(

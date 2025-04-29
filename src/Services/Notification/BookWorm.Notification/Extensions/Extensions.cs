@@ -1,4 +1,4 @@
-﻿using BookWorm.Notification.Infrastructure.Senders.Providers;
+﻿using OpenTelemetry.Trace;
 
 namespace BookWorm.Notification.Extensions;
 
@@ -59,12 +59,24 @@ public static class Extensions
             return new OutboxSender(tableService, sender);
         });
 
-        services.AddHostedService<ResendErrorEmailWorker>();
-        services.AddHostedService<CleanUpSentEmailWorker>();
+        services.AddQuartz(q =>
+        {
+            // Clean up sent emails job - runs daily at midnight
+            q.AddJobConfigurator<CleanUpSentEmailWorker>("0 0 0 * * ?");
+
+            // Resend error emails job - runs every hour
+            q.AddJobConfigurator<ResendErrorEmailWorker>("0 0 * * * ?");
+        });
+
+        services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 
         builder.AddDefaultCors();
 
-        services.AddOpenTelemetry().WithTracing(t => t.AddSource(TelemetryTags.ActivitySourceName));
+        services
+            .AddOpenTelemetry()
+            .WithTracing(t =>
+                t.AddSource(TelemetryTags.ActivitySourceName).AddQuartzInstrumentation()
+            );
 
         builder.AddEventBus(typeof(INotificationApiMarker), cfg => cfg.AddInMemoryInboxOutbox());
 
