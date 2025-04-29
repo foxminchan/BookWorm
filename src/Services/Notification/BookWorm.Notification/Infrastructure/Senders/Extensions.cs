@@ -1,6 +1,4 @@
-﻿using BookWorm.Notification.Infrastructure.Senders.Providers;
-
-namespace BookWorm.Notification.Infrastructure.Senders;
+﻿namespace BookWorm.Notification.Infrastructure.Senders;
 
 public static class Extensions
 {

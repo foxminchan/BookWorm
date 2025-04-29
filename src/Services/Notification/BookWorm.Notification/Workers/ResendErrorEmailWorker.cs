@@ -2,64 +2,34 @@
 
 namespace BookWorm.Notification.Workers;
 
+[DisallowConcurrentExecution]
 public sealed class ResendErrorEmailWorker(
     ILogger<ResendErrorEmailWorker> logger,
     EmailOptions emailOptions,
     IServiceScopeFactory scopeFactory
-) : IHostedService, IDisposable
+) : IJob
 {
-    private const int CheckIntervalInHours = 1;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
-    private Timer? _timer;
 
-    public void Dispose()
+    public async Task Execute(IJobExecutionContext context)
     {
-        _timer?.Dispose();
-        _semaphore.Dispose();
-    }
+        if (!await _semaphore.WaitAsync(0))
+        {
+            return;
+        }
 
-    public Task StartAsync(CancellationToken cancellationToken)
-    {
-        logger.LogInformation("Resend Error Email Service is starting.");
-
-        _timer = new(
-            _ =>
-                Task.Run(
-                    async () =>
-                    {
-                        if (!await _semaphore.WaitAsync(0, cancellationToken))
-                        {
-                            return;
-                        }
-
-                        try
-                        {
-                            await ResendFailedEmails();
-                        }
-                        catch (Exception ex)
-                        {
-                            logger.LogError(ex, "Error occurred in timer callback");
-                        }
-                        finally
-                        {
-                            _semaphore.Release();
-                        }
-                    },
-                    cancellationToken
-                ),
-            null,
-            TimeSpan.Zero,
-            TimeSpan.FromHours(CheckIntervalInHours)
-        );
-
-        return Task.CompletedTask;
-    }
-
-    public Task StopAsync(CancellationToken cancellationToken)
-    {
-        logger.LogDebug("Resend Error Email Service is stopping.");
-        _timer?.Change(Timeout.Infinite, 0);
-        return Task.CompletedTask;
+        try
+        {
+            await ResendFailedEmails();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error occurred in job execution");
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
     }
 
     private async Task ResendFailedEmails()
