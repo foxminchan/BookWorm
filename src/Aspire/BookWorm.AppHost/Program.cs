@@ -65,7 +65,7 @@ var keycloak = builder
 var catalogApi = builder
     .AddProject<BookWorm_Catalog>(Application.Catalog)
     .WithReplicas(builder.ExecutionContext.IsRunMode ? 1 : 2)
-    .WithScalarApiClient()
+    .WithScalarApiDocs()
     .WithOllama(models)
     .WithReference(blobStorage)
     .WaitFor(blobStorage)
@@ -88,7 +88,7 @@ qdrant.WithParentRelationship(catalogApi);
 
 var basketApi = builder
     .AddProject<BookWorm_Basket>(Application.Basket)
-    .WithScalarApiClient()
+    .WithScalarApiDocs()
     .WithReference(redis)
     .WaitFor(redis)
     .WithReference(queue)
@@ -108,7 +108,7 @@ var notificationApi = builder
 
 var orderingApi = builder
     .AddProject<BookWorm_Ordering>(Application.Ordering)
-    .WithScalarApiClient()
+    .WithScalarApiDocs()
     .WithReference(orderingDb)
     .WaitFor(orderingDb)
     .WithReference(queue)
@@ -122,7 +122,7 @@ var orderingApi = builder
 
 var ratingApi = builder
     .AddProject<BookWorm_Rating>(Application.Rating)
-    .WithScalarApiClient()
+    .WithScalarApiDocs()
     .WithReference(ratingDb)
     .WaitFor(ratingDb)
     .WithReference(queue)
@@ -132,7 +132,7 @@ var ratingApi = builder
 
 var financeApi = builder
     .AddProject<BookWorm_Finance>(Application.Finance)
-    .WithScalarApiClient()
+    .WithScalarApiDocs()
     .WithReference(financeDb)
     .WaitFor(financeDb)
     .WithReference(queue)

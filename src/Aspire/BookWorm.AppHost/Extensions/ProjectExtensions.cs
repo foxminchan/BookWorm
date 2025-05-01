@@ -42,11 +42,11 @@ public static class ProjectExtensions
     }
 
     /// <summary>
-    ///     Configures the resource builder to use the Scalar API client if not in publish mode.
+    ///     Configures the resource builder to use the Scalar API documentation if not in publish mode.
     /// </summary>
     /// <param name="builder">The resource builder for the project resource.</param>
     /// <returns>The updated resource builder.</returns>
-    public static IResourceBuilder<ProjectResource> WithScalarApiClient(
+    public static IResourceBuilder<ProjectResource> WithScalarApiDocs(
         this IResourceBuilder<ProjectResource> builder
     )
     {
