@@ -7,7 +7,7 @@ namespace BookWorm.Catalog.Features.Books;
 [ExcludeFromCodeCoverage]
 public sealed class DomainToDtoMapper(IBlobService blobService) : IMapper<Book, BookDto>
 {
-    public BookDto MapToDto(Book book)
+    public BookDto Map(Book book)
     {
         var imageUrl = book.Image is not null
             ? blobService.GetFileUrl(book.Image).GetAwaiter().GetResult()
@@ -23,14 +23,14 @@ public sealed class DomainToDtoMapper(IBlobService blobService) : IMapper<Book, 
             book.Status,
             book.Category?.ToCategoryDto(),
             book.Publisher?.ToPublisherDto(),
-            book.BookAuthors.Select(x => x.Author.ToAuthorDto()).ToArray(),
+            [.. book.BookAuthors.Select(x => x.Author.ToAuthorDto())],
             book.AverageRating,
             book.TotalReviews
         );
     }
 
-    public IReadOnlyList<BookDto> MapToDtos(IReadOnlyList<Book> models)
+    public IReadOnlyList<BookDto> Map(IReadOnlyList<Book> models)
     {
-        return models.Count == 0 ? [] : models.Select(MapToDto).ToArray();
+        return models.Count == 0 ? [] : [.. models.Select(Map)];
     }
 }

@@ -201,7 +201,6 @@ public static class Extensions
     {
         // Given a value like "localhost:12345/healthz;hub.docker.internal:12345/healthz" return a dictionary like:
         // { { "healthz", [ "localhost:12345", "hub.docker.internal:12345" ] } }
-
         var uris = healthChecksUrls
             .Split(';', StringSplitOptions.RemoveEmptyEntries)
             .Select(url => new Uri(url, UriKind.Absolute))

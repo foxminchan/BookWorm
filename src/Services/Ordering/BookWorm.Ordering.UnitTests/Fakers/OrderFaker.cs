@@ -9,7 +9,7 @@ public sealed class OrderFaker : Faker<Order>
     {
         Randomizer.Seed = new(Seeder.DefaultSeed);
         CustomInstantiator(f =>
-            new(f.Random.Guid(), f.Random.String2(1, 100), new OrderItemFaker().Generate().ToList())
+            new(f.Random.Guid(), f.Random.String2(1, 100), [.. new OrderItemFaker().Generate()])
         );
     }
 

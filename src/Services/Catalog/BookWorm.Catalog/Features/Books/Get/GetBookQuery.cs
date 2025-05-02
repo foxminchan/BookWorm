@@ -28,6 +28,6 @@ public sealed class GetBookHandler(
             cancellationToken: cancellationToken
         );
 
-        return mapper.MapToDto(book);
+        return mapper.Map(book);
     }
 }
