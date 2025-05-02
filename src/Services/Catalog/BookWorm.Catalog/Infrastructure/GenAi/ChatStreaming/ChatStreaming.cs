@@ -258,7 +258,7 @@ public sealed class ChatStreaming : IChatStreaming
 
         var books = await repository.ListAsync(new BookFilterSpec(ids));
 
-        var results = mapper.MapToDtos(books);
+        var results = mapper.Map(books);
 
         return JsonSerializer.Serialize(results);
     }

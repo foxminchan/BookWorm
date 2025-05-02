@@ -133,15 +133,17 @@ public sealed class RedisConversationState : IConversationState, IDisposable
                 .OfType<ClientMessageFragment>()
         );
 
-        return fragments
-            .GroupBy(f => f.Id)
-            .Select(g => MessageBuffer.CoalesceFragments([.. g.Skip(1)]))
-            .Select(coalescedFragment => new ClientMessage(
-                coalescedFragment.Id,
-                coalescedFragment.Sender,
-                coalescedFragment.Text
-            ))
-            .ToList();
+        return
+        [
+            .. fragments
+                .GroupBy(f => f.Id)
+                .Select(g => MessageBuffer.CoalesceFragments([.. g.Skip(1)]))
+                .Select(coalescedFragment => new ClientMessage(
+                    coalescedFragment.Id,
+                    coalescedFragment.Sender,
+                    coalescedFragment.Text
+                )),
+        ];
     }
 
     public void Dispose()

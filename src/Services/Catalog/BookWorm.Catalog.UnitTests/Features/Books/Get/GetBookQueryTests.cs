@@ -46,7 +46,7 @@ public sealed class GetBookQueryTests
         _repositoryMock
             .Setup(r => r.GetByIdAsync(book.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(book);
-        _mapperMock.Setup(m => m.MapToDto(book)).Returns(expectedBookDto);
+        _mapperMock.Setup(m => m.Map(book)).Returns(expectedBookDto);
 
         // Act
         var result = await _handler.Handle(new(book.Id), CancellationToken.None);
@@ -58,7 +58,7 @@ public sealed class GetBookQueryTests
             r => r.GetByIdAsync(book.Id, It.IsAny<CancellationToken>()),
             Times.Once
         );
-        _mapperMock.Verify(m => m.MapToDto(book), Times.Once);
+        _mapperMock.Verify(m => m.Map(book), Times.Once);
     }
 
     [Test]
@@ -80,6 +80,6 @@ public sealed class GetBookQueryTests
             r => r.GetByIdAsync(nonExistentId, It.IsAny<CancellationToken>()),
             Times.Once
         );
-        _mapperMock.Verify(m => m.MapToDto(It.IsAny<Book>()), Times.Never);
+        _mapperMock.Verify(m => m.Map(It.IsAny<Book>()), Times.Never);
     }
 }

@@ -178,7 +178,7 @@ public sealed class UpdateBookCommandTests
             "existing-image.jpg",
             (Guid)book.CategoryId!,
             (Guid)book.PublisherId!,
-            book.BookAuthors.Select(x => x.AuthorId).ToArray()
+            [.. book.BookAuthors.Select(x => x.AuthorId)]
         );
 
         var repository = new Mock<IBookRepository>();
@@ -199,7 +199,7 @@ public sealed class UpdateBookCommandTests
             book.Price.DiscountPrice,
             (Guid)book.CategoryId,
             (Guid)book.PublisherId,
-            book.BookAuthors.Select(x => x.AuthorId).ToArray(),
+            [.. book.BookAuthors.Select(x => x.AuthorId)],
             true // IsRemoveImage = true
         );
 
@@ -226,7 +226,7 @@ public sealed class UpdateBookCommandTests
             "existing-image.jpg",
             (Guid)book.CategoryId!,
             (Guid)book.PublisherId!,
-            book.BookAuthors.Select(x => x.AuthorId).ToArray()
+            [.. book.BookAuthors.Select(x => x.AuthorId)]
         );
 
         var repository = new Mock<IBookRepository>();
@@ -247,7 +247,7 @@ public sealed class UpdateBookCommandTests
             book.Price.DiscountPrice,
             (Guid)book.CategoryId!,
             (Guid)book.PublisherId!,
-            book.BookAuthors.Select(x => x.AuthorId).ToArray()
+            [.. book.BookAuthors.Select(x => x.AuthorId)]
         )
         {
             ImageName = "new-image.jpg",
@@ -276,7 +276,7 @@ public sealed class UpdateBookCommandTests
             "existing-image.jpg",
             (Guid)book.CategoryId!,
             (Guid)book.PublisherId!,
-            book.BookAuthors.Select(x => x.AuthorId).ToArray()
+            [.. book.BookAuthors.Select(x => x.AuthorId)]
         );
 
         var repository = new Mock<IBookRepository>();
@@ -297,7 +297,7 @@ public sealed class UpdateBookCommandTests
             book.Price.DiscountPrice,
             (Guid)book.CategoryId,
             (Guid)book.PublisherId,
-            book.BookAuthors.Select(x => x.AuthorId).ToArray()
+            [.. book.BookAuthors.Select(x => x.AuthorId)]
         );
 
         var handler = new UpdateBookHandler(repository.Object);

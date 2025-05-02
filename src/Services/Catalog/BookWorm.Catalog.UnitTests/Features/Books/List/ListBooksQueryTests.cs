@@ -53,7 +53,7 @@ public sealed class ListBooksQueryTests
 
         // Setup mapper mock
         _mockMapper
-            .Setup(m => m.MapToDtos((It.IsAny<IEnumerable<Book>>() as IReadOnlyList<Book>)!))
+            .Setup(m => m.Map((It.IsAny<IEnumerable<Book>>() as IReadOnlyList<Book>)!))
             .Returns(_bookDtos);
     }
 
@@ -264,7 +264,7 @@ public sealed class ListBooksQueryTests
 
         _mockRepository
             .Setup(r => r.ListAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_books.Take(pageSize).ToArray());
+            .ReturnsAsync([.. _books.Take(pageSize)]);
 
         _mockRepository
             .Setup(r => r.CountAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
@@ -337,7 +337,7 @@ public sealed class ListBooksQueryTests
             .ReturnsAsync(totalItems);
 
         _mockMapper
-            .Setup(m => m.MapToDtos((It.IsAny<IEnumerable<Book>>() as IReadOnlyList<Book>)!))
+            .Setup(m => m.Map((It.IsAny<IEnumerable<Book>>() as IReadOnlyList<Book>)!))
             .Returns([]);
 
         // Act

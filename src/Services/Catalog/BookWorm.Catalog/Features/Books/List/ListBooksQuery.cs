@@ -57,7 +57,7 @@ public sealed class ListBooksHandler(
                 cancellationToken: cancellationToken
             );
 
-            ids = response.Select(x => x.Id).ToArray();
+            ids = [.. response.Select(x => x.Id)];
         }
 
         var filterSpec = new BookFilterSpec(
@@ -88,7 +88,7 @@ public sealed class ListBooksHandler(
 
         var totalPages = (int)Math.Ceiling(totalItems / (double)request.PageSize);
 
-        var results = mapper.MapToDtos(books);
+        var results = mapper.Map(books);
 
         return new(results, request.PageIndex, request.PageSize, totalItems, totalPages);
     }

@@ -9,7 +9,7 @@ public sealed class CustomerBasketFaker : Faker<CustomerBasket>
     {
         Randomizer.Seed = new(Seeder.DefaultSeed);
         CustomInstantiator(f =>
-            new(f.Random.Uuid().ToString(), new BasketItemFaker().Generate().ToList())
+            new(f.Random.Uuid().ToString(), [.. new BasketItemFaker().Generate()])
         );
     }
 

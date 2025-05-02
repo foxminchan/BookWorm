@@ -18,9 +18,9 @@ public sealed class ListBooksQueryFaker : Faker<ListBooksQuery>
                 f.Random.Bool() ? f.Lorem.Word() : null,
                 f.Random.Bool() ? f.Random.Decimal(1, 50) : null,
                 f.Random.Bool() ? f.Random.Decimal(51, 200) : null,
-                f.Random.Bool() ? f.Make(f.Random.Int(1, 5), Guid.CreateVersion7).ToArray() : null,
-                f.Random.Bool() ? f.Make(f.Random.Int(1, 3), Guid.CreateVersion7).ToArray() : null,
-                f.Random.Bool() ? f.Make(f.Random.Int(1, 4), Guid.CreateVersion7).ToArray() : null
+                f.Random.Bool() ? [.. f.Make(f.Random.Int(1, 5), Guid.CreateVersion7)] : null,
+                f.Random.Bool() ? [.. f.Make(f.Random.Int(1, 3), Guid.CreateVersion7)] : null,
+                f.Random.Bool() ? [.. f.Make(f.Random.Int(1, 4), Guid.CreateVersion7)] : null
             )
         );
     }
