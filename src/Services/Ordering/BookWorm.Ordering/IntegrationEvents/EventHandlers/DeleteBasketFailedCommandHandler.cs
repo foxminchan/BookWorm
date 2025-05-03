@@ -27,7 +27,7 @@ public sealed class DeleteBasketFailedCommandHandler(IOrderRepository repository
 
         repository.Delete(order);
 
-        await repository.UnitOfWork.SaveChangesAsync(CancellationToken.None);
+        await repository.UnitOfWork.SaveEntitiesAsync(CancellationToken.None);
     }
 }
 

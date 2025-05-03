@@ -66,7 +66,7 @@ public sealed class DeleteBasketFailedConsumerTests
 
         _repositoryMock.Verify(x => x.Delete(order), Times.Once);
 
-        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _unitOfWorkMock.Verify(x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()), Times.Once);
 
         await harness.Stop();
     }
@@ -104,7 +104,10 @@ public sealed class DeleteBasketFailedConsumerTests
 
         _repositoryMock.Verify(x => x.Delete(It.IsAny<Order>()), Times.Never);
 
-        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _unitOfWorkMock.Verify(
+            x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
+            Times.Never
+        );
 
         await harness.Stop();
     }

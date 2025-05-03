@@ -45,7 +45,7 @@ public sealed class ActivityBehavior<TRequest, TResponse>(
         var queryName = typeof(TRequest).Name;
         var activityName = $"{queryName}-{handlerName}";
 
-        var isCommand = queryName.ToLowerInvariant().EndsWith("command");
+        var isCommand = queryName.ToLowerInvariant().EndsWith(nameof(Command).ToLowerInvariant());
         var tagName = isCommand ? TelemetryTags.Commands.Command : TelemetryTags.Queries.Query;
 
         var startingTimestamp = isCommand

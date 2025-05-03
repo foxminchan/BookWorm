@@ -21,6 +21,7 @@ global using BookWorm.ServiceDefaults.Kestrel;
 global using BookWorm.ServiceDefaults.Keycloak;
 global using BookWorm.SharedKernel.ActivityScope;
 global using BookWorm.SharedKernel.Command;
+global using BookWorm.SharedKernel.Converters;
 global using BookWorm.SharedKernel.EF;
 global using BookWorm.SharedKernel.Endpoints;
 global using BookWorm.SharedKernel.EventBus;
