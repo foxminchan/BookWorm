@@ -8,7 +8,7 @@ This guide provides detailed instructions for deploying the BookWorm application
   - [Table of Contents](#table-of-contents)
   - [Prerequisites](#prerequisites)
   - [Deployment Options](#deployment-options)
-    - [Azure Kubernetes Service (AKS)](#azure-kubernetes-service-aks)
+    - [Azure Container Apps (ACA)](#azure-container-apps-aca)
       - [Deployment Steps](#deployment-steps)
       - [Cleanup](#cleanup)
     - [k3d (Local Kubernetes)](#k3d-local-kubernetes)
@@ -16,13 +16,13 @@ This guide provides detailed instructions for deploying the BookWorm application
       - [Cleanup](#cleanup-1)
   - [Deployment Process](#deployment-process)
   - [Monitoring](#monitoring)
-    - [AKS Monitoring](#aks-monitoring)
+    - [ACA Monitoring](#aca-monitoring)
     - [k3d Monitoring](#k3d-monitoring)
   - [Troubleshooting](#troubleshooting)
     - [Common Issues](#common-issues)
     - [Debugging Steps](#debugging-steps)
   - [Cleanup](#cleanup-2)
-    - [AKS Cleanup](#aks-cleanup)
+    - [ACA Cleanup](#aca-cleanup)
     - [k3d Cleanup](#k3d-cleanup)
   - [Contributing](#contributing)
 
@@ -32,7 +32,7 @@ Before deploying, ensure you have the following tools installed:
 
 | Tool          | Purpose                       | Installation Guide                                                                  |
 | ------------- | ----------------------------- | ----------------------------------------------------------------------------------- |
-| Azure CLI     | AKS deployment and management | [Install Guide](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)       |
+| Azure CLI     | ACA deployment and management | [Install Guide](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)       |
 | k3d           | Local Kubernetes cluster      | [Install Guide](https://k3d.io/)                                                    |
 | kubectl       | Kubernetes management         | [Install Guide](https://kubernetes.io/docs/tasks/tools/)                            |
 | Helm          | Package management            | [Install Guide](https://helm.sh/docs/intro/install/)                                |
@@ -40,9 +40,9 @@ Before deploying, ensure you have the following tools installed:
 
 ## Deployment Options
 
-### Azure Kubernetes Service (AKS)
+### Azure Container Apps (ACA)
 
-Best suited for production environments, AKS provides:
+Best suited for production environments, ACA provides:
 
 - Managed Kubernetes service
 - Auto-scaling capabilities
@@ -66,11 +66,11 @@ Best suited for production environments, AKS provides:
 3. **Verify Deployment**
 
    ```bash
-   # Get AKS credentials
-   az aks get-credentials --resource-group rg-dev --name bookworm-aks
+   # Get ACA credentials
+   az containerapp env show --resource-group rg-dev --name bookworm-env
 
    # Check deployment status
-   kubectl get all -n bookworm
+   az containerapp show --resource-group rg-dev --name bookworm
    ```
 
 #### Cleanup
@@ -146,17 +146,14 @@ Both deployment methods follow these steps:
 
 ## Monitoring
 
-### AKS Monitoring
+### ACA Monitoring
 
 ```bash
-# View cluster metrics
-kubectl top nodes
+az containerapp show --resource-group rg-dev --name bookworm
 
-# View pod metrics
-kubectl top pods -n bookworm
+az containerapp logs show --resource-group rg-dev --name bookworm
 
-# View logs
-kubectl logs -n bookworm <pod-name>
+az containerapp metrics show --resource-group rg-dev --name bookworm
 ```
 
 ### k3d Monitoring
@@ -218,7 +215,7 @@ kubectl logs -n bookworm <pod-name>
 
 ## Cleanup
 
-### AKS Cleanup
+### ACA Cleanup
 
 ```bash
 # Run cleanup script
