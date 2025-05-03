@@ -1,0 +1,32 @@
+---
+id: Category
+name: Category
+version: 1.0.0
+identifier: id
+aggregateRoot: true
+summary: Category domain entity, encapsulates category information and business rules
+
+properties:
+  - name: id
+    type: UUID
+    required: true
+    description: Unique identifier for the category
+  - name: name
+    type: string
+    required: true
+    description: A name of the category
+owners:
+  - nhanxnguyen
+---
+
+## Overview
+
+The category entity represents a category in the catalog. It encapsulates category information and business rules such as a unique identifier, a name, and a collection of books categorized under the category. The category entity also enforces rules such as requiring a non-empty name and ensuring that the category is not deleted.
+
+### Entity Properties
+
+<EntityPropertiesTable />
+
+### Entity Relationships
+
+- A category has multiple **books**

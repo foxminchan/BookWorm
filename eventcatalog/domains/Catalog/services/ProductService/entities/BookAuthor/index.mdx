@@ -1,0 +1,37 @@
+---
+id: BookAuthor
+name: BookAuthor
+version: 1.0.0
+identifier: id
+aggregateRoot: false
+summary: Book author domain entity, encapsulates book author information and business rules
+
+properties:
+  - name: id
+    type: UUID
+    required: true
+    description: Unique identifier for the book author
+  - name: bookId
+    type: UUID
+    required: true
+    description: Unique identifier for the book
+  - name: authorId
+    type: UUID
+    required: true
+    description: Unique identifier for the author
+owners:
+  - nhanxnguyen
+---
+
+## Overview
+
+The book author entity represents a relationship between a book and an author. It has a unique identifier, a book identifier, and an author identifier. This entity encapsulates the many-to-many relationship between books and authors, allowing for a book to have multiple authors and for an author to have written multiple books. The entity also enforces referential integrity, ensuring that the book and author identifiers exist in their respective tables.
+
+### Entity Properties
+
+<EntityPropertiesTable />
+
+### Entity Relationships
+
+- A book author is associated with one **book**
+- A book author is associated with one **author**

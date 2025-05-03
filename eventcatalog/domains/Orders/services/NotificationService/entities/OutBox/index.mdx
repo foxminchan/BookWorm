@@ -1,0 +1,52 @@
+---
+id: OutBox
+name: OutBox
+version: 1.0.0
+identifier: id
+aggregateRoot: false
+summary: Outbox domain entity, encapsulates outbox information and business rules
+
+properties:
+  - name: id
+    type: UUID
+    required: true
+    description: Unique identifier for the outbox
+  - name: toName
+    type: string
+    required: true
+    description: Name of the recipient
+  - name: toEmail
+    type: string
+    required: true
+    description: Email of the recipient
+  - name: subject
+    type: string
+    required: true
+    description: Subject of the notification
+  - name: body
+    type: string
+    required: true
+    description: Body of the notification
+  - name: isSent
+    type: boolean
+    required: true
+    description: Whether the notification has been sent
+  - name: sentAt
+    type: DateTime
+    required: false
+    description: Time when the notification was sent
+  - name: createdAt
+    type: DateTime
+    required: true
+    description: Time when the notification was created
+owners:
+  - nhanxnguyen
+---
+
+## Overview
+
+The outbox entity represents an outbox in the orders domain. It encapsulates outbox information and business rules such as a unique identifier, the recipient's name and email, the subject and body of the notification, whether the notification has been sent, and timestamps for when the notification was created and sent. This entity is used by the notification service to send notifications to customers about their order status.
+
+### Entity Properties
+
+<EntityPropertiesTable />

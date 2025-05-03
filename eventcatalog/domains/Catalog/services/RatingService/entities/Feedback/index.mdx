@@ -1,0 +1,48 @@
+---
+id: Feedback
+name: Feedback
+version: 1.0.0
+identifier: id
+aggregateRoot: true
+summary: Feedback domain entity, encapsulates feedback information and business rules
+
+properties:
+  - name: id
+    type: UUID
+    required: true
+    description: Unique identifier for the feedback
+  - name: bookId
+    type: UUID
+    required: true
+    description: Unique identifier for the book
+  - name: firstName
+    type: string
+    required: true
+    description: A first name of the user
+  - name: lastName
+    type: string
+    required: true
+    description: A last name of the user
+  - name: rating
+    type: int
+    required: true
+    description: A rating of the book
+  - name: comment
+    type: string
+    required: false
+    description: A comment of the book
+owners:
+  - nhanxnguyen
+---
+
+## Overview
+
+The feedback entity represents a feedback in the catalog. It encapsulates feedback information and business rules such as a unique identifier, a book identifier, a user identifier, a rating, and a comment. The feedback entity also enforces rules such as requiring a non-empty rating and ensuring that the feedback is not deleted.
+
+### Entity Properties
+
+<EntityPropertiesTable />
+
+### Entity Relationships
+
+- A feedback is associated with one **book**

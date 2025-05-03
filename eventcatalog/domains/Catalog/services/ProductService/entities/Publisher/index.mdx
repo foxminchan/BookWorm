@@ -1,0 +1,32 @@
+---
+id: Publisher
+name: Publisher
+version: 1.0.0
+identifier: id
+aggregateRoot: true
+summary: Publisher domain entity, encapsulates publisher information and business rules
+
+properties:
+  - name: id
+    type: UUID
+    required: true
+    description: Unique identifier for the publisher
+  - name: name
+    type: string
+    required: true
+    description: A name of the publisher
+owners:
+  - nhanxnguyen
+---
+
+## Overview
+
+The publisher entity represents a publisher in the catalog. It encapsulates publisher information and business rules such as a unique identifier, a name, and a collection of books published by the publisher. The publisher entity also enforces rules such as requiring a non-empty name and ensuring that the publisher is not deleted.
+
+### Entity Properties
+
+<EntityPropertiesTable />
+
+### Entity Relationships
+
+- A publisher has multiple **books**

@@ -1,0 +1,58 @@
+---
+id: Order
+name: Order
+version: 1.0.0
+identifier: id
+aggregateRoot: true
+summary: Order domain entity, encapsulates order information and business rules
+
+properties:
+  - name: id
+    type: UUID
+    required: true
+    description: Unique identifier for the order
+  - name: status
+    type: string
+    required: true
+    description: Status of the order
+  - name: note
+    type: string
+    required: false
+    description: Note of the order
+  - name: buyerId
+    type: UUID
+    required: true
+    description: Unique identifier of the buyer
+  - name: isDeleted
+    type: boolean
+    required: true
+    description: Whether the order has been deleted
+  - name: createdAt
+    type: DateTime
+    required: true
+    description: Time when the order was created
+  - name: lastModifiedAt
+    type: DateTime
+    required: true
+    description: Time when the order was last modified
+  - name: version
+    type: int
+    required: true
+    description: Version of the record for optimistic concurrency control
+owners:
+  - nhanxnguyen
+---
+
+## Overview
+
+The order entity represents an order in the orders domain. It encapsulates order information and business rules such as a unique identifier. The order is the final step in the ordering process and is associated with the buyer and basket.
+
+### Entity Properties
+
+<EntityPropertiesTable />
+
+### Entity Relationships
+
+- A **buyer** has one or more **orders**
+- A **basket** is associated with one **order**
+- An **order** consists of one or more **order items**

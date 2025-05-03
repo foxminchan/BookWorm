@@ -1,0 +1,32 @@
+---
+id: Author
+name: Author
+version: 1.0.0
+identifier: id
+aggregateRoot: true
+summary: Author domain entity, encapsulates author information and business rules
+
+properties:
+  - name: id
+    type: UUID
+    required: true
+    description: Unique identifier for the author
+  - name: name
+    type: string
+    required: true
+    description: A name of the author
+owners:
+  - nhanxnguyen
+---
+
+## Overview
+
+The author entity represents a person who writes books. It encapsulates the author's information, including the unique identifier, name, and a collection of books written by the author. The entity is responsible for maintaining its internal state and enforcing its own business rules. For example, when a book is added to the author's collection, the entity will validate that the book was written by the author and that the book is not already part of the collection. The entity also provides a way to retrieve the list of books written by the author, which can be used to display the author's bibliography.
+
+### Entity Properties
+
+<EntityPropertiesTable />
+
+### Entity Relationships
+
+- An author writes multiple **books**

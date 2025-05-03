@@ -1,0 +1,85 @@
+---
+id: Book
+name: Book
+version: 1.0.0
+identifier: id
+aggregateRoot: true
+summary: Book domain entity, encapsulates book information and business rules
+
+properties:
+  - name: id
+    type: UUID
+    required: true
+    description: Unique identifier for the book
+  - name: name
+    type: string
+    required: true
+    description: A title of the book
+  - name: description
+    type: string
+    required: false
+    description: Description of the book
+  - name: image
+    type: string
+    required: false
+    description: Image of the book
+  - name: price
+    type: Price
+    required: true
+    description: Price of the book include Original price and Sale price
+  - name: status
+    type: int
+    required: true
+    description: Status of the book
+  - name: averageRating
+    type: double
+    required: true
+    description: Average rating of the book
+  - name: totalReviews
+    type: int
+    required: true
+    description: Total number of reviews for the book
+  - name: categoryId
+    type: UUID
+    required: true
+    description: Unique identifier for the category
+  - name: publisherId
+    type: UUID
+    required: true
+    description: Unique identifier for the publisher
+  - name: isDeleted
+    type: bool
+    required: true
+    description: Whether the book is deleted or not
+  - name: createdAt
+    type: DateTime
+    required: true
+    description: The date and time the book was created
+  - name: lastModifiedAt
+    type: DateTime
+    required: false
+    description: The date and time the book was updated
+  - name: version
+    type: UUID
+    required: true
+    description: Version of the record for optimistic concurrency control
+owners:
+  - nhanxnguyen
+---
+
+## Overview
+
+This entity represents a book in the catalog. It encapsulates book information and business rules, such as a unique identifier, a title, a description, an image, a price, a status, an average rating, a total number of reviews, a category, a publisher, and a flag indicating whether the book is deleted or not. The entity also has a version property for optimistic concurrency control.
+
+### Entity Properties
+
+<EntityPropertiesTable />
+
+### Entity Relationships
+
+- A book is categorized under one **category**
+- A book is published by one **publisher**
+- A book is written by multiple **authors**
+- A book has multiple **reviews**
+- A book is ordered by multiple **orders**
+- A book is added to multiple **baskets**

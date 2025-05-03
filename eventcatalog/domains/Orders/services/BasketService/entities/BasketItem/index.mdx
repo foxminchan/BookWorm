@@ -1,0 +1,33 @@
+---
+id: BasketItem
+name: BasketItem
+version: 1.0.0
+identifier: id
+aggregateRoot: false
+summary: Basket item domain entity, encapsulates basket item information and business rules
+
+properties:
+  - name: id
+    type: UUID
+    required: true
+    description: Unique identifier for the book
+  - name: quantity
+    type: integer
+    required: true
+    description: Quantity of the book in the basket
+owners:
+  - nhanxnguyen
+---
+
+## Overview
+
+The basket item entity represents a basket item in the orders. It encapsulates basket item information and business rules such as a unique identifier, a book identifier, and a quantity. A basket item is an aggregate root that captures the user's intent to purchase a specific book. The entity enforces invariants across its properties and manages the lifecycle of the book in the basket.
+
+### Entity Properties
+
+<EntityPropertiesTable />
+
+### Entity Relationships
+
+- A basket item is associated with one **book**
+- A basket item is associated with one **basket**
