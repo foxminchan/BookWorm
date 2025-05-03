@@ -1,0 +1,39 @@
+---
+id: CustomerBasket
+name: CustomerBasket
+version: 1.0.0
+identifier: id
+aggregateRoot: true
+summary: Customer basket domain entity, encapsulates customer basket information and business rules
+
+properties:
+  - name: id
+    type: UUID
+    required: true
+    description: Unique identifier for the customer basket
+  - name: userId
+    type: UUID
+    required: true
+    description: Unique identifier for the user
+  - name: items
+    type: array
+    items:
+      type: BasketItem
+    required: true
+    description: A list of items in the basket
+owners:
+  - nhanxnguyen
+---
+
+## Overview
+
+The customer basket entity represents a customer basket in the orders. It encapsulates customer basket information and business rules such as a unique identifier, a user identifier, and a list of items.
+
+### Entity Properties
+
+<EntityPropertiesTable />
+
+### Entity Relationships
+
+- A customer basket is associated with one **user**
+- A customer basket has multiple **items**

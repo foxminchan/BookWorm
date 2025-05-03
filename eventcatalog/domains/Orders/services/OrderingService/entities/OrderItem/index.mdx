@@ -1,0 +1,45 @@
+---
+id: OrderItem
+name: OrderItem
+version: 1.0.0
+identifier: id
+aggregateRoot: false
+summary: OrderItem domain entity, encapsulates order item information and business rules
+
+properties:
+  - name: id
+    type: UUID
+    required: true
+    description: Unique identifier for the order item
+  - name: bookId
+    type: UUID
+    required: true
+    description: Unique identifier of the book
+  - name: quantity
+    type: int
+    required: true
+    description: Quantity of the order item
+  - name: price
+    type: decimal
+    required: true
+    description: Price of the order item
+  - name: orderId
+    type: UUID
+    required: true
+    description: Unique identifier of the order
+owners:
+  - nhanxnguyen
+---
+
+## Overview
+
+The order item entity represents an order item in the orders domain. It encapsulates order item information and business rules such as a unique identifier. The order item is the final step in the ordering process and is associated with the order and book.
+
+### Entity Properties
+
+<EntityPropertiesTable />
+
+### Entity Relationships
+
+- An **order** consists of one or more **order items**
+- A **book** is associated with one **order item**

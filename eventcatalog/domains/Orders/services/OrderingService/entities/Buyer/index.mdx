@@ -1,0 +1,36 @@
+---
+id: Buyer
+name: Buyer
+version: 1.0.0
+identifier: id
+aggregateRoot: true
+summary: Buyer domain entity, encapsulates buyer information and business rules
+
+properties:
+  - name: id
+    type: UUID
+    required: true
+    description: Unique identifier for the buyer
+  - name: name
+    type: string
+    required: true
+    description: Name of the buyer
+  - name: address
+    type: Address
+    required: true
+    description: Address of the buyer
+owners:
+  - nhanxnguyen
+---
+
+## Overview
+
+The buyer entity represents a buyer in the orders domain. It encapsulates buyer information and business rules such as a unique identifier. The buyer is the person who places an order and is associated with the order. The buyer is responsible for providing payment information and shipping address.
+
+### Entity Properties
+
+<EntityPropertiesTable />
+
+### Entity Relationships
+
+- A buyer is associated with one **order**
