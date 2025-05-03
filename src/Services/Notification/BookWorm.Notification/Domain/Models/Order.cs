@@ -9,6 +9,6 @@ public sealed record Order(
     Status Status
 )
 {
-    [Format("dd/MM/yyyy")]
+    [Format("yyyy-MM-dd")]
     public DateOnly CreatedAt { get; init; } = DateOnly.FromDateTime(DateTime.UtcNow);
 }

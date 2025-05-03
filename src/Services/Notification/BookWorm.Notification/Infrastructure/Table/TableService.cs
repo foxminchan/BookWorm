@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using Azure.Data.Tables;
+﻿using Azure.Data.Tables;
 
 namespace BookWorm.Notification.Infrastructure.Table;
 

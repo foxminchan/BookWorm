@@ -17,6 +17,10 @@ public static class Extensions
 
         builder.AddDefaultAuthentication().AddKeycloakClaimsTransformation();
 
+        services.AddSingleton(
+            new JsonSerializerOptions { Converters = { new StringTrimmerJsonConverter() } }
+        );
+
         // Add exception handlers
         services.AddExceptionHandler<ValidationExceptionHandler>();
         services.AddExceptionHandler<GlobalExceptionHandler>();

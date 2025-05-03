@@ -13,6 +13,10 @@ public static class Extensions
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails();
 
+        services.AddSingleton(
+            new JsonSerializerOptions { Converters = { new DateOnlyJsonConverter() } }
+        );
+
         // Resilience pipeline for the notification service
         services.AddResiliencePipeline(
             nameof(Notification),
