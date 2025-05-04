@@ -168,7 +168,7 @@ public sealed class ListOrdersQueryTests
 
         _repositoryMock
             .Setup(x => x.ListAsync(It.IsAny<OrderFilterSpec>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Array.Empty<Order>());
+            .ReturnsAsync([]);
         _repositoryMock
             .Setup(x => x.CountAsync(It.IsAny<OrderFilterSpec>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);

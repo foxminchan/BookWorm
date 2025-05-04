@@ -1,5 +1,5 @@
-﻿using BookWorm.Ordering.Features.Buyers.Delete;
-using BookWorm.SharedKernel.Exceptions;
+﻿using BookWorm.Chassis.Exceptions;
+using BookWorm.Ordering.Features.Buyers.Delete;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 

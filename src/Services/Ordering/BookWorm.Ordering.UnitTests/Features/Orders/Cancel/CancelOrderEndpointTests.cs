@@ -1,7 +1,7 @@
-﻿using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
+﻿using BookWorm.Chassis.Exceptions;
+using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Features.Orders;
 using BookWorm.Ordering.Features.Orders.Cancel;
-using BookWorm.SharedKernel.Exceptions;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 

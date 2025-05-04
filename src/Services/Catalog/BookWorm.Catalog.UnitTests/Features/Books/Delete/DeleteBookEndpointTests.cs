@@ -1,5 +1,5 @@
 ﻿using BookWorm.Catalog.Features.Books.Delete;
-using BookWorm.SharedKernel.Exceptions;
+using BookWorm.Chassis.Exceptions;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 

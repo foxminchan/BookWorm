@@ -23,6 +23,6 @@
     <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\BuildingBlocks\BookWorm.SharedKernel\BookWorm.SharedKernel.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\BookWorm.Chassis\BookWorm.Chassis.csproj" />
   </ItemGroup>
 </Project>

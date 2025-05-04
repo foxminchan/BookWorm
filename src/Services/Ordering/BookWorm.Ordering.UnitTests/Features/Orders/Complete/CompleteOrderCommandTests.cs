@@ -1,8 +1,8 @@
-﻿using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
+﻿using BookWorm.Chassis.Exceptions;
+using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
 using BookWorm.Ordering.Features.Orders.Complete;
 using BookWorm.Ordering.UnitTests.Fakers;
-using BookWorm.SharedKernel.Exceptions;
 
 namespace BookWorm.Ordering.UnitTests.Features.Orders.Complete;
 

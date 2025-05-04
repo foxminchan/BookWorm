@@ -2,7 +2,7 @@
 using BookWorm.Catalog.Features.Authors;
 using BookWorm.Catalog.Features.Authors.List;
 using BookWorm.Catalog.UnitTests.Fakers;
-using BookWorm.SharedKernel.Query;
+using BookWorm.Chassis.Query;
 
 namespace BookWorm.Catalog.UnitTests.Features.Authors.List;
 

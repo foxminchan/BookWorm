@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Ordering.Features.Orders.List;
+﻿using BookWorm.SharedKernel.Results;
+
+namespace BookWorm.Ordering.Features.Orders.List;
 
 public sealed class ListOrdersEndpoint
     : IEndpoint<Ok<PagedResult<OrderDto>>, ListOrdersQuery, ISender>

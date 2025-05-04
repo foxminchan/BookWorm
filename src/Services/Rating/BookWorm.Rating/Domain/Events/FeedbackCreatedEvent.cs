@@ -1,6 +1,4 @@
-﻿using BookWorm.SharedKernel.SeedWork.Event;
-
-namespace BookWorm.Rating.Domain.Events;
+﻿namespace BookWorm.Rating.Domain.Events;
 
 public sealed class FeedbackCreatedEvent(Guid bookId, int rating, Guid feedbackId) : DomainEvent
 {

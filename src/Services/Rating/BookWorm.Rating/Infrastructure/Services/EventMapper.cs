@@ -1,6 +1,5 @@
 ﻿using BookWorm.Contracts;
 using BookWorm.Rating.Domain.Events;
-using BookWorm.SharedKernel.SeedWork.Event;
 
 namespace BookWorm.Rating.Infrastructure.Services;
 

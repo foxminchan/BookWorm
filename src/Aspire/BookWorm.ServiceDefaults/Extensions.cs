@@ -1,6 +1,6 @@
+using BookWorm.Chassis.ActivityScope;
+using BookWorm.Chassis.Logging;
 using BookWorm.ServiceDefaults.Kestrel;
-using BookWorm.SharedKernel.ActivityScope;
-using BookWorm.SharedKernel.Logging;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;

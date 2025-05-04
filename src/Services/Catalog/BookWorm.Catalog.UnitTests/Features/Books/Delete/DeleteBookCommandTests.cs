@@ -1,7 +1,7 @@
 ﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 using BookWorm.Catalog.Features.Books.Delete;
 using BookWorm.Catalog.UnitTests.Fakers;
-using BookWorm.SharedKernel.Exceptions;
+using BookWorm.Chassis.Exceptions;
 using MediatR;
 
 namespace BookWorm.Catalog.UnitTests.Features.Books.Delete;

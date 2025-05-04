@@ -1,4 +1,4 @@
-﻿using BookWorm.SharedKernel.Specification.Evaluators;
+﻿using BookWorm.Chassis.Specification.Evaluators;
 
 namespace BookWorm.Catalog.Infrastructure.Repositories;
 
