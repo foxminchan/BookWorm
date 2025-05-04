@@ -1,4 +1,4 @@
-﻿using BookWorm.SharedKernel.Query;
+﻿using BookWorm.Chassis.Query;
 using MassTransit.SagaStateMachine;
 using MassTransit.Visualizer;
 

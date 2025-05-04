@@ -1,7 +1,7 @@
 ﻿using BookWorm.Rating.Domain.Events;
 using BookWorm.Rating.Domain.Exceptions;
 using BookWorm.Rating.Domain.FeedbackAggregator;
-using BookWorm.SharedKernel.SeedWork.Model;
+using BookWorm.SharedKernel.SeedWork;
 
 namespace BookWorm.Rating.UnitTests.Domain;
 

@@ -1,6 +1,6 @@
 ﻿using BookWorm.Ordering.Features.Buyers;
 using BookWorm.Ordering.Features.Buyers.List;
-using BookWorm.SharedKernel.SeedWork.Model;
+using BookWorm.SharedKernel.Results;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 

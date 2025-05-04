@@ -1,7 +1,7 @@
-﻿using BookWorm.Contracts;
+﻿using BookWorm.Chassis.Repository;
+using BookWorm.Contracts;
 using BookWorm.Rating.Domain.FeedbackAggregator;
 using BookWorm.Rating.IntegrationEvents.EventHandlers;
-using BookWorm.SharedKernel.Repository;
 using MassTransit;
 using MassTransit.Testing;
 using Microsoft.Extensions.DependencyInjection;

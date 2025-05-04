@@ -1,7 +1,7 @@
 ﻿using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
 using BookWorm.Catalog.Features.Categories.Update;
-using BookWorm.SharedKernel.Exceptions;
-using BookWorm.SharedKernel.Repository;
+using BookWorm.Chassis.Exceptions;
+using BookWorm.Chassis.Repository;
 using MediatR;
 
 namespace BookWorm.Catalog.UnitTests.Features.Categories.Update;

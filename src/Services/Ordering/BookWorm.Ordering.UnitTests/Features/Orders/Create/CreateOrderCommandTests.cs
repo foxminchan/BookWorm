@@ -1,6 +1,8 @@
 ﻿using System.Security.Claims;
 using BookWorm.Basket.Grpc.Services;
 using BookWorm.Catalog.Grpc.Services;
+using BookWorm.Chassis.Command;
+using BookWorm.Chassis.Exceptions;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Features.Orders.Create;
 using BookWorm.Ordering.Grpc.Services.Basket;
@@ -9,8 +11,6 @@ using BookWorm.Ordering.Infrastructure.Helpers;
 using BookWorm.Ordering.Infrastructure.Services;
 using BookWorm.Ordering.UnitTests.Mocks;
 using BookWorm.ServiceDefaults.Keycloak;
-using BookWorm.SharedKernel.Command;
-using BookWorm.SharedKernel.Exceptions;
 using Medallion.Threading;
 
 namespace BookWorm.Ordering.UnitTests.Features.Orders.Create;

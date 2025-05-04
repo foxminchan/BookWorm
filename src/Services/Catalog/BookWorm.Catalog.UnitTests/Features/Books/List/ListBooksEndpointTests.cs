@@ -1,8 +1,7 @@
 ﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
-using BookWorm.Catalog.Features.Authors;
 using BookWorm.Catalog.Features.Books;
 using BookWorm.Catalog.Features.Books.List;
-using BookWorm.SharedKernel.SeedWork.Model;
+using BookWorm.SharedKernel.Results;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -36,7 +35,7 @@ public sealed class ListBooksEndpointTests
                 Status.InStock,
                 null,
                 null,
-                new List<AuthorDto>(),
+                [],
                 4.5,
                 10
             ),
@@ -73,7 +72,7 @@ public sealed class ListBooksEndpointTests
     public async Task GivenEmptyResult_WhenHandlingRequest_ThenShouldReturnOkResultWithEmptyList()
     {
         // Arrange
-        var emptyResult = new PagedResult<BookDto>(new List<BookDto>(), 1, 10, 0, 0);
+        var emptyResult = new PagedResult<BookDto>([], 1, 10, 0, 0);
 
         _senderMock
             .Setup(x => x.Send(_validQuery, It.IsAny<CancellationToken>()))

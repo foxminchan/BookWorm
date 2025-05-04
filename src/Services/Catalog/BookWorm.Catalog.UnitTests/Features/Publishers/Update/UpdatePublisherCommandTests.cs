@@ -1,7 +1,7 @@
 ﻿using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
 using BookWorm.Catalog.Features.Publishers.Update;
 using BookWorm.Catalog.UnitTests.Fakers;
-using BookWorm.SharedKernel.Exceptions;
+using BookWorm.Chassis.Exceptions;
 using MediatR;
 
 namespace BookWorm.Catalog.UnitTests.Features.Publishers.Update;

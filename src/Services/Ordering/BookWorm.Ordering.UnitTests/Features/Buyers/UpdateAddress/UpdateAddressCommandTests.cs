@@ -1,9 +1,9 @@
 ﻿using System.Security.Claims;
+using BookWorm.Chassis.Exceptions;
 using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
 using BookWorm.Ordering.Features.Buyers.UpdateAddress;
 using BookWorm.Ordering.UnitTests.Fakers;
 using BookWorm.ServiceDefaults.Keycloak;
-using BookWorm.SharedKernel.Exceptions;
 
 namespace BookWorm.Ordering.UnitTests.Features.Buyers.UpdateAddress;
 

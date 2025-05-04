@@ -1,4 +1,4 @@
-﻿using BookWorm.SharedKernel.OpenTelemetry;
+﻿using BookWorm.Chassis.OpenTelemetry;
 
 namespace BookWorm.Ordering.Infrastructure.EventStore.Diagnostic;
 

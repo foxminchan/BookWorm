@@ -1,5 +1,6 @@
 ﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
 using BookWorm.Catalog.Infrastructure.GenAi.Search;
+using BookWorm.SharedKernel.Results;
 
 namespace BookWorm.Catalog.Features.Books.List;
 

@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Scrutor" />
+    <PackageReference Include="MassTransit.RabbitMQ" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <PackageReference Include="EFCore.NamingConventions" />
+    <PackageReference Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Telemetry" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Asp.Versioning.Http.Client" />
+    <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BookWorm.Constants\BookWorm.Constants.csproj" />
+    <ProjectReference Include="..\BookWorm.SharedKernel\BookWorm.SharedKernel.csproj" />
+  </ItemGroup>
+</Project>

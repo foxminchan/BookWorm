@@ -2,9 +2,9 @@
 using BookWorm.Basket.Domain;
 using BookWorm.Basket.Features.Delete;
 using BookWorm.Basket.UnitTests.Fakers;
+using BookWorm.Chassis.Command;
+using BookWorm.Chassis.Exceptions;
 using BookWorm.ServiceDefaults.Keycloak;
-using BookWorm.SharedKernel.Command;
-using BookWorm.SharedKernel.Exceptions;
 using MediatR;
 
 namespace BookWorm.Basket.UnitTests.Features.Delete;

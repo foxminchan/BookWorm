@@ -1,8 +1,8 @@
 ﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 using BookWorm.Catalog.IntegrationEvents.EventHandlers;
 using BookWorm.Catalog.UnitTests.Fakers;
+using BookWorm.Chassis.Repository;
 using BookWorm.Contracts;
-using BookWorm.SharedKernel.Repository;
 using MassTransit;
 using MassTransit.Testing;
 using Microsoft.Extensions.DependencyInjection;
