@@ -1,5 +1,5 @@
-﻿using BookWorm.Finance.Feature;
-using BookWorm.SharedKernel.Query;
+﻿using BookWorm.Chassis.Query;
+using BookWorm.Finance.Feature;
 using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Finance.UnitTests;

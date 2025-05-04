@@ -1,7 +1,7 @@
-﻿using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
+﻿using BookWorm.Chassis.Exceptions;
+using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Features.Orders.Delete;
 using BookWorm.Ordering.UnitTests.Fakers;
-using BookWorm.SharedKernel.Exceptions;
 using MediatR;
 
 namespace BookWorm.Ordering.UnitTests.Features.Orders.Delete;

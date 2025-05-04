@@ -1,6 +1,5 @@
 ﻿using BookWorm.Rating.Domain.Events;
 using BookWorm.Rating.Domain.Exceptions;
-using BookWorm.SharedKernel.SeedWork.Model;
 
 namespace BookWorm.Rating.Domain.FeedbackAggregator;
 

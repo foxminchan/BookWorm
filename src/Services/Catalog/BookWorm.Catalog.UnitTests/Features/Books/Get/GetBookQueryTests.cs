@@ -3,8 +3,8 @@ using BookWorm.Catalog.Features.Books;
 using BookWorm.Catalog.Features.Books.Get;
 using BookWorm.Catalog.UnitTests.Fakers;
 using BookWorm.Catalog.UnitTests.Mocks;
-using BookWorm.SharedKernel.Exceptions;
-using BookWorm.SharedKernel.Mapper;
+using BookWorm.Chassis.Exceptions;
+using BookWorm.Chassis.Mapper;
 
 namespace BookWorm.Catalog.UnitTests.Features.Books.Get;
 

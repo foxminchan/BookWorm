@@ -1,4 +1,4 @@
-﻿using ISpecification = BookWorm.SharedKernel.Specification.ISpecification<BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate.Buyer>;
+﻿using BookWorm.Chassis.Specification;
 
 namespace BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
 
@@ -8,7 +8,7 @@ public interface IBuyerRepository : IRepository<Buyer>
     Task<Buyer> AddAsync(Buyer buyer, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<Buyer>> ListAsync(
-        ISpecification spec,
+        ISpecification<Buyer> spec,
         CancellationToken cancellationToken = default
     );
 

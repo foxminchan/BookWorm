@@ -2,8 +2,8 @@
 using BookWorm.Basket.Domain;
 using BookWorm.Basket.Features.Update;
 using BookWorm.Basket.UnitTests.Fakers;
+using BookWorm.Chassis.Exceptions;
 using BookWorm.ServiceDefaults.Keycloak;
-using BookWorm.SharedKernel.Exceptions;
 using MediatR;
 
 namespace BookWorm.Basket.UnitTests.Features.Update;

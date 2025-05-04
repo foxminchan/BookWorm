@@ -1,7 +1,7 @@
 ﻿using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Features.Orders;
 using BookWorm.Ordering.Features.Orders.List;
-using BookWorm.SharedKernel.SeedWork.Model;
+using BookWorm.SharedKernel.Results;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -86,7 +86,7 @@ public sealed class ListOrdersEndpointsTests
         var status = Status.Completed;
         var query = new ListOrdersQuery(1, 10, status);
 
-        var expectedResult = new PagedResult<OrderDto>(new List<OrderDto>(), 1, 10, 0, 0);
+        var expectedResult = new PagedResult<OrderDto>([], 1, 10, 0, 0);
 
         _senderMock
             .Setup(x =>
@@ -119,7 +119,7 @@ public sealed class ListOrdersEndpointsTests
         var buyerId = Guid.CreateVersion7();
         var query = new ListOrdersQuery(1, 10, null, buyerId);
 
-        var expectedResult = new PagedResult<OrderDto>(new List<OrderDto>(), 1, 10, 0, 0);
+        var expectedResult = new PagedResult<OrderDto>([], 1, 10, 0, 0);
 
         _senderMock
             .Setup(x =>

@@ -1,8 +1,4 @@
-﻿using BookWorm.ServiceDefaults.Auth;
-using BookWorm.ServiceDefaults.Kestrel;
-using BookWorm.ServiceDefaults.Keycloak;
-
-namespace BookWorm.Gateway.Extensions;
+﻿namespace BookWorm.Gateway.Extensions;
 
 public static class Extensions
 {

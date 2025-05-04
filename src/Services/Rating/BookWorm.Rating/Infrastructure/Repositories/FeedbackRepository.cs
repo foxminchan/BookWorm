@@ -1,5 +1,5 @@
-﻿using BookWorm.SharedKernel.Specification;
-using BookWorm.SharedKernel.Specification.Evaluators;
+﻿using BookWorm.Chassis.Specification;
+using BookWorm.Chassis.Specification.Evaluators;
 
 namespace BookWorm.Rating.Infrastructure.Repositories;
 

@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc.Infrastructure;
-
-namespace BookWorm.Gateway.Extensions;
+﻿namespace BookWorm.Gateway.Extensions;
 
 public static class TimeOutExtensions
 {

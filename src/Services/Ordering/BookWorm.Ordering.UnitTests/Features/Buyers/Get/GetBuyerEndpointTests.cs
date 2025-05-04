@@ -1,7 +1,7 @@
-﻿using BookWorm.Constants;
+﻿using BookWorm.Chassis.Exceptions;
+using BookWorm.Constants;
 using BookWorm.Ordering.Features.Buyers;
 using BookWorm.Ordering.Features.Buyers.Get;
-using BookWorm.SharedKernel.Exceptions;
 using MediatR;
 using Microsoft.FeatureManagement;
 

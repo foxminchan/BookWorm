@@ -1,8 +1,7 @@
 ﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
-using BookWorm.Catalog.Features.Authors;
 using BookWorm.Catalog.Features.Books;
 using BookWorm.Catalog.Features.Books.Get;
-using BookWorm.SharedKernel.Exceptions;
+using BookWorm.Chassis.Exceptions;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -32,7 +31,7 @@ public sealed class GetBookEndpointTests
             Status.InStock,
             null,
             null,
-            new List<AuthorDto>(),
+            [],
             4.5,
             10
         );

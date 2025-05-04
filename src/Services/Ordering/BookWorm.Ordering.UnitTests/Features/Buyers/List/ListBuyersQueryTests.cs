@@ -109,7 +109,7 @@ public sealed class ListBuyersQueryTests
 
         _buyerRepositoryMock
             .Setup(x => x.ListAsync(It.IsAny<BuyerFilterSpec>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Array.Empty<Buyer>());
+            .ReturnsAsync([]);
 
         _buyerRepositoryMock
             .Setup(x => x.CountAsync(It.IsAny<CancellationToken>()))
@@ -174,7 +174,7 @@ public sealed class ListBuyersQueryTests
         var cancellationToken = new CancellationToken(true);
         var query = new ListBuyersQuery();
 
-        // Since we're using a cancelled token, the operation should throw when the token is used
+        // Since we're using a canceled token, the operation should throw when the token is used
         _buyerRepositoryMock
             .Setup(x => x.ListAsync(It.IsAny<BuyerFilterSpec>(), cancellationToken))
             .ThrowsAsync(new OperationCanceledException(cancellationToken));

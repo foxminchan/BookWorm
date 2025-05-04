@@ -1,7 +1,7 @@
-﻿using BookWorm.Contracts;
+﻿using BookWorm.Chassis.Repository;
+using BookWorm.Contracts;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.IntegrationEvents.EventHandlers;
-using BookWorm.SharedKernel.Repository;
 using MassTransit;
 using MassTransit.Testing;
 using Microsoft.Extensions.DependencyInjection;

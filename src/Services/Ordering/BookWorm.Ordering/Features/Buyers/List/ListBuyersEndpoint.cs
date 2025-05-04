@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Ordering.Features.Buyers.List;
+﻿using BookWorm.SharedKernel.Results;
+
+namespace BookWorm.Ordering.Features.Buyers.List;
 
 public sealed class ListBuyersEndpoint
     : IEndpoint<Ok<PagedResult<BuyerDto>>, ListBuyersQuery, ISender>

@@ -124,7 +124,7 @@ public sealed class ListFeedbacksQueryTests
 
         _repositoryMock
             .Setup(x => x.ListAsync(It.IsAny<FeedbackFilterSpec>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Array.Empty<Feedback>());
+            .ReturnsAsync([]);
 
         _repositoryMock
             .Setup(x => x.CountAsync(It.IsAny<FeedbackFilterSpec>(), It.IsAny<CancellationToken>()))

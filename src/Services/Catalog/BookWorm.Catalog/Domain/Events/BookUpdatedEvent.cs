@@ -1,6 +1,4 @@
-﻿using BookWorm.SharedKernel.SeedWork.Event;
-
-namespace BookWorm.Catalog.Domain.Events;
+﻿namespace BookWorm.Catalog.Domain.Events;
 
 public sealed class BookUpdatedEvent(Book book) : DomainEvent
 {

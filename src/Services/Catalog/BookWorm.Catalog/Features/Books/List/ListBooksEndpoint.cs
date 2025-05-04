@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Catalog.Features.Books.List;
+﻿using BookWorm.SharedKernel.Results;
+
+namespace BookWorm.Catalog.Features.Books.List;
 
 public sealed class ListBooksEndpoint : IEndpoint<Ok<PagedResult<BookDto>>, ListBooksQuery, ISender>
 {

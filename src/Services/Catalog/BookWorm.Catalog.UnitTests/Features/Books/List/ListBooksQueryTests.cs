@@ -5,7 +5,7 @@ using BookWorm.Catalog.Features.Books.List;
 using BookWorm.Catalog.Infrastructure.GenAi;
 using BookWorm.Catalog.Infrastructure.GenAi.Search;
 using BookWorm.Catalog.UnitTests.Fakers;
-using BookWorm.SharedKernel.Mapper;
+using BookWorm.Chassis.Mapper;
 
 namespace BookWorm.Catalog.UnitTests.Features.Books.List;
 

@@ -1,7 +1,7 @@
 ﻿using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
 using BookWorm.Catalog.Features.Authors.Update;
 using BookWorm.Catalog.UnitTests.Fakers;
-using BookWorm.SharedKernel.Exceptions;
+using BookWorm.Chassis.Exceptions;
 
 namespace BookWorm.Catalog.UnitTests.Features.Authors.Update;
 

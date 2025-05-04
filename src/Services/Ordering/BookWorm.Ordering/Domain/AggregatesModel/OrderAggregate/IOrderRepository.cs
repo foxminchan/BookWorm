@@ -1,4 +1,4 @@
-using BookWorm.SharedKernel.Specification;
+using BookWorm.Chassis.Specification;
 
 namespace BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 

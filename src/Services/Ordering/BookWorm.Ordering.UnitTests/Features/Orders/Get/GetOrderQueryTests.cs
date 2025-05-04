@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using BookWorm.Catalog.Grpc.Services;
+using BookWorm.Chassis.Exceptions;
 using BookWorm.Constants;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
@@ -8,7 +9,6 @@ using BookWorm.Ordering.Features.Orders.Get;
 using BookWorm.Ordering.Grpc.Services.Book;
 using BookWorm.Ordering.UnitTests.Fakers;
 using BookWorm.ServiceDefaults.Keycloak;
-using BookWorm.SharedKernel.Exceptions;
 
 namespace BookWorm.Ordering.UnitTests.Features.Orders.Get;
 
@@ -36,7 +36,7 @@ public sealed class GetOrderQueryTests
         var orderFaker = new OrderFaker();
         _order = orderFaker.Generate()[0];
 
-        // Replace with our specific IDs for testing
+        // Replace it with our specific IDs for testing
         _order.GetType().GetProperty("Id")?.SetValue(_order, _id);
         _order.GetType().GetProperty("BuyerId")?.SetValue(_order, _buyerId);
 
@@ -202,7 +202,7 @@ public sealed class GetOrderQueryTests
 
     private void SetupRegularUser(string userId)
     {
-        var roles = Array.Empty<string>();
+        string[] roles = [];
         _claimsPrincipalMock
             .Setup(c => c.FindAll(ClaimTypes.Role))
             .Returns(roles.Select(r => new Claim(ClaimTypes.Role, r)));

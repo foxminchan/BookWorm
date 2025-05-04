@@ -1,4 +1,4 @@
-﻿using BookWorm.SharedKernel.Guards;
+﻿using BookWorm.Chassis.Guards;
 
 namespace BookWorm.Rating.Features.Delete;
 

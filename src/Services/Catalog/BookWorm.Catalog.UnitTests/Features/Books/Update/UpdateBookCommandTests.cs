@@ -2,7 +2,7 @@
 using BookWorm.Catalog.Features.Books.Update;
 using BookWorm.Catalog.Infrastructure.Blob;
 using BookWorm.Catalog.UnitTests.Fakers;
-using BookWorm.SharedKernel.Exceptions;
+using BookWorm.Chassis.Exceptions;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 

@@ -5,9 +5,9 @@ using BookWorm.Basket.Features.Get;
 using BookWorm.Basket.Grpc.Services.Book;
 using BookWorm.Basket.UnitTests.Fakers;
 using BookWorm.Catalog.Grpc.Services;
+using BookWorm.Chassis.Exceptions;
+using BookWorm.Chassis.Query;
 using BookWorm.ServiceDefaults.Keycloak;
-using BookWorm.SharedKernel.Exceptions;
-using BookWorm.SharedKernel.Query;
 
 namespace BookWorm.Basket.UnitTests.Features.Get;
 

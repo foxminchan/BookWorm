@@ -1,5 +1,5 @@
 ﻿using BookWorm.Rating.Domain.FeedbackAggregator.Specifications;
-using BookWorm.SharedKernel.SeedWork.Model;
+using BookWorm.SharedKernel.Results;
 
 namespace BookWorm.Rating.Features.List;
 

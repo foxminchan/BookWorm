@@ -2,7 +2,7 @@
 using BookWorm.Catalog.Features.Publishers;
 using BookWorm.Catalog.Features.Publishers.List;
 using BookWorm.Catalog.UnitTests.Fakers;
-using BookWorm.SharedKernel.Query;
+using BookWorm.Chassis.Query;
 
 namespace BookWorm.Catalog.UnitTests.Features.Publishers.List;
 
@@ -57,7 +57,7 @@ public sealed class ListPublishersQueryTests
         // Arrange
         _repositoryMock
             .Setup(repo => repo.ListAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Publisher>());
+            .ReturnsAsync([]);
 
         var query = new ListPublishersQuery();
 

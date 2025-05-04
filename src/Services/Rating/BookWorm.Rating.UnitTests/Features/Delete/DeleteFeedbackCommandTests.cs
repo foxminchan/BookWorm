@@ -1,7 +1,7 @@
-﻿using BookWorm.Rating.Domain.FeedbackAggregator;
+﻿using BookWorm.Chassis.Exceptions;
+using BookWorm.Rating.Domain.FeedbackAggregator;
 using BookWorm.Rating.Features.Delete;
 using BookWorm.Rating.UnitTests.Fakers;
-using BookWorm.SharedKernel.Exceptions;
 using MediatR;
 
 namespace BookWorm.Rating.UnitTests.Features.Delete;

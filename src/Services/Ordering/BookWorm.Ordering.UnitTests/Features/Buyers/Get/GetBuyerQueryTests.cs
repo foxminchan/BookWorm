@@ -1,10 +1,10 @@
 ﻿using System.Security.Claims;
+using BookWorm.Chassis.Exceptions;
 using BookWorm.Constants;
 using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
 using BookWorm.Ordering.Features.Buyers.Get;
 using BookWorm.Ordering.UnitTests.Fakers;
 using BookWorm.ServiceDefaults.Keycloak;
-using BookWorm.SharedKernel.Exceptions;
 
 namespace BookWorm.Ordering.UnitTests.Features.Buyers.Get;
 

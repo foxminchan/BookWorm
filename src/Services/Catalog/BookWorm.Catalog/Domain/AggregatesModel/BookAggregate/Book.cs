@@ -116,6 +116,7 @@ public sealed class Book() : AuditableEntity, IAggregateRoot, ISoftDelete
         {
             RegisterDomainEvent(new BookUpdatedEvent(this));
         }
+
         RegisterDomainEvent(new BookChangedEvent($"{nameof(Book).ToLowerInvariant()}:{Id}"));
     }
 
