@@ -17,7 +17,7 @@ public static class AsyncApiExtensions
         {
             options.AssemblyMarkerTypes = types;
 
-            string[] versions = ["1.0.0"];
+            Span<string> versions = ["1.0.0"];
 
             foreach (var version in versions)
             {

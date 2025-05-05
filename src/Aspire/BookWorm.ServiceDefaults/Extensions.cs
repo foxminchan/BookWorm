@@ -127,7 +127,7 @@ public static class Extensions
 
         builder
             .Services.AddHealthChecks()
-            // Add a default liveness check to ensure app is responsive
+            // Add a default liveness check to ensure the app is responsive
             .AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
     }
 
@@ -172,9 +172,9 @@ public static class Extensions
 
         foreach (var path in pathToHostsMap.Keys)
         {
-            // Ensure that the HealthChecksUI endpoint is only accessible from configured hosts, e.g. localhost:12345, hub.docker.internal, etc.
+            // Ensure that the HealthChecksUI endpoint is only accessible from configured hosts,
+            // e.g., localhost:12345, hub.docker.internal, etc.
             // as it contains more detailed information about the health of the app including the types of dependencies it has.
-
             healthChecks
                 .MapHealthChecks(
                     path,

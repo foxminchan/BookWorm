@@ -11,9 +11,11 @@ public static class OpenApiExtensions
     public static void AddDefaultOpenApi(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;
+
         var document = builder.Configuration.GetSection(nameof(Document)).Get<Document>();
 
-        string[] versions = ["v1"];
+        Span<string> versions = ["v1"];
+
         foreach (var description in versions)
         {
             services.AddOpenApi(

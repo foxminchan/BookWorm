@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Notification.Infrastructure.Helpers;
+﻿namespace BookWorm.Notification.Extensions;
 
 public static class ConfigureOptionExtensions
 {

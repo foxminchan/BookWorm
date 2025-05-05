@@ -3,7 +3,6 @@ using BookGrpcServiceClient = BookWorm.Catalog.Grpc.Services.BookGrpcService.Boo
 
 namespace BookWorm.Basket.Extensions;
 
-[ExcludeFromCodeCoverage]
 public static class Extensions
 {
     public static void AddApplicationServices(this IHostApplicationBuilder builder)

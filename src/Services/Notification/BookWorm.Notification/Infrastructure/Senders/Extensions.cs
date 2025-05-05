@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Notification.Infrastructure.Senders;
+﻿using BookWorm.Notification.Extensions;
+
+namespace BookWorm.Notification.Infrastructure.Senders;
 
 public static class Extensions
 {
@@ -16,10 +18,7 @@ public static class Extensions
 
         services.AddTransient(_ =>
         {
-            smtpUri ??= new(
-                builder.Configuration.GetConnectionString(Components.MailPit)
-                    ?? throw new InvalidOperationException("SMTP URI is not configured.")
-            );
+            smtpUri ??= new(builder.Configuration.GetRequiredConnectionString(Components.MailPit));
 
             var smtpClient = new SmtpClient();
 
