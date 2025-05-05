@@ -1,4 +1,5 @@
 ﻿using System.Net.Mime;
+using BookWorm.Catalog.Features.Books.Shared;
 using BookWorm.Catalog.Features.Books.Update;
 using BookWorm.Constants;
 using FluentValidation.TestHelper;
@@ -21,7 +22,7 @@ public sealed class UpdateBookValidatorTests
     [Before(Test)]
     public void Setup()
     {
-        _validator = new();
+        _validator = new(new ImageValidator());
     }
 
     [Test]
