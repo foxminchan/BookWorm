@@ -1,10 +1,8 @@
-﻿using BookWorm.Catalog.Features.Books.Shared;
-
-namespace BookWorm.Catalog.Features.Books.Update;
+﻿namespace BookWorm.Catalog.Features.Books.Update;
 
 public sealed class UpdateBookValidator : AbstractValidator<UpdateBookCommand>
 {
-    public UpdateBookValidator()
+    public UpdateBookValidator(IValidator<IFormFile> validator)
     {
         RuleFor(x => x.Id).NotEmpty();
 
@@ -22,7 +20,7 @@ public sealed class UpdateBookValidator : AbstractValidator<UpdateBookCommand>
 
         RuleFor(x => x.AuthorIds).NotEmpty();
 
-        When(IsHasFiles, () => RuleFor(x => x.Image!).SetValidator(new ImageValidator()));
+        When(IsHasFiles, () => RuleFor(x => x.Image!).SetValidator(validator));
     }
 
     private static bool IsHasFiles(UpdateBookCommand command)

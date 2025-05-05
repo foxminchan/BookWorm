@@ -1,10 +1,8 @@
-﻿using BookWorm.Catalog.Features.Books.Shared;
-
-namespace BookWorm.Catalog.Features.Books.Create;
+﻿namespace BookWorm.Catalog.Features.Books.Create;
 
 public sealed class CreateBookValidator : AbstractValidator<CreateBookCommand>
 {
-    public CreateBookValidator()
+    public CreateBookValidator(IValidator<IFormFile> validator)
     {
         RuleFor(x => x.Name).NotEmpty().MaximumLength(DataSchemaLength.Medium);
 
@@ -20,7 +18,7 @@ public sealed class CreateBookValidator : AbstractValidator<CreateBookCommand>
 
         RuleFor(x => x.AuthorIds).NotEmpty();
 
-        When(IsHasFiles, () => RuleFor(x => x.Image!).SetValidator(new ImageValidator()));
+        When(IsHasFiles, () => RuleFor(x => x.Image!).SetValidator(validator));
     }
 
     private static bool IsHasFiles(CreateBookCommand command)
