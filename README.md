@@ -90,6 +90,11 @@
 
 For detailed deployment instructions, please consult the [Deployment Guide](./deploys/README.md).
 
+## Documentation Resources
+
+- **Project Wiki**: Setup, architecture, and guidelines in the [BookWorm Wiki](https://github.com/foxminchan/BookWorm/wiki).
+- **Event-Driven Architecture**: Explore event flows, messaging patterns and API endpoints in the [Event Catalog](https://bookwormdev.netlify.app/).
+
 ## Contributing
 
 Please read [CONTRIBUTING.md](./.github/CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us. Thank you for contributing to BookWorm!
