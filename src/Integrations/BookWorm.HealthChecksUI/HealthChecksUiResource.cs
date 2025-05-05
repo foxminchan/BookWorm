@@ -58,7 +58,8 @@ public sealed class MonitoredProject(
         project ?? throw new ArgumentNullException(nameof(project));
 
     /// <summary>
-    ///     The name of the endpoint the project serves health check details from. If it doesn't exist it will be added.
+    ///     The name of the endpoint the project serves health check details from.
+    ///     If it doesn't exist, it will be added.
     /// </summary>
     public string EndpointName { get; } =
         endpointName ?? throw new ArgumentNullException(nameof(endpointName));

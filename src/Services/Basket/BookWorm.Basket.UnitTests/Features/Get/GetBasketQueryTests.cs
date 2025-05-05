@@ -178,12 +178,12 @@ public static class GetBasketQueryTests
             // Arrange
             var query = new GetBasketQuery();
 
-            // First book exists
+            // The First book exists
             _bookServiceMock
                 .Setup(x => x.GetBookByIdAsync(_bookIds[0], It.IsAny<CancellationToken>()))
                 .ReturnsAsync(_bookResponses[0]);
 
-            // Second book doesn't exist
+            // The Second book doesn't exist
             _bookServiceMock
                 .Setup(x => x.GetBookByIdAsync(_bookIds[1], It.IsAny<CancellationToken>()))
                 .ReturnsAsync((BookResponse?)null);

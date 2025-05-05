@@ -294,7 +294,7 @@ public sealed class BookAggregatorTests
         var bookAuthor = new BookAuthor(Guid.CreateVersion7());
 
         // Act
-        // Note: In a real scenario, these would be set by EF Core
+        // Note: In a real scenario, EF Core would set these
         typeof(Book).GetProperty("Category")?.SetValue(book, new Category());
         typeof(Book).GetProperty("Publisher")?.SetValue(book, new Publisher());
         typeof(BookAuthor).GetProperty("Author")?.SetValue(bookAuthor, new Author());

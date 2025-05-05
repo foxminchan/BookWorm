@@ -1,4 +1,5 @@
-﻿using Grpc.Core;
+﻿using BookWorm.Constants;
+using Grpc.Core;
 
 namespace BookWorm.Catalog.UnitTests.Grpc.Context;
 
@@ -13,7 +14,7 @@ public sealed class TestServerCallContext(
 {
     protected override string MethodCore => "test";
 
-    protected override string HostCore => "localhost";
+    protected override string HostCore => Restful.Host.Localhost;
 
     protected override string PeerCore => "127.0.0.1";
 

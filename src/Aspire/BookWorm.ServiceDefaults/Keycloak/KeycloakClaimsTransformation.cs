@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using System.Text.Json.Nodes;
 using BookWorm.ServiceDefaults.Auth;
 using Microsoft.AspNetCore.Authentication;
@@ -29,25 +29,13 @@ public sealed class KeycloakRolesClaimsTransformation(
             ?? options.TokenValidationParameters.ValidAudiences.FirstOrDefault()
             ?? throw new InvalidOperationException("Audience is not set on JwtBearerOptions");
 
-        if (!principal.TryGetJsonClaim("resource_access", out var resourceAccess))
-        {
-            return Task.FromResult(principal);
-        }
-
-        if (!principal.TryGetJsonClaim("realm_access", out var realmAccess))
-        {
-            return Task.FromResult(principal);
-        }
-
         if (
-            resourceAccess[clientId] is not JsonObject resourceNode
+            !principal.TryGetJsonClaim("resource_access", out var resourceAccess)
+            || !principal.TryGetJsonClaim("realm_access", out var realmAccess)
+            || resourceAccess[clientId] is not JsonObject resourceNode
             || resourceNode["roles"] is not JsonArray resourceRoles
+            || realmAccess["roles"] is not JsonArray realmRoles
         )
-        {
-            return Task.FromResult(principal);
-        }
-
-        if (realmAccess["roles"] is not JsonArray realmRoles)
         {
             return Task.FromResult(principal);
         }

@@ -1,4 +1,5 @@
-﻿using Grpc.Core;
+﻿using BookWorm.Constants;
+using Grpc.Core;
 
 namespace BookWorm.Basket.UnitTests.Grpc.Context;
 
@@ -14,7 +15,7 @@ public sealed class TestServerCallContext(
     private readonly Dictionary<object, object> _userState = new();
     protected override string MethodCore => "test";
 
-    protected override string HostCore => "localhost";
+    protected override string HostCore => Restful.Host.Localhost;
 
     protected override string PeerCore => "127.0.0.1";
 

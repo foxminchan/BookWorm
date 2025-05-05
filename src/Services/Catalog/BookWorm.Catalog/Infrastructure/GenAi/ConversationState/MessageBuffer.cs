@@ -96,7 +96,7 @@ public sealed class MessageBuffer : IAsyncDisposable
         }
     }
 
-    // Timer callback for flush.
+    // Timer callback for a flush.
     private void TriggerFlush()
     {
         if (_draining)

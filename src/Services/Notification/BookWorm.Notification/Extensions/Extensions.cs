@@ -2,7 +2,6 @@
 
 namespace BookWorm.Notification.Extensions;
 
-[ExcludeFromCodeCoverage]
 public static class Extensions
 {
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
