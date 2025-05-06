@@ -16,7 +16,10 @@ public sealed class Buyer() : Entity, IAggregateRoot
         Address = new(street, city, province);
     }
 
+    [DisallowNull]
     public string? Name { get; private set; }
+
+    [DisallowNull]
     public Address? Address { get; private set; }
 
     [NotMapped]

@@ -5,13 +5,14 @@ namespace BookWorm.Basket.Domain;
 [method: JsonConstructor]
 public sealed class BasketItem() : IValidatableObject
 {
-    public BasketItem(string id, int quantity)
+    public BasketItem([StringSyntax(StringSyntaxAttribute.GuidFormat)] string id, int quantity)
         : this()
     {
         Id = id;
         Quantity = quantity;
     }
 
+    [DisallowNull]
     public string? Id { get; private set; }
 
     public int Quantity { get; }

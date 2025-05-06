@@ -34,6 +34,8 @@ public sealed class Book() : AuditableEntity, IAggregateRoot, ISoftDelete
     public string? Name { get; private set; }
     public string? Description { get; private set; }
     public string? Image { get; private set; }
+
+    [DisallowNull]
     public Price? Price { get; private set; }
     public Status Status { get; private set; }
     public double AverageRating { get; private set; }

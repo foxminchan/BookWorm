@@ -10,6 +10,7 @@ public sealed class Category() : Entity, IAggregateRoot
             : throw new CatalogDomainException("Category name must be provided.");
     }
 
+    [DisallowNull]
     public string? Name { get; private set; }
 
     public void UpdateName(string name)

@@ -4,7 +4,10 @@ namespace BookWorm.Basket.Grpc.Services.Book;
 
 public interface IBookService
 {
-    Task<BookResponse?> GetBookByIdAsync(string id, CancellationToken cancellationToken = default);
+    Task<BookResponse?> GetBookByIdAsync(
+        [StringSyntax(StringSyntaxAttribute.GuidFormat)] string id,
+        CancellationToken cancellationToken = default
+    );
 
     Task<BooksResponse?> GetBooksByIdsAsync(
         IEnumerable<string> ids,

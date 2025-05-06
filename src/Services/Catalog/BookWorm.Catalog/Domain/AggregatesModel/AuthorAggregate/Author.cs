@@ -12,6 +12,7 @@ public sealed class Author() : Entity, IAggregateRoot
             : throw new CatalogDomainException("Author name must be provided.");
     }
 
+    [DisallowNull]
     public string? Name { get; private set; }
 
     public IReadOnlyCollection<BookAuthor> BookAuthors => _bookAuthors.AsReadOnly();

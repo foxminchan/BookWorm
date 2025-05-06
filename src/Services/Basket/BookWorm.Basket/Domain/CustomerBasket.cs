@@ -8,7 +8,10 @@ public sealed class CustomerBasket() : AuditableEntity<string>
 {
     private readonly List<BasketItem> _basketItems = [];
 
-    public CustomerBasket(string id, List<BasketItem> items)
+    public CustomerBasket(
+        [StringSyntax(StringSyntaxAttribute.GuidFormat)] string id,
+        List<BasketItem> items
+    )
         : this()
     {
         Id = id ?? throw new BasketDomainException("Customer ID cannot be null.");

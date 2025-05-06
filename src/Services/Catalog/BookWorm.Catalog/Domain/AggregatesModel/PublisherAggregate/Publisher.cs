@@ -10,6 +10,7 @@ public sealed class Publisher() : Entity, IAggregateRoot
             : throw new CatalogDomainException("Publisher name must be provided.");
     }
 
+    [DisallowNull]
     public string? Name { get; private set; }
 
     public void UpdateName(string name)

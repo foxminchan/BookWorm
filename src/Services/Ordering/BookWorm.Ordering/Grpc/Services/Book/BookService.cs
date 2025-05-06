@@ -7,7 +7,7 @@ namespace BookWorm.Ordering.Grpc.Services.Book;
 public sealed class BookService(BookGrpcServiceClient service) : IBookService
 {
     public async Task<BookResponse?> GetBookByIdAsync(
-        string id,
+        [StringSyntax(StringSyntaxAttribute.GuidFormat)] string id,
         CancellationToken cancellationToken = default
     )
     {
