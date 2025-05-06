@@ -9,7 +9,7 @@ public sealed class CustomerBasketTests
     public void GivenIdAndItems_WhenCreatingCustomerBasket_ThenPropertiesShouldBeSet()
     {
         // Arrange
-        const string id = "customer-123";
+        const string id = "B";
         var items = new List<BasketItem> { new("book-1", 2), new("book-2", 1) };
 
         // Act
@@ -37,7 +37,10 @@ public sealed class CustomerBasketTests
     public void GivenNewItems_WhenUpdatingBasket_ThenItemsShouldBeReplaced()
     {
         // Arrange
-        var basket = new CustomerBasket("customer-123", [new BasketItem("book-1", 2)]);
+        var basket = new CustomerBasket(
+            Guid.CreateVersion7().ToString(),
+            [new BasketItem("book-1", 2)]
+        );
 
         var newItems = new List<BasketItem> { new("book-3", 1), new("book-4", 3) };
 
@@ -56,7 +59,7 @@ public sealed class CustomerBasketTests
     {
         // Arrange
         var basket = new CustomerBasket(
-            "customer-123",
+            Guid.CreateVersion7().ToString(),
             [new BasketItem("book-1", 2), new BasketItem("book-2", 1)]
         );
 

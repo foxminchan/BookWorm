@@ -1,3 +1,6 @@
 ﻿namespace BookWorm.Basket.Features;
 
-public sealed record BasketItemRequest(string Id, int Quantity);
+public sealed record BasketItemRequest(
+    [StringSyntax(StringSyntaxAttribute.GuidFormat)] string Id,
+    int Quantity
+);

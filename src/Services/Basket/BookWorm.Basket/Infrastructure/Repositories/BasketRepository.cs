@@ -11,7 +11,9 @@ public sealed class BasketRepository(ILogger<BasketRepository> logger, IConnecti
 
     private static RedisKey BasketKey => "/basket"u8.ToArray();
 
-    public async Task<CustomerBasket?> GetBasketAsync(string id)
+    public async Task<CustomerBasket?> GetBasketAsync(
+        [StringSyntax(StringSyntaxAttribute.GuidFormat)] string id
+    )
     {
         var database = await GetDatabaseAsync();
         var data = await database.HashGetAsync(BasketKey, id);
@@ -44,7 +46,9 @@ public sealed class BasketRepository(ILogger<BasketRepository> logger, IConnecti
         return null;
     }
 
-    public async Task<bool> DeleteBasketAsync(string id)
+    public async Task<bool> DeleteBasketAsync(
+        [StringSyntax(StringSyntaxAttribute.GuidFormat)] string id
+    )
     {
         var database = await GetDatabaseAsync();
         return await database.HashDeleteAsync(BasketKey, id);
