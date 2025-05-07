@@ -11,8 +11,7 @@ public sealed class GetBookEndpoint : IEndpoint<Ok<BookDto>, Guid, ISender>
                     ISender sender
                 ) => await HandleAsync(id, sender)
             )
-            .Produces<BookDto>()
-            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesGet<BookDto>(hasNotFound: true)
             .WithTags(nameof(Book))
             .WithName(nameof(GetBookEndpoint))
             .WithSummary("Get Book")

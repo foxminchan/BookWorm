@@ -9,8 +9,7 @@ public sealed class CreateCategoryEndpoint : IEndpoint<Ok<Guid>, CreateCategoryC
                 async (CreateCategoryCommand command, ISender sender) =>
                     await HandleAsync(command, sender)
             )
-            .Produces<Guid>()
-            .ProducesValidationProblem()
+            .ProducesPostWithoutLocation<Guid>()
             .WithTags(nameof(Category))
             .WithName(nameof(CreateCategoryEndpoint))
             .WithSummary("Create Category")

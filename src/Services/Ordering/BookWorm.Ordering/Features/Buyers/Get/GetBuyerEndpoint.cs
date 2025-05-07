@@ -13,8 +13,7 @@ public sealed class GetBuyerEndpoint
                     IFeatureManager featureManager
                 ) => await HandleAsync(query, sender, featureManager)
             )
-            .Produces<BuyerDto>()
-            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesGet<BuyerDto>(hasNotFound: true)
             .WithTags(nameof(Buyer))
             .WithName(nameof(GetBuyerEndpoint))
             .WithSummary("Get Buyer")

@@ -12,8 +12,7 @@ public sealed class CreateBuyerEndpoint
                 async (CreateBuyerCommand command, ISender sender, LinkGenerator linker) =>
                     await HandleAsync(command, sender, linker)
             )
-            .Produces<Guid>(StatusCodes.Status201Created)
-            .ProducesValidationProblem()
+            .ProducesPost<Guid>()
             .WithTags(nameof(Buyer))
             .WithName(nameof(CreateBuyerEndpoint))
             .WithSummary("Create Buyer")

@@ -11,8 +11,7 @@ public sealed class DeleteFeedbackEndpoint : IEndpoint<NoContent, Guid, ISender>
                     ISender sender
                 ) => await HandleAsync(id, sender)
             )
-            .Produces(StatusCodes.Status204NoContent)
-            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesDelete()
             .WithTags(nameof(Feedback))
             .WithName(nameof(DeleteFeedbackEndpoint))
             .WithSummary("Delete Feedback")

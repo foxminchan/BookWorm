@@ -9,9 +9,7 @@ public sealed class UpdateAddressEndpoint : IEndpoint<Ok<BuyerDto>, UpdateAddres
                 async (UpdateAddressCommand command, ISender sender) =>
                     await HandleAsync(command, sender)
             )
-            .Produces<BuyerDto>()
-            .ProducesProblem(StatusCodes.Status404NotFound)
-            .ProducesValidationProblem()
+            .ProducesPatch<BuyerDto>()
             .WithTags(nameof(Buyer))
             .WithName(nameof(UpdateAddressEndpoint))
             .WithSummary("Update Buyer Address")

@@ -5,8 +5,7 @@ public sealed class DeleteBasketEndpoint : IEndpoint<NoContent, ISender>
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapDelete("/baskets", async (ISender sender) => await HandleAsync(sender))
-            .Produces(StatusCodes.Status204NoContent)
-            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesDelete()
             .WithTags(nameof(Basket))
             .WithName(nameof(DeleteBasketEndpoint))
             .WithSummary("Delete Basket")

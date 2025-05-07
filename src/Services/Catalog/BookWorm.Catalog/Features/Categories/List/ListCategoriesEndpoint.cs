@@ -5,7 +5,7 @@ public sealed class ListCategoriesEndpoint : IEndpoint<Ok<IReadOnlyList<Category
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapGet("/categories", async (ISender sender) => await HandleAsync(sender))
-            .Produces<IReadOnlyList<CategoryDto>>()
+            .ProducesGet<IReadOnlyList<CategoryDto>>()
             .WithTags(nameof(Category))
             .WithName(nameof(ListCategoriesEndpoint))
             .WithSummary("List Categories")

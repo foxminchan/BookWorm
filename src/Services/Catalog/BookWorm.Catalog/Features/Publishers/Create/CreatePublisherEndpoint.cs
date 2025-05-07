@@ -9,8 +9,7 @@ public sealed class CreatePublisherEndpoint : IEndpoint<Ok<Guid>, CreatePublishe
                 async (CreatePublisherCommand command, ISender sender) =>
                     await HandleAsync(command, sender)
             )
-            .Produces<Guid>()
-            .ProducesValidationProblem()
+            .ProducesPostWithoutLocation<Guid>()
             .WithTags(nameof(Publisher))
             .WithName(nameof(CreatePublisherEndpoint))
             .WithSummary("Create Publisher")

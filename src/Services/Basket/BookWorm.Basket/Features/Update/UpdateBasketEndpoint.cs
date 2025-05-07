@@ -9,8 +9,7 @@ public sealed class UpdateBasketEndpoint : IEndpoint<NoContent, UpdateBasketComm
                 async (UpdateBasketCommand command, ISender sender) =>
                     await HandleAsync(command, sender)
             )
-            .Produces(StatusCodes.Status204NoContent)
-            .ProducesValidationProblem()
+            .ProducesPut()
             .WithTags(nameof(Basket))
             .WithName(nameof(UpdateBasketEndpoint))
             .WithSummary("Update Basket")

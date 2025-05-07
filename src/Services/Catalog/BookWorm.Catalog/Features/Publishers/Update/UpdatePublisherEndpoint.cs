@@ -9,8 +9,7 @@ public sealed class UpdatePublisherEndpoint : IEndpoint<NoContent, UpdatePublish
                 async (UpdatePublisherCommand command, ISender sender) =>
                     await HandleAsync(command, sender)
             )
-            .Produces(StatusCodes.Status204NoContent)
-            .ProducesValidationProblem()
+            .ProducesPut()
             .WithTags(nameof(Publisher))
             .WithName(nameof(UpdatePublisherEndpoint))
             .WithSummary("Update Publisher")

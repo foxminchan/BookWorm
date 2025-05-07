@@ -5,7 +5,7 @@ public sealed class ListAuthorsEndpoint : IEndpoint<Ok<IReadOnlyList<AuthorDto>>
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapGet("/authors", async (ISender sender) => await HandleAsync(sender))
-            .Produces<IReadOnlyList<AuthorDto>>()
+            .ProducesGet<IReadOnlyList<AuthorDto>>()
             .WithTags(nameof(Author))
             .WithName(nameof(ListAuthorsEndpoint))
             .WithSummary("List Authors")

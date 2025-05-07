@@ -17,8 +17,7 @@ public sealed class CancelOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, IS
                     ISender sender
                 ) => await HandleAsync(orderId, sender)
             )
-            .Produces<OrderDetailDto>()
-            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesPatch<OrderDetailDto>(false)
             .WithIdempotency()
             .WithTags(nameof(Order))
             .WithName(nameof(CancelOrderEndpoint))

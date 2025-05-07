@@ -9,8 +9,7 @@ public sealed class CreateAuthorEndpoint : IEndpoint<Ok<Guid>, CreateAuthorComma
                 async (CreateAuthorCommand command, ISender sender) =>
                     await HandleAsync(command, sender)
             )
-            .Produces<Guid>()
-            .ProducesValidationProblem()
+            .ProducesPostWithoutLocation<Guid>()
             .WithTags(nameof(Author))
             .WithName(nameof(CreateAuthorEndpoint))
             .WithSummary("Create Author")

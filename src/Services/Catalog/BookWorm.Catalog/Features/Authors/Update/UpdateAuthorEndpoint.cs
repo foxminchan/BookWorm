@@ -9,9 +9,7 @@ public sealed class UpdateAuthorEndpoint : IEndpoint<NoContent, UpdateAuthorComm
                 async (UpdateAuthorCommand command, ISender sender) =>
                     await HandleAsync(command, sender)
             )
-            .Produces(StatusCodes.Status204NoContent)
-            .ProducesProblem(StatusCodes.Status404NotFound)
-            .ProducesValidationProblem()
+            .ProducesPut()
             .WithTags(nameof(Author))
             .WithName(nameof(UpdateAuthorEndpoint))
             .WithSummary("Update Author")

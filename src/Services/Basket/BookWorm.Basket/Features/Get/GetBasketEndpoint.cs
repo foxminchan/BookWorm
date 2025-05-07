@@ -9,8 +9,7 @@ public sealed class GetBasketEndpoint : IEndpoint<Ok<CustomerBasketDto>, ISender
                 async (ISender sender, CancellationToken cancellationToken) =>
                     await HandleAsync(sender, cancellationToken)
             )
-            .Produces<CustomerBasketDto>()
-            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesGet<CustomerBasketDto>(hasNotFound: true)
             .WithTags(nameof(Basket))
             .WithName(nameof(GetBasketEndpoint))
             .WithSummary("Get Basket")

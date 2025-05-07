@@ -17,7 +17,7 @@ public sealed class CreateOrderEndpoint : IEndpoint<Created<Guid>, ISender, Link
                     LinkGenerator linker
                 ) => await HandleAsync(sender, linker)
             )
-            .Produces<Guid>(StatusCodes.Status201Created)
+            .ProducesPost<Guid>(false)
             .WithIdempotency()
             .WithTags(nameof(Order))
             .WithName(nameof(CreateOrderEndpoint))
