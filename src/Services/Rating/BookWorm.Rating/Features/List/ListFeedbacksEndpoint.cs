@@ -12,8 +12,7 @@ public sealed class ListFeedbacksEndpoint
                 async ([AsParameters] ListFeedbacksQuery query, ISender sender) =>
                     await HandleAsync(query, sender)
             )
-            .Produces<PagedResult<FeedbackDto>>()
-            .ProducesValidationProblem()
+            .ProducesGet<PagedResult<FeedbackDto>>(true)
             .WithTags(nameof(Feedback))
             .WithName(nameof(ListFeedbacksEndpoint))
             .WithSummary("List Feedbacks")

@@ -9,8 +9,7 @@ public sealed class CreateFeedbackEndpoint : IEndpoint<Ok<Guid>, CreateFeedbackC
                 async (CreateFeedbackCommand command, ISender sender) =>
                     await HandleAsync(command, sender)
             )
-            .Produces<Guid>()
-            .ProducesValidationProblem()
+            .ProducesPostWithoutLocation<Guid>()
             .WithTags(nameof(Feedback))
             .WithName(nameof(CreateFeedbackEndpoint))
             .WithSummary("Create Feedback")

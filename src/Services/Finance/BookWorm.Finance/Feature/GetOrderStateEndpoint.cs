@@ -8,7 +8,7 @@ public sealed class GetOrderStateEndpoint : IEndpoint<Ok<string>, ISender>
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapGet("/order-state-machine", async (ISender sender) => await HandleAsync(sender))
-            .Produces<string>()
+            .ProducesGet<string>()
             .WithTags(nameof(OrderState))
             .WithName(nameof(GetOrderStateEndpoint))
             .WithSummary("Get Order State Machine")

@@ -11,8 +11,7 @@ public sealed class DeleteOrderEndpoint : IEndpoint<NoContent, Guid, ISender>
                     ISender sender
                 ) => await HandleAsync(id, sender)
             )
-            .Produces(StatusCodes.Status204NoContent)
-            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesDelete()
             .WithTags(nameof(Order))
             .WithName(nameof(DeleteOrderEndpoint))
             .WithSummary("Delete Order")

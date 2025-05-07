@@ -11,8 +11,7 @@ public sealed class GetOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, ISend
                     ISender sender
                 ) => await HandleAsync(id, sender)
             )
-            .Produces<OrderDetailDto>()
-            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesGet<OrderDetailDto>(hasNotFound: true)
             .WithTags(nameof(Order))
             .WithName(nameof(GetOrderEndpoint))
             .WithSummary("Get Order")

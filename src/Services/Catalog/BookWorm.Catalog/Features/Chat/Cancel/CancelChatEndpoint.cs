@@ -13,7 +13,7 @@ public sealed class CancelChatEndpoint : IEndpoint<NoContent, Guid, ICancellatio
                     ICancellationManager manager
                 ) => await HandleAsync(id, manager)
             )
-            .Produces(StatusCodes.Status204NoContent)
+            .ProducesDelete()
             .WithTags(nameof(Chat))
             .WithName(nameof(CancelChatEndpoint))
             .WithSummary("Cancel Chat")

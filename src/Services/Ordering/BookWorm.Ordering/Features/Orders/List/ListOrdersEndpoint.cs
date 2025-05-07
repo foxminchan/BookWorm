@@ -12,8 +12,7 @@ public sealed class ListOrdersEndpoint
                 async ([AsParameters] ListOrdersQuery query, ISender sender) =>
                     await HandleAsync(query, sender)
             )
-            .Produces<PagedResult<OrderDto>>()
-            .ProducesValidationProblem()
+            .ProducesGet<PagedResult<OrderDto>>(true)
             .WithTags(nameof(Order))
             .WithName(nameof(ListOrdersEndpoint))
             .WithSummary("List Orders")

@@ -9,9 +9,7 @@ public sealed class UpdateCategoryEndpoint : IEndpoint<NoContent, UpdateCategory
                 async (UpdateCategoryCommand command, ISender sender) =>
                     await HandleAsync(command, sender)
             )
-            .Produces(StatusCodes.Status204NoContent)
-            .ProducesProblem(StatusCodes.Status404NotFound)
-            .ProducesValidationProblem()
+            .ProducesPut()
             .WithTags(nameof(Category))
             .WithName(nameof(UpdateCategoryEndpoint))
             .WithSummary("Update Category")

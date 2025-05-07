@@ -11,9 +11,7 @@ public sealed class DeleteAuthorEndpoint : IEndpoint<NoContent, Guid, ISender>
                     ISender sender
                 ) => await HandleAsync(id, sender)
             )
-            .Produces(StatusCodes.Status204NoContent)
-            .ProducesProblem(StatusCodes.Status404NotFound)
-            .ProducesValidationProblem()
+            .ProducesDelete()
             .WithTags(nameof(Author))
             .WithName(nameof(DeleteAuthorEndpoint))
             .WithSummary("Delete Author")

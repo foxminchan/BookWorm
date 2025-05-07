@@ -12,8 +12,7 @@ public sealed class CreateBasketEndpoint
                 async (CreateBasketCommand command, ISender sender, LinkGenerator linker) =>
                     await HandleAsync(command, sender, linker)
             )
-            .Produces<string>(StatusCodes.Status201Created)
-            .ProducesValidationProblem()
+            .ProducesPost<string>()
             .WithTags(nameof(Basket))
             .WithName(nameof(CreateBasketEndpoint))
             .WithSummary("Create Basket")

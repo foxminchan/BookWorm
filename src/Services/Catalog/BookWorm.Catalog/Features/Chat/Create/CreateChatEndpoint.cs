@@ -10,7 +10,7 @@ public sealed class CreateChatEndpoint : IEndpoint<Ok<Guid>, Prompt, IChatStream
                 "/chats",
                 async (Prompt prompt, IChatStreaming chat) => await HandleAsync(prompt, chat)
             )
-            .Produces<Guid>()
+            .ProducesPost<Guid>(false)
             .WithTags(nameof(Chat))
             .WithName(nameof(CreateChatEndpoint))
             .WithSummary("Create Chat")

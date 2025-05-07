@@ -14,7 +14,7 @@ public sealed class SummaryOrderEndpoint : IEndpoint
                     [Description("The unique identifier of the order to be retrieved")] Guid id
                 ) => querySession.Json.WriteById<OrderSummaryInfo>(id, context)
             )
-            .Produces<OrderSummaryInfo>()
+            .ProducesGet<OrderSummaryInfo>()
             .WithTags(nameof(Order))
             .WithName(nameof(SummaryOrderEndpoint))
             .WithSummary("Get Order Summary")

@@ -5,7 +5,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace BookWorm.Chassis.Endpoints;
 
-public static class Extensions
+public static class RegisterEndpointExtensions
 {
     public static void AddEndpoints(this IServiceCollection services, Type type)
     {

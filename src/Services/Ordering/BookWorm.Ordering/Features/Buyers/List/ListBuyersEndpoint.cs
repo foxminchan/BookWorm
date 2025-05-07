@@ -12,7 +12,7 @@ public sealed class ListBuyersEndpoint
                 async ([AsParameters] ListBuyersQuery query, ISender sender) =>
                     await HandleAsync(query, sender)
             )
-            .Produces<PagedResult<BuyerDto>>()
+            .ProducesGet<PagedResult<BuyerDto>>()
             .WithFeatureFlag(nameof(ListBuyersEndpoint))
             .WithTags(nameof(Buyer))
             .WithName(nameof(ListBuyersEndpoint))
