@@ -28,7 +28,7 @@ public sealed class ListBuyersEndpointTests
             new(Guid.CreateVersion7(), "Jane Smith", "456 Elm St"),
         };
 
-        _pagedResult = new(buyers, 1, 10, 2, 1);
+        _pagedResult = new(buyers, 1, 10, 2);
     }
 
     [Test]

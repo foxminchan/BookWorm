@@ -48,14 +48,6 @@ public sealed class ListOrdersHandler(IOrderRepository repository, ClaimsPrincip
 
         var totalItems = await repository.CountAsync(countSpec, cancellationToken);
 
-        var totalPages = (int)Math.Ceiling(totalItems / (double)request.PageSize);
-
-        return new(
-            orders.ToOrderDtos(),
-            request.PageIndex,
-            request.PageSize,
-            totalItems,
-            totalPages
-        );
+        return new(orders.ToOrderDtos(), request.PageIndex, request.PageSize, totalItems);
     }
 }

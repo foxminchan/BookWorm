@@ -87,10 +87,8 @@ public sealed class ListBooksHandler(
 
         var totalItems = await repository.CountAsync(countSpec, cancellationToken);
 
-        var totalPages = (int)Math.Ceiling(totalItems / (double)request.PageSize);
-
         var results = mapper.Map(books);
 
-        return new(results, request.PageIndex, request.PageSize, totalItems, totalPages);
+        return new(results, request.PageIndex, request.PageSize, totalItems);
     }
 }

@@ -80,7 +80,7 @@ public sealed class ListBooksQueryTests
         result.PageIndex.ShouldBe(query.PageIndex);
         result.PageSize.ShouldBe(query.PageSize);
         result.TotalItems.ShouldBe(expectedTotalItems);
-        result.TotalPages.ShouldBe(Math.Ceiling(expectedTotalItems / (double)query.PageSize));
+        result.TotalPages.ShouldBe((long)Math.Ceiling(expectedTotalItems / (double)query.PageSize));
 
         _mockSemanticSearch.Verify(
             s =>
@@ -278,7 +278,7 @@ public sealed class ListBooksQueryTests
         result.PageIndex.ShouldBe(pageIndex);
         result.PageSize.ShouldBe(pageSize);
         result.TotalItems.ShouldBe(totalItems);
-        result.TotalPages.ShouldBe(Math.Ceiling(totalItems / (double)pageSize));
+        result.TotalPages.ShouldBe((long)Math.Ceiling(totalItems / (double)pageSize));
 
         _mockRepository.Verify(
             r => r.ListAsync(It.Is<BookFilterSpec>(spec => true), It.IsAny<CancellationToken>()),
