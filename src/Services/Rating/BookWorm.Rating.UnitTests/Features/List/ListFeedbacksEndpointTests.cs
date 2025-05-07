@@ -31,7 +31,7 @@ public sealed class ListFeedbacksEndpointTests
         };
 
         // Create paged result
-        _pagedResult = new(feedbacks, 1, 10, 2, 1);
+        _pagedResult = new(feedbacks, 1, 10, 2);
     }
 
     [Test]
@@ -75,7 +75,7 @@ public sealed class ListFeedbacksEndpointTests
     public async Task GivenEmptyResult_WhenHandleAsync_ThenShouldReturnOkWithEmptyPagedResult()
     {
         // Arrange
-        var emptyResult = new PagedResult<FeedbackDto>([], 1, 10, 0, 0);
+        var emptyResult = new PagedResult<FeedbackDto>([], 1, 10, 0);
 
         _senderMock
             .Setup(x => x.Send(_validQuery, It.IsAny<CancellationToken>()))

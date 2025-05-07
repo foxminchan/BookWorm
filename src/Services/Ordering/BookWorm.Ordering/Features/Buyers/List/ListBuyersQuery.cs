@@ -27,14 +27,6 @@ public sealed class ListBuyersQueryHandler(IBuyerRepository repository)
 
         var totalItems = await repository.CountAsync(cancellationToken);
 
-        var totalPages = (int)Math.Ceiling(totalItems / (double)request.PageSize);
-
-        return new(
-            buyers.ToBuyerDtos(),
-            request.PageIndex,
-            request.PageSize,
-            totalItems,
-            totalPages
-        );
+        return new(buyers.ToBuyerDtos(), request.PageIndex, request.PageSize, totalItems);
     }
 }

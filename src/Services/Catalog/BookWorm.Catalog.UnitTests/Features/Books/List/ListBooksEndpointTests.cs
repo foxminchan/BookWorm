@@ -41,7 +41,7 @@ public sealed class ListBooksEndpointTests
             ),
         };
 
-        _expectedResult = new(books, 1, 10, 1, 1);
+        _expectedResult = new(books, 1, 10, 1);
     }
 
     [Test]
@@ -72,7 +72,7 @@ public sealed class ListBooksEndpointTests
     public async Task GivenEmptyResult_WhenHandlingRequest_ThenShouldReturnOkResultWithEmptyList()
     {
         // Arrange
-        var emptyResult = new PagedResult<BookDto>([], 1, 10, 0, 0);
+        var emptyResult = new PagedResult<BookDto>([], 1, 10, 0);
 
         _senderMock
             .Setup(x => x.Send(_validQuery, It.IsAny<CancellationToken>()))
