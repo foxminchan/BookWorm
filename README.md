@@ -1,7 +1,6 @@
 [![CI](https://github.com/foxminchan/BookWorm/actions/workflows/ci.yaml/badge.svg)](https://github.com/foxminchan/BookWorm/actions/workflows/ci.yaml)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=coverage)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
 [![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
-[![Netlify Status](https://api.netlify.com/api/v1/badges/ff82b0cb-bbb5-4d49-b326-e4792d673420/deploy-status)](https://app.netlify.com/sites/bookwormdev/deploys)
 
 # 📖 BookWorm: A Practical .NET Aspire Application
 
@@ -20,19 +19,18 @@
 ## Project Goals
 
 - [x] Developed a cloud-native application using .NET Aspire
-- [x] Organized the codebase with Vertical Slice Architecture
-- [x] Applied Domain-Driven Design & CQRS
+- [x] Implemented Vertical Slice Architecture with Domain-Driven Design & CQRS
 - [x] Enabled service-to-service communication with gRPC
-- [x] Implemented Saga patterns (Orchestration & Choreography)
-- [x] Integrated Event Sourcing
-- [x] Utilized Outbox and Inbox Patterns
-- [x] Supported API versioning
-- [x] Enabled feature flags to manage application behavior
+- [x] Incorporated various microservices patterns
+  - [x] Utilized outbox and inbox patterns to manage commands and events
+  - [x] Implemented saga patterns for orchestration and choreography
+  - [x] Integrated event sourcing for storing domain events
+  - [x] Implemented a microservices chassis for cross-cutting concerns and service infrastructure
+- [x] Implemented API versioning and feature flags for flexible application management
 - [x] Set up AuthN/AuthZ with Keycloak
 - [x] Implemented caching with HybridCache
 - [x] Incorporated AI components:
   - [x] Text embedding with Nomic Embed Text
-  - [x] Enabled hybrid search with Qdrant
   - [x] Integrated a chatbot using DeepSeek R1
 - [x] Configured CI/CD with GitHub Actions
 - [x] Created comprehensive documentation:
@@ -60,8 +58,7 @@
 
 > [!IMPORTANT]
 >
-> - **AI Components**: This project uses [DeepSeek R1](https://ollama.com/library/deepseek-r1) for chatbot integration and [Nomic Embed Text](https://ollama.com/library/nomic-embed-text) for text embedding, requiring an **Nvidia GPU** for local development.
-> - **Email Services**: Production uses [SendGrid](https://sendgrid.com/), while local development uses [Mailpit](https://mailpit.axllent.org/) for email testing.
+> AI components require an **Nvidia GPU** for local development. Email services use [SendGrid](https://sendgrid.com/) in production and [Mailpit](https://mailpit.axllent.org/) locally.
 
 ### Run the Application
 
@@ -84,20 +81,19 @@
    ```
 
 > [!WARNING]
-> Docker must be running on your machine before starting the application.
+> Docker or Podman must be running on your machine before starting the application.
 
 ### Deploy the application
 
-For detailed deployment instructions, please consult the [Deployment Guide](./deploys/README.md).
+For detailed deployment instructions, please consult the [deployment guide](./deploys/README.md).
 
-## Documentation Resources
+### Event-Driven Architecture
 
-- **Project Wiki**: Setup, architecture, and guidelines in the [BookWorm Wiki](https://github.com/foxminchan/BookWorm/wiki).
-- **Event-Driven Architecture**: Explore event flows, messaging patterns and API endpoints in the [Event Catalog](https://bookwormdev.netlify.app/).
+Explore our [event catalog](https://bookwormdev.netlify.app/) for messaging patterns and API details.
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](./.github/CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us. Thank you for contributing to BookWorm!
+Contributions are welcome! Please read the [contribution guidelines](./.github/CONTRIBUTING.md) and [code of conduct](./.github/CODE-OF-CONDUCT.md) to learn how to participate.
 
 ## Support
 
