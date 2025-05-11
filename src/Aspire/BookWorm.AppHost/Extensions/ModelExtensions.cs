@@ -45,7 +45,6 @@ public static class ModelExtensions
     ///     Configures a project resource to utilize Ollama models.
     /// </summary>
     /// <param name="builder">The project resource builder to be configured.</param>
-    /// <param name="models">A dictionary of models where the key is the model identifier and the value is the model name.</param>
     /// <returns>The configured project resource builder.</returns>
     /// <remarks>
     ///     This method locates an existing Ollama resource in the application,
@@ -53,25 +52,17 @@ public static class ModelExtensions
     ///     and wait for these models to be loaded before proceeding.
     /// </remarks>
     public static IResourceBuilder<ProjectResource> WithOllama(
-        this IResourceBuilder<ProjectResource> builder,
-        Dictionary<string, string> models
+        this IResourceBuilder<ProjectResource> builder
     )
     {
-        var resource = builder
-            .ApplicationBuilder.Resources.Where(r => r.GetType() == typeof(OllamaResource))
-            .OfType<OllamaResource>()
-            .First();
+        var models = builder
+            .ApplicationBuilder.Resources.Where(r => r.GetType() == typeof(OllamaModelResource))
+            .OfType<OllamaModelResource>()
+            .Select(model => builder.ApplicationBuilder.CreateResourceBuilder(model));
 
-        var ollama = builder.ApplicationBuilder.CreateResourceBuilder(resource);
-
-        foreach (
-            var ollamaModel in from model in models
-            let name = model.Key
-            let modelName = model.Value
-            select ollama.AddModel(name, modelName)
-        )
+        foreach (var model in models)
         {
-            builder.WithReference(ollamaModel).WaitFor(ollamaModel);
+            builder.WithReference(model).WaitFor(model);
         }
 
         return builder;

@@ -1,6 +1,6 @@
 ﻿using BookWorm.Catalog.Domain.Events;
 using BookWorm.Catalog.Extensions;
-using BookWorm.Catalog.Infrastructure.GenAi.Ingestion;
+using BookWorm.Chassis.Ingestion;
 
 namespace BookWorm.Catalog.Domain.EventHandlers;
 

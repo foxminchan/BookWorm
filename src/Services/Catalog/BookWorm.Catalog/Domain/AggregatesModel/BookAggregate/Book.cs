@@ -37,6 +37,7 @@ public sealed class Book() : AuditableEntity, IAggregateRoot, ISoftDelete
 
     [DisallowNull]
     public Price? Price { get; private set; }
+
     public Status Status { get; private set; }
     public double AverageRating { get; private set; }
     public int TotalReviews { get; private set; }

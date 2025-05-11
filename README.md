@@ -32,6 +32,7 @@
 - [x] Incorporated AI components:
   - [x] Text embedding with Nomic Embed Text
   - [x] Integrated a chatbot using DeepSeek R1
+  - [x] Standardized AI tools with MCP Tools
 - [x] Configured CI/CD with GitHub Actions
 - [x] Created comprehensive documentation:
   - [x] Used OpenAPI for REST API documentation

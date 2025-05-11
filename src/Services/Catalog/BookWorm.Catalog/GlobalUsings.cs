@@ -8,7 +8,6 @@ global using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 global using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
 global using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
 global using BookWorm.Catalog.Domain.Exceptions;
-global using BookWorm.Catalog.Features.Books;
 global using BookWorm.Catalog.Infrastructure;
 global using BookWorm.Catalog.Infrastructure.Blob;
 global using BookWorm.Catalog.Infrastructure.GenAi;

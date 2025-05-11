@@ -4,13 +4,14 @@
     <Project Path="src/Aspire/BookWorm.ServiceDefaults/BookWorm.ServiceDefaults.csproj" />
   </Folder>
   <Folder Name="/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/BookWorm.Chassis/BookWorm.Chassis.csproj" />
     <Project Path="src/BuildingBlocks/BookWorm.Constants/BookWorm.Constants.csproj" />
     <Project Path="src/BuildingBlocks/BookWorm.SharedKernel/BookWorm.SharedKernel.csproj" />
-    <Project Path="src/BuildingBlocks/BookWorm.Chassis/BookWorm.Chassis.csproj" />
   </Folder>
   <Folder Name="/Integrations/">
     <Project Path="src/Integrations/BookWorm.HealthChecksUI/BookWorm.HealthChecksUI.csproj" />
     <Project Path="src/Integrations/BookWorm.Scalar/BookWorm.Scalar.csproj" />
+    <Project Path="src/Integrations/BookWorm.McpTools/BookWorm.McpTools.csproj" />
   </Folder>
   <Folder Name="/Services/" />
   <Folder Name="/Services/Basket/">
@@ -20,6 +21,10 @@
   <Folder Name="/Services/Catalog/">
     <Project Path="src/Services/Catalog/BookWorm.Catalog.UnitTests/BookWorm.Catalog.UnitTests.csproj" />
     <Project Path="src/Services/Catalog/BookWorm.Catalog/BookWorm.Catalog.csproj" />
+  </Folder>
+  <Folder Name="/Services/Chat/">
+    <Project Path="src/Services/Chat/BookWorm.Chat.UnitTests/BookWorm.Chat.UnitTests.csproj" />
+    <Project Path="src/Services/Chat/BookWorm.Chat/BookWorm.Chat.csproj" />
   </Folder>
   <Folder Name="/Services/Finance/">
     <Project Path="src/Services/Finance/BookWorm.Finance.UnitTests/BookWorm.Finance.UnitTests.csproj" />
