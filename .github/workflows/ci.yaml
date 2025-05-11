@@ -202,3 +202,11 @@ jobs:
           project-path: "src/Services/Rating/BookWorm.Rating/BookWorm.Rating.csproj"
           container-repository: "foxminchan/bookworm/rating"
           container-tag: ${{ steps.set_tag.outputs.version }}
+
+      - name: Publish Chat Service
+        uses: ./.github/actions/publish
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          project-path: "src/Services/Chat/BookWorm.Chat/BookWorm.Chat.csproj"
+          container-repository: "foxminchan/bookworm/chat"
+          container-tag: ${{ steps.set_tag.outputs.version }}

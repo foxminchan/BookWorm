@@ -20,5 +20,4 @@ data:
   services__keycloak__http__0: "{{ .Values.config.catalog.services__keycloak__http__0 }}"
   services__keycloak__management__0: "{{ .Values.config.catalog.services__keycloak__management__0 }}"
   ConnectionStrings__redis: "{{ .Values.config.catalog.ConnectionStrings__redis }}"
-  ConnectionStrings__signalr: "{{ .Values.config.catalog.ConnectionStrings__signalr }}"
   HEALTHCHECKSUI_URLS: "{{ .Values.config.catalog.HEALTHCHECKSUI_URLS }}"

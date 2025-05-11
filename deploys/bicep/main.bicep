@@ -6,7 +6,7 @@ param location string
 
 param principalId string
 
-param postgres_username string = 'wYkSKPQHvq'
+param postgres_username string = 'ksTcpYfrMg'
 
 @secure()
 param postgres_password string
@@ -100,16 +100,6 @@ module catalog_roles_storage 'catalog-roles-storage/catalog-roles-storage.bicep'
   }
 }
 
-module catalog_roles_signalr 'catalog-roles-signalr/catalog-roles-signalr.bicep' = {
-  name: 'catalog-roles-signalr'
-  scope: rg
-  params: {
-    location: location
-    signalr_outputs_name: signalr.outputs.name
-    principalId: catalog_identity.outputs.principalId
-  }
-}
-
 module catalog_roles_postgres_kv 'catalog-roles-postgres-kv/catalog-roles-postgres-kv.bicep' = {
   name: 'catalog-roles-postgres-kv'
   scope: rg
@@ -127,6 +117,34 @@ module catalog_roles_redis_kv 'catalog-roles-redis-kv/catalog-roles-redis-kv.bic
     location: location
     redis_kv_outputs_name: redis_kv.outputs.name
     principalId: catalog_identity.outputs.principalId
+  }
+}
+
+module chatting_identity 'chatting-identity/chatting-identity.bicep' = {
+  name: 'chatting-identity'
+  scope: rg
+  params: {
+    location: location
+  }
+}
+
+module chatting_roles_signalr 'chatting-roles-signalr/chatting-roles-signalr.bicep' = {
+  name: 'chatting-roles-signalr'
+  scope: rg
+  params: {
+    location: location
+    signalr_outputs_name: signalr.outputs.name
+    principalId: chatting_identity.outputs.principalId
+  }
+}
+
+module chatting_roles_redis_kv 'chatting-roles-redis-kv/chatting-roles-redis-kv.bicep' = {
+  name: 'chatting-roles-redis-kv'
+  scope: rg
+  params: {
+    location: location
+    redis_kv_outputs_name: redis_kv.outputs.name
+    principalId: chatting_identity.outputs.principalId
   }
 }
 
@@ -254,11 +272,15 @@ output redis_kv_name string = redis_kv.outputs.name
 
 output redis_kv_vaultUri string = redis_kv.outputs.vaultUri
 
-output signalr_hostName string = signalr.outputs.hostName
-
 output bookworm_aca_AZURE_CONTAINER_REGISTRY_ENDPOINT string = bookworm_aca.outputs.AZURE_CONTAINER_REGISTRY_ENDPOINT
 
 output bookworm_aca_AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID string = bookworm_aca.outputs.AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID
+
+output chatting_identity_id string = chatting_identity.outputs.id
+
+output chatting_identity_clientId string = chatting_identity.outputs.clientId
+
+output signalr_hostName string = signalr.outputs.hostName
 
 output basket_identity_id string = basket_identity.outputs.id
 

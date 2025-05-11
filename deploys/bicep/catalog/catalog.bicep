@@ -21,8 +21,6 @@ param vectordb_key_value string
 
 param redis_kv_outputs_name string
 
-param signalr_outputs_hostname string
-
 param bookworm_aca_outputs_azure_container_apps_environment_id string
 
 param bookworm_aca_outputs_azure_container_registry_endpoint string
@@ -157,10 +155,6 @@ resource catalog 'Microsoft.App/containerApps@2024-03-01' = {
             {
               name: 'ConnectionStrings__redis'
               secretRef: 'connectionstrings--redis'
-            }
-            {
-              name: 'ConnectionStrings__signalr'
-              value: 'Endpoint=https://${signalr_outputs_hostname};AuthType=azure'
             }
             {
               name: 'AZURE_CLIENT_ID'

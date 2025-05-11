@@ -47,13 +47,11 @@ var orderingDb = postgres.AddDatabase(Components.Database.Ordering);
 var financeDb = postgres.AddDatabase(Components.Database.Finance);
 var ratingDb = postgres.AddDatabase(Components.Database.Rating);
 
-builder.AddOllama();
-
-var models = new Dictionary<string, string>(2)
+builder.AddOllama(configure: configure =>
 {
-    { Components.Ollama.Embedding, "nomic-embed-text:latest" },
-    { Components.Ollama.Chat, "deepseek-r1:1.5b" },
-};
+    configure.AddModel(Components.Ollama.Embedding, "nomic-embed-text:latest");
+    configure.AddModel(Components.Ollama.Chat, "deepseek-r1:1.5b");
+});
 
 var keycloak = builder
     .AddKeycloak(Components.KeyCloak)
@@ -66,7 +64,7 @@ var catalogApi = builder
     .AddProject<BookWorm_Catalog>(Application.Catalog)
     .WithReplicas(builder.ExecutionContext.IsRunMode ? 1 : 2)
     .WithScalarApiDocs()
-    .WithOllama(models)
+    .WithOllama()
     .WithReference(blobStorage)
     .WaitFor(blobStorage)
     .WithReference(queue)
@@ -79,12 +77,31 @@ var catalogApi = builder
     .WaitFor(keycloak)
     .WithReference(redis)
     .WaitFor(redis)
-    .WithReference(signalR)
-    .WaitFor(signalR)
-    .WithRoleAssignments(storage, StorageBuiltInRole.StorageBlobDataContributor)
-    .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor);
+    .WithRoleAssignments(storage, StorageBuiltInRole.StorageBlobDataContributor);
 
 qdrant.WithParentRelationship(catalogApi);
+
+var mcp = builder
+    .AddProject<BookWorm_McpTools>(Application.McpTools)
+    .WithOllama()
+    .WithReference(qdrant)
+    .WaitFor(qdrant)
+    .WithReference(catalogApi)
+    .WaitFor(catalogApi);
+
+var chatApi = builder
+    .AddProject<BookWorm_Chat>(Application.Chatting)
+    .WithScalarApiDocs()
+    .WithOllama()
+    .WithReference(redis)
+    .WaitFor(redis)
+    .WithReference(signalR)
+    .WaitFor(signalR)
+    .WithReference(keycloak)
+    .WaitFor(keycloak)
+    .WithReference(mcp)
+    .WaitFor(mcp)
+    .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor);
 
 var basketApi = builder
     .AddProject<BookWorm_Basket>(Application.Basket)
@@ -142,6 +159,7 @@ var gateway = builder
     .AddProject<BookWorm_Gateway>(Application.Gateway)
     .WithExternalHttpEndpoints()
     .WithReference(catalogApi)
+    .WithReference(chatApi)
     .WithReference(orderingApi)
     .WithReference(ratingApi)
     .WithReference(basketApi)
@@ -155,6 +173,7 @@ builder
     .WithExternalHttpEndpoints()
     .WithReference(gateway)
     .WithReference(catalogApi)
+    .WithReference(chatApi)
     .WithReference(orderingApi)
     .WithReference(ratingApi)
     .WithReference(basketApi)
