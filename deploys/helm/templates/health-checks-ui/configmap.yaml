@@ -22,3 +22,5 @@ data:
   HealthChecksUI__HealthChecks__5__Uri: "{{ .Values.config.health-checks-ui.HealthChecksUI__HealthChecks__5__Uri }}"
   HealthChecksUI__HealthChecks__6__Name: "{{ .Values.config.health-checks-ui.HealthChecksUI__HealthChecks__6__Name }}"
   HealthChecksUI__HealthChecks__6__Uri: "{{ .Values.config.health-checks-ui.HealthChecksUI__HealthChecks__6__Uri }}"
+  HealthChecksUI__HealthChecks__7__Name: "{{ .Values.config.health-checks-ui.HealthChecksUI__HealthChecks__7__Name }}"
+  HealthChecksUI__HealthChecks__7__Uri: "{{ .Values.config.health-checks-ui.HealthChecksUI__HealthChecks__7__Uri }}"

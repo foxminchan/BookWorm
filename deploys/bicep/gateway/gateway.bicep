@@ -67,6 +67,14 @@ resource gateway 'Microsoft.App/containerApps@2024-03-01' = {
               value: 'https://catalog.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'
             }
             {
+              name: 'services__chatting__http__0'
+              value: 'http://chatting.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'
+            }
+            {
+              name: 'services__chatting__https__0'
+              value: 'https://chatting.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'
+            }
+            {
               name: 'services__ordering__http__0'
               value: 'http://ordering.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'
             }

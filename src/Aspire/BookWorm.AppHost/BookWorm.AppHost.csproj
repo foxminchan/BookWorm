@@ -26,8 +26,10 @@
   </ItemGroup>
   <ItemGroup Label="Services">
     <ProjectReference Include="..\..\BookWorm.Gateway\BookWorm.Gateway.csproj" />
+    <ProjectReference Include="..\..\Integrations\BookWorm.McpTools\BookWorm.McpTools.csproj" />
     <ProjectReference Include="..\..\Services\Basket\BookWorm.Basket\BookWorm.Basket.csproj" />
     <ProjectReference Include="..\..\Services\Catalog\BookWorm.Catalog\BookWorm.Catalog.csproj" />
+    <ProjectReference Include="..\..\Services\Chat\BookWorm.Chat\BookWorm.Chat.csproj" />
     <ProjectReference Include="..\..\Services\Finance\BookWorm.Finance\BookWorm.Finance.csproj" />
     <ProjectReference Include="..\..\Services\Notification\BookWorm.Notification\BookWorm.Notification.csproj" />
     <ProjectReference Include="..\..\Services\Ordering\BookWorm.Ordering\BookWorm.Ordering.csproj" />

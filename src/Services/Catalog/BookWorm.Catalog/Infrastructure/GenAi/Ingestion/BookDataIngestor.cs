@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.VectorData;
+﻿using BookWorm.Chassis.Ingestion;
+using BookWorm.Chassis.Search;
+using Microsoft.Extensions.VectorData;
 
 namespace BookWorm.Catalog.Infrastructure.GenAi.Ingestion;
 

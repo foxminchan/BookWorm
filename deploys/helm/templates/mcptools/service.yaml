@@ -1,0 +1,19 @@
+---
+apiVersion: "v1"
+kind: "Service"
+metadata:
+  name: "mcptools-service"
+spec:
+  type: "ClusterIP"
+  selector:
+    app: "aspire"
+    component: "mcptools"
+  ports:
+    - name: "http"
+      protocol: "TCP"
+      port: "{{ .Values.parameters.mcptools.port_http }}"
+      targetPort: "{{ .Values.parameters.mcptools.port_http }}"
+    - name: "https"
+      protocol: "TCP"
+      port: "{{ .Values.parameters.mcptools.port_https }}"
+      targetPort: "{{ .Values.parameters.mcptools.port_https }}"

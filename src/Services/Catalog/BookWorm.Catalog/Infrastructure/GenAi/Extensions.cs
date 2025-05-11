@@ -1,9 +1,6 @@
-﻿using BookWorm.Catalog.Infrastructure.GenAi.CancellationManager;
-using BookWorm.Catalog.Infrastructure.GenAi.ChatStreaming;
-using BookWorm.Catalog.Infrastructure.GenAi.ConversationState;
-using BookWorm.Catalog.Infrastructure.GenAi.ConversationState.Abstractions;
-using BookWorm.Catalog.Infrastructure.GenAi.Ingestion;
-using BookWorm.Catalog.Infrastructure.GenAi.Search;
+﻿using BookWorm.Catalog.Infrastructure.GenAi.Ingestion;
+using BookWorm.Chassis.Ingestion;
+using BookWorm.Chassis.Search;
 using Microsoft.Extensions.VectorData;
 using Microsoft.SemanticKernel.Connectors.Qdrant;
 
@@ -28,14 +25,8 @@ public static class Extensions
             );
 
         services.AddSingleton<IVectorStore, QdrantVectorStore>();
-        services.AddSingleton<IChatStreaming, ChatStreaming.ChatStreaming>();
-        services.AddSingleton<IConversationState, RedisConversationState>();
-        services.AddSingleton<ICancellationManager, RedisCancellationManager>();
-
         services.AddScoped<IIngestionSource<Book>, BookDataIngestor>();
         services.AddScoped<ISearch, HybridSearch>();
-
-        services.AddSignalR().AddNamedAzureSignalR(Components.Azure.SignalR);
 
         services
             .AddOpenTelemetry()

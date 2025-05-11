@@ -2,10 +2,9 @@
 using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
 using BookWorm.Catalog.Features.Books;
 using BookWorm.Catalog.Features.Books.List;
-using BookWorm.Catalog.Infrastructure.GenAi;
-using BookWorm.Catalog.Infrastructure.GenAi.Search;
 using BookWorm.Catalog.UnitTests.Fakers;
 using BookWorm.Chassis.Mapper;
+using BookWorm.Chassis.Search;
 
 namespace BookWorm.Catalog.UnitTests.Features.Books.List;
 
@@ -17,17 +16,17 @@ public sealed class ListBooksQueryTests
     private BookDto[] _bookDtos = null!;
     private List<Book> _books = null!;
     private ListBooksHandler _handler = null!;
+    private Mock<ISearch> _mockHybridSearch = null!;
     private Mock<IMapper<Book, BookDto>> _mockMapper = null!;
     private Mock<IBookRepository> _mockRepository = null!;
-    private Mock<ISearch> _mockSemanticSearch = null!;
 
     [Before(Test)]
     public void Setup()
     {
-        _mockSemanticSearch = new();
+        _mockHybridSearch = new();
         _mockRepository = new();
         _mockMapper = new();
-        _handler = new(_mockSemanticSearch.Object, _mockRepository.Object, _mockMapper.Object);
+        _handler = new(_mockHybridSearch.Object, _mockRepository.Object, _mockMapper.Object);
 
         // Generate test data
         var bookFaker = new BookFaker();
@@ -82,7 +81,7 @@ public sealed class ListBooksQueryTests
         result.TotalItems.ShouldBe(expectedTotalItems);
         result.TotalPages.ShouldBe((long)Math.Ceiling(expectedTotalItems / (double)query.PageSize));
 
-        _mockSemanticSearch.Verify(
+        _mockHybridSearch.Verify(
             s =>
                 s.SearchAsync(
                     It.IsAny<string>(),
@@ -101,13 +100,13 @@ public sealed class ListBooksQueryTests
         // Arrange
         const string searchTerm = "fantasy novel";
         var query = new ListBooksQuery(Search: searchTerm);
-        var semanticSearchResults = new List<HybridSearchRecord>
+        var hybridSearchRecords = new List<HybridSearchRecord>
         {
             new() { Id = Guid.CreateVersion7(), Description = "Book 1" },
             new() { Id = Guid.CreateVersion7(), Description = "Book 2" },
         };
 
-        _mockSemanticSearch
+        _mockHybridSearch
             .Setup(s =>
                 s.SearchAsync(
                     searchTerm,
@@ -117,7 +116,7 @@ public sealed class ListBooksQueryTests
                     It.IsAny<CancellationToken>()
                 )
             )
-            .ReturnsAsync(semanticSearchResults);
+            .ReturnsAsync(hybridSearchRecords);
 
         _mockRepository
             .Setup(r => r.ListAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
@@ -133,7 +132,7 @@ public sealed class ListBooksQueryTests
         // Assert
         result.ShouldNotBeNull();
 
-        _mockSemanticSearch.Verify(
+        _mockHybridSearch.Verify(
             s =>
                 s.SearchAsync(
                     searchTerm,
