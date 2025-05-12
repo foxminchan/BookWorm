@@ -106,6 +106,7 @@ C4Container
         System_Boundary(catalog, "Catalog Domain") {
           Container(catalog, "Catalog Service", ".NET", "Manages product catalog and inventory")
           Container(rating, "Rating Service", ".NET", "Manages product ratings and reviews")
+          Container(chat, "Chat Service", ".NET", "Manages chat interactions and conversations")
         }
 
         System_Boundary(order, "Order Domain") {
@@ -139,6 +140,7 @@ C4Container
     Rel(gateway, finance, "Routes requests", "HTTPS")
     Rel(gateway, rating, "Routes requests", "HTTPS")
     Rel(gateway, identity, "Routes requests", "HTTPS")
+    Rel(gateway, chat, "Routes requests", "HTTPS")
 
     Rel(catalog, catalogDb, "Reads/Writes", "TCP")
     Rel(order, orderDb, "Reads/Writes", "TCP")
