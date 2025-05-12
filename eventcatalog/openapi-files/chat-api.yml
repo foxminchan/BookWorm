@@ -1,0 +1,135 @@
+---
+openapi: 3.1.1
+info:
+  title: Chat Service API
+  description:
+    Manages the chat functionality for the BookWorm platform, providing
+    conversational interactions about books and reading recommendations
+  contact:
+    name: Nhan Nguyen
+    url: https://github.com/foxminchan
+    email: nguyenxuannhan407@gmail.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  version: "1.0"
+externalDocs:
+  description: Documentation
+  url: https://github.com/foxminchan/BookWorm
+servers:
+  - url: "{protocol}://dev.chat.bookworm.com"
+    description: Development
+    variables:
+      protocol:
+        enum:
+          - https
+        default: https
+  - url: "{protocol}://stg.chat.bookworm.com"
+    description: Staging
+    variables:
+      protocol:
+        enum:
+          - https
+        default: https
+  - url: "{protocol}://qa.chat.bookworm.com"
+    description: QA
+    variables:
+      protocol:
+        enum:
+          - https
+        default: https
+  - url: "{protocol}://chat.bookworm.com"
+    description: Production
+    variables:
+      protocol:
+        enum:
+          - https
+        default: https
+paths:
+  "/api/v1/chats":
+    post:
+      tags:
+        - Chat
+      summary: Create Chat
+      description: Create a new chat in the catalog system
+      x-eventcatalog-message-type: command
+      operationId: CreateChatEndpoint
+      requestBody:
+        description: The command to create a chat
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/Prompt"
+            example:
+              text: "What is best book in the BookWorm platform?"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: string
+                format: uuid
+                description: The unique identifier of the chat
+                example: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
+  "/api/v1/chats/{id}/cancel":
+    delete:
+      tags:
+        - Chat
+      summary: Cancel Chat
+      description: Cancel a chat if it exists
+      x-eventcatalog-message-type: command
+      operationId: CancelChatEndpoint
+      parameters:
+        - name: id
+          in: path
+          description: The unique identifier of the chat to be cancelled
+          required: true
+          schema:
+            type: string
+            format: uuid
+            description: The unique identifier of the chat to be cancelled
+            example: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
+      responses:
+        "204":
+          description: No Content
+components:
+  schemas:
+    Prompt:
+      required:
+        - text
+      type: object
+      writeOnly: true
+      description: The prompt for creating a chat in the catalog system
+      properties:
+        text:
+          type: string
+          description: The text of the prompt
+          example: "What is the best book in the world?"
+    ProblemDetails:
+      type: object
+      readOnly: true
+      x-scalar-ignore: true
+      description: RFC 9110 (https://tools.ietf.org/html/rfc9110)
+      properties:
+        type:
+          type: string
+          description: The type of the problem
+          example: "https://tools.ietf.org/html/rfc9110#section-15.5.5"
+        title:
+          type: string
+          description: The title of the problem
+          example: "Not Found"
+        status:
+          type: integer
+          format: int32
+          description: The status code of the problem
+          example: 404
+        detail:
+          type: string
+          description: The detail of the problem
+          example: "Chat with id 01961f13-64ef-7dbb-84a1-25114e2e0ca4 not found."
+tags:
+  - name: Chat
+    description: Endpoints for handling book-related discussions and user interactions in chat format

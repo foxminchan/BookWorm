@@ -189,5 +189,17 @@ export default {
         domain: { id: "rating", name: "Rating", version: "1.0.0" },
       },
     ],
+    [
+      "@eventcatalog/generator-openapi",
+      {
+        services: [
+          {
+            path: path.join(__dirname, "openapi-files", "chat-api.yml"),
+            id: "Chat Service",
+          },
+        ],
+        domain: { id: "chat", name: "Chat", version: "1.0.0" },
+      },
+    ]
   ],
 };

@@ -197,54 +197,6 @@ paths:
           description: Unauthorized - Access token is missing or invalid.
         "403":
           description: Forbidden - The permission requirements are not met.
-  "/api/v1/chats":
-    post:
-      tags:
-        - Chat
-      summary: Create Chat
-      description: Create a new chat in the catalog system
-      x-eventcatalog-message-type: command
-      operationId: CreateChatEndpoint
-      requestBody:
-        description: The command to create a chat
-        content:
-          application/json:
-            schema:
-              "$ref": "#/components/schemas/Prompt"
-            example:
-              text: "What is best book in the BookWorm platform?"
-        required: true
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: string
-                format: uuid
-                description: The unique identifier of the chat
-                example: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
-  "/api/v1/chats/{id}/cancel":
-    delete:
-      tags:
-        - Chat
-      summary: Cancel Chat
-      description: Cancel a chat if it exists
-      x-eventcatalog-message-type: command
-      operationId: CancelChatEndpoint
-      parameters:
-        - name: id
-          in: path
-          description: The unique identifier of the chat to be cancelled
-          required: true
-          schema:
-            type: string
-            format: uuid
-            description: The unique identifier of the chat to be cancelled
-            example: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
-      responses:
-        "204":
-          description: No Content
   "/api/v1/categories":
     put:
       tags:
@@ -1490,6 +1442,17 @@ components:
           type: boolean
           description: Whether the page has a next page
           example: true
+    Prompt:
+      required:
+        - text
+      type: object
+      writeOnly: true
+      description: The prompt for creating a chat in the catalog system
+      properties:
+        text:
+          type: string
+          description: The text of the prompt
+          example: "What is the best book in the world?"
     ProblemDetails:
       type: object
       readOnly: true
@@ -1513,17 +1476,6 @@ components:
           type: string
           description: The detail of the problem
           example: "Category with id 01961eb4-668d-7e7e-ae25-0fab379614f7 not found."
-    Prompt:
-      required:
-        - text
-      type: object
-      writeOnly: true
-      description: The prompt for creating a chat in the catalog system
-      properties:
-        text:
-          type: string
-          description: The text of the prompt
-          example: "What is the best book in the world?"
     PublisherDto:
       type: object
       readOnly: true
@@ -1608,8 +1560,6 @@ tags:
     description: Operations for managing book authors, including author profiles, book associations, and biographical information
   - name: Book
     description: Core operations for managing books in the catalog, including creation, updates, and retrieval of book details
-  - name: Chat
-    description: Endpoints for handling book-related discussions and user interactions in chat format
   - name: Category
     description: Management of book categories and genres, allowing for organization and classification of books
   - name: Publisher
