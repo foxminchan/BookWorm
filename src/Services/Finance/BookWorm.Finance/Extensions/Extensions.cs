@@ -50,7 +50,7 @@ public static class Extensions
                             {
                                 optionsBuilder
                                     .UseNpgsql(
-                                        builder.Configuration.GetConnectionString(
+                                        builder.Configuration.GetRequiredConnectionString(
                                             Components.Database.Finance
                                         )
                                     )

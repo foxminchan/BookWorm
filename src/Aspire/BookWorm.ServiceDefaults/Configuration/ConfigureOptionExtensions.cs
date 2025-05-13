@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Notification.Extensions;
+﻿using Microsoft.Extensions.DependencyInjection;
+
+namespace BookWorm.ServiceDefaults.Configuration;
 
 public static class ConfigureOptionExtensions
 {

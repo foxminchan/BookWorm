@@ -6,7 +6,7 @@
     <AspireUnstableVersion>9.2.1-preview.1.25222.1</AspireUnstableVersion>
     <ApiVersioningVersion>8.1.0</ApiVersioningVersion>
     <GrpcVersion>2.71.0</GrpcVersion>
-    <MassTransitVersion>8.4.0</MassTransitVersion>
+    <MassTransitVersion>8.4.1</MassTransitVersion>
     <MsExtVersion>9.4.0</MsExtVersion>
     <MsTestVersion>1.6.3</MsTestVersion>
     <ToolKitVersion>9.4.0</ToolKitVersion>
@@ -104,7 +104,7 @@
   </ItemGroup>
   <ItemGroup Label="Testing">
     <!-- Testing packages -->
-    <PackageVersion Include="TUnit" Version="0.19.143" />
+    <PackageVersion Include="TUnit" Version="0.19.148" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Bogus" Version="35.6.3" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />

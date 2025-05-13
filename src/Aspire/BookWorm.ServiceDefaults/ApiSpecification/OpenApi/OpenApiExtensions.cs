@@ -23,7 +23,7 @@ public static class OpenApiExtensions
                 options =>
                 {
                     options.AddServerFromRequest();
-                    options.ApplyApiVersionInfo(document?.Title, document?.Description);
+                    options.ApplyApiVersionInfo(document);
                     options.ApplySchemaNullableFalse();
                     options.ApplySecuritySchemeDefinitions();
                     options.ApplyOperationDeprecatedStatus();
