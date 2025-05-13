@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Notification.Extensions;
+﻿using Microsoft.Extensions.Configuration;
+
+namespace BookWorm.ServiceDefaults.Configuration;
 
 public static class ConnectionStringExtensions
 {
@@ -8,7 +10,9 @@ public static class ConnectionStringExtensions
 
         if (string.IsNullOrEmpty(connectionString))
         {
-            throw new InvalidOperationException($"Connection string '{name}' not found.");
+            throw new InvalidOperationException(
+                $"Configuration missing value for: {(configuration is IConfigurationSection s ? s.Path + ":" + name : name)}"
+            );
         }
 
         return connectionString;

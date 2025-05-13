@@ -25,12 +25,15 @@ public static class AsyncApiExtensions
                 {
                     Info = new(document?.Title, version)
                     {
-                        License = new("MIT") { Url = new("https://opensource.org/licenses/MIT") },
+                        License = new(document?.LicenseName)
+                        {
+                            Url = document?.LicenseUrl.ToString(),
+                        },
                         Contact = new()
                         {
-                            Name = "Nhan Nguyen",
-                            Url = new("https://github.com/foxminchan"),
-                            Email = "nguyenxuannhan407@gmail.com",
+                            Name = document?.AuthorName,
+                            Url = document?.AuthorUrl.ToString(),
+                            Email = document?.AuthorEmail,
                         },
                     },
                 };

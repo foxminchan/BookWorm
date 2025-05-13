@@ -103,6 +103,8 @@ var chatApi = builder
     .WaitFor(mcp)
     .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor);
 
+mcp.WithParentRelationship(chatApi);
+
 var basketApi = builder
     .AddProject<BookWorm_Basket>(Application.Basket)
     .WithScalarApiDocs()

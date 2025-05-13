@@ -1,4 +1,4 @@
-﻿using BookWorm.Notification.Extensions;
+﻿using BookWorm.ServiceDefaults.Configuration;
 
 namespace BookWorm.Notification.Infrastructure.Senders;
 

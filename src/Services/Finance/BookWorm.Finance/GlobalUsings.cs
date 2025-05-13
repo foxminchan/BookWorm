@@ -12,6 +12,7 @@ global using BookWorm.ServiceDefaults;
 global using BookWorm.ServiceDefaults.ApiSpecification.AsyncApi;
 global using BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
 global using BookWorm.ServiceDefaults.Auth;
+global using BookWorm.ServiceDefaults.Configuration;
 global using BookWorm.ServiceDefaults.Kestrel;
 global using BookWorm.ServiceDefaults.Keycloak;
 global using MassTransit;
