@@ -16,7 +16,7 @@ public sealed class HybridSearch(
         CancellationToken cancellationToken = default
     )
     {
-        var vector = await embeddingGenerator.GenerateEmbeddingVectorAsync(
+        var vector = await embeddingGenerator.GenerateVectorAsync(
             text,
             cancellationToken: cancellationToken
         );
@@ -27,21 +27,21 @@ public sealed class HybridSearch(
 
         var options = new HybridSearchOptions<HybridSearchRecord>
         {
-            Top = maxResults,
             VectorProperty = r => r.Vector,
             AdditionalProperty = r => r.Description,
         };
 
-        var nearest = await vectorCollection.HybridSearchAsync(
+        var nearest = vectorCollection.HybridSearchAsync(
             vector,
             keywords,
+            maxResults,
             options,
             cancellationToken
         );
 
         var results = new List<HybridSearchRecord>();
 
-        await foreach (var item in nearest.Results.WithCancellation(cancellationToken))
+        await foreach (var item in nearest)
         {
             results.Add(item.Record);
         }

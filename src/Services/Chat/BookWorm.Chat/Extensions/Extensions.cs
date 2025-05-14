@@ -57,6 +57,7 @@ public static class Extensions
                 .CreateAsync(sseClientTransport, mcpClientOptions)
                 .GetAwaiter()
                 .GetResult();
+
             return mcpClient;
         });
     }
