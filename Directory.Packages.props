@@ -7,7 +7,7 @@
     <ApiVersioningVersion>8.1.0</ApiVersioningVersion>
     <GrpcVersion>2.71.0</GrpcVersion>
     <MassTransitVersion>8.4.1</MassTransitVersion>
-    <MsExtVersion>9.4.0</MsExtVersion>
+    <MsExtVersion>9.5.0</MsExtVersion>
     <MsTestVersion>1.6.3</MsTestVersion>
     <ToolKitVersion>9.4.0</ToolKitVersion>
   </PropertyGroup>
@@ -57,12 +57,12 @@
     <!-- ASP.NET Core -->
     <PackageVersion Include="Asp.Versioning.Http.Client" Version="$(ApiVersioningVersion)" />
     <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer" Version="$(ApiVersioningVersion)" />
-    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.4" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.5" />
     <PackageVersion Include="Microsoft.Azure.SignalR.Management" Version="1.30.3" />
-    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.47.0-preview" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.50.0-preview" />
     <!-- Entity Framework Core -->
     <PackageVersion Include="EFCore.NamingConventions" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.4" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.5" />
     <!-- OpenTelemetry -->
     <PackageVersion Include="OpenTelemetry.Instrumentation.Quartz" Version="1.12.0-beta.1" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.12.0" />
@@ -89,7 +89,7 @@
     <PackageVersion Include="Grpc.AspNetCore" Version="$(GrpcVersion)" />
     <PackageVersion Include="Grpc.AspNetCore.Server.ClientFactory" Version="$(GrpcVersion)" />
     <PackageVersion Include="Grpc.Tools" Version="2.72.0" PrivateAssets="All" />
-    <PackageVersion Include="Google.Protobuf" Version="3.30.2" />
+    <PackageVersion Include="Google.Protobuf" Version="3.31.0" />
     <!-- MassTransit -->
     <PackageVersion Include="MassTransit.TestFramework" Version="$(MassTransitVersion)" />
     <PackageVersion Include="MassTransit.RabbitMQ" Version="$(MassTransitVersion)" />
@@ -100,7 +100,7 @@
     <PackageVersion Include="AspNetCore.HealthChecks.SendGrid" Version="9.0.0" />
     <PackageVersion Include="MailKit" Version="4.12.0" />
     <PackageVersion Include="Mjml.Net" Version="4.8.0" />
-    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.1.0-preview.13" />
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.1.0-preview.14" />
   </ItemGroup>
   <ItemGroup Label="Testing">
     <!-- Testing packages -->
@@ -108,7 +108,7 @@
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Bogus" Version="35.6.3" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
-    <PackageVersion Include="System.Linq.AsyncEnumerable" Version="10.0.0-preview.3.25171.5" />
+    <PackageVersion Include="System.Linq.AsyncEnumerable" Version="10.0.0-preview.4.25258.110" />
     <PackageVersion Include="Aspire.Hosting.Testing" Version="$(AspireVersion)" />
     <PackageVersion Include="GitHubActionsTestLogger" Version="2.4.1" />
     <!-- Testing Platform -->

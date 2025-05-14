@@ -7,9 +7,9 @@ public sealed class HybridSearchRecord
     [VectorStoreRecordKey]
     public required Guid Id { get; init; }
 
-    [VectorStoreRecordData(IsFullTextSearchable = true)]
+    [VectorStoreRecordData(IsFullTextIndexed = true)]
     public required string Description { get; set; }
 
-    [VectorStoreRecordVector(768, DistanceFunction.CosineSimilarity)]
+    [VectorStoreRecordVector(768, DistanceFunction = DistanceFunction.CosineSimilarity)]
     public ReadOnlyMemory<float> Vector { get; set; }
 }

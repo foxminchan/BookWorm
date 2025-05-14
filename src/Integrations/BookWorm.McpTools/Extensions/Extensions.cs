@@ -30,5 +30,11 @@ public static class Extensions
         services.AddSingleton<IBookService, BookService>();
 
         services.AddMcpServer().WithHttpTransport().WithTools<Product>();
+
+        services
+            .AddOpenTelemetry()
+            .WithTracing(b => b.AddSource("*"))
+            .WithMetrics(b => b.AddMeter("*"))
+            .WithLogging();
     }
 }
