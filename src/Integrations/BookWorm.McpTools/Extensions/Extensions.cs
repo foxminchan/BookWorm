@@ -29,7 +29,11 @@ public static class Extensions
         );
         services.AddSingleton<IBookService, BookService>();
 
-        services.AddMcpServer().WithHttpTransport().WithTools<Product>();
+        services
+            .AddMcpServer()
+            .WithHttpTransport()
+            .WithTools<Product>()
+            .WithPrompts<Prompts.System>();
 
         services
             .AddOpenTelemetry()

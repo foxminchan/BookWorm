@@ -14,5 +14,6 @@ global using BookWorm.ServiceDefaults.Kestrel;
 global using BookWorm.ServiceDefaults.Keycloak;
 global using Microsoft.AspNetCore.Http.HttpResults;
 global using Microsoft.Extensions.AI;
+global using ModelContextProtocol;
 global using ModelContextProtocol.Client;
 global using StackExchange.Redis;
