@@ -288,15 +288,15 @@ public sealed class ListBooksQueryTests
     [Test]
     [MatrixDataSource]
     public async Task GivenCustomOrdering_WhenHandlingListBooksQuery_ThenShouldOrderCorrectly(
-        [Matrix(
+        [Matrix<string>(
             nameof(Book.Name),
             nameof(Book.Price.OriginalPrice),
             nameof(Book.Price.DiscountPrice),
             nameof(Book.Status),
-            null
+            null!
         )]
             string? orderBy,
-        [Matrix(false, true)] bool isDescending
+        [Matrix<bool>(false, true)] bool isDescending
     )
     {
         // Arrange

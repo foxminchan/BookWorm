@@ -67,16 +67,16 @@ public sealed class ListFeedbacksQueryTests
     [Test]
     [MatrixDataSource]
     public async Task GivenValidQueryWithPagination_WhenHandlingListFeedbacks_ThenShouldApplyPagination(
-        [Matrix(
+        [Matrix<string>(
             nameof(Feedback.Rating),
             nameof(Feedback.CreatedAt),
             nameof(Feedback.Version),
-            null,
+            null!,
             " ",
             ""
         )]
             string? orderBy,
-        [Matrix(true, false)] bool isDescending
+        [Matrix<bool>(true, false)] bool isDescending
     )
     {
         // Arrange

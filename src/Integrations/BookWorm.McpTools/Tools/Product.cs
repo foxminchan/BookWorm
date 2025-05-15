@@ -8,7 +8,7 @@ public sealed class Product(ISearch search, IBookService bookService)
 {
     private const string CollectionName = "book";
 
-    [McpServerTool]
+    [McpServerTool(Name = "SearchCatalog")]
     [Description("Searches the BookWorm catalog for a provided book description")]
     public async Task<string> SearchCatalogAsync(
         [Description("The product description for which to search")] string description

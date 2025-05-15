@@ -21,7 +21,7 @@ public sealed class BookDataIngestor(
 
         var text = $"{data.Name} {data.Description}";
 
-        var embeddings = await embeddingGenerator.GenerateEmbeddingVectorAsync(
+        var embeddings = await embeddingGenerator.GenerateVectorAsync(
             text,
             cancellationToken: cancellationToken
         );

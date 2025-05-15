@@ -32,24 +32,10 @@ public sealed class ChatStreaming : IChatStreaming
             );
         }
 
-        Messages =
-        [
-            new(
-                ChatRole.System,
-                """
-                You are an AI customer service assistant for BookWorm bookstore. You help customers find books and answer questions about our catalog.
-                You ONLY respond to topics related to BookWorm.
-                BookWorm is a book store that sells and provides information about books.
-                Be concise and only provide detailed responses when necessary.
-                If someone asks about anything other than BookWorm, its catalog, or their account, 
-                politely refuse to answer and ask if there's a book-related topic you can assist with instead.
-                """
-            ),
-            new(ChatRole.Assistant, "Hi! I'm the BookWorm assistant. How can I help you today?"),
-        ];
+        Messages = [];
     }
 
-    private IList<ChatMessage> Messages { get; }
+    private List<ChatMessage> Messages { get; }
 
     /// <summary>
     ///     Adds a new user message to the conversation and starts streaming the AI response.
@@ -63,6 +49,14 @@ public sealed class ChatStreaming : IChatStreaming
         var tools = await _mcpClient.ListToolsAsync();
 
         var chatOptions = new ChatOptions { Tools = [.. tools] };
+
+        var prompts = await _mcpClient.ListPromptsAsync();
+
+        var promptMessages = await Task.WhenAll(
+            prompts.Select(async prompt => (await prompt.GetAsync()).ToChatMessages())
+        );
+
+        Messages.AddRange(promptMessages.SelectMany(messages => messages));
 
         var fragment = new ClientMessageFragment(
             conversationId,
