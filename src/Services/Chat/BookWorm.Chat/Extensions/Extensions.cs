@@ -14,6 +14,12 @@ public static class Extensions
 
         builder.AddDefaultAuthentication().AddKeycloakClaimsTransformation();
 
+        var appSettings = new AppSettings();
+
+        builder.Configuration.Bind(appSettings);
+
+        services.AddSingleton(appSettings);
+
         // Add exception handlers
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails();
