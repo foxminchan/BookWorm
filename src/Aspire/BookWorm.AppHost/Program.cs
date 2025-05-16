@@ -176,6 +176,7 @@ builder
     .WithReference(gateway)
     .WithReference(catalogApi)
     .WithReference(chatApi)
+    .WithReference(mcp)
     .WithReference(orderingApi)
     .WithReference(ratingApi)
     .WithReference(basketApi)

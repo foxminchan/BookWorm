@@ -6,7 +6,7 @@ public sealed class ChatStreaming : IChatStreaming
     private readonly IChatClient _chatClient;
     private readonly IConversationState _conversationState;
 
-    private readonly TimeSpan _defaultStreamItemTimeout = TimeSpan.FromMinutes(1);
+    private readonly TimeSpan _defaultStreamItemTimeout;
     private readonly ILogger<ChatStreaming> _logger;
     private readonly IMcpClient _mcpClient;
 
@@ -15,6 +15,7 @@ public sealed class ChatStreaming : IChatStreaming
         ILogger<ChatStreaming> logger,
         IConversationState conversationState,
         ICancellationManager cancellationManager,
+        AppSettings appSettings,
         IMcpClient mcpClient
     )
     {
@@ -31,6 +32,8 @@ public sealed class ChatStreaming : IChatStreaming
                 chatClient.GetService<ChatClientMetadata>()?.DefaultModelId
             );
         }
+
+        _defaultStreamItemTimeout = appSettings.StreamTimeout;
 
         Messages = [];
     }
