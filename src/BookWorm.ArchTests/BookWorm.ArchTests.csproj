@@ -6,6 +6,7 @@
   <ItemGroup>
     <PackageReference Include="TUnit" />
     <PackageReference Include="TngTech.ArchUnitNET" />
+    <PackageReference Include="GitHubActionsTestLogger" />
   </ItemGroup>
   <ItemGroup Label="Test Platforms">
     <PackageReference Include="Microsoft.Testing.Extensions.HangDump" />
