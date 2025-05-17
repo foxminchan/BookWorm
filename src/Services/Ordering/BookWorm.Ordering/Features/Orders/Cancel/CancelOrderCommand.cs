@@ -2,10 +2,10 @@
 
 namespace BookWorm.Ordering.Features.Orders.Cancel;
 
-public sealed record CancelOrderCommand(Guid OrderId) : IQuery<OrderDetailDto>;
+public sealed record CancelOrderCommand(Guid OrderId) : ICommand<OrderDetailDto>;
 
 public sealed class CancelOrderHandler(IOrderRepository repository)
-    : IQueryHandler<CancelOrderCommand, OrderDetailDto>
+    : ICommandHandler<CancelOrderCommand, OrderDetailDto>
 {
     public async Task<OrderDetailDto> Handle(
         CancelOrderCommand request,

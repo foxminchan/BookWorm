@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <ExcludeFromCodeCoverage>true</ExcludeFromCodeCoverage>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="TUnit" />
+    <PackageReference Include="TngTech.ArchUnitNET" />
+  </ItemGroup>
+  <ItemGroup Label="Test Platforms">
+    <PackageReference Include="Microsoft.Testing.Extensions.HangDump" />
+    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CrashDump" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Services\Basket\BookWorm.Basket\BookWorm.Basket.csproj" />
+    <ProjectReference Include="..\Services\Catalog\BookWorm.Catalog\BookWorm.Catalog.csproj" />
+    <ProjectReference Include="..\Services\Chat\BookWorm.Chat\BookWorm.Chat.csproj" />
+    <ProjectReference Include="..\Services\Finance\BookWorm.Finance\BookWorm.Finance.csproj" />
+    <ProjectReference Include="..\Services\Notification\BookWorm.Notification\BookWorm.Notification.csproj" />
+    <ProjectReference Include="..\Services\Ordering\BookWorm.Ordering\BookWorm.Ordering.csproj" />
+    <ProjectReference Include="..\Services\Rating\BookWorm.Rating\BookWorm.Rating.csproj" />
+  </ItemGroup>
+</Project>
