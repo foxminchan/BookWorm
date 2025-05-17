@@ -8,6 +8,12 @@ Thank you for your interest in contributing to BookWorm! This document provides 
 2. **Clone Your Fork**: git clone `https://github.com/YOUR-USERNAME/BookWorm.git`
 3. **Add Upstream Remote**: git remote add upstream `https://github.com/ORIGINAL-OWNER/BookWorm.git`
 
+# Project Dependencies Diagram
+
+This diagram illustrates the dependencies between various components of the BookWorm project. It helps in understanding how different modules interact with each other.
+
+![BookWorm Dependencies Diagram](../assets/dependency.png)
+
 # Development Workflow
 
 1. **Create a Branch**: `git checkout -b feature/your-feature-name`
