@@ -2,10 +2,10 @@
 
 namespace BookWorm.Ordering.Features.Orders.Complete;
 
-public sealed record CompleteOrderCommand(Guid OrderId) : IQuery<OrderDetailDto>;
+public sealed record CompleteOrderCommand(Guid OrderId) : ICommand<OrderDetailDto>;
 
 public sealed class CompleteOrderHandler(IOrderRepository repository)
-    : IQueryHandler<CompleteOrderCommand, OrderDetailDto>
+    : ICommandHandler<CompleteOrderCommand, OrderDetailDto>
 {
     public async Task<OrderDetailDto> Handle(
         CompleteOrderCommand request,
