@@ -59,7 +59,7 @@
     <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer" Version="$(ApiVersioningVersion)" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.5" />
     <PackageVersion Include="Microsoft.Azure.SignalR.Management" Version="1.30.3" />
-    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.50.0-preview" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.51.0-preview" />
     <!-- Entity Framework Core -->
     <PackageVersion Include="EFCore.NamingConventions" Version="9.0.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.5" />
@@ -96,11 +96,11 @@
     <PackageVersion Include="MassTransit.EntityFrameworkCore" Version="$(MassTransitVersion)" />
     <PackageVersion Include="MassTransit.StateMachineVisualizer" Version="$(MassTransitVersion)" />
     <!-- Miscellaneous -->
-    <PackageVersion Include="MailKit" Version="4.12.0" />
+    <PackageVersion Include="MailKit" Version="4.12.1" />
     <PackageVersion Include="Mjml.Net" Version="4.8.0" />
     <PackageVersion Include="SendGrid" Version="9.29.3" />
     <PackageVersion Include="AspNetCore.HealthChecks.SendGrid" Version="9.0.0" />
-    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.1.0-preview.14" />
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.2.0-preview.1" />
   </ItemGroup>
   <ItemGroup Label="Testing">
     <!-- Testing packages -->
