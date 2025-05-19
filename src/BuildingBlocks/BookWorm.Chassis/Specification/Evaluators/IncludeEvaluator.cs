@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
+using ZLinq;
 
 namespace BookWorm.Chassis.Specification.Evaluators;
 
@@ -13,6 +14,7 @@ public sealed class IncludeEvaluator : IEvaluator
         typeof(EntityFrameworkQueryableExtensions)
             .GetTypeInfo()
             .GetDeclaredMethods(nameof(EntityFrameworkQueryableExtensions.Include))
+            .AsValueEnumerable()
             .Single(mi =>
                 mi.IsPublic
                 && mi.GetGenericArguments().Length == 2
@@ -26,6 +28,7 @@ public sealed class IncludeEvaluator : IEvaluator
         typeof(EntityFrameworkQueryableExtensions)
             .GetTypeInfo()
             .GetDeclaredMethods(nameof(EntityFrameworkQueryableExtensions.ThenInclude))
+            .AsValueEnumerable()
             .Single(mi =>
                 mi.IsPublic
                 && mi.GetGenericArguments().Length == 3
@@ -40,6 +43,7 @@ public sealed class IncludeEvaluator : IEvaluator
         typeof(EntityFrameworkQueryableExtensions)
             .GetTypeInfo()
             .GetDeclaredMethods(nameof(EntityFrameworkQueryableExtensions.ThenInclude))
+            .AsValueEnumerable()
             .Single(mi =>
                 mi.IsPublic
                 && mi.GetGenericArguments().Length == 3

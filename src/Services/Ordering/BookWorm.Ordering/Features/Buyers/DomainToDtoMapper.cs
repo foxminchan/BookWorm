@@ -9,6 +9,6 @@ public static class DomainToDtoMapper
 
     public static IReadOnlyList<BuyerDto> ToBuyerDtos(this IEnumerable<Buyer> buyers)
     {
-        return [.. buyers.Select(b => b.ToBuyerDto())];
+        return [.. buyers.AsValueEnumerable().Select(b => b.ToBuyerDto())];
     }
 }

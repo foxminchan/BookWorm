@@ -11,11 +11,14 @@ public sealed class MjmlRenderer : IRenderer
         var mjml = File.ReadAllText(template);
         var properties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
-        foreach (var property in properties)
-        {
-            var value = GetFormattedValue(property, model);
-            mjml = mjml.Replace($"{{{{{property.Name}}}}}", value);
-        }
+        properties
+            .AsValueEnumerable()
+            .ToList()
+            .ForEach(property =>
+            {
+                var value = GetFormattedValue(property, model);
+                mjml = mjml.Replace($"{{{{{property.Name}}}}}", value);
+            });
 
         mjml = mjml.Replace("{{Year}}", DateTime.Now.Year.ToString());
 
