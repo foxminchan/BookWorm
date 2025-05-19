@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Catalog.Features.Publishers.Create;
+﻿using BookWorm.Constants.Core;
+
+namespace BookWorm.Catalog.Features.Publishers.Create;
 
 public sealed class CreatePublisherEndpoint : IEndpoint<Ok<Guid>, CreatePublisherCommand, ISender>
 {

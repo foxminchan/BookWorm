@@ -1,4 +1,5 @@
-﻿using MassTransit;
+﻿using BookWorm.Constants.Aspire;
+using MassTransit;
 using BookGrpcServiceClient = BookWorm.Catalog.Grpc.Services.BookGrpcService.BookGrpcServiceClient;
 
 namespace BookWorm.Basket.Extensions;

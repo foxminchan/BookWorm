@@ -2,6 +2,7 @@
 using BookWorm.Catalog.Features.Books.Shared;
 using BookWorm.Catalog.Features.Books.Update;
 using BookWorm.Constants;
+using BookWorm.Constants.Core;
 using FluentValidation.TestHelper;
 using Microsoft.AspNetCore.Http;
 

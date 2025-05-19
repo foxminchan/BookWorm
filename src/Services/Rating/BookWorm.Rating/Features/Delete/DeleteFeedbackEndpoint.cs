@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Rating.Features.Delete;
+﻿using BookWorm.Constants.Core;
+
+namespace BookWorm.Rating.Features.Delete;
 
 public sealed class DeleteFeedbackEndpoint : IEndpoint<NoContent, Guid, ISender>
 {

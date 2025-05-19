@@ -1,13 +1,19 @@
 @description('The location for the resource(s) to be deployed.')
 param location string = resourceGroup().location
 
+param aca_outputs_azure_container_apps_environment_default_domain string
+
+param aca_outputs_azure_container_apps_environment_id string
+
+param aca_outputs_azure_container_registry_endpoint string
+
+param aca_outputs_azure_container_registry_managed_identity_id string
+
+param catalog_containerimage string
+
 param catalog_identity_outputs_id string
 
-param catalog_identity_outputs_clientid string
-
 param catalog_containerport string
-
-param bookworm_aca_outputs_azure_container_apps_environment_default_domain string
 
 param storage_outputs_blobendpoint string
 
@@ -21,25 +27,19 @@ param vectordb_key_value string
 
 param redis_kv_outputs_name string
 
-param bookworm_aca_outputs_azure_container_apps_environment_id string
-
-param bookworm_aca_outputs_azure_container_registry_endpoint string
-
-param bookworm_aca_outputs_azure_container_registry_managed_identity_id string
-
-param catalog_containerimage string
+param catalog_identity_outputs_clientid string
 
 resource postgres_kv_outputs_name_kv 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
   name: postgres_kv_outputs_name
 }
 
-resource redis_kv_outputs_name_kv 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
-  name: redis_kv_outputs_name
-}
-
 resource postgres_kv_outputs_name_kv_connectionstrings__catalogdb 'Microsoft.KeyVault/vaults/secrets@2023-07-01' existing = {
   name: 'connectionstrings--catalogdb'
   parent: postgres_kv_outputs_name_kv
+}
+
+resource redis_kv_outputs_name_kv 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
+  name: redis_kv_outputs_name
 }
 
 resource redis_kv_outputs_name_kv_connectionstrings__redis 'Microsoft.KeyVault/vaults/secrets@2023-07-01' existing = {
@@ -64,7 +64,7 @@ resource catalog 'Microsoft.App/containerApps@2024-03-01' = {
         }
         {
           name: 'connectionstrings--vectordb'
-          value: 'Endpoint=${'http://vectordb.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'};Key=${vectordb_key_value}'
+          value: 'Endpoint=${'http://vectordb.internal.${aca_outputs_azure_container_apps_environment_default_domain}'};Key=${vectordb_key_value}'
         }
         {
           name: 'connectionstrings--vectordb-http'
@@ -79,17 +79,17 @@ resource catalog 'Microsoft.App/containerApps@2024-03-01' = {
       activeRevisionsMode: 'Single'
       ingress: {
         external: false
-        targetPort: catalog_containerport
+        targetPort: int(catalog_containerport)
         transport: 'http'
       }
       registries: [
         {
-          server: bookworm_aca_outputs_azure_container_registry_endpoint
-          identity: bookworm_aca_outputs_azure_container_registry_managed_identity_id
+          server: aca_outputs_azure_container_registry_endpoint
+          identity: aca_outputs_azure_container_registry_managed_identity_id
         }
       ]
     }
-    environmentId: bookworm_aca_outputs_azure_container_apps_environment_id
+    environmentId: aca_outputs_azure_container_apps_environment_id
     template: {
       containers: [
         {
@@ -118,15 +118,15 @@ resource catalog 'Microsoft.App/containerApps@2024-03-01' = {
             }
             {
               name: 'ConnectionStrings__embedding'
-              value: 'Endpoint=http://${'ollama.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'}:80;Model=nomic-embed-text:latest'
+              value: 'Endpoint=http://${'ollama.internal.${aca_outputs_azure_container_apps_environment_default_domain}'}:80;Model=nomic-embed-text:latest'
             }
             {
               name: 'ConnectionStrings__chat'
-              value: 'Endpoint=http://${'ollama.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'}:80;Model=deepseek-r1:1.5b'
+              value: 'Endpoint=http://${'ollama.internal.${aca_outputs_azure_container_apps_environment_default_domain}'}:80;Model=deepseek-r1:1.5b'
             }
             {
-              name: 'ConnectionStrings__blob'
-              value: storage_outputs_blobendpoint
+              name: 'ConnectionStrings__catalog-blob'
+              value: 'Endpoint="${storage_outputs_blobendpoint}";ContainerName=catalog-blob;'
             }
             {
               name: 'ConnectionStrings__queue'
@@ -146,7 +146,7 @@ resource catalog 'Microsoft.App/containerApps@2024-03-01' = {
             }
             {
               name: 'services__keycloak__http__0'
-              value: 'http://keycloak.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'
+              value: 'http://keycloak.internal.${aca_outputs_azure_container_apps_environment_default_domain}'
             }
             {
               name: 'services__keycloak__management__0'
@@ -172,7 +172,7 @@ resource catalog 'Microsoft.App/containerApps@2024-03-01' = {
     type: 'UserAssigned'
     userAssignedIdentities: {
       '${catalog_identity_outputs_id}': { }
-      '${bookworm_aca_outputs_azure_container_registry_managed_identity_id}': { }
+      '${aca_outputs_azure_container_registry_managed_identity_id}': { }
     }
   }
 }

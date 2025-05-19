@@ -1,14 +1,14 @@
 @description('The location for the resource(s) to be deployed.')
 param location string = resourceGroup().location
 
-param bookworm_aca_outputs_volumes_vectordb_0 string
+param aca_outputs_azure_container_apps_environment_default_domain string
+
+param aca_outputs_azure_container_apps_environment_id string
 
 @secure()
 param vectordb_key_value string
 
-param bookworm_aca_outputs_azure_container_apps_environment_default_domain string
-
-param bookworm_aca_outputs_azure_container_apps_environment_id string
+param aca_outputs_volumes_vectordb_0 string
 
 resource vectordb 'Microsoft.App/containerApps@2024-03-01' = {
   name: 'vectordb'
@@ -34,11 +34,11 @@ resource vectordb 'Microsoft.App/containerApps@2024-03-01' = {
         ]
       }
     }
-    environmentId: bookworm_aca_outputs_azure_container_apps_environment_id
+    environmentId: aca_outputs_azure_container_apps_environment_id
     template: {
       containers: [
         {
-          image: 'docker.io/qdrant/qdrant:v1.13.4'
+          image: 'docker.io/qdrant/qdrant:v1.13.6'
           name: 'vectordb'
           env: [
             {
@@ -65,7 +65,7 @@ resource vectordb 'Microsoft.App/containerApps@2024-03-01' = {
         {
           name: 'v0'
           storageType: 'AzureFile'
-          storageName: bookworm_aca_outputs_volumes_vectordb_0
+          storageName: aca_outputs_volumes_vectordb_0
         }
       ]
     }

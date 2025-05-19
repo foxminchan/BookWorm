@@ -1,4 +1,5 @@
 ﻿using BookWorm.Constants;
+using BookWorm.Constants.Aspire;
 using FluentValidation;
 using MassTransit;
 using MassTransit.Logging;

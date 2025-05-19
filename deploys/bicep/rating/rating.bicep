@@ -1,9 +1,17 @@
 @description('The location for the resource(s) to be deployed.')
 param location string = resourceGroup().location
 
-param rating_identity_outputs_id string
+param aca_outputs_azure_container_apps_environment_default_domain string
 
-param rating_identity_outputs_clientid string
+param aca_outputs_azure_container_apps_environment_id string
+
+param aca_outputs_azure_container_registry_endpoint string
+
+param aca_outputs_azure_container_registry_managed_identity_id string
+
+param rating_containerimage string
+
+param rating_identity_outputs_id string
 
 param rating_containerport string
 
@@ -12,15 +20,7 @@ param postgres_kv_outputs_name string
 @secure()
 param queue_password_value string
 
-param bookworm_aca_outputs_azure_container_apps_environment_default_domain string
-
-param bookworm_aca_outputs_azure_container_apps_environment_id string
-
-param bookworm_aca_outputs_azure_container_registry_endpoint string
-
-param bookworm_aca_outputs_azure_container_registry_managed_identity_id string
-
-param rating_containerimage string
+param rating_identity_outputs_clientid string
 
 resource postgres_kv_outputs_name_kv 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
   name: postgres_kv_outputs_name
@@ -50,17 +50,17 @@ resource rating 'Microsoft.App/containerApps@2024-03-01' = {
       activeRevisionsMode: 'Single'
       ingress: {
         external: false
-        targetPort: rating_containerport
+        targetPort: int(rating_containerport)
         transport: 'http'
       }
       registries: [
         {
-          server: bookworm_aca_outputs_azure_container_registry_endpoint
-          identity: bookworm_aca_outputs_azure_container_registry_managed_identity_id
+          server: aca_outputs_azure_container_registry_endpoint
+          identity: aca_outputs_azure_container_registry_managed_identity_id
         }
       ]
     }
-    environmentId: bookworm_aca_outputs_azure_container_apps_environment_id
+    environmentId: aca_outputs_azure_container_apps_environment_id
     template: {
       containers: [
         {
@@ -97,7 +97,7 @@ resource rating 'Microsoft.App/containerApps@2024-03-01' = {
             }
             {
               name: 'services__keycloak__http__0'
-              value: 'http://keycloak.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'
+              value: 'http://keycloak.internal.${aca_outputs_azure_container_apps_environment_default_domain}'
             }
             {
               name: 'services__keycloak__management__0'
@@ -119,7 +119,7 @@ resource rating 'Microsoft.App/containerApps@2024-03-01' = {
     type: 'UserAssigned'
     userAssignedIdentities: {
       '${rating_identity_outputs_id}': { }
-      '${bookworm_aca_outputs_azure_container_registry_managed_identity_id}': { }
+      '${aca_outputs_azure_container_registry_managed_identity_id}': { }
     }
   }
 }

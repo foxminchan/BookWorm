@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Rating.Extensions;
+﻿using BookWorm.Constants.Aspire;
+
+namespace BookWorm.Rating.Extensions;
 
 public static class Extensions
 {

@@ -1,9 +1,17 @@
 @description('The location for the resource(s) to be deployed.')
 param location string = resourceGroup().location
 
-param notification_identity_outputs_id string
+param aca_outputs_azure_container_apps_environment_default_domain string
 
-param notification_identity_outputs_clientid string
+param aca_outputs_azure_container_apps_environment_id string
+
+param aca_outputs_azure_container_registry_endpoint string
+
+param aca_outputs_azure_container_registry_managed_identity_id string
+
+param notification_containerimage string
+
+param notification_identity_outputs_id string
 
 param notification_containerport string
 
@@ -21,15 +29,7 @@ param queue_password_value string
 
 param storage_outputs_tableendpoint string
 
-param bookworm_aca_outputs_azure_container_apps_environment_default_domain string
-
-param bookworm_aca_outputs_azure_container_apps_environment_id string
-
-param bookworm_aca_outputs_azure_container_registry_endpoint string
-
-param bookworm_aca_outputs_azure_container_registry_managed_identity_id string
-
-param notification_containerimage string
+param notification_identity_outputs_clientid string
 
 resource notification 'Microsoft.App/containerApps@2024-03-01' = {
   name: 'notification'
@@ -57,17 +57,17 @@ resource notification 'Microsoft.App/containerApps@2024-03-01' = {
       activeRevisionsMode: 'Single'
       ingress: {
         external: false
-        targetPort: notification_containerport
+        targetPort: int(notification_containerport)
         transport: 'http'
       }
       registries: [
         {
-          server: bookworm_aca_outputs_azure_container_registry_endpoint
-          identity: bookworm_aca_outputs_azure_container_registry_managed_identity_id
+          server: aca_outputs_azure_container_registry_endpoint
+          identity: aca_outputs_azure_container_registry_managed_identity_id
         }
       ]
     }
-    environmentId: bookworm_aca_outputs_azure_container_apps_environment_id
+    environmentId: aca_outputs_azure_container_apps_environment_id
     template: {
       containers: [
         {
@@ -130,7 +130,7 @@ resource notification 'Microsoft.App/containerApps@2024-03-01' = {
     type: 'UserAssigned'
     userAssignedIdentities: {
       '${notification_identity_outputs_id}': { }
-      '${bookworm_aca_outputs_azure_container_registry_managed_identity_id}': { }
+      '${aca_outputs_azure_container_registry_managed_identity_id}': { }
     }
   }
 }

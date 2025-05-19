@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Ordering.Features.Buyers.Get;
+﻿using BookWorm.Constants.Other;
+
+namespace BookWorm.Ordering.Features.Buyers.Get;
 
 public sealed class GetBuyerEndpoint
     : IEndpoint<Ok<BuyerDto>, GetBuyerQuery, ISender, IFeatureManager>

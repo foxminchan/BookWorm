@@ -1,28 +1,23 @@
 targetScope = 'subscription'
 
-param environmentName string
+param resourceGroupName string
 
 param location string
 
 param principalId string
 
-param postgres_username string = 'ksTcpYfrMg'
+param postgres_username string = 'wBpFMdaVMg'
 
 @secure()
 param postgres_password string
 
-var tags = {
-  'aspire-env-name': environmentName
-}
-
 resource rg 'Microsoft.Resources/resourceGroups@2023-07-01' = {
-  name: 'rg-${environmentName}'
+  name: resourceGroupName
   location: location
-  tags: tags
 }
 
-module bookworm_aca 'bookworm-aca/bookworm-aca.bicep' = {
-  name: 'bookworm-aca'
+module aca 'aca/aca.bicep' = {
+  name: 'aca'
   scope: rg
   params: {
     location: location
@@ -248,19 +243,23 @@ module finance_roles_postgres_kv 'finance-roles-postgres-kv/finance-roles-postgr
   }
 }
 
-output bookworm_aca_volumes_vectordb_0 string = bookworm_aca.outputs.volumes_vectordb_0
+output aca_AZURE_CONTAINER_REGISTRY_NAME string = aca.outputs.AZURE_CONTAINER_REGISTRY_NAME
 
-output bookworm_aca_AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN string = bookworm_aca.outputs.AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN
+output aca_AZURE_CONTAINER_REGISTRY_ENDPOINT string = aca.outputs.AZURE_CONTAINER_REGISTRY_ENDPOINT
 
-output bookworm_aca_AZURE_CONTAINER_APPS_ENVIRONMENT_ID string = bookworm_aca.outputs.AZURE_CONTAINER_APPS_ENVIRONMENT_ID
+output aca_AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID string = aca.outputs.AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID
 
-output bookworm_aca_volumes_ollama_0 string = bookworm_aca.outputs.volumes_ollama_0
+output aca_AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN string = aca.outputs.AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN
 
-output bookworm_aca_volumes_keycloak_0 string = bookworm_aca.outputs.volumes_keycloak_0
+output aca_AZURE_CONTAINER_APPS_ENVIRONMENT_ID string = aca.outputs.AZURE_CONTAINER_APPS_ENVIRONMENT_ID
+
+output aca_volumes_vectordb_0 string = aca.outputs.volumes_vectordb_0
+
+output aca_volumes_ollama_0 string = aca.outputs.volumes_ollama_0
+
+output aca_volumes_keycloak_0 string = aca.outputs.volumes_keycloak_0
 
 output catalog_identity_id string = catalog_identity.outputs.id
-
-output catalog_identity_clientId string = catalog_identity.outputs.clientId
 
 output storage_blobEndpoint string = storage.outputs.blobEndpoint
 
@@ -272,15 +271,13 @@ output redis_kv_name string = redis_kv.outputs.name
 
 output redis_kv_vaultUri string = redis_kv.outputs.vaultUri
 
-output bookworm_aca_AZURE_CONTAINER_REGISTRY_ENDPOINT string = bookworm_aca.outputs.AZURE_CONTAINER_REGISTRY_ENDPOINT
-
-output bookworm_aca_AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID string = bookworm_aca.outputs.AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID
+output catalog_identity_clientId string = catalog_identity.outputs.clientId
 
 output chatting_identity_id string = chatting_identity.outputs.id
 
-output chatting_identity_clientId string = chatting_identity.outputs.clientId
-
 output signalr_hostName string = signalr.outputs.hostName
+
+output chatting_identity_clientId string = chatting_identity.outputs.clientId
 
 output basket_identity_id string = basket_identity.outputs.id
 
@@ -288,9 +285,9 @@ output basket_identity_clientId string = basket_identity.outputs.clientId
 
 output notification_identity_id string = notification_identity.outputs.id
 
-output notification_identity_clientId string = notification_identity.outputs.clientId
-
 output storage_tableEndpoint string = storage.outputs.tableEndpoint
+
+output notification_identity_clientId string = notification_identity.outputs.clientId
 
 output ordering_identity_id string = ordering_identity.outputs.id
 

@@ -18,7 +18,7 @@ resource storage 'Microsoft.Storage/storageAccounts@2024-01-01' = {
   }
   tags: {
     'aspire-resource-name': 'storage'
-    Environment: 'Development'
+    Environment: 'Production'
     Projects: 'BookWorm'
   }
 }
@@ -26,6 +26,11 @@ resource storage 'Microsoft.Storage/storageAccounts@2024-01-01' = {
 resource blobs 'Microsoft.Storage/storageAccounts/blobServices@2024-01-01' = {
   name: 'default'
   parent: storage
+}
+
+resource catalog_blob 'Microsoft.Storage/storageAccounts/blobServices/containers@2024-01-01' = {
+  name: 'catalog-blob'
+  parent: blobs
 }
 
 output blobEndpoint string = storage.properties.primaryEndpoints.blob

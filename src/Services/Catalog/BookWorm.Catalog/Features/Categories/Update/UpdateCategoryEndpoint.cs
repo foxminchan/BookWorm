@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Catalog.Features.Categories.Update;
+﻿using BookWorm.Constants.Core;
+
+namespace BookWorm.Catalog.Features.Categories.Update;
 
 public sealed class UpdateCategoryEndpoint : IEndpoint<NoContent, UpdateCategoryCommand, ISender>
 {
