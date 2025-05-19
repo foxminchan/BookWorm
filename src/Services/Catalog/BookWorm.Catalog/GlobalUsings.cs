@@ -40,3 +40,4 @@ global using Microsoft.AspNetCore.Http.HttpResults;
 global using Microsoft.EntityFrameworkCore;
 global using Microsoft.Extensions.AI;
 global using Microsoft.FeatureManagement;
+global using ZLinq;

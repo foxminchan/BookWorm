@@ -3,6 +3,7 @@
     <PublishAot>true</PublishAot>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="ZLinq" />
     <PackageReference Include="MediatR" />
   </ItemGroup>
 </Project>

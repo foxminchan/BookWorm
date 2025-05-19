@@ -1,4 +1,5 @@
 ﻿using System.Threading.Channels;
+using ZLinq;
 
 namespace BookWorm.Chat.Infrastructure.ConversationState;
 
@@ -132,6 +133,7 @@ public sealed class RedisConversationState : IConversationState, IDisposable
         return
         [
             .. fragments
+                .AsValueEnumerable()
                 .GroupBy(f => f.Id)
                 .Select(g => MessageBuffer.CoalesceFragments([.. g.Skip(1)]))
                 .Select(coalescedFragment => new ClientMessage(

@@ -4,6 +4,7 @@ using FluentValidation;
 using FluentValidation.Results;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using ZLinq;
 
 namespace BookWorm.Chassis.Pipelines;
 
@@ -40,6 +41,7 @@ public class ValidationBehavior<TRequest, TResponse>(
         );
 
         var errors = validationResult
+            .AsValueEnumerable()
             .Where(result => !result.IsValid)
             .SelectMany(result => result.Errors)
             .Select(failure => new ValidationFailure(failure.PropertyName, failure.ErrorMessage))

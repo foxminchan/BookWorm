@@ -1,4 +1,5 @@
 ﻿using BookWorm.Chassis.Specification.Expressions;
+using ZLinq;
 
 namespace BookWorm.Chassis.Specification.Evaluators;
 
@@ -17,9 +18,9 @@ public sealed class OrderEvaluator : IEvaluator
         }
 
         if (
-            specification.OrderExpressions.Count(x =>
-                x.OrderType is OrderType.OrderBy or OrderType.OrderByDescending
-            ) > 1
+            specification
+                .OrderExpressions.AsValueEnumerable()
+                .Count(x => x.OrderType is OrderType.OrderBy or OrderType.OrderByDescending) > 1
         )
         {
             throw new InvalidOperationException(
