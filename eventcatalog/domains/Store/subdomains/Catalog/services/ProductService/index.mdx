@@ -54,10 +54,14 @@ receives:
     version: 1.0.0
   - id: FeedbackDeletedEvent
     version: 1.0.0
-schemaPath: catalog-service.yml
+schemaPath: openapi-v1.yml
 specifications:
-  openapiPath: catalog-api.yml
-  asyncapiPath: catalog-service.yml
+  - type: asyncapi
+    path: asyncapi-v1.yml
+    name: AsyncAPI V1
+  - type: openapi
+    path: openapi-v1.yml
+    name: OpenAPI V1
 owners:
   - nhanxnguyen
 repository:

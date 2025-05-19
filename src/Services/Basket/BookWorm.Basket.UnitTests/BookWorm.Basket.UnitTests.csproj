@@ -4,10 +4,10 @@
     <ExcludeFromCodeCoverage>true</ExcludeFromCodeCoverage>
   </PropertyGroup>
   <ItemGroup Label="Unit Test">
-    <PackageReference Include="TUnit" />
-    <PackageReference Include="Shouldly" />
     <PackageReference Include="Moq" />
+    <PackageReference Include="TUnit" />
     <PackageReference Include="Bogus" />
+    <PackageReference Include="Shouldly" />
     <PackageReference Include="GitHubActionsTestLogger" />
   </ItemGroup>
   <ItemGroup Label="Test Platforms">

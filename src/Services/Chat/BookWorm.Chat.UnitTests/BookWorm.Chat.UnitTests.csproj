@@ -4,9 +4,9 @@
     <ExcludeFromCodeCoverage>true</ExcludeFromCodeCoverage>
   </PropertyGroup>
   <ItemGroup Label="Unit Test">
+    <PackageReference Include="Moq" />
     <PackageReference Include="TUnit" />
     <PackageReference Include="Shouldly" />
-    <PackageReference Include="Moq" />
     <PackageReference Include="GitHubActionsTestLogger" />
     <PackageReference Include="System.Linq.AsyncEnumerable" />
   </ItemGroup>

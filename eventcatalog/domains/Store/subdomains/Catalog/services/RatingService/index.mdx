@@ -26,10 +26,14 @@ receives:
     version: 1.0.0
   - id: DeleteFeedbackCommand
     version: 1.0.0
-schemaPath: rating-service.yml
+schemaPath: openapi-v1.yml
 specifications:
-  openapiPath: rating-api.yml
-  asyncapiPath: rating-service.yml
+  - type: openapi
+    path: openapi-v1.yml
+    name: OpenAPI V1
+  - type: asyncapi
+    path: asyncapi-v1.yml
+    name: AsyncAPI V1
 owners:
   - nhanxnguyen
 repository:

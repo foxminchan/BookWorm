@@ -4,18 +4,18 @@
   </PropertyGroup>
   <ItemGroup Label="Project">
     <PackageReference Include="Marten.AspNetCore" />
-    <PackageReference Include="Aspire.StackExchange.Redis" />
     <PackageReference Include="DistributedLock.Redis" />
+    <PackageReference Include="Aspire.StackExchange.Redis" />
     <PackageReference Include="Microsoft.FeatureManagement.AspNetCore" />
   </ItemGroup>
   <ItemGroup Label="Grpc">
-    <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
     <PackageReference Include="Google.Protobuf" />
+    <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup Label="EF Core">
     <PackageReference Include="Aspire.Azure.Npgsql" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
     <PackageReference Include="MassTransit.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\Aspire\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj" />

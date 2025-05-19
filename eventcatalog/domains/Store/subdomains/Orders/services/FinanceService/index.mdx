@@ -36,10 +36,14 @@ receives:
     version: 1.0.0
   - id: UserCheckedOutEvent
     version: 1.0.0
-schemaPath: finance-service.yml
+schemaPath: openapi-v1.yml
 specifications:
-  openapiPath: finance-api.yml
-  asyncapiPath: finance-service.yml
+  - type: openapi
+    path: openapi-v1.yml
+    name: OpenAPI V1
+  - type: asyncapi
+    path: asyncapi-v1.yml
+    name: AsyncAPI V1
 owners:
   - nhanxnguyen
 repository:

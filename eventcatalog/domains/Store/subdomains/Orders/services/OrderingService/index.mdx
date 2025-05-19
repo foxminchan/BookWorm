@@ -48,10 +48,14 @@ receives:
     version: 1.0.0
   - id: DeleteBasketFailedCommand
     version: 1.0.0
-schemaPath: ordering-service.yml
+schemaPath: openapi-v1.yml
 specifications:
-  openapiPath: ordering-api.yml
-  asyncapiPath: ordering-service.yml
+  - type: openapi
+    path: openapi-v1.yml
+    name: OpenAPI V1
+  - type: asyncapi
+    path: asyncapi-v1.yml
+    name: AsyncAPI V1
 owners:
   - nhanxnguyen
 repository:

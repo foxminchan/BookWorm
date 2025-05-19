@@ -1,4 +1,5 @@
-﻿using BookWorm.Constants;
+﻿using Aspire.Hosting.Azure;
+using BookWorm.Constants;
 using BookWorm.Scalar;
 
 namespace BookWorm.AppHost.Extensions;
@@ -18,8 +19,8 @@ public static class ProjectExtensions
     /// </remarks>
     public static void AddProjectPublisher(this IDistributedApplicationBuilder builder)
     {
-        builder.AddAzurePublisher();
-        builder.AddKubernetesPublisher();
+        builder.AddAzureEnvironment();
+        builder.AddKubernetesEnvironment("k8s");
     }
 
     /// <summary>
