@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Chat.Extensions;
+﻿using BookWorm.Constants.Aspire;
+
+namespace BookWorm.Chat.Extensions;
 
 public static class Extensions
 {

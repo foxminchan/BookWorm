@@ -1,47 +1,11 @@
-﻿using Aspire.Hosting.Azure;
-using BookWorm.Constants;
+﻿using Aspire.Hosting.Yarp;
+using BookWorm.Constants.Aspire;
 using BookWorm.Scalar;
 
 namespace BookWorm.AppHost.Extensions;
 
 public static class ProjectExtensions
 {
-    /// <summary>
-    ///     Adds project-specific publishers to the distributed application builder.
-    /// </summary>
-    /// <param name="builder">The distributed application builder.</param>
-    /// <remarks>
-    ///     Starting in Aspire 9.2, we can use the new DockerComposePublisher to generate a docker-compose file.
-    ///     Run 'dotnet run --publisher kubernetes --output-path .\deploys\helm --project
-    ///     .\src\Aspire\BookWorm.AppHost\BookWorm.AppHost.csproj' to publish as a helm chart.
-    ///     Run 'dotnet run --publisher azure --output-path .\deploys\bicep --project
-    ///     .\src\Aspire\BookWorm.AppHost\BookWorm.AppHost.csproj' to publish as a bicep template.
-    /// </remarks>
-    public static void AddProjectPublisher(this IDistributedApplicationBuilder builder)
-    {
-        builder.AddAzureEnvironment();
-        builder.AddKubernetesEnvironment("k8s");
-    }
-
-    /// <summary>
-    ///     Adds an Azure Container App Environment to the distributed application.
-    /// </summary>
-    /// <param name="builder">The distributed application builder to configure.</param>
-    /// <remarks>
-    ///     This method creates a container app environment with the current environment name,
-    ///     configures Azure Developer CLI (azd) compatible resource naming,
-    ///     and provisions it as a service in the application.
-    /// </remarks>
-    public static void AddAzureContainerAppEnvironment(this IDistributedApplicationBuilder builder)
-    {
-        var environmentName = $"{nameof(BookWorm).ToLowerInvariant()}-aca";
-
-        builder
-            .AddAzureContainerAppEnvironment(environmentName)
-            .WithAzdResourceNaming()
-            .ProvisionAsService();
-    }
-
     /// <summary>
     ///     Configures the resource builder to use the Scalar API documentation if not in publish mode.
     /// </summary>
@@ -76,7 +40,7 @@ public static class ProjectExtensions
     /// </remarks>
     public static void AddK6(
         this IDistributedApplicationBuilder builder,
-        IResourceBuilder<ProjectResource> entryPoint
+        IResourceBuilder<YarpResource> entryPoint
     )
     {
         if (builder.ExecutionContext.IsRunMode)
@@ -87,7 +51,7 @@ public static class ProjectExtensions
                 .WithBindMount("Container/scripts", "/scripts", true)
                 .WithBindMount("Container/dist", "/home/k6")
                 .WithScript("/scripts/main.js", Random.Shared.Next(10, 100))
-                .WithReference(entryPoint)
+                .WithReference(entryPoint.Resource.GetEndpoint("http"))
                 .WaitFor(entryPoint);
         }
     }

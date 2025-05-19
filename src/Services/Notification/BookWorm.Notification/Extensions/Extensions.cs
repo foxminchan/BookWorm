@@ -1,4 +1,5 @@
-﻿using OpenTelemetry.Trace;
+﻿using BookWorm.Constants.Aspire;
+using OpenTelemetry.Trace;
 
 namespace BookWorm.Notification.Extensions;
 

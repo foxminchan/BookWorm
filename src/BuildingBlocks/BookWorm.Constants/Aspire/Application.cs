@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Constants;
+﻿namespace BookWorm.Constants.Aspire;
 
 public static class Application
 {

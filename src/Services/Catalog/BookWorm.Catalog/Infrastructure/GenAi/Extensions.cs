@@ -1,6 +1,7 @@
 ﻿using BookWorm.Catalog.Infrastructure.GenAi.Ingestion;
 using BookWorm.Chassis.Ingestion;
 using BookWorm.Chassis.Search;
+using BookWorm.Constants.Aspire;
 using Microsoft.Extensions.VectorData;
 using Microsoft.SemanticKernel.Connectors.Qdrant;
 

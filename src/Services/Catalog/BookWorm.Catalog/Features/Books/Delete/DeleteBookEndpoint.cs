@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Catalog.Features.Books.Delete;
+﻿using BookWorm.Constants.Core;
+
+namespace BookWorm.Catalog.Features.Books.Delete;
 
 public sealed class DeleteBookEndpoint : IEndpoint<NoContent, Guid, ISender>
 {

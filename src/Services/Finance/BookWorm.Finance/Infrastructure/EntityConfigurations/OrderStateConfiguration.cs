@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
+﻿using BookWorm.Constants.Core;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BookWorm.Finance.Infrastructure.EntityConfigurations;
 

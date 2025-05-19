@@ -4,26 +4,18 @@ using Azure.Storage.Sas;
 
 namespace BookWorm.Catalog.Infrastructure.Blob;
 
-public sealed class BlobService(BlobServiceClient client) : IBlobService
+public sealed class BlobService(BlobContainerClient client) : IBlobService
 {
     private const int SasExpiryHours = 1;
-    private readonly string _container = nameof(Catalog).ToLowerInvariant();
 
     public async Task<string> UploadFileAsync(
         IFormFile file,
         CancellationToken cancellationToken = default
     )
     {
-        var blobContainerClient = client.GetBlobContainerClient(_container);
-
-        await blobContainerClient.CreateIfNotExistsAsync(
-            PublicAccessType.BlobContainer,
-            cancellationToken: cancellationToken
-        );
-
         var uniqueFileName = $"{Guid.CreateVersion7()}-{file.FileName}";
 
-        var blobClient = blobContainerClient.GetBlobClient(uniqueFileName);
+        var blobClient = client.GetBlobClient(uniqueFileName);
 
         await blobClient.UploadAsync(file.OpenReadStream(), cancellationToken);
 
@@ -35,9 +27,7 @@ public sealed class BlobService(BlobServiceClient client) : IBlobService
         CancellationToken cancellationToken = default
     )
     {
-        var blobContainerClient = client.GetBlobContainerClient(_container);
-
-        var blobClient = blobContainerClient.GetBlobClient(fileName);
+        var blobClient = client.GetBlobClient(fileName);
 
         await blobClient.DeleteIfExistsAsync(
             DeleteSnapshotsOption.IncludeSnapshots,
@@ -45,36 +35,15 @@ public sealed class BlobService(BlobServiceClient client) : IBlobService
         );
     }
 
-    public async Task<string> GetFileUrl(
-        string fileName,
-        CancellationToken cancellationToken = default
-    )
+    public string GetFileUrl(string fileName, CancellationToken cancellationToken = default)
     {
-        var blobContainerClient = client.GetBlobContainerClient(_container);
+        var blobClient = client.GetBlobClient(fileName);
 
-        var blobClient = blobContainerClient.GetBlobClient(fileName);
-
-        var sasBuilder = new BlobSasBuilder
-        {
-            BlobContainerName = _container,
-            BlobName = fileName,
-            Resource = "b",
-            StartsOn = DateTimeOffset.UtcNow.AddMinutes(-5),
-            ExpiresOn = DateTimeOffset.UtcNow.AddHours(SasExpiryHours),
-        };
-
-        sasBuilder.SetPermissions(BlobSasPermissions.Read);
-
-        var userDelegationKey = await client.GetUserDelegationKeyAsync(
-            DateTimeOffset.UtcNow.AddMinutes(-5),
-            DateTimeOffset.UtcNow.AddHours(SasExpiryHours),
-            cancellationToken
+        var url = blobClient.GenerateSasUri(
+            BlobSasPermissions.Read,
+            DateTimeOffset.UtcNow.AddHours(SasExpiryHours)
         );
 
-        var sasToken = sasBuilder
-            .ToSasQueryParameters(userDelegationKey, client.AccountName)
-            .ToString();
-
-        return $"{blobClient.Uri}?{sasToken}";
+        return url.ToString();
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Constants;
+﻿namespace BookWorm.Constants.Aspire;
 
 public static class Components
 {
@@ -35,6 +35,7 @@ public static class Components
             public static readonly string Resource = nameof(Storage).ToLowerInvariant();
             public static readonly string Blob = nameof(Blob).ToLowerInvariant();
             public static readonly string Table = nameof(Table).ToLowerInvariant();
+            public static readonly string BlobContainer = $"{Application.Catalog}-{Blob}";
         }
     }
 }

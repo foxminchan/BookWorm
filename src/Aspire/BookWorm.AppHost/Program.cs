@@ -1,14 +1,13 @@
 using Azure.Provisioning.SignalR;
 using Azure.Provisioning.Storage;
 using BookWorm.AppHost.Extensions;
-using BookWorm.Constants;
+using BookWorm.Constants.Aspire;
 using BookWorm.HealthChecksUI;
 using Projects;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-builder.AddProjectPublisher();
-builder.AddAzureContainerAppEnvironment();
+builder.AddAzureContainerAppEnvironment("aca");
 
 var postgres = builder
     .AddAzurePostgresFlexibleServer(Components.Postgres)
@@ -40,7 +39,9 @@ var signalR = builder
     .RunAsContainer()
     .ProvisionAsService();
 
-var blobStorage = storage.AddBlobs(Components.Azure.Storage.Blob);
+var blobStorage = storage
+    .AddBlobs(Components.Azure.Storage.Blob)
+    .AddBlobContainer(Components.Azure.Storage.BlobContainer);
 var tableStorage = storage.AddTables(Components.Azure.Storage.Table);
 var catalogDb = postgres.AddDatabase(Components.Database.Catalog);
 var orderingDb = postgres.AddDatabase(Components.Database.Ordering);
@@ -158,8 +159,8 @@ var financeApi = builder
     .WaitFor(queue);
 
 var gateway = builder
-    .AddProject<BookWorm_Gateway>(Application.Gateway)
-    .WithExternalHttpEndpoints()
+    .AddYarp(Application.Gateway)
+    .WithConfigFile("Container/proxy/yarp.json")
     .WithReference(catalogApi)
     .WithReference(chatApi)
     .WithReference(orderingApi)
@@ -173,7 +174,6 @@ builder.AddK6(gateway);
 builder
     .AddHealthChecksUi()
     .WithExternalHttpEndpoints()
-    .WithReference(gateway)
     .WithReference(catalogApi)
     .WithReference(chatApi)
     .WithReference(mcp)

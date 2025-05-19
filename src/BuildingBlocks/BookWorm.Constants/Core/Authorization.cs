@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Constants;
+﻿namespace BookWorm.Constants.Core;
 
 public static class Authorization
 {

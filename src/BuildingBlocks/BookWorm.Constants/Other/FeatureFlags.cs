@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Constants;
+﻿namespace BookWorm.Constants.Other;
 
 public static class FeatureFlags
 {

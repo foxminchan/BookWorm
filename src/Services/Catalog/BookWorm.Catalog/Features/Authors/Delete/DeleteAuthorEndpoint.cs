@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Catalog.Features.Authors.Delete;
+﻿using BookWorm.Constants.Core;
+
+namespace BookWorm.Catalog.Features.Authors.Delete;
 
 public sealed class DeleteAuthorEndpoint : IEndpoint<NoContent, Guid, ISender>
 {

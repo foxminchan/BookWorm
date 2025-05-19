@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Catalog.Features.Authors.Create;
+﻿using BookWorm.Constants.Core;
+
+namespace BookWorm.Catalog.Features.Authors.Create;
 
 public sealed class CreateAuthorEndpoint : IEndpoint<Ok<Guid>, CreateAuthorCommand, ISender>
 {

@@ -1,4 +1,4 @@
-{
+﻿{
   "Logging": {
     "LogLevel": {
       "Default": "Information",
@@ -135,7 +135,6 @@
       },
       "financeApi": {
         "ClusterId": "financeApi",
-        "AuthorizationPolicy": "Admin",
         "Match": {
           "Path": "/finance/{**remainder}"
         },

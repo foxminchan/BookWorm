@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Catalog.Extensions;
+﻿using BookWorm.Constants.Aspire;
+
+namespace BookWorm.Catalog.Extensions;
 
 public static class Extensions
 {
@@ -82,8 +84,8 @@ public static class Extensions
         builder.AddGenAi();
 
         // Add Blob services
-        builder.AddAzureBlobClient(Components.Azure.Storage.Blob);
-        services.AddSingleton<IBlobService, BlobService>();
+        builder.AddAzureBlobContainerClient(Components.Azure.Storage.BlobContainer);
+        services.AddScoped<IBlobService, BlobService>();
 
         // Configure endpoints
         services.AddVersioning();

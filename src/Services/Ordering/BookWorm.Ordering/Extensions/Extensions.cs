@@ -1,4 +1,5 @@
-﻿using StackExchange.Redis;
+﻿using BookWorm.Constants.Aspire;
+using StackExchange.Redis;
 
 namespace BookWorm.Ordering.Extensions;
 

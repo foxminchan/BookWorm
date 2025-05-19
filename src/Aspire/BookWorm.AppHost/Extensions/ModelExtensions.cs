@@ -1,4 +1,5 @@
 ﻿using BookWorm.Constants;
+using BookWorm.Constants.Aspire;
 
 namespace BookWorm.AppHost.Extensions;
 

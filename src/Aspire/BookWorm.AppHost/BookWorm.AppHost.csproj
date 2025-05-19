@@ -3,14 +3,14 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <UserSecretsId>78a33324-5add-4731-b2fc-e0fc06ef0564</UserSecretsId>
-    <NoWarn>ASPIREAZURE001,NU1603</NoWarn>
+    <NoWarn>ASPIREAZURE001,ASPIRECOMPUTE001,NU1603</NoWarn>
   </PropertyGroup>
   <ItemGroup Label="Aspire">
+    <PackageReference Include="Aspire.Hosting.Yarp" />
     <PackageReference Include="Aspire.Hosting.Qdrant" />
     <PackageReference Include="Aspire.Hosting.AppHost" />
     <PackageReference Include="Aspire.Hosting.Keycloak" />
     <PackageReference Include="Aspire.Hosting.RabbitMQ" />
-    <PackageReference Include="Aspire.Hosting.Kubernetes" />
   </ItemGroup>
   <ItemGroup Label="Azure">
     <PackageReference Include="Aspire.Hosting.Azure.Redis" />
@@ -25,7 +25,6 @@
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.MailPit" />
   </ItemGroup>
   <ItemGroup Label="Services">
-    <ProjectReference Include="..\..\BookWorm.Gateway\BookWorm.Gateway.csproj" />
     <ProjectReference Include="..\..\Integrations\BookWorm.McpTools\BookWorm.McpTools.csproj" />
     <ProjectReference Include="..\..\Services\Basket\BookWorm.Basket\BookWorm.Basket.csproj" />
     <ProjectReference Include="..\..\Services\Catalog\BookWorm.Catalog\BookWorm.Catalog.csproj" />

@@ -1,4 +1,5 @@
-﻿using BookWorm.Ordering.Infrastructure.EventStore.Configs;
+﻿using BookWorm.Constants.Aspire;
+using BookWorm.Ordering.Infrastructure.EventStore.Configs;
 using BookWorm.Ordering.Infrastructure.EventStore.Diagnostic;
 using JasperFx.CodeGeneration;
 using Marten.Events.Daemon;
