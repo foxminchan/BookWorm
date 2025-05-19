@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Azure.SignalR.Management" />
+  <ItemGroup Label="Project">
     <PackageReference Include="Aspire.StackExchange.Redis" />
-    <PackageReference Include="CommunityToolkit.Aspire.OllamaSharp" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
+    <PackageReference Include="Microsoft.Azure.SignalR.Management" />
+    <PackageReference Include="CommunityToolkit.Aspire.OllamaSharp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\Aspire\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj" />

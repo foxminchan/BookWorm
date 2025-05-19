@@ -5,22 +5,22 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Label="Integration">
     <PackageReference Include="Saunter" />
+    <PackageReference Include="Grpc.HealthCheck" />
     <PackageReference Include="APIWeaver.OpenApi" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
-    <PackageReference Include="AspNetCore.HealthChecks.UI.Client" />
     <PackageReference Include="Aspire.Keycloak.Authentication" />
-    <PackageReference Include="Grpc.HealthCheck" />
+    <PackageReference Include="AspNetCore.HealthChecks.UI.Client" />
     <PackageReference Include="Grpc.AspNetCore.Server.ClientFactory" />
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Label="Aspire">
     <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
     <PackageReference Include="Microsoft.Extensions.ServiceDiscovery" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
     <PackageReference Include="OpenTelemetry.Instrumentation.GrpcNetClient" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\BuildingBlocks\BookWorm.Chassis\BookWorm.Chassis.csproj" />

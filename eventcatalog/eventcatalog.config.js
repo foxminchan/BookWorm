@@ -14,6 +14,7 @@ export default {
   editUrl: "https://github.com/foxminchan/BookWorm/edit/main/",
   trailingSlash: false,
   base: "/",
+  mdxOptimize: true,
   mermaid: {
     iconPacks: ["logos"],
   },
@@ -41,6 +42,9 @@ export default {
       visible: false,
     },
   ],
+  api: {
+    fullCatalogAPIEnabled: true,
+  },
   generators: [
     [
       "@eventcatalog/generator-ai",

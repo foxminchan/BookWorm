@@ -28,10 +28,14 @@ receives:
     version: 1.0.0
   - id: PlaceOrderCommand
     version: 1.0.0
-schemaPath: basket-service.yml
+schemaPath: openapi-v1.yml
 specifications:
-  openapiPath: basket-api.yml
-  asyncapiPath: basket-service.yml
+  - type: openapi
+    path: openapi-v1.yml
+    name: OpenAPI V1
+  - type: asyncapi
+    path: asyncapi-v1.yml
+    name: AsyncAPI V1
 owners:
   - nhanxnguyen
 repository:

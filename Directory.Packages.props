@@ -2,8 +2,8 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-    <AspireVersion>9.2.1</AspireVersion>
-    <AspireUnstableVersion>9.2.1-preview.1.25222.1</AspireUnstableVersion>
+    <AspireVersion>9.3.0</AspireVersion>
+    <AspireUnstableVersion>9.3.0-preview.1.25265.20</AspireUnstableVersion>
     <ApiVersioningVersion>8.1.0</ApiVersioningVersion>
     <GrpcVersion>2.71.0</GrpcVersion>
     <MassTransitVersion>8.4.1</MassTransitVersion>
@@ -13,8 +13,8 @@
   </PropertyGroup>
   <ItemGroup Label="Aspire Packages">
     <!-- Aspire Hosting -->
-    <PackageVersion Include="Aspire.Hosting.AppHost" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Qdrant" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Hosting.AppHost" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Keycloak" Version="$(AspireUnstableVersion)" />
     <PackageVersion Include="Aspire.Hosting.Kubernetes" Version="$(AspireUnstableVersion)" />
@@ -29,8 +29,8 @@
       Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL"
       Version="$(AspireVersion)"
     />
-    <PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Azure.Data.Tables" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.StackExchange.Redis" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Qdrant.Client" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Keycloak.Authentication" Version="$(AspireUnstableVersion)" />
@@ -69,8 +69,8 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.12.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.12.0" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.12.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Quartz" Version="1.12.0-beta.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.GrpcNetClient" Version="1.12.0-beta.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Quartz" Version="1.12.0-beta.1" />
     <!-- Miscellaneous -->
     <PackageVersion Include="Scrutor" Version="6.0.1" />
     <PackageVersion Include="Saunter" Version="0.13.0" />
@@ -105,8 +105,8 @@
   <ItemGroup Label="Testing">
     <!-- Testing packages -->
     <PackageVersion Include="Moq" Version="4.20.72" />
-    <PackageVersion Include="TUnit" Version="0.20.4" />
     <PackageVersion Include="Bogus" Version="35.6.3" />
+    <PackageVersion Include="TUnit" Version="0.20.18" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="TngTech.ArchUnitNET" Version="0.11.4" />
     <PackageVersion Include="GitHubActionsTestLogger" Version="2.4.1" />
