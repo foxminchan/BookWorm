@@ -1,29 +1,21 @@
 # Deployment Guide
 
-This guide provides detailed instructions for deploying the BookWorm application to different environments.
+This guide provides detailed instructions for deploying the BookWorm application to Azure Container Apps (ACA).
 
 ## Table of Contents
 
 - [Deployment Guide](#deployment-guide)
   - [Table of Contents](#table-of-contents)
   - [Prerequisites](#prerequisites)
-  - [Deployment Options](#deployment-options)
-    - [Azure Container Apps (ACA)](#azure-container-apps-aca)
-      - [Deployment Steps](#deployment-steps)
-      - [Cleanup](#cleanup)
-    - [k3d (Local Kubernetes)](#k3d-local-kubernetes)
-      - [Deployment Steps](#deployment-steps-1)
-      - [Cleanup](#cleanup-1)
+  - [Deployment to Azure Container Apps](#deployment-to-azure-container-apps)
+    - [Deployment Steps](#deployment-steps)
+    - [Cleanup](#cleanup)
   - [Deployment Process](#deployment-process)
   - [Monitoring](#monitoring)
-    - [ACA Monitoring](#aca-monitoring)
-    - [k3d Monitoring](#k3d-monitoring)
   - [Troubleshooting](#troubleshooting)
     - [Common Issues](#common-issues)
     - [Debugging Steps](#debugging-steps)
-  - [Cleanup](#cleanup-2)
-    - [ACA Cleanup](#aca-cleanup)
-    - [k3d Cleanup](#k3d-cleanup)
+  - [Cleanup](#cleanup-1)
   - [Contributing](#contributing)
 
 ## Prerequisites
@@ -33,23 +25,18 @@ Before deploying, ensure you have the following tools installed:
 | Tool          | Purpose                       | Installation Guide                                                                  |
 | ------------- | ----------------------------- | ----------------------------------------------------------------------------------- |
 | Azure CLI     | ACA deployment and management | [Install Guide](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)       |
-| k3d           | Local Kubernetes cluster      | [Install Guide](https://k3d.io/)                                                    |
-| kubectl       | Kubernetes management         | [Install Guide](https://kubernetes.io/docs/tasks/tools/)                            |
-| Helm          | Package management            | [Install Guide](https://helm.sh/docs/intro/install/)                                |
 | Docker/Podman | Container runtime             | [Docker](https://www.docker.com/get-started) / [Podman](https://podman-desktop.io/) |
 
-## Deployment Options
+## Deployment to Azure Container Apps
 
-### Azure Container Apps (ACA)
+Azure Container Apps (ACA) provides:
 
-Best suited for production environments, ACA provides:
-
-- Managed Kubernetes service
+- Managed container service
 - Auto-scaling capabilities
 - High availability
 - Azure service integration
 
-#### Deployment Steps
+### Deployment Steps
 
 1. **Login to Azure**
 
@@ -73,100 +60,50 @@ Best suited for production environments, ACA provides:
    az containerapp show --resource-group rg-dev --name bookworm
    ```
 
-#### Cleanup
+### Cleanup
 
 ```bash
 bash ./scripts/az-cleanup.sh
 ```
 
-### k3d (Local Kubernetes)
-
-Ideal for development and testing:
-
-- Runs locally
-- Lightweight and fast
-- Perfect for CI/CD
-- Easy to reset
-
-#### Deployment Steps
-
-1. **Deploy to k3d**
-
-   ```bash
-   bash ./scripts/k3d.sh
-   ```
-
-2. **Verify Deployment**
-
-   ```bash
-   # Check cluster status
-   k3d cluster list
-
-   # Check deployment status
-   kubectl get all -n bookworm
-   ```
-
-#### Cleanup
-
-```bash
-bash ./scripts/k3d-cleanup.sh
-```
-
 ## Deployment Process
 
-Both deployment methods follow these steps:
+The ACA deployment follows these steps:
 
-1. **Cluster Setup**
+1. **Environment Setup**
 
-   - Create Kubernetes cluster
+   - Create ACA environment
    - Configure networking
    - Set up storage
 
-2. **Namespace Creation**
+2. **Application Deployment**
 
-   - Create `bookworm` namespace
-   - Set up RBAC
-
-3. **Application Deployment**
-
-   - Deploy using Helm
+   - Deploy containers
    - Configure services
    - Set up ingress
 
-4. **Service Configuration**
+3. **Service Configuration**
 
    - Configure databases
    - Set up messaging
    - Configure monitoring
 
-5. **Monitoring Setup**
+4. **Monitoring Setup**
    - Configure logging
    - Set up metrics
    - Configure alerts
 
 ## Monitoring
 
-### ACA Monitoring
-
 ```bash
+# View container app details
 az containerapp show --resource-group rg-dev --name bookworm
 
+# View logs
 az containerapp logs show --resource-group rg-dev --name bookworm
 
+# View metrics
 az containerapp metrics show --resource-group rg-dev --name bookworm
-```
-
-### k3d Monitoring
-
-```bash
-# View cluster status
-k3d cluster list
-
-# View resources
-kubectl get all -n bookworm
-
-# View logs
-kubectl logs -n bookworm <pod-name>
 ```
 
 ## Troubleshooting
@@ -183,56 +120,23 @@ kubectl logs -n bookworm <pod-name>
 2. **Resource Issues**
 
    ```bash
-   # Check resource usage
-   kubectl top nodes
-   kubectl top pods -n bookworm
+   # Check resource usage in Azure
+   az containerapp metrics show --resource-group rg-dev --name bookworm
    ```
 
 3. **Network Problems**
    ```bash
    # Check network connectivity
-   kubectl get svc -n bookworm
-   ```
-
-### Debugging Steps
-
-1. **Check Pod Status**
-
-   ```bash
-   kubectl describe pod -n bookworm <pod-name>
-   ```
-
-2. **View Deployment Status**
-
-   ```bash
-   kubectl describe deployment -n bookworm
-   ```
-
-3. **Check Events**
-   ```bash
-   kubectl get events -n bookworm
+   az containerapp ingress show --resource-group rg-dev --name bookworm
    ```
 
 ## Cleanup
 
-### ACA Cleanup
-
 ```bash
-# Run cleanup script
 bash ./scripts/az-cleanup.sh
 
 # Verify cleanup
-az group list --query "[?name=='rg-dev']" -o table
-```
-
-### k3d Cleanup
-
-```bash
-# Run cleanup script
-bash ./scripts/k3d-cleanup.sh
-
-# Verify cleanup
-k3d cluster list
+az group show --name rg-dev
 ```
 
 > [!WARNING]

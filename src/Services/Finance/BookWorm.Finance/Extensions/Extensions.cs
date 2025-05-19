@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Finance.Extensions;
+﻿using BookWorm.Constants.Aspire;
+
+namespace BookWorm.Finance.Extensions;
 
 public static class Extensions
 {

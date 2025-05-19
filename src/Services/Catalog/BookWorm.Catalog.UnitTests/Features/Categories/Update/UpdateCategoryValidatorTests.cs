@@ -1,5 +1,6 @@
 ﻿using BookWorm.Catalog.Features.Categories.Update;
 using BookWorm.Constants;
+using BookWorm.Constants.Core;
 using FluentValidation.TestHelper;
 
 namespace BookWorm.Catalog.UnitTests.Features.Categories.Update;

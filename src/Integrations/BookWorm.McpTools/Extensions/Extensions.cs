@@ -1,4 +1,5 @@
-﻿using BookGrpcServiceClient = BookWorm.Catalog.Grpc.Services.BookGrpcService.BookGrpcServiceClient;
+﻿using BookWorm.Constants.Aspire;
+using BookGrpcServiceClient = BookWorm.Catalog.Grpc.Services.BookGrpcService.BookGrpcServiceClient;
 
 namespace BookWorm.McpTools.Extensions;
 

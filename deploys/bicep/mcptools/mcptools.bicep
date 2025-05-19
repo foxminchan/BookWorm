@@ -1,20 +1,20 @@
 @description('The location for the resource(s) to be deployed.')
 param location string = resourceGroup().location
 
-param mcptools_containerport string
+param aca_outputs_azure_container_apps_environment_default_domain string
 
-param bookworm_aca_outputs_azure_container_apps_environment_default_domain string
+param aca_outputs_azure_container_apps_environment_id string
+
+param aca_outputs_azure_container_registry_endpoint string
+
+param aca_outputs_azure_container_registry_managed_identity_id string
+
+param mcptools_containerimage string
+
+param mcptools_containerport string
 
 @secure()
 param vectordb_key_value string
-
-param bookworm_aca_outputs_azure_container_apps_environment_id string
-
-param bookworm_aca_outputs_azure_container_registry_endpoint string
-
-param bookworm_aca_outputs_azure_container_registry_managed_identity_id string
-
-param mcptools_containerimage string
 
 resource mcptools 'Microsoft.App/containerApps@2024-03-01' = {
   name: 'mcptools'
@@ -24,7 +24,7 @@ resource mcptools 'Microsoft.App/containerApps@2024-03-01' = {
       secrets: [
         {
           name: 'connectionstrings--vectordb'
-          value: 'Endpoint=${'http://vectordb.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'};Key=${vectordb_key_value}'
+          value: 'Endpoint=${'http://vectordb.internal.${aca_outputs_azure_container_apps_environment_default_domain}'};Key=${vectordb_key_value}'
         }
         {
           name: 'connectionstrings--vectordb-http'
@@ -34,17 +34,17 @@ resource mcptools 'Microsoft.App/containerApps@2024-03-01' = {
       activeRevisionsMode: 'Single'
       ingress: {
         external: false
-        targetPort: mcptools_containerport
+        targetPort: int(mcptools_containerport)
         transport: 'http'
       }
       registries: [
         {
-          server: bookworm_aca_outputs_azure_container_registry_endpoint
-          identity: bookworm_aca_outputs_azure_container_registry_managed_identity_id
+          server: aca_outputs_azure_container_registry_endpoint
+          identity: aca_outputs_azure_container_registry_managed_identity_id
         }
       ]
     }
-    environmentId: bookworm_aca_outputs_azure_container_apps_environment_id
+    environmentId: aca_outputs_azure_container_apps_environment_id
     template: {
       containers: [
         {
@@ -73,11 +73,11 @@ resource mcptools 'Microsoft.App/containerApps@2024-03-01' = {
             }
             {
               name: 'ConnectionStrings__embedding'
-              value: 'Endpoint=http://${'ollama.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'}:80;Model=nomic-embed-text:latest'
+              value: 'Endpoint=http://${'ollama.internal.${aca_outputs_azure_container_apps_environment_default_domain}'}:80;Model=nomic-embed-text:latest'
             }
             {
               name: 'ConnectionStrings__chat'
-              value: 'Endpoint=http://${'ollama.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'}:80;Model=deepseek-r1:1.5b'
+              value: 'Endpoint=http://${'ollama.internal.${aca_outputs_azure_container_apps_environment_default_domain}'}:80;Model=deepseek-r1:1.5b'
             }
             {
               name: 'ConnectionStrings__vectordb'
@@ -89,11 +89,11 @@ resource mcptools 'Microsoft.App/containerApps@2024-03-01' = {
             }
             {
               name: 'services__catalog__http__0'
-              value: 'http://catalog.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'
+              value: 'http://catalog.internal.${aca_outputs_azure_container_apps_environment_default_domain}'
             }
             {
               name: 'services__catalog__https__0'
-              value: 'https://catalog.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'
+              value: 'https://catalog.internal.${aca_outputs_azure_container_apps_environment_default_domain}'
             }
           ]
         }
@@ -106,7 +106,7 @@ resource mcptools 'Microsoft.App/containerApps@2024-03-01' = {
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
-      '${bookworm_aca_outputs_azure_container_registry_managed_identity_id}': { }
+      '${aca_outputs_azure_container_registry_managed_identity_id}': { }
     }
   }
 }

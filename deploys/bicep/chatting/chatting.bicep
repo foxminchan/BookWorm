@@ -1,25 +1,25 @@
 @description('The location for the resource(s) to be deployed.')
 param location string = resourceGroup().location
 
+param aca_outputs_azure_container_apps_environment_default_domain string
+
+param aca_outputs_azure_container_apps_environment_id string
+
+param aca_outputs_azure_container_registry_endpoint string
+
+param aca_outputs_azure_container_registry_managed_identity_id string
+
+param chatting_containerimage string
+
 param chatting_identity_outputs_id string
 
-param chatting_identity_outputs_clientid string
-
 param chatting_containerport string
-
-param bookworm_aca_outputs_azure_container_apps_environment_default_domain string
 
 param redis_kv_outputs_name string
 
 param signalr_outputs_hostname string
 
-param bookworm_aca_outputs_azure_container_apps_environment_id string
-
-param bookworm_aca_outputs_azure_container_registry_endpoint string
-
-param bookworm_aca_outputs_azure_container_registry_managed_identity_id string
-
-param chatting_containerimage string
+param chatting_identity_outputs_clientid string
 
 resource redis_kv_outputs_name_kv 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
   name: redis_kv_outputs_name
@@ -45,17 +45,17 @@ resource chatting 'Microsoft.App/containerApps@2024-03-01' = {
       activeRevisionsMode: 'Single'
       ingress: {
         external: false
-        targetPort: chatting_containerport
+        targetPort: int(chatting_containerport)
         transport: 'http'
       }
       registries: [
         {
-          server: bookworm_aca_outputs_azure_container_registry_endpoint
-          identity: bookworm_aca_outputs_azure_container_registry_managed_identity_id
+          server: aca_outputs_azure_container_registry_endpoint
+          identity: aca_outputs_azure_container_registry_managed_identity_id
         }
       ]
     }
-    environmentId: bookworm_aca_outputs_azure_container_apps_environment_id
+    environmentId: aca_outputs_azure_container_apps_environment_id
     template: {
       containers: [
         {
@@ -84,11 +84,11 @@ resource chatting 'Microsoft.App/containerApps@2024-03-01' = {
             }
             {
               name: 'ConnectionStrings__embedding'
-              value: 'Endpoint=http://${'ollama.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'}:80;Model=nomic-embed-text:latest'
+              value: 'Endpoint=http://${'ollama.internal.${aca_outputs_azure_container_apps_environment_default_domain}'}:80;Model=nomic-embed-text:latest'
             }
             {
               name: 'ConnectionStrings__chat'
-              value: 'Endpoint=http://${'ollama.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'}:80;Model=deepseek-r1:1.5b'
+              value: 'Endpoint=http://${'ollama.internal.${aca_outputs_azure_container_apps_environment_default_domain}'}:80;Model=deepseek-r1:1.5b'
             }
             {
               name: 'ConnectionStrings__redis'
@@ -100,7 +100,7 @@ resource chatting 'Microsoft.App/containerApps@2024-03-01' = {
             }
             {
               name: 'services__keycloak__http__0'
-              value: 'http://keycloak.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'
+              value: 'http://keycloak.internal.${aca_outputs_azure_container_apps_environment_default_domain}'
             }
             {
               name: 'services__keycloak__management__0'
@@ -108,11 +108,11 @@ resource chatting 'Microsoft.App/containerApps@2024-03-01' = {
             }
             {
               name: 'services__mcptools__http__0'
-              value: 'http://mcptools.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'
+              value: 'http://mcptools.internal.${aca_outputs_azure_container_apps_environment_default_domain}'
             }
             {
               name: 'services__mcptools__https__0'
-              value: 'https://mcptools.internal.${bookworm_aca_outputs_azure_container_apps_environment_default_domain}'
+              value: 'https://mcptools.internal.${aca_outputs_azure_container_apps_environment_default_domain}'
             }
             {
               name: 'AZURE_CLIENT_ID'
@@ -130,7 +130,7 @@ resource chatting 'Microsoft.App/containerApps@2024-03-01' = {
     type: 'UserAssigned'
     userAssignedIdentities: {
       '${chatting_identity_outputs_id}': { }
-      '${bookworm_aca_outputs_azure_container_registry_managed_identity_id}': { }
+      '${aca_outputs_azure_container_registry_managed_identity_id}': { }
     }
   }
 }

@@ -1,4 +1,5 @@
 ﻿using BookWorm.Constants;
+using BookWorm.Constants.Other;
 using BookWorm.Rating.Domain.FeedbackAggregator;
 
 namespace BookWorm.Rating.UnitTests.Fakers;

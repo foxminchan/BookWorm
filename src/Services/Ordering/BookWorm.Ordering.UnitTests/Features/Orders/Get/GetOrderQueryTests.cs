@@ -2,6 +2,7 @@
 using BookWorm.Catalog.Grpc.Services;
 using BookWorm.Chassis.Exceptions;
 using BookWorm.Constants;
+using BookWorm.Constants.Core;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
 using BookWorm.Ordering.Features.Orders;

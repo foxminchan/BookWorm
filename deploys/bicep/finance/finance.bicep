@@ -1,9 +1,17 @@
 @description('The location for the resource(s) to be deployed.')
 param location string = resourceGroup().location
 
-param finance_identity_outputs_id string
+param aca_outputs_azure_container_apps_environment_default_domain string
 
-param finance_identity_outputs_clientid string
+param aca_outputs_azure_container_apps_environment_id string
+
+param aca_outputs_azure_container_registry_endpoint string
+
+param aca_outputs_azure_container_registry_managed_identity_id string
+
+param finance_containerimage string
+
+param finance_identity_outputs_id string
 
 param finance_containerport string
 
@@ -12,15 +20,7 @@ param postgres_kv_outputs_name string
 @secure()
 param queue_password_value string
 
-param bookworm_aca_outputs_azure_container_apps_environment_default_domain string
-
-param bookworm_aca_outputs_azure_container_apps_environment_id string
-
-param bookworm_aca_outputs_azure_container_registry_endpoint string
-
-param bookworm_aca_outputs_azure_container_registry_managed_identity_id string
-
-param finance_containerimage string
+param finance_identity_outputs_clientid string
 
 resource postgres_kv_outputs_name_kv 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
   name: postgres_kv_outputs_name
@@ -50,17 +50,17 @@ resource finance 'Microsoft.App/containerApps@2024-03-01' = {
       activeRevisionsMode: 'Single'
       ingress: {
         external: false
-        targetPort: finance_containerport
+        targetPort: int(finance_containerport)
         transport: 'http'
       }
       registries: [
         {
-          server: bookworm_aca_outputs_azure_container_registry_endpoint
-          identity: bookworm_aca_outputs_azure_container_registry_managed_identity_id
+          server: aca_outputs_azure_container_registry_endpoint
+          identity: aca_outputs_azure_container_registry_managed_identity_id
         }
       ]
     }
-    environmentId: bookworm_aca_outputs_azure_container_apps_environment_id
+    environmentId: aca_outputs_azure_container_apps_environment_id
     template: {
       containers: [
         {
@@ -111,7 +111,7 @@ resource finance 'Microsoft.App/containerApps@2024-03-01' = {
     type: 'UserAssigned'
     userAssignedIdentities: {
       '${finance_identity_outputs_id}': { }
-      '${bookworm_aca_outputs_azure_container_registry_managed_identity_id}': { }
+      '${aca_outputs_azure_container_registry_managed_identity_id}': { }
     }
   }
 }

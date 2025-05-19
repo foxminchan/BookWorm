@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Ordering.Infrastructure.EntityConfigurations;
+﻿using BookWorm.Constants.Core;
+
+namespace BookWorm.Ordering.Infrastructure.EntityConfigurations;
 
 internal sealed class BuyerConfiguration : IEntityTypeConfiguration<Buyer>
 {

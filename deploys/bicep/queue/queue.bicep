@@ -1,12 +1,12 @@
 @description('The location for the resource(s) to be deployed.')
 param location string = resourceGroup().location
 
+param aca_outputs_azure_container_apps_environment_default_domain string
+
+param aca_outputs_azure_container_apps_environment_id string
+
 @secure()
 param queue_password_value string
-
-param bookworm_aca_outputs_azure_container_apps_environment_default_domain string
-
-param bookworm_aca_outputs_azure_container_apps_environment_id string
 
 resource queue 'Microsoft.App/containerApps@2024-03-01' = {
   name: 'queue'
@@ -32,11 +32,11 @@ resource queue 'Microsoft.App/containerApps@2024-03-01' = {
         ]
       }
     }
-    environmentId: bookworm_aca_outputs_azure_container_apps_environment_id
+    environmentId: aca_outputs_azure_container_apps_environment_id
     template: {
       containers: [
         {
-          image: 'docker.io/library/rabbitmq:4.0-management'
+          image: 'docker.io/library/rabbitmq:4.1-management'
           name: 'queue'
           env: [
             {

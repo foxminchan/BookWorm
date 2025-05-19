@@ -17,7 +17,7 @@ resource redis 'Microsoft.Cache/redis@2024-03-01' = {
   }
   tags: {
     'aspire-resource-name': 'redis'
-    Environment: 'Development'
+    Environment: 'Production'
     Projects: 'BookWorm'
   }
 }
