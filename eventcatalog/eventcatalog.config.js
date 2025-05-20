@@ -204,6 +204,11 @@ export default {
         ],
         domain: { id: "chat", name: "Chat", version: "1.0.0" },
       },
-    ]
+    ],
   ],
+  visualiser: {
+    channels: {
+      renderMode: "flat",
+    },
+  },
 };
