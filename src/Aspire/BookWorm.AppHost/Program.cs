@@ -64,7 +64,6 @@ var keycloak = builder
 var catalogApi = builder
     .AddProject<BookWorm_Catalog>(Application.Catalog)
     .WithReplicas(builder.ExecutionContext.IsRunMode ? 1 : 2)
-    .WithScalarApiDocs()
     .WithOllama()
     .WithReference(blobStorage)
     .WaitFor(blobStorage)
@@ -78,7 +77,8 @@ var catalogApi = builder
     .WaitFor(keycloak)
     .WithReference(redis)
     .WaitFor(redis)
-    .WithRoleAssignments(storage, StorageBuiltInRole.StorageBlobDataContributor);
+    .WithRoleAssignments(storage, StorageBuiltInRole.StorageBlobDataContributor)
+    .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Open API ({u.Endpoint?.EndpointName})"));
 
 qdrant.WithParentRelationship(catalogApi);
 
@@ -92,7 +92,6 @@ var mcp = builder
 
 var chatApi = builder
     .AddProject<BookWorm_Chat>(Application.Chatting)
-    .WithScalarApiDocs()
     .WithOllama()
     .WithReference(redis)
     .WaitFor(redis)
@@ -102,20 +101,21 @@ var chatApi = builder
     .WaitFor(keycloak)
     .WithReference(mcp)
     .WaitFor(mcp)
-    .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor);
+    .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor)
+    .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Open API ({u.Endpoint?.EndpointName})"));
 
 mcp.WithParentRelationship(chatApi);
 
 var basketApi = builder
     .AddProject<BookWorm_Basket>(Application.Basket)
-    .WithScalarApiDocs()
     .WithReference(redis)
     .WaitFor(redis)
     .WithReference(queue)
     .WaitFor(queue)
     .WithReference(keycloak)
     .WaitFor(keycloak)
-    .WithReference(catalogApi);
+    .WithReference(catalogApi)
+    .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Open API ({u.Endpoint?.EndpointName})"));
 
 var notificationApi = builder
     .AddProject<BookWorm_Notification>(Application.Notification)
@@ -128,7 +128,6 @@ var notificationApi = builder
 
 var orderingApi = builder
     .AddProject<BookWorm_Ordering>(Application.Ordering)
-    .WithScalarApiDocs()
     .WithReference(orderingDb)
     .WaitFor(orderingDb)
     .WithReference(queue)
@@ -138,25 +137,26 @@ var orderingApi = builder
     .WithReference(redis)
     .WaitFor(redis)
     .WithReference(catalogApi)
-    .WithReference(basketApi);
+    .WithReference(basketApi)
+    .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Open API ({u.Endpoint?.EndpointName})"));
 
 var ratingApi = builder
     .AddProject<BookWorm_Rating>(Application.Rating)
-    .WithScalarApiDocs()
     .WithReference(ratingDb)
     .WaitFor(ratingDb)
     .WithReference(queue)
     .WaitFor(queue)
     .WithReference(keycloak)
-    .WaitFor(keycloak);
+    .WaitFor(keycloak)
+    .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Open API ({u.Endpoint?.EndpointName})"));
 
 var financeApi = builder
     .AddProject<BookWorm_Finance>(Application.Finance)
-    .WithScalarApiDocs()
     .WithReference(financeDb)
     .WaitFor(financeDb)
     .WithReference(queue)
-    .WaitFor(queue);
+    .WaitFor(queue)
+    .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Open API ({u.Endpoint?.EndpointName})"));
 
 var gateway = builder
     .AddYarp(Application.Gateway)
