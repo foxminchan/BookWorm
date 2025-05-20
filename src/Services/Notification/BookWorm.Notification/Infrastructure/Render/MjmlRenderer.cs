@@ -12,7 +12,6 @@ public sealed class MjmlRenderer : IRenderer
         var properties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
         properties
-            .AsValueEnumerable()
             .ToList()
             .ForEach(property =>
             {

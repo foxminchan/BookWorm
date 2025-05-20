@@ -1,6 +1,5 @@
 ﻿using System.Security.Claims;
 using BookWorm.Chassis.Exceptions;
-using BookWorm.Constants;
 using BookWorm.Constants.Core;
 using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
 using BookWorm.Ordering.Features.Buyers.Get;

@@ -9,11 +9,7 @@ public static class DomainToDtoMapper
             model.CreatedAt,
             model.TotalPrice,
             model.Status,
-            [
-                .. model
-                    .OrderItems.AsValueEnumerable()
-                    .Select(x => new OrderItemDto(x.Id, x.Quantity, x.Price)),
-            ]
+            [.. model.OrderItems.Select(x => new OrderItemDto(x.Id, x.Quantity, x.Price))]
         );
     }
 
@@ -24,6 +20,6 @@ public static class DomainToDtoMapper
 
     public static IReadOnlyList<OrderDto> ToOrderDtos(this IReadOnlyList<Order> models)
     {
-        return [.. models.AsValueEnumerable().Select(x => x.ToOrderDto())];
+        return [.. models.Select(x => x.ToOrderDto())];
     }
 }

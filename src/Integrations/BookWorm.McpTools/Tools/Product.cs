@@ -4,10 +4,8 @@ using ModelContextProtocol.Server;
 namespace BookWorm.McpTools.Tools;
 
 [McpServerToolType]
-public sealed class Product(ISearch search, IBookService bookService)
+public sealed class Product(ICatalogApi catalogApi)
 {
-    private const string CollectionName = "book";
-
     [McpServerTool(Name = "SearchCatalog")]
     [Description("Searches the BookWorm catalog for a provided book description")]
     public async Task<string> SearchCatalogAsync(
@@ -16,19 +14,11 @@ public sealed class Product(ISearch search, IBookService bookService)
     {
         const string notFoundMessage =
             "We couldn't find any books matching your description. Please try again with a different description.";
-        string[] keywords = ["book", "author", "publisher"];
 
-        var response = await search.SearchAsync(description, keywords, CollectionName);
+        var response = await catalogApi.ListBooksAsync(description);
 
-        if (response.Count == 0)
-        {
-            return notFoundMessage;
-        }
-
-        var ids = response.Select(r => r.Id).Select(id => id.ToString());
-
-        var results = await bookService.GetBooksByIdsAsync(ids);
-
-        return results is null ? notFoundMessage : JsonSerializer.Serialize(results);
+        return response.Items.Count == 0
+            ? notFoundMessage
+            : JsonSerializer.Serialize(response.Items);
     }
 }

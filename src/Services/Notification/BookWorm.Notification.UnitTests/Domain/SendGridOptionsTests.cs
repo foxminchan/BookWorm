@@ -1,5 +1,4 @@
-﻿using BookWorm.Constants;
-using BookWorm.Constants.Core;
+﻿using BookWorm.Constants.Core;
 using BookWorm.Notification.Domain.Settings;
 
 namespace BookWorm.Notification.UnitTests.Domain;

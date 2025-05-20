@@ -1,6 +1,4 @@
-﻿using ZLinq;
-
-namespace BookWorm.SharedKernel.SeedWork;
+﻿namespace BookWorm.SharedKernel.SeedWork;
 
 public abstract class ValueObject
 {
@@ -30,15 +28,12 @@ public abstract class ValueObject
 
         var other = (ValueObject)obj;
 
-        return GetEqualityComponents()
-            .AsValueEnumerable()
-            .SequenceEqual(other.GetEqualityComponents());
+        return GetEqualityComponents().SequenceEqual(other.GetEqualityComponents());
     }
 
     public override int GetHashCode()
     {
         return GetEqualityComponents()
-            .AsValueEnumerable()
             .Select(x => x is not null ? x.GetHashCode() : 0)
             .Aggregate((x, y) => x ^ y);
     }

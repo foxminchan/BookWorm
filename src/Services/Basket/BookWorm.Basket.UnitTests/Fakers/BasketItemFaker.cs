@@ -1,5 +1,4 @@
 ﻿using BookWorm.Basket.Domain;
-using BookWorm.Constants;
 using BookWorm.Constants.Other;
 
 namespace BookWorm.Basket.UnitTests.Fakers;

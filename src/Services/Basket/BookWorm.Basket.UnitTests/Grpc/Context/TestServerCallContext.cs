@@ -1,5 +1,4 @@
-﻿using BookWorm.Constants;
-using BookWorm.Constants.Core;
+﻿using BookWorm.Constants.Core;
 using Grpc.Core;
 
 namespace BookWorm.Basket.UnitTests.Grpc.Context;

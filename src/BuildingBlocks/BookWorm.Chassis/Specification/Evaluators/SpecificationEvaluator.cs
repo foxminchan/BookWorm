@@ -1,6 +1,4 @@
-﻿using ZLinq;
-
-namespace BookWorm.Chassis.Specification.Evaluators;
+﻿namespace BookWorm.Chassis.Specification.Evaluators;
 
 public sealed class SpecificationEvaluator
 {
@@ -30,8 +28,9 @@ public sealed class SpecificationEvaluator
     {
         ArgumentNullException.ThrowIfNull(specification);
 
-        return Evaluators
-            .AsValueEnumerable()
-            .Aggregate(query, (current, evaluator) => evaluator.GetQuery(current, specification));
+        return Evaluators.Aggregate(
+            query,
+            (current, evaluator) => evaluator.GetQuery(current, specification)
+        );
     }
 }

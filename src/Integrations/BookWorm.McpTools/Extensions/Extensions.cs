@@ -1,7 +1,4 @@
-﻿using BookWorm.Constants.Aspire;
-using BookGrpcServiceClient = BookWorm.Catalog.Grpc.Services.BookGrpcService.BookGrpcServiceClient;
-
-namespace BookWorm.McpTools.Extensions;
+﻿namespace BookWorm.McpTools.Extensions;
 
 public static class Extensions
 {
@@ -11,30 +8,17 @@ public static class Extensions
 
         builder.AddDefaultCors();
 
-        builder.AddQdrantClient(Components.VectorDb);
-
-        builder.AddOllamaApiClient(Components.Ollama.Embedding).AddEmbeddingGenerator();
-
         // Add exception handlers
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails();
 
-        services.AddScoped<ISearch, HybridSearch>();
-        services.AddSingleton<IVectorStore, QdrantVectorStore>();
-
-        // Configure gRPC
-        services.AddGrpc();
-        services.AddGrpcServiceReference<BookGrpcServiceClient>(
+        // Configure HTTP client
+        services.AddHttpServiceReference<ICatalogApi>(
             $"https://{Application.Catalog}",
             HealthStatus.Degraded
         );
-        services.AddSingleton<IBookService, BookService>();
 
-        services
-            .AddMcpServer()
-            .WithHttpTransport()
-            .WithTools<Product>()
-            .WithPrompts<Prompts.System>();
+        services.AddMcpServer().WithHttpTransport().WithTools<Product>().WithPrompts<Instruction>();
 
         services
             .AddOpenTelemetry()

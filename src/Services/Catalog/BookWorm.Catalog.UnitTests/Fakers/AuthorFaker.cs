@@ -1,5 +1,4 @@
 ﻿using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
-using BookWorm.Constants;
 using BookWorm.Constants.Other;
 
 namespace BookWorm.Catalog.UnitTests.Fakers;

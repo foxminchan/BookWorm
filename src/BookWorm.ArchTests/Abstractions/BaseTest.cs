@@ -18,8 +18,10 @@ public abstract class BaseTest
     protected static readonly Assembly CatalogAssembly = typeof(ICatalogApiMarker).Assembly;
     protected static readonly Assembly ChatAssembly = typeof(IChatApiMarker).Assembly;
     protected static readonly Assembly FinanceAssembly = typeof(IFinanceApiMarker).Assembly;
+
     protected static readonly Assembly NotificationAssembly =
         typeof(INotificationApiMarker).Assembly;
+
     protected static readonly Assembly OrderingAssembly = typeof(IOrderingApiMarker).Assembly;
     protected static readonly Assembly RatingAssembly = typeof(IRatingApiMarker).Assembly;
     protected static readonly Assembly ChassisAssembly = typeof(IChassisMarker).Assembly;

@@ -5,7 +5,7 @@ namespace BookWorm.Chassis.Search;
 
 public sealed class HybridSearch(
     IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
-    IVectorStore vectorStore
+    VectorStore vectorStore
 ) : ISearch
 {
     public async Task<IReadOnlyList<HybridSearchRecord>> SearchAsync(
@@ -22,7 +22,7 @@ public sealed class HybridSearch(
         );
 
         var vectorCollection =
-            (IKeywordHybridSearch<HybridSearchRecord>)
+            (IKeywordHybridSearchable<HybridSearchRecord>)
                 vectorStore.GetCollection<Guid, HybridSearchRecord>(collectionName);
 
         var options = new HybridSearchOptions<HybridSearchRecord>

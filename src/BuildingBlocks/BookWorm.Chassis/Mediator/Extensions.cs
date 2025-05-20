@@ -1,7 +1,7 @@
-﻿using BookWorm.SharedKernel.SeedWork;
+﻿using System.Collections.Immutable;
+using BookWorm.SharedKernel.SeedWork;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using ZLinq;
 
 namespace BookWorm.Chassis.Mediator;
 
@@ -11,14 +11,10 @@ public static class Extensions
     {
         var domainEntities = ctx
             .ChangeTracker.Entries<Entity>()
-            .AsValueEnumerable()
             .Where(x => x.Entity.DomainEvents.Count != 0)
             .ToImmutableList();
 
-        var domainEvents = domainEntities
-            .AsValueEnumerable()
-            .SelectMany(x => x.Entity.DomainEvents)
-            .ToImmutableList();
+        var domainEvents = domainEntities.SelectMany(x => x.Entity.DomainEvents).ToImmutableList();
 
         domainEntities.ForEach(entity => entity.Entity.ClearDomainEvents());
 

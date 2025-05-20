@@ -21,7 +21,7 @@ public sealed class DomainToDtoMapper(IBlobService blobService) : IMapper<Book, 
             book.Status,
             book.Category?.ToCategoryDto(),
             book.Publisher?.ToPublisherDto(),
-            [.. book.BookAuthors.AsValueEnumerable().Select(x => x.Author.ToAuthorDto())],
+            [.. book.BookAuthors.Select(x => x.Author.ToAuthorDto())],
             book.AverageRating,
             book.TotalReviews
         );
@@ -29,6 +29,6 @@ public sealed class DomainToDtoMapper(IBlobService blobService) : IMapper<Book, 
 
     public IReadOnlyList<BookDto> Map(IReadOnlyList<Book> models)
     {
-        return models.Count == 0 ? [] : [.. models.AsValueEnumerable().Select(Map)];
+        return models.Count == 0 ? [] : [.. models.Select(Map)];
     }
 }

@@ -1,6 +1,4 @@
-﻿using ZLinq;
-
-namespace BookWorm.Chassis.Specification.Evaluators;
+﻿namespace BookWorm.Chassis.Specification.Evaluators;
 
 public sealed class WhereEvaluator : IEvaluator
 {
@@ -13,8 +11,9 @@ public sealed class WhereEvaluator : IEvaluator
     {
         return specification.WhereExpressions is null
             ? query
-            : specification
-                .WhereExpressions.AsValueEnumerable()
-                .Aggregate(query, (current, info) => current.Where(info.Filter));
+            : specification.WhereExpressions.Aggregate(
+                query,
+                (current, info) => current.Where(info.Filter)
+            );
     }
 }

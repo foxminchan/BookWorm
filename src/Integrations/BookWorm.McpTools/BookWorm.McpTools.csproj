@@ -3,20 +3,9 @@
     <SuppressCheckGrpcNetClientFactoryVersion>true</SuppressCheckGrpcNetClientFactoryVersion>
   </PropertyGroup>
   <ItemGroup Label="Project">
-    <PackageReference Include="Aspire.Qdrant.Client" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
-    <PackageReference Include="CommunityToolkit.Aspire.OllamaSharp" />
-    <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
-    <PackageReference Include="Google.Protobuf" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Aspire\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Protobuf
-      Include="..\..\Services\Catalog\BookWorm.Catalog\Grpc\Protos\book.proto"
-      Link="Grpc\Protos\book.proto"
-      GrpcServices="Client"
-    />
   </ItemGroup>
 </Project>

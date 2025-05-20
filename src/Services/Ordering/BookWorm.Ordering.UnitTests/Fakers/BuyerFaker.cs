@@ -1,5 +1,4 @@
-﻿using BookWorm.Constants;
-using BookWorm.Constants.Other;
+﻿using BookWorm.Constants.Other;
 using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
 
 namespace BookWorm.Ordering.UnitTests.Fakers;

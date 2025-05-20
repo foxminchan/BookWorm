@@ -6,7 +6,7 @@ namespace BookWorm.Catalog.Infrastructure.GenAi.Ingestion;
 
 public sealed class BookDataIngestor(
     IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
-    IVectorStore vectorStore
+    VectorStore vectorStore
 ) : IIngestionSource<Book>
 {
     private readonly string _collectionName = nameof(Book).ToLowerInvariant();
@@ -17,7 +17,7 @@ public sealed class BookDataIngestor(
         ArgumentException.ThrowIfNullOrEmpty(data.Description);
 
         var vectorCollection = vectorStore.GetCollection<Guid, HybridSearchRecord>(_collectionName);
-        await vectorCollection.CreateCollectionIfNotExistsAsync(cancellationToken);
+        await vectorCollection.EnsureCollectionExistsAsync(cancellationToken);
 
         var text = $"{data.Name} {data.Description}";
 
