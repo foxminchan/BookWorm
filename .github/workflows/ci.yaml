@@ -147,14 +147,6 @@ jobs:
             echo "version=latest" >> $GITHUB_OUTPUT
           fi
 
-      - name: Publish API Gateway
-        uses: ./.github/actions/publish
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-          project-path: "src/BookWorm.Gateway/BookWorm.Gateway.csproj"
-          container-repository: "foxminchan/bookworm/gateway"
-          container-tag: ${{ steps.set_tag.outputs.version }}
-
       - name: Publish Basket Service
         uses: ./.github/actions/publish
         with:
