@@ -1,5 +1,4 @@
-﻿using BookWorm.Constants;
-using BookWorm.Constants.Other;
+﻿using BookWorm.Constants.Other;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Diagnostics.Enrichment;
 

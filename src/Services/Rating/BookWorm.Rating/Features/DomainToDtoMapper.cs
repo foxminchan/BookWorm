@@ -16,6 +16,6 @@ public static class DomainToDtoMapper
 
     public static IReadOnlyList<FeedbackDto> ToFeedbackDtos(this IEnumerable<Feedback> feedbacks)
     {
-        return [.. feedbacks.AsValueEnumerable().Select(ToFeedbackDto)];
+        return [.. feedbacks.Select(ToFeedbackDto)];
     }
 }

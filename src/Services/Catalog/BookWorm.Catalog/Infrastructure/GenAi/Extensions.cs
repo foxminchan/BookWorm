@@ -2,8 +2,6 @@
 using BookWorm.Chassis.Ingestion;
 using BookWorm.Chassis.Search;
 using BookWorm.Constants.Aspire;
-using Microsoft.Extensions.VectorData;
-using Microsoft.SemanticKernel.Connectors.Qdrant;
 
 namespace BookWorm.Catalog.Infrastructure.GenAi;
 
@@ -25,7 +23,7 @@ public static class Extensions
                 c.EnableSensitiveData = builder.Environment.IsDevelopment()
             );
 
-        services.AddSingleton<IVectorStore, QdrantVectorStore>();
+        services.AddQdrantVectorStore();
         services.AddScoped<IIngestionSource<Book>, BookDataIngestor>();
         services.AddScoped<ISearch, HybridSearch>();
 

@@ -11,6 +11,6 @@ public static class DomainToDtoMapper
         this IEnumerable<Publisher> publishers
     )
     {
-        return [.. publishers.AsValueEnumerable().Select(ToPublisherDto)];
+        return [.. publishers.Select(ToPublisherDto)];
     }
 }

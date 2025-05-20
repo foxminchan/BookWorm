@@ -1,5 +1,4 @@
-﻿using BookWorm.Constants;
-using BookWorm.Constants.Core;
+﻿using BookWorm.Constants.Core;
 using BookWorm.Ordering.Features.Buyers.Create;
 using FluentValidation.TestHelper;
 

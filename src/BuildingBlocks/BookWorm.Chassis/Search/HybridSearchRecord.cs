@@ -4,12 +4,12 @@ namespace BookWorm.Chassis.Search;
 
 public sealed class HybridSearchRecord
 {
-    [VectorStoreRecordKey]
+    [VectorStoreKey]
     public required Guid Id { get; init; }
 
-    [VectorStoreRecordData(IsFullTextIndexed = true)]
-    public required string Description { get; set; }
+    [VectorStoreData(IsFullTextIndexed = true)]
+    public required string Description { get; init; }
 
-    [VectorStoreRecordVector(768, DistanceFunction = DistanceFunction.CosineSimilarity)]
-    public ReadOnlyMemory<float> Vector { get; set; }
+    [VectorStoreVector(768, DistanceFunction = DistanceFunction.CosineSimilarity)]
+    public ReadOnlyMemory<float> Vector { get; init; }
 }

@@ -4,11 +4,11 @@ using ModelContextProtocol.Server;
 namespace BookWorm.McpTools.Prompts;
 
 [McpServerPromptType]
-public sealed class System
+public sealed class Instruction
 {
     [McpServerPrompt(Name = "SystemPrompt")]
     [Description("The system prompt for the BookWorm assistant")]
-    public static IEnumerable<ChatMessage> SystemPrompt()
+    public static IEnumerable<ChatMessage> InstructionPrompt()
     {
         return
         [

@@ -1,11 +1,14 @@
 ﻿using Grpc.Health.V1;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Refit;
 
 namespace BookWorm.ServiceDefaults.Kestrel;
 
 public static class ServiceReferenceExtensions
 {
+    private static readonly string _healthCheckName = nameof(Health).ToLowerInvariant();
+
     public static IHttpClientBuilder AddGrpcServiceReference<TClient>(
         this IServiceCollection services,
         string address,
@@ -23,7 +26,12 @@ public static class ServiceReferenceExtensions
 
         builder.AddStandardResilienceHandler();
 
-        AddGrpcHealthChecks(services, uri, $"{typeof(TClient).Name}-health", failureStatus);
+        AddGrpcHealthChecks(
+            services,
+            uri,
+            $"{typeof(TClient).Name}-{_healthCheckName}",
+            failureStatus
+        );
 
         return builder;
     }
@@ -39,6 +47,33 @@ public static class ServiceReferenceExtensions
             .AddGrpcClient<Health.HealthClient>(o => o.Address = uri)
             .AddStandardResilienceHandler();
         services.AddHealthChecks().AddCheck<GrpcServiceHealthCheck>(healthCheckName, failureStatus);
+    }
+
+    public static void AddHttpServiceReference<TClient>(
+        this IServiceCollection services,
+        string address,
+        HealthStatus failureStatus
+    )
+        where TClient : class
+    {
+        if (!Uri.IsWellFormedUriString(address, UriKind.Absolute))
+        {
+            throw new ArgumentException("Address must be a valid absolute URI.", nameof(address));
+        }
+
+        var uri = new Uri(address);
+
+        services.AddRefitClient<TClient>().ConfigureHttpClient(c => c.BaseAddress = uri);
+
+        services
+            .AddHealthChecks()
+            .AddUrlGroup(
+                new Uri(uri, _healthCheckName),
+                $"{typeof(TClient).Name}-{_healthCheckName}",
+                failureStatus,
+                configurePrimaryHttpMessageHandler: s =>
+                    s.GetRequiredService<IHttpMessageHandlerFactory>().CreateHandler()
+            );
     }
 
     private sealed class GrpcServiceHealthCheck(Health.HealthClient healthClient) : IHealthCheck

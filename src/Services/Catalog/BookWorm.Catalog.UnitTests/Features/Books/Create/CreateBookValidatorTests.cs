@@ -1,7 +1,6 @@
 ﻿using System.Net.Mime;
 using BookWorm.Catalog.Features.Books.Create;
 using BookWorm.Catalog.Features.Books.Shared;
-using BookWorm.Constants;
 using BookWorm.Constants.Core;
 using FluentValidation.TestHelper;
 using Microsoft.AspNetCore.Http;

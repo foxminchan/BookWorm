@@ -21,7 +21,7 @@ public sealed class CleanUpSentEmailWorker(
 
             // Get all sent emails
             var sentEmails = await tableService.ListAsync<Outbox>(_partitionKey);
-            var emailsToDelete = sentEmails.AsValueEnumerable().Where(e => e.IsSent).ToList();
+            var emailsToDelete = sentEmails.Where(e => e.IsSent).ToList();
 
             if (emailsToDelete.Count == 0)
             {

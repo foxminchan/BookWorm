@@ -31,4 +31,3 @@ global using MimeKit;
 global using Polly;
 global using Quartz;
 global using Saunter.Attributes;
-global using ZLinq;

@@ -84,9 +84,6 @@ qdrant.WithParentRelationship(catalogApi);
 
 var mcp = builder
     .AddProject<BookWorm_McpTools>(Application.McpTools)
-    .WithOllama()
-    .WithReference(qdrant)
-    .WaitFor(qdrant)
     .WithReference(catalogApi)
     .WaitFor(catalogApi);
 

@@ -9,6 +9,6 @@ public static class DomainToDtoMapper
 
     public static IReadOnlyList<CategoryDto> ToCategoryDtos(this IEnumerable<Category> categories)
     {
-        return [.. categories.AsValueEnumerable().Select(ToCategoryDto)];
+        return [.. categories.Select(ToCategoryDto)];
     }
 }
