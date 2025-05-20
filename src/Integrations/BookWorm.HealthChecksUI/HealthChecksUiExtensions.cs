@@ -28,7 +28,8 @@ public static class HealthChecksUiExtensions
             .WithImage(HealthChecksUiDefaults.ContainerImageName, tag)
             .WithImageRegistry(HealthChecksUiDefaults.ContainerRegistry)
             .WithEnvironment(HealthChecksUiResource.KnownEnvVars.UiPath, "/")
-            .WithHttpEndpoint(port, HealthChecksUiDefaults.ContainerPort);
+            .WithHttpEndpoint(port, HealthChecksUiDefaults.ContainerPort)
+            .WithUrlForEndpoint("http", url => url.DisplayText = "Health Checks UI");
     }
 
     /// <summary>

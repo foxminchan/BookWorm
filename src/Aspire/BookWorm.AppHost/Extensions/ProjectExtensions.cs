@@ -1,30 +1,10 @@
 ﻿using Aspire.Hosting.Yarp;
 using BookWorm.Constants.Aspire;
-using BookWorm.Scalar;
 
 namespace BookWorm.AppHost.Extensions;
 
 public static class ProjectExtensions
 {
-    /// <summary>
-    ///     Configures the resource builder to use the Scalar API documentation if not in publish mode.
-    /// </summary>
-    /// <param name="builder">The resource builder for the project resource.</param>
-    /// <returns>The updated resource builder.</returns>
-    public static IResourceBuilder<ProjectResource> WithScalarApiDocs(
-        this IResourceBuilder<ProjectResource> builder
-    )
-    {
-        if (builder.ApplicationBuilder.ExecutionContext.IsPublishMode)
-        {
-            return builder;
-        }
-
-        builder.WithScalar();
-
-        return builder;
-    }
-
     /// <summary>
     ///     Adds K6 load testing to the distributed application.
     /// </summary>

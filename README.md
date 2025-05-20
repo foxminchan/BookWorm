@@ -35,8 +35,7 @@
   - [x] Standardized AI tools with MCP Tools
 - [x] Configured CI/CD with GitHub Actions
 - [x] Created comprehensive documentation:
-  - [x] Used OpenAPI for REST API documentation
-  - [x] Provided AsyncAPI for event-driven endpoints
+  - [x] Used OpenAPI for REST API & AsyncAPI for event-driven endpoints
   - [x] Utilized EventCatalog for centralized architecture documentation
 - [x] Established a testing strategy:
   - [x] Conducted service unit tests
