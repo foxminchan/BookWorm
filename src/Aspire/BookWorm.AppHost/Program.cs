@@ -121,7 +121,8 @@ var notificationApi = builder
     .WaitFor(queue)
     .WithReference(tableStorage)
     .WaitFor(tableStorage)
-    .WithRoleAssignments(storage, StorageBuiltInRole.StorageTableDataContributor);
+    .WithRoleAssignments(storage, StorageBuiltInRole.StorageTableDataContributor)
+    .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Async API ({u.Endpoint?.EndpointName})"));
 
 var orderingApi = builder
     .AddProject<BookWorm_Ordering>(Application.Ordering)
