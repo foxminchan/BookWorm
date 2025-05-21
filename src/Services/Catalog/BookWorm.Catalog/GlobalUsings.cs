@@ -25,7 +25,6 @@ global using BookWorm.Chassis.Query;
 global using BookWorm.Chassis.Repository;
 global using BookWorm.Chassis.Specification;
 global using BookWorm.Chassis.Versioning;
-global using BookWorm.Constants;
 global using BookWorm.ServiceDefaults;
 global using BookWorm.ServiceDefaults.ApiSpecification.AsyncApi;
 global using BookWorm.ServiceDefaults.ApiSpecification.OpenApi;

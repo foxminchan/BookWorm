@@ -7,7 +7,6 @@ global using System.Text.Json;
 global using BookWorm.Chassis.Converters;
 global using BookWorm.Chassis.EventBus;
 global using BookWorm.Chassis.Exceptions;
-global using BookWorm.Constants;
 global using BookWorm.Contracts;
 global using BookWorm.Notification.Domain.Builders;
 global using BookWorm.Notification.Domain.Exceptions;

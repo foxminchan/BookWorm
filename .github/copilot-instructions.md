@@ -1,71 +1,25 @@
 # Instructions for BookWorm
 
-## Project Architecture
+## General
 
-BookWorm is a microservices-based application with the following components:
+* Make only high confidence suggestions when reviewing code changes.
+* Always use the latest version C#, currently C# 13 features.
+* Never change global.json unless explicitly asked to.
 
-- **BuildingBlocks**: Shared libraries like Constants and SharedKernel
-- **Services**: Catalog, Basket, Ordering, Notification, Rating
-- **Infrastructure**: AppHost and Gateway
-- **Integrations**: HealthChecksUI and Scalar
+## Formatting
 
-## Coding Conventions
+* Apply code-formatting style defined in `.editorconfig`.
+* Prefer file-scoped namespace declarations and single-line using directives.
+* Insert a newline before the opening curly brace of any code block (e.g., after `if`, `for`, `while`, `foreach`, `using`, `try`, etc.).
+* Ensure that the final return statement of a method is on its own line.
+* Use pattern matching and switch expressions wherever possible.
+* Use `nameof` instead of string literals when referring to member names.
+* Use `var` when the type is obvious.
+* Use `Primary Constructor` for classes with immutable properties.
+* Use `Expression-bodied members` for methods and properties.
 
-- Follow DDD (Domain-Driven Design) principles
-- Use latest C# features and idioms
-- Implement unit tests for business logic
-- Maintain service boundaries - avoid cross-service direct dependencies
-- Use spaces for indentation with four-spaces per level, unless it is a csproj file, then use two-spaces per level.
-- Prefer type declarations over `var` when the type isn't obvious.
-- Use `Primary Constructor` for classes with immutable properties.
-- Use `Expression-bodied members` for methods and properties.
+### Nullable Reference Types
 
-Example:
-
-```csharp
-public sealed class Book
-{
-	public string Title { get; private set; }
-	public string Author { get; private set; }
-
-	public Book(string title, string author)
-	{
-		Title = !string.IsNullOrWhiteSpace(title) ? title : throw new CatalogDomainException("Title cannot be empty.");
-		Author = !string.IsNullOrWhiteSpace(author) ? author : throw new CatalogDomainException("Author cannot be empty.");
-	}
-}
-
-public sealed class BookService
-{
-	public Book GetBook(string title, string author) => new Book(title, author);
-}
-```
-
-## Service Descriptions
-
-- **Catalog**: Book inventory and metadata management
-- **Basket**: Shopping cart functionality
-- **Ordering**: Order processing and fulfillment
-- **Notification**: User notifications and alerts
-- **Rating**: Book reviews and ratings
-
-## Patterns to Follow
-
-- Use CQRS with MediatR when applicable
-- Repository pattern for data access
-- Domain Events for cross-service communication
-- Avoid circular dependencies between services
-- Keep services independently deployable
-
-## Testing Guidelines
-
-- Unit test business logic thoroughly
-- Name tests using Given_When_Then pattern
-- Mock external dependencies
-- Test happy paths and edge cases
-
-## Common Tasks
-
-- For adding new API endpoints, follow the existing controller patterns
-- When modifying data models, update both entity and DTOs
-- Register new services in AppHost project
+* Declare variables non-nullable, and check for `null` at entry points.
+* Always use `is null` or `is not null` instead of `== null` or `!= null`.
+* Trust the C# null annotations and don't add null checks when the type system says a value cannot be null.

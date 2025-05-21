@@ -15,7 +15,6 @@ global using BookWorm.Chassis.Pipelines;
 global using BookWorm.Chassis.Query;
 global using BookWorm.Chassis.Repository;
 global using BookWorm.Chassis.Versioning;
-global using BookWorm.Constants;
 global using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
 global using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 global using BookWorm.Ordering.Domain.Events;

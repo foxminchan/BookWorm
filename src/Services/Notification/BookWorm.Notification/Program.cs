@@ -12,4 +12,9 @@ app.MapDefaultEndpoints();
 
 app.UseDefaultAsyncApi();
 
+if (app.Environment.IsDevelopment())
+{
+    app.MapGet("/", () => Results.Redirect("/asyncapi/ui")).ExcludeFromDescription();
+}
+
 app.Run();
