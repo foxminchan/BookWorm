@@ -17,19 +17,21 @@
       "label": "publish",
       "command": "dotnet",
       "type": "process",
-      "args": [
-        "publish",
-        "${workspaceFolder}/BookWorm.slnx",
-        "/property:GenerateFullPaths=true",
-        "/consoleloggerparameters:NoSummary;ForceNoAlign"
-      ],
+      "args": ["aspire", "publish", "--output-path", "/deploys/bicep"],
       "problemMatcher": "$msCompile"
     },
     {
-      "label": "watch",
+      "label": "run",
       "command": "dotnet",
       "type": "process",
-      "args": ["watch", "run", "--project", "${workspaceFolder}/BookWorm.slnx"],
+      "args": ["aspire", "run"],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "format",
+      "command": "dotnet",
+      "type": "process",
+      "args": ["csharpier", "format", "."],
       "problemMatcher": "$msCompile"
     }
   ]
