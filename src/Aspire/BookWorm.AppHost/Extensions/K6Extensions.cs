@@ -3,7 +3,7 @@ using BookWorm.Constants.Aspire;
 
 namespace BookWorm.AppHost.Extensions;
 
-public static class ProjectExtensions
+public static class K6Extensions
 {
     /// <summary>
     ///     Adds K6 load testing to the distributed application.

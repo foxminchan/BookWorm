@@ -66,6 +66,18 @@ resource mcptools 'Microsoft.App/containerApps@2024-03-01' = {
               name: 'services__catalog__https__0'
               value: 'https://catalog.internal.${aca_outputs_azure_container_apps_environment_default_domain}'
             }
+            {
+              name: 'OTEL_EXPORTER_OTLP_ENDPOINT'
+              value: 'http://dashboard:18889'
+            }
+            {
+              name: 'OTEL_EXPORTER_OTLP_PROTOCOL'
+              value: 'grpc'
+            }
+            {
+              name: 'OTEL_SERVICE_NAME'
+              value: 'mcptools'
+            }
           ]
         }
       ]

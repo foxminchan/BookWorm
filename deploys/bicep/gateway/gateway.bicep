@@ -84,6 +84,18 @@ resource gateway 'Microsoft.App/containerApps@2024-03-01' = {
               name: 'services__keycloak__management__0'
               value: 'http://keycloak:9000'
             }
+            {
+              name: 'OTEL_EXPORTER_OTLP_ENDPOINT'
+              value: 'http://dashboard:18889'
+            }
+            {
+              name: 'OTEL_EXPORTER_OTLP_PROTOCOL'
+              value: 'grpc'
+            }
+            {
+              name: 'OTEL_SERVICE_NAME'
+              value: 'gateway'
+            }
           ]
         }
       ]

@@ -47,6 +47,18 @@ resource queue 'Microsoft.App/containerApps@2024-03-01' = {
               name: 'RABBITMQ_DEFAULT_PASS'
               secretRef: 'rabbitmq-default-pass'
             }
+            {
+              name: 'OTEL_EXPORTER_OTLP_ENDPOINT'
+              value: 'http://dashboard:18889'
+            }
+            {
+              name: 'OTEL_EXPORTER_OTLP_PROTOCOL'
+              value: 'grpc'
+            }
+            {
+              name: 'OTEL_SERVICE_NAME'
+              value: 'queue'
+            }
           ]
         }
       ]

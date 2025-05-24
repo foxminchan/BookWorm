@@ -115,6 +115,18 @@ resource notification 'Microsoft.App/containerApps@2024-03-01' = {
               value: storage_outputs_tableendpoint
             }
             {
+              name: 'OTEL_EXPORTER_OTLP_ENDPOINT'
+              value: 'http://dashboard:18889'
+            }
+            {
+              name: 'OTEL_EXPORTER_OTLP_PROTOCOL'
+              value: 'grpc'
+            }
+            {
+              name: 'OTEL_SERVICE_NAME'
+              value: 'notification'
+            }
+            {
               name: 'AZURE_CLIENT_ID'
               value: notification_identity_outputs_clientid
             }

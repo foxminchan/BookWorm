@@ -18,3 +18,13 @@ resource storage_StorageBlobDataContributor 'Microsoft.Authorization/roleAssignm
   }
   scope: storage
 }
+
+resource storage_StorageBlobDataOwner 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(storage.id, principalId, subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b'))
+  properties: {
+    principalId: principalId
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b')
+    principalType: 'ServicePrincipal'
+  }
+  scope: storage
+}

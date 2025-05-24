@@ -57,6 +57,18 @@ resource keycloak 'Microsoft.App/containerApps@2024-03-01' = {
               name: 'KC_HEALTH_ENABLED'
               value: 'true'
             }
+            {
+              name: 'OTEL_EXPORTER_OTLP_ENDPOINT'
+              value: 'http://dashboard:18889'
+            }
+            {
+              name: 'OTEL_EXPORTER_OTLP_PROTOCOL'
+              value: 'grpc'
+            }
+            {
+              name: 'OTEL_SERVICE_NAME'
+              value: 'keycloak'
+            }
           ]
           volumeMounts: [
             {

@@ -96,6 +96,18 @@ resource finance 'Microsoft.App/containerApps@2024-03-01' = {
               secretRef: 'connectionstrings--queue'
             }
             {
+              name: 'OTEL_EXPORTER_OTLP_ENDPOINT'
+              value: 'http://dashboard:18889'
+            }
+            {
+              name: 'OTEL_EXPORTER_OTLP_PROTOCOL'
+              value: 'grpc'
+            }
+            {
+              name: 'OTEL_SERVICE_NAME'
+              value: 'finance'
+            }
+            {
               name: 'AZURE_CLIENT_ID'
               value: finance_identity_outputs_clientid
             }

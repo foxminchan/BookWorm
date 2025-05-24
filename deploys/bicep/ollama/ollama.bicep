@@ -25,6 +25,20 @@ resource ollama 'Microsoft.App/containerApps@2024-03-01' = {
         {
           image: 'docker.io/ollama/ollama:0.6.0'
           name: 'ollama'
+          env: [
+            {
+              name: 'OTEL_EXPORTER_OTLP_ENDPOINT'
+              value: 'http://dashboard:18889'
+            }
+            {
+              name: 'OTEL_EXPORTER_OTLP_PROTOCOL'
+              value: 'grpc'
+            }
+            {
+              name: 'OTEL_SERVICE_NAME'
+              value: 'ollama'
+            }
+          ]
           volumeMounts: [
             {
               volumeName: 'v0'

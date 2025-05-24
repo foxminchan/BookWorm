@@ -104,6 +104,18 @@ resource rating 'Microsoft.App/containerApps@2024-03-01' = {
               value: 'http://keycloak:9000'
             }
             {
+              name: 'OTEL_EXPORTER_OTLP_ENDPOINT'
+              value: 'http://dashboard:18889'
+            }
+            {
+              name: 'OTEL_EXPORTER_OTLP_PROTOCOL'
+              value: 'grpc'
+            }
+            {
+              name: 'OTEL_SERVICE_NAME'
+              value: 'rating'
+            }
+            {
               name: 'AZURE_CLIENT_ID'
               value: rating_identity_outputs_clientid
             }
