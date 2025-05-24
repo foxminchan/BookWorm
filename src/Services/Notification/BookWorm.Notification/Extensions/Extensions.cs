@@ -50,7 +50,10 @@ public static class Extensions
             builder.AddSendGridSender();
         }
 
-        builder.AddAzureTableClient(Components.Azure.Storage.Table);
+        builder.AddAzureTableClient(
+            Components.Azure.Storage.Table,
+            settings => settings.DisableHealthChecks = true
+        );
         services.AddScoped<ITableService, TableService>();
 
         // Replace the Decorate call with a factory registration
