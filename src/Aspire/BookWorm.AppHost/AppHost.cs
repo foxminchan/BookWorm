@@ -42,6 +42,7 @@ var signalR = builder
 var blobStorage = storage
     .AddBlobs(Components.Azure.Storage.Blob)
     .AddBlobContainer(Components.Azure.Storage.BlobContainer);
+
 var tableStorage = storage.AddTables(Components.Azure.Storage.Table);
 var catalogDb = postgres.AddDatabase(Components.Database.Catalog);
 var orderingDb = postgres.AddDatabase(Components.Database.Ordering);
@@ -77,7 +78,11 @@ var catalogApi = builder
     .WaitFor(keycloak)
     .WithReference(redis)
     .WaitFor(redis)
-    .WithRoleAssignments(storage, StorageBuiltInRole.StorageBlobDataContributor)
+    .WithRoleAssignments(
+        storage,
+        StorageBuiltInRole.StorageBlobDataContributor,
+        StorageBuiltInRole.StorageBlobDataOwner
+    )
     .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Open API ({u.Endpoint?.EndpointName})"));
 
 qdrant.WithParentRelationship(catalogApi);
