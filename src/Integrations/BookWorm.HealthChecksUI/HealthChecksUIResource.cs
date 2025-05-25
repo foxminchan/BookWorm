@@ -5,7 +5,7 @@
 ///     See https://github.com/Xabaril/AspNetCore.Diagnostics.HealthChecks?tab=readme-ov-file#HealthCheckUI
 /// </summary>
 /// <param name="name">The resource name.</param>
-public class HealthChecksUiResource(string name)
+public class HealthChecksUIResource(string name)
     : ContainerResource(name),
         IResourceWithServiceDiscovery
 {
@@ -21,7 +21,7 @@ public class HealthChecksUiResource(string name)
     /// </summary>
     public static class KnownEnvVars
     {
-        public const string UiPath = "ui_path";
+        public const string UIPath = "ui_path";
 
         // These keys are taken from https://github.com/Xabaril/AspNetCore.Diagnostics.HealthChecks?tab=readme-ov-file#sample-2-configuration-using-appsettingsjson
         private const string HealthChecksConfigSection = "HealthChecksUI__HealthChecks";
@@ -41,7 +41,7 @@ public class HealthChecksUiResource(string name)
 }
 
 /// <summary>
-///     Represents a project to be monitored by a <see cref="HealthChecksUiResource" />.
+///     Represents a project to be monitored by a <see cref="HealthChecksUIResource" />.
 /// </summary>
 public sealed class MonitoredProject(
     IResourceBuilder<ProjectResource> project,

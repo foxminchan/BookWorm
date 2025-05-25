@@ -2,11 +2,11 @@
 
 namespace BookWorm.HealthChecksUI;
 
-internal sealed class HealthChecksUiLifecycleHook(
+internal sealed class HealthChecksUILifecycleHook(
     DistributedApplicationExecutionContext executionContext
 ) : IDistributedApplicationLifecycleHook
 {
-    private const string HealthchecksuiUrls = "HEALTHCHECKSUI_URLS";
+    private const string HealthChecksUIUrls = "HEALTHCHECKSUI_URLS";
 
     public Task BeforeStartAsync(
         DistributedApplicationModel appModel,
@@ -14,11 +14,11 @@ internal sealed class HealthChecksUiLifecycleHook(
     )
     {
         // Configure each project referenced by a Health Checks UI resource
-        var healthChecksUiResources = appModel.Resources.OfType<HealthChecksUiResource>();
+        var healthChecksUIResources = appModel.Resources.OfType<HealthChecksUIResource>();
 
-        foreach (var healthChecksUiResource in healthChecksUiResources)
+        foreach (var healthChecksUIResource in healthChecksUIResources)
         {
-            foreach (var monitoredProject in healthChecksUiResource.MonitoredProjects)
+            foreach (var monitoredProject in healthChecksUIResource.MonitoredProjects)
             {
                 var project = monitoredProject.Project;
 
@@ -40,7 +40,7 @@ internal sealed class HealthChecksUiLifecycleHook(
                     if (context.ExecutionContext.IsRunMode)
                     {
                         // Running during dev inner-loop
-                        var containerHost = healthChecksUiResource
+                        var containerHost = healthChecksUIResource
                             .GetEndpoint("http")
                             .ContainerHost;
                         var fromContainerUriBuilder = new UriBuilder(healthChecksEndpoint.Url)
@@ -55,7 +55,7 @@ internal sealed class HealthChecksUiLifecycleHook(
                     }
 
                     context.EnvironmentVariables.Add(
-                        HealthchecksuiUrls,
+                        HealthChecksUIUrls,
                         healthChecksEndpointsExpression
                     );
                 });
@@ -64,7 +64,7 @@ internal sealed class HealthChecksUiLifecycleHook(
 
         if (executionContext.IsPublishMode)
         {
-            ConfigureHealthChecksUiContainers(appModel.Resources, true);
+            ConfigureHealthChecksUIContainers(appModel.Resources, true);
         }
 
         return Task.CompletedTask;
@@ -75,21 +75,21 @@ internal sealed class HealthChecksUiLifecycleHook(
         CancellationToken cancellationToken = default
     )
     {
-        ConfigureHealthChecksUiContainers(appModel.Resources, false);
+        ConfigureHealthChecksUIContainers(appModel.Resources, false);
 
         return Task.CompletedTask;
     }
 
-    private static void ConfigureHealthChecksUiContainers(
+    private static void ConfigureHealthChecksUIContainers(
         IResourceCollection resources,
         bool isPublishing
     )
     {
-        var healthChecksUiResources = resources.OfType<HealthChecksUiResource>();
+        var healthChecksUIResources = resources.OfType<HealthChecksUIResource>();
 
-        foreach (var healthChecksUiResource in healthChecksUiResources)
+        foreach (var healthChecksUIResource in healthChecksUIResources)
         {
-            var monitoredProjects = healthChecksUiResource.MonitoredProjects;
+            var monitoredProjects = healthChecksUIResource.MonitoredProjects;
 
             // Add environment variables to configure the HealthChecksUI container with the health checks endpoints of each referenced project
             // See example configuration at https://github.com/Xabaril/AspNetCore.Diagnostics.HealthChecks?tab=readme-ov-file#sample-2-configuration-using-appsettingsjson
@@ -101,16 +101,16 @@ internal sealed class HealthChecksUiLifecycleHook(
                 );
 
                 // Set health check name
-                var nameEnvVarName = HealthChecksUiResource.KnownEnvVars.GetHealthCheckNameKey(i);
-                healthChecksUiResource.Annotations.Add(
+                var nameEnvVarName = HealthChecksUIResource.KnownEnvVars.GetHealthCheckNameKey(i);
+                healthChecksUIResource.Annotations.Add(
                     new EnvironmentCallbackAnnotation(nameEnvVarName, () => monitoredProject.Name)
                 );
 
                 // Set health check URL
                 var probePath = monitoredProject.ProbePath.TrimStart('/');
-                var urlEnvVarName = HealthChecksUiResource.KnownEnvVars.GetHealthCheckUriKey(i);
+                var urlEnvVarName = HealthChecksUIResource.KnownEnvVars.GetHealthCheckUriKey(i);
 
-                healthChecksUiResource.Annotations.Add(
+                healthChecksUIResource.Annotations.Add(
                     new EnvironmentCallbackAnnotation(context =>
                         context[urlEnvVarName] = isPublishing
                             ? ReferenceExpression.Create($"{healthChecksEndpoint}/{probePath}")

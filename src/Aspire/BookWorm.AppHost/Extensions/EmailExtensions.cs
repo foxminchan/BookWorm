@@ -1,6 +1,4 @@
-﻿using BookWorm.Constants.Aspire;
-
-namespace BookWorm.AppHost.Extensions;
+﻿namespace BookWorm.AppHost.Extensions;
 
 public static class EmailExtensions
 {

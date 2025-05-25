@@ -7,7 +7,8 @@ public static class DashboardExtensions
     /// </summary>
     /// <param name="builder">The distributed application builder.</param>
     /// <remarks>
-    ///     The dashboard is only added in publish mode. It provides monitoring and telemetry
+    ///     The dashboard is only added in publishing mode.
+    ///     It provides monitoring and telemetry
     ///     capabilities for the distributed application by configuring OpenTelemetry (OTLP)
     ///     endpoints for all resources.
     /// </remarks>

@@ -17,6 +17,7 @@ public static class Components
         public static readonly string Ordering = $"{nameof(Ordering).ToLowerInvariant()}{Suffix}";
         public static readonly string Rating = $"{nameof(Rating).ToLowerInvariant()}{Suffix}";
         public static readonly string Finance = $"{nameof(Finance).ToLowerInvariant()}{Suffix}";
+        public static readonly string Health = $"{nameof(Health).ToLowerInvariant()}{Suffix}";
     }
 
     public static class Ollama

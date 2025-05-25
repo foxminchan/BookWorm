@@ -1,10 +1,3 @@
-using Azure.Provisioning.SignalR;
-using Azure.Provisioning.Storage;
-using BookWorm.AppHost.Extensions;
-using BookWorm.Constants.Aspire;
-using BookWorm.HealthChecksUI;
-using Projects;
-
 var builder = DistributedApplication.CreateBuilder(args);
 
 builder.AddDashboard();
@@ -49,6 +42,7 @@ var catalogDb = postgres.AddDatabase(Components.Database.Catalog);
 var orderingDb = postgres.AddDatabase(Components.Database.Ordering);
 var financeDb = postgres.AddDatabase(Components.Database.Finance);
 var ratingDb = postgres.AddDatabase(Components.Database.Rating);
+var healthDb = postgres.AddDatabase(Components.Database.Health);
 
 builder.AddOllama(configure: configure =>
 {
@@ -176,8 +170,9 @@ var gateway = builder
 builder.AddK6(gateway);
 
 builder
-    .AddHealthChecksUi()
+    .AddHealthChecksUI()
     .WithExternalHttpEndpoints()
+    .WithStorageProvider(healthDb)
     .WithReference(catalogApi)
     .WithReference(chatApi)
     .WithReference(mcp)
