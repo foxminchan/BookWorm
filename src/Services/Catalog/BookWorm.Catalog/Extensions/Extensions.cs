@@ -22,6 +22,12 @@ public static class Extensions
             new JsonSerializerOptions { Converters = { new StringTrimmerJsonConverter() } }
         );
 
+        var appSettings = new AppSettings();
+
+        builder.Configuration.Bind(appSettings);
+
+        services.AddSingleton(appSettings);
+
         // Add exception handlers
         services.AddExceptionHandler<ValidationExceptionHandler>();
         services.AddExceptionHandler<GlobalExceptionHandler>();

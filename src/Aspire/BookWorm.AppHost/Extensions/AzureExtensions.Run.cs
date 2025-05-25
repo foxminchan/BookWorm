@@ -1,6 +1,4 @@
-﻿using Aspire.Hosting.Azure;
-
-namespace BookWorm.AppHost.Extensions;
+﻿namespace BookWorm.AppHost.Extensions;
 
 public static partial class AzureExtensions
 {

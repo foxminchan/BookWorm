@@ -6,7 +6,7 @@ param location string
 
 param principalId string
 
-param postgres_username string = 'tQjekZdKfm'
+param postgres_username string = 'CQbFeqCTHW'
 
 @secure()
 param postgres_password string
@@ -243,6 +243,24 @@ module finance_roles_postgres_kv 'finance-roles-postgres-kv/finance-roles-postgr
   }
 }
 
+module health_checks_ui_identity 'health-checks-ui-identity/health-checks-ui-identity.bicep' = {
+  name: 'health-checks-ui-identity'
+  scope: rg
+  params: {
+    location: location
+  }
+}
+
+module health_checks_ui_roles_postgres_kv 'health-checks-ui-roles-postgres-kv/health-checks-ui-roles-postgres-kv.bicep' = {
+  name: 'health-checks-ui-roles-postgres-kv'
+  scope: rg
+  params: {
+    location: location
+    postgres_kv_outputs_name: postgres_kv.outputs.name
+    principalId: health_checks_ui_identity.outputs.principalId
+  }
+}
+
 output aca_AZURE_CONTAINER_REGISTRY_NAME string = aca.outputs.AZURE_CONTAINER_REGISTRY_NAME
 
 output aca_AZURE_CONTAINER_REGISTRY_ENDPOINT string = aca.outputs.AZURE_CONTAINER_REGISTRY_ENDPOINT
@@ -300,3 +318,7 @@ output rating_identity_clientId string = rating_identity.outputs.clientId
 output finance_identity_id string = finance_identity.outputs.id
 
 output finance_identity_clientId string = finance_identity.outputs.clientId
+
+output health_checks_ui_identity_id string = health_checks_ui_identity.outputs.id
+
+output health_checks_ui_identity_clientId string = health_checks_ui_identity.outputs.clientId

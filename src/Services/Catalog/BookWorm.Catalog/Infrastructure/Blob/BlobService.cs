@@ -4,10 +4,8 @@ using Azure.Storage.Sas;
 
 namespace BookWorm.Catalog.Infrastructure.Blob;
 
-public sealed class BlobService(BlobContainerClient client) : IBlobService
+public sealed class BlobService(BlobContainerClient client, AppSettings appSettings) : IBlobService
 {
-    private const int SasExpiryHours = 1;
-
     public async Task<string> UploadFileAsync(
         IFormFile file,
         CancellationToken cancellationToken = default
@@ -41,7 +39,7 @@ public sealed class BlobService(BlobContainerClient client) : IBlobService
 
         var url = blobClient.GenerateSasUri(
             BlobSasPermissions.Read,
-            DateTimeOffset.UtcNow.AddHours(SasExpiryHours)
+            DateTimeOffset.UtcNow.AddHours(appSettings.SasExpiryHours)
         );
 
         return url.ToString();

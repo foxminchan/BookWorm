@@ -1,10 +1,7 @@
-﻿using Aspire.Hosting.Azure;
-using Aspire.Hosting.Azure.AppContainers;
+﻿using Aspire.Hosting.Azure.AppContainers;
 using Azure.Provisioning.AppContainers;
 using Azure.Provisioning.PostgreSql;
 using Azure.Provisioning.Redis;
-using Azure.Provisioning.SignalR;
-using Azure.Provisioning.Storage;
 using RedisResource = Azure.Provisioning.Redis.RedisResource;
 
 namespace BookWorm.AppHost.Extensions;

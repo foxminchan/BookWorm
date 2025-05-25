@@ -1,5 +1,4 @@
 ﻿using Aspire.Hosting.Yarp;
-using BookWorm.Constants.Aspire;
 
 namespace BookWorm.AppHost.Extensions;
 
