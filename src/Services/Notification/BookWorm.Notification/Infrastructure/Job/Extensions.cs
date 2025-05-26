@@ -1,23 +1,11 @@
-﻿namespace BookWorm.Notification.Infrastructure.Job;
+﻿using BookWorm.ServiceDefaults.Configuration;
+using OpenTelemetry.Trace;
+
+namespace BookWorm.Notification.Infrastructure.Job;
 
 public static class Extensions
 {
-    /// <summary>
-    ///     Configures a scheduled job in Quartz with the specified cron expression.
-    /// </summary>
-    /// <typeparam name="TJob">The type of job to be scheduled. Must implement IJob interface.</typeparam>
-    /// <param name="quartz">The Quartz configurator extension point.</param>
-    /// <param name="cronExpression">A cron expression that defines the job's execution schedule.</param>
-    /// <param name="timeZoneInfo">
-    ///     The timezone in which the cron expression should be evaluated. Defaults to UTC if not
-    ///     specified.
-    /// </param>
-    /// <param name="trigger">Optional action to further configure the trigger.</param>
-    /// <remarks>
-    ///     This method simplifies Quartz job registration by automatically creating a job key based on the job type name
-    ///     and setting up the appropriate triggers with the provided cron schedule.
-    /// </remarks>
-    public static void AddJobConfigurator<TJob>(
+    private static void AddJobConfigurator<TJob>(
         this IServiceCollectionQuartzConfigurator quartz,
         string cronExpression,
         TimeZoneInfo? timeZoneInfo = null,
@@ -39,5 +27,24 @@ public static class Extensions
 
             trigger?.Invoke(opts);
         });
+    }
+
+    public static void AddCronJobServices(this IHostApplicationBuilder builder)
+    {
+        var services = builder.Services;
+
+        services.Configure<JobOptions>(JobOptions.ConfigurationSection);
+
+        var jobOptions = services.BuildServiceProvider().GetRequiredService<JobOptions>();
+
+        services.AddQuartz(q =>
+        {
+            q.AddJobConfigurator<CleanUpSentEmailWorker>(jobOptions.CleanUpSentEmailCronExpression);
+            q.AddJobConfigurator<ResendErrorEmailWorker>(jobOptions.ResendErrorEmailCronExpression);
+        });
+
+        services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
+
+        services.AddOpenTelemetry().WithTracing(t => t.AddQuartzInstrumentation());
     }
 }

@@ -1,5 +1,4 @@
-﻿using BookWorm.Constants.Aspire;
-using StackExchange.Redis;
+﻿using StackExchange.Redis;
 
 namespace BookWorm.Ordering.Extensions;
 
@@ -17,26 +16,13 @@ public static class Extensions
 
         builder.AddDefaultAuthentication().AddKeycloakClaimsTransformation();
 
-        // Add Redis configuration
-        builder.AddRedisClient(Components.Redis);
-        services.AddScoped<IRequestManager, RequestManager>();
-
         // Add exception handlers
         services.AddExceptionHandler<ValidationExceptionHandler>();
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddExceptionHandler<NotFoundExceptionHandler>();
         services.AddProblemDetails();
 
-        // Add database configuration
-        builder.AddAzurePostgresDbContext<OrderingDbContext>(
-            Components.Database.Ordering,
-            _ =>
-            {
-                services.AddMigration<OrderingDbContext>();
-
-                services.AddRepositories(typeof(IOrderingApiMarker));
-            }
-        );
+        builder.AddPersistenceServices();
 
         // Configure MediatR
         services.AddMediatR(cfg =>
@@ -58,6 +44,7 @@ public static class Extensions
 
         services.AddScoped<IEventMapper, EventMapper>();
         services.AddScoped<IEventDispatcher, EventDispatcher>();
+        services.AddScoped<IRequestManager, RequestManager>();
 
         // Configure endpoints
         services.AddVersioning();
@@ -86,13 +73,6 @@ public static class Extensions
 
         // Configure gRPC
         services.AddGrpcServices();
-
-        // Configure EventStore
-        builder.AddEventStore(options =>
-        {
-            options.Projections.LiveStreamAggregation<OrderSummary>();
-            options.Projections.Add<Projection>(ProjectionLifecycle.Async);
-        });
 
         // Configure Redis distributed lock
         services.AddSingleton<IDistributedLockProvider>(

@@ -1,13 +1,12 @@
-﻿using BookWorm.Constants.Aspire;
-using OpenTelemetry.Trace;
-
-namespace BookWorm.Notification.Extensions;
+﻿namespace BookWorm.Notification.Extensions;
 
 public static class Extensions
 {
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;
+
+        builder.AddDefaultCors();
 
         // Add exception handlers
         services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -50,40 +49,9 @@ public static class Extensions
             builder.AddSendGridSender();
         }
 
-        builder.AddAzureTableClient(
-            Components.Azure.Storage.Table,
-            settings => settings.DisableHealthChecks = true
-        );
-        services.AddScoped<ITableService, TableService>();
+        builder.AddOutBoxSender();
 
-        // Replace the Decorate call with a factory registration
-        services.AddSingleton<ISender>(sp =>
-        {
-            var scopeFactory = sp.GetRequiredService<IServiceScopeFactory>();
-            var scope = scopeFactory.CreateScope();
-            var tableService = scope.ServiceProvider.GetRequiredService<ITableService>();
-            var sender = sp.GetRequiredService<ISender>();
-            return new OutboxSender(tableService, sender);
-        });
-
-        services.AddQuartz(q =>
-        {
-            // Clean up sent emails job - runs daily at midnight
-            q.AddJobConfigurator<CleanUpSentEmailWorker>("0 0 0 * * ?");
-
-            // Resend error emails job - runs every hour
-            q.AddJobConfigurator<ResendErrorEmailWorker>("0 0 * * * ?");
-        });
-
-        services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
-
-        builder.AddDefaultCors();
-
-        services
-            .AddOpenTelemetry()
-            .WithTracing(t =>
-                t.AddSource(TelemetryTags.ActivitySourceName).AddQuartzInstrumentation()
-            );
+        builder.AddCronJobServices();
 
         builder.AddEventBus(typeof(INotificationApiMarker), cfg => cfg.AddInMemoryInboxOutbox());
 

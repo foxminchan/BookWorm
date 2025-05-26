@@ -23,7 +23,6 @@ public static class Extensions
                 c.EnableSensitiveData = builder.Environment.IsDevelopment()
             );
 
-        services.AddQdrantVectorStore();
         services.AddScoped<IIngestionSource<Book>, BookDataIngestor>();
         services.AddScoped<ISearch, HybridSearch>();
 
