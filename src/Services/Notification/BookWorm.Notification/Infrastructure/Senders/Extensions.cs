@@ -57,4 +57,22 @@ public static class Extensions
             .AddHealthChecks()
             .AddCheck<SendGridHealthCheck>(nameof(SendGridHealthCheck), HealthStatus.Degraded);
     }
+
+    public static void AddOutBoxSender(this IHostApplicationBuilder builder)
+    {
+        var services = builder.Services;
+
+        builder.AddTableService();
+
+        services.AddSingleton<ISender>(sp =>
+        {
+            var scopeFactory = sp.GetRequiredService<IServiceScopeFactory>();
+            var scope = scopeFactory.CreateScope();
+            var tableService = scope.ServiceProvider.GetRequiredService<ITableService>();
+            var sender = sp.GetRequiredService<ISender>();
+            return new OutboxSender(tableService, sender);
+        });
+
+        services.AddOpenTelemetry().WithTracing(x => x.AddSource(TelemetryTags.ActivitySourceName));
+    }
 }

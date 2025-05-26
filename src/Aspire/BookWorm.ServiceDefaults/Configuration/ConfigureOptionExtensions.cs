@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 namespace BookWorm.ServiceDefaults.Configuration;
 
@@ -11,13 +13,16 @@ public static class ConfigureOptionExtensions
     )
         where TSetting : class, new()
     {
-        var setting = new TSetting();
-
         services
             .AddOptionsWithValidateOnStart<TSetting>(name)
             .BindConfiguration(section)
             .ValidateDataAnnotations();
 
-        services.AddSingleton(setting);
+        services.TryAddSingleton(sp =>
+        {
+            var options = sp.GetRequiredService<IOptions<TSetting>>();
+            var setting = options.Value;
+            return setting;
+        });
     }
 }

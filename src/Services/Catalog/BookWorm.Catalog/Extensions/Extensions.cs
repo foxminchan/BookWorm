@@ -1,12 +1,16 @@
-﻿using BookWorm.Constants.Aspire;
-
-namespace BookWorm.Catalog.Extensions;
+﻿namespace BookWorm.Catalog.Extensions;
 
 public static class Extensions
 {
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;
+
+        var appSettings = new AppSettings();
+
+        builder.Configuration.Bind(appSettings);
+
+        services.AddSingleton(appSettings);
 
         builder.AddDefaultCors();
 
@@ -22,12 +26,6 @@ public static class Extensions
             new JsonSerializerOptions { Converters = { new StringTrimmerJsonConverter() } }
         );
 
-        var appSettings = new AppSettings();
-
-        builder.Configuration.Bind(appSettings);
-
-        services.AddSingleton(appSettings);
-
         // Add exception handlers
         services.AddExceptionHandler<ValidationExceptionHandler>();
         services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -35,40 +33,7 @@ public static class Extensions
         services.AddProblemDetails();
 
         // Add database configuration
-        builder.AddAzurePostgresDbContext<CatalogDbContext>(
-            Components.Database.Catalog,
-            app =>
-            {
-                if (app.Environment.IsDevelopment())
-                {
-                    services.AddMigration<CatalogDbContext, CatalogDbContextSeed>();
-                }
-                else
-                {
-                    services.AddMigration<CatalogDbContext>();
-                }
-
-                services.AddRepositories(typeof(ICatalogApiMarker));
-            }
-        );
-
-        builder.AddQdrantClient(Components.VectorDb);
-
-        builder.AddRedisClient(Components.Redis);
-
-        services.AddHybridCache(options =>
-        {
-            // Maximum size of cached items
-            options.MaximumPayloadBytes = 1024 * 1024 * 10; // 10MB
-            options.MaximumKeyLength = 512;
-
-            // Default timeouts
-            options.DefaultEntryOptions = new()
-            {
-                Expiration = TimeSpan.FromMinutes(30),
-                LocalCacheExpiration = TimeSpan.FromMinutes(30),
-            };
-        });
+        builder.AddPersistenceServices();
 
         // Configure MediatR
         services.AddMediatR(cfg =>
@@ -89,15 +54,11 @@ public static class Extensions
         // Configure AI
         builder.AddGenAi();
 
-        // Add Blob services
-        builder.AddAzureBlobContainerClient(Components.Azure.Storage.BlobContainer);
-        services.AddScoped<IBlobService, BlobService>();
-
         // Configure endpoints
         services.AddVersioning();
         services.AddEndpoints(typeof(ICatalogApiMarker));
 
-        // Other services
+        // Configure Mapper
         services.AddMapper(typeof(ICatalogApiMarker));
 
         // Configure EventBus
