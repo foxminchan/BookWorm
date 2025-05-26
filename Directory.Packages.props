@@ -9,7 +9,7 @@
     <MassTransitVersion>8.4.1</MassTransitVersion>
     <MsExtVersion>9.5.0</MsExtVersion>
     <MsTestVersion>1.7.0</MsTestVersion>
-    <ToolKitVersion>9.4.0</ToolKitVersion>
+    <ToolKitVersion>9.5.0</ToolKitVersion>
   </PropertyGroup>
   <ItemGroup Label="Aspire Packages">
     <!-- Aspire Hosting -->
@@ -38,10 +38,7 @@
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.k6" Version="$(ToolKitVersion)" />
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.Ollama" Version="$(ToolKitVersion)" />
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.MailPit" Version="$(ToolKitVersion)" />
-    <PackageVersion
-      Include="CommunityToolkit.Aspire.OllamaSharp"
-      Version="9.4.0-preview.1.250420-0640"
-    />
+    <PackageVersion Include="CommunityToolkit.Aspire.OllamaSharp" Version="$(ToolKitVersion)" />
   </ItemGroup>
   <ItemGroup Label="Core Packages">
     <!-- Microsoft Extensions -->
@@ -72,7 +69,7 @@
     <PackageVersion Include="Saunter" Version="0.13.0" />
     <PackageVersion Include="MediatR" Version="12.5.0" />
     <PackageVersion Include="Scalar.AspNetCore" Version="2.4.3" />
-    <PackageVersion Include="Marten.AspNetCore" Version="7.40.4" />
+    <PackageVersion Include="Marten.AspNetCore" Version="7.40.5" />
     <PackageVersion Include="Quartz.AspNetCore" Version="3.14.0" />
     <PackageVersion Include="DistributedLock.Redis" Version="1.0.3" />
     <PackageVersion Include="Refit.HttpClientFactory" Version="8.0.0" />
