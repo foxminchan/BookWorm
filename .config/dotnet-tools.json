@@ -4,27 +4,37 @@
   "tools": {
     "husky": {
       "version": "0.7.2",
-      "commands": ["husky"],
+      "commands": [
+        "husky"
+      ],
       "rollForward": false
     },
     "csharpier": {
-      "version": "1.0.1",
-      "commands": ["csharpier"],
+      "version": "1.0.2",
+      "commands": [
+        "csharpier"
+      ],
       "rollForward": false
     },
     "dotnet-ef": {
       "version": "9.0.5",
-      "commands": ["dotnet-ef"],
+      "commands": [
+        "dotnet-ef"
+      ],
       "rollForward": false
     },
     "dotnet-sonarscanner": {
       "version": "10.1.2",
-      "commands": ["dotnet-sonarscanner"],
+      "commands": [
+        "dotnet-sonarscanner"
+      ],
       "rollForward": false
     },
     "aspire.cli": {
       "version": "9.3.0-preview.1.25265.20",
-      "commands": ["aspire"],
+      "commands": [
+        "aspire"
+      ],
       "rollForward": false
     }
   }
