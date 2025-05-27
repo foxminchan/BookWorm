@@ -52,6 +52,7 @@ public sealed class RedisConversationState : IConversationState, IDisposable
             fragment.Id,
             _ => new(_database, _subscriber, _logger, conversationId)
         );
+
         await buffer.AddFragmentAsync(fragment);
     }
 
@@ -66,6 +67,7 @@ public sealed class RedisConversationState : IConversationState, IDisposable
             conversationId,
             lastMessageId
         );
+
         var channel = Channel.CreateUnbounded<ClientMessageFragment>();
 
         AddLocalSubscriber(conversationId, LocalCallback);
@@ -75,6 +77,7 @@ public sealed class RedisConversationState : IConversationState, IDisposable
         foreach (var t in values)
         {
             var fragment = JsonSerializer.Deserialize<ClientMessageFragment>((byte[])t!);
+
             if (fragment is not null && (lastMessageId is null || fragment.Id > lastMessageId))
             {
                 yield return fragment;
@@ -171,8 +174,8 @@ public sealed class RedisConversationState : IConversationState, IDisposable
 
     private void OnRedisMessage(RedisChannel channel, RedisValue value)
     {
-        var channelStr = channel.ToString();
-        var parts = channelStr.Split(':');
+        var parts = channel.ToString().Split(':');
+
         if (parts.Length < 3 || !Guid.TryParse(parts[1], out var conversationId))
         {
             return;
@@ -228,6 +231,7 @@ public sealed class RedisConversationState : IConversationState, IDisposable
         lock (list)
         {
             list.Remove(callback);
+
             if (list.Count == 0)
             {
                 _globalSubscribers.TryRemove(conversationId, out _);

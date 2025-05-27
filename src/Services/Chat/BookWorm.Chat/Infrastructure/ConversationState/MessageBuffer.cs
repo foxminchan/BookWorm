@@ -106,6 +106,7 @@ public sealed class MessageBuffer : IAsyncDisposable
     private async Task FlushAsync()
     {
         var fragmentsToFlush = new List<ClientMessageFragment>();
+
         try
         {
             // Dequeue until empty and decrement the counter for each item.

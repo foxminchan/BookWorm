@@ -2,7 +2,7 @@
 
 namespace BookWorm.Chat.Features.Cancel;
 
-public sealed class CancelChatEndpoint : IEndpoint<NoContent, Guid, ICancellationManager>
+public sealed class CancelChatEndpoint : IEndpoint<NoContent, Guid, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
@@ -10,24 +10,25 @@ public sealed class CancelChatEndpoint : IEndpoint<NoContent, Guid, ICancellatio
                 "/chats/{id:guid}/cancel",
                 async (
                     [Description("The unique identifier of the chat to be cancelled")] Guid id,
-                    ICancellationManager manager
-                ) => await HandleAsync(id, manager)
+                    ISender sender
+                ) => await HandleAsync(id, sender)
             )
             .ProducesDelete()
             .WithTags(nameof(Chat))
             .WithName(nameof(CancelChatEndpoint))
             .WithSummary("Cancel Chat")
             .WithDescription("Cancel a chat if it exists")
-            .MapToApiVersion(new(1, 0));
+            .MapToApiVersion(new(1, 0))
+            .RequireAuthorization();
     }
 
     public async Task<NoContent> HandleAsync(
         Guid id,
-        ICancellationManager manager,
+        ISender sender,
         CancellationToken cancellationToken = default
     )
     {
-        await manager.CancelAsync(id);
+        await sender.Send(new CancelChatCommand(id), cancellationToken);
 
         return TypedResults.NoContent();
     }

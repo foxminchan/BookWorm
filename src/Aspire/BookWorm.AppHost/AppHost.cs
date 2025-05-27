@@ -42,6 +42,7 @@ var catalogDb = postgres.AddDatabase(Components.Database.Catalog);
 var orderingDb = postgres.AddDatabase(Components.Database.Ordering);
 var financeDb = postgres.AddDatabase(Components.Database.Finance);
 var ratingDb = postgres.AddDatabase(Components.Database.Rating);
+var chatDb = postgres.AddDatabase(Components.Database.Chat);
 var healthDb = postgres.AddDatabase(Components.Database.Health);
 
 builder.AddOllama(configure: configure =>
@@ -101,6 +102,8 @@ var chatApi = builder
     .WaitFor(keycloak)
     .WithReference(mcp)
     .WaitFor(mcp)
+    .WithReference(chatDb)
+    .WaitFor(chatDb)
     .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor)
     .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Open API ({u.Endpoint?.EndpointName})"));
 

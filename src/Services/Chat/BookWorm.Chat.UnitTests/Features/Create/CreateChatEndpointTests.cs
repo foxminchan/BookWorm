@@ -1,46 +1,47 @@
-﻿using BookWorm.Chat.Features;
-using BookWorm.Chat.Features.Create;
-using BookWorm.Chat.Infrastructure.ChatStreaming;
+﻿using BookWorm.Chat.Features.Create;
+using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Routing;
 
 namespace BookWorm.Chat.UnitTests.Features.Create;
 
 public sealed class CreateChatEndpointTests
 {
-    private readonly Mock<IChatStreaming> _chatStreamingMock;
+    private readonly CreateChatCommand _command;
     private readonly CreateChatEndpoint _endpoint;
     private readonly Guid _expectedGuid;
-    private readonly Prompt _prompt;
+    private readonly Mock<LinkGenerator> _linkGeneratorMock;
+    private readonly Mock<ISender> _senderMock;
 
     public CreateChatEndpointTests()
     {
-        _prompt = new("Test prompt text");
         _expectedGuid = Guid.CreateVersion7();
+        _command = new("Test chat name");
 
-        _chatStreamingMock = new();
-        _chatStreamingMock
-            .Setup(x => x.AddStreamingMessage(_prompt.Text))
+        _senderMock = new();
+        _senderMock
+            .Setup(x => x.Send(It.IsAny<CreateChatCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(_expectedGuid);
 
+        _linkGeneratorMock = new();
         _endpoint = new();
     }
 
     [Test]
-    public async Task GivenValidPrompt_WhenHandlingCreateChat_ThenShouldReturnCreatedWithCorrectGuid()
+    public async Task GivenValidCommand_WhenHandlingCreateChat_ThenShouldReturnCreatedWithCorrectGuid()
     {
         // Act
         var result = await _endpoint.HandleAsync(
-            _prompt,
-            _chatStreamingMock.Object,
+            _command,
+            _senderMock.Object,
+            _linkGeneratorMock.Object,
             CancellationToken.None
         );
 
         // Assert
         result.ShouldNotBeNull();
-        result.ShouldBeOfType<Ok<Guid>>();
+        result.ShouldBeOfType<Created<Guid>>();
         result.Value.ShouldBe(_expectedGuid);
-
-        // Verify chat streaming was called with correct prompt
-        _chatStreamingMock.Verify(x => x.AddStreamingMessage(_prompt.Text), Times.Once);
+        _senderMock.Verify(x => x.Send(_command, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

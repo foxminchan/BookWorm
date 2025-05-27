@@ -18,22 +18,23 @@ public sealed class ChatStreamHubTests
     ];
 
     [Test]
-    public async Task GivenValidText_WhenAddingStreamingMessage_ThenShouldReturnMessageId()
+    public async Task GivenValidText_WhenAddingStreamingMessage_ThenShouldCompleteSuccessfully()
     {
         // Arrange
         const string messageText = "Hello, how can I help you today?";
-        var expectedMessageId = Guid.CreateVersion7();
 
         _chatStreamingMock
-            .Setup(x => x.AddStreamingMessage(messageText))
-            .ReturnsAsync(expectedMessageId);
+            .Setup(x => x.AddStreamingMessage(_conversationId, messageText))
+            .Returns(Task.CompletedTask);
 
         // Act
-        var result = await _chatStreamingMock.Object.AddStreamingMessage(messageText);
+        await _chatStreamingMock.Object.AddStreamingMessage(_conversationId, messageText);
 
         // Assert
-        result.ShouldBe(expectedMessageId);
-        _chatStreamingMock.Verify(x => x.AddStreamingMessage(messageText), Times.Once);
+        _chatStreamingMock.Verify(
+            x => x.AddStreamingMessage(_conversationId, messageText),
+            Times.Once
+        );
     }
 
     [Test]
@@ -46,14 +47,14 @@ public sealed class ChatStreamHubTests
     {
         // Arrange
         _chatStreamingMock
-            .Setup(x => x.AddStreamingMessage(invalidText!))
+            .Setup(x => x.AddStreamingMessage(_conversationId, invalidText!))
             .ThrowsAsync(
                 new ArgumentException("Message text cannot be null or empty", nameof(invalidText))
             );
 
         // Act
-        Func<Task> act = async () =>
-            await _chatStreamingMock.Object.AddStreamingMessage(invalidText!);
+        var act = async () =>
+            await _chatStreamingMock.Object.AddStreamingMessage(_conversationId, invalidText!);
 
         // Assert
         act.ShouldThrowAsync<ArgumentException>();
@@ -235,18 +236,19 @@ public sealed class ChatStreamHubTests
     {
         // Arrange
         var prompt = new Prompt("What is the capital of France?");
-        var expectedMessageId = Guid.CreateVersion7();
 
         _chatStreamingMock
-            .Setup(x => x.AddStreamingMessage(prompt.Text))
-            .ReturnsAsync(expectedMessageId);
+            .Setup(x => x.AddStreamingMessage(_conversationId, prompt.Text))
+            .Returns(Task.CompletedTask);
 
         // Act
-        var result = await _chatStreamingMock.Object.AddStreamingMessage(prompt.Text);
+        await _chatStreamingMock.Object.AddStreamingMessage(_conversationId, prompt.Text);
 
         // Assert
-        result.ShouldBe(expectedMessageId);
-        _chatStreamingMock.Verify(x => x.AddStreamingMessage(prompt.Text), Times.Once);
+        _chatStreamingMock.Verify(
+            x => x.AddStreamingMessage(_conversationId, prompt.Text),
+            Times.Once
+        );
     }
 
     [Test]

@@ -1,6 +1,4 @@
-﻿using BookWorm.Constants.Aspire;
-
-namespace BookWorm.Chat.Infrastructure.ChatStreaming;
+﻿namespace BookWorm.Chat.Infrastructure.ChatStreaming;
 
 public static class Extensions
 {
