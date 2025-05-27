@@ -1,29 +1,37 @@
-﻿namespace BookWorm.Chat.Features.Create;
+﻿using BookWorm.Chat.Features.Get;
 
-public sealed class CreateChatEndpoint : IEndpoint<Ok<Guid>, Prompt, IChatStreaming>
+namespace BookWorm.Chat.Features.Create;
+
+public sealed class CreateChatEndpoint
+    : IEndpoint<Created<Guid>, CreateChatCommand, ISender, LinkGenerator>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapPost(
                 "/chats",
-                async (Prompt prompt, IChatStreaming chat) => await HandleAsync(prompt, chat)
+                async (CreateChatCommand request, ISender sender, LinkGenerator linker) =>
+                    await HandleAsync(request, sender, linker)
             )
-            .ProducesPost<Guid>(false)
+            .ProducesPost<Guid>()
             .WithTags(nameof(Chat))
             .WithName(nameof(CreateChatEndpoint))
             .WithSummary("Create Chat")
             .WithDescription("Create a new chat in the catalog system")
-            .MapToApiVersion(new(1, 0));
+            .MapToApiVersion(new(1, 0))
+            .RequireAuthorization();
     }
 
-    public async Task<Ok<Guid>> HandleAsync(
-        Prompt prompt,
-        IChatStreaming chat,
+    public async Task<Created<Guid>> HandleAsync(
+        CreateChatCommand command,
+        ISender sender,
+        LinkGenerator linker,
         CancellationToken cancellationToken = default
     )
     {
-        var result = await chat.AddStreamingMessage(prompt.Text);
+        var result = await sender.Send(command, cancellationToken);
 
-        return TypedResults.Ok(result);
+        var path = linker.GetPathByName(nameof(GetChatEndpoint), new { id = result });
+
+        return TypedResults.Created(path, result);
     }
 }
