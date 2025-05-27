@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Chat.Infrastructure.ChatStreaming;
+﻿using BookWorm.Chat.Domain.AggregatesModel;
+
+namespace BookWorm.Chat.Infrastructure.ChatStreaming;
 
 public sealed class ChatStreaming : IChatStreaming
 {
@@ -9,6 +11,7 @@ public sealed class ChatStreaming : IChatStreaming
     private readonly TimeSpan _defaultStreamItemTimeout;
     private readonly ILogger<ChatStreaming> _logger;
     private readonly IMcpClient _mcpClient;
+    private readonly IServiceScopeFactory _scopeFactory;
 
     public ChatStreaming(
         IChatClient chatClient,
@@ -16,7 +19,8 @@ public sealed class ChatStreaming : IChatStreaming
         IConversationState conversationState,
         ICancellationManager cancellationManager,
         AppSettings appSettings,
-        IMcpClient mcpClient
+        IMcpClient mcpClient,
+        IServiceScopeFactory scopeFactory
     )
     {
         _chatClient = chatClient;
@@ -24,6 +28,7 @@ public sealed class ChatStreaming : IChatStreaming
         _conversationState = conversationState;
         _cancellationManager = cancellationManager;
         _mcpClient = mcpClient;
+        _scopeFactory = scopeFactory;
 
         if (_logger.IsEnabled(LogLevel.Debug))
         {
@@ -40,42 +45,16 @@ public sealed class ChatStreaming : IChatStreaming
 
     private List<ChatMessage> Messages { get; }
 
-    /// <summary>
-    ///     Adds a new user message to the conversation and starts streaming the AI response.
-    /// </summary>
-    /// <param name="text">The text message from the user.</param>
-    /// <returns>A unique identifier for the conversation.</returns>
-    public async Task<Guid> AddStreamingMessage(string text)
+    public async Task AddStreamingMessage(Guid conversationId, string text)
     {
-        var conversationId = Guid.CreateVersion7();
+        await FetchAndAddPromptMessages(conversationId, text);
 
         var tools = await _mcpClient.ListToolsAsync();
 
         var chatOptions = new ChatOptions { Tools = [.. tools] };
 
-        var prompts = await _mcpClient.ListPromptsAsync();
-
-        var promptMessages = await Task.WhenAll(
-            prompts.Select(async prompt => (await prompt.GetAsync()).ToChatMessages())
-        );
-
-        Messages.AddRange(promptMessages.SelectMany(messages => messages));
-
-        var fragment = new ClientMessageFragment(
-            conversationId,
-            ChatRole.User.Value,
-            text,
-            Guid.CreateVersion7(),
-            true
-        );
-
-        await _conversationState.PublishFragmentAsync(conversationId, fragment);
-
-        Messages.Add(new(ChatRole.User, text));
-
         _ = Task.Run(StreamReplyAsync);
-
-        return conversationId;
+        return;
 
         async Task StreamReplyAsync()
         {
@@ -91,13 +70,12 @@ public sealed class ChatStreaming : IChatStreaming
 
             var token = _cancellationManager.GetCancellationToken(assistantReplyId);
 
-            fragment = new(
+            var fragment = new ClientMessageFragment(
                 assistantReplyId,
                 ChatRole.Assistant.Value,
-                "Thinking...",
+                "Generating reply...",
                 Guid.CreateVersion7()
             );
-
             await _conversationState.PublishFragmentAsync(conversationId, fragment);
 
             try
@@ -106,21 +84,20 @@ public sealed class ChatStreaming : IChatStreaming
                 tokenSource.CancelAfter(_defaultStreamItemTimeout);
 
                 await foreach (
-                    var chatResponseUpdate in _chatClient
+                    var update in _chatClient
                         .GetStreamingResponseAsync(Messages, chatOptions)
                         .WithCancellation(tokenSource.Token)
                 )
                 {
                     tokenSource.CancelAfter(_defaultStreamItemTimeout);
 
+                    allChunks.Add(update);
                     fragment = new(
                         assistantReplyId,
                         ChatRole.Assistant.Value,
-                        chatResponseUpdate.Text,
+                        update.Text,
                         Guid.CreateVersion7()
                     );
-
-                    allChunks.Add(chatResponseUpdate);
                     await _conversationState.PublishFragmentAsync(conversationId, fragment);
                 }
 
@@ -132,7 +109,12 @@ public sealed class ChatStreaming : IChatStreaming
 
                 if (allChunks.Count > 0)
                 {
-                    await _conversationState.CompleteAsync(conversationId, assistantReplyId);
+                    var fullMessage = allChunks.ToChatResponse().Text;
+                    await SaveAssistantMessageToDatabase(
+                        conversationId,
+                        assistantReplyId,
+                        fullMessage
+                    );
                 }
             }
             catch (OperationCanceledException ex)
@@ -146,7 +128,12 @@ public sealed class ChatStreaming : IChatStreaming
 
                 if (allChunks.Count > 0)
                 {
-                    await _conversationState.CompleteAsync(conversationId, assistantReplyId);
+                    var fullMessage = allChunks.ToChatResponse().Text;
+                    await SaveAssistantMessageToDatabase(
+                        conversationId,
+                        assistantReplyId,
+                        fullMessage
+                    );
                 }
             }
             catch (Exception ex)
@@ -165,10 +152,11 @@ public sealed class ChatStreaming : IChatStreaming
                     assistantReplyId
                 );
 
-                if (allChunks.Count > 0)
-                {
-                    await _conversationState.CompleteAsync(conversationId, assistantReplyId);
-                }
+                await SaveAssistantMessageToDatabase(
+                    conversationId,
+                    assistantReplyId,
+                    "Error streaming message"
+                );
             }
             finally
             {
@@ -185,14 +173,6 @@ public sealed class ChatStreaming : IChatStreaming
         }
     }
 
-    /// <summary>
-    ///     Retrieves a stream of message fragments for a specific conversation.
-    /// </summary>
-    /// <param name="conversationId">The unique identifier of the conversation.</param>
-    /// <param name="lastMessageId">Optional identifier of the last message received.</param>
-    /// <param name="lastDeliveredFragment">Optional identifier of the last delivered fragment.</param>
-    /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>An asynchronous stream of message fragments.</returns>
     public async IAsyncEnumerable<ClientMessageFragment> GetMessageStream(
         Guid conversationId,
         Guid? lastMessageId,
@@ -220,5 +200,93 @@ public sealed class ChatStreaming : IChatStreaming
 
             yield return fragment;
         }
+    }
+
+    private async Task FetchAndAddPromptMessages(Guid conversationId, string text)
+    {
+        var prompts = await _mcpClient.ListPromptsAsync();
+
+        var promptMessages = await prompts
+            .ToAsyncEnumerable()
+            .Select(async prompt => (await prompt.GetAsync()).ToChatMessages())
+            .SelectMany(x => x.Result)
+            .ToListAsync();
+
+        Messages.AddRange(promptMessages);
+
+        var messages = await SavePromptAndGetMessageHistoryAsync(conversationId, text);
+
+        Messages.AddRange(messages);
+    }
+
+    private async Task<IList<ChatMessage>> SavePromptAndGetMessageHistoryAsync(Guid id, string text)
+    {
+        await using var scope = _scopeFactory.CreateAsyncScope();
+
+        var repository = scope.ServiceProvider.GetRequiredService<IConversationRepository>();
+
+        var conversation = await repository.GetByIdAsync(id);
+
+        Guard.Against.NotFound(conversation, $"Conversation with id {id} not found.");
+
+        var parentMessage = conversation
+            .Messages.OrderByDescending(m => m.CreatedAt)
+            .FirstOrDefault();
+
+        var message = new ConversationMessage(null, text, ChatRole.User.Value, parentMessage?.Id);
+
+        conversation.AddMessage(message);
+
+        await repository.AddAsync(conversation);
+
+        var messages = conversation
+            .Messages.Select(m => new ChatMessage(new(m.Role!), m.Text))
+            .ToList();
+
+        var fragment = new ClientMessageFragment(
+            message.Id,
+            ChatRole.User.Value,
+            text,
+            Guid.CreateVersion7(),
+            true
+        );
+
+        await _conversationState.PublishFragmentAsync(id, fragment);
+
+        return messages;
+    }
+
+    private async Task SaveAssistantMessageToDatabase(
+        Guid conversationId,
+        Guid messageId,
+        string text
+    )
+    {
+        await using var scope = _scopeFactory.CreateAsyncScope();
+
+        var repository = scope.ServiceProvider.GetRequiredService<IConversationRepository>();
+
+        var conversation = await repository.GetByIdAsync(conversationId);
+
+        if (conversation is not null)
+        {
+            var parentMessage = conversation
+                .Messages.Where(m => m.Role == ChatRole.User.Value)
+                .OrderByDescending(m => m.CreatedAt)
+                .FirstOrDefault();
+
+            var message = new ConversationMessage(
+                messageId,
+                text,
+                ChatRole.Assistant.Value,
+                parentMessage?.Id
+            );
+
+            conversation.AddMessage(message);
+
+            await repository.UnitOfWork.SaveChangesAsync();
+        }
+
+        await _conversationState.CompleteAsync(conversationId, messageId);
     }
 }

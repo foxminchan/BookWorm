@@ -2,7 +2,7 @@
 
 public interface IChatStreaming
 {
-    Task<Guid> AddStreamingMessage(string text);
+    Task AddStreamingMessage(Guid conversationId, string text);
 
     IAsyncEnumerable<ClientMessageFragment> GetMessageStream(
         Guid conversationId,

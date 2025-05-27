@@ -6,9 +6,9 @@
   <ItemGroup Label="Unit Test">
     <PackageReference Include="Moq" />
     <PackageReference Include="TUnit" />
+    <PackageReference Include="Bogus" />
     <PackageReference Include="Shouldly" />
     <PackageReference Include="GitHubActionsTestLogger" />
-    <PackageReference Include="System.Linq.AsyncEnumerable" />
   </ItemGroup>
   <ItemGroup Label="Test Platforms">
     <PackageReference Include="Microsoft.Testing.Extensions.HangDump" />
@@ -21,9 +21,7 @@
   </ItemGroup>
   <ItemGroup>
     <Using Include="Moq" />
+    <Using Include="Bogus" />
     <Using Include="Shouldly" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Features\" />
   </ItemGroup>
 </Project>

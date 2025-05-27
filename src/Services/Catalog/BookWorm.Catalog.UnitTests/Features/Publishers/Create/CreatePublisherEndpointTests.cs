@@ -30,7 +30,7 @@ public sealed class CreatePublisherEndpointTests
     public async Task GivenValidCommand_WhenHandlingCreatePublisher_ThenShouldReturnOkWithPublisherId()
     {
         // Arrange
-        var expectedPublisherId = Guid.NewGuid();
+        var expectedPublisherId = Guid.CreateVersion7();
         _senderMock
             .Setup(s => s.Send(_validCommand, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedPublisherId);
