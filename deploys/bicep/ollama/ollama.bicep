@@ -23,7 +23,7 @@ resource ollama 'Microsoft.App/containerApps@2024-03-01' = {
     template: {
       containers: [
         {
-          image: 'docker.io/ollama/ollama:0.6.0'
+          image: 'docker.io/ollama/ollama:0.7.1'
           name: 'ollama'
           env: [
             {

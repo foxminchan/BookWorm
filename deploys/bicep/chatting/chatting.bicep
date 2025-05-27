@@ -88,7 +88,7 @@ resource chatting 'Microsoft.App/containerApps@2024-03-01' = {
             }
             {
               name: 'ConnectionStrings__chat'
-              value: 'Endpoint=http://${'ollama.internal.${aca_outputs_azure_container_apps_environment_default_domain}'}:80;Model=deepseek-r1:1.5b'
+              value: 'Endpoint=http://${'ollama.internal.${aca_outputs_azure_container_apps_environment_default_domain}'}:80;Model=gemma3:4b'
             }
             {
               name: 'ConnectionStrings__redis'

@@ -6,7 +6,7 @@ param location string
 
 param principalId string
 
-param postgres_username string = 'CQbFeqCTHW'
+param postgres_username string = 'zPYrPdBreH'
 
 @secure()
 param postgres_password string

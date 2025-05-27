@@ -1,10 +1,9 @@
-﻿using System.Text.RegularExpressions;
-using BookWorm.Constants.Other;
+﻿using BookWorm.Constants.Other;
 using Npgsql;
 
 namespace BookWorm.Catalog.Infrastructure;
 
-public sealed partial class CatalogDbContextSeed(
+public sealed class CatalogDbContextSeed(
     IChatClient chatClient,
     ILogger<CatalogDbContextSeed> logger,
     IFeatureManager featureManager
@@ -72,10 +71,7 @@ public sealed partial class CatalogDbContextSeed(
                     new() { Temperature = 0.6f, ResponseFormat = ChatResponseFormat.Text }
                 );
 
-                var description = response.Text.Trim('"', ' ', '\r', '\n', '\t');
-
-                description = RemoveExtraWhitespaceRegex().Replace(description, " ");
-                description = RemoveThinkTagsRegex().Replace(description, string.Empty);
+                var description = response.Text;
 
                 logger.LogDebug(
                     "Generated description for book {Name}: {Description}",
@@ -95,10 +91,4 @@ public sealed partial class CatalogDbContextSeed(
             await context.SaveChangesAsync();
         }
     }
-
-    [GeneratedRegex(@"\s{2,}")]
-    private static partial Regex RemoveExtraWhitespaceRegex();
-
-    [GeneratedRegex("<think>.*?</think>", RegexOptions.Singleline)]
-    private static partial Regex RemoveThinkTagsRegex();
 }

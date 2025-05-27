@@ -47,7 +47,10 @@ var healthDb = postgres.AddDatabase(Components.Database.Health);
 builder.AddOllama(configure: configure =>
 {
     configure.AddModel(Components.Ollama.Embedding, "nomic-embed-text:latest");
-    configure.AddModel(Components.Ollama.Chat, "deepseek-r1:1.5b");
+    configure.AddModel(
+        Components.Ollama.Chat,
+        $"gemma3:{(builder.ExecutionContext.IsPublishMode ? 4 : 1)}b"
+    );
 });
 
 var keycloak = builder
