@@ -47,9 +47,12 @@ public static class Extensions
         services.AddEndpoints(typeof(IBasketApiMarker));
 
         // Configure gRPC
+        var isHttps = builder.Configuration["DOTNET_LAUNCH_PROFILE"] == "https";
+
         services.AddGrpc();
+        services.AddGrpcHealthChecks();
         services.AddGrpcServiceReference<BookGrpcServiceClient>(
-            $"https://{Application.Catalog}",
+            $"{(isHttps ? "https" : "http")}://{Application.Catalog}",
             HealthStatus.Degraded
         );
         services.AddSingleton<IBookService, BookService>();

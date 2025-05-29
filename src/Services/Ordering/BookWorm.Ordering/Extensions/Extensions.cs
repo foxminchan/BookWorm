@@ -72,7 +72,7 @@ public static class Extensions
         );
 
         // Configure gRPC
-        services.AddGrpcServices();
+        builder.AddGrpcServices();
 
         // Configure Redis distributed lock
         services.AddSingleton<IDistributedLockProvider>(

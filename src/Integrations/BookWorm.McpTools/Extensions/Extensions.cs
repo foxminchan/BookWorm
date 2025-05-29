@@ -14,11 +14,11 @@ public static class Extensions
 
         // Configure HTTP client
         services.AddHttpServiceReference<ICatalogApi>(
-            $"https://{Application.Catalog}",
+            $"https+http://{Application.Catalog}",
             HealthStatus.Degraded
         );
 
-        services.AddMcpServer().WithHttpTransport().WithTools<Product>().WithPrompts<Instruction>();
+        services.AddMcpServer().WithHttpTransport().WithToolsFromAssembly();
 
         services
             .AddOpenTelemetry()

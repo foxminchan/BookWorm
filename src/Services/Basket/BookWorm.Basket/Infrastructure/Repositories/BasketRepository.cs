@@ -73,4 +73,4 @@ public sealed class BasketRepository(ILogger<BasketRepository> logger, IConnecti
     PropertyNameCaseInsensitive = true,
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase
 )]
-public partial class BasketSerializationContext : JsonSerializerContext;
+internal sealed partial class BasketSerializationContext : JsonSerializerContext;
