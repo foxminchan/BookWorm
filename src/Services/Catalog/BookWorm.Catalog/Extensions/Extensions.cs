@@ -15,6 +15,7 @@ public static class Extensions
         builder.AddDefaultCors();
 
         services.AddGrpc();
+        services.AddGrpcHealthChecks();
 
         builder.AddDefaultOpenApi();
 

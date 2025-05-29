@@ -7,19 +7,23 @@ namespace BookWorm.Ordering.Grpc;
 [ExcludeFromCodeCoverage]
 public static class Extensions
 {
-    public static void AddGrpcServices(this IServiceCollection services)
+    public static void AddGrpcServices(this IHostApplicationBuilder builder)
     {
+        var services = builder.Services;
+
+        var isHttps = builder.Configuration["DOTNET_LAUNCH_PROFILE"] == "https";
+
         services.AddGrpc();
 
         services.AddGrpcServiceReference<BookGrpcServiceClient>(
-            $"https://{Application.Catalog}",
+            $"{(isHttps ? "https" : "http")}://{Application.Catalog}",
             HealthStatus.Degraded
         );
         services.AddSingleton<IBookService, BookService>();
 
         services
             .AddGrpcServiceReference<BasketGrpcServiceClient>(
-                $"https://{Application.Basket}",
+                $"{(isHttps ? "https" : "http")}://{Application.Basket}",
                 HealthStatus.Degraded
             )
             .AddAuthToken();

@@ -21,4 +21,6 @@ app.UseDefaultOpenApi();
 
 app.UseDefaultAsyncApi();
 
+app.MapGrpcHealthChecksService();
+
 app.Run();

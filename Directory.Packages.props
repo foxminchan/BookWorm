@@ -80,7 +80,7 @@
   <ItemGroup Label="Integration Packages">
     <!-- Grpc -->
     <PackageVersion Include="Grpc.AspNetCore" Version="$(GrpcVersion)" />
-    <PackageVersion Include="Grpc.HealthCheck" Version="$(GrpcVersion)" />
+    <PackageVersion Include="Grpc.AspNetCore.HealthChecks" Version="$(GrpcVersion)" />
     <PackageVersion Include="Grpc.AspNetCore.Server.ClientFactory" Version="$(GrpcVersion)" />
     <PackageVersion Include="Grpc.Tools" Version="2.72.0" PrivateAssets="All" />
     <PackageVersion Include="Google.Protobuf" Version="3.31.1" />
@@ -94,7 +94,7 @@
     <PackageVersion Include="Mjml.Net" Version="4.8.0" />
     <PackageVersion Include="SendGrid" Version="9.29.3" />
     <PackageVersion Include="AspNetCore.HealthChecks.SendGrid" Version="9.0.0" />
-    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.2.0-preview.1" />
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.2.0-preview.2" />
   </ItemGroup>
   <ItemGroup Label="Testing">
     <!-- Testing packages -->

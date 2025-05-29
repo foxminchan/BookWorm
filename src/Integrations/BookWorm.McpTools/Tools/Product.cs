@@ -1,4 +1,6 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization;
+using BookWorm.McpTools.Models;
 using ModelContextProtocol.Server;
 
 namespace BookWorm.McpTools.Tools;
@@ -19,6 +21,13 @@ public sealed class Product(ICatalogApi catalogApi)
 
         return response.Items.Count == 0
             ? notFoundMessage
-            : JsonSerializer.Serialize(response.Items);
+            : JsonSerializer.Serialize(response.Items, BookSerializationContext.Default.Book);
     }
 }
+
+[JsonSerializable(typeof(IReadOnlyList<Book>))]
+[JsonSourceGenerationOptions(
+    PropertyNameCaseInsensitive = true,
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase
+)]
+internal sealed partial class BookSerializationContext : JsonSerializerContext;
