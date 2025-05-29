@@ -38,6 +38,7 @@ Creates a new chat in the catalog system and returns the chat's unique identifie
 ```bash
 curl -X POST https://api.bookworm.com/api/v1/chats \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -d '{
     "text": "What is the best selling book in BookWorm?"
   }'

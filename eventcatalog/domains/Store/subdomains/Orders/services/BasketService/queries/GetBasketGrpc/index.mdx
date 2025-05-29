@@ -1,0 +1,37 @@
+---
+id: GetBasketGrpc
+version: 1.0.0
+name: Get Basket (gRPC)
+summary: Get a basket by user via gRPC
+badges:
+  - content: GET
+    textColor: blue
+    backgroundColor: blue
+    icon: MagnifyingGlassIcon
+  - content: "gRPC"
+    textColor: purple
+    backgroundColor: purple
+    icon: ServerIcon
+  - content: "Basket"
+    textColor: yellow
+    backgroundColor: yellow
+    icon: ShoppingCartIcon
+owners:
+  - nhanxnguyen
+---
+
+## Overview
+
+This gRPC endpoint follows Domain-Driven Design principles to retrieve a specific Basket aggregate root from the Orders bounded context by its user identifier. The operation is implemented as a query that doesn't modify state, adhering to CQRS patterns.
+
+The query handler maps the domain entity to a BasketDto response through an auto-mapper profile, ensuring that domain implementation details remain encapsulated. The endpoint respects the aggregate boundaries and only exposes data appropriate for the presentation layer.
+
+## Architecture
+
+<NodeGraph />
+
+## Usage
+
+```bash
+grpcurl api.bookworm.com:50051 bookworm.orders.services.BasketService.GetBasket -d '{"userId": "user-id"}'
+```

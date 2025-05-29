@@ -1,0 +1,56 @@
+---
+id: ListChatsQuery
+version: 1.0.0
+name: List Chats
+summary: Retrieve a list of chat sessions
+badges:
+  - content: GET
+    textColor: blue
+    backgroundColor: blue
+    icon: MagnifyingGlassIcon
+  - content: "Chat"
+    textColor: yellow
+    backgroundColor: yellow
+    icon: BookOpenIcon
+owners:
+  - nhanxnguyen
+---
+
+## Overview
+
+The List Chats query allows users to retrieve a list of chat sessions. This is useful for displaying all active or historical chats in the user interface, enabling users to select a chat session to view its messages.
+
+## Architecture
+
+<NodeGraph />
+
+## Behavior
+
+The List Chats query follows these steps:
+
+1. Validates the pagination parameters
+2. Queries the chat repository to fetch a paginated list of chat sessions.
+3. Maps the chat sessions to a DTO using the configured auto-mapper.
+4. Returns the list of chat sessions with a 200 OK status code.
+
+# GET `/api/v1/chats`
+
+### Parameters
+
+- **Name** (query) (optional) - The name of the chat session to filter by.
+- **UserId** (query) (optional) - The unique identifier (GUID) of the user to filter chats by.
+- **IncludeMessages** (query) (optional) - A boolean flag to include messages in the response. Defaults to `false`.
+
+### Request Body
+
+This query does not require a request body.
+
+### Response
+
+#### <span class="badge badge-success">200 OK</span>
+
+<SchemaViewer file="response-200.json" maxHeight="500" id="response-200" />
+
+#### <span class="badge badge-error">400 Bad Request</span>
+
+<SchemaViewer file="response-400.json" maxHeight="500" id="response-400" />

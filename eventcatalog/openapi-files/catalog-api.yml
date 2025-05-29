@@ -23,6 +23,7 @@ servers:
       protocol:
         enum:
           - https
+          - grpc
         default: https
   - url: "{protocol}://stg.catalog.bookworm.com"
     description: Staging
@@ -30,6 +31,7 @@ servers:
       protocol:
         enum:
           - https
+          - grpc
         default: https
   - url: "{protocol}://qa.catalog.bookworm.com"
     description: QA
@@ -37,6 +39,7 @@ servers:
       protocol:
         enum:
           - https
+          - grpc
         default: https
   - url: "{protocol}://catalog.bookworm.com"
     description: Production
@@ -44,6 +47,7 @@ servers:
       protocol:
         enum:
           - https
+          - grpc
         default: https
 security:
   - bearerAuth: []
@@ -988,6 +992,67 @@ paths:
                 title: "Not Found"
                 status: 404
                 detail: "Book with id 01961eb4-668d-7e7e-ae25-0fab379614f7 not found."
+  "/grpc/v1/books/{id}":
+    get:
+      tags:
+        - Book gRPC
+      summary: Get Book (gRPC)
+      description: Get a book by identifier using gRPC service
+      x-eventcatalog-message-type: query
+      x-grpc-service: BookGrpcService
+      x-grpc-method: GetBook
+      operationId: GetBookGrpcEndpoint
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the book
+      responses:
+        "200":
+          description: Book details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookGrpcResponse"
+        "404":
+          description: Book not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: ""
+                  name:
+                    type: string
+                    example: ""
+  "/grpc/v1/books/batch":
+    post:
+      tags:
+        - Book gRPC
+      summary: Get Books Batch (gRPC)
+      description: Get multiple books by their identifiers using gRPC service
+      x-eventcatalog-message-type: query
+      x-grpc-service: BookGrpcService
+      x-grpc-method: GetBooks
+      operationId: GetBooksGrpcEndpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BooksGrpcRequest"
+      responses:
+        "200":
+          description: Books retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BooksGrpcResponse"
   "/api/v1/authors":
     put:
       tags:
@@ -1550,6 +1615,76 @@ components:
           description: The name of the publisher
           example: "O'Reilly Media, Inc."
           maxLength: 50
+    BookGrpcRequest:
+      type: object
+      description: Request for getting a single book via gRPC
+      properties:
+        bookId:
+          type: string
+          format: uuid
+          description: The unique identifier of the book
+          example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+      required:
+        - bookId
+    BooksGrpcRequest:
+      type: object
+      description: Request for getting multiple books via gRPC
+      properties:
+        bookIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Array of book unique identifiers
+          example:
+            [
+              "01961eb4-668d-7e7e-ae25-0fab379614f7",
+              "01961eb4-0c29-799f-ab78-ad3e2beaa54a",
+            ]
+      required:
+        - bookIds
+    BookGrpcResponse:
+      type: object
+      description: gRPC response for a single book
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The unique identifier of the book
+          example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+        name:
+          type: string
+          description: The name of the book
+          example: "Software Architecture: The Hard Parts"
+        price:
+          type: number
+          format: double
+          description: The price of the book
+          example: 49.99
+        priceSale:
+          type: number
+          format: double
+          nullable: true
+          description: The sale price of the book (optional)
+          example: 39.99
+        status:
+          "$ref": "#/components/schemas/BookGrpcStatus"
+    BooksGrpcResponse:
+      type: object
+      description: gRPC response for multiple books
+      properties:
+        books:
+          type: array
+          items:
+            "$ref": "#/components/schemas/BookGrpcResponse"
+          description: Array of book responses
+    BookGrpcStatus:
+      type: string
+      enum:
+        - InStock
+        - OutOfStock
+      description: The availability status of the book
+      example: "InStock"
   securitySchemes:
     bearerAuth:
       type: http

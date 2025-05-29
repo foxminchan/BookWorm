@@ -2,7 +2,7 @@
 openapi: 3.1.1
 info:
   title: Basket Service API
-  description:
+  description: |
     Manages the lifecycle of customer shopping baskets in the BookWorm
     e-commerce system
   contact:
@@ -23,6 +23,7 @@ servers:
       protocol:
         enum:
           - https
+          - grpc
         default: https
   - url: "{protocol}://stg.basket.bookworm.com"
     description: Staging
@@ -30,6 +31,7 @@ servers:
       protocol:
         enum:
           - https
+          - grpc
         default: https
   - url: "{protocol}://qa.basket.bookworm.com"
     description: QA
@@ -37,6 +39,7 @@ servers:
       protocol:
         enum:
           - https
+          - grpc
         default: https
   - url: "{protocol}://basket.bookworm.com"
     description: Production
@@ -44,6 +47,7 @@ servers:
       protocol:
         enum:
           - https
+          - grpc
         default: https
 security:
   - bearerAuth: []
@@ -264,6 +268,56 @@ paths:
                         severity: 0
         "401":
           description: Unauthorized - Access token is missing or invalid.
+  "grpc/v1/baskets":
+    get:
+      tags:
+        - Basket
+      summary: Get Basket (gRPC)
+      description: Retrieve a basket using gRPC
+      x-eventcatalog-message-type: query
+      x-grpc-service: BasketGrpcService
+      x-grpc-method: GetBasket
+      security:
+        - bearerAuth: []
+      operationId: GetBasketGrpcEndpoint
+      responses:
+        "200":
+          description: OK
+          content:
+            application/grpc:
+              schema:
+                "$ref": "#/components/schemas/BasketResponse"
+              examples:
+                empty-basket:
+                  summary: Empty basket response
+                  value:
+                    id: "019622af-19dd-73dd-9420-9e9d401ad85b"
+                    items: []
+                basket-with-items:
+                  summary: Basket with multiple items
+                  value:
+                    id: "019622af-19dd-73dd-9420-9e9d401ad85b"
+                    items:
+                      - id: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
+                        quantity: 2
+                      - id: "019622a4-a3ae-7705-a11b-a08f2a2ca622"
+                        quantity: 1
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+              example:
+                basket-not-found:
+                  summary: Basket not found
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.5"
+                    title: "Not Found"
+                    status: 404
+                    detail: "Basket with id 01962e92-02ed-7b23-8af6-95b267a97e44 not found."
 components:
   schemas:
     BasketItemDto:
@@ -325,6 +379,23 @@ components:
           example:
             - id: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
               quantity: 2
+            - id: "019622a4-a3ae-7705-a11b-a08f2a2ca622"
+              quantity: 1
+          type: array
+          items:
+            "$ref": "#/components/schemas/BasketItemRequest"
+    UpdateBasketCommand:
+      required:
+        - items
+      type: object
+      writeOnly: true
+      description: The command to update a basket
+      properties:
+        items:
+          description: An array of basket items to update the basket with
+          example:
+            - id: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
+              quantity: 3
             - id: "019622a4-a3ae-7705-a11b-a08f2a2ca622"
               quantity: 1
           type: array
@@ -444,23 +515,38 @@ components:
           type: string
           description: The detail of the problem
           example: "Basket with id 01962e92-02ed-7b23-8af6-95b267a97e44 not found."
-    UpdateBasketCommand:
-      required:
-        - items
+    BasketResponse:
       type: object
-      writeOnly: true
-      description: The command to update a basket
+      readOnly: true
+      description: |
+        gRPC BasketResponse model (from basket.proto)
+        This aligns with REST CustomerBasketDto but contains only core fields
       properties:
+        id:
+          type: string
+          description: The unique identifier of the basket
+          example: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
         items:
           type: array
-          description: An array of basket items to be included in the basket
-          example:
-            - id: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
-              quantity: 2
-            - id: "019622a4-a3ae-7705-a11b-a08f2a2ca622"
-              quantity: 1
+          description: Array of basket items
           items:
-            "$ref": "#/components/schemas/BasketItemRequest"
+            "$ref": "#/components/schemas/Item"
+    Item:
+      type: object
+      readOnly: true
+      description: |
+        gRPC Item model (from basket.proto)
+        This aligns with REST BasketItemDto but contains only core fields
+      properties:
+        id:
+          type: string
+          description: The unique identifier of the item
+          example: "019622a3-a3ae-7705-a11b-a08f2a2ca621"
+        quantity:
+          type: integer
+          format: int32
+          description: The quantity of the item
+          example: 2
   securitySchemes:
     bearerAuth:
       type: http

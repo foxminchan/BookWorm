@@ -1,0 +1,40 @@
+{
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "number",
+      "format": "int32",
+      "description": "The type of the chat message, e.g., 0 for text, 1 for image, etc."
+    },
+    "arguments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The unique identifier for the chat message"
+          },
+          "sender": {
+            "type": "string",
+            "description": "The name of the sender of the chat message"
+          },
+          "text": {
+            "type": "string",
+            "description": "The text content of the chat message"
+          },
+          "fragmentId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The unique identifier for the chat fragment"
+          },
+          "isFinal": {
+            "type": "boolean",
+            "description": "Indicates whether the chat message is final"
+          }
+        }
+      }
+    }
+  }
+}
