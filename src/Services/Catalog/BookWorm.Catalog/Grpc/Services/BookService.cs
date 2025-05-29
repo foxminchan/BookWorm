@@ -53,10 +53,8 @@ public sealed class BookService(IBookRepository repository, ILogger<BookService>
         {
             Id = book.Id.ToString(),
             Name = book.Name,
-            Price = decimal.ToDouble(book.Price!.OriginalPrice),
-            PriceSale = double.TryParse(book.Price?.DiscountPrice?.ToString(), out var price)
-                ? price
-                : null,
+            Price = book.Price!.OriginalPrice,
+            PriceSale = book.Price?.DiscountPrice,
             Status = book.Status == Status.InStock ? BookStatus.InStock : BookStatus.OutOfStock,
         };
     }

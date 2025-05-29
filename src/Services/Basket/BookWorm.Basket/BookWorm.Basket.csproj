@@ -11,6 +11,12 @@
     <ProjectReference Include="..\..\..\Aspire\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Compile
+      Include="..\..\Catalog\BookWorm.Catalog\Domain\Values\DecimalValue.cs"
+      Link="Domain\DecimalValue.cs"
+    />
+  </ItemGroup>
+  <ItemGroup>
     <Protobuf Include="Grpc\Protos\basket.proto" GrpcServices="Server" />
     <Protobuf
       Include="..\..\Catalog\BookWorm.Catalog\Grpc\Protos\book.proto"

@@ -50,8 +50,8 @@ public sealed class PostGetBasketHandler(IBookService bookService)
             var updatedItem = books[i] with
             {
                 Name = bookResponse.Name,
-                Price = (decimal)bookResponse.Price,
-                PriceSale = bookResponse.PriceSale is null ? null : (decimal)bookResponse.PriceSale,
+                PriceSale = bookResponse.PriceSale,
+                Price = (decimal)bookResponse.Price!,
             };
 
             updatedItems.Add(updatedItem);
