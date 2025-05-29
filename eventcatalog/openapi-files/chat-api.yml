@@ -23,6 +23,7 @@ servers:
       protocol:
         enum:
           - https
+          - wss
         default: https
   - url: "{protocol}://stg.chat.bookworm.com"
     description: Staging
@@ -30,6 +31,7 @@ servers:
       protocol:
         enum:
           - https
+          - wss
         default: https
   - url: "{protocol}://qa.chat.bookworm.com"
     description: QA
@@ -37,6 +39,7 @@ servers:
       protocol:
         enum:
           - https
+          - wss
         default: https
   - url: "{protocol}://chat.bookworm.com"
     description: Production
@@ -44,7 +47,10 @@ servers:
       protocol:
         enum:
           - https
+          - wss
         default: https
+security:
+  - bearerAuth: []
 paths:
   "/api/v1/chats":
     post:
@@ -54,25 +60,269 @@ paths:
       description: Create a new chat in the catalog system
       x-eventcatalog-message-type: command
       operationId: CreateChatEndpoint
+      security:
+        - bearerAuth: []
       requestBody:
         description: The command to create a chat
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/Prompt"
+              "$ref": "#/components/schemas/CreateChatCommand"
             example:
-              text: "What is best book in the BookWorm platform?"
+              name: "Book Recommendations Chat"
         required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: string
+                format: uuid
+                description: The unique identifier of the created chat
+                example: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
+          headers:
+            Location:
+              description: The URI of the created chat
+              schema:
+                type: string
+                format: uri
+                example: "/api/v1/chats/01961f13-64ef-7dbb-84a1-25114e2e0ca4"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+              examples:
+                empty-name:
+                  summary: "Chat name is empty"
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "name"
+                        errorMessage: "'Name' must not be empty."
+                        severity: 0
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
+    get:
+      tags:
+        - Chat
+      summary: List Chats
+      description: List all chats with optional filtering
+      x-eventcatalog-message-type: query
+      operationId: ListChatEndpoint
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: name
+          in: query
+          description: The name of the conversation to filter by
+          required: false
+          schema:
+            type: string
+            example: "Book Recommendations"
+        - name: userId
+          in: query
+          description: The user ID to filter conversations by (admin only)
+          required: false
+          schema:
+            type: string
+            format: uuid
+            example: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
+        - name: includeMessages
+          in: query
+          description: Flag to include messages in the result
+          required: false
+          schema:
+            type: boolean
+            default: false
+            example: false
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: string
-                format: uuid
-                description: The unique identifier of the chat
-                example: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
+                type: array
+                items:
+                  "$ref": "#/components/schemas/ConversationDto"
+              examples:
+                chat-empty:
+                  summary: "Empty chat list"
+                  value: []
+                chat-with-messages:
+                  summary: "Chat list with messages"
+                  value:
+                    - id: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
+                      name: "Book Recommendations"
+                      userId: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
+                      messages:
+                        - id: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
+                          text: "What are the top science fiction books available?"
+                          role: "user"
+                          parentMessageId: null
+                          createdAt: "2023-10-01T12:00:00Z"
+                        - id: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
+                          text: "Here are some recommendations: Dune, Neuromancer, Foundation."
+                          role: "assistant"
+                          parentMessageId: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
+                          createdAt: "2023-10-01T12:05:00Z"
+                chat-without-messages:
+                  summary: "Chat list without messages"
+                  value:
+                    - id: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
+                      name: "Book Recommendations"
+                      userId: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
+                      messages: []
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
+    put:
+      tags:
+        - Chat
+      summary: Update Chat
+      description: Update an existing chat in the catalog system
+      x-eventcatalog-message-type: command
+      operationId: UpdateChatEndpoint
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: The command to update a chat
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/UpdateChatCommand"
+            example:
+              id: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
+              prompt:
+                text: "What are the top science fiction books available?"
+        required: true
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+              examples:
+                empty-id:
+                  summary: "Chat ID is empty"
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "id"
+                        errorMessage: "'Id' must not be empty."
+                        severity: 0
+                empty-prompt:
+                  summary: "Chat prompt is empty"
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "prompt"
+                        errorMessage: "'Prompt' must not be empty."
+                        severity: 0
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/api/v1/chats/{id}":
+    get:
+      tags:
+        - Chat
+      summary: Get Chat
+      description: Get a chat by its ID
+      x-eventcatalog-message-type: query
+      operationId: GetChatEndpoint
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: The unique identifier of the chat
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ConversationDto"
+              example:
+                id: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
+                name: "Book Recommendations"
+                userId: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
+                messages:
+                  - id: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
+                    text: "What are the top science fiction books available?"
+                    role: "user"
+                    parentMessageId: null
+                    createdAt: "2023-10-01T12:00:00Z"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc9110#section-15.5.5"
+                title: "Not Found"
+                status: 404
+                detail: "Chat with id 01961f13-64ef-7dbb-84a1-25114e2e0ca4 not found."
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
+    delete:
+      tags:
+        - Chat
+      summary: Delete Chat
+      description: Delete a chat by its ID
+      x-eventcatalog-message-type: command
+      operationId: DeleteChatEndpoint
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: The unique identifier of the chat to be deleted
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc9110#section-15.5.5"
+                title: "Not Found"
+                status: 404
+                detail: "Chat with id 01961f13-64ef-7dbb-84a1-25114e2e0ca4 not found."
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
   "/api/v1/chats/{id}/cancel":
     delete:
       tags:
@@ -81,6 +331,8 @@ paths:
       description: Cancel a chat if it exists
       x-eventcatalog-message-type: command
       operationId: CancelChatEndpoint
+      security:
+        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -89,11 +341,27 @@ paths:
           schema:
             type: string
             format: uuid
-            description: The unique identifier of the chat to be cancelled
             example: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
+  "/api/v1/chats/stream":
+    get:
+      tags:
+        - Chat
+      summary: Chat Stream
+      x-eventcatalog-message-type: command
+      description: SignalR hub endpoint for real-time chat streaming
+      operationId: ChatStreamEndpoint
+      security:
+        - bearerAuth: []
+      responses:
+        "101":
+          description: Switching Protocols - WebSocket connection established
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
 components:
   schemas:
     Prompt:
@@ -130,6 +398,86 @@ components:
           type: string
           description: The detail of the problem
           example: "Chat with id 01961f13-64ef-7dbb-84a1-25114e2e0ca4 not found."
+    ConversationDto:
+      type: object
+      readOnly: true
+      description: A conversation in the catalog system
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The unique identifier of the conversation
+          example: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
+        name:
+          type: string
+          description: The name of the conversation
+          example: "Book Recommendations"
+        userId:
+          type: string
+          format: uuid
+          description: The ID of the user who created the conversation
+          example: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
+        messages:
+          type: array
+          items:
+            "$ref": "#/components/schemas/MessageDto"
+    CreateChatCommand:
+      type: object
+      required:
+        - name
+      description: Command to create a chat in the catalog system
+      properties:
+        name:
+          type: string
+          description: The name of the chat
+          example: "Book Recommendations Chat"
+    UpdateChatCommand:
+      type: object
+      required:
+        - id
+        - prompt
+      description: Command to update a chat in the catalog system
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The unique identifier of the chat to be updated
+          example: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
+        prompt:
+          "$ref": "#/components/schemas/Prompt"
+    MessageDto:
+      type: object
+      readOnly: true
+      description: A message in a conversation
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The unique identifier of the message
+          example: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
+        text:
+          type: string
+          description: The text of the message
+          example: "What are the top science fiction books available?"
+        role:
+          type: string
+          description: The role of the message sender (e.g., user, assistant)
+          example: "user"
+        parentMessageId:
+          type: string
+          format: uuid
+          description: The ID of the parent message, if any
+          example: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
+        createdAt:
+          type: string
+          format: date-time
+          description: The timestamp when the message was created
+          example: "2023-10-01T12:00:00Z"
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: JWT Bearer token authentication
 tags:
   - name: Chat
     description: Endpoints for handling book-related discussions and user interactions in chat format

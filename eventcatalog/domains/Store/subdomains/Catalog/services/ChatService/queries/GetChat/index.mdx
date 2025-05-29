@@ -1,0 +1,55 @@
+---
+id: GetChatQuery
+version: 1.0.0
+name: Get Chat
+summary: Retrieve chat messages for a specific chat session
+badges:
+  - content: GET
+    textColor: blue
+    backgroundColor: blue
+    icon: MagnifyingGlassIcon
+  - content: "Chat"
+    textColor: yellow
+    backgroundColor: yellow
+    icon: BookOpenIcon
+owners:
+  - nhanxnguyen
+---
+
+## Overview
+
+The Get Chat query allows users to retrieve chat messages for a specific chat session. This is useful for displaying the conversation history in the user interface or for processing chat data.
+
+## Architecture
+
+<NodeGraph />
+
+## Behavior
+
+The Get Chat query follows these steps:
+
+1. Validates the provided chat ID format.
+2. Queries the chat repository to fetch the chat session and its messages.
+3. If the chat session is not found, returns a 404 Not Found response.
+4. Maps the chat session and messages to a DTO using the configured auto-mapper.
+5. Returns the chat data with a 200 OK status code.
+
+# GET `/api/v1/chats/{id}`
+
+### Parameters
+
+- **id** (path) (required) - The unique identifier (GUID) of the chat session to retrieve.
+
+### Request Body
+
+This query does not require a request body.
+
+### Response
+
+#### <span class="badge badge-success">200 OK</span>
+
+<SchemaViewer file="response-200.json" maxHeight="500" id="response-200" />
+
+#### <span class="badge badge-error">404 Not Found</span>
+
+<SchemaViewer file="response-404.json" maxHeight="500" id="response-404" />

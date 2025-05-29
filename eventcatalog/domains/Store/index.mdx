@@ -129,6 +129,7 @@ C4Container
           ContainerDb(basketDb, "Basket DB", "NoSQL", "Stores shopping cart data")
           ContainerDb(financeDb, "Finance DB", "SQL", "Stores payment records")
           ContainerDb(ratingDb, "Rating DB", "SQL", "Stores ratings and reviews")
+          ContainerDb(chatDb, "Chat DB", "SQL", "Stores chat sessions and messages")
         }
       }
     }
@@ -149,6 +150,7 @@ C4Container
     Rel(finance, financeDb, "Reads/Writes", "TCP")
     Rel(rating, ratingDb, "Reads/Writes", "TCP")
     Rel(catalog, vectorDb, "Reads/Writes", "TCP")
+    Rel(chat, chatDb, "Reads/Writes", "TCP")
     Rel(notification, notificationDb, "Reads/Writes", "TCP")
 
     Rel(notification, email, "Sends emails", "SMTP")

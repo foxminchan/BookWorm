@@ -13,7 +13,8 @@ public sealed class DeleteChatEndpoint : IEndpoint<NoContent, Guid, ISender>
             .WithName(nameof(DeleteChatEndpoint))
             .WithSummary("Delete Chat")
             .WithDescription("Delete a chat by its ID")
-            .MapToApiVersion(new(1, 0));
+            .MapToApiVersion(new(1, 0))
+            .RequireAuthorization();
     }
 
     public async Task<NoContent> HandleAsync(

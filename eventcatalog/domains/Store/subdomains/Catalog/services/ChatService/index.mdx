@@ -18,6 +18,16 @@ receives:
     version: 1.0.0
   - id: CancelChatCommand
     version: 1.0.0
+  - id: UpdateChatCommand
+    version: 1.0.0
+  - id: DeleteChatCommand
+    version: 1.0.0
+  - id: ChatStream
+    version: 1.0.0
+  - id: GetChatQuery
+    version: 1.0.0
+  - id: ListChatsQuery
+    version: 1.0.0
 schemaPath: openapi-v1.yml
 specifications:
   - type: openapi
@@ -77,6 +87,7 @@ C4Component
         }
 
         Container_Boundary(infrastructure, "Infrastructure") {
+            ComponentDb(chatDb, "Chat Database", "PostgreSQL", "Stores chat sessions and history")
 
             Container_Boundary(ai, "AI") {
                 Component(ollama, "Ollama", "Ollama", "Get and run models")
@@ -96,6 +107,8 @@ C4Component
     Rel(mcp, llmService, "Uses", "MCP")
 
     Rel(llmService, ollama, "Uses", "Internal")
+
+    Rel(llmService, chatDb, "Reads/Writes", "Internal")
 
     UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
 ```

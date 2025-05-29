@@ -14,7 +14,8 @@ public sealed class GetChatEndpoint : IEndpoint<Ok<ConversationDto>, Guid, ISend
             .WithName(nameof(GetChatEndpoint))
             .WithSummary("Get Chat")
             .WithDescription("Get a chat by its ID")
-            .MapToApiVersion(new(1, 0));
+            .MapToApiVersion(new(1, 0))
+            .RequireAuthorization();
     }
 
     public async Task<Ok<ConversationDto>> HandleAsync(

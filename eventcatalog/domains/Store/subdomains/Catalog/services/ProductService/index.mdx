@@ -40,6 +40,10 @@ receives:
     version: 1.0.0
   - id: ListBooksQuery
     version: 1.0.0
+  - id: GetBookGrpc
+    version: 1.0.0
+  - id: ListBooksGrpc
+    version: 1.0.0
   - id: CreateBookCommand
     version: 1.0.0
   - id: DeleteAuthorCommand
@@ -145,7 +149,6 @@ C4Component
                 ComponentDb(vectorDb, "Vector DB", "Qdrant", "Stores vector embeddings")
             }
         }
-
     }
 
     Rel(catalogEndpoint, catalogFacade, "Uses", "Internal")

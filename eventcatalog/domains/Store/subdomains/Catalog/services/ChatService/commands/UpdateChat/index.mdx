@@ -1,0 +1,57 @@
+---
+id: UpdateChatCommand
+version: 1.0.0
+name: Update Chat
+summary: Update an existing chat in the catalog system
+schemaPath: request-body.json
+badges:
+  - content: PUT
+    textColor: green
+    backgroundColor: green
+    icon: PencilSquareIcon
+  - content: "Chat"
+    textColor: yellow
+    backgroundColor: yellow
+    icon: ChatBubbleBottomCenterTextIcon
+owners:
+  - nhanxnguyen
+---
+
+## Overview
+
+The Update Chat endpoint allows users to modify an existing chat session in the catalog system. This endpoint accepts a chat identifier and a text prompt, updating the chat with the new information. It is designed to enhance the interactivity of conversations within the BookWorm platform.
+
+## Architecture
+
+<NodeGraph />
+
+## PUT `/api/v1/chats`
+
+Updates an existing chat in the catalog system and returns the updated chat's unique identifier.
+
+### Request Body
+
+<SchemaViewer file="request-body.json" maxHeight="500" id="request-body" />
+
+### Example Usage
+
+```bash
+curl -X PUT https://api.bookworm.com/api/v1/chats/123e4567-e89b-12d3-a456-426614174000 \
+	-H "Content-Type: application/json" \
+	-d '{
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "prompt": {
+    	"text": "What is the capital of France?"
+    }
+	}'
+```
+
+### Response
+
+#### <span className="text-green-500">204 No Content</span>
+
+Indicates that the chat was successfully updated. No content is returned in the response body.
+
+### <span className="text-red-500">404 Not Found</span>
+
+Indicates that the specified chat identifier does not exist in the system.

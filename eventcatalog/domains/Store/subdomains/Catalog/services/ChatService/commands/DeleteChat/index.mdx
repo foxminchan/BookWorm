@@ -1,0 +1,54 @@
+---
+id: DeleteChatCommand
+version: 1.0.0
+name: Delete Chat
+summary: Delete a chat
+badges:
+  - content: DELETE
+    textColor: red
+    backgroundColor: red
+    icon: XMarkIcon
+  - content: "Chat"
+    textColor: yellow
+    backgroundColor: yellow
+    icon: ChatBubbleBottomCenterTextIcon
+owners:
+  - nhanxnguyen
+---
+
+## Overview
+
+The Delete Chat endpoint allows users to permanently remove a chat session from the BookWorm platform. This endpoint accepts a chat's unique identifier (GUID) and deletes the associated chat session if it exists. It is designed to provide users with the ability to manage their chat history effectively.
+
+The endpoint follows RESTful principles and returns a 204 No Content response upon successful deletion, indicating that the request was processed successfully but no content needs to be returned.
+
+## Architecture
+
+<NodeGraph />
+
+## DELETE `/api/v1/chats/{id:guid}`
+
+Deletes a chat session by its unique identifier.
+
+### Path Parameters
+
+| Name | Type | Description                                       |
+| ---- | ---- | ------------------------------------------------- |
+| id   | GUID | The unique identifier of the chat to be deleted |
+
+### Example Usage
+
+```bash
+curl -X DELETE https://api.bookworm.com/api/v1/chats/{id} \
+	-H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+### Response
+
+#### <span className="text-green-500">204 No Content</span>
+
+Returns a 204 No Content response if the chat is successfully deleted. This indicates that the request was processed successfully but there is no content to return.
+
+### <span className="text-red-500">404 Not Found</span>
+
+Indicates that the specified chat identifier does not exist in the system. This response is returned when attempting to delete a chat that has already been removed or never existed.

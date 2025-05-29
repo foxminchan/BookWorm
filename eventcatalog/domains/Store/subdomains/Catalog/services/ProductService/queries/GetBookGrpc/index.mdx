@@ -1,0 +1,37 @@
+---
+id: GetBookGrpc
+version: 1.0.0
+name: Get Book (gRPC)
+summary: Get a book by ID via gRPC
+badges:
+  - content: GET
+    textColor: blue
+    backgroundColor: blue
+    icon: MagnifyingGlassIcon
+  - content: "gRPC"
+    textColor: purple
+    backgroundColor: purple
+    icon: ServerIcon
+  - content: "Book"
+    textColor: yellow
+    backgroundColor: yellow
+    icon: BookOpenIcon
+owners:
+  - nhanxnguyen
+---
+
+## Overview
+
+This gRPC endpoint follows Domain-Driven Design principles to retrieve a specific Book aggregate root from the Catalog bounded context by its unique identifier. The operation is implemented as a query that doesn't modify state, adhering to CQRS patterns.
+
+The query handler maps the domain entity to a BookDto response through an auto-mapper profile, ensuring that domain implementation details remain encapsulated. The endpoint respects the aggregate boundaries and only exposes data appropriate for the presentation layer.
+
+## Architecture
+
+<NodeGraph />
+
+## Usage
+
+```bash
+grpcurl api.bookworm.com:50051 bookworm.catalog.services.ProductService.GetBook -d '{"id": "book-id"}'
+```

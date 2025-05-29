@@ -1,0 +1,57 @@
+---
+id: ConversationMessage
+name: ConversationMessage
+version: 1.0.0
+identifier: id
+aggregateRoot: false
+summary: ConversationMessage domain entity, encapsulates message information and business rules
+
+properties:
+  - name: id
+    type: UUID
+    required: true
+    description: Unique identifier for the message
+  - name: conversationId
+    type: UUID
+    required: true
+    description: Unique identifier for the conversation this message belongs to
+  - name: role
+    type: string
+    required: true
+    description: Role of the user who sent the message
+  - name: parentMessageId
+    type: UUID
+    required: false
+    description: Unique identifier for the parent message, if this message is a reply
+  - name: text
+    type: string
+    required: true
+    description: Content of the message
+  - name: createdAt
+    type: DateTime
+    required: true
+    description: The date and time the message was created
+  - name: lastModifiedAt
+    type: DateTime
+    required: false
+    description: The date and time the message was updated
+  - name: version
+    type: UUID
+    required: true
+    description: Version of the record for optimistic concurrency control
+owners:
+  - nhanxnguyen
+---
+
+## Overview
+
+The `ConversationMessage` entity represents a message within a conversation in the chat service. It encapsulates the information and business rules related to a message, such as its unique identifier, conversation association, user ownership, content, creation date, last modified date, and version for optimistic concurrency control.
+
+### Entity Properties
+
+<EntityPropertiesTable />
+
+### Entity Relationships
+
+- A message belongs to one **conversation**.
+- A message is sent by one **user**.

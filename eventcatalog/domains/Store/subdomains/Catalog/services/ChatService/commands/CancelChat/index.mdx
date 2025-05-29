@@ -39,7 +39,8 @@ Cancels a chat session by its unique identifier.
 ### Example Usage
 
 ```bash
-curl -X DELETE https://api.bookworm.com/api/v1/chats/{id}/cancel
+curl -X DELETE https://api.bookworm.com/api/v1/chats/{id}/cancel \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
 ### Response
