@@ -32,8 +32,8 @@ public sealed class DecimalConversionTests
 
         // Assert
         convertedBack.ShouldBe(originalValue);
-        protoDecimal.Units.ShouldBe(-98);
-        protoDecimal.Nanos.ShouldBe(-123456789); // Negative nanos for negative numbers
+        protoDecimal.Units.ShouldBe(-99); // Floor division: -99 + 0.876543211 = -98.123456789
+        protoDecimal.Nanos.ShouldBe(876543211); // Nanos is always positive (fractional part)
     }
 
     [Test]
@@ -128,5 +128,21 @@ public sealed class DecimalConversionTests
         convertedBack.ShouldBe(originalValue);
         protoDecimal.Units.ShouldBe(0);
         protoDecimal.Nanos.ShouldBe(1);
+    }
+
+    [Test]
+    public void GivenNegativeSmallDecimal_WhenConvertingToAndFromDecimal_ThenShouldMaintainPrecision()
+    {
+        // Arrange
+        var originalValue = -0.123456789m;
+
+        // Act
+        var protoDecimal = BookService.ToDecimal(originalValue);
+        var convertedBack = BookService.FromDecimal(protoDecimal);
+
+        // Assert
+        convertedBack.ShouldBe(originalValue);
+        protoDecimal.Units.ShouldBe(-1); // Floor division: -1 + 0.876543211 = -0.123456789
+        protoDecimal.Nanos.ShouldBe(876543211); // Fractional part is positive
     }
 }

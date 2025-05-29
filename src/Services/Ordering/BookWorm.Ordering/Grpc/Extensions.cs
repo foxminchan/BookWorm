@@ -41,7 +41,7 @@ public static class Extensions
             return 0m;
         }
         
-        // Convert nanos back to fractional part
+        // Convert nanos back to fractional part (always positive)
         var fractionalPart = (decimal)value.Nanos / 1_000_000_000m;
         
         // Combine units and fractional part

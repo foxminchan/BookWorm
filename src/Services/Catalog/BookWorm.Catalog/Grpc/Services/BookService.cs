@@ -77,16 +77,19 @@ public sealed class BookService(IBookRepository repository, ILogger<BookService>
 
     /// <summary>
     /// Converts a .NET decimal to a protobuf Decimal message.
+    /// Uses Google's protobuf decimal representation where nanos is always positive.
     /// </summary>
     /// <param name="value">The decimal value to convert.</param>
     /// <returns>A protobuf Decimal message.</returns>
-    private static Decimal ToDecimal(decimal value)
+    public static Decimal ToDecimal(decimal value)
     {
-        // Split the decimal into integer and fractional parts
-        var units = (long)Math.Truncate(value);
+        // For negative numbers, we need to use floor division
+        // to ensure nanos is always positive
+        var units = (long)Math.Floor(value);
         var fractionalPart = value - units;
         
         // Convert fractional part to nanoseconds (9 decimal places)
+        // fractionalPart is always >= 0 after floor division
         var nanos = (int)Math.Round(fractionalPart * 1_000_000_000m);
         
         // Handle cases where rounding causes nanos to be 1 billion
@@ -115,7 +118,7 @@ public sealed class BookService(IBookRepository repository, ILogger<BookService>
             return 0m;
         }
         
-        // Convert nanos back to fractional part
+        // Convert nanos back to fractional part (always positive)
         var fractionalPart = (decimal)value.Nanos / 1_000_000_000m;
         
         // Combine units and fractional part
