@@ -62,14 +62,14 @@ public sealed class CreateOrderCommandTests
                     {
                         Id = basketResponse.Items[0].Id,
                         Name = "Book 1",
-                        Price = 10.99,
+                        Price = CreateDecimal(10.99m),
                     },
                     new BookResponse
                     {
                         Id = basketResponse.Items[1].Id,
                         Name = "Book 2",
-                        Price = 12.99,
-                        PriceSale = 10.99,
+                        Price = CreateDecimal(12.99m),
+                        PriceSale = CreateDecimal(10.99m),
                     },
                 },
             };
@@ -281,4 +281,26 @@ public sealed class CreateOrderCommandTests
     }
 
     #endregion
+
+    /// <summary>
+    /// Helper method to create a Decimal protobuf message from a .NET decimal value.
+    /// </summary>
+    private static Decimal CreateDecimal(decimal value)
+    {
+        var units = (long)Math.Truncate(value);
+        var fractionalPart = value - units;
+        var nanos = (int)Math.Round(fractionalPart * 1_000_000_000m);
+        
+        if (nanos >= 1_000_000_000)
+        {
+            units += 1;
+            nanos = 0;
+        }
+        
+        return new Decimal
+        {
+            Units = units,
+            Nanos = nanos
+        };
+    }
 }

@@ -50,8 +50,8 @@ public sealed class BookServiceTests
         result.ShouldNotBeNull();
         result.Id.ShouldBe(bookId.ToString());
         result.Name.ShouldBe("Test Book");
-        result.Price.ShouldBe(29.99d);
-        result.PriceSale.ShouldBe(19.99d);
+        BookService.FromDecimal(result.Price).ShouldBe(29.99m);
+        BookService.FromDecimal(result.PriceSale).ShouldBe(19.99m);
         result.Status.ShouldBe(BookStatus.InStock);
 
         _bookRepositoryMock.Verify(
@@ -168,14 +168,14 @@ public sealed class BookServiceTests
         result.Books.Count.ShouldBe(2);
         result.Books[0].Id.ShouldBe(bookIds[0].ToString());
         result.Books[0].Name.ShouldBe("Test Book 1");
-        result.Books[0].Price.ShouldBe(29.99d);
-        result.Books[0].PriceSale.ShouldBe(19.99d);
+        BookService.FromDecimal(result.Books[0].Price).ShouldBe(29.99m);
+        BookService.FromDecimal(result.Books[0].PriceSale).ShouldBe(19.99m);
         result.Books[0].Status.ShouldBe(BookStatus.InStock);
 
         result.Books[1].Id.ShouldBe(bookIds[1].ToString());
         result.Books[1].Name.ShouldBe("Test Book 2");
-        result.Books[1].Price.ShouldBe(29.99d);
-        result.Books[1].PriceSale.ShouldBe(19.99d);
+        BookService.FromDecimal(result.Books[1].Price).ShouldBe(29.99m);
+        BookService.FromDecimal(result.Books[1].PriceSale).ShouldBe(19.99m);
         result.Books[1].Status.ShouldBe(BookStatus.InStock);
 
         _bookRepositoryMock.Verify(
@@ -298,6 +298,106 @@ public sealed class BookServiceTests
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()
                 ),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task GivenBookWithHighPrecisionDecimal_WhenGetBookCalled_ThenShouldMaintainDecimalPrecision()
+    {
+        // Arrange
+        var bookId = Guid.CreateVersion7();
+        var bookRequest = new BookRequest { BookId = bookId.ToString() };
+        var context = new TestServerCallContext();
+
+        // Use a high-precision decimal value that would lose precision with double conversion
+        var highPrecisionPrice = 123.456789m;
+        var highPrecisionSalePrice = 98.123456789m;
+
+        var book = new Book(
+            "High Precision Book",
+            "Test Description",
+            "test-image.jpg",
+            highPrecisionPrice,
+            highPrecisionSalePrice,
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7()]
+        );
+        // Use reflection to set the id property since it's not settable directly
+        typeof(Book).GetProperty("Id")!.SetValue(book, bookId);
+
+        _bookRepositoryMock
+            .Setup(repo => repo.GetByIdAsync(bookId, CancellationToken.None))
+            .ReturnsAsync(book);
+
+        // Act
+        var result = await _bookService.GetBook(bookRequest, context);
+
+        // Assert
+        result.ShouldNotBeNull();
+        result.Id.ShouldBe(bookId.ToString());
+        result.Name.ShouldBe("High Precision Book");
+        
+        // Verify that the decimal precision is maintained through the conversion
+        var convertedPrice = BookService.FromDecimal(result.Price);
+        var convertedSalePrice = BookService.FromDecimal(result.PriceSale);
+        
+        convertedPrice.ShouldBe(highPrecisionPrice);
+        convertedSalePrice.ShouldBe(highPrecisionSalePrice);
+        
+        // Additional verification that the original precision is preserved
+        Math.Round(convertedPrice, 6).ShouldBe(123.456789m);
+        Math.Round(convertedSalePrice, 9).ShouldBe(98.123456789m);
+
+        _bookRepositoryMock.Verify(
+            repo => repo.GetByIdAsync(bookId, CancellationToken.None),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task GivenBookWithNullSalePrice_WhenGetBookCalled_ThenShouldHandleNullPriceSale()
+    {
+        // Arrange
+        var bookId = Guid.CreateVersion7();
+        var bookRequest = new BookRequest { BookId = bookId.ToString() };
+        var context = new TestServerCallContext();
+
+        var book = new Book(
+            "No Sale Book",
+            "Test Description",
+            "test-image.jpg",
+            29.99m,
+            null, // No sale price
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7()]
+        );
+        // Use reflection to set the id property since it's not settable directly
+        typeof(Book).GetProperty("Id")!.SetValue(book, bookId);
+
+        _bookRepositoryMock
+            .Setup(repo => repo.GetByIdAsync(bookId, CancellationToken.None))
+            .ReturnsAsync(book);
+
+        // Act
+        var result = await _bookService.GetBook(bookRequest, context);
+
+        // Assert
+        result.ShouldNotBeNull();
+        result.Id.ShouldBe(bookId.ToString());
+        result.Name.ShouldBe("No Sale Book");
+        BookService.FromDecimal(result.Price).ShouldBe(29.99m);
+        
+        // PriceSale should be empty/default (0 units and 0 nanos)
+        result.PriceSale.ShouldNotBeNull();
+        result.PriceSale.Units.ShouldBe(0);
+        result.PriceSale.Nanos.ShouldBe(0);
+        BookService.FromDecimal(result.PriceSale).ShouldBe(0m);
+
+        _bookRepositoryMock.Verify(
+            repo => repo.GetByIdAsync(bookId, CancellationToken.None),
             Times.Once
         );
     }

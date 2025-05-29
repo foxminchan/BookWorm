@@ -136,15 +136,15 @@ public static class GetBasketQueryTests
                 {
                     Id = _bookIds[0],
                     Name = "Book 1",
-                    Price = 19.99,
-                    PriceSale = 15.99,
+                    Price = CreateDecimal(19.99m),
+                    PriceSale = CreateDecimal(15.99m),
                 },
                 new BookResponse
                 {
                     Id = _bookIds[1],
                     Name = "Book 2",
-                    Price = 29.99,
-                    PriceSale = 0,
+                    Price = CreateDecimal(29.99m),
+                    PriceSale = CreateDecimal(0m),
                 },
             ];
 
@@ -211,5 +211,27 @@ public static class GetBasketQueryTests
                 Times.Once
             );
         }
+    }
+
+    /// <summary>
+    /// Helper method to create a Decimal protobuf message from a .NET decimal value.
+    /// </summary>
+    private static Decimal CreateDecimal(decimal value)
+    {
+        var units = (long)Math.Truncate(value);
+        var fractionalPart = value - units;
+        var nanos = (int)Math.Round(fractionalPart * 1_000_000_000m);
+        
+        if (nanos >= 1_000_000_000)
+        {
+            units += 1;
+            nanos = 0;
+        }
+        
+        return new Decimal
+        {
+            Units = units,
+            Nanos = nanos
+        };
     }
 }
