@@ -29,7 +29,7 @@ public static class GetBasketQueryTests
             _repositoryMock = new();
 
             // Set up the claim using the KeycloakClaimTypes.Subject
-            // and ensure GetClaimValue extension method will work
+            // and ensure the GetClaimValue extension method will work
             var claim = new Claim(KeycloakClaimTypes.Subject, _userId);
             _claimsPrincipalMock.Setup(x => x.FindFirst(KeycloakClaimTypes.Subject)).Returns(claim);
 
@@ -63,6 +63,14 @@ public static class GetBasketQueryTests
             result.ShouldNotBeNull();
             result.Id.ShouldBe(_basket.Id);
             result.Items.Count.ShouldBe(_basket.Items.Count);
+
+            // Verify quantities are preserved by matching items
+            var basketItemsArray = _basket.Items.ToArray();
+            for (var i = 0; i < result.Items.Count; i++)
+            {
+                result.Items[i].Quantity.ShouldBe(basketItemsArray[i].Quantity);
+            }
+
             _repositoryMock.Verify(r => r.GetBasketAsync(_userId), Times.Once);
         }
 
@@ -170,6 +178,10 @@ public static class GetBasketQueryTests
                     Times.Once
                 );
             }
+
+            // Verify quantities are preserved during processing
+            _basketDto.Items[0].Quantity.ShouldBe(2);
+            _basketDto.Items[1].Quantity.ShouldBe(1);
         }
 
         [Test]

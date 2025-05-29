@@ -4,19 +4,9 @@
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
     },
-    "playwright": {
-      "type": "stdio",
+    "memory": {
       "command": "npx",
-      "args": ["@playwright/mcp@latest"]
-    },
-    "azure": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@azure/mcp@latest",
-        "server",
-        "start"
-      ]
+      "args": ["-y", "@modelcontextprotocol/server-memory"]
     }
   }
 }
