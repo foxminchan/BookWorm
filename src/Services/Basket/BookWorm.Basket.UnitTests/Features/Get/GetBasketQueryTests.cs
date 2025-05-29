@@ -218,7 +218,7 @@ public static class GetBasketQueryTests
     /// </summary>
     private static Decimal CreateDecimal(decimal value)
     {
-        var units = (long)Math.Truncate(value);
+        var units = (long)Math.Floor(value);
         var fractionalPart = value - units;
         var nanos = (int)Math.Round(fractionalPart * 1_000_000_000m);
         

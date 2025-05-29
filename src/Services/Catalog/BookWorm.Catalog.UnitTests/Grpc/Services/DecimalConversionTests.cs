@@ -131,6 +131,26 @@ public sealed class DecimalConversionTests
     }
 
     [Test]
+    public void GivenValueTooLarge_WhenConvertingToDecimal_ThenShouldThrowArgumentOutOfRangeException()
+    {
+        // Arrange
+        var tooLargeValue = (decimal)long.MaxValue + 1m;
+
+        // Act & Assert
+        Should.Throw<ArgumentOutOfRangeException>(() => BookService.ToDecimal(tooLargeValue));
+    }
+
+    [Test]
+    public void GivenValueTooSmall_WhenConvertingToDecimal_ThenShouldThrowArgumentOutOfRangeException()
+    {
+        // Arrange
+        var tooSmallValue = (decimal)long.MinValue - 1m;
+
+        // Act & Assert
+        Should.Throw<ArgumentOutOfRangeException>(() => BookService.ToDecimal(tooSmallValue));
+    }
+
+    [Test]
     public void GivenNegativeSmallDecimal_WhenConvertingToAndFromDecimal_ThenShouldMaintainPrecision()
     {
         // Arrange

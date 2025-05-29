@@ -81,8 +81,16 @@ public sealed class BookService(IBookRepository repository, ILogger<BookService>
     /// </summary>
     /// <param name="value">The decimal value to convert.</param>
     /// <returns>A protobuf Decimal message.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the value is too large to represent.</exception>
     public static Decimal ToDecimal(decimal value)
     {
+        // Check bounds - protobuf int64 has limits
+        if (value > long.MaxValue || value < long.MinValue)
+        {
+            throw new ArgumentOutOfRangeException(nameof(value), 
+                $"Value {value} is outside the range that can be represented in protobuf Decimal type.");
+        }
+        
         // For negative numbers, we need to use floor division
         // to ensure nanos is always positive
         var units = (long)Math.Floor(value);
