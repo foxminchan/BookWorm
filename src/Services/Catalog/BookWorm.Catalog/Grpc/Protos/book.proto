@@ -1,7 +1,5 @@
 ﻿syntax = "proto3";
 
-import "google/protobuf/wrappers.proto";
-
 option csharp_namespace = "BookWorm.Catalog.Grpc.Services";
 
 package CatalogApi;
@@ -11,6 +9,14 @@ service BookGrpcService {
   rpc GetBooks(BooksRequest) returns (BooksResponse);
 }
 
+// Custom decimal type to preserve .NET decimal precision
+message Decimal {
+  // The whole units of the decimal
+  int64 units = 1;
+  // The fractional part in nanoseconds (up to 9 decimal places)
+  int32 nanos = 2;
+}
+
 message BookRequest {
   string bookId = 1;
 }
@@ -18,8 +24,8 @@ message BookRequest {
 message BookResponse {
   string id = 1;
   string name = 2;
-  double price = 3;
-  google.protobuf.DoubleValue priceSale = 4;
+  Decimal price = 3;
+  Decimal priceSale = 4;
   BookStatus status = 5;
 }
 

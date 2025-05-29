@@ -49,16 +49,21 @@ public sealed class BookService(IBookRepository repository, ILogger<BookService>
 
     private static BookResponse MapToBookResponse(Book book)
     {
-        return new()
+        var response = new BookResponse
         {
             Id = book.Id.ToString(),
             Name = book.Name,
-            Price = decimal.ToDouble(book.Price!.OriginalPrice),
-            PriceSale = double.TryParse(book.Price?.DiscountPrice?.ToString(), out var price)
-                ? price
-                : null,
+            Price = ToDecimal(book.Price!.OriginalPrice),
             Status = book.Status == Status.InStock ? BookStatus.InStock : BookStatus.OutOfStock,
         };
+
+        // Only set PriceSale if there's a discount price
+        if (book.Price?.DiscountPrice is not null)
+        {
+            response.PriceSale = ToDecimal(book.Price.DiscountPrice.Value);
+        }
+
+        return response;
     }
 
     private static BooksResponse MapToBookResponse(IReadOnlyList<Book> books)
@@ -68,5 +73,52 @@ public sealed class BookService(IBookRepository repository, ILogger<BookService>
         response.Books.AddRange(books.Select(MapToBookResponse));
 
         return response;
+    }
+
+    /// <summary>
+    /// Converts a .NET decimal to a protobuf Decimal message.
+    /// </summary>
+    /// <param name="value">The decimal value to convert.</param>
+    /// <returns>A protobuf Decimal message.</returns>
+    private static Decimal ToDecimal(decimal value)
+    {
+        // Split the decimal into integer and fractional parts
+        var units = (long)Math.Truncate(value);
+        var fractionalPart = value - units;
+        
+        // Convert fractional part to nanoseconds (9 decimal places)
+        var nanos = (int)Math.Round(fractionalPart * 1_000_000_000m);
+        
+        // Handle cases where rounding causes nanos to be 1 billion
+        if (nanos >= 1_000_000_000)
+        {
+            units += 1;
+            nanos = 0;
+        }
+        
+        return new Decimal
+        {
+            Units = units,
+            Nanos = nanos
+        };
+    }
+
+    /// <summary>
+    /// Converts a protobuf Decimal message to a .NET decimal.
+    /// </summary>
+    /// <param name="value">The protobuf Decimal to convert.</param>
+    /// <returns>A .NET decimal value.</returns>
+    public static decimal FromDecimal(Decimal value)
+    {
+        if (value is null)
+        {
+            return 0m;
+        }
+        
+        // Convert nanos back to fractional part
+        var fractionalPart = (decimal)value.Nanos / 1_000_000_000m;
+        
+        // Combine units and fractional part
+        return value.Units + fractionalPart;
     }
 }
