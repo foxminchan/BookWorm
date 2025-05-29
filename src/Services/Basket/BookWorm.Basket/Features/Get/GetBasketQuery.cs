@@ -1,4 +1,5 @@
-﻿using MediatR.Pipeline;
+﻿using BookWorm.Basket.Extensions;
+using MediatR.Pipeline;
 
 namespace BookWorm.Basket.Features.Get;
 
@@ -50,8 +51,8 @@ public sealed class PostGetBasketHandler(IBookService bookService)
             var updatedItem = books[i] with
             {
                 Name = bookResponse.Name,
-                Price = (decimal)bookResponse.Price,
-                PriceSale = bookResponse.PriceSale is null ? null : (decimal)bookResponse.PriceSale,
+                Price = bookResponse.GetPrice(),
+                PriceSale = bookResponse.GetPriceSale(),
             };
 
             updatedItems.Add(updatedItem);

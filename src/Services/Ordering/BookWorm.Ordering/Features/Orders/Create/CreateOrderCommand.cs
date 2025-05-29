@@ -1,4 +1,5 @@
 ﻿using BookWorm.Ordering.Infrastructure.Helpers;
+using BookWorm.Ordering.Grpc;
 using MediatR.Pipeline;
 
 namespace BookWorm.Ordering.Features.Orders.Create;
@@ -29,9 +30,9 @@ public sealed class PreCreateOrderHandler([AsParameters] BasketMetadata basket)
 
                 Guard.Against.NotFound(book, $"Book with id {item.Id} not found.");
 
-                var bookPrice = book.PriceSale ?? book.Price;
+                var bookPrice = book.GetEffectivePrice();
 
-                return new OrderItem(Guid.Parse(book.Id), item.Quantity, (decimal)bookPrice);
+                return new OrderItem(Guid.Parse(book.Id), item.Quantity, bookPrice);
             }),
         ];
     }
