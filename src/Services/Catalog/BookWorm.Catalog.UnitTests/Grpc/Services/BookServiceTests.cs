@@ -1,5 +1,6 @@
 ﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
+using BookWorm.Catalog.Extensions;
 using BookWorm.Catalog.Grpc.Services;
 using BookWorm.Catalog.UnitTests.Grpc.Context;
 using Microsoft.Extensions.Logging;
@@ -50,8 +51,8 @@ public sealed class BookServiceTests
         result.ShouldNotBeNull();
         result.Id.ShouldBe(bookId.ToString());
         result.Name.ShouldBe("Test Book");
-        BookService.FromDecimal(result.Price).ShouldBe(29.99m);
-        BookService.FromDecimal(result.PriceSale).ShouldBe(19.99m);
+        DecimalValueExtensions.FromDecimal(result.Price).ShouldBe(29.99m);
+        DecimalValueExtensions.FromDecimal(result.PriceSale).ShouldBe(19.99m);
         result.Status.ShouldBe(BookStatus.InStock);
 
         _bookRepositoryMock.Verify(
@@ -168,14 +169,14 @@ public sealed class BookServiceTests
         result.Books.Count.ShouldBe(2);
         result.Books[0].Id.ShouldBe(bookIds[0].ToString());
         result.Books[0].Name.ShouldBe("Test Book 1");
-        BookService.FromDecimal(result.Books[0].Price).ShouldBe(29.99m);
-        BookService.FromDecimal(result.Books[0].PriceSale).ShouldBe(19.99m);
+        DecimalValueExtensions.FromDecimal(result.Books[0].Price).ShouldBe(29.99m);
+        DecimalValueExtensions.FromDecimal(result.Books[0].PriceSale).ShouldBe(19.99m);
         result.Books[0].Status.ShouldBe(BookStatus.InStock);
 
         result.Books[1].Id.ShouldBe(bookIds[1].ToString());
         result.Books[1].Name.ShouldBe("Test Book 2");
-        BookService.FromDecimal(result.Books[1].Price).ShouldBe(29.99m);
-        BookService.FromDecimal(result.Books[1].PriceSale).ShouldBe(19.99m);
+        DecimalValueExtensions.FromDecimal(result.Books[1].Price).ShouldBe(29.99m);
+        DecimalValueExtensions.FromDecimal(result.Books[1].PriceSale).ShouldBe(19.99m);
         result.Books[1].Status.ShouldBe(BookStatus.InStock);
 
         _bookRepositoryMock.Verify(
@@ -340,8 +341,8 @@ public sealed class BookServiceTests
         result.Name.ShouldBe("High Precision Book");
         
         // Verify that the decimal precision is maintained through the conversion
-        var convertedPrice = BookService.FromDecimal(result.Price);
-        var convertedSalePrice = BookService.FromDecimal(result.PriceSale);
+        var convertedPrice = DecimalValueExtensions.FromDecimal(result.Price);
+        var convertedSalePrice = DecimalValueExtensions.FromDecimal(result.PriceSale);
         
         convertedPrice.ShouldBe(highPrecisionPrice);
         convertedSalePrice.ShouldBe(highPrecisionSalePrice);
@@ -388,13 +389,13 @@ public sealed class BookServiceTests
         result.ShouldNotBeNull();
         result.Id.ShouldBe(bookId.ToString());
         result.Name.ShouldBe("No Sale Book");
-        BookService.FromDecimal(result.Price).ShouldBe(29.99m);
+        DecimalValueExtensions.FromDecimal(result.Price).ShouldBe(29.99m);
         
         // PriceSale should be empty/default (0 units and 0 nanos)
         result.PriceSale.ShouldNotBeNull();
         result.PriceSale.Units.ShouldBe(0);
         result.PriceSale.Nanos.ShouldBe(0);
-        BookService.FromDecimal(result.PriceSale).ShouldBe(0m);
+        DecimalValueExtensions.FromDecimal(result.PriceSale).ShouldBe(0m);
 
         _bookRepositoryMock.Verify(
             repo => repo.GetByIdAsync(bookId, CancellationToken.None),

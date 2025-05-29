@@ -1,3 +1,4 @@
+using BookWorm.Catalog.Extensions;
 using BookWorm.Catalog.Grpc.Services;
 
 namespace BookWorm.Catalog.UnitTests.Grpc.Services;
@@ -11,8 +12,8 @@ public sealed class DecimalConversionTests
         var originalValue = 123.456789m;
 
         // Act
-        var protoDecimal = BookService.ToDecimal(originalValue);
-        var convertedBack = BookService.FromDecimal(protoDecimal);
+        var protoDecimal = DecimalValueExtensions.ToDecimal(originalValue);
+        var convertedBack = DecimalValueExtensions.FromDecimal(protoDecimal);
 
         // Assert
         convertedBack.ShouldBe(originalValue);
@@ -27,8 +28,8 @@ public sealed class DecimalConversionTests
         var originalValue = -98.123456789m;
 
         // Act
-        var protoDecimal = BookService.ToDecimal(originalValue);
-        var convertedBack = BookService.FromDecimal(protoDecimal);
+        var protoDecimal = DecimalValueExtensions.ToDecimal(originalValue);
+        var convertedBack = DecimalValueExtensions.FromDecimal(protoDecimal);
 
         // Assert
         convertedBack.ShouldBe(originalValue);
@@ -43,8 +44,8 @@ public sealed class DecimalConversionTests
         var originalValue = 0m;
 
         // Act
-        var protoDecimal = BookService.ToDecimal(originalValue);
-        var convertedBack = BookService.FromDecimal(protoDecimal);
+        var protoDecimal = DecimalValueExtensions.ToDecimal(originalValue);
+        var convertedBack = DecimalValueExtensions.FromDecimal(protoDecimal);
 
         // Assert
         convertedBack.ShouldBe(originalValue);
@@ -59,8 +60,8 @@ public sealed class DecimalConversionTests
         var originalValue = 42m;
 
         // Act
-        var protoDecimal = BookService.ToDecimal(originalValue);
-        var convertedBack = BookService.FromDecimal(protoDecimal);
+        var protoDecimal = DecimalValueExtensions.ToDecimal(originalValue);
+        var convertedBack = DecimalValueExtensions.FromDecimal(protoDecimal);
 
         // Assert
         convertedBack.ShouldBe(originalValue);
@@ -75,8 +76,8 @@ public sealed class DecimalConversionTests
         var originalValue = 1.123456789m;
 
         // Act
-        var protoDecimal = BookService.ToDecimal(originalValue);
-        var convertedBack = BookService.FromDecimal(protoDecimal);
+        var protoDecimal = DecimalValueExtensions.ToDecimal(originalValue);
+        var convertedBack = DecimalValueExtensions.FromDecimal(protoDecimal);
 
         // Assert
         convertedBack.ShouldBe(originalValue);
@@ -88,10 +89,10 @@ public sealed class DecimalConversionTests
     public void GivenNullDecimal_WhenConvertingFromDecimal_ThenShouldReturnZero()
     {
         // Arrange
-        Decimal? nullDecimal = null;
+        BookWorm.Catalog.Grpc.Services.Decimal? nullDecimal = null;
 
         // Act
-        var result = BookService.FromDecimal(nullDecimal!);
+        var result = DecimalValueExtensions.FromDecimal(nullDecimal!);
 
         // Assert
         result.ShouldBe(0m);
@@ -104,8 +105,8 @@ public sealed class DecimalConversionTests
         var originalValue = 0.9999999999m;
 
         // Act
-        var protoDecimal = BookService.ToDecimal(originalValue);
-        var convertedBack = BookService.FromDecimal(protoDecimal);
+        var protoDecimal = DecimalValueExtensions.ToDecimal(originalValue);
+        var convertedBack = DecimalValueExtensions.FromDecimal(protoDecimal);
 
         // Assert
         // Due to nanosecond precision (9 decimal places), values beyond that get rounded
@@ -121,8 +122,8 @@ public sealed class DecimalConversionTests
         var originalValue = 0.000000001m; // 1 nanosecond
 
         // Act
-        var protoDecimal = BookService.ToDecimal(originalValue);
-        var convertedBack = BookService.FromDecimal(protoDecimal);
+        var protoDecimal = DecimalValueExtensions.ToDecimal(originalValue);
+        var convertedBack = DecimalValueExtensions.FromDecimal(protoDecimal);
 
         // Assert
         convertedBack.ShouldBe(originalValue);
@@ -137,7 +138,7 @@ public sealed class DecimalConversionTests
         var tooLargeValue = (decimal)long.MaxValue + 1m;
 
         // Act & Assert
-        Should.Throw<ArgumentOutOfRangeException>(() => BookService.ToDecimal(tooLargeValue));
+        Should.Throw<ArgumentOutOfRangeException>(() => DecimalValueExtensions.ToDecimal(tooLargeValue));
     }
 
     [Test]
@@ -147,7 +148,7 @@ public sealed class DecimalConversionTests
         var tooSmallValue = (decimal)long.MinValue - 1m;
 
         // Act & Assert
-        Should.Throw<ArgumentOutOfRangeException>(() => BookService.ToDecimal(tooSmallValue));
+        Should.Throw<ArgumentOutOfRangeException>(() => DecimalValueExtensions.ToDecimal(tooSmallValue));
     }
 
     [Test]
@@ -157,8 +158,8 @@ public sealed class DecimalConversionTests
         var originalValue = -0.123456789m;
 
         // Act
-        var protoDecimal = BookService.ToDecimal(originalValue);
-        var convertedBack = BookService.FromDecimal(protoDecimal);
+        var protoDecimal = DecimalValueExtensions.ToDecimal(originalValue);
+        var convertedBack = DecimalValueExtensions.FromDecimal(protoDecimal);
 
         // Assert
         convertedBack.ShouldBe(originalValue);
