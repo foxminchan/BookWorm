@@ -136,14 +136,14 @@ public static class GetBasketQueryTests
                 {
                     Id = _bookIds[0],
                     Name = "Book 1",
-                    Price = 19.99,
-                    PriceSale = 15.99,
+                    Price = 19.99m,
+                    PriceSale = 15.99m,
                 },
                 new BookResponse
                 {
                     Id = _bookIds[1],
                     Name = "Book 2",
-                    Price = 29.99,
+                    Price = 29.99m,
                     PriceSale = 0,
                 },
             ];

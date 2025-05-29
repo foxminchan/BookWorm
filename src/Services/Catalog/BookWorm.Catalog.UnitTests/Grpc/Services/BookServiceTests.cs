@@ -50,8 +50,8 @@ public sealed class BookServiceTests
         result.ShouldNotBeNull();
         result.Id.ShouldBe(bookId.ToString());
         result.Name.ShouldBe("Test Book");
-        result.Price.ShouldBe(29.99d);
-        result.PriceSale.ShouldBe(19.99d);
+        result.Price.ShouldBe(29.99m);
+        result.PriceSale.ShouldBe(19.99m);
         result.Status.ShouldBe(BookStatus.InStock);
 
         _bookRepositoryMock.Verify(
@@ -168,14 +168,14 @@ public sealed class BookServiceTests
         result.Books.Count.ShouldBe(2);
         result.Books[0].Id.ShouldBe(bookIds[0].ToString());
         result.Books[0].Name.ShouldBe("Test Book 1");
-        result.Books[0].Price.ShouldBe(29.99d);
-        result.Books[0].PriceSale.ShouldBe(19.99d);
+        result.Books[0].Price.ShouldBe(29.99m);
+        result.Books[0].PriceSale.ShouldBe(19.99m);
         result.Books[0].Status.ShouldBe(BookStatus.InStock);
 
         result.Books[1].Id.ShouldBe(bookIds[1].ToString());
         result.Books[1].Name.ShouldBe("Test Book 2");
-        result.Books[1].Price.ShouldBe(29.99d);
-        result.Books[1].PriceSale.ShouldBe(19.99d);
+        result.Books[1].Price.ShouldBe(29.99m);
+        result.Books[1].PriceSale.ShouldBe(19.99m);
         result.Books[1].Status.ShouldBe(BookStatus.InStock);
 
         _bookRepositoryMock.Verify(
@@ -194,7 +194,7 @@ public sealed class BookServiceTests
 
         var loggerMock = new Mock<ILogger<BookService>>();
 
-        // Setup logger to return true for IsEnabled(LogLevel.Debug)
+        // Set up the logger to return true for IsEnabled(LogLevel.Debug)
         loggerMock.Setup(x => x.IsEnabled(LogLevel.Debug)).Returns(true);
 
         var bookService = new BookService(_bookRepositoryMock.Object, loggerMock.Object);
@@ -246,7 +246,7 @@ public sealed class BookServiceTests
 
         var loggerMock = new Mock<ILogger<BookService>>();
 
-        // Setup logger to return true for IsEnabled(LogLevel.Debug)
+        // Set up the logger to return true for IsEnabled(LogLevel.Debug)
         loggerMock.Setup(x => x.IsEnabled(LogLevel.Debug)).Returns(true);
 
         var bookService = new BookService(_bookRepositoryMock.Object, loggerMock.Object);

@@ -62,14 +62,14 @@ public sealed class CreateOrderCommandTests
                     {
                         Id = basketResponse.Items[0].Id,
                         Name = "Book 1",
-                        Price = 10.99,
+                        Price = 10.99m,
                     },
                     new BookResponse
                     {
                         Id = basketResponse.Items[1].Id,
                         Name = "Book 2",
-                        Price = 12.99,
-                        PriceSale = 10.99,
+                        Price = 12.99m,
+                        PriceSale = 10.99m,
                     },
                 },
             };
