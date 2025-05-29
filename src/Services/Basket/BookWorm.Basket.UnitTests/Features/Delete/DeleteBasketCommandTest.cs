@@ -26,7 +26,7 @@ public sealed class DeleteBasketCommandTest
         _claimsPrincipalMock = new();
 
         // Set up the claim using the KeycloakClaimTypes.Subject
-        // and ensure GetClaimValue extension method will work
+        // and ensure the GetClaimValue extension method will work
         var claim = new Claim(KeycloakClaimTypes.Subject, _userId);
         _claimsPrincipalMock.Setup(x => x.FindFirst(KeycloakClaimTypes.Subject)).Returns(claim);
 

@@ -24,7 +24,7 @@ public static class Extensions
             );
 
         services.AddScoped<IIngestionSource<Book>, BookDataIngestor>();
-        services.AddScoped<ISearch, HybridSearch>();
+        builder.AddSearchService();
 
         services
             .AddOpenTelemetry()
