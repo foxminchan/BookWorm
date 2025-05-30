@@ -70,6 +70,11 @@ resource ratingdb 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2024-08-0
   parent: postgres
 }
 
+resource chatdb 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2024-08-01' = {
+  name: 'chatdb'
+  parent: postgres
+}
+
 resource healthdb 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2024-08-01' = {
   name: 'healthdb'
   parent: postgres
@@ -115,6 +120,14 @@ resource ratingdb_connectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-01
   name: 'connectionstrings--ratingdb'
   properties: {
     value: 'Host=${postgres.properties.fullyQualifiedDomainName};Username=${administratorLogin};Password=${administratorLoginPassword};Database=ratingdb'
+  }
+  parent: keyVault
+}
+
+resource chatdb_connectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  name: 'connectionstrings--chatdb'
+  properties: {
+    value: 'Host=${postgres.properties.fullyQualifiedDomainName};Username=${administratorLogin};Password=${administratorLoginPassword};Database=chatdb'
   }
   parent: keyVault
 }

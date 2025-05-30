@@ -19,6 +19,8 @@ param redis_kv_outputs_name string
 
 param signalr_outputs_hostname string
 
+param postgres_kv_outputs_name string
+
 param chatting_identity_outputs_clientid string
 
 resource redis_kv_outputs_name_kv 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
@@ -28,6 +30,15 @@ resource redis_kv_outputs_name_kv 'Microsoft.KeyVault/vaults@2023-07-01' existin
 resource redis_kv_outputs_name_kv_connectionstrings__redis 'Microsoft.KeyVault/vaults/secrets@2023-07-01' existing = {
   name: 'connectionstrings--redis'
   parent: redis_kv_outputs_name_kv
+}
+
+resource postgres_kv_outputs_name_kv 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
+  name: postgres_kv_outputs_name
+}
+
+resource postgres_kv_outputs_name_kv_connectionstrings__chatdb 'Microsoft.KeyVault/vaults/secrets@2023-07-01' existing = {
+  name: 'connectionstrings--chatdb'
+  parent: postgres_kv_outputs_name_kv
 }
 
 resource chatting 'Microsoft.App/containerApps@2024-03-01' = {
@@ -40,6 +51,11 @@ resource chatting 'Microsoft.App/containerApps@2024-03-01' = {
           name: 'connectionstrings--redis'
           identity: chatting_identity_outputs_id
           keyVaultUrl: redis_kv_outputs_name_kv_connectionstrings__redis.properties.secretUri
+        }
+        {
+          name: 'connectionstrings--chatdb'
+          identity: chatting_identity_outputs_id
+          keyVaultUrl: postgres_kv_outputs_name_kv_connectionstrings__chatdb.properties.secretUri
         }
       ]
       activeRevisionsMode: 'Single'
@@ -113,6 +129,10 @@ resource chatting 'Microsoft.App/containerApps@2024-03-01' = {
             {
               name: 'services__mcptools__https__0'
               value: 'https://mcptools.internal.${aca_outputs_azure_container_apps_environment_default_domain}'
+            }
+            {
+              name: 'ConnectionStrings__chatdb'
+              secretRef: 'connectionstrings--chatdb'
             }
             {
               name: 'OTEL_EXPORTER_OTLP_ENDPOINT'

@@ -6,7 +6,7 @@ param location string
 
 param principalId string
 
-param postgres_username string = 'zPYrPdBreH'
+param postgres_username string = 'wsHsGwFGPx'
 
 @secure()
 param postgres_password string
@@ -139,6 +139,16 @@ module chatting_roles_redis_kv 'chatting-roles-redis-kv/chatting-roles-redis-kv.
   params: {
     location: location
     redis_kv_outputs_name: redis_kv.outputs.name
+    principalId: chatting_identity.outputs.principalId
+  }
+}
+
+module chatting_roles_postgres_kv 'chatting-roles-postgres-kv/chatting-roles-postgres-kv.bicep' = {
+  name: 'chatting-roles-postgres-kv'
+  scope: rg
+  params: {
+    location: location
+    postgres_kv_outputs_name: postgres_kv.outputs.name
     principalId: chatting_identity.outputs.principalId
   }
 }
