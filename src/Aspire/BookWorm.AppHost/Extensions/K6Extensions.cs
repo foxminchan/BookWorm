@@ -27,9 +27,9 @@ public static class K6Extensions
             builder
                 .AddK6(Components.K6)
                 .WithImagePullPolicy(ImagePullPolicy.Always)
-                .WithBindMount("Container/scripts", "/scripts", true)
-                .WithBindMount("Container/dist", "/home/k6")
-                .WithScript("/scripts/main.js", Random.Shared.Next(10, 100))
+                .WithBindMount("Container/k6", "/scripts", true)
+                .WithBindMount("Container/k6/dist", "/home/k6")
+                .WithScript("/scripts/dist/main.js")
                 .WithReference(entryPoint.Resource.GetEndpoint("http"))
                 .WaitFor(entryPoint);
         }
