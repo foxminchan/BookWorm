@@ -31,6 +31,16 @@ public static class K6Extensions
                 .WithBindMount("Container/k6/dist", "/home/k6")
                 .WithScript("/scripts/dist/main.js")
                 .WithReference(entryPoint.Resource.GetEndpoint("http"))
+                .WithEnvironment("K6_WEB_DASHBOARD", "true")
+                .WithEnvironment("K6_WEB_DASHBOARD_EXPORT", "dashboard-report.html")
+                .WithHttpEndpoint(
+                    targetPort: Components.K6Dashboard.ContainerPort,
+                    name: Components.K6Dashboard.Name
+                )
+                .WithUrlForEndpoint(
+                    Components.K6Dashboard.Name,
+                    url => url.DisplayText = "K6 Dashboard"
+                )
                 .WaitFor(entryPoint);
         }
     }
