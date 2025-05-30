@@ -378,4 +378,120 @@ public sealed class DecimalValueTests
         result.ShouldNotBeNull();
         result.ShouldBe(long.MinValue + (int.MinValue / 1_000_000_000m));
     }
+
+    [Test]
+    public void GivenDecimalValueWithExactNanoFactor_WhenConvertingToDecimal_ThenShouldReturnCorrectValue()
+    {
+        // Arrange
+        var decimalValue = new DecimalValue(1, 1_000_000_000);
+        const decimal expected = 2m; // 1 + (1_000_000_000 / 1_000_000_000)
+
+        // Act
+        decimal? result = decimalValue;
+
+        // Assert
+        result.ShouldBe(expected);
+    }
+
+    [Test]
+    public void GivenDecimalEqualToNanoFactor_WhenConvertingToDecimalValue_ThenShouldReturnCorrectValue()
+    {
+        // Arrange
+        const decimal value = 1_000_000_000m;
+
+        // Act
+        DecimalValue? result = value;
+
+        // Assert
+        result.ShouldNotBeNull();
+        result.Units.ShouldBe(1_000_000_000);
+        result.Nanos.ShouldBe(0);
+    }
+
+    [Test]
+    public void GivenNanoFactorPlusOne_WhenConvertingToDecimalValue_ThenShouldReturnCorrectValue()
+    {
+        // Arrange
+        const decimal value = 1_000_000_000.000000001m;
+
+        // Act
+        DecimalValue? result = value;
+
+        // Assert
+        result.ShouldNotBeNull();
+        result.Units.ShouldBe(1_000_000_000);
+        result.Nanos.ShouldBe(1);
+    }
+
+    [Test]
+    public void GivenExactlyOneNanoPrecision_WhenConvertingBothWays_ThenShouldMaintainPrecision()
+    {
+        // Arrange
+        const decimal originalValue = 0.000000001m; // Exactly 1 nano
+
+        // Act
+        DecimalValue? decimalValue = originalValue;
+        decimal? convertedBack = decimalValue;
+
+        // Assert
+        convertedBack.ShouldBe(originalValue);
+    }
+
+    [Test]
+    public void GivenNegativeNanoFactor_WhenConvertingToDecimal_ThenShouldReturnCorrectValue()
+    {
+        // Arrange
+        var decimalValue = new DecimalValue(1, -1_000_000_000);
+        const decimal expected = 0m; // 1 + (-1_000_000_000 / 1_000_000_000) = 1 - 1 = 0
+
+        // Act
+        decimal? result = decimalValue;
+
+        // Assert
+        result.ShouldBe(expected);
+    }
+
+    [Test]
+    public void GivenLargeNegativeNanos_WhenConvertingToDecimal_ThenShouldReturnCorrectValue()
+    {
+        // Arrange
+        var decimalValue = new DecimalValue(5, -2_000_000_000);
+        const decimal expected = 3m; // 5 + (-2_000_000_000 / 1_000_000_000) = 5 - 2 = 3
+
+        // Act
+        decimal? result = decimalValue;
+
+        // Assert
+        result.ShouldBe(expected);
+    }
+
+    [Test]
+    public void GivenSubNanoPrecisionDecimal_WhenConvertingToDecimalValue_ThenShouldTruncateToNano()
+    {
+        // Arrange
+        const decimal value = 0.0000000005m;
+
+        // Act
+        DecimalValue? result = value;
+
+        // Assert
+        result.ShouldNotBeNull();
+        result.Units.ShouldBe(0);
+        result.Nanos.ShouldBe(0); // Truncated because it's less than 1 nano
+    }
+
+    [Test]
+    public void GivenDecimalWithExactNanoFactorDivision_WhenConvertingToDecimalValue_ThenShouldReturnCorrectValue()
+    {
+        // Arrange
+        const decimal value = 999.999999999m; // 9 nines after decimal
+
+        // Act
+        DecimalValue? result = value;
+
+        // Assert
+        result.ShouldNotBeNull();
+        result.Units.ShouldBe(999);
+        result.Nanos.ShouldBe(999_999_999);
+    }
 }

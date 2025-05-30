@@ -18,7 +18,11 @@ public static class Extensions
             HealthStatus.Degraded
         );
 
-        services.AddMcpServer().WithHttpTransport().WithToolsFromAssembly();
+        services
+            .AddMcpServer()
+            .WithHttpTransport()
+            .WithToolsFromAssembly()
+            .WithPromptsFromAssembly();
 
         services
             .AddOpenTelemetry()
