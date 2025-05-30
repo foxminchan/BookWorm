@@ -40,7 +40,7 @@
 - [x] Established a testing strategy:
   - [x] Conducted service unit tests
   - [x] Established architecture testing strategy
-  - [x] Performed load testing with k6
+  - [x] Performed load testing with k6 (see [testing suite](./src/Aspire/BookWorm.AppHost/Container/scripts/README.md))
   - [ ] Planned integration tests
 
 ## Project Architecture

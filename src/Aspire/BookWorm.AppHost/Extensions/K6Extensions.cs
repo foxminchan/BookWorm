@@ -29,7 +29,7 @@ public static class K6Extensions
                 .WithImagePullPolicy(ImagePullPolicy.Always)
                 .WithBindMount("Container/scripts", "/scripts", true)
                 .WithBindMount("Container/dist", "/home/k6")
-                .WithScript("/scripts/main.js", Random.Shared.Next(10, 100))
+                .WithScript("/scripts/main.js")
                 .WithReference(entryPoint.Resource.GetEndpoint("http"))
                 .WaitFor(entryPoint);
         }
