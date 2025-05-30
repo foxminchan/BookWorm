@@ -40,4 +40,10 @@ public static class Components
             public static readonly string BlobContainer = $"{Application.Catalog}-{Blob}";
         }
     }
+
+    public static class K6Dashboard
+    {
+        public const string Name = "k6-dashboard";
+        public const int ContainerPort = 5665;
+    }
 }

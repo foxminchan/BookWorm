@@ -26,16 +26,17 @@ k6/
 │   └── config/
 │       └── index.ts           # K6 options and constants
 ├── dist/
-│   ├── main.js               # Compiled output (generated)
-│   ├── main.js.map           # Source map (generated)
-│   ├── summary.json          # Custom summary statistics (generated)
-│   └── summary.html          # HTML report (generated)
+│   ├── main.js                  # Compiled output (generated)
+│   ├── main.js.map              # Source map (generated)
+│   ├── summary.json             # Custom summary statistics (generated)
+│   ├── summary.html             # HTML report (generated)
+│   └── dashboard-report.html    # Dashboard report (generated)
 ├── package.json              # Dependencies and scripts
-├── tsconfig.json            # TypeScript configuration
-├── .prettierrc.json         # Prettier configuration
-├── .prettierignore          # Files to ignore for Prettier
-├── webpack.config.js        # Webpack bundling configuration
-└── README.md                # This file
+├── tsconfig.json             # TypeScript configuration
+├── .prettierrc.json          # Prettier configuration
+├── .prettierignore           # Files to ignore for Prettier
+├── webpack.config.js         # Webpack bundling configuration
+└── README.md                 # This file
 ```
 
 ## 📊 Test Scenarios
@@ -75,18 +76,39 @@ k6/
 - **Duration**: 1.5 minutes
 - **Behavior**: Rapid traffic changes, consecutive requests, recovery testing
 
+## Dashboard Integration
+
+The K6 tests can be integrated with the K6 Dashboard for real-time monitoring and analysis. The
+dashboard provides a visual representation of test metrics, allowing you to track performance over
+time and identify bottlenecks.
+
+![K6 Dashboard](../../../../../assets/k6-dashboard.png)
+
 ## 📈 Reporting
 
 After running tests, you'll get:
 
 - **summary.html**: Detailed HTML report with charts and graphs
+- **dashboard-report.html**: Interactive dashboard report
 - **summary.json**: Machine-readable JSON output for further analysis
 - **Console output**: Real-time metrics and summary statistics
 
 The tests generate comprehensive reports showing performance metrics, response times, and validation
 results. Below is an example of the HTML summary report:
 
+<details>
+<summary><em>K6 Reporter</em></summary>
+
 ![Summary HTML Output](../../../../../assets/k6-report.png)
+
+</details>
+
+<details>
+<summary><em>K6 Dashboard Reporter</em></summary>
+
+![Summary HTML Output](../../../../../assets/k6-dashboard-report.png)
+
+</details>
 
 ## 🛠️ Development
 
