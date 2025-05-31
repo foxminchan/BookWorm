@@ -1,0 +1,21 @@
+{
+  "name": "bookworm-docs",
+  "version": "1.0.0",
+  "description": "Architecture documentation for BookWorm using arc42 and VuePress",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "docs:build": "vuepress-vite build src",
+    "docs:clean-dev": "vuepress-vite dev src --clean-cache",
+    "docs:dev": "vuepress-vite dev src",
+    "docs:update-package": "npx vp-update"
+  },
+  "devDependencies": {
+    "@vuepress/bundler-vite": "2.0.0-rc.23",
+    "sass-embedded": "^1.89.1",
+    "vue": "^3.5.16",
+    "vuepress": "2.0.0-rc.23",
+    "mermaid": "11.6.0",
+    "vuepress-theme-hope": "2.0.0-rc.89"
+  }
+}
