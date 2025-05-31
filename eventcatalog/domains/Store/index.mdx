@@ -1,7 +1,7 @@
 ---
 id: store
 name: Store
-summary: The Store domain is responsible for managing the store's business capabilities and services
+summary: The core business domain encompassing all e-commerce operations for BookWorm
 version: 1.0.0
 owners:
   - nhanxnguyen
@@ -14,10 +14,18 @@ badges:
     backgroundColor: blue
     textColor: blue
     icon: RectangleGroupIcon
-  - content: Business Critical`
-    backgroundColor: yellow
-    textColor: yellow
+  - content: Business Critical
+    backgroundColor: red
+    textColor: red
     icon: ShieldCheckIcon
+  - content: Event-Driven
+    textColor: purple
+    backgroundColor: purple
+    icon: BoltIcon
+  - content: Microservices
+    textColor: blue
+    backgroundColor: blue
+    icon: CubeIcon
 ---
 
 <Tiles>
@@ -37,22 +45,48 @@ badges:
 
 ## Overview
 
-The Store domain is a strategic core domain within the BookWorm system, integrating functionalities from both the **Orders** and **Catalog** domains. It is responsible for managing the store's business capabilities and services, encompassing essential functionalities that directly impact the organization's competitive advantage and overall performance.
+The Store domain represents the heart of BookWorm's business operations, orchestrating all aspects of the online bookstore experience from product discovery to order fulfillment.
 
-## Subdomains
+## 🎯 Domain Vision
 
-The Store domain is composed of the following subdomains:
+To create a seamless, scalable, and maintainable e-commerce platform that delights book lovers while demonstrating modern software architecture best practices.
 
-- **Orders** - Manages the complete order lifecycle, from basket management to order fulfillment, payment processing, and customer notifications.
-- **Catalog** - Manages the product catalog, including book information, inventory, pricing, and user reviews. It provides the foundation for product discovery and browsing.
+## 🏗️ Strategic Design
 
-## Event Storming
+### Domain Boundaries
+
+The Store domain is strategically divided into two subdomains:
+
+1. **[Catalog Subdomain](/docs/domains/catalog/1.0.0)** - Core subdomain
+   - Product information management
+   - Search and discovery
+   - Ratings and reviews
+   - AI-powered recommendations
+
+2. **[Orders Subdomain](/docs/domains/orders/1.0.0)** - Core subdomain
+   - Shopping cart management
+   - Order processing workflow
+   - Payment orchestration
+   - Customer notifications
+
+### Ubiquitous Language
+
+| Term | Definition |
+|------|------------|
+| **Book** | A physical or digital publication available for purchase |
+| **Basket** | A temporary collection of items selected by a customer |
+| **Order** | A confirmed purchase request with payment information |
+| **Catalog** | The complete inventory of available books |
+| **Rating** | Customer feedback including stars and written reviews |
+| **Saga** | A distributed transaction pattern for order processing |
+
+## 💼 Event Storming
 
 We conducted an [event storming](https://www.eventstorming.com/) session for the Store domain to understand its complexities and subdomain interactions. This session helped us map key events, commands, and aggregates, aligning our technical implementation with business needs for robust functionality.
 
 <Miro boardId="uXjVIG4lIr0=/" moveToWidget="3458764623724644744" edit={false} />
 
-## High-level architecture
+## 📊 High-level architecture
 
 To effectively visualize and understand the architecture of the BookWorm system, we will employ the [C4 model](https://c4model.com/). This model allows us to represent the system at various levels of abstraction, providing a comprehensive view of its structure and interactions.
 
@@ -170,7 +204,7 @@ C4Container
     UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="2")
 ```
 
-## Interactive Architecture Diagram
+## 🔄 Interactive Architecture Diagram
 
 The following diagram provides an interactive view of the architecture of the BookWorm system. You can explore the components, their relationships, and the flow of data between them.
 
@@ -182,10 +216,69 @@ Below is the interactive event-driven architecture diagram for the BookWorm Stor
 
 <NodeGraph />
 
-## Service Level Agreements
+## 📈 Domain Metrics
 
-The following SLAs are defined for the Store domain:
+### Service Level Objectives (SLOs)
 
-- **SLA-001**: The system must be available 99.9% of the time.
-- **SLA-002**: The system must respond to requests within 1 second.
-- **SLA-003**: The system must be able to handle 1000 requests per second.
+| Metric | Target | Description |
+|--------|--------|-------------|
+| **Availability** | 99.9% | Uptime for critical services |
+| **Response Time** | < 200ms | P95 latency for API calls |
+| **Order Success Rate** | > 98% | Successful order completions |
+| **Event Processing** | < 1s | Time to process domain events |
+
+### Key Performance Indicators (KPIs)
+
+- **Orders per Hour**: Average throughput capacity
+- **Catalog Search Speed**: Time to return search results
+- **Cart Abandonment Rate**: Percentage of uncompleted orders
+- **Service Health Score**: Composite reliability metric
+
+## 📈 Domain Metrics
+
+### Service Level Objectives (SLOs)
+
+| Metric | Target | Description |
+|--------|--------|-------------|
+| **Availability** | 99.9% | Uptime for critical services |
+| **Response Time** | < 200ms | P95 latency for API calls |
+| **Order Success Rate** | > 98% | Successful order completions |
+| **Event Processing** | < 1s | Time to process domain events |
+
+### Key Performance Indicators (KPIs)
+
+- **Orders per Hour**: Average throughput capacity
+- **Catalog Search Speed**: Time to return search results
+- **Cart Abandonment Rate**: Percentage of uncompleted orders
+- **Service Health Score**: Composite reliability metric
+
+## 🛡️ Security & Compliance
+
+### Security Measures
+
+- **Authentication**: JWT-based user authentication
+- **Authorization**: Role-based access control (RBAC)
+- **Encryption**: TLS 1.3 for all communications
+- **Data Protection**: PCI DSS compliance for payments
+
+### Audit & Compliance
+
+- Complete audit trail via event sourcing
+- GDPR compliance for user data
+- Regular security assessments
+- Automated compliance checking
+
+## 🔍 Observability
+
+### Three Pillars
+
+1. **Metrics**: Prometheus + Grafana dashboards
+2. **Logging**: Structured logging with Serilog
+3. **Tracing**: Distributed tracing with OpenTelemetry
+
+### Monitoring Dashboards
+
+- Service health and availability
+- Business metrics and KPIs
+- Performance bottleneck detection
+- Error rate tracking

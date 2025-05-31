@@ -74,11 +74,12 @@ The Rating Service represents a distinct bounded context within the BookWorm eco
 
 ### Key Responsibilities
 
-- Collecting and storing user ratings and reviews
-- Calculating aggregate rating metrics for books
-- Validating feedback content against business rules
-- Publishing domain events when feedback changes
-
+- **Feedback Collection**: Capturing user ratings, reviews, and sentiment analysis
+- **Rating Aggregation**: Computing real-time rating metrics and statistics
+- **Content Moderation**: Validating and filtering review content for quality
+- **Event Broadcasting**: Publishing domain events for system-wide rating updates
+- **Analytics Support**: Providing rating trends and insights for business intelligence
+- **Fraud Detection**: Identifying and preventing rating manipulation
 ## Component Diagram
 
 ```mermaid
@@ -209,3 +210,26 @@ architecture-beta
 
     db:L -- R:server
 ```
+
+## Performance Optimizations
+
+- **Read Replicas**: Queries directed to read replicas for scalability
+- **Caching Strategy**: Multi-level caching with Redis for hot data
+- **Batch Processing**: Aggregated rating updates processed in batches
+- **Connection Pooling**: Optimized database connections with pooling
+- **Async Processing**: Non-blocking I/O throughout the stack
+
+## Key Metrics
+
+- **Business Metrics**
+  - Average rating per book
+  - Total feedbacks submitted
+  - Moderation approval rate
+  - User engagement rate
+
+- **Technical Metrics**
+  - API response times (P50, P95, P99)
+  - Cache hit ratio
+  - Event processing lag
+  - Database query performance
+  - Moderation service latency

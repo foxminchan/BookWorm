@@ -32,6 +32,32 @@ The query handler maps the domain entity to a BasketDto response through an auto
 
 ## Usage
 
+### Call GetBasket using grpcurl
+
+You can use [grpcurl](https://github.com/fullstorydev/grpcurl) to call the `GetBasket` method of the `BasketGrpcService` defined in your `basket.proto`:
+
 ```bash
-grpcurl api.bookworm.com:50051 bookworm.orders.services.BasketService.GetBasket -d '{"userId": "user-id"}'
+grpcurl -plaintext \
+  -d '{}' \
+  -H "Authorization: Bearer <token>" \
+  localhost:5001 \
+  BasketApi.BasketGrpcService/GetBasket
 ```
+
+- This endpoint does not require any request fields (uses `google.protobuf.Empty`).
+- Adjust the host/port (`localhost:5001`) as needed for your environment.
+- The response will be a `BasketResponse` message as defined in your proto:
+
+```json
+{
+  "id": "...",
+  "items": [
+    { "id": "...", "quantity": 2 },
+    // ... more items ...
+  ]
+}
+```
+
+<SchemaViewer file="response-200.json" maxHeight="500" id="response-200" />
+
+- The `Authorization` header is used to pass the JWT token for user authentication. Replace `<token>` with a valid JWT token.
