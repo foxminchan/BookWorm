@@ -92,6 +92,10 @@ For detailed deployment instructions, please consult the [deployment guide](./de
 
 Explore our [event catalog](https://bookwormdev.netlify.app/) for messaging patterns and API details.
 
+### Architecture Documentation
+
+For comprehensive architecture documentation, refer to the [arc42 documentation](https://foxminchan.github.io/BookWorm/).
+
 ## Contributing
 
 Contributions are welcome! Please read the [contribution guidelines](./.github/CONTRIBUTING.md) and [code of conduct](./.github/CODE-OF-CONDUCT.md) to learn how to participate.
