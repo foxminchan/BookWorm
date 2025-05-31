@@ -1,0 +1,32 @@
+{
+  "build": {
+    "content": [
+      {
+        "files": ["**.md", "**.yml"],
+        "src": "articles"
+      },
+      {
+        "files": ["index.md"]
+      },
+      {
+        "files": ["toc.yml"]
+      }
+    ],
+    "resource": [
+      {
+        "files": ["images/**"]
+      }
+    ],
+    "output": "_site",
+    "template": ["default"],
+    "globalMetadata": {
+      "_appName": "BookWorm Architecture Documentation",
+      "_appTitle": "BookWorm Architecture Documentation",
+      "_enableSearch": true,
+      "_gitContribute": {
+        "repo": "https://github.com/foxminchan/BookWorm",
+        "branch": "main"
+      }
+    }
+  }
+}
