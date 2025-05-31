@@ -12,6 +12,14 @@ badges:
     textColor: green
     backgroundColor: green
     icon: CubeTransparentIcon
+  - content: CQRS
+    textColor: blue
+    backgroundColor: blue
+    icon: CommandLineIcon
+  - content: Domain-Driven
+    textColor: orange
+    backgroundColor: orange
+    icon: CubeIcon
 sends:
   - id: UserCheckedOutEvent
     version: 1.0.0
@@ -93,6 +101,13 @@ repository:
 ## Overview
 
 The Ordering Service is a core bounded context in the BookWorm ecosystem responsible for managing the complete order lifecycle. Implemented using Domain-Driven Design principles, this service encapsulates all business logic related to order processing, from creation to fulfillment or cancellation.
+
+### Key Responsibilities
+
+- **Order Lifecycle Management**: Complete order processing from placement to completion
+- **Buyer Management**: Customer profile and address management
+- **Status Orchestration**: State machine implementation for order transitions
+- **Event Sourcing**: Maintains complete audit trail of all order changes
 
 ## Component Diagram
 

@@ -36,10 +36,6 @@ repository:
   url: https://github.com/foxminchan/BookWorm
 ---
 
-## Overview
-
-The Notification Service is a supporting service within BookWorm's microservices architecture, responsible for sending transactional emails to customers at critical points in the order lifecycle. Built using an event-driven approach, this service listens for integration events from other domains and transforms them into appropriate customer communications.
-
 <Tiles>
   <Tile
     icon="DocumentIcon"
@@ -60,6 +56,19 @@ The Notification Service is a supporting service within BookWorm's microservices
     description="This service receives messages from other services"
   />
 </Tiles>
+
+## Overview
+
+The Notification Service is a supporting service within BookWorm's microservices architecture, responsible for sending transactional emails to customers at critical points in the order lifecycle. Built using an event-driven approach, this service listens for integration events from other domains and transforms them into appropriate customer communications.
+
+### Key Responsibilities
+
+- **Event Processing**: Consumes order-related events from the message bus
+- **Email Composition**: Transforms events into well-formatted email messages
+- **Template Management**: Maintains and renders email templates with dynamic content
+- **Delivery Orchestration**: Manages email delivery through multiple providers
+- **Retry & Resilience**: Implements robust retry mechanisms for failed deliveries
+- **Audit Trail**: Maintains comprehensive logs of all notification attempts
 
 ## Component Diagram
 
@@ -100,27 +109,36 @@ C4Component
 
 <NodeGraph />
 
-## Technical Implementation
-
-The Notification Service is implemented using modern cloud-native practices:
-
-### Email Providers
-
-The service supports multiple email delivery mechanisms through a clean abstraction:
-
-- **Development Environment**: Uses local SMTP server (MailPit) for testing
-- **Production Environment**: Integrates with SendGrid for reliable email delivery
-- **Interface Abstraction**: Implements `ISmtpClient` interface for provider flexibility
-
 ## Message Flow
 
 The Notification Service processes the following commands:
 
-| Command                | Channel                     | Purpose                              |
-| ---------------------- | --------------------------- | ------------------------------------ |
-| `PlaceOrderCommand`    | notification-place-order    | Sends order confirmation emails      |
-| `CompleteOrderCommand` | notification-complete-order | Sends order completion notifications |
-| `CancelOrderCommand`   | notification-cancel-order   | Delivers order cancellation notices  |
+| Command                | Channel                     | Purpose                              | SLA      |
+| ---------------------- | --------------------------- | ------------------------------------ | -------- |
+| `PlaceOrderCommand`    | notification-place-order    | Sends order confirmation emails      | < 5 min  |
+| `CompleteOrderCommand` | notification-complete-order | Sends order completion notifications | < 10 min |
+| `CancelOrderCommand`   | notification-cancel-order   | Delivers order cancellation notices  | < 5 min  |
+
+### Event Processing Pipeline
+
+```mermaid
+stateDiagram-v2
+    [*] --> EventReceived: Order Event
+    EventReceived --> ValidateEvent: Parse & Validate
+    ValidateEvent --> LoadTemplate: Valid Event
+    ValidateEvent --> ErrorHandling: Invalid Event
+    LoadTemplate --> ComposeEmail: Template Found
+    LoadTemplate --> ErrorHandling: Template Missing
+    ComposeEmail --> SendEmail: Email Ready
+    SendEmail --> DeliverySuccess: Sent
+    SendEmail --> RetryQueue: Failed
+    RetryQueue --> SendEmail: Retry Attempt
+    RetryQueue --> DeadLetter: Max Retries
+    DeliverySuccess --> OutBox: Log Success
+    DeadLetter --> OutBox: Log Failure
+    OutBox --> [*]
+    ErrorHandling --> OutBox: Log Error
+```
 
 ## Email Templates
 
@@ -137,3 +155,43 @@ The Notification Service is deployed on Microsoft Azure, leveraging Azure Servic
 For `Development` environment, the service uses MailPit for email delivery.
 
 For `Production` environment, the service uses SendGrid for email delivery.
+
+```mermaid
+architecture-beta
+    group prod[Production Environment]
+    group dev[Development Environment]
+
+    service app(logos:docker)[Notification Service] in prod
+    service sg(logos:sendgrid)[SendGrid API] in prod
+    service bus(logos:rabbitmq)[RabbitMQ] in prod
+    service storage(logos:microsoft-azure)[Table Storage] in prod
+    service monitor(logos:microsoft-azure)[Azure Monitor] in prod
+
+    service appDev(logos:docker)[Notification Service] in dev
+    service mail(logos:docker)[MailPit SMTP] in dev
+    service busDev(logos:rabbitmq)[RabbitMQ] in dev
+
+    app:R --> L:sg
+    bus:R --> L:app
+    app:B --> T:storage
+    app:L --> R:monitor
+
+    busDev:R --> L:appDev
+    appDev:R --> L:mail
+```
+
+## Security Considerations
+
+- **PII Protection**: Customer data is encrypted at rest and in transit
+- **API Key Management**: SendGrid API keys stored in Azure Key Vault
+- **Rate Limiting**: Protection against notification spam
+- **Content Sanitization**: HTML content is sanitized to prevent XSS
+- **Audit Compliance**: GDPR-compliant data retention policies
+
+## Performance Optimizations
+
+- **Async Processing**: All operations are fully asynchronous
+- **Batch Processing**: Groups multiple notifications when possible
+- **Template Caching**: Compiled templates cached in memory
+- **Connection Pooling**: Reuses SMTP/HTTP connections
+- **Parallel Delivery**: Concurrent email sending with throttling

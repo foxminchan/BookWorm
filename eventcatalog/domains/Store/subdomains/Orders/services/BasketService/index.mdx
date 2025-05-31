@@ -12,6 +12,10 @@ badges:
     textColor: red
     backgroundColor: red
     icon: CircleStackIcon
+  - content: gRPC
+    textColor: blue
+    backgroundColor: blue
+    icon: ServerIcon
 sends:
   - id: BasketDeletedCompletedEvent
     version: 1.0.0
@@ -78,14 +82,13 @@ The Basket Service is a domain-centric microservice within our bounded context t
 
 As a core part of our Domain-Driven Design implementation, the Basket Service maintains its own dedicated Redis persistence store, ensuring proper encapsulation of the basket domain model. It serves as the system of record for the shopping intent of customers before this intent is transformed into an order through domain events.
 
-The service implements several key domain operations:
+### Key Responsibilities
 
-- Adding/removing items to the basket
-- Updating quantities of basket items
-- Managing the checkout process and transition to the Order bounded context
-
-Following tactical DDD patterns, the basket is modeled as an aggregate root with basket items as entities within its boundary, ensuring consistency through transactional integrity and proper domain invariants.
-
+- **Basket Lifecycle Management**: Creation, modification, and deletion of shopping baskets
+- **Item Management**: Adding, updating, and removing items with quantity validation
+- **Checkout Orchestration**: Coordinating the transition from basket to order
+- **State Persistence**: Maintaining basket state in Redis with configurable TTL
+- **Event Publishing**: Emitting domain events for basket state changes
 ## Component Diagram
 
 ```mermaid
@@ -116,12 +119,15 @@ C4Component
 
 ## Core Features
 
-| Feature                     | Description                                                                                               |
-| --------------------------- | --------------------------------------------------------------------------------------------------------- |
-| **Get Basket**              | Retrieves the current basket for an authenticated user, including all items and their quantities.         |
-| **Add Item to Basket**      | Allows customers to add items to their basket, with validation ensuring quantities are greater than zero. |
-| **Remove Item from Basket** | Enables customers to remove items from their basket, maintaining data consistency.                        |
-| **Update Item Quantity**    | Supports customers in updating the quantity of items in their basket, with built-in validation.           |
+| Feature                     | Description                                                                                               | Event Published                |
+| --------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| **Get Basket**              | Retrieves the current basket for an authenticated user, including all items and their quantities.         | -                              |
+| **Add Item to Basket**      | Allows customers to add items to their basket, with validation ensuring quantities are greater than zero. | `BasketItemAddedEvent`         |
+| **Remove Item from Basket** | Enables customers to remove items from their basket, maintaining data consistency.                        | `BasketItemRemovedEvent`       |
+| **Update Item Quantity**    | Supports customers in updating the quantity of items in their basket, with built-in validation.           | `BasketItemQuantityUpdatedEvent` |
+| **Clear Basket**            | Removes all items from the basket at once.                                                               | `BasketClearedEvent`           |
+| **Delete Basket**           | Permanently removes the basket from the system.                                                           | `BasketDeletedCompletedEvent`  |
+
 
 ## Architecture diagram
 
@@ -145,27 +151,35 @@ C4Component
 
 ## Infrastructure
 
-The Basket Service is deployed as a containerized application within the BookWorm ecosystem. It leverages cloud-native technologies for scalability and resilience, ensuring high availability and fault tolerance.
+The Basket Service is deployed as a containerized application within the BookWorm ecosystem, leveraging cloud-native technologies for scalability and resilience.
 
 ```mermaid
 architecture-beta
-    group api(logos:microsoft-azure)[API]
+    group api(logos:microsoft-azure)[API Layer]
+    group data(logos:microsoft-azure)[Data Layer]
+    group messaging(logos:microsoft-azure)[Messaging Layer]
 
-    service db(logos:redis)[Redis Database] in api
-    service server(logos:docker-icon)[gRPC Server] in api
+    service server(logos:docker-icon)[Application] in api
 
-    db:L -- R:server
+    service db(logos:redis)[Redis Primary] in data
+
+    service bus(logos:rabbitmq)[RabbitMQ] in messaging
+
+    server:L --> R:db
+    server:R --> L:bus
 ```
 
-The service is hosted on a cloud platform, utilizing Redis for high-performance data storage and container orchestration. This infrastructure setup enables seamless scaling and efficient resource utilization, supporting the dynamic demands of customer shopping activities.
+## Performance Optimizations
 
-## Technical Implementation
+- **Connection Pooling**: Redis connection multiplexing
+- **Caching Strategy**: L1 in-memory cache with L2 Redis cache
+- **Batch Operations**: Bulk item updates in single transactions
+- **Async/Await**: Non-blocking I/O throughout the stack
 
-The service is implemented in C# using:
+## Security Considerations
 
-- gRPC for high-performance API communication
-- Redis for data persistence
-- Domain-Driven Design patterns for business logic
-- Built-in validation using Data Annotations
-- Dependency injection for loose coupling
-- Logging for observability and debugging
+- **Authentication**: JWT bearer tokens validated on each request
+- **Authorization**: Customer can only access their own basket
+- **Input Validation**: All inputs sanitized and validated
+- **Rate Limiting**: Per-customer request throttling
+- **Data Encryption**: TLS for transit, optional Redis encryption at rest

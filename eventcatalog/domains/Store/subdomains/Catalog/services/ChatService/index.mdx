@@ -12,6 +12,14 @@ badges:
     textColor: green
     icon: ChatBubbleBottomCenterTextIcon
     backgroundColor: green
+  - content: Real-time
+    textColor: blue
+    icon: ArrowPathIcon
+    backgroundColor: blue
+  - content: MCP
+    textColor: orange
+    icon: CogIcon
+    backgroundColor: orange
 sends: []
 receives:
   - id: CreateChatCommand
@@ -72,6 +80,13 @@ The Chat Service is a specialized bounded context within the BookWorm ecosystem 
 - Integrating with the catalog service to access book metadata and information
 
 The domain model follows strategic DDD patterns with clearly defined aggregates, entities, and value objects. The Chat domain enforces business rules such as prompt validation, session management, and response generation.
+
+### Key Capabilities
+
+- **Conversational AI**: Natural language understanding and generation using state-of-the-art LLMs
+- **Context Management**: Maintains conversation history and context for coherent multi-turn dialogues
+- **Tool Integration**: Leverages Model Context Protocol (MCP) for dynamic tool usage
+- **Streaming Responses**: Real-time streaming of AI responses for better user experience
 
 ## Component Diagram
 
@@ -141,16 +156,21 @@ architecture-beta
     llm:L -- R:server
 ```
 
-## Security
+## Security Considerations
 
-The Chat Service implements several security measures to protect user data and ensure secure communication:
+- **Authentication**: JWT-based authentication with user context isolation
+- **Rate Limiting**: Per-user request throttling to prevent abuse
+- **Content Filtering**: Automated moderation of inappropriate content
+- **Data Privacy**: Conversation history encrypted at rest
+- **Prompt Injection Protection**: Input sanitization and validation
+- **API Key Management**: Secure storage of LLM API credentials in Azure Key Vault
 
-- TLS/SSL encryption for all API endpoints
-- JWT-based authentication for user sessions
-- Rate limiting to prevent abuse
-- Input validation and sanitization to prevent injection attacks
-- Secure storage of conversation history
+## Monitoring and Observability
 
-## API Documentation
+### Key Metrics
 
-The Chat Service exposes RESTful API endpoints for creating and managing chat sessions. The API is documented using the OpenAPI specification, which provides detailed information about available endpoints, request/response formats, and authentication requirements.
+- **Response Latency**: Time to first token and total generation time
+- **Token Usage**: Track token consumption per user and model
+- **Conversation Quality**: User satisfaction and engagement metrics
+- **Error Rates**: Failed generations and timeout occurrences
+- **Tool Usage**: Frequency and success rate of MCP tool calls

@@ -32,6 +32,34 @@ The query handler maps the domain entities to a list of BookDto responses throug
 
 ## Usage
 
+### Call ListBooks using grpcurl
+
+You can use [grpcurl](https://github.com/fullstorydev/grpcurl) to call the `GetBooks` (or `ListBooks`) method of the `BookGrpcService` defined in your `book.proto`:
+
 ```bash
-grpcurl api.bookworm.com:50051 bookworm.catalog.services.ProductService.ListBooks
+grpcurl -plaintext \
+  -d '{"bookIds": ["<BOOK_ID_1>", "<BOOK_ID_2>"]}' \
+  localhost:5001 \
+  CatalogApi.BookGrpcService/GetBooks
 ```
+
+- Replace `<BOOK_ID_1>`, `<BOOK_ID_2>`, etc. with actual book IDs (strings). To list all books, you may pass an empty array or omit the field if supported by your implementation.
+- Adjust the host/port (`localhost:5001`) as needed for your environment.
+- The response will be a `BooksResponse` message as defined in your proto:
+
+```json title="200 OK"
+{
+  "books": [
+    {
+      "id": "...",
+      "name": "...",
+      "price": { "units": 12, "nanos": 0 },
+      "priceSale": { "units": 10, "nanos": 0 },
+      "status": "InStock"
+    },
+    // ... more books ...
+  ]
+}
+```
+
+<SchemaViewer file="response-200.json" maxHeight="500" id="response-200" />

@@ -26,12 +26,42 @@ This gRPC endpoint follows Domain-Driven Design principles to retrieve a specifi
 
 The query handler maps the domain entity to a BookDto response through an auto-mapper profile, ensuring that domain implementation details remain encapsulated. The endpoint respects the aggregate boundaries and only exposes data appropriate for the presentation layer.
 
+### Key Features
+
+- **High Performance**: gRPC binary protocol for efficient data transfer
+- **Strong Typing**: Protocol buffer definitions ensure type safety
+- **Streaming Support**: Capable of server streaming for bulk operations
+- **Cross-Platform**: Works with any gRPC-compatible client
+
 ## Architecture
 
 <NodeGraph />
 
 ## Usage
 
+### Call GetBook using grpcurl
+
+You can use [grpcurl](https://github.com/fullstorydev/grpcurl) to call the `GetBook` method of the `BookGrpcService` defined in your `book.proto`:
+
 ```bash
-grpcurl api.bookworm.com:50051 bookworm.catalog.services.ProductService.GetBook -d '{"id": "book-id"}'
+grpcurl -plaintext \
+  -d '{"bookId": "<BOOK_ID>"}' \
+  localhost:5001 \
+  CatalogApi.BookGrpcService/GetBook
 ```
+
+- Replace `<BOOK_ID>` with the actual book ID (string).
+- Adjust the host/port (`localhost:5001`) as needed for your environment.
+- The response will be a `BookResponse` message as defined in your proto:
+
+```json title="200 OK"
+{
+  "id": "<BOOK_ID>",
+  "name": "Atomic Habits",
+  "price": { "units": 12, "nanos": 0 },
+  "priceSale": { "units": 10, "nanos": 0 },
+  "status": "InStock"
+}
+```
+
+<SchemaViewer file="response-200.json" maxHeight="500" id="response-200" />
