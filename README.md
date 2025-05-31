@@ -92,55 +92,6 @@ For detailed deployment instructions, please consult the [deployment guide](./de
 
 Explore our [event catalog](https://bookwormdev.netlify.app/) for messaging patterns and API details.
 
-## Documentation
-
-### Architecture Documentation
-
-BookWorm includes comprehensive architecture documentation using the [arc42 template](https://arc42.org) and [DocFX](https://dotnet.github.io/docfx/).
-
-#### Building Documentation Locally
-
-1. **Prerequisites**: Ensure DocFX is installed globally
-   ```bash
-   dotnet tool install --global docfx
-   ```
-
-2. **Build Documentation**:
-   ```bash
-   # On Linux/macOS
-   cd docs
-   ./build.sh
-   
-   # On Windows
-   cd docs
-   build.cmd
-   ```
-
-3. **Serve Documentation Locally**:
-   ```bash
-   # On Linux/macOS
-   ./serve.sh
-   
-   # On Windows
-   serve.cmd
-   ```
-
-4. **View Documentation**: Open http://localhost:8080 in your browser
-
-The architecture documentation includes:
-- Introduction and Goals
-- Architecture Constraints  
-- System Scope and Context
-- Solution Strategy
-- Building Block View
-- Runtime View
-- Deployment View
-- Cross-cutting Concepts
-- Architecture Decisions
-- Quality Requirements
-- Risks and Technical Debt
-- Glossary
-
 ## Contributing
 
 Contributions are welcome! Please read the [contribution guidelines](./.github/CONTRIBUTING.md) and [code of conduct](./.github/CODE-OF-CONDUCT.md) to learn how to participate.
