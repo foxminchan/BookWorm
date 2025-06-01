@@ -14,6 +14,6 @@ public static class Extensions
         services.AddRepositories(typeof(IChatApiMarker));
 
         // Configure Redis
-        builder.AddRedisClient(Components.Redis);
+        builder.AddRedisDistributedCache(Components.Redis);
     }
 }
