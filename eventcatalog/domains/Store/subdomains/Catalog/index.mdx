@@ -65,13 +65,17 @@ owners:
 
 ## Overview
 
-The Catalog domain is responsible for managing the products that are available for purchase in the BookWorm platform and handling product ratings and reviews. It consists of two main services:
+The Catalog domain is responsible for managing the products that are available for purchase in the BookWorm platform and handling product ratings and reviews. Built following our [microservices architecture](https://foxminchan.github.io/BookWorm/architecture/adr/adr-001-microservices-architecture.html) principles, it consists of three main services:
 
 1. **Product Service**: Serves as the central repository for all book-related information including metadata, inventory status, pricing, and categorization. It allows customers to browse the extensive collection of books, view detailed product information, and search based on various criteria.
 
 2. **Rating Service**: Manages customer reviews, ratings, and feedback for books in the catalog. It provides functionality for users to rate books, write reviews, and view aggregated rating statistics.
 
+3. **Chat Service**: Provides AI-powered conversational capabilities for book recommendations and customer support, implementing our [AI Integration Strategy](https://foxminchan.github.io/BookWorm/architecture/adr/adr-009-ai-integration.html).
+
 The domain provides robust management capabilities for product categories, series, collections, publishers, and user-generated content. It maintains relationships between books, such as series orders, related titles, author bibliographies, and user reviews.
+
+Data persistence follows our [PostgreSQL database strategy](https://foxminchan.github.io/BookWorm/architecture/adr/adr-004-postgresql-database.html), while service communication uses [event-driven patterns](https://foxminchan.github.io/BookWorm/architecture/adr/adr-002-event-driven-cqrs.html) for loose coupling.
 
 For administrators, the Catalog domain offers comprehensive management tools for both product information and user-generated content, allowing them to:
 
