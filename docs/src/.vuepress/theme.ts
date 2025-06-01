@@ -11,7 +11,7 @@ export default hopeTheme({
   },
   logo: "/assets/image/book.svg",
   repo: "foxminchan/BookWorm",
-  docsDir: "src",
+  docsDir: "docs/src",
   navbar,
   sidebar,
   footer:
@@ -32,6 +32,8 @@ export default hopeTheme({
     imgSize: true,
     include: true,
     mark: true,
+    markmap: true,
+    flowchart: true,
     plantuml: true,
     spoiler: true,
     stylize: [
@@ -56,8 +58,13 @@ export default hopeTheme({
   },
 
   plugins: {
+    catalog: true,
     components: {
       components: ["Badge", "VPCard"],
+    },
+    copyright: {
+      author: "Nhan Nguyen",
+      license: "MIT",
     },
     icon: {
       prefix: "fa6-solid:",

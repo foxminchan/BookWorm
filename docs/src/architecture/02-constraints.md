@@ -1,26 +1,32 @@
+---
+category:
+  - Architecture Documentation
+tag:
+  - arc42
+---
+
 # 2. Architecture Constraints
 
 ## 2.1 Technical Constraints
 
 ### Platform and Technology Stack
 
-| Constraint | Description | Rationale |
-|------------|-------------|-----------|
-| **.NET 9** | Latest .NET framework | Access to newest features and performance improvements |
-| **C# 13** | Latest C# language version | Modern language features and best practices |
-| **.NET Aspire** | Cloud-native application framework | Simplified cloud-native development and deployment |
-| **Azure Container Apps** | Primary deployment target | Managed container service with auto-scaling |
-| **Docker/Podman** | Containerization platform | Consistent deployment across environments |
+| Constraint               | Description                        | Rationale                                              |
+| ------------------------ | ---------------------------------- | ------------------------------------------------------ |
+| **.NET 9**               | Latest .NET framework              | Access to newest features and performance improvements |
+| **.NET Aspire**          | Cloud-native application framework | Simplified cloud-native development and deployment     |
+| **Azure Container Apps** | Primary deployment target          | Managed container service with auto-scaling            |
+| **Docker/Podman**        | Containerization platform          | Consistent deployment across environments              |
 
 ### Development Constraints
 
-| Constraint | Description | Impact |
-|------------|-------------|--------|
-| **Domain-Driven Design** | Mandatory architectural approach | Influences service boundaries and model design |
-| **Vertical Slice Architecture** | Required code organization | Affects project structure and feature implementation |
-| **Event-Driven Architecture** | Required communication pattern | Impacts service interaction and data consistency |
-| **CQRS Pattern** | Command Query Responsibility Segregation | Separates read and write operations |
-| **OpenAPI/AsyncAPI** | API documentation standards | All APIs must be properly documented |
+| Constraint                      | Description                              | Impact                                               |
+| ------------------------------- | ---------------------------------------- | ---------------------------------------------------- |
+| **Domain-Driven Design**        | Mandatory architectural approach         | Influences service boundaries and model design       |
+| **Vertical Slice Architecture** | Required code organization               | Affects project structure and feature implementation |
+| **Event-Driven Architecture**   | Required communication pattern           | Impacts service interaction and data consistency     |
+| **CQRS Pattern**                | Command Query Responsibility Segregation | Separates read and write operations                  |
+| **OpenAPI/AsyncAPI**            | API documentation standards              | All APIs must be properly documented                 |
 
 ## 2.2 Organizational Constraints
 
@@ -50,13 +56,13 @@
 
 ### Architecture Patterns
 
-| Pattern | Application | Justification |
-|---------|-------------|---------------|
-| **Microservices** | Service decomposition | Scalability and independent deployment |
-| **Event Sourcing** | Domain events storage | Audit trail and temporal queries |
-| **Outbox Pattern** | Reliable event publishing | Ensures message delivery consistency |
-| **Inbox Pattern** | Idempotent message processing | Prevents duplicate message processing |
-| **Saga Pattern** | Distributed transactions | Manages long-running business processes |
+| Pattern            | Application                   | Justification                           |
+| ------------------ | ----------------------------- | --------------------------------------- |
+| **Microservices**  | Service decomposition         | Scalability and independent deployment  |
+| **Event Sourcing** | Domain events storage         | Audit trail and temporal queries        |
+| **Outbox Pattern** | Reliable event publishing     | Ensures message delivery consistency    |
+| **Inbox Pattern**  | Idempotent message processing | Prevents duplicate message processing   |
+| **Saga Pattern**   | Distributed transactions      | Manages long-running business processes |
 
 ## 2.4 Infrastructure Constraints
 
@@ -79,12 +85,12 @@
 
 ### Third-Party Services
 
-| Service | Purpose | Constraint Impact |
-|---------|---------|-------------------|
-| **Keycloak** | Identity and access management | Authentication architecture dependency |
-| **SendGrid** | Email delivery service | Email functionality limitation |
-| **Azure Services** | Cloud infrastructure | Platform-specific implementation |
-| **AI Models** | Nomic Embed Text, Gemma 3 | GPU requirements for local development |
+| Service            | Purpose                        | Constraint Impact                      |
+| ------------------ | ------------------------------ | -------------------------------------- |
+| **Keycloak**       | Identity and access management | Authentication architecture dependency |
+| **SendGrid**       | Email delivery service         | Email functionality limitation         |
+| **Azure Services** | Cloud infrastructure           | Platform-specific implementation       |
+| **AI Models**      | Nomic Embed Text, Gemma 3      | GPU requirements for local development |
 
 ### Hardware Requirements
 

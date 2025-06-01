@@ -152,10 +152,10 @@ public static class Extensions
         // Configure health checks endpoints to use the configured request timeouts and cache policies
         healthChecks.CacheOutput(HealthChecks).WithRequestTimeout(HealthChecks);
 
-        // All health checks must pass for app to be considered ready to accept traffic after starting
+        // All health checks must pass for the app to be considered ready to accept traffic after starting
         healthChecks.MapHealthChecks(HealthEndpointPath);
 
-        // Only health checks tagged with the "live" tag must pass for app to be considered alive
+        // Only health checks tagged with the "live" tag must pass for the app to be considered alive
         healthChecks.MapHealthChecks(
             AlivenessEndpointPath,
             new() { Predicate = r => r.Tags.Contains("live") }
@@ -174,7 +174,8 @@ public static class Extensions
         {
             // Ensure that the HealthChecksUI endpoint is only accessible from configured hosts,
             // e.g., localhost:12345, hub.docker.internal, etc.
-            // as it contains more detailed information about the health of the app including the types of dependencies it has.
+            // as it contains more detailed information about the health of the app,
+            // including the types of dependencies it has.
             healthChecks
                 .MapHealthChecks(
                     path,
