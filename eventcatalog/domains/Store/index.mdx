@@ -55,7 +55,7 @@ To create a seamless, scalable, and maintainable e-commerce platform that deligh
 
 ### Domain Boundaries
 
-The Store domain is strategically divided into two subdomains:
+The Store domain is strategically divided into two subdomains based on our [microservices architecture](https://foxminchan.github.io/BookWorm/architecture/adr/adr-001-microservices-architecture.html):
 
 1. **[Catalog Subdomain](/docs/domains/catalog/1.0.0)** - Core subdomain
    - Product information management
@@ -84,11 +84,19 @@ The Store domain is strategically divided into two subdomains:
 
 We conducted an [event storming](https://www.eventstorming.com/) session for the Store domain to understand its complexities and subdomain interactions. This session helped us map key events, commands, and aggregates, aligning our technical implementation with business needs for robust functionality.
 
+Our implementation follows an [event-driven architecture with CQRS pattern](https://foxminchan.github.io/BookWorm/architecture/adr/adr-002-event-driven-cqrs.html) to ensure scalability and loose coupling between services.
+
 <Miro boardId="uXjVIG4lIr0=/" moveToWidget="3458764623724644744" edit={false} />
 
 ## 📊 High-level architecture
 
 To effectively visualize and understand the architecture of the BookWorm system, we will employ the [C4 model](https://c4model.com/). This model allows us to represent the system at various levels of abstraction, providing a comprehensive view of its structure and interactions.
+
+Our architecture follows several key architectural decisions:
+- [Microservices Architecture](https://foxminchan.github.io/BookWorm/architecture/adr/adr-001-microservices-architecture.html) for service boundaries
+- [.NET Aspire for Cloud-Native Development](https://foxminchan.github.io/BookWorm/architecture/adr/adr-003-aspire-cloud-native.html) for orchestration
+- [Container-First Deployment Strategy](https://foxminchan.github.io/BookWorm/architecture/adr/adr-007-container-deployment.html) for consistency
+- [API Gateway Pattern](https://foxminchan.github.io/BookWorm/architecture/adr/adr-008-api-gateway.html) for unified access
 
 ### System Context Diagram
 
@@ -204,6 +212,10 @@ C4Container
     UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="2")
 ```
 
+The data storage strategy is detailed in our [PostgreSQL database decision](https://foxminchan.github.io/BookWorm/architecture/adr/adr-004-postgresql-database.html), with event-driven communication patterns outlined in our [Event-Driven CQRS approach](https://foxminchan.github.io/BookWorm/architecture/adr/adr-002-event-driven-cqrs.html).
+
+AI-powered features are implemented following our [AI Integration Strategy](https://foxminchan.github.io/BookWorm/architecture/adr/adr-009-ai-integration.html), while real-time communication uses [SignalR](https://foxminchan.github.io/BookWorm/architecture/adr/adr-006-signalr-realtime.html).
+
 ## 🔄 Interactive Architecture Diagram
 
 The following diagram provides an interactive view of the architecture of the BookWorm system. You can explore the components, their relationships, and the flow of data between them.
@@ -256,7 +268,7 @@ Below is the interactive event-driven architecture diagram for the BookWorm Stor
 
 ### Security Measures
 
-- **Authentication**: JWT-based user authentication
+- **Authentication**: JWT-based user authentication via [Keycloak Identity Management](https://foxminchan.github.io/BookWorm/architecture/adr/adr-005-keycloak-identity.html)
 - **Authorization**: Role-based access control (RBAC)
 - **Encryption**: TLS 1.3 for all communications
 - **Data Protection**: PCI DSS compliance for payments
@@ -269,6 +281,8 @@ Below is the interactive event-driven architecture diagram for the BookWorm Stor
 - Automated compliance checking
 
 ## 🔍 Observability
+
+Our observability strategy is built on modern cloud-native principles, following our [.NET Aspire cloud-native development approach](https://foxminchan.github.io/BookWorm/architecture/adr/adr-003-aspire-cloud-native.html) and [container-first deployment strategy](https://foxminchan.github.io/BookWorm/architecture/adr/adr-007-container-deployment.html).
 
 ### Three Pillars
 

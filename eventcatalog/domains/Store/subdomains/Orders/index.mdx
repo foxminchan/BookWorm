@@ -52,7 +52,7 @@ owners:
 
 ## Overview
 
-The Ordering domain represents a strategic core domain within the BookWorm system, responsible for managing the complete lifecycle of customer orders from creation through fulfillment. As a core domain, it embodies critical business capabilities that directly impact the organization's competitive advantage.
+The Ordering domain represents a strategic core domain within the BookWorm system, responsible for managing the complete lifecycle of customer orders from creation through fulfillment. Built on our [microservices architecture](https://foxminchan.github.io/BookWorm/architecture/adr/adr-001-microservices-architecture.html), it embodies critical business capabilities that directly impact the organization's competitive advantage.
 
 <Tiles>
   <Tile
@@ -71,7 +71,7 @@ The Ordering domain represents a strategic core domain within the BookWorm syste
 
 ### Domain Characteristics
 
-- **Bounded Context**: The Ordering domain has a well-defined boundary with explicit integration points between its constituent services (Ordering, Basket, Finance, and Notification) through gRPC communication.
+- **Bounded Context**: The Ordering domain has a well-defined boundary with explicit integration points between its constituent services (Ordering, Basket, Finance, and Notification) through gRPC communication, managed via our [API Gateway](https://foxminchan.github.io/BookWorm/architecture/adr/adr-008-api-gateway.html).
 
 - **Service Architecture**: The domain is composed of four specialized services:
 
@@ -80,7 +80,9 @@ The Ordering domain represents a strategic core domain within the BookWorm syste
   - **Finance Service**: Manages payment processing and financial transactions
   - **Notification Service**: Handles customer communications and alerts
 
-- **Event Sourcing**: The domain implements event sourcing as its persistence mechanism, storing the complete history of order-related events rather than just the current state. This approach provides a comprehensive audit trail and enables temporal queries and state reconstruction at any point in time.
+- **Event Sourcing**: The domain implements event sourcing as its persistence mechanism following our [event-driven CQRS pattern](https://foxminchan.github.io/BookWorm/architecture/adr/adr-002-event-driven-cqrs.html), storing the complete history of order-related events rather than just the current state. This approach provides a comprehensive audit trail and enables temporal queries and state reconstruction at any point in time.
+
+- **Data Storage**: Uses [PostgreSQL as the primary database](https://foxminchan.github.io/BookWorm/architecture/adr/adr-004-postgresql-database.html) for transactional data and Redis for caching and session management.
 
 ### Business Rules and Invariants
 
