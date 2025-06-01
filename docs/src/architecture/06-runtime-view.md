@@ -1,3 +1,10 @@
+---
+category:
+  - Architecture Documentation
+tag:
+  - arc42
+---
+
 # 6. Runtime View
 
 ## 6.1 Important Scenarios
@@ -19,31 +26,31 @@ sequenceDiagram
     participant Catalog
     participant EventBus
     participant Notification
-    
+
     Customer->>WebApp: Add book to cart
     WebApp->>Gateway: POST /basket/items
     Gateway->>Basket: Add item to basket
     Basket-->>Gateway: Item added
     Gateway-->>WebApp: Success response
-    
+
     Customer->>WebApp: Proceed to checkout
     WebApp->>Gateway: POST /orders/checkout
     Gateway->>Ordering: Create order from basket
-    
+
     Ordering->>Basket: Get basket items
     Basket-->>Ordering: Basket contents
-    
+
     Ordering->>Catalog: Verify book availability
     Catalog-->>Ordering: Availability confirmed
-    
+
     Ordering->>EventBus: Publish OrderCreated event
     EventBus->>Finance: Process financial transaction
     Finance-->>EventBus: Transaction processed
-    
+
     Ordering->>EventBus: Publish OrderConfirmed event
     EventBus->>Notification: Send confirmation email
     EventBus->>Basket: Clear customer basket
-    
+
     Ordering-->>Gateway: Order confirmed
     Gateway-->>WebApp: Order success
     WebApp-->>Customer: Order confirmation
@@ -70,33 +77,33 @@ sequenceDiagram
     participant AIService
     participant SearchIndex
     participant Cache
-    
+
     User->>WebApp: Enter search query
     WebApp->>Gateway: GET /search?q=query
     Gateway->>Cache: Check cached results
-    
+
     alt Cache Hit
         Cache-->>Gateway: Return cached results
         Gateway-->>WebApp: Search results
     else Cache Miss
         Gateway->>Catalog: Process search request
-        
+
         Catalog->>AIService: Generate text embedding
         AIService-->>Catalog: Vector embedding
-        
+
         Catalog->>SearchIndex: Vector similarity search
         SearchIndex-->>Catalog: Similar books
-        
+
         Catalog->>SearchIndex: Text search
         SearchIndex-->>Catalog: Text matches
-        
+
         Catalog->>Catalog: Merge and rank results
         Catalog-->>Gateway: Ranked search results
-        
+
         Gateway->>Cache: Cache results
         Gateway-->>WebApp: Search results
     end
-    
+
     WebApp-->>User: Display search results
 ```
 
@@ -120,19 +127,19 @@ sequenceDiagram
     participant AIBot
     participant SupportAgent
     participant Database
-    
+
     Customer->>WebApp: Initiate chat
     WebApp->>ChatHub: Connect to chat
     ChatHub->>ChatService: Create conversation
     ChatService->>Database: Store conversation
-    
+
     Customer->>ChatHub: Send message
     ChatHub->>ChatService: Process message
     ChatService->>Database: Store message
-    
+
     ChatService->>AIBot: Analyze message intent
     AIBot-->>ChatService: Intent classification
-    
+
     alt Simple Query
         ChatService->>AIBot: Generate response
         AIBot-->>ChatService: AI response
@@ -142,13 +149,13 @@ sequenceDiagram
         ChatService->>SupportAgent: Route to human agent
         SupportAgent->>ChatHub: Join conversation
         ChatHub-->>Customer: Agent joined
-        
+
         Customer->>ChatHub: Explain issue
         ChatHub->>SupportAgent: Forward message
         SupportAgent->>ChatHub: Provide solution
         ChatHub-->>Customer: Agent response
     end
-    
+
     ChatService->>Database: Update conversation status
 ```
 
@@ -171,9 +178,9 @@ sequenceDiagram
     participant CatalogService
     participant RatingService
     participant EmailService
-    
+
     OrderingService->>EventBus: Publish OrderCompleted event
-    
+
     par Inventory Update
         EventBus->>CatalogService: OrderCompleted event
         CatalogService->>CatalogService: Update inventory
@@ -182,20 +189,20 @@ sequenceDiagram
         EventBus->>RatingService: OrderCompleted event
         RatingService->>EmailService: Send rating invitation
     end
-    
+
     Note over EventBus: Events processed independently
     Note over EventBus: Eventual consistency maintained
 ```
 
 ### Event Processing Patterns
 
-| Pattern | Implementation | Purpose |
-|---------|----------------|---------|
-| **Outbox Pattern** | Database transaction + event publishing | Ensures reliable event publishing |
-| **Inbox Pattern** | Idempotent event processing | Prevents duplicate processing |
-| **Event Sourcing** | Events as source of truth | Provides audit trail and temporal queries |
-| **Saga Orchestration** | Centralized workflow coordination | Manages complex business processes |
-| **Saga Choreography** | Decentralized event reactions | Enables loose coupling between services |
+| Pattern                | Implementation                          | Purpose                                   |
+| ---------------------- | --------------------------------------- | ----------------------------------------- |
+| **Outbox Pattern**     | Database transaction + event publishing | Ensures reliable event publishing         |
+| **Inbox Pattern**      | Idempotent event processing             | Prevents duplicate processing             |
+| **Event Sourcing**     | Events as source of truth               | Provides audit trail and temporal queries |
+| **Saga Orchestration** | Centralized workflow coordination       | Manages complex business processes        |
+| **Saga Choreography**  | Decentralized event reactions           | Enables loose coupling between services   |
 
 ## 6.6 System Startup and Health Monitoring
 
@@ -208,21 +215,21 @@ sequenceDiagram
     participant CatalogService
     participant OrderingService
     participant HealthMonitor
-    
+
     CatalogService->>ServiceRegistry: Register service
     OrderingService->>ServiceRegistry: Register service
-    
+
     Gateway->>ServiceRegistry: Discover services
     ServiceRegistry-->>Gateway: Service endpoints
-    
+
     loop Health Monitoring
         HealthMonitor->>CatalogService: Health check
         CatalogService-->>HealthMonitor: Health status
-        
+
         HealthMonitor->>OrderingService: Health check
         OrderingService-->>HealthMonitor: Health status
     end
-    
+
     Note over HealthMonitor: Unhealthy services removed from routing
 ```
 
@@ -238,36 +245,34 @@ sequenceDiagram
 
 ### Circuit Breaker Pattern Implementation
 
-```mermaid
-stateDiagram-v2
-    [*] --> Closed
-    Closed --> Open: Failure threshold reached
-    Open --> HalfOpen: Timeout expires
-    HalfOpen --> Closed: Success
-    HalfOpen --> Open: Failure
-    
-    note right of Closed
-        Normal operation
-        Requests flow through
-    end note
-    
-    note right of Open
-        Circuit breaker trips
-        Fast fail responses
-    end note
-    
-    note right of HalfOpen
-        Limited test requests
-        Evaluate service health
-    end note
+```flow:preset
+st=>start: Start
+closed=>operation: Closed State|past
+monitor=>condition: Monitor Failures?
+open=>operation: Open State|invalid
+timer=>condition: Timeout expired?
+halfopen=>operation: Half-Open State|current
+test=>condition: Test Success?
+end=>end: End
+
+st->closed
+closed->monitor
+monitor(yes,bottom)->open
+monitor(no,right)->closed
+open->timer
+timer(no,left)->open
+timer(yes,right)->halfopen
+halfopen->test
+test(yes,top)->closed
+test(no,left)->open
 ```
 
 ### Resilience Strategies
 
-| Strategy | Implementation | Use Case |
-|----------|----------------|----------|
-| **Retry Policies** | Exponential backoff with jitter | Transient failures |
-| **Circuit Breakers** | Polly library integration | Cascading failure prevention |
-| **Timeouts** | Configurable per operation | Resource protection |
-| **Bulkhead Isolation** | Separate thread pools | Fault isolation |
-| **Graceful Degradation** | Fallback responses | Service unavailability |
+| Strategy                 | Implementation                  | Use Case                     |
+| ------------------------ | ------------------------------- | ---------------------------- |
+| **Retry Policies**       | Exponential backoff with jitter | Transient failures           |
+| **Circuit Breakers**     | Polly library integration       | Cascading failure prevention |
+| **Timeouts**             | Configurable per operation      | Resource protection          |
+| **Bulkhead Isolation**   | Separate thread pools           | Fault isolation              |
+| **Graceful Degradation** | Fallback responses              | Service unavailability       |

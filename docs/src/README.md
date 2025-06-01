@@ -13,18 +13,18 @@ actions:
 copyright: false
 highlights:
   - features:
-      - title: Learn the Architecture
-        icon: graduation-cap
-        link: architecture/01-introduction-goals.html
-        details: Start with our <a href="architecture/01-introduction-goals">Introduction and Goals</a> to understand the system's purpose and explore the complete arc42 documentation structure.
+      - title: Deploy BookWorm
+        icon: rocket
+        link: https://github.com/foxminchan/BookWorm/blob/main/deploys/README.md
+        details: Easily deploy BookWorm to Azure Container Apps with our step-by-step <a href="https://github.com/foxminchan/BookWorm/blob/main/deploys/README.md" target="_blank">deployment guide</a> on your own Azure subscription.
       - title: Explore EDA
         icon: diagram-next
         link: https://bookwormdev.netlify.app/
         details: Dive into our interactive <a href="https://bookwormdev.netlify.app/" target="_blank">EventCatalog</a> to explore domains, services, and event flows with visual dependency graphs.
-      - title: Star on GitHub
-        icon: lines-leaning
-        link: https://github.com/foxminchan/BookWorm/stargazers
-        details: "Support the project by starring us on GitHub! Your support helps us grow and improve BookWorm continuously."
+      - title: Performance Testing
+        icon: stopwatch
+        link: https://github.com/foxminchan/BookWorm/blob/main/src/Aspire/BookWorm.AppHost/Container/k6/README.md
+        details: Check out our <a href="https://github.com/foxminchan/BookWorm/blob/main/src/Aspire/BookWorm.AppHost/Container/k6/README.md" target="_blank">testing documentation</a> to learn more about our testing strategies and how to run performance tests.
   - header: What is BookWorm?
     description: "BookWorm is a cloud-native e-commerce application built with .NET Aspire that demonstrates practical implementation of modern software architecture patterns including Domain-Driven Design, Vertical Slice Architecture, microservices patterns, event-driven architecture, AI integration, and comprehensive testing strategies."
   - features:

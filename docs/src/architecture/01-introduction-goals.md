@@ -1,3 +1,10 @@
+---
+category:
+  - Architecture Documentation
+tag:
+  - arc42
+---
+
 # 1. Introduction and Goals
 
 ## 1.1 Requirements Overview
@@ -24,23 +31,23 @@ BookWorm is a comprehensive e-commerce platform demonstrating practical implemen
 
 ## 1.2 Quality Goals
 
-| Priority | Quality Attribute | Motivation |
-|----------|-------------------|------------|
-| 1 | **Scalability** | System must handle varying loads and scale horizontally |
-| 2 | **Maintainability** | Clear architecture patterns for easy development and maintenance |
-| 3 | **Reliability** | High availability with proper error handling and resilience |
-| 4 | **Performance** | Fast response times with efficient resource utilization |
-| 5 | **Security** | Comprehensive authentication, authorization, and data protection |
+| Priority | Quality Attribute   | Motivation                                                       |
+| -------- | ------------------- | ---------------------------------------------------------------- |
+| 1        | **Scalability**     | System must handle varying loads and scale horizontally          |
+| 2        | **Maintainability** | Clear architecture patterns for easy development and maintenance |
+| 3        | **Reliability**     | High availability with proper error handling and resilience      |
+| 4        | **Performance**     | Fast response times with efficient resource utilization          |
+| 5        | **Security**        | Comprehensive authentication, authorization, and data protection |
 
 ## 1.3 Stakeholders
 
-| Role | Contact | Expectations |
-|------|---------|--------------|
-| **Development Team** | Core contributors | Maintainable, well-documented codebase with clear patterns |
-| **System Administrators** | DevOps engineers | Easy deployment, monitoring, and operational management |
-| **End Users** | Customers | Fast, reliable, and intuitive user experience |
-| **Technical Community** | Open source community | Educational value and best practice demonstration |
-| **Solution Architects** | Enterprise architects | Reference implementation for .NET Aspire patterns |
+| Role                      | Contact               | Expectations                                               |
+| ------------------------- | --------------------- | ---------------------------------------------------------- |
+| **Development Team**      | Core contributors     | Maintainable, well-documented codebase with clear patterns |
+| **System Administrators** | DevOps engineers      | Easy deployment, monitoring, and operational management    |
+| **End Users**             | Customers             | Fast, reliable, and intuitive user experience              |
+| **Technical Community**   | Open source community | Educational value and best practice demonstration          |
+| **Solution Architects**   | Enterprise architects | Reference implementation for .NET Aspire patterns          |
 
 ## 1.4 Success Criteria
 

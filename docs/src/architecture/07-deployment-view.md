@@ -1,3 +1,10 @@
+---
+category:
+  - Architecture Documentation
+tag:
+  - arc42
+---
+
 # 7. Deployment View
 
 ## 7.1 Infrastructure Overview
@@ -6,191 +13,113 @@ BookWorm is designed for cloud-native deployment on Azure Container Apps (ACA), 
 
 ### High-Level Deployment Architecture
 
-```mermaid
-graph TB
-    subgraph "Azure Cloud"
-        subgraph "Azure Container Apps Environment"
-            subgraph "Frontend Tier"
-                WebApp[🖥️ Web Application<br/>SPA React/Blazor]
-                AdminUI[⚙️ Admin Dashboard<br/>Management Interface]
-            end
-            
-            subgraph "API Gateway Tier"
-                Gateway[🌐 API Gateway<br/>YARP Reverse Proxy]
-            end
-            
-            subgraph "Microservices Tier"
-                CatalogAPI[📚 Catalog Service<br/>2-10 replicas]
-                OrderingAPI[🛒 Ordering Service<br/>2-5 replicas]
-                BasketAPI[🛍️ Basket Service<br/>1-3 replicas]
-                RatingAPI[⭐ Rating Service<br/>1-3 replicas]
-                ChatAPI[💬 Chat Service<br/>1-5 replicas]
-            end
-            
-            subgraph "Infrastructure Services"
-                Keycloak[🔐 Keycloak<br/>Identity Provider]
-                EventBus[📡 Event Bus<br/>RabbitMQ/Service Bus]
-            end
-        end
-        
-        subgraph "Data Services"
-            PostgreSQL[🗄️ Azure Database<br/>PostgreSQL Flexible]
-            Redis[⚡ Azure Cache<br/>Redis]
-            Storage[💾 Azure Blob Storage<br/>Static Assets]
-        end
-        
-        subgraph "External Services"
-            CDN[🌐 Azure CDN<br/>Content Delivery]
-            KeyVault[🔑 Azure Key Vault<br/>Secrets Management]
-            Monitor[📊 Azure Monitor<br/>Observability]
-        end
-    end
-    
-    subgraph "External APIs"
-        SendGrid[📧 SendGrid API]
-        AIServices[🤖 AI Model APIs<br/>Nomic, Gemma]
-    end
-    
-    WebApp --> Gateway
-    AdminUI --> Gateway
-    Gateway --> CatalogAPI
-    Gateway --> OrderingAPI
-    Gateway --> BasketAPI
-    Gateway --> RatingAPI
-    Gateway --> ChatAPI
-    
-    CatalogAPI --> PostgreSQL
-    OrderingAPI --> PostgreSQL
-    BasketAPI --> Redis
-    RatingAPI --> PostgreSQL
-    
-    CatalogAPI --> EventBus
-    OrderingAPI --> EventBus
-    RatingAPI --> EventBus
-    ChatAPI --> EventBus
-    
-    Gateway --> Keycloak
-    ChatAPI --> SendGrid
-    CatalogAPI --> AIServices
-    
-    WebApp --> CDN
-    CatalogAPI --> Storage
-    
-    Gateway --> KeyVault
-    CatalogAPI --> Monitor
-```
+@startuml BookWorm-Deployment
+!define AZURE_CLOUD_COLOR #0078D4
+!define CONTAINER_COLOR #E1F5FE
+!define SERVICE_COLOR #F3E5F5
+!define DATA_COLOR #E8F5E8
+!define EXTERNAL_COLOR #FFF3E0
+
+skinparam backgroundColor White
+skinparam nodeBackgroundColor AZURE_CLOUD_COLOR
+skinparam artifactBackgroundColor SERVICE_COLOR
+skinparam databaseBackgroundColor DATA_COLOR
+skinparam cloudBackgroundColor EXTERNAL_COLOR
+
+cloud "Azure Cloud" as AzureCloud {
+node "Azure Container Apps Environment" as ACAEnv {
+package "Frontend Tier" as FrontendTier {
+artifact "🖥️ Web Application\nSPA React/Blazor" as WebApp
+artifact "⚙️ Admin Dashboard\nManagement Interface" as AdminUI
+}
+
+        package "API Gateway Tier" as GatewayTier {
+            artifact "🌐 API Gateway\nYARP Reverse Proxy" as Gateway
+        }
+
+        package "Microservices Tier" as MicroservicesTier {
+            artifact "📚 Catalog Service\n2-10 replicas" as CatalogAPI
+            artifact "🛒 Ordering Service\n2-5 replicas" as OrderingAPI
+            artifact "🛍️ Basket Service\n1-3 replicas" as BasketAPI
+            artifact "⭐ Rating Service\n1-3 replicas" as RatingAPI
+            artifact "💬 Chat Service\n1-5 replicas" as ChatAPI
+        }
+
+        package "Infrastructure Services" as InfraServices {
+            artifact "🔐 Keycloak\nIdentity Provider" as Keycloak
+            artifact "📡 Event Bus\nRabbitMQ/Service Bus" as EventBus
+        }
+    }
+
+    package "Data Services" as DataServices {
+        database "🗄️ Azure Database\nPostgreSQL Flexible" as PostgreSQL
+        database "⚡ Azure Cache\nRedis" as Redis
+        database "💾 Azure Blob Storage\nStatic Assets" as Storage
+    }
+
+    package "External Services" as ExternalServices {
+        cloud "🌐 Azure CDN\nContent Delivery" as CDN
+        node "🔑 Azure Key Vault\nSecrets Management" as KeyVault
+        node "📊 Azure Monitor\nObservability" as Monitor
+    }
+
+}
+
+cloud "External APIs" as ExternalAPIs {
+cloud "📧 SendGrid API" as SendGrid
+cloud "🤖 AI Model APIs\nNomic, Gemma" as AIServices
+}
+
+' Frontend connections
+WebApp --> Gateway : HTTPS
+AdminUI --> Gateway : HTTPS
+
+' Gateway to microservices
+Gateway --> CatalogAPI : HTTP
+Gateway --> OrderingAPI : HTTP
+Gateway --> BasketAPI : HTTP
+Gateway --> RatingAPI : HTTP
+Gateway --> ChatAPI : HTTP/WebSocket
+
+' Microservices to databases
+CatalogAPI --> PostgreSQL : SQL
+OrderingAPI --> PostgreSQL : SQL
+BasketAPI --> Redis : Redis Protocol
+RatingAPI --> PostgreSQL : SQL
+
+' Event Bus connections
+CatalogAPI --> EventBus : AMQP
+OrderingAPI --> EventBus : AMQP
+RatingAPI --> EventBus : AMQP
+ChatAPI --> EventBus : AMQP
+
+' Authentication
+Gateway --> Keycloak : OIDC
+
+' External API connections
+ChatAPI --> SendGrid : HTTPS
+CatalogAPI --> AIServices : HTTPS
+
+' Azure services
+WebApp --> CDN : HTTPS
+CatalogAPI --> Storage : HTTPS
+Gateway --> KeyVault : HTTPS
+CatalogAPI --> Monitor : HTTPS
+
+@enduml
 
 ## 7.2 Infrastructure as Code with Bicep
 
-### Bicep Template Structure
-
-All Azure resources are deployed using Bicep templates for Infrastructure as Code:
-
-```bicep
-@description('The name of the Container Apps environment')
-param environmentName string = 'bookworm-env'
-
-@description('The location for all resources')
-param location string = resourceGroup().location
-
-@description('Log Analytics Workspace Name')
-param logAnalyticsWorkspaceName string = 'bookworm-logs'
-
-resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
-  name: logAnalyticsWorkspaceName
-  location: location
-  properties: {
-    sku: {
-      name: 'PerGB2018'
-    }
-    retentionInDays: 90
-  }
-}
-
-resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' = {
-  name: environmentName
-  location: location
-  properties: {
-    appLogsConfiguration: {
-      destination: 'log-analytics'
-      logAnalyticsConfiguration: {
-        customerId: logAnalyticsWorkspace.properties.customerId
-        sharedKey: logAnalyticsWorkspace.listKeys().primarySharedKey
-      }
-    }
-    workloadProfiles: [
-      {
-        name: 'Consumption'
-        workloadProfileType: 'Consumption'
-      }
-    ]
-  }
-}
-
-resource catalogApi 'Microsoft.App/containerApps@2024-03-01' = {
-  name: 'catalog-api'
-  location: location
-  properties: {
-    managedEnvironmentId: containerAppsEnvironment.id
-    configuration: {
-      ingress: {
-        external: true
-        targetPort: 8080
-        allowInsecure: false
-      }
-      secrets: [
-        {
-          name: 'connection-string'
-          value: connectionString
-        }
-      ]
-    }
-    template: {
-      containers: [
-        {
-          name: 'catalog-api'
-          image: 'bookworm.azurecr.io/catalog-api:latest'
-          resources: {
-            cpu: json('0.5')
-            memory: '1Gi'
-          }
-          env: [
-            {
-              name: 'ConnectionStrings__DefaultConnection'
-              secretRef: 'connection-string'
-            }
-          ]
-        }
-      ]
-      scale: {
-        minReplicas: 1
-        maxReplicas: 10
-        rules: [
-          {
-            name: 'http-rule'
-            http: {
-              metadata: {
-                concurrentRequests: '100'
-              }
-            }
-          }
-        ]
-      }
-    }
-  }
-}
-```
-
 ### Service Scaling Configuration
 
-| Service | Min Replicas | Max Replicas | Scaling Rules |
-|---------|--------------|--------------|---------------|
-| **Catalog API** | 2 | 10 | CPU > 70%, Memory > 80%, HTTP requests > 100/min |
-| **Ordering API** | 2 | 5 | CPU > 80%, HTTP requests > 50/min |
-| **Basket API** | 1 | 3 | CPU > 70%, HTTP requests > 200/min |
-| **Rating API** | 1 | 3 | HTTP requests > 30/min |
-| **Chat API** | 1 | 5 | WebSocket connections > 100, CPU > 70% |
-| **API Gateway** | 2 | 5 | CPU > 60%, HTTP requests > 500/min |
+| Service          | Min Replicas | Max Replicas | Scaling Rules                                    |
+| ---------------- | ------------ | ------------ | ------------------------------------------------ |
+| **Catalog API**  | 2            | 10           | CPU > 70%, Memory > 80%, HTTP requests > 100/min |
+| **Ordering API** | 2            | 5            | CPU > 80%, HTTP requests > 50/min                |
+| **Basket API**   | 1            | 3            | CPU > 70%, HTTP requests > 200/min               |
+| **Rating API**   | 1            | 3            | HTTP requests > 30/min                           |
+| **Chat API**     | 1            | 5            | WebSocket connections > 100, CPU > 70%           |
+| **API Gateway**  | 2            | 5            | CPU > 60%, HTTP requests > 500/min               |
 
 ## 7.4 Data Layer Deployment
 
@@ -198,139 +127,185 @@ resource catalogApi 'Microsoft.App/containerApps@2024-03-01' = {
 
 #### PostgreSQL (Primary Database)
 
-```yaml
-# Azure Database for PostgreSQL Flexible Server
-serverName: bookworm-postgres-prod
-location: East US
-tier: GeneralPurpose
-skuName: Standard_D2s_v3
-storageSize: 256GB
-backupRetentionDays: 30
-geoRedundantBackup: Enabled
-
-databases:
-  - catalog_db
-  - ordering_db
-  - rating_db
-  - event_store_db
-
-configuration:
-  shared_preload_libraries: pg_stat_statements
-  log_statement: all
-  log_min_duration_statement: 1000
+```bicep title="deploys/bicep/postgresql/postgresql.bicep"
+resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
+  name: take('postgres-${uniqueString(resourceGroup().id)}', 63)
+  location: location
+  properties: {
+    administratorLogin: administratorLogin
+    administratorLoginPassword: administratorLoginPassword
+    authConfig: {
+      activeDirectoryAuth: 'Disabled'
+      passwordAuth: 'Enabled'
+    }
+    availabilityZone: '1'
+    backup: {
+      backupRetentionDays: 7
+      geoRedundantBackup: 'Disabled'
+    }
+    highAvailability: {
+      mode: 'Disabled'
+    }
+    storage: {
+      storageSizeGB: 32
+    }
+    version: '16'
+  }
+  sku: {
+    tier: 'GeneralPurpose'
+  }
+  tags: {
+    'aspire-resource-name': 'postgres'
+    Environment: 'Production'
+    Projects: 'BookWorm'
+  }
+}
 ```
 
 #### Redis Cache
 
-```yaml
-# Azure Cache for Redis
-cacheName: bookworm-redis-prod
-location: East US
-sku:
-  name: Standard
-  family: C
-  capacity: 1
-enableNonSslPort: false
-redisConfiguration:
-  maxmemory-policy: allkeys-lru
-  maxmemory-delta: 10%
+```bicep title="deploys/bicep/redis/redis.bicep"
+resource redis 'Microsoft.Cache/redis@2024-03-01' = {
+  name: take('redis-${uniqueString(resourceGroup().id)}', 63)
+  location: location
+  properties: {
+    sku: {
+      name: 'Basic'
+      family: 'C'
+      capacity: 1
+    }
+    enableNonSslPort: false
+    minimumTlsVersion: '1.2'
+  }
+  tags: {
+    'aspire-resource-name': 'redis'
+    Environment: 'Production'
+    Projects: 'BookWorm'
+  }
+}
 ```
 
 ## 7.5 Network and Security Configuration
 
 ### Network Security
 
-```mermaid
-graph TB
-    subgraph "Internet"
-        Users[👥 Users]
-        AdminUsers[👤 Administrators]
-    end
-    
-    subgraph "Azure Front Door"
-        WAF[🛡️ Web Application Firewall]
-        CDN[🌐 Content Delivery Network]
-    end
-    
-    subgraph "Container Apps Environment"
-        subgraph "Public Subnet"
-            Gateway[🌐 API Gateway]
-            WebApp[🖥️ Web Application]
-        end
-        
-        subgraph "Private Subnet"
-            Services[🔧 Microservices]
-            InternalLB[⚖️ Internal Load Balancer]
-        end
-    end
-    
-    subgraph "Data Subnet"
-        Databases[🗄️ Databases]
-        Cache[⚡ Cache]
-    end
-    
-    Users --> WAF
-    AdminUsers --> WAF
-    WAF --> CDN
-    CDN --> Gateway
-    CDN --> WebApp
-    Gateway --> InternalLB
-    InternalLB --> Services
-    Services --> Databases
-    Services --> Cache
-```
+@startuml Network-Security
+!define INTERNET_COLOR #FFECB3
+!define AZURE_FRONT_DOOR_COLOR #E3F2FD
+!define PUBLIC_SUBNET_COLOR #E8F5E8
+!define PRIVATE_SUBNET_COLOR #FFF3E0
+!define DATA_SUBNET_COLOR #FCE4EC
+
+skinparam backgroundColor White
+skinparam cloudBackgroundColor INTERNET_COLOR
+skinparam nodeBackgroundColor AZURE_FRONT_DOOR_COLOR
+skinparam packageBackgroundColor PUBLIC_SUBNET_COLOR
+
+cloud "Internet" as Internet {
+actor "👥 Users" as Users
+actor "👤 Administrators" as AdminUsers
+}
+
+node "Azure Front Door" as AzureFrontDoor {
+component "🛡️ Web Application Firewall" as WAF
+component "🌐 Content Delivery Network" as CDN
+}
+
+package "Container Apps Environment" as ContainerAppsEnv {
+package "Public Subnet" as PublicSubnet {
+component "🌐 API Gateway" as Gateway
+component "🖥️ Web Application" as WebApp
+}
+
+    package "Private Subnet" as PrivateSubnet {
+        component "🔧 Microservices" as Services
+        component "⚖️ Internal Load Balancer" as InternalLB
+    }
+
+}
+
+package "Data Subnet" as DataSubnet {
+database "🗄️ Databases" as Databases
+database "⚡ Cache" as Cache
+}
+
+' Network flow connections
+Users --> WAF : HTTPS
+AdminUsers --> WAF : HTTPS
+WAF --> CDN : Filtered Traffic
+CDN --> Gateway : Load Balanced
+CDN --> WebApp : Static Content
+Gateway --> InternalLB : Internal Routing
+InternalLB --> Services : Service Discovery
+Services --> Databases : Secure Connection
+Services --> Cache : Redis Protocol
+
+@enduml
 
 ### Security Configuration
 
-| Component | Security Measure | Implementation |
-|-----------|------------------|----------------|
-| **API Gateway** | TLS termination, Rate limiting | Azure Container Apps ingress |
-| **Services** | mTLS, JWT validation | .NET Aspire security middleware |
-| **Databases** | Private endpoints, SSL only | Azure private link |
-| **Secrets** | Key Vault integration | Managed identity authentication |
-| **Network** | NSG rules, Private DNS | Azure VNET configuration |
+| Component       | Security Measure               | Implementation                  |
+| --------------- | ------------------------------ | ------------------------------- |
+| **API Gateway** | TLS termination, Rate limiting | Azure Container Apps ingress    |
+| **Services**    | mTLS, JWT validation           | .NET Aspire security middleware |
+| **Databases**   | Private endpoints, SSL only    | Azure private link              |
+| **Secrets**     | Key Vault integration          | Managed identity authentication |
+| **Network**     | NSG rules, Private DNS         | Azure VNET configuration        |
 
 ## 7.6 CI/CD Pipeline
 
 ### Deployment Pipeline
 
-```mermaid
-graph LR
-    subgraph "Source Control"
-        GitHub[📂 GitHub Repository]
-    end
-    
-    subgraph "Build Pipeline"
-        Build[🔨 Build & Test]
-        Security[🔒 Security Scan]
-        Package[📦 Container Build]
-    end
-    
-    subgraph "Registry"
-        ACR[📋 Azure Container Registry]
-    end
-    
-    subgraph "Deployment Stages"
-        Dev[🧪 Development]
-        Staging[🎭 Staging]
-        Prod[🚀 Production]
-    end
-    
-    subgraph "Monitoring"
-        Monitor[📊 Azure Monitor]
-        Alerts[🚨 Alerting]
-    end
-    
-    GitHub --> Build
-    Build --> Security
-    Security --> Package
-    Package --> ACR
-    ACR --> Dev
-    Dev --> Staging
-    Staging --> Prod
-    Prod --> Monitor
-    Monitor --> Alerts
-```
+@startuml CICD-Pipeline
+!define SOURCE_COLOR #E8F5E8
+!define BUILD_COLOR #E3F2FD
+!define REGISTRY_COLOR #FFF3E0
+!define DEPLOY_COLOR #F3E5F5
+!define MONITOR_COLOR #FFECB3
+
+skinparam backgroundColor White
+skinparam packageBackgroundColor SOURCE_COLOR
+skinparam nodeBackgroundColor BUILD_COLOR
+skinparam databaseBackgroundColor REGISTRY_COLOR
+skinparam cloudBackgroundColor DEPLOY_COLOR
+
+package "Source Control" as SourceControl {
+component "📂 GitHub Repository" as GitHub
+}
+
+node "Build Pipeline" as BuildPipeline {
+component "🔨 Build & Test" as Build
+component "🔒 Security Scan" as Security
+component "📦 Container Build" as Package
+}
+
+database "Registry" as Registry {
+component "📋 Azure Container Registry" as ACR
+}
+
+cloud "Deployment Stages" as DeploymentStages {
+component "🧪 Development" as Dev
+component "🎭 Staging" as Staging
+component "🚀 Production" as Prod
+}
+
+package "Monitoring" as Monitoring {
+component "📊 Azure Monitor" as Monitor
+component "🚨 Alerting" as Alerts
+}
+
+' Pipeline flow
+GitHub --> Build : Source Code
+Build --> Security : Artifacts
+Security --> Package : Verified Code
+Package --> ACR : Container Images
+ACR --> Dev : Deploy
+Dev --> Staging : Promote
+Staging --> Prod : Release
+Prod --> Monitor : Telemetry
+Monitor --> Alerts : Notifications
+
+@enduml
 
 ### Infrastructure as Code
 
@@ -342,28 +317,17 @@ az deployment group create \
   --parameters @parameters/prod.json
 ```
 
-### Health Check Configuration
-
-```csharp
-// Health check endpoints for each service
-services.AddHealthChecks()
-    .AddCheck("database", () => CheckDatabaseConnection())
-    .AddCheck("external-api", () => CheckExternalAPIs())
-    .AddCheck("memory", () => CheckMemoryUsage())
-    .AddCheck("disk-space", () => CheckDiskSpace());
-```
-
 ## 7.8 Disaster Recovery
 
 ### Backup Strategy
 
-| Component | Backup Method | Retention | Recovery Time |
-|-----------|---------------|-----------|---------------|
-| **PostgreSQL** | Automated daily backups | 30 days | < 1 hour |
-| **Redis** | Data persistence enabled | Real-time | < 5 minutes |
-| **Azure Table Storage** | Automatic backups | 30 days | < 30 minutes |
-| **Application Code** | Container registry | Version-based | < 10 minutes |
-| **Configuration** | Key Vault backup | 90 days | < 5 minutes |
+| Component               | Backup Method            | Retention     | Recovery Time |
+| ----------------------- | ------------------------ | ------------- | ------------- |
+| **PostgreSQL**          | Automated daily backups  | 30 days       | < 1 hour      |
+| **Redis**               | Data persistence enabled | Real-time     | < 5 minutes   |
+| **Azure Table Storage** | Automatic backups        | 30 days       | < 30 minutes  |
+| **Application Code**    | Container registry       | Version-based | < 10 minutes  |
+| **Configuration**       | Key Vault backup         | 90 days       | < 5 minutes   |
 
 ### Recovery Procedures
 

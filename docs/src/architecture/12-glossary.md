@@ -1,3 +1,10 @@
+---
+category:
+  - Architecture Documentation
+tag:
+  - arc42
+---
+
 # 12. Glossary
 
 ## A
@@ -270,4 +277,4 @@
 
 ---
 
-*This glossary provides definitions for terms used throughout the BookWorm architecture documentation. It serves as a reference for developers, stakeholders, and anyone working with or studying the system.*
+_This glossary provides definitions for terms used throughout the BookWorm architecture documentation. It serves as a reference for developers, stakeholders, and anyone working with or studying the system._

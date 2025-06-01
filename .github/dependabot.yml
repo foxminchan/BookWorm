@@ -51,7 +51,13 @@ updates:
     schedule:
       interval: weekly
     commit-message:
-      prefix: "NPM"
+      prefix: "NPM (Event Catalog)"
+  - package-ecosystem: "npm"
+    directory: "/docs"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "NPM (VuePress)"
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
