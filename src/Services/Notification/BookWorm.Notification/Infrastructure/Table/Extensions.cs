@@ -8,10 +8,7 @@ public static class Extensions
     {
         var services = builder.Services;
 
-        builder.AddAzureTableClient(
-            Components.Azure.Storage.Table,
-            settings => settings.DisableHealthChecks = true
-        );
+        builder.AddAzureTableClient(Components.Azure.Storage.Table);
 
         services.AddScoped<ITableService, TableService>();
     }

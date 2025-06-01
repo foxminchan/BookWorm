@@ -13,6 +13,7 @@ public static class Extensions
         builder
             .AddOllamaApiClient(Components.Ollama.Chat)
             .AddChatClient()
+            .UseDistributedCache()
             .UseFunctionInvocation()
             .UseOpenTelemetry(configure: c =>
                 c.EnableSensitiveData = builder.Environment.IsDevelopment()

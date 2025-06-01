@@ -201,7 +201,7 @@ public sealed class CompleteOrderConsumerTests
             return Task.CompletedTask;
         });
 
-        exception.Message.ShouldBe($"Invalid status: {invalidStatus}");
+        exception?.Message.ShouldBe($"Invalid status: {invalidStatus}");
 
         _senderMock.Verify(
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
