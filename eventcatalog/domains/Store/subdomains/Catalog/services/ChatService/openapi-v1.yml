@@ -164,7 +164,7 @@ paths:
                         - id: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
                           text: "What are the top science fiction books available?"
                           role: "user"
-                          parentMessageId: null
+                          parentMessageId: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
                           createdAt: "2023-10-01T12:00:00Z"
                         - id: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
                           text: "Here are some recommendations: Dune, Neuromancer, Foundation."
@@ -274,7 +274,7 @@ paths:
                   - id: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
                     text: "What are the top science fiction books available?"
                     role: "user"
-                    parentMessageId: null
+                    parentMessageId: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
                     createdAt: "2023-10-01T12:00:00Z"
         "404":
           description: Not Found
@@ -360,6 +360,13 @@ paths:
       responses:
         "101":
           description: Switching Protocols - WebSocket connection established
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: string
+              example: "Chat stream endpoint is available."
         "401":
           description: Unauthorized - Access token is missing or invalid.
 components:
@@ -464,7 +471,9 @@ components:
           description: The role of the message sender (e.g., user, assistant)
           example: "user"
         parentMessageId:
-          type: string
+          type:
+            - "string"
+            - "null"
           format: uuid
           description: The ID of the parent message, if any
           example: "01961f13-64ef-7dbb-84a1-25114e2e0ca4"
