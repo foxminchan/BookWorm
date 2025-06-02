@@ -26,7 +26,7 @@ public sealed class DeleteBasketCompleteConsumerTests
         _documentSessionMock
             .Setup(x => x.Events)
             .Returns(
-                Mock.Of<IEventStore>(store =>
+                Mock.Of<IEventStoreOperations>(store =>
                     store.WriteToAggregate(
                         It.IsAny<Guid>(),
                         It.IsAny<Action<IEventStream<OrderSummary>>>(),
@@ -70,7 +70,7 @@ public sealed class DeleteBasketCompleteConsumerTests
         _documentSessionMock
             .Setup(x => x.Events)
             .Returns(
-                Mock.Of<IEventStore>(store =>
+                Mock.Of<IEventStoreOperations>(store =>
                     store.WriteToAggregate(
                         It.IsAny<Guid>(),
                         It.IsAny<Action<IEventStream<OrderSummary>>>(),
@@ -116,7 +116,7 @@ public sealed class DeleteBasketCompleteConsumerTests
         _documentSessionMock
             .Setup(x => x.Events)
             .Returns(
-                Mock.Of<IEventStore>(store =>
+                Mock.Of<IEventStoreOperations>(store =>
                     store.WriteToAggregate(
                         It.IsAny<Guid>(),
                         It.IsAny<Action<IEventStream<OrderSummary>>>(),
@@ -163,7 +163,7 @@ public sealed class DeleteBasketCompleteConsumerTests
         _documentSessionMock
             .Setup(x => x.Events)
             .Returns(
-                Mock.Of<IEventStore>(store =>
+                Mock.Of<IEventStoreOperations>(store =>
                     store.WriteToAggregate(
                         It.IsAny<Guid>(),
                         It.IsAny<Action<IEventStream<OrderSummary>>>(),
@@ -183,7 +183,7 @@ public sealed class DeleteBasketCompleteConsumerTests
         // Act
         await harness.Bus.Publish(command);
 
-        // Wait a bit longer than the delay to ensure task completes
+        // Wait a bit longer than the delay to ensure the task completes
         await Task.Delay(delayTime.Add(TimeSpan.FromMilliseconds(50)));
 
         // Assert

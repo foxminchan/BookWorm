@@ -1,6 +1,4 @@
-﻿using BookWorm.Constants.Core;
-
-namespace BookWorm.Ordering.Infrastructure.EntityConfigurations;
+﻿namespace BookWorm.Ordering.Infrastructure.EntityConfigurations;
 
 internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
 {

@@ -8,11 +8,11 @@ namespace BookWorm.Ordering.UnitTests.Domain;
 public sealed class OrderProjectionTests
 {
     private readonly Faker<Order> _orderFaker;
-    private readonly Projection _projection;
+    private readonly OrderProjection _orderProjection;
 
     public OrderProjectionTests()
     {
-        _projection = new();
+        _orderProjection = new();
 
         _orderFaker = new Faker<Order>()
             .RuleFor(o => o.Id, _ => Guid.CreateVersion7())
@@ -25,7 +25,7 @@ public sealed class OrderProjectionTests
         // No explicit assertions needed as the constructor behavior is validated
         // through the Apply method tests. If identities weren't properly set up,
         // the Apply methods wouldn't work correctly.
-        _projection.ShouldNotBeNull();
+        _orderProjection.ShouldNotBeNull();
     }
 
     [Test]
@@ -33,14 +33,15 @@ public sealed class OrderProjectionTests
     {
         // Arrange
         var orderId = Guid.CreateVersion7();
-        var totalMoney = 123.45m;
+        const decimal totalMoney = 123.45m;
         var info = new OrderSummaryInfo();
         var command = new DeleteBasketCompleteCommand(orderId, totalMoney);
 
         // Act
-        var result = _projection.Apply(info, command);
+        var result = _orderProjection.Create(info, command);
 
         // Assert
+        result.Id.ShouldBe(orderId);
         result.Status.ShouldBe(Status.New);
         result.TotalPrice.ShouldBe(totalMoney);
     }
@@ -54,7 +55,7 @@ public sealed class OrderProjectionTests
         var @event = new OrderCancelledEvent(order);
 
         // Act
-        var result = _projection.Apply(info, @event);
+        var result = _orderProjection.Apply(info, @event);
 
         // Assert
         result.Status.ShouldBe(Status.Cancelled);
@@ -70,7 +71,7 @@ public sealed class OrderProjectionTests
         var @event = new OrderCompletedEvent(order);
 
         // Act
-        var result = _projection.Apply(info, @event);
+        var result = _orderProjection.Apply(info, @event);
 
         // Assert
         result.Status.ShouldBe(Status.Completed);
@@ -82,7 +83,7 @@ public sealed class OrderProjectionTests
     {
         // Arrange
         var orderId = Guid.CreateVersion7();
-        var totalMoney = 123.45m;
+        const decimal totalMoney = 123.45m;
         var info = new OrderSummaryInfo
         {
             Id = Guid.CreateVersion7(),
@@ -92,10 +93,11 @@ public sealed class OrderProjectionTests
         var command = new DeleteBasketCompleteCommand(orderId, totalMoney);
 
         // Act
-        var result = _projection.Apply(info, command);
+        var result = _orderProjection.Create(info, command);
 
         // Assert
         result.ShouldBeSameAs(info); // Should modify the same object
+        result.Id.ShouldBe(orderId);
         result.Status.ShouldBe(Status.New);
         result.TotalPrice.ShouldBe(totalMoney);
     }
@@ -114,7 +116,7 @@ public sealed class OrderProjectionTests
         var @event = new OrderCancelledEvent(order);
 
         // Act
-        var result = _projection.Apply(info, @event);
+        var result = _orderProjection.Apply(info, @event);
 
         // Assert
         result.ShouldBeSameAs(info); // Should modify the same object
@@ -136,7 +138,7 @@ public sealed class OrderProjectionTests
         var @event = new OrderCompletedEvent(order);
 
         // Act
-        var result = _projection.Apply(info, @event);
+        var result = _orderProjection.Apply(info, @event);
 
         // Assert
         result.ShouldBeSameAs(info); // Should modify the same object

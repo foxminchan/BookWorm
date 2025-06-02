@@ -1,5 +1,3 @@
-using BookWorm.Chassis.Specification;
-
 namespace BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 
 public interface IOrderRepository : IRepository<Order>

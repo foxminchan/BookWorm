@@ -1,6 +1,4 @@
-﻿using BookWorm.Constants.Core;
-
-namespace BookWorm.Ordering.Features.Buyers.UpdateAddress;
+﻿namespace BookWorm.Ordering.Features.Buyers.UpdateAddress;
 
 public sealed class UpdateAddressValidator : AbstractValidator<UpdateAddressCommand>
 {
