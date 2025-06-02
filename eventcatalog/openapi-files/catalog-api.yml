@@ -50,7 +50,7 @@ servers:
           - grpc
         default: https
 security:
-  - bearerAuth: []
+  - OAuth: []
 paths:
   "/api/v1/publishers":
     put:
@@ -61,7 +61,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: UpdatePublisherEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       requestBody:
         description: The command to update the publisher
         content:
@@ -148,7 +148,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CreatePublisherEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       requestBody:
         description: The command to create a publisher
         content:
@@ -210,7 +210,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: UpdateCategoryEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       requestBody:
         description: The command to update the category
         content:
@@ -308,7 +308,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CreateCategoryEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       requestBody:
         description: The command to create a category
         content:
@@ -370,7 +370,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: UpdateBookEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       requestBody:
         description: The command to update the book
         content:
@@ -748,7 +748,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CreateBookEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       requestBody:
         description: The command to create a book
         content:
@@ -946,7 +946,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: DeleteBookEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       parameters:
         - name: id
           in: path
@@ -1044,7 +1044,7 @@ paths:
       description: Update an author if it exists
       operationId: UpdateAuthorEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       requestBody:
         description: The command to update the author
         content:
@@ -1131,7 +1131,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CreateAuthorEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       requestBody:
         description: The command to create an author
         content:
@@ -1193,7 +1193,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: DeleteAuthorEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       parameters:
         - name: id
           in: path
@@ -1636,10 +1636,15 @@ components:
       description: The availability status of the book
       example: "InStock"
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      description: JWT Bearer token authentication
+    OAuth:
+      type: oauth2
+      description: OAuth2 security scheme for the BookWorm API
+      flows:
+        implicit:
+          authorizationUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/auth"
+          tokenUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/token"
+          scopes:
+            catalog: "Catalog API"
 tags:
   - name: Publisher
     description: Operations related to publishers

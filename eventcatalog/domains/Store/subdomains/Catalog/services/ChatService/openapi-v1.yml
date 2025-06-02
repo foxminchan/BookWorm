@@ -50,7 +50,7 @@ servers:
           - wss
         default: https
 security:
-  - bearerAuth: []
+  - OAuth: []
 paths:
   "/api/v1/chats":
     post:
@@ -61,7 +61,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CreateChatEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       requestBody:
         description: The command to create a chat
         content:
@@ -116,7 +116,7 @@ paths:
       x-eventcatalog-message-type: query
       operationId: ListChatEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       parameters:
         - name: name
           in: query
@@ -188,7 +188,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: UpdateChatEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       requestBody:
         description: The command to update a chat
         content:
@@ -249,7 +249,7 @@ paths:
       x-eventcatalog-message-type: query
       operationId: GetChatEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       parameters:
         - name: id
           in: path
@@ -297,7 +297,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: DeleteChatEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       parameters:
         - name: id
           in: path
@@ -332,7 +332,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CancelChatEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       parameters:
         - name: id
           in: path
@@ -356,7 +356,7 @@ paths:
       description: SignalR hub endpoint for real-time chat streaming
       operationId: ChatStreamEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       responses:
         "101":
           description: Switching Protocols - WebSocket connection established
@@ -483,10 +483,15 @@ components:
           description: The timestamp when the message was created
           example: "2023-10-01T12:00:00Z"
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      description: JWT Bearer token authentication
+    OAuth:
+      type: oauth2
+      description: OAuth2 security scheme for the BookWorm API
+      flows:
+        implicit:
+          authorizationUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/auth"
+          tokenUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/token"
+          scopes:
+            chat: "Chat API"
 tags:
   - name: Chat
     description: Endpoints for handling book-related discussions and user interactions in chat format

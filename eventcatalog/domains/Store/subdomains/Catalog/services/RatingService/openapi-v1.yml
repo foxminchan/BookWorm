@@ -46,7 +46,7 @@ servers:
           - https
         default: https
 security:
-  - bearerAuth: []
+  - OAuth: []
 paths:
   "/api/v1/feedbacks":
     get:
@@ -266,7 +266,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: DeleteFeedbackEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       parameters:
         - name: id
           in: path
@@ -505,10 +505,15 @@ components:
           description: The detail of the problem
           example: "Feedback with id 01961eb4-668d-7e7e-ae25-0fab379614f7 was not found."
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      description: JWT Bearer token authentication
+    OAuth:
+      type: oauth2
+      description: OAuth2 security scheme for the BookWorm API
+      flows:
+        implicit:
+          authorizationUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/auth"
+          tokenUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/token"
+          scopes:
+            rating: "Rating API"
 tags:
   - name: Feedback
     description: Endpoints for managing user ratings and feedback for books on the BookWorm platform

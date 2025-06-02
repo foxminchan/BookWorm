@@ -50,7 +50,7 @@ servers:
           - grpc
         default: https
 security:
-  - bearerAuth: []
+  - OAuth: []
 paths:
   /api/v1/baskets:
     put:
@@ -61,7 +61,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: UpdateBasketEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       requestBody:
         description: The command to update the basket with new items
         content:
@@ -177,7 +177,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: DeleteBasketEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       responses:
         "204":
           description: No Content
@@ -205,7 +205,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CreateBasketEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       requestBody:
         description: A command to create a basket with the specified items
         content:
@@ -278,7 +278,7 @@ paths:
       x-grpc-service: BasketGrpcService
       x-grpc-method: GetBasket
       security:
-        - bearerAuth: []
+        - OAuth: []
       operationId: GetBasketGrpcEndpoint
       responses:
         "200":
@@ -548,10 +548,15 @@ components:
           description: The quantity of the item
           example: 2
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      description: JWT Bearer token authentication
+    OAuth:
+      type: oauth2
+      description: OAuth2 security scheme for the BookWorm API
+      flows:
+        implicit:
+          authorizationUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/auth"
+          tokenUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/token"
+          scopes:
+            basket: "Basket API"
 tags:
   - name: Basket
     description: Manages shopping baskets for customers, allowing them to add, update, and remove items before checkout

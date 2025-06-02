@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Authentication.OAuth;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +16,15 @@ public static class OpenApiExtensions
 
         var document = builder.Configuration.GetSection(nameof(Document)).Get<Document>();
 
+        var identitySection = builder.Configuration.GetSection("Identity");
+
+        var scopes = identitySection.Exists()
+            ? identitySection
+                .GetRequiredSection("Scopes")
+                .GetChildren()
+                .ToDictionary(p => p.Key, p => p.Value)
+            : new();
+
         Span<string> versions = ["v1"];
 
         foreach (var description in versions)
@@ -26,6 +36,7 @@ public static class OpenApiExtensions
                     options.ApplyApiVersionInfo(document);
                     options.ApplySchemaNullableFalse();
                     options.ApplySecuritySchemeDefinitions();
+                    options.ApplyAuthorizationChecks([.. scopes.Keys]);
                     options.ApplyOperationDeprecatedStatus();
                 }
             );
@@ -45,6 +56,13 @@ public static class OpenApiExtensions
         {
             options.Theme = ScalarTheme.BluePlanet;
             options.DefaultFonts = false;
+            options.AddImplicitFlow(
+                OAuthDefaults.DisplayName,
+                cfg =>
+                    cfg.ClientId = app
+                        .Configuration.GetSection("Identity")
+                        .GetValue<string>("ClientId")
+            );
         });
 
         app.MapGet("/", () => Results.Redirect("/scalar/v1")).ExcludeFromDescription();
