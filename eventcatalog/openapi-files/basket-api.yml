@@ -52,7 +52,7 @@ servers:
 security:
   - bearerAuth: []
 paths:
-  "/api/v1/baskets":
+  /api/v1/baskets:
     put:
       tags:
         - Basket
@@ -268,7 +268,7 @@ paths:
                         severity: 0
         "401":
           description: Unauthorized - Access token is missing or invalid.
-  "grpc/v1/baskets":
+  /grpc/v1/baskets:
     get:
       tags:
         - Basket
@@ -472,11 +472,11 @@ components:
               attemptedValue:
                 type: object
                 description: The value that was attempted
-                example: null
+                example: {} # Corrected: example is an empty object
               customState:
                 type: object
                 description: Custom state information
-                example: null
+                example: {} # Corrected: example is an empty object
               severity:
                 type: integer
                 format: int32
@@ -491,7 +491,7 @@ components:
               formattedMessagePlaceholderValues:
                 type: object
                 description: Placeholder values for the formatted message
-                example: null
+                example: {}
     ProblemDetails:
       type: object
       readOnly: true

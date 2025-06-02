@@ -576,7 +576,6 @@ paths:
           description: Search term to filter results by
           schema:
             type: string
-            default:
             example: "Software"
         - name: MinPrice
           in: query
@@ -584,16 +583,12 @@ paths:
           schema:
             type: number
             format: double
-            default:
-            example: 10
         - name: MaxPrice
           in: query
           description: Maximum price to filter results by
           schema:
             type: number
             format: double
-            default:
-            example: 100
         - name: CategoryId
           in: query
           description: Category IDs to filter results by
@@ -602,10 +597,6 @@ paths:
             items:
               type: string
               format: uuid
-            default:
-            example:
-              - "01961eb2-5a5b-749f-b494-1063d73c96a3"
-              - "01961eb4-668d-7e7e-ae25-0fab379614f7"
         - name: PublisherId
           in: query
           description: Publisher IDs to filter results by
@@ -614,10 +605,6 @@ paths:
             items:
               type: string
               format: uuid
-            default:
-            example:
-              - "01961eb7-be10-7235-bed8-2fea41c28c02"
-              - "01961ebd-2bc1-7de2-aa90-639662d9259e"
         - name: AuthorIds
           in: query
           description: Author IDs to filter results by
@@ -626,10 +613,6 @@ paths:
             items:
               type: string
               format: uuid
-            default:
-            example:
-              - "01961eb4-0c29-799f-ab78-ad3e2beaa54a"
-              - "01961ebd-ba46-75c6-8834-ff51cc0ff650"
       responses:
         "200":
           description: OK
@@ -995,7 +978,7 @@ paths:
   "/grpc/v1/books/{id}":
     get:
       tags:
-        - Book
+        - Book gRPC
       summary: Get Book (gRPC)
       description: Get a book by identifier using gRPC service
       x-eventcatalog-message-type: query
@@ -1033,7 +1016,7 @@ paths:
   "/grpc/v1/books/batch":
     post:
       tags:
-        - Book
+        - Book gRPC
       summary: Get Books Batch (gRPC)
       description: Get multiple books by their identifiers using gRPC service
       x-eventcatalog-message-type: query
@@ -1419,11 +1402,6 @@ components:
           example: "One or more validation errors has occurred"
         errors:
           type: array
-          description: The validation errors
-          example:
-            - propertyName: "Name"
-              errorMessage: "'Name' must not be empty."
-              severity: 0
           items:
             type: object
             properties:
@@ -1438,11 +1416,9 @@ components:
               attemptedValue:
                 type: object
                 description: The value that was attempted
-                example: null
               customState:
                 type: object
                 description: Custom state information
-                example: null
               severity:
                 type: integer
                 format: int32
@@ -1457,13 +1433,9 @@ components:
               formattedMessagePlaceholderValues:
                 type: object
                 description: Placeholder values for the formatted message
-                example: null
     IFormFile:
       type: string
       description: The file to be uploaded
-      contentMediaType:
-        - image/png
-        - image/jpeg
     PagedResultOfBookDto:
       required:
         - items
@@ -1507,17 +1479,6 @@ components:
           type: boolean
           description: Whether the page has a next page
           example: true
-    Prompt:
-      required:
-        - text
-      type: object
-      writeOnly: true
-      description: The prompt for creating a chat in the catalog system
-      properties:
-        text:
-          type: string
-          description: The text of the prompt
-          example: "What is the best book in the world?"
     ProblemDetails:
       type: object
       readOnly: true
@@ -1615,17 +1576,6 @@ components:
           description: The name of the publisher
           example: "O'Reilly Media, Inc."
           maxLength: 50
-    BookGrpcRequest:
-      type: object
-      description: Request for getting a single book via gRPC
-      properties:
-        bookId:
-          type: string
-          format: uuid
-          description: The unique identifier of the book
-          example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
-      required:
-        - bookId
     BooksGrpcRequest:
       type: object
       description: Request for getting multiple books via gRPC
@@ -1691,11 +1641,13 @@ components:
       scheme: bearer
       description: JWT Bearer token authentication
 tags:
-  - name: Author
-    description: Operations for managing book authors, including author profiles, book associations, and biographical information
-  - name: Book
-    description: Core operations for managing books in the catalog, including creation, updates, and retrieval of book details
-  - name: Category
-    description: Management of book categories and genres, allowing for organization and classification of books
   - name: Publisher
-    description: Operations related to managing book publishers, including creating, updating, and retrieving publisher information
+    description: Operations related to publishers
+  - name: Category
+    description: Operations related to categories
+  - name: Book
+    description: Operations related to books
+  - name: Author
+    description: Operations related to authors
+  - name: Book gRPC
+    description: gRPC operations for books
