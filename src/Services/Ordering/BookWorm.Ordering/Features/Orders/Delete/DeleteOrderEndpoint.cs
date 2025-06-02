@@ -1,6 +1,4 @@
-﻿using BookWorm.Constants.Core;
-
-namespace BookWorm.Ordering.Features.Orders.Delete;
+﻿namespace BookWorm.Ordering.Features.Orders.Delete;
 
 public sealed class DeleteOrderEndpoint : IEndpoint<NoContent, Guid, ISender>
 {

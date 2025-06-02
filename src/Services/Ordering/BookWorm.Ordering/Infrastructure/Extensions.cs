@@ -1,6 +1,4 @@
-﻿using BookWorm.Constants.Aspire;
-
-namespace BookWorm.Ordering.Infrastructure;
+﻿namespace BookWorm.Ordering.Infrastructure;
 
 public static class Extensions
 {
@@ -22,8 +20,14 @@ public static class Extensions
         // Configure EventStore
         builder.AddEventStore(options =>
         {
-            options.Projections.LiveStreamAggregation<OrderSummary>();
-            options.Projections.Add<Projection>(ProjectionLifecycle.Async);
+            options.Projections.Add<OrderProjection>(ProjectionLifecycle.Async);
+
+            // If we're running in development mode, let Marten just take care
+            // of all necessary schema building and patching behind the scenes
+            if (builder.Environment.IsDevelopment())
+            {
+                options.AutoCreateSchemaObjects = AutoCreate.All;
+            }
         });
 
         // Configure Redis

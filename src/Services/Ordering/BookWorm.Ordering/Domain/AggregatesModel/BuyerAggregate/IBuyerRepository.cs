@@ -1,6 +1,4 @@
-﻿using BookWorm.Chassis.Specification;
-
-namespace BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
+﻿namespace BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
 
 public interface IBuyerRepository : IRepository<Buyer>
 {

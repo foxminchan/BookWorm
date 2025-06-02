@@ -1,5 +1,4 @@
-﻿using BookWorm.Constants.Aspire;
-using BookWorm.Ordering.Infrastructure.EventStore.Configs;
+﻿using BookWorm.Ordering.Infrastructure.EventStore.Configs;
 using BookWorm.Ordering.Infrastructure.EventStore.Diagnostic;
 using JasperFx.CodeGeneration;
 using Marten.Events.Daemon;
@@ -14,25 +13,32 @@ public static class Extensions
         bool disableAsyncDaemon = false
     )
     {
+        var services = builder.Services;
         var martenConfig = builder.Configuration.Get<MartenConfigs>() ?? new MartenConfigs();
 
         builder.AddNpgsqlDataSource(Components.Database.Ordering);
 
-        var config = builder
-            .Services.AddMarten(_ => StoreConfigs.SetStoreOptions(martenConfig, configureOptions))
+        var config = services
+            .AddMarten(_ => StoreConfigs.SetStoreOptions(martenConfig, configureOptions))
             .UseNpgsqlDataSource()
             .UseLightweightSessions()
             .ApplyAllDatabaseChangesOnStartup();
 
         if (!disableAsyncDaemon)
         {
-            config
-                .OptimizeArtifactWorkflow(TypeLoadMode.Static)
-                .AddAsyncDaemon(martenConfig.DaemonMode);
+            config.AddAsyncDaemon(martenConfig.DaemonMode);
         }
 
-        builder
-            .Services.AddOpenTelemetry()
+        // In a "Production" environment, we're turning off the
+        // automatic database migrations and dynamic code generation
+        services.CritterStackDefaults(x =>
+        {
+            x.Production.GeneratedCodeMode = TypeLoadMode.Static;
+            x.Production.ResourceAutoCreate = AutoCreate.None;
+        });
+
+        services
+            .AddOpenTelemetry()
             .WithMetrics(t =>
                 t.AddMeter(TelemetryTags.ActivityName, ActivitySourceProvider.DefaultSourceName)
             )
@@ -40,8 +46,6 @@ public static class Extensions
                 t.AddSource(TelemetryTags.ActivityName, ActivitySourceProvider.DefaultSourceName)
             );
 
-        builder
-            .Services.AddHealthChecks()
-            .AddMartenAsyncDaemonHealthCheck(500, TimeSpan.FromSeconds(30));
+        services.AddHealthChecks().AddMartenAsyncDaemonHealthCheck(500, TimeSpan.FromSeconds(30));
     }
 }
