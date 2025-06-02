@@ -1,10 +1,12 @@
 ﻿using System.Net.Mime;
 using System.Text;
 using Asp.Versioning.ApiExplorer;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.OAuth;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.OpenApi;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Primitives;
 using Microsoft.OpenApi.Models;
@@ -160,36 +162,98 @@ internal static class OpenApiOptionsExtensions
         );
     }
 
-    private sealed class SecuritySchemeDefinitionsTransformer(
-        IAuthenticationSchemeProvider authenticationSchemeProvider
-    ) : IOpenApiDocumentTransformer
+    public static OpenApiOptions ApplyAuthorizationChecks(
+        this OpenApiOptions options,
+        string[] scopes
+    )
     {
-        public async Task TransformAsync(
+        options.AddOperationTransformer(
+            (operation, context, _) =>
+            {
+                var metadata = context.Description.ActionDescriptor.EndpointMetadata;
+
+                if (!metadata.OfType<IAuthorizeData>().Any())
+                {
+                    return Task.CompletedTask;
+                }
+
+                operation.Responses.TryAdd(
+                    $"{StatusCodes.Status401Unauthorized}",
+                    new() { Description = "Unauthorized" }
+                );
+                operation.Responses.TryAdd(
+                    $"{StatusCodes.Status403Forbidden}",
+                    new() { Description = "Forbidden" }
+                );
+
+                var oAuthScheme = new OpenApiSecurityScheme
+                {
+                    Reference = new()
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = OAuthDefaults.DisplayName,
+                    },
+                };
+
+                operation.Security = new List<OpenApiSecurityRequirement>
+                {
+                    new() { [oAuthScheme] = scopes },
+                };
+
+                return Task.CompletedTask;
+            }
+        );
+        return options;
+    }
+
+    private class SecuritySchemeDefinitionsTransformer(IConfiguration configuration)
+        : IOpenApiDocumentTransformer
+    {
+        public Task TransformAsync(
             OpenApiDocument document,
             OpenApiDocumentTransformerContext context,
             CancellationToken cancellationToken
         )
         {
-            var authenticationSchemes = await authenticationSchemeProvider.GetAllSchemesAsync();
-            if (
-                authenticationSchemes.Any(authScheme =>
-                    authScheme.Name == JwtBearerDefaults.AuthenticationScheme
-                )
-            )
+            var identitySection = configuration.GetSection("Identity");
+
+            if (!identitySection.Exists())
             {
-                var requirements = new Dictionary<string, OpenApiSecurityScheme>
-                {
-                    [JwtBearerDefaults.AuthenticationScheme] = new()
-                    {
-                        Type = SecuritySchemeType.Http,
-                        Scheme = JwtBearerDefaults.AuthenticationScheme,
-                        In = ParameterLocation.Header,
-                        BearerFormat = "Json Web Token",
-                    },
-                };
-                document.Components ??= new();
-                document.Components.SecuritySchemes = requirements;
+                return Task.CompletedTask;
             }
+
+            var identityUrlExternal = identitySection.GetValue<string>("Url");
+
+            var scopes = identitySection
+                .GetRequiredSection("Scopes")
+                .GetChildren()
+                .ToDictionary(p => p.Key, p => p.Value);
+
+            var realm =
+                Environment.GetEnvironmentVariable("REALM") ?? nameof(BookWorm).ToLowerInvariant();
+
+            var securityScheme = new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.OAuth2,
+                Description = "OAuth2 security scheme for the BookWorm API",
+                Flows = new()
+                {
+                    Implicit = new()
+                    {
+                        AuthorizationUrl = new(
+                            $"{identityUrlExternal}/realms/{realm}/protocol/openid-connect/auth"
+                        ),
+                        TokenUrl = new(
+                            $"{identityUrlExternal}/realms/{realm}/protocol/openid-connect/token"
+                        ),
+                        Scopes = scopes,
+                    },
+                },
+            };
+
+            document.Components ??= new();
+            document.Components.SecuritySchemes.Add(OAuthDefaults.DisplayName, securityScheme);
+            return Task.CompletedTask;
         }
     }
 }

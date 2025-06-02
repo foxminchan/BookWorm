@@ -115,14 +115,6 @@ resource chatting 'Microsoft.App/containerApps@2024-03-01' = {
               value: 'Endpoint=https://${signalr_outputs_hostname};AuthType=azure'
             }
             {
-              name: 'services__keycloak__http__0'
-              value: 'http://keycloak.internal.${aca_outputs_azure_container_apps_environment_default_domain}'
-            }
-            {
-              name: 'services__keycloak__management__0'
-              value: 'http://keycloak:9000'
-            }
-            {
               name: 'services__mcptools__http__0'
               value: 'http://mcptools.internal.${aca_outputs_azure_container_apps_environment_default_domain}'
             }
@@ -133,6 +125,18 @@ resource chatting 'Microsoft.App/containerApps@2024-03-01' = {
             {
               name: 'ConnectionStrings__chatdb'
               secretRef: 'connectionstrings--chatdb'
+            }
+            {
+              name: 'services__keycloak__http__0'
+              value: 'http://keycloak.internal.${aca_outputs_azure_container_apps_environment_default_domain}'
+            }
+            {
+              name: 'services__keycloak__management__0'
+              value: 'http://keycloak:9000'
+            }
+            {
+              name: 'Identity__Url'
+              value: 'http://keycloak.internal.${aca_outputs_azure_container_apps_environment_default_domain}'
             }
             {
               name: 'OTEL_EXPORTER_OTLP_ENDPOINT'

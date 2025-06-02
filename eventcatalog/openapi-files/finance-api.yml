@@ -44,7 +44,7 @@ servers:
           - https
         default: https
 security:
-  - bearerAuth: []
+  - OAuth: []
 paths:
   "/api/v1/order-state-machine":
     get:
@@ -55,7 +55,7 @@ paths:
       x-eventcatalog-message-type: query
       operationId: GetOrderStateEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       responses:
         "200":
           description: OK
@@ -86,10 +86,15 @@ paths:
           description: Forbidden - The permission requirements are not met.
 components:
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      description: JWT Bearer token authentication
+    OAuth:
+      type: oauth2
+      description: OAuth2 security scheme for the BookWorm API
+      flows:
+        implicit:
+          authorizationUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/auth"
+          tokenUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/token"
+          scopes:
+            finance: "Finance API"
 tags:
   - name: OrderState
     description: Operations related to order state management

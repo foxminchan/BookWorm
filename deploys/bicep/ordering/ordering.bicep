@@ -112,6 +112,10 @@ resource ordering 'Microsoft.App/containerApps@2024-03-01' = {
               secretRef: 'connectionstrings--queue'
             }
             {
+              name: 'ConnectionStrings__redis'
+              secretRef: 'connectionstrings--redis'
+            }
+            {
               name: 'services__keycloak__http__0'
               value: 'http://keycloak.internal.${aca_outputs_azure_container_apps_environment_default_domain}'
             }
@@ -120,8 +124,8 @@ resource ordering 'Microsoft.App/containerApps@2024-03-01' = {
               value: 'http://keycloak:9000'
             }
             {
-              name: 'ConnectionStrings__redis'
-              secretRef: 'connectionstrings--redis'
+              name: 'Identity__Url'
+              value: 'http://keycloak.internal.${aca_outputs_azure_container_apps_environment_default_domain}'
             }
             {
               name: 'services__catalog__http__0'

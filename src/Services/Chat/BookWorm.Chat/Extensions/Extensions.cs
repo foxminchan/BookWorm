@@ -33,6 +33,9 @@ public static class Extensions
             cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
         });
 
+        services.AddVersioning();
+        services.AddEndpoints(typeof(IChatApiMarker));
+
         // Configure FluentValidation
         services.AddValidatorsFromAssemblyContaining<IChatApiMarker>(includeInternalTypes: true);
 

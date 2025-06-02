@@ -10,6 +10,7 @@ global using BookWorm.Chassis.Guards;
 global using BookWorm.Chassis.Pipelines;
 global using BookWorm.Chassis.Query;
 global using BookWorm.Chassis.Repository;
+global using BookWorm.Chassis.Versioning;
 global using BookWorm.Chat.Infrastructure;
 global using BookWorm.Chat.Infrastructure.CancellationManager;
 global using BookWorm.Chat.Infrastructure.ChatStreaming;

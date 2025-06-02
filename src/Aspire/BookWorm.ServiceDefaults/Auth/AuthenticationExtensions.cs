@@ -11,10 +11,13 @@ public static class AuthenticationExtensions
 {
     public static IHostApplicationBuilder AddDefaultAuthentication(
         this IHostApplicationBuilder builder,
-        string realm = "bookworm"
+        string? realm = null
     )
     {
         var services = builder.Services;
+
+        realm ??=
+            Environment.GetEnvironmentVariable("REALM") ?? nameof(BookWorm).ToLowerInvariant();
 
         services
             .AddAuthentication(options =>

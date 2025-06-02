@@ -73,10 +73,9 @@ var catalogApi = builder
     .WaitFor(catalogDb)
     .WithReference(qdrant)
     .WaitFor(qdrant)
-    .WithReference(keycloak)
-    .WaitFor(keycloak)
     .WithReference(redis)
     .WaitFor(redis)
+    .WithKeycloak(keycloak)
     .WithRoleAssignments(
         storage,
         StorageBuiltInRole.StorageBlobDataContributor,
@@ -98,12 +97,11 @@ var chatApi = builder
     .WaitFor(redis)
     .WithReference(signalR)
     .WaitFor(signalR)
-    .WithReference(keycloak)
-    .WaitFor(keycloak)
     .WithReference(mcp)
     .WaitFor(mcp)
     .WithReference(chatDb)
     .WaitFor(chatDb)
+    .WithKeycloak(keycloak)
     .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor)
     .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Open API ({u.Endpoint?.EndpointName})"));
 
@@ -115,9 +113,8 @@ var basketApi = builder
     .WaitFor(redis)
     .WithReference(queue)
     .WaitFor(queue)
-    .WithReference(keycloak)
-    .WaitFor(keycloak)
     .WithReference(catalogApi)
+    .WithKeycloak(keycloak)
     .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Open API ({u.Endpoint?.EndpointName})"));
 
 var notificationApi = builder
@@ -136,10 +133,9 @@ var orderingApi = builder
     .WaitFor(orderingDb)
     .WithReference(queue)
     .WaitFor(queue)
-    .WithReference(keycloak)
-    .WaitFor(keycloak)
     .WithReference(redis)
     .WaitFor(redis)
+    .WithKeycloak(keycloak)
     .WithReference(catalogApi)
     .WithReference(basketApi)
     .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Open API ({u.Endpoint?.EndpointName})"));
@@ -150,8 +146,7 @@ var ratingApi = builder
     .WaitFor(ratingDb)
     .WithReference(queue)
     .WaitFor(queue)
-    .WithReference(keycloak)
-    .WaitFor(keycloak)
+    .WithKeycloak(keycloak)
     .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Open API ({u.Endpoint?.EndpointName})"));
 
 var financeApi = builder
@@ -160,6 +155,7 @@ var financeApi = builder
     .WaitFor(financeDb)
     .WithReference(queue)
     .WaitFor(queue)
+    .WithKeycloak(keycloak)
     .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Open API ({u.Endpoint?.EndpointName})"));
 
 var gateway = builder

@@ -46,7 +46,7 @@ servers:
           - https
         default: https
 security:
-  - bearerAuth: []
+  - OAuth: []
 paths:
   "/api/v1/orders/{id}/summary":
     get:
@@ -57,7 +57,7 @@ paths:
       x-eventcatalog-message-type: query
       operationId: SummaryOrderEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       parameters:
         - name: id
           in: path
@@ -90,7 +90,7 @@ paths:
       x-eventcatalog-message-type: query
       operationId: ListOrdersEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       parameters:
         - name: PageIndex
           in: query
@@ -217,7 +217,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CreateOrderEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       parameters:
         - name: X-Request-Id
           in: header
@@ -248,7 +248,7 @@ paths:
       x-eventcatalog-message-type: query
       operationId: GetOrderEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       parameters:
         - name: id
           in: path
@@ -344,7 +344,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CompleteOrderEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       parameters:
         - name: X-Request-Id
           in: header
@@ -415,7 +415,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CancelOrderEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       parameters:
         - name: X-Request-Id
           in: header
@@ -487,7 +487,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: UpdateAddressEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       requestBody:
         description: The command to update the current buyer's address
         content:
@@ -575,7 +575,7 @@ paths:
       x-eventcatalog-message-type: query
       operationId: ListBuyersEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       parameters:
         - name: PageIndex
           in: query
@@ -656,7 +656,7 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CreateBuyerEndpoint
       security:
-        - bearerAuth: []
+        - OAuth: []
       requestBody:
         description: The command to create a new buyer
         content:
@@ -1136,10 +1136,15 @@ components:
           maxLength: 50
           example: "CA"
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      description: JWT Bearer token authentication
+    OAuth:
+      type: oauth2
+      description: OAuth2 security scheme for the BookWorm API
+      flows:
+        implicit:
+          authorizationUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/auth"
+          tokenUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/token"
+          scopes:
+            order: "Order API"
 tags:
   - name: Buyer
     description: Endpoints for managing buyer information, including profile details, shipping addresses, and purchase history for customers of the BookWorm platform
