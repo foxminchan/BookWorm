@@ -13,11 +13,3 @@ rules:
     severity: warn
     then:
       function: truthy
-  oas3-schema:
-    description: Ignore unevaluated properties for OAuth and implicit flows
-    given:
-      - $.components.securitySchemes.OAuth
-      - $.components.securitySchemes.OAuth.flows.implicit
-    severity: off
-    then:
-      function: falsy

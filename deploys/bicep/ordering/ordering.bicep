@@ -124,10 +124,6 @@ resource ordering 'Microsoft.App/containerApps@2024-03-01' = {
               value: 'http://keycloak:9000'
             }
             {
-              name: 'Identity__Url'
-              value: 'http://keycloak.internal.${aca_outputs_azure_container_apps_environment_default_domain}'
-            }
-            {
               name: 'services__catalog__http__0'
               value: 'http://catalog.internal.${aca_outputs_azure_container_apps_environment_default_domain}'
             }

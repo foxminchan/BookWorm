@@ -31,24 +31,27 @@ public static class KeycloakExtensions
     }
 
     /// <summary>
-    ///     Configures a project resource with Keycloak integration.
+    ///     Configures a ProjectResource with Keycloak integration.
     /// </summary>
-    /// <param name="builder">The project resource builder.</param>
+    /// <param name="builder">The ProjectResource builder to configure.</param>
     /// <param name="keycloak">The Keycloak resource builder to reference.</param>
-    /// <returns>The project resource builder for method chaining.</returns>
+    /// <returns>The ProjectResource builder for method chaining.</returns>
     /// <remarks>
-    ///     This method configures the project to reference the Keycloak resource,
-    ///     sets up the identity URL environment variable, and ensures the project
-    ///     waits for Keycloak to be ready before starting.
+    ///     This extension adds a reference to the Keycloak resource and sets the Identity URL
+    ///     environment variable when running in execution mode.
     /// </remarks>
     public static IResourceBuilder<ProjectResource> WithKeycloak(
         this IResourceBuilder<ProjectResource> builder,
         IResourceBuilder<KeycloakResource> keycloak
     )
     {
-        return builder
-            .WithReference(keycloak)
-            .WithEnvironment("Identity__Url", keycloak.GetEndpoint("http"))
-            .WaitFor(keycloak);
+        builder.WithReference(keycloak).WaitFor(keycloak);
+
+        if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
+        {
+            builder.WithEnvironment("Identity__Url", keycloak.GetEndpoint("http"));
+        }
+
+        return builder;
     }
 }

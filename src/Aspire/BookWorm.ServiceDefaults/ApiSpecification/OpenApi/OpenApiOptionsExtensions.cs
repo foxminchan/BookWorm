@@ -1,6 +1,7 @@
 ﻿using System.Net.Mime;
 using System.Text;
 using Asp.Versioning.ApiExplorer;
+using BookWorm.ServiceDefaults.Auth;
 using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -162,10 +163,7 @@ internal static class OpenApiOptionsExtensions
         );
     }
 
-    public static OpenApiOptions ApplyAuthorizationChecks(
-        this OpenApiOptions options,
-        string[] scopes
-    )
+    public static void ApplyAuthorizationChecks(this OpenApiOptions options, string[] scopes)
     {
         options.AddOperationTransformer(
             (operation, context, _) =>
@@ -203,10 +201,9 @@ internal static class OpenApiOptionsExtensions
                 return Task.CompletedTask;
             }
         );
-        return options;
     }
 
-    private class SecuritySchemeDefinitionsTransformer(IConfiguration configuration)
+    private sealed class SecuritySchemeDefinitionsTransformer(IConfiguration configuration)
         : IOpenApiDocumentTransformer
     {
         public Task TransformAsync(
@@ -215,19 +212,7 @@ internal static class OpenApiOptionsExtensions
             CancellationToken cancellationToken
         )
         {
-            var identitySection = configuration.GetSection("Identity");
-
-            if (!identitySection.Exists())
-            {
-                return Task.CompletedTask;
-            }
-
-            var identityUrlExternal = identitySection.GetValue<string>("Url");
-
-            var scopes = identitySection
-                .GetRequiredSection("Scopes")
-                .GetChildren()
-                .ToDictionary(p => p.Key, p => p.Value);
+            var identityUrlExternal = configuration.GetIdentityUrl();
 
             var realm =
                 Environment.GetEnvironmentVariable("REALM") ?? nameof(BookWorm).ToLowerInvariant();
@@ -238,7 +223,7 @@ internal static class OpenApiOptionsExtensions
                 Description = "OAuth2 security scheme for the BookWorm API",
                 Flows = new()
                 {
-                    Implicit = new()
+                    AuthorizationCode = new()
                     {
                         AuthorizationUrl = new(
                             $"{identityUrlExternal}/realms/{realm}/protocol/openid-connect/auth"
@@ -246,7 +231,7 @@ internal static class OpenApiOptionsExtensions
                         TokenUrl = new(
                             $"{identityUrlExternal}/realms/{realm}/protocol/openid-connect/token"
                         ),
-                        Scopes = scopes,
+                        Scopes = configuration.GetScopes(),
                     },
                 },
             };
