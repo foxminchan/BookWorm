@@ -509,7 +509,7 @@ components:
       type: oauth2
       description: OAuth2 security scheme for the BookWorm API
       flows:
-        implicit:
+        authorizationCode:
           authorizationUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/auth"
           tokenUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/token"
           scopes:

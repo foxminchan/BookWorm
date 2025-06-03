@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication.OAuth;
+﻿using BookWorm.ServiceDefaults.Auth;
+using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -13,17 +14,11 @@ public static class OpenApiExtensions
     public static void AddDefaultOpenApi(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;
+        var configuration = builder.Configuration;
 
-        var document = builder.Configuration.GetSection(nameof(Document)).Get<Document>();
+        var document = configuration.GetSection(nameof(Document)).Get<Document>();
 
-        var identitySection = builder.Configuration.GetSection("Identity");
-
-        var scopes = identitySection.Exists()
-            ? identitySection
-                .GetRequiredSection("Scopes")
-                .GetChildren()
-                .ToDictionary(p => p.Key, p => p.Value)
-            : new();
+        var scopes = configuration.GetScopes();
 
         Span<string> versions = ["v1"];
 
@@ -56,12 +51,16 @@ public static class OpenApiExtensions
         {
             options.Theme = ScalarTheme.BluePlanet;
             options.DefaultFonts = false;
-            options.AddImplicitFlow(
+            options.AddAuthorizationCodeFlow(
                 OAuthDefaults.DisplayName,
-                cfg =>
-                    cfg.ClientId = app
-                        .Configuration.GetSection("Identity")
-                        .GetValue<string>("ClientId")
+                flow =>
+                {
+                    var configuration = app.Configuration;
+
+                    flow.Pkce = Pkce.Sha256;
+                    flow.ClientId = configuration.GetClientId();
+                    flow.ClientSecret = configuration.GetClientSecret();
+                }
             );
         });
 
