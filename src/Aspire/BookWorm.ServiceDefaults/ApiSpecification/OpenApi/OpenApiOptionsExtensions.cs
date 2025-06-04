@@ -1,13 +1,14 @@
 ﻿using System.Net.Mime;
 using System.Text;
 using Asp.Versioning.ApiExplorer;
+using BookWorm.Constants.Aspire;
 using BookWorm.ServiceDefaults.Auth;
+using BookWorm.ServiceDefaults.Keycloak;
 using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.OpenApi;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Primitives;
 using Microsoft.OpenApi.Models;
@@ -16,7 +17,10 @@ namespace BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
 
 internal static class OpenApiOptionsExtensions
 {
-    public static void ApplyApiVersionInfo(this OpenApiOptions options, Document? openApiDocument)
+    public static void ApplyApiVersionInfo(
+        this OpenApiOptions options,
+        DocumentOptions? openApiDocument
+    )
     {
         options.AddDocumentTransformer(
             (document, context, _) =>
@@ -193,29 +197,37 @@ internal static class OpenApiOptionsExtensions
                     },
                 };
 
-                operation.Security = new List<OpenApiSecurityRequirement>
-                {
-                    new() { [oAuthScheme] = scopes },
-                };
+                operation.Security = [new() { [oAuthScheme] = scopes }];
 
                 return Task.CompletedTask;
             }
         );
     }
 
-    private sealed class SecuritySchemeDefinitionsTransformer(IConfiguration configuration)
-        : IOpenApiDocumentTransformer
+    private sealed class SecuritySchemeDefinitionsTransformer(
+        IdentityOptions identityOptions,
+        IKeycloakUrls keycloakUrls
+    ) : IOpenApiDocumentTransformer
     {
-        public Task TransformAsync(
+        public async Task TransformAsync(
             OpenApiDocument document,
             OpenApiDocumentTransformerContext context,
             CancellationToken cancellationToken
         )
         {
-            var identityUrlExternal = configuration.GetIdentityUrl();
+            var scopes = identityOptions.Scopes;
 
-            var realm =
-                Environment.GetEnvironmentVariable("REALM") ?? nameof(BookWorm).ToLowerInvariant();
+            var authorizationUrlTask = keycloakUrls.GetAuthorizationUrlAsync(
+                Components.KeyCloak,
+                cancellationToken
+            );
+
+            var tokenUrlTask = keycloakUrls.GetTokenUrlAsync(
+                Components.KeyCloak,
+                cancellationToken
+            );
+
+            await Task.WhenAll(authorizationUrlTask, tokenUrlTask);
 
             var securityScheme = new OpenApiSecurityScheme
             {
@@ -225,20 +237,15 @@ internal static class OpenApiOptionsExtensions
                 {
                     AuthorizationCode = new()
                     {
-                        AuthorizationUrl = new(
-                            $"{identityUrlExternal}/realms/{realm}/protocol/openid-connect/auth"
-                        ),
-                        TokenUrl = new(
-                            $"{identityUrlExternal}/realms/{realm}/protocol/openid-connect/token"
-                        ),
-                        Scopes = configuration.GetScopes(),
+                        AuthorizationUrl = new(authorizationUrlTask.Result),
+                        TokenUrl = new(tokenUrlTask.Result),
+                        Scopes = scopes,
                     },
                 },
             };
 
             document.Components ??= new();
             document.Components.SecuritySchemes.Add(OAuthDefaults.DisplayName, securityScheme);
-            return Task.CompletedTask;
         }
     }
 }

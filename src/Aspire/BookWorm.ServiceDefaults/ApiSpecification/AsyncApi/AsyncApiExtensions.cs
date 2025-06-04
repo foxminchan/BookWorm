@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Saunter;
 
@@ -11,29 +11,29 @@ public static class AsyncApiExtensions
     {
         var services = builder.Services;
 
-        var document = builder.Configuration.GetSection(nameof(Document)).Get<Document>();
-
         services.AddAsyncApiSchemaGeneration(options =>
         {
             options.AssemblyMarkerTypes = types;
 
             Span<string> versions = ["1.0.0"];
+            using var sp = services.BuildServiceProvider();
+            var document = sp.GetRequiredService<DocumentOptions>();
 
             foreach (var version in versions)
             {
                 options.AsyncApi = new()
                 {
-                    Info = new(document?.Title, version)
+                    Info = new(document.Title, version)
                     {
-                        License = new(document?.LicenseName)
+                        License = new(document.LicenseName)
                         {
-                            Url = document?.LicenseUrl.ToString(),
+                            Url = document.LicenseUrl.ToString(),
                         },
                         Contact = new()
                         {
-                            Name = document?.AuthorName,
-                            Url = document?.AuthorUrl.ToString(),
-                            Email = document?.AuthorEmail,
+                            Name = document.AuthorName,
+                            Url = document.AuthorUrl.ToString(),
+                            Email = document.AuthorEmail,
                         },
                     },
                 };

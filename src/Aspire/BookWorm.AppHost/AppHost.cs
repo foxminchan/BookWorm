@@ -75,7 +75,8 @@ var catalogApi = builder
     .WaitFor(qdrant)
     .WithReference(redis)
     .WaitFor(redis)
-    .WithKeycloak(keycloak)
+    .WithReference(keycloak)
+    .WaitFor(keycloak)
     .WithRoleAssignments(
         storage,
         StorageBuiltInRole.StorageBlobDataContributor,
@@ -101,7 +102,8 @@ var chatApi = builder
     .WaitFor(mcp)
     .WithReference(chatDb)
     .WaitFor(chatDb)
-    .WithKeycloak(keycloak)
+    .WithReference(keycloak)
+    .WaitFor(keycloak)
     .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor)
     .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Open API ({u.Endpoint?.EndpointName})"));
 
@@ -114,7 +116,8 @@ var basketApi = builder
     .WithReference(queue)
     .WaitFor(queue)
     .WithReference(catalogApi)
-    .WithKeycloak(keycloak)
+    .WithReference(keycloak)
+    .WaitFor(keycloak)
     .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Open API ({u.Endpoint?.EndpointName})"));
 
 var notificationApi = builder
@@ -135,7 +138,8 @@ var orderingApi = builder
     .WaitFor(queue)
     .WithReference(redis)
     .WaitFor(redis)
-    .WithKeycloak(keycloak)
+    .WithReference(keycloak)
+    .WaitFor(keycloak)
     .WithReference(catalogApi)
     .WithReference(basketApi)
     .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Open API ({u.Endpoint?.EndpointName})"));
@@ -146,7 +150,8 @@ var ratingApi = builder
     .WaitFor(ratingDb)
     .WithReference(queue)
     .WaitFor(queue)
-    .WithKeycloak(keycloak)
+    .WithReference(keycloak)
+    .WaitFor(keycloak)
     .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Open API ({u.Endpoint?.EndpointName})"));
 
 var financeApi = builder
@@ -155,7 +160,8 @@ var financeApi = builder
     .WaitFor(financeDb)
     .WithReference(queue)
     .WaitFor(queue)
-    .WithKeycloak(keycloak)
+    .WithReference(keycloak)
+    .WaitFor(keycloak)
     .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Open API ({u.Endpoint?.EndpointName})"));
 
 var gateway = builder
