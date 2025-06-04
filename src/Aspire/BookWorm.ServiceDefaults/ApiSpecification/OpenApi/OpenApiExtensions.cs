@@ -1,8 +1,8 @@
 ﻿using BookWorm.ServiceDefaults.Auth;
+using BookWorm.ServiceDefaults.Configuration;
 using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Scalar.AspNetCore;
@@ -14,11 +14,12 @@ public static class OpenApiExtensions
     public static void AddDefaultOpenApi(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;
-        var configuration = builder.Configuration;
 
-        var document = configuration.GetSection(nameof(Document)).Get<Document>();
+        services.Configure<IdentityOptions>(IdentityOptions.ConfigurationSection);
 
-        var scopes = configuration.GetScopes();
+        var sp = services.BuildServiceProvider();
+        var document = sp.GetRequiredService<DocumentOptions>();
+        var identity = sp.GetRequiredService<IdentityOptions>();
 
         Span<string> versions = ["v1"];
 
@@ -31,7 +32,7 @@ public static class OpenApiExtensions
                     options.ApplyApiVersionInfo(document);
                     options.ApplySchemaNullableFalse();
                     options.ApplySecuritySchemeDefinitions();
-                    options.ApplyAuthorizationChecks([.. scopes.Keys]);
+                    options.ApplyAuthorizationChecks([.. identity.Scopes.Keys]);
                     options.ApplyOperationDeprecatedStatus();
                 }
             );
@@ -55,11 +56,10 @@ public static class OpenApiExtensions
                 OAuthDefaults.DisplayName,
                 flow =>
                 {
-                    var configuration = app.Configuration;
-
+                    var identity = app.Services.GetRequiredService<IdentityOptions>();
                     flow.Pkce = Pkce.Sha256;
-                    flow.ClientId = configuration.GetClientId();
-                    flow.ClientSecret = configuration.GetClientSecret();
+                    flow.ClientId = identity.ClientId;
+                    flow.ClientSecret = identity.ClientSecret;
                 }
             );
         });

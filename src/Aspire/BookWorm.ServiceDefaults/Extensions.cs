@@ -1,5 +1,7 @@
 using BookWorm.Chassis.ActivityScope;
 using BookWorm.Chassis.Logging;
+using BookWorm.ServiceDefaults.ApiSpecification;
+using BookWorm.ServiceDefaults.Configuration;
 using BookWorm.ServiceDefaults.Kestrel;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Builder;
@@ -29,6 +31,8 @@ public static class Extensions
         builder.ConfigureOpenTelemetry();
 
         builder.AddDefaultHealthChecks();
+
+        builder.Services.Configure<DocumentOptions>(DocumentOptions.ConfigurationSection);
 
         builder.Services.AddServiceDiscovery();
 
