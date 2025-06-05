@@ -1,4 +1,5 @@
 ﻿using Aspire.Hosting.Lifecycle;
+using BookWorm.Constants.Aspire;
 
 namespace BookWorm.HealthChecksUI;
 
@@ -29,7 +30,7 @@ public static class HealthChecksUIExtensions
             .WithImageRegistry(HealthChecksUIDefaults.ContainerRegistry)
             .WithEnvironment(HealthChecksUIResource.KnownEnvVars.UIPath, "/")
             .WithHttpEndpoint(port, HealthChecksUIDefaults.ContainerPort)
-            .WithUrlForEndpoint("http", url => url.DisplayText = "Health Checks UI");
+            .WithUrlForEndpoint(Protocol.Http, url => url.DisplayText = "Health Checks UI");
     }
 
     /// <summary>

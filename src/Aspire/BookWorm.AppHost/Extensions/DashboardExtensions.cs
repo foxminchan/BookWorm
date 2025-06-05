@@ -22,7 +22,7 @@ public static class DashboardExtensions
         var dashboard = builder
             .AddContainer(DashboardDefaults.ResourceName, DashboardDefaults.ContainerImageName)
             .WithHttpEndpoint(targetPort: DashboardDefaults.ContainerPort)
-            .WithHttpEndpoint(name: "otlp", targetPort: DashboardDefaults.OtlpPort);
+            .WithHttpEndpoint(name: Protocol.Otlp, targetPort: DashboardDefaults.OtlpPort);
 
         builder.Eventing.Subscribe<BeforeStartEvent>(
             (e, _) =>
@@ -39,8 +39,8 @@ public static class DashboardExtensions
                         .WithEnvironment(c =>
                         {
                             c.EnvironmentVariables["OTEL_EXPORTER_OTLP_ENDPOINT"] =
-                                dashboard.GetEndpoint("otlp");
-                            c.EnvironmentVariables["OTEL_EXPORTER_OTLP_PROTOCOL"] = "grpc";
+                                dashboard.GetEndpoint(Protocol.Otlp);
+                            c.EnvironmentVariables["OTEL_EXPORTER_OTLP_PROTOCOL"] = Protocol.Grpc;
                             c.EnvironmentVariables["OTEL_SERVICE_NAME"] = r.Name;
                         });
                 }

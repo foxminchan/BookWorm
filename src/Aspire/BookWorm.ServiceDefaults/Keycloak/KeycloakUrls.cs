@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.ServiceDiscovery;
+﻿using BookWorm.Constants.Aspire;
+using Microsoft.Extensions.ServiceDiscovery;
 
 namespace BookWorm.ServiceDefaults.Keycloak;
 
@@ -45,7 +46,8 @@ public sealed class KeycloakUrls(ServiceEndpointResolver serviceEndpointResolver
         CancellationToken cancellationToken = default
     )
     {
-        var serviceLookupName = $"https+http://{serviceName}";
+        var serviceLookupName = $"{Protocol.HttpOrHttps}://{serviceName}";
+
         var serviceAddresses = (
             await serviceEndpointResolver.GetEndpointsAsync(serviceLookupName, cancellationToken)
         )
@@ -53,12 +55,15 @@ public sealed class KeycloakUrls(ServiceEndpointResolver serviceEndpointResolver
             .ToList();
 
         var firstHttpsEndpointUrl = serviceAddresses.FirstOrDefault(e =>
-            e?.StartsWith("https://") == true
+            e?.StartsWith($"{Protocol.Https}://") == true
         );
+
         var endpointUrl =
             (
                 firstHttpsEndpointUrl
-                ?? serviceAddresses.FirstOrDefault(e => e?.StartsWith("http://") == true)
+                ?? serviceAddresses.FirstOrDefault(e =>
+                    e?.StartsWith($"{Protocol.Http}://") == true
+                )
             )
             ?? throw new InvalidOperationException(
                 $"No HTTP(S) endpoints found for service '{serviceName}'."

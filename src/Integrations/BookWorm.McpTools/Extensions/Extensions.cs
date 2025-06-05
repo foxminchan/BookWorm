@@ -14,7 +14,7 @@ public static class Extensions
 
         // Configure HTTP client
         services.AddHttpServiceReference<ICatalogApi>(
-            $"https+http://{Application.Catalog}",
+            $"{Protocol.HttpOrHttps}://{Application.Catalog}",
             HealthStatus.Degraded
         );
 

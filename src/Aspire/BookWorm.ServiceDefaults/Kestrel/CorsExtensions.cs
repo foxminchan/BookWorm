@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using BookWorm.Constants.Aspire;
 using BookWorm.Constants.Core;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -67,7 +68,7 @@ public static class CorsExtensions
     {
         var builder = new StringBuilder();
 
-        builder.Append("https://");
+        builder.Append($"{Protocol.Https}://");
 
         environmentName = environmentName.ToLowerInvariant();
 

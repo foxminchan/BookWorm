@@ -10,19 +10,22 @@ public static class Extensions
     {
         var services = builder.Services;
 
-        var isHttps = builder.Configuration["DOTNET_LAUNCH_PROFILE"] == "https";
+        var scheme =
+            builder.Configuration["DOTNET_LAUNCH_PROFILE"] == Protocol.Https
+                ? Protocol.Https
+                : Protocol.Http;
 
         services.AddGrpc();
 
         services.AddGrpcServiceReference<BookGrpcServiceClient>(
-            $"{(isHttps ? "https" : "http")}://{Application.Catalog}",
+            $"{scheme}://{Application.Catalog}",
             HealthStatus.Degraded
         );
         services.AddSingleton<IBookService, BookService>();
 
         services
             .AddGrpcServiceReference<BasketGrpcServiceClient>(
-                $"{(isHttps ? "https" : "http")}://{Application.Basket}",
+                $"{scheme}://{Application.Basket}",
                 HealthStatus.Degraded
             )
             .AddAuthToken();
