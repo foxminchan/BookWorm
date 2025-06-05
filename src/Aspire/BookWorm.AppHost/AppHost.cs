@@ -21,7 +21,7 @@ var queue = builder
     .WithManagementPlugin()
     .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent)
-    .WithEndpoint("tcp", e => e.Port = 5672);
+    .WithEndpoint(Protocol.Tcp, e => e.Port = 5672);
 
 var storage = builder
     .AddAzureStorage(Components.Azure.Storage.Resource)
@@ -82,7 +82,10 @@ var catalogApi = builder
         StorageBuiltInRole.StorageBlobDataContributor,
         StorageBuiltInRole.StorageBlobDataOwner
     )
-    .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Open API ({u.Endpoint?.EndpointName})"));
+    .WithOpenApi()
+    .WithAsyncApi()
+    .WithHealthCheck()
+    .WithHidePlainHttpLink();
 
 qdrant.WithParentRelationship(catalogApi);
 
@@ -105,7 +108,9 @@ var chatApi = builder
     .WithReference(keycloak)
     .WaitFor(keycloak)
     .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor)
-    .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Open API ({u.Endpoint?.EndpointName})"));
+    .WithOpenApi()
+    .WithHealthCheck()
+    .WithHidePlainHttpLink();
 
 mcp.WithParentRelationship(chatApi);
 
@@ -118,7 +123,10 @@ var basketApi = builder
     .WithReference(catalogApi)
     .WithReference(keycloak)
     .WaitFor(keycloak)
-    .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Open API ({u.Endpoint?.EndpointName})"));
+    .WithOpenApi()
+    .WithAsyncApi()
+    .WithHealthCheck()
+    .WithHidePlainHttpLink();
 
 var notificationApi = builder
     .AddProject<BookWorm_Notification>(Application.Notification)
@@ -128,7 +136,9 @@ var notificationApi = builder
     .WithReference(tableStorage)
     .WaitFor(tableStorage)
     .WithRoleAssignments(storage, StorageBuiltInRole.StorageTableDataContributor)
-    .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Async API ({u.Endpoint?.EndpointName})"));
+    .WithAsyncApi(true)
+    .WithHealthCheck()
+    .WithHidePlainHttpLink();
 
 var orderingApi = builder
     .AddProject<BookWorm_Ordering>(Application.Ordering)
@@ -142,7 +152,10 @@ var orderingApi = builder
     .WaitFor(keycloak)
     .WithReference(catalogApi)
     .WithReference(basketApi)
-    .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Open API ({u.Endpoint?.EndpointName})"));
+    .WithOpenApi()
+    .WithAsyncApi()
+    .WithHealthCheck()
+    .WithHidePlainHttpLink();
 
 var ratingApi = builder
     .AddProject<BookWorm_Rating>(Application.Rating)
@@ -152,7 +165,10 @@ var ratingApi = builder
     .WaitFor(queue)
     .WithReference(keycloak)
     .WaitFor(keycloak)
-    .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Open API ({u.Endpoint?.EndpointName})"));
+    .WithOpenApi()
+    .WithAsyncApi()
+    .WithHealthCheck()
+    .WithHidePlainHttpLink();
 
 var financeApi = builder
     .AddProject<BookWorm_Finance>(Application.Finance)
@@ -162,7 +178,10 @@ var financeApi = builder
     .WaitFor(queue)
     .WithReference(keycloak)
     .WaitFor(keycloak)
-    .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Open API ({u.Endpoint?.EndpointName})"));
+    .WithOpenApi()
+    .WithAsyncApi()
+    .WithHealthCheck()
+    .WithHidePlainHttpLink();
 
 var gateway = builder
     .AddYarp(Application.Gateway)

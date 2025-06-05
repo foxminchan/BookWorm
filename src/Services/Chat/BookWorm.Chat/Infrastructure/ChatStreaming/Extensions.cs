@@ -31,8 +31,10 @@ public static class Extensions
                 ClientInfo = new() { Name = Application.McpTools, Version = "1.0.0" },
             };
 
-            var client = new HttpClient();
-            client.BaseAddress = new($"https+http://{Application.McpTools}");
+            var client = new HttpClient
+            {
+                BaseAddress = new($"{Protocol.HttpOrHttps}://{Application.McpTools}"),
+            };
 
             SseClientTransportOptions sseTransportOptions = new() { Endpoint = client.BaseAddress };
 

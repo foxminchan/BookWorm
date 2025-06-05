@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "build",
+      "label": "Build projects",
       "command": "dotnet",
       "type": "process",
       "args": [
@@ -11,28 +11,79 @@
         "/property:GenerateFullPaths=true",
         "/consoleloggerparameters:NoSummary;ForceNoAlign"
       ],
-      "problemMatcher": "$msCompile"
+      "problemMatcher": "$msCompile",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
     },
     {
-      "label": "publish",
+      "label": "Restore projects",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "restore",
+        "${workspaceFolder}/BookWorm.slnx",
+        "/property:GenerateFullPaths=true"
+      ],
+      "problemMatcher": "$msCompile",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "Run tests",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "test",
+        "${workspaceFolder}/BookWorm.slnx",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary;ForceNoAlign"
+      ],
+      "problemMatcher": "$msCompile",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "Publish Bicep",
       "command": "dotnet",
       "type": "process",
       "args": ["aspire", "publish", "--output-path", "/deploys/bicep"],
-      "problemMatcher": "$msCompile"
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
     },
     {
-      "label": "run",
+      "label": "Run Aspire",
       "command": "dotnet",
       "type": "process",
       "args": ["aspire", "run"],
-      "problemMatcher": "$msCompile"
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
     },
     {
-      "label": "format",
+      "label": "Format C# files",
+      "dependsOn": "Build projects",
       "command": "dotnet",
       "type": "process",
       "args": ["csharpier", "format", "."],
-      "problemMatcher": "$msCompile"
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
     }
   ]
 }

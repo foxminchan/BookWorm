@@ -22,26 +22,33 @@ public static class K6Extensions
         IResourceBuilder<YarpResource> entryPoint
     )
     {
-        if (builder.ExecutionContext.IsRunMode)
+        if (!builder.ExecutionContext.IsRunMode)
         {
-            builder
-                .AddK6(Components.K6)
-                .WithImagePullPolicy(ImagePullPolicy.Always)
-                .WithBindMount("Container/k6", "/scripts", true)
-                .WithBindMount("Container/k6/dist", "/home/k6")
-                .WithScript("/scripts/dist/main.js")
-                .WithReference(entryPoint.Resource.GetEndpoint("http"))
-                .WithEnvironment("K6_WEB_DASHBOARD", "true")
-                .WithEnvironment("K6_WEB_DASHBOARD_EXPORT", "dashboard-report.html")
-                .WithHttpEndpoint(
-                    targetPort: Components.K6Dashboard.ContainerPort,
-                    name: Components.K6Dashboard.Name
-                )
-                .WithUrlForEndpoint(
-                    Components.K6Dashboard.Name,
-                    url => url.DisplayText = "K6 Dashboard"
-                )
-                .WaitFor(entryPoint);
+            return;
         }
+
+        var endpointName = builder.IsHttpsLaunchProfile() ? Protocol.Https : Protocol.Http;
+
+        builder
+            .AddK6(Components.K6)
+            .WithImagePullPolicy(ImagePullPolicy.Always)
+            .WithBindMount("Container/k6", "/scripts", true)
+            .WithBindMount("Container/k6/dist", "/home/k6")
+            .WithScript("/scripts/dist/main.js")
+            .WithReference(entryPoint.Resource.GetEndpoint(endpointName))
+            .WithEnvironment("K6_WEB_DASHBOARD", "true")
+            .WithEnvironment("K6_WEB_DASHBOARD_EXPORT", "dashboard-report.html")
+            .WithHttpEndpoint(
+                targetPort: K6DashboardDefaults.ContainerPort,
+                name: K6DashboardDefaults.Name
+            )
+            .WithUrlForEndpoint(K6DashboardDefaults.Name, url => url.DisplayText = "K6 Dashboard")
+            .WaitFor(entryPoint);
+    }
+
+    private static class K6DashboardDefaults
+    {
+        public const string Name = "k6-dashboard";
+        public const int ContainerPort = 5665;
     }
 }

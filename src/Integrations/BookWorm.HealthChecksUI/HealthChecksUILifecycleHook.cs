@@ -1,4 +1,5 @@
 ﻿using Aspire.Hosting.Lifecycle;
+using BookWorm.Constants.Aspire;
 
 namespace BookWorm.HealthChecksUI;
 
@@ -41,7 +42,7 @@ internal sealed class HealthChecksUILifecycleHook(
                     {
                         // Running during dev inner-loop
                         var containerHost = healthChecksUIResource
-                            .GetEndpoint("http")
+                            .GetEndpoint(Protocol.Http)
                             .ContainerHost;
                         var fromContainerUriBuilder = new UriBuilder(healthChecksEndpoint.Url)
                         {
