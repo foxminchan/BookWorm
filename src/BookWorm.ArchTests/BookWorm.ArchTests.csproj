@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup Label="Unit Test">
     <PackageReference Include="TUnit" />
+    <PackageReference Include="Shouldly" />
     <PackageReference Include="TngTech.ArchUnitNET" />
     <PackageReference Include="GitHubActionsTestLogger" />
   </ItemGroup>

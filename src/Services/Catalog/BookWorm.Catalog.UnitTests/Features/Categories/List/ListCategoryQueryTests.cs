@@ -83,4 +83,61 @@ public sealed class ListCategoryQueryTests
             await _handler.Handle(query, CancellationToken.None)
         );
     }
+
+    [Test]
+    public void GivenTwoListCategoriesQueryInstances_WhenCompared_ThenShouldBeEqual()
+    {
+        // Arrange
+        var query1 = new ListCategoriesQuery();
+        var query2 = new ListCategoriesQuery();
+
+        // Assert
+        query1.ShouldBe(query2);
+        query1.GetHashCode().ShouldBe(query2.GetHashCode());
+        query1.ToString().ShouldBe(query2.ToString());
+    }
+
+    [Test]
+    public void GivenTwoListCategoriesQuery_WhenComparing_ThenShouldBeEqual()
+    {
+        // Arrange
+        var query1 = new ListCategoriesQuery();
+        var query2 = new ListCategoriesQuery();
+
+        // Act & Assert
+        query1.ShouldBe(query2);
+        query1.Equals(query2).ShouldBeTrue();
+        (query1 == query2).ShouldBeTrue();
+        (query1 != query2).ShouldBeFalse();
+    }
+
+    [Test]
+    public void GivenListCategoriesQuery_WhenCallingToString_ThenShouldReturnStringRepresentation()
+    {
+        // Arrange
+        var query = new ListCategoriesQuery();
+
+        // Act
+        var result = query.ToString();
+
+        // Assert
+        result.ShouldNotBeNull();
+        result.ShouldNotBeEmpty();
+        result.ShouldContain(nameof(ListCategoriesQuery));
+    }
+
+    [Test]
+    public void GivenListCategoriesQuery_WhenUsingWithExpression_ThenShouldCreateIdenticalCopy()
+    {
+        // Arrange
+        var original = new ListCategoriesQuery();
+
+        // Act
+        var copy = original with
+        { };
+
+        // Assert
+        copy.ShouldBe(original);
+        copy.ShouldNotBeSameAs(original);
+    }
 }

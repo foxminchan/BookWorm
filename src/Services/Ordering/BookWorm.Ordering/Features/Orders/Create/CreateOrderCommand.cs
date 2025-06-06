@@ -3,7 +3,7 @@ using MediatR.Pipeline;
 
 namespace BookWorm.Ordering.Features.Orders.Create;
 
-public sealed record CreateOrderCommand : ICommand<Guid>
+public sealed class CreateOrderCommand : ICommand<Guid>
 {
     [JsonIgnore]
     public List<OrderItem> Items { get; set; } = [];

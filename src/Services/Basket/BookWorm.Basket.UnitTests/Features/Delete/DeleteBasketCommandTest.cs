@@ -46,6 +46,33 @@ public sealed class DeleteBasketCommandTest
     }
 
     [Test]
+    public void GivenDeleteBasketCommand_WhenComparingEquality_ThenShouldBeEqual()
+    {
+        // Arrange
+        var command1 = new DeleteBasketCommand();
+        var command2 = new DeleteBasketCommand();
+
+        // Act & Assert
+        command1.ShouldBe(command2);
+        (command1 == command2).ShouldBeTrue();
+        command1.GetHashCode().ShouldBe(command2.GetHashCode());
+    }
+
+    [Test]
+    public void GivenDeleteBasketCommand_WhenCallingToString_ThenShouldReturnExpectedFormat()
+    {
+        // Arrange
+        var command = new DeleteBasketCommand();
+
+        // Act
+        var result = command.ToString();
+
+        // Assert
+        result.ShouldNotBeNullOrWhiteSpace();
+        result.ShouldContain(nameof(DeleteBasketCommand));
+    }
+
+    [Test]
     public async Task GivenExistingBasket_WhenHandlingDeleteCommand_ThenShouldCallDeleteBasketAsync()
     {
         // Arrange
@@ -97,5 +124,58 @@ public sealed class DeleteBasketCommandTest
         var exception = await act.ShouldThrowAsync<UnauthorizedAccessException>();
         exception.Message.ShouldBe("User is not authenticated.");
         _repositoryMock.Verify(x => x.DeleteBasketAsync(It.IsAny<string>()), Times.Never);
+    }
+
+    [Test]
+    public void GivenTwoDeleteBasketCommands_WhenComparing_ThenShouldBeEqual()
+    {
+        // Arrange
+        var command1 = new DeleteBasketCommand();
+        var command2 = new DeleteBasketCommand();
+
+        // Act & Assert
+        command1.ShouldBe(command2);
+        (command1 == command2).ShouldBeTrue();
+        command1.GetHashCode().ShouldBe(command2.GetHashCode());
+    }
+
+    [Test]
+    public void GivenDeleteBasketCommand_WhenCreating_ThenShouldBeAssignableToICommand()
+    {
+        // Arrange
+        var command = new DeleteBasketCommand();
+
+        // Act & Assert
+        command.ShouldBeOfType<DeleteBasketCommand>();
+        command.ShouldBeAssignableTo<ICommand<Unit>>();
+    }
+
+    [Test]
+    public void GivenDeleteBasketCommand_WhenCallingToString_ThenShouldReturnStringRepresentation()
+    {
+        // Arrange
+        var command = new DeleteBasketCommand();
+
+        // Act
+        var result = command.ToString();
+
+        // Assert
+        result.ShouldNotBeNullOrWhiteSpace();
+        result.ShouldContain(nameof(DeleteBasketCommand));
+    }
+
+    [Test]
+    public void GivenDeleteBasketCommand_WhenUsingWithExpression_ThenShouldCreateIdenticalCopy()
+    {
+        // Arrange
+        var original = new DeleteBasketCommand();
+
+        // Act
+        var copy = original with
+        { };
+
+        // Assert
+        copy.ShouldBe(original);
+        copy.ShouldNotBeSameAs(original);
     }
 }
