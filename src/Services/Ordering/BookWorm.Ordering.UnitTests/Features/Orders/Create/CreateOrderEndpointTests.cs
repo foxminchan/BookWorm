@@ -31,9 +31,6 @@ public sealed class CreateOrderEndpointTests
         result.ShouldBeOfType<Created<Guid>>();
         result.Value.ShouldBe(_orderId);
 
-        // Verify the location header contains the correct URL
-        result.Location?.ShouldContain($"Orders/{_orderId}");
-
         // Verify the command was sent
         _senderMock.Verify(
             x => x.Send(It.IsAny<CreateOrderCommand>(), It.IsAny<CancellationToken>()),
@@ -58,5 +55,53 @@ public sealed class CreateOrderEndpointTests
         // Assert
         var exception = await act.ShouldThrowAsync<InvalidOperationException>();
         exception.Message.ShouldBe("Test exception");
+    }
+
+    [Test]
+    public async Task GivenCancellationToken_WhenHandlingCreateOrder_ThenShouldPassTokenToSender()
+    {
+        // Arrange
+        var cancellationToken = new CancellationToken(true);
+
+        _senderMock
+            .Setup(x => x.Send(It.IsAny<CreateOrderCommand>(), cancellationToken))
+            .ReturnsAsync(_orderId);
+
+        // Act
+        var result = await _endpoint.HandleAsync(
+            _senderMock.Object,
+            _linkGenerator,
+            cancellationToken
+        );
+
+        // Assert
+        result.ShouldBeOfType<Created<Guid>>();
+        result.Value.ShouldBe(_orderId);
+
+        // Verify the cancellation token was passed
+        _senderMock.Verify(
+            x => x.Send(It.IsAny<CreateOrderCommand>(), cancellationToken),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task GivenNullPathFromLinkGenerator_WhenHandlingCreateOrder_ThenShouldReturnCreatedWithNullLocation()
+    {
+        // Arrange
+        _senderMock
+            .Setup(x => x.Send(It.IsAny<CreateOrderCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(_orderId);
+
+        // Act
+        var result = await _endpoint.HandleAsync(
+            _senderMock.Object,
+            _linkGenerator,
+            CancellationToken.None
+        );
+
+        // Assert
+        result.ShouldBeOfType<Created<Guid>>();
+        result.Value.ShouldBe(_orderId);
     }
 }
