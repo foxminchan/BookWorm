@@ -88,4 +88,63 @@ public sealed class ListPublishersQueryTests
 
         _repositoryMock.Verify(repo => repo.ListAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Test]
+    public void GivenTwoListPublishersQueries_WhenComparing_ThenShouldBeEqual()
+    {
+        // Arrange
+        var query1 = new ListPublishersQuery();
+        var query2 = new ListPublishersQuery();
+
+        // Act & Assert
+        query1.ShouldBe(query2);
+        query1.Equals(query2).ShouldBeTrue();
+        (query1 == query2).ShouldBeTrue();
+        (query1 != query2).ShouldBeFalse();
+    }
+
+    [Test]
+    public void GivenTwoListPublishersQueries_WhenGettingHashCode_ThenShouldReturnSameHashCode()
+    {
+        // Arrange
+        var query1 = new ListPublishersQuery();
+        var query2 = new ListPublishersQuery();
+
+        // Act
+        var hashCode1 = query1.GetHashCode();
+        var hashCode2 = query2.GetHashCode();
+
+        // Assert
+        hashCode1.ShouldBe(hashCode2);
+    }
+
+    [Test]
+    public void GivenListPublishersQuery_WhenCallingToString_ThenShouldReturnStringRepresentation()
+    {
+        // Arrange
+        var query = new ListPublishersQuery();
+
+        // Act
+        var result = query.ToString();
+
+        // Assert
+        result.ShouldNotBeNull();
+        result.ShouldNotBeEmpty();
+        result.ShouldContain(nameof(ListPublishersQuery));
+    }
+
+    [Test]
+    public void GivenListPublishersQuery_WhenUsingWithExpression_ThenShouldCreateIdenticalCopy()
+    {
+        // Arrange
+        var original = new ListPublishersQuery();
+
+        // Act
+        var copy = original with
+        { };
+
+        // Assert
+        copy.ShouldBe(original);
+        copy.ShouldNotBeSameAs(original);
+    }
 }

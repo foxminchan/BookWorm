@@ -52,6 +52,25 @@ public sealed class ListAuthorsQueryTests
     }
 
     [Test]
+    public async Task GivenEmptyAuthors_WhenHandlingListAuthorsQuery_ThenShouldReturnEmptyList()
+    {
+        // Arrange
+        _repositoryMock
+            .Setup(repo => repo.ListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        var query = new ListAuthorsQuery();
+
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.ShouldNotBeNull();
+        result.ShouldBeEmpty();
+        _repositoryMock.Verify(repo => repo.ListAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Test]
     public async Task GivenRepositoryThrowsException_WhenHandlingListAuthorsQuery_ThenShouldThrowException()
     {
         // Arrange
@@ -67,5 +86,64 @@ public sealed class ListAuthorsQueryTests
         // Assert
         await act.ShouldThrowAsync<Exception>();
         _repositoryMock.Verify(repo => repo.ListAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Test]
+    public void GivenTwoListAuthorsQueries_WhenComparing_ThenShouldBeEqual()
+    {
+        // Arrange
+        var query1 = new ListAuthorsQuery();
+        var query2 = new ListAuthorsQuery();
+
+        // Act & Assert
+        query1.ShouldBe(query2);
+        query1.Equals(query2).ShouldBeTrue();
+        (query1 == query2).ShouldBeTrue();
+        (query1 != query2).ShouldBeFalse();
+    }
+
+    [Test]
+    public void GivenTwoListAuthorsQueries_WhenGettingHashCode_ThenShouldReturnSameHashCode()
+    {
+        // Arrange
+        var query1 = new ListAuthorsQuery();
+        var query2 = new ListAuthorsQuery();
+
+        // Act
+        var hashCode1 = query1.GetHashCode();
+        var hashCode2 = query2.GetHashCode();
+
+        // Assert
+        hashCode1.ShouldBe(hashCode2);
+    }
+
+    [Test]
+    public void GivenListAuthorsQuery_WhenCallingToString_ThenShouldReturnStringRepresentation()
+    {
+        // Arrange
+        var query = new ListAuthorsQuery();
+
+        // Act
+        var result = query.ToString();
+
+        // Assert
+        result.ShouldNotBeNull();
+        result.ShouldNotBeEmpty();
+        result.ShouldContain(nameof(ListAuthorsQuery));
+    }
+
+    [Test]
+    public void GivenListAuthorsQuery_WhenUsingWithExpression_ThenShouldCreateIdenticalCopy()
+    {
+        // Arrange
+        var original = new ListAuthorsQuery();
+
+        // Act
+        var copy = original with
+        { };
+
+        // Assert
+        copy.ShouldBe(original);
+        copy.ShouldNotBeSameAs(original);
     }
 }

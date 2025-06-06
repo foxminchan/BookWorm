@@ -83,4 +83,17 @@ public sealed class ListCategoryQueryTests
             await _handler.Handle(query, CancellationToken.None)
         );
     }
+
+    [Test]
+    public void GivenTwoListCategoriesQueryInstances_WhenCompared_ThenShouldBeEqual()
+    {
+        // Arrange
+        var query1 = new ListCategoriesQuery();
+        var query2 = new ListCategoriesQuery();
+
+        // Assert
+        query1.ShouldBe(query2);
+        query1.GetHashCode().ShouldBe(query2.GetHashCode());
+        query1.ToString().ShouldBe(query2.ToString());
+    }
 }
