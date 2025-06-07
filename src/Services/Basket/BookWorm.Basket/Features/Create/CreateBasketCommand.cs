@@ -14,7 +14,7 @@ public sealed class CreateBasketHandler(
         CancellationToken cancellationToken
     )
     {
-        var sub = claimsPrincipal.GetClaimValue(KeycloakClaimTypes.Subject);
+        var sub = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier);
 
         var userId = Guard.Against.NotAuthenticated(sub);
 

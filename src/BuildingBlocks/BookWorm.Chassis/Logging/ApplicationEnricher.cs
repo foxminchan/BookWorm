@@ -1,4 +1,5 @@
-﻿using BookWorm.Constants.Other;
+﻿using System.Security.Claims;
+using BookWorm.Constants.Other;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Diagnostics.Enrichment;
 
@@ -16,7 +17,7 @@ public sealed class ApplicationEnricher(IHttpContextAccessor httpContextAccessor
         {
             collector.Add(
                 LoggingConstant.UserId,
-                httpContext.User.Claims.First(c => c.Type == "sub").Value
+                httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty
             );
         }
     }

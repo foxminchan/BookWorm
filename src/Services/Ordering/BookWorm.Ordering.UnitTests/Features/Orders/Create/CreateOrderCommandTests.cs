@@ -10,7 +10,6 @@ using BookWorm.Ordering.Grpc.Services.Book;
 using BookWorm.Ordering.Infrastructure.Helpers;
 using BookWorm.Ordering.Infrastructure.Services;
 using BookWorm.Ordering.UnitTests.Mocks;
-using BookWorm.ServiceDefaults.Keycloak;
 using Medallion.Threading;
 
 namespace BookWorm.Ordering.UnitTests.Features.Orders.Create;
@@ -167,8 +166,8 @@ public sealed class CreateOrderCommandTests
             _claimsPrincipalMock = new();
             _lockProviderMock = new();
 
-            var claim = new Claim(KeycloakClaimTypes.Subject, _userId);
-            _claimsPrincipalMock.Setup(x => x.FindFirst(KeycloakClaimTypes.Subject)).Returns(claim);
+            var claim = new Claim(ClaimTypes.NameIdentifier, _userId);
+            _claimsPrincipalMock.Setup(x => x.FindFirst(ClaimTypes.NameIdentifier)).Returns(claim);
 
             _handler = new(
                 _repositoryMock.Object,
@@ -203,7 +202,7 @@ public sealed class CreateOrderCommandTests
         {
             // Arrange
             _claimsPrincipalMock
-                .Setup(x => x.FindFirst(KeycloakClaimTypes.Subject))
+                .Setup(x => x.FindFirst(ClaimTypes.NameIdentifier))
                 .Returns((Claim)default!);
 
             // Act

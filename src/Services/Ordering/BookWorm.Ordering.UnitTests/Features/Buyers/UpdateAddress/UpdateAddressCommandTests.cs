@@ -3,7 +3,6 @@ using BookWorm.Chassis.Exceptions;
 using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
 using BookWorm.Ordering.Features.Buyers.UpdateAddress;
 using BookWorm.Ordering.UnitTests.Fakers;
-using BookWorm.ServiceDefaults.Keycloak;
 
 namespace BookWorm.Ordering.UnitTests.Features.Buyers.UpdateAddress;
 
@@ -25,8 +24,8 @@ public sealed class UpdateAddressCommandTests
         _claimsPrincipalMock = new();
 
         // Setup claim
-        var claim = new Claim(KeycloakClaimTypes.Subject, _userId.ToString());
-        _claimsPrincipalMock.Setup(x => x.FindFirst(KeycloakClaimTypes.Subject)).Returns(claim);
+        var claim = new Claim(ClaimTypes.NameIdentifier, _userId.ToString());
+        _claimsPrincipalMock.Setup(x => x.FindFirst(ClaimTypes.NameIdentifier)).Returns(claim);
 
         _handler = new(_buyerRepositoryMock.Object, _claimsPrincipalMock.Object);
 
@@ -82,9 +81,9 @@ public sealed class UpdateAddressCommandTests
     public async Task GivenInvalidUserId_WhenHandlingUpdateAddress_ThenShouldThrowArgumentException()
     {
         // Arrange
-        var invalidClaim = new Claim(KeycloakClaimTypes.Subject, "not-a-guid");
+        var invalidClaim = new Claim(ClaimTypes.NameIdentifier, "not-a-guid");
         _claimsPrincipalMock
-            .Setup(x => x.FindFirst(KeycloakClaimTypes.Subject))
+            .Setup(x => x.FindFirst(ClaimTypes.NameIdentifier))
             .Returns(invalidClaim);
 
         // Act
@@ -104,7 +103,7 @@ public sealed class UpdateAddressCommandTests
     {
         // Arrange
         _claimsPrincipalMock
-            .Setup(x => x.FindFirst(KeycloakClaimTypes.Subject))
+            .Setup(x => x.FindFirst(ClaimTypes.NameIdentifier))
             .Returns((Claim)null!);
 
         // Act

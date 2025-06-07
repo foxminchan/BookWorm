@@ -9,7 +9,7 @@ public sealed class UpdateBasketHandler(
 {
     public async Task<Unit> Handle(UpdateBasketCommand request, CancellationToken cancellationToken)
     {
-        var sub = claimsPrincipal.GetClaimValue(KeycloakClaimTypes.Subject);
+        var sub = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier);
 
         var userId = Guard.Against.NotAuthenticated(sub);
 

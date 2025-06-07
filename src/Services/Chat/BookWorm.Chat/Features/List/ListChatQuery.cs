@@ -31,7 +31,7 @@ public sealed class ListChatHandler(
         {
             request = request with
             {
-                UserId = claimsPrincipal.GetClaimValue(KeycloakClaimTypes.Subject).ToUserId(),
+                UserId = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToUserId(),
             };
         }
 

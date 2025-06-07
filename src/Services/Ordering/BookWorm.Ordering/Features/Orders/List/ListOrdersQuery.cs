@@ -31,7 +31,7 @@ public sealed class ListOrdersHandler(IOrderRepository repository, ClaimsPrincip
         {
             request = request with
             {
-                BuyerId = claimsPrincipal.GetClaimValue(KeycloakClaimTypes.Subject).ToBuyerId(),
+                BuyerId = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId(),
             };
         }
 

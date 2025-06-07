@@ -3,7 +3,6 @@ using BookWorm.Basket.Domain;
 using BookWorm.Basket.Features.Update;
 using BookWorm.Basket.UnitTests.Fakers;
 using BookWorm.Chassis.Exceptions;
-using BookWorm.ServiceDefaults.Keycloak;
 using MediatR;
 
 namespace BookWorm.Basket.UnitTests.Features.Update;
@@ -22,10 +21,10 @@ public sealed class UpdateBasketCommandTests
         _repositoryMock = new();
         Mock<ClaimsPrincipal> claimsPrincipalMock = new();
 
-        // Set up the claim using the KeycloakClaimTypes.Subject
+        // Set up the claim using the ClaimTypes.NameIdentifier
         // and ensure GetClaimValue extension method will work
-        var claim = new Claim(KeycloakClaimTypes.Subject, _userId);
-        claimsPrincipalMock.Setup(x => x.FindFirst(KeycloakClaimTypes.Subject)).Returns(claim);
+        var claim = new Claim(ClaimTypes.NameIdentifier, _userId);
+        claimsPrincipalMock.Setup(x => x.FindFirst(ClaimTypes.NameIdentifier)).Returns(claim);
 
         _handler = new(_repositoryMock.Object, claimsPrincipalMock.Object);
     }
@@ -68,10 +67,10 @@ public sealed class UpdateBasketCommandTests
         var command = new UpdateBasketCommandFaker().Generate();
         Mock<ClaimsPrincipal> claimsPrincipalMock = new();
 
-        // Set up the claim using the KeycloakClaimTypes.Subject
+        // Set up the claim using the ClaimTypes.NameIdentifier
         // and ensure GetClaimValue extension method will work
         claimsPrincipalMock
-            .Setup(x => x.FindFirst(KeycloakClaimTypes.Subject))
+            .Setup(x => x.FindFirst(ClaimTypes.NameIdentifier))
             .Returns((Claim?)null);
 
         var handler = new UpdateBasketHandler(_repositoryMock.Object, claimsPrincipalMock.Object);

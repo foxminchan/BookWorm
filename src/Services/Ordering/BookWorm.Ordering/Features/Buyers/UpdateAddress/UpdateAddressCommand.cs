@@ -15,7 +15,7 @@ public sealed class UpdateAddressHandler(
         CancellationToken cancellationToken
     )
     {
-        var userId = claimsPrincipal.GetClaimValue(KeycloakClaimTypes.Subject).ToBuyerId();
+        var userId = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId();
 
         var buyer = await buyerRepository.GetByIdAsync(userId, cancellationToken);
 

@@ -3,7 +3,6 @@ using BookWorm.Basket.Domain;
 using BookWorm.Basket.Features.Create;
 using BookWorm.Basket.Infrastructure.Exceptions;
 using BookWorm.Basket.UnitTests.Fakers;
-using BookWorm.ServiceDefaults.Keycloak;
 
 namespace BookWorm.Basket.UnitTests.Features.Create;
 
@@ -22,8 +21,8 @@ public sealed class CreateBasketCommandTests
         _faker = new();
 
         mockClaimsPrincipal
-            .Setup(x => x.FindFirst(KeycloakClaimTypes.Subject))
-            .Returns(new Claim(KeycloakClaimTypes.Subject, _userId));
+            .Setup(x => x.FindFirst(ClaimTypes.NameIdentifier))
+            .Returns(new Claim(ClaimTypes.NameIdentifier, _userId));
 
         _handler = new(_mockBasketRepository.Object, mockClaimsPrincipal.Object);
     }
@@ -64,7 +63,7 @@ public sealed class CreateBasketCommandTests
 
         // Return null when looking for the claim
         mockEmptyClaimsPrincipal
-            .Setup(x => x.FindFirst(KeycloakClaimTypes.Subject))
+            .Setup(x => x.FindFirst(ClaimTypes.NameIdentifier))
             .Returns((Claim?)null);
 
         var handler = new CreateBasketHandler(
