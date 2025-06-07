@@ -1,21 +1,21 @@
 ﻿using BookWorm.Contracts;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Domain.Events;
+using BookWorm.Ordering.UnitTests.Fakers;
 
 namespace BookWorm.Ordering.UnitTests.Domain;
 
 public sealed class OrderSummaryTests
 {
     [Test]
-    public void GivenOrderSummary_WhenApplyingDeleteBasketCompleteCommand_ThenStatusShouldBeNew()
+    public void GivenDeleteBasketCompleteCommand_WhenCreatingOrderSummary_ThenStatusShouldBeNew()
     {
         // Arrange
         var orderId = Guid.CreateVersion7();
-        var orderSummary = new OrderSummary(orderId, Status.New, 100.0m);
         var command = new DeleteBasketCompleteCommand(orderId, 100.0m);
 
         // Act
-        var result = orderSummary.Apply(command);
+        var result = OrderSummary.Create(command);
 
         // Assert
         result.Id.ShouldBe(orderId);
@@ -24,39 +24,35 @@ public sealed class OrderSummaryTests
     }
 
     [Test]
-    public void GivenOrderSummary_WhenApplyingOrderCancelledEvent_ThenStatusShouldBeCancelled()
+    public void GivenOrderCancelledEvent_WhenApplyingToOrderSummary_ThenStatusShouldBeCancelled()
     {
         // Arrange
-        var orderId = Guid.CreateVersion7();
-        var orderSummary = new OrderSummary(orderId, Status.Cancelled, 100.0m);
-        var order = new Order(); // This would need to be properly initialized based on your Order class
+        var order = new OrderFaker().Generate()[0];
         var cancelledEvent = new OrderCancelledEvent(order);
 
         // Act
-        var result = orderSummary.Apply(cancelledEvent);
+        var result = OrderSummary.Apply(cancelledEvent);
 
         // Assert
-        result.Id.ShouldBe(orderId);
+        result.Id.ShouldBe(order.Id);
         result.Status.ShouldBe(Status.Cancelled);
-        result.TotalPrice.ShouldBe(100.0m);
+        result.TotalPrice.ShouldBe(order.TotalPrice);
     }
 
     [Test]
-    public void GivenOrderSummary_WhenApplyingOrderCompletedEvent_ThenStatusShouldBeCompleted()
+    public void GivenOrderCompletedEvent_WhenApplyingToOrderSummary_ThenStatusShouldBeCompleted()
     {
         // Arrange
-        var orderId = Guid.CreateVersion7();
-        var orderSummary = new OrderSummary(orderId, Status.Completed, 100.0m);
-        var order = new Order(); // This would need to be properly initialized based on your Order class
+        var order = new OrderFaker().Generate()[0];
         var completedEvent = new OrderCompletedEvent(order);
 
         // Act
-        var result = orderSummary.Apply(completedEvent);
+        var result = OrderSummary.Apply(completedEvent);
 
         // Assert
-        result.Id.ShouldBe(orderId);
+        result.Id.ShouldBe(order.Id);
         result.Status.ShouldBe(Status.Completed);
-        result.TotalPrice.ShouldBe(100.0m);
+        result.TotalPrice.ShouldBe(order.TotalPrice);
     }
 
     [Test]

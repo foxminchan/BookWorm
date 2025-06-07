@@ -4,18 +4,18 @@ namespace BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 
 public sealed record OrderSummary(Guid Id, Status Status, decimal TotalPrice)
 {
-    public OrderSummary Apply(DeleteBasketCompleteCommand @event)
+    public static OrderSummary Create(DeleteBasketCompleteCommand @event)
     {
-        return this with { Status = Status.New };
+        return new(@event.OrderId, Status.New, @event.TotalMoney);
     }
 
-    public OrderSummary Apply(OrderCancelledEvent @event)
+    public static OrderSummary Apply(OrderCancelledEvent @event)
     {
-        return this with { Status = Status.Cancelled };
+        return new(@event.Order.Id, Status.Cancelled, @event.Order.TotalPrice);
     }
 
-    public OrderSummary Apply(OrderCompletedEvent @event)
+    public static OrderSummary Apply(OrderCompletedEvent @event)
     {
-        return this with { Status = Status.Completed };
+        return new(@event.Order.Id, Status.Completed, @event.Order.TotalPrice);
     }
 }

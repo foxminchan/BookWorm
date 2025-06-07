@@ -3,7 +3,7 @@ using Marten.Schema;
 
 namespace BookWorm.Ordering.Domain.Projections;
 
-public sealed class OrderSummaryInfo
+public sealed class OrderSummaryView
 {
     [Identity]
     public Guid Id { get; set; }
@@ -12,11 +12,11 @@ public sealed class OrderSummaryInfo
     public decimal TotalPrice { get; set; }
 }
 
-public sealed class OrderProjection : MultiStreamProjection<OrderSummaryInfo, Guid>
+public sealed class OrderSummaryViewProjection : MultiStreamProjection<OrderSummaryView, Guid>
 {
-    public OrderProjection()
+    public OrderSummaryViewProjection()
     {
-        Name = nameof(OrderSummary);
+        Name = nameof(OrderSummaryView);
 
         // Opt into 2nd level caching of up to 100
         // most recently encountered aggregates as a
@@ -36,25 +36,25 @@ public sealed class OrderProjection : MultiStreamProjection<OrderSummaryInfo, Gu
         Identity<OrderCompletedEvent>(e => e.Order.Id);
     }
 
-    public OrderSummaryInfo Create(OrderSummaryInfo info, DeleteBasketCompleteCommand @event)
+    public static OrderSummaryView Create(OrderSummaryView view, DeleteBasketCompleteCommand @event)
     {
-        info.Id = @event.OrderId;
-        info.Status = Status.New;
-        info.TotalPrice = @event.TotalMoney;
-        return info;
+        view.Id = @event.OrderId;
+        view.Status = Status.New;
+        view.TotalPrice = @event.TotalMoney;
+        return view;
     }
 
-    public OrderSummaryInfo Apply(OrderSummaryInfo info, OrderCancelledEvent @event)
+    public static OrderSummaryView Apply(OrderSummaryView view, OrderCancelledEvent @event)
     {
-        info.Status = Status.Cancelled;
-        info.TotalPrice = @event.Order.TotalPrice;
-        return info;
+        view.Status = Status.Cancelled;
+        view.TotalPrice = @event.Order.TotalPrice;
+        return view;
     }
 
-    public OrderSummaryInfo Apply(OrderSummaryInfo info, OrderCompletedEvent @event)
+    public static OrderSummaryView Apply(OrderSummaryView view, OrderCompletedEvent @event)
     {
-        info.Status = Status.Completed;
-        info.TotalPrice = @event.Order.TotalPrice;
-        return info;
+        view.Status = Status.Completed;
+        view.TotalPrice = @event.Order.TotalPrice;
+        return view;
     }
 }
