@@ -15,7 +15,7 @@ public sealed class GetBuyerHandler(
     {
         var buyerId = claimsPrincipal.GetRoles().Contains(Authorization.Roles.Admin)
             ? request.Id
-            : claimsPrincipal.GetClaimValue(KeycloakClaimTypes.Subject).ToBuyerId();
+            : claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId();
 
         var result = await buyerRepository.GetByIdAsync(buyerId, cancellationToken);
 

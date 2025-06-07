@@ -4,7 +4,6 @@ using BookWorm.Chat.Domain.AggregatesModel.Specifications;
 using BookWorm.Chat.Features.List;
 using BookWorm.Chat.UnitTests.Fakers;
 using BookWorm.Constants.Core;
-using BookWorm.ServiceDefaults.Keycloak;
 
 namespace BookWorm.Chat.UnitTests.Features.List;
 
@@ -306,7 +305,7 @@ public sealed class ListChatHandlerTests
 
     private static ClaimsPrincipal CreateClaimsPrincipal(string[] roles, string userId)
     {
-        var claims = new List<Claim> { new(KeycloakClaimTypes.Subject, userId) };
+        var claims = new List<Claim> { new(ClaimTypes.NameIdentifier, userId) };
 
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 

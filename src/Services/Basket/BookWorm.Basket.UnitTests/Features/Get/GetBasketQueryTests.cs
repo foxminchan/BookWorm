@@ -7,7 +7,6 @@ using BookWorm.Basket.UnitTests.Fakers;
 using BookWorm.Catalog.Grpc.Services;
 using BookWorm.Chassis.Exceptions;
 using BookWorm.Chassis.Query;
-using BookWorm.ServiceDefaults.Keycloak;
 
 namespace BookWorm.Basket.UnitTests.Features.Get;
 
@@ -28,10 +27,10 @@ public static class GetBasketQueryTests
             _claimsPrincipalMock = new();
             _repositoryMock = new();
 
-            // Set up the claim using the KeycloakClaimTypes.Subject
+            // Set up the claim using the ClaimTypes.NameIdentifier
             // and ensure the GetClaimValue extension method will work
-            var claim = new Claim(KeycloakClaimTypes.Subject, _userId);
-            _claimsPrincipalMock.Setup(x => x.FindFirst(KeycloakClaimTypes.Subject)).Returns(claim);
+            var claim = new Claim(ClaimTypes.NameIdentifier, _userId);
+            _claimsPrincipalMock.Setup(x => x.FindFirst(ClaimTypes.NameIdentifier)).Returns(claim);
 
             _handler = new(_repositoryMock.Object, _claimsPrincipalMock.Object);
         }
@@ -81,7 +80,7 @@ public static class GetBasketQueryTests
             var query = new GetBasketQuery();
 
             _claimsPrincipalMock
-                .Setup(x => x.FindFirst(KeycloakClaimTypes.Subject))
+                .Setup(x => x.FindFirst(ClaimTypes.NameIdentifier))
                 .Returns((Claim?)null);
 
             // Act

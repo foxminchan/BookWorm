@@ -2,7 +2,6 @@
 using BookWorm.Chassis.Repository;
 using BookWorm.Chat.Domain.AggregatesModel;
 using BookWorm.Chat.Features.Create;
-using BookWorm.ServiceDefaults.Keycloak;
 
 namespace BookWorm.Chat.UnitTests.Features.Create;
 
@@ -126,7 +125,7 @@ public sealed class CreateChatCommandTests
         var command = new CreateChatCommand("Test Chat");
 
         _claimsPrincipalMock
-            .Setup(x => x.FindFirst(KeycloakClaimTypes.Subject))
+            .Setup(x => x.FindFirst(ClaimTypes.NameIdentifier))
             .Returns((Claim?)null);
 
         // Act & Assert
@@ -148,8 +147,8 @@ public sealed class CreateChatCommandTests
         var command = new CreateChatCommand("Test Chat");
 
         _claimsPrincipalMock
-            .Setup(x => x.FindFirst(KeycloakClaimTypes.Subject))
-            .Returns(new Claim(KeycloakClaimTypes.Subject, string.Empty));
+            .Setup(x => x.FindFirst(ClaimTypes.NameIdentifier))
+            .Returns(new Claim(ClaimTypes.NameIdentifier, string.Empty));
 
         // Act & Assert
         var exception = await Should.ThrowAsync<UnauthorizedAccessException>(() =>
@@ -166,8 +165,8 @@ public sealed class CreateChatCommandTests
         var command = new CreateChatCommand("Test Chat");
 
         _claimsPrincipalMock
-            .Setup(x => x.FindFirst(KeycloakClaimTypes.Subject))
-            .Returns(new Claim(KeycloakClaimTypes.Subject, "   "));
+            .Setup(x => x.FindFirst(ClaimTypes.NameIdentifier))
+            .Returns(new Claim(ClaimTypes.NameIdentifier, "   "));
 
         // Act & Assert
         var exception = await Should.ThrowAsync<UnauthorizedAccessException>(() =>
@@ -184,8 +183,8 @@ public sealed class CreateChatCommandTests
         var command = new CreateChatCommand("Test Chat");
 
         _claimsPrincipalMock
-            .Setup(x => x.FindFirst(KeycloakClaimTypes.Subject))
-            .Returns(new Claim(KeycloakClaimTypes.Subject, "invalid-guid"));
+            .Setup(x => x.FindFirst(ClaimTypes.NameIdentifier))
+            .Returns(new Claim(ClaimTypes.NameIdentifier, "invalid-guid"));
 
         // Act & Assert
         var exception = await Should.ThrowAsync<ArgumentException>(() =>
@@ -379,8 +378,8 @@ public sealed class CreateChatCommandTests
     private void SetupClaimsPrincipal(Guid userId)
     {
         _claimsPrincipalMock
-            .Setup(x => x.FindFirst(KeycloakClaimTypes.Subject))
-            .Returns(new Claim(KeycloakClaimTypes.Subject, userId.ToString()));
+            .Setup(x => x.FindFirst(ClaimTypes.NameIdentifier))
+            .Returns(new Claim(ClaimTypes.NameIdentifier, userId.ToString()));
     }
 
     private void SetupRepositoryAddAsync(Conversation conversation)

@@ -4,7 +4,6 @@ using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
 using BookWorm.Ordering.Features.Orders.List;
 using BookWorm.Ordering.UnitTests.Fakers;
-using BookWorm.ServiceDefaults.Keycloak;
 
 namespace BookWorm.Ordering.UnitTests.Features.Orders.List;
 
@@ -23,8 +22,8 @@ public sealed class ListOrdersQueryTests
         _claimsPrincipalMock = new();
 
         // Setup default claims for a regular user
-        var claim = new Claim(KeycloakClaimTypes.Subject, userId.ToString());
-        _claimsPrincipalMock.Setup(x => x.FindFirst(KeycloakClaimTypes.Subject)).Returns(claim);
+        var claim = new Claim(ClaimTypes.NameIdentifier, userId.ToString());
+        _claimsPrincipalMock.Setup(x => x.FindFirst(ClaimTypes.NameIdentifier)).Returns(claim);
         _claimsPrincipalMock
             .Setup(x => x.FindAll(ClaimTypes.Role))
             .Returns([new(ClaimTypes.Role, Authorization.Roles.User)]);

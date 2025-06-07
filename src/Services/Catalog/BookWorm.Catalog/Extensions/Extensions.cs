@@ -29,8 +29,8 @@ public static class Extensions
 
         // Add exception handlers
         services.AddExceptionHandler<ValidationExceptionHandler>();
-        services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddExceptionHandler<NotFoundExceptionHandler>();
+        services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails();
 
         // Add database configuration

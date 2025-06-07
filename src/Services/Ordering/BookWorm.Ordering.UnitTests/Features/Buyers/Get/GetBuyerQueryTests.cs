@@ -4,7 +4,6 @@ using BookWorm.Constants.Core;
 using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
 using BookWorm.Ordering.Features.Buyers.Get;
 using BookWorm.Ordering.UnitTests.Fakers;
-using BookWorm.ServiceDefaults.Keycloak;
 
 namespace BookWorm.Ordering.UnitTests.Features.Buyers.Get;
 
@@ -118,7 +117,7 @@ public sealed class GetBuyerQueryTests
         // Arrange
         var claimsPrincipalMock = new Mock<ClaimsPrincipal>();
         claimsPrincipalMock
-            .Setup(cp => cp.FindFirst(KeycloakClaimTypes.Subject))
+            .Setup(cp => cp.FindFirst(ClaimTypes.NameIdentifier))
             .Returns((Claim)null!);
 
         var handler = new GetBuyerHandler(_buyerRepositoryMock.Object, claimsPrincipalMock.Object);
@@ -138,7 +137,7 @@ public sealed class GetBuyerQueryTests
 
     private static ClaimsPrincipal CreateClaimsPrincipal(bool isAdmin, Guid userId)
     {
-        var claims = new List<Claim> { new(KeycloakClaimTypes.Subject, userId.ToString()) };
+        var claims = new List<Claim> { new(ClaimTypes.NameIdentifier, userId.ToString()) };
 
         if (isAdmin)
         {

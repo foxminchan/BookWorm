@@ -23,7 +23,7 @@ public sealed class GetOrderHandler(IOrderRepository repository, ClaimsPrincipal
         }
         else
         {
-            var buyerId = claimsPrincipal.GetClaimValue(KeycloakClaimTypes.Subject).ToBuyerId();
+            var buyerId = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId();
 
             order = await repository.FirstOrDefaultAsync(
                 new OrderFilterSpec(request.Id, buyerId),

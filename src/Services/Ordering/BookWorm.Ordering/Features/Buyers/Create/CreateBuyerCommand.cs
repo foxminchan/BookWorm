@@ -12,7 +12,7 @@ public sealed class CreateBuyerHandler(
 {
     public async Task<Guid> Handle(CreateBuyerCommand request, CancellationToken cancellationToken)
     {
-        var userId = claimsPrincipal.GetClaimValue(KeycloakClaimTypes.Subject).ToBuyerId();
+        var userId = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId();
 
         var name = claimsPrincipal.GetClaimValue(KeycloakClaimTypes.Name) ?? "anonymous";
 

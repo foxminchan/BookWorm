@@ -12,7 +12,7 @@ public sealed class CreateChatHandler(
 {
     public async Task<Guid> Handle(CreateChatCommand request, CancellationToken cancellationToken)
     {
-        var userId = claimsPrincipal.GetClaimValue(KeycloakClaimTypes.Subject).ToUserId();
+        var userId = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToUserId();
 
         var conversation = new Conversation(request.Name, userId);
 

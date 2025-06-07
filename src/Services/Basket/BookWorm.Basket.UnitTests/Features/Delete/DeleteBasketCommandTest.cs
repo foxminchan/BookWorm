@@ -4,7 +4,6 @@ using BookWorm.Basket.Features.Delete;
 using BookWorm.Basket.UnitTests.Fakers;
 using BookWorm.Chassis.Command;
 using BookWorm.Chassis.Exceptions;
-using BookWorm.ServiceDefaults.Keycloak;
 using MediatR;
 
 namespace BookWorm.Basket.UnitTests.Features.Delete;
@@ -25,10 +24,10 @@ public sealed class DeleteBasketCommandTest
         _repositoryMock = new();
         _claimsPrincipalMock = new();
 
-        // Set up the claim using the KeycloakClaimTypes.Subject
+        // Set up the claim using the ClaimTypes.NameIdentifier
         // and ensure the GetClaimValue extension method will work
-        var claim = new Claim(KeycloakClaimTypes.Subject, _userId);
-        _claimsPrincipalMock.Setup(x => x.FindFirst(KeycloakClaimTypes.Subject)).Returns(claim);
+        var claim = new Claim(ClaimTypes.NameIdentifier, _userId);
+        _claimsPrincipalMock.Setup(x => x.FindFirst(ClaimTypes.NameIdentifier)).Returns(claim);
 
         _handler = new(_repositoryMock.Object, _claimsPrincipalMock.Object);
     }
@@ -114,7 +113,7 @@ public sealed class DeleteBasketCommandTest
         var command = new DeleteBasketCommand();
 
         _claimsPrincipalMock
-            .Setup(x => x.FindFirst(KeycloakClaimTypes.Subject))
+            .Setup(x => x.FindFirst(ClaimTypes.NameIdentifier))
             .Returns((Claim?)null);
 
         // Act

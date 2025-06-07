@@ -2,7 +2,6 @@
 
 public static class KeycloakClaimTypes
 {
-    public static string Subject => "sub";
     public static string PreferredUsername => "preferred_username";
     public static string Email => "email";
     public static string Name => "name";

@@ -25,8 +25,8 @@ public sealed class CreateBuyerCommandTests
 
         // Setup claims principal
         _claimsPrincipalMock
-            .Setup(x => x.FindFirst(KeycloakClaimTypes.Subject))
-            .Returns(new Claim(KeycloakClaimTypes.Subject, userId.ToString()));
+            .Setup(x => x.FindFirst(ClaimTypes.NameIdentifier))
+            .Returns(new Claim(ClaimTypes.NameIdentifier, userId.ToString()));
         _claimsPrincipalMock
             .Setup(x => x.FindFirst(KeycloakClaimTypes.Name))
             .Returns(new Claim(KeycloakClaimTypes.Name, _userName));
@@ -79,8 +79,8 @@ public sealed class CreateBuyerCommandTests
         // Arrange
         var command = new CreateBuyerCommand("123 Main St", "Seattle", "Washington");
         _claimsPrincipalMock
-            .Setup(x => x.FindFirst(KeycloakClaimTypes.Subject))
-            .Returns(new Claim(KeycloakClaimTypes.Subject, "invalid-guid"));
+            .Setup(x => x.FindFirst(ClaimTypes.NameIdentifier))
+            .Returns(new Claim(ClaimTypes.NameIdentifier, "invalid-guid"));
 
         // Act
         var act = async () => await _handler.Handle(command, CancellationToken.None);
@@ -100,7 +100,7 @@ public sealed class CreateBuyerCommandTests
         // Arrange
         var command = new CreateBuyerCommand("123 Main St", "Seattle", "Washington");
         _claimsPrincipalMock
-            .Setup(x => x.FindFirst(KeycloakClaimTypes.Subject))
+            .Setup(x => x.FindFirst(ClaimTypes.NameIdentifier))
             .Returns((Claim)default!);
 
         // Act

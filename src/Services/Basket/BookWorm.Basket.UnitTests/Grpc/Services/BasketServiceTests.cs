@@ -2,7 +2,6 @@
 using BookWorm.Basket.Domain;
 using BookWorm.Basket.Grpc.Services.Basket;
 using BookWorm.Basket.UnitTests.Grpc.Context;
-using BookWorm.ServiceDefaults.Keycloak;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -37,7 +36,7 @@ public sealed class BasketServiceTests
         var context = TestServerCallContext.Create();
         var httpContext = new DefaultHttpContext
         {
-            User = new(new ClaimsIdentity([new(KeycloakClaimTypes.Subject, basket.Id)])),
+            User = new(new ClaimsIdentity([new(ClaimTypes.NameIdentifier, basket.Id)])),
         };
         context.SetUserState("__HttpContext", httpContext);
 
@@ -90,7 +89,7 @@ public sealed class BasketServiceTests
         {
             User = new(
                 new ClaimsIdentity(
-                    [new(KeycloakClaimTypes.Subject, Guid.CreateVersion7().ToString())]
+                    [new(ClaimTypes.NameIdentifier, Guid.CreateVersion7().ToString())]
                 )
             ),
         };
@@ -119,7 +118,7 @@ public sealed class BasketServiceTests
         var context = TestServerCallContext.Create();
         var httpContext = new DefaultHttpContext
         {
-            User = new(new ClaimsIdentity([new(KeycloakClaimTypes.Subject, userId)])),
+            User = new(new ClaimsIdentity([new(ClaimTypes.NameIdentifier, userId)])),
         };
         context.SetUserState("__HttpContext", httpContext);
 
@@ -166,7 +165,7 @@ public sealed class BasketServiceTests
         var context = TestServerCallContext.Create();
         var httpContext = new DefaultHttpContext
         {
-            User = new(new ClaimsIdentity([new(KeycloakClaimTypes.Subject, userId)])),
+            User = new(new ClaimsIdentity([new(ClaimTypes.NameIdentifier, userId)])),
         };
         context.SetUserState("__HttpContext", httpContext);
 

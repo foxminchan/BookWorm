@@ -8,7 +8,6 @@ using BookWorm.Ordering.Features.Orders;
 using BookWorm.Ordering.Features.Orders.Get;
 using BookWorm.Ordering.Grpc.Services.Book;
 using BookWorm.Ordering.UnitTests.Fakers;
-using BookWorm.ServiceDefaults.Keycloak;
 
 namespace BookWorm.Ordering.UnitTests.Features.Orders.Get;
 
@@ -207,9 +206,9 @@ public sealed class GetOrderQueryTests
             .Setup(c => c.FindAll(ClaimTypes.Role))
             .Returns(roles.Select(r => new Claim(ClaimTypes.Role, r)));
 
-        var subjectClaim = new Claim(KeycloakClaimTypes.Subject, userId);
+        var subjectClaim = new Claim(ClaimTypes.NameIdentifier, userId);
         _claimsPrincipalMock
-            .Setup(c => c.FindFirst(KeycloakClaimTypes.Subject))
+            .Setup(c => c.FindFirst(ClaimTypes.NameIdentifier))
             .Returns(subjectClaim);
     }
 }
