@@ -2,22 +2,13 @@
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Domain.Events;
 using BookWorm.Ordering.Domain.Projections;
+using BookWorm.Ordering.UnitTests.Fakers;
 
 namespace BookWorm.Ordering.UnitTests.Domain;
 
-public sealed class OrderProjectionTests
+public sealed class OrderSummaryViewProjectionTests
 {
-    private readonly Faker<Order> _orderFaker;
-    private readonly OrderProjection _orderProjection;
-
-    public OrderProjectionTests()
-    {
-        _orderProjection = new();
-
-        _orderFaker = new Faker<Order>()
-            .RuleFor(o => o.Id, _ => Guid.CreateVersion7())
-            .RuleFor(o => o.TotalPrice, f => f.Random.Decimal(10, 1000));
-    }
+    private readonly OrderFaker _orderFaker = new();
 
     [Test]
     public void GivenConstructor_WhenInstantiated_ThenShouldSetupIdentities()
@@ -25,7 +16,7 @@ public sealed class OrderProjectionTests
         // No explicit assertions needed as the constructor behavior is validated
         // through the Apply method tests. If identities weren't properly set up,
         // the Apply methods wouldn't work correctly.
-        _orderProjection.ShouldNotBeNull();
+        new OrderSummaryViewProjection().ShouldNotBeNull();
     }
 
     [Test]
@@ -34,11 +25,11 @@ public sealed class OrderProjectionTests
         // Arrange
         var orderId = Guid.CreateVersion7();
         const decimal totalMoney = 123.45m;
-        var info = new OrderSummaryInfo();
+        var info = new OrderSummaryView();
         var command = new DeleteBasketCompleteCommand(orderId, totalMoney);
 
         // Act
-        var result = _orderProjection.Create(info, command);
+        var result = OrderSummaryViewProjection.Create(info, command);
 
         // Assert
         result.Id.ShouldBe(orderId);
@@ -50,12 +41,12 @@ public sealed class OrderProjectionTests
     public void GivenOrderCancelledEvent_WhenApplied_ThenShouldUpdateStatusToCancelledAndSetTotalPrice()
     {
         // Arrange
-        var info = new OrderSummaryInfo();
-        var order = _orderFaker.Generate();
+        var info = new OrderSummaryView();
+        var order = _orderFaker.Generate()[0];
         var @event = new OrderCancelledEvent(order);
 
         // Act
-        var result = _orderProjection.Apply(info, @event);
+        var result = OrderSummaryViewProjection.Apply(info, @event);
 
         // Assert
         result.Status.ShouldBe(Status.Cancelled);
@@ -66,12 +57,12 @@ public sealed class OrderProjectionTests
     public void GivenOrderCompletedEvent_WhenApplied_ThenShouldUpdateStatusToCompletedAndSetTotalPrice()
     {
         // Arrange
-        var info = new OrderSummaryInfo();
-        var order = _orderFaker.Generate();
+        var info = new OrderSummaryView();
+        var order = _orderFaker.Generate()[0];
         var @event = new OrderCompletedEvent(order);
 
         // Act
-        var result = _orderProjection.Apply(info, @event);
+        var result = OrderSummaryViewProjection.Apply(info, @event);
 
         // Assert
         result.Status.ShouldBe(Status.Completed);
@@ -84,7 +75,7 @@ public sealed class OrderProjectionTests
         // Arrange
         var orderId = Guid.CreateVersion7();
         const decimal totalMoney = 123.45m;
-        var info = new OrderSummaryInfo
+        var info = new OrderSummaryView
         {
             Id = Guid.CreateVersion7(),
             Status = Status.Completed,
@@ -93,7 +84,7 @@ public sealed class OrderProjectionTests
         var command = new DeleteBasketCompleteCommand(orderId, totalMoney);
 
         // Act
-        var result = _orderProjection.Create(info, command);
+        var result = OrderSummaryViewProjection.Create(info, command);
 
         // Assert
         result.ShouldBeSameAs(info); // Should modify the same object
@@ -106,17 +97,17 @@ public sealed class OrderProjectionTests
     public void GivenExistingOrderSummary_WhenApplyingOrderCancelledEvent_ThenShouldUpdateExistingInfo()
     {
         // Arrange
-        var info = new OrderSummaryInfo
+        var info = new OrderSummaryView
         {
             Id = Guid.CreateVersion7(),
             Status = Status.New,
             TotalPrice = 999.99m,
         };
-        var order = _orderFaker.Generate();
+        var order = _orderFaker.Generate()[0];
         var @event = new OrderCancelledEvent(order);
 
         // Act
-        var result = _orderProjection.Apply(info, @event);
+        var result = OrderSummaryViewProjection.Apply(info, @event);
 
         // Assert
         result.ShouldBeSameAs(info); // Should modify the same object
@@ -128,17 +119,17 @@ public sealed class OrderProjectionTests
     public void GivenExistingOrderSummary_WhenApplyingOrderCompletedEvent_ThenShouldUpdateExistingInfo()
     {
         // Arrange
-        var info = new OrderSummaryInfo
+        var info = new OrderSummaryView
         {
             Id = Guid.CreateVersion7(),
             Status = Status.New,
             TotalPrice = 999.99m,
         };
-        var order = _orderFaker.Generate();
+        var order = _orderFaker.Generate()[0];
         var @event = new OrderCompletedEvent(order);
 
         // Act
-        var result = _orderProjection.Apply(info, @event);
+        var result = OrderSummaryViewProjection.Apply(info, @event);
 
         // Assert
         result.ShouldBeSameAs(info); // Should modify the same object

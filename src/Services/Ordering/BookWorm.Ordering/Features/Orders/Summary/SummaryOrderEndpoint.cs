@@ -12,9 +12,9 @@ public sealed class SummaryOrderEndpoint : IEndpoint
                     HttpContext context,
                     IQuerySession querySession,
                     [Description("The unique identifier of the order to be retrieved")] Guid id
-                ) => querySession.Json.WriteById<OrderSummaryInfo>(id, context)
+                ) => querySession.Json.WriteById<OrderSummaryView>(id, context)
             )
-            .ProducesGet<OrderSummaryInfo>()
+            .ProducesGet<OrderSummaryView>()
             .WithTags(nameof(Order))
             .WithName(nameof(SummaryOrderEndpoint))
             .WithSummary("Get Order Summary")

@@ -20,7 +20,9 @@ public static class Extensions
         // Configure EventStore
         builder.AddEventStore(options =>
         {
-            options.Projections.Add<OrderProjection>(ProjectionLifecycle.Async);
+            options.ConfigureOrders();
+            options.Projections.DaemonLockId = 44444;
+            options.DisableNpgsqlLogging = true;
 
             // If we're running in development mode, let Marten just take care
             // of all necessary schema building and patching behind the scenes
@@ -32,5 +34,12 @@ public static class Extensions
 
         // Configure Redis
         builder.AddRedisClient(Components.Redis);
+    }
+
+    private static void ConfigureOrders(this StoreOptions options)
+    {
+        // Snapshots
+        options.Projections.LiveStreamAggregation<OrderSummary>();
+        options.Projections.Add<OrderSummaryViewProjection>(ProjectionLifecycle.Async);
     }
 }

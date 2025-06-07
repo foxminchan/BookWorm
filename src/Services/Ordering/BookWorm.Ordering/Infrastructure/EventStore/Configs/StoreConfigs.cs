@@ -1,4 +1,5 @@
-﻿using Marten.Services;
+﻿using JasperFx.Events;
+using Marten.Services;
 using Weasel.Core;
 
 namespace BookWorm.Ordering.Infrastructure.EventStore.Configs;
@@ -29,6 +30,16 @@ public static class StoreConfigs
             options.Events.MetadataConfig.CorrelationIdEnabled = true;
             options.Events.MetadataConfig.HeadersEnabled = true;
         }
+
+        // Make event writing faster, like 2X faster
+        options.Events.AppendMode = EventAppendMode.Quick;
+
+        // This can cut down on the number of database round trips
+        // Marten has to do during CQRS command handler execution
+        options.Events.UseIdentityMapForAggregates = true;
+
+        // Let's leverage PostgreSQL table partitioning
+        options.Events.UseArchivedStreamPartitioning = true;
 
         // Turn on Otel tracing for connection activity and
         // also tag events to each span for all the Marten "write"

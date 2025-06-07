@@ -5,6 +5,42 @@ namespace BookWorm.Ordering.Infrastructure.EventStore.Extensions;
 
 public static class DocumentSessionWithTelemetryExtensions
 {
+    public static async Task Add<T>(
+        this IDocumentSession documentSession,
+        Guid id,
+        DomainEvent @event,
+        CancellationToken ct = default
+    )
+        where T : class
+    {
+        await documentSession.WithTelemetry<T>(
+            async token =>
+            {
+                documentSession.Events.StartStream<T>(id, @event);
+                await documentSession.SaveChangesAsync(token);
+            },
+            ct
+        );
+    }
+
+    public static Task Add<T>(
+        this IDocumentSession documentSession,
+        Guid id,
+        IntegrationEvent @event,
+        CancellationToken ct = default
+    )
+        where T : class
+    {
+        return documentSession.WithTelemetry<IntegrationEvent>(
+            async token =>
+            {
+                documentSession.Events.StartStream<T>(id, @event);
+                await documentSession.SaveChangesAsync(token);
+            },
+            ct
+        );
+    }
+
     public static async Task GetAndUpdate<T>(
         this IDocumentSession documentSession,
         Guid id,

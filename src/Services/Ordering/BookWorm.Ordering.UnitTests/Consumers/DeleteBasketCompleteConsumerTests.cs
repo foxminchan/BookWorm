@@ -13,6 +13,7 @@ public sealed class DeleteBasketCompleteConsumerTests
 {
     private const decimal TotalMoney = 125.99m;
     private readonly Mock<IDocumentSession> _documentSessionMock = new();
+    private readonly Mock<IEventStoreOperations> _eventStoreMock = new();
     private readonly Guid _orderId = Guid.CreateVersion7();
 
     [Test]
@@ -20,20 +21,12 @@ public sealed class DeleteBasketCompleteConsumerTests
     {
         // Arrange
         var command = new DeleteBasketCompleteCommand(_orderId, TotalMoney);
-        var taskCompletionSource = new TaskCompletionSource<bool>();
 
-        // Use a simpler mocking approach to avoid the lambda expression issue
+        // Set up the mock to return a completed task
+        _documentSessionMock.Setup(x => x.Events).Returns(_eventStoreMock.Object);
         _documentSessionMock
-            .Setup(x => x.Events)
-            .Returns(
-                Mock.Of<IEventStoreOperations>(store =>
-                    store.WriteToAggregate(
-                        It.IsAny<Guid>(),
-                        It.IsAny<Action<IEventStream<OrderSummary>>>(),
-                        It.IsAny<CancellationToken>()
-                    ) == Task.FromResult(taskCompletionSource.Task)
-                )
-            );
+            .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => x.AddConsumer<DeleteBasketCompleteCommandHandler>())
@@ -42,9 +35,6 @@ public sealed class DeleteBasketCompleteConsumerTests
 
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
-
-        // Complete the task before triggering the handler
-        taskCompletionSource.SetResult(true);
 
         // Act
         await harness.Bus.Publish(command);
@@ -55,6 +45,22 @@ public sealed class DeleteBasketCompleteConsumerTests
 
         // No fault should be published
         (await harness.Published.Any<Fault<DeleteBasketCompleteCommand>>()).ShouldBeFalse();
+
+        // Verify the StartStream method was called
+        _eventStoreMock.Verify(
+            x =>
+                x.StartStream<OrderSummary>(
+                    It.IsAny<Guid>(),
+                    It.IsAny<DeleteBasketCompleteCommand>()
+                ),
+            Times.Once
+        );
+
+        // Verify SaveChangesAsync was called
+        _documentSessionMock.Verify(
+            x => x.SaveChangesAsync(It.IsAny<CancellationToken>()),
+            Times.Once
+        );
 
         await harness.Stop();
     }
@@ -67,17 +73,10 @@ public sealed class DeleteBasketCompleteConsumerTests
         var expectedException = new InvalidOperationException("Task faulted");
 
         // Set up the mock to return a faulted task
+        _documentSessionMock.Setup(x => x.Events).Returns(_eventStoreMock.Object);
         _documentSessionMock
-            .Setup(x => x.Events)
-            .Returns(
-                Mock.Of<IEventStoreOperations>(store =>
-                    store.WriteToAggregate(
-                        It.IsAny<Guid>(),
-                        It.IsAny<Action<IEventStream<OrderSummary>>>(),
-                        It.IsAny<CancellationToken>()
-                    ) == Task.FromException(expectedException)
-                )
-            );
+            .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.FromException(expectedException));
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => x.AddConsumer<DeleteBasketCompleteCommandHandler>())
@@ -107,23 +106,16 @@ public sealed class DeleteBasketCompleteConsumerTests
     {
         // Arrange
         var command = new DeleteBasketCompleteCommand(_orderId, TotalMoney);
-        var cancellationTokenSource = new CancellationTokenSource();
+        using var cancellationTokenSource = new CancellationTokenSource();
 
         // Cancel the token before using it in the mock
         await cancellationTokenSource.CancelAsync();
 
         // Set up the mock to return a canceled task
+        _documentSessionMock.Setup(x => x.Events).Returns(_eventStoreMock.Object);
         _documentSessionMock
-            .Setup(x => x.Events)
-            .Returns(
-                Mock.Of<IEventStoreOperations>(store =>
-                    store.WriteToAggregate(
-                        It.IsAny<Guid>(),
-                        It.IsAny<Action<IEventStream<OrderSummary>>>(),
-                        It.IsAny<CancellationToken>()
-                    ) == Task.FromCanceled<bool>(cancellationTokenSource.Token)
-                )
-            );
+            .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.FromCanceled(cancellationTokenSource.Token));
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => x.AddConsumer<DeleteBasketCompleteCommandHandler>())
@@ -160,17 +152,10 @@ public sealed class DeleteBasketCompleteConsumerTests
         var delayTime = TimeSpan.FromMilliseconds(50);
 
         // Set up the mock to return a delayed task
+        _documentSessionMock.Setup(x => x.Events).Returns(_eventStoreMock.Object);
         _documentSessionMock
-            .Setup(x => x.Events)
-            .Returns(
-                Mock.Of<IEventStoreOperations>(store =>
-                    store.WriteToAggregate(
-                        It.IsAny<Guid>(),
-                        It.IsAny<Action<IEventStream<OrderSummary>>>(),
-                        It.IsAny<CancellationToken>()
-                    ) == Task.Delay(delayTime)
-                )
-            );
+            .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.Delay(delayTime));
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => x.AddConsumer<DeleteBasketCompleteCommandHandler>())
