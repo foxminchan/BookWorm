@@ -78,7 +78,12 @@ public static partial class AzureExtensions
                 .OfType<PostgreSqlFlexibleServer>()
                 .Single();
 
-            flexibleServer.Sku = new() { Tier = PostgreSqlFlexibleServerSkuTier.GeneralPurpose };
+            flexibleServer.Sku = new()
+            {
+                Name = "Standard_B1ms",
+                Tier = PostgreSqlFlexibleServerSkuTier.Burstable,
+            };
+
             flexibleServer.Tags.Add(
                 nameof(Environment),
                 builder.ApplicationBuilder.Environment.EnvironmentName
@@ -108,6 +113,7 @@ public static partial class AzureExtensions
                 Name = RedisSkuName.Basic,
                 Capacity = 1,
             };
+
             resource.Tags.Add(
                 nameof(Environment),
                 builder.ApplicationBuilder.Environment.EnvironmentName
@@ -124,20 +130,19 @@ public static partial class AzureExtensions
     /// </summary>
     /// <param name="builder">The resource builder for Azure Container App Environment.</param>
     /// <returns>The updated resource builder.</returns>
-    public static IResourceBuilder<AzureContainerAppEnvironmentResource> ProvisionAsService(
+    public static void ProvisionAsService(
         this IResourceBuilder<AzureContainerAppEnvironmentResource> builder
     )
     {
-        builder.ConfigureInfrastructure(infra =>
-        {
-            var resource = infra
-                .GetProvisionableResources()
-                .OfType<ContainerAppManagedEnvironment>()
-                .FirstOrDefault();
-
-            resource?.Tags.Add(nameof(Projects), nameof(BookWorm));
-        });
-
-        return builder;
+        builder
+            .WithAzdResourceNaming()
+            .ConfigureInfrastructure(infra =>
+            {
+                var resource = infra
+                    .GetProvisionableResources()
+                    .OfType<ContainerAppManagedEnvironment>()
+                    .FirstOrDefault();
+                resource?.Tags.Add(nameof(Projects), nameof(BookWorm));
+            });
     }
 }

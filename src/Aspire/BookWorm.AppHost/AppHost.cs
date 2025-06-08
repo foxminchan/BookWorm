@@ -1,7 +1,7 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
 builder.AddDashboard();
-builder.AddAzureContainerAppEnvironment("aca");
+builder.AddAzureContainerAppEnvironment("aca").ProvisionAsService();
 
 var postgres = builder
     .AddAzurePostgresFlexibleServer(Components.Postgres)

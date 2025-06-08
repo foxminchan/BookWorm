@@ -14,7 +14,6 @@ This guide provides detailed instructions for deploying the BookWorm application
   - [Monitoring](#monitoring)
   - [Troubleshooting](#troubleshooting)
     - [Common Issues](#common-issues)
-    - [Debugging Steps](#debugging-steps)
   - [Cleanup](#cleanup-1)
   - [Contributing](#contributing)
 
@@ -22,10 +21,17 @@ This guide provides detailed instructions for deploying the BookWorm application
 
 Before deploying, ensure you have the following tools installed:
 
-| Tool          | Purpose                       | Installation Guide                                                                  |
-| ------------- | ----------------------------- | ----------------------------------------------------------------------------------- |
-| Azure CLI     | ACA deployment and management | [Install Guide](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)       |
-| Docker/Podman | Container runtime             | [Docker](https://www.docker.com/get-started) / [Podman](https://podman-desktop.io/) |
+| Tool          | Purpose                       | Installation Guide                                                                                   |
+| ------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Azure CLI     | ACA deployment and management | [Install Guide](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)                        |
+| Docker/Podman | Container runtime             | [Docker](https://www.docker.com/get-started) / [Podman](https://podman-desktop.io/)                  |
+| PowerShell    | Windows deployment scripts    | [Install Guide](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell) |
+
+> [!NOTE]
+>
+> - **Linux/macOS/WSL users**: Use the bash scripts (`az.sh`, `az-cleanup.sh`)
+> - **Windows users**: Use the PowerShell scripts (`az.ps1`, `az-cleanup.ps1`)
+> - Both script versions provide identical functionality
 
 ## Deployment to Azure Container Apps
 
@@ -46,8 +52,19 @@ Azure Container Apps (ACA) provides:
 
 2. **Deploy Infrastructure**
 
+   **Using Bash (Linux/macOS/WSL):**
+
    ```bash
    bash ./scripts/az.sh
+   ```
+
+   **Using PowerShell (Windows):**
+
+   ```powershell
+   .\scripts\az.ps1
+
+   # Or with specific subscription
+   .\scripts\az.ps1 -SubscriptionId "your-subscription-id"
    ```
 
 3. **Verify Deployment**
@@ -62,8 +79,16 @@ Azure Container Apps (ACA) provides:
 
 ### Cleanup
 
+**Using Bash (Linux/macOS/WSL):**
+
 ```bash
 bash ./scripts/az-cleanup.sh
+```
+
+**Using PowerShell (Windows):**
+
+```powershell
+.\scripts\az-cleanup.ps1
 ```
 
 ## Deployment Process
@@ -132,8 +157,19 @@ az containerapp metrics show --resource-group rg-dev --name bookworm
 
 ## Cleanup
 
+**Using Bash (Linux/macOS/WSL):**
+
 ```bash
 bash ./scripts/az-cleanup.sh
+
+# Verify cleanup
+az group show --name rg-dev
+```
+
+**Using PowerShell (Windows):**
+
+```powershell
+.\scripts\az-cleanup.ps1
 
 # Verify cleanup
 az group show --name rg-dev

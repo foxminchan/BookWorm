@@ -5,14 +5,16 @@ param userPrincipalId string
 
 param tags object = { }
 
+var resourceToken = uniqueString(resourceGroup().id)
+
 resource aca_mi 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
-  name: take('aca_mi-${uniqueString(resourceGroup().id)}', 128)
+  name: 'mi-${resourceToken}'
   location: location
   tags: tags
 }
 
 resource aca_acr 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
-  name: take('acaacr${uniqueString(resourceGroup().id)}', 50)
+  name: replace('acr-${resourceToken}', '-', '')
   location: location
   sku: {
     name: 'Basic'
@@ -31,7 +33,7 @@ resource aca_acr_aca_mi_AcrPull 'Microsoft.Authorization/roleAssignments@2022-04
 }
 
 resource aca_law 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
-  name: take('acalaw-${uniqueString(resourceGroup().id)}', 63)
+  name: 'law-${resourceToken}'
   location: location
   properties: {
     sku: {
@@ -42,7 +44,7 @@ resource aca_law 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
 }
 
 resource aca 'Microsoft.App/managedEnvironments@2024-03-01' = {
-  name: take('aca${uniqueString(resourceGroup().id)}', 24)
+  name: 'cae-${resourceToken}'
   location: location
   properties: {
     appLogsConfiguration: {
@@ -80,7 +82,7 @@ resource aca_Contributor 'Microsoft.Authorization/roleAssignments@2022-04-01' = 
 }
 
 resource aca_storageVolume 'Microsoft.Storage/storageAccounts@2024-01-01' = {
-  name: take('acastoragevolume${uniqueString(resourceGroup().id)}', 24)
+  name: 'vol${resourceToken}'
   kind: 'StorageV2'
   location: location
   sku: {
@@ -98,7 +100,7 @@ resource storageVolumeFileService 'Microsoft.Storage/storageAccounts/fileService
 }
 
 resource shares_volumes_vectordb_0 'Microsoft.Storage/storageAccounts/fileServices/shares@2024-01-01' = {
-  name: take('sharesvolumesvectordb0-${uniqueString(resourceGroup().id)}', 63)
+  name: take('${toLower('vectordb')}-${toLower('bookwormapphost62fd53aa4evectordbdata')}', 60)
   properties: {
     enabledProtocols: 'SMB'
     shareQuota: 1024
@@ -107,7 +109,7 @@ resource shares_volumes_vectordb_0 'Microsoft.Storage/storageAccounts/fileServic
 }
 
 resource managedStorage_volumes_vectordb_0 'Microsoft.App/managedEnvironments/storages@2024-03-01' = {
-  name: take('managedstoragevolumesvectordb${uniqueString(resourceGroup().id)}', 24)
+  name: take('${toLower('vectordb')}-${toLower('bookwormapphost62fd53aa4evectordbdata')}', 32)
   properties: {
     azureFile: {
       accountName: aca_storageVolume.name
@@ -120,7 +122,7 @@ resource managedStorage_volumes_vectordb_0 'Microsoft.App/managedEnvironments/st
 }
 
 resource shares_volumes_ollama_0 'Microsoft.Storage/storageAccounts/fileServices/shares@2024-01-01' = {
-  name: take('sharesvolumesollama0-${uniqueString(resourceGroup().id)}', 63)
+  name: take('${toLower('ollama')}-${toLower('bookwormapphost62fd53aa4eollamaollama')}', 60)
   properties: {
     enabledProtocols: 'SMB'
     shareQuota: 1024
@@ -129,7 +131,7 @@ resource shares_volumes_ollama_0 'Microsoft.Storage/storageAccounts/fileServices
 }
 
 resource managedStorage_volumes_ollama_0 'Microsoft.App/managedEnvironments/storages@2024-03-01' = {
-  name: take('managedstoragevolumesollama${uniqueString(resourceGroup().id)}', 24)
+  name: take('${toLower('ollama')}-${toLower('bookwormapphost62fd53aa4eollamaollama')}', 32)
   properties: {
     azureFile: {
       accountName: aca_storageVolume.name
@@ -142,7 +144,7 @@ resource managedStorage_volumes_ollama_0 'Microsoft.App/managedEnvironments/stor
 }
 
 resource shares_volumes_keycloak_0 'Microsoft.Storage/storageAccounts/fileServices/shares@2024-01-01' = {
-  name: take('sharesvolumeskeycloak0-${uniqueString(resourceGroup().id)}', 63)
+  name: take('${toLower('keycloak')}-${toLower('bookwormapphost62fd53aa4ekeycloakdata')}', 60)
   properties: {
     enabledProtocols: 'SMB'
     shareQuota: 1024
@@ -151,7 +153,7 @@ resource shares_volumes_keycloak_0 'Microsoft.Storage/storageAccounts/fileServic
 }
 
 resource managedStorage_volumes_keycloak_0 'Microsoft.App/managedEnvironments/storages@2024-03-01' = {
-  name: take('managedstoragevolumeskeycloak${uniqueString(resourceGroup().id)}', 24)
+  name: take('${toLower('keycloak')}-${toLower('bookwormapphost62fd53aa4ekeycloakdata')}', 32)
   properties: {
     azureFile: {
       accountName: aca_storageVolume.name
@@ -169,21 +171,21 @@ output volumes_ollama_0 string = managedStorage_volumes_ollama_0.name
 
 output volumes_keycloak_0 string = managedStorage_volumes_keycloak_0.name
 
-output MANAGED_IDENTITY_NAME string = aca_mi.name
+output MANAGED_IDENTITY_NAME string = 'mi-${resourceToken}'
 
 output MANAGED_IDENTITY_PRINCIPAL_ID string = aca_mi.properties.principalId
 
-output AZURE_LOG_ANALYTICS_WORKSPACE_NAME string = aca_law.name
+output AZURE_LOG_ANALYTICS_WORKSPACE_NAME string = 'law-${resourceToken}'
 
 output AZURE_LOG_ANALYTICS_WORKSPACE_ID string = aca_law.id
 
-output AZURE_CONTAINER_REGISTRY_NAME string = aca_acr.name
+output AZURE_CONTAINER_REGISTRY_NAME string = replace('acr-${resourceToken}', '-', '')
 
 output AZURE_CONTAINER_REGISTRY_ENDPOINT string = aca_acr.properties.loginServer
 
 output AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID string = aca_mi.id
 
-output AZURE_CONTAINER_APPS_ENVIRONMENT_NAME string = aca.name
+output AZURE_CONTAINER_APPS_ENVIRONMENT_NAME string = 'cae-${resourceToken}'
 
 output AZURE_CONTAINER_APPS_ENVIRONMENT_ID string = aca.id
 
