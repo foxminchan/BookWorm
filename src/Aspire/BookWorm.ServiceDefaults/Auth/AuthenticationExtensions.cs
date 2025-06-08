@@ -30,7 +30,7 @@ public static class AuthenticationExtensions
                 realm,
                 options =>
                 {
-                    options.RequireHttpsMetadata = false;
+                    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
                     options.Audience = "account";
                 }
             );

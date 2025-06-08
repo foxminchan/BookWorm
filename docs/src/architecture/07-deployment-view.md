@@ -127,7 +127,7 @@ CatalogAPI --> Monitor : HTTPS
 
 #### PostgreSQL (Primary Database)
 
-```bicep title="deploys/bicep/postgresql/postgresql.bicep"
+```bicep
 resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
   name: take('postgres-${uniqueString(resourceGroup().id)}', 63)
   location: location
@@ -164,7 +164,7 @@ resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
 
 #### Redis Cache
 
-```bicep title="deploys/bicep/redis/redis.bicep"
+```bicep
 resource redis 'Microsoft.Cache/redis@2024-03-01' = {
   name: take('redis-${uniqueString(resourceGroup().id)}', 63)
   location: location
@@ -306,16 +306,6 @@ Prod --> Monitor : Telemetry
 Monitor --> Alerts : Notifications
 
 @enduml
-
-### Infrastructure as Code
-
-```bash
-# Azure Resource Manager deployment
-az deployment group create \
-  --resource-group rg-bookworm-prod \
-  --template-file infrastructure/main.bicep \
-  --parameters @parameters/prod.json
-```
 
 ## 7.8 Disaster Recovery
 

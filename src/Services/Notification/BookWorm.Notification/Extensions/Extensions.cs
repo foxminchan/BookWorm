@@ -21,18 +21,7 @@ public static class Extensions
             nameof(Notification),
             pipelineBuilder =>
             {
-                pipelineBuilder
-                    .AddRetry(
-                        new()
-                        {
-                            ShouldHandle = new PredicateBuilder().Handle<Exception>(),
-                            BackoffType = DelayBackoffType.Exponential,
-                            MaxRetryAttempts = 3,
-                            Delay = TimeSpan.FromSeconds(2),
-                            UseJitter = true,
-                        }
-                    )
-                    .AddTimeout(TimeSpan.FromSeconds(45));
+                pipelineBuilder.AddCircuitBreaker().AddRetry().AddTimeout(TimeSpan.FromSeconds(45));
             }
         );
 
@@ -56,5 +45,35 @@ public static class Extensions
         builder.AddEventBus(typeof(INotificationApiMarker), cfg => cfg.AddInMemoryInboxOutbox());
 
         builder.AddDefaultAsyncApi([typeof(INotificationApiMarker)]);
+    }
+
+    private static ResiliencePipelineBuilder AddCircuitBreaker(
+        this ResiliencePipelineBuilder builder
+    )
+    {
+        return builder.AddCircuitBreaker(
+            new()
+            {
+                ShouldHandle = new PredicateBuilder().Handle<Exception>(),
+                FailureRatio = 0.3,
+                MinimumThroughput = 5,
+                SamplingDuration = TimeSpan.FromSeconds(30),
+                BreakDuration = TimeSpan.FromSeconds(60),
+            }
+        );
+    }
+
+    private static ResiliencePipelineBuilder AddRetry(this ResiliencePipelineBuilder builder)
+    {
+        return builder.AddRetry(
+            new()
+            {
+                ShouldHandle = new PredicateBuilder().Handle<Exception>(),
+                BackoffType = DelayBackoffType.Exponential,
+                MaxRetryAttempts = 3,
+                Delay = TimeSpan.FromSeconds(2),
+                UseJitter = true,
+            }
+        );
     }
 }

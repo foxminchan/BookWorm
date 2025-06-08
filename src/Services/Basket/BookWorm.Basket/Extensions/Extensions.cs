@@ -1,6 +1,4 @@
-﻿using BookWorm.Constants.Aspire;
-using MassTransit;
-using BookGrpcServiceClient = BookWorm.Catalog.Grpc.Services.BookGrpcService.BookGrpcServiceClient;
+﻿using MassTransit;
 
 namespace BookWorm.Basket.Extensions;
 
@@ -47,18 +45,7 @@ public static class Extensions
         services.AddEndpoints(typeof(IBasketApiMarker));
 
         // Configure gRPC
-        var scheme =
-            builder.Configuration["DOTNET_LAUNCH_PROFILE"] == Protocol.Https
-                ? Protocol.Https
-                : Protocol.Http;
-
-        services.AddGrpc();
-        services.AddGrpcHealthChecks();
-        services.AddGrpcServiceReference<BookGrpcServiceClient>(
-            $"{scheme}://{Application.Catalog}",
-            HealthStatus.Degraded
-        );
-        services.AddSingleton<IBookService, BookService>();
+        builder.AddGrpcServices();
 
         // Configure ClaimsPrincipal
         services.AddTransient<ClaimsPrincipal>(s =>

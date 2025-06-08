@@ -1,4 +1,5 @@
-﻿using BasketGrpcServiceClient = BookWorm.Basket.Grpc.Services.BasketGrpcService.BasketGrpcServiceClient;
+﻿using BookWorm.ServiceDefaults.Configuration;
+using BasketGrpcServiceClient = BookWorm.Basket.Grpc.Services.BasketGrpcService.BasketGrpcServiceClient;
 using BookGrpcServiceClient = BookWorm.Catalog.Grpc.Services.BookGrpcService.BookGrpcServiceClient;
 
 namespace BookWorm.Ordering.Grpc;
@@ -10,25 +11,22 @@ public static class Extensions
     {
         var services = builder.Services;
 
-        var scheme =
-            builder.Configuration["DOTNET_LAUNCH_PROFILE"] == Protocol.Https
-                ? Protocol.Https
-                : Protocol.Http;
-
         services.AddGrpc();
 
         services.AddGrpcServiceReference<BookGrpcServiceClient>(
-            $"{scheme}://{Application.Catalog}",
+            $"{builder.GetScheme()}://{Application.Catalog}",
             HealthStatus.Degraded
         );
+
         services.AddSingleton<IBookService, BookService>();
 
         services
             .AddGrpcServiceReference<BasketGrpcServiceClient>(
-                $"{scheme}://{Application.Basket}",
+                $"{builder.GetScheme()}://{Application.Basket}",
                 HealthStatus.Degraded
             )
             .AddAuthToken();
+
         services.AddSingleton<IBasketService, BasketService>();
 
         services.AddScoped<BasketMetadata>();

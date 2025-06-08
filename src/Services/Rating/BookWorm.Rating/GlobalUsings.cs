@@ -10,7 +10,6 @@ global using BookWorm.Chassis.Pipelines;
 global using BookWorm.Chassis.Query;
 global using BookWorm.Chassis.Repository;
 global using BookWorm.Chassis.Versioning;
-global using BookWorm.Constants;
 global using BookWorm.Rating.Domain.FeedbackAggregator;
 global using BookWorm.Rating.Infrastructure;
 global using BookWorm.Rating.Infrastructure.Services;

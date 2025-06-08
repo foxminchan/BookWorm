@@ -5,7 +5,6 @@ global using BookWorm.Chassis.EventBus;
 global using BookWorm.Chassis.Exceptions;
 global using BookWorm.Chassis.Pipelines;
 global using BookWorm.Chassis.Versioning;
-global using BookWorm.Constants;
 global using BookWorm.Finance.Infrastructure;
 global using BookWorm.Finance.Saga;
 global using BookWorm.ServiceDefaults;

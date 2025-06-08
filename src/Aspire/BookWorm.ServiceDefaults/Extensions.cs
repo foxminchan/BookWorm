@@ -5,6 +5,7 @@ using BookWorm.ServiceDefaults.Configuration;
 using BookWorm.ServiceDefaults.Kestrel;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -189,6 +190,13 @@ public static class Extensions
                 // See this documentation to learn more about restricting access to health checks endpoints via routing:
                 // https://learn.microsoft.com/aspnet/core/host-and-deploy/health-checks?view=aspnetcore-8.0#use-health-checks-routing
                 .RequireHost(pathToHostsMap[path]);
+        }
+
+        // Since OpenAPI/AsyncAPI routes are only available in development mode,
+        // we redirect the root path to the health endpoint in production
+        if (!app.Environment.IsDevelopment())
+        {
+            app.MapGet("/", () => Results.Redirect("/health")).ExcludeFromDescription();
         }
     }
 
