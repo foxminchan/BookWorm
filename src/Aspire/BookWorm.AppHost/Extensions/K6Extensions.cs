@@ -9,6 +9,7 @@ public static class K6Extensions
     /// </summary>
     /// <param name="builder">The distributed application builder to configure.</param>
     /// <param name="entryPoint">The resource builder for the project resource to test.</param>
+    /// <param name="vus">Virtual Users (VUs) to simulate during the load test. Default is 10.</param>
     /// <remarks>
     ///     This method configures a K6 load testing instance that:
     ///     - Mounts scripts from a Container/scripts directory
@@ -19,7 +20,8 @@ public static class K6Extensions
     /// </remarks>
     public static void AddK6(
         this IDistributedApplicationBuilder builder,
-        IResourceBuilder<YarpResource> entryPoint
+        IResourceBuilder<YarpResource> entryPoint,
+        int vus = 10
     )
     {
         if (!builder.ExecutionContext.IsRunMode)
@@ -34,7 +36,7 @@ public static class K6Extensions
             .WithImagePullPolicy(ImagePullPolicy.Always)
             .WithBindMount("Container/k6", "/scripts", true)
             .WithBindMount("Container/k6/dist", "/home/k6")
-            .WithScript("/scripts/dist/main.js")
+            .WithScript("/scripts/dist/main.js", vus)
             .WithReference(entryPoint.Resource.GetEndpoint(endpointName))
             .WithEnvironment("K6_WEB_DASHBOARD", "true")
             .WithEnvironment("K6_WEB_DASHBOARD_EXPORT", "dashboard-report.html")

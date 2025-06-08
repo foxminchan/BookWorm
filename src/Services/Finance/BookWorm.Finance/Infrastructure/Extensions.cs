@@ -28,21 +28,7 @@ public static class Extensions
                         OrderState,
                         OrderStateMachineDefinition
                     >()
-                    .EntityFrameworkRepository(config =>
-                    {
-                        config.AddDbContext<DbContext, FinanceDbContext>(
-                            (_, optionsBuilder) =>
-                            {
-                                optionsBuilder
-                                    .UseNpgsql(
-                                        builder.Configuration.GetRequiredConnectionString(
-                                            Components.Database.Finance
-                                        )
-                                    )
-                                    .UseSnakeCaseNamingConvention();
-                            }
-                        );
-                    });
+                    .AddRepository(builder);
 
                 configurator.AddEntityFrameworkOutbox<FinanceDbContext>(o =>
                 {
@@ -54,5 +40,27 @@ public static class Extensions
                 });
             }
         );
+    }
+
+    private static void AddRepository(
+        this ISagaRegistrationConfigurator<OrderState> configurator,
+        IHostApplicationBuilder builder
+    )
+    {
+        configurator.EntityFrameworkRepository(config =>
+        {
+            config.AddDbContext<DbContext, FinanceDbContext>(
+                (_, optionsBuilder) =>
+                {
+                    optionsBuilder
+                        .UseNpgsql(
+                            builder.Configuration.GetRequiredConnectionString(
+                                Components.Database.Finance
+                            )
+                        )
+                        .UseSnakeCaseNamingConvention();
+                }
+            );
+        });
     }
 }

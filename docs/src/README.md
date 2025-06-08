@@ -13,10 +13,6 @@ actions:
 copyright: false
 highlights:
   - features:
-      - title: Deploy BookWorm
-        icon: rocket
-        link: https://github.com/foxminchan/BookWorm/blob/main/deploys/README.md
-        details: Easily deploy BookWorm to Azure Container Apps with our step-by-step <a href="https://github.com/foxminchan/BookWorm/blob/main/deploys/README.md" target="_blank">deployment guide</a> on your own Azure subscription.
       - title: Explore EDA
         icon: diagram-next
         link: https://bookwormdev.netlify.app/
@@ -36,8 +32,4 @@ highlights:
         icon: chart-line
         link: https://sonarcloud.io/summary/overall?id=foxminchan_BookWorm&branch=main
         details: View our <a href="https://sonarcloud.io/summary/overall?id=foxminchan_BookWorm&branch=main" target="_blank">code quality metrics</a> and explore our comprehensive <a href="https://github.com/foxminchan/BookWorm/tree/main/src/Aspire/BookWorm.AppHost/Container/k6" target="_blank">performance testing suite</a>.
-      - title: Deploy to Azure
-        icon: cloud
-        link: https://github.com/foxminchan/BookWorm/tree/main/deploys
-        details: Follow our <a href="https://github.com/foxminchan/BookWorm/tree/main/deploys" target="_blank">deployment guide</a> for Azure Container Apps or contribute to the project using our <a href="https://github.com/foxminchan/BookWorm/blob/main/.github/CONTRIBUTING.md" target="_blank">contributing guidelines</a>.
 ---

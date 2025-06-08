@@ -2,6 +2,7 @@
 global using System.Security.Claims;
 global using System.Text.Json.Serialization;
 global using BookWorm.Basket.Domain;
+global using BookWorm.Basket.Grpc;
 global using BookWorm.Basket.Grpc.Services.Book;
 global using BookWorm.Basket.Infrastructure.Repositories;
 global using BookWorm.Chassis.ActivityScope;
@@ -13,6 +14,7 @@ global using BookWorm.Chassis.Guards;
 global using BookWorm.Chassis.Pipelines;
 global using BookWorm.Chassis.Query;
 global using BookWorm.Chassis.Versioning;
+global using BookWorm.Constants.Aspire;
 global using BookWorm.ServiceDefaults;
 global using BookWorm.ServiceDefaults.ApiSpecification.AsyncApi;
 global using BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
