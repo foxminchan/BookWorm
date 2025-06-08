@@ -1,0 +1,63 @@
+name: BookWorm Azure Deploy
+
+# Run when commits are pushed to ci/simplify-deploy
+on:
+  workflow_dispatch:
+
+# Set up permissions for deploying with secretless Azure federated credentials
+# https://learn.microsoft.com/en-us/azure/developer/github/connect-from-azure?tabs=azure-portal%2Clinux#set-up-azure-login-with-openid-connect-authentication
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      AZURE_POSTGRES_USERNAME: ${{ vars.AZURE_POSTGRES_USERNAME }}
+      AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
+      AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install azd
+        uses: Azure/setup-azd@v2
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.x.x
+            9.x.x
+
+      - name: Log in with Azure (Federated Credentials)
+        run: |
+          azd auth login `
+            --client-id "$Env:AZURE_CLIENT_ID" `
+            --federated-credential-provider "github" `
+            --tenant-id "$Env:AZURE_TENANT_ID"
+        shell: pwsh
+
+      - name: Provision Infrastructure
+        run: azd provision --no-prompt
+        env:
+          AZURE_VECTORDB_KEY: ${{ secrets.AZURE_VECTORDB_KEY }}
+          AZURE_QUEUE_PASSWORD: ${{ secrets.AZURE_QUEUE_PASSWORD }}
+          AZURE_SENDER_EMAIL: ${{ secrets.AZURE_SENDER_EMAIL }}
+          AZURE_SENDER_NAME: ${{ secrets.AZURE_SENDER_NAME }}
+          AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
+          AZURE_KEYCLOAK_PASSWORD: ${{ secrets.AZURE_KEYCLOAK_PASSWORD }}
+          AZURE_POSTGRES_PASSWORD: ${{ secrets.AZURE_POSTGRES_PASSWORD }}
+
+      - name: Deploy Application
+        run: azd deploy --no-prompt
+        env:
+          AZURE_VECTORDB_KEY: ${{ secrets.AZURE_VECTORDB_KEY }}
+          AZURE_QUEUE_PASSWORD: ${{ secrets.AZURE_QUEUE_PASSWORD }}
+          AZURE_SENDER_EMAIL: ${{ secrets.AZURE_SENDER_EMAIL }}
+          AZURE_SENDER_NAME: ${{ secrets.AZURE_SENDER_NAME }}
+          AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
+          AZURE_KEYCLOAK_PASSWORD: ${{ secrets.AZURE_KEYCLOAK_PASSWORD }}
+          AZURE_POSTGRES_PASSWORD: ${{ secrets.AZURE_POSTGRES_PASSWORD }}

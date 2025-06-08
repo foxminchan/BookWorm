@@ -86,7 +86,47 @@
 
 ### Deploy the application
 
-For detailed deployment instructions, please consult the [deployment guide](./deploys/README.md).
+You can use the [Azure Developer CLI](https://aka.ms/azd) to run this project on Azure with only a few commands. Follow the next instructions:
+
+- Install the latest or update to the latest [Azure Developer CLI (azd)](https://aka.ms/azure-dev/install).
+- Log in `azd` (if you haven't done it before) to your Azure account:
+
+```sh
+azd auth login
+```
+
+- Initialize `azd` from the root of the repo.
+
+```sh
+azd init
+```
+
+- During initialization, you will be prompted to select the project type and services to expose. Follow these steps:
+
+  - Select `Use code in the current directory`. Azd will automatically detect the .NET Aspire project.
+  - Confirm `.NET (Aspire)` and continue.
+  - Select which services to expose to the Internet (exposing `gateway` is enough to test the sample).
+  - Finalize the initialization by giving a name to your environment.
+
+- Create Azure resources and deploy the sample by running:
+
+```sh
+azd up
+```
+
+> [!NOTE]
+>
+> - The operation takes a few minutes the first time it is ever run for an environment.
+> - At the end of the process, `azd` will display the `url` for the webapp. Follow that link to test the sample.
+> - You can run `azd up` after saving changes to the sample to re-deploy and update the sample.
+> - Report any issues to [azure-dev](https://github.com/Azure/azure-dev/issues) repo.
+> - [FAQ and troubleshoot](https://learn.microsoft.com/azure/developer/azure-developer-cli/troubleshoot?tabs=Browser) for azd.
+
+- For cleaning up the resources created by `azd`, run:
+
+```sh
+az group delete --name rg-<your-environment-name> --yes --no-wait
+```
 
 ### Event-Driven Architecture
 
