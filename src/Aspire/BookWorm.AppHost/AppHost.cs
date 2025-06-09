@@ -57,6 +57,7 @@ builder.AddOllama(configure: configure =>
 var keycloak = builder
     .AddKeycloak(Components.KeyCloak)
     .WithDataVolume()
+    .WithCustomTheme()
     .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent)
     .WithSampleRealmImport(nameof(BookWorm).ToLowerInvariant(), nameof(BookWorm));
