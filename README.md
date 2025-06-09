@@ -27,7 +27,7 @@
   - [x] Integrated event sourcing for storing domain events
   - [x] Implemented a microservices chassis for cross-cutting concerns and service infrastructure
 - [x] Implemented API versioning and feature flags for flexible application management
-- [x] Set up AuthN/AuthZ with Keycloak
+- [x] Set up AuthN/AuthZ with Keycloak (see [here](./src/Aspire/BookWorm.AppHost/Container/keycloak/README.md))
 - [x] Implemented caching with HybridCache
 - [x] Incorporated AI components:
   - [x] Text embedding with Nomic Embed Text
@@ -95,7 +95,13 @@ You can use the [Azure Developer CLI](https://aka.ms/azd) to run this project on
 azd auth login
 ```
 
-- Initialize `azd` from the root of the repo.
+- Enable the `azd` alpha features to support bind mounts:
+
+```sh
+azd config set alpha.azd.operations on
+```
+
+- Initialize `azd` from the root of the repository.
 
 ```sh
 azd init
