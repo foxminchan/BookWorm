@@ -1,0 +1,60 @@
+name: "Security Scan"
+description: "Run comprehensive security scanning including Trivy vulnerability scanner and CodeQL analysis"
+
+inputs:
+  dotnet-version:
+    description: "The version of .NET Core to use"
+    required: true
+  solution-file:
+    description: "The solution file to build for CodeQL analysis"
+    required: false
+    default: "BookWorm.slnx"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@0.31.0
+      with:
+        scan-type: "fs"
+        scan-ref: "."
+        format: "sarif"
+        output: "trivy-results.sarif"
+        severity: "CRITICAL,HIGH"
+        exit-code: "0"
+        ignore-unfixed: true
+
+    - name: Run Gitleaks
+      shell: bash
+      run: |
+        docker run --rm -v $(pwd):/repo ghcr.io/gitleaks/gitleaks:v8.27.2 detect --source=/repo --exit-code 0 || echo "Warnings: Potential secrets detected, but continuing CI pipeline"
+
+    - name: Upload Trivy Results
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: "trivy-results.sarif"
+
+    - name: Run CodeQL Analysis
+      uses: github/codeql-action/init@v3
+      with:
+        languages: "csharp"
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ inputs.dotnet-version }}
+
+    - name: Install Tools
+      shell: bash
+      run: dotnet tool restore
+
+    - name: Build for CodeQL
+      shell: bash
+      run: |
+        dotnet build ${{ inputs.solution-file }} --configuration Release
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:csharp"
