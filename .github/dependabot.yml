@@ -58,6 +58,12 @@ updates:
       interval: weekly
     commit-message:
       prefix: "NPM (VuePress)"
+  - package-ecosystem: "npm"
+    directory: "/src/Aspire/BookWorm.AppHost/Container/k6"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "NPM (k6)"
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
