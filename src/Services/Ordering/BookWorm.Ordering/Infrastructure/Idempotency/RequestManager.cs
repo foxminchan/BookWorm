@@ -1,12 +1,17 @@
 ﻿using System.Text.Json;
+using System.Text.RegularExpressions;
 using StackExchange.Redis;
 
 namespace BookWorm.Ordering.Infrastructure.Idempotency;
 
-public sealed class RequestManager(ILogger<RequestManager> logger, IConnectionMultiplexer redis)
-    : IRequestManager
+public sealed partial class RequestManager(
+    ILogger<RequestManager> logger,
+    IConnectionMultiplexer redis
+) : IRequestManager
 {
     private const int DefaultExpirationTime = 3600;
+
+    private static readonly Regex _sanitizeLoggingRegex = SanitizeLoggingRegex();
 
     private readonly SemaphoreSlim _connectionLock = new(1, 1);
 
@@ -39,10 +44,11 @@ public sealed class RequestManager(ILogger<RequestManager> logger, IConnectionMu
 
         if (!created)
         {
+            var sanitizedId = _sanitizeLoggingRegex.Replace(clientRequest.Id, string.Empty);
             logger.LogError(
                 "[{RequestManager}] Failed to create request for {IdempotencyKey}",
                 nameof(RequestManager),
-                clientRequest.Id
+                sanitizedId
             );
         }
     }
@@ -59,6 +65,9 @@ public sealed class RequestManager(ILogger<RequestManager> logger, IConnectionMu
             _connectionLock.Release();
         }
     }
+
+    [GeneratedRegex(@"[\r\n<>(){}[\]\\/&*#$%^|;:]", RegexOptions.Compiled)]
+    private static partial Regex SanitizeLoggingRegex();
 }
 
 [JsonSerializable(typeof(ClientRequest))]
