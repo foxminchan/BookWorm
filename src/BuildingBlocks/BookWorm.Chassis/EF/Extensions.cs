@@ -17,18 +17,28 @@ public static class Extensions
     {
         var services = builder.Services;
 
-        services.AddSingleton<PublishDomainEventsInterceptor>();
+        services.AddScoped<ISaveChangesInterceptor, PublishDomainEventsInterceptor>();
+        services.AddScoped<DbCommandInterceptor, QueryPerformanceInterceptor>();
 
         services.AddDbContext<TDbContext>(
             (sp, options) =>
             {
                 options
                     .UseNpgsql(builder.Configuration.GetConnectionString(name))
-                    .AddInterceptors(sp.GetRequiredService<PublishDomainEventsInterceptor>())
+                    .AddInterceptors(
+                        sp.GetRequiredService<ISaveChangesInterceptor>(),
+                        sp.GetRequiredService<DbCommandInterceptor>()
+                    )
                     .UseSnakeCaseNamingConvention()
+                    // Issue: https://github.com/dotnet/efcore/issues/35158
                     .ConfigureWarnings(warnings =>
                         warnings.Ignore(RelationalEventId.PendingModelChangesWarning)
                     );
+
+                if (builder.Environment.IsDevelopment())
+                {
+                    options.EnableSensitiveDataLogging();
+                }
             }
         );
 
