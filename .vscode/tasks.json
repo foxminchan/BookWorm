@@ -52,17 +52,6 @@
       }
     },
     {
-      "label": "Publish Bicep",
-      "command": "dotnet",
-      "type": "process",
-      "args": ["aspire", "publish", "--output-path", "/deploys/bicep"],
-      "problemMatcher": "$msCompile",
-      "presentation": {
-        "reveal": "always",
-        "panel": "new"
-      }
-    },
-    {
       "label": "Start Aspire",
       "command": "dotnet",
       "type": "process",

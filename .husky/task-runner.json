@@ -20,6 +20,17 @@
       "name": "analyzers",
       "command": "dotnet",
       "args": ["format", "analyzers", ".", "--verify-no-changes"]
+    },
+    {
+      "name": "build",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "BookWorm.slnx",
+        "--no-restore",
+        "--configuration",
+        "Release"
+      ]
     }
   ]
 }
