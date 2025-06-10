@@ -63,19 +63,19 @@
 
 ### Run the Application
 
-1. Clone the repository
+1. **Clone the repository**
 
    ```bash
    git clone git@github.com:foxminchan/BookWorm.git
    ```
 
-2. Change directory to the repository
+2. **Navigate to the project directory**
 
    ```bash
    cd BookWorm
    ```
 
-3. Run the application
+3. **Run the application**
 
    ```bash
    make run

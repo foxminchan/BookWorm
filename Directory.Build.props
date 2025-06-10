@@ -3,6 +3,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup Label="Product">
     <Product>BookWorm</Product>
@@ -21,5 +22,8 @@
     <Nullable>enable</Nullable>
     <!-- Temporarily disable security warnings for transitive packages. -->
     <NoWarn>NU1608</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
 </Project>
