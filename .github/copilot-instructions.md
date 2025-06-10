@@ -2,12 +2,14 @@
 applyTo: "**/*.cs"
 ---
 
+# Instructions for GitHub Copilot
+
 ## General
 
 - Make only high confidence suggestions when reviewing code changes.
 - Always use the latest version C#, currently C# 13 features.
 - Never change global.json unless explicitly asked to.
-- Never change NuGet.config files unless explicitly asked to.
+- Never change nuget.config files unless explicitly asked to.
 
 ## Formatting
 
@@ -17,6 +19,7 @@ applyTo: "**/*.cs"
 - Ensure that the final return statement of a method is on its own line.
 - Use pattern matching and switch expressions wherever possible.
 - Use `nameof` instead of string literals when referring to member names.
+- Place private class declarations at the bottom of the file.
 - Use `var` when the type is obvious.
 - Use `Primary Constructor` for classes with immutable properties.
 - Use `Expression-bodied members` for methods and properties.

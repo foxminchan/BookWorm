@@ -1,15 +1,9 @@
 <Project>
+  <Import Project="Versions.props" />
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
     <AspireVersion>9.3.0</AspireVersion>
-    <AspireUnstableVersion>9.3.0-preview.1.25265.20</AspireUnstableVersion>
-    <ApiVersioningVersion>8.1.0</ApiVersioningVersion>
-    <GrpcVersion>2.71.0</GrpcVersion>
-    <MassTransitVersion>8.4.1</MassTransitVersion>
-    <MsExtVersion>9.5.0</MsExtVersion>
-    <MsTestVersion>1.7.1</MsTestVersion>
-    <ToolKitVersion>9.5.0</ToolKitVersion>
   </PropertyGroup>
   <ItemGroup Label="Aspire Packages">
     <!-- Aspire Hosting -->
@@ -72,7 +66,7 @@
     <PackageVersion Include="Saunter" Version="0.13.0" />
     <PackageVersion Include="MediatR" Version="12.5.0" />
     <PackageVersion Include="Scalar.AspNetCore" Version="2.4.13" />
-    <PackageVersion Include="Marten.AspNetCore" Version="8.1.2" />
+    <PackageVersion Include="Marten.AspNetCore" Version="8.2.0" />
     <PackageVersion Include="Quartz.AspNetCore" Version="3.14.0" />
     <PackageVersion Include="DistributedLock.Redis" Version="1.0.3" />
     <PackageVersion Include="Refit.HttpClientFactory" Version="8.0.0" />
