@@ -1,6 +1,7 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
 builder.AddDashboard();
+builder.HidePlainHttpLink();
 builder.AddAzureContainerAppEnvironment("aca").ProvisionAsService();
 
 var postgres = builder
@@ -85,8 +86,7 @@ var catalogApi = builder
     )
     .WithOpenApi()
     .WithAsyncApi()
-    .WithHealthCheck()
-    .WithHidePlainHttpLink();
+    .WithHealthCheck();
 
 qdrant.WithParentRelationship(catalogApi);
 
@@ -110,8 +110,7 @@ var chatApi = builder
     .WaitFor(keycloak)
     .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor)
     .WithOpenApi()
-    .WithHealthCheck()
-    .WithHidePlainHttpLink();
+    .WithHealthCheck();
 
 mcp.WithParentRelationship(chatApi);
 
@@ -126,8 +125,7 @@ var basketApi = builder
     .WaitFor(keycloak)
     .WithOpenApi()
     .WithAsyncApi()
-    .WithHealthCheck()
-    .WithHidePlainHttpLink();
+    .WithHealthCheck();
 
 var notificationApi = builder
     .AddProject<BookWorm_Notification>(Application.Notification)
@@ -138,8 +136,7 @@ var notificationApi = builder
     .WaitFor(tableStorage)
     .WithRoleAssignments(storage, StorageBuiltInRole.StorageTableDataContributor)
     .WithAsyncApi(true)
-    .WithHealthCheck()
-    .WithHidePlainHttpLink();
+    .WithHealthCheck();
 
 var orderingApi = builder
     .AddProject<BookWorm_Ordering>(Application.Ordering)
@@ -155,8 +152,7 @@ var orderingApi = builder
     .WithReference(basketApi)
     .WithOpenApi()
     .WithAsyncApi()
-    .WithHealthCheck()
-    .WithHidePlainHttpLink();
+    .WithHealthCheck();
 
 var ratingApi = builder
     .AddProject<BookWorm_Rating>(Application.Rating)
@@ -168,8 +164,7 @@ var ratingApi = builder
     .WaitFor(keycloak)
     .WithOpenApi()
     .WithAsyncApi()
-    .WithHealthCheck()
-    .WithHidePlainHttpLink();
+    .WithHealthCheck();
 
 var financeApi = builder
     .AddProject<BookWorm_Finance>(Application.Finance)
@@ -181,8 +176,7 @@ var financeApi = builder
     .WaitFor(keycloak)
     .WithOpenApi()
     .WithAsyncApi()
-    .WithHealthCheck()
-    .WithHidePlainHttpLink();
+    .WithHealthCheck();
 
 var gateway = builder
     .AddYarp(Application.Gateway)

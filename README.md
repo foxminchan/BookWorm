@@ -52,14 +52,13 @@
 ### Prerequisites
 
 - [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- [Just](https://github.com/casey/just)
 - [Gitleaks](https://gitleaks.io/)
 - [Docker](https://www.docker.com/get-started) or [Podman](https://podman-desktop.io/)
 
-### System Requirements
-
-> [!IMPORTANT]
+> [!NOTE]
 >
-> AI components require an **Nvidia GPU** for local development. Email services use [SendGrid](https://sendgrid.com/) in production and [Mailpit](https://mailpit.axllent.org/) locally.
+> Email services use [SendGrid](https://sendgrid.com/) in production and [Mailpit](https://mailpit.axllent.org/) locally.
 
 ### Run the Application
 
@@ -78,11 +77,14 @@
 3. **Run the application**
 
    ```bash
-   make run
+   just run
    ```
 
-> [!WARNING]
-> Docker or Podman must be running on your machine before starting the application.
+> [!IMPORTANT]
+>
+> - Docker or Podman must be running on your machine before starting the application.
+> - For GPU support with AI components, install GPU drivers and run `just gpu 1`.
+> - Run `just help` to see all available commands.
 
 ### Deploy the application
 

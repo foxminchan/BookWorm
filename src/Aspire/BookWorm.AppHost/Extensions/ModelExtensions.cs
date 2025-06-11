@@ -6,7 +6,6 @@ public static class ModelExtensions
     ///     Adds an Ollama instance to the distributed application.
     /// </summary>
     /// <param name="builder">The distributed application builder to add the Ollama instance to.</param>
-    /// <param name="useGpu">Whether to enable GPU support for Ollama, defaults to true.</param>
     /// <param name="configure">Optional action to further configure the Ollama resource.</param>
     /// <returns>A configured container resource builder for the Ollama instance.</returns>
     /// <remarks>
@@ -19,7 +18,6 @@ public static class ModelExtensions
     /// </remarks>
     public static void AddOllama(
         this IDistributedApplicationBuilder builder,
-        bool useGpu = true,
         Action<IResourceBuilder<OllamaResource>>? configure = null
     )
     {
@@ -31,7 +29,7 @@ public static class ModelExtensions
             .WithLifetime(ContainerLifetime.Persistent)
             .PublishAsContainer();
 
-        if (!OperatingSystem.IsMacOS() && useGpu)
+        if (IsUseGpu())
         {
             ollama.WithGPUSupport();
         }
@@ -64,5 +62,16 @@ public static class ModelExtensions
         }
 
         return builder;
+    }
+
+    private static bool IsUseGpu()
+    {
+        if (OperatingSystem.IsMacOS())
+        {
+            return false;
+        }
+
+        var envVar = Environment.GetEnvironmentVariable("OLLAMA_USE_GPU");
+        return int.TryParse(envVar, out var useGpu) && useGpu == 1;
     }
 }
