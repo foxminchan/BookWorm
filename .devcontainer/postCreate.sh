@@ -61,6 +61,22 @@ if command -v npm >/dev/null 2>&1; then
     npm install -g npm@latest
 fi
 
+# Install Just task runner
+echo "🔧 Installing Just task runner..."
+if command -v npm >/dev/null 2>&1; then
+    npm install -g rust-just
+    echo "✅ Just installed via npm"
+    
+    # Verify Just installation
+    if command -v just >/dev/null 2>&1; then
+        echo "✅ Just version: $(just --version)"
+    else
+        echo "⚠️ Just installed but not found in PATH. You may need to restart your terminal."
+    fi
+else
+    echo "❌ npm not available, skipping Just installation"
+fi
+
 # Restore .NET tools and packages
 echo "📦 Restoring .NET tools and packages..."
 if [ -f "global.json" ]; then
@@ -73,8 +89,8 @@ fi
 
 # Set up pre-commit hooks
 echo "🪝 Setting up pre-commit hooks..."
-if [ -f "Makefile" ]; then
-    make hook
+if [ -f ".justfile" ]; then
+    just hook
 fi
 
 # Install Node.js dependencies for EventCatalog
@@ -134,12 +150,12 @@ alias ..='cd ..'
 alias ...='cd ../..'
 
 # BookWorm specific aliases
-alias bw-run='make run'
-alias bw-build='make build'
-alias bw-test='make test'
-alias bw-format='make format'
-alias bw-clean='make clean'
-alias bw-restore='make restore'
+alias bw-run='just run'
+alias bw-build='just build'
+alias bw-test='just test'
+alias bw-format='just format'
+alias bw-clean='just clean'
+alias bw-restore='just restore'
 
 # Docker aliases
 alias d='docker'
@@ -188,11 +204,11 @@ echo ""
 echo "✅ BookWorm development environment setup complete!"
 echo ""
 echo "🚀 Quick Start Commands:"
-echo "  make run          - Start the full application"
-echo "  make build        - Build all projects"
-echo "  make test         - Run all tests"
-echo "  make format       - Format code"
-echo "  make help         - Show all available commands"
+echo "  just run          - Start the full application"
+echo "  just build        - Build all projects"
+echo "  just test         - Run all tests"
+echo "  just format       - Format code"
+echo "  just help         - Show all available commands"
 echo ""
 echo "📦 Node.js/npm Commands:"
 echo "  cd eventcatalog && npm start  - Start EventCatalog dev server"

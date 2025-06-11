@@ -3,33 +3,44 @@
 public static class EndpointExtensions
 {
     /// <summary>
-    ///     Configures the resource builder to hide the plain HTTP link in the resource representation.
+    ///     Hides the plain HTTP link from the resource endpoints when the application is launched with an HTTPS profile.
     /// </summary>
-    /// <typeparam name="T">
-    ///     The type of the resource, which must inherit from <see cref="ProjectResource" />.
-    /// </typeparam>
     /// <param name="builder">
-    ///     The resource builder to configure.
+    ///     The distributed application builder to configure.
     /// </param>
-    /// <returns>
-    ///     The configured <see cref="IResourceBuilder{T}" /> instance.
-    /// </returns>
     /// <remarks>
-    ///     This method checks if the application is running with an HTTPS launch profile.
-    ///     If so, it modifies the HTTP endpoint's URL display location to be shown only in the details view.
+    ///     This method subscribes to the <see cref="BeforeStartEvent"/> and updates the display location of HTTP endpoints
+    ///     to <see cref="UrlDisplayLocation.DetailsOnly"/> for all resources of type <see cref="IResourceWithEndpoints"/>.
+    ///     This ensures that
     /// </remarks>
-    public static IResourceBuilder<T> WithHidePlainHttpLink<T>(this IResourceBuilder<T> builder)
-        where T : ProjectResource
+    public static void HidePlainHttpLink(this IDistributedApplicationBuilder builder)
     {
-        if (builder.ApplicationBuilder.IsHttpsLaunchProfile())
+        if (builder.IsHttpsLaunchProfile())
         {
-            builder.WithUrlForEndpoint(
-                Protocol.Http,
-                url => url.DisplayLocation = UrlDisplayLocation.DetailsOnly
+            builder.Eventing.Subscribe<BeforeStartEvent>(
+                (e, _) =>
+                {
+                    foreach (var r in e.Model.Resources.OfType<IResourceWithEndpoints>())
+                    {
+                        if (r is ProjectResource projectResource)
+                        {
+                            builder
+                                .CreateResourceBuilder(projectResource)
+                                .WithUrls(c =>
+                                {
+                                    c.Urls.Where(u => u.Endpoint?.EndpointName == Protocol.Http)
+                                        .ToList()
+                                        .ForEach(u =>
+                                            u.DisplayLocation = UrlDisplayLocation.DetailsOnly
+                                        );
+                                });
+                        }
+                    }
+
+                    return Task.CompletedTask;
+                }
             );
         }
-
-        return builder;
     }
 
     /// <summary>

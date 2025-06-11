@@ -1,5 +1,6 @@
 using BookWorm.Chassis.ActivityScope;
 using BookWorm.Chassis.Logging;
+using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.ServiceDefaults.ApiSpecification;
 using BookWorm.ServiceDefaults.Configuration;
 using BookWorm.ServiceDefaults.Kestrel;
@@ -91,6 +92,7 @@ public static class Extensions
                     )
                     .AddGrpcClientInstrumentation()
                     .AddHttpClientInstrumentation()
+                    .AddProcessor(new FixHttpRouteProcessor())
                     .AddSource(ActivitySourceProvider.DefaultSourceName);
             });
 
