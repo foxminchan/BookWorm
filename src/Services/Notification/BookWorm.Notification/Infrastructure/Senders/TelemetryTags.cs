@@ -2,9 +2,6 @@
 
 public static class TelemetryTags
 {
-    public const string ActivitySourceName = "Smtp";
-    public static ActivitySource ActivitySource { get; } = new(ActivitySourceName);
-
     public static class SmtpClient
     {
         public const string Recipient = "smtp.recipient";

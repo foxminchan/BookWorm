@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Notification.Extensions;
+﻿using BookWorm.Notification.Infrastructure.Senders.Extensions;
+
+namespace BookWorm.Notification.Extensions;
 
 public static class Extensions
 {
@@ -20,9 +22,7 @@ public static class Extensions
         services.AddResiliencePipeline(
             nameof(Notification),
             pipelineBuilder =>
-            {
-                pipelineBuilder.AddCircuitBreaker().AddRetry().AddTimeout(TimeSpan.FromSeconds(45));
-            }
+                pipelineBuilder.AddCircuitBreaker().AddRetry().AddTimeout(TimeSpan.FromSeconds(45))
         );
 
         builder.Services.AddTransient<IRenderer, MjmlRenderer>();

@@ -1,4 +1,5 @@
-﻿using Polly.Registry;
+﻿using BookWorm.Notification.Infrastructure.Senders.Extensions;
+using Polly.Registry;
 
 namespace BookWorm.Notification.Infrastructure.Senders.Providers;
 
@@ -13,36 +14,25 @@ public sealed class MailKitSender(
         CancellationToken cancellationToken = default
     )
     {
+        await this.WithTelemetry(
+            mailMessage,
+            async token => await SendEmailAsync(mailMessage, token),
+            cancellationToken
+        );
+    }
+
+    private async Task SendEmailAsync(MimeMessage mailMessage, CancellationToken cancellationToken)
+    {
         var client = clientPool.Get();
 
         try
         {
-            using var activity = TelemetryTags.ActivitySource.StartActivity(
-                $"{nameof(MailKitSender)}/{nameof(SendAsync)}",
-                ActivityKind.Client
-            );
-
-            activity?.SetTag(TelemetryTags.SmtpClient.Recipient, mailMessage.To.ToString());
-            activity?.SetTag(TelemetryTags.SmtpClient.Subject, mailMessage.Subject);
-            activity?.SetTag(TelemetryTags.SmtpClient.EmailOperation, "Send");
-            if (!string.IsNullOrEmpty(mailMessage.Headers["Message-ID"]))
-            {
-                activity?.SetTag(
-                    TelemetryTags.SmtpClient.MessageId,
-                    mailMessage.Headers["Message-ID"]
-                );
-            }
-
             var pipeline = provider.GetPipeline(nameof(Notification));
 
             await pipeline.ExecuteAsync(
                 async ct => await client.SendAsync(mailMessage, ct),
                 cancellationToken
             );
-
-            await client.DisconnectAsync(true, cancellationToken);
-
-            activity?.SetStatus(ActivityStatusCode.Ok);
         }
         catch (Exception ex)
         {
@@ -52,11 +42,37 @@ public sealed class MailKitSender(
                 mailMessage.To.ToString(),
                 mailMessage.Subject
             );
-            throw new NotificationException($"Failed to send email. Exception: {ex.Message}");
+            throw new NotificationException($"Failed to send email. Exception: {ex.Message}", ex);
         }
         finally
         {
-            clientPool.Return(client);
+            await DisconnectAndReturnClient(client, mailMessage, cancellationToken);
         }
+    }
+
+    private async Task DisconnectAndReturnClient(
+        SmtpClient client,
+        MimeMessage mailMessage,
+        CancellationToken cancellationToken
+    )
+    {
+        try
+        {
+            if (client.IsConnected)
+            {
+                await client.DisconnectAsync(true, cancellationToken);
+            }
+        }
+        catch (Exception e)
+        {
+            logger.LogError(
+                e,
+                "Failed to disconnect SMTP client after sending email to {Recipient} with subject {Subject}",
+                mailMessage.To.ToString(),
+                mailMessage.Subject
+            );
+        }
+
+        clientPool.Return(client);
     }
 }

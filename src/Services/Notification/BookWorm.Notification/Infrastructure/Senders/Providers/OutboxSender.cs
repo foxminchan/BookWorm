@@ -11,9 +11,16 @@ public sealed class OutboxSender(ITableService tableService, ISender sender) : I
         CancellationToken cancellationToken = default
     )
     {
+        var mailbox =
+            mailMessage.To.Mailboxes.FirstOrDefault()
+            ?? throw new ArgumentException(
+                "Message must have at least one recipient",
+                nameof(mailMessage)
+            );
+
         var outbox = new Outbox(
-            mailMessage.To.Mailboxes.First().Name,
-            mailMessage.To.Mailboxes.First().Address,
+            mailbox.Name ?? "Unknown",
+            mailbox.Address,
             mailMessage.Subject,
             mailMessage.HtmlBody
         );
