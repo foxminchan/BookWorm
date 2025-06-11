@@ -3,6 +3,12 @@
 public static class KeycloakExtensions
 {
     private const string BaseContainerPath = "Container/keycloak";
+    private const string RealmName = "REALM_NAME";
+    private const string RealmDisplayName = "REALM_DISPLAY_NAME";
+    private const string RealmHsts = "REALM_HSTS";
+    private const string HttpEnabledEnvVarName = "KC_HTTP_ENABLED";
+    private const string ProxyHeadersEnvVarName = "KC_PROXY_HEADERS";
+    private const string HostNameStrictEnvVarName = "KC_HOSTNAME_STRICT";
 
     /// <summary>
     ///     Configures a Keycloak resource with a sample realm import.
@@ -23,12 +29,12 @@ public static class KeycloakExtensions
     {
         builder
             .WithRealmImport($"{BaseContainerPath}/realms", true)
-            .WithEnvironment("REALM_NAME", realmName)
-            .WithEnvironment("REALM_DISPLAY_NAME", displayName)
+            .WithEnvironment(RealmName, realmName)
+            .WithEnvironment(RealmDisplayName, displayName)
             // Ensure HSTS is not enabled in run mode to avoid browser caching issues when developing.
             // Workaround for https://github.com/keycloak/keycloak/issues/32366
             .WithEnvironment(
-                "REALM_HSTS",
+                RealmHsts,
                 builder.ApplicationBuilder.ExecutionContext.IsRunMode
                     ? string.Empty
                     : "max-age=31536000; includeSubDomains"
@@ -62,5 +68,20 @@ public static class KeycloakExtensions
         }
 
         return builder;
+    }
+
+    /// <summary>
+    ///     Configures the Keycloak resource to enable HTTP, set proxy headers, and disable strict hostname checking.
+    /// </summary>
+    /// <param name="builder">The Keycloak resource builder.</param>
+    /// <returns>The Keycloak resource builder for method chaining.</returns>
+    public static IResourceBuilder<KeycloakResource> WithHttpEnabled(
+        this IResourceBuilder<KeycloakResource> builder
+    )
+    {
+        return builder
+            .WithEnvironment(HttpEnabledEnvVarName, "true")
+            .WithEnvironment(ProxyHeadersEnvVarName, "xforwarded")
+            .WithEnvironment(HostNameStrictEnvVarName, "false");
     }
 }

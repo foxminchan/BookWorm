@@ -2,6 +2,10 @@
 
 public static class DashboardExtensions
 {
+    private const string OtelExporterOtlpEndpoint = "OTEL_EXPORTER_OTLP_ENDPOINT";
+    private const string OtelExporterOtlpProtocol = "OTEL_EXPORTER_OTLP_PROTOCOL";
+    private const string OtelServiceName = "OTEL_SERVICE_NAME";
+
     /// <summary>
     ///     Adds the Aspire dashboard to the distributed application.
     /// </summary>
@@ -38,10 +42,10 @@ public static class DashboardExtensions
                         .CreateResourceBuilder(r)
                         .WithEnvironment(c =>
                         {
-                            c.EnvironmentVariables["OTEL_EXPORTER_OTLP_ENDPOINT"] =
+                            c.EnvironmentVariables[OtelExporterOtlpEndpoint] =
                                 dashboard.GetEndpoint(Protocol.Otlp);
-                            c.EnvironmentVariables["OTEL_EXPORTER_OTLP_PROTOCOL"] = Protocol.Grpc;
-                            c.EnvironmentVariables["OTEL_SERVICE_NAME"] = r.Name;
+                            c.EnvironmentVariables[OtelExporterOtlpProtocol] = Protocol.Grpc;
+                            c.EnvironmentVariables[OtelServiceName] = r.Name;
                         });
                 }
 

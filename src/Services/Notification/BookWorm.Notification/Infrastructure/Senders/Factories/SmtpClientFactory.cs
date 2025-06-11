@@ -1,14 +1,10 @@
-using BookWorm.Constants.Aspire;
 using BookWorm.Constants.Core;
-using BookWorm.ServiceDefaults.Configuration;
 
 namespace BookWorm.Notification.Infrastructure.Senders.Factories;
 
-public sealed class SmtpClientFactory(IConfiguration configuration) : ISmtpClientFactory
+public sealed class SmtpClientFactory(UriBuilder uri) : ISmtpClientFactory
 {
-    private readonly Lazy<UriBuilder> _smtpUri = new(() =>
-        new(configuration.GetRequiredConnectionString(Components.MailPit))
-    );
+    private readonly Lazy<UriBuilder> _smtpUri = new(() => uri);
 
     public SmtpClient CreateClient()
     {

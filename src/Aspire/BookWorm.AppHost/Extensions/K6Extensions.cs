@@ -4,6 +4,10 @@ namespace BookWorm.AppHost.Extensions;
 
 public static class K6Extensions
 {
+    private const string BaseContainerPath = "Container/k6";
+    private const string K6WebDashboard = "K6_WEB_DASHBOARD";
+    private const string K6WebDashboardExport = "K6_WEB_DASHBOARD_EXPORT";
+
     /// <summary>
     ///     Adds K6 load testing to the distributed application.
     /// </summary>
@@ -34,12 +38,12 @@ public static class K6Extensions
         builder
             .AddK6(Components.K6)
             .WithImagePullPolicy(ImagePullPolicy.Always)
-            .WithBindMount("Container/k6", "/scripts", true)
-            .WithBindMount("Container/k6/dist", "/home/k6")
+            .WithBindMount($"{BaseContainerPath}", "/scripts", true)
+            .WithBindMount($"{BaseContainerPath}/dist", "/home/k6")
             .WithScript("/scripts/dist/main.js", vus)
             .WithReference(entryPoint.Resource.GetEndpoint(endpointName))
-            .WithEnvironment("K6_WEB_DASHBOARD", "true")
-            .WithEnvironment("K6_WEB_DASHBOARD_EXPORT", "dashboard-report.html")
+            .WithEnvironment(K6WebDashboard, true.ToString)
+            .WithEnvironment(K6WebDashboardExport, "dashboard-report.html")
             .WithHttpEndpoint(
                 targetPort: K6DashboardDefaults.ContainerPort,
                 name: K6DashboardDefaults.Name

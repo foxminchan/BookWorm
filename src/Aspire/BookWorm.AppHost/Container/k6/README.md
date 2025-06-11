@@ -136,14 +136,3 @@ The project uses Webpack to bundle TypeScript into a single K6-compatible JavaSc
 2. **Webpack bundling**: Creates a single main.js file with all dependencies
 3. **Source maps**: Enables debugging of original TypeScript code
 4. **External libraries**: Handles K6-specific external imports
-
-### Integration with Aspire
-
-The K6 tests integrate seamlessly with the .NET Aspire application host:
-
-```csharp
-// Configured in K6Extensions.cs
-.WithScript("/scripts/dist/main.js")  // Uses compiled TypeScript output
-.WithBindMount("Container/k6", "/scripts", true)
-.WithReference(entryPoint.Resource.GetEndpoint("http"))
-```
