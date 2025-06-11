@@ -1,5 +1,4 @@
 ﻿global using System.ComponentModel.DataAnnotations;
-global using System.Diagnostics;
 global using System.Diagnostics.CodeAnalysis;
 global using System.Net;
 global using System.Security.Authentication;
@@ -11,7 +10,6 @@ global using BookWorm.Contracts;
 global using BookWorm.Notification.Domain.Builders;
 global using BookWorm.Notification.Domain.Exceptions;
 global using BookWorm.Notification.Domain.Settings;
-global using BookWorm.Notification.Infrastructure.Helpers;
 global using BookWorm.Notification.Infrastructure.Job;
 global using BookWorm.Notification.Infrastructure.Render;
 global using BookWorm.Notification.Infrastructure.Senders;

@@ -1,4 +1,5 @@
-﻿using Polly.Registry;
+﻿using BookWorm.Notification.Infrastructure.Senders.Extensions;
+using Polly.Registry;
 using SendGrid;
 using SendGrid.Helpers.Mail;
 
@@ -7,6 +8,7 @@ namespace BookWorm.Notification.Infrastructure.Senders.Providers;
 public sealed class SendGridSender(
     ILogger<SendGridSender> logger,
     SendGridOptions sendGridOptions,
+    ISendGridClient sendGridClient,
     ResiliencePipelineProvider<string> provider
 ) : ISender
 {
@@ -15,17 +17,15 @@ public sealed class SendGridSender(
         CancellationToken cancellationToken = default
     )
     {
-        using var activity = TelemetryTags.ActivitySource.StartActivity(
-            $"{nameof(MailKitSender)}/{nameof(SendAsync)}",
-            ActivityKind.Client
+        await this.WithTelemetry(
+            mailMessage,
+            async token => await SendEmailAsync(mailMessage, token),
+            cancellationToken
         );
+    }
 
-        activity?.SetTag(TelemetryTags.SmtpClient.Recipient, mailMessage.To.ToString());
-        activity?.SetTag(TelemetryTags.SmtpClient.Subject, mailMessage.Subject);
-        activity?.SetTag(TelemetryTags.SmtpClient.MessageId, mailMessage.Headers["Message-ID"]);
-        activity?.SetTag(TelemetryTags.SmtpClient.EmailOperation, "Send");
-
-        var sendGridClient = new SendGridClient(sendGridOptions.ApiKey);
+    private async Task SendEmailAsync(MimeMessage mailMessage, CancellationToken cancellationToken)
+    {
         var message = new SendGridMessage
         {
             From = new(sendGridOptions.SenderEmail, sendGridOptions.SenderName),
@@ -35,7 +35,7 @@ public sealed class SendGridSender(
 
         foreach (var recipient in mailMessage.To.Mailboxes)
         {
-            message.AddTo(new EmailAddress(recipient.Address));
+            message.AddTo(new EmailAddress(recipient.Address, recipient.Name ?? string.Empty));
         }
 
         var pipeline = provider.GetPipeline(nameof(Notification));
@@ -45,7 +45,7 @@ public sealed class SendGridSender(
             cancellationToken
         );
 
-        if (response.StatusCode != HttpStatusCode.OK)
+        if (response.StatusCode is not (HttpStatusCode.OK or HttpStatusCode.Accepted))
         {
             logger.LogError(
                 "Failed to send email to {Recipient} with subject {Subject}. Status code: {StatusCode}",
