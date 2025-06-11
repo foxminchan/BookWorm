@@ -11,9 +11,11 @@ public static class EmailExtensions
         this IResourceBuilder<ProjectResource> builder
     )
     {
-        if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
+        var applicationBuilder = builder.ApplicationBuilder;
+
+        if (applicationBuilder.ExecutionContext.IsRunMode)
         {
-            var mailpit = builder.ApplicationBuilder.AddMailPit(Components.MailPit);
+            var mailpit = applicationBuilder.AddMailPit(Components.MailPit, smtpPort: 587);
             builder.WithReference(mailpit).WaitFor(mailpit);
             mailpit.WithParentRelationship(builder);
         }
@@ -22,15 +24,15 @@ public static class EmailExtensions
             builder
                 .WithEnvironment(
                     "SendGrid__ApiKey",
-                    builder.ApplicationBuilder.AddParameter("api-key", true)
+                    applicationBuilder.AddParameter("api-key", true)
                 )
                 .WithEnvironment(
                     "SendGrid__SenderEmail",
-                    builder.ApplicationBuilder.AddParameter("sender-email", true)
+                    applicationBuilder.AddParameter("sender-email", true)
                 )
                 .WithEnvironment(
                     "SendGrid__SenderName",
-                    builder.ApplicationBuilder.AddParameter("sender-name", true)
+                    applicationBuilder.AddParameter("sender-name", true)
                 );
         }
 

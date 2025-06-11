@@ -1,4 +1,5 @@
-﻿using BookWorm.Notification.Infrastructure.Senders.Factories;
+﻿using BookWorm.Constants.Aspire;
+using BookWorm.Notification.Infrastructure.Senders.Factories;
 using BookWorm.ServiceDefaults.Configuration;
 using SendGrid;
 
@@ -12,7 +13,9 @@ public static class Extensions
 
         services.AddSingleton<MailKitSender>();
 
-        services.AddSingleton<ISmtpClientFactory, SmtpClientFactory>();
+        var uri = builder.GetMailPitEndpoint(Components.MailPit);
+
+        services.AddSingleton<ISmtpClientFactory>(_ => new SmtpClientFactory(uri));
 
         services.AddSingleton<ObjectPool<SmtpClient>>(sp =>
         {
@@ -22,6 +25,18 @@ public static class Extensions
         });
 
         services.Configure<EmailOptions>(EmailOptions.ConfigurationSection);
+
+        services
+            .AddHealthChecks()
+            .AddSmtpHealthCheck(
+                setup =>
+                {
+                    setup.Host = uri.Host;
+                    setup.Port = uri.Port;
+                },
+                nameof(Components.MailPit),
+                HealthStatus.Unhealthy
+            );
     }
 
     public static void AddSendGridSender(this IHostApplicationBuilder builder)
@@ -32,13 +47,11 @@ public static class Extensions
 
         services.AddSingleton<SendGridSender>();
 
-        services.AddSingleton<ISendGridClient>(sp => new SendGridClient(
-            sp.GetRequiredService<SendGridOptions>().ApiKey
-        ));
+        var apiKey = services.BuildServiceProvider().GetRequiredService<SendGridOptions>().ApiKey;
 
-        services
-            .AddHealthChecks()
-            .AddCheck<SendGridHealthCheck>(nameof(SendGridHealthCheck), HealthStatus.Degraded);
+        services.AddSingleton<ISendGridClient>(_ => new SendGridClient(apiKey));
+
+        services.AddHealthChecks().AddSendGrid(apiKey, nameof(SendGrid), HealthStatus.Degraded);
     }
 
     public static void AddOutBoxSender(this IHostApplicationBuilder builder)

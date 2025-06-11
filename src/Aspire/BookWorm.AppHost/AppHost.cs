@@ -59,6 +59,7 @@ var keycloak = builder
     .AddKeycloak(Components.KeyCloak)
     .WithDataVolume()
     .WithCustomTheme()
+    .WithHttpEnabled()
     .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent)
     .WithSampleRealmImport(nameof(BookWorm).ToLowerInvariant(), nameof(BookWorm));

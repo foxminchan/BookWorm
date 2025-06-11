@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -34,7 +35,10 @@ public static class HttpClientExtensions
 
             if (accessToken is not null)
             {
-                request.Headers.Authorization = new("Bearer", accessToken);
+                request.Headers.Authorization = new(
+                    JwtBearerDefaults.AuthenticationScheme,
+                    accessToken
+                );
             }
 
             return await base.SendAsync(request, cancellationToken);
