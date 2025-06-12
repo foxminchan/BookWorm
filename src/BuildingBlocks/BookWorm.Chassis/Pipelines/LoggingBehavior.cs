@@ -36,7 +36,7 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
             behavior,
             typeof(TRequest).Name,
             response,
-            Stopwatch.GetElapsedTime(start).Milliseconds
+            Stopwatch.GetElapsedTime(start).TotalMilliseconds
         );
 
         var timeTaken = Stopwatch.GetElapsedTime(start);

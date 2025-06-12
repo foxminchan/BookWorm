@@ -142,7 +142,7 @@ public sealed class CreateOrderCommandTests
 
             // Assert
             var exception = await act.ShouldThrowAsync<NotFoundException>();
-            exception.Message.ShouldBe("Book with id book1 not found.");
+            exception.Message.ShouldBe("BookResponse with id book1 not found.");
         }
     }
 

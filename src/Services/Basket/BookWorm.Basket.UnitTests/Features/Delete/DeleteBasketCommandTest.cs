@@ -102,7 +102,7 @@ public sealed class DeleteBasketCommandTest
 
         // Assert
         var exception = await act.ShouldThrowAsync<NotFoundException>();
-        exception.Message.ShouldBe($"Basket with id {_userId} not found.");
+        exception.Message.ShouldBe($"CustomerBasket with id {_userId} not found.");
         _repositoryMock.Verify(x => x.DeleteBasketAsync(_userId), Times.Never);
     }
 

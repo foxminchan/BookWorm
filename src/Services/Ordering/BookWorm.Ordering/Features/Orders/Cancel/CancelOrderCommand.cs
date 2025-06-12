@@ -17,7 +17,7 @@ public sealed class CancelOrderHandler(IOrderRepository repository)
             cancellationToken
         );
 
-        Guard.Against.NotFound(order, $"Order with id {request.OrderId} not found.");
+        Guard.Against.NotFound(order, request.OrderId);
 
         order.MarkAsCanceled();
 

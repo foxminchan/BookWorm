@@ -1,15 +1,8 @@
 ﻿using System.Net.Mime;
-using System.Text;
 using Asp.Versioning.ApiExplorer;
-using BookWorm.Constants.Aspire;
-using BookWorm.ServiceDefaults.Auth;
 using BookWorm.ServiceDefaults.Keycloak;
-using Microsoft.AspNetCore.Authentication.OAuth;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.OpenApi;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Primitives;
 using Microsoft.OpenApi.Models;
 

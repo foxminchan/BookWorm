@@ -20,7 +20,7 @@ public sealed class GetBookHandler(
             {
                 var book = await repository.GetByIdAsync(request.Id, ctx);
 
-                Guard.Against.NotFound(book, $"Book with id {request.Id} not found.");
+                Guard.Against.NotFound(book, request.Id);
 
                 return book;
             },

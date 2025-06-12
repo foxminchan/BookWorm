@@ -13,9 +13,9 @@ public sealed class OutboxSender(ITableService tableService, ISender sender) : I
     {
         var mailbox =
             mailMessage.To.Mailboxes.FirstOrDefault()
-            ?? throw new ArgumentException(
-                "Message must have at least one recipient",
-                nameof(mailMessage)
+            ?? throw new ArgumentNullException(
+                nameof(mailMessage),
+                "Message must have at least one recipient"
             );
 
         var outbox = new Outbox(

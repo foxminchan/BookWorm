@@ -14,7 +14,7 @@ public sealed class GetChatHandler(IConversationRepository repository)
     {
         var conversation = await repository.GetByIdAsync(request.Id, cancellationToken);
 
-        Guard.Against.NotFound(conversation, $"Conversation with id {request.Id} not found.");
+        Guard.Against.NotFound(conversation, request.Id);
 
         return conversation.ToConversationDto();
     }

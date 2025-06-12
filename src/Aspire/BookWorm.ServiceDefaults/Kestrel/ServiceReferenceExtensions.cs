@@ -1,6 +1,4 @@
 ﻿using Grpc.Health.V1;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Refit;
 
 namespace BookWorm.ServiceDefaults.Kestrel;

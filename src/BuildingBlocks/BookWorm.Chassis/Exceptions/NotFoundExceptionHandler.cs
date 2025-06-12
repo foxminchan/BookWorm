@@ -4,7 +4,13 @@ using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Chassis.Exceptions;
 
-public class NotFoundException(string message) : Exception(message);
+public sealed class NotFoundException(string message) : Exception(message)
+{
+    public static NotFoundException For<T>(Guid id) => For<T>(id.ToString());
+
+    public static NotFoundException For<T>(string id) =>
+        new($"{typeof(T).Name} with id {id} not found.");
+}
 
 public sealed class NotFoundExceptionHandler(ILogger<NotFoundExceptionHandler> logger)
     : IExceptionHandler

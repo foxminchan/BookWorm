@@ -19,7 +19,7 @@ public sealed class GetBuyerHandler(
 
         var result = await buyerRepository.GetByIdAsync(buyerId, cancellationToken);
 
-        Guard.Against.NotFound(result, $"Buyer with id {buyerId} not found.");
+        Guard.Against.NotFound(result, buyerId);
 
         return result.ToBuyerDto();
     }

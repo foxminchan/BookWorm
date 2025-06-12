@@ -1,7 +1,4 @@
-﻿using BookWorm.Constants.Aspire;
-using Microsoft.Extensions.Hosting;
-
-namespace BookWorm.ServiceDefaults.Configuration;
+﻿namespace BookWorm.ServiceDefaults.Configuration;
 
 public static class LaunchProfileExtensions
 {

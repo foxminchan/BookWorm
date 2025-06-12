@@ -18,7 +18,7 @@ public sealed class GetBasketHandler(IBasketRepository repository, ClaimsPrincip
 
         var basket = await repository.GetBasketAsync(userId);
 
-        Guard.Against.NotFound(basket, $"Basket with id {userId} not found.");
+        Guard.Against.NotFound(basket, userId);
 
         return basket.ToCustomerBasketDto();
     }

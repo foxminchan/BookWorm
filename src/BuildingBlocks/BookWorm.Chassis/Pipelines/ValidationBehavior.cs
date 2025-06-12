@@ -33,6 +33,11 @@ public class ValidationBehavior<TRequest, TResponse>(
             );
         }
 
+        if (!validators.Any())
+        {
+            return await next(cancellationToken);
+        }
+
         var context = new ValidationContext<TRequest>(request);
 
         var validationResult = await Task.WhenAll(

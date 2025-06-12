@@ -11,7 +11,7 @@ public sealed class DeleteChatHandler(IConversationRepository repository)
     {
         var conversation = await repository.GetByIdAsync(request.Id, cancellationToken);
 
-        Guard.Against.NotFound(conversation, $"Conversation with id {request.Id} not found.");
+        Guard.Against.NotFound(conversation, request.Id);
 
         repository.Delete(conversation, cancellationToken);
 

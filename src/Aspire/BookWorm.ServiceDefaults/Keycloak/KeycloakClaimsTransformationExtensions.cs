@@ -1,8 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-
-namespace BookWorm.ServiceDefaults.Keycloak;
+﻿namespace BookWorm.ServiceDefaults.Keycloak;
 
 public static class KeycloakClaimsTransformationExtensions
 {
