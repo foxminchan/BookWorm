@@ -14,7 +14,7 @@ public sealed class DeleteFeedbackHandler(IFeedbackRepository repository)
     {
         var feedback = await repository.GetByIdAsync(request.Id, cancellationToken);
 
-        Guard.Against.NotFound(feedback, $"Feedback with id {request.Id} not found.");
+        Guard.Against.NotFound(feedback, request.Id);
 
         feedback.Remove();
 

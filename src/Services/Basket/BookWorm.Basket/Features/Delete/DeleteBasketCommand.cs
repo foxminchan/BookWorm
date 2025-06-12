@@ -15,7 +15,7 @@ public sealed class DeleteBasketHandler(
 
         var basket = await basketRepository.GetBasketAsync(userId);
 
-        Guard.Against.NotFound(basket, $"Basket with id {userId} not found.");
+        Guard.Against.NotFound(basket, userId);
 
         await basketRepository.DeleteBasketAsync(userId);
 

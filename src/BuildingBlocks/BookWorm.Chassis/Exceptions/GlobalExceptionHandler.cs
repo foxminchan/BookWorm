@@ -41,7 +41,14 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
     {
         return exception switch
         {
-            ArgumentOutOfRangeException => (StatusCodes.Status400BadRequest, exception.Message),
+            ArgumentOutOfRangeException or ArgumentNullException or ArgumentException => (
+                StatusCodes.Status400BadRequest,
+                exception.Message
+            ),
+            InvalidOperationException or NotSupportedException => (
+                StatusCodes.Status409Conflict,
+                exception.Message
+            ),
             _ => (StatusCodes.Status500InternalServerError, "We made a mistake but we are on it!"),
         };
     }

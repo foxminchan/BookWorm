@@ -1,10 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-
-namespace BookWorm.ServiceDefaults.Kestrel;
+﻿namespace BookWorm.ServiceDefaults.Kestrel;
 
 public static class HttpClientExtensions
 {

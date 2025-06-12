@@ -227,7 +227,7 @@ public sealed class ChatStreaming : IChatStreaming
 
         var conversation = await repository.GetByIdAsync(id);
 
-        Guard.Against.NotFound(conversation, $"Conversation with id {id} not found.");
+        Guard.Against.NotFound(conversation, id);
 
         var parentMessage = conversation
             .Messages.OrderByDescending(m => m.CreatedAt)

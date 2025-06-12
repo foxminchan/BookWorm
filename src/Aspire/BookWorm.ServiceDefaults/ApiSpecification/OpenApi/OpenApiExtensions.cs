@@ -1,11 +1,4 @@
-﻿using BookWorm.ServiceDefaults.Auth;
-using BookWorm.ServiceDefaults.Configuration;
-using Microsoft.AspNetCore.Authentication.OAuth;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Scalar.AspNetCore;
+﻿using Scalar.AspNetCore;
 
 namespace BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
 

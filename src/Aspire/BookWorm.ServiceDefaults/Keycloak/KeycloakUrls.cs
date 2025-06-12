@@ -1,5 +1,4 @@
-﻿using BookWorm.Constants.Aspire;
-using Microsoft.Extensions.ServiceDiscovery;
+﻿using Microsoft.Extensions.ServiceDiscovery;
 
 namespace BookWorm.ServiceDefaults.Keycloak;
 

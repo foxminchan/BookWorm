@@ -12,7 +12,7 @@ public sealed class UpdateCategoryHandler(ICategoryRepository repository)
     {
         var category = await repository.GetByIdAsync(request.Id, cancellationToken);
 
-        Guard.Against.NotFound(category, $"Category with id {request.Id} not found.");
+        Guard.Against.NotFound(category, request.Id);
 
         category.UpdateName(request.Name);
 

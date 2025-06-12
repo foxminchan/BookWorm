@@ -27,7 +27,7 @@ public sealed class PreCreateOrderHandler([AsParameters] BasketMetadata basket)
             {
                 var book = response?.Books.FirstOrDefault(b => b.Id == item.Id);
 
-                Guard.Against.NotFound(book, $"Book with id {item.Id} not found.");
+                Guard.Against.NotFound(book, item.Id);
 
                 var bookPrice = book.PriceSale ?? book.Price;
 

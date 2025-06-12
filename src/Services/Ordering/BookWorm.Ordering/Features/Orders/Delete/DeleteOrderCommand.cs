@@ -9,7 +9,7 @@ public sealed class DeleteOrderHandler(IOrderRepository repository)
     {
         var order = await repository.GetByIdAsync(request.Id, cancellationToken);
 
-        Guard.Against.NotFound(order, $"Order with id {request.Id} not found.");
+        Guard.Against.NotFound(order, request.Id);
 
         order.Delete();
 

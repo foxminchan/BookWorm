@@ -17,6 +17,17 @@ public static class TelemetryPropagator
         _propagator.Inject(context, carrier, setter);
     }
 
+    public static PropagationContext Extract<T>(
+        PropagationContext context,
+        T carrier,
+        Func<T, string, IEnumerable<string>> getter
+    )
+    {
+        _propagator.Extract(context, carrier, getter);
+
+        return context;
+    }
+
     public static PropagationContext? Propagate<T>(
         this Activity? activity,
         T carrier,
@@ -32,5 +43,17 @@ public static class TelemetryPropagator
         propagationContext.Inject(carrier, setter);
 
         return propagationContext;
+    }
+
+    public static PropagationContext? GetPropagationContext(Activity? activity = null)
+    {
+        var activityContext = (activity ?? Activity.Current)?.Context;
+
+        if (!activityContext.HasValue)
+        {
+            return null;
+        }
+
+        return new PropagationContext(activityContext.Value, Baggage.Current);
     }
 }

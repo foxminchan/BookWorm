@@ -19,7 +19,7 @@ public sealed class UpdateAddressHandler(
 
         var buyer = await buyerRepository.GetByIdAsync(userId, cancellationToken);
 
-        Guard.Against.NotFound(buyer, $"Buyer with id {userId} not found.");
+        Guard.Against.NotFound(buyer, userId);
 
         buyer.UpdateAddress(request.Street, request.City, request.Province);
 

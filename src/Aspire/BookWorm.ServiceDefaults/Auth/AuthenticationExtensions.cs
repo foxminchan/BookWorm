@@ -1,11 +1,4 @@
-﻿using BookWorm.Constants.Aspire;
-using BookWorm.Constants.Core;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-
-namespace BookWorm.ServiceDefaults.Auth;
+﻿namespace BookWorm.ServiceDefaults.Auth;
 
 public static class AuthenticationExtensions
 {

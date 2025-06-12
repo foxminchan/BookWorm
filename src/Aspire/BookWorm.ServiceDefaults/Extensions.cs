@@ -1,16 +1,10 @@
+using System.Diagnostics;
 using BookWorm.Chassis.ActivityScope;
 using BookWorm.Chassis.Logging;
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.ServiceDefaults.ApiSpecification;
-using BookWorm.ServiceDefaults.Configuration;
 using BookWorm.ServiceDefaults.Kestrel;
 using HealthChecks.UI.Client;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -51,18 +45,33 @@ public static class Extensions
     private static void ConfigureOpenTelemetry<TBuilder>(this TBuilder builder)
         where TBuilder : IHostApplicationBuilder
     {
-        builder.Logging.EnableEnrichment();
-        builder.Services.AddHttpContextAccessor();
-        builder.Services.AddLogEnricher<ApplicationEnricher>();
+        var services = builder.Services;
+        var loggingBuilder = builder.Logging;
 
-        builder.Logging.AddOpenTelemetry(logging =>
+        loggingBuilder.EnableEnrichment();
+        services.AddHttpContextAccessor();
+        services.AddLogEnricher<ApplicationEnricher>();
+
+        loggingBuilder.AddOpenTelemetry(logging =>
         {
             logging.IncludeFormattedMessage = true;
             logging.IncludeScopes = true;
         });
 
-        builder
-            .Services.AddOpenTelemetry()
+        services.AddOpenTelemetry(builder);
+
+        builder.AddOpenTelemetryExporters();
+    }
+
+    private static void AddOpenTelemetry(
+        this IServiceCollection services,
+        IHostApplicationBuilder builder
+    )
+    {
+        Activity.DefaultIdFormat = ActivityIdFormat.W3C;
+
+        services
+            .AddOpenTelemetry()
             .WithMetrics(metrics =>
             {
                 metrics
@@ -95,8 +104,6 @@ public static class Extensions
                     .AddProcessor(new FixHttpRouteProcessor())
                     .AddSource(ActivitySourceProvider.DefaultSourceName);
             });
-
-        builder.AddOpenTelemetryExporters();
     }
 
     private static void AddOpenTelemetryExporters<TBuilder>(this TBuilder builder)

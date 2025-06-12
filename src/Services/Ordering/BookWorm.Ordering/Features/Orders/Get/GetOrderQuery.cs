@@ -31,7 +31,7 @@ public sealed class GetOrderHandler(IOrderRepository repository, ClaimsPrincipal
             );
         }
 
-        Guard.Against.NotFound(order, $"Order with id {request.Id} not found.");
+        Guard.Against.NotFound(order, request.Id);
 
         return order.ToOrderDetailDto();
     }
@@ -60,7 +60,7 @@ public sealed class PostGetOrderHandler(IBookService bookService)
         {
             var bookResponse = bookResponses[i];
 
-            Guard.Against.NotFound(bookResponse, $"Book with id {items[i].Id} not found.");
+            Guard.Against.NotFound(bookResponse, items[i].Id);
 
             var updatedItem = items[i] with { Name = bookResponse.Name };
 

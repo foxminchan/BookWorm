@@ -1,11 +1,4 @@
-﻿using System.Text;
-using BookWorm.Constants.Aspire;
-using BookWorm.Constants.Core;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-
-namespace BookWorm.ServiceDefaults.Kestrel;
+﻿namespace BookWorm.ServiceDefaults.Kestrel;
 
 public static class CorsExtensions
 {

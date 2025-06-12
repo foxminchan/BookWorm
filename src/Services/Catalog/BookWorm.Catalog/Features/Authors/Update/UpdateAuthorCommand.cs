@@ -9,7 +9,7 @@ public sealed class UpdateAuthorHandler(IAuthorRepository repository)
     {
         var author = await repository.GetByIdAsync(request.Id, cancellationToken);
 
-        Guard.Against.NotFound(author, $"Author with id {request.Id} not found.");
+        Guard.Against.NotFound(author, request.Id);
 
         author.UpdateName(request.Name);
 

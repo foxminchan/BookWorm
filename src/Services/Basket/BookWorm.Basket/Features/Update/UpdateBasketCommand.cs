@@ -15,7 +15,7 @@ public sealed class UpdateBasketHandler(
 
         var basket = await basketRepository.GetBasketAsync(userId);
 
-        Guard.Against.NotFound(basket, $"Basket with id {userId} not found.");
+        Guard.Against.NotFound(basket, userId);
 
         basket.Update(request.Items.ToBasketItem());
 
