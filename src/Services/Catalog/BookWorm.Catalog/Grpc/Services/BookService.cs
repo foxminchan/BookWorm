@@ -22,7 +22,14 @@ public sealed class BookService(IBookRepository repository, ILogger<BookService>
 
         var book = await repository.GetByIdAsync(Guid.Parse(request.BookId));
 
-        return book is not null ? MapToBookResponse(book) : new();
+        if (book is null)
+        {
+            throw new RpcException(
+                new(StatusCode.NotFound, $"Book with id {request.BookId} not found.")
+            );
+        }
+
+        return MapToBookResponse(book);
     }
 
     [AllowAnonymous]

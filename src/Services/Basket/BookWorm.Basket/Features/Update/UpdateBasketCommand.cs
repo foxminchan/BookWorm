@@ -19,7 +19,7 @@ public sealed class UpdateBasketHandler(
 
         basket.Update(request.Items.ToBasketItem());
 
-        await basketRepository.UpdateBasketAsync(basket);
+        await basketRepository.CreateOrUpdateBasketAsync(basket);
 
         return Unit.Value;
     }

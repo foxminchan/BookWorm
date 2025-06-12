@@ -2,7 +2,9 @@
 using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
 using BookWorm.Catalog.Grpc.Services;
 using BookWorm.Catalog.UnitTests.Grpc.Context;
+using Grpc.Core;
 using Microsoft.Extensions.Logging;
+using Status = BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Status;
 
 namespace BookWorm.Catalog.UnitTests.Grpc.Services;
 
@@ -61,7 +63,7 @@ public sealed class BookServiceTests
     }
 
     [Test]
-    public async Task GivenNonExistentBookId_WhenGetBookCalled_ThenShouldReturnEmptyResponse()
+    public async Task GivenNonExistentBookId_WhenGetBookCalled_ThenShouldThrowRpcException()
     {
         // Arrange
         var nonExistentBookId = Guid.CreateVersion7();
@@ -72,13 +74,13 @@ public sealed class BookServiceTests
             .Setup(repo => repo.GetByIdAsync(nonExistentBookId, CancellationToken.None))
             .ReturnsAsync((Book)null!);
 
-        // Act
-        var result = await _bookService.GetBook(bookRequest, context);
+        // Act & Assert
+        var exception = await Should.ThrowAsync<RpcException>(async () =>
+            await _bookService.GetBook(bookRequest, context)
+        );
 
-        // Assert
-        result.ShouldNotBeNull();
-        result.Id.ShouldBeEmpty();
-        result.Name.ShouldBeEmpty();
+        exception.StatusCode.ShouldBe(StatusCode.NotFound);
+        exception.Status.Detail.ShouldBe($"Book with id {nonExistentBookId} not found.");
 
         _bookRepositoryMock.Verify(
             repo => repo.GetByIdAsync(nonExistentBookId, CancellationToken.None),

@@ -26,7 +26,7 @@ public sealed class BasketRepository(ILogger<BasketRepository> logger, IConnecti
             );
     }
 
-    public async Task<CustomerBasket?> UpdateBasketAsync(CustomerBasket basket)
+    public async Task<CustomerBasket?> CreateOrUpdateBasketAsync(CustomerBasket basket)
     {
         var database = await GetDatabaseAsync();
         var id = basket.Id;

@@ -47,7 +47,7 @@ public sealed class CatalogDbContextSeed(
             var categoryIds = await context.Categories.Select(c => c.Id).ToListAsync();
 
             var random = Random.Shared;
-            var booksList = new List<Book>(new BookData());
+            var booksList = new List<Book>([]);
 
             foreach (var book in booksList)
             {

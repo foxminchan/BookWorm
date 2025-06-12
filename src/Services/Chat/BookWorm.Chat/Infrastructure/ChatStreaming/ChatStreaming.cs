@@ -53,123 +53,114 @@ public sealed class ChatStreaming : IChatStreaming
 
         var chatOptions = new ChatOptions { Tools = [.. tools] };
 
-        _ = Task.Run(StreamReplyAsync);
-        return;
+        _ = Task.Run(() => StreamReplyAsync(conversationId, chatOptions));
+    }
 
-        async Task StreamReplyAsync()
+    private async Task StreamReplyAsync(Guid conversationId, ChatOptions chatOptions)
+    {
+        var assistantReplyId = Guid.CreateVersion7();
+
+        _logger.LogInformation(
+            "Adding streaming message for conversation {ConversationId} {MessageId}",
+            conversationId,
+            assistantReplyId
+        );
+
+        var allChunks = new List<ChatResponseUpdate>();
+
+        var token = _cancellationManager.GetCancellationToken(assistantReplyId);
+
+        var fragment = new ClientMessageFragment(
+            assistantReplyId,
+            ChatRole.Assistant.Value,
+            "Generating reply...",
+            Guid.CreateVersion7()
+        );
+        await _conversationState.PublishFragmentAsync(conversationId, fragment);
+
+        try
         {
-            var assistantReplyId = Guid.CreateVersion7();
+            using var tokenSource = CancellationTokenSource.CreateLinkedTokenSource(token);
+            tokenSource.CancelAfter(_defaultStreamItemTimeout);
+
+            await foreach (
+                var update in _chatClient
+                    .GetStreamingResponseAsync(Messages, chatOptions)
+                    .WithCancellation(tokenSource.Token)
+            )
+            {
+                tokenSource.CancelAfter(_defaultStreamItemTimeout);
+
+                allChunks.Add(update);
+                fragment = new(
+                    assistantReplyId,
+                    ChatRole.Assistant.Value,
+                    update.Text,
+                    Guid.CreateVersion7()
+                );
+                await _conversationState.PublishFragmentAsync(conversationId, fragment);
+            }
 
             _logger.LogInformation(
-                "Adding streaming message for conversation {ConversationId} {MessageId}",
+                "Full message received for conversation {ConversationId} {MessageId}",
                 conversationId,
                 assistantReplyId
             );
 
-            var allChunks = new List<ChatResponseUpdate>();
+            if (allChunks.Count > 0)
+            {
+                var fullMessage = allChunks.ToChatResponse().Text;
+                await SaveAssistantMessageToDatabase(conversationId, assistantReplyId, fullMessage);
+            }
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogError(
+                ex,
+                "Streaming message cancelled for conversation {ConversationId} {MessageId}",
+                conversationId,
+                assistantReplyId
+            );
 
-            var token = _cancellationManager.GetCancellationToken(assistantReplyId);
-
-            var fragment = new ClientMessageFragment(
+            if (allChunks.Count > 0)
+            {
+                var fullMessage = allChunks.ToChatResponse().Text;
+                await SaveAssistantMessageToDatabase(conversationId, assistantReplyId, fullMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            fragment = new(
                 assistantReplyId,
                 ChatRole.Assistant.Value,
-                "Generating reply...",
+                "Error streaming message",
                 Guid.CreateVersion7()
             );
             await _conversationState.PublishFragmentAsync(conversationId, fragment);
+            _logger.LogError(
+                ex,
+                "Error streaming message for conversation {ConversationId} {MessageId}",
+                conversationId,
+                assistantReplyId
+            );
 
-            try
-            {
-                using var tokenSource = CancellationTokenSource.CreateLinkedTokenSource(token);
-                tokenSource.CancelAfter(_defaultStreamItemTimeout);
-
-                await foreach (
-                    var update in _chatClient
-                        .GetStreamingResponseAsync(Messages, chatOptions)
-                        .WithCancellation(tokenSource.Token)
-                )
-                {
-                    tokenSource.CancelAfter(_defaultStreamItemTimeout);
-
-                    allChunks.Add(update);
-                    fragment = new(
-                        assistantReplyId,
-                        ChatRole.Assistant.Value,
-                        update.Text,
-                        Guid.CreateVersion7()
-                    );
-                    await _conversationState.PublishFragmentAsync(conversationId, fragment);
-                }
-
-                _logger.LogInformation(
-                    "Full message received for conversation {ConversationId} {MessageId}",
-                    conversationId,
-                    assistantReplyId
-                );
-
-                if (allChunks.Count > 0)
-                {
-                    var fullMessage = allChunks.ToChatResponse().Text;
-                    await SaveAssistantMessageToDatabase(
-                        conversationId,
-                        assistantReplyId,
-                        fullMessage
-                    );
-                }
-            }
-            catch (OperationCanceledException ex)
-            {
-                _logger.LogError(
-                    ex,
-                    "Streaming message cancelled for conversation {ConversationId} {MessageId}",
-                    conversationId,
-                    assistantReplyId
-                );
-
-                if (allChunks.Count > 0)
-                {
-                    var fullMessage = allChunks.ToChatResponse().Text;
-                    await SaveAssistantMessageToDatabase(
-                        conversationId,
-                        assistantReplyId,
-                        fullMessage
-                    );
-                }
-            }
-            catch (Exception ex)
-            {
-                fragment = new(
-                    assistantReplyId,
-                    ChatRole.Assistant.Value,
-                    "Error streaming message",
-                    Guid.CreateVersion7()
-                );
-                await _conversationState.PublishFragmentAsync(conversationId, fragment);
-                _logger.LogError(
-                    ex,
-                    "Error streaming message for conversation {ConversationId} {MessageId}",
-                    conversationId,
-                    assistantReplyId
-                );
-
-                await SaveAssistantMessageToDatabase(
-                    conversationId,
-                    assistantReplyId,
-                    "Error streaming message"
-                );
-            }
-            finally
-            {
-                fragment = new(
-                    assistantReplyId,
-                    ChatRole.Assistant.Value,
-                    string.Empty,
-                    Guid.CreateVersion7(),
-                    true
-                );
-                await _conversationState.PublishFragmentAsync(conversationId, fragment);
-                await _cancellationManager.CancelAsync(assistantReplyId);
-            }
+            await SaveAssistantMessageToDatabase(
+                conversationId,
+                assistantReplyId,
+                "Error streaming message"
+            );
+        }
+        finally
+        {
+            fragment = new(
+                assistantReplyId,
+                ChatRole.Assistant.Value,
+                string.Empty,
+                Guid.CreateVersion7(),
+                true
+            );
+            await _conversationState.PublishFragmentAsync(conversationId, fragment);
+            await _cancellationManager.CancelAsync(assistantReplyId);
         }
     }
 

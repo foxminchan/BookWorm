@@ -144,15 +144,22 @@ public sealed class GetOrderQueryTests
             DateTime.UtcNow,
             150.00m,
             Status.New,
-            new List<OrderItemDto> { new(bookId1, 2, 50.00m), new(bookId2, 1, 50.00m) }
+            [new(bookId1, 2, 50.00m), new(bookId2, 1, 50.00m)]
         );
 
+        var booksResponse = new BooksResponse();
+        booksResponse.Books.Add(new BookResponse { Id = bookId1.ToString(), Name = "Book 1" });
+        booksResponse.Books.Add(new BookResponse { Id = bookId2.ToString(), Name = "Book 2" });
         _bookServiceMock
-            .Setup(b => b.GetBookByIdAsync(bookId1.ToString(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new BookResponse { Name = "Book 1" });
-        _bookServiceMock
-            .Setup(b => b.GetBookByIdAsync(bookId2.ToString(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new BookResponse { Name = "Book 2" });
+            .Setup(b =>
+                b.GetBooksByIdsAsync(
+                    It.Is<IReadOnlyList<string>>(ids =>
+                        ids.Contains(bookId1.ToString()) && ids.Contains(bookId2.ToString())
+                    ),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(booksResponse);
 
         // Act
         await _postHandler.Process(new(_id), orderDetailDto, CancellationToken.None);
@@ -160,10 +167,12 @@ public sealed class GetOrderQueryTests
         // Assert
         orderDetailDto.Items.ShouldNotBeEmpty();
         orderDetailDto.Items.Count.ShouldBe(2);
+        orderDetailDto.Items[0].Name.ShouldBe("Book 1");
+        orderDetailDto.Items[1].Name.ShouldBe("Book 2");
     }
 
     [Test]
-    public async Task GivenOrderWithItemsAndMissingBook_WhenPostProcessing_ThenShouldThrowNotFoundException()
+    public async Task GivenOrderWithItemsAndMissingBook_WhenPostProcessing_ThenShouldHandleGracefully()
     {
         // Arrange
         var bookId1 = Guid.CreateVersion7();
@@ -174,21 +183,30 @@ public sealed class GetOrderQueryTests
             DateTime.UtcNow,
             150.00m,
             Status.Cancelled,
-            new List<OrderItemDto> { new(bookId1, 2, 50.00m), new(bookId2, 1, 50.00m) }
+            [new(bookId1, 2, 50.00m), new(bookId2, 1, 50.00m)]
         );
 
+        var booksResponse = new BooksResponse();
+        booksResponse.Books.Add(new BookResponse { Id = bookId1.ToString(), Name = "Book 1" }); // bookId2 missing
         _bookServiceMock
-            .Setup(b => b.GetBookByIdAsync(bookId1.ToString(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new BookResponse { Name = "Book 1" });
-        _bookServiceMock
-            .Setup(b => b.GetBookByIdAsync(bookId2.ToString(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((BookResponse)null!);
+            .Setup(b =>
+                b.GetBooksByIdsAsync(
+                    It.Is<IReadOnlyList<string>>(ids =>
+                        ids.Contains(bookId1.ToString()) && ids.Contains(bookId2.ToString())
+                    ),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(booksResponse);
 
         // Act
-        var act = () => _postHandler.Process(new(_id), orderDetailDto, CancellationToken.None);
+        await _postHandler.Process(new(_id), orderDetailDto, CancellationToken.None);
 
         // Assert
-        await act.ShouldThrowAsync<NotFoundException>();
+        orderDetailDto.Items.ShouldNotBeEmpty();
+        orderDetailDto.Items.Count.ShouldBe(2);
+        orderDetailDto.Items[0].Name.ShouldBe("Book 1"); // Found book has name
+        orderDetailDto.Items[1].Name.ShouldBeNull(); // Missing book has no name
     }
 
     private void SetupAdminUser()
