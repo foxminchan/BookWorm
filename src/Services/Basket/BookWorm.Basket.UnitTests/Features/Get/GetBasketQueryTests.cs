@@ -198,35 +198,31 @@ public static class GetBasketQueryTests
         {
             // Arrange
             var query = new GetBasketQuery();
-
-            for (var i = 0; i < _bookIds.Count; i++)
-            {
-                var i1 = i;
-                _bookServiceMock
-                    .Setup(x => x.GetBookByIdAsync(_bookIds[i1], It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(_bookResponses[i]);
-            }
+            var booksResponse = new BooksResponse { Books = { _bookResponses } };
+            _bookServiceMock
+                .Setup(x => x.GetBooksByIdsAsync(_bookIds, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(booksResponse);
 
             // Act
             await _handler.Process(query, _basketDto, CancellationToken.None);
 
             // Assert
-            // Verify each book was looked up
-            foreach (var bookId in _bookIds)
-            {
-                _bookServiceMock.Verify(
-                    x => x.GetBookByIdAsync(bookId, It.IsAny<CancellationToken>()),
-                    Times.Once
-                );
-            }
-
-            // Verify quantities are preserved during processing
+            _bookServiceMock.Verify(
+                x => x.GetBooksByIdsAsync(_bookIds, It.IsAny<CancellationToken>()),
+                Times.Once
+            );
+            _basketDto.Items[0].Name.ShouldBe("Book 1");
+            _basketDto.Items[0].Price.ShouldBe(19.99m);
+            _basketDto.Items[0].PriceSale.ShouldBe(15.99m);
+            _basketDto.Items[1].Name.ShouldBe("Book 2");
+            _basketDto.Items[1].Price.ShouldBe(29.99m);
+            _basketDto.Items[1].PriceSale.ShouldBe(0);
             _basketDto.Items[0].Quantity.ShouldBe(2);
             _basketDto.Items[1].Quantity.ShouldBe(1);
         }
 
         [Test]
-        public async Task GivenValidBasketWithItems_WhenProcessing_ThenShouldCreateNewResponseWithUpdatedItems()
+        public async Task GivenValidBasketWithItems_WhenProcessing_ThenShouldUpdateItemsProperty()
         {
             // Arrange
             var query = new GetBasketQuery();
@@ -234,61 +230,56 @@ public static class GetBasketQueryTests
                 Guid.CreateVersion7().ToString(),
                 [new BasketItemDto(_bookIds[0], 3), new BasketItemDto(_bookIds[1], 5)]
             );
-
-            for (var i = 0; i < _bookIds.Count; i++)
-            {
-                var i1 = i;
-                _bookServiceMock
-                    .Setup(x => x.GetBookByIdAsync(_bookIds[i1], It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(_bookResponses[i]);
-            }
+            var booksResponse = new BooksResponse { Books = { _bookResponses } };
+            _bookServiceMock
+                .Setup(x => x.GetBooksByIdsAsync(_bookIds, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(booksResponse);
 
             // Act
             await _handler.Process(query, originalBasketDto, CancellationToken.None);
 
             // Assert
-            // Verify the response with statement creates a new object
-            // This test ensures the line `_ = response with { Items = updatedItems };` is covered
             var updatedItems = originalBasketDto.Items;
             updatedItems.ShouldNotBeNull();
             updatedItems.Count.ShouldBe(2);
-
-            // Verify that the 'response with' statement was executed (even though it's discarded)
-            _bookServiceMock.Verify(
-                x => x.GetBookByIdAsync(_bookIds[0], It.IsAny<CancellationToken>()),
-                Times.Once
-            );
-            _bookServiceMock.Verify(
-                x => x.GetBookByIdAsync(_bookIds[1], It.IsAny<CancellationToken>()),
-                Times.Once
-            );
+            updatedItems[0].Name.ShouldBe("Book 1");
+            updatedItems[1].Name.ShouldBe("Book 2");
+            updatedItems[0].Quantity.ShouldBe(3);
+            updatedItems[1].Quantity.ShouldBe(5);
         }
 
         [Test]
-        public async Task GivenBasketItemWithNonExistentBookId_WhenProcessing_ThenShouldThrowNotFoundException()
+        public async Task GivenBasketWithNoMatchingBooks_WhenProcessing_ThenShouldNotUpdateItems()
         {
             // Arrange
             var query = new GetBasketQuery();
-
-            // The First book exists
+            var booksResponse = new BooksResponse { Books = { } };
             _bookServiceMock
-                .Setup(x => x.GetBookByIdAsync(_bookIds[0], It.IsAny<CancellationToken>()))
-                .ReturnsAsync(_bookResponses[0]);
-
-            // The Second book doesn't exist
-            _bookServiceMock
-                .Setup(x => x.GetBookByIdAsync(_bookIds[1], It.IsAny<CancellationToken>()))
-                .ReturnsAsync((BookResponse?)null);
+                .Setup(x => x.GetBooksByIdsAsync(_bookIds, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(booksResponse);
 
             // Act
-            var act = async () => await _handler.Process(query, _basketDto, CancellationToken.None);
+            await _handler.Process(query, _basketDto, CancellationToken.None);
 
             // Assert
-            var exception = await act.ShouldThrowAsync<NotFoundException>();
-            exception.Message.ShouldBe($"Book with id {_bookIds[1]} not found.");
+            _basketDto.Items[0].Name.ShouldBeNull();
+            _basketDto.Items[1].Name.ShouldBeNull();
+        }
+
+        [Test]
+        public async Task GivenEmptyBasket_WhenProcessing_ThenShouldNotCallBookService()
+        {
+            // Arrange
+            var query = new GetBasketQuery();
+            var emptyBasket = new CustomerBasketDto(Guid.CreateVersion7().ToString(), []);
+
+            // Act
+            await _handler.Process(query, emptyBasket, CancellationToken.None);
+
+            // Assert
             _bookServiceMock.Verify(
-                r => r.GetBookByIdAsync(_bookIds[1], It.IsAny<CancellationToken>()),
-                Times.Once
+                x => x.GetBooksByIdsAsync(It.IsAny<List<string>>(), It.IsAny<CancellationToken>()),
+                Times.Never
             );
         }
     }

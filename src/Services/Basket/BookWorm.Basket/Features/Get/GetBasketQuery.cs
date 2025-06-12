@@ -33,30 +33,38 @@ public sealed class PostGetBasketHandler(IBookService bookService)
         CancellationToken cancellationToken
     )
     {
-        var books = response.Items;
-
-        var bookTasks = books
-            .Select(book => bookService.GetBookByIdAsync(book.Id!, cancellationToken))
-            .ToList();
-        var bookResponses = await Task.WhenAll(bookTasks);
-
-        List<BasketItemDto> updatedItems = [];
-        for (var i = 0; i < books.Count; i++)
+        if (response.Items.Count == 0)
         {
-            var bookResponse =
-                bookResponses[i]
-                ?? throw new NotFoundException($"Book with id {books[i].Id} not found.");
-
-            var updatedItem = books[i] with
-            {
-                Name = bookResponse.Name,
-                PriceSale = bookResponse.PriceSale,
-                Price = (decimal)bookResponse.Price!,
-            };
-
-            updatedItems.Add(updatedItem);
+            return;
         }
 
-        _ = response with { Items = updatedItems };
+        var bookIds = response.Items.Select(item => item.Id!).Distinct().ToList();
+
+        var bookResponses = await bookService.GetBooksByIdsAsync(bookIds, cancellationToken);
+
+        if (bookResponses?.Books.Count is null or 0)
+        {
+            return;
+        }
+
+        var bookLookup = bookResponses.Books.ToDictionary(b => b.Id);
+
+        var updatedItems = response
+            .Items.Select(item =>
+                bookLookup.TryGetValue(item.Id!, out var bookResponse)
+                    ? item with
+                    {
+                        Name = bookResponse.Name,
+                        PriceSale = bookResponse.PriceSale,
+                        Price = (decimal)bookResponse.Price!,
+                    }
+                    : item
+            )
+            .ToList();
+
+        // Since we can't mutate the response directly, we need to use reflection
+        // or consider returning a new response type
+        var itemsProperty = response.GetType().GetProperty(nameof(response.Items));
+        itemsProperty?.SetValue(response, updatedItems);
     }
 }

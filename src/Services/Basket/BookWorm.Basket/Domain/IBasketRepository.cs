@@ -6,6 +6,6 @@ public interface IBasketRepository
         [StringSyntax(StringSyntaxAttribute.GuidFormat)] string id
     );
 
-    Task<CustomerBasket?> UpdateBasketAsync(CustomerBasket basket);
+    Task<CustomerBasket?> CreateOrUpdateBasketAsync(CustomerBasket basket);
     Task<bool> DeleteBasketAsync([StringSyntax(StringSyntaxAttribute.GuidFormat)] string id);
 }

@@ -82,7 +82,7 @@ public sealed class ListChatEndpointTests
             s =>
                 s.Send(
                     It.Is<ListChatQuery>(q =>
-                        q.Name == "Specific Chat" && q.UserId == null && q.IncludeMessages == false
+                        q.Name == "Specific Chat" && q.UserId == null && !q.IncludeMessages
                     ),
                     It.IsAny<CancellationToken>()
                 ),
@@ -113,7 +113,7 @@ public sealed class ListChatEndpointTests
             s =>
                 s.Send(
                     It.Is<ListChatQuery>(q =>
-                        q.Name == null && q.UserId == userId && q.IncludeMessages == false
+                        q.Name == null && q.UserId == userId && !q.IncludeMessages
                     ),
                     It.IsAny<CancellationToken>()
                 ),
@@ -126,7 +126,7 @@ public sealed class ListChatEndpointTests
     {
         // Arrange
         var query = new ListChatQuery(null, null, true);
-        var conversationsWithMessages = GenerateConversationsWithMessages();
+        var conversationsWithMessages = GenerateConversationsWithMessages;
 
         _senderMock
             .Setup(s => s.Send(It.IsAny<ListChatQuery>(), It.IsAny<CancellationToken>()))
@@ -142,10 +142,7 @@ public sealed class ListChatEndpointTests
 
         _senderMock.Verify(
             s =>
-                s.Send(
-                    It.Is<ListChatQuery>(q => q.IncludeMessages == true),
-                    It.IsAny<CancellationToken>()
-                ),
+                s.Send(It.Is<ListChatQuery>(q => q.IncludeMessages), It.IsAny<CancellationToken>()),
             Times.Once
         );
     }
@@ -172,7 +169,7 @@ public sealed class ListChatEndpointTests
             s =>
                 s.Send(
                     It.Is<ListChatQuery>(q =>
-                        q.Name == null && q.UserId == null && q.IncludeMessages == false
+                        q.Name == null && q.UserId == null && !q.IncludeMessages
                     ),
                     It.IsAny<CancellationToken>()
                 ),
@@ -376,37 +373,41 @@ public sealed class ListChatEndpointTests
     private ConversationDto[] GenerateTestConversationDtos()
     {
         var conversations = _conversationFaker.Generate(5);
-        return conversations
-            .Select(c => new ConversationDto(
+        return
+        [
+            .. conversations.Select(c => new ConversationDto(
                 c.Id,
                 c.Name,
                 c.UserId,
                 new List<ConversationMessageDto>().AsReadOnly()
-            ))
-            .ToArray();
+            )),
+        ];
     }
 
-    private IReadOnlyList<ConversationDto> GenerateConversationsWithMessages()
+    private IReadOnlyList<ConversationDto> GenerateConversationsWithMessages
     {
-        var conversations = _conversationFaker.Generate(3);
-        return conversations
-            .Select(c =>
-            {
-                var messages = _messageFaker
-                    .Generate(3)
-                    .Select(m => new ConversationMessageDto(
-                        m.Id,
-                        m.Text,
-                        m.Role,
-                        m.ParentMessageId,
-                        m.CreatedAt
-                    ))
-                    .ToList()
-                    .AsReadOnly();
+        get
+        {
+            var conversations = _conversationFaker.Generate(3);
+            return conversations
+                .Select(c =>
+                {
+                    var messages = _messageFaker
+                        .Generate(3)
+                        .Select(m => new ConversationMessageDto(
+                            m.Id,
+                            m.Text,
+                            m.Role,
+                            m.ParentMessageId,
+                            m.CreatedAt
+                        ))
+                        .ToList()
+                        .AsReadOnly();
 
-                return new ConversationDto(c.Id, c.Name, c.UserId, messages);
-            })
-            .ToList()
-            .AsReadOnly();
+                    return new ConversationDto(c.Id, c.Name, c.UserId, messages);
+                })
+                .ToList()
+                .AsReadOnly();
+        }
     }
 }

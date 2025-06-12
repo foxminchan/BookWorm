@@ -20,7 +20,7 @@ public sealed class CreateBasketHandler(
 
         var basket = new CustomerBasket(userId, request.Items.ToBasketItem());
 
-        var result = await basketRepository.UpdateBasketAsync(basket);
+        var result = await basketRepository.CreateOrUpdateBasketAsync(basket);
 
         if (result?.Id is null)
         {

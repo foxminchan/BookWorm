@@ -42,7 +42,7 @@ public sealed class UpdateBasketCommandTests
 
         // Assert
         result.ShouldBe(Unit.Value);
-        _repositoryMock.Verify(x => x.UpdateBasketAsync(_customerBasket), Times.Once);
+        _repositoryMock.Verify(x => x.CreateOrUpdateBasketAsync(_customerBasket), Times.Once);
     }
 
     [Test]
@@ -57,7 +57,10 @@ public sealed class UpdateBasketCommandTests
         // Assert
         var exception = await act.ShouldThrowAsync<NotFoundException>();
         exception.Message.ShouldBe($"CustomerBasket with id {_userId} not found.");
-        _repositoryMock.Verify(x => x.UpdateBasketAsync(It.IsAny<CustomerBasket>()), Times.Never);
+        _repositoryMock.Verify(
+            x => x.CreateOrUpdateBasketAsync(It.IsAny<CustomerBasket>()),
+            Times.Never
+        );
     }
 
     [Test]
@@ -81,6 +84,9 @@ public sealed class UpdateBasketCommandTests
         // Assert
         var exception = await act.ShouldThrowAsync<UnauthorizedAccessException>();
         exception.Message.ShouldBe("User is not authenticated.");
-        _repositoryMock.Verify(x => x.UpdateBasketAsync(It.IsAny<CustomerBasket>()), Times.Never);
+        _repositoryMock.Verify(
+            x => x.CreateOrUpdateBasketAsync(It.IsAny<CustomerBasket>()),
+            Times.Never
+        );
     }
 }

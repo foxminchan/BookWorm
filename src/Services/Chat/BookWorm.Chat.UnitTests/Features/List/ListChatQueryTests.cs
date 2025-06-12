@@ -206,7 +206,7 @@ public sealed class ListChatHandlerTests
             currentUserId.ToString()
         );
         var query = new ListChatQuery();
-        var conversation = _conversationFaker.Generate().First();
+        var conversation = _conversationFaker.Generate()[0];
         var messages = _messageFaker.Generate();
         foreach (var message in messages)
         {
@@ -230,7 +230,7 @@ public sealed class ListChatHandlerTests
         result.ShouldNotBeNull();
         result.Count.ShouldBe(1);
 
-        var conversationDto = result.First();
+        var conversationDto = result[0];
         conversationDto.Id.ShouldBe(conversation.Id);
         conversationDto.Name.ShouldBe(conversation.Name);
         conversationDto.UserId.ShouldBe(conversation.UserId);

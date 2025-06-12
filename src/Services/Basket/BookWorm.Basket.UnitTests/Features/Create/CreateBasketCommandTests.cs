@@ -34,7 +34,7 @@ public sealed class CreateBasketCommandTests
         var command = _faker.Generate();
 
         _mockBasketRepository
-            .Setup(x => x.UpdateBasketAsync(It.IsAny<CustomerBasket>()))
+            .Setup(x => x.CreateOrUpdateBasketAsync(It.IsAny<CustomerBasket>()))
             .ReturnsAsync((CustomerBasket)null!);
 
         // Act
@@ -45,7 +45,7 @@ public sealed class CreateBasketCommandTests
         exception.Message.ShouldBe("An error occurred while creating the basket.");
         _mockBasketRepository.Verify(
             x =>
-                x.UpdateBasketAsync(
+                x.CreateOrUpdateBasketAsync(
                     It.Is<CustomerBasket>(b =>
                         b.Id == _userId && b.Items.Count == command.Items.Count
                     )
@@ -78,7 +78,7 @@ public sealed class CreateBasketCommandTests
         var exception = await act.ShouldThrowAsync<UnauthorizedAccessException>();
         exception.Message.ShouldBe("User is not authenticated.");
         _mockBasketRepository.Verify(
-            x => x.UpdateBasketAsync(It.IsAny<CustomerBasket>()),
+            x => x.CreateOrUpdateBasketAsync(It.IsAny<CustomerBasket>()),
             Times.Never
         );
     }
@@ -91,7 +91,7 @@ public sealed class CreateBasketCommandTests
         var basket = new CustomerBasketFaker().Generate(1)[0];
 
         _mockBasketRepository
-            .Setup(x => x.UpdateBasketAsync(It.IsAny<CustomerBasket>()))
+            .Setup(x => x.CreateOrUpdateBasketAsync(It.IsAny<CustomerBasket>()))
             .ReturnsAsync(basket);
 
         // Act
@@ -101,7 +101,7 @@ public sealed class CreateBasketCommandTests
         result.ShouldBe(basket.Id);
         _mockBasketRepository.Verify(
             x =>
-                x.UpdateBasketAsync(
+                x.CreateOrUpdateBasketAsync(
                     It.Is<CustomerBasket>(b =>
                         b.Id == _userId && b.Items.Count == command.Items.Count
                     )
