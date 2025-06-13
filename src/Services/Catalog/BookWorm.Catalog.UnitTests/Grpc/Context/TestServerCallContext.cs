@@ -31,7 +31,7 @@ public sealed class TestServerCallContext(
     protected override WriteOptions? WriteOptionsCore
     {
         get => writeOptions;
-        set { }
+        set => _ = value;
     }
 
     protected override AuthContext AuthContextCore { get; } =

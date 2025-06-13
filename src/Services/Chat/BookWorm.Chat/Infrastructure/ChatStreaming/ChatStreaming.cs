@@ -33,7 +33,7 @@ public sealed class ChatStreaming : IChatStreaming
         if (_logger.IsEnabled(LogLevel.Debug))
         {
             _logger.LogDebug(
-                "ChatModel: {model}",
+                "Chat client initialized with model ID: {ModelId}",
                 chatClient.GetService<ChatClientMetadata>()?.DefaultModelId
             );
         }
@@ -54,6 +54,35 @@ public sealed class ChatStreaming : IChatStreaming
         var chatOptions = new ChatOptions { Tools = [.. tools] };
 
         _ = Task.Run(() => StreamReplyAsync(conversationId, chatOptions));
+    }
+
+    public async IAsyncEnumerable<ClientMessageFragment> GetMessageStream(
+        Guid conversationId,
+        Guid? lastMessageId,
+        Guid? lastDeliveredFragment,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default
+    )
+    {
+        _logger.LogInformation(
+            "Getting message stream for conversation {ConversationId}, {LastMessageId}",
+            conversationId,
+            lastMessageId
+        );
+        var stream = _conversationState.Subscribe(conversationId, lastMessageId, cancellationToken);
+
+        await foreach (var fragment in stream)
+        {
+            if (lastDeliveredFragment is null || fragment.FragmentId > lastDeliveredFragment)
+            {
+                lastDeliveredFragment = fragment.FragmentId;
+            }
+            else
+            {
+                continue;
+            }
+
+            yield return fragment;
+        }
     }
 
     private async Task StreamReplyAsync(Guid conversationId, ChatOptions chatOptions)
@@ -161,35 +190,6 @@ public sealed class ChatStreaming : IChatStreaming
             );
             await _conversationState.PublishFragmentAsync(conversationId, fragment);
             await _cancellationManager.CancelAsync(assistantReplyId);
-        }
-    }
-
-    public async IAsyncEnumerable<ClientMessageFragment> GetMessageStream(
-        Guid conversationId,
-        Guid? lastMessageId,
-        Guid? lastDeliveredFragment,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default
-    )
-    {
-        _logger.LogInformation(
-            "Getting message stream for conversation {ConversationId}, {LastMessageId}",
-            conversationId,
-            lastMessageId
-        );
-        var stream = _conversationState.Subscribe(conversationId, lastMessageId, cancellationToken);
-
-        await foreach (var fragment in stream)
-        {
-            if (lastDeliveredFragment is null || fragment.FragmentId > lastDeliveredFragment)
-            {
-                lastDeliveredFragment = fragment.FragmentId;
-            }
-            else
-            {
-                continue;
-            }
-
-            yield return fragment;
         }
     }
 

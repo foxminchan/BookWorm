@@ -26,6 +26,33 @@ public sealed class ListChatEndpointTests
         _conversationDtos = GenerateTestConversationDtos();
     }
 
+    private IReadOnlyList<ConversationDto> GenerateConversationsWithMessages
+    {
+        get
+        {
+            var conversations = _conversationFaker.Generate(3);
+            return conversations
+                .Select(c =>
+                {
+                    var messages = _messageFaker
+                        .Generate(3)
+                        .Select(m => new ConversationMessageDto(
+                            m.Id,
+                            m.Text,
+                            m.Role,
+                            m.ParentMessageId,
+                            m.CreatedAt
+                        ))
+                        .ToList()
+                        .AsReadOnly();
+
+                    return new ConversationDto(c.Id, c.Name, c.UserId, messages);
+                })
+                .ToList()
+                .AsReadOnly();
+        }
+    }
+
     [Test]
     public async Task GivenValidQueryWithAllParameters_WhenHandlingListChat_ThenShouldReturnOkWithConversationDtos()
     {
@@ -382,32 +409,5 @@ public sealed class ListChatEndpointTests
                 new List<ConversationMessageDto>().AsReadOnly()
             )),
         ];
-    }
-
-    private IReadOnlyList<ConversationDto> GenerateConversationsWithMessages
-    {
-        get
-        {
-            var conversations = _conversationFaker.Generate(3);
-            return conversations
-                .Select(c =>
-                {
-                    var messages = _messageFaker
-                        .Generate(3)
-                        .Select(m => new ConversationMessageDto(
-                            m.Id,
-                            m.Text,
-                            m.Role,
-                            m.ParentMessageId,
-                            m.CreatedAt
-                        ))
-                        .ToList()
-                        .AsReadOnly();
-
-                    return new ConversationDto(c.Id, c.Name, c.UserId, messages);
-                })
-                .ToList()
-                .AsReadOnly();
-        }
     }
 }

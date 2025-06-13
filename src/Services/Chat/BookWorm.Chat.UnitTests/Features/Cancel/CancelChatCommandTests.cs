@@ -58,7 +58,10 @@ public sealed class CancelChatCommandTests
     {
         // Arrange
         var command = new CancelChatCommand(_chatId);
+
+#pragma warning disable S3928 // Parameter name 'id' matches the ICancellationManager.CancelAsync parameter
         var expectedException = new ArgumentException("Invalid chat ID", nameof(_chatId));
+#pragma warning restore S3928
 
         _cancellationManagerMock
             .Setup(cm => cm.CancelAsync(_chatId))

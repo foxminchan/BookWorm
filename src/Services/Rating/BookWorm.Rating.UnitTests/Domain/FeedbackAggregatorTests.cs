@@ -135,4 +135,56 @@ public sealed class FeedbackAggregatorTests
         // This is more of a compilation check than a runtime test
         feedback.ShouldBeAssignableTo<IAggregateRoot>();
     }
+
+    [Test]
+    [Arguments(0)]
+    [Arguments(5)]
+    public void GivenFeedbackWithBoundaryRatings_WhenCreating_ThenShouldHandleCorrectly(
+        int boundaryRating
+    )
+    {
+        // Arrange
+        var bookId = Guid.CreateVersion7();
+        const string firstName = "John";
+        const string lastName = "Doe";
+        const string comment = "Boundary rating test";
+
+        // Act
+        var feedback = new Feedback(bookId, firstName, lastName, comment, boundaryRating);
+
+        // Assert
+        feedback.BookId.ShouldBe(bookId);
+        feedback.FirstName.ShouldBe(firstName);
+        feedback.LastName.ShouldBe(lastName);
+        feedback.Comment.ShouldBe(comment);
+        feedback.Rating.ShouldBe(boundaryRating);
+
+        // Verify domain event is still registered for boundary values
+        var domainEvents = feedback.DomainEvents;
+        domainEvents.Count.ShouldBe(1);
+
+        var createdEvent = domainEvents.First() as FeedbackCreatedEvent;
+        createdEvent.ShouldNotBeNull();
+        createdEvent.BookId.ShouldBe(bookId);
+        createdEvent.Rating.ShouldBe(boundaryRating);
+        createdEvent.FeedbackId.ShouldBe(feedback.Id);
+    }
+
+    [Test]
+    public void GivenFeedbackWithDomainEvents_WhenClearing_ThenEventsShouldBeEmpty()
+    {
+        // Arrange
+        var bookId = Guid.CreateVersion7();
+        const int rating = 4;
+        var feedback = new Feedback(bookId, "Jane", "Smith", "Good book", rating);
+
+        // Verify we have domain events initially
+        feedback.DomainEvents.Count.ShouldBeGreaterThan(0);
+
+        // Act
+        feedback.ClearDomainEvents();
+
+        // Assert
+        feedback.DomainEvents.ShouldBeEmpty();
+    }
 }

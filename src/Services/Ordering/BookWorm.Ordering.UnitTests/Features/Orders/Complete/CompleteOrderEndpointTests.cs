@@ -25,7 +25,7 @@ public sealed class CompleteOrderEndpointTests
             DateTime.UtcNow,
             99.99m,
             Status.Completed,
-            new List<OrderItemDto> { new(Guid.CreateVersion7(), 2, 49.99m) { Name = "Test Book" } }
+            [new(Guid.CreateVersion7(), 2, 49.99m) { Name = "Test Book" }]
         );
     }
 

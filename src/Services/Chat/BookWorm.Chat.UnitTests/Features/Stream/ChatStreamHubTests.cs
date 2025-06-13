@@ -1,4 +1,5 @@
-﻿using BookWorm.Chat.Features;
+﻿using System.Diagnostics;
+using BookWorm.Chat.Features;
 using BookWorm.Chat.Features.Stream;
 using BookWorm.Chat.Infrastructure.ChatStreaming;
 using BookWorm.Chat.Infrastructure.ConversationState.Abstractions;
@@ -156,20 +157,22 @@ public sealed class ChatStreamHubTests
     public void GivenCancellationRequested_WhenGettingMessageStream_ThenShouldThrowOperationCanceledException()
     {
         // Arrange
-        var cancellationTokenSource = new CancellationTokenSource();
-        cancellationTokenSource.Cancel();
+        CancellationToken cancellationToken;
+        using (var cancellationTokenSource = new CancellationTokenSource())
+        {
+            cancellationTokenSource.Cancel();
+            cancellationToken = cancellationTokenSource.Token;
+        }
 
         _chatStreamingMock
-            .Setup(x =>
-                x.GetMessageStream(_conversationId, null, null, cancellationTokenSource.Token)
-            )
+            .Setup(x => x.GetMessageStream(_conversationId, null, null, cancellationToken))
             .Throws<OperationCanceledException>();
 
         // Act
         Func<Task> act = async () =>
             await _chatStreamingMock
-                .Object.GetMessageStream(_conversationId, null, null, cancellationTokenSource.Token)
-                .ToListAsync(cancellationTokenSource.Token);
+                .Object.GetMessageStream(_conversationId, null, null, cancellationToken)
+                .ToListAsync(cancellationToken);
 
         // Assert
         act.ShouldThrowAsync<OperationCanceledException>();
@@ -306,8 +309,13 @@ public sealed class ChatStreamHubTests
             _messageFragments[0].Id,
             _messageFragments[1].FragmentId
         );
-        var cancellationTokenSource = new CancellationTokenSource();
-        await cancellationTokenSource.CancelAsync();
+
+        CancellationToken cancellationToken;
+        using (var cancellationTokenSource = new CancellationTokenSource())
+        {
+            await cancellationTokenSource.CancelAsync();
+            cancellationToken = cancellationTokenSource.Token;
+        }
 
         _chatStreamingMock
             .Setup(x =>
@@ -315,7 +323,7 @@ public sealed class ChatStreamHubTests
                     _conversationId,
                     streamContext.LastMessageId,
                     streamContext.LastFragmentId,
-                    cancellationTokenSource.Token
+                    cancellationToken
                 )
             )
             .Throws<OperationCanceledException>();
@@ -326,9 +334,9 @@ public sealed class ChatStreamHubTests
                     _conversationId,
                     streamContext,
                     _chatStreamingMock.Object,
-                    cancellationTokenSource.Token
+                    cancellationToken
                 )
-                .ToListAsync(cancellationTokenSource.Token);
+                .ToListAsync(cancellationToken);
 
         // Assert
         await act.ShouldThrowAsync<OperationCanceledException>();
@@ -338,7 +346,7 @@ public sealed class ChatStreamHubTests
                     _conversationId,
                     streamContext.LastMessageId,
                     streamContext.LastFragmentId,
-                    cancellationTokenSource.Token
+                    cancellationToken
                 ),
             Times.Once
         );
@@ -368,6 +376,123 @@ public sealed class ChatStreamHubTests
         // Assert
         result.Count.ShouldBe(3);
         result.ShouldBe(_messageFragments);
+        _chatStreamingMock.Verify(
+            x => x.GetMessageStream(_conversationId, null, null, cancellationToken),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task GivenMultipleClients_WhenStreaming_ThenAllClientsShouldReceiveMessages()
+    {
+        // Arrange
+        const int clientCount = 3;
+        var hub = new ChatStreamHub();
+        var streamContext = new StreamContext(null, null);
+        var cancellationToken = CancellationToken.None;
+
+        _chatStreamingMock
+            .Setup(x => x.GetMessageStream(_conversationId, null, null, cancellationToken))
+            .Returns(_messageFragments.ToAsyncEnumerable());
+
+        // Act - Simulate multiple clients requesting the same stream
+        var clientTasks = new List<Task<List<ClientMessageFragment>>>();
+
+        for (var i = 0; i < clientCount; i++)
+        {
+            var task = hub.Stream(
+                    _conversationId,
+                    streamContext,
+                    _chatStreamingMock.Object,
+                    cancellationToken
+                )
+                .ToListAsync(cancellationToken)
+                .AsTask();
+
+            clientTasks.Add(task);
+        }
+
+        var results = await Task.WhenAll(clientTasks);
+
+        // Assert
+        results.Length.ShouldBe(clientCount);
+
+        foreach (var result in results)
+        {
+            result.Count.ShouldBe(3);
+            result.ShouldBe(_messageFragments);
+        }
+
+        // Verify that the streaming service was called for each client
+        _chatStreamingMock.Verify(
+            x => x.GetMessageStream(_conversationId, null, null, cancellationToken),
+            Times.Exactly(clientCount)
+        );
+    }
+
+    [Test]
+    public async Task GivenLargeConversation_WhenLoading_ThenShouldCompleteWithinTimeout()
+    {
+        // Arrange
+        const int largeMessageCount = 1000;
+        const int timeoutMs = 5000;
+
+        var hub = new ChatStreamHub();
+        var streamContext = new StreamContext(null, null);
+
+        CancellationToken cancellationToken;
+        using (var cancellationTokenSource = new CancellationTokenSource(timeoutMs))
+        {
+            cancellationToken = cancellationTokenSource.Token;
+        }
+
+        // Create a large set of message fragments to simulate a conversation with many messages
+        var largeMessageFragments = new List<ClientMessageFragment>();
+        for (var i = 0; i < largeMessageCount; i++)
+        {
+            largeMessageFragments.Add(
+                new(
+                    Guid.CreateVersion7(),
+                    "user",
+                    $"Message {i}: This is a test message with some content to simulate realistic message size.",
+                    Guid.CreateVersion7(),
+                    i == largeMessageCount - 1 // Mark last message as final
+                )
+            );
+        }
+
+        _chatStreamingMock
+            .Setup(x => x.GetMessageStream(_conversationId, null, null, cancellationToken))
+            .Returns(largeMessageFragments.ToAsyncEnumerable());
+
+        // Act
+        var stopwatch = Stopwatch.StartNew();
+
+        var result = await hub.Stream(
+                _conversationId,
+                streamContext,
+                _chatStreamingMock.Object,
+                cancellationToken
+            )
+            .ToListAsync(cancellationToken);
+
+        stopwatch.Stop();
+
+        // Assert
+        result.Count.ShouldBe(largeMessageCount);
+        stopwatch.ElapsedMilliseconds.ShouldBeLessThan(timeoutMs);
+
+        // Verify the first and last messages to ensure data integrity
+        result[0]
+            .Text.ShouldBe(
+                "Message 0: This is a test message with some content to simulate realistic message size."
+            );
+        result[largeMessageCount - 1]
+            .Text.ShouldBe(
+                $"Message {largeMessageCount - 1}: This is a test message with some content to simulate realistic message size."
+            );
+        result[largeMessageCount - 1].IsFinal.ShouldBeTrue();
+
         _chatStreamingMock.Verify(
             x => x.GetMessageStream(_conversationId, null, null, cancellationToken),
             Times.Once

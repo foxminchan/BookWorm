@@ -18,7 +18,7 @@ public sealed class FeedbackDeletedIntegrationEventHandler(IBookRepository repos
     {
         var @event = context.Message;
 
-        var book = await repository.GetByIdAsync(@event.BookId);
+        var book = await repository.GetByIdAsync(@event.BookId, context.CancellationToken);
 
         if (book is null)
         {
@@ -27,7 +27,7 @@ public sealed class FeedbackDeletedIntegrationEventHandler(IBookRepository repos
 
         book.RemoveRating(@event.Rating);
 
-        await repository.UnitOfWork.SaveEntitiesAsync();
+        await repository.UnitOfWork.SaveEntitiesAsync(context.CancellationToken);
     }
 }
 

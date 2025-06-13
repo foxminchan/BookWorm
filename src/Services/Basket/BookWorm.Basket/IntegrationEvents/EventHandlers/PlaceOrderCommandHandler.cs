@@ -56,7 +56,8 @@ public sealed class PlaceOrderCommandHandler(IBasketRepository repository)
     )
     {
         await context.Publish(
-            new BasketDeletedCompleteIntegrationEvent(orderId, basketId, totalMoney)
+            new BasketDeletedCompleteIntegrationEvent(orderId, basketId, totalMoney),
+            context.CancellationToken
         );
     }
 
@@ -76,7 +77,8 @@ public sealed class PlaceOrderCommandHandler(IBasketRepository repository)
     )
     {
         await context.Publish(
-            new BasketDeletedFailedIntegrationEvent(orderId, basketId, email, totalMoney)
+            new BasketDeletedFailedIntegrationEvent(orderId, basketId, email, totalMoney),
+            context.CancellationToken
         );
     }
 }

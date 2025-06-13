@@ -86,7 +86,7 @@ public sealed class CancelOrderCommandTests
             .Setup(r =>
                 r.FirstOrDefaultAsync(It.IsAny<OrderFilterSpec>(), It.IsAny<CancellationToken>())
             )
-            .ReturnsAsync((Order)default!);
+            .ReturnsAsync((Order?)default!);
 
         // Act
         var act = () => _handler.Handle(command, CancellationToken.None);
@@ -113,7 +113,7 @@ public sealed class CancelOrderCommandTests
             .Setup(r =>
                 r.FirstOrDefaultAsync(It.IsAny<OrderFilterSpec>(), It.IsAny<CancellationToken>())
             )
-            .ReturnsAsync((Order)default!);
+            .ReturnsAsync((Order?)default!);
 
         // Act
         var act = () => _handler.Handle(command, CancellationToken.None);

@@ -99,7 +99,7 @@ public sealed class CreateFeedbackValidatorTests
     }
 
     [Test]
-    public void GivenValidComment_WhenValidating_ThenShouldNotHaveValidationError()
+    public void GivenMaxLengthComment_WhenValidating_ThenShouldNotHaveValidationError()
     {
         // Arrange
         var validComment = new string('A', DataSchemaLength.Max);

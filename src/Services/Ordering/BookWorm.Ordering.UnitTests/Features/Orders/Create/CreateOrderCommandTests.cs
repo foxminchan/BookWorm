@@ -203,7 +203,7 @@ public sealed class CreateOrderCommandTests
             // Arrange
             _claimsPrincipalMock
                 .Setup(x => x.FindFirst(ClaimTypes.NameIdentifier))
-                .Returns((Claim)default!);
+                .Returns((Claim?)default!);
 
             // Act
             var act = async () => await _handler.Handle(_command, CancellationToken.None);

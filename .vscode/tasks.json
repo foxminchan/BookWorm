@@ -64,7 +64,6 @@
     },
     {
       "label": "Format C# files",
-      "dependsOn": "Build projects",
       "command": "dotnet",
       "type": "process",
       "args": ["csharpier", "format", "."],

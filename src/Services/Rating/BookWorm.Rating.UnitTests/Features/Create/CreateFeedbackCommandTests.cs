@@ -20,19 +20,24 @@ public sealed class CreateFeedbackCommandTests
             .ReturnsAsync(true);
     }
 
-    [Test]
-    public async Task GivenValidCommand_WhenHandlingCreateFeedback_ThenShouldAddToRepositoryAndSaveChanges()
+    private static Feedback CreateFeedbackFromCommand(CreateFeedbackCommand command)
     {
-        // Arrange
-        var command = _faker.Generate();
-
-        var feedbackWithId = new Feedback(
+        return new(
             command.BookId,
             command.FirstName,
             command.LastName,
             command.Comment,
             command.Rating
         );
+    }
+
+    [Test]
+    public async Task GivenValidCommand_WhenHandlingCreateFeedback_ThenShouldAddToRepositoryAndSaveChanges()
+    {
+        // Arrange
+        var command = _faker.Generate();
+
+        var feedbackWithId = CreateFeedbackFromCommand(command);
 
         // Set a known ID for verification
         var expectedId = Guid.CreateVersion7();
@@ -75,13 +80,7 @@ public sealed class CreateFeedbackCommandTests
         // Arrange
         var command = _faker.Generate();
         var expectedId = Guid.CreateVersion7();
-        var feedback = new Feedback(
-            command.BookId,
-            command.FirstName,
-            command.LastName,
-            command.Comment,
-            command.Rating
-        );
+        var feedback = CreateFeedbackFromCommand(command);
 
         // Use reflection to set the ID since it's likely not directly settable
         typeof(Feedback).GetProperty("Id")?.SetValue(feedback, expectedId);
@@ -116,15 +115,7 @@ public sealed class CreateFeedbackCommandTests
         _repositoryMock
             .Setup(r => r.AddAsync(It.IsAny<Feedback>(), It.IsAny<CancellationToken>()))
             .Callback<Feedback, CancellationToken>((f, _) => capturedFeedback = f)
-            .ReturnsAsync(
-                new Feedback(
-                    command.BookId,
-                    command.FirstName,
-                    command.LastName,
-                    command.Comment,
-                    command.Rating
-                )
-            );
+            .ReturnsAsync(CreateFeedbackFromCommand(command));
 
         // Act
         await _handler.Handle(command, CancellationToken.None);

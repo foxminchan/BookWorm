@@ -18,7 +18,7 @@ public sealed class DeleteBasketFailedCommandHandler(IOrderRepository repository
     {
         var message = context.Message;
 
-        var order = await repository.GetByIdAsync(message.OrderId, CancellationToken.None);
+        var order = await repository.GetByIdAsync(message.OrderId, context.CancellationToken);
 
         if (order is null)
         {
@@ -27,7 +27,7 @@ public sealed class DeleteBasketFailedCommandHandler(IOrderRepository repository
 
         repository.Delete(order);
 
-        await repository.UnitOfWork.SaveEntitiesAsync(CancellationToken.None);
+        await repository.UnitOfWork.SaveEntitiesAsync(context.CancellationToken);
     }
 }
 

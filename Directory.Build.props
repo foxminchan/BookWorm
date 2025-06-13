@@ -18,6 +18,7 @@
     <DebugType>embedded</DebugType>
   </PropertyGroup>
   <PropertyGroup Label="Build">
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <WarnOnPackingNonPackableProject>false</WarnOnPackingNonPackableProject>
     <Nullable>enable</Nullable>
     <!-- Temporarily disable security warnings for transitive packages. -->

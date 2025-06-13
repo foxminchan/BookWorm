@@ -18,7 +18,7 @@ public sealed class FeedbackCreatedIntegrationEventHandler(IBookRepository bookR
     {
         var @event = context.Message;
 
-        var book = await bookRepository.GetByIdAsync(@event.BookId);
+        var book = await bookRepository.GetByIdAsync(@event.BookId, context.CancellationToken);
 
         if (book is null)
         {
@@ -28,7 +28,7 @@ public sealed class FeedbackCreatedIntegrationEventHandler(IBookRepository bookR
 
         book.AddRating(@event.Rating);
 
-        await bookRepository.UnitOfWork.SaveEntitiesAsync();
+        await bookRepository.UnitOfWork.SaveEntitiesAsync(context.CancellationToken);
     }
 
     [Channel("rating-book-updated-rating-failed")]
@@ -43,7 +43,10 @@ public sealed class FeedbackCreatedIntegrationEventHandler(IBookRepository bookR
         Guid feedbackId
     )
     {
-        await context.Publish(new BookUpdatedRatingFailedIntegrationEvent(feedbackId));
+        await context.Publish(
+            new BookUpdatedRatingFailedIntegrationEvent(feedbackId),
+            context.CancellationToken
+        );
     }
 }
 

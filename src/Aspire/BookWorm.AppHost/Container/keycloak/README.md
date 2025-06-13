@@ -2,7 +2,9 @@
 
 ## Overview
 
-Keycloak is an open-source Identity and Access Management (IAM) solution that provides authentication and authorization services for the BookWorm application. It serves as the central identity provider, handling user authentication, token management, and access control across all BookWorm microservices.
+Keycloak is an open-source Identity and Access Management (IAM) solution that provides authentication and authorization
+services for the BookWorm application. It serves as the central identity provider, handling user authentication, token
+management, and access control across all BookWorm microservices.
 
 ### Purpose in BookWorm Application
 
@@ -17,7 +19,8 @@ In the BookWorm e-commerce platform, Keycloak serves several critical functions:
 
 ## Authorization Code + PKCE Flow
 
-The BookWorm application implements the OAuth2 Authorization Code flow with PKCE (Proof Key for Code Exchange) for secure authentication. This flow is particularly important for public clients like SPAs and mobile applications.
+The BookWorm application implements the OAuth2 Authorization Code flow with PKCE (Proof Key for Code Exchange) for
+secure authentication. This flow is particularly important for public clients like SPAs and mobile applications.
 
 ```mermaid
 sequenceDiagram
@@ -51,7 +54,8 @@ sequenceDiagram
 
 ### PKCE Security Benefits
 
-- **Prevents Authorization Code Interception**: Even if the authorization code is intercepted, it cannot be exchanged for tokens without the original `code_verifier`
+- **Prevents Authorization Code Interception**: Even if the authorization code is intercepted, it cannot be exchanged
+  for tokens without the original `code_verifier`
 - **No Client Secret Required**: Perfect for public clients that cannot securely store secrets
 - **Dynamic Challenge**: Each authentication flow uses a unique code challenge/verifier pair
 
@@ -82,25 +86,26 @@ Related Configuration Files:
 
 - **`BookWormRealms.json`**: Complete realm configuration including:
 
-  - Client definitions (public and confidential clients)
-  - PKCE settings (`pkce.code.challenge.method": "S256"`)
-  - Custom theme configuration (`"loginTheme": "bookworm"`)
-  - Role mappings and user federation settings
+    - Client definitions (public and confidential clients)
+    - PKCE settings (`pkce.code.challenge.method": "S256"`)
+    - Custom theme configuration (`"loginTheme": "bookworm"`)
+    - Role mappings and user federation settings
 
 - **`BookWormThemes.jar`**: Custom theme package containing:
 
-  - Branded login pages
-  - CSS styling matching BookWorm design
-  - Custom templates and resources
+    - Branded login pages
+    - CSS styling matching BookWorm design
+    - Custom templates and resources
 
 - **`KeycloakExtensions.cs`**: Aspire integration that:
-  - Sets up Keycloak container with proper configuration
-  - Mounts realm and theme files
-  - Configures environment variables
+    - Sets up Keycloak container with proper configuration
+    - Mounts realm and theme files
+    - Configures environment variables
 
 ## Custom Theme Introduction
 
-The BookWorm application includes a custom Keycloak theme to provide a branded authentication experience that matches the application's design language.
+The BookWorm application includes a custom Keycloak theme to provide a branded authentication experience that matches
+the application's design language.
 
 ![BookWorm Custom Theme](../../../../../assets/keycloak-theme.jpg)
 

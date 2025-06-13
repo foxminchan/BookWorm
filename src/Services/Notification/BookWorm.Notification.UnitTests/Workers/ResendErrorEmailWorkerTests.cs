@@ -1,8 +1,8 @@
 ﻿using System.Reflection;
 using BookWorm.Notification.Domain.Models;
-using BookWorm.Notification.Domain.Settings;
 using BookWorm.Notification.Infrastructure.Senders;
 using BookWorm.Notification.Infrastructure.Table;
+using BookWorm.Notification.UnitTests.Fakers;
 using BookWorm.Notification.Workers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -11,7 +11,7 @@ using Quartz;
 
 namespace BookWorm.Notification.UnitTests.Workers;
 
-public class ResendErrorEmailWorkerTests : IDisposable
+public class ResendErrorEmailWorkerTests
 {
     private readonly Mock<ILogger<ResendErrorEmailWorker>> _loggerMock;
     private readonly string _partitionKey = nameof(Outbox).ToLowerInvariant();
@@ -28,7 +28,7 @@ public class ResendErrorEmailWorkerTests : IDisposable
         _tableServiceMock = new();
         _senderMock = new();
 
-        EmailOptions emailOptions = new() { From = "test@example.com", Name = "Test Sender" };
+        var emailOptions = TestDataFakers.EmailOptions.Generate();
 
         scopeFactoryMock.Setup(x => x.CreateScope()).Returns(scopeMock.Object);
         scopeMock.Setup(x => x.ServiceProvider).Returns(serviceProviderMock.Object);
@@ -40,20 +40,11 @@ public class ResendErrorEmailWorkerTests : IDisposable
         _worker = new(_loggerMock.Object, emailOptions, scopeFactoryMock.Object);
     }
 
-    public void Dispose()
-    {
-        GC.SuppressFinalize(this);
-    }
-
     [Test]
     public async Task GivenFailedEmails_WhenResending_ThenShouldResendAllEmails()
     {
         // Arrange
-        var failedEmails = new List<Outbox>
-        {
-            new("Test User", "test@example.com", "Subject", "Body"),
-            new("Test User 2", "test2@example.com", "Subject 2", "Body 2"),
-        };
+        var failedEmails = TestDataFakers.Outbox.Generate(2);
 
         _tableServiceMock
             .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
@@ -78,7 +69,8 @@ public class ResendErrorEmailWorkerTests : IDisposable
     public async Task GivenFailedEmail_WhenResendingFails_ThenShouldLogError()
     {
         // Arrange
-        var failedEmail = new Outbox("Test User", "test@example.com", "Subject", "Body");
+        var failedEmail = TestDataFakers.Outbox.Generate();
+
         _tableServiceMock
             .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync([failedEmail]);
@@ -167,11 +159,7 @@ public class ResendErrorEmailWorkerTests : IDisposable
     public async Task GivenFailedEmail_WhenIndividualEmailResendFails_ThenShouldLogErrorAndContinue()
     {
         // Arrange
-        var failedEmails = new List<Outbox>
-        {
-            new("Test User", "test@example.com", "Subject", "Body"),
-            new("Test User 2", "test2@example.com", "Subject 2", "Body 2"),
-        };
+        var failedEmails = TestDataFakers.Outbox.Generate(2);
 
         _tableServiceMock
             .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
@@ -208,10 +196,7 @@ public class ResendErrorEmailWorkerTests : IDisposable
     public async Task GivenSemaphoreAcquired_WhenJobExecutes_ThenShouldSkipProcessing()
     {
         // Arrange
-        var failedEmails = new List<Outbox>
-        {
-            new("Test User", "test@example.com", "Subject", "Body"),
-        };
+        var failedEmails = TestDataFakers.Outbox.Generate(1);
 
         _tableServiceMock
             .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))

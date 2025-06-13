@@ -101,7 +101,7 @@ public sealed class CreateBuyerCommandTests
         var command = new CreateBuyerCommand("123 Main St", "Seattle", "Washington");
         _claimsPrincipalMock
             .Setup(x => x.FindFirst(ClaimTypes.NameIdentifier))
-            .Returns((Claim)default!);
+            .Returns((Claim?)default!);
 
         // Act
         var act = async () => await _handler.Handle(command, CancellationToken.None);
@@ -122,7 +122,7 @@ public sealed class CreateBuyerCommandTests
         var command = new CreateBuyerCommand("123 Main St", "Seattle", "Washington");
         _claimsPrincipalMock
             .Setup(x => x.FindFirst(KeycloakClaimTypes.Name))
-            .Returns((Claim)default!);
+            .Returns((Claim?)default!);
 
         Buyer? buyerEntity = null;
         _buyerRepositoryMock

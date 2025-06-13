@@ -42,8 +42,8 @@ public sealed class CompleteOrderConsumerTests
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => x.AddConsumer<CompleteOrderCommandHandler>())
-            .AddScoped<ISender>(_ => _senderMock.Object)
-            .AddScoped<IRenderer>(_ => _rendererMock.Object)
+            .AddScoped(_ => _senderMock.Object)
+            .AddScoped(_ => _rendererMock.Object)
             .AddSingleton(_ => _emailOptions)
             .BuildServiceProvider(true);
 
@@ -73,8 +73,8 @@ public sealed class CompleteOrderConsumerTests
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => x.AddConsumer<CompleteOrderCommandHandler>())
-            .AddScoped<ISender>(_ => _senderMock.Object)
-            .AddScoped<IRenderer>(_ => _rendererMock.Object)
+            .AddScoped(_ => _senderMock.Object)
+            .AddScoped(_ => _rendererMock.Object)
             .AddSingleton(_ => _emailOptions)
             .BuildServiceProvider(true);
 
@@ -104,8 +104,8 @@ public sealed class CompleteOrderConsumerTests
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => x.AddConsumer<CompleteOrderCommandHandler>())
-            .AddScoped<ISender>(_ => _senderMock.Object)
-            .AddScoped<IRenderer>(_ => _rendererMock.Object)
+            .AddScoped(_ => _senderMock.Object)
+            .AddScoped(_ => _rendererMock.Object)
             .AddSingleton(_ => _emailOptions)
             .BuildServiceProvider(true);
 
@@ -140,8 +140,8 @@ public sealed class CompleteOrderConsumerTests
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => x.AddConsumer<CompleteOrderCommandHandler>())
-            .AddScoped<ISender>(_ => _senderMock.Object)
-            .AddScoped<IRenderer>(_ => _rendererMock.Object)
+            .AddScoped(_ => _senderMock.Object)
+            .AddScoped(_ => _rendererMock.Object)
             .AddSingleton(_ => _emailOptions)
             .BuildServiceProvider(true);
 
@@ -183,8 +183,8 @@ public sealed class CompleteOrderConsumerTests
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => x.AddConsumer<CompleteOrderCommandHandler>())
-            .AddScoped<ISender>(_ => _senderMock.Object)
-            .AddScoped<IRenderer>(_ => _rendererMock.Object)
+            .AddScoped(_ => _senderMock.Object)
+            .AddScoped(_ => _rendererMock.Object)
             .AddSingleton(_ => _emailOptions)
             .BuildServiceProvider(true);
 
