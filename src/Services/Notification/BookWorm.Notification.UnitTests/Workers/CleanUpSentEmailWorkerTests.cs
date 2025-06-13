@@ -1,5 +1,6 @@
 ﻿using BookWorm.Notification.Domain.Models;
 using BookWorm.Notification.Infrastructure.Table;
+using BookWorm.Notification.UnitTests.Fakers;
 using BookWorm.Notification.Workers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -72,16 +73,10 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
     public async Task GivenSentEmails_WhenCleaningUp_ThenShouldDeleteAllSentEmails()
     {
         // Arrange
-        var sentEmails = new List<Outbox>
+        var sentEmails = new List<Outbox>();
+        for (var i = 0; i < 2; i++)
         {
-            new("Test1", "test1@example.com", "Subject1", "Body1"),
-            new("Test2", "test2@example.com", "Subject2", "Body2"),
-        };
-
-        // Mark IsSent as true for all emails
-        foreach (var email in sentEmails)
-        {
-            email.MarkAsSent();
+            sentEmails.Add(TestDataFakers.Outbox.AsSent());
         }
 
         _tableServiceMock
@@ -116,14 +111,10 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
     public async Task GivenMixedEmails_WhenCleaningUp_ThenShouldOnlyDeleteSentEmails()
     {
         // Arrange
-        var emails = new List<Outbox>
-        {
-            new("Test1", "test1@example.com", "Subject1", "Body1"),
-            new("Test2", "test2@example.com", "Subject2", "Body2"),
-        };
+        var sentOutbox = TestDataFakers.Outbox.AsSent();
+        var unsentOutbox = TestDataFakers.Outbox.Generate();
 
-        // Mark IsSent as true for the first email
-        emails[0].MarkAsSent();
+        var emails = new List<Outbox> { sentOutbox, unsentOutbox };
 
         _tableServiceMock
             .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
@@ -146,9 +137,7 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
         var sentEmails = new List<Outbox>();
         for (var i = 0; i < 150; i++)
         {
-            var email = new Outbox($"Test{i}", $"test{i}@example.com", $"Subject{i}", $"Body{i}");
-            email.MarkAsSent();
-            sentEmails.Add(email);
+            sentEmails.Add(TestDataFakers.Outbox.AsSent());
         }
 
         _tableServiceMock
@@ -188,36 +177,25 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
             .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
             .ThrowsAsync(exception);
 
-        // Act
-        try
-        {
-            await _worker.Execute(Mock.Of<IJobExecutionContext>());
-            Should.Throw<Exception>(() => throw new("This code path should not be reached"));
-        }
-        catch (Exception ex)
-        {
-            // Assert
-            if (!string.Equals(ex.Message, "Table service error", StringComparison.Ordinal))
-            {
-                ex.Message.ShouldBe(
-                    "Table service error",
-                    $"Expected exception message 'Table service error' but got '{ex.Message}'"
-                );
-            }
+        // Act & Assert
+        var thrownException = await Should.ThrowAsync<Exception>(async () =>
+            await _worker.Execute(Mock.Of<IJobExecutionContext>())
+        );
 
-            _loggerMock.Verify(
-                x =>
-                    x.Log(
-                        LogLevel.Error,
-                        It.IsAny<EventId>(),
-                        It.Is<It.IsAnyType>(
-                            (o, t) => o.ToString()!.Contains("Error occurred in job execution")
-                        ),
-                        exception,
-                        It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+        thrownException.Message.ShouldBe("Table service error");
+
+        _loggerMock.Verify(
+            x =>
+                x.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>(
+                        (o, t) => o.ToString()!.Contains("Error occurred in job execution")
                     ),
-                Times.Once
-            );
-        }
+                    exception,
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+                ),
+            Times.Once
+        );
     }
 }

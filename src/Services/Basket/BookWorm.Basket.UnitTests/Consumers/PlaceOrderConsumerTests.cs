@@ -34,7 +34,7 @@ public sealed class PlaceOrderConsumerTests
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => x.AddConsumer<PlaceOrderCommandHandler>())
-            .AddScoped<IBasketRepository>(_ => _repositoryMock.Object)
+            .AddScoped(_ => _repositoryMock.Object)
             .BuildServiceProvider(true);
 
         var harness = provider.GetRequiredService<ITestHarness>();
@@ -71,7 +71,7 @@ public sealed class PlaceOrderConsumerTests
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => x.AddConsumer<PlaceOrderCommandHandler>())
-            .AddScoped<IBasketRepository>(_ => _repositoryMock.Object)
+            .AddScoped(_ => _repositoryMock.Object)
             .BuildServiceProvider(true);
 
         var harness = provider.GetRequiredService<ITestHarness>();
@@ -109,7 +109,7 @@ public sealed class PlaceOrderConsumerTests
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => x.AddConsumer<PlaceOrderCommandHandler>())
-            .AddScoped<IBasketRepository>(_ => _repositoryMock.Object)
+            .AddScoped(_ => _repositoryMock.Object)
             .BuildServiceProvider(true);
 
         var harness = provider.GetRequiredService<ITestHarness>();

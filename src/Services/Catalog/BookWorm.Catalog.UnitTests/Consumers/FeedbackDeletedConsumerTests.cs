@@ -46,7 +46,7 @@ public sealed class FeedbackDeletedConsumerTests
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => x.AddConsumer<FeedbackDeletedIntegrationEventHandler>())
-            .AddScoped<IBookRepository>(_ => _repositoryMock.Object)
+            .AddScoped(_ => _repositoryMock.Object)
             .BuildServiceProvider(true);
 
         var harness = provider.GetRequiredService<ITestHarness>();
@@ -82,7 +82,7 @@ public sealed class FeedbackDeletedConsumerTests
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => x.AddConsumer<FeedbackDeletedIntegrationEventHandler>())
-            .AddScoped<IBookRepository>(_ => _repositoryMock.Object)
+            .AddScoped(_ => _repositoryMock.Object)
             .BuildServiceProvider(true);
 
         var harness = provider.GetRequiredService<ITestHarness>();

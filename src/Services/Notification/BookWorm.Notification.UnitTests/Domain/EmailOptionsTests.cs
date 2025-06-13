@@ -1,4 +1,5 @@
 ﻿using BookWorm.Notification.Domain.Settings;
+using BookWorm.Notification.UnitTests.Fakers;
 
 namespace BookWorm.Notification.UnitTests.Domain;
 
@@ -19,8 +20,8 @@ public sealed class EmailOptionsTests
     public void GivenValidEmail_WhenSettingFromAddress_ThenShouldSetCorrectly()
     {
         // Arrange
-        var options = new EmailOptions();
-        const string validEmail = "test@example.com";
+        var options = TestDataFakers.EmailOptions.Generate();
+        var validEmail = "custom@example.com";
 
         // Act
         options.From = validEmail;
@@ -39,7 +40,8 @@ public sealed class EmailOptionsTests
     )
     {
         // Arrange
-        var options = new EmailOptions { From = invalidEmail! };
+        var options = TestDataFakers.EmailOptions.Generate();
+        options.From = invalidEmail!;
 
         // Act
         var result = options.Validate(nameof(EmailOptions), options);
@@ -53,7 +55,7 @@ public sealed class EmailOptionsTests
     public void GivenValidEmail_WhenValidatingOptions_ThenShouldSucceed()
     {
         // Arrange
-        var options = new EmailOptions { From = "test@example.com" };
+        var options = TestDataFakers.EmailOptions.Generate();
 
         // Act
         var result = options.Validate(nameof(EmailOptions), options);
@@ -66,7 +68,7 @@ public sealed class EmailOptionsTests
     public void GivenCustomName_WhenSettingName_ThenShouldSetCorrectly()
     {
         // Arrange
-        var options = new EmailOptions();
+        var options = TestDataFakers.EmailOptions.Generate();
         const string customName = "Custom BookWorm";
 
         // Act

@@ -30,7 +30,7 @@ public sealed class DeleteBasketCompleteConsumerTests
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => x.AddConsumer<DeleteBasketCompleteCommandHandler>())
-            .AddScoped<IDocumentSession>(_ => _documentSessionMock.Object)
+            .AddScoped(_ => _documentSessionMock.Object)
             .BuildServiceProvider(true);
 
         var harness = provider.GetRequiredService<ITestHarness>();
@@ -80,7 +80,7 @@ public sealed class DeleteBasketCompleteConsumerTests
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => x.AddConsumer<DeleteBasketCompleteCommandHandler>())
-            .AddScoped<IDocumentSession>(_ => _documentSessionMock.Object)
+            .AddScoped(_ => _documentSessionMock.Object)
             .BuildServiceProvider(true);
 
         var harness = provider.GetRequiredService<ITestHarness>();
@@ -119,7 +119,7 @@ public sealed class DeleteBasketCompleteConsumerTests
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => x.AddConsumer<DeleteBasketCompleteCommandHandler>())
-            .AddScoped<IDocumentSession>(_ => _documentSessionMock.Object)
+            .AddScoped(_ => _documentSessionMock.Object)
             .BuildServiceProvider(true);
 
         var harness = provider.GetRequiredService<ITestHarness>();
@@ -159,7 +159,7 @@ public sealed class DeleteBasketCompleteConsumerTests
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => x.AddConsumer<DeleteBasketCompleteCommandHandler>())
-            .AddScoped<IDocumentSession>(_ => _documentSessionMock.Object)
+            .AddScoped(_ => _documentSessionMock.Object)
             .BuildServiceProvider(true);
 
         var harness = provider.GetRequiredService<ITestHarness>();

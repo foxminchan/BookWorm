@@ -43,7 +43,7 @@ public sealed class BookUpdatedRatingFailedConsumerTests
             .AddMassTransitTestHarness(x =>
                 x.AddConsumer<BookUpdatedRatingFailedIntegrationEventHandler>()
             )
-            .AddScoped<IFeedbackRepository>(_ => _repositoryMock.Object)
+            .AddScoped(_ => _repositoryMock.Object)
             .BuildServiceProvider(true);
 
         var harness = provider.GetRequiredService<ITestHarness>();
@@ -78,7 +78,7 @@ public sealed class BookUpdatedRatingFailedConsumerTests
         // Arrange
         _repositoryMock
             .Setup(x => x.GetByIdAsync(_feedbackId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Feedback)null!);
+            .ReturnsAsync((Feedback?)null);
 
         var integrationEvent = new BookUpdatedRatingFailedIntegrationEvent(_feedbackId);
 
@@ -86,7 +86,7 @@ public sealed class BookUpdatedRatingFailedConsumerTests
             .AddMassTransitTestHarness(x =>
                 x.AddConsumer<BookUpdatedRatingFailedIntegrationEventHandler>()
             )
-            .AddScoped<IFeedbackRepository>(_ => _repositoryMock.Object)
+            .AddScoped(_ => _repositoryMock.Object)
             .BuildServiceProvider(true);
 
         var harness = provider.GetRequiredService<ITestHarness>();

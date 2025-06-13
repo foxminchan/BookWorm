@@ -291,7 +291,7 @@ public sealed class ListChatHandlerTests
             .Setup(r =>
                 r.ListAsync(It.IsAny<ConversationFilterSpec>(), It.IsAny<CancellationToken>())
             )
-            .ReturnsAsync(new List<Conversation>());
+            .ReturnsAsync([]);
 
         var handler = new ListChatHandler(_mockRepository.Object, claimsPrincipal);
 

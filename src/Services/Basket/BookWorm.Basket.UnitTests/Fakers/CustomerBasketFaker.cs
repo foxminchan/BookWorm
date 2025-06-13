@@ -15,6 +15,6 @@ public sealed class CustomerBasketFaker : Faker<CustomerBasket>
 
     public CustomerBasket[] Generate()
     {
-        return [.. Generate(Seeder.DefaultSeed)];
+        return [.. Generate(Seeder.DefaultCount)];
     }
 }

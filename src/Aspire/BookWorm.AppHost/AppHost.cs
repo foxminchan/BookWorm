@@ -46,7 +46,7 @@ var ratingDb = postgres.AddDatabase(Components.Database.Rating);
 var chatDb = postgres.AddDatabase(Components.Database.Chat);
 var healthDb = postgres.AddDatabase(Components.Database.Health);
 
-builder.AddOllama(configure: configure =>
+builder.AddOllama(configure =>
 {
     configure.AddModel(Components.Ollama.Embedding, "nomic-embed-text:latest");
     configure.AddModel(

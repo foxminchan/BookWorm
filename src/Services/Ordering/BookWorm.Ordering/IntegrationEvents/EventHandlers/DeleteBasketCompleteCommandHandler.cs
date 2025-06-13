@@ -16,7 +16,11 @@ public sealed class DeleteBasketCompleteCommandHandler(IDocumentSession document
     )]
     public async Task Consume(ConsumeContext<DeleteBasketCompleteCommand> context)
     {
-        await documentSession.Add<OrderSummary>(Guid.CreateVersion7(), context.Message);
+        await documentSession.Add<OrderSummary>(
+            Guid.CreateVersion7(),
+            context.Message,
+            context.CancellationToken
+        );
     }
 }
 

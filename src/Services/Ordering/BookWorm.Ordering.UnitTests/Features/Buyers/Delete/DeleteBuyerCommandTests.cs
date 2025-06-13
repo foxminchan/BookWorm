@@ -67,7 +67,7 @@ public sealed class DeleteBuyerCommandTests
         var nonExistingId = Guid.CreateVersion7();
         _repositoryMock
             .Setup(x => x.GetByIdAsync(nonExistingId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Buyer)default!);
+            .ReturnsAsync((Buyer?)default!);
 
         // Act
         var act = async () => await _handler.Handle(new(nonExistingId), CancellationToken.None);

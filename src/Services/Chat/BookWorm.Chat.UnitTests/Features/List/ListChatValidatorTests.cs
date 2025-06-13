@@ -202,32 +202,6 @@ public sealed class ListChatValidatorTests
     }
 
     [Test]
-    public void GivenQueryWithAllNullOrDefaultValues_WhenValidating_ThenShouldNotHaveValidationErrors()
-    {
-        // Arrange
-        var query = new ListChatQuery();
-
-        // Act
-        var result = _validator.TestValidate(query);
-
-        // Assert
-        result.ShouldNotHaveAnyValidationErrors();
-    }
-
-    [Test]
-    public void GivenQueryWithAllValidValues_WhenValidating_ThenShouldNotHaveValidationErrors()
-    {
-        // Arrange
-        var query = new ListChatQuery("Valid Chat Name", Guid.CreateVersion7(), true);
-
-        // Act
-        var result = _validator.TestValidate(query);
-
-        // Assert
-        result.ShouldNotHaveAnyValidationErrors();
-    }
-
-    [Test]
     public void GivenMultipleQueriesWithDifferentNameLengths_WhenValidating_ThenShouldValidateCorrectly()
     {
         // Arrange

@@ -1,4 +1,5 @@
 ﻿using BookWorm.Notification.Domain.Settings;
+using BookWorm.Notification.UnitTests.Fakers;
 
 namespace BookWorm.Notification.UnitTests.Domain;
 
@@ -24,11 +25,9 @@ public sealed class JobOptionsTests
     )
     {
         // Arrange
-        var options = new JobOptions
-        {
-            CleanUpSentEmailCronExpression = cleanUpCron,
-            ResendErrorEmailCronExpression = resendErrorCron,
-        };
+        var options = TestDataFakers.JobOptions.Generate();
+        options.CleanUpSentEmailCronExpression = cleanUpCron;
+        options.ResendErrorEmailCronExpression = resendErrorCron;
 
         // Act & Assert
         options.CleanUpSentEmailCronExpression.ShouldBe(cleanUpCron);
@@ -45,11 +44,9 @@ public sealed class JobOptionsTests
     )
     {
         // Arrange
-        var options = new JobOptions
-        {
-            CleanUpSentEmailCronExpression = invalidCron!,
-            ResendErrorEmailCronExpression = invalidCron!,
-        };
+        var options = TestDataFakers.JobOptions.Generate();
+        options.CleanUpSentEmailCronExpression = invalidCron!;
+        options.ResendErrorEmailCronExpression = invalidCron!;
 
         // Act
         var result = options.Validate(nameof(JobOptions), options);

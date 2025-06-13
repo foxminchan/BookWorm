@@ -9,8 +9,8 @@ public static class EndpointExtensions
     ///     The distributed application builder to configure.
     /// </param>
     /// <remarks>
-    ///     This method subscribes to the <see cref="BeforeStartEvent"/> and updates the display location of HTTP endpoints
-    ///     to <see cref="UrlDisplayLocation.DetailsOnly"/> for all resources of type <see cref="IResourceWithEndpoints"/>.
+    ///     This method subscribes to the <see cref="BeforeStartEvent" /> and updates the display location of HTTP endpoints
+    ///     to <see cref="UrlDisplayLocation.DetailsOnly" /> for all resources of type <see cref="IResourceWithEndpoints" />.
     ///     This ensures that
     /// </remarks>
     public static void HidePlainHttpLink(this IDistributedApplicationBuilder builder)

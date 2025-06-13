@@ -26,11 +26,7 @@ public sealed class FeedbackRepository(RatingDbContext context) : IFeedbackRepos
         CancellationToken cancellationToken = default
     )
     {
-        var feedback = await _context
-            .Feedbacks.AsNoTracking()
-            .SingleOrDefaultAsync(f => f.Id == id, cancellationToken);
-
-        return feedback;
+        return await _context.Feedbacks.FindAsync([id], cancellationToken);
     }
 
     public async Task<IReadOnlyList<Feedback>> ListAsync(

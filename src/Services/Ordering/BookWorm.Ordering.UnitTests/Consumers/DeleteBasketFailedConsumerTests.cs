@@ -45,7 +45,7 @@ public sealed class DeleteBasketFailedConsumerTests
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => x.AddConsumer<DeleteBasketFailedCommandHandler>())
-            .AddScoped<IOrderRepository>(_ => _repositoryMock.Object)
+            .AddScoped(_ => _repositoryMock.Object)
             .BuildServiceProvider(true);
 
         var harness = provider.GetRequiredService<ITestHarness>();
@@ -77,13 +77,13 @@ public sealed class DeleteBasketFailedConsumerTests
         // Arrange
         _repositoryMock
             .Setup(x => x.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Order)default!);
+            .ReturnsAsync((Order?)null);
 
         var command = new DeleteBasketFailedCommand(_basketId, _email, _orderId);
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => x.AddConsumer<DeleteBasketFailedCommandHandler>())
-            .AddScoped<IOrderRepository>(_ => _repositoryMock.Object)
+            .AddScoped(_ => _repositoryMock.Object)
             .BuildServiceProvider(true);
 
         var harness = provider.GetRequiredService<ITestHarness>();

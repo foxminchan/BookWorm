@@ -18,7 +18,7 @@ public sealed class ListOrdersEndpointsTests
         // Arrange
         var query = new ListOrdersQuery(1, 10);
         var expectedResult = new PagedResult<OrderDto>(
-            new List<OrderDto> { new(Guid.CreateVersion7(), DateTime.UtcNow, 100.0m, Status.New) },
+            [new(Guid.CreateVersion7(), DateTime.UtcNow, 100.0m, Status.New)],
             1,
             10,
             1
@@ -45,12 +45,7 @@ public sealed class ListOrdersEndpointsTests
         var pageSize = 25;
         var query = new ListOrdersQuery(pageIndex, pageSize);
 
-        var expectedResult = new PagedResult<OrderDto>(
-            new List<OrderDto>(),
-            pageIndex,
-            pageSize,
-            0
-        );
+        var expectedResult = new PagedResult<OrderDto>([], pageIndex, pageSize, 0);
 
         _senderMock
             .Setup(x =>
@@ -154,12 +149,7 @@ public sealed class ListOrdersEndpointsTests
 
         var query = new ListOrdersQuery(pageIndex, pageSize, status, buyerId);
 
-        var expectedResult = new PagedResult<OrderDto>(
-            new List<OrderDto>(),
-            pageIndex,
-            pageSize,
-            0
-        );
+        var expectedResult = new PagedResult<OrderDto>([], pageIndex, pageSize, 0);
 
         _senderMock
             .Setup(x =>

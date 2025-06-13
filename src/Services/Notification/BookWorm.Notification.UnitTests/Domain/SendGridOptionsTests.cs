@@ -1,5 +1,6 @@
 ﻿using BookWorm.Constants.Core;
 using BookWorm.Notification.Domain.Settings;
+using BookWorm.Notification.UnitTests.Fakers;
 
 namespace BookWorm.Notification.UnitTests.Domain;
 
@@ -9,12 +10,7 @@ public sealed class SendGridOptionsTests
     public void GivenValidOptions_WhenValidating_ThenShouldPassValidation()
     {
         // Arrange
-        var options = new SendGridOptions
-        {
-            ApiKey = "valid-api-key",
-            SenderEmail = "test@example.com",
-            SenderName = "Test Sender",
-        };
+        var options = TestDataFakers.SendGridOptions.Generate();
 
         // Act
         var result = options.Validate(string.Empty, options);
@@ -30,12 +26,8 @@ public sealed class SendGridOptionsTests
     public void GivenEmptyApiKey_WhenValidating_ThenShouldFailValidation(string? apiKey)
     {
         // Arrange
-        var options = new SendGridOptions
-        {
-            ApiKey = apiKey!,
-            SenderEmail = "test@example.com",
-            SenderName = "Test Sender",
-        };
+        var options = TestDataFakers.SendGridOptions.Generate();
+        options.ApiKey = apiKey!;
 
         // Act
         var result = options.Validate(string.Empty, options);
@@ -56,12 +48,8 @@ public sealed class SendGridOptionsTests
     public void GivenInvalidEmail_WhenValidating_ThenShouldFailValidation(string invalidEmail)
     {
         // Arrange
-        var options = new SendGridOptions
-        {
-            ApiKey = "valid-api-key",
-            SenderEmail = invalidEmail,
-            SenderName = "Test Sender",
-        };
+        var options = TestDataFakers.SendGridOptions.Generate();
+        options.SenderEmail = invalidEmail;
 
         // Act
         var result = options.Validate(string.Empty, options);
@@ -78,12 +66,8 @@ public sealed class SendGridOptionsTests
     public void GivenEmptySenderName_WhenValidating_ThenShouldFailValidation(string? senderName)
     {
         // Arrange
-        var options = new SendGridOptions
-        {
-            ApiKey = "valid-api-key",
-            SenderEmail = "test@example.com",
-            SenderName = senderName!,
-        };
+        var options = TestDataFakers.SendGridOptions.Generate();
+        options.SenderName = senderName!;
 
         // Act
         var result = options.Validate(string.Empty, options);
@@ -97,12 +81,8 @@ public sealed class SendGridOptionsTests
     public void GivenSenderNameExceedsMaxLength_WhenValidating_ThenShouldFailValidation()
     {
         // Arrange
-        var options = new SendGridOptions
-        {
-            ApiKey = "valid-api-key",
-            SenderEmail = "test@example.com",
-            SenderName = new('a', DataSchemaLength.Medium + 1),
-        };
+        var options = TestDataFakers.SendGridOptions.Generate();
+        options.SenderName = new('a', DataSchemaLength.Medium + 1);
 
         // Act
         var result = options.Validate(string.Empty, options);
@@ -116,12 +96,10 @@ public sealed class SendGridOptionsTests
     public void GivenMultipleValidationFailures_WhenValidating_ThenShouldReportAllFailures()
     {
         // Arrange
-        var options = new SendGridOptions
-        {
-            ApiKey = "",
-            SenderEmail = "invalid-email",
-            SenderName = "",
-        };
+        var options = TestDataFakers.SendGridOptions.Generate();
+        options.ApiKey = string.Empty;
+        options.SenderEmail = "invalid-email";
+        options.SenderName = string.Empty;
 
         // Act
         var result = options.Validate(string.Empty, options);

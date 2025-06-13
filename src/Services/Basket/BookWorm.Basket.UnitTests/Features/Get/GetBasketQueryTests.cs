@@ -253,7 +253,7 @@ public static class GetBasketQueryTests
         {
             // Arrange
             var query = new GetBasketQuery();
-            var booksResponse = new BooksResponse { Books = { } };
+            var booksResponse = new BooksResponse();
             _bookServiceMock
                 .Setup(x => x.GetBooksByIdsAsync(_bookIds, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(booksResponse);

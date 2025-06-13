@@ -4,6 +4,7 @@ using BookWorm.Notification.Domain.Settings;
 using BookWorm.Notification.Infrastructure.Render;
 using BookWorm.Notification.Infrastructure.Senders;
 using BookWorm.Notification.IntegrationEvents.EventHandlers;
+using BookWorm.Notification.UnitTests.Fakers;
 using MassTransit;
 using MassTransit.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,22 +14,12 @@ namespace BookWorm.Notification.UnitTests.Consumers;
 
 public sealed class PlaceOrderConsumerTests
 {
-    private const string FullName = "Test User";
-    private readonly Guid _basketId;
-    private readonly string _email;
     private readonly EmailOptions _emailOptions;
-    private readonly Guid _orderId;
     private readonly Mock<IRenderer> _rendererMock;
     private readonly Mock<ISender> _senderMock;
-    private readonly decimal _totalMoney;
 
     public PlaceOrderConsumerTests()
     {
-        _orderId = Guid.CreateVersion7();
-        _basketId = Guid.CreateVersion7();
-        _email = "test@example.com";
-        _totalMoney = 99.99m;
-
         _senderMock = new();
         _senderMock
             .Setup(x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()))
@@ -39,105 +30,104 @@ public sealed class PlaceOrderConsumerTests
             .Setup(x => x.Render(It.IsAny<Order>(), It.IsAny<string>()))
             .Returns("Rendered order content");
 
-        _emailOptions = new() { From = "bookworm@example.com" };
+        _emailOptions = TestDataFakers.EmailOptions.Generate();
+    }
+
+    private async Task<ITestHarness> CreateTestHarnessAsync()
+    {
+        var services = new ServiceCollection();
+
+        services.AddMassTransitTestHarness(cfg => cfg.AddConsumer<PlaceOrderCommandHandler>());
+
+        services.AddScoped(_ => _senderMock.Object);
+        services.AddSingleton(_rendererMock.Object);
+        services.AddSingleton(_emailOptions);
+
+        var provider = services.BuildServiceProvider(true);
+        var harness = provider.GetRequiredService<ITestHarness>();
+
+        await harness.Start();
+        return harness;
     }
 
     [Test]
     public async Task GivenValidPlaceOrderCommand_WhenHandling_ThenShouldSendEmail()
     {
         // Arrange
-        var command = new PlaceOrderCommand(_basketId, FullName, _email, _orderId, _totalMoney);
+        var command = TestDataFakers.PlaceOrderCommand.Generate();
+        var harness = await CreateTestHarnessAsync();
 
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness(x => x.AddConsumer<PlaceOrderCommandHandler>())
-            .AddScoped<ISender>(_ => _senderMock.Object)
-            .AddScoped<IRenderer>(_ => _rendererMock.Object)
-            .AddSingleton(_ => _emailOptions)
-            .BuildServiceProvider(true);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(command);
 
-        var harness = provider.GetRequiredService<ITestHarness>();
-        await harness.Start();
+            // Assert
+            var consumerHarness = harness.GetConsumerHarness<PlaceOrderCommandHandler>();
+            (await consumerHarness.Consumed.Any<PlaceOrderCommand>()).ShouldBeTrue();
 
-        // Act
-        await harness.Bus.Publish(command);
-
-        // Assert
-        var consumerHarness = harness.GetConsumerHarness<PlaceOrderCommandHandler>();
-        (await consumerHarness.Consumed.Any<PlaceOrderCommand>()).ShouldBeTrue();
-
-        _senderMock.Verify(
-            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
-            Times.Once
-        );
-
-        await harness.Stop();
+            _senderMock.Verify(
+                x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
+                Times.Once
+            );
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 
     [Test]
     public async Task GivenPlaceOrderCommandWithNullEmail_WhenHandling_ThenShouldNotSendEmail()
     {
         // Arrange
-        var command = new PlaceOrderCommand(_basketId, FullName, null, _orderId, _totalMoney);
+        var command = TestDataFakers.PlaceOrderCommand.WithNullEmail();
+        var harness = await CreateTestHarnessAsync();
 
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness(x => x.AddConsumer<PlaceOrderCommandHandler>())
-            .AddScoped<ISender>(_ => _senderMock.Object)
-            .AddScoped<IRenderer>(_ => _rendererMock.Object)
-            .AddSingleton(_ => _emailOptions)
-            .BuildServiceProvider(true);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(command);
 
-        var harness = provider.GetRequiredService<ITestHarness>();
-        await harness.Start();
+            // Assert
+            var consumerHarness = harness.GetConsumerHarness<PlaceOrderCommandHandler>();
+            (await consumerHarness.Consumed.Any<PlaceOrderCommand>()).ShouldBeTrue();
 
-        // Act
-        await harness.Bus.Publish(command);
-
-        // Assert
-        var consumerHarness = harness.GetConsumerHarness<PlaceOrderCommandHandler>();
-        (await consumerHarness.Consumed.Any<PlaceOrderCommand>()).ShouldBeTrue();
-
-        _senderMock.Verify(
-            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
-            Times.Never
-        );
-
-        await harness.Stop();
+            _senderMock.Verify(
+                x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
+                Times.Never
+            );
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 
     [Test]
     public async Task GivenPlaceOrderCommandWithEmptyEmail_WhenHandling_ThenShouldNotSendEmail()
     {
         // Arrange
-        var command = new PlaceOrderCommand(
-            _basketId,
-            FullName,
-            string.Empty,
-            _orderId,
-            _totalMoney
-        );
+        var command = TestDataFakers.PlaceOrderCommand.WithEmptyEmailAddress();
+        var harness = await CreateTestHarnessAsync();
 
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness(x => x.AddConsumer<PlaceOrderCommandHandler>())
-            .AddScoped<ISender>(_ => _senderMock.Object)
-            .AddScoped<IRenderer>(_ => _rendererMock.Object)
-            .AddSingleton(_ => _emailOptions)
-            .BuildServiceProvider(true);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(command);
 
-        var harness = provider.GetRequiredService<ITestHarness>();
-        await harness.Start();
+            // Assert
+            var consumerHarness = harness.GetConsumerHarness<PlaceOrderCommandHandler>();
+            (await consumerHarness.Consumed.Any<PlaceOrderCommand>()).ShouldBeTrue();
 
-        // Act
-        await harness.Bus.Publish(command);
-
-        // Assert
-        var consumerHarness = harness.GetConsumerHarness<PlaceOrderCommandHandler>();
-        (await consumerHarness.Consumed.Any<PlaceOrderCommand>()).ShouldBeTrue();
-
-        _senderMock.Verify(
-            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
-            Times.Never
-        );
-
-        await harness.Stop();
+            _senderMock.Verify(
+                x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
+                Times.Never
+            );
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 }

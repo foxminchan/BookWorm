@@ -33,7 +33,7 @@ public sealed class CompleteOrderCommandHandler(
             .WithBody(order, renderer)
             .Build();
 
-        await sender.SendAsync(mailMessage);
+        await sender.SendAsync(mailMessage, context.CancellationToken);
     }
 }
 

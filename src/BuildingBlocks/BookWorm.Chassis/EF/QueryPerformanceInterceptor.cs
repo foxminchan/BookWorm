@@ -16,7 +16,7 @@ public sealed class QueryPerformanceInterceptor(ILogger<QueryPerformanceIntercep
         InterceptionResult<DbDataReader> result
     )
     {
-        Stopwatch stopwatch = Stopwatch.StartNew();
+        var stopwatch = Stopwatch.StartNew();
 
         var interceptionResult = base.ReaderExecuting(command, eventData, result);
 
