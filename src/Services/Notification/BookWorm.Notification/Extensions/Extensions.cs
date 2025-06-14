@@ -1,6 +1,4 @@
-﻿using BookWorm.Notification.Infrastructure.Senders.Extensions;
-
-namespace BookWorm.Notification.Extensions;
+﻿namespace BookWorm.Notification.Extensions;
 
 public static class Extensions
 {
@@ -17,6 +15,8 @@ public static class Extensions
         services.AddSingleton(
             new JsonSerializerOptions { Converters = { new DateOnlyJsonConverter() } }
         );
+
+        services.AddSingleton<IActivityScope, ActivityScope>();
 
         // Resilience pipeline for the notification service
         services.AddResiliencePipeline(

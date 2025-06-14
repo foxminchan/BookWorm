@@ -26,6 +26,10 @@ public static class Extensions
             cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
         });
 
+        services.AddSingleton<IActivityScope, ActivityScope>();
+        services.AddSingleton<CommandHandlerMetrics>();
+        services.AddSingleton<QueryHandlerMetrics>();
+
         builder.AddPersistenceServices();
         builder.AddSagaStateMachineServices();
 

@@ -12,9 +12,9 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
 
         builder.Property(e => e.Note).HasMaxLength(DataSchemaLength.SuperLarge);
 
-        builder.Property(e => e.CreatedAt).HasDefaultValue(DateTime.UtcNow);
+        builder.Property(e => e.CreatedAt).HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
 
-        builder.Property(e => e.LastModifiedAt).HasDefaultValue(DateTime.UtcNow);
+        builder.Property(e => e.LastModifiedAt).HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
 
         builder.Property(e => e.Version).IsConcurrencyToken();
 

@@ -1,4 +1,5 @@
-﻿using MassTransit;
+﻿using BookWorm.SharedKernel.Helpers;
+using MassTransit;
 
 namespace BookWorm.Chassis.EventBus;
 
@@ -7,5 +8,5 @@ public abstract record IntegrationEvent
 {
     public Guid Id { get; } = Guid.CreateVersion7();
 
-    public DateTime CreationDate { get; } = DateTime.UtcNow;
+    public DateTime CreationDate { get; } = DateTimeHelper.UtcNow();
 }

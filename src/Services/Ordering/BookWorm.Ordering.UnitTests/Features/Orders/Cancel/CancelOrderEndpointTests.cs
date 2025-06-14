@@ -2,6 +2,7 @@
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Features.Orders;
 using BookWorm.Ordering.Features.Orders.Cancel;
+using BookWorm.SharedKernel.Helpers;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -21,7 +22,7 @@ public sealed class CancelOrderEndpointTests
         _orderId = Guid.CreateVersion7();
 
         // Create a sample OrderDetailDto to return from the sender
-        _orderDetailDto = new(_orderId, DateTime.UtcNow, 100.0m, Status.Cancelled, []);
+        _orderDetailDto = new(_orderId, DateTimeHelper.UtcNow(), 100.0m, Status.Cancelled, []);
     }
 
     [Test]

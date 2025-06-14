@@ -1,4 +1,5 @@
 ﻿using BookWorm.Notification.Infrastructure.Attributes;
+using BookWorm.SharedKernel.Helpers;
 
 namespace BookWorm.Notification.Domain.Models;
 
@@ -10,5 +11,5 @@ public sealed record Order(
 )
 {
     [Format("yyyy-MM-dd")]
-    public DateOnly CreatedAt { get; init; } = DateOnly.FromDateTime(DateTime.UtcNow);
+    public DateOnly CreatedAt { get; init; } = DateOnly.FromDateTime(DateTimeHelper.UtcNow());
 }

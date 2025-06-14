@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Notification.Domain.Models;
+﻿using BookWorm.SharedKernel.Helpers;
+
+namespace BookWorm.Notification.Domain.Models;
 
 public sealed class Outbox(string toName, string toEmail, string subject, string body)
 {
@@ -8,12 +10,12 @@ public sealed class Outbox(string toName, string toEmail, string subject, string
     public string Subject { get; private set; } = subject;
     public string Body { get; private set; } = body;
     public bool IsSent { get; private set; }
-    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; private set; } = DateTimeHelper.UtcNow();
     public DateTime? SentAt { get; private set; }
 
     public void MarkAsSent()
     {
         IsSent = true;
-        SentAt = DateTime.UtcNow;
+        SentAt = DateTimeHelper.UtcNow();
     }
 }

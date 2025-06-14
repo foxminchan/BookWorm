@@ -1,9 +1,12 @@
 ﻿global using System.Diagnostics.CodeAnalysis;
+global using BookWorm.Chassis.ActivityScope;
+global using BookWorm.Chassis.Command;
 global using BookWorm.Chassis.EF;
 global using BookWorm.Chassis.Endpoints;
 global using BookWorm.Chassis.EventBus;
 global using BookWorm.Chassis.Exceptions;
 global using BookWorm.Chassis.Pipelines;
+global using BookWorm.Chassis.Query;
 global using BookWorm.Chassis.Versioning;
 global using BookWorm.Finance.Infrastructure;
 global using BookWorm.Finance.Saga;

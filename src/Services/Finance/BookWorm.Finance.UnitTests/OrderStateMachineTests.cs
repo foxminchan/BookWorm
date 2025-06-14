@@ -1,5 +1,6 @@
 ﻿using BookWorm.Contracts;
 using BookWorm.Finance.Saga;
+using BookWorm.SharedKernel.Helpers;
 using MassTransit;
 using MassTransit.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -410,10 +411,8 @@ public sealed class OrderStateMachineTests
         instance.Email.ShouldBe(email);
         instance.TotalMoney.ShouldBe(totalMoney);
         instance.OrderPlacedDate.ShouldNotBeNull();
-        instance.OrderPlacedDate.Value.ShouldBeInRange(
-            DateTime.UtcNow.AddMinutes(-1),
-            DateTime.UtcNow.AddMinutes(1)
-        );
+        var now = DateTimeHelper.UtcNow();
+        instance.OrderPlacedDate.Value.ShouldBeInRange(now.AddMinutes(-1), now.AddMinutes(1));
     }
 
     [Test]

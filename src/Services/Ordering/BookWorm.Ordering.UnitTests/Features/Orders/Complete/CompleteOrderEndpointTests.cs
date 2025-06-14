@@ -1,6 +1,7 @@
 ﻿using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Features.Orders;
 using BookWorm.Ordering.Features.Orders.Complete;
+using BookWorm.SharedKernel.Helpers;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -22,7 +23,7 @@ public sealed class CompleteOrderEndpointTests
         // Create a sample OrderDetailDto for testing
         _orderDetailDto = new(
             _orderId,
-            DateTime.UtcNow,
+            DateTimeHelper.UtcNow(),
             99.99m,
             Status.Completed,
             [new(Guid.CreateVersion7(), 2, 49.99m) { Name = "Test Book" }]

@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using BookWorm.Chassis.ActivityScope;
 
 namespace BookWorm.Notification.Infrastructure.Senders.Extensions;
 
@@ -7,13 +6,14 @@ public static class SenderWithTelemetryExtensions
 {
     public static async Task WithTelemetry(
         this ISender sender,
+        IActivityScope activityScope,
         MimeMessage mailMessage,
         Func<CancellationToken, Task> run,
         CancellationToken cancellationToken,
         [CallerMemberName] string memberName = ""
     )
     {
-        await ActivityScope.Instance.Run(
+        await activityScope.Run(
             $"{sender.GetType().Name}/{memberName}",
             (activity, token) =>
             {

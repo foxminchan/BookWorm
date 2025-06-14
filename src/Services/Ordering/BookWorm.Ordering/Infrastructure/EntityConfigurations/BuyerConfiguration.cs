@@ -15,11 +15,11 @@ internal sealed class BuyerConfiguration : IEntityTypeConfiguration<Buyer>
                 {
                     e.WithOwner();
 
-                    e.Property(c => c.Street).HasMaxLength(DataSchemaLength.Medium);
+                    e.Property(c => c.Street).HasMaxLength(DataSchemaLength.Medium).IsRequired();
 
-                    e.Property(c => c.City).HasMaxLength(DataSchemaLength.Medium);
+                    e.Property(c => c.City).HasMaxLength(DataSchemaLength.Medium).IsRequired();
 
-                    e.Property(c => c.Province).HasMaxLength(DataSchemaLength.Medium);
+                    e.Property(c => c.Province).HasMaxLength(DataSchemaLength.Medium).IsRequired();
                 }
             )
             .UsePropertyAccessMode(PropertyAccessMode.Property);

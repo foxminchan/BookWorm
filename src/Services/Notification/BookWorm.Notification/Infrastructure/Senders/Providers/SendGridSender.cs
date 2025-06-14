@@ -1,5 +1,4 @@
-﻿using BookWorm.Notification.Infrastructure.Senders.Extensions;
-using Polly.Registry;
+﻿using Polly.Registry;
 using SendGrid;
 using SendGrid.Helpers.Mail;
 
@@ -9,6 +8,7 @@ public sealed class SendGridSender(
     ILogger<SendGridSender> logger,
     SendGridOptions sendGridOptions,
     ISendGridClient sendGridClient,
+    IActivityScope activityScope,
     ResiliencePipelineProvider<string> provider
 ) : ISender
 {
@@ -18,6 +18,7 @@ public sealed class SendGridSender(
     )
     {
         await this.WithTelemetry(
+            activityScope,
             mailMessage,
             async token => await SendEmailAsync(mailMessage, token),
             cancellationToken
