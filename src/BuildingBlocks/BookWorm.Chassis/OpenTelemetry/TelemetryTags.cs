@@ -30,4 +30,21 @@ public static class TelemetryTags
     {
         public const string Validation = $"{ActivitySourceProvider.DefaultSourceName}.validator";
     }
+
+    public static class Messaging
+    {
+        public const string System = "messaging.system";
+        public const string Operation = "messaging.operation";
+        public const string MessageId = "messaging.message_id";
+        public const string ConversationId = "messaging.conversation_id";
+        public const string CorrelationId = "messaging.correlation_id";
+        public const string MessageType = "messaging.message_type";
+        public const string Destination = "messaging.destination";
+        public const string SourceAddress = "messaging.source_address";
+        public const string RequestId = "messaging.request_id";
+        public const string Consumer = "messaging.consumer";
+        public const string SentTime = "messaging.sent_time";
+        public const string TimeToLive = "messaging.ttl";
+        public const string Delay = "messaging.delay";
+    }
 }

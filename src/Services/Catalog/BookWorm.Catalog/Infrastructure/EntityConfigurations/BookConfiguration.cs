@@ -26,9 +26,9 @@ internal sealed class BookConfiguration : IEntityTypeConfiguration<Book>
 
         builder.Property(p => p.AverageRating).HasDefaultValue(0.0);
 
-        builder.Property(p => p.CreatedAt).HasDefaultValue(DateTime.UtcNow);
+        builder.Property(p => p.CreatedAt).HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
 
-        builder.Property(p => p.LastModifiedAt).HasDefaultValue(DateTime.UtcNow);
+        builder.Property(p => p.LastModifiedAt).HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
 
         builder.Property(p => p.Version).IsConcurrencyToken();
 
@@ -43,8 +43,6 @@ internal sealed class BookConfiguration : IEntityTypeConfiguration<Book>
             .WithMany()
             .HasForeignKey(x => x.PublisherId)
             .OnDelete(DeleteBehavior.SetNull);
-
-        builder.HasMany(x => x.BookAuthors).WithOne(x => x.Book).OnDelete(DeleteBehavior.Cascade);
 
         builder.Navigation(e => e.Category).AutoInclude();
 

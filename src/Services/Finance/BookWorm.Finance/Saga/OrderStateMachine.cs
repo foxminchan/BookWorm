@@ -1,4 +1,5 @@
 ﻿using BookWorm.Contracts;
+using BookWorm.SharedKernel.Helpers;
 
 namespace BookWorm.Finance.Saga;
 
@@ -27,7 +28,7 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
                     context.Saga.Email = context.Message.Email;
                     context.Saga.TotalMoney = context.Message.TotalMoney;
                     context.Saga.FullName = context.Message.FullName;
-                    context.Saga.OrderPlacedDate = DateTime.UtcNow;
+                    context.Saga.OrderPlacedDate = DateTimeHelper.UtcNow();
 
                     logger.LogInformation(
                         "[{Event}] Order placed for {OrderId}",

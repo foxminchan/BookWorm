@@ -9,6 +9,7 @@ global using BookWorm.Chassis.Command;
 global using BookWorm.Chassis.EF;
 global using BookWorm.Chassis.Endpoints;
 global using BookWorm.Chassis.EventBus;
+global using BookWorm.Chassis.EventBus.Dispatcher;
 global using BookWorm.Chassis.Exceptions;
 global using BookWorm.Chassis.Guards;
 global using BookWorm.Chassis.Pipelines;

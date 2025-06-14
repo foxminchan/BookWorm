@@ -1,6 +1,7 @@
 ﻿using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Features.Orders;
 using BookWorm.Ordering.Features.Orders.List;
+using BookWorm.SharedKernel.Helpers;
 using BookWorm.SharedKernel.Results;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -18,7 +19,7 @@ public sealed class ListOrdersEndpointsTests
         // Arrange
         var query = new ListOrdersQuery(1, 10);
         var expectedResult = new PagedResult<OrderDto>(
-            [new(Guid.CreateVersion7(), DateTime.UtcNow, 100.0m, Status.New)],
+            [new(Guid.CreateVersion7(), DateTimeHelper.UtcNow(), 100.0m, Status.New)],
             1,
             10,
             1

@@ -169,6 +169,8 @@ public sealed class DependenciesTests : ArchUnitBaseTest
             .And()
             .HaveNameEndingWith("Configuration")
             .And()
+            .DoNotResideInNamespace($"{nameof(BookWorm)}.*.Infrastructure.Migrations", true)
+            .And()
             .DoNotResideInAssembly(FinanceAssembly)
             .Should()
             .BeInternal()

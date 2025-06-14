@@ -1,4 +1,5 @@
 ﻿using BookWorm.Constants.Core;
+using BookWorm.SharedKernel.Helpers;
 using Grpc.Core;
 
 namespace BookWorm.Basket.UnitTests.Grpc.Context;
@@ -19,7 +20,8 @@ public sealed class TestServerCallContext(
 
     protected override string PeerCore => "127.0.0.1";
 
-    protected override DateTime DeadlineCore { get; } = deadline ?? DateTime.UtcNow.AddMinutes(5);
+    protected override DateTime DeadlineCore { get; } =
+        deadline ?? DateTimeHelper.UtcNow().AddMinutes(5);
 
     protected override Metadata RequestHeadersCore { get; } = requestHeaders ?? [];
 

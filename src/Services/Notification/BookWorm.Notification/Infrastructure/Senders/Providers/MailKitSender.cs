@@ -1,11 +1,11 @@
-﻿using BookWorm.Notification.Infrastructure.Senders.Extensions;
-using Polly.Registry;
+﻿using Polly.Registry;
 
 namespace BookWorm.Notification.Infrastructure.Senders.Providers;
 
 public sealed class MailKitSender(
     ObjectPool<SmtpClient> clientPool,
     ILogger<MailKitSender> logger,
+    IActivityScope activityScope,
     ResiliencePipelineProvider<string> provider
 ) : ISender
 {
@@ -15,6 +15,7 @@ public sealed class MailKitSender(
     )
     {
         await this.WithTelemetry(
+            activityScope,
             mailMessage,
             async token => await SendEmailAsync(mailMessage, token),
             cancellationToken

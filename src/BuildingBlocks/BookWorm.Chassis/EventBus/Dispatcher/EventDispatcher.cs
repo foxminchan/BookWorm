@@ -1,7 +1,7 @@
 ﻿using BookWorm.SharedKernel.SeedWork;
 using MassTransit;
 
-namespace BookWorm.Chassis.EventBus;
+namespace BookWorm.Chassis.EventBus.Dispatcher;
 
 public sealed class EventDispatcher(IPublishEndpoint publishEndpoint, IEventMapper eventMapper)
     : IEventDispatcher
@@ -13,8 +13,11 @@ public sealed class EventDispatcher(IPublishEndpoint publishEndpoint, IEventMapp
     {
         ArgumentNullException.ThrowIfNull(@event);
 
-        var integrationEvent = eventMapper.MapToIntegrationEvent(@event);
-
+        var integrationEvent =
+            eventMapper.MapToIntegrationEvent(@event)
+            ?? throw new InvalidOperationException(
+                $"No integration event mapping found for '{@event.GetType().Name}'."
+            );
         await publishEndpoint.Publish(integrationEvent, cancellationToken);
     }
 }

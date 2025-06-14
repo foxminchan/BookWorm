@@ -1,4 +1,5 @@
 ﻿using BookWorm.Notification.Domain.Models;
+using BookWorm.SharedKernel.Helpers;
 
 namespace BookWorm.Notification.UnitTests.Domain;
 
@@ -23,7 +24,7 @@ public sealed class OutboxTests
         outbox.Body.ShouldBe(body);
         outbox.IsSent.ShouldBeFalse();
         outbox.SentAt.ShouldBeNull();
-        outbox.CreatedAt.ShouldBeLessThanOrEqualTo(DateTime.UtcNow);
+        outbox.CreatedAt.ShouldBeLessThanOrEqualTo(DateTimeHelper.UtcNow());
     }
 
     [Test]
@@ -38,6 +39,6 @@ public sealed class OutboxTests
         // Assert
         outbox.IsSent.ShouldBeTrue();
         outbox.SentAt.ShouldNotBeNull();
-        outbox.SentAt?.ShouldBeLessThanOrEqualTo(DateTime.UtcNow);
+        outbox.SentAt?.ShouldBeLessThanOrEqualTo(DateTimeHelper.UtcNow());
     }
 }

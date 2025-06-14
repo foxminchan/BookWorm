@@ -15,5 +15,7 @@ internal sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderIte
         builder.Property(e => e.Price).IsRequired();
 
         builder.HasIndex(e => new { e.BookId, e.OrderId }).IsUnique();
+
+        builder.HasQueryFilter(e => !e.Order!.IsDeleted);
     }
 }

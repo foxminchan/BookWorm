@@ -1,6 +1,7 @@
 ﻿using BookWorm.Chassis.Endpoints;
 using BookWorm.Chat.Features;
 using BookWorm.Chat.Features.Get;
+using BookWorm.SharedKernel.Helpers;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -236,8 +237,8 @@ public sealed class GetChatEndpointTests
         // Arrange
         var messages = new List<ConversationMessageDto>
         {
-            new(Guid.CreateVersion7(), "Hello", "user", null, DateTime.UtcNow),
-            new(Guid.CreateVersion7(), "Hi there!", "assistant", null, DateTime.UtcNow),
+            new(Guid.CreateVersion7(), "Hello", "user", null, DateTimeHelper.UtcNow()),
+            new(Guid.CreateVersion7(), "Hi there!", "assistant", null, DateTimeHelper.UtcNow()),
         }.AsReadOnly();
 
         var conversationWithMessages = _conversationDto with { Messages = messages };

@@ -8,6 +8,7 @@ using BookWorm.Ordering.Features.Orders;
 using BookWorm.Ordering.Features.Orders.Get;
 using BookWorm.Ordering.Grpc.Services.Book;
 using BookWorm.Ordering.UnitTests.Fakers;
+using BookWorm.SharedKernel.Helpers;
 
 namespace BookWorm.Ordering.UnitTests.Features.Orders.Get;
 
@@ -141,7 +142,7 @@ public sealed class GetOrderQueryTests
 
         var orderDetailDto = new OrderDetailDto(
             _id,
-            DateTime.UtcNow,
+            DateTimeHelper.UtcNow(),
             150.00m,
             Status.New,
             [new(bookId1, 2, 50.00m), new(bookId2, 1, 50.00m)]
@@ -180,7 +181,7 @@ public sealed class GetOrderQueryTests
 
         var orderDetailDto = new OrderDetailDto(
             _id,
-            DateTime.UtcNow,
+            DateTimeHelper.UtcNow(),
             150.00m,
             Status.Cancelled,
             [new(bookId1, 2, 50.00m), new(bookId2, 1, 50.00m)]
@@ -205,7 +206,7 @@ public sealed class GetOrderQueryTests
         // Assert
         orderDetailDto.Items.ShouldNotBeEmpty();
         orderDetailDto.Items.Count.ShouldBe(2);
-        orderDetailDto.Items[0].Name.ShouldBe("Book 1"); // Found book has name
+        orderDetailDto.Items[0].Name.ShouldBe("Book 1"); // Found book has a name
         orderDetailDto.Items[1].Name.ShouldBeNull(); // Missing book has no name
     }
 

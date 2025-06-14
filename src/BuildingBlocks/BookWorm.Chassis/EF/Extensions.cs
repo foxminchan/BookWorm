@@ -30,7 +30,7 @@ public static class Extensions
                         sp.GetRequiredService<DbCommandInterceptor>()
                     )
                     .UseSnakeCaseNamingConvention()
-                    // Issue: https://github.com/dotnet/efcore/issues/35158
+                    // Issue: https://github.com/dotnet/efcore/issues/35285
                     .ConfigureWarnings(warnings =>
                         warnings.Ignore(RelationalEventId.PendingModelChangesWarning)
                     );

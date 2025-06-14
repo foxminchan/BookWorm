@@ -1,5 +1,4 @@
-﻿using BookWorm.Chassis.Query;
-using MassTransit.SagaStateMachine;
+﻿using MassTransit.SagaStateMachine;
 using MassTransit.Visualizer;
 
 namespace BookWorm.Finance.Feature;
