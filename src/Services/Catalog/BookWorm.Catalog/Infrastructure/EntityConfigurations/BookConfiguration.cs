@@ -1,4 +1,5 @@
 ﻿using BookWorm.Constants.Core;
+using BookWorm.SharedKernel.Helpers;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BookWorm.Catalog.Infrastructure.EntityConfigurations;
@@ -26,9 +27,9 @@ internal sealed class BookConfiguration : IEntityTypeConfiguration<Book>
 
         builder.Property(p => p.AverageRating).HasDefaultValue(0.0);
 
-        builder.Property(p => p.CreatedAt).HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
+        builder.Property(p => p.CreatedAt).HasDefaultValueSql(DateTimeHelper.SqlUtcNow);
 
-        builder.Property(p => p.LastModifiedAt).HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
+        builder.Property(p => p.LastModifiedAt).HasDefaultValueSql(DateTimeHelper.SqlUtcNow);
 
         builder.Property(p => p.Version).IsConcurrencyToken();
 

@@ -210,6 +210,93 @@ public sealed class GetOrderQueryTests
         orderDetailDto.Items[1].Name.ShouldBeNull(); // Missing book has no name
     }
 
+    [Test]
+    public async Task GivenOrderWithNoItems_WhenPostProcessing_ThenShouldReturnEarly()
+    {
+        // Arrange
+        var orderDetailDto = new OrderDetailDto(
+            _id,
+            DateTimeHelper.UtcNow(),
+            0.00m,
+            Status.New,
+            [] // Empty items list
+        );
+
+        // Act
+        await _postHandler.Process(new(_id), orderDetailDto, CancellationToken.None);
+
+        // Assert
+        _bookServiceMock.Verify(
+            b =>
+                b.GetBooksByIdsAsync(
+                    It.IsAny<IReadOnlyList<string>>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Never
+        );
+    }
+
+    [Test]
+    public async Task GivenOrderWithItems_WhenBookServiceReturnsNull_ThenShouldReturnEarly()
+    {
+        // Arrange
+        var bookId = Guid.CreateVersion7();
+        var orderDetailDto = new OrderDetailDto(
+            _id,
+            DateTimeHelper.UtcNow(),
+            50.00m,
+            Status.New,
+            [new(bookId, 1, 50.00m)]
+        );
+
+        _bookServiceMock
+            .Setup(b =>
+                b.GetBooksByIdsAsync(
+                    It.IsAny<IReadOnlyList<string>>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync((BooksResponse?)null);
+
+        // Act
+        await _postHandler.Process(new(_id), orderDetailDto, CancellationToken.None);
+
+        // Assert
+        orderDetailDto.Items.ShouldNotBeEmpty();
+        orderDetailDto.Items[0].Name.ShouldBeNull(); // Name should remain unchanged (null)
+    }
+
+    [Test]
+    public async Task GivenOrderWithItems_WhenBookServiceReturnsEmptyBooks_ThenShouldReturnEarly()
+    {
+        // Arrange
+        var bookId = Guid.CreateVersion7();
+        var orderDetailDto = new OrderDetailDto(
+            _id,
+            DateTimeHelper.UtcNow(),
+            50.00m,
+            Status.New,
+            [new(bookId, 1, 50.00m)]
+        );
+
+        var emptyBooksResponse = new BooksResponse(); // Empty books collection
+        _bookServiceMock
+            .Setup(b =>
+                b.GetBooksByIdsAsync(
+                    It.IsAny<IReadOnlyList<string>>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(emptyBooksResponse);
+
+        // Act
+        await _postHandler.Process(new(_id), orderDetailDto, CancellationToken.None);
+
+        // Assert
+        orderDetailDto.Items.ShouldNotBeEmpty();
+        orderDetailDto.Items[0].Name.ShouldBeNull(); // Name should remain unchanged (null)
+    }
+
     private void SetupAdminUser()
     {
         var roles = new[] { Authorization.Roles.Admin };
