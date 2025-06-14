@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Ordering.Infrastructure.EntityConfigurations;
+﻿using BookWorm.SharedKernel.Helpers;
+
+namespace BookWorm.Ordering.Infrastructure.EntityConfigurations;
 
 internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
 {
@@ -12,9 +14,9 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
 
         builder.Property(e => e.Note).HasMaxLength(DataSchemaLength.SuperLarge);
 
-        builder.Property(e => e.CreatedAt).HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
+        builder.Property(e => e.CreatedAt).HasDefaultValueSql(DateTimeHelper.SqlUtcNow);
 
-        builder.Property(e => e.LastModifiedAt).HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
+        builder.Property(e => e.LastModifiedAt).HasDefaultValueSql(DateTimeHelper.SqlUtcNow);
 
         builder.Property(e => e.Version).IsConcurrencyToken();
 

@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using BookWorm.Notification.Domain.Exceptions;
 using BookWorm.Notification.Domain.Models;
 using BookWorm.Notification.Infrastructure.Senders;
 using BookWorm.Notification.Infrastructure.Table;
@@ -233,5 +234,44 @@ public class ResendErrorEmailWorkerTests
             // Release the semaphore
             semaphore.Release();
         }
+    }
+
+    [Test]
+    public async Task GivenFailedEmail_WhenSenderThrowsNotificationExceptionWithInnerException_ThenShouldLogError()
+    {
+        // Arrange
+        var failedEmail = TestDataFakers.Outbox.Generate();
+
+        _tableServiceMock
+            .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([failedEmail]);
+
+        var innerException = new InvalidOperationException("SMTP connection failed");
+        var notificationException = new NotificationException(
+            "Failed to send email. Exception: SMTP connection failed",
+            innerException
+        );
+
+        _senderMock
+            .Setup(x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(notificationException);
+
+        // Act
+        await _worker.Execute(Mock.Of<IJobExecutionContext>());
+
+        // Assert
+        _loggerMock.Verify(
+            x =>
+                x.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((o, t) => o.ToString()!.Contains("Failed to resend email")),
+                    It.Is<Exception>(ex =>
+                        ex.GetType() == typeof(NotificationException) && ex.InnerException != null
+                    ),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+                ),
+            Times.Once
+        );
     }
 }
