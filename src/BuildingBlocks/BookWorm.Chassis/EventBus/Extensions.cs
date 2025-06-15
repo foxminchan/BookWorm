@@ -1,5 +1,4 @@
-﻿using BookWorm.Chassis.EventBus.Filters;
-using BookWorm.Constants.Aspire;
+﻿using BookWorm.Constants.Aspire;
 using FluentValidation;
 using MassTransit;
 using MassTransit.Logging;
@@ -42,11 +41,6 @@ public static class Extensions
                     configurator.Host(new Uri(connectionString));
                     configurator.ConfigureEndpoints(context);
                     configurator.UseMessageRetry(AddRetryConfiguration);
-
-                    // Add telemetry enricher filters
-                    configurator.UseSendFilter(typeof(SendEnricherFilter<>), context);
-                    configurator.UsePublishFilter(typeof(PublishEnricherFilter<>), context);
-                    configurator.UseConsumeFilter(typeof(ConsumeEnricherFilter<>), context);
                 }
             );
 

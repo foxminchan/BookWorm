@@ -34,6 +34,20 @@ public static class Extensions
 
         // Configure Redis
         builder.AddRedisClient(Components.Redis);
+
+        services.AddHybridCache(options =>
+        {
+            // Maximum size of cached items
+            options.MaximumPayloadBytes = 1024 * 1024 * 8; // 8MB
+            options.MaximumKeyLength = 512;
+
+            // Default timeouts
+            options.DefaultEntryOptions = new()
+            {
+                Expiration = TimeSpan.FromMinutes(15),
+                LocalCacheExpiration = TimeSpan.FromMinutes(15),
+            };
+        });
     }
 
     private static void ConfigureOrders(this StoreOptions options)

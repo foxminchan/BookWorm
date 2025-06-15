@@ -2,9 +2,16 @@
 
 namespace BookWorm.Notification.Infrastructure.Table;
 
-public sealed class TableService(TableServiceClient client) : ITableService
+public sealed class TableService : ITableService
 {
+    private readonly TableClient _tableClient;
     private readonly string _tableName = nameof(Notification).ToLowerInvariant();
+
+    public TableService(TableServiceClient client)
+    {
+        client.CreateTableIfNotExists(_tableName);
+        _tableClient = client.GetTableClient(_tableName);
+    }
 
     public async Task<Guid> UpsertAsync<T>(
         T entity,
@@ -13,10 +20,6 @@ public sealed class TableService(TableServiceClient client) : ITableService
     )
         where T : class
     {
-        var tableClient = client.GetTableClient(_tableName);
-
-        await tableClient.CreateIfNotExistsAsync(cancellationToken);
-
         var idProperty = typeof(T).GetProperty("Id");
 
         var entityId = idProperty?.GetValue(entity) is Guid id ? id : Guid.CreateVersion7();
@@ -26,7 +29,7 @@ public sealed class TableService(TableServiceClient client) : ITableService
             { nameof(T).ToLowerInvariant(), JsonSerializer.Serialize(entity) },
         };
 
-        await tableClient.UpsertEntityAsync(tableEntity, cancellationToken: cancellationToken);
+        await _tableClient.UpsertEntityAsync(tableEntity, cancellationToken: cancellationToken);
 
         return entityId;
     }
@@ -37,9 +40,7 @@ public sealed class TableService(TableServiceClient client) : ITableService
     )
         where T : class
     {
-        var tableClient = client.GetTableClient(_tableName);
-
-        var tableEntity = tableClient.QueryAsync<TableEntity>(
+        var tableEntity = _tableClient.QueryAsync<TableEntity>(
             TableClient.CreateQueryFilter($"{nameof(TableEntity.PartitionKey)} eq {partitionKey}"),
             cancellationToken: cancellationToken
         );
@@ -71,9 +72,7 @@ public sealed class TableService(TableServiceClient client) : ITableService
         CancellationToken cancellationToken = default
     )
     {
-        var tableClient = client.GetTableClient(_tableName);
-
-        await tableClient.DeleteEntityAsync(
+        await _tableClient.DeleteEntityAsync(
             partitionKey,
             rowKey,
             cancellationToken: cancellationToken

@@ -1,10 +1,11 @@
 ﻿using BookWorm.Catalog.Grpc.Services;
+using Microsoft.Extensions.Caching.Hybrid;
 using BookGrpcServiceClient = BookWorm.Catalog.Grpc.Services.BookGrpcService.BookGrpcServiceClient;
 
 namespace BookWorm.Ordering.Grpc.Services.Book;
 
 [ExcludeFromCodeCoverage]
-public sealed class BookService(BookGrpcServiceClient service) : IBookService
+public sealed class BookService(BookGrpcServiceClient service, HybridCache cache) : IBookService
 {
     public async Task<BookResponse?> GetBookByIdAsync(
         [StringSyntax(StringSyntaxAttribute.GuidFormat)] string id,
@@ -24,8 +25,19 @@ public sealed class BookService(BookGrpcServiceClient service) : IBookService
         CancellationToken cancellationToken = default
     )
     {
-        var result = await service.GetBooksAsync(
-            new() { BookIds = { ids } },
+        var sortedIds = ids.OrderBy(x => x).ToArray();
+
+        var result = await cache.GetOrCreateAsync(
+            $"books:{string.Join(",", sortedIds)}",
+            async _ =>
+            {
+                var response = await service.GetBooksAsync(
+                    new() { BookIds = { sortedIds } },
+                    cancellationToken: cancellationToken
+                );
+                return response;
+            },
+            tags: ["books", nameof(Catalog).ToLowerInvariant()],
             cancellationToken: cancellationToken
         );
 
