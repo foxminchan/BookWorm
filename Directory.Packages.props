@@ -39,7 +39,6 @@
   </ItemGroup>
   <ItemGroup Label="Core Packages">
     <!-- Microsoft Extensions -->
-    <PackageVersion Include="Microsoft.Extensions.Telemetry" Version="$(MsExtVersion)" />
     <PackageVersion Include="Microsoft.Extensions.Caching.Hybrid" Version="$(MsExtVersion)" />
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="$(MsExtVersion)" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="$(AspireVersion)" />
@@ -47,6 +46,7 @@
     <!-- ASP.NET Core -->
     <PackageVersion Include="Asp.Versioning.Http.Client" Version="$(ApiVersioningVersion)" />
     <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer" Version="$(ApiVersioningVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Diagnostics.Middleware" Version="9.6.0" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.6" />
     <PackageVersion Include="Microsoft.Azure.SignalR.Management" Version="1.30.3" />
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.56.0-preview" />
