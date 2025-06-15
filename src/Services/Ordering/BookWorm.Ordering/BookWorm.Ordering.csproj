@@ -7,6 +7,7 @@
     <PackageReference Include="DistributedLock.Redis" />
     <PackageReference Include="Microsoft.FeatureManagement.AspNetCore" />
     <PackageReference Include="Aspire.StackExchange.Redis.DistributedCaching" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
   </ItemGroup>
   <ItemGroup Label="Grpc">
     <PackageReference Include="Google.Protobuf" />

@@ -49,18 +49,21 @@ public static class Extensions
 
         services.AddHttpContextAccessor();
 
-        builder.Logging.AddLogging(builder);
+        builder.AddLogging();
 
         services.AddOpenTelemetry(builder);
 
         builder.AddOpenTelemetryExporters();
     }
 
-    private static void AddLogging(this ILoggingBuilder logger, IHostApplicationBuilder builder)
+    private static void AddLogging(this IHostApplicationBuilder builder)
     {
-        logger.EnableEnrichment();
+        var logger = builder.Logging;
 
+        logger.EnableEnrichment();
         builder.Services.AddLogEnricher<ApplicationEnricher>();
+
+        logger.AddGlobalBuffer(builder.Configuration.GetSection("Logging"));
         logger.AddPerIncomingRequestBuffer(builder.Configuration.GetSection("Logging"));
 
         logger.AddOpenTelemetry(logging =>
