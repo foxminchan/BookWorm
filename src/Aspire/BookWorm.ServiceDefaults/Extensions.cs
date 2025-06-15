@@ -46,21 +46,33 @@ public static class Extensions
         where TBuilder : IHostApplicationBuilder
     {
         var services = builder.Services;
-        var loggingBuilder = builder.Logging;
 
-        loggingBuilder.EnableEnrichment();
         services.AddHttpContextAccessor();
-        services.AddLogEnricher<ApplicationEnricher>();
 
-        loggingBuilder.AddOpenTelemetry(logging =>
+        builder.Logging.AddLogging(builder);
+
+        services.AddOpenTelemetry(builder);
+
+        builder.AddOpenTelemetryExporters();
+    }
+
+    private static void AddLogging(this ILoggingBuilder logger, IHostApplicationBuilder builder)
+    {
+        logger.EnableEnrichment();
+
+        builder.Services.AddLogEnricher<ApplicationEnricher>();
+        logger.AddPerIncomingRequestBuffer(builder.Configuration.GetSection("Logging"));
+
+        logger.AddOpenTelemetry(logging =>
         {
             logging.IncludeFormattedMessage = true;
             logging.IncludeScopes = true;
         });
 
-        services.AddOpenTelemetry(builder);
-
-        builder.AddOpenTelemetryExporters();
+        if (builder.Environment.IsDevelopment())
+        {
+            logger.AddTraceBasedSampler();
+        }
     }
 
     private static void AddOpenTelemetry(

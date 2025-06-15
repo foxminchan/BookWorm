@@ -11,9 +11,9 @@
     <PackageReference Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" />
   </ItemGroup>
   <ItemGroup Label="Telemetry">
-    <PackageReference Include="Microsoft.Extensions.Telemetry" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.Middleware" />
   </ItemGroup>
   <ItemGroup Label="Versioning">
     <PackageReference Include="Asp.Versioning.Http.Client" />
