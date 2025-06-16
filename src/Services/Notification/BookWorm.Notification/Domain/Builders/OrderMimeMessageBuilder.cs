@@ -1,6 +1,5 @@
 ﻿using BookWorm.Notification.Domain.Models;
 using MimeKit.Text;
-using MailKitSettings = BookWorm.Notification.Infrastructure.Senders.MailKit.MailKitSettings;
 
 namespace BookWorm.Notification.Domain.Builders;
 
@@ -13,7 +12,6 @@ public sealed class OrderMimeMessageBuilder
     private string Subject { get; set; } = string.Empty;
     private MimeEntity Body { get; set; } = new TextPart(TextFormat.Html) { Text = string.Empty };
     private MailboxAddress To { get; set; } = new(string.Empty, string.Empty);
-    private MailboxAddress From { get; set; } = new(string.Empty, string.Empty);
 
     public static OrderMimeMessageBuilder Initialize()
     {
@@ -23,12 +21,6 @@ public sealed class OrderMimeMessageBuilder
     public OrderMimeMessageBuilder WithTo(string fullName, string email)
     {
         To = new(fullName, email);
-        return this;
-    }
-
-    public OrderMimeMessageBuilder WithFrom(MailKitSettings mailKitSettings)
-    {
-        From = new(mailKitSettings.Name, mailKitSettings.From);
         return this;
     }
 
@@ -68,7 +60,6 @@ public sealed class OrderMimeMessageBuilder
     public MimeMessage Build()
     {
         var message = new MimeMessage();
-        message.From.Add(From);
         message.To.Add(To);
         message.Subject = Subject;
         message.Body = Body;

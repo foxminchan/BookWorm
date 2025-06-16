@@ -1,4 +1,5 @@
 ﻿using BookWorm.ServiceDefaults.Configuration;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using SendGrid;
 
 namespace BookWorm.Notification.Infrastructure.Senders.SendGrid;
@@ -23,16 +24,11 @@ public static class SendGridExtensions
 
         services.Configure<SendGridSettings>(configurationSection);
 
-        services.AddSingleton<SendGridSender>();
+        services.AddSendGrid(
+            (sp, options) => options.ApiKey = sp.GetRequiredService<SendGridSettings>().ApiKey
+        );
 
-        services.AddSingleton<ISendGridClient>(_ =>
-        {
-            var apiKey = services
-                .BuildServiceProvider()
-                .GetRequiredService<SendGridSettings>()
-                .ApiKey;
-            return new SendGridClient(apiKey);
-        });
+        services.AddTransient<ISender, SendGridSender>();
 
         services
             .AddHealthChecks()
@@ -41,5 +37,25 @@ public static class SendGridExtensions
                 nameof(SendGrid),
                 HealthStatus.Degraded
             );
+    }
+
+    private static void AddSendGrid(
+        this IServiceCollection services,
+        Action<IServiceProvider, SendGridClientOptions> configureOptions
+    )
+    {
+        services
+            .AddOptions<SendGridClientOptions>()
+            .Configure<IServiceProvider>((options, resolver) => configureOptions(resolver, options))
+            .Validate(
+                o => !string.IsNullOrWhiteSpace(o.ApiKey),
+                "SendGrid API key must be provided in the configuration."
+            );
+
+        services.TryAddTransient<ISendGridClient>(resolver =>
+            resolver.GetRequiredService<InjectableSendGridClient>()
+        );
+
+        services.AddHttpClient<InjectableSendGridClient>();
     }
 }

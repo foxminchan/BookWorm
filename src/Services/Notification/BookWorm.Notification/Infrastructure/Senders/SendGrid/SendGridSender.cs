@@ -7,7 +7,7 @@ namespace BookWorm.Notification.Infrastructure.Senders.SendGrid;
 
 public sealed class SendGridSender(
     ILogger<SendGridSender> logger,
-    SendGridSettings sendGridSettings,
+    SendGridSettings settings,
     ISendGridClient sendGridClient,
     GlobalLogBuffer logBuffer,
     ResiliencePipelineProvider<string> provider
@@ -20,7 +20,7 @@ public sealed class SendGridSender(
     {
         var message = new SendGridMessage
         {
-            From = new(sendGridSettings.SenderEmail, sendGridSettings.SenderName),
+            From = new(settings.SenderEmail, settings.SenderName),
             Subject = mailMessage.Subject,
             HtmlContent = mailMessage.HtmlBody,
         };

@@ -1,13 +1,8 @@
-﻿using MailKitSettings = BookWorm.Notification.Infrastructure.Senders.MailKit.MailKitSettings;
-
-namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
+﻿namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
 
 [AsyncApi]
-public sealed class CompleteOrderCommandHandler(
-    ISender sender,
-    IRenderer renderer,
-    MailKitSettings mailKitSettings
-) : IConsumer<CompleteOrderCommand>
+public sealed class CompleteOrderCommandHandler(ISender sender, IRenderer renderer)
+    : IConsumer<CompleteOrderCommand>
 {
     [Channel("notification-complete-order")]
     [PublishOperation(
@@ -29,7 +24,6 @@ public sealed class CompleteOrderCommandHandler(
 
         var mailMessage = OrderMimeMessageBuilder
             .Initialize()
-            .WithFrom(mailKitSettings)
             .WithTo(order.FullName, message.Email)
             .WithSubject(order)
             .WithBody(order, renderer)

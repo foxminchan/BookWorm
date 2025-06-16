@@ -1,13 +1,8 @@
-﻿using MailKitSettings = BookWorm.Notification.Infrastructure.Senders.MailKit.MailKitSettings;
-
-namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
+﻿namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
 
 [AsyncApi]
-public sealed class PlaceOrderCommandHandler(
-    ISender sender,
-    IRenderer renderer,
-    MailKitSettings mailKitSettings
-) : IConsumer<PlaceOrderCommand>
+public sealed class PlaceOrderCommandHandler(ISender sender, IRenderer renderer)
+    : IConsumer<PlaceOrderCommand>
 {
     [Channel("notification-place-order")]
     [PublishOperation(
@@ -29,7 +24,6 @@ public sealed class PlaceOrderCommandHandler(
 
         var mailMessage = OrderMimeMessageBuilder
             .Initialize()
-            .WithFrom(mailKitSettings)
             .WithTo(order.FullName, message.Email)
             .WithSubject(order)
             .WithBody(order, renderer)

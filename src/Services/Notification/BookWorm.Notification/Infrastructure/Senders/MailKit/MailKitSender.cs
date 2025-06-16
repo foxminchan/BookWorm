@@ -7,6 +7,7 @@ public sealed class MailKitSender(
     MailKitClientFactory factory,
     ILogger<MailKitSender> logger,
     GlobalLogBuffer logBuffer,
+    MailKitSettings settings,
     ResiliencePipelineProvider<string> provider
 ) : ISender
 {
@@ -20,6 +21,8 @@ public sealed class MailKitSender(
         try
         {
             var pipeline = provider.GetPipeline(nameof(Notification));
+
+            mailMessage.From.Add(new MailboxAddress(settings.Name, settings.From));
 
             await pipeline.ExecuteAsync(
                 async ct => await client.SendAsync(mailMessage, ct),
