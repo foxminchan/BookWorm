@@ -1,4 +1,4 @@
-﻿namespace BookWorm.AppHost.Extensions;
+﻿namespace BookWorm.AppHost.Extensions.AI;
 
 public static class ModelExtensions
 {

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 
-namespace BookWorm.AppHost.Extensions;
+namespace BookWorm.AppHost.Extensions.Infrastructure;
 
 public static class RedisResourceExtensions
 {

@@ -1,4 +1,9 @@
-﻿namespace BookWorm.Notification.Extensions;
+﻿using BookWorm.Constants.Aspire;
+using BookWorm.Notification.Infrastructure.Senders.MailKit;
+using BookWorm.Notification.Infrastructure.Senders.Outbox;
+using BookWorm.Notification.Infrastructure.Senders.SendGrid;
+
+namespace BookWorm.Notification.Extensions;
 
 public static class Extensions
 {
@@ -31,14 +36,14 @@ public static class Extensions
         // and the sendgrid sender for other environments
         if (builder.Environment.IsDevelopment())
         {
-            builder.AddMailKitSender();
+            builder.AddMailKitClient(Components.MailPit);
         }
         else
         {
-            builder.AddSendGridSender();
+            builder.AddSendGridClient();
         }
 
-        builder.AddOutBoxSender();
+        builder.AddEmailOutbox();
 
         builder.AddCronJobServices();
 

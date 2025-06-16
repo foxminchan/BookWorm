@@ -1,55 +1,26 @@
 ﻿using BookWorm.Chat.Domain.AggregatesModel;
+using Microsoft.Extensions.Diagnostics.Buffering;
 
 namespace BookWorm.Chat.Infrastructure.ChatStreaming;
 
-public sealed class ChatStreaming : IChatStreaming
+public sealed class ChatStreaming(
+    IChatClient chatClient,
+    ILogger<ChatStreaming> logger,
+    ChatContext chatContext,
+    AppSettings appSettings,
+    IMcpClient mcpClient,
+    GlobalLogBuffer logBuffer,
+    IServiceScopeFactory scopeFactory
+) : IChatStreaming
 {
-    private readonly ICancellationManager _cancellationManager;
-    private readonly IChatClient _chatClient;
-    private readonly IConversationState _conversationState;
-
-    private readonly TimeSpan _defaultStreamItemTimeout;
-    private readonly ILogger<ChatStreaming> _logger;
-    private readonly IMcpClient _mcpClient;
-    private readonly IServiceScopeFactory _scopeFactory;
-
-    public ChatStreaming(
-        IChatClient chatClient,
-        ILogger<ChatStreaming> logger,
-        IConversationState conversationState,
-        ICancellationManager cancellationManager,
-        AppSettings appSettings,
-        IMcpClient mcpClient,
-        IServiceScopeFactory scopeFactory
-    )
-    {
-        _chatClient = chatClient;
-        _logger = logger;
-        _conversationState = conversationState;
-        _cancellationManager = cancellationManager;
-        _mcpClient = mcpClient;
-        _scopeFactory = scopeFactory;
-
-        if (_logger.IsEnabled(LogLevel.Debug))
-        {
-            _logger.LogDebug(
-                "Chat client initialized with model ID: {ModelId}",
-                chatClient.GetService<ChatClientMetadata>()?.DefaultModelId
-            );
-        }
-
-        _defaultStreamItemTimeout = appSettings.StreamTimeout;
-
-        Messages = [];
-    }
-
-    private List<ChatMessage> Messages { get; }
+    private readonly TimeSpan _defaultStreamItemTimeout = appSettings.StreamTimeout;
+    private List<ChatMessage> Messages { get; } = [];
 
     public async Task AddStreamingMessage(Guid conversationId, string text)
     {
         await FetchAndAddPromptMessages(conversationId, text);
 
-        var tools = await _mcpClient.ListToolsAsync();
+        var tools = await mcpClient.ListToolsAsync();
 
         var chatOptions = new ChatOptions { Tools = [.. tools] };
 
@@ -63,12 +34,16 @@ public sealed class ChatStreaming : IChatStreaming
         [EnumeratorCancellation] CancellationToken cancellationToken = default
     )
     {
-        _logger.LogInformation(
+        logger.LogInformation(
             "Getting message stream for conversation {ConversationId}, {LastMessageId}",
             conversationId,
             lastMessageId
         );
-        var stream = _conversationState.Subscribe(conversationId, lastMessageId, cancellationToken);
+        var stream = chatContext.ConversationState.Subscribe(
+            conversationId,
+            lastMessageId,
+            cancellationToken
+        );
 
         await foreach (var fragment in stream)
         {
@@ -89,7 +64,7 @@ public sealed class ChatStreaming : IChatStreaming
     {
         var assistantReplyId = Guid.CreateVersion7();
 
-        _logger.LogInformation(
+        logger.LogInformation(
             "Adding streaming message for conversation {ConversationId} {MessageId}",
             conversationId,
             assistantReplyId
@@ -97,7 +72,7 @@ public sealed class ChatStreaming : IChatStreaming
 
         var allChunks = new List<ChatResponseUpdate>();
 
-        var token = _cancellationManager.GetCancellationToken(assistantReplyId);
+        var token = chatContext.CancellationManager.GetCancellationToken(assistantReplyId);
 
         var fragment = new ClientMessageFragment(
             assistantReplyId,
@@ -105,7 +80,7 @@ public sealed class ChatStreaming : IChatStreaming
             "Generating reply...",
             Guid.CreateVersion7()
         );
-        await _conversationState.PublishFragmentAsync(conversationId, fragment);
+        await chatContext.ConversationState.PublishFragmentAsync(conversationId, fragment);
 
         try
         {
@@ -113,7 +88,7 @@ public sealed class ChatStreaming : IChatStreaming
             tokenSource.CancelAfter(_defaultStreamItemTimeout);
 
             await foreach (
-                var update in _chatClient
+                var update in chatClient
                     .GetStreamingResponseAsync(Messages, chatOptions)
                     .WithCancellation(tokenSource.Token)
             )
@@ -127,10 +102,10 @@ public sealed class ChatStreaming : IChatStreaming
                     update.Text,
                     Guid.CreateVersion7()
                 );
-                await _conversationState.PublishFragmentAsync(conversationId, fragment);
+                await chatContext.ConversationState.PublishFragmentAsync(conversationId, fragment);
             }
 
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Full message received for conversation {ConversationId} {MessageId}",
                 conversationId,
                 assistantReplyId
@@ -144,7 +119,7 @@ public sealed class ChatStreaming : IChatStreaming
         }
         catch (OperationCanceledException ex)
         {
-            _logger.LogError(
+            logger.LogError(
                 ex,
                 "Streaming message cancelled for conversation {ConversationId} {MessageId}",
                 conversationId,
@@ -156,6 +131,8 @@ public sealed class ChatStreaming : IChatStreaming
                 var fullMessage = allChunks.ToChatResponse().Text;
                 await SaveAssistantMessageToDatabase(conversationId, assistantReplyId, fullMessage);
             }
+
+            logBuffer.Flush();
         }
         catch (Exception ex)
         {
@@ -165,8 +142,8 @@ public sealed class ChatStreaming : IChatStreaming
                 "Error streaming message",
                 Guid.CreateVersion7()
             );
-            await _conversationState.PublishFragmentAsync(conversationId, fragment);
-            _logger.LogError(
+            await chatContext.ConversationState.PublishFragmentAsync(conversationId, fragment);
+            logger.LogError(
                 ex,
                 "Error streaming message for conversation {ConversationId} {MessageId}",
                 conversationId,
@@ -178,6 +155,8 @@ public sealed class ChatStreaming : IChatStreaming
                 assistantReplyId,
                 "Error streaming message"
             );
+
+            logBuffer.Flush();
         }
         finally
         {
@@ -188,14 +167,14 @@ public sealed class ChatStreaming : IChatStreaming
                 Guid.CreateVersion7(),
                 true
             );
-            await _conversationState.PublishFragmentAsync(conversationId, fragment);
-            await _cancellationManager.CancelAsync(assistantReplyId);
+            await chatContext.ConversationState.PublishFragmentAsync(conversationId, fragment);
+            await chatContext.CancellationManager.CancelAsync(assistantReplyId);
         }
     }
 
     private async Task FetchAndAddPromptMessages(Guid conversationId, string text)
     {
-        var prompts = await _mcpClient.ListPromptsAsync();
+        var prompts = await mcpClient.ListPromptsAsync();
 
         var promptMessages = await prompts
             .ToAsyncEnumerable()
@@ -212,7 +191,7 @@ public sealed class ChatStreaming : IChatStreaming
 
     private async Task<IList<ChatMessage>> SavePromptAndGetMessageHistoryAsync(Guid id, string text)
     {
-        await using var scope = _scopeFactory.CreateAsyncScope();
+        await using var scope = scopeFactory.CreateAsyncScope();
 
         var repository = scope.ServiceProvider.GetRequiredService<IConversationRepository>();
 
@@ -242,7 +221,7 @@ public sealed class ChatStreaming : IChatStreaming
             true
         );
 
-        await _conversationState.PublishFragmentAsync(id, fragment);
+        await chatContext.ConversationState.PublishFragmentAsync(id, fragment);
 
         return messages;
     }
@@ -253,7 +232,7 @@ public sealed class ChatStreaming : IChatStreaming
         string text
     )
     {
-        await using var scope = _scopeFactory.CreateAsyncScope();
+        await using var scope = scopeFactory.CreateAsyncScope();
 
         var repository = scope.ServiceProvider.GetRequiredService<IConversationRepository>();
 
@@ -278,6 +257,6 @@ public sealed class ChatStreaming : IChatStreaming
             await repository.UnitOfWork.SaveChangesAsync();
         }
 
-        await _conversationState.CompleteAsync(conversationId, messageId);
+        await chatContext.ConversationState.CompleteAsync(conversationId, messageId);
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace BookWorm.AppHost.Extensions;
+﻿namespace BookWorm.AppHost.Extensions.Security;
 
 public static class KeycloakExtensions
 {

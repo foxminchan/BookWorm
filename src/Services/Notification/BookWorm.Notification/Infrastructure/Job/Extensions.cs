@@ -33,9 +33,9 @@ public static class Extensions
     {
         var services = builder.Services;
 
-        services.Configure<JobOptions>(JobOptions.ConfigurationSection);
+        services.Configure<JobSettings>(JobSettings.ConfigurationSection);
 
-        var jobOptions = services.BuildServiceProvider().GetRequiredService<JobOptions>();
+        var jobOptions = services.BuildServiceProvider().GetRequiredService<JobSettings>();
 
         services.AddQuartz(q =>
         {
