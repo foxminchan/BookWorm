@@ -22,7 +22,10 @@ public sealed class CleanUpSentEmailWorker(
             var tableService = scope.ServiceProvider.GetRequiredService<ITableService>();
 
             // Get all sent emails
-            var sentEmails = await tableService.ListAsync<Outbox>(_partitionKey);
+            var sentEmails = await tableService.ListAsync<Outbox>(
+                _partitionKey,
+                context.CancellationToken
+            );
             var emailsToDelete = sentEmails.Where(e => e.IsSent).ToList();
 
             if (emailsToDelete.Count == 0)

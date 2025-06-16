@@ -1,8 +1,5 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace BookWorm.Chat.Infrastructure.ChatStreaming;
 
-[ExcludeFromCodeCoverage]
 public sealed class ChatContext(
     IConversationState conversationState,
     ICancellationManager cancellationManager

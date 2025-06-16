@@ -31,8 +31,6 @@ public class ResendErrorEmailWorkerTests
         _tableServiceMock = new();
         _senderMock = new();
 
-        var mailKitSettings = TestDataFakers.EmailOptions.Generate();
-
         scopeFactoryMock.Setup(x => x.CreateScope()).Returns(scopeMock.Object);
         scopeMock.Setup(x => x.ServiceProvider).Returns(serviceProviderMock.Object);
         serviceProviderMock
@@ -40,12 +38,7 @@ public class ResendErrorEmailWorkerTests
             .Returns(_tableServiceMock.Object);
         serviceProviderMock.Setup(x => x.GetService(typeof(ISender))).Returns(_senderMock.Object);
 
-        _worker = new(
-            _loggerMock.Object,
-            mailKitSettings,
-            logBufferMock.Object,
-            scopeFactoryMock.Object
-        );
+        _worker = new(_loggerMock.Object, logBufferMock.Object, scopeFactoryMock.Object);
     }
 
     [Test]
@@ -274,7 +267,7 @@ public class ResendErrorEmailWorkerTests
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>((o, t) => o.ToString()!.Contains("Failed to resend email")),
                     It.Is<Exception>(ex =>
-                        ex.GetType() == typeof(NotificationException) && ex.InnerException != null
+                        ex is NotificationException && ex.InnerException != null
                     ),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()
                 ),

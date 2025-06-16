@@ -1,13 +1,11 @@
 ﻿using BookWorm.Notification.Domain.Models;
 using Microsoft.Extensions.Diagnostics.Buffering;
-using MailKitSettings = BookWorm.Notification.Infrastructure.Senders.MailKit.MailKitSettings;
 
 namespace BookWorm.Notification.Workers;
 
 [DisallowConcurrentExecution]
 public sealed class ResendErrorEmailWorker(
     ILogger<ResendErrorEmailWorker> logger,
-    MailKitSettings mailKitSettings,
     GlobalLogBuffer logBuffer,
     IServiceScopeFactory scopeFactory
 ) : IJob
@@ -23,7 +21,7 @@ public sealed class ResendErrorEmailWorker(
 
         try
         {
-            await ResendFailedEmails();
+            await ResendFailedEmails(context.CancellationToken);
         }
         catch (Exception ex)
         {
@@ -36,7 +34,7 @@ public sealed class ResendErrorEmailWorker(
         }
     }
 
-    private async Task ResendFailedEmails()
+    private async Task ResendFailedEmails(CancellationToken cancellation = default)
     {
         logger.LogDebug("Checking for failed emails to resend...");
 
@@ -44,7 +42,10 @@ public sealed class ResendErrorEmailWorker(
         var tableService = scope.ServiceProvider.GetRequiredService<ITableService>();
         var sender = scope.ServiceProvider.GetRequiredService<ISender>();
 
-        var unsentEmails = await tableService.ListAsync<Outbox>(nameof(Outbox).ToLower());
+        var unsentEmails = await tableService.ListAsync<Outbox>(
+            nameof(Outbox).ToLower(),
+            cancellation
+        );
         var failedEmails = unsentEmails.Where(e => !e.IsSent).ToList();
 
         if (failedEmails.Count == 0)
@@ -62,12 +63,11 @@ public sealed class ResendErrorEmailWorker(
                 var message = OrderMimeMessageBuilder
                     .Initialize()
                     .WithTo(email.ToName, email.ToEmail)
-                    .WithFrom(mailKitSettings)
                     .WithSubject(email.Subject)
                     .WithBody(email.Body)
                     .Build();
 
-                await sender.SendAsync(message);
+                await sender.SendAsync(message, cancellation);
                 logger.LogDebug("Successfully resent email to {Email}", email.ToEmail);
             }
             catch (Exception ex)
