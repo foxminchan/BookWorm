@@ -1,14 +1,15 @@
-﻿using Polly.Registry;
+﻿using Microsoft.Extensions.Diagnostics.Buffering;
+using Polly.Registry;
 using SendGrid;
 using SendGrid.Helpers.Mail;
 
-namespace BookWorm.Notification.Infrastructure.Senders.Providers;
+namespace BookWorm.Notification.Infrastructure.Senders.SendGrid;
 
 public sealed class SendGridSender(
     ILogger<SendGridSender> logger,
-    SendGridOptions sendGridOptions,
+    SendGridSettings sendGridSettings,
     ISendGridClient sendGridClient,
-    IActivityScope activityScope,
+    GlobalLogBuffer logBuffer,
     ResiliencePipelineProvider<string> provider
 ) : ISender
 {
@@ -17,19 +18,9 @@ public sealed class SendGridSender(
         CancellationToken cancellationToken = default
     )
     {
-        await this.WithTelemetry(
-            activityScope,
-            mailMessage,
-            async token => await SendEmailAsync(mailMessage, token),
-            cancellationToken
-        );
-    }
-
-    private async Task SendEmailAsync(MimeMessage mailMessage, CancellationToken cancellationToken)
-    {
         var message = new SendGridMessage
         {
-            From = new(sendGridOptions.SenderEmail, sendGridOptions.SenderName),
+            From = new(sendGridSettings.SenderEmail, sendGridSettings.SenderName),
             Subject = mailMessage.Subject,
             HtmlContent = mailMessage.HtmlBody,
         };
@@ -54,6 +45,7 @@ public sealed class SendGridSender(
                 mailMessage.Subject,
                 response.StatusCode
             );
+            logBuffer.Flush();
             throw new NotificationException(
                 $"Failed to send email. Status code: {response.StatusCode}"
             );

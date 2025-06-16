@@ -6,6 +6,7 @@ using BookWorm.Notification.Infrastructure.Table;
 using BookWorm.Notification.UnitTests.Fakers;
 using BookWorm.Notification.Workers;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.Buffering;
 using Microsoft.Extensions.Logging;
 using MimeKit;
 using Quartz;
@@ -23,13 +24,14 @@ public class ResendErrorEmailWorkerTests
     public ResendErrorEmailWorkerTests()
     {
         _loggerMock = new();
+        Mock<GlobalLogBuffer> logBufferMock = new();
         Mock<IServiceScopeFactory> scopeFactoryMock = new();
         Mock<IServiceScope> scopeMock = new();
         Mock<IServiceProvider> serviceProviderMock = new();
         _tableServiceMock = new();
         _senderMock = new();
 
-        var emailOptions = TestDataFakers.EmailOptions.Generate();
+        var mailKitSettings = TestDataFakers.EmailOptions.Generate();
 
         scopeFactoryMock.Setup(x => x.CreateScope()).Returns(scopeMock.Object);
         scopeMock.Setup(x => x.ServiceProvider).Returns(serviceProviderMock.Object);
@@ -38,7 +40,12 @@ public class ResendErrorEmailWorkerTests
             .Returns(_tableServiceMock.Object);
         serviceProviderMock.Setup(x => x.GetService(typeof(ISender))).Returns(_senderMock.Object);
 
-        _worker = new(_loggerMock.Object, emailOptions, scopeFactoryMock.Object);
+        _worker = new(
+            _loggerMock.Object,
+            mailKitSettings,
+            logBufferMock.Object,
+            scopeFactoryMock.Object
+        );
     }
 
     [Test]

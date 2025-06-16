@@ -1,6 +1,6 @@
 ﻿using Aspire.Hosting.Yarp;
 
-namespace BookWorm.AppHost.Extensions;
+namespace BookWorm.AppHost.Extensions.Testing;
 
 public static class K6Extensions
 {
@@ -42,13 +42,14 @@ public static class K6Extensions
             .WithBindMount($"{BaseContainerPath}/dist", "/home/k6")
             .WithScript("/scripts/dist/main.js", vus)
             .WithReference(entryPoint.Resource.GetEndpoint(endpointName))
-            .WithEnvironment(K6WebDashboard, true.ToString)
+            .WithEnvironment(K6WebDashboard, "true")
             .WithEnvironment(K6WebDashboardExport, "dashboard-report.html")
             .WithHttpEndpoint(
                 targetPort: K6DashboardDefaults.ContainerPort,
                 name: K6DashboardDefaults.Name
             )
             .WithUrlForEndpoint(K6DashboardDefaults.Name, url => url.DisplayText = "K6 Dashboard")
+            .WithK6OtlpEnvironment()
             .WaitFor(entryPoint);
     }
 

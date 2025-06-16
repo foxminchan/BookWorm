@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Chat.Infrastructure.ConversationState;
+﻿using Microsoft.Extensions.Diagnostics.Buffering;
+
+namespace BookWorm.Chat.Infrastructure.ConversationState;
 
 public sealed class MessageBuffer : IAsyncDisposable
 {
@@ -10,6 +12,7 @@ public sealed class MessageBuffer : IAsyncDisposable
     private readonly TimeSpan _flushInterval = TimeSpan.FromMilliseconds(MaxBufferTimeMs);
     private readonly SemaphoreSlim _flushLock = new(1, 1);
     private readonly Timer _flushTimer;
+    private readonly GlobalLogBuffer _logBuffer;
     private readonly ILogger<RedisConversationState> _logger;
     private readonly ISubscriber _subscriber;
 
@@ -20,13 +23,15 @@ public sealed class MessageBuffer : IAsyncDisposable
         IDatabase database,
         ISubscriber subscriber,
         ILogger<RedisConversationState> logger,
-        Guid conversationId
+        Guid conversationId,
+        GlobalLogBuffer logBuffer
     )
     {
         _database = database;
         _subscriber = subscriber;
         _logger = logger;
         _conversationId = conversationId;
+        _logBuffer = logBuffer;
         _flushTimer = new(_ => TriggerFlush(), null, _flushInterval, _flushInterval);
     }
 
@@ -161,6 +166,8 @@ public sealed class MessageBuffer : IAsyncDisposable
                 Interlocked.Increment(ref _count);
             }
 
+            _logBuffer.Flush();
+
             throw new InvalidOperationException(
                 "Error flushing fragments. Re-enqueued fragments.",
                 ex
@@ -191,6 +198,10 @@ public sealed class MessageBuffer : IAsyncDisposable
                 }
             }
         );
-        return lastFragment with { Text = combined };
+
+        return lastFragment with
+        {
+            Text = combined,
+        };
     }
 }

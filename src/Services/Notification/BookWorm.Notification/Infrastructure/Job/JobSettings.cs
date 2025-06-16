@@ -1,11 +1,11 @@
 ﻿using Microsoft.Extensions.Options;
 
-namespace BookWorm.Notification.Domain.Settings;
+namespace BookWorm.Notification.Infrastructure.Job;
 
 [OptionsValidator]
-public sealed partial class JobOptions : IValidateOptions<JobOptions>
+public sealed partial class JobSettings : IValidateOptions<JobSettings>
 {
-    public const string ConfigurationSection = "Job";
+    internal const string ConfigurationSection = "Job";
 
     [Required]
     [RegularExpression(

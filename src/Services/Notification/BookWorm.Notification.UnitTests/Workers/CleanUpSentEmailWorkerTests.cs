@@ -3,6 +3,7 @@ using BookWorm.Notification.Infrastructure.Table;
 using BookWorm.Notification.UnitTests.Fakers;
 using BookWorm.Notification.Workers;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.Buffering;
 using Microsoft.Extensions.Logging;
 using Quartz;
 
@@ -19,6 +20,7 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
     public CleanUpSentEmailWorkerTests()
     {
         _loggerMock = new();
+        Mock<GlobalLogBuffer> logBufferMock = new();
         _tableServiceMock = new();
 
         // Create a service collection and add our mock service
@@ -34,7 +36,7 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
         scope.Setup(x => x.ServiceProvider).Returns(_serviceProvider);
         scopeFactory.Setup(x => x.CreateScope()).Returns(scope.Object);
 
-        _worker = new(_loggerMock.Object, scopeFactory.Object);
+        _worker = new(_loggerMock.Object, logBufferMock.Object, scopeFactory.Object);
     }
 
     public void Dispose()

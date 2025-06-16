@@ -1,11 +1,14 @@
 ﻿using BookWorm.Notification.Domain.Models;
+using Microsoft.Extensions.Diagnostics.Buffering;
+using MailKitSettings = BookWorm.Notification.Infrastructure.Senders.MailKit.MailKitSettings;
 
 namespace BookWorm.Notification.Workers;
 
 [DisallowConcurrentExecution]
 public sealed class ResendErrorEmailWorker(
     ILogger<ResendErrorEmailWorker> logger,
-    EmailOptions emailOptions,
+    MailKitSettings mailKitSettings,
+    GlobalLogBuffer logBuffer,
     IServiceScopeFactory scopeFactory
 ) : IJob
 {
@@ -25,6 +28,7 @@ public sealed class ResendErrorEmailWorker(
         catch (Exception ex)
         {
             logger.LogError(ex, "Error occurred in job execution");
+            logBuffer.Flush();
         }
         finally
         {
@@ -58,7 +62,7 @@ public sealed class ResendErrorEmailWorker(
                 var message = OrderMimeMessageBuilder
                     .Initialize()
                     .WithTo(email.ToName, email.ToEmail)
-                    .WithFrom(emailOptions)
+                    .WithFrom(mailKitSettings)
                     .WithSubject(email.Subject)
                     .WithBody(email.Body)
                     .Build();
@@ -69,6 +73,7 @@ public sealed class ResendErrorEmailWorker(
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to resend email to {Email}", email.ToEmail);
+                logBuffer.Flush();
             }
         }
     }

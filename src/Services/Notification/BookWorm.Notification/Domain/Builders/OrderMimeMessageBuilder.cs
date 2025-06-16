@@ -1,5 +1,6 @@
 ﻿using BookWorm.Notification.Domain.Models;
 using MimeKit.Text;
+using MailKitSettings = BookWorm.Notification.Infrastructure.Senders.MailKit.MailKitSettings;
 
 namespace BookWorm.Notification.Domain.Builders;
 
@@ -25,9 +26,9 @@ public sealed class OrderMimeMessageBuilder
         return this;
     }
 
-    public OrderMimeMessageBuilder WithFrom(EmailOptions emailOptions)
+    public OrderMimeMessageBuilder WithFrom(MailKitSettings mailKitSettings)
     {
-        From = new(emailOptions.Name, emailOptions.From);
+        From = new(mailKitSettings.Name, mailKitSettings.From);
         return this;
     }
 

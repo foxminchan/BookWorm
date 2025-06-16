@@ -1,10 +1,12 @@
 ﻿using BookWorm.Notification.Domain.Models;
+using Microsoft.Extensions.Diagnostics.Buffering;
 
 namespace BookWorm.Notification.Workers;
 
 [DisallowConcurrentExecution]
 public sealed class CleanUpSentEmailWorker(
     ILogger<CleanUpSentEmailWorker> logger,
+    GlobalLogBuffer logBuffer,
     IServiceScopeFactory scopeFactory
 ) : IJob
 {
@@ -38,7 +40,11 @@ public sealed class CleanUpSentEmailWorker(
             foreach (var batch in batches)
             {
                 var tasks = batch.Select(email =>
-                    tableService.DeleteAsync(_partitionKey, email.Id.ToString())
+                    tableService.DeleteAsync(
+                        _partitionKey,
+                        email.Id.ToString(),
+                        context.CancellationToken
+                    )
                 );
 
                 await Task.WhenAll(tasks);
@@ -50,6 +56,7 @@ public sealed class CleanUpSentEmailWorker(
         catch (Exception ex)
         {
             logger.LogError(ex, "Error occurred in job execution");
+            logBuffer.Flush();
             throw; // Re-throw to let Quartz handle the job failure
         }
     }

@@ -142,6 +142,7 @@ public static class Extensions
         var healthChecksRequestTimeout =
             healthChecksConfiguration.GetValue<TimeSpan?>("RequestTimeout")
             ?? TimeSpan.FromSeconds(5);
+
         builder.Services.AddRequestTimeouts(timeouts =>
             timeouts.AddPolicy(HealthChecks, healthChecksRequestTimeout)
         );
@@ -150,6 +151,7 @@ public static class Extensions
         var healthChecksExpireAfter =
             healthChecksConfiguration.GetValue<TimeSpan?>("ExpireAfter")
             ?? TimeSpan.FromSeconds(10);
+
         builder.Services.AddOutputCache(caching =>
             caching.AddPolicy(HealthChecks, policy => policy.Expire(healthChecksExpireAfter))
         );

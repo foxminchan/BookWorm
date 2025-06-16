@@ -8,6 +8,14 @@ public static class Extensions
     {
         var services = builder.Services;
 
+        // Register chat context composite service
+        services.AddSingleton(provider =>
+        {
+            var conversationState = provider.GetRequiredService<IConversationState>();
+            var cancellationManager = provider.GetRequiredService<ICancellationManager>();
+            return new ChatContext(conversationState, cancellationManager);
+        });
+
         services.AddSingleton<IChatStreaming, ChatStreaming>();
 
         builder
@@ -24,7 +32,7 @@ public static class Extensions
             .WithMetrics(m => m.AddMeter(ActivitySourceName))
             .WithTracing(t => t.AddSource(ActivitySourceName));
 
-        services.AddSingleton<IMcpClient>(_ =>
+        services.AddSingleton(_ =>
         {
             McpClientOptions mcpClientOptions = new()
             {

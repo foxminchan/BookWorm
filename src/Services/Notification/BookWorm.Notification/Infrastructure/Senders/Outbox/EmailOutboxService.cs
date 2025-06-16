@@ -1,10 +1,8 @@
-﻿using BookWorm.Notification.Domain.Models;
+﻿namespace BookWorm.Notification.Infrastructure.Senders.Outbox;
 
-namespace BookWorm.Notification.Infrastructure.Senders.Providers;
-
-public sealed class OutboxSender(ITableService tableService, ISender sender) : ISender
+public sealed class EmailOutboxService(ITableService tableService, ISender sender) : ISender
 {
-    private readonly string _partitionKey = nameof(Outbox).ToLowerInvariant();
+    private readonly string _partitionKey = nameof(Domain.Models.Outbox).ToLowerInvariant();
 
     public async Task SendAsync(
         MimeMessage mailMessage,
@@ -18,7 +16,7 @@ public sealed class OutboxSender(ITableService tableService, ISender sender) : I
                 "Message must have at least one recipient"
             );
 
-        var outbox = new Outbox(
+        var outbox = new Domain.Models.Outbox(
             mailbox.Name ?? "Unknown",
             mailbox.Address,
             mailMessage.Subject,

@@ -1,4 +1,5 @@
 ﻿using System.Threading.Channels;
+using Microsoft.Extensions.Diagnostics.Buffering;
 
 namespace BookWorm.Chat.Infrastructure.ConversationState;
 
@@ -10,6 +11,7 @@ public sealed class RedisConversationState : IConversationState, IDisposable
     > _globalSubscribers = new();
 
     private readonly IDatabase _database;
+    private readonly GlobalLogBuffer _logBuffer;
     private readonly ILogger<RedisConversationState> _logger;
 
     private readonly ConcurrentDictionary<Guid, MessageBuffer> _messageBuffers = [];
@@ -19,12 +21,14 @@ public sealed class RedisConversationState : IConversationState, IDisposable
 
     public RedisConversationState(
         IConnectionMultiplexer redis,
-        ILogger<RedisConversationState> logger
+        ILogger<RedisConversationState> logger,
+        GlobalLogBuffer logBuffer
     )
     {
         _database = redis.GetDatabase();
         _subscriber = redis.GetSubscriber();
         _logger = logger;
+        _logBuffer = logBuffer;
         _patternChannel = RedisChannel.Pattern("conversation:*:channel");
         _subscriber.Subscribe(_patternChannel, OnRedisMessage);
         _logger.LogInformation("Subscribed to pattern {Pattern}", _patternChannel);
@@ -50,7 +54,7 @@ public sealed class RedisConversationState : IConversationState, IDisposable
 
         var buffer = _messageBuffers.GetOrAdd(
             fragment.Id,
-            _ => new(_database, _subscriber, _logger, conversationId)
+            _ => new(_database, _subscriber, _logger, conversationId, _logBuffer)
         );
 
         await buffer.AddFragmentAsync(fragment);
@@ -159,6 +163,8 @@ public sealed class RedisConversationState : IConversationState, IDisposable
                 "Error during unsubscription for pattern {Pattern}",
                 _patternChannel
             );
+
+            _logBuffer.Flush();
         }
     }
 
@@ -190,6 +196,7 @@ public sealed class RedisConversationState : IConversationState, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deserializing message from channel {Channel}", channel);
+            _logBuffer.Flush();
             return;
         }
 

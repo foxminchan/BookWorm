@@ -1,10 +1,12 @@
-﻿namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
+﻿using MailKitSettings = BookWorm.Notification.Infrastructure.Senders.MailKit.MailKitSettings;
+
+namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
 
 [AsyncApi]
 public sealed class CancelOrderCommandHandler(
     ISender sender,
     IRenderer renderer,
-    EmailOptions emailOptions
+    MailKitSettings mailKitSettings
 ) : IConsumer<CancelOrderCommand>
 {
     [Channel("notification-cancel-order")]
@@ -27,7 +29,7 @@ public sealed class CancelOrderCommandHandler(
 
         var mailMessage = OrderMimeMessageBuilder
             .Initialize()
-            .WithFrom(emailOptions)
+            .WithFrom(mailKitSettings)
             .WithTo(order.FullName, message.Email)
             .WithSubject(order)
             .WithBody(order, renderer)

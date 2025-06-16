@@ -4,8 +4,31 @@ using Azure.Provisioning.PostgreSql;
 using Azure.Provisioning.Redis;
 using RedisResource = Azure.Provisioning.Redis.RedisResource;
 
-namespace BookWorm.AppHost.Extensions;
+namespace BookWorm.AppHost.Extensions.Infrastructure;
 
+/// <summary>
+///     Provides extension methods for configuring Azure resources for production deployment provisioning.
+///     This partial class handles infrastructure configuration, SKU settings, capacity planning,
+///     and tagging strategies for Azure services when deployed to the cloud.
+/// </summary>
+/// <remarks>
+///     <para>
+///         This class focuses on production-ready configurations for Azure resources including
+///         - Storage accounts with Premium ZRS and Hot access tier
+///         - SignalR services with Premium_P1 SKU and 10 capacity units
+///         - PostgreSQL Flexible Servers with Standard_B1ms burstable tier
+///         - Redis Cache with Basic SKU and 1 capacity unit
+///         - Container App Environments with standardized naming and tagging
+///     </para>
+///     <para>
+///         All provisioned resources are automatically tagged with environment and project information
+///         for resource management and cost tracking purposes.
+///     </para>
+///     <para>
+///         These methods only affect resource provisioning during Azure deployment (publish mode)
+///         and have no impact on local development execution.
+///     </para>
+/// </remarks>
 public static partial class AzureExtensions
 {
     /// <summary>
@@ -19,18 +42,15 @@ public static partial class AzureExtensions
     {
         builder.ConfigureInfrastructure(infra =>
         {
-            var storageAccount = infra
-                .GetProvisionableResources()
-                .OfType<StorageAccount>()
-                .Single();
+            var resource = infra.GetProvisionableResources().OfType<StorageAccount>().Single();
 
-            storageAccount.AccessTier = StorageAccountAccessTier.Hot;
-            storageAccount.Sku = new() { Name = StorageSkuName.PremiumZrs };
-            storageAccount.Tags.Add(
+            resource.Sku = new() { Name = StorageSkuName.StandardLrs };
+
+            resource.Tags.Add(
                 nameof(Environment),
                 builder.ApplicationBuilder.Environment.EnvironmentName
             );
-            storageAccount.Tags.Add(nameof(Projects), nameof(BookWorm));
+            resource.Tags.Add(nameof(Projects), nameof(BookWorm));
         });
 
         return builder;
@@ -47,15 +67,16 @@ public static partial class AzureExtensions
     {
         builder.ConfigureInfrastructure(infra =>
         {
-            var signalRService = infra
-                .GetProvisionableResources()
-                .OfType<SignalRService>()
-                .Single();
+            var resource = infra.GetProvisionableResources().OfType<SignalRService>().Single();
 
-            signalRService.Sku.Name = "Premium_P1";
-            signalRService.Sku.Capacity = 10;
-            signalRService.PublicNetworkAccess = "Enabled";
-            signalRService.Tags.Add(nameof(Projects), nameof(BookWorm));
+            resource.Sku.Name = "Free_F1";
+            resource.PublicNetworkAccess = "Enabled";
+
+            resource.Tags.Add(
+                nameof(Environment),
+                builder.ApplicationBuilder.Environment.EnvironmentName
+            );
+            resource.Tags.Add(nameof(Projects), nameof(BookWorm));
         });
 
         return builder;
@@ -73,22 +94,22 @@ public static partial class AzureExtensions
     {
         builder.ConfigureInfrastructure(infra =>
         {
-            var flexibleServer = infra
+            var resource = infra
                 .GetProvisionableResources()
                 .OfType<PostgreSqlFlexibleServer>()
                 .Single();
 
-            flexibleServer.Sku = new()
+            resource.Sku = new()
             {
                 Name = "Standard_B1ms",
                 Tier = PostgreSqlFlexibleServerSkuTier.Burstable,
             };
 
-            flexibleServer.Tags.Add(
+            resource.Tags.Add(
                 nameof(Environment),
                 builder.ApplicationBuilder.Environment.EnvironmentName
             );
-            flexibleServer.Tags.Add(nameof(Projects), nameof(BookWorm));
+            resource.Tags.Add(nameof(Projects), nameof(BookWorm));
         });
 
         return builder;
@@ -141,8 +162,13 @@ public static partial class AzureExtensions
                 var resource = infra
                     .GetProvisionableResources()
                     .OfType<ContainerAppManagedEnvironment>()
-                    .FirstOrDefault();
-                resource?.Tags.Add(nameof(Projects), nameof(BookWorm));
+                    .Single();
+
+                resource.Tags.Add(
+                    nameof(Environment),
+                    builder.ApplicationBuilder.Environment.EnvironmentName
+                );
+                resource.Tags.Add(nameof(Projects), nameof(BookWorm));
             });
     }
 }

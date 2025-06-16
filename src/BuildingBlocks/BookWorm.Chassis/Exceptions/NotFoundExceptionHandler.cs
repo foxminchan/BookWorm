@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Diagnostics.Buffering;
 using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Chassis.Exceptions;
@@ -17,8 +18,10 @@ public sealed class NotFoundException(string message) : Exception(message)
     }
 }
 
-public sealed class NotFoundExceptionHandler(ILogger<NotFoundExceptionHandler> logger)
-    : IExceptionHandler
+public sealed class NotFoundExceptionHandler(
+    ILogger<NotFoundExceptionHandler> logger,
+    PerRequestLogBuffer logBuffer
+) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(
         HttpContext httpContext,
@@ -37,6 +40,8 @@ public sealed class NotFoundExceptionHandler(ILogger<NotFoundExceptionHandler> l
             nameof(NotFoundExceptionHandler),
             notFoundException.Message
         );
+
+        logBuffer.Flush();
 
         await TypedResults
             .NotFound(new { Detail = notFoundException.Message })
