@@ -2,9 +2,9 @@
 using BookWorm.Notification.Domain.Builders;
 using BookWorm.Notification.Domain.Exceptions;
 using BookWorm.Notification.Domain.Models;
-using BookWorm.Notification.Domain.Settings;
 using BookWorm.Notification.Infrastructure.Render;
 using BookWorm.Notification.Infrastructure.Senders;
+using BookWorm.Notification.Infrastructure.Senders.MailKit;
 using BookWorm.Notification.IntegrationEvents.EventHandlers;
 using MassTransit;
 using MassTransit.Testing;
@@ -18,7 +18,7 @@ public sealed class CompleteOrderConsumerTests
     private const decimal TotalMoney = 150.99m;
     private const string FullName = "John Doe";
     private const string ValidEmail = "customer@example.com";
-    private readonly EmailOptions _emailOptions = new() { From = "store@bookworm.com" };
+    private readonly MailKitSettings _mailKitSettings = new() { From = "store@bookworm.com" };
     private readonly Guid _orderId = Guid.CreateVersion7();
     private readonly Mock<IRenderer> _rendererMock = new();
     private readonly Mock<ISender> _senderMock = new();
@@ -44,7 +44,7 @@ public sealed class CompleteOrderConsumerTests
             .AddMassTransitTestHarness(x => x.AddConsumer<CompleteOrderCommandHandler>())
             .AddScoped(_ => _senderMock.Object)
             .AddScoped(_ => _rendererMock.Object)
-            .AddSingleton(_ => _emailOptions)
+            .AddSingleton(_ => _mailKitSettings)
             .BuildServiceProvider(true);
 
         var harness = provider.GetRequiredService<ITestHarness>();
@@ -75,7 +75,7 @@ public sealed class CompleteOrderConsumerTests
             .AddMassTransitTestHarness(x => x.AddConsumer<CompleteOrderCommandHandler>())
             .AddScoped(_ => _senderMock.Object)
             .AddScoped(_ => _rendererMock.Object)
-            .AddSingleton(_ => _emailOptions)
+            .AddSingleton(_ => _mailKitSettings)
             .BuildServiceProvider(true);
 
         var harness = provider.GetRequiredService<ITestHarness>();
@@ -106,7 +106,7 @@ public sealed class CompleteOrderConsumerTests
             .AddMassTransitTestHarness(x => x.AddConsumer<CompleteOrderCommandHandler>())
             .AddScoped(_ => _senderMock.Object)
             .AddScoped(_ => _rendererMock.Object)
-            .AddSingleton(_ => _emailOptions)
+            .AddSingleton(_ => _mailKitSettings)
             .BuildServiceProvider(true);
 
         var harness = provider.GetRequiredService<ITestHarness>();
@@ -142,7 +142,7 @@ public sealed class CompleteOrderConsumerTests
             .AddMassTransitTestHarness(x => x.AddConsumer<CompleteOrderCommandHandler>())
             .AddScoped(_ => _senderMock.Object)
             .AddScoped(_ => _rendererMock.Object)
-            .AddSingleton(_ => _emailOptions)
+            .AddSingleton(_ => _mailKitSettings)
             .BuildServiceProvider(true);
 
         var harness = provider.GetRequiredService<ITestHarness>();
@@ -185,7 +185,7 @@ public sealed class CompleteOrderConsumerTests
             .AddMassTransitTestHarness(x => x.AddConsumer<CompleteOrderCommandHandler>())
             .AddScoped(_ => _senderMock.Object)
             .AddScoped(_ => _rendererMock.Object)
-            .AddSingleton(_ => _emailOptions)
+            .AddSingleton(_ => _mailKitSettings)
             .BuildServiceProvider(true);
 
         var harness = provider.GetRequiredService<ITestHarness>();

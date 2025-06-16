@@ -1,12 +1,15 @@
 ﻿using System.Diagnostics;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Diagnostics.Buffering;
 using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Chassis.Exceptions;
 
-public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger)
-    : IExceptionHandler
+public sealed class GlobalExceptionHandler(
+    ILogger<GlobalExceptionHandler> logger,
+    GlobalLogBuffer logBuffer
+) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(
         HttpContext httpContext,
@@ -23,6 +26,8 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
             Environment.MachineName,
             traceId
         );
+
+        logBuffer.Flush();
 
         var (statusCode, title) = MapException(exception);
 

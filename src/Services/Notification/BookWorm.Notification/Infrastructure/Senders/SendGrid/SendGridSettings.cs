@@ -1,12 +1,12 @@
 ﻿using BookWorm.Constants.Core;
 using Microsoft.Extensions.Options;
 
-namespace BookWorm.Notification.Domain.Settings;
+namespace BookWorm.Notification.Infrastructure.Senders.SendGrid;
 
 [OptionsValidator]
-public sealed partial class SendGridOptions : IValidateOptions<SendGridOptions>
+public sealed partial class SendGridSettings : IValidateOptions<SendGridSettings>
 {
-    public const string ConfigurationSection = "SendGrid";
+    internal const string ConfigurationSection = "SendGrid";
 
     [Key]
     [Required]

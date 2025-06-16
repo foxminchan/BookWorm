@@ -1,8 +1,8 @@
 ﻿using BookWorm.Contracts;
 using BookWorm.Notification.Domain.Models;
-using BookWorm.Notification.Domain.Settings;
 using BookWorm.Notification.Infrastructure.Render;
 using BookWorm.Notification.Infrastructure.Senders;
+using BookWorm.Notification.Infrastructure.Senders.MailKit;
 using BookWorm.Notification.IntegrationEvents.EventHandlers;
 using MassTransit;
 using MassTransit.Testing;
@@ -14,8 +14,8 @@ namespace BookWorm.Notification.UnitTests.Consumers;
 public sealed class CancelOrderConsumerTests
 {
     private readonly string _email;
-    private readonly EmailOptions _emailOptions;
     private readonly string _fullName;
+    private readonly MailKitSettings _mailKitSettings;
     private readonly Guid _orderId;
     private readonly Mock<IRenderer> _rendererMock;
     private readonly Mock<ISender> _senderMock;
@@ -38,7 +38,7 @@ public sealed class CancelOrderConsumerTests
             .Setup(x => x.Render(It.IsAny<Order>(), It.IsAny<string>()))
             .Returns("Rendered order content");
 
-        _emailOptions = new() { From = "bookworm@example.com" };
+        _mailKitSettings = new() { From = "bookworm@example.com" };
     }
 
     [Test]
@@ -51,7 +51,7 @@ public sealed class CancelOrderConsumerTests
             .AddMassTransitTestHarness(x => x.AddConsumer<CancelOrderCommandHandler>())
             .AddScoped(_ => _senderMock.Object)
             .AddScoped(_ => _rendererMock.Object)
-            .AddSingleton(_ => _emailOptions)
+            .AddSingleton(_ => _mailKitSettings)
             .BuildServiceProvider(true);
 
         var harness = provider.GetRequiredService<ITestHarness>();
@@ -82,7 +82,7 @@ public sealed class CancelOrderConsumerTests
             .AddMassTransitTestHarness(x => x.AddConsumer<CancelOrderCommandHandler>())
             .AddScoped(_ => _senderMock.Object)
             .AddScoped(_ => _rendererMock.Object)
-            .AddSingleton(_ => _emailOptions)
+            .AddSingleton(_ => _mailKitSettings)
             .BuildServiceProvider(true);
 
         var harness = provider.GetRequiredService<ITestHarness>();
@@ -113,7 +113,7 @@ public sealed class CancelOrderConsumerTests
             .AddMassTransitTestHarness(x => x.AddConsumer<CancelOrderCommandHandler>())
             .AddScoped(_ => _senderMock.Object)
             .AddScoped(_ => _rendererMock.Object)
-            .AddSingleton(_ => _emailOptions)
+            .AddSingleton(_ => _mailKitSettings)
             .BuildServiceProvider(true);
 
         var harness = provider.GetRequiredService<ITestHarness>();

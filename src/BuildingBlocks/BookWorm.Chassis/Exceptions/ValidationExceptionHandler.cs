@@ -2,12 +2,15 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Diagnostics.Buffering;
 using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Chassis.Exceptions;
 
-public sealed class ValidationExceptionHandler(ILogger<ValidationExceptionHandler> logger)
-    : IExceptionHandler
+public sealed class ValidationExceptionHandler(
+    ILogger<ValidationExceptionHandler> logger,
+    PerRequestLogBuffer logBuffer
+) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(
         HttpContext httpContext,
@@ -26,6 +29,8 @@ public sealed class ValidationExceptionHandler(ILogger<ValidationExceptionHandle
             nameof(ValidationExceptionHandler),
             validationException.Message
         );
+
+        logBuffer.Flush();
 
         ProblemDetails problemDetails = new()
         {
