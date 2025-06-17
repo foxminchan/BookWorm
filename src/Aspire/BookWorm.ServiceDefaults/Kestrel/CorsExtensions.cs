@@ -7,6 +7,8 @@ public static class CorsExtensions
 
     public static void AddDefaultCors(this IHostApplicationBuilder builder)
     {
+        var services = builder.Services;
+
         if (builder.Environment.IsDevelopment())
         {
             builder.Services.AddCors(options =>
@@ -24,18 +26,19 @@ public static class CorsExtensions
         }
         else
         {
-            var environmentName = builder.Environment.EnvironmentName;
-            var storeFront = GetOrigin(false, environmentName);
-            var backOffice = GetOrigin(true, environmentName);
+            services.Configure<CorsSettings>(CorsSettings.ConfigurationSection);
 
-            builder.Services.AddCors(options =>
+            services.AddCors(options =>
             {
                 options.AddPolicy(
                     AllowSpecificCorsPolicy,
                     policyBuilder =>
                     {
+                        var serviceProvider = services.BuildServiceProvider();
+                        var corsOptions = serviceProvider.GetRequiredService<CorsSettings>();
+
                         policyBuilder
-                            .WithOrigins(storeFront, backOffice)
+                            .WithOrigins(corsOptions.StoreFrontUrl, corsOptions.BackOfficeUrl)
                             .WithMethods(
                                 Restful.Methods.Get,
                                 Restful.Methods.Post,
@@ -55,34 +58,5 @@ public static class CorsExtensions
     public static void UseDefaultCors(this WebApplication app)
     {
         app.UseCors(app.Environment.IsDevelopment() ? AllowAllCorsPolicy : AllowSpecificCorsPolicy);
-    }
-
-    private static string GetOrigin(bool isAdmin, string environmentName)
-    {
-        var builder = new StringBuilder();
-
-        builder.Append($"{Protocol.Https}://");
-
-        environmentName = environmentName.ToLowerInvariant();
-
-        if (
-            !string.Equals(
-                environmentName,
-                Environments.Production,
-                StringComparison.OrdinalIgnoreCase
-            )
-        )
-        {
-            builder.Append($"{environmentName}.");
-        }
-
-        if (isAdmin)
-        {
-            builder.Append("admin.");
-        }
-
-        builder.Append($"{nameof(BookWorm).ToLowerInvariant()}.com");
-
-        return builder.ToString();
     }
 }

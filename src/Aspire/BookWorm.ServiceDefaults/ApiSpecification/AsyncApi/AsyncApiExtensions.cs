@@ -22,10 +22,16 @@ public static class AsyncApiExtensions
                 {
                     Info = new(document.Title, version)
                     {
+                        Description = ApiVersionDescriptionBuilder.BuildDescription(
+                            sp.GetApiVersionDescription(version),
+                            document.Description
+                        ),
+
                         License = new(document.LicenseName)
                         {
                             Url = document.LicenseUrl.ToString(),
                         },
+
                         Contact = new()
                         {
                             Name = document.AuthorName,
