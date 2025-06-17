@@ -1,6 +1,7 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
 builder.AddDashboard();
+builder.ConfigureCors();
 builder.HidePlainHttpLink();
 builder.AddAzureContainerAppEnvironment("aca").ProvisionAsService();
 

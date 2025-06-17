@@ -1,9 +1,6 @@
-﻿using System.Net.Mime;
-using Asp.Versioning.ApiExplorer;
-using BookWorm.ServiceDefaults.Keycloak;
+﻿using BookWorm.ServiceDefaults.Keycloak;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.OpenApi;
-using Microsoft.Extensions.Primitives;
 using Microsoft.OpenApi.Models;
 
 namespace BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
@@ -18,11 +15,9 @@ internal static class OpenApiOptionsExtensions
         options.AddDocumentTransformer(
             (document, context, _) =>
             {
-                var apiDescription = context
-                    .ApplicationServices.GetService<IApiVersionDescriptionProvider>()
-                    ?.ApiVersionDescriptions.SingleOrDefault(versionDescription =>
-                        versionDescription.GroupName == context.DocumentName
-                    );
+                var apiDescription = context.ApplicationServices.GetApiVersionDescription(
+                    context.DocumentName
+                );
 
                 if (apiDescription is null)
                 {
@@ -51,7 +46,7 @@ internal static class OpenApiOptionsExtensions
 
                 if (!string.IsNullOrWhiteSpace(openApiDocument?.Description))
                 {
-                    document.Info.Description = BuildDescription(
+                    document.Info.Description = ApiVersionDescriptionBuilder.BuildDescription(
                         apiDescription,
                         openApiDocument.Description
                     );
@@ -60,64 +55,6 @@ internal static class OpenApiOptionsExtensions
                 return Task.CompletedTask;
             }
         );
-    }
-
-    private static string BuildDescription(ApiVersionDescription api, string description)
-    {
-        var text = new StringBuilder(description);
-
-        if (api.IsDeprecated)
-        {
-            text.AppendLine();
-            text.AppendLine("**This API version has been deprecated.**");
-        }
-
-        if (api.SunsetPolicy is not { } policy)
-        {
-            return text.ToString();
-        }
-
-        text.AppendLine();
-
-        if (policy.Date is { } when)
-        {
-            text.AppendLine($"**Sunset date:** {when:yyyy-MM-dd}");
-        }
-
-        if (!policy.HasLinks)
-        {
-            return text.ToString();
-        }
-
-        text.AppendLine();
-
-        var rendered = false;
-
-        foreach (var link in policy.Links.Where(l => l.Type == MediaTypeNames.Text.Html))
-        {
-            if (!rendered)
-            {
-                text.Append("<h4>Links</h4><ul>");
-                rendered = true;
-            }
-
-            text.Append("<li><a href=\"");
-            text.Append(link.LinkTarget.OriginalString);
-            text.Append("\">");
-            text.Append(
-                StringSegment.IsNullOrEmpty(link.Title)
-                    ? link.LinkTarget.OriginalString
-                    : link.Title.ToString()
-            );
-            text.Append("</a></li>");
-        }
-
-        if (rendered)
-        {
-            text.Append("</ul>");
-        }
-
-        return text.ToString();
     }
 
     public static void ApplySecuritySchemeDefinitions(this OpenApiOptions options)
@@ -220,7 +157,7 @@ internal static class OpenApiOptionsExtensions
                 cancellationToken
             );
 
-            await Task.WhenAll(authorizationUrlTask, tokenUrlTask);
+            await Task.WhenAll(authorizationUrlTask, tokenUrlTask).ConfigureAwait(false);
 
             var securityScheme = new OpenApiSecurityScheme
             {
