@@ -63,6 +63,7 @@ public sealed class OrderMimeMessageBuilder
         message.To.Add(To);
         message.Subject = Subject;
         message.Body = Body;
+        message.Date = DateTimeOffset.UtcNow;
         return message;
     }
 }
