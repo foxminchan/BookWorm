@@ -26,6 +26,11 @@ public static class TelemetryTags
         public const string QueryHandlingDuration = $"{QueryHandling}.duration";
     }
 
+    public static class EventHandling
+    {
+        public const string Event = $"{ActivitySourceProvider.DefaultSourceName}.event";
+    }
+
     public static class Validator
     {
         public const string Validation = $"{ActivitySourceProvider.DefaultSourceName}.validator";

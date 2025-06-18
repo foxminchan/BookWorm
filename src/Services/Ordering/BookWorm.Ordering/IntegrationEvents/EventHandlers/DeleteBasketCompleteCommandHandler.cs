@@ -1,26 +1,31 @@
-﻿using BookWorm.Contracts;
+using BookWorm.Contracts;
 using Saunter.Attributes;
 
 namespace BookWorm.Ordering.IntegrationEvents.EventHandlers;
 
 [AsyncApi]
-public sealed class DeleteBasketCompleteCommandHandler(IDocumentSession documentSession)
-    : IConsumer<DeleteBasketCompleteCommand>
+public sealed class DeleteBasketCompleteCommandHandler(
+    ILogger<DeleteBasketCompleteCommandHandler> logger
+) : IConsumer<DeleteBasketCompleteCommand>
 {
     [Channel("basket-checkout-complete")]
     [PublishOperation(
         typeof(DeleteBasketCompleteCommand),
         OperationId = nameof(DeleteBasketCompleteCommand),
         Summary = "Delete basket complete",
-        Description = "Represents a domain event that is published when reverse basket is completed"
+        Description = "Represents an integration event that is published when reverse basket is completed"
     )]
-    public async Task Consume(ConsumeContext<DeleteBasketCompleteCommand> context)
+    public Task Consume(ConsumeContext<DeleteBasketCompleteCommand> context)
     {
-        await documentSession.Add<OrderSummary>(
-            Guid.CreateVersion7(),
-            context.Message,
-            context.CancellationToken
+        var message = context.Message;
+
+        logger.LogInformation(
+            "Basket deletion completed for Order {OrderId}, Amount: {TotalMoney}",
+            message.OrderId,
+            message.TotalMoney
         );
+
+        return Task.CompletedTask;
     }
 }
 

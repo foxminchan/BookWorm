@@ -1,5 +1,4 @@
-﻿using BookWorm.Contracts;
-using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
+﻿using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Domain.Events;
 using BookWorm.Ordering.Domain.Projections;
 using BookWorm.Ordering.UnitTests.Fakers;
@@ -20,21 +19,20 @@ public sealed class OrderSummaryViewProjectionTests
     }
 
     [Test]
-    public void GivenDeleteBasketCommand_WhenApplied_ThenShouldUpdateStatusToNewAndSetTotalPrice()
+    public void GivenOrderPlacedEvent_WhenApplied_ThenShouldUpdateStatusToNewAndSetTotalPrice()
     {
         // Arrange
-        var orderId = Guid.CreateVersion7();
-        const decimal totalMoney = 123.45m;
         var info = new OrderSummaryView();
-        var command = new DeleteBasketCompleteCommand(orderId, totalMoney);
+        var order = _orderFaker.Generate()[0];
+        var orderPlacedEvent = new OrderPlacedEvent(order);
 
         // Act
-        var result = OrderSummaryViewProjection.Create(info, command);
+        var result = OrderSummaryViewProjection.Create(info, orderPlacedEvent);
 
         // Assert
-        result.Id.ShouldBe(orderId);
+        result.Id.ShouldBe(order.Id);
         result.Status.ShouldBe(Status.New);
-        result.TotalPrice.ShouldBe(totalMoney);
+        result.TotalPrice.ShouldBe(order.TotalPrice);
     }
 
     [Test]
@@ -70,27 +68,26 @@ public sealed class OrderSummaryViewProjectionTests
     }
 
     [Test]
-    public void GivenExistingOrderSummary_WhenApplyingDeleteBasketCommand_ThenShouldUpdateExistingInfo()
+    public void GivenExistingOrderSummary_WhenApplyingOrderPlacedEvent_ThenShouldUpdateExistingInfo()
     {
         // Arrange
-        var orderId = Guid.CreateVersion7();
-        const decimal totalMoney = 123.45m;
         var info = new OrderSummaryView
         {
             Id = Guid.CreateVersion7(),
             Status = Status.Completed,
             TotalPrice = 999.99m,
         };
-        var command = new DeleteBasketCompleteCommand(orderId, totalMoney);
+        var order = _orderFaker.Generate()[0];
+        var orderPlacedEvent = new OrderPlacedEvent(order);
 
         // Act
-        var result = OrderSummaryViewProjection.Create(info, command);
+        var result = OrderSummaryViewProjection.Create(info, orderPlacedEvent);
 
         // Assert
         result.ShouldBeSameAs(info); // Should modify the same object
-        result.Id.ShouldBe(orderId);
+        result.Id.ShouldBe(order.Id);
         result.Status.ShouldBe(Status.New);
-        result.TotalPrice.ShouldBe(totalMoney);
+        result.TotalPrice.ShouldBe(order.TotalPrice);
     }
 
     [Test]
