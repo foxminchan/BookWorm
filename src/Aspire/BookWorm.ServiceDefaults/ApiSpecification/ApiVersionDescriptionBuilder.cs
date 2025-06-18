@@ -70,15 +70,13 @@ public static class ApiVersionDescriptionBuilder
         return text.ToString();
     }
 
-    public static ApiVersionDescription? GetApiVersionDescription(
-        this IServiceProvider provider,
-        string? version
+    public static IReadOnlyList<ApiVersionDescription> GetApiVersionDescription(
+        this IServiceProvider provider
     )
     {
-        return provider
-            .GetService<IApiVersionDescriptionProvider>()
-            ?.ApiVersionDescriptions.SingleOrDefault(description =>
-                description.GroupName == version
-            );
+        ArgumentNullException.ThrowIfNull(provider);
+
+        return provider.GetService<IApiVersionDescriptionProvider>()?.ApiVersionDescriptions
+            ?? [new(new(1, 0), "v1")];
     }
 }

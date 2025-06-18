@@ -1,4 +1,5 @@
-﻿using BookWorm.ServiceDefaults.Keycloak;
+﻿using Asp.Versioning.ApiExplorer;
+using BookWorm.ServiceDefaults.Keycloak;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi.Models;
@@ -9,21 +10,13 @@ internal static class OpenApiOptionsExtensions
 {
     public static void ApplyApiVersionInfo(
         this OpenApiOptions options,
-        DocumentOptions? openApiDocument
+        DocumentOptions? openApiDocument,
+        ApiVersionDescription apiDescription
     )
     {
         options.AddDocumentTransformer(
-            (document, context, _) =>
+            (document, _, _) =>
             {
-                var apiDescription = context.ApplicationServices.GetApiVersionDescription(
-                    context.DocumentName
-                );
-
-                if (apiDescription is null)
-                {
-                    return Task.CompletedTask;
-                }
-
                 document.Info.License = new()
                 {
                     Name = openApiDocument?.LicenseName,
@@ -37,12 +30,12 @@ internal static class OpenApiOptionsExtensions
                     Email = openApiDocument?.AuthorEmail,
                 };
 
-                document.Info.Version = apiDescription.ApiVersion.ToString();
-
                 if (!string.IsNullOrWhiteSpace(openApiDocument?.Title))
                 {
-                    document.Info.Title = openApiDocument.Title;
+                    document.Info.Title = $"{openApiDocument.Title} {apiDescription.ApiVersion}";
                 }
+
+                document.Info.Version = apiDescription.ApiVersion.ToString();
 
                 if (!string.IsNullOrWhiteSpace(openApiDocument?.Description))
                 {
@@ -86,7 +79,7 @@ internal static class OpenApiOptionsExtensions
 
                 foreach (var property in schema.Properties)
                 {
-                    if (schema.Required?.Contains(property.Key) != true)
+                    if (schema.Required?.Contains(property.Key) == false)
                     {
                         property.Value.Nullable = false;
                     }
