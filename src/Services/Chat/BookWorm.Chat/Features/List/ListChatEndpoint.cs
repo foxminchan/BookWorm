@@ -6,7 +6,7 @@ public sealed class ListChatEndpoint
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapGet(
-                "/chats",
+                string.Empty,
                 async ([AsParameters] ListChatQuery query, ISender sender) =>
                     await HandleAsync(query, sender)
             )

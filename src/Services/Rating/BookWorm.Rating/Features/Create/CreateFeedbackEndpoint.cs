@@ -5,7 +5,7 @@ public sealed class CreateFeedbackEndpoint : IEndpoint<Ok<Guid>, CreateFeedbackC
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapPost(
-                "/feedbacks",
+                string.Empty,
                 async (CreateFeedbackCommand command, ISender sender) =>
                     await HandleAsync(command, sender)
             )

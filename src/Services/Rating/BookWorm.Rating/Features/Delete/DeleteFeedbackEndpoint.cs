@@ -7,7 +7,7 @@ public sealed class DeleteFeedbackEndpoint : IEndpoint<NoContent, Guid, ISender>
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapDelete(
-                "/feedbacks/{id:guid}",
+                "/{id:guid}",
                 async (
                     [Description("The unique identifier of the feedback to be deleted")] Guid id,
                     ISender sender

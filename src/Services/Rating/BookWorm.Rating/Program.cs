@@ -12,7 +12,7 @@ app.MapDefaultEndpoints();
 
 var apiVersionSet = app.NewApiVersionSet().HasApiVersion(new(1, 0)).ReportApiVersions().Build();
 
-app.MapEndpoints(apiVersionSet);
+app.MapEndpoints(apiVersionSet, "feedbacks");
 
 app.UseDefaultOpenApi();
 

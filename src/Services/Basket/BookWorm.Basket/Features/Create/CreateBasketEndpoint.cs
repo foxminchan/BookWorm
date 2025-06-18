@@ -8,7 +8,7 @@ public sealed class CreateBasketEndpoint
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapPost(
-                "/baskets",
+                string.Empty,
                 async (CreateBasketCommand command, ISender sender, LinkGenerator linker) =>
                     await HandleAsync(command, sender, linker)
             )

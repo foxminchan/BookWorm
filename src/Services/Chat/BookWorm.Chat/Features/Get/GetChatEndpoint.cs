@@ -5,7 +5,7 @@ public sealed class GetChatEndpoint : IEndpoint<Ok<ConversationDto>, Guid, ISend
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapGet(
-                "/chats/{id:guid}",
+                "/{id:guid}",
                 async (Guid id, ISender sender, CancellationToken cancellationToken) =>
                     await HandleAsync(id, sender, cancellationToken)
             )
