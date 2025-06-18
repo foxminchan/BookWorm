@@ -21,13 +21,22 @@ public static class RegisterEndpointExtensions
         );
     }
 
-    public static void MapEndpoints(this WebApplication app, ApiVersionSet apiVersionSet)
+    public static void MapEndpoints(
+        this WebApplication app,
+        ApiVersionSet apiVersionSet,
+        string? resourceName = null
+    )
     {
-        var scope = app.Services.CreateScope();
+        using var scope = app.Services.CreateScope();
 
         var endpoints = scope.ServiceProvider.GetRequiredService<IEnumerable<IEndpoint>>();
 
-        var builder = app.MapGroup("/api/v{version:apiVersion}").WithApiVersionSet(apiVersionSet);
+        var builder = app.MapGroup(
+                resourceName is null or { Length: 0 }
+                    ? "/api/v{version:apiVersion}"
+                    : $"/api/v{{version:apiVersion}}/{resourceName}"
+            )
+            .WithApiVersionSet(apiVersionSet);
 
         if (app.Environment.IsDevelopment())
         {

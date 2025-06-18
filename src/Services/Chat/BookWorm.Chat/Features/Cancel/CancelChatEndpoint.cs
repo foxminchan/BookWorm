@@ -7,7 +7,7 @@ public sealed class CancelChatEndpoint : IEndpoint<NoContent, Guid, ISender>
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapDelete(
-                "/chats/{id:guid}/cancel",
+                "/{id:guid}/cancel",
                 async (
                     [Description("The unique identifier of the chat to be cancelled")] Guid id,
                     ISender sender

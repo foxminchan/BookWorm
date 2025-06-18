@@ -5,7 +5,7 @@ public sealed class UpdateChatEndpoint : IEndpoint<NoContent, UpdateChatCommand,
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapPut(
-                "/chats",
+                string.Empty,
                 async (UpdateChatCommand command, ISender sender) =>
                     await HandleAsync(command, sender)
             )

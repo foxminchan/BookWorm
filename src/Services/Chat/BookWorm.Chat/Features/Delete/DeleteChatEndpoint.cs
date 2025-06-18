@@ -5,7 +5,7 @@ public sealed class DeleteChatEndpoint : IEndpoint<NoContent, Guid, ISender>
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapDelete(
-                "/chats/{id:guid}",
+                "/{id:guid}",
                 async (Guid id, ISender sender) => await HandleAsync(id, sender)
             )
             .ProducesDelete()

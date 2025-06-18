@@ -5,7 +5,7 @@ public sealed class UpdateBasketEndpoint : IEndpoint<NoContent, UpdateBasketComm
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapPut(
-                "/baskets",
+                string.Empty,
                 async (UpdateBasketCommand command, ISender sender) =>
                     await HandleAsync(command, sender)
             )

@@ -5,7 +5,7 @@ public sealed class GetBasketEndpoint : IEndpoint<Ok<CustomerBasketDto>, ISender
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapGet(
-                "/baskets",
+                string.Empty,
                 async (ISender sender, CancellationToken cancellationToken) =>
                     await HandleAsync(sender, cancellationToken)
             )

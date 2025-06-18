@@ -8,7 +8,7 @@ public sealed class CreateChatEndpoint
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapPost(
-                "/chats",
+                string.Empty,
                 async (CreateChatCommand request, ISender sender, LinkGenerator linker) =>
                     await HandleAsync(request, sender, linker)
             )
