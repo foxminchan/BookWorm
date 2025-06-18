@@ -1,5 +1,4 @@
-﻿using BookWorm.Contracts;
-using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
+﻿using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Domain.Events;
 using BookWorm.Ordering.UnitTests.Fakers;
 
@@ -8,19 +7,19 @@ namespace BookWorm.Ordering.UnitTests.Domain;
 public sealed class OrderSummaryTests
 {
     [Test]
-    public void GivenDeleteBasketCompleteCommand_WhenCreatingOrderSummary_ThenStatusShouldBeNew()
+    public void GivenOrderPlacedEvent_WhenCreatingOrderSummary_ThenStatusShouldBeNew()
     {
         // Arrange
-        var orderId = Guid.CreateVersion7();
-        var command = new DeleteBasketCompleteCommand(orderId, 100.0m);
+        var order = new OrderFaker().Generate()[0];
+        var orderPlacedEvent = new OrderPlacedEvent(order);
 
         // Act
-        var result = OrderSummary.Create(command);
+        var result = OrderSummary.Create(orderPlacedEvent);
 
         // Assert
-        result.Id.ShouldBe(orderId);
+        result.Id.ShouldBe(order.Id);
         result.Status.ShouldBe(Status.New);
-        result.TotalPrice.ShouldBe(100.0m);
+        result.TotalPrice.ShouldBe(order.TotalPrice);
     }
 
     [Test]

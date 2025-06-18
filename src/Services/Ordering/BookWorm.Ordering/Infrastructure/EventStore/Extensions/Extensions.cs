@@ -1,5 +1,6 @@
 ﻿using BookWorm.Ordering.Infrastructure.EventStore.Configs;
 using BookWorm.Ordering.Infrastructure.EventStore.Diagnostic;
+using BookWorm.Ordering.Infrastructure.EventStore.Subscriptions;
 using JasperFx.CodeGeneration;
 using Marten.Events.Daemon;
 
@@ -26,7 +27,9 @@ public static class Extensions
 
         if (!disableAsyncDaemon)
         {
-            config.AddAsyncDaemon(martenConfig.DaemonMode);
+            config
+                .AddAsyncDaemon(martenConfig.DaemonMode)
+                .AddSubscriptionWithServices<MartenEventPublisher>(ServiceLifetime.Scoped);
         }
 
         // In a "Production" environment, we're turning off the

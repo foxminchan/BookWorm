@@ -1,5 +1,4 @@
-﻿using BookWorm.Contracts;
-using Marten.Schema;
+﻿using Marten.Schema;
 
 namespace BookWorm.Ordering.Domain.Projections;
 
@@ -31,16 +30,16 @@ public sealed class OrderSummaryViewProjection : MultiStreamProjection<OrderSumm
 
         // Tell the projection how to group the events
         // by the aggregate id
-        Identity<DeleteBasketCompleteCommand>(e => e.Id);
+        Identity<OrderPlacedEvent>(e => e.Order.Id);
         Identity<OrderCancelledEvent>(e => e.Order.Id);
         Identity<OrderCompletedEvent>(e => e.Order.Id);
     }
 
-    public static OrderSummaryView Create(OrderSummaryView view, DeleteBasketCompleteCommand @event)
+    public static OrderSummaryView Create(OrderSummaryView view, OrderPlacedEvent @event)
     {
-        view.Id = @event.OrderId;
+        view.Id = @event.Order.Id;
         view.Status = Status.New;
-        view.TotalPrice = @event.TotalMoney;
+        view.TotalPrice = @event.Order.TotalPrice;
         return view;
     }
 

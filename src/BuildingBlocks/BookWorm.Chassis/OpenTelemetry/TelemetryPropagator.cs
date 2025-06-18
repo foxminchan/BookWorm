@@ -28,6 +28,14 @@ public static class TelemetryPropagator
         return context;
     }
 
+    public static PropagationContext Extract<T>(
+        T carrier,
+        Func<T, string, IEnumerable<string>> getter
+    )
+    {
+        return _propagator.Extract(default, carrier, getter);
+    }
+
     public static PropagationContext? Propagate<T>(
         this Activity? activity,
         T carrier,

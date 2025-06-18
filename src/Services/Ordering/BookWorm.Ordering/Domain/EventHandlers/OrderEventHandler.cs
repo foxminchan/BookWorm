@@ -6,7 +6,6 @@ namespace BookWorm.Ordering.Domain.EventHandlers;
 
 [AsyncApi]
 public sealed class OrderEventHandler(
-    IEventDispatcher eventDispatcher,
     IDocumentSession documentSession,
     ILogger<OrderEventHandler> logger
 )
@@ -24,7 +23,6 @@ public sealed class OrderEventHandler(
     public async Task Handle(OrderCancelledEvent notification, CancellationToken cancellationToken)
     {
         OrderingTrace.LogOrderCancelled(logger, notification.Order.Id, Status.New);
-        await eventDispatcher.DispatchAsync(notification, cancellationToken);
         await documentSession.GetAndUpdate<OrderSummary>(
             Guid.CreateVersion7(),
             notification,
@@ -44,7 +42,6 @@ public sealed class OrderEventHandler(
     public async Task Handle(OrderCompletedEvent notification, CancellationToken cancellationToken)
     {
         OrderingTrace.LogOrderCompleted(logger, notification.Order.Id, Status.New);
-        await eventDispatcher.DispatchAsync(notification, cancellationToken);
         await documentSession.GetAndUpdate<OrderSummary>(
             Guid.CreateVersion7(),
             notification,
@@ -64,6 +61,10 @@ public sealed class OrderEventHandler(
     public async Task Handle(OrderPlacedEvent notification, CancellationToken cancellationToken)
     {
         OrderingTrace.LogOrderPlaced(logger, notification.Order.Id, Status.New);
-        await eventDispatcher.DispatchAsync(notification, cancellationToken);
+        await documentSession.Add<OrderSummary>(
+            Guid.CreateVersion7(),
+            notification,
+            cancellationToken
+        );
     }
 }

@@ -1,12 +1,10 @@
-﻿using BookWorm.Contracts;
-
-namespace BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
+﻿namespace BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 
 public sealed record OrderSummary(Guid Id, Status Status, decimal TotalPrice)
 {
-    public static OrderSummary Create(DeleteBasketCompleteCommand @event)
+    public static OrderSummary Create(OrderPlacedEvent @event)
     {
-        return new(@event.OrderId, Status.New, @event.TotalMoney);
+        return new(@event.Order.Id, Status.New, @event.Order.TotalPrice);
     }
 
     public static OrderSummary Apply(OrderCancelledEvent @event)
