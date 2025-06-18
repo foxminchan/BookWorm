@@ -14,15 +14,13 @@ public static class OpenApiExtensions
         var document = sp.GetRequiredService<DocumentOptions>();
         var identity = sp.GetRequiredService<IdentityOptions>();
 
-        Span<string> versions = ["v1"];
-
-        foreach (var description in versions)
+        foreach (var version in sp.GetApiVersionDescription())
         {
             services.AddOpenApi(
-                description,
+                version.GroupName,
                 options =>
                 {
-                    options.ApplyApiVersionInfo(document);
+                    options.ApplyApiVersionInfo(document, version);
                     options.ApplySchemaNullableFalse();
                     options.ApplySecuritySchemeDefinitions();
                     options.ApplyAuthorizationChecks([.. identity.Scopes.Keys]);

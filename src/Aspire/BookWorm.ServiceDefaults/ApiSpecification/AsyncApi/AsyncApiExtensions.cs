@@ -12,18 +12,17 @@ public static class AsyncApiExtensions
         {
             options.AssemblyMarkerTypes = types;
 
-            Span<string> versions = ["1.0.0"];
             using var sp = services.BuildServiceProvider();
             var document = sp.GetRequiredService<DocumentOptions>();
 
-            foreach (var version in versions)
+            foreach (var version in sp.GetApiVersionDescription())
             {
                 options.AsyncApi = new()
                 {
-                    Info = new(document.Title, version)
+                    Info = new(document.Title, version.ApiVersion.ToString())
                     {
                         Description = ApiVersionDescriptionBuilder.BuildDescription(
-                            sp.GetApiVersionDescription(version),
+                            version,
                             document.Description
                         ),
 
