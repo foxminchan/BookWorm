@@ -34,6 +34,9 @@
     <ProjectReference Include="..\..\Services\Ordering\BookWorm.Ordering\BookWorm.Ordering.csproj" />
     <ProjectReference Include="..\..\Services\Rating\BookWorm.Rating\BookWorm.Rating.csproj" />
   </ItemGroup>
+  <ItemGroup Label="Other">
+    <PackageReference Include="CliWrap" />
+  </ItemGroup>
   <ItemGroup Label="Integrations">
     <ProjectReference
       Include="..\..\BuildingBlocks\BookWorm.Constants\BookWorm.Constants.csproj"
