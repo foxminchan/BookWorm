@@ -3,6 +3,11 @@ id: GetBookGrpc
 version: 1.0.0
 name: Get Book (gRPC)
 summary: Get a book by ID via gRPC
+channels:
+  - id: catalog.{env}.events
+    version: 1.0.0
+    parameters:
+      env: stg
 badges:
   - content: GET
     textColor: blue
@@ -18,6 +23,11 @@ badges:
     icon: BookOpenIcon
 owners:
   - nhanxnguyen
+deprecated:
+  date: 2025-06-20
+  message: |
+    This endpoint (`GetBookGrpc`) is currently not utilized by any service in BookWorm.
+    For retrieving books, consider using the `ListBookGrpc` endpoint, which is designed for listing and querying books efficiently.
 ---
 
 ## Overview

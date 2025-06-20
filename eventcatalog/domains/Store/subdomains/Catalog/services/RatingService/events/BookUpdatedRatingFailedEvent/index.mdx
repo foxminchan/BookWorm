@@ -5,6 +5,9 @@ name: Book Updated Rating Fail
 summary: Represents a failed integration event when updating a book's rating in the system
 channels:
   - id: rating.{env}.events
+    version: 1.0.0
+    parameters:
+      env: stg
 badges:
   - content: Broker:AMQP
     backgroundColor: green

@@ -5,6 +5,9 @@ name: Order Status Changed To Cancel
 summary: Represents an integration event to notify the system about the status change of an order to `Cancel`
 channels:
   - id: finance.{env}.events
+    version: 1.0.0
+    parameters:
+      env: stg
 badges:
   - content: Order Lifecycle
     textColor: orange

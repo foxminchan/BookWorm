@@ -1,6 +1,7 @@
 {
   "name": "BookWorm",
   "image": "mcr.microsoft.com/devcontainers/dotnet:dev-9.0-bookworm",  "features": {
+    "ghcr.io/azure/azure-dev/azd:latest": {},
     "ghcr.io/devcontainers/features/azure-cli:1": {},
     "ghcr.io/devcontainers/features/docker-in-docker:2": {},
     "ghcr.io/devcontainers/features/common-utils:2": {},
