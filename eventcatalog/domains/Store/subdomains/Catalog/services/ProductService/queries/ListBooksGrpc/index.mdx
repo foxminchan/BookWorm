@@ -3,6 +3,11 @@ id: ListBooksGrpc
 version: 1.0.0
 name: List Books (gRPC)
 summary: List all books via gRPC
+channels:
+  - id: catalog.{env}.events
+    version: 1.0.0
+    parameters:
+      env: stg
 badges:
   - content: GET
     textColor: blue
