@@ -59,11 +59,11 @@ builder.AddOllama(configure =>
 var keycloak = builder
     .AddKeycloak(Components.KeyCloak)
     .WithDataVolume()
-    .WithCustomTheme()
-    .WithHttpEnabled()
+    .WithCustomTheme(nameof(BookWorm).ToLowerInvariant())
     .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent)
-    .WithSampleRealmImport(nameof(BookWorm).ToLowerInvariant(), nameof(BookWorm));
+    .WithSampleRealmImport(nameof(BookWorm).ToLowerInvariant(), nameof(BookWorm))
+    .RunWithHttpsDevCertificate();
 
 var catalogApi = builder
     .AddProject<BookWorm_Catalog>(Application.Catalog)
@@ -79,8 +79,7 @@ var catalogApi = builder
     .WaitFor(qdrant)
     .WithReference(redis)
     .WaitFor(redis)
-    .WithReference(keycloak)
-    .WaitFor(keycloak)
+    .WithIdP(keycloak)
     .WithRoleAssignments(
         storage,
         StorageBuiltInRole.StorageBlobDataContributor,
@@ -108,8 +107,7 @@ var chatApi = builder
     .WaitFor(mcp)
     .WithReference(chatDb)
     .WaitFor(chatDb)
-    .WithReference(keycloak)
-    .WaitFor(keycloak)
+    .WithIdP(keycloak)
     .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor)
     .WithOpenApi()
     .WithHealthCheck();
@@ -123,8 +121,7 @@ var basketApi = builder
     .WithReference(queue)
     .WaitFor(queue)
     .WithReference(catalogApi)
-    .WithReference(keycloak)
-    .WaitFor(keycloak)
+    .WithIdP(keycloak)
     .WithOpenApi()
     .WithAsyncApi()
     .WithHealthCheck();
@@ -148,8 +145,7 @@ var orderingApi = builder
     .WaitFor(queue)
     .WithReference(redis)
     .WaitFor(redis)
-    .WithReference(keycloak)
-    .WaitFor(keycloak)
+    .WithIdP(keycloak)
     .WithReference(catalogApi)
     .WithReference(basketApi)
     .WithOpenApi()
@@ -162,8 +158,7 @@ var ratingApi = builder
     .WaitFor(ratingDb)
     .WithReference(queue)
     .WaitFor(queue)
-    .WithReference(keycloak)
-    .WaitFor(keycloak)
+    .WithIdP(keycloak)
     .WithOpenApi()
     .WithAsyncApi()
     .WithHealthCheck();
@@ -174,8 +169,7 @@ var financeApi = builder
     .WaitFor(financeDb)
     .WithReference(queue)
     .WaitFor(queue)
-    .WithReference(keycloak)
-    .WaitFor(keycloak)
+    .WithIdP(keycloak)
     .WithOpenApi()
     .WithAsyncApi()
     .WithHealthCheck();

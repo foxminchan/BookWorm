@@ -1,7 +1,7 @@
 {
   "id": "7159a0fb-1009-40ae-9dd3-5d310a64970c",
-  "realm": "bookworm",
-  "displayName": "BookWorm",
+  "realm": "${REALM_NAME}",
+  "displayName": "${REALM_DISPLAY_NAME}",
   "displayNameHtml": "",
   "notBefore": 0,
   "defaultSignatureAlgorithm": "RS256",
@@ -87,21 +87,13 @@
       },
       {
         "id": "ade97ae7-296f-414d-ba33-6ea1ff0dbd20",
-        "name": "default-roles-bookworm",
+        "name": "default-roles-${REALM_NAME}",
         "description": "${role_default-roles}",
         "composite": true,
         "composites": {
-          "realm": [
-            "offline_access",
-            "uma_authorization",
-            "USER"
-          ],
+          "realm": ["offline_access", "uma_authorization", "USER"],
           "client": {
-            "account": [
-              "manage-account",
-              "view-consent",
-              "view-profile"
-            ]
+            "account": ["manage-account", "view-consent", "view-profile"]
           }
         },
         "clientRole": false,
@@ -154,9 +146,7 @@
           "composite": true,
           "composites": {
             "client": {
-              "realm-management": [
-                "query-clients"
-              ]
+              "realm-management": ["query-clients"]
             }
           },
           "clientRole": true,
@@ -302,10 +292,7 @@
           "composite": true,
           "composites": {
             "client": {
-              "realm-management": [
-                "query-users",
-                "query-groups"
-              ]
+              "realm-management": ["query-users", "query-groups"]
             }
           },
           "clientRole": true,
@@ -322,7 +309,7 @@
           "attributes": {}
         }
       ],
-      "catalog-api": [
+      "${CLIENT_CATALOG_ID}": [
         {
           "id": "f04ab1a1-33b2-4651-93f7-c1c87e8d1a16",
           "name": "uma_protection",
@@ -332,7 +319,7 @@
           "attributes": {}
         }
       ],
-      "rating-api": [
+      "${CLIENT_RATING_ID}": [
         {
           "id": "80ca6b7d-6531-4459-8a70-a9053567f5c5",
           "name": "uma_protection",
@@ -343,7 +330,7 @@
         }
       ],
       "security-admin-console": [],
-      "ordering-api": [
+      "${CLIENT_ORDERING_ID}": [
         {
           "id": "fb8a1317-9e95-4ad3-8ac1-8c1007e8f2c5",
           "name": "uma_protection",
@@ -355,7 +342,7 @@
       ],
       "admin-cli": [],
       "account-console": [],
-      "basket-api": [
+      "${CLIENT_BASKET_ID}": [
         {
           "id": "fcdc711b-7a4b-4353-90a2-70a7f12f5de0",
           "name": "uma_protection",
@@ -376,7 +363,7 @@
           "attributes": {}
         }
       ],
-      "finance-api": [
+      "${CLIENT_FINANCE_ID}": [
         {
           "id": "d94f2b6a-b5d2-438f-9e42-5d4fa9ebd2be",
           "name": "uma_protection",
@@ -394,9 +381,7 @@
           "composite": true,
           "composites": {
             "client": {
-              "account": [
-                "manage-account-links"
-              ]
+              "account": ["manage-account-links"]
             }
           },
           "clientRole": true,
@@ -419,9 +404,7 @@
           "composite": true,
           "composites": {
             "client": {
-              "account": [
-                "view-consent"
-              ]
+              "account": ["view-consent"]
             }
           },
           "clientRole": true,
@@ -474,7 +457,7 @@
           "attributes": {}
         }
       ],
-      "chat-api": [
+      "${CLIENT_CHATTING_ID}": [
         {
           "id": "eb395161-f22f-41e7-a1d3-3e7f889886ac",
           "name": "uma_protection",
@@ -489,15 +472,13 @@
   "groups": [],
   "defaultRole": {
     "id": "ade97ae7-296f-414d-ba33-6ea1ff0dbd20",
-    "name": "default-roles-bookworm",
+    "name": "default-roles-${REALM_NAME}",
     "description": "${role_default-roles}",
     "composite": true,
     "clientRole": false,
     "containerId": "7159a0fb-1009-40ae-9dd3-5d310a64970c"
   },
-  "requiredCredentials": [
-    "password"
-  ],
+  "requiredCredentials": ["password"],
   "otpPolicyType": "totp",
   "otpPolicyAlgorithm": "HmacSHA1",
   "otpPolicyInitialCounter": 0,
@@ -512,10 +493,7 @@
   ],
   "localizationTexts": {},
   "webAuthnPolicyRpEntityName": "keycloak",
-  "webAuthnPolicySignatureAlgorithms": [
-    "ES256",
-    "RS256"
-  ],
+  "webAuthnPolicySignatureAlgorithms": ["ES256", "RS256"],
   "webAuthnPolicyRpId": "",
   "webAuthnPolicyAttestationConveyancePreference": "not specified",
   "webAuthnPolicyAuthenticatorAttachment": "not specified",
@@ -526,10 +504,7 @@
   "webAuthnPolicyAcceptableAaguids": [],
   "webAuthnPolicyExtraOrigins": [],
   "webAuthnPolicyPasswordlessRpEntityName": "keycloak",
-  "webAuthnPolicyPasswordlessSignatureAlgorithms": [
-    "ES256",
-    "RS256"
-  ],
+  "webAuthnPolicyPasswordlessSignatureAlgorithms": ["ES256", "RS256"],
   "webAuthnPolicyPasswordlessRpId": "",
   "webAuthnPolicyPasswordlessAttestationConveyancePreference": "not specified",
   "webAuthnPolicyPasswordlessAuthenticatorAttachment": "not specified",
@@ -542,126 +517,102 @@
   "users": [
     {
       "id": "74b3f025-6c8e-451a-a32c-286ed08e0eac",
-      "username": "service-account-basket-api",
+      "username": "service-account-${CLIENT_BASKET_ID}",
       "emailVerified": false,
       "createdTimestamp": 1748888907625,
       "enabled": true,
       "totp": false,
-      "serviceAccountClientId": "basket-api",
+      "serviceAccountClientId": "${CLIENT_BASKET_ID}",
       "disableableCredentialTypes": [],
       "requiredActions": [],
-      "realmRoles": [
-        "default-roles-bookworm"
-      ],
+      "realmRoles": ["default-roles-${REALM_NAME}"],
       "clientRoles": {
-        "basket-api": [
-          "uma_protection"
-        ]
+        "${CLIENT_BASKET_ID}": ["uma_protection"]
       },
       "notBefore": 0,
       "groups": []
     },
     {
       "id": "25d3e3a8-3d02-4e4b-bc58-9af00f93938c",
-      "username": "service-account-catalog-api",
+      "username": "service-account-${CLIENT_CATALOG_ID}",
       "emailVerified": false,
       "createdTimestamp": 1748888580944,
       "enabled": true,
       "totp": false,
-      "serviceAccountClientId": "catalog-api",
+      "serviceAccountClientId": "${CLIENT_CATALOG_ID}",
       "disableableCredentialTypes": [],
       "requiredActions": [],
-      "realmRoles": [
-        "default-roles-bookworm"
-      ],
+      "realmRoles": ["default-roles-${REALM_NAME}"],
       "clientRoles": {
-        "catalog-api": [
-          "uma_protection"
-        ]
+        "${CLIENT_CATALOG_ID}": ["uma_protection"]
       },
       "notBefore": 0,
       "groups": []
     },
     {
       "id": "1e74e4e2-1f79-4abf-8f10-5efda38de872",
-      "username": "service-account-chat-api",
+      "username": "service-account-${CLIENT_CHATTING_ID}",
       "emailVerified": false,
       "createdTimestamp": 1748888726973,
       "enabled": true,
       "totp": false,
-      "serviceAccountClientId": "chat-api",
+      "serviceAccountClientId": "${CLIENT_CHATTING_ID}",
       "disableableCredentialTypes": [],
       "requiredActions": [],
-      "realmRoles": [
-        "default-roles-bookworm"
-      ],
+      "realmRoles": ["default-roles-${REALM_NAME}"],
       "clientRoles": {
-        "chat-api": [
-          "uma_protection"
-        ]
+        "${CLIENT_CHATTING_ID}": ["uma_protection"]
       },
       "notBefore": 0,
       "groups": []
     },
     {
       "id": "76536746-d26a-4255-8189-5b91096bdcdf",
-      "username": "service-account-finance-api",
+      "username": "service-account-${CLIENT_FINANCE_ID}",
       "emailVerified": false,
       "createdTimestamp": 1748889200822,
       "enabled": true,
       "totp": false,
-      "serviceAccountClientId": "finance-api",
+      "serviceAccountClientId": "${CLIENT_FINANCE_ID}",
       "disableableCredentialTypes": [],
       "requiredActions": [],
-      "realmRoles": [
-        "default-roles-bookworm"
-      ],
+      "realmRoles": ["default-roles-${REALM_NAME}"],
       "clientRoles": {
-        "finance-api": [
-          "uma_protection"
-        ]
+        "${CLIENT_FINANCE_ID}": ["uma_protection"]
       },
       "notBefore": 0,
       "groups": []
     },
     {
       "id": "fef2a4d7-82be-47a0-8e62-ae8427402584",
-      "username": "service-account-ordering-api",
+      "username": "service-account-${CLIENT_ORDERING_ID}",
       "emailVerified": false,
       "createdTimestamp": 1748888987403,
       "enabled": true,
       "totp": false,
-      "serviceAccountClientId": "ordering-api",
+      "serviceAccountClientId": "${CLIENT_ORDERING_ID}",
       "disableableCredentialTypes": [],
       "requiredActions": [],
-      "realmRoles": [
-        "default-roles-bookworm"
-      ],
+      "realmRoles": ["default-roles-${REALM_NAME}"],
       "clientRoles": {
-        "ordering-api": [
-          "uma_protection"
-        ]
+        "${CLIENT_ORDERING_ID}": ["uma_protection"]
       },
       "notBefore": 0,
       "groups": []
     },
     {
       "id": "3d6de182-f41c-452a-b8ad-0ca193cb622f",
-      "username": "service-account-rating-api",
+      "username": "service-account-${CLIENT_RATING_ID}",
       "emailVerified": false,
       "createdTimestamp": 1748889128804,
       "enabled": true,
       "totp": false,
-      "serviceAccountClientId": "rating-api",
+      "serviceAccountClientId": "${CLIENT_RATING_ID}",
       "disableableCredentialTypes": [],
       "requiredActions": [],
-      "realmRoles": [
-        "default-roles-bookworm"
-      ],
+      "realmRoles": ["default-roles-${REALM_NAME}"],
       "clientRoles": {
-        "rating-api": [
-          "uma_protection"
-        ]
+        "${CLIENT_RATING_ID}": ["uma_protection"]
       },
       "notBefore": 0,
       "groups": []
@@ -670,19 +621,14 @@
   "scopeMappings": [
     {
       "clientScope": "offline_access",
-      "roles": [
-        "offline_access"
-      ]
+      "roles": ["offline_access"]
     }
   ],
   "clientScopeMappings": {
     "account": [
       {
         "client": "account-console",
-        "roles": [
-          "manage-account",
-          "view-groups"
-        ]
+        "roles": ["manage-account", "view-groups"]
       }
     ]
   },
@@ -694,14 +640,12 @@
       "description": "",
       "rootUrl": "${authBaseUrl}",
       "adminUrl": "",
-      "baseUrl": "/realms/bookworm/account/",
+      "baseUrl": "/realms/${REALM_NAME}/account/",
       "surrogateAuthRequired": false,
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "redirectUris": [
-        "/realms/bookworm/account/*"
-      ],
+      "redirectUris": ["/realms/${REALM_NAME}/account/*"],
       "webOrigins": [],
       "notBefore": 0,
       "bearerOnly": false,
@@ -718,7 +662,7 @@
         "oidc.ciba.grant.enabled": "false",
         "backchannel.logout.session.required": "true",
         "standard.token.exchange.enabled": "false",
-        "login_theme": "keycloak.v2",
+        "login_theme": "${THEME_NAME}",
         "post.logout.redirect.uris": "+",
         "oauth2.device.authorization.grant.enabled": "false",
         "display.on.consent.screen": "false",
@@ -748,14 +692,12 @@
       "clientId": "account-console",
       "name": "${client_account-console}",
       "rootUrl": "${authBaseUrl}",
-      "baseUrl": "/realms/bookworm/account/",
+      "baseUrl": "/realms/${REALM_NAME}/account/",
       "surrogateAuthRequired": false,
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "redirectUris": [
-        "/realms/bookworm/account/*"
-      ],
+      "redirectUris": ["/realms/${REALM_NAME}/account/*"],
       "webOrigins": [],
       "notBefore": 0,
       "bearerOnly": false,
@@ -847,23 +789,19 @@
     },
     {
       "id": "f1f6b9ba-8625-449d-97e1-53505e93e8aa",
-      "clientId": "basket-api",
-      "name": "Basket API",
+      "clientId": "${CLIENT_BASKET_ID}",
+      "name": "${CLIENT_BASKET_NAME}",
       "description": "Manages the lifecycle of customer shopping baskets in the BookWorm e-commerce system",
-      "rootUrl": "",
-      "adminUrl": "",
-      "baseUrl": "",
+      "rootUrl": "${CLIENT_BASKET_URL}",
+      "adminUrl": "${CLIENT_BASKET_URL_CONTAINERHOST}",
+      "baseUrl": "/",
       "surrogateAuthRequired": false,
       "enabled": true,
       "alwaysDisplayInConsole": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "**********",
-      "redirectUris": [
-        "*"
-      ],
-      "webOrigins": [
-        "*"
-      ],
+      "secret": "${CLIENT_BASKET_SECRET}",
+      "redirectUris": ["/scalar/*"],
+      "webOrigins": ["*"],
       "notBefore": 0,
       "bearerOnly": false,
       "consentRequired": false,
@@ -892,7 +830,7 @@
         "request.object.encryption.alg": "any",
         "client.introspection.response.allow.jwt.claim.enabled": "false",
         "standard.token.exchange.enabled": "false",
-        "login_theme": "bookworm",
+        "login_theme": "${THEME_NAME}",
         "client.use.lightweight.access.token.enabled": "false",
         "request.object.required": "not required",
         "access.token.header.type.rfc9068": "false",
@@ -914,7 +852,7 @@
         "email"
       ],
       "optionalClientScopes": [
-        "basket",
+        "${CLIENT_BASKET_ID}",
         "address",
         "phone",
         "organization",
@@ -967,23 +905,19 @@
     },
     {
       "id": "8cf34f0b-4f2e-47ef-970a-110397a1c924",
-      "clientId": "catalog-api",
-      "name": "Catalog API",
+      "clientId": "${CLIENT_CATALOG_ID}",
+      "name": "${CLIENT_CATALOG_NAME}",
       "description": "Manages the catalog of products for the BookWorm platform, including books, authors, and categories",
-      "rootUrl": "",
-      "adminUrl": "",
-      "baseUrl": "",
+      "rootUrl": "${CLIENT_CATALOG_URL}",
+      "adminUrl": "${CLIENT_CATALOG_URL_CONTAINERHOST}",
+      "baseUrl": "/",
       "surrogateAuthRequired": false,
       "enabled": true,
       "alwaysDisplayInConsole": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "**********",
-      "redirectUris": [
-        "*"
-      ],
-      "webOrigins": [
-        "*"
-      ],
+      "secret": "${CLIENT_CATALOG_SECRET}",
+      "redirectUris": ["/scalar/*"],
+      "webOrigins": ["*"],
       "notBefore": 0,
       "bearerOnly": false,
       "consentRequired": false,
@@ -1012,7 +946,7 @@
         "request.object.encryption.alg": "any",
         "client.introspection.response.allow.jwt.claim.enabled": "false",
         "standard.token.exchange.enabled": "false",
-        "login_theme": "bookworm",
+        "login_theme": "${THEME_NAME}",
         "client.use.lightweight.access.token.enabled": "false",
         "request.object.required": "not required",
         "access.token.header.type.rfc9068": "false",
@@ -1036,7 +970,7 @@
       "optionalClientScopes": [
         "address",
         "phone",
-        "catalog",
+        "${CLIENT_CATALOG_ID}",
         "organization",
         "offline_access",
         "microprofile-jwt"
@@ -1044,23 +978,19 @@
     },
     {
       "id": "dc87a6cc-0137-4248-9215-632c3b7fe073",
-      "clientId": "chat-api",
-      "name": "Chat API",
+      "clientId": "${CLIENT_CHATTING_ID}",
+      "name": "${CLIENT_CHATTING_NAME}",
       "description": "Manages the chat functionality for the BookWorm platform, providing conversational interactions about books and reading recommendations",
-      "rootUrl": "",
-      "adminUrl": "",
-      "baseUrl": "",
+      "rootUrl": "${CLIENT_CHATTING_URL}",
+      "adminUrl": "${CLIENT_CHATTING_URL_CONTAINERHOST}",
+      "baseUrl": "/",
       "surrogateAuthRequired": false,
       "enabled": true,
       "alwaysDisplayInConsole": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "**********",
-      "redirectUris": [
-        "*"
-      ],
-      "webOrigins": [
-        "*"
-      ],
+      "secret": "${CLIENT_CHATTING_SECRET}",
+      "redirectUris": ["/scalar/*"],
+      "webOrigins": ["*"],
       "notBefore": 0,
       "bearerOnly": false,
       "consentRequired": false,
@@ -1089,7 +1019,7 @@
         "request.object.encryption.alg": "any",
         "client.introspection.response.allow.jwt.claim.enabled": "false",
         "standard.token.exchange.enabled": "false",
-        "login_theme": "bookworm",
+        "login_theme": "${THEME_NAME}",
         "client.use.lightweight.access.token.enabled": "false",
         "request.object.required": "not required",
         "access.token.header.type.rfc9068": "false",
@@ -1113,7 +1043,7 @@
       "optionalClientScopes": [
         "address",
         "phone",
-        "chat",
+        "${CLIENT_CHATTING_ID}",
         "organization",
         "offline_access",
         "microprofile-jwt"
@@ -1121,23 +1051,19 @@
     },
     {
       "id": "1b54c9d9-3144-45d1-ab6e-762dcce7823f",
-      "clientId": "finance-api",
-      "name": "Finance Api",
+      "clientId": "${CLIENT_FINANCE_ID}",
+      "name": "${CLIENT_FINANCE_NAME}",
       "description": "Orchestrates order processing and financial transactions for BookWorm",
-      "rootUrl": "",
-      "adminUrl": "",
-      "baseUrl": "",
+      "rootUrl": "${CLIENT_FINANCE_URL}",
+      "adminUrl": "${CLIENT_FINANCE_URL_CONTAINERHOST}",
+      "baseUrl": "/",
       "surrogateAuthRequired": false,
       "enabled": true,
       "alwaysDisplayInConsole": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "**********",
-      "redirectUris": [
-        "*"
-      ],
-      "webOrigins": [
-        "*"
-      ],
+      "secret": "${CLIENT_FINANCE_SECRET}",
+      "redirectUris": ["/scalar/*"],
+      "webOrigins": ["*"],
       "notBefore": 0,
       "bearerOnly": false,
       "consentRequired": false,
@@ -1167,7 +1093,7 @@
         "request.object.encryption.alg": "any",
         "client.introspection.response.allow.jwt.claim.enabled": "false",
         "standard.token.exchange.enabled": "false",
-        "login_theme": "bookworm",
+        "login_theme": "${THEME_NAME}",
         "client.use.lightweight.access.token.enabled": "false",
         "request.object.required": "not required",
         "access.token.header.type.rfc9068": "false",
@@ -1194,28 +1120,24 @@
         "organization",
         "offline_access",
         "microprofile-jwt",
-        "finance"
+        "${CLIENT_FINANCE_ID}"
       ]
     },
     {
       "id": "4d65d7fe-f70e-4991-99e7-340eb5012130",
-      "clientId": "ordering-api",
-      "name": "Ordering Api",
+      "clientId": "${CLIENT_ORDERING_ID}",
+      "name": "${CLIENT_ORDERING_NAME}",
       "description": "Orchestrates the entire order lifecycle, from creation to completion or cancellation, for the BookWorm platform",
-      "rootUrl": "",
-      "adminUrl": "",
-      "baseUrl": "",
+      "rootUrl": "${CLIENT_ORDERING_URL}",
+      "adminUrl": "${CLIENT_ORDERING_URL_CONTAINERHOST}",
+      "baseUrl": "/",
       "surrogateAuthRequired": false,
       "enabled": true,
       "alwaysDisplayInConsole": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "**********",
-      "redirectUris": [
-        "*"
-      ],
-      "webOrigins": [
-        "*"
-      ],
+      "secret": "${CLIENT_ORDERING_SECRET}",
+      "redirectUris": ["/scalar/*"],
+      "webOrigins": ["*"],
       "notBefore": 0,
       "bearerOnly": false,
       "consentRequired": false,
@@ -1244,7 +1166,7 @@
         "request.object.encryption.alg": "any",
         "client.introspection.response.allow.jwt.claim.enabled": "false",
         "standard.token.exchange.enabled": "false",
-        "login_theme": "bookworm",
+        "login_theme": "${THEME_NAME}",
         "client.use.lightweight.access.token.enabled": "false",
         "request.object.required": "not required",
         "access.token.header.type.rfc9068": "false",
@@ -1268,7 +1190,7 @@
       "optionalClientScopes": [
         "address",
         "phone",
-        "ordering",
+        "${CLIENT_ORDERING_ID}",
         "organization",
         "offline_access",
         "microprofile-jwt"
@@ -1276,23 +1198,19 @@
     },
     {
       "id": "b3abf8f9-4d75-4a3c-ada2-3b27abbe509f",
-      "clientId": "rating-api",
-      "name": "Rating Api",
+      "clientId": "${CLIENT_RATING_ID}",
+      "name": "${CLIENT_RATING_NAME}",
       "description": "Handles the collection, storage, and aggregation of user feedback and ratings for books on the BookWorm platform",
-      "rootUrl": "",
-      "adminUrl": "",
-      "baseUrl": "",
+      "rootUrl": "${CLIENT_RATING_URL}",
+      "adminUrl": "${CLIENT_RATING_URL_CONTAINERHOST}",
+      "baseUrl": "/",
       "surrogateAuthRequired": false,
       "enabled": true,
       "alwaysDisplayInConsole": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "**********",
-      "redirectUris": [
-        "*"
-      ],
-      "webOrigins": [
-        "*"
-      ],
+      "secret": "${CLIENT_RATING_SECRET}",
+      "redirectUris": ["/scalar/*"],
+      "webOrigins": ["*"],
       "notBefore": 0,
       "bearerOnly": false,
       "consentRequired": false,
@@ -1321,7 +1239,7 @@
         "request.object.encryption.alg": "any",
         "client.introspection.response.allow.jwt.claim.enabled": "false",
         "standard.token.exchange.enabled": "false",
-        "login_theme": "bookworm",
+        "login_theme": "${THEME_NAME}",
         "client.use.lightweight.access.token.enabled": "false",
         "request.object.required": "not required",
         "access.token.header.type.rfc9068": "false",
@@ -1347,7 +1265,7 @@
         "phone",
         "organization",
         "offline_access",
-        "rating",
+        "${CLIENT_RATING_ID}",
         "microprofile-jwt"
       ]
     },
@@ -1399,17 +1317,13 @@
       "clientId": "security-admin-console",
       "name": "${client_security-admin-console}",
       "rootUrl": "${authAdminUrl}",
-      "baseUrl": "/admin/bookworm/console/",
+      "baseUrl": "/admin/${REALM_NAME}/console/",
       "surrogateAuthRequired": false,
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "redirectUris": [
-        "/admin/bookworm/console/*"
-      ],
-      "webOrigins": [
-        "+"
-      ],
+      "redirectUris": ["/admin/${REALM_NAME}/console/*"],
+      "webOrigins": ["+"],
       "notBefore": 0,
       "bearerOnly": false,
       "consentRequired": false,
@@ -1620,8 +1534,8 @@
     },
     {
       "id": "15520ea5-5c09-4ab4-abec-2ee89fb32267",
-      "name": "chat",
-      "description": "Chat API",
+      "name": "${CLIENT_CHATTING_ID}",
+      "description": "${CLIENT_CHATTING_NAME}",
       "protocol": "openid-connect",
       "attributes": {
         "include.in.token.scope": "true",
@@ -1687,8 +1601,8 @@
     },
     {
       "id": "fbd2ef92-6dc3-46af-b0cd-d8b81f18cb06",
-      "name": "rating",
-      "description": "Rating API",
+      "name": "${CLIENT_RATING_ID}",
+      "description": "${CLIENT_RATING_NAME}",
       "protocol": "openid-connect",
       "attributes": {
         "include.in.token.scope": "true",
@@ -1775,8 +1689,8 @@
     },
     {
       "id": "fa0295b4-d575-49ea-bad8-34fd0e492100",
-      "name": "basket",
-      "description": "Basket API",
+      "name": "${CLIENT_BASKET_ID}",
+      "description": "${CLIENT_BASKET_NAME}",
       "protocol": "openid-connect",
       "attributes": {
         "include.in.token.scope": "true",
@@ -1900,8 +1814,8 @@
     },
     {
       "id": "dc9d8059-8e37-4ffd-904b-1a4d080afb17",
-      "name": "catalog",
-      "description": "Catalog API",
+      "name": "${CLIENT_CATALOG_ID}",
+      "description": "${CLIENT_CATALOG_NAME}",
       "protocol": "openid-connect",
       "attributes": {
         "include.in.token.scope": "true",
@@ -1966,8 +1880,8 @@
     },
     {
       "id": "847b3b8e-aa0d-43c7-af3a-e57b5b938bec",
-      "name": "ordering",
-      "description": "Ordering API",
+      "name": "${CLIENT_ORDERING_ID}",
+      "description": "${CLIENT_ORDERING_NAME}",
       "protocol": "openid-connect",
       "attributes": {
         "include.in.token.scope": "true",
@@ -1978,8 +1892,8 @@
     },
     {
       "id": "a20ce209-69ca-491e-87ce-e991ce42e54c",
-      "name": "finance",
-      "description": "Finance API",
+      "name": "${CLIENT_FINANCE_ID}",
+      "description": "${CLIENT_FINANCE_NAME}",
       "protocol": "openid-connect",
       "attributes": {
         "include.in.token.scope": "true",
@@ -2251,14 +2165,12 @@
     "strictTransportSecurity": "max-age=31536000; includeSubDomains"
   },
   "smtpServer": {},
-  "loginTheme": "bookworm",
+  "loginTheme": "${THEME_NAME}",
   "accountTheme": "keycloak.v3",
   "adminTheme": "keycloak.v2",
   "emailTheme": "keycloak",
   "eventsEnabled": false,
-  "eventsListeners": [
-    "jboss-logging"
-  ],
+  "eventsListeners": ["jboss-logging"],
   "enabledEventTypes": [],
   "adminEventsEnabled": false,
   "adminEventsDetailsEnabled": false,
@@ -2300,9 +2212,7 @@
         "subType": "anonymous",
         "subComponents": {},
         "config": {
-          "max-clients": [
-            "200"
-          ]
+          "max-clients": ["200"]
         }
       },
       {
@@ -2312,12 +2222,8 @@
         "subType": "anonymous",
         "subComponents": {},
         "config": {
-          "host-sending-registration-request-must-match": [
-            "true"
-          ],
-          "client-uris-must-match": [
-            "true"
-          ]
+          "host-sending-registration-request-must-match": ["true"],
+          "client-uris-must-match": ["true"]
         }
       },
       {
@@ -2327,9 +2233,7 @@
         "subType": "anonymous",
         "subComponents": {},
         "config": {
-          "allow-default-scopes": [
-            "true"
-          ]
+          "allow-default-scopes": ["true"]
         }
       },
       {
@@ -2347,9 +2251,7 @@
         "subType": "authenticated",
         "subComponents": {},
         "config": {
-          "allow-default-scopes": [
-            "true"
-          ]
+          "allow-default-scopes": ["true"]
         }
       },
       {
@@ -2379,12 +2281,8 @@
         "providerId": "rsa-enc-generated",
         "subComponents": {},
         "config": {
-          "priority": [
-            "100"
-          ],
-          "algorithm": [
-            "RSA-OAEP"
-          ]
+          "priority": ["100"],
+          "algorithm": ["RSA-OAEP"]
         }
       },
       {
@@ -2393,9 +2291,7 @@
         "providerId": "rsa-generated",
         "subComponents": {},
         "config": {
-          "priority": [
-            "100"
-          ]
+          "priority": ["100"]
         }
       },
       {
@@ -2404,12 +2300,8 @@
         "providerId": "hmac-generated",
         "subComponents": {},
         "config": {
-          "priority": [
-            "100"
-          ],
-          "algorithm": [
-            "HS512"
-          ]
+          "priority": ["100"],
+          "algorithm": ["HS512"]
         }
       },
       {
@@ -2418,9 +2310,7 @@
         "providerId": "aes-generated",
         "subComponents": {},
         "config": {
-          "priority": [
-            "100"
-          ]
+          "priority": ["100"]
         }
       }
     ]
