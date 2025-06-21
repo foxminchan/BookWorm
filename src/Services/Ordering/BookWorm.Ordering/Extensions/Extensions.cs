@@ -16,6 +16,8 @@ public static class Extensions
 
         builder.AddDefaultAuthentication().AddKeycloakClaimsTransformation();
 
+        services.AddSignalR().AddNamedAzureSignalR(Components.Azure.SignalR);
+
         // Add exception handlers
         services.AddExceptionHandler<ValidationExceptionHandler>();
         services.AddExceptionHandler<NotFoundExceptionHandler>();
