@@ -166,7 +166,6 @@ public static class KeycloakExtensions
 
         return builder
             .WithReference(keycloak)
-            .WithEnvironment("Identity__ClientId", clientId)
-            .WithEnvironment("Identity__ClientSecret", clientSecret);
+            .WithEnvironment($"Identity__Scopes__{clientId}", clientId.ToClientName("API"));
     }
 }

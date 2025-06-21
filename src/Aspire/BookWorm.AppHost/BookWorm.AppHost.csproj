@@ -6,6 +6,7 @@
     <NoWarn>ASPIREAZURE001,ASPIRECOMPUTE001,NU1603</NoWarn>
   </PropertyGroup>
   <ItemGroup Label="Aspire">
+    <PackageReference Include="Scalar.Aspire" />
     <PackageReference Include="Aspire.Hosting.Yarp" />
     <PackageReference Include="Aspire.Hosting.Qdrant" />
     <PackageReference Include="Aspire.Hosting.AppHost" />
