@@ -28,11 +28,6 @@ public static class K6Extensions
         int vus = 10
     )
     {
-        if (!builder.ExecutionContext.IsRunMode)
-        {
-            return;
-        }
-
         var endpointName = builder.IsHttpsLaunchProfile() ? Protocol.Https : Protocol.Http;
 
         builder

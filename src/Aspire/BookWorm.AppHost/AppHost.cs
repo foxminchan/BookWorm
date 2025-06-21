@@ -188,8 +188,6 @@ var gateway = builder
     .WithReference(financeApi)
     .WithReference(keycloak);
 
-builder.AddK6(gateway);
-
 builder
     .AddHealthChecksUI()
     .WithExternalHttpEndpoints()
@@ -202,5 +200,19 @@ builder
     .WithReference(basketApi)
     .WithReference(notificationApi)
     .WithReference(financeApi);
+
+if (builder.ExecutionContext.IsRunMode)
+{
+    builder
+        .AddScalar()
+        .WithApi(basketApi)
+        .WithApi(catalogApi)
+        .WithApi(chatApi)
+        .WithApi(orderingApi)
+        .WithApi(ratingApi)
+        .WithApi(financeApi);
+
+    builder.AddK6(gateway);
+}
 
 builder.Build().Run();

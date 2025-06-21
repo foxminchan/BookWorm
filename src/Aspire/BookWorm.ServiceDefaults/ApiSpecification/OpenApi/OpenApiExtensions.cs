@@ -1,6 +1,4 @@
-﻿using Scalar.AspNetCore;
-
-namespace BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
+﻿namespace BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
 
 public static class OpenApiExtensions
 {
@@ -33,28 +31,6 @@ public static class OpenApiExtensions
     public static void UseDefaultOpenApi(this WebApplication app)
     {
         app.MapOpenApi();
-
-        if (!app.Environment.IsDevelopment())
-        {
-            return;
-        }
-
-        app.MapScalarApiReference(options =>
-        {
-            options.Theme = ScalarTheme.BluePlanet;
-            options.DefaultFonts = false;
-            options.AddAuthorizationCodeFlow(
-                OAuthDefaults.DisplayName,
-                flow =>
-                {
-                    var identity = app.Services.GetRequiredService<IdentityOptions>();
-                    flow.Pkce = Pkce.Sha256;
-                    flow.ClientId = identity.ClientId;
-                    flow.ClientSecret = identity.ClientSecret;
-                }
-            );
-        });
-
-        app.MapGet("/", () => Results.Redirect("/scalar/v1")).ExcludeFromDescription();
+        app.MapGet("/", () => Results.Redirect("openapi/v1.json")).ExcludeFromDescription();
     }
 }

@@ -217,13 +217,6 @@ public static class Extensions
                 // https://learn.microsoft.com/aspnet/core/host-and-deploy/health-checks?view=aspnetcore-8.0#use-health-checks-routing
                 .RequireHost(pathToHostsMap[path]);
         }
-
-        // Since OpenAPI/AsyncAPI routes are only available in development mode,
-        // we redirect the root path to the health endpoint in production
-        if (!app.Environment.IsDevelopment())
-        {
-            app.MapGet("/", () => Results.Redirect("/health")).ExcludeFromDescription();
-        }
     }
 
     private static Dictionary<string, string[]> GetPathToHostsMap(string healthChecksUrls)
