@@ -69,8 +69,6 @@ var catalogApi = builder
     .AddProject<BookWorm_Catalog>(Application.Catalog)
     .WithReplicas(builder.ExecutionContext.IsRunMode ? 1 : 2)
     .WithOllama()
-    .WithReference(blobStorage)
-    .WaitFor(blobStorage)
     .WithReference(queue)
     .WaitFor(queue)
     .WithReference(catalogDb)
@@ -80,6 +78,8 @@ var catalogApi = builder
     .WithReference(redis)
     .WaitFor(redis)
     .WithIdP(keycloak)
+    .WithReference(blobStorage)
+    .WaitFor(blobStorage)
     .WithRoleAssignments(
         storage,
         StorageBuiltInRole.StorageBlobDataContributor,
@@ -101,13 +101,13 @@ var chatApi = builder
     .WithOllama()
     .WithReference(redis)
     .WaitFor(redis)
-    .WithReference(signalR)
-    .WaitFor(signalR)
     .WithReference(mcp)
     .WaitFor(mcp)
     .WithReference(chatDb)
     .WaitFor(chatDb)
     .WithIdP(keycloak)
+    .WithReference(signalR)
+    .WaitFor(signalR)
     .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor)
     .WithOpenApi()
     .WithHealthCheck();
@@ -148,6 +148,9 @@ var orderingApi = builder
     .WithIdP(keycloak)
     .WithReference(catalogApi)
     .WithReference(basketApi)
+    .WithReference(signalR)
+    .WaitFor(signalR)
+    .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor)
     .WithOpenApi()
     .WithAsyncApi()
     .WithHealthCheck();

@@ -1,0 +1,68 @@
+---
+id: OrderStream
+version: 1.0.0
+name: Order Stream
+summary: Real-time order event sourcing stream for BookWorm
+badges:
+  - content: WebSocket
+    textColor: orange
+    backgroundColor: orange
+    icon: WifiIcon
+  - content: "Order"
+    textColor: yellow
+    backgroundColor: yellow
+    icon: BookOpenIcon
+owners:
+  - nhanxnguyen
+---
+
+## Overview
+
+The Order Stream service provides a real-time WebSocket connection for users to interact with the BookWorm platform's order management system. It allows users to receive real-time updates on order events, enabling dynamic interactions and monitoring of order statuses.
+
+## Architecture
+
+<NodeGraph />
+
+## WebSocket `wss://api.bookworm.com/api/v1/orders/stream`
+
+The Order Stream service uses WebSocket for real-time communication. Users can connect to the WebSocket endpoint to send and receive order-related events.
+
+### Example Usage
+
+```js title="order-stream.js"
+const connection = new signalR.HubConnectionBuilder()
+	.withUrl("wss://api.bookworm.com/api/v1/orders/stream", {
+		accessTokenFactory: () => "your-access-token"
+	})
+	.build();
+
+await connection.start();
+connection.on("OrderCreated", (order) => {
+	console.log("New order created:", order);
+});
+
+connection.on("OrderUpdated", (order) => {
+	console.log("Order updated:", order);
+});
+
+connection.on("OrderDeleted", (orderId) => {
+	console.log("Order deleted:", orderId);
+});
+
+connection.onclose(() => {
+	console.log("Connection closed");
+});
+
+connection.onreconnected(() => {
+	console.log("Reconnected to the order stream");
+});
+```
+
+## Event Types
+
+The Order Stream service supports the following event types:
+
+- `OrderPlaced`: Triggered when a new order is placed.
+- `OrderCompleted`: Triggered when an order is completed.
+- `OrderCancelled`: Triggered when an order is cancelled.

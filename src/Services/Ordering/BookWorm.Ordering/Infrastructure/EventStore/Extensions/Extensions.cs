@@ -10,7 +10,9 @@ public static class Extensions
 {
     public static void AddEventStore(
         this IHostApplicationBuilder builder,
-        Action<StoreOptions>? configureOptions = null,
+        Action<StoreOptions>? configureStore = null,
+        Action<MartenServiceCollectionExtensions.MartenConfigurationExpression>? configureMarten =
+            null,
         bool disableAsyncDaemon = false
     )
     {
@@ -20,7 +22,7 @@ public static class Extensions
         builder.AddNpgsqlDataSource(Components.Database.Ordering);
 
         var config = services
-            .AddMarten(_ => StoreConfigs.SetStoreOptions(martenConfig, configureOptions))
+            .AddMarten(_ => StoreConfigs.SetStoreOptions(martenConfig, configureStore))
             .UseNpgsqlDataSource()
             .UseLightweightSessions()
             .ApplyAllDatabaseChangesOnStartup();
@@ -31,6 +33,8 @@ public static class Extensions
                 .AddAsyncDaemon(martenConfig.DaemonMode)
                 .AddSubscriptionWithServices<MartenEventPublisher>(ServiceLifetime.Scoped);
         }
+
+        configureMarten?.Invoke(config);
 
         // In a "Production" environment, we're turning off the
         // automatic database migrations and dynamic code generation
