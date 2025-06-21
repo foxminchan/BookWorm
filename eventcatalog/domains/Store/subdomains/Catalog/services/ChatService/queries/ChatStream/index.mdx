@@ -3,6 +3,11 @@ id: ChatStream
 version: 1.0.0
 name: Chat Stream
 summary: Real-time chat stream for BookWorm
+channels:
+  - id: chat.{env}.events
+    version: 1.0.0
+    parameters:
+      env: stg
 badges:
   - content: WebSocket
     textColor: orange
