@@ -164,9 +164,6 @@ public static class KeycloakExtensions
                 context.EnvironmentVariables[$"CLIENT_{clientEnv}_URL_CONTAINERHOST"] = endpoint;
             });
 
-        return builder
-            .WithReference(keycloak)
-            .WithEnvironment("Identity__ClientId", clientId)
-            .WithEnvironment("Identity__ClientSecret", clientSecret);
+        return builder.WithReference(keycloak);
     }
 }

@@ -7,6 +7,7 @@
   </PropertyGroup>
   <ItemGroup Label="Aspire Packages">
     <!-- Aspire Hosting -->
+    <PackageVersion Include="Scalar.Aspire" Version="0.1.0" />
     <PackageVersion Include="Aspire.Hosting.Qdrant" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.AppHost" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="$(AspireVersion)" />
@@ -65,7 +66,6 @@
     <PackageVersion Include="Scrutor" Version="6.1.0" />
     <PackageVersion Include="Saunter" Version="0.13.0" />
     <PackageVersion Include="MediatR" Version="12.5.0" />
-    <PackageVersion Include="Scalar.AspNetCore" Version="2.4.22" />
     <PackageVersion Include="Marten.AspNetCore" Version="8.3.0" />
     <PackageVersion Include="Quartz.AspNetCore" Version="3.14.0" />
     <PackageVersion Include="DistributedLock.Redis" Version="1.0.3" />
@@ -92,7 +92,7 @@
     <PackageVersion Include="Mjml.Net" Version="4.9.0" />
     <PackageVersion Include="SendGrid" Version="9.29.3" />
     <PackageVersion Include="AspNetCore.HealthChecks.SendGrid" Version="$(HealthChecksVersion)" />
-    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.2.0-preview.3" />
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.3.0-preview.1" />
   </ItemGroup>
   <ItemGroup Label="Testing">
     <!-- Testing packages -->
