@@ -1,0 +1,31 @@
+---
+id: chat.{env}.events
+name: Chat Events Channel
+version: 1.0.0
+summary: |
+  A specialized messaging conduit for managing all chat-related activities within the BookWorm e-commerce platform.
+owners:
+  - nhanxnguyen
+address: chat.{env}.events
+protocols:
+  - redis
+  - ws
+parameters:
+  env:
+    enum:
+      - dev
+      - stg
+      - prod
+    default: dev
+    examples:
+      - dev
+      - stg
+      - prod
+    description: "Environment to use for the channel"
+---
+
+## Overview
+
+The Chat Events Channel serves as a specialized messaging conduit for managing all chat-related activities within the BookWorm e-commerce platform. It enables seamless interaction between the Chat Service and various other components, handling key events such as message creation, updates, and deletions. This channel ensures reliable message delivery and maintains eventual consistency across the chat domain.
+
+<ChannelInformation />
