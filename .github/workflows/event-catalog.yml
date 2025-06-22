@@ -2,7 +2,10 @@ name: BookWorm EventCatalog
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+    paths:
+      - "docs/eventcatalog/**"
 
 jobs:
   build:

@@ -3,7 +3,10 @@ name: BookWorm CI
 on:
   push:
     branches: [main]
-    paths: ["src/**", ".github/workflows/ci.yaml"]
+    paths:
+      - "src/**"
+      - ".github/workflows/ci.yaml"
+      - "!**.md"
   workflow_dispatch:
 
 env:

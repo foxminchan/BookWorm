@@ -2,9 +2,14 @@ name: BookWorm Pull Request Validation
 
 on:
   pull_request:
-    paths-ignore:
-      - "**.md"
-    types: [opened, synchronize, reopened]
+    paths:
+      - "src/**"
+      - ".github/workflows/pr-validation.yml"
+      - "!**.md"
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 env:
   DOTNET_VERSION: "9.0.x"
