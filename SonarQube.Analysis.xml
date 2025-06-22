@@ -6,7 +6,7 @@
   <Property Name="sonar.host.url">https://sonarcloud.io</Property>
   <Property Name="sonar.scanner.scanAll">false</Property>
   <Property Name="sonar.exclusions">
-    eventcatalog/**,src/Services/**/**/Infrastructure/Migrations/**
+    docs/**,src/Services/**/**/Infrastructure/Migrations/**
   </Property>
   <Property Name="sonar.coverage.exclusions">
     src/Services/**/**/Infrastructure/**,src/Services/**/**/Extensions/**,src/Services/**/**/Program.cs,src/BuildingBlocks/**,src/Integrations/**,src/Aspire/**
