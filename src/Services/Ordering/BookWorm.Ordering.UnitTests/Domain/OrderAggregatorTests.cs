@@ -96,7 +96,7 @@ public sealed class OrderAggregatorTests
     }
 
     [Test]
-    public void GivenCompletedOrder_WhenCancelling_ThenShouldBeCanceled()
+    public void GivenCompletedOrder_WhenCancelling_ThenShouldRemainCompleted()
     {
         // Arrange
         var order = new Order(Guid.CreateVersion7(), null, []);
@@ -106,7 +106,7 @@ public sealed class OrderAggregatorTests
         order.MarkAsCanceled();
 
         // Assert
-        order.Status.ShouldBe(Status.Cancelled);
+        order.Status.ShouldBe(Status.Completed);
     }
 
     [Test]
@@ -168,5 +168,56 @@ public sealed class OrderAggregatorTests
         // Assert
         order.Buyer.ShouldBeNull();
         order.BuyerId.ShouldBe(buyerId);
+    }
+
+    [Test]
+    public void GivenCancelledOrder_WhenCompleting_ThenShouldRemainCancelled()
+    {
+        // Arrange
+        var order = new Order(Guid.CreateVersion7(), null, []);
+        order.MarkAsCanceled();
+
+        // Act
+        order.MarkAsCompleted();
+
+        // Assert
+        order.Status.ShouldBe(Status.Cancelled);
+    }
+
+    [Test]
+    public void GivenOrderItem_WhenCalculatingTotalPrice_ThenShouldReturnPriceTimesQuantity()
+    {
+        // Arrange
+        var bookId = Guid.CreateVersion7();
+        const int quantity = 3;
+        const decimal price = 15.50m;
+        const decimal expectedTotal = 46.50m;
+
+        // Act
+        var orderItem = new OrderItem(bookId, quantity, price);
+        var totalPrice = orderItem.GetTotalPrice();
+
+        // Assert
+        totalPrice.ShouldBe(expectedTotal);
+    }
+
+    [Test]
+    public void GivenOrderWithItems_WhenCalculatingTotalPrice_ThenShouldReturnSumOfAllItems()
+    {
+        // Arrange
+        var buyerId = Guid.CreateVersion7();
+        var orderItems = new List<OrderItem>
+        {
+            new(Guid.CreateVersion7(), 2, 10.00m), // 20.00
+            new(Guid.CreateVersion7(), 1, 15.50m), // 15.50
+            new(Guid.CreateVersion7(), 3, 8.75m), // 26.25
+        };
+        const decimal expectedTotal = 61.75m;
+
+        // Act
+        var order = new Order(buyerId, null, orderItems);
+
+        // Assert
+        order.TotalPrice.ShouldBe(expectedTotal);
     }
 }

@@ -24,7 +24,7 @@ public sealed class Order() : AuditableEntity, IAggregateRoot, ISoftDelete
     public IReadOnlyCollection<OrderItem> OrderItems => _orderItems.AsReadOnly();
 
     [NotMapped]
-    public decimal TotalPrice => OrderItems.Sum(oi => oi.Price * oi.Quantity);
+    public decimal TotalPrice => OrderItems.Select(item => item.GetTotalPrice()).Sum();
 
     public bool IsDeleted { get; set; }
 
@@ -35,12 +35,22 @@ public sealed class Order() : AuditableEntity, IAggregateRoot, ISoftDelete
 
     public void MarkAsCompleted()
     {
+        if (Status != Status.New)
+        {
+            return;
+        }
+
         Status = Status.Completed;
         RegisterDomainEvent(new OrderCompletedEvent(this));
     }
 
     public void MarkAsCanceled()
     {
+        if (Status != Status.New)
+        {
+            return;
+        }
+
         Status = Status.Cancelled;
         RegisterDomainEvent(new OrderCancelledEvent(this));
     }

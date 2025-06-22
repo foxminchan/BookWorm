@@ -21,4 +21,9 @@ public sealed class OrderItem() : Entity
     public Guid BookId { get; private set; }
     public Guid OrderId { get; private set; }
     public Order? Order { get; private set; } = null!;
+
+    public decimal GetTotalPrice()
+    {
+        return Price * Quantity;
+    }
 }
