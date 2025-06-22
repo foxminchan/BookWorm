@@ -1,11 +1,11 @@
 ﻿using BookWorm.Catalog.Grpc.Services;
 using Microsoft.Extensions.Caching.Hybrid;
-using BookGrpcServiceClient = BookWorm.Catalog.Grpc.Services.BookGrpcService.BookGrpcServiceClient;
 
 namespace BookWorm.Ordering.Grpc.Services.Book;
 
 [ExcludeFromCodeCoverage]
-public sealed class BookService(BookGrpcServiceClient service, HybridCache cache) : IBookService
+public sealed class BookService(BookGrpcService.BookGrpcServiceClient service, HybridCache cache)
+    : IBookService
 {
     public async Task<BookResponse?> GetBookByIdAsync(
         [StringSyntax(StringSyntaxAttribute.GuidFormat)] string id,

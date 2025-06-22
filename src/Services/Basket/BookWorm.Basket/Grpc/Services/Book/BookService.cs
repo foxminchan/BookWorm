@@ -1,10 +1,9 @@
 ﻿using BookWorm.Catalog.Grpc.Services;
-using BookGrpcServiceClient = BookWorm.Catalog.Grpc.Services.BookGrpcService.BookGrpcServiceClient;
 
 namespace BookWorm.Basket.Grpc.Services.Book;
 
 [ExcludeFromCodeCoverage]
-public sealed class BookService(BookGrpcServiceClient service) : IBookService
+public sealed class BookService(BookGrpcService.BookGrpcServiceClient service) : IBookService
 {
     public async Task<BookResponse?> GetBookByIdAsync(
         [StringSyntax(StringSyntaxAttribute.GuidFormat)] string id,

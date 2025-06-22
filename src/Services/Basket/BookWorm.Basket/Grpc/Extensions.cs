@@ -10,7 +10,7 @@ public static class Extensions
     {
         var services = builder.Services;
 
-        services.AddGrpc();
+        services.AddGrpc(options => options.EnableDetailedErrors = true);
 
         services.AddGrpcHealthChecks();
 
