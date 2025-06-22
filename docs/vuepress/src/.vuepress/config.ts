@@ -18,9 +18,9 @@ export default defineUserConfig({
     ],
     [
       "link",
-      { rel: "icon", href: "/BookWorm/favicon.svg", type: "image/svg+xml" },
+      { rel: "icon", href: "/BookWorm/favicon.ico", type: "image/x-icon" },
     ],
-    ["link", { rel: "alternate icon", href: "/BookWorm/favicon.svg" }],
+    ["link", { rel: "alternate icon", href: "/BookWorm/favicon-16x16.png", type: "image/png" }],
     [
       "link",
       { rel: "mask-icon", href: "/BookWorm/favicon.svg", color: "#45AAB8" },
