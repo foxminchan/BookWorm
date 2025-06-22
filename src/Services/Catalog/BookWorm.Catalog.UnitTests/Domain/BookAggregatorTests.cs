@@ -214,6 +214,89 @@ public sealed class BookAggregatorTests
         // Assert
         book.AverageRating.ShouldBe(3);
         book.TotalReviews.ShouldBe(1);
+        book.DomainEvents.ShouldContain(e => e is BookChangedEvent);
+    }
+
+    [Test]
+    public void GivenBookWithOnlyOneRating_WhenRemovingRating_ThenShouldResetRatingToZero()
+    {
+        // Arrange
+        var book = new Book(
+            "Test Book",
+            "Test Description",
+            "test.jpg",
+            19.99m,
+            15.99m,
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7()]
+        );
+
+        // Add one rating
+        book.AddRating(5);
+
+        // Act
+        book.RemoveRating(5);
+
+        // Assert
+        book.AverageRating.ShouldBe(0);
+        book.TotalReviews.ShouldBe(0);
+        book.DomainEvents.ShouldContain(e => e is BookChangedEvent);
+    }
+
+    [Test]
+    public void GivenBookWithNoRatings_WhenRemovingRating_ThenShouldKeepRatingAtZero()
+    {
+        // Arrange
+        var book = new Book(
+            "Test Book",
+            "Test Description",
+            "test.jpg",
+            19.99m,
+            15.99m,
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7()]
+        );
+
+        // Act
+        book.RemoveRating(3);
+
+        // Assert
+        book.AverageRating.ShouldBe(0);
+        book.TotalReviews.ShouldBe(0);
+        book.DomainEvents.ShouldContain(e => e is BookChangedEvent);
+    }
+
+    [Test]
+    public void GivenBookWithMultipleRatings_WhenRemovingRating_ThenShouldCalculateCorrectAverage()
+    {
+        // Arrange
+        var book = new Book(
+            "Test Book",
+            "Test Description",
+            "test.jpg",
+            19.99m,
+            15.99m,
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7()]
+        );
+
+        // Add multiple ratings: 5, 4, 3, 2, 1 (average = 3.0)
+        book.AddRating(5);
+        book.AddRating(4);
+        book.AddRating(3);
+        book.AddRating(2);
+        book.AddRating(1);
+
+        // Act - Remove rating of 5
+        book.RemoveRating(5);
+
+        // Assert - New average should be (4+3+2+1)/4 = 2.5
+        book.AverageRating.ShouldBe(2.5);
+        book.TotalReviews.ShouldBe(4);
+        book.DomainEvents.ShouldContain(e => e is BookChangedEvent);
     }
 
     [Test]

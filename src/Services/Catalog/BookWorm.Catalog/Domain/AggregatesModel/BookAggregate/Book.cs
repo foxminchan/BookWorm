@@ -140,8 +140,17 @@ public sealed class Book() : AuditableEntity, IAggregateRoot, ISoftDelete
     /// <param name="rating">The rating to remove.</param>
     public void RemoveRating(int rating)
     {
-        AverageRating = ((AverageRating * TotalReviews) - rating) / (TotalReviews - 1);
-        TotalReviews--;
+        if (TotalReviews <= 1)
+        {
+            AverageRating = 0;
+            TotalReviews = 0;
+        }
+        else
+        {
+            AverageRating = ((AverageRating * TotalReviews) - rating) / (TotalReviews - 1);
+            TotalReviews--;
+        }
+
         RegisterDomainEvent(new BookChangedEvent($"{nameof(Book).ToLowerInvariant()}:{Id}"));
     }
 }
