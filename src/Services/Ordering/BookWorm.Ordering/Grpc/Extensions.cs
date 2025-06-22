@@ -1,5 +1,4 @@
-﻿using BasketGrpcServiceClient = BookWorm.Basket.Grpc.Services.BasketGrpcService.BasketGrpcServiceClient;
-using BookGrpcServiceClient = BookWorm.Catalog.Grpc.Services.BookGrpcService.BookGrpcServiceClient;
+﻿using BookWorm.Catalog.Grpc.Services;
 
 namespace BookWorm.Ordering.Grpc;
 
@@ -10,9 +9,9 @@ public static class Extensions
     {
         var services = builder.Services;
 
-        services.AddGrpc();
+        services.AddGrpc(options => options.EnableDetailedErrors = true);
 
-        services.AddGrpcServiceReference<BookGrpcServiceClient>(
+        services.AddGrpcServiceReference<BookGrpcService.BookGrpcServiceClient>(
             $"{builder.GetScheme()}://{Application.Catalog}",
             HealthStatus.Degraded
         );
@@ -20,7 +19,7 @@ public static class Extensions
         services.AddSingleton<IBookService, BookService>();
 
         services
-            .AddGrpcServiceReference<BasketGrpcServiceClient>(
+            .AddGrpcServiceReference<BasketGrpcService.BasketGrpcServiceClient>(
                 $"{builder.GetScheme()}://{Application.Basket}",
                 HealthStatus.Degraded
             )
