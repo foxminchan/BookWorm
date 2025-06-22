@@ -11,7 +11,7 @@ export default hopeTheme({
   },
   logo: "/assets/image/book.svg",
   repo: "foxminchan/BookWorm",
-  docsDir: "docs/src",
+  docsDir: "docs/vuepress/src",
   navbar,
   sidebar,
   footer:
