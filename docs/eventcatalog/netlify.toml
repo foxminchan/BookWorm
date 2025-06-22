@@ -1,10 +1,10 @@
 [build]
-base = "eventcatalog"
+base = "docs/eventcatalog"
 publish = "dist"
 command = "npm run build"
 
 [functions]
-directory = "eventcatalog/netlify/functions"
+directory = "docs/eventcatalog/netlify/functions"
 
 [[plugins]]
 package = "@netlify/plugin-lighthouse"
