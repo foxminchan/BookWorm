@@ -2,9 +2,13 @@ name: Container Security Scan
 
 on:
   workflow_run:
-    workflows: ["BookWorm CI"]
-    types: [completed]
-    branches: [main]
+    workflows:
+      - "BookWorm CI"
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
 
 permissions:
   security-events: write

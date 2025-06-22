@@ -2,8 +2,11 @@ name: BookWorm Documentation
 
 on:
   push:
-    branches: [main]
-    paths: ["docs/vuepress/**"]
+    branches:
+      - main
+    paths:
+      - "docs/vuepress/**"
+      - ".github/workflows/docs.yaml"
   workflow_dispatch:
 
 permissions:

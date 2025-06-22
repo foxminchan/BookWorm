@@ -1,6 +1,7 @@
 name: BookWorm Azure Deploy
 
-# Run when commits are pushed to ci/simplify-deploy
+# Continuous delivery workflow for deploying BookWorm to Azure
+# Meant to be triggered manually by a user
 on:
   workflow_dispatch:
 

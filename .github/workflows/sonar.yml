@@ -4,8 +4,14 @@ on:
   push:
     branches:
       - main
+    paths:
+      - "src/**"
+      - ".github/workflows/sonar.yml"
   pull_request:
-    types: [opened, synchronize, reopened]
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 jobs:
   build:
