@@ -2,11 +2,16 @@
 using System.IO.Hashing;
 using System.Text;
 using CliWrap;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace BookWorm.AppHost.Extensions.Security;
 
 public static class HostingExtensions
 {
+    private const string AspNet = "aspnet";
+    private const string Dotnet = "dotnet";
+    private const string DevCertDir = "dev-certs";
     private const string DevCertPem = "dev-cert.pem";
     private const string DevCertKey = "dev-cert.key";
 
@@ -82,7 +87,6 @@ public static class HostingExtensions
     )
         where TResource : IResourceWithEnvironment
     {
-        const string devCertDir = "/dev-certs";
         var applicationBuilder = builder.ApplicationBuilder;
 
         if (!applicationBuilder.ExecutionContext.IsRunMode)
@@ -94,7 +98,17 @@ public static class HostingExtensions
         // and configure it to use them via the specified environment variables.
         var (certPath, keyPath) = ExportDevCertificateSync(applicationBuilder);
 
-        Console.WriteLine($"Certificate exported to: {certPath} with key {keyPath}");
+        var logger = applicationBuilder
+            .Services.BuildServiceProvider()
+            .GetRequiredService<ILogger<Program>>();
+        if (logger.IsEnabled(LogLevel.Debug))
+        {
+            logger.LogDebug(
+                "Exported ASP.NET Core HTTPS development certificate to {CertPath} with key {KeyPath}",
+                certPath,
+                keyPath
+            );
+        }
 
         var bindSource = Path.GetDirectoryName(certPath) ?? throw new UnreachableException();
 
@@ -102,12 +116,12 @@ public static class HostingExtensions
         {
             applicationBuilder
                 .CreateResourceBuilder(containerResource)
-                .WithBindMount(bindSource, devCertDir, true);
+                .WithBindMount(bindSource, $"/{DevCertDir}", true);
         }
 
         builder
-            .WithEnvironment(certFileEnv, $"{devCertDir}/{DevCertPem}")
-            .WithEnvironment(certKeyFileEnv, $"{devCertDir}/{DevCertKey}");
+            .WithEnvironment(certFileEnv, $"/{DevCertDir}/{DevCertPem}")
+            .WithEnvironment(certKeyFileEnv, $"/{DevCertDir}/{DevCertKey}");
 
         return builder;
     }
@@ -130,7 +144,10 @@ public static class HostingExtensions
             Encoding.Unicode.GetBytes(builder.Environment.ApplicationName).AsSpan()
         );
         var appNameHash = Convert.ToHexStringLower(appNameHashBytes);
-        var tempDir = Path.Combine(Path.GetTempPath(), $"aspire.{appNameHash}");
+        var tempDir = Path.Combine(
+            Path.GetTempPath(),
+            $"{nameof(Aspire).ToLowerInvariant()}.{appNameHash}"
+        );
         var certExportPath = Path.Combine(tempDir, DevCertPem);
         var certKeyExportPath = Path.Combine(tempDir, DevCertKey);
 
@@ -178,10 +195,10 @@ public static class HostingExtensions
 
         Directory.CreateDirectory(tempDir);
 
-        var result = await Cli.Wrap("dotnet")
+        var result = await Cli.Wrap(Dotnet)
             .WithArguments(
                 [
-                    "dev-certs",
+                    DevCertDir,
                     Protocol.Https,
                     "--export-path",
                     certExportPath,
@@ -214,7 +231,7 @@ public static class HostingExtensions
 
         // Try to find existing PEM files in common locations
         var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var aspnetHttpsDir = Path.Combine(homeDir, ".aspnet", Protocol.Https);
+        var aspnetHttpsDir = Path.Combine(homeDir, $".{AspNet}", Protocol.Https);
 
         return await TryFindAndCopyCertificates(tempDir, [aspnetHttpsDir]).ConfigureAwait(false);
     }
@@ -229,10 +246,10 @@ public static class HostingExtensions
 
         // Try to find existing certificates in common Linux locations
         var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var aspnetHttpsDir = Path.Combine(homeDir, ".aspnet", Protocol.Https);
+        var aspnetHttpsDir = Path.Combine(homeDir, $".{AspNet}", Protocol.Https);
         var dotnetToolsDir = Path.Combine(
             homeDir,
-            ".dotnet",
+            $".{Dotnet}",
             "corefx",
             "cryptography",
             "x509stores"
@@ -244,8 +261,8 @@ public static class HostingExtensions
 
     private static async Task<bool> IsCertificateAvailable()
     {
-        var checkResult = await Cli.Wrap("dotnet")
-            .WithArguments(["dev-certs", Protocol.Https, "--check", "--verbose"])
+        var checkResult = await Cli.Wrap(Dotnet)
+            .WithArguments([DevCertDir, Protocol.Https, "--check", "--verbose"])
             .WithValidation(CommandResultValidation.None)
             .ExecuteAsync()
             .ConfigureAwait(false);

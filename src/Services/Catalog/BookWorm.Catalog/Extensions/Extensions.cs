@@ -14,6 +14,8 @@ public static class Extensions
 
         builder.AddDefaultCors();
 
+        services.AddRateLimiting();
+
         services.AddGrpc(options => options.EnableDetailedErrors = true);
         services.AddGrpcHealthChecks();
 

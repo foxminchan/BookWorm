@@ -17,7 +17,8 @@ public sealed class CreateAuthorEndpoint : IEndpoint<Ok<Guid>, CreateAuthorComma
             .WithSummary("Create Author")
             .WithDescription("Create a new author in the catalog system")
             .MapToApiVersion(new(1, 0))
-            .RequireAuthorization(Authorization.Policies.Admin);
+            .RequireAuthorization(Authorization.Policies.Admin)
+            .RequirePerUserRateLimit();
     }
 
     public async Task<Ok<Guid>> HandleAsync(

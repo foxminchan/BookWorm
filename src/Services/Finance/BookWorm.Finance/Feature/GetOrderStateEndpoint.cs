@@ -15,7 +15,8 @@ public sealed class GetOrderStateEndpoint : IEndpoint<Ok<string>, ISender>
             .WithSummary("Get Order State Machine")
             .WithDescription("Get the order state machine definition")
             .MapToApiVersion(new(1, 0))
-            .RequireAuthorization(Authorization.Policies.Admin);
+            .RequireAuthorization(Authorization.Policies.Admin)
+            .RequirePerUserRateLimit();
     }
 
     public async Task<Ok<string>> HandleAsync(

@@ -24,7 +24,8 @@ public sealed class CompleteOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, 
             .WithSummary("Complete Order")
             .WithDescription("Complete an order")
             .MapToApiVersion(new(1, 0))
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequirePerUserRateLimit();
     }
 
     public async Task<Ok<OrderDetailDto>> HandleAsync(

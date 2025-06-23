@@ -16,6 +16,8 @@ public static class Extensions
 
         builder.AddDefaultAuthentication().AddKeycloakClaimsTransformation();
 
+        services.AddRateLimiting();
+
         services.AddSignalR().AddNamedAzureSignalR(Components.Azure.SignalR);
 
         // Add exception handlers

@@ -11,7 +11,8 @@ public sealed class DeleteBasketEndpoint : IEndpoint<NoContent, ISender>
             .WithSummary("Delete Basket")
             .WithDescription("Delete a basket by its unique identifier")
             .MapToApiVersion(new(1, 0))
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequirePerUserRateLimit();
     }
 
     public async Task<NoContent> HandleAsync(

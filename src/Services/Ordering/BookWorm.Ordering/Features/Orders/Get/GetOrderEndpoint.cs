@@ -17,7 +17,8 @@ public sealed class GetOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, ISend
             .WithSummary("Get Order")
             .WithDescription("Get an order if it exists")
             .MapToApiVersion(new(1, 0))
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequirePerUserRateLimit();
     }
 
     public async Task<Ok<OrderDetailDto>> HandleAsync(

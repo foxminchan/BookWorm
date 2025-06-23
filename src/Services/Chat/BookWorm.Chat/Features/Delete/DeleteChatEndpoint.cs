@@ -14,7 +14,8 @@ public sealed class DeleteChatEndpoint : IEndpoint<NoContent, Guid, ISender>
             .WithSummary("Delete Chat")
             .WithDescription("Delete a chat by its ID")
             .MapToApiVersion(new(1, 0))
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequirePerUserRateLimit();
     }
 
     public async Task<NoContent> HandleAsync(

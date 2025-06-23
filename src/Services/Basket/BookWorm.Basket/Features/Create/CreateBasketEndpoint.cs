@@ -18,7 +18,8 @@ public sealed class CreateBasketEndpoint
             .WithSummary("Create Basket")
             .WithDescription("Create a new basket for a user")
             .MapToApiVersion(new(1, 0))
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequirePerUserRateLimit();
     }
 
     public async Task<Created<string>> HandleAsync(

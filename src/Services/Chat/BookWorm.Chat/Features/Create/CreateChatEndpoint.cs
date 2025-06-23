@@ -18,7 +18,8 @@ public sealed class CreateChatEndpoint
             .WithSummary("Create Chat")
             .WithDescription("Create a new chat in the catalog system")
             .MapToApiVersion(new(1, 0))
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequirePerUserRateLimit();
     }
 
     public async Task<Created<Guid>> HandleAsync(

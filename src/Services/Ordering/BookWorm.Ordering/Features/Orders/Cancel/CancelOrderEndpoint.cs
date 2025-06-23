@@ -24,7 +24,8 @@ public sealed class CancelOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, IS
             .WithSummary("Cancel Order")
             .WithDescription("Cancel an order")
             .MapToApiVersion(new(1, 0))
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequirePerUserRateLimit();
     }
 
     public async Task<Ok<OrderDetailDto>> HandleAsync(

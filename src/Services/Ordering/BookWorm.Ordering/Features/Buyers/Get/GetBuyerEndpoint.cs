@@ -21,7 +21,8 @@ public sealed class GetBuyerEndpoint
             .WithSummary("Get Buyer")
             .WithDescription("Get the current buyer's information")
             .MapToApiVersion(new(1, 0))
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequirePerUserRateLimit();
     }
 
     public async Task<Ok<BuyerDto>> HandleAsync(

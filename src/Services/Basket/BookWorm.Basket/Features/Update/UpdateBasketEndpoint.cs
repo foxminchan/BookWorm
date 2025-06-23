@@ -15,7 +15,8 @@ public sealed class UpdateBasketEndpoint : IEndpoint<NoContent, UpdateBasketComm
             .WithSummary("Update Basket")
             .WithDescription("Update a basket by its unique identifier")
             .MapToApiVersion(new(1, 0))
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequirePerUserRateLimit();
     }
 
     public async Task<NoContent> HandleAsync(
