@@ -10,6 +10,7 @@ public sealed class OrderStreamEndpoint : IEndpoint
     {
         app.MapHub<OrderStreamHub>("/stream", o => o.AllowStatefulReconnects = true)
             .MapToApiVersion(new(1, 0))
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequirePerUserRateLimit();
     }
 }

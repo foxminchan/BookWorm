@@ -3,6 +3,7 @@ using BookWorm.Basket.Domain;
 using BookWorm.Basket.Grpc.Services.Basket;
 using BookWorm.Basket.UnitTests.Grpc.Context;
 using Google.Protobuf.WellKnownTypes;
+using Grpc.Core;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
@@ -62,24 +63,25 @@ public sealed class BasketServiceTests
     }
 
     [Test]
-    public async Task GivenNoUser_WhenGetBasketCalled_ThenShouldReturnEmptyResponse()
+    public async Task GivenNoUser_WhenGetBasketCalled_ThenShouldThrowRpcException()
     {
         // Arrange
         var request = new Empty();
         var context = TestServerCallContext.Create();
         context.SetUserState("__HttpContext", new DefaultHttpContext());
 
-        // Act
-        var response = await _basketService.GetBasket(request, context);
+        // Act & Assert
+        var exception = await Should.ThrowAsync<RpcException>(() =>
+            _basketService.GetBasket(request, context)
+        );
 
-        // Assert
-        response.ShouldNotBeNull();
-        response.Items.Count.ShouldBe(0);
+        exception.StatusCode.ShouldBe(StatusCode.Unauthenticated);
+        exception.Status.Detail.ShouldBe("User is not authenticated.");
         _basketRepositoryMock.Verify(repo => repo.GetBasketAsync(It.IsAny<string>()), Times.Never);
     }
 
     [Test]
-    public async Task GivenInvalidUserId_WhenGetBasketCalled_ThenShouldReturnEmptyResponse()
+    public async Task GivenEmptyUserId_WhenGetBasketCalled_ThenShouldThrowRpcException()
     {
         // Arrange
         var request = new Empty();
@@ -87,21 +89,18 @@ public sealed class BasketServiceTests
         var context = TestServerCallContext.Create();
         var httpContext = new DefaultHttpContext
         {
-            User = new(
-                new ClaimsIdentity(
-                    [new(ClaimTypes.NameIdentifier, Guid.CreateVersion7().ToString())]
-                )
-            ),
+            User = new(new ClaimsIdentity([new(ClaimTypes.NameIdentifier, string.Empty)])),
         };
         context.SetUserState("__HttpContext", httpContext);
 
-        // Act
-        var response = await _basketService.GetBasket(request, context);
+        // Act & Assert
+        var exception = await Should.ThrowAsync<RpcException>(() =>
+            _basketService.GetBasket(request, context)
+        );
 
-        // Assert
-        response.ShouldNotBeNull();
-        response.Items.Count.ShouldBe(0);
-        _basketRepositoryMock.Verify(repo => repo.GetBasketAsync(It.IsAny<string>()), Times.Once);
+        exception.StatusCode.ShouldBe(StatusCode.Unauthenticated);
+        exception.Status.Detail.ShouldBe("User is not authenticated.");
+        _basketRepositoryMock.Verify(repo => repo.GetBasketAsync(It.IsAny<string>()), Times.Never);
     }
 
     [Test]
@@ -196,5 +195,64 @@ public sealed class BasketServiceTests
 
         response.ShouldNotBeNull();
         response.Items.Count.ShouldBe(basket.Items.Count);
+    }
+
+    [Test]
+    public async Task GivenValidUserIdWithNoBasket_WhenGetBasketCalled_ThenShouldReturnEmptyResponse()
+    {
+        // Arrange
+        var request = new Empty();
+        var userId = Guid.CreateVersion7().ToString();
+
+        var context = TestServerCallContext.Create();
+        var httpContext = new DefaultHttpContext
+        {
+            User = new(new ClaimsIdentity([new(ClaimTypes.NameIdentifier, userId)])),
+        };
+        context.SetUserState("__HttpContext", httpContext);
+
+        _basketRepositoryMock
+            .Setup(repo => repo.GetBasketAsync(userId))
+            .ReturnsAsync((CustomerBasket?)null);
+
+        // Act
+        var response = await _basketService.GetBasket(request, context);
+
+        // Assert
+        response.ShouldNotBeNull();
+        response.Items.Count.ShouldBe(0);
+        _basketRepositoryMock.Verify(repo => repo.GetBasketAsync(userId), Times.Once);
+    }
+
+    [Test]
+    public async Task GivenNoUser_WhenGetBasketCalled_ThenShouldLogWarning()
+    {
+        // Arrange
+        var request = new Empty();
+        var context = TestServerCallContext.Create();
+        context.SetUserState("__HttpContext", new DefaultHttpContext());
+
+        var loggerMock = new Mock<ILogger<BasketService>>();
+        var basketService = new BasketService(_basketRepositoryMock.Object, loggerMock.Object);
+
+        // Act & Assert
+        var exception = await Should.ThrowAsync<RpcException>(() =>
+            basketService.GetBasket(request, context)
+        );
+
+        // Verify warning log was called
+        loggerMock.Verify(
+            l =>
+                l.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.IsAny<It.IsAnyType>(),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception, string>>()!
+                ),
+            Times.Once
+        );
+
+        exception.StatusCode.ShouldBe(StatusCode.Unauthenticated);
     }
 }

@@ -17,7 +17,8 @@ public sealed class CreateCategoryEndpoint : IEndpoint<Ok<Guid>, CreateCategoryC
             .WithSummary("Create Category")
             .WithDescription("Create a new category in the catalog system")
             .MapToApiVersion(new(1, 0))
-            .RequireAuthorization(Authorization.Policies.Admin);
+            .RequireAuthorization(Authorization.Policies.Admin)
+            .RequirePerUserRateLimit();
     }
 
     public async Task<Ok<Guid>> HandleAsync(

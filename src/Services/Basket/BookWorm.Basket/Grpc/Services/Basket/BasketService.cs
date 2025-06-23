@@ -2,19 +2,26 @@
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace BookWorm.Basket.Grpc.Services.Basket;
 
 public sealed class BasketService(IBasketRepository repository, ILogger<BasketService> logger)
     : BasketGrpcService.BasketGrpcServiceBase
 {
-    [AllowAnonymous]
+    [Authorize]
+    [EnableRateLimiting("PerUserRateLimit")]
     public override async Task<BasketResponse> GetBasket(Empty request, ServerCallContext context)
     {
         var userId = context.GetUserIdentity();
         if (string.IsNullOrEmpty(userId))
         {
-            return new();
+            logger.LogWarning(
+                "User identity is null or empty for method {Method} in {Service}",
+                context.Method,
+                nameof(BasketService)
+            );
+            throw new RpcException(new(StatusCode.Unauthenticated, "User is not authenticated."));
         }
 
         if (logger.IsEnabled(LogLevel.Debug))

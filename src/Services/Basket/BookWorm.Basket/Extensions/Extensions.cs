@@ -14,6 +14,8 @@ public static class Extensions
 
         builder.AddDefaultAuthentication().AddKeycloakClaimsTransformation();
 
+        services.AddRateLimiting();
+
         // Add exception handlers
         services.AddExceptionHandler<ValidationExceptionHandler>();
         services.AddExceptionHandler<NotFoundExceptionHandler>();

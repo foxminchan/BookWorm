@@ -19,7 +19,8 @@ public sealed class CancelChatEndpoint : IEndpoint<NoContent, Guid, ISender>
             .WithSummary("Cancel Chat")
             .WithDescription("Cancel a chat if it exists")
             .MapToApiVersion(new(1, 0))
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequirePerUserRateLimit();
     }
 
     public async Task<NoContent> HandleAsync(

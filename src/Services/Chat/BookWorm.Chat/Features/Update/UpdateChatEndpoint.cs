@@ -15,7 +15,8 @@ public sealed class UpdateChatEndpoint : IEndpoint<NoContent, UpdateChatCommand,
             .WithSummary("Update Chat")
             .WithDescription("Update an existing chat in the catalog system")
             .MapToApiVersion(new(1, 0))
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequirePerUserRateLimit();
     }
 
     public async Task<NoContent> HandleAsync(

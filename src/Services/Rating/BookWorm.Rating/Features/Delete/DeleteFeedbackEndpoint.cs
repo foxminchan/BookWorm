@@ -19,7 +19,8 @@ public sealed class DeleteFeedbackEndpoint : IEndpoint<NoContent, Guid, ISender>
             .WithSummary("Delete Feedback")
             .WithDescription("Delete a feedback if it exists")
             .MapToApiVersion(new(1, 0))
-            .RequireAuthorization(Authorization.Policies.Admin);
+            .RequireAuthorization(Authorization.Policies.Admin)
+            .RequirePerUserRateLimit();
     }
 
     public async Task<NoContent> HandleAsync(

@@ -24,7 +24,8 @@ public sealed class CreateOrderEndpoint : IEndpoint<Created<Guid>, ISender, Link
             .WithSummary("Create Order")
             .WithDescription("Create a new order")
             .MapToApiVersion(new(1, 0))
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequirePerUserRateLimit();
     }
 
     public async Task<Created<Guid>> HandleAsync(

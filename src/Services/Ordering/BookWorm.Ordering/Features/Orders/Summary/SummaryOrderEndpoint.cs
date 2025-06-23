@@ -20,6 +20,7 @@ public sealed class SummaryOrderEndpoint : IEndpoint
             .WithSummary("Get Order Summary")
             .WithDescription("Get an order summary if it exists")
             .MapToApiVersion(new(1, 0))
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequirePerUserRateLimit();
     }
 }

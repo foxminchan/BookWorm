@@ -24,7 +24,8 @@ public sealed class CreateBookEndpoint
             .WithDescription("Create a book")
             .WithFormOptions(true)
             .MapToApiVersion(new(1, 0))
-            .RequireAuthorization(Authorization.Policies.Admin);
+            .RequireAuthorization(Authorization.Policies.Admin)
+            .RequirePerUserRateLimit();
     }
 
     public async Task<Created<Guid>> HandleAsync(

@@ -18,7 +18,8 @@ public sealed class CreateBuyerEndpoint
             .WithSummary("Create Buyer")
             .WithDescription("Create a new buyer in the system")
             .MapToApiVersion(new(1, 0))
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequirePerUserRateLimit();
     }
 
     public async Task<Created<Guid>> HandleAsync(

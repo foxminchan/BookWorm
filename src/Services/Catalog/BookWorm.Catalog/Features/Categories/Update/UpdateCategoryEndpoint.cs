@@ -17,7 +17,8 @@ public sealed class UpdateCategoryEndpoint : IEndpoint<NoContent, UpdateCategory
             .WithSummary("Update Category")
             .WithDescription("Update a category if it exists")
             .MapToApiVersion(new(1, 0))
-            .RequireAuthorization(Authorization.Policies.Admin);
+            .RequireAuthorization(Authorization.Policies.Admin)
+            .RequirePerUserRateLimit();
     }
 
     public async Task<NoContent> HandleAsync(

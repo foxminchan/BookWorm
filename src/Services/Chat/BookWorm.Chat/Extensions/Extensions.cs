@@ -12,6 +12,8 @@ public static class Extensions
 
         services.AddSingleton(appSettings);
 
+        services.AddRateLimiting();
+
         builder.AddDefaultCors();
 
         builder.AddDefaultOpenApi();

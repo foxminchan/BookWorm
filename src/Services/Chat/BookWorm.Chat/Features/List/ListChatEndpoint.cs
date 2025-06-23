@@ -16,7 +16,8 @@ public sealed class ListChatEndpoint
             .WithSummary("List Chats")
             .WithDescription("List all chats")
             .MapToApiVersion(new(1, 0))
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequirePerUserRateLimit();
     }
 
     public async Task<Ok<IReadOnlyList<ConversationDto>>> HandleAsync(

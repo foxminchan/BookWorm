@@ -15,7 +15,8 @@ public sealed class GetBasketEndpoint : IEndpoint<Ok<CustomerBasketDto>, ISender
             .WithSummary("Get Basket")
             .WithDescription("Get a basket by user")
             .MapToApiVersion(new(1, 0))
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequirePerUserRateLimit();
     }
 
     public async Task<Ok<CustomerBasketDto>> HandleAsync(
