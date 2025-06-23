@@ -12,6 +12,7 @@ global using BookWorm.Chassis.EventBus;
 global using BookWorm.Chassis.EventBus.Dispatcher;
 global using BookWorm.Chassis.Exceptions;
 global using BookWorm.Chassis.Guards;
+global using BookWorm.Chassis.Logging;
 global using BookWorm.Chassis.Pipelines;
 global using BookWorm.Chassis.Query;
 global using BookWorm.Chassis.Repository;

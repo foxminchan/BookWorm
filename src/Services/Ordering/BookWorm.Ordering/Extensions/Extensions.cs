@@ -14,6 +14,8 @@ public static class Extensions
 
         builder.AddDefaultOpenApi();
 
+        builder.AddRedaction();
+
         builder.AddDefaultAuthentication().AddKeycloakClaimsTransformation();
 
         services.AddRateLimiting();
