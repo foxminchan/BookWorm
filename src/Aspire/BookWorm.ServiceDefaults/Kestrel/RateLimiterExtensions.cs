@@ -1,4 +1,5 @@
 ﻿using System.Threading.RateLimiting;
+using Ganss.Xss;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Logging;
@@ -131,7 +132,7 @@ public static class RateLimiterExtensions
                 {
                     logger.LogWarning(
                         "Rate limit exceeded for {Path} from {IpAddress} by User {User}",
-                        httpContext.Request.Path,
+                        new HtmlSanitizer().Sanitize(httpContext.Request.Path),
                         httpContext.Connection.RemoteIpAddress,
                         httpContext.User.Identity?.Name
                     );
