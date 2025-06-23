@@ -16,6 +16,22 @@ public static class HostingExtensions
     private const string DevCertKey = "dev-cert.key";
 
     /// <summary>
+    ///     Adds an HMAC secret key to the resource builder's environment configuration.
+    /// </summary>
+    /// <param name="builder">The resource builder to configure.</param>
+    /// <returns>The configured <see cref="IResourceBuilder{ProjectResource}" /> instance.</returns>
+    public static IResourceBuilder<ProjectResource> WithHmacSecret(
+        this IResourceBuilder<ProjectResource> builder
+    )
+    {
+        var hmacKey = builder
+            .ApplicationBuilder.AddParameter($"{builder.Resource.Name}-hmac-key", true)
+            .WithGeneratedDefault(new() { MinLength = 32, Special = false });
+
+        return builder.WithEnvironment("HMAC__Key", hmacKey);
+    }
+
+    /// <summary>
     ///     Configures the resource builder to generate a default parameter value and override the initial state of the
     ///     resource.
     /// </summary>

@@ -153,6 +153,7 @@ var orderingApi = builder
     .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor)
     .WithOpenApi()
     .WithAsyncApi()
+    .WithHmacSecret()
     .WithHealthCheck();
 
 var ratingApi = builder

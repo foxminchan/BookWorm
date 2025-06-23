@@ -15,6 +15,7 @@
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.Middleware" />
+    <PackageReference Include="Microsoft.Extensions.Compliance.Redaction" />
   </ItemGroup>
   <ItemGroup Label="Versioning">
     <PackageReference Include="Asp.Versioning.Http.Client" />
