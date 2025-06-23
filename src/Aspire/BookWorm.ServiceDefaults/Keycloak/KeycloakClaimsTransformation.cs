@@ -36,22 +36,24 @@ public sealed class KeycloakRolesClaimsTransformation(
         var claimsIdentity = new ClaimsIdentity();
 
         // Convert resource roles to regular roles.
-        foreach (var role in resourceRoles.GetValues<string>())
-        {
-            if (!claimsIdentity.HasClaim(c => c.Type == ClaimTypes.Role && c.Value == role))
-            {
-                claimsIdentity.AddClaim(new(ClaimTypes.Role, role));
-            }
-        }
+        var resourceRoleClaims = resourceRoles
+            .GetValues<string>()
+            .Where(role =>
+                !claimsIdentity.HasClaim(c => c.Type == ClaimTypes.Role && c.Value == role)
+            )
+            .Select(role => new Claim(ClaimTypes.Role, role));
+
+        claimsIdentity.AddClaims(resourceRoleClaims);
 
         // Convert realm roles to regular roles.
-        foreach (var role in realmRoles.GetValues<string>())
-        {
-            if (!claimsIdentity.HasClaim(c => c.Type == ClaimTypes.Role && c.Value == role))
-            {
-                claimsIdentity.AddClaim(new(ClaimTypes.Role, role));
-            }
-        }
+        var realmRoleClaims = realmRoles
+            .GetValues<string>()
+            .Where(role =>
+                !claimsIdentity.HasClaim(c => c.Type == ClaimTypes.Role && c.Value == role)
+            )
+            .Select(role => new Claim(ClaimTypes.Role, role));
+
+        claimsIdentity.AddClaims(realmRoleClaims);
 
         principal.AddIdentity(claimsIdentity);
 
