@@ -94,7 +94,9 @@ qdrant.WithParentRelationship(catalogApi);
 var mcp = builder
     .AddProject<BookWorm_McpTools>(Application.McpTools)
     .WithReference(catalogApi)
-    .WaitFor(catalogApi);
+    .WaitFor(catalogApi)
+    .WithReference(redis)
+    .WaitFor(redis);
 
 var chatApi = builder
     .AddProject<BookWorm_Chat>(Application.Chatting)
@@ -131,6 +133,8 @@ var notificationApi = builder
     .WithEmailProvider()
     .WithReference(queue)
     .WaitFor(queue)
+    .WithReference(redis)
+    .WaitFor(redis)
     .WithReference(tableStorage)
     .WaitFor(tableStorage)
     .WithRoleAssignments(storage, StorageBuiltInRole.StorageTableDataContributor)
@@ -160,6 +164,8 @@ var ratingApi = builder
     .AddProject<BookWorm_Rating>(Application.Rating)
     .WithReference(ratingDb)
     .WaitFor(ratingDb)
+    .WithReference(redis)
+    .WaitFor(redis)
     .WithReference(queue)
     .WaitFor(queue)
     .WithIdP(keycloak)
@@ -173,6 +179,8 @@ var financeApi = builder
     .WaitFor(financeDb)
     .WithReference(queue)
     .WaitFor(queue)
+    .WithReference(redis)
+    .WaitFor(redis)
     .WithIdP(keycloak)
     .WithOpenApi()
     .WithAsyncApi()
