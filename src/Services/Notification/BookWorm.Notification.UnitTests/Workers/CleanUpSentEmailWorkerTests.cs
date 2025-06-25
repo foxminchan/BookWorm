@@ -1,6 +1,4 @@
-﻿using BookWorm.Notification.Domain.Models;
-using BookWorm.Notification.Infrastructure.Table;
-using BookWorm.Notification.UnitTests.Fakers;
+﻿using BookWorm.Notification.Infrastructure.Table;
 using BookWorm.Notification.Workers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.Buffering;
@@ -12,7 +10,6 @@ namespace BookWorm.Notification.UnitTests.Workers;
 public sealed class CleanUpSentEmailWorkerTests : IDisposable
 {
     private readonly Mock<ILogger<CleanUpSentEmailWorker>> _loggerMock;
-    private readonly string _partitionKey = nameof(Outbox).ToLowerInvariant();
     private readonly ServiceProvider _serviceProvider;
     private readonly Mock<ITableService> _tableServiceMock;
     private readonly CleanUpSentEmailWorker _worker;
@@ -45,53 +42,18 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
     }
 
     [Test]
-    public async Task GivenNoSentEmails_WhenCleaningUp_ThenShouldLogNoEmailsFound()
+    public async Task GivenCleanupRequest_WhenExecuting_ThenShouldCallBulkDeleteAsync()
     {
         // Arrange
-        _tableServiceMock
-            .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([]);
+        var jobContext = Mock.Of<IJobExecutionContext>();
 
         // Act
-        await _worker.Execute(Mock.Of<IJobExecutionContext>());
-
-        // Assert
-        _loggerMock.Verify(
-            x =>
-                x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>(
-                        (o, t) => o.ToString()!.Contains("No sent emails found to delete")
-                    ),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
-                ),
-            Times.Once
-        );
-    }
-
-    [Test]
-    public async Task GivenSentEmails_WhenCleaningUp_ThenShouldDeleteAllSentEmails()
-    {
-        // Arrange
-        var sentEmails = new List<Outbox>();
-        for (var i = 0; i < 2; i++)
-        {
-            sentEmails.Add(TestDataFakers.Outbox.AsSent());
-        }
-
-        _tableServiceMock
-            .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(sentEmails);
-
-        // Act
-        await _worker.Execute(Mock.Of<IJobExecutionContext>());
+        await _worker.Execute(jobContext);
 
         // Assert
         _tableServiceMock.Verify(
-            x => x.DeleteAsync(_partitionKey, It.IsAny<string>(), It.IsAny<CancellationToken>()),
-            Times.Exactly(2)
+            x => x.BulkDeleteAsync(TablePartition.Processed, It.IsAny<CancellationToken>()),
+            Times.Once
         );
 
         _loggerMock.Verify(
@@ -100,7 +62,7 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
                     LogLevel.Debug,
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>(
-                        (o, t) => o.ToString()!.Contains("Found 2 sent emails to delete")
+                        (o, t) => o.ToString()!.Contains("Starting cleanup of sent emails")
                     ),
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()
@@ -110,78 +72,19 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
     }
 
     [Test]
-    public async Task GivenMixedEmails_WhenCleaningUp_ThenShouldOnlyDeleteSentEmails()
-    {
-        // Arrange
-        var sentOutbox = TestDataFakers.Outbox.AsSent();
-        var unsentOutbox = TestDataFakers.Outbox.Generate();
-
-        var emails = new List<Outbox> { sentOutbox, unsentOutbox };
-
-        _tableServiceMock
-            .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(emails);
-
-        // Act
-        await _worker.Execute(Mock.Of<IJobExecutionContext>());
-
-        // Assert
-        _tableServiceMock.Verify(
-            x => x.DeleteAsync(_partitionKey, It.IsAny<string>(), It.IsAny<CancellationToken>()),
-            Times.Once
-        );
-    }
-
-    [Test]
-    public async Task GivenLargeNumberOfEmails_WhenCleaningUp_ThenShouldProcessInBatches()
-    {
-        // Arrange
-        var sentEmails = new List<Outbox>();
-        for (var i = 0; i < 150; i++)
-        {
-            sentEmails.Add(TestDataFakers.Outbox.AsSent());
-        }
-
-        _tableServiceMock
-            .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(sentEmails);
-
-        // Act
-        await _worker.Execute(Mock.Of<IJobExecutionContext>());
-
-        // Assert
-        _tableServiceMock.Verify(
-            x => x.DeleteAsync(_partitionKey, It.IsAny<string>(), It.IsAny<CancellationToken>()),
-            Times.Exactly(150)
-        );
-
-        _loggerMock.Verify(
-            x =>
-                x.Log(
-                    LogLevel.Debug,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>(
-                        (o, t) => o.ToString()!.Contains("Successfully deleted batch of")
-                    ),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
-                ),
-            Times.AtLeastOnce
-        );
-    }
-
-    [Test]
-    public async Task GivenException_WhenCleaningUp_ThenShouldLogError()
+    public async Task GivenException_WhenExecuting_ThenShouldLogErrorAndRethrow()
     {
         // Arrange
         var exception = new Exception("Table service error");
+        var jobContext = Mock.Of<IJobExecutionContext>();
+
         _tableServiceMock
-            .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
+            .Setup(x => x.BulkDeleteAsync(TablePartition.Processed, It.IsAny<CancellationToken>()))
             .ThrowsAsync(exception);
 
         // Act & Assert
         var thrownException = await Should.ThrowAsync<Exception>(async () =>
-            await _worker.Execute(Mock.Of<IJobExecutionContext>())
+            await _worker.Execute(jobContext)
         );
 
         thrownException.Message.ShouldBe("Table service error");
@@ -195,6 +98,31 @@ public sealed class CleanUpSentEmailWorkerTests : IDisposable
                         (o, t) => o.ToString()!.Contains("Error occurred in job execution")
                     ),
                     exception,
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+                ),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task GivenSuccessfulExecution_WhenExecuting_ThenShouldLogDebugMessage()
+    {
+        // Arrange
+        var jobContext = Mock.Of<IJobExecutionContext>();
+
+        // Act
+        await _worker.Execute(jobContext);
+
+        // Assert
+        _loggerMock.Verify(
+            x =>
+                x.Log(
+                    LogLevel.Debug,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>(
+                        (o, t) => o.ToString()!.Contains("Starting cleanup of sent emails")
+                    ),
+                    It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()
                 ),
             Times.Once

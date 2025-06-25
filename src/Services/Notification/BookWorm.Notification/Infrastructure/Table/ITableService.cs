@@ -20,4 +20,6 @@ public interface ITableService
         string rowKey,
         CancellationToken cancellationToken = default
     );
+
+    Task BulkDeleteAsync(string partitionKey, CancellationToken cancellationToken = default);
 }
