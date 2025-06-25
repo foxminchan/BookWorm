@@ -78,4 +78,50 @@ public sealed class TableService : ITableService
             cancellationToken: cancellationToken
         );
     }
+
+    public async Task BulkDeleteAsync(
+        string partitionKey,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var entities = _tableClient.QueryAsync<TableEntity>(
+            TableClient.CreateQueryFilter($"{nameof(TableEntity.PartitionKey)} eq {partitionKey}"),
+            select: [nameof(TableEntity.PartitionKey), nameof(TableEntity.RowKey)],
+            cancellationToken: cancellationToken
+        );
+
+        var entitiesToDelete = new List<TableEntity>();
+
+        await foreach (var entity in entities)
+        {
+            entitiesToDelete.Add(entity);
+        }
+
+        if (entitiesToDelete.Count == 0)
+        {
+            return;
+        }
+
+        // Azure Table Storage supports batch operations with up to 100 entities per batch
+        // and all entities in a batch must have the same partition key
+        const int batchSize = 100;
+
+        for (var i = 0; i < entitiesToDelete.Count; i += batchSize)
+        {
+            var batch = entitiesToDelete.Skip(i).Take(batchSize);
+            var batchOperations = batch
+                .Select(entity => new TableTransactionAction(
+                    TableTransactionActionType.Delete,
+                    entity
+                ))
+                .ToList();
+
+            if (batchOperations.Count > 0)
+            {
+                await _tableClient
+                    .SubmitTransactionAsync(batchOperations, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+        }
+    }
 }

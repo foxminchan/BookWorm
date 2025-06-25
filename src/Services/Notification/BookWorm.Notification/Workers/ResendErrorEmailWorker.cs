@@ -43,7 +43,7 @@ public sealed class ResendErrorEmailWorker(
         var sender = scope.ServiceProvider.GetRequiredService<ISender>();
 
         var unsentEmails = await tableService.ListAsync<Outbox>(
-            nameof(Outbox).ToLower(),
+            TablePartition.Pending,
             cancellation
         );
         var failedEmails = unsentEmails.Where(e => !e.IsSent).ToList();

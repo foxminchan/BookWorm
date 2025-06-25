@@ -16,7 +16,6 @@ namespace BookWorm.Notification.UnitTests.Workers;
 public class ResendErrorEmailWorkerTests
 {
     private readonly Mock<ILogger<ResendErrorEmailWorker>> _loggerMock;
-    private readonly string _partitionKey = nameof(Outbox).ToLowerInvariant();
     private readonly Mock<ISender> _senderMock;
     private readonly Mock<ITableService> _tableServiceMock;
     private readonly ResendErrorEmailWorker _worker;
@@ -48,7 +47,7 @@ public class ResendErrorEmailWorkerTests
         var failedEmails = TestDataFakers.Outbox.Generate(2);
 
         _tableServiceMock
-            .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListAsync<Outbox>(TablePartition.Pending, It.IsAny<CancellationToken>()))
             .ReturnsAsync(failedEmails);
 
         // Act
@@ -61,7 +60,7 @@ public class ResendErrorEmailWorkerTests
         );
 
         _tableServiceMock.Verify(
-            x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()),
+            x => x.ListAsync<Outbox>(TablePartition.Pending, It.IsAny<CancellationToken>()),
             Times.Once
         );
     }
@@ -73,7 +72,7 @@ public class ResendErrorEmailWorkerTests
         var failedEmail = TestDataFakers.Outbox.Generate();
 
         _tableServiceMock
-            .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListAsync<Outbox>(TablePartition.Pending, It.IsAny<CancellationToken>()))
             .ReturnsAsync([failedEmail]);
 
         _senderMock
@@ -102,7 +101,7 @@ public class ResendErrorEmailWorkerTests
     {
         // Arrange
         _tableServiceMock
-            .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListAsync<Outbox>(TablePartition.Pending, It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
         // Act
@@ -124,7 +123,7 @@ public class ResendErrorEmailWorkerTests
         );
 
         _tableServiceMock.Verify(
-            x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()),
+            x => x.ListAsync<Outbox>(TablePartition.Pending, It.IsAny<CancellationToken>()),
             Times.Once
         );
     }
@@ -134,8 +133,8 @@ public class ResendErrorEmailWorkerTests
     {
         // Arrange
         _tableServiceMock
-            .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new("Table service error"));
+            .Setup(x => x.ListAsync<Outbox>(TablePartition.Pending, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("Table service error"));
 
         // Act
         await _worker.Execute(Mock.Of<IJobExecutionContext>());
@@ -154,6 +153,21 @@ public class ResendErrorEmailWorkerTests
                 ),
             Times.Once
         );
+
+        // Verify that the debug message was logged before the exception
+        _loggerMock.Verify(
+            x =>
+                x.Log(
+                    LogLevel.Debug,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>(
+                        (o, t) => o.ToString()!.Contains("Checking for failed emails to resend")
+                    ),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+                ),
+            Times.Once
+        );
     }
 
     [Test]
@@ -163,7 +177,7 @@ public class ResendErrorEmailWorkerTests
         var failedEmails = TestDataFakers.Outbox.Generate(2);
 
         _tableServiceMock
-            .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListAsync<Outbox>(TablePartition.Pending, It.IsAny<CancellationToken>()))
             .ReturnsAsync(failedEmails);
 
         _senderMock
@@ -200,7 +214,7 @@ public class ResendErrorEmailWorkerTests
         var failedEmails = TestDataFakers.Outbox.Generate(1);
 
         _tableServiceMock
-            .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListAsync<Outbox>(TablePartition.Pending, It.IsAny<CancellationToken>()))
             .ReturnsAsync(failedEmails);
 
         // Get the private semaphore field using reflection
@@ -220,7 +234,7 @@ public class ResendErrorEmailWorkerTests
 
             // Assert
             _tableServiceMock.Verify(
-                x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()),
+                x => x.ListAsync<Outbox>(TablePartition.Pending, It.IsAny<CancellationToken>()),
                 Times.Never
             );
 
@@ -243,7 +257,7 @@ public class ResendErrorEmailWorkerTests
         var failedEmail = TestDataFakers.Outbox.Generate();
 
         _tableServiceMock
-            .Setup(x => x.ListAsync<Outbox>(_partitionKey, It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListAsync<Outbox>(TablePartition.Pending, It.IsAny<CancellationToken>()))
             .ReturnsAsync([failedEmail]);
 
         var innerException = new InvalidOperationException("SMTP connection failed");

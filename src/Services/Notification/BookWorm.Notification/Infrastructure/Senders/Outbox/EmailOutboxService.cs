@@ -2,8 +2,6 @@
 
 public sealed class EmailOutboxService(ITableService tableService, ISender sender) : ISender
 {
-    private readonly string _partitionKey = nameof(Domain.Models.Outbox).ToLowerInvariant();
-
     public async Task SendAsync(
         MimeMessage mailMessage,
         CancellationToken cancellationToken = default
@@ -23,12 +21,25 @@ public sealed class EmailOutboxService(ITableService tableService, ISender sende
             mailMessage.HtmlBody
         );
 
-        await tableService.UpsertAsync(outbox, _partitionKey, cancellationToken);
+        // Store in pending partition first
+        var entityId = await tableService.UpsertAsync(
+            outbox,
+            TablePartition.Pending,
+            cancellationToken
+        );
 
         await sender.SendAsync(mailMessage, cancellationToken);
 
         outbox.MarkAsSent();
 
-        await tableService.UpsertAsync(outbox, _partitionKey, cancellationToken);
+        // Move to sent partition
+        await tableService.UpsertAsync(outbox, TablePartition.Processed, cancellationToken);
+
+        // Remove from pending partition
+        await tableService.DeleteAsync(
+            TablePartition.Pending,
+            entityId.ToString(),
+            cancellationToken
+        );
     }
 }
