@@ -285,18 +285,17 @@ public sealed class ListChatEndpointTests
     {
         // Arrange
         var query = new ListChatQuery("NonExistent");
-        var emptyResult = new List<ConversationDto>().AsReadOnly();
 
         _senderMock
             .Setup(s => s.Send(It.IsAny<ListChatQuery>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(emptyResult);
+            .ReturnsAsync([]);
 
         // Act
         var result = await _endpoint.HandleAsync(query, _senderMock.Object);
 
         // Assert
         result.ShouldBeOfType<Ok<IReadOnlyList<ConversationDto>>>();
-        result.Value.ShouldBe(emptyResult);
+        result.Value.ShouldBe([]);
         result.Value!.Count.ShouldBe(0);
 
         _senderMock.Verify(
@@ -400,14 +399,6 @@ public sealed class ListChatEndpointTests
     private ConversationDto[] GenerateTestConversationDtos()
     {
         var conversations = _conversationFaker.Generate(5);
-        return
-        [
-            .. conversations.Select(c => new ConversationDto(
-                c.Id,
-                c.Name,
-                c.UserId,
-                new List<ConversationMessageDto>().AsReadOnly()
-            )),
-        ];
+        return [.. conversations.Select(c => new ConversationDto(c.Id, c.Name, c.UserId, []))];
     }
 }

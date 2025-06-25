@@ -137,7 +137,7 @@ public sealed class GetBuyerQueryTests
 
     private static ClaimsPrincipal CreateClaimsPrincipal(bool isAdmin, Guid userId)
     {
-        var claims = new List<Claim> { new(ClaimTypes.NameIdentifier, userId.ToString()) };
+        List<Claim> claims = [new(ClaimTypes.NameIdentifier, userId.ToString())];
 
         if (isAdmin)
         {

@@ -23,8 +23,8 @@ public sealed class ListBooksEndpointTests
         _validQuery = new(1, 10);
 
         // Create an expected result
-        var books = new List<BookDto>
-        {
+        List<BookDto> books =
+        [
             new(
                 Guid.CreateVersion7(),
                 "Book 1",
@@ -39,7 +39,7 @@ public sealed class ListBooksEndpointTests
                 4.5,
                 10
             ),
-        };
+        ];
 
         _expectedResult = new(books, 1, 10, 1);
     }

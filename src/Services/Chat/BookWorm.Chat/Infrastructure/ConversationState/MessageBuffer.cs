@@ -110,7 +110,7 @@ public sealed class MessageBuffer : IAsyncDisposable
 
     private async Task FlushAsync()
     {
-        var fragmentsToFlush = new List<ClientMessageFragment>();
+        List<ClientMessageFragment> fragmentsToFlush = [];
 
         try
         {

@@ -24,11 +24,11 @@ public sealed class ListFeedbacksEndpointTests
         _validQuery = new(bookId, 1, 10);
 
         // Create sample feedback DTOs
-        var feedbacks = new List<FeedbackDto>
-        {
+        List<FeedbackDto> feedbacks =
+        [
             new(Guid.CreateVersion7(), "John", "Doe", "Great book!", 5, bookId),
             new(Guid.CreateVersion7(), "Jane", "Smith", "Loved it", 4, bookId),
-        };
+        ];
 
         // Create paged result
         _pagedResult = new(feedbacks, 1, 10, 2);

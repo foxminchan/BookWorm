@@ -14,11 +14,11 @@ public sealed class ListAuthorEndpointTests
     public async Task GivenValidQuery_WhenHandlingRequest_ThenShouldReturnOkResultWithAuthors()
     {
         // Arrange
-        var authors = new List<AuthorDto>
-        {
+        List<AuthorDto> authors =
+        [
             new(Guid.CreateVersion7(), "Author 1"),
             new(Guid.CreateVersion7(), "Author 2"),
-        };
+        ];
 
         _senderMock
             .Setup(sender =>

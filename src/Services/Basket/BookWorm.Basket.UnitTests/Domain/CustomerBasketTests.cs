@@ -10,7 +10,7 @@ public sealed class CustomerBasketTests
     {
         // Arrange
         const string id = "B";
-        var items = new List<BasketItem> { new("book-1", 2), new("book-2", 1) };
+        List<BasketItem> items = [new("book-1", 2), new("book-2", 1)];
 
         // Act
         var basket = new CustomerBasket(id, items);
@@ -42,7 +42,7 @@ public sealed class CustomerBasketTests
             [new BasketItem("book-1", 2)]
         );
 
-        var newItems = new List<BasketItem> { new("book-3", 1), new("book-4", 3) };
+        List<BasketItem> newItems = [new("book-3", 1), new("book-4", 3)];
 
         // Act
         basket.Update(newItems);
@@ -75,7 +75,7 @@ public sealed class CustomerBasketTests
     {
         // Arrange
         const string? id = null;
-        var items = new List<BasketItem> { new("book-1", 2), new("book-2", 1) };
+        List<BasketItem> items = [new("book-1", 2), new("book-2", 1)];
 
         // Act & Assert
         Should
@@ -88,7 +88,7 @@ public sealed class CustomerBasketTests
     {
         // Arrange
         const string id = "customer-123";
-        var items = new List<BasketItem>();
+        List<BasketItem> items = [];
 
         // Act & Assert
         Should
