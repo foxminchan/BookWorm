@@ -21,12 +21,7 @@ public sealed class GetChatEndpointTests
         _conversationId = Guid.CreateVersion7();
 
         // Create a sample ConversationDto for testing
-        _conversationDto = new(
-            _conversationId,
-            "Test Conversation",
-            Guid.CreateVersion7(),
-            new List<ConversationMessageDto>().AsReadOnly()
-        );
+        _conversationDto = new(_conversationId, "Test Conversation", Guid.CreateVersion7(), []);
     }
 
     [Test]
@@ -235,11 +230,11 @@ public sealed class GetChatEndpointTests
     public async Task GivenConversationWithMessages_WhenHandlingGetChat_ThenShouldReturnCompleteConversationDto()
     {
         // Arrange
-        var messages = new List<ConversationMessageDto>
-        {
+        List<ConversationMessageDto> messages =
+        [
             new(Guid.CreateVersion7(), "Hello", "user", null, DateTimeHelper.UtcNow()),
             new(Guid.CreateVersion7(), "Hi there!", "assistant", null, DateTimeHelper.UtcNow()),
-        }.AsReadOnly();
+        ];
 
         var conversationWithMessages = _conversationDto with { Messages = messages };
 

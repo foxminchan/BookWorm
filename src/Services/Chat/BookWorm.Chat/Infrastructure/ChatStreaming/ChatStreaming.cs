@@ -70,7 +70,7 @@ public sealed class ChatStreaming(
             assistantReplyId
         );
 
-        var allChunks = new List<ChatResponseUpdate>();
+        List<ChatResponseUpdate> allChunks = [];
 
         var token = chatContext.CancellationManager.GetCancellationToken(assistantReplyId);
 

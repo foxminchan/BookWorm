@@ -22,11 +22,11 @@ public sealed class ListBuyersEndpointTests
         // Create test data
         _validQuery = new(1, 10);
 
-        var buyers = new List<BuyerDto>
-        {
+        List<BuyerDto> buyers =
+        [
             new(Guid.CreateVersion7(), "John Doe", "123 Main St"),
             new(Guid.CreateVersion7(), "Jane Smith", "456 Elm St"),
-        };
+        ];
 
         _pagedResult = new(buyers, 1, 10, 2);
     }

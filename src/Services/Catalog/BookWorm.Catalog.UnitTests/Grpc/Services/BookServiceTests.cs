@@ -131,8 +131,8 @@ public sealed class BookServiceTests
         var booksRequest = new BooksRequest { BookIds = { bookIds.Select(id => id.ToString()) } };
         var context = new TestServerCallContext();
 
-        var books = new List<Book>
-        {
+        List<Book> books =
+        [
             new(
                 "Test Book 1",
                 "Test Description",
@@ -153,7 +153,7 @@ public sealed class BookServiceTests
                 Guid.CreateVersion7(),
                 [Guid.CreateVersion7()]
             ),
-        };
+        ];
         // Use reflection to set the id properties since they're not settable directly
         typeof(Book).GetProperty("Id")!.SetValue(books[0], bookIds[0]);
         typeof(Book).GetProperty("Id")!.SetValue(books[1], bookIds[1]);
@@ -253,8 +253,8 @@ public sealed class BookServiceTests
 
         var bookService = new BookService(_bookRepositoryMock.Object, loggerMock.Object);
 
-        var books = new List<Book>
-        {
+        List<Book> books =
+        [
             new(
                 "Test Book 1",
                 "Test Description",
@@ -275,7 +275,7 @@ public sealed class BookServiceTests
                 Guid.CreateVersion7(),
                 [Guid.CreateVersion7()]
             ),
-        };
+        ];
         typeof(Book).GetProperty("Id")!.SetValue(books[0], bookIds[0]);
         typeof(Book).GetProperty("Id")!.SetValue(books[1], bookIds[1]);
 

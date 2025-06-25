@@ -22,13 +22,13 @@ public sealed class GetOrderEndpointTests
         _orderId = Guid.CreateVersion7();
 
         var faker = new Faker();
-        var orderItems = new List<OrderItemDto>
-        {
+        List<OrderItemDto> orderItems =
+        [
             new(Guid.CreateVersion7(), faker.Random.Int(1, 10), faker.Random.Decimal(10, 100))
             {
                 Name = faker.Commerce.ProductName(),
             },
-        };
+        ];
 
         _orderDetailDto = new(
             _orderId,

@@ -53,7 +53,7 @@ public sealed class UpdateBasketEndpointTests
     public async Task GivenEmptyItemsList_WhenHandlingRequest_ThenShouldCallSenderWithCorrectCommand()
     {
         // Arrange
-        var items = new List<BasketItemRequest>();
+        List<BasketItemRequest> items = [];
         var command = new UpdateBasketCommand(items);
 
         _senderMock

@@ -39,7 +39,7 @@ public sealed class HybridSearch(
             cancellationToken
         );
 
-        var results = new List<HybridSearchRecord>();
+        List<HybridSearchRecord> results = [];
 
         await foreach (var item in nearest)
         {

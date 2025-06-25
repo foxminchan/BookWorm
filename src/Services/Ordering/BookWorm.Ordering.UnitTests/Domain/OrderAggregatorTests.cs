@@ -128,7 +128,7 @@ public sealed class OrderAggregatorTests
         // Arrange
         var buyerId = Guid.CreateVersion7();
         const string note = "Test order";
-        var orderItems = new List<OrderItem> { new(Guid.CreateVersion7(), 1, 29.99m) };
+        List<OrderItem> orderItems = [new(Guid.CreateVersion7(), 1, 29.99m)];
 
         // Act
         var order = new Order(buyerId, note, orderItems);
@@ -206,12 +206,12 @@ public sealed class OrderAggregatorTests
     {
         // Arrange
         var buyerId = Guid.CreateVersion7();
-        var orderItems = new List<OrderItem>
-        {
+        List<OrderItem> orderItems =
+        [
             new(Guid.CreateVersion7(), 2, 10.00m), // 20.00
             new(Guid.CreateVersion7(), 1, 15.50m), // 15.50
             new(Guid.CreateVersion7(), 3, 8.75m), // 26.25
-        };
+        ];
         const decimal expectedTotal = 61.75m;
 
         // Act

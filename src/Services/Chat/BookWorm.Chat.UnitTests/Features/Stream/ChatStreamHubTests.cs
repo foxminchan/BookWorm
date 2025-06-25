@@ -130,7 +130,7 @@ public sealed class ChatStreamHubTests
         // Arrange
         Guid? lastMessageId = null;
         var lastFragmentId = _messageFragments[1].FragmentId;
-        var expectedFragments = new List<ClientMessageFragment> { _messageFragments[2] };
+        List<ClientMessageFragment> expectedFragments = [_messageFragments[2]];
 
         _chatStreamingMock
             .Setup(x =>
@@ -207,7 +207,7 @@ public sealed class ChatStreamHubTests
             _messageFragments[0].Id,
             _messageFragments[1].FragmentId
         );
-        var expectedFragments = new List<ClientMessageFragment> { _messageFragments[2] };
+        List<ClientMessageFragment> expectedFragments = [_messageFragments[2]];
 
         _chatStreamingMock
             .Setup(x =>
@@ -396,7 +396,7 @@ public sealed class ChatStreamHubTests
             .Returns(_messageFragments.ToAsyncEnumerable());
 
         // Act - Simulate multiple clients requesting the same stream
-        var clientTasks = new List<Task<List<ClientMessageFragment>>>();
+        List<Task<List<ClientMessageFragment>>> clientTasks = [];
 
         for (var i = 0; i < clientCount; i++)
         {
@@ -447,7 +447,7 @@ public sealed class ChatStreamHubTests
         }
 
         // Create a large set of message fragments to simulate a conversation with many messages
-        var largeMessageFragments = new List<ClientMessageFragment>();
+        List<ClientMessageFragment> largeMessageFragments = [];
         for (var i = 0; i < largeMessageCount; i++)
         {
             largeMessageFragments.Add(

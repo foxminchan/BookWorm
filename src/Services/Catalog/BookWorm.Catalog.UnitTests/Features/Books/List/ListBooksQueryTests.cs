@@ -100,11 +100,11 @@ public sealed class ListBooksQueryTests
         // Arrange
         const string searchTerm = "fantasy novel";
         var query = new ListBooksQuery(Search: searchTerm);
-        var hybridSearchRecords = new List<HybridSearchRecord>
-        {
+        List<HybridSearchRecord> hybridSearchRecords =
+        [
             new() { Id = Guid.CreateVersion7(), Description = "Book 1" },
             new() { Id = Guid.CreateVersion7(), Description = "Book 2" },
-        };
+        ];
 
         _mockHybridSearch
             .Setup(s =>

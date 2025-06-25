@@ -213,7 +213,7 @@ public sealed class ListChatHandlerTests
             conversation.AddMessage(message);
         }
 
-        var expectedConversations = new List<Conversation> { conversation };
+        List<Conversation> expectedConversations = [conversation];
 
         _mockRepository
             .Setup(r =>
@@ -305,7 +305,7 @@ public sealed class ListChatHandlerTests
 
     private static ClaimsPrincipal CreateClaimsPrincipal(string[] roles, string userId)
     {
-        var claims = new List<Claim> { new(ClaimTypes.NameIdentifier, userId) };
+        List<Claim> claims = [new(ClaimTypes.NameIdentifier, userId)];
 
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 

@@ -45,7 +45,7 @@ public sealed class TableService : ITableService
             cancellationToken: cancellationToken
         );
 
-        var entities = new List<T>();
+        List<T> entities = [];
 
         await foreach (var entity in tableEntity)
         {
@@ -90,7 +90,7 @@ public sealed class TableService : ITableService
             cancellationToken: cancellationToken
         );
 
-        var entitiesToDelete = new List<TableEntity>();
+        List<TableEntity> entitiesToDelete = [];
 
         await foreach (var entity in entities)
         {
