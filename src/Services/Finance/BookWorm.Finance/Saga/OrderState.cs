@@ -9,6 +9,8 @@ public sealed class OrderState : SagaStateMachineInstance, ISagaVersion
     public string CurrentState { get; set; } = null!;
     public decimal? TotalMoney { get; set; }
     public DateTime? OrderPlacedDate { get; set; }
+    public Guid? PlaceOrderTimeoutTokenId { get; set; }
+    public int TimeoutRetryCount { get; set; }
     public int Version { get; set; }
     public Guid CorrelationId { get; set; }
 }
