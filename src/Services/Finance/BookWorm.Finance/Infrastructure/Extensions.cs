@@ -14,6 +14,10 @@ public static class Extensions
         );
 
         services.AddMigration<FinanceDbContext>();
+
+        services.Configure<OrderStateMachineSettings>(
+            OrderStateMachineSettings.ConfigurationSection
+        );
     }
 
     public static void AddSagaStateMachineServices(this IHostApplicationBuilder builder)
