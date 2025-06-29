@@ -72,8 +72,16 @@ public sealed class OrderStateMachineTests
     private async Task AssertEventConsumed<TEvent>()
         where TEvent : class
     {
-        (await _harness.Consumed.Any<TEvent>()).ShouldBeTrue();
-        (await _sagaHarness.Consumed.Any<TEvent>()).ShouldBeTrue();
+        // Use CancellationToken with timeout for more reliable testing
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+
+        // The primary assertion is that the saga consumed the event
+        // This is the most important check for saga state machine tests
+        (await _sagaHarness.Consumed.Any<TEvent>(cts.Token)).ShouldBeTrue();
+
+        // Secondary check for general harness consumption
+        // This verifies the message was published and consumed in the system
+        (await _harness.Consumed.Any<TEvent>(cts.Token)).ShouldBeTrue();
     }
 
     private OrderState AssertSagaInState(Guid orderId, State state)
