@@ -8,7 +8,6 @@
   <ItemGroup Label="Aspire">
     <PackageReference Include="Aspire.Qdrant.Client" />
     <PackageReference Include="Aspire.Azure.Storage.Blobs" />
-    <PackageReference Include="Aspire.StackExchange.Redis.DistributedCaching" />
   </ItemGroup>
   <ItemGroup>
     <Protobuf Include="Grpc\Protos\book.proto" GrpcServices="Server" />

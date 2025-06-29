@@ -153,12 +153,7 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
                 .Publish(context => new DeleteBasketCompleteCommand(
                     context.Saga.OrderId,
                     context.Saga.TotalMoney.GetValueOrDefault(0.0M)
-                ))
-        );
-
-        During(
-            Placed,
-            Ignore(OrderPlaced),
+                )),
             When(OrderCompleted)
                 .Then(context =>
                 {

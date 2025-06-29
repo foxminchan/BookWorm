@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using BookWorm.Constants.Aspire;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -29,6 +30,11 @@ public static class Extensions
         var loggerFactory =
             provider.GetRequiredService<ILoggerFactory>()
             ?? throw new InvalidOperationException("ILoggerFactory is not registered.");
+
+        if (provider.GetService<IDistributedCache>() is null)
+        {
+            builder.AddRedisDistributedCache(Components.Redis);
+        }
 
         builder
             .AddOllamaApiClient(Components.Ollama.Chat)
