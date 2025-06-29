@@ -1,9 +1,9 @@
-﻿namespace BookWorm.Chat.Infrastructure.ChatStreaming;
+﻿using BookWorm.Chassis.AI;
+
+namespace BookWorm.Chat.Infrastructure.ChatStreaming;
 
 public static class Extensions
 {
-    private const string ActivitySourceName = "Experimental.Microsoft.Extensions.AI";
-
     public static void AddChatStreamingServices(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;
@@ -16,24 +16,21 @@ public static class Extensions
             return new ChatContext(conversationState, cancellationManager);
         });
 
+        builder.AddAITelemetry();
+
+        builder.AddChatClient();
+
+        services.AddMcpClient();
+
         services.AddSingleton<IChatStreaming, ChatStreaming>();
+    }
 
-        builder
-            .AddOllamaApiClient(Components.Ollama.Chat)
-            .AddChatClient()
-            .UseDistributedCache()
-            .UseFunctionInvocation()
-            .UseOpenTelemetry(configure: c =>
-                c.EnableSensitiveData = builder.Environment.IsDevelopment()
-            );
-
-        services
-            .AddOpenTelemetry()
-            .WithMetrics(m => m.AddMeter(ActivitySourceName))
-            .WithTracing(t => t.AddSource(ActivitySourceName));
-
-        services.AddSingleton(_ =>
+    private static void AddMcpClient(this IServiceCollection services)
+    {
+        services.AddTransient(sp =>
         {
+            var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+
             McpClientOptions mcpClientOptions = new()
             {
                 ClientInfo = new() { Name = Application.McpTools, Version = "1.0.0" },
@@ -44,12 +41,16 @@ public static class Extensions
                 BaseAddress = new($"{Protocol.HttpOrHttps}://{Application.McpTools}"),
             };
 
-            SseClientTransportOptions sseTransportOptions = new() { Endpoint = client.BaseAddress };
+            SseClientTransportOptions sseTransportOptions = new()
+            {
+                Name = "AspNetCoreSse",
+                Endpoint = client.BaseAddress,
+            };
 
-            SseClientTransport sseClientTransport = new(sseTransportOptions);
+            SseClientTransport sseClientTransport = new(sseTransportOptions, loggerFactory);
 
             var mcpClient = McpClientFactory
-                .CreateAsync(sseClientTransport, mcpClientOptions)
+                .CreateAsync(sseClientTransport, mcpClientOptions, loggerFactory)
                 .GetAwaiter()
                 .GetResult();
 

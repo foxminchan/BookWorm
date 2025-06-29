@@ -7,7 +7,6 @@
   </ItemGroup>
   <ItemGroup Label="AI">
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
-    <PackageReference Include="CommunityToolkit.Aspire.OllamaSharp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\Aspire\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj" />

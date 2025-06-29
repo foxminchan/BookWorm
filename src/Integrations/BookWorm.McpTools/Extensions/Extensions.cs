@@ -2,6 +2,8 @@
 
 public static class Extensions
 {
+    private const string ActivitySourceName = "Experimental.ModelContextProtocol";
+
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;
@@ -26,8 +28,7 @@ public static class Extensions
 
         services
             .AddOpenTelemetry()
-            .WithTracing(b => b.AddSource("*"))
-            .WithMetrics(b => b.AddMeter("*"))
-            .WithLogging();
+            .WithMetrics(m => m.AddMeter(ActivitySourceName))
+            .WithTracing(t => t.AddSource(ActivitySourceName));
     }
 }
