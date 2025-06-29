@@ -32,6 +32,7 @@ public static class Extensions
 
         // Configure Redis Cache
         builder.AddRedisClient(Components.Redis);
+        builder.AddRedisDistributedCache(Components.Redis);
 
         services.AddHybridCache(options =>
         {
