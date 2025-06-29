@@ -176,11 +176,13 @@ public sealed class ChatStreaming(
     {
         var prompts = await mcpClient.ListPromptsAsync();
 
-        var promptMessages = await prompts
-            .ToAsyncEnumerable()
-            .Select(async prompt => (await prompt.GetAsync()).ToChatMessages())
-            .SelectMany(x => x.Result)
-            .ToListAsync();
+        var promptMessages = new List<ChatMessage>();
+
+        foreach (var prompt in prompts)
+        {
+            var chatMessages = (await prompt.GetAsync()).ToChatMessages();
+            promptMessages.AddRange(chatMessages);
+        }
 
         Messages.AddRange(promptMessages);
 
