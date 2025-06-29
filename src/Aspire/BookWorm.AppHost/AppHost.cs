@@ -1,9 +1,14 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-builder.AddDashboard();
-builder.ConfigureCors();
 builder.HidePlainHttpLink();
-builder.AddAzureContainerAppEnvironment("aca").ProvisionAsService();
+
+if (builder.ExecutionContext.IsPublishMode)
+{
+    builder.AddDashboard();
+    builder.ConfigureCors();
+    builder.AddAzureApplicationInsights(Components.Azure.ApplicationInsights);
+    builder.AddAzureContainerAppEnvironment(Components.Azure.ContainerApp).ProvisionAsService();
+}
 
 var postgres = builder
     .AddAzurePostgresFlexibleServer(Components.Postgres)
@@ -85,6 +90,7 @@ var catalogApi = builder
         StorageBuiltInRole.StorageBlobDataContributor,
         StorageBuiltInRole.StorageBlobDataOwner
     )
+    .WithAzApplicationInsights()
     .WithOpenApi()
     .WithAsyncApi()
     .WithHealthCheck();
@@ -96,7 +102,8 @@ var mcp = builder
     .WithReference(catalogApi)
     .WaitFor(catalogApi)
     .WithReference(redis)
-    .WaitFor(redis);
+    .WaitFor(redis)
+    .WithAzApplicationInsights();
 
 var chatApi = builder
     .AddProject<BookWorm_Chat>(Application.Chatting)
@@ -111,6 +118,7 @@ var chatApi = builder
     .WithReference(signalR)
     .WaitFor(signalR)
     .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor)
+    .WithAzApplicationInsights()
     .WithOpenApi()
     .WithHealthCheck();
 
@@ -124,6 +132,7 @@ var basketApi = builder
     .WaitFor(queue)
     .WithReference(catalogApi)
     .WithIdP(keycloak)
+    .WithAzApplicationInsights()
     .WithOpenApi()
     .WithAsyncApi()
     .WithHealthCheck();
@@ -138,6 +147,7 @@ var notificationApi = builder
     .WithReference(tableStorage)
     .WaitFor(tableStorage)
     .WithRoleAssignments(storage, StorageBuiltInRole.StorageTableDataContributor)
+    .WithAzApplicationInsights()
     .WithAsyncApi(true)
     .WithHealthCheck();
 
@@ -155,6 +165,7 @@ var orderingApi = builder
     .WithReference(signalR)
     .WaitFor(signalR)
     .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor)
+    .WithAzApplicationInsights()
     .WithOpenApi()
     .WithAsyncApi()
     .WithHmacSecret()
@@ -169,6 +180,7 @@ var ratingApi = builder
     .WithReference(queue)
     .WaitFor(queue)
     .WithIdP(keycloak)
+    .WithAzApplicationInsights()
     .WithOpenApi()
     .WithAsyncApi()
     .WithHealthCheck();
@@ -182,6 +194,7 @@ var financeApi = builder
     .WithReference(redis)
     .WaitFor(redis)
     .WithIdP(keycloak)
+    .WithAzApplicationInsights()
     .WithOpenApi()
     .WithAsyncApi()
     .WithHealthCheck();

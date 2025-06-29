@@ -11,50 +11,47 @@ public static class CorsExtensions
     /// <param name="builder">The distributed application builder instance.</param>
     public static void ConfigureCors(this IDistributedApplicationBuilder builder)
     {
-        if (builder.ExecutionContext.IsPublishMode)
-        {
-            builder.Eventing.Subscribe<BeforeStartEvent>(
-                (e, _) =>
+        builder.Eventing.Subscribe<BeforeStartEvent>(
+            (e, _) =>
+            {
+                var backofficeParam = builder.AddParameter("backoffice-domain", true);
+                var storefrontParam = builder.AddParameter("storefront-domain", true);
+
+                foreach (var project in e.Model.Resources.OfType<ProjectResource>())
                 {
-                    var backofficeParam = builder.AddParameter("backoffice-domain", true);
-                    var storefrontParam = builder.AddParameter("storefront-domain", true);
+                    builder
+                        .CreateResourceBuilder(project)
+                        .WithEnvironment("Cors__BackOfficeUrl", backofficeParam)
+                        .WithEnvironment("Cors__StoreFrontUrl", storefrontParam)
+                        .PublishAsAzureContainerApp(
+                            (infra, app) =>
+                            {
+                                app.Configuration.Ingress.CorsPolicy.AllowedOrigins =
+                                [
+                                    backofficeParam.AsProvisioningParameter(infra),
+                                    storefrontParam.AsProvisioningParameter(infra),
+                                ];
 
-                    foreach (var project in e.Model.Resources.OfType<ProjectResource>())
-                    {
-                        builder
-                            .CreateResourceBuilder(project)
-                            .WithEnvironment("Cors__BackOfficeUrl", backofficeParam)
-                            .WithEnvironment("Cors__StoreFrontUrl", storefrontParam)
-                            .PublishAsAzureContainerApp(
-                                (infra, app) =>
-                                {
-                                    app.Configuration.Ingress.CorsPolicy.AllowedOrigins =
-                                    [
-                                        backofficeParam.AsProvisioningParameter(infra),
-                                        storefrontParam.AsProvisioningParameter(infra),
-                                    ];
+                                app.Configuration.Ingress.CorsPolicy.AllowedMethods =
+                                [
+                                    Restful.Methods.Get,
+                                    Restful.Methods.Post,
+                                    Restful.Methods.Put,
+                                    Restful.Methods.Patch,
+                                    Restful.Methods.Delete,
+                                    Restful.Methods.Options,
+                                ];
 
-                                    app.Configuration.Ingress.CorsPolicy.AllowedMethods =
-                                    [
-                                        Restful.Methods.Get,
-                                        Restful.Methods.Post,
-                                        Restful.Methods.Put,
-                                        Restful.Methods.Patch,
-                                        Restful.Methods.Delete,
-                                        Restful.Methods.Options,
-                                    ];
-
-                                    app.Tags.Add(
-                                        nameof(Environment),
-                                        builder.Environment.EnvironmentName
-                                    );
-                                    app.Tags.Add(nameof(Projects), nameof(BookWorm));
-                                }
-                            );
-                    }
-                    return Task.CompletedTask;
+                                app.Tags.Add(
+                                    nameof(Environment),
+                                    builder.Environment.EnvironmentName
+                                );
+                                app.Tags.Add(nameof(Projects), nameof(BookWorm));
+                            }
+                        );
                 }
-            );
-        }
+                return Task.CompletedTask;
+            }
+        );
     }
 }

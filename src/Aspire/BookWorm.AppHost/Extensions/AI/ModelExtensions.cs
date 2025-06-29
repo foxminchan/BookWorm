@@ -52,9 +52,8 @@ public static class ModelExtensions
     )
     {
         var models = builder
-            .ApplicationBuilder.Resources.Where(r => r.GetType() == typeof(OllamaModelResource))
-            .OfType<OllamaModelResource>()
-            .Select(model => builder.ApplicationBuilder.CreateResourceBuilder(model));
+            .ApplicationBuilder.Resources.OfType<OllamaModelResource>()
+            .Select(builder.ApplicationBuilder.CreateResourceBuilder);
 
         foreach (var model in models)
         {
