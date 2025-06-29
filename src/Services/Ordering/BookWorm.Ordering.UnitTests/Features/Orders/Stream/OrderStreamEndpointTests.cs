@@ -170,7 +170,7 @@ public sealed class OrderStreamEndpointTests
         var implementationParams = implementationMethod.GetParameters();
 
         interfaceParams.Length.ShouldBe(implementationParams.Length);
-        for (int i = 0; i < interfaceParams.Length; i++)
+        for (var i = 0; i < interfaceParams.Length; i++)
         {
             implementationParams[i].ParameterType.ShouldBe(interfaceParams[i].ParameterType);
             implementationParams[i].Name.ShouldBe(interfaceParams[i].Name);

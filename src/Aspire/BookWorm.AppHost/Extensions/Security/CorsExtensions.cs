@@ -50,6 +50,7 @@ public static class CorsExtensions
                             }
                         );
                 }
+
                 return Task.CompletedTask;
             }
         );

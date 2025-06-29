@@ -9,13 +9,16 @@ public sealed class GetOrderStateQueryTests
 {
     private readonly GetOrderStateHandler _handler;
     private readonly Mock<ILoggerFactory> _loggerFactoryMock;
-    private readonly OrderStateMachineSettings _settings;
 
     public GetOrderStateQueryTests()
     {
         _loggerFactoryMock = new();
-        _settings = new() { MaxAttempts = 3, MaxRetryTimeout = TimeSpan.FromMinutes(30) };
-        _handler = new(_loggerFactoryMock.Object, _settings);
+        OrderStateMachineSettings settings = new()
+        {
+            MaxAttempts = 3,
+            MaxRetryTimeout = TimeSpan.FromMinutes(30),
+        };
+        _handler = new(_loggerFactoryMock.Object, settings);
     }
 
     [Test]
