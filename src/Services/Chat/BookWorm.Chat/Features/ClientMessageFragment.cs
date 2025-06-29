@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Chat.Infrastructure.ConversationState.Abstractions;
+﻿namespace BookWorm.Chat.Features;
 
 public sealed record ClientMessageFragment(
     Guid Id,

@@ -33,6 +33,7 @@
   - [x] Text embedding with Nomic Embed Text
   - [x] Integrated a chatbot using Gemma 3
   - [x] Standardized AI tools with MCP Tools
+  - [x] Orchestrated multi-agent workflows with Semantic Kernel
 - [x] Configured CI/CD with GitHub Actions
 - [x] Created comprehensive documentation:
   - [x] Used OpenAPI for REST API & AsyncAPI for event-driven endpoints

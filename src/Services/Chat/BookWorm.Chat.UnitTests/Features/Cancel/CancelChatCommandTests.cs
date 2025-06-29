@@ -1,5 +1,5 @@
 ﻿using BookWorm.Chat.Features.Cancel;
-using BookWorm.Chat.Infrastructure.CancellationManager;
+using BookWorm.Chat.Infrastructure.Backplane.Contracts;
 using MediatR;
 
 namespace BookWorm.Chat.UnitTests.Features.Cancel;

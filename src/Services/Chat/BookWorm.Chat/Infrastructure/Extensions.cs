@@ -12,5 +12,7 @@ public static class Extensions
         builder.AddAzureNpgsqlDbContext<ChatDbContext>(Components.Database.Chat);
         services.AddMigration<ChatDbContext>();
         services.AddRepositories(typeof(IChatApiMarker));
+
+        builder.AddRedisClient(Components.Redis);
     }
 }

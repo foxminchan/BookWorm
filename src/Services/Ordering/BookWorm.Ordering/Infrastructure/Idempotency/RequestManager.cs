@@ -67,4 +67,4 @@ public sealed class RequestManager(ILogger<RequestManager> logger, IConnectionMu
     WriteIndented = true,
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase
 )]
-public partial class IdempotencySerializationContext : JsonSerializerContext;
+public sealed partial class IdempotencySerializationContext : JsonSerializerContext;

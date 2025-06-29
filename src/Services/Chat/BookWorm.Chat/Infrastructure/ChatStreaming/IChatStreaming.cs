@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Chat.Infrastructure.ChatStreaming;
+﻿using BookWorm.Chat.Features;
+
+namespace BookWorm.Chat.Infrastructure.ChatStreaming;
 
 public interface IChatStreaming
 {

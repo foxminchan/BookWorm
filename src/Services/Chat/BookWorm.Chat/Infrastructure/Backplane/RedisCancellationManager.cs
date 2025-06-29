@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Chat.Infrastructure.CancellationManager;
+﻿using BookWorm.Chat.Infrastructure.Backplane.Contracts;
+
+namespace BookWorm.Chat.Infrastructure.Backplane;
 
 public sealed class RedisCancellationManager : ICancellationManager, IDisposable
 {

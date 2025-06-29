@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Chat.Extensions;
+﻿using BookWorm.Chat.Infrastructure.Backplane;
+
+namespace BookWorm.Chat.Extensions;
 
 public static class Extensions
 {
@@ -47,8 +49,7 @@ public static class Extensions
 
         builder.AddPersistenceServices();
 
-        services.AddSingleton<IConversationState, RedisConversationState>();
-        services.AddSingleton<ICancellationManager, RedisCancellationManager>();
+        services.AddBackplaneServices();
 
         // Configure ClaimsPrincipal
         services.AddTransient<ClaimsPrincipal>(s =>

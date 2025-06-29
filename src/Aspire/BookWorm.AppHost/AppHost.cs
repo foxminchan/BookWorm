@@ -101,8 +101,6 @@ var mcp = builder
     .AddProject<BookWorm_McpTools>(Application.McpTools)
     .WithReference(catalogApi)
     .WaitFor(catalogApi)
-    .WithReference(redis)
-    .WaitFor(redis)
     .WithAzApplicationInsights();
 
 var chatApi = builder
@@ -142,8 +140,6 @@ var notificationApi = builder
     .WithEmailProvider()
     .WithReference(queue)
     .WaitFor(queue)
-    .WithReference(redis)
-    .WaitFor(redis)
     .WithReference(tableStorage)
     .WaitFor(tableStorage)
     .WithRoleAssignments(storage, StorageBuiltInRole.StorageTableDataContributor)
@@ -175,8 +171,6 @@ var ratingApi = builder
     .AddProject<BookWorm_Rating>(Application.Rating)
     .WithReference(ratingDb)
     .WaitFor(ratingDb)
-    .WithReference(redis)
-    .WaitFor(redis)
     .WithReference(queue)
     .WaitFor(queue)
     .WithIdP(keycloak)
@@ -191,8 +185,6 @@ var financeApi = builder
     .WaitFor(financeDb)
     .WithReference(queue)
     .WaitFor(queue)
-    .WithReference(redis)
-    .WaitFor(redis)
     .WithIdP(keycloak)
     .WithAzApplicationInsights()
     .WithOpenApi()

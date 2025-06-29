@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Chat.Infrastructure.CancellationManager;
+﻿namespace BookWorm.Chat.Infrastructure.Backplane.Contracts;
 
 public interface ICancellationManager
 {

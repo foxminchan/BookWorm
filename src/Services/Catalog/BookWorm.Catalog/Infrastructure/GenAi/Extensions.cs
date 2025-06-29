@@ -11,14 +11,14 @@ public static class Extensions
     {
         var services = builder.Services;
 
-        builder.AddAITelemetry();
-
-        builder.AddChatClient();
+        builder.AddSkTelemetry();
 
         builder.AddEmbeddingGenerator();
 
+        builder.AddChatCompletion();
+
         services.AddScoped<IIngestionSource<Book>, BookDataIngestor>();
 
-        builder.AddSearchService();
+        services.AddScoped<ISearch, HybridSearch>();
     }
 }

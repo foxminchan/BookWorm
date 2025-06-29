@@ -1,30 +1,53 @@
 ﻿using BookWorm.Chat.Domain.AggregatesModel;
-using Microsoft.Extensions.Diagnostics.Buffering;
+using BookWorm.Chat.Extensions;
+using BookWorm.Chat.Features;
+using BookWorm.Chat.Infrastructure.Backplane;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Agents.Orchestration.Sequential;
+using Microsoft.SemanticKernel.Agents.Runtime.InProcess;
+using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace BookWorm.Chat.Infrastructure.ChatStreaming;
 
 public sealed class ChatStreaming(
-    IChatClient chatClient,
-    ILogger<ChatStreaming> logger,
     ChatContext chatContext,
     AppSettings appSettings,
-    IMcpClient mcpClient,
-    GlobalLogBuffer logBuffer,
-    IServiceScopeFactory scopeFactory
+    ILogger<ChatStreaming> logger,
+    IServiceScopeFactory scopeFactory,
+    RedisBackplaneService backplaneService
 ) : IChatStreaming
 {
     private readonly TimeSpan _defaultStreamItemTimeout = appSettings.StreamTimeout;
-    private List<ChatMessage> Messages { get; } = [];
+    private readonly ChatHistory _messages = [];
 
     public async Task AddStreamingMessage(Guid conversationId, string text)
     {
-        await FetchAndAddPromptMessages(conversationId, text);
+        logger.LogInformation(
+            "Adding streaming message for conversation {ConversationId}",
+            conversationId
+        );
 
-        var tools = await mcpClient.ListToolsAsync();
+        _messages.AddMessage(AuthorRole.User, text);
 
-        var chatOptions = new ChatOptions { Tools = [.. tools] };
+        var messages = await FetchAndAddPromptMessages(conversationId, text);
+        var history = messages.ToChatHistory();
+        _messages.AddRange(history);
 
-        _ = Task.Run(() => StreamReplyAsync(conversationId, chatOptions));
+        _ = StreamReplyAsync(conversationId)
+            .ContinueWith(
+                t =>
+                {
+                    if (t.IsFaulted)
+                    {
+                        logger.LogError(
+                            t.Exception,
+                            "Failed to stream reply for conversation {ConversationId}",
+                            conversationId
+                        );
+                    }
+                },
+                TaskScheduler.Default
+            );
     }
 
     public async IAsyncEnumerable<ClientMessageFragment> GetMessageStream(
@@ -34,12 +57,18 @@ public sealed class ChatStreaming(
         [EnumeratorCancellation] CancellationToken cancellationToken = default
     )
     {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            yield break;
+        }
+
         logger.LogInformation(
             "Getting message stream for conversation {ConversationId}, {LastMessageId}",
             conversationId,
             lastMessageId
         );
-        var stream = chatContext.ConversationState.Subscribe(
+
+        var stream = backplaneService.ConversationState.Subscribe(
             conversationId,
             lastMessageId,
             cancellationToken
@@ -47,20 +76,17 @@ public sealed class ChatStreaming(
 
         await foreach (var fragment in stream)
         {
-            if (lastDeliveredFragment is null || fragment.FragmentId > lastDeliveredFragment)
-            {
-                lastDeliveredFragment = fragment.FragmentId;
-            }
-            else
+            if (lastDeliveredFragment is not null && !(fragment.FragmentId > lastDeliveredFragment))
             {
                 continue;
             }
 
+            lastDeliveredFragment = fragment.FragmentId;
             yield return fragment;
         }
     }
 
-    private async Task StreamReplyAsync(Guid conversationId, ChatOptions chatOptions)
+    private async Task StreamReplyAsync(Guid conversationId)
     {
         var assistantReplyId = Guid.CreateVersion7();
 
@@ -70,138 +96,199 @@ public sealed class ChatStreaming(
             assistantReplyId
         );
 
-        List<ChatResponseUpdate> allChunks = [];
-
-        var token = chatContext.CancellationManager.GetCancellationToken(assistantReplyId);
-
+        var token = backplaneService.CancellationManager.GetCancellationToken(assistantReplyId);
         var fragment = new ClientMessageFragment(
             assistantReplyId,
             ChatRole.Assistant.Value,
             "Generating reply...",
             Guid.CreateVersion7()
         );
-        await chatContext.ConversationState.PublishFragmentAsync(conversationId, fragment);
 
         try
         {
+            await backplaneService.ConversationState.PublishFragmentAsync(conversationId, fragment);
+
             using var tokenSource = CancellationTokenSource.CreateLinkedTokenSource(token);
             tokenSource.CancelAfter(_defaultStreamItemTimeout);
 
-            await foreach (
-                var update in chatClient
-                    .GetStreamingResponseAsync(Messages, chatOptions)
-                    .WithCancellation(tokenSource.Token)
-            )
-            {
-                tokenSource.CancelAfter(_defaultStreamItemTimeout);
+            // Get the last user message
+            var lastUserMessage = _messages.LastOrDefault(m => m.Role == AuthorRole.User)?.Content;
 
-                allChunks.Add(update);
-                fragment = new(
+            if (string.IsNullOrEmpty(lastUserMessage))
+            {
+                logger.LogWarning(
+                    "No user message found in chat history for conversation {ConversationId}",
+                    conversationId
+                );
+                var errorFragment = new ClientMessageFragment(
+                    assistantReplyId,
+                    AuthorRole.Assistant.Label,
+                    "Unable to process request: No user message found",
+                    Guid.CreateVersion7(),
+                    true
+                );
+                await backplaneService.ConversationState.PublishFragmentAsync(
+                    conversationId,
+                    errorFragment
+                );
+                return;
+            }
+
+            // Use concurrent orchestration to process responses from both agents in parallel
+            var runtime = new InProcessRuntime();
+            await runtime.StartAsync(token);
+
+            // Callback to observe agent responses during orchestration
+            async ValueTask ResponseCallback(ChatMessageContent response)
+            {
+                // Add to existing message history for tracking
+                _messages.Add(response);
+
+                logger.LogInformation(
+                    "Agent response received from {AuthorName}: {Content}",
+                    response.AuthorName ?? "Unknown",
+                    response.Content
+                );
+
+                // Stream individual agent responses as they come in
+                var agentFragment = new ClientMessageFragment(
                     assistantReplyId,
                     ChatRole.Assistant.Value,
-                    update.Text,
+                    $"**{response.AuthorName ?? "Agent"}**: {response.Content}\n\n",
                     Guid.CreateVersion7()
                 );
-                await chatContext.ConversationState.PublishFragmentAsync(conversationId, fragment);
+
+                await backplaneService.ConversationState.PublishFragmentAsync(
+                    conversationId,
+                    agentFragment
+                );
             }
 
-            logger.LogInformation(
-                "Full message received for conversation {ConversationId} {MessageId}",
-                conversationId,
-                assistantReplyId
+            SequentialOrchestration orchestration = new(
+                chatContext.LanguageAgent,
+                chatContext.SummarizeAgent,
+                chatContext.SentimentAgent,
+                chatContext.BookAgent
+            )
+            {
+                ResponseCallback = ResponseCallback,
+            };
+
+            // Get result from sequential orchestration - it will handle streaming internally
+            var result = await orchestration.InvokeAsync(
+                lastUserMessage,
+                runtime,
+                tokenSource.Token
             );
 
-            if (allChunks.Count > 0)
-            {
-                var fullMessage = allChunks.ToChatResponse().Text;
-                await SaveAssistantMessageToDatabase(conversationId, assistantReplyId, fullMessage);
-            }
-        }
-        catch (OperationCanceledException ex)
-        {
-            logger.LogError(
-                ex,
-                "Streaming message cancelled for conversation {ConversationId} {MessageId}",
-                conversationId,
-                assistantReplyId
+            // Get final combined results
+            var finalResults = await result.GetValueAsync(
+                TimeSpan.FromSeconds(60),
+                tokenSource.Token
             );
 
-            if (allChunks.Count > 0)
-            {
-                var fullMessage = allChunks.ToChatResponse().Text;
-                await SaveAssistantMessageToDatabase(conversationId, assistantReplyId, fullMessage);
-            }
+            var combinedMessage = string.Join("\n\n", finalResults);
 
-            logBuffer.Flush();
-        }
-        catch (Exception ex)
-        {
-            fragment = new(
+            // Publish the final fragment
+            var finalFragment = new ClientMessageFragment(
                 assistantReplyId,
                 ChatRole.Assistant.Value,
-                "Error streaming message",
-                Guid.CreateVersion7()
-            );
-            await chatContext.ConversationState.PublishFragmentAsync(conversationId, fragment);
-            logger.LogError(
-                ex,
-                "Error streaming message for conversation {ConversationId} {MessageId}",
-                conversationId,
-                assistantReplyId
-            );
-
-            await SaveAssistantMessageToDatabase(
-                conversationId,
-                assistantReplyId,
-                "Error streaming message"
-            );
-
-            logBuffer.Flush();
-        }
-        finally
-        {
-            fragment = new(
-                assistantReplyId,
-                ChatRole.Assistant.Value,
-                string.Empty,
+                combinedMessage,
                 Guid.CreateVersion7(),
                 true
             );
-            await chatContext.ConversationState.PublishFragmentAsync(conversationId, fragment);
-            await chatContext.CancellationManager.CancelAsync(assistantReplyId);
+
+            await backplaneService.ConversationState.PublishFragmentAsync(
+                conversationId,
+                finalFragment
+            );
+
+            // Add the completed message to the history
+            _messages.AddMessage(AuthorRole.Assistant, combinedMessage);
+
+            // Save assistant's message to database
+            await SaveAssistantMessageToDatabase(conversationId, assistantReplyId, combinedMessage);
+
+            await runtime.RunUntilIdleAsync();
+        }
+        catch (OperationCanceledException ex)
+        {
+            logger.LogInformation(
+                ex,
+                "Message stream cancelled for conversation {ConversationId} {MessageId}",
+                conversationId,
+                assistantReplyId
+            );
+
+            // Publish cancelled fragment
+            var cancelledFragment = new ClientMessageFragment(
+                assistantReplyId,
+                ChatRole.Assistant.Value,
+                "Message generation cancelled",
+                Guid.CreateVersion7(),
+                true
+            );
+
+            await backplaneService.ConversationState.PublishFragmentAsync(
+                conversationId,
+                cancelledFragment
+            );
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Error streaming response for conversation {ConversationId} {MessageId}",
+                conversationId,
+                assistantReplyId
+            );
+
+            var errorFragment = new ClientMessageFragment(
+                assistantReplyId,
+                ChatRole.Assistant.Value,
+                "An error occurred while generating the response",
+                Guid.CreateVersion7(),
+                true
+            );
+
+            await backplaneService.ConversationState.PublishFragmentAsync(
+                conversationId,
+                errorFragment
+            );
         }
     }
 
-    private async Task FetchAndAddPromptMessages(Guid conversationId, string text)
+    private async Task<List<ChatMessage>> FetchAndAddPromptMessages(
+        Guid conversationId,
+        string text
+    )
     {
-        var prompts = await mcpClient.ListPromptsAsync();
+        var prompts = await chatContext.McpClient.ListPromptsAsync();
 
-        var promptMessages = await prompts
-            .ToAsyncEnumerable()
-            .Select(async prompt => (await prompt.GetAsync()).ToChatMessages())
-            .SelectMany(x => x.Result)
-            .ToListAsync();
+        List<ChatMessage> promptMessages = [];
 
-        Messages.AddRange(promptMessages);
+        foreach (var prompt in prompts)
+        {
+            var chatMessages = (await prompt.GetAsync()).ToChatMessages();
+            promptMessages.AddRange(chatMessages);
+        }
 
         var messages = await SavePromptAndGetMessageHistoryAsync(conversationId, text);
 
-        Messages.AddRange(messages);
+        promptMessages.AddRange(messages);
+
+        return promptMessages;
     }
 
-    private async Task<IList<ChatMessage>> SavePromptAndGetMessageHistoryAsync(Guid id, string text)
+    private async Task<List<ChatMessage>> SavePromptAndGetMessageHistoryAsync(Guid id, string text)
     {
         await using var scope = scopeFactory.CreateAsyncScope();
-
         var repository = scope.ServiceProvider.GetRequiredService<IConversationRepository>();
 
         var conversation = await repository.GetByIdAsync(id);
-
         Guard.Against.NotFound(conversation, id);
 
-        var parentMessage = conversation
-            .Messages.OrderByDescending(m => m.CreatedAt)
-            .FirstOrDefault();
+        var parentMessage = conversation.Messages.MaxBy(m => m.CreatedAt);
 
         var message = new ConversationMessage(null, text, ChatRole.User.Value, parentMessage?.Id);
 
@@ -221,7 +308,7 @@ public sealed class ChatStreaming(
             true
         );
 
-        await chatContext.ConversationState.PublishFragmentAsync(id, fragment);
+        await backplaneService.ConversationState.PublishFragmentAsync(id, fragment);
 
         return messages;
     }
@@ -257,6 +344,6 @@ public sealed class ChatStreaming(
             await repository.UnitOfWork.SaveChangesAsync();
         }
 
-        await chatContext.ConversationState.CompleteAsync(conversationId, messageId);
+        await backplaneService.ConversationState.CompleteAsync(conversationId, messageId);
     }
 }
