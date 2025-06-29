@@ -18,7 +18,7 @@ public sealed class CreateOrderCommandTests
 {
     #region PreCreateOrderHandler Tests
 
-    public class PreCreateOrderHandlerTests
+    public sealed class PreCreateOrderHandlerTests
     {
         private readonly Mock<IBasketService> _basketServiceMock;
         private readonly Mock<IBookService> _bookServiceMock;
@@ -150,7 +150,7 @@ public sealed class CreateOrderCommandTests
 
     #region CreateOrderHandler Tests
 
-    public class CreateOrderHandlerTests
+    public sealed class CreateOrderHandlerTests
     {
         private readonly Mock<ClaimsPrincipal> _claimsPrincipalMock;
         private readonly CreateOrderCommand _command;

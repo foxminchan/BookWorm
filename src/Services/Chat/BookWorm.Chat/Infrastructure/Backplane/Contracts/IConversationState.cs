@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Chat.Infrastructure.ConversationState.Abstractions;
+﻿using BookWorm.Chat.Features;
+
+namespace BookWorm.Chat.Infrastructure.Backplane.Contracts;
 
 public interface IConversationState
 {

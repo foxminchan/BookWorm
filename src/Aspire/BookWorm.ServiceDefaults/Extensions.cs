@@ -38,8 +38,11 @@ public static class Extensions
             // Turn on resilience by default
             http.AddStandardResilienceHandler(options =>
             {
-                options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(60);
-                options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(30);
+                var timeSpan = TimeSpan.FromMinutes(2);
+                options.AttemptTimeout.Timeout = timeSpan;
+                options.CircuitBreaker.SamplingDuration = timeSpan * 2;
+                options.TotalRequestTimeout.Timeout = timeSpan * 3;
+                options.Retry.MaxRetryAttempts = 1;
             });
 
             // Turn on service discovery by default
@@ -164,7 +167,6 @@ public static class Extensions
             healthChecksConfiguration.GetValue<TimeSpan?>("ExpireAfter")
             ?? TimeSpan.FromSeconds(10);
 
-        builder.AddRedisOutputCache(Components.Redis);
         services.AddOutputCache(caching =>
             caching.AddPolicy(HealthChecks, policy => policy.Expire(healthChecksExpireAfter))
         );

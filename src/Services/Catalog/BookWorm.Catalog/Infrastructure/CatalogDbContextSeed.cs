@@ -1,10 +1,12 @@
 ﻿using BookWorm.Constants.Other;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Connectors.Ollama;
 using Npgsql;
 
 namespace BookWorm.Catalog.Infrastructure;
 
 public sealed class CatalogDbContextSeed(
-    IChatClient chatClient,
+    Kernel kernel,
     ILogger<CatalogDbContextSeed> logger,
     IFeatureManager featureManager
 ) : IDbSeeder<CatalogDbContext>
@@ -66,12 +68,12 @@ public sealed class CatalogDbContextSeed(
                     Return only the description text with no additional formatting or commentary.
                     """;
 
-                var response = await chatClient.GetResponseAsync(
-                    prompts,
-                    new() { Temperature = 0.6f, ResponseFormat = ChatResponseFormat.Text }
-                );
-
-                var description = response.Text;
+                var settings = new OllamaPromptExecutionSettings
+                {
+                    FunctionChoiceBehavior = FunctionChoiceBehavior.Auto(),
+                    Temperature = 0.6f,
+                };
+                var description = await kernel.InvokePromptAsync<string>(prompts, new(settings));
 
                 logger.LogDebug(
                     "Generated description for book {Name}: {Description}",

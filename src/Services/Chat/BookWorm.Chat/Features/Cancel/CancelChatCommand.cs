@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Chat.Features.Cancel;
+﻿using BookWorm.Chat.Infrastructure.Backplane.Contracts;
+
+namespace BookWorm.Chat.Features.Cancel;
 
 public sealed record CancelChatCommand(Guid Id) : ICommand;
 

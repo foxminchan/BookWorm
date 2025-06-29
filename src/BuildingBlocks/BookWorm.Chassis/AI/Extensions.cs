@@ -1,66 +1,38 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using BookWorm.Constants.Aspire;
-using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Caching.Distributed;
+﻿using BookWorm.Constants.Aspire;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using Microsoft.SemanticKernel;
 
 namespace BookWorm.Chassis.AI;
 
 public static class Extensions
 {
-    private const string ActivitySourceName = "Experimental.Microsoft.Extensions.AI*";
+    private const string ActivitySourceName = "Microsoft.SemanticKernel*";
 
-    [SuppressMessage("ReSharper", "InconsistentNaming")]
-    public static void AddAITelemetry(this IHostApplicationBuilder builder)
+    public static void AddSkTelemetry(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;
 
+        AppContext.SetSwitch(
+            "Microsoft.SemanticKernel.Experimental.GenAI.EnableOTelDiagnosticsSensitive",
+            builder.Environment.IsDevelopment()
+        );
+
         services
             .AddOpenTelemetry()
-            .WithMetrics(m => m.AddMeter(ActivitySourceName))
-            .WithTracing(t => t.AddSource(ActivitySourceName));
+            .WithTracing(x => x.AddSource(ActivitySourceName))
+            .WithMetrics(x => x.AddMeter(ActivitySourceName));
     }
 
-    public static void AddChatClient(this IHostApplicationBuilder builder)
+    public static void AddChatCompletion(this IHostApplicationBuilder builder)
     {
-        var provider = builder.Services.BuildServiceProvider();
-
-        var loggerFactory =
-            provider.GetRequiredService<ILoggerFactory>()
-            ?? throw new InvalidOperationException("ILoggerFactory is not registered.");
-
-        if (provider.GetService<IDistributedCache>() is null)
-        {
-            builder.AddRedisDistributedCache(Components.Redis);
-        }
-
-        builder
-            .AddOllamaApiClient(Components.Ollama.Chat)
-            .AddChatClient()
-            .UseDistributedCache()
-            .UseFunctionInvocation()
-            .UseLogging(loggerFactory)
-            .UseOpenTelemetry(configure: c =>
-                c.EnableSensitiveData = builder.Environment.IsDevelopment()
-            );
+        builder.AddOllamaApiClient(Components.Ollama.Chat);
+        builder.Services.AddKernel().AddOllamaChatCompletion();
     }
 
     public static void AddEmbeddingGenerator(this IHostApplicationBuilder builder)
     {
-        var provider = builder.Services.BuildServiceProvider();
-
-        var loggerFactory =
-            provider.GetRequiredService<ILoggerFactory>()
-            ?? throw new InvalidOperationException("ILoggerFactory is not registered.");
-
-        builder
-            .AddOllamaApiClient(Components.Ollama.Embedding)
-            .AddEmbeddingGenerator()
-            .UseLogging(loggerFactory)
-            .UseOpenTelemetry(configure: c =>
-                c.EnableSensitiveData = builder.Environment.IsDevelopment()
-            );
+        builder.AddOllamaApiClient(Components.Ollama.Embedding);
+        builder.Services.AddKernel().AddOllamaEmbeddingGenerator();
     }
 }

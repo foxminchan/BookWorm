@@ -1,4 +1,5 @@
 ﻿using BookWorm.Chassis.AI;
+using BookWorm.Chat.Agents;
 
 namespace BookWorm.Chat.Infrastructure.ChatStreaming;
 
@@ -9,25 +10,22 @@ public static class Extensions
         var services = builder.Services;
 
         // Register chat context composite service
-        services.AddSingleton(provider =>
-        {
-            var conversationState = provider.GetRequiredService<IConversationState>();
-            var cancellationManager = provider.GetRequiredService<ICancellationManager>();
-            return new ChatContext(conversationState, cancellationManager);
-        });
+        services.AddSingleton<ChatContext>();
 
-        builder.AddAITelemetry();
+        builder.AddSkTelemetry();
 
-        builder.AddChatClient();
+        builder.AddChatCompletion();
 
-        services.AddMcpClient();
+        builder.AddMcpClient();
+
+        builder.AddAgents();
 
         services.AddSingleton<IChatStreaming, ChatStreaming>();
     }
 
-    private static void AddMcpClient(this IServiceCollection services)
+    private static void AddMcpClient(this IHostApplicationBuilder builder)
     {
-        services.AddTransient(sp =>
+        builder.Services.AddTransient(async sp =>
         {
             var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
 
@@ -49,10 +47,11 @@ public static class Extensions
 
             SseClientTransport sseClientTransport = new(sseTransportOptions, loggerFactory);
 
-            var mcpClient = McpClientFactory
-                .CreateAsync(sseClientTransport, mcpClientOptions, loggerFactory)
-                .GetAwaiter()
-                .GetResult();
+            var mcpClient = await McpClientFactory.CreateAsync(
+                sseClientTransport,
+                mcpClientOptions,
+                loggerFactory
+            );
 
             return mcpClient;
         });
