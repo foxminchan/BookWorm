@@ -1,9 +1,11 @@
 ﻿using System.Threading.Channels;
+using BookWorm.Chat.Features;
+using BookWorm.Chat.Infrastructure.Backplane.Contracts;
 using Microsoft.Extensions.Diagnostics.Buffering;
 
-namespace BookWorm.Chat.Infrastructure.ConversationState;
+namespace BookWorm.Chat.Infrastructure.Backplane;
 
-public sealed class RedisConversationState : IConversationState, IDisposable
+public sealed partial class RedisConversationState : IConversationState, IDisposable
 {
     private static readonly ConcurrentDictionary<
         Guid,
@@ -13,6 +15,7 @@ public sealed class RedisConversationState : IConversationState, IDisposable
     private readonly IDatabase _database;
     private readonly GlobalLogBuffer _logBuffer;
     private readonly ILogger<RedisConversationState> _logger;
+    private readonly ILoggerFactory _loggerFactory;
 
     private readonly ConcurrentDictionary<Guid, MessageBuffer> _messageBuffers = [];
 
@@ -22,12 +25,14 @@ public sealed class RedisConversationState : IConversationState, IDisposable
     public RedisConversationState(
         IConnectionMultiplexer redis,
         ILogger<RedisConversationState> logger,
+        ILoggerFactory loggerFactory,
         GlobalLogBuffer logBuffer
     )
     {
         _database = redis.GetDatabase();
         _subscriber = redis.GetSubscriber();
         _logger = logger;
+        _loggerFactory = loggerFactory;
         _logBuffer = logBuffer;
         _patternChannel = RedisChannel.Pattern("conversation:*:channel");
         _subscriber.Subscribe(_patternChannel, OnRedisMessage);
@@ -54,7 +59,14 @@ public sealed class RedisConversationState : IConversationState, IDisposable
 
         var buffer = _messageBuffers.GetOrAdd(
             fragment.Id,
-            _ => new(_database, _subscriber, _logger, conversationId, _logBuffer)
+            _ =>
+                new(
+                    _database,
+                    _subscriber,
+                    _loggerFactory.CreateLogger<MessageBuffer>(),
+                    conversationId,
+                    _logBuffer
+                )
         );
 
         await buffer.AddFragmentAsync(fragment);
@@ -168,12 +180,12 @@ public sealed class RedisConversationState : IConversationState, IDisposable
         }
     }
 
-    public static RedisKey GetBacklogKey(Guid conversationId)
+    private static RedisKey GetBacklogKey(Guid conversationId)
     {
         return $"conversation:{conversationId}:backlog";
     }
 
-    public static RedisChannel GetRedisChannelName(Guid conversationId)
+    private static RedisChannel GetRedisChannelName(Guid conversationId)
     {
         return RedisChannel.Literal($"conversation:{conversationId}:channel");
     }

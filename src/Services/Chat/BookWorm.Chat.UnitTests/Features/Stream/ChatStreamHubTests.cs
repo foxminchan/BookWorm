@@ -2,7 +2,6 @@
 using BookWorm.Chat.Features;
 using BookWorm.Chat.Features.Stream;
 using BookWorm.Chat.Infrastructure.ChatStreaming;
-using BookWorm.Chat.Infrastructure.ConversationState.Abstractions;
 
 namespace BookWorm.Chat.UnitTests.Features.Stream;
 
@@ -497,5 +496,50 @@ public sealed class ChatStreamHubTests
             x => x.GetMessageStream(_conversationId, null, null, cancellationToken),
             Times.Once
         );
+    }
+
+    [Test]
+    public void GivenClientMessageFragment_WhenCreatedWithExplicitFalseFinalFlag_ThenShouldSetIsFinalCorrectly()
+    {
+        // Arrange
+        var id = Guid.CreateVersion7();
+        const string sender = "user";
+        const string text = "Test message";
+        var fragmentId = Guid.CreateVersion7();
+
+        // Act
+        var fragment = new ClientMessageFragment(id, sender, text, fragmentId);
+
+        // Assert
+        fragment.Id.ShouldBe(id);
+        fragment.Sender.ShouldBe(sender);
+        fragment.Text.ShouldBe(text);
+        fragment.FragmentId.ShouldBe(fragmentId);
+        fragment.IsFinal.ShouldBeFalse();
+    }
+
+    [Test]
+    [Arguments("user")]
+    [Arguments("assistant")]
+    [Arguments("system")]
+    [Arguments("")]
+    public void GivenClientMessageFragment_WhenCreatedWithDifferentSenders_ThenShouldSetSenderCorrectly(
+        string sender
+    )
+    {
+        // Arrange
+        var id = Guid.CreateVersion7();
+        const string text = "Test message";
+        var fragmentId = Guid.CreateVersion7();
+
+        // Act
+        var fragment = new ClientMessageFragment(id, sender, text, fragmentId);
+
+        // Assert
+        fragment.Sender.ShouldBe(sender);
+        fragment.Id.ShouldBe(id);
+        fragment.Text.ShouldBe(text);
+        fragment.FragmentId.ShouldBe(fragmentId);
+        fragment.IsFinal.ShouldBeFalse(); // default value
     }
 }

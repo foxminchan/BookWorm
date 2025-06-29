@@ -154,7 +154,7 @@ public static class GetBasketQueryTests
         }
     }
 
-    public class PostGetBasketHandlerTests
+    public sealed class PostGetBasketHandlerTests
     {
         private readonly CustomerBasketDto _basketDto;
         private readonly List<string> _bookIds;
