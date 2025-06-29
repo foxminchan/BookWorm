@@ -18,11 +18,6 @@ public static class DashboardExtensions
     /// </remarks>
     public static void AddDashboard(this IDistributedApplicationBuilder builder)
     {
-        if (!builder.ExecutionContext.IsPublishMode)
-        {
-            return;
-        }
-
         var dashboard = builder
             .AddContainer(DashboardDefaults.ResourceName, DashboardDefaults.ContainerImageName)
             .WithHttpEndpoint(targetPort: DashboardDefaults.ContainerPort)

@@ -30,6 +30,8 @@ public static class Components
 
     public static class Azure
     {
+        public const string ContainerApp = "aca";
+        public const string ApplicationInsights = "appInsights";
         public static readonly string SignalR = nameof(SignalR).ToLowerInvariant();
 
         public static class Storage

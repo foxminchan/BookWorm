@@ -171,4 +171,31 @@ public static partial class AzureExtensions
                 resource.Tags.Add(nameof(Projects), nameof(BookWorm));
             });
     }
+
+    /// <summary>
+    ///     Configures Azure Application Insights for the project resource during Azure deployment.
+    ///     Adds a reference to the Application Insights resource if the execution context is in publish mode.
+    /// </summary>
+    /// <param name="builder">The resource builder for the project resource.</param>
+    /// <returns>The updated resource builder with Application Insights configured.</returns>
+    public static IResourceBuilder<ProjectResource> WithAzApplicationInsights(
+        this IResourceBuilder<ProjectResource> builder
+    )
+    {
+        var applicationBuilder = builder.ApplicationBuilder;
+
+        if (!applicationBuilder.ExecutionContext.IsPublishMode)
+        {
+            return builder;
+        }
+
+        var resource = applicationBuilder
+            .Resources.OfType<AzureApplicationInsightsResource>()
+            .Single();
+        var applicationInsights = applicationBuilder.CreateResourceBuilder(resource);
+
+        builder.WithReference(applicationInsights);
+
+        return builder;
+    }
 }

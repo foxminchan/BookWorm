@@ -31,10 +31,12 @@ public static class ScalarExtensions
     )
     {
         var clientId = api.Resource.Name;
+
         var secret = builder
-            .ApplicationBuilder.Resources.Where(r => r.Name == $"{clientId}-secret")
-            .OfType<ParameterResource>()
-            .FirstOrDefault()
+            .ApplicationBuilder.Resources.OfType<ParameterResource>()
+            .FirstOrDefault(r =>
+                string.Equals(r.Name, $"{clientId}-secret", StringComparison.OrdinalIgnoreCase)
+            )
             ?.Value;
 
         return builder.WithApiReference(
