@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Chat.Features.Get;
+﻿using System.ComponentModel;
+
+namespace BookWorm.Chat.Features.Get;
 
 public sealed class GetChatEndpoint : IEndpoint<Ok<ConversationDto>, Guid, ISender>
 {
@@ -6,8 +8,11 @@ public sealed class GetChatEndpoint : IEndpoint<Ok<ConversationDto>, Guid, ISend
     {
         app.MapGet(
                 "/{id:guid}",
-                async (Guid id, ISender sender, CancellationToken cancellationToken) =>
-                    await HandleAsync(id, sender, cancellationToken)
+                async (
+                    [Description("The unique identifier of the chat to be retrieved")] Guid id,
+                    ISender sender,
+                    CancellationToken cancellationToken
+                ) => await HandleAsync(id, sender, cancellationToken)
             )
             .ProducesGet<ConversationDto>(hasNotFound: true)
             .WithTags(nameof(Chat))
