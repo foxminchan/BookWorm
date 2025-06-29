@@ -25,12 +25,10 @@ public static class AsyncApiExtensions
                             version,
                             document.Description
                         ),
-
                         License = new(document.LicenseName)
                         {
                             Url = document.LicenseUrl.ToString(),
                         },
-
                         Contact = new()
                         {
                             Name = document.AuthorName,

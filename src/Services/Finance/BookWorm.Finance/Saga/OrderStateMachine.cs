@@ -227,8 +227,10 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
     public State Failed { get; set; } = null!;
 
     public Event<UserCheckedOutIntegrationEvent> OrderPlaced { get; init; } = null!;
+
     public Event<OrderStatusChangedToCompleteIntegrationEvent> OrderCompleted { get; init; } =
         null!;
+
     public Event<OrderStatusChangedToCancelIntegrationEvent> OrderCancelled { get; init; } = null!;
     public Event<BasketDeletedFailedIntegrationEvent> BasketDeletedFailed { get; init; } = null!;
     public Event<BasketDeletedCompleteIntegrationEvent> BasketDeleted { get; init; } = null!;

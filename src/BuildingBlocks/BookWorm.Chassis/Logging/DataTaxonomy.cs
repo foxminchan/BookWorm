@@ -8,6 +8,7 @@ public static class DataTaxonomy
 
     public static DataClassification SensitiveData { get; } =
         new(TaxonomyName, nameof(SensitiveData));
+
     public static DataClassification PiiData { get; } = new(TaxonomyName, nameof(PiiData));
 }
 

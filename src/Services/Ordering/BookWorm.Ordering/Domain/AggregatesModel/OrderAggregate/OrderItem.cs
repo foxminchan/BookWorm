@@ -16,8 +16,8 @@ public sealed class OrderItem() : Entity
                 : throw new OrderingDomainException("Price must be greater than or equal to zero");
     }
 
-    public int Quantity { get; private set; }
-    public decimal Price { get; private set; }
+    public int Quantity { get; }
+    public decimal Price { get; }
     public Guid BookId { get; private set; }
     public Guid OrderId { get; private set; }
     public Order? Order { get; private set; } = null!;

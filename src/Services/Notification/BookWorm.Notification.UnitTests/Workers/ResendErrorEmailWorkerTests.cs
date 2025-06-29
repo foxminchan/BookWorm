@@ -134,7 +134,7 @@ public class ResendErrorEmailWorkerTests
         // Arrange
         _tableServiceMock
             .Setup(x => x.ListAsync<Outbox>(TablePartition.Pending, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new Exception("Table service error"));
+            .ThrowsAsync(new("Table service error"));
 
         // Act
         await _worker.Execute(Mock.Of<IJobExecutionContext>());

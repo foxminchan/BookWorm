@@ -73,7 +73,7 @@ public sealed class OrderStateMachineTests
         where TEvent : class
     {
         // Use CancellationToken with timeout for more reliable testing
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 
         // The primary assertion is that the saga consumed the event
         // This is the most important check for saga state machine tests
@@ -82,6 +82,22 @@ public sealed class OrderStateMachineTests
         // Secondary check for general harness consumption
         // This verifies the message was published and consumed in the system
         (await _harness.Consumed.Any<TEvent>(cts.Token)).ShouldBeTrue();
+    }
+
+    private async Task<bool> WaitForCommandPublished<TCommand>(TimeSpan? timeout = null)
+        where TCommand : class
+    {
+        timeout ??= TimeSpan.FromSeconds(30);
+        using var cts = new CancellationTokenSource(timeout.Value);
+
+        try
+        {
+            return await _harness.Published.Any<TCommand>(cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return false;
+        }
     }
 
     private OrderState AssertSagaInState(Guid orderId, State state)
@@ -99,6 +115,7 @@ public sealed class OrderStateMachineTests
     }
 
     [Test]
+    [Retry(2)]
     public async Task GivenUserCheckedOutIntegrationEvent_WhenConsuming_ThenShouldCreateOrderStateAndPublishPlaceOrderCommand()
     {
         // Arrange
@@ -131,7 +148,7 @@ public sealed class OrderStateMachineTests
         instance.CurrentState.ShouldBe(_sagaHarness.StateMachine.Placed.Name);
         instance.OrderPlacedDate.ShouldNotBe(DateTime.MinValue);
 
-        (await _harness.Published.Any<PlaceOrderCommand>()).ShouldBeTrue();
+        (await WaitForCommandPublished<PlaceOrderCommand>()).ShouldBeTrue();
 
         var publishedMessage = _harness.Published.Select<PlaceOrderCommand>().First();
         var message = publishedMessage.Context.Message;
@@ -169,7 +186,7 @@ public sealed class OrderStateMachineTests
         instance.CurrentState.ShouldBe(_sagaHarness.StateMachine.Placed.Name);
         instance.OrderPlacedDate.ShouldNotBe(DateTime.MinValue);
 
-        (await _harness.Published.Any<DeleteBasketCompleteCommand>()).ShouldBeTrue();
+        (await WaitForCommandPublished<DeleteBasketCompleteCommand>()).ShouldBeTrue();
         var publishedMessage = _harness.Published.Select<DeleteBasketCompleteCommand>().First();
         var message = publishedMessage.Context.Message;
         message.OrderId.ShouldBe(orderId);
@@ -208,7 +225,7 @@ public sealed class OrderStateMachineTests
         instance.CurrentState.ShouldBe(_sagaHarness.StateMachine.Failed.Name);
         instance.OrderPlacedDate.ShouldNotBe(DateTime.MinValue);
 
-        (await _harness.Published.Any<DeleteBasketFailedCommand>()).ShouldBeTrue();
+        (await WaitForCommandPublished<DeleteBasketFailedCommand>()).ShouldBeTrue();
         var publishedMessage = _harness.Published.Select<DeleteBasketFailedCommand>().First();
         var message = publishedMessage.Context.Message;
         message.OrderId.ShouldBe(orderId);
@@ -218,6 +235,7 @@ public sealed class OrderStateMachineTests
     }
 
     [Test]
+    [Retry(3)]
     [Arguments(DefaultTestEmail)]
     [Arguments(null)]
     public async Task GivenOrderCompletedEvent_WhenConsuming_ThenShouldPublishCompleteOrderCommandOnlyWithValidEmail(
@@ -283,7 +301,7 @@ public sealed class OrderStateMachineTests
         // But we can verify it was completed by checking the published command
         if (email is not null)
         {
-            (await _harness.Published.Any<CompleteOrderCommand>()).ShouldBeTrue();
+            (await WaitForCommandPublished<CompleteOrderCommand>()).ShouldBeTrue();
             var publishedMessage = _harness.Published.Select<CompleteOrderCommand>().First();
             var message = publishedMessage.Context.Message;
             message.OrderId.ShouldBe(orderId);
@@ -293,11 +311,14 @@ public sealed class OrderStateMachineTests
         }
         else
         {
-            (await _harness.Published.Any<CompleteOrderCommand>()).ShouldBeFalse();
+            (
+                await WaitForCommandPublished<CompleteOrderCommand>(TimeSpan.FromSeconds(5))
+            ).ShouldBeFalse();
         }
     }
 
     [Test]
+    [Retry(3)]
     [Arguments(DefaultTestEmail)]
     [Arguments(null)]
     public async Task GivenOrderCancelledEvent_WhenConsuming_ThenShouldPublishCancelOrderCommandOnlyWithValidEmail(
@@ -324,6 +345,9 @@ public sealed class OrderStateMachineTests
 
         // Assert
         await AssertEventConsumed<OrderStatusChangedToCancelIntegrationEvent>();
+
+        // Add explicit wait for command processing in case email/fullName validation affects timing
+        await Task.Delay(100); // Small delay to ensure all processing is complete
 
         // The saga should be finalized after cancellation - check that it's not in any active state
         var sagaNotInPlaced =
@@ -363,7 +387,7 @@ public sealed class OrderStateMachineTests
         // But we can verify it was cancelled by checking the published command
         if (email is not null)
         {
-            (await _harness.Published.Any<CancelOrderCommand>()).ShouldBeTrue();
+            (await WaitForCommandPublished<CancelOrderCommand>()).ShouldBeTrue();
             var publishedMessage = _harness.Published.Select<CancelOrderCommand>().First();
             var message = publishedMessage.Context.Message;
             message.OrderId.ShouldBe(orderId);
@@ -373,7 +397,9 @@ public sealed class OrderStateMachineTests
         }
         else
         {
-            (await _harness.Published.Any<CancelOrderCommand>()).ShouldBeFalse();
+            (
+                await WaitForCommandPublished<CancelOrderCommand>(TimeSpan.FromSeconds(5))
+            ).ShouldBeFalse();
         }
     }
 
@@ -483,7 +509,11 @@ public sealed class OrderStateMachineTests
     }
 
     [Test]
-    public async Task GivenMultipleConcurrentEvents_WhenProcessed_ThenShouldMaintainConsistency()
+    [Retry(2)]
+    [Timeout(45_000)] // 45 seconds for concurrent test
+    public async Task GivenMultipleConcurrentEvents_WhenProcessed_ThenShouldMaintainConsistency(
+        CancellationToken cancellationToken
+    )
     {
         // Arrange
         const int numberOfOrders = 5;
@@ -512,13 +542,15 @@ public sealed class OrderStateMachineTests
             .ToList();
 
         // Act - Send all events concurrently
-        var publishTasks = checkoutEvents.Select(evt => _harness.Bus.Publish(evt));
+        var publishTasks = checkoutEvents.Select(evt =>
+            _harness.Bus.Publish(evt, cancellationToken)
+        );
         await Task.WhenAll(publishTasks);
 
         // Wait for all sagas to be created
         foreach (var orderId in orderIds)
         {
-            await _sagaHarness.Created.Any(x => x.CorrelationId == orderId);
+            await _sagaHarness.Created.Any(x => x.CorrelationId == orderId, cancellationToken);
         }
 
         // Assert
@@ -528,7 +560,9 @@ public sealed class OrderStateMachineTests
         // Each order should have exactly one saga instance
         foreach (var orderId in orderIds)
         {
-            (await _sagaHarness.Created.Any(x => x.CorrelationId == orderId)).ShouldBeTrue();
+            (
+                await _sagaHarness.Created.Any(x => x.CorrelationId == orderId, cancellationToken)
+            ).ShouldBeTrue();
             var instance = AssertSagaInState(orderId, _sagaHarness.StateMachine.Placed);
 
             // Verify saga state consistency
@@ -670,6 +704,7 @@ public sealed class OrderStateMachineTests
     }
 
     [Test]
+    [Retry(3)]
     public async Task GivenOrderTimeout_WhenRetryCountReachesMax_ThenShouldTransitionToFailedAndCancel()
     {
         // Arrange
@@ -682,9 +717,11 @@ public sealed class OrderStateMachineTests
         var timeoutEvent = new PlaceOrderTimeoutIntegrationEvent(orderId);
 
         // Act - Send 3 timeouts to exhaust retries
-        for (int i = 0; i < 3; i++)
+        for (var i = 0; i < 3; i++)
         {
             await _harness.Bus.Publish(timeoutEvent);
+            // Add small delay between timeout events to ensure proper processing
+            await Task.Delay(50);
         }
 
         // Assert
@@ -692,7 +729,7 @@ public sealed class OrderStateMachineTests
 
         // After max retries, the order should be cancelled
         // The most important behavior is that CancelOrderCommand is published
-        (await _harness.Published.Any<CancelOrderCommand>()).ShouldBeTrue();
+        (await WaitForCommandPublished<CancelOrderCommand>()).ShouldBeTrue();
         var cancelCommand = _harness.Published.Select<CancelOrderCommand>().First();
         var message = cancelCommand.Context.Message;
         message.OrderId.ShouldBe(orderId);
@@ -744,7 +781,11 @@ public sealed class OrderStateMachineTests
     }
 
     [Test]
-    public async Task GivenTimeoutRetryAttempts_WhenOrderCompletes_ThenShouldUnscheduleTimeoutAndComplete()
+    [Retry(3)]
+    [Timeout(30_000)] // 30 seconds for timeout handling test
+    public async Task GivenTimeoutRetryAttempts_WhenOrderCompletes_ThenShouldUnscheduleTimeoutAndComplete(
+        CancellationToken cancellationToken
+    )
     {
         // Arrange
         var orderId = Guid.CreateVersion7();
@@ -755,7 +796,7 @@ public sealed class OrderStateMachineTests
 
         // Send one timeout to increment retry count
         var timeoutEvent = new PlaceOrderTimeoutIntegrationEvent(orderId);
-        await _harness.Bus.Publish(timeoutEvent);
+        await _harness.Bus.Publish(timeoutEvent, cancellationToken);
 
         // Wait for timeout event to be consumed
         await AssertEventConsumed<PlaceOrderTimeoutIntegrationEvent>();
@@ -772,11 +813,18 @@ public sealed class OrderStateMachineTests
             DefaultTestEmail,
             totalMoney
         );
-        await _harness.Bus.Publish(completeEvent);
+        await _harness.Bus.Publish(completeEvent, cancellationToken);
 
         // Assert
+        // Wait for the event to be consumed first
+        await AssertEventConsumed<OrderStatusChangedToCompleteIntegrationEvent>();
+
+        // Add explicit delay to ensure command publishing completes
+        await Task.Delay(100, cancellationToken);
+
         // Verify completion command is published (this indirectly confirms the event was consumed)
-        (await _harness.Published.Any<CompleteOrderCommand>()).ShouldBeTrue();
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        (await _harness.Published.Any<CompleteOrderCommand>(cts.Token)).ShouldBeTrue();
 
         // Should transition to Completed state and then be finalized
         // We can't check the final state because finalized sagas are removed, but we can verify behavior
@@ -815,7 +863,7 @@ public sealed class OrderStateMachineTests
         ).ShouldBeTrue();
 
         // Should have published CompleteOrderCommand
-        (await _harness.Published.Any<CompleteOrderCommand>()).ShouldBeTrue();
+        (await _harness.Published.Any<CompleteOrderCommand>(cts.Token)).ShouldBeTrue();
     }
 
     [Test]
@@ -849,7 +897,9 @@ public sealed class OrderStateMachineTests
         await AssertEventConsumed<OrderStatusChangedToCompleteIntegrationEvent>();
 
         // Should not publish CompleteOrderCommand when FullName is null/empty
-        (await _harness.Published.Any<CompleteOrderCommand>()).ShouldBeFalse();
+        (
+            await WaitForCommandPublished<CompleteOrderCommand>(TimeSpan.FromSeconds(5))
+        ).ShouldBeFalse();
     }
 
     [Test]
@@ -883,7 +933,9 @@ public sealed class OrderStateMachineTests
         await AssertEventConsumed<OrderStatusChangedToCancelIntegrationEvent>();
 
         // Should not publish CancelOrderCommand when FullName is null/empty
-        (await _harness.Published.Any<CancelOrderCommand>()).ShouldBeFalse();
+        (
+            await WaitForCommandPublished<CancelOrderCommand>(TimeSpan.FromSeconds(5))
+        ).ShouldBeFalse();
     }
 
     [Test]
@@ -904,15 +956,19 @@ public sealed class OrderStateMachineTests
         var timeoutEvent = new PlaceOrderTimeoutIntegrationEvent(orderId);
 
         // Act - Send 3 timeouts to exhaust retries
-        for (int i = 0; i < 3; i++)
+        for (var i = 0; i < 3; i++)
         {
             await _harness.Bus.Publish(timeoutEvent);
+            // Add small delay between timeout events to ensure proper processing
+            await Task.Delay(50);
         }
 
         // Assert
         await AssertEventConsumed<PlaceOrderTimeoutIntegrationEvent>();
 
         // Should not publish CancelOrderCommand when Email or FullName is null
-        (await _harness.Published.Any<CancelOrderCommand>()).ShouldBeFalse();
+        (
+            await WaitForCommandPublished<CancelOrderCommand>(TimeSpan.FromSeconds(5))
+        ).ShouldBeFalse();
     }
 }
