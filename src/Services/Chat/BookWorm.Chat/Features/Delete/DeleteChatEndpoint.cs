@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Chat.Features.Delete;
+﻿using System.ComponentModel;
+
+namespace BookWorm.Chat.Features.Delete;
 
 public sealed class DeleteChatEndpoint : IEndpoint<NoContent, Guid, ISender>
 {
@@ -6,7 +8,10 @@ public sealed class DeleteChatEndpoint : IEndpoint<NoContent, Guid, ISender>
     {
         app.MapDelete(
                 "/{id:guid}",
-                async (Guid id, ISender sender) => await HandleAsync(id, sender)
+                async (
+                    [Description("The unique identifier of the chat to be deleted")] Guid id,
+                    ISender sender
+                ) => await HandleAsync(id, sender)
             )
             .ProducesDelete()
             .WithTags(nameof(Chat))
