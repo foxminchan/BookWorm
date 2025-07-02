@@ -27,7 +27,7 @@ public sealed class ChatStreaming(
             conversationId
         );
 
-        _messages.AddMessage(AuthorRole.User, text);
+        _messages.AddUserMessage(text);
 
         var messages = await FetchAndAddPromptMessages(conversationId, text);
         var history = messages.ToChatHistory();
@@ -99,7 +99,7 @@ public sealed class ChatStreaming(
         var token = backplaneService.CancellationManager.GetCancellationToken(assistantReplyId);
         var fragment = new ClientMessageFragment(
             assistantReplyId,
-            ChatRole.Assistant.Value,
+            AuthorRole.Assistant.Label,
             "Generating reply...",
             Guid.CreateVersion7()
         );
@@ -146,14 +146,14 @@ public sealed class ChatStreaming(
 
                 logger.LogInformation(
                     "Agent response received from {AuthorName}: {Content}",
-                    response.AuthorName ?? "Unknown",
+                    response.AuthorName ?? "Anonymous User",
                     response.Content
                 );
 
                 // Stream individual agent responses as they come in
                 var agentFragment = new ClientMessageFragment(
                     assistantReplyId,
-                    ChatRole.Assistant.Value,
+                    AuthorRole.Assistant.Label,
                     $"**{response.AuthorName ?? "Agent"}**: {response.Content}\n\n",
                     Guid.CreateVersion7()
                 );
@@ -192,7 +192,7 @@ public sealed class ChatStreaming(
             // Publish the final fragment
             var finalFragment = new ClientMessageFragment(
                 assistantReplyId,
-                ChatRole.Assistant.Value,
+                AuthorRole.Assistant.Label,
                 combinedMessage,
                 Guid.CreateVersion7(),
                 true
@@ -204,7 +204,7 @@ public sealed class ChatStreaming(
             );
 
             // Add the completed message to the history
-            _messages.AddMessage(AuthorRole.Assistant, combinedMessage);
+            _messages.AddAssistantMessage(combinedMessage);
 
             // Save assistant's message to database
             await SaveAssistantMessageToDatabase(conversationId, assistantReplyId, combinedMessage);
@@ -223,7 +223,7 @@ public sealed class ChatStreaming(
             // Publish cancelled fragment
             var cancelledFragment = new ClientMessageFragment(
                 assistantReplyId,
-                ChatRole.Assistant.Value,
+                AuthorRole.Assistant.Label,
                 "Message generation cancelled",
                 Guid.CreateVersion7(),
                 true
@@ -245,7 +245,7 @@ public sealed class ChatStreaming(
 
             var errorFragment = new ClientMessageFragment(
                 assistantReplyId,
-                ChatRole.Assistant.Value,
+                AuthorRole.Assistant.Label,
                 "An error occurred while generating the response",
                 Guid.CreateVersion7(),
                 true
@@ -290,7 +290,7 @@ public sealed class ChatStreaming(
 
         var parentMessage = conversation.Messages.MaxBy(m => m.CreatedAt);
 
-        var message = new ConversationMessage(null, text, ChatRole.User.Value, parentMessage?.Id);
+        var message = new ConversationMessage(null, text, AuthorRole.User.Label, parentMessage?.Id);
 
         conversation.AddMessage(message);
 
@@ -302,7 +302,7 @@ public sealed class ChatStreaming(
 
         var fragment = new ClientMessageFragment(
             message.Id,
-            ChatRole.User.Value,
+            AuthorRole.User.Label,
             text,
             Guid.CreateVersion7(),
             true
@@ -328,14 +328,14 @@ public sealed class ChatStreaming(
         if (conversation is not null)
         {
             var parentMessage = conversation
-                .Messages.Where(m => m.Role == ChatRole.User.Value)
+                .Messages.Where(m => m.Role == AuthorRole.User.Label)
                 .OrderByDescending(m => m.CreatedAt)
                 .FirstOrDefault();
 
             var message = new ConversationMessage(
                 messageId,
                 text,
-                ChatRole.Assistant.Value,
+                AuthorRole.Assistant.Label,
                 parentMessage?.Id
             );
 

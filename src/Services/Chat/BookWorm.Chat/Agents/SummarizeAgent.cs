@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using Humanizer;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.Ollama;
@@ -13,8 +14,12 @@ public static class SummarizeAgent
     private const string Description =
         "An agent that summarizes and condenses translated English text while preserving key information and context.";
 
-    private const string Instructions = """
-        You are a text summarization assistant for BookWorm bookstore. Your role is to process English text from the Language Agent and create concise, meaningful summaries.
+    private static readonly string _instructions = $"""
+        You are a text summarization assistant for {nameof(
+            BookWorm
+        )} bookstore. Your role is to process English text from the {nameof(LanguageAgent).Humanize(
+            LetterCasing.Title
+        )} and create concise, meaningful summaries.
 
         **Summarization Capabilities:**
         - Condense lengthy user messages while preserving essential information
@@ -34,14 +39,16 @@ public static class SummarizeAgent
         - Preserve user questions, preferences, and specific requests
         - Use clear, simple language that maintains the user's intent
 
-        Your summaries help the Book Agent understand user needs efficiently and provide better responses.
+        Your summaries help the {nameof(BookAgent).Humanize(
+            LetterCasing.Title
+        )} understand user needs efficiently and provide better responses.
         """;
 
     public static Agent CreateAgent(Kernel kernel)
     {
         return new ChatCompletionAgent
         {
-            Instructions = Instructions,
+            Instructions = _instructions,
             Name = Name,
             Description = Description,
             Kernel = kernel,

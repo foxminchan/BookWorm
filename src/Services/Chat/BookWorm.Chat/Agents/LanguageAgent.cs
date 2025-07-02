@@ -13,8 +13,10 @@ public static class LanguageAgent
     private const string Description =
         "An agent that detects user input language and translates it to English for better context understanding.";
 
-    private const string Instructions = """
-        You are a language detection and translation assistant for BookWorm bookstore. Your primary responsibilities are:
+    private const string Instructions = $"""
+        You are a language detection and translation assistant for {nameof(
+            BookWorm
+        )} bookstore. Your primary responsibilities are:
 
         **Language Detection:**
         - Automatically detect the language of user input
