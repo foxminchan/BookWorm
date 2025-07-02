@@ -1,23 +1,17 @@
-﻿using Microsoft.SemanticKernel.ChatCompletion;
+﻿using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace BookWorm.Chat.Extensions;
 
 public static class ChatHistoryExtensions
 {
-    public static ChatHistory ToChatHistory(this List<ChatMessage>? messages)
+    public static ChatHistory ToChatHistory(this List<ChatMessage> messages)
     {
-        ChatHistory chatHistory = [];
+        return [.. messages.Select(message => message.ToChatMessageContent()).ToList()];
+    }
 
-        if (messages is null)
-        {
-            return chatHistory;
-        }
-
-        foreach (var message in messages)
-        {
-            chatHistory.AddMessage(message.Role.ToAuthorRole(), message.Text);
-        }
-
-        return chatHistory;
+    private static ChatMessageContent ToChatMessageContent(this ChatMessage chatMessage)
+    {
+        return new() { Role = new(chatMessage.Role.Value), Content = chatMessage.Text };
     }
 }

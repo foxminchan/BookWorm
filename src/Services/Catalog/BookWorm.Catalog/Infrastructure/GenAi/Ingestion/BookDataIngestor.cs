@@ -16,7 +16,7 @@ public sealed class BookDataIngestor(
         ArgumentException.ThrowIfNullOrEmpty(data.Name);
         ArgumentException.ThrowIfNullOrEmpty(data.Description);
 
-        var vectorCollection = vectorStore.GetCollection<Guid, HybridSearchRecord>(_collectionName);
+        var vectorCollection = vectorStore.GetCollection<Guid, TextSnippet>(_collectionName);
         await vectorCollection.EnsureCollectionExistsAsync(cancellationToken);
 
         var text = $"{data.Name} {data.Description}";
@@ -26,7 +26,7 @@ public sealed class BookDataIngestor(
             cancellationToken: cancellationToken
         );
 
-        var record = new HybridSearchRecord
+        var record = new TextSnippet
         {
             Id = data.Id,
             Description = text,

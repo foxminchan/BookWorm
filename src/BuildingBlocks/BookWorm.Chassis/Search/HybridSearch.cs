@@ -8,7 +8,7 @@ public sealed class HybridSearch(
     VectorStore vectorStore
 ) : ISearch
 {
-    public async Task<IReadOnlyList<HybridSearchRecord>> SearchAsync(
+    public async Task<IReadOnlyList<TextSnippet>> SearchAsync(
         string text,
         ICollection<string> keywords,
         string collectionName,
@@ -22,10 +22,10 @@ public sealed class HybridSearch(
         );
 
         var vectorCollection =
-            (IKeywordHybridSearchable<HybridSearchRecord>)
-                vectorStore.GetCollection<Guid, HybridSearchRecord>(collectionName);
+            (IKeywordHybridSearchable<TextSnippet>)
+                vectorStore.GetCollection<Guid, TextSnippet>(collectionName);
 
-        var options = new HybridSearchOptions<HybridSearchRecord>
+        var options = new HybridSearchOptions<TextSnippet>
         {
             VectorProperty = r => r.Vector,
             AdditionalProperty = r => r.Description,
@@ -39,7 +39,7 @@ public sealed class HybridSearch(
             cancellationToken
         );
 
-        List<HybridSearchRecord> results = [];
+        List<TextSnippet> results = [];
 
         await foreach (var item in nearest)
         {
