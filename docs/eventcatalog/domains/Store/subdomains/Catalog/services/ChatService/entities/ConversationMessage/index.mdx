@@ -15,6 +15,9 @@ properties:
     type: UUID
     required: true
     description: Unique identifier for the conversation this message belongs to
+    references: Conversation
+    relationType: hasOne
+    referencesIdentifier: id
   - name: role
     type: string
     required: true
@@ -23,6 +26,9 @@ properties:
     type: UUID
     required: false
     description: Unique identifier for the parent message, if this message is a reply
+    references: ConversationMessage
+    relationType: hasMany
+    referencesIdentifier: id
   - name: text
     type: string
     required: true

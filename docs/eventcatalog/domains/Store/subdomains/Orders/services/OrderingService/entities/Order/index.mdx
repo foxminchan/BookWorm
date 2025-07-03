@@ -23,6 +23,9 @@ properties:
     type: UUID
     required: true
     description: Unique identifier of the buyer
+    references: Buyer
+    relationType: hasOne
+    referencesIdentifier: id
   - name: isDeleted
     type: boolean
     required: true

@@ -11,6 +11,9 @@ properties:
     type: UUID
     required: true
     description: Unique identifier for the book
+    references: Book
+    relationType: belongsTo
+    referencesIdentifier: id
   - name: quantity
     type: integer
     required: true

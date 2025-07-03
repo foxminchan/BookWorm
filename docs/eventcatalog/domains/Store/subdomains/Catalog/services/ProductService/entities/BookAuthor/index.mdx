@@ -15,10 +15,16 @@ properties:
     type: UUID
     required: true
     description: Unique identifier for the book
+    references: Book
+    relationType: hasMany
+    referencesIdentifier: id
   - name: authorId
     type: UUID
     required: true
     description: Unique identifier for the author
+    references: Author
+    relationType: belongsTo
+    referencesIdentifier: id
 owners:
   - nhanxnguyen
 ---
