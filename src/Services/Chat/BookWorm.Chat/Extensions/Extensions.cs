@@ -1,4 +1,5 @@
-﻿using BookWorm.Chat.Infrastructure.Backplane;
+﻿using BookWorm.Chassis.Mediator;
+using BookWorm.Chat.Infrastructure.Backplane;
 
 namespace BookWorm.Chat.Extensions;
 
@@ -29,13 +30,9 @@ public static class Extensions
         services.AddProblemDetails();
 
         // Configure MediatR
-        services.AddMediatR(cfg =>
-        {
-            cfg.RegisterServicesFromAssemblyContaining<IChatApiMarker>();
-            cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
-            cfg.AddOpenBehavior(typeof(ActivityBehavior<,>));
-            cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
-        });
+        services.AddMediatR<IChatApiMarker>(configuration =>
+            configuration.AddOpenBehavior(typeof(ValidationBehavior<,>))
+        );
 
         services.AddVersioning();
         services.AddEndpoints(typeof(IChatApiMarker));

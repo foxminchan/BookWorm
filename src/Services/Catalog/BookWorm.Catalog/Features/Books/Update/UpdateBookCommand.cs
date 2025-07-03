@@ -1,5 +1,4 @@
-﻿using MediatR.Pipeline;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 
 namespace BookWorm.Catalog.Features.Books.Update;
 
@@ -18,19 +17,6 @@ public sealed record UpdateBookCommand(
 {
     [JsonIgnore]
     public string? ImageName { get; set; }
-}
-
-public sealed class PreUpdateBookHandler(IBlobService blobService)
-    : IRequestPreProcessor<UpdateBookCommand>
-{
-    public async Task Process(UpdateBookCommand request, CancellationToken cancellationToken)
-    {
-        if (request.Image is not null)
-        {
-            var imageUrl = await blobService.UploadFileAsync(request.Image, cancellationToken);
-            request.ImageName = imageUrl;
-        }
-    }
 }
 
 public sealed class UpdateBookHandler(IBookRepository repository)
@@ -58,21 +44,5 @@ public sealed class UpdateBookHandler(IBookRepository repository)
         await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
 
         return Unit.Value;
-    }
-}
-
-public sealed class PostUpdateBookHandler(IBlobService blobService)
-    : IRequestPostProcessor<UpdateBookCommand, Unit>
-{
-    public async Task Process(
-        UpdateBookCommand request,
-        Unit response,
-        CancellationToken cancellationToken
-    )
-    {
-        if (request is { IsRemoveImage: true, ImageName: not null })
-        {
-            await blobService.DeleteFileAsync(request.ImageName, cancellationToken);
-        }
     }
 }

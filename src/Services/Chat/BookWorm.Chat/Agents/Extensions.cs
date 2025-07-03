@@ -12,11 +12,14 @@ public static class Extensions
 
         services.AddKeyedSingleton(
             nameof(BookAgent),
-            async (sp, _) =>
+            (sp, _) =>
             {
                 var kernel = sp.GetRequiredService<Kernel>();
                 var mcpClient = sp.GetRequiredService<IMcpClient>();
-                return await BookAgent.CreateAgentWithPluginsAsync(kernel, mcpClient);
+                return BookAgent
+                    .CreateAgentWithPluginsAsync(kernel, mcpClient)
+                    .GetAwaiter()
+                    .GetResult();
             }
         );
 

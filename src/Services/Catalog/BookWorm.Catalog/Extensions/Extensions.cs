@@ -1,4 +1,8 @@
-﻿namespace BookWorm.Catalog.Extensions;
+﻿using BookWorm.Catalog.Features.Books.Create;
+using BookWorm.Catalog.Features.Books.Update;
+using BookWorm.Chassis.Mediator;
+
+namespace BookWorm.Catalog.Extensions;
 
 public static class Extensions
 {
@@ -39,12 +43,12 @@ public static class Extensions
         builder.AddPersistenceServices();
 
         // Configure MediatR
-        services.AddMediatR(cfg =>
+        services.AddMediatR<ICatalogApiMarker>(configuration =>
         {
-            cfg.RegisterServicesFromAssemblyContaining<ICatalogApiMarker>();
-            cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
-            cfg.AddOpenBehavior(typeof(ActivityBehavior<,>));
-            cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
+            configuration.AddOpenBehavior(typeof(ValidationBehavior<,>));
+            configuration.AddRequestPreProcessor<CreateBookPreProcessor>();
+            configuration.AddRequestPreProcessor<UpdateBookPreProcessor>();
+            configuration.AddRequestPostProcessor<UpdateBookPostProcessor>();
         });
 
         // Configure FluentValidation
