@@ -1,4 +1,6 @@
-﻿using MassTransit;
+﻿using BookWorm.Basket.Features.Get;
+using BookWorm.Chassis.Mediator;
+using MassTransit;
 
 namespace BookWorm.Basket.Extensions;
 
@@ -27,12 +29,10 @@ public static class Extensions
         services.AddSingleton<IBasketRepository, BasketRepository>();
 
         // Configure MediatR
-        services.AddMediatR(cfg =>
+        services.AddMediatR<IBasketApiMarker>(configuration =>
         {
-            cfg.RegisterServicesFromAssemblyContaining<IBasketApiMarker>();
-            cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
-            cfg.AddOpenBehavior(typeof(ActivityBehavior<,>));
-            cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
+            configuration.AddOpenBehavior(typeof(ValidationBehavior<,>));
+            configuration.AddRequestPostProcessor<GetBasketPostProcessor>();
         });
 
         // Configure FluentValidation

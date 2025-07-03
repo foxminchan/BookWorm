@@ -1,4 +1,7 @@
-﻿using StackExchange.Redis;
+﻿using BookWorm.Chassis.Mediator;
+using BookWorm.Ordering.Features.Orders.Create;
+using BookWorm.Ordering.Features.Orders.Get;
+using StackExchange.Redis;
 
 namespace BookWorm.Ordering.Extensions;
 
@@ -31,12 +34,11 @@ public static class Extensions
         builder.AddPersistenceServices();
 
         // Configure MediatR
-        services.AddMediatR(cfg =>
+        services.AddMediatR<IOrderingApiMarker>(configuration =>
         {
-            cfg.RegisterServicesFromAssemblyContaining<IOrderingApiMarker>();
-            cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
-            cfg.AddOpenBehavior(typeof(ActivityBehavior<,>));
-            cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
+            configuration.AddOpenBehavior(typeof(ValidationBehavior<,>));
+            configuration.AddRequestPreProcessor<CreateOrderPreProcessor>();
+            configuration.AddRequestPostProcessor<GetOrderPostProcessor>();
         });
 
         // Configure FluentValidation
