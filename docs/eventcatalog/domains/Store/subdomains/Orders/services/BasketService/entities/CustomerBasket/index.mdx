@@ -21,6 +21,9 @@ properties:
       type: BasketItem
     required: true
     description: A list of items in the basket
+    references: BasketItem
+    relationType: hasMany
+    referencesIdentifier: id
 owners:
   - nhanxnguyen
 ---

@@ -211,4 +211,18 @@ export default {
       renderMode: "flat",
     },
   },
+  environments: [
+    {
+      name: "Staging",
+      url: "https://bookwormdev.netlify.app/",
+      description: "Staging environment",
+      shortName: "Staging",
+    },
+    {
+      name: "Production",
+      url: "https://bookwormdev.netlify.app/",
+      description: "Production environment",
+      shortName: "Prod",
+    },
+  ],
 };

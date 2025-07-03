@@ -15,6 +15,9 @@ properties:
     type: UUID
     required: true
     description: Unique identifier for the book
+    references: Book
+    relationType: hasMany
+    referencesIdentifier: id
   - name: firstName
     type: string
     required: true

@@ -43,10 +43,16 @@ properties:
     type: UUID
     required: true
     description: Unique identifier for the category
+    references: Category
+    relationType: hasOne
+    referencesIdentifier: id
   - name: publisherId
     type: UUID
     required: true
     description: Unique identifier for the publisher
+    references: Publisher
+    relationType: hasOne
+    referencesIdentifier: id
   - name: isDeleted
     type: bool
     required: true

@@ -15,6 +15,9 @@ properties:
     type: UUID
     required: true
     description: Unique identifier of the book
+    references: Book
+    relationType: belongsTo
+    referencesIdentifier: id
   - name: quantity
     type: int
     required: true
@@ -27,6 +30,9 @@ properties:
     type: UUID
     required: true
     description: Unique identifier of the order
+    references: Order
+    relationType: hasOne
+    referencesIdentifier: id
 owners:
   - nhanxnguyen
 ---
