@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Finance.Extensions;
+﻿using BookWorm.Chassis.Mediator;
+
+namespace BookWorm.Finance.Extensions;
 
 public static class Extensions
 {
@@ -21,12 +23,7 @@ public static class Extensions
         services.AddProblemDetails();
 
         // Configure MediatR
-        services.AddMediatR(cfg =>
-        {
-            cfg.RegisterServicesFromAssemblyContaining<IFinanceApiMarker>();
-            cfg.AddOpenBehavior(typeof(ActivityBehavior<,>));
-            cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
-        });
+        services.AddMediatR<IFinanceApiMarker>();
 
         services.AddSingleton<IActivityScope, ActivityScope>();
         services.AddSingleton<CommandHandlerMetrics>();

@@ -15,31 +15,31 @@ public static class SentimentAgent
         "An agent that evaluates the sentiment of translated English text as negative, positive, or neutral.";
 
     private static readonly string _instructions = $"""
-        You are a sentiment analysis assistant for BookWorm bookstore. Your role is to evaluate the emotional tone of user messages that have been processed by the {nameof(
-                SummarizeAgent
-            ).Humanize(LetterCasing.Title)}.
+                                                    You are a sentiment analysis assistant for BookWorm bookstore. Your role is to evaluate the emotional tone of user messages that have been processed by the {nameof(
+                                                        SummarizeAgent
+                                                    ).Humanize(LetterCasing.Title)}.
 
-        **Sentiment Analysis:**
-        - Analyze the English text received from the {nameof(SummarizeAgent).Humanize(
-            LetterCasing.Title
-        )}
-        - Classify sentiment as: Positive, Negative, or Neutral
-        - Consider context and nuance when making assessments
-        - Pay attention to book-related emotions and customer satisfaction indicators
+                                                    **Sentiment Analysis:**
+                                                    - Analyze the English text received from the {nameof(SummarizeAgent).Humanize(
+                                                        LetterCasing.Title
+                                                    )}
+                                                    - Classify sentiment as: Positive, Negative, or Neutral
+                                                    - Consider context and nuance when making assessments
+                                                    - Pay attention to book-related emotions and customer satisfaction indicators
 
-        **Analysis Criteria:**
-        - **Positive**: Happy, satisfied, excited, pleased, enthusiastic about books/service
-        - **Negative**: Frustrated, disappointed, angry, dissatisfied, complaints
-        - **Neutral**: Informational, factual, questions without emotional tone
+                                                    **Analysis Criteria:**
+                                                    - **Positive**: Happy, satisfied, excited, pleased, enthusiastic about books/service
+                                                    - **Negative**: Frustrated, disappointed, angry, dissatisfied, complaints
+                                                    - **Neutral**: Informational, factual, questions without emotional tone
 
-        **Output Requirements:**
-        - Provide clear sentiment classification (Positive/Negative/Neutral)
-        - Include confidence level when possible
-        - Brief explanation of reasoning behind the sentiment assessment
-        - Consider customer service context when evaluating sentiment
+                                                    **Output Requirements:**
+                                                    - Provide clear sentiment classification (Positive/Negative/Neutral)
+                                                    - Include confidence level when possible
+                                                    - Brief explanation of reasoning behind the sentiment assessment
+                                                    - Consider customer service context when evaluating sentiment
 
-        Your analysis helps the {nameof(BookAgent).Humanize(LetterCasing.Title)} understand the user's emotional state to provide appropriate responses.
-        """;
+                                                    Your analysis helps the {nameof(BookAgent).Humanize(LetterCasing.Title)} understand the user's emotional state to provide appropriate responses.
+                                                    """;
 
     public static Agent CreateAgent(Kernel kernel)
     {

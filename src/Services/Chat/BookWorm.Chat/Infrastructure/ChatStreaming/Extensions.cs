@@ -9,9 +9,6 @@ public static class Extensions
     {
         var services = builder.Services;
 
-        // Register chat context composite service
-        services.AddSingleton<ChatContext>();
-
         builder.AddSkTelemetry();
 
         builder.AddChatCompletion();
@@ -20,12 +17,14 @@ public static class Extensions
 
         builder.AddAgents();
 
+        services.AddSingleton<ChatAgents>();
+
         services.AddSingleton<IChatStreaming, ChatStreaming>();
     }
 
     private static void AddMcpClient(this IHostApplicationBuilder builder)
     {
-        builder.Services.AddTransient(async sp =>
+        builder.Services.AddSingleton<IMcpClient>(sp =>
         {
             var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
 
@@ -47,11 +46,12 @@ public static class Extensions
 
             SseClientTransport sseClientTransport = new(sseTransportOptions, loggerFactory);
 
-            var mcpClient = await McpClientFactory.CreateAsync(
-                sseClientTransport,
-                mcpClientOptions,
-                loggerFactory
-            );
+            // Since this is synchronous DI registration, we need to use synchronous method
+            // or provide a lazy initialization pattern
+            var mcpClient = McpClientFactory
+                .CreateAsync(sseClientTransport, mcpClientOptions, loggerFactory)
+                .GetAwaiter()
+                .GetResult();
 
             return mcpClient;
         });

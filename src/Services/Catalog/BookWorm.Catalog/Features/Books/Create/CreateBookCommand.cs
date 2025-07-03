@@ -1,5 +1,4 @@
-﻿using MediatR.Pipeline;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 
 namespace BookWorm.Catalog.Features.Books.Create;
 
@@ -16,19 +15,6 @@ public sealed record CreateBookCommand(
 {
     [JsonIgnore]
     public string? ImageName { get; set; }
-}
-
-public sealed class PreCreateBookHandler(IBlobService blobService)
-    : IRequestPreProcessor<CreateBookCommand>
-{
-    public async Task Process(CreateBookCommand request, CancellationToken cancellationToken)
-    {
-        if (request.Image is not null)
-        {
-            var imageUrl = await blobService.UploadFileAsync(request.Image, cancellationToken);
-            request.ImageName = imageUrl;
-        }
-    }
 }
 
 public sealed class CreateBookHandler(IBookRepository repository)

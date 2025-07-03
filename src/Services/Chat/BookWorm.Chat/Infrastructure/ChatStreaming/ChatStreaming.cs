@@ -10,7 +10,8 @@ using Microsoft.SemanticKernel.ChatCompletion;
 namespace BookWorm.Chat.Infrastructure.ChatStreaming;
 
 public sealed class ChatStreaming(
-    ChatContext chatContext,
+    IMcpClient mcpClient,
+    ChatAgents chatAgents,
     AppSettings appSettings,
     ILogger<ChatStreaming> logger,
     IServiceScopeFactory scopeFactory,
@@ -165,10 +166,10 @@ public sealed class ChatStreaming(
             }
 
             SequentialOrchestration orchestration = new(
-                chatContext.LanguageAgent,
-                chatContext.SummarizeAgent,
-                chatContext.SentimentAgent,
-                chatContext.BookAgent
+                chatAgents.LanguageAgent,
+                chatAgents.SummarizeAgent,
+                chatAgents.SentimentAgent,
+                chatAgents.BookAgent
             )
             {
                 ResponseCallback = ResponseCallback,
@@ -263,7 +264,7 @@ public sealed class ChatStreaming(
         string text
     )
     {
-        var prompts = await chatContext.McpClient.ListPromptsAsync();
+        var prompts = await mcpClient.ListPromptsAsync();
 
         List<ChatMessage> promptMessages = [];
 

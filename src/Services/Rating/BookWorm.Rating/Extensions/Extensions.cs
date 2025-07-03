@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Rating.Extensions;
+﻿using BookWorm.Chassis.Mediator;
+
+namespace BookWorm.Rating.Extensions;
 
 public static class Extensions
 {
@@ -31,13 +33,9 @@ public static class Extensions
         );
 
         // Configure MediatR
-        services.AddMediatR(cfg =>
-        {
-            cfg.RegisterServicesFromAssemblyContaining<IRatingApiMarker>();
-            cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
-            cfg.AddOpenBehavior(typeof(ActivityBehavior<,>));
-            cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
-        });
+        services.AddMediatR<IRatingApiMarker>(configuration =>
+            configuration.AddOpenBehavior(typeof(ValidationBehavior<,>))
+        );
 
         // Configure FluentValidation
         services.AddValidatorsFromAssemblyContaining<IRatingApiMarker>(includeInternalTypes: true);

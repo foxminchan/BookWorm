@@ -1,5 +1,4 @@
 ﻿using BookWorm.Ordering.Infrastructure.Helpers;
-using MediatR.Pipeline;
 
 namespace BookWorm.Ordering.Features.Orders.Create;
 
@@ -7,34 +6,6 @@ public sealed class CreateOrderCommand : ICommand<Guid>
 {
     [JsonIgnore]
     public List<OrderItem> Items { get; set; } = [];
-}
-
-public sealed class PreCreateOrderHandler([AsParameters] BasketMetadata basket)
-    : IRequestPreProcessor<CreateOrderCommand>
-{
-    public async Task Process(CreateOrderCommand request, CancellationToken cancellationToken)
-    {
-        var basketItems = await basket.BasketService.GetBasket(cancellationToken);
-
-        var response = await basket.BookService.GetBooksByIdsAsync(
-            basketItems.Items.Select(item => item.Id),
-            cancellationToken
-        );
-
-        request.Items =
-        [
-            .. basketItems.Items.Select(item =>
-            {
-                var book = response?.Books.FirstOrDefault(b => b.Id == item.Id);
-
-                Guard.Against.NotFound(book, item.Id);
-
-                var bookPrice = book.PriceSale ?? book.Price;
-
-                return new OrderItem(Guid.Parse(book.Id), item.Quantity, (decimal)bookPrice!);
-            }),
-        ];
-    }
 }
 
 public sealed class CreateOrderHandler(
