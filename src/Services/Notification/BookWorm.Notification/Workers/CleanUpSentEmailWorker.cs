@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Diagnostics.Buffering;
-
-namespace BookWorm.Notification.Workers;
+﻿namespace BookWorm.Notification.Workers;
 
 [DisallowConcurrentExecution]
 public sealed class CleanUpSentEmailWorker(

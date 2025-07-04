@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Chat.Infrastructure.Helpers;
 
-public static class UserIdHelper
+internal static class UserIdExtensions
 {
     public static Guid ToUserId(this string? userId)
     {

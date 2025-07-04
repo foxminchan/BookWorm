@@ -4,7 +4,7 @@ using StackExchange.Redis;
 
 namespace BookWorm.Ordering.Infrastructure.Idempotency;
 
-public sealed class RequestManager(ILogger<RequestManager> logger, IConnectionMultiplexer redis)
+internal sealed class RequestManager(ILogger<RequestManager> logger, IConnectionMultiplexer redis)
     : IRequestManager
 {
     private const int DefaultExpirationTime = 3600;

@@ -6,7 +6,7 @@ using Marten.Events.Daemon;
 
 namespace BookWorm.Ordering.Infrastructure.EventStore.Extensions;
 
-public static class Extensions
+internal static class Extensions
 {
     public static void AddEventStore(
         this IHostApplicationBuilder builder,

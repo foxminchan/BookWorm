@@ -2,7 +2,7 @@
 
 namespace BookWorm.Chat.Infrastructure.Backplane;
 
-public static class Extensions
+internal static class Extensions
 {
     public static void AddBackplaneServices(this IServiceCollection services)
     {

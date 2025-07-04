@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Notification.Infrastructure.Senders.MailKit;
 
-public sealed class MailKitHealthCheck(MailKitClientFactory factory) : IHealthCheck
+internal sealed class MailKitHealthCheck(MailKitClientFactory factory) : IHealthCheck
 {
     public async Task<HealthCheckResult> CheckHealthAsync(
         HealthCheckContext context,

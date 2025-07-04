@@ -1,9 +1,8 @@
-﻿using BookWorm.ServiceDefaults.Configuration;
-using OpenTelemetry.Trace;
+﻿using OpenTelemetry.Trace;
 
 namespace BookWorm.Notification.Infrastructure.Job;
 
-public static class Extensions
+internal static class Extensions
 {
     private static void AddJobConfigurator<TJob>(
         this IServiceCollectionQuartzConfigurator quartz,

@@ -4,8 +4,10 @@ using StackExchange.Redis;
 
 namespace BookWorm.Basket.Infrastructure.Repositories;
 
-public sealed class BasketRepository(ILogger<BasketRepository> logger, IConnectionMultiplexer redis)
-    : IBasketRepository
+internal sealed class BasketRepository(
+    ILogger<BasketRepository> logger,
+    IConnectionMultiplexer redis
+) : IBasketRepository
 {
     private readonly SemaphoreSlim _connectionLock = new(1, 1);
 

@@ -4,7 +4,7 @@ using Microsoft.SemanticKernel;
 namespace BookWorm.Chat.Agents;
 
 [ExcludeFromCodeCoverage]
-public static class Extensions
+internal static class Extensions
 {
     public static void AddAgents(this IHostApplicationBuilder builder)
     {

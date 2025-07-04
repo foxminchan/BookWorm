@@ -4,7 +4,7 @@ using MassTransit;
 
 namespace BookWorm.Basket.Extensions;
 
-public static class Extensions
+internal static class Extensions
 {
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
     {

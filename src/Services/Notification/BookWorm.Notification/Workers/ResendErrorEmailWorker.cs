@@ -1,5 +1,4 @@
 ﻿using BookWorm.Notification.Domain.Models;
-using Microsoft.Extensions.Diagnostics.Buffering;
 
 namespace BookWorm.Notification.Workers;
 

@@ -3,7 +3,7 @@
 namespace BookWorm.Basket.Grpc.Services.Book;
 
 [ExcludeFromCodeCoverage]
-public sealed class BookService(BookGrpcService.BookGrpcServiceClient service) : IBookService
+internal sealed class BookService(BookGrpcService.BookGrpcServiceClient service) : IBookService
 {
     public async Task<BookResponse?> GetBookByIdAsync(
         [StringSyntax(StringSyntaxAttribute.GuidFormat)] string id,

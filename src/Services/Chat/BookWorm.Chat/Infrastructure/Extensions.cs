@@ -2,7 +2,7 @@
 
 namespace BookWorm.Chat.Infrastructure;
 
-public static class Extensions
+internal static class Extensions
 {
     public static void AddPersistenceServices(this IHostApplicationBuilder builder)
     {

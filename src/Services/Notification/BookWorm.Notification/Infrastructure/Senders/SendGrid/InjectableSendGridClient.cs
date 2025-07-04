@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Options;
-using SendGrid;
+﻿using SendGrid;
 
 namespace BookWorm.Notification.Infrastructure.Senders.SendGrid;
 

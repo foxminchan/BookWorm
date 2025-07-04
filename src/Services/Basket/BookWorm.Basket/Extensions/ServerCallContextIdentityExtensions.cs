@@ -2,7 +2,7 @@
 
 namespace BookWorm.Basket.Extensions;
 
-public static class ServerCallContextIdentityExtensions
+internal static class ServerCallContextIdentityExtensions
 {
     public static string? GetUserIdentity(this ServerCallContext context)
     {
