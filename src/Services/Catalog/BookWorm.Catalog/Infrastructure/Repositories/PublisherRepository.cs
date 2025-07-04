@@ -23,4 +23,9 @@ internal sealed class PublisherRepository(CatalogDbContext context) : IPublisher
     {
         return await _context.Publishers.FindAsync([id], cancellationToken);
     }
+
+    public void Delete(Publisher publisher)
+    {
+        _context.Publishers.Remove(publisher);
+    }
 }
