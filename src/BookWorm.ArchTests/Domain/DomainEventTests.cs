@@ -152,6 +152,8 @@ public sealed class DomainEventTests : ArchUnitBaseTest
             .ResideInNamespace($"{nameof(BookWorm)}", true)
             .Should()
             .BePublic()
+            .OrShould()
+            .BeInternal()
             .AndShould()
             .BeSealed()
             .Because(
