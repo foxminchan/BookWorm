@@ -4,18 +4,32 @@ namespace BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
 
 public sealed class BookFilterSpec : Specification<Book>
 {
-    public BookFilterSpec(
-        decimal? minPrice,
-        decimal? maxPrice,
-        Guid[]? categoryId,
-        Guid[]? publisherId,
-        Guid[]? authorIds,
-        Guid[] ids
-    )
+    public BookFilterSpec(Guid[]? categoryIds, Guid[]? publisherIds)
     {
         Query.AsNoTracking();
 
-        if (ids.Length > 0)
+        if (categoryIds is not null && categoryIds.Length > 0)
+        {
+            Query.Where(book => categoryIds.Contains(book.Category!.Id));
+        }
+
+        if (publisherIds is not null && publisherIds.Length > 0)
+        {
+            Query.Where(book => publisherIds.Contains(book.Publisher!.Id));
+        }
+    }
+
+    public BookFilterSpec(
+        decimal? minPrice,
+        decimal? maxPrice,
+        Guid[]? categoryIds,
+        Guid[]? publisherIds,
+        Guid[]? authorIds,
+        Guid[]? ids
+    )
+        : this(categoryIds, publisherIds)
+    {
+        if (ids is not null && ids.Length > 0)
         {
             Query.Where(book => ids.Contains(book.Id));
         }
@@ -28,16 +42,6 @@ public sealed class BookFilterSpec : Specification<Book>
         if (maxPrice is not null)
         {
             Query.Where(book => book.Price!.OriginalPrice <= maxPrice);
-        }
-
-        if (categoryId is not null && categoryId.Length > 0)
-        {
-            Query.Where(book => categoryId.Contains(book.Category!.Id));
-        }
-
-        if (publisherId is not null && publisherId.Length > 0)
-        {
-            Query.Where(book => publisherId.Contains(book.Publisher!.Id));
         }
 
         if (authorIds is not null && authorIds.Length > 0)
@@ -53,12 +57,12 @@ public sealed class BookFilterSpec : Specification<Book>
         bool isDescending,
         decimal? minPrice,
         decimal? maxPrice,
-        Guid[]? categoryId,
-        Guid[]? publisherId,
+        Guid[]? categoryIds,
+        Guid[]? publisherIds,
         Guid[]? authorIds,
-        Guid[] ids
+        Guid[]? ids
     )
-        : this(minPrice, maxPrice, categoryId, publisherId, authorIds, ids)
+        : this(minPrice, maxPrice, categoryIds, publisherIds, authorIds, ids)
     {
         Query
             .Include(x => x.BookAuthors)
@@ -67,8 +71,6 @@ public sealed class BookFilterSpec : Specification<Book>
             .ApplyPaging(pageIndex, pageSize);
     }
 
-    public BookFilterSpec(Guid[] ids)
-    {
-        Query.AsNoTracking().Where(book => ids.Contains(book.Id));
-    }
+    public BookFilterSpec(Guid[]? ids)
+        : this(null, null, null, null, null, ids) { }
 }
