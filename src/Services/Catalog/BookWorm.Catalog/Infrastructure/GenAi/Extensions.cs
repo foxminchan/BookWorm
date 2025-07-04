@@ -5,7 +5,7 @@ using BookWorm.Chassis.Search;
 
 namespace BookWorm.Catalog.Infrastructure.GenAi;
 
-public static class Extensions
+internal static class Extensions
 {
     public static void AddGenAi(this IHostApplicationBuilder builder)
     {

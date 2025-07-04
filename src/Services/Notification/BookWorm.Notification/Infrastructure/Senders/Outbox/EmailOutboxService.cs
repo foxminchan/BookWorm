@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Notification.Infrastructure.Senders.Outbox;
 
-public sealed class EmailOutboxService(ITableService tableService, ISender sender) : ISender
+internal sealed class EmailOutboxService(ITableService tableService, ISender sender) : ISender
 {
     public async Task SendAsync(
         MimeMessage mailMessage,

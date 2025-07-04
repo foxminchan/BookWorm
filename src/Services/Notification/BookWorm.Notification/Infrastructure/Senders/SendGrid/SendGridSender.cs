@@ -1,11 +1,10 @@
-﻿using Microsoft.Extensions.Diagnostics.Buffering;
-using Polly.Registry;
+﻿using Polly.Registry;
 using SendGrid;
 using SendGrid.Helpers.Mail;
 
 namespace BookWorm.Notification.Infrastructure.Senders.SendGrid;
 
-public sealed class SendGridSender(
+internal sealed class SendGridSender(
     ILogger<SendGridSender> logger,
     SendGridSettings settings,
     ISendGridClient sendGridClient,

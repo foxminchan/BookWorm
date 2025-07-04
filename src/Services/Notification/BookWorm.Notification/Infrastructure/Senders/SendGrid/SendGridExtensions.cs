@@ -1,10 +1,9 @@
-﻿using BookWorm.ServiceDefaults.Configuration;
-using Microsoft.Extensions.DependencyInjection.Extensions;
+﻿using Microsoft.Extensions.DependencyInjection.Extensions;
 using SendGrid;
 
 namespace BookWorm.Notification.Infrastructure.Senders.SendGrid;
 
-public static class SendGridExtensions
+internal static class SendGridExtensions
 {
     /// <summary>
     ///     Registers the SendGrid client and related services using the default configuration section.

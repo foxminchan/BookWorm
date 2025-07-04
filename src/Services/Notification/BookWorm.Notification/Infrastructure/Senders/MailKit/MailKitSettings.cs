@@ -1,5 +1,4 @@
 ﻿using System.Data.Common;
-using Microsoft.Extensions.Options;
 
 namespace BookWorm.Notification.Infrastructure.Senders.MailKit;
 

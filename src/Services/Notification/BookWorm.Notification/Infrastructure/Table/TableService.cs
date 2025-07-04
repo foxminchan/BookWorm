@@ -2,7 +2,7 @@
 
 namespace BookWorm.Notification.Infrastructure.Table;
 
-public sealed class TableService : ITableService
+internal sealed class TableService : ITableService
 {
     private readonly TableClient _tableClient;
     private readonly string _tableName = nameof(Notification).ToLowerInvariant();

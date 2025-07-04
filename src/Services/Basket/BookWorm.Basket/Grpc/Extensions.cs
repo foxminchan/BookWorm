@@ -4,7 +4,7 @@ using BookWorm.ServiceDefaults.Configuration;
 namespace BookWorm.Basket.Grpc;
 
 [ExcludeFromCodeCoverage]
-public static class Extensions
+internal static class Extensions
 {
     public static void AddGrpcServices(this IHostApplicationBuilder builder)
     {

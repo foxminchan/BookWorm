@@ -1,6 +1,6 @@
 namespace BookWorm.Notification.Infrastructure.Senders.MailKit;
 
-public sealed class MailKitClientFactory(MailKitSettings settings) : IDisposable
+internal sealed class MailKitClientFactory(MailKitSettings settings) : IDisposable
 {
     private readonly SemaphoreSlim _semaphore = new(1, 1);
     private SmtpClient? _client;

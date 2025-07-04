@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Catalog.Infrastructure.Repositories;
 
-public sealed class CategoryRepository(CatalogDbContext context) : ICategoryRepository
+internal sealed class CategoryRepository(CatalogDbContext context) : ICategoryRepository
 {
     private readonly CatalogDbContext _context =
         context ?? throw new ArgumentNullException(nameof(context));
@@ -29,5 +29,10 @@ public sealed class CategoryRepository(CatalogDbContext context) : ICategoryRepo
     )
     {
         return await _context.Categories.FindAsync([id], cancellationToken);
+    }
+
+    public void Delete(Category category)
+    {
+        _context.Categories.Remove(category);
     }
 }

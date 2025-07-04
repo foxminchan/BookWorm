@@ -1,7 +1,7 @@
 ﻿namespace BookWorm.Ordering.Grpc.Services.Basket;
 
 [ExcludeFromCodeCoverage]
-public sealed class BasketService(BasketGrpcService.BasketGrpcServiceClient service)
+internal sealed class BasketService(BasketGrpcService.BasketGrpcServiceClient service)
     : IBasketService
 {
     public async Task<BasketResponse> GetBasket(CancellationToken cancellationToken = default)

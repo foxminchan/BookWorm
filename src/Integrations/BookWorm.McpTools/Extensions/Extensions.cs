@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.McpTools.Extensions;
 
-public static class Extensions
+internal static class Extensions
 {
     private const string ActivitySourceName = "Experimental.ModelContextProtocol";
 

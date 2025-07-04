@@ -1,11 +1,10 @@
-﻿using BookWorm.Constants.Aspire;
-using BookWorm.Notification.Infrastructure.Senders.MailKit;
+﻿using BookWorm.Notification.Infrastructure.Senders.MailKit;
 using BookWorm.Notification.Infrastructure.Senders.Outbox;
 using BookWorm.Notification.Infrastructure.Senders.SendGrid;
 
 namespace BookWorm.Notification.Extensions;
 
-public static class Extensions
+internal static class Extensions
 {
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
     {

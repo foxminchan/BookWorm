@@ -4,7 +4,7 @@ using BookWorm.Chassis.Mediator;
 
 namespace BookWorm.Catalog.Extensions;
 
-public static class Extensions
+internal static class Extensions
 {
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
     {

@@ -3,7 +3,7 @@ using BookWorm.Chat.Agents;
 
 namespace BookWorm.Chat.Infrastructure.ChatStreaming;
 
-public static class Extensions
+internal static class Extensions
 {
     public static void AddChatStreamingServices(this IHostApplicationBuilder builder)
     {

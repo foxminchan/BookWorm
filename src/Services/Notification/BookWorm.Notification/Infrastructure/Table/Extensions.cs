@@ -1,8 +1,6 @@
-﻿using BookWorm.Constants.Aspire;
+﻿namespace BookWorm.Notification.Infrastructure.Table;
 
-namespace BookWorm.Notification.Infrastructure.Table;
-
-public static class Extensions
+internal static class Extensions
 {
     public static void AddTableService(this IHostApplicationBuilder builder)
     {

@@ -1,10 +1,8 @@
-﻿using BookWorm.Constants.Aspire;
-using BookWorm.ServiceDefaults.Configuration;
-using MailKit;
+﻿using MailKit;
 
 namespace BookWorm.Notification.Infrastructure.Senders.MailKit;
 
-public static class MailKitExtensions
+internal static class MailKitExtensions
 {
     /// <summary>
     ///     Registers and configures the MailKit client for dependency injection using the specified connection name.

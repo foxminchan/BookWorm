@@ -3,7 +3,7 @@ using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace BookWorm.Chat.Extensions;
 
-public static class ChatHistoryExtensions
+internal static class ChatHistoryExtensions
 {
     public static ChatHistory ToChatHistory(this List<ChatMessage> messages)
     {

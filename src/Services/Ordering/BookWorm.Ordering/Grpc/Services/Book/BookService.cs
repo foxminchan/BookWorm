@@ -4,7 +4,7 @@ using Microsoft.Extensions.Caching.Hybrid;
 namespace BookWorm.Ordering.Grpc.Services.Book;
 
 [ExcludeFromCodeCoverage]
-public sealed class BookService(BookGrpcService.BookGrpcServiceClient service, HybridCache cache)
+internal sealed class BookService(BookGrpcService.BookGrpcServiceClient service, HybridCache cache)
     : IBookService
 {
     public async Task<BookResponse?> GetBookByIdAsync(

@@ -3,7 +3,7 @@ using BookWorm.Notification.Infrastructure.Attributes;
 
 namespace BookWorm.Notification.Infrastructure.Render;
 
-public sealed class MjmlRenderer : IRenderer
+internal sealed class MjmlRenderer : IRenderer
 {
     public string Render<T>(T model, string template)
         where T : notnull

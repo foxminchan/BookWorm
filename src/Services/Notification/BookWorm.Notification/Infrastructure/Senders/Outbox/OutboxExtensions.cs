@@ -3,7 +3,7 @@ using BookWorm.Notification.Infrastructure.Senders.SendGrid;
 
 namespace BookWorm.Notification.Infrastructure.Senders.Outbox;
 
-public static class OutboxExtensions
+internal static class OutboxExtensions
 {
     /// <summary>
     ///     Registers the email outbox service and its dependencies in the application's service container.

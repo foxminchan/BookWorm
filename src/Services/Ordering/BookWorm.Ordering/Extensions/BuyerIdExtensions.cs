@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Ordering.Infrastructure.Helpers;
 
-public static class BuyerIdHelper
+public static class BuyerIdExtensions
 {
     public static Guid ToBuyerId(this string? userId)
     {

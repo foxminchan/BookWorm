@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Options;
-
-namespace BookWorm.Notification.Infrastructure.Job;
+﻿namespace BookWorm.Notification.Infrastructure.Job;
 
 [OptionsValidator]
 public sealed partial class JobSettings : IValidateOptions<JobSettings>

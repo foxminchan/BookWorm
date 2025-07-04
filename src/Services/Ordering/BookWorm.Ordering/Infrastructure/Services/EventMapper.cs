@@ -2,7 +2,7 @@
 
 namespace BookWorm.Ordering.Infrastructure.Services;
 
-public sealed class EventMapper(ClaimsPrincipal claimsPrincipal) : IEventMapper
+internal sealed class EventMapper(ClaimsPrincipal claimsPrincipal) : IEventMapper
 {
     public IntegrationEvent MapToIntegrationEvent(DomainEvent @event)
     {

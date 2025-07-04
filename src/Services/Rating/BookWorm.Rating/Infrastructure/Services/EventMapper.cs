@@ -3,7 +3,7 @@ using BookWorm.Rating.Domain.Events;
 
 namespace BookWorm.Rating.Infrastructure.Services;
 
-public sealed class EventMapper : IEventMapper
+internal sealed class EventMapper : IEventMapper
 {
     public IntegrationEvent MapToIntegrationEvent(DomainEvent @event)
     {

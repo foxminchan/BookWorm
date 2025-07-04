@@ -1,9 +1,8 @@
-﻿using Microsoft.Extensions.Diagnostics.Buffering;
-using Polly.Registry;
+﻿using Polly.Registry;
 
 namespace BookWorm.Notification.Infrastructure.Senders.MailKit;
 
-public sealed class MailKitSender(
+internal sealed class MailKitSender(
     MailKitClientFactory factory,
     ILogger<MailKitSender> logger,
     GlobalLogBuffer logBuffer,

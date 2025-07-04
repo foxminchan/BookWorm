@@ -3,7 +3,7 @@ using BookWorm.Ordering.Infrastructure.EventStore.Diagnostic;
 
 namespace BookWorm.Ordering.Infrastructure.EventStore.Extensions;
 
-public static class DocumentSessionWithTelemetryExtensions
+internal static class DocumentSessionWithTelemetryExtensions
 {
     public static async Task Add<T>(
         this IDocumentSession documentSession,

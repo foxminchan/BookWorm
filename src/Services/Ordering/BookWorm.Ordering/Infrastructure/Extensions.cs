@@ -3,7 +3,7 @@ using BookWorm.Ordering.Infrastructure.EventStore.Subscriptions;
 
 namespace BookWorm.Ordering.Infrastructure;
 
-public static class Extensions
+internal static class Extensions
 {
     public static void AddPersistenceServices(this IHostApplicationBuilder builder)
     {

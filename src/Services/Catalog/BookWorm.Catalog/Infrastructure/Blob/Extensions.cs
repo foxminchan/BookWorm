@@ -2,7 +2,7 @@
 
 namespace BookWorm.Catalog.Infrastructure.Blob;
 
-public static class Extensions
+internal static class Extensions
 {
     public static void AddAzureBlobStorage(this IHostApplicationBuilder builder)
     {
