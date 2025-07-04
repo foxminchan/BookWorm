@@ -153,7 +153,7 @@ public sealed class DependenciesTests : ArchUnitBaseTest
             .And()
             .HaveName("Extensions")
             .Should()
-            .BePublic()
+            .BeInternal()
             .Because(
                 "Extensions should not be abstract or sealed to ensure they can be extended and used as intended."
             )
