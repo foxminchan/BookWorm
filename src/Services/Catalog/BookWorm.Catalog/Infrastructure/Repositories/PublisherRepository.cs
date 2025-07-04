@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Catalog.Infrastructure.Repositories;
 
-internal sealed class PublisherRepository(CatalogDbContext context) : IPublisherRepository
+public sealed class PublisherRepository(CatalogDbContext context) : IPublisherRepository
 {
     private readonly CatalogDbContext _context =
         context ?? throw new ArgumentNullException(nameof(context));
