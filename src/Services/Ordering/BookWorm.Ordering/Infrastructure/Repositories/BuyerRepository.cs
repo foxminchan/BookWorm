@@ -2,7 +2,7 @@
 
 namespace BookWorm.Ordering.Infrastructure.Repositories;
 
-internal sealed class BuyerRepository(OrderingDbContext context) : IBuyerRepository
+public sealed class BuyerRepository(OrderingDbContext context) : IBuyerRepository
 {
     private readonly OrderingDbContext _context =
         context ?? throw new ArgumentNullException(nameof(context));

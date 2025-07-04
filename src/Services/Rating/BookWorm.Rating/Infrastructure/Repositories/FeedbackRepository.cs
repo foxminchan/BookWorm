@@ -3,7 +3,7 @@ using BookWorm.Chassis.Specification.Evaluators;
 
 namespace BookWorm.Rating.Infrastructure.Repositories;
 
-internal sealed class FeedbackRepository(RatingDbContext context) : IFeedbackRepository
+public sealed class FeedbackRepository(RatingDbContext context) : IFeedbackRepository
 {
     private readonly RatingDbContext _context =
         context ?? throw new ArgumentNullException(nameof(context));
