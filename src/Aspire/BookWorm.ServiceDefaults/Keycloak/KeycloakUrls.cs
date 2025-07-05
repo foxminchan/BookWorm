@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.ServiceDiscovery;
+﻿using BookWorm.ServiceDefaults.Kestrel;
+using Microsoft.Extensions.ServiceDiscovery;
 
 namespace BookWorm.ServiceDefaults.Keycloak;
 
@@ -45,36 +46,12 @@ public sealed class KeycloakUrls(ServiceEndpointResolver serviceEndpointResolver
         CancellationToken cancellationToken = default
     )
     {
-        var serviceLookupName = $"{Protocol.HttpOrHttps}://{serviceName}";
-
-        var serviceAddresses = (
-            await serviceEndpointResolver.GetEndpointsAsync(serviceLookupName, cancellationToken)
-        )
-            .Endpoints.Select(e => e.EndPoint.ToString())
-            .ToList();
-
-        var firstHttpsEndpointUrl = serviceAddresses.FirstOrDefault(e =>
-            e?.StartsWith($"{Protocol.Https}://") == true
+        var baseUri = $"{Protocol.HttpOrHttps}://{serviceName}/realms/{_realmName}";
+        var realmPath = string.IsNullOrWhiteSpace(path) ? null : $"/{path}";
+        return await serviceEndpointResolver.ResolveServiceEndpointUrl(
+            baseUri,
+            realmPath,
+            cancellationToken
         );
-
-        var endpointUrl =
-            (
-                firstHttpsEndpointUrl
-                ?? serviceAddresses.FirstOrDefault(e =>
-                    e?.StartsWith($"{Protocol.Http}://") == true
-                )
-            )
-            ?? throw new InvalidOperationException(
-                $"No HTTP(S) endpoints found for service '{serviceName}'."
-            );
-
-        var uriBuilder = new UriBuilder(endpointUrl) { Path = $"/realms/{_realmName}" };
-
-        if (!string.IsNullOrWhiteSpace(path))
-        {
-            uriBuilder.Path += $"/{path}";
-        }
-
-        return uriBuilder.Uri.ToString();
     }
 }

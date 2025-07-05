@@ -1,4 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using BookWorm.Chassis.AI;
+using Microsoft.Extensions.ServiceDiscovery;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.Ollama;
@@ -38,21 +40,33 @@ public static class BookAgent
         Whether users are searching for specific books or looking for recommendations, help them discover their next great read!
         """;
 
-    public static async Task<Agent> CreateAgentWithPluginsAsync(Kernel kernel, IMcpClient mcpClient)
+    public static async Task<ChatCompletionAgent> CreateAgentWithPluginsAsync(
+        Kernel kernel,
+        IMcpClient mcpClient,
+        ServiceEndpointResolver resolver
+    )
     {
-        var tools = await mcpClient.ListToolsAsync().ConfigureAwait(false);
+        var agentKernel = kernel.Clone();
 
-        kernel.Plugins.AddFromFunctions(
+        var toolsTask = mcpClient.ListToolsAsync().AsTask();
+        var ratingAgentTask = resolver.ConnectRemoteAgent(
+            $"{Protocol.HttpOrHttps}://{Application.Rating}/agents/rating"
+        );
+        await Task.WhenAll(toolsTask, ratingAgentTask);
+
+        agentKernel.Plugins.AddFromFunctions(
             nameof(BookWorm),
-            tools.Select(aiFunction => aiFunction.AsKernelFunction())
+            (await toolsTask).Select(aiFunction => aiFunction.AsKernelFunction())
         );
 
-        return new ChatCompletionAgent
+        agentKernel.Plugins.Add(await ratingAgentTask);
+
+        return new()
         {
             Instructions = Instructions,
             Name = Name,
             Description = Description,
-            Kernel = kernel,
+            Kernel = agentKernel,
             Arguments = new(
                 new OllamaPromptExecutionSettings
                 {
@@ -63,5 +77,16 @@ public static class BookAgent
                 }
             ),
         };
+    }
+
+    private static async Task<KernelPlugin> ConnectRemoteAgent(
+        this ServiceEndpointResolver resolver,
+        string agentUri
+    )
+    {
+        var resolvedUrl = await resolver.ResolveServiceEndpointUrl(agentUri, "/");
+        var agent = await resolvedUrl.CreateAgentAsync();
+        var agentFunction = AgentKernelFunctionFactory.CreateFromAgent(agent);
+        return KernelPluginFactory.CreateFromFunctions("AgentPlugin", [agentFunction]);
     }
 }

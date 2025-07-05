@@ -4,14 +4,14 @@ using Microsoft.SemanticKernel.Agents;
 namespace BookWorm.Chat.Infrastructure.ChatStreaming;
 
 public sealed class ChatAgents(
-    [FromKeyedServices(nameof(BookAgent))] Agent bookAgent,
-    [FromKeyedServices(nameof(LanguageAgent))] Agent languageAgent,
-    [FromKeyedServices(nameof(SentimentAgent))] Agent sentimentAgent,
-    [FromKeyedServices(nameof(SummarizeAgent))] Agent summarizeAgent
+    [FromKeyedServices(nameof(BookAgent))] ChatCompletionAgent bookAgent,
+    [FromKeyedServices(nameof(LanguageAgent))] ChatCompletionAgent languageAgent,
+    [FromKeyedServices(nameof(SentimentAgent))] ChatCompletionAgent sentimentAgent,
+    [FromKeyedServices(nameof(SummarizeAgent))] ChatCompletionAgent summarizeAgent
 )
 {
-    public Agent BookAgent { get; } = bookAgent;
-    public Agent LanguageAgent { get; } = languageAgent;
-    public Agent SentimentAgent { get; } = sentimentAgent;
-    public Agent SummarizeAgent { get; } = summarizeAgent;
+    public ChatCompletionAgent BookAgent { get; } = bookAgent;
+    public ChatCompletionAgent LanguageAgent { get; } = languageAgent;
+    public ChatCompletionAgent SentimentAgent { get; } = sentimentAgent;
+    public ChatCompletionAgent SummarizeAgent { get; } = summarizeAgent;
 }

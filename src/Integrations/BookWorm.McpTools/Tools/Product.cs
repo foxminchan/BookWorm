@@ -21,7 +21,10 @@ public sealed class Product(ICatalogApi catalogApi)
 
         return response.Items.Count == 0
             ? notFoundMessage
-            : JsonSerializer.Serialize(response.Items, BookSerializationContext.Default.Book);
+            : JsonSerializer.Serialize(
+                response.Items,
+                BookSerializationContext.Default.IReadOnlyListBook
+            );
     }
 }
 

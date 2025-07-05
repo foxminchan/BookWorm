@@ -1,3 +1,4 @@
+using BookWorm.Chat.Agents;
 using BookWorm.Chat.Extensions;
 using BookWorm.ServiceDefaults;
 
@@ -18,5 +19,9 @@ var apiVersionSet = app.NewApiVersionSet().HasApiVersion(new(1, 0)).ReportApiVer
 app.MapEndpoints(apiVersionSet, "chats");
 
 app.UseDefaultOpenApi();
+
+app.MapHostSummarizeAgent();
+
+app.MapHostSentimentAgent();
 
 app.Run();
