@@ -21,7 +21,9 @@ internal static class Extensions
         );
 
         services
-            .AddMcpServer()
+            .AddMcpServer(o =>
+                o.ServerInfo = new() { Name = Application.McpTools, Version = "1.0.0" }
+            )
             .WithHttpTransport()
             .WithToolsFromAssembly()
             .WithPromptsFromAssembly();

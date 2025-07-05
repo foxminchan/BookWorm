@@ -174,10 +174,13 @@ var ratingApi = builder
     .WithReference(queue)
     .WaitFor(queue)
     .WithIdP(keycloak)
+    .WithReference(chatApi)
     .WithAzApplicationInsights()
     .WithOpenApi()
     .WithAsyncApi()
     .WithHealthCheck();
+
+chatApi.WithReference(ratingApi).WaitFor(ratingApi);
 
 var financeApi = builder
     .AddProject<BookWorm_Finance>(Application.Finance)
@@ -195,11 +198,17 @@ var gateway = builder
     .AddYarp(Application.Gateway)
     .WithConfigFile("Container/proxy/yarp.json")
     .WithReference(catalogApi)
+    .WaitFor(catalogApi)
     .WithReference(chatApi)
+    .WaitFor(chatApi)
     .WithReference(orderingApi)
+    .WaitFor(orderingApi)
     .WithReference(ratingApi)
+    .WaitFor(ratingApi)
     .WithReference(basketApi)
+    .WaitFor(basketApi)
     .WithReference(financeApi)
+    .WaitFor(financeApi)
     .WithReference(keycloak);
 
 builder

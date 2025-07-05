@@ -1,3 +1,4 @@
+using BookWorm.Rating.Agents;
 using BookWorm.Rating.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,5 +20,7 @@ app.MapEndpoints(apiVersionSet, "feedbacks");
 app.UseDefaultOpenApi();
 
 app.UseDefaultAsyncApi();
+
+app.MapHostRatingAgent();
 
 app.Run();

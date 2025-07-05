@@ -1,5 +1,9 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.ServiceDiscovery;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Agents;
+using Microsoft.SemanticKernel.Agents.A2A;
+using SharpA2A.AspNetCore;
 
 namespace BookWorm.Chat.Agents;
 
@@ -16,8 +20,9 @@ internal static class Extensions
             {
                 var kernel = sp.GetRequiredService<Kernel>();
                 var mcpClient = sp.GetRequiredService<IMcpClient>();
+                var resolver = sp.GetRequiredService<ServiceEndpointResolver>();
                 return BookAgent
-                    .CreateAgentWithPluginsAsync(kernel, mcpClient)
+                    .CreateAgentWithPluginsAsync(kernel, mcpClient, resolver)
                     .GetAwaiter()
                     .GetResult();
             }
@@ -49,5 +54,27 @@ internal static class Extensions
                 return SentimentAgent.CreateAgent(kernel);
             }
         );
+    }
+
+    public static void MapHostSummarizeAgent(this WebApplication app)
+    {
+        var agent = app.Services.GetRequiredKeyedService<ChatCompletionAgent>(
+            nameof(SummarizeAgent)
+        );
+        var hostAgent = new A2AHostAgent(agent, SummarizeAgent.GetAgentCard());
+        app.MapA2A(hostAgent.TaskManager!, "/agents/summarize").WithTags(nameof(SummarizeAgent));
+        app.MapHttpA2A(hostAgent.TaskManager!, "/agents/summarize")
+            .WithTags(nameof(SummarizeAgent));
+    }
+
+    public static void MapHostSentimentAgent(this WebApplication app)
+    {
+        var agent = app.Services.GetRequiredKeyedService<ChatCompletionAgent>(
+            nameof(SentimentAgent)
+        );
+        var hostAgent = new A2AHostAgent(agent, SentimentAgent.GetAgentCard());
+        app.MapA2A(hostAgent.TaskManager!, "/agents/sentiment").WithTags(nameof(SentimentAgent));
+        app.MapHttpA2A(hostAgent.TaskManager!, "/agents/sentiment")
+            .WithTags(nameof(SentimentAgent));
     }
 }

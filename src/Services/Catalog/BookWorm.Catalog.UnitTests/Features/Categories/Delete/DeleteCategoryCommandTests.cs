@@ -271,6 +271,7 @@ public sealed class DeleteCategoryCommandTests
         {
             result.ShouldBe(Unit.Value);
         }
+
         foreach (var category in categories)
         {
             _repositoryMock.Verify(
@@ -279,6 +280,7 @@ public sealed class DeleteCategoryCommandTests
             );
             _repositoryMock.Verify(r => r.Delete(category), Times.Once);
         }
+
         _unitOfWorkMock.Verify(
             u => u.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
             Times.Exactly(3)
