@@ -72,7 +72,7 @@ public sealed partial class RedisConversationState : IConversationState, IDispos
         await buffer.AddFragmentAsync(fragment);
     }
 
-    public async IAsyncEnumerable<ClientMessageFragment> Subscribe(
+    public async IAsyncEnumerable<ClientMessageFragment> SubscribeAsync(
         Guid conversationId,
         Guid? lastMessageId,
         [EnumeratorCancellation] CancellationToken cancellationToken = default

@@ -9,6 +9,8 @@ internal static class Extensions
     {
         var services = builder.Services;
 
+        services.AddKernel();
+
         builder.AddSkTelemetry();
 
         builder.AddChatCompletion();

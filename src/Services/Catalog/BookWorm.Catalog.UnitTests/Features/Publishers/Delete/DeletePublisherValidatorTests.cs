@@ -8,8 +8,8 @@ namespace BookWorm.Catalog.UnitTests.Features.Publishers.Delete;
 public sealed class DeletePublisherValidatorTests
 {
     private readonly Mock<IBookRepository> _mockRepository = new();
-    private readonly DeletePublisherValidator _validator;
     private readonly PublisherValidator _publisherValidator;
+    private readonly DeletePublisherValidator _validator;
 
     public DeletePublisherValidatorTests()
     {
@@ -142,7 +142,7 @@ public sealed class DeletePublisherValidatorTests
         // Arrange
         var publisherId = Guid.NewGuid();
         var bookFaker = new BookFaker();
-        List<Book> existingBooks = bookFaker.Generate(2);
+        var existingBooks = bookFaker.Generate(2);
 
         _mockRepository
             .Setup(x => x.ListAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))

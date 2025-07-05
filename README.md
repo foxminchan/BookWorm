@@ -31,9 +31,10 @@
 - [x] Implemented caching with HybridCache
 - [x] Incorporated AI components:
   - [x] Text embedding with Nomic Embed Text
-  - [x] Integrated a chatbot using Gemma 3
-  - [x] Standardized AI tools with MCP Tools
-  - [x] Orchestrated multi-agent workflows with Semantic Kernel
+  - [x] Integrated chatbot functionality using Gemma 3
+  - [x] Standardized AI tooling with Model Context Protocol (MCP)
+  - [x] Orchestrated multi-agent workflows using Semantic Kernel
+  - [x] Enabled agent-to-agent communication via A2A Protocol
 - [x] Configured CI/CD with GitHub Actions
 - [x] Created comprehensive documentation:
   - [x] Used OpenAPI for REST API & AsyncAPI for event-driven endpoints

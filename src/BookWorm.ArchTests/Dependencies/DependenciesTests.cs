@@ -41,7 +41,7 @@ public sealed class DependenciesTests : ArchUnitBaseTest
     }
 
     [Test]
-    public void GivenQueries_WhenQueryHandler_ThenShouldContainListOrGet()
+    public void GivenQueries_WhenQueryHandler_ThenShouldContainListOrGetOrSummarize()
     {
         Types()
             .That()
@@ -52,10 +52,12 @@ public sealed class DependenciesTests : ArchUnitBaseTest
             .HaveNameContaining("List")
             .OrShould()
             .HaveNameContaining("Get")
+            .OrShould()
+            .HaveNameContaining("Summarize")
             .AndShould()
             .ImplementInterface(typeof(IQuery<>))
             .Because(
-                "Query handlers should not have Create or Update methods, as they are responsible for querying data and not for modifying it."
+                "Query handlers should contain List, Get, or Summarize methods, as they are responsible for querying data and not for modifying it."
             )
             .Check(Architecture);
     }

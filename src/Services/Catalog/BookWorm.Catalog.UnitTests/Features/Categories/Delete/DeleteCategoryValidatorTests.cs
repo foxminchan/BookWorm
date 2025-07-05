@@ -7,9 +7,9 @@ namespace BookWorm.Catalog.UnitTests.Features.Categories.Delete;
 
 public sealed class DeleteCategoryValidatorTests
 {
-    private readonly Mock<IBookRepository> _mockRepository;
-    private readonly DeleteCategoryValidator _deleteCategoryValidator;
     private readonly Guid _categoryId = Guid.CreateVersion7();
+    private readonly DeleteCategoryValidator _deleteCategoryValidator;
+    private readonly Mock<IBookRepository> _mockRepository;
 
     public DeleteCategoryValidatorTests()
     {

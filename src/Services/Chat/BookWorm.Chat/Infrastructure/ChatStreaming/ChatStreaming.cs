@@ -30,7 +30,7 @@ public sealed class ChatStreaming(
 
         _messages.AddUserMessage(text);
 
-        var messages = await FetchAndAddPromptMessages(conversationId, text);
+        var messages = await FetchAndAddPromptMessagesAsync(conversationId, text);
         var history = messages.ToChatHistory();
         _messages.AddRange(history);
 
@@ -69,7 +69,7 @@ public sealed class ChatStreaming(
             lastMessageId
         );
 
-        var stream = backplaneService.ConversationState.Subscribe(
+        var stream = backplaneService.ConversationState.SubscribeAsync(
             conversationId,
             lastMessageId,
             cancellationToken
@@ -140,7 +140,7 @@ public sealed class ChatStreaming(
             await runtime.StartAsync(token);
 
             // Callback to observe agent responses during orchestration
-            async ValueTask ResponseCallback(ChatMessageContent response)
+            async ValueTask ResponseCallbackAsync(ChatMessageContent response)
             {
                 // Add to existing message history for tracking
                 _messages.Add(response);
@@ -172,7 +172,7 @@ public sealed class ChatStreaming(
                 chatAgents.BookAgent
             )
             {
-                ResponseCallback = ResponseCallback,
+                ResponseCallback = ResponseCallbackAsync,
             };
 
             // Get result from sequential orchestration - it will handle streaming internally
@@ -208,7 +208,11 @@ public sealed class ChatStreaming(
             _messages.AddAssistantMessage(combinedMessage);
 
             // Save assistant's message to database
-            await SaveAssistantMessageToDatabase(conversationId, assistantReplyId, combinedMessage);
+            await SaveAssistantMessageToDatabaseAsync(
+                conversationId,
+                assistantReplyId,
+                combinedMessage
+            );
 
             await runtime.RunUntilIdleAsync();
         }
@@ -259,7 +263,7 @@ public sealed class ChatStreaming(
         }
     }
 
-    private async Task<List<ChatMessage>> FetchAndAddPromptMessages(
+    private async Task<List<ChatMessage>> FetchAndAddPromptMessagesAsync(
         Guid conversationId,
         string text
     )
@@ -314,7 +318,7 @@ public sealed class ChatStreaming(
         return messages;
     }
 
-    private async Task SaveAssistantMessageToDatabase(
+    private async Task SaveAssistantMessageToDatabaseAsync(
         Guid conversationId,
         Guid messageId,
         string text
