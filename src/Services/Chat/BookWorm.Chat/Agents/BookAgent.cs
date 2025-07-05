@@ -1,4 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using BookWorm.Chassis.AI;
+using Microsoft.Extensions.ServiceDiscovery;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.Ollama;
@@ -40,17 +42,24 @@ public static class BookAgent
 
     public static async Task<ChatCompletionAgent> CreateAgentWithPluginsAsync(
         Kernel kernel,
-        IMcpClient mcpClient
+        IMcpClient mcpClient,
+        ServiceEndpointResolver resolver
     )
     {
-        var tools = await mcpClient.ListToolsAsync().ConfigureAwait(false);
-
         Kernel agentKernel = kernel.Clone();
+
+        var toolsTask = mcpClient.ListToolsAsync().AsTask();
+        var ratingAgentTask = resolver.ConnectRemoteAgent(
+            $"{Protocol.HttpOrHttps}://{Application.Rating}/agents/rating"
+        );
+        await Task.WhenAll(toolsTask, ratingAgentTask);
 
         agentKernel.Plugins.AddFromFunctions(
             nameof(BookWorm),
-            tools.Select(aiFunction => aiFunction.AsKernelFunction())
+            toolsTask.Result.Select(aiFunction => aiFunction.AsKernelFunction())
         );
+
+        agentKernel.Plugins.Add(ratingAgentTask.Result);
 
         return new()
         {
@@ -68,5 +77,16 @@ public static class BookAgent
                 }
             ),
         };
+    }
+
+    private static async Task<KernelPlugin> ConnectRemoteAgent(
+        this ServiceEndpointResolver resolver,
+        string agentUri
+    )
+    {
+        var resolvedUrl = await resolver.ResolveServiceEndpointUrl(agentUri, "/");
+        var agent = await resolvedUrl.CreateAgentAsync();
+        var agentFunction = AgentKernelFunctionFactory.CreateFromAgent(agent);
+        return KernelPluginFactory.CreateFromFunctions("AgentPlugin", [agentFunction]);
     }
 }

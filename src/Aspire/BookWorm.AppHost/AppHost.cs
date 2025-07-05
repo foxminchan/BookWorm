@@ -174,10 +174,13 @@ var ratingApi = builder
     .WithReference(queue)
     .WaitFor(queue)
     .WithIdP(keycloak)
+    .WithReference(chatApi)
     .WithAzApplicationInsights()
     .WithOpenApi()
     .WithAsyncApi()
     .WithHealthCheck();
+
+chatApi.WithReference(ratingApi);
 
 var financeApi = builder
     .AddProject<BookWorm_Finance>(Application.Finance)
