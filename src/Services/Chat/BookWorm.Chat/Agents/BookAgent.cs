@@ -38,7 +38,10 @@ public static class BookAgent
         Whether users are searching for specific books or looking for recommendations, help them discover their next great read!
         """;
 
-    public static async Task<Agent> CreateAgentWithPluginsAsync(Kernel kernel, IMcpClient mcpClient)
+    public static async Task<ChatCompletionAgent> CreateAgentWithPluginsAsync(
+        Kernel kernel,
+        IMcpClient mcpClient
+    )
     {
         var tools = await mcpClient.ListToolsAsync().ConfigureAwait(false);
 
@@ -49,7 +52,7 @@ public static class BookAgent
             tools.Select(aiFunction => aiFunction.AsKernelFunction())
         );
 
-        return new ChatCompletionAgent
+        return new()
         {
             Instructions = Instructions,
             Name = Name,

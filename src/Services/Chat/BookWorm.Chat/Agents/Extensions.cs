@@ -1,5 +1,8 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Agents;
+using Microsoft.SemanticKernel.Agents.A2A;
+using SharpA2A.AspNetCore;
 
 namespace BookWorm.Chat.Agents;
 
@@ -49,5 +52,23 @@ internal static class Extensions
                 return SentimentAgent.CreateAgent(kernel);
             }
         );
+    }
+
+    public static void MapHostSummarizeAgent(this WebApplication app)
+    {
+        var agent = app.Services.GetRequiredKeyedService<ChatCompletionAgent>(
+            nameof(SummarizeAgent)
+        );
+        var hostAgent = new A2AHostAgent(agent, SummarizeAgent.GetAgentCard());
+        app.MapA2A(hostAgent.TaskManager!, "summarize");
+    }
+
+    public static void MapHostSentimentAgent(this WebApplication app)
+    {
+        var agent = app.Services.GetRequiredKeyedService<ChatCompletionAgent>(
+            nameof(SentimentAgent)
+        );
+        var hostAgent = new A2AHostAgent(agent, SentimentAgent.GetAgentCard());
+        app.MapA2A(hostAgent.TaskManager!, "sentiment");
     }
 }

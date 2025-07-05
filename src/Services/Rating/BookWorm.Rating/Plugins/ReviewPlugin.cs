@@ -6,7 +6,7 @@ using Microsoft.SemanticKernel;
 
 namespace BookWorm.Rating.Plugins;
 
-public sealed class ReviewPlugin(IFeedbackRepository repository)
+public sealed class ReviewPlugin(IServiceScopeFactory factory)
 {
     [KernelFunction(nameof(GetCustomerReviews))]
     [Description(
@@ -16,6 +16,9 @@ public sealed class ReviewPlugin(IFeedbackRepository repository)
         [Description("The ID of the book to get the review for")] Guid bookId
     )
     {
+        using var scope = factory.CreateScope();
+        var repository = scope.ServiceProvider.GetRequiredService<IFeedbackRepository>();
+
         var reviews = await repository.ListAsync(new FeedbackFilterSpec(bookId, null, false));
 
         return reviews.Any()

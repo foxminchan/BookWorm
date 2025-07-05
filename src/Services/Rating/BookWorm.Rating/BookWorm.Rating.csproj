@@ -6,6 +6,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
   </ItemGroup>
   <ItemGroup Label="AI">
+    <PackageReference Include="SharpA2A.AspNetCore" />
     <PackageReference Include="Microsoft.SemanticKernel.Agents.A2A" />
     <PackageReference Include="Microsoft.SemanticKernel.Agents.Core" />
   </ItemGroup>
