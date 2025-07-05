@@ -201,6 +201,42 @@ paths:
           description: Unauthorized - Access token is missing or invalid.
         "403":
           description: Forbidden - The permission requirements are not met.
+  "/api/v1/publishers/{id}":
+    delete:
+      tags:
+        - Publisher
+      summary: Delete Publisher
+      description: Delete a publisher by identifier
+      x-eventcatalog-message-type: command
+      operationId: DeletePublisherEndpoint
+      parameters:
+        - name: id
+          in: path
+          description: The unique identifier of the publisher to be deleted
+          required: true
+          schema:
+            type: string
+            format: uuid
+            description: The unique identifier of the publisher to be deleted
+            example: "01961eb7-be10-7235-bed8-2fea41c28c02"
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
+        "403":
+          description: Forbidden - The permission requirements are not met.
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                title: "Not Found"
+                status: 404
+                detail: "Publisher with id 01961eb7-be10-7235-bed8-2fea41c28c02 not found."
   "/api/v1/categories":
     put:
       tags:
@@ -361,6 +397,42 @@ paths:
           description: Unauthorized - Access token is missing or invalid.
         "403":
           description: Forbidden - The permission requirements are not met.
+  "/api/v1/categories/{id}":
+    delete:
+      tags:
+        - Category
+      summary: Delete Category
+      description: Delete a category by identifier
+      x-eventcatalog-message-type: command
+      operationId: DeleteCategoryEndpoint
+      parameters:
+        - name: id
+          in: path
+          description: The unique identifier of the category to be deleted
+          required: true
+          schema:
+            type: string
+            format: uuid
+            description: The unique identifier of the category to be deleted
+            example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
+        "403":
+          description: Forbidden - The permission requirements are not met.
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                title: "Not Found"
+                status: 404
+                detail: "Category with id 01961eb4-668d-7e7e-ae25-0fab379614f7 not found."
   "/api/v1/books":
     put:
       tags:
