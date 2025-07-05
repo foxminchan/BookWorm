@@ -2,6 +2,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Agents.A2A;
+using SharpA2A.Core;
 
 namespace BookWorm.Chassis.AI;
 
@@ -27,12 +29,27 @@ public static class Extensions
     public static void AddChatCompletion(this IHostApplicationBuilder builder)
     {
         builder.AddOllamaApiClient(Components.Ollama.Chat);
-        builder.Services.AddKernel().AddOllamaChatCompletion();
+        builder.Services.AddOllamaChatCompletion();
     }
 
     public static void AddEmbeddingGenerator(this IHostApplicationBuilder builder)
     {
         builder.AddOllamaApiClient(Components.Ollama.Embedding);
-        builder.Services.AddKernel().AddOllamaEmbeddingGenerator();
+        builder.Services.AddOllamaEmbeddingGenerator();
+    }
+
+    public static async Task<A2AAgent> CreateAgentAsync(this string agentUri)
+    {
+        var httpClient = new HttpClient
+        {
+            BaseAddress = new(agentUri),
+            Timeout = TimeSpan.FromSeconds(60),
+        };
+
+        var client = new A2AClient(httpClient);
+        var cardResolver = new A2ACardResolver(httpClient);
+        var agentCard = await cardResolver.GetAgentCardAsync();
+
+        return new(client, agentCard);
     }
 }

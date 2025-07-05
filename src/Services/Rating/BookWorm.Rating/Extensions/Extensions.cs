@@ -1,4 +1,5 @@
 ﻿using BookWorm.Chassis.Mediator;
+using BookWorm.Rating.Agents;
 
 namespace BookWorm.Rating.Extensions;
 
@@ -56,5 +57,7 @@ internal static class Extensions
         services.AddEndpoints(typeof(IRatingApiMarker));
 
         builder.AddDefaultAsyncApi([typeof(IRatingApiMarker)]);
+
+        builder.AddAgents();
     }
 }
