@@ -27,12 +27,12 @@ public static class Extensions
     public static void AddChatCompletion(this IHostApplicationBuilder builder)
     {
         builder.AddOllamaApiClient(Components.Ollama.Chat);
-        builder.Services.AddKernel().AddOllamaChatCompletion();
+        builder.Services.AddOllamaChatCompletion();
     }
 
     public static void AddEmbeddingGenerator(this IHostApplicationBuilder builder)
     {
         builder.AddOllamaApiClient(Components.Ollama.Embedding);
-        builder.Services.AddKernel().AddOllamaEmbeddingGenerator();
+        builder.Services.AddOllamaEmbeddingGenerator();
     }
 }

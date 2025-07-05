@@ -42,7 +42,9 @@ public static class BookAgent
     {
         var tools = await mcpClient.ListToolsAsync().ConfigureAwait(false);
 
-        kernel.Plugins.AddFromFunctions(
+        Kernel agentKernel = kernel.Clone();
+
+        agentKernel.Plugins.AddFromFunctions(
             nameof(BookWorm),
             tools.Select(aiFunction => aiFunction.AsKernelFunction())
         );
@@ -52,7 +54,7 @@ public static class BookAgent
             Instructions = Instructions,
             Name = Name,
             Description = Description,
-            Kernel = kernel,
+            Kernel = agentKernel,
             Arguments = new(
                 new OllamaPromptExecutionSettings
                 {
