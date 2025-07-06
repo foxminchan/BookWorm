@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.Ollama;
@@ -34,6 +34,11 @@ public static class LanguageAgent
         Your goal is to ensure all user communications are accessible in English for proper processing by other agents in the system.
         """;
 
+    /// <summary>
+    /// Creates and configures a chat completion agent for language detection and translation tasks.
+    /// </summary>
+    /// <param name="kernel">The kernel instance to associate with the agent.</param>
+    /// <returns>A <see cref="ChatCompletionAgent"/> initialized with language detection and translation instructions.</returns>
     public static ChatCompletionAgent CreateAgent(Kernel kernel)
     {
         return new()

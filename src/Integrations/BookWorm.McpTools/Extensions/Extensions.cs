@@ -1,9 +1,13 @@
-﻿namespace BookWorm.McpTools.Extensions;
+namespace BookWorm.McpTools.Extensions;
 
 internal static class Extensions
 {
     private const string ActivitySourceName = "Experimental.ModelContextProtocol";
 
+    /// <summary>
+    /// Configures core application services and middleware for the host builder, including CORS, exception handling, HTTP client references, MCP server setup, and OpenTelemetry instrumentation.
+    /// </summary>
+    /// <param name="builder">The application host builder to configure.</param>
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;

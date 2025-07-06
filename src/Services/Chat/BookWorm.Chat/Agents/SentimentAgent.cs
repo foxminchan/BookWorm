@@ -37,6 +37,11 @@ public static class SentimentAgent
         Your analysis helps the Book Agent understand the user's emotional state to provide appropriate responses.
         """;
 
+    /// <summary>
+    /// Creates and configures a ChatCompletionAgent for sentiment analysis of English text in a bookstore context.
+    /// </summary>
+    /// <param name="kernel">The Semantic Kernel instance to be used by the agent.</param>
+    /// <returns>A ChatCompletionAgent initialized with sentiment analysis instructions, metadata, and prompt execution settings.</returns>
     public static ChatCompletionAgent CreateAgent(Kernel kernel)
     {
         return new()
@@ -49,6 +54,10 @@ public static class SentimentAgent
         };
     }
 
+    /// <summary>
+    /// Returns an <see cref="AgentCard"/> describing the SentimentAgent's metadata, capabilities, skills, tags, and example prompts for sentiment analysis tasks.
+    /// </summary>
+    /// <returns>An <see cref="AgentCard"/> containing the agent's name, description, version, input/output modes, capabilities, and skills.</returns>
     public static AgentCard GetAgentCard()
     {
         var capabilities = new AgentCapabilities { Streaming = false, PushNotifications = false };

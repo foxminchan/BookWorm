@@ -1,4 +1,4 @@
-﻿using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.Ollama;
 using SharpA2A.Core;
@@ -41,6 +41,11 @@ public static class RatingAgent
         - Handle edge cases like products with very few but high ratings
         """;
 
+    /// <summary>
+    /// Creates and configures a chat completion agent specialized in analyzing and classifying book rating data.
+    /// </summary>
+    /// <param name="kernel">The semantic kernel instance to be used by the agent.</param>
+    /// <returns>A <see cref="ChatCompletionAgent"/> preconfigured with instructions, metadata, and prompt execution settings for book rating analysis.</returns>
     public static ChatCompletionAgent CreateAgent(Kernel kernel)
     {
         return new()
@@ -62,6 +67,10 @@ public static class RatingAgent
         };
     }
 
+    /// <summary>
+    /// Returns an <see cref="AgentCard"/> describing the RatingAgent's metadata, capabilities, and supported skills for integration or UI display.
+    /// </summary>
+    /// <returns>An <see cref="AgentCard"/> containing the agent's name, description, version, input/output modes, capabilities, and example queries related to book rating analysis.</returns>
     public static AgentCard GetAgentCard()
     {
         var capabilities = new AgentCapabilities { Streaming = false, PushNotifications = false };

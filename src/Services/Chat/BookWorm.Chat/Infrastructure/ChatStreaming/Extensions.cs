@@ -1,10 +1,13 @@
-﻿using BookWorm.Chassis.AI;
+using BookWorm.Chassis.AI;
 using BookWorm.Chat.Agents;
 
 namespace BookWorm.Chat.Infrastructure.ChatStreaming;
 
 internal static class Extensions
 {
+    /// <summary>
+    /// Registers all required chat streaming services and related dependencies into the application's dependency injection container.
+    /// </summary>
     public static void AddChatStreamingServices(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;

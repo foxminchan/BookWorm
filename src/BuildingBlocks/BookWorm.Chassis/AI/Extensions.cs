@@ -1,4 +1,4 @@
-﻿using BookWorm.Constants.Aspire;
+using BookWorm.Constants.Aspire;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.SemanticKernel;
@@ -26,18 +26,29 @@ public static class Extensions
             .WithMetrics(x => x.AddMeter(ActivitySourceName));
     }
 
+    /// <summary>
+    /// Registers the Ollama chat completion API client and service with the application's dependency injection container.
+    /// </summary>
     public static void AddChatCompletion(this IHostApplicationBuilder builder)
     {
         builder.AddOllamaApiClient(Components.Ollama.Chat);
         builder.Services.AddOllamaChatCompletion();
     }
 
+    /// <summary>
+    /// Registers the Ollama embedding generator service and its API client with the application's dependency injection container.
+    /// </summary>
     public static void AddEmbeddingGenerator(this IHostApplicationBuilder builder)
     {
         builder.AddOllamaApiClient(Components.Ollama.Embedding);
         builder.Services.AddOllamaEmbeddingGenerator();
     }
 
+    /// <summary>
+    /// Asynchronously creates an <see cref="A2AAgent"/> instance using the specified agent URI.
+    /// </summary>
+    /// <param name="agentUri">The base URI of the agent service.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the created <see cref="A2AAgent"/>.</returns>
     public static async Task<A2AAgent> CreateAgentAsync(this string agentUri)
     {
         var httpClient = new HttpClient

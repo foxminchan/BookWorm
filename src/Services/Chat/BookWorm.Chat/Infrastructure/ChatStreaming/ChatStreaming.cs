@@ -1,4 +1,4 @@
-﻿using BookWorm.Chat.Domain.AggregatesModel;
+using BookWorm.Chat.Domain.AggregatesModel;
 using BookWorm.Chat.Extensions;
 using BookWorm.Chat.Features;
 using BookWorm.Chat.Infrastructure.Backplane;
@@ -21,6 +21,11 @@ public sealed class ChatStreaming(
     private readonly TimeSpan _defaultStreamItemTimeout = appSettings.StreamTimeout;
     private readonly ChatHistory _messages = [];
 
+    /// <summary>
+    /// Adds a user message to the conversation, updates the chat history with prompts and previous messages, and initiates asynchronous streaming of the assistant's reply.
+    /// </summary>
+    /// <param name="conversationId">The unique identifier of the conversation.</param>
+    /// <param name="text">The user's message text to add and stream a reply for.</param>
     public async Task AddStreamingMessage(Guid conversationId, string text)
     {
         logger.LogInformation(
@@ -51,6 +56,14 @@ public sealed class ChatStreaming(
             );
     }
 
+    /// <summary>
+    /// Asynchronously streams new message fragments for a conversation, starting after the specified fragment.
+    /// </summary>
+    /// <param name="conversationId">The unique identifier of the conversation to stream messages from.</param>
+    /// <param name="lastMessageId">The ID of the last message received by the client, or null to start from the beginning.</param>
+    /// <param name="lastDeliveredFragment">The ID of the last delivered message fragment, or null to include all fragments.</param>
+    /// <param name="cancellationToken">A token to cancel the streaming operation.</param>
+    /// <returns>An asynchronous stream of <see cref="ClientMessageFragment"/> objects representing new message fragments.</returns>
     public async IAsyncEnumerable<ClientMessageFragment> GetMessageStream(
         Guid conversationId,
         Guid? lastMessageId,
@@ -87,6 +100,10 @@ public sealed class ChatStreaming(
         }
     }
 
+    /// <summary>
+    /// Streams an assistant's reply for a conversation by orchestrating multiple chat agents, publishing partial and final response fragments to the backplane, and saving the completed message to the database.
+    /// </summary>
+    /// <param name="conversationId">The unique identifier of the conversation for which to stream the assistant's reply.</param>
     private async Task StreamReplyAsync(Guid conversationId)
     {
         var assistantReplyId = Guid.CreateVersion7();
@@ -263,6 +280,12 @@ public sealed class ChatStreaming(
         }
     }
 
+    /// <summary>
+    /// Retrieves all prompt messages and the conversation history for the specified conversation, adds the user's message, and returns the combined list of chat messages.
+    /// </summary>
+    /// <param name="conversationId">The unique identifier of the conversation.</param>
+    /// <param name="text">The user's message text to add to the conversation.</param>
+    /// <returns>A list of chat messages including prompts and updated conversation history.</returns>
     private async Task<List<ChatMessage>> FetchAndAddPromptMessagesAsync(
         Guid conversationId,
         string text
@@ -285,6 +308,12 @@ public sealed class ChatStreaming(
         return promptMessages;
     }
 
+    /// <summary>
+    /// Saves a new user message to the specified conversation and returns the updated chat message history.
+    /// </summary>
+    /// <param name="id">The unique identifier of the conversation.</param>
+    /// <param name="text">The text content of the user message to add.</param>
+    /// <returns>A list of chat messages representing the conversation history after the new message is added.</returns>
     private async Task<List<ChatMessage>> SavePromptAndGetMessageHistoryAsync(Guid id, string text)
     {
         await using var scope = scopeFactory.CreateAsyncScope();
@@ -318,6 +347,12 @@ public sealed class ChatStreaming(
         return messages;
     }
 
+    /// <summary>
+    /// Saves an assistant message to the database for the specified conversation and marks the message as complete in the backplane.
+    /// </summary>
+    /// <param name="conversationId">The unique identifier of the conversation.</param>
+    /// <param name="messageId">The unique identifier of the assistant message.</param>
+    /// <param name="text">The content of the assistant message.</param>
     private async Task SaveAssistantMessageToDatabaseAsync(
         Guid conversationId,
         Guid messageId,

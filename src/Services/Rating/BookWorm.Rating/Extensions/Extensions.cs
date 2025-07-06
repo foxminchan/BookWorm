@@ -1,10 +1,16 @@
-﻿using BookWorm.Chassis.Mediator;
+using BookWorm.Chassis.Mediator;
 using BookWorm.Rating.Agents;
 
 namespace BookWorm.Rating.Extensions;
 
 internal static class Extensions
 {
+    /// <summary>
+    /// Configures and registers all core application services, middleware, and infrastructure components required for the rating module.
+    /// </summary>
+    /// <remarks>
+    /// This extension method sets up CORS, OpenAPI, authentication (with Keycloak claims transformation), rate limiting, exception handling, database context and migrations, MediatR with validation, FluentValidation, activity and metrics tracking, event bus with in-memory inbox/outbox, event mapping and dispatching, API versioning, endpoint registration, asynchronous API support, and agent services for the rating application.
+    /// </remarks>
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;

@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.AI;
+using BookWorm.Chassis.AI;
 using BookWorm.Rating.Plugins;
 using Microsoft.Extensions.ServiceDiscovery;
 using Microsoft.SemanticKernel;
@@ -11,6 +11,9 @@ namespace BookWorm.Rating.Agents;
 [ExcludeFromCodeCoverage]
 public static class Extensions
 {
+    /// <summary>
+    /// Configures and registers AI agent services, including local and remote plugins, for the host application.
+    /// </summary>
     public static void AddAgents(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;
@@ -34,6 +37,9 @@ public static class Extensions
         );
     }
 
+    /// <summary>
+    /// Maps HTTP and agent-to-agent endpoints for the RatingAgent to the application under "/agents/rating".
+    /// </summary>
     public static void MapHostRatingAgent(this WebApplication app)
     {
         var agent = app.Services.GetRequiredKeyedService<ChatCompletionAgent>(nameof(RatingAgent));
@@ -42,6 +48,10 @@ public static class Extensions
         app.MapHttpA2A(hostAgent.TaskManager!, "/agents/rating").WithTags(nameof(RatingAgent));
     }
 
+    /// <summary>
+    /// Asynchronously retrieves a kernel plugin that aggregates remote agent functions for summarization and sentiment analysis.
+    /// </summary>
+    /// <returns>A <see cref="KernelPlugin"/> containing functions from the connected remote agents.</returns>
     private static async Task<KernelPlugin> GetRemoteAgentPlugin(
         this IHostApplicationBuilder builder
     )
@@ -55,6 +65,11 @@ public static class Extensions
         return sentimentPlugin;
     }
 
+    /// <summary>
+    /// Connects to multiple remote agents using their URIs, retrieves their service endpoints, creates agent proxies, and aggregates their kernel functions into a single kernel plugin.
+    /// </summary>
+    /// <param name="agentUris">An array of URIs identifying the remote agents to connect to.</param>
+    /// <returns>A kernel plugin containing the combined functions of the connected remote agents.</returns>
     private static async Task<KernelPlugin> ConnectRemoteAgent(
         this IHostApplicationBuilder builder,
         string[] agentUris

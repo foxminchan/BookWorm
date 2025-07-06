@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using BookWorm.Chassis.AI;
 using Microsoft.Extensions.ServiceDiscovery;
 using Microsoft.SemanticKernel;
@@ -40,6 +40,13 @@ public static class BookAgent
         Whether users are searching for specific books or looking for recommendations, help them discover their next great read!
         """;
 
+    /// <summary>
+    /// Asynchronously creates and configures a <see cref="ChatCompletionAgent"/> specialized for book-related assistance, adding catalog tools and a remote rating agent as plugins.
+    /// </summary>
+    /// <param name="kernel">The base semantic kernel to clone and extend for the agent.</param>
+    /// <param name="mcpClient">Client used to retrieve available AI tools for the BookWorm catalog.</param>
+    /// <param name="resolver">Resolves the endpoint for connecting to the remote rating agent.</param>
+    /// <returns>A configured <see cref="ChatCompletionAgent"/> with book search, recommendation, and rating capabilities.</returns>
     public static async Task<ChatCompletionAgent> CreateAgentWithPluginsAsync(
         Kernel kernel,
         IMcpClient mcpClient,
@@ -79,6 +86,11 @@ public static class BookAgent
         };
     }
 
+    /// <summary>
+    /// Asynchronously connects to a remote agent using the specified URI, wraps it as a kernel function, and returns it as a plugin.
+    /// </summary>
+    /// <param name="agentUri">The URI of the remote agent to connect to.</param>
+    /// <returns>A kernel plugin containing the connected remote agent as a function.</returns>
     private static async Task<KernelPlugin> ConnectRemoteAgent(
         this ServiceEndpointResolver resolver,
         string agentUri

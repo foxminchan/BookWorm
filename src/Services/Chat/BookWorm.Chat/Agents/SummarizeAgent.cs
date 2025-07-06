@@ -38,6 +38,11 @@ public static class SummarizeAgent
         Your summaries help the Book Agent understand user needs efficiently and provide better responses.
         """;
 
+    /// <summary>
+    /// Creates and configures a ChatCompletionAgent for summarizing and condensing English text while preserving key information and context.
+    /// </summary>
+    /// <param name="kernel">The semantic kernel instance to associate with the agent.</param>
+    /// <returns>A ChatCompletionAgent initialized with summarization instructions and settings.</returns>
     public static ChatCompletionAgent CreateAgent(Kernel kernel)
     {
         return new()
@@ -50,6 +55,10 @@ public static class SummarizeAgent
         };
     }
 
+    /// <summary>
+    /// Returns an <see cref="AgentCard"/> describing the summarization agent's metadata, capabilities, and example use cases.
+    /// </summary>
+    /// <returns>An <see cref="AgentCard"/> containing the agent's name, description, version, supported input/output modes, capabilities, and summarization skill details.</returns>
     public static AgentCard GetAgentCard()
     {
         var capabilities = new AgentCapabilities { Streaming = false, PushNotifications = false };

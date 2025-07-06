@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.ServiceDiscovery;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
@@ -10,6 +10,12 @@ namespace BookWorm.Chat.Agents;
 [ExcludeFromCodeCoverage]
 internal static class Extensions
 {
+    /// <summary>
+    /// Registers agent services as keyed singletons in the dependency injection container for use within the application.
+    /// </summary>
+    /// <remarks>
+    /// Adds <c>BookAgent</c>, <c>LanguageAgent</c>, <c>SummarizeAgent</c>, and <c>SentimentAgent</c> as keyed singleton services, enabling their retrieval by name. The <c>BookAgent</c> is initialized with plugin support and additional dependencies, while the other agents are created with a <c>Kernel</c> instance.
+    /// </remarks>
     public static void AddAgents(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;
@@ -56,6 +62,9 @@ internal static class Extensions
         );
     }
 
+    /// <summary>
+    /// Maps the SummarizeAgent as both A2A and HTTP A2A endpoints at "/agents/summarize" on the web application.
+    /// </summary>
     public static void MapHostSummarizeAgent(this WebApplication app)
     {
         var agent = app.Services.GetRequiredKeyedService<ChatCompletionAgent>(
@@ -67,6 +76,9 @@ internal static class Extensions
             .WithTags(nameof(SummarizeAgent));
     }
 
+    /// <summary>
+    /// Maps the SentimentAgent as a hosted A2A and HTTP A2A endpoint at "/agents/sentiment" on the web application.
+    /// </summary>
     public static void MapHostSentimentAgent(this WebApplication app)
     {
         var agent = app.Services.GetRequiredKeyedService<ChatCompletionAgent>(

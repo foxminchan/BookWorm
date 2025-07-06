@@ -1,4 +1,4 @@
-﻿using System.Threading.Channels;
+using System.Threading.Channels;
 using BookWorm.Chat.Features;
 using BookWorm.Chat.Infrastructure.Backplane.Contracts;
 using Microsoft.Extensions.Diagnostics.Buffering;
@@ -49,6 +49,12 @@ public sealed partial class RedisConversationState : IConversationState, IDispos
         await _database.KeyExpireAsync(GetBacklogKey(conversationId), TimeSpan.FromMinutes(5));
     }
 
+    /// <summary>
+    /// Publishes a message fragment to the Redis backplane for the specified conversation.
+    /// </summary>
+    /// <param name="conversationId">The unique identifier of the conversation.</param>
+    /// <param name="fragment">The message fragment to publish.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     public async Task PublishFragmentAsync(Guid conversationId, ClientMessageFragment fragment)
     {
         _logger.LogDebug(
@@ -72,6 +78,13 @@ public sealed partial class RedisConversationState : IConversationState, IDispos
         await buffer.AddFragmentAsync(fragment);
     }
 
+    /// <summary>
+    /// Subscribes to real-time and backlog message fragments for a conversation, yielding fragments newer than the specified last message ID.
+    /// </summary>
+    /// <param name="conversationId">The unique identifier of the conversation to subscribe to.</param>
+    /// <param name="lastMessageId">The ID of the last message fragment received by the subscriber, or null to receive all fragments.</param>
+    /// <param name="cancellationToken">Token to cancel the subscription and stop yielding fragments.</param>
+    /// <returns>An asynchronous stream of <see cref="ClientMessageFragment"/> objects representing new and backlog message fragments for the conversation.</returns>
     public async IAsyncEnumerable<ClientMessageFragment> SubscribeAsync(
         Guid conversationId,
         Guid? lastMessageId,

@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using BookWorm.McpTools.Models;
 using ModelContextProtocol.Server;
@@ -8,6 +8,13 @@ namespace BookWorm.McpTools.Tools;
 [McpServerToolType]
 public sealed class Product(ICatalogApi catalogApi)
 {
+    /// <summary>
+    /// Searches the book catalog for books matching the provided description and returns the results as a JSON string.
+    /// </summary>
+    /// <param name="description">A description of the book to search for.</param>
+    /// <returns>
+    /// A JSON string containing a list of matching books, or a message indicating no matches were found.
+    /// </returns>
     [McpServerTool(Name = "SearchCatalog")]
     [Description("Searches the BookWorm catalog for a provided book description")]
     public async Task<string> SearchCatalogAsync(
