@@ -17,30 +17,21 @@ externalDocs:
   description: Documentation
   url: https://github.com/foxminchan/BookWorm
 servers:
-  - url: "{protocol}://dev.chat.bookworm.com"
-    description: Development
+  - url: "{protocol}://{environment}.chat.bookworm.com"
+    description: Before deploying to production, ensure the environment is set correctly
     variables:
       protocol:
         enum:
           - https
+          - http
           - wss
         default: https
-  - url: "{protocol}://stg.chat.bookworm.com"
-    description: Staging
-    variables:
-      protocol:
+      environment:
         enum:
-          - https
-          - wss
-        default: https
-  - url: "{protocol}://qa.chat.bookworm.com"
-    description: QA
-    variables:
-      protocol:
-        enum:
-          - https
-          - wss
-        default: https
+          - dev
+          - stg
+          - qa
+        default: dev
   - url: "{protocol}://chat.bookworm.com"
     description: Production
     variables:
@@ -50,7 +41,8 @@ servers:
           - wss
         default: https
 security:
-  - OAuth: []
+  - OAuth:
+      - chatting
 paths:
   "/api/v1/chats":
     post:
@@ -61,7 +53,8 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CreateChatEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - chatting
       requestBody:
         description: The command to create a chat
         content:
@@ -116,7 +109,8 @@ paths:
       x-eventcatalog-message-type: query
       operationId: ListChatEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - chatting
       parameters:
         - name: name
           in: query
@@ -188,7 +182,8 @@ paths:
       x-eventcatalog-message-type: command
       operationId: UpdateChatEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - chatting
       requestBody:
         description: The command to update a chat
         content:
@@ -249,7 +244,8 @@ paths:
       x-eventcatalog-message-type: query
       operationId: GetChatEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - chatting
       parameters:
         - name: id
           in: path
@@ -297,7 +293,8 @@ paths:
       x-eventcatalog-message-type: command
       operationId: DeleteChatEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - chatting
       parameters:
         - name: id
           in: path
@@ -332,7 +329,8 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CancelChatEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - chatting
       parameters:
         - name: id
           in: path
@@ -356,7 +354,8 @@ paths:
       description: SignalR hub endpoint for real-time chat streaming
       operationId: ChatStreamEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - chatting
       responses:
         "101":
           description: Switching Protocols - WebSocket connection established
@@ -369,8 +368,562 @@ paths:
               example: "Chat stream endpoint is available."
         "401":
           description: Unauthorized - Access token is missing or invalid.
+  "/api/v1/agents/summarize/.well-known/agent.json":
+    get:
+      tags:
+        - SummarizeAgent
+      summary: Get Summarize Agent Info
+      x-eventcatalog-message-type: query
+      description: Retrieve information about the Summarize Agent
+      responses:
+        "200":
+          description: OK
+  "/api/v1/agents/summarize":
+    post:
+      tags:
+        - SummarizeAgent
+      summary: Send Summarize Request
+      x-eventcatalog-message-type: command
+      description: Send a request to the Summarize Agent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonRpcRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+  "/api/v1/agents/summarize/tasks/{id}":
+    get:
+      tags:
+        - SummarizeAgent
+      summary: Get Summarize Task
+      x-eventcatalog-message-type: query
+      description: Retrieve a specific task from the Summarize Agent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: historyLength
+          in: query
+          schema:
+            type: integer
+            format: int32
+            default: 0
+        - name: metadata
+          in: query
+          schema:
+            type: string
+            default: null
+      responses:
+        "200":
+          description: OK
+  "/api/v1/agents/summarize/tasks/{id}/cancel":
+    post:
+      tags:
+        - SummarizeAgent
+      summary: Cancel Summarize Task
+      x-eventcatalog-message-type: command
+      description: Cancel a specific task from the Summarize Agent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+  "/api/v1/agents/summarize/send":
+    post:
+      tags:
+        - SummarizeAgent
+      summary: Send Summarize Request
+      x-eventcatalog-message-type: command
+      description: Send a request to the Summarize Agent with optional parameters
+      parameters:
+        - name: historyLength
+          in: query
+          schema:
+            type: integer
+            format: int32
+        - name: metadata
+          in: query
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageSendParams"
+        required: true
+      responses:
+        "200":
+          description: OK
+  "/api/v1/agents/summarize/tasks/{id}/send":
+    post:
+      tags:
+        - SummarizeAgent
+      summary: Send Summarize Task
+      x-eventcatalog-message-type: command
+      description: Send a request to the Summarize Agent for a specific task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: historyLength
+          in: query
+          schema:
+            type: integer
+            format: int32
+        - name: metadata
+          in: query
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageSendParams"
+        required: true
+      responses:
+        "200":
+          description: OK
+  "/api/v1/agents/summarize/tasks/{id}/sendSubscribe":
+    post:
+      tags:
+        - SummarizeAgent
+      summary: Send Summarize Task with Subscribe
+      x-eventcatalog-message-type: command
+      description: Send a request to the Summarize Agent for a specific task with subscribe
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: historyLength
+          in: query
+          schema:
+            type: integer
+            format: int32
+        - name: metadata
+          in: query
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageSendParams"
+        required: true
+      responses:
+        "200":
+          description: OK
+  "/api/v1/agents/summarize/tasks/{id}/resubscribe":
+    post:
+      tags:
+        - SummarizeAgent
+      summary: Resubscribe to Summarize Task
+      x-eventcatalog-message-type: command
+      description: Resubscribe to a specific task from the Summarize Agent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+  "/api/v1/agents/summarize/tasks/{id}/pushNotification":
+    put:
+      tags:
+        - SummarizeAgent
+      summary: Set Push Notification for Summarize Task
+      x-eventcatalog-message-type: command
+      description: Set up push notification for a specific task from the Summarize Agent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushNotificationConfig"
+        required: true
+      responses:
+        "200":
+          description: OK
+    get:
+      tags:
+        - SummarizeAgent
+      summary: Get Push Notification for Summarize Task
+      x-eventcatalog-message-type: query
+      description: Get the push notification settings for a specific task from the Summarize Agent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+  "/api/v1/agents/sentiment/.well-known/agent.json":
+    get:
+      tags:
+        - SentimentAgent
+      summary: Get Sentiment Agent Info
+      x-eventcatalog-message-type: query
+      description: Get information about the Sentiment Agent
+      responses:
+        "200":
+          description: OK
+  "/api/v1/agents/sentiment":
+    post:
+      tags:
+        - SentimentAgent
+      summary: Send Sentiment Request
+      x-eventcatalog-message-type: command
+      description: Send a request to the Sentiment Agent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonRpcRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+  "/api/v1/agents/sentiment/tasks/{id}":
+    get:
+      tags:
+        - SentimentAgent
+      summary: Get Sentiment Task
+      x-eventcatalog-message-type: query
+      description: Get the details of a specific sentiment task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: historyLength
+          in: query
+          schema:
+            type: integer
+            format: int32
+            default: 0
+        - name: metadata
+          in: query
+          schema:
+            type: string
+            default: null
+      responses:
+        "200":
+          description: OK
+  "/api/v1/agents/sentiment/tasks/{id}/cancel":
+    post:
+      tags:
+        - SentimentAgent
+      summary: Cancel Sentiment Task
+      x-eventcatalog-message-type: command
+      description: Cancel a specific sentiment task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+  "/api/v1/agents/sentiment/send":
+    post:
+      tags:
+        - SentimentAgent
+      summary: Send Sentiment Request
+      x-eventcatalog-message-type: command
+      description: Send a request to the Sentiment Agent
+      parameters:
+        - name: historyLength
+          in: query
+          schema:
+            type: integer
+            format: int32
+        - name: metadata
+          in: query
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageSendParams"
+        required: true
+      responses:
+        "200":
+          description: OK
+  "/api/v1/agents/sentiment/tasks/{id}/send":
+    post:
+      tags:
+        - SentimentAgent
+      summary: Send Sentiment Task
+      x-eventcatalog-message-type: command
+      description: Send a request to the Sentiment Agent for a specific task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: historyLength
+          in: query
+          schema:
+            type: integer
+            format: int32
+        - name: metadata
+          in: query
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageSendParams"
+        required: true
+      responses:
+        "200":
+          description: OK
+  "/api/v1/agents/sentiment/tasks/{id}/sendSubscribe":
+    post:
+      tags:
+        - SentimentAgent
+      summary: Send Sentiment Task with Subscribe
+      x-eventcatalog-message-type: command
+      description: Send a request to the Sentiment Agent for a specific task with subscription
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: historyLength
+          in: query
+          schema:
+            type: integer
+            format: int32
+        - name: metadata
+          in: query
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageSendParams"
+        required: true
+      responses:
+        "200":
+          description: OK
+  "/api/v1/agents/sentiment/tasks/{id}/resubscribe":
+    post:
+      tags:
+        - SentimentAgent
+      summary: Resubscribe to Sentiment Task
+      x-eventcatalog-message-type: command
+      description: Resubscribe to a specific sentiment task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+  "/api/v1/agents/sentiment/tasks/{id}/pushNotification":
+    put:
+      tags:
+        - SentimentAgent
+      summary: Set Push Notification for Sentiment Task
+      x-eventcatalog-message-type: command
+      description: Set up push notification for a specific sentiment task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushNotificationConfig"
+        required: true
+      responses:
+        "200":
+          description: OK
+    get:
+      tags:
+        - SentimentAgent
+      summary: Get Push Notification for Sentiment Task
+      x-eventcatalog-message-type: query
+      description: Get the push notification settings for a specific sentiment task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
 components:
   schemas:
+    AuthenticationInfo:
+      required:
+        - schemes
+      type: object
+      description: Information about the authentication schemes supported by the agent
+      properties:
+        schemes:
+          type: array
+          items:
+            type: string
+        credentials:
+          type: string
+    JsonRpcRequest:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+        id:
+          type: string
+        method:
+          type: string
+        params:
+          $ref: "#/components/schemas/NullableOfJsonElement"
+    Message:
+      required:
+        - role
+        - parts
+        - messageId
+      type: object
+      properties:
+        role:
+          $ref: "#/components/schemas/MessageRole"
+        parts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Part"
+        metadata:
+          type: object
+        referenceTaskIds:
+          type: array
+          items:
+            type: string
+        messageId:
+          type:
+            - "string"
+            - "null"
+        taskId:
+          type: string
+        contextId:
+          type: string
+        extensions:
+          type: array
+          items:
+            type: string
+    MessageRole: {}
+    MessageSendConfiguration:
+      type: object
+      properties:
+        acceptedOutputModes:
+          type: array
+          items:
+            type: string
+        pushNotification:
+          $ref: "#/components/schemas/PushNotificationConfig"
+        historyLength:
+          type: integer
+          format: int32
+        blocking:
+          type: boolean
+    MessageSendParams:
+      required:
+        - message
+      type: object
+      properties:
+        message:
+          $ref: "#/components/schemas/Message"
+        configuration:
+          $ref: "#/components/schemas/MessageSendConfiguration"
+        metadata:
+          type: object
+    NullableOfJsonElement: {}
+    Part:
+      required:
+        - kind
+      type: object
+      anyOf:
+        - $ref: "#/components/schemas/PartTextPart"
+        - $ref: "#/components/schemas/PartFilePart"
+        - $ref: "#/components/schemas/PartDataPart"
+      discriminator:
+        propertyName: kind
+        mapping:
+          text: "#/components/schemas/PartTextPart"
+          file: "#/components/schemas/PartFilePart"
+          data: "#/components/schemas/PartDataPart"
+    PartDataPart:
+      properties:
+        kind:
+          enum:
+            - data
+          type: string
+        data:
+          type: object
+        metadata:
+          type: object
+    PartFilePart:
+      properties:
+        kind:
+          enum:
+            - file
+          type: string
+        file:
+          type: object
+          properties:
+            name:
+              type: string
+            mimeType:
+              type: string
+            bytes:
+              type: string
+            uri:
+              type: string
+        metadata:
+          type: object
+    PartTextPart:
+      properties:
+        kind:
+          enum:
+            - text
+          type: string
+        text:
+          type: string
+        metadata:
+          type: object
     Prompt:
       required:
         - text
@@ -405,6 +958,17 @@ components:
           type: string
           description: The detail of the problem
           example: "Chat with id 01961f13-64ef-7dbb-84a1-25114e2e0ca4 not found."
+    PushNotificationConfig:
+      required:
+        - url
+      type: object
+      properties:
+        url:
+          type: string
+        token:
+          type: string
+        authentication:
+          $ref: "#/components/schemas/AuthenticationInfo"
     ConversationDto:
       type: object
       readOnly: true
@@ -491,7 +1055,11 @@ components:
           authorizationUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/auth"
           tokenUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/token"
           scopes:
-            chat: "Chat API"
+            chatting: "Chatting API"
 tags:
   - name: Chat
     description: Endpoints for handling book-related discussions and user interactions in chat format
+  - name: SummarizeAgent
+    description: Agent for summarizing book-related content
+  - name: SentimentAgent
+    description: Agent for analyzing sentiment in book-related discussions

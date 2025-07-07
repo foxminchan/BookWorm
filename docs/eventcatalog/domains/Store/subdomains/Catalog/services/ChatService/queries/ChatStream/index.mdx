@@ -25,6 +25,33 @@ owners:
 
 The Chat Stream service provides a real-time WebSocket connection for users to interact with the BookWorm platform. It allows users to send and receive messages in real-time, enabling dynamic conversations and interactions with the system.
 
+## Implementation Details
+
+The Chat Stream service is built on a microservices architecture, utilizing various agents to process user messages and generate responses.
+
+```mermaid
+flowchart LR
+ subgraph G["Sequential"]
+    direction LR
+        E["SummarizeAgent"]
+        D["LanguageAgent"]
+        n1["SentimentAgent"]
+       V1["RatingAgent"]
+       V2["BookAgent"]
+       n2["MCP Server"]
+  end
+    O(("Start")) --> A["User"]
+    A -- input --> G
+    D --> E
+    E --> n1
+    V1 <-- A2A --> V2
+    n1 --> V2
+    n2 -- MCP --> V2
+    G --> n3(("Done"))
+
+    n2@{ shape: rounded}
+```
+
 ## Architecture
 
 <NodeGraph />

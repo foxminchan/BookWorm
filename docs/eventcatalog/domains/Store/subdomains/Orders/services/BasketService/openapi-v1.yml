@@ -17,32 +17,23 @@ externalDocs:
   description: Documentation
   url: https://github.com/foxminchan/BookWorm
 servers:
-  - url: "{protocol}://dev.basket.bookworm.com"
-    description: Development
+  - url: "{protocol}://{environment}.basket.bookworm.com"
+    description: Before deploying to production, ensure the environment is set correctly
     variables:
       protocol:
         enum:
           - https
+          - http
           - grpc
         default: https
-  - url: "{protocol}://stg.basket.bookworm.com"
-    description: Staging
-    variables:
-      protocol:
+      environment:
         enum:
-          - https
-          - grpc
-        default: https
-  - url: "{protocol}://qa.basket.bookworm.com"
-    description: QA
-    variables:
-      protocol:
-        enum:
-          - https
-          - grpc
-        default: https
+          - dev
+          - stg
+          - qa
+        default: dev
   - url: "{protocol}://basket.bookworm.com"
-    description: Production
+    description: Production environment
     variables:
       protocol:
         enum:
@@ -50,7 +41,8 @@ servers:
           - grpc
         default: https
 security:
-  - OAuth: []
+  - OAuth:
+      - basket
 paths:
   /api/v1/baskets:
     put:
@@ -61,7 +53,8 @@ paths:
       x-eventcatalog-message-type: command
       operationId: UpdateBasketEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - basket
       requestBody:
         description: The command to update the basket with new items
         content:
@@ -177,7 +170,8 @@ paths:
       x-eventcatalog-message-type: command
       operationId: DeleteBasketEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - basket
       responses:
         "204":
           description: No Content
@@ -205,7 +199,8 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CreateBasketEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - basket
       requestBody:
         description: A command to create a basket with the specified items
         content:
@@ -278,7 +273,8 @@ paths:
       x-grpc-service: BasketGrpcService
       x-grpc-method: GetBasket
       security:
-        - OAuth: []
+        - OAuth:
+            - basket
       operationId: GetBasketGrpcEndpoint
       responses:
         "200":

@@ -1,4 +1,5 @@
-﻿using Microsoft.SemanticKernel;
+﻿using BookWorm.Chassis.AI;
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.Ollama;
 using SharpA2A.Core;
@@ -85,6 +86,7 @@ public static class RatingAgent
             Name = Name,
             Description = Description,
             Version = "1.0.0",
+            Provider = BookWormAgentProvider.Create(),
             DefaultInputModes = ["text"],
             DefaultOutputModes = ["text"],
             Capabilities = capabilities,

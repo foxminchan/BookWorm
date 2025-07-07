@@ -17,36 +17,30 @@ externalDocs:
   description: Documentation
   url: https://github.com/foxminchan/BookWorm
 servers:
-  - url: "{protocol}://dev.rating.bookworm.com"
-    description: Development
+  - url: "{protocol}://{environment}.rating.bookworm.com"
+    description: Before deploying to production, ensure the environment is set correctly
     variables:
       protocol:
         enum:
           - https
+          - http
         default: https
-  - url: "{protocol}://stg.rating.bookworm.com"
-    description: Staging
-    variables:
-      protocol:
+      environment:
         enum:
-          - https
-        default: https
-  - url: "{protocol}://qa.rating.bookworm.com"
-    description: QA
-    variables:
-      protocol:
-        enum:
-          - https
-        default: https
+          - dev
+          - stg
+          - qa
+        default: dev
   - url: "{protocol}://rating.bookworm.com"
-    description: Production
+    description: Production environment
     variables:
       protocol:
         enum:
           - https
         default: https
 security:
-  - OAuth: []
+  - OAuth:
+      - rating
 paths:
   "/api/v1/feedbacks":
     get:
@@ -257,6 +251,44 @@ paths:
                       - propertyName: "LastName"
                         errorMessage: "'LastName' must not be empty."
                         severity: 0
+  "/api/v1/feedbacks/{id}/summarize":
+    get:
+      tags:
+        - Feedback
+      summary: Summarize Feedback
+      description: Summarize the feedback for a book by its ID
+      x-eventcatalog-message-type: query
+      operationId: SummarizeFeedbackEndpoint
+      security:
+        - OAuth:
+            - rating
+      parameters:
+        - name: id
+          in: path
+          description: The unique identifier of the book to be summarized
+          required: true
+          schema:
+            type: string
+            format: uuid
+            description: The unique identifier of the book
+            example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SummarizeResult"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
   "/api/v1/feedbacks/{id}":
     delete:
       tags:
@@ -266,7 +298,8 @@ paths:
       x-eventcatalog-message-type: command
       operationId: DeleteFeedbackEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - rating
       parameters:
         - name: id
           in: path
@@ -298,8 +331,232 @@ paths:
                     title: "Not found"
                     status: 404
                     detail: "Feedback with id 01961eb4-668d-7e7e-ae25-0fab379614f7 not found."
+  "/api/v1/agents/rating/.well-known/agent.json":
+    get:
+      tags:
+        - RatingAgent
+      summary: Get Agent Information
+      x-eventcatalog-message-type: query
+      description: Retrieve the agent information for the Rating Agent
+      responses:
+        "200":
+          description: OK
+  "/api/v1/agents/rating":
+    post:
+      tags:
+        - RatingAgent
+      summary: Send JSON-RPC Request
+      x-eventcatalog-message-type: command
+      description: Send a JSON-RPC request to the Rating Agent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonRpcRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+  "/api/v1/agents/rating/tasks/{id}":
+    get:
+      tags:
+        - RatingAgent
+      summary: Get Task Information
+      x-eventcatalog-message-type: query
+      description: Retrieve information about a specific task by its ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: historyLength
+          in: query
+          schema:
+            type: integer
+            format: int32
+            default: 0
+        - name: metadata
+          in: query
+          schema:
+            type:
+              - "string"
+              - "null"
+            default: null
+      responses:
+        "200":
+          description: OK
+  "/api/v1/agents/rating/tasks/{id}/cancel":
+    post:
+      tags:
+        - RatingAgent
+      summary: Cancel Task
+      x-eventcatalog-message-type: command
+      description: Cancel a specific task by its ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+  "/api/v1/agents/rating/send":
+    post:
+      tags:
+        - RatingAgent
+      summary: Send Message
+      x-eventcatalog-message-type: command
+      description: Send a message with optional history length and metadata
+      parameters:
+        - name: historyLength
+          in: query
+          schema:
+            type: integer
+            format: int32
+        - name: metadata
+          in: query
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageSendParams"
+        required: true
+      responses:
+        "200":
+          description: OK
+  "/api/v1/agents/rating/tasks/{id}/send":
+    post:
+      tags:
+        - RatingAgent
+      summary: Send Message to Task
+      x-eventcatalog-message-type: command
+      description: Send a message to a specific task with optional history length and metadata
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: historyLength
+          in: query
+          schema:
+            type: integer
+            format: int32
+        - name: metadata
+          in: query
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageSendParams"
+        required: true
+      responses:
+        "200":
+          description: OK
+  "/api/v1/agents/rating/tasks/{id}/sendSubscribe":
+    post:
+      tags:
+        - RatingAgent
+      summary: Send Message with Subscription
+      x-eventcatalog-message-type: command
+      description: Send a message to a specific task with subscription, history length, and metadata
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: historyLength
+          in: query
+          schema:
+            type: integer
+            format: int32
+        - name: metadata
+          in: query
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageSendParams"
+        required: true
+      responses:
+        "200":
+          description: OK
+  "/api/v1/agents/rating/tasks/{id}/resubscribe":
+    post:
+      tags:
+        - RatingAgent
+      summary: Resubscribe to Task
+      x-eventcatalog-message-type: command
+      description: Resubscribe to a specific task by its ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+  "/api/v1/agents/rating/tasks/{id}/pushNotification":
+    put:
+      tags:
+        - RatingAgent
+      summary: Update Push Notification Configuration
+      x-eventcatalog-message-type: command
+      description: Update the push notification configuration for a specific task by its ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushNotificationConfig"
+        required: true
+      responses:
+        "200":
+          description: OK
+    get:
+      tags:
+        - RatingAgent
+      summary: Get Push Notification Configuration
+      x-eventcatalog-message-type: query
+      description: Retrieve the push notification configuration for a specific task by its ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
 components:
   schemas:
+    AuthenticationInfo:
+      required:
+        - schemes
+      type: object
+      description: Information about the authentication schemes supported by the agent
+      properties:
+        schemes:
+          type: array
+          items:
+            type: string
+        credentials:
+          type: string
     CreateFeedbackCommand:
       required:
         - bookId
@@ -322,8 +579,9 @@ components:
           description: The unique identifier of the book
           example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
         firstName:
-          type: string
-          nullable: true
+          type:
+            - "string"
+            - "null"
           description: The first name of the user
           maxLength: 50
           example: "John"
@@ -444,6 +702,75 @@ components:
                 type: object
                 description: Placeholder values for the formatted message
                 example: null
+    JsonRpcRequest:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+        id:
+          type: string
+        method:
+          type: string
+        params:
+          $ref: "#/components/schemas/NullableOfJsonElement"
+    Message:
+      required:
+        - role
+        - parts
+        - messageId
+      type: object
+      properties:
+        role:
+          $ref: "#/components/schemas/MessageRole"
+        parts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Part"
+        metadata:
+          type: object
+        referenceTaskIds:
+          type: array
+          items:
+            type: string
+        messageId:
+          type:
+            - "string"
+            - "null"
+        taskId:
+          type: string
+        contextId:
+          type: string
+        extensions:
+          type: array
+          items:
+            type: string
+    MessageRole: {}
+    MessageSendConfiguration:
+      type: object
+      properties:
+        acceptedOutputModes:
+          type: array
+          items:
+            type: string
+        pushNotification:
+          $ref: "#/components/schemas/PushNotificationConfig"
+        historyLength:
+          type: integer
+          format: int32
+        blocking:
+          type: boolean
+    MessageSendParams:
+      required:
+        - message
+      type: object
+      properties:
+        message:
+          $ref: "#/components/schemas/Message"
+        configuration:
+          $ref: "#/components/schemas/MessageSendConfiguration"
+        metadata:
+          type: object
+    NullableOfJsonElement: {}
     PagedResultOfFeedbackDto:
       type: object
       readOnly: true
@@ -481,6 +808,59 @@ components:
           type: boolean
           description: Whether there is a next page
           example: true
+    Part:
+      required:
+        - kind
+      type: object
+      anyOf:
+        - $ref: "#/components/schemas/PartTextPart"
+        - $ref: "#/components/schemas/PartFilePart"
+        - $ref: "#/components/schemas/PartDataPart"
+      discriminator:
+        propertyName: kind
+        mapping:
+          text: "#/components/schemas/PartTextPart"
+          file: "#/components/schemas/PartFilePart"
+          data: "#/components/schemas/PartDataPart"
+    PartDataPart:
+      properties:
+        kind:
+          enum:
+            - data
+          type: string
+        data:
+          type: object
+        metadata:
+          type: object
+    PartFilePart:
+      properties:
+        kind:
+          enum:
+            - file
+          type: string
+        file:
+          type: object
+          properties:
+            name:
+              type: string
+            mimeType:
+              type: string
+            bytes:
+              type: string
+            uri:
+              type: string
+        metadata:
+          type: object
+    PartTextPart:
+      properties:
+        kind:
+          enum:
+            - text
+          type: string
+        text:
+          type: string
+        metadata:
+          type: object
     ProblemDetails:
       type: object
       readOnly: true
@@ -504,6 +884,17 @@ components:
           type: string
           description: The detail of the problem
           example: "Feedback with id 01961eb4-668d-7e7e-ae25-0fab379614f7 was not found."
+    PushNotificationConfig:
+      required:
+        - url
+      type: object
+      properties:
+        url:
+          type: string
+        token:
+          type: string
+        authentication:
+          $ref: "#/components/schemas/AuthenticationInfo"
   securitySchemes:
     OAuth:
       type: oauth2
@@ -517,3 +908,5 @@ components:
 tags:
   - name: Feedback
     description: Endpoints for managing user ratings and feedback for books on the BookWorm platform
+  - name: RatingAgent
+    description: Endpoints for interacting with the Rating Agent, which provides advanced features like summarization and sentiment analysis for user feedback

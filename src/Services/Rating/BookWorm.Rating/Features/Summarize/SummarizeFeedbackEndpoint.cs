@@ -5,12 +5,11 @@ public sealed class SummarizeFeedbackEndpoint : IEndpoint<Ok<SummarizeResult>, G
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapGet(
-                "/{id:guid}",
+                "/{id:guid}/summarize",
                 async (
                     [Description("The unique identifier of the book to be summarized")] Guid id,
-                    ISender sender,
-                    CancellationToken cancellationToken
-                ) => await HandleAsync(id, sender, cancellationToken)
+                    ISender sender
+                ) => await HandleAsync(id, sender)
             )
             .ProducesGet<SummarizeResult>(hasNotFound: true)
             .WithTags(nameof(Feedback))
