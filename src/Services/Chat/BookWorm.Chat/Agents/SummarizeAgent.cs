@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using BookWorm.Chassis.AI;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.Ollama;
@@ -73,6 +74,7 @@ public static class SummarizeAgent
             Name = Name,
             Description = Description,
             Version = "1.0.0",
+            Provider = BookWormAgentProvider.Create(),
             DefaultInputModes = ["text"],
             DefaultOutputModes = ["text"],
             Capabilities = capabilities,

@@ -17,27 +17,20 @@ externalDocs:
   description: Documentation
   url: https://github.com/foxminchan/BookWorm
 servers:
-  - url: "{protocol}://dev.ordering.bookworm.com"
-    description: Development
+  - url: "{protocol}://{environment}.ordering.bookworm.com"
+    description: Before deploying to production, ensure the environment is set correctly
     variables:
       protocol:
         enum:
           - https
+          - http
         default: https
-  - url: "{protocol}://stg.ordering.bookworm.com"
-    description: Staging
-    variables:
-      protocol:
+      environment:
         enum:
-          - https
-        default: https
-  - url: "{protocol}://qa.ordering.bookworm.com"
-    description: QA
-    variables:
-      protocol:
-        enum:
-          - https
-        default: https
+          - dev
+          - stg
+          - qa
+        default: dev
   - url: "{protocol}://ordering.bookworm.com"
     description: Production
     variables:
@@ -46,7 +39,8 @@ servers:
           - https
         default: https
 security:
-  - OAuth: []
+  - OAuth:
+      - ordering
 paths:
   "/api/v1/orders/{id}/summary":
     get:
@@ -57,7 +51,8 @@ paths:
       x-eventcatalog-message-type: query
       operationId: SummaryOrderEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - ordering
       parameters:
         - name: id
           in: path
@@ -90,7 +85,8 @@ paths:
       x-eventcatalog-message-type: query
       operationId: ListOrdersEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - ordering
       parameters:
         - name: PageIndex
           in: query
@@ -217,7 +213,8 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CreateOrderEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - ordering
       parameters:
         - name: X-Request-Id
           in: header
@@ -248,7 +245,8 @@ paths:
       x-eventcatalog-message-type: query
       operationId: GetOrderEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - ordering
       parameters:
         - name: id
           in: path
@@ -344,7 +342,8 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CompleteOrderEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - ordering
       parameters:
         - name: X-Request-Id
           in: header
@@ -415,7 +414,8 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CancelOrderEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - ordering
       parameters:
         - name: X-Request-Id
           in: header
@@ -487,7 +487,8 @@ paths:
       x-eventcatalog-message-type: command
       operationId: UpdateAddressEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - ordering
       requestBody:
         description: The command to update the current buyer's address
         content:
@@ -575,7 +576,8 @@ paths:
       x-eventcatalog-message-type: query
       operationId: ListBuyersEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - ordering
       parameters:
         - name: PageIndex
           in: query
@@ -656,7 +658,8 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CreateBuyerEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - ordering
       requestBody:
         description: The command to create a new buyer
         content:

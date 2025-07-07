@@ -22,6 +22,8 @@ receives:
     version: 1.0.0
   - id: ListFeedbacksQuery
     version: 1.0.0
+  - id: SummarizeFeedbackQuery
+    version: 1.0.0
   - id: CreateFeedbackCommand
     version: 1.0.0
   - id: DeleteFeedbackCommand
@@ -80,6 +82,7 @@ The Rating Service represents a distinct bounded context within the BookWorm eco
 - **Event Broadcasting**: Publishing domain events for system-wide rating updates
 - **Analytics Support**: Providing rating trends and insights for business intelligence
 - **Fraud Detection**: Identifying and preventing rating manipulation
+
 ## Component Diagram
 
 ```mermaid
@@ -222,6 +225,7 @@ architecture-beta
 ## Key Metrics
 
 - **Business Metrics**
+
   - Average rating per book
   - Total feedbacks submitted
   - Moderation approval rate

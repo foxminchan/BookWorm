@@ -61,9 +61,21 @@ internal static class Extensions
         var agent = app.Services.GetRequiredKeyedService<ChatCompletionAgent>(
             nameof(SummarizeAgent)
         );
+
         var hostAgent = new A2AHostAgent(agent, SummarizeAgent.GetAgentCard());
-        app.MapA2A(hostAgent.TaskManager!, "/agents/summarize").WithTags(nameof(SummarizeAgent));
-        app.MapHttpA2A(hostAgent.TaskManager!, "/agents/summarize")
+        var apiVersionSet = app.NewApiVersionSet()
+            .HasApiVersion(new(1, 0))
+            .ReportApiVersions()
+            .Build();
+
+        app.MapA2A(hostAgent.TaskManager!, "/api/v{version:apiVersion}/agents/summarize")
+            .WithApiVersionSet(apiVersionSet)
+            .MapToApiVersion(new(1, 0))
+            .WithTags(nameof(SummarizeAgent));
+
+        app.MapHttpA2A(hostAgent.TaskManager!, "/api/v{version:apiVersion}/agents/summarize")
+            .WithApiVersionSet(apiVersionSet)
+            .MapToApiVersion(new(1, 0))
             .WithTags(nameof(SummarizeAgent));
     }
 
@@ -72,9 +84,21 @@ internal static class Extensions
         var agent = app.Services.GetRequiredKeyedService<ChatCompletionAgent>(
             nameof(SentimentAgent)
         );
+
         var hostAgent = new A2AHostAgent(agent, SentimentAgent.GetAgentCard());
-        app.MapA2A(hostAgent.TaskManager!, "/agents/sentiment").WithTags(nameof(SentimentAgent));
-        app.MapHttpA2A(hostAgent.TaskManager!, "/agents/sentiment")
+        var apiVersionSet = app.NewApiVersionSet()
+            .HasApiVersion(new(1, 0))
+            .ReportApiVersions()
+            .Build();
+
+        app.MapA2A(hostAgent.TaskManager!, "/api/v{version:apiVersion}/agents/sentiment")
+            .WithApiVersionSet(apiVersionSet)
+            .MapToApiVersion(new(1, 0))
+            .WithTags(nameof(SentimentAgent));
+
+        app.MapHttpA2A(hostAgent.TaskManager!, "/api/v{version:apiVersion}/agents/sentiment")
+            .WithApiVersionSet(apiVersionSet)
+            .MapToApiVersion(new(1, 0))
             .WithTags(nameof(SentimentAgent));
     }
 }

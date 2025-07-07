@@ -17,32 +17,23 @@ externalDocs:
   description: Documentation
   url: https://github.com/foxminchan/BookWorm
 servers:
-  - url: "{protocol}://dev.catalog.bookworm.com"
-    description: Development
+  - url: "{protocol}://{environment}.catalog.bookworm.com"
+    description: Before deploying to production, ensure the environment is set correctly
     variables:
       protocol:
         enum:
           - https
+          - http
           - grpc
         default: https
-  - url: "{protocol}://stg.catalog.bookworm.com"
-    description: Staging
-    variables:
-      protocol:
+      environment:
         enum:
-          - https
-          - grpc
-        default: https
-  - url: "{protocol}://qa.catalog.bookworm.com"
-    description: QA
-    variables:
-      protocol:
-        enum:
-          - https
-          - grpc
-        default: https
+          - dev
+          - stg
+          - qa
+        default: dev
   - url: "{protocol}://catalog.bookworm.com"
-    description: Production
+    description: Production environment
     variables:
       protocol:
         enum:
@@ -50,7 +41,8 @@ servers:
           - grpc
         default: https
 security:
-  - OAuth: []
+  - OAuth:
+      - catalog
 paths:
   "/api/v1/publishers":
     put:
@@ -61,7 +53,8 @@ paths:
       x-eventcatalog-message-type: command
       operationId: UpdatePublisherEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - catalog
       requestBody:
         description: The command to update the publisher
         content:
@@ -148,7 +141,8 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CreatePublisherEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - catalog
       requestBody:
         description: The command to create a publisher
         content:
@@ -246,7 +240,8 @@ paths:
       x-eventcatalog-message-type: command
       operationId: UpdateCategoryEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - catalog
       requestBody:
         description: The command to update the category
         content:
@@ -344,7 +339,8 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CreateCategoryEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - catalog
       requestBody:
         description: The command to create a category
         content:
@@ -442,7 +438,8 @@ paths:
       x-eventcatalog-message-type: command
       operationId: UpdateBookEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - catalog
       requestBody:
         description: The command to update the book
         content:
@@ -820,7 +817,8 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CreateBookEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - catalog
       requestBody:
         description: The command to create a book
         content:
@@ -1018,7 +1016,8 @@ paths:
       x-eventcatalog-message-type: command
       operationId: DeleteBookEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - catalog
       parameters:
         - name: id
           in: path
@@ -1116,7 +1115,8 @@ paths:
       description: Update an author if it exists
       operationId: UpdateAuthorEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - catalog
       requestBody:
         description: The command to update the author
         content:
@@ -1203,7 +1203,8 @@ paths:
       x-eventcatalog-message-type: command
       operationId: CreateAuthorEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - catalog
       requestBody:
         description: The command to create an author
         content:
@@ -1265,7 +1266,8 @@ paths:
       x-eventcatalog-message-type: command
       operationId: DeleteAuthorEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - catalog
       parameters:
         - name: id
           in: path
@@ -1590,10 +1592,14 @@ components:
             - "null"
           example: "O'Reilly Media, Inc."
     Status:
+      type: string
       description: The status of the book
       enum:
         - InStock
         - OutOfStock
+      x-enum-descriptions:
+        InStock: The book is available for purchase
+        OutOfStock: The book is currently not available
     UpdateAuthorCommand:
       required:
         - id

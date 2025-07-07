@@ -15,27 +15,20 @@ externalDocs:
   description: Documentation
   url: https://github.com/foxminchan/BookWorm
 servers:
-  - url: "{protocol}://dev.finance.bookworm.com"
-    description: Development
+  - url: "{protocol}://{environment}.finance.bookworm.com"
+    description: Before deploying to production, ensure the environment is set correctly
     variables:
       protocol:
         enum:
           - https
+          - http
         default: https
-  - url: "{protocol}://stg.finance.bookworm.com"
-    description: Staging
-    variables:
-      protocol:
+      environment:
         enum:
-          - https
-        default: https
-  - url: "{protocol}://qa.finance.bookworm.com"
-    description: QA
-    variables:
-      protocol:
-        enum:
-          - https
-        default: https
+          - dev
+          - stg
+          - qa
+        default: dev
   - url: "{protocol}://finance.bookworm.com"
     description: Production
     variables:
@@ -44,7 +37,8 @@ servers:
           - https
         default: https
 security:
-  - OAuth: []
+  - OAuth:
+      - finance
 paths:
   "/api/v1/order-state-machine":
     get:
@@ -55,7 +49,8 @@ paths:
       x-eventcatalog-message-type: query
       operationId: GetOrderStateEndpoint
       security:
-        - OAuth: []
+        - OAuth:
+            - finance
       responses:
         "200":
           description: OK
