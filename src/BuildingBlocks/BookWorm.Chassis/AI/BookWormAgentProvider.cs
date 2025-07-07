@@ -6,9 +6,6 @@ public sealed class BookWormAgentProvider : AgentProvider
 {
     public static BookWormAgentProvider Create()
     {
-        return new()
-        {
-            Organization = nameof(BookWorm),
-        };
+        return new() { Organization = nameof(BookWorm) };
     }
 }

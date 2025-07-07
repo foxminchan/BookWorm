@@ -53,6 +53,8 @@ internal static class Extensions
     {
         configurator.EntityFrameworkRepository(config =>
         {
+            config.ConcurrencyMode = ConcurrencyMode.Optimistic;
+
             config.AddDbContext<DbContext, FinanceDbContext>(
                 (_, optionsBuilder) =>
                 {
@@ -65,6 +67,8 @@ internal static class Extensions
                         .UseSnakeCaseNamingConvention();
                 }
             );
+
+            config.UsePostgres();
         });
     }
 }

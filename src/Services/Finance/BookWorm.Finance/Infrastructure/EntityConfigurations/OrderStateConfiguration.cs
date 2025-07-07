@@ -11,5 +11,10 @@ internal sealed class OrderStateConfiguration : SagaClassMap<OrderState>
         entity.Property(p => p.BasketId).IsRequired();
         entity.Property(p => p.TotalMoney).HasPrecision(18, 2);
         entity.Property(p => p.Email).HasMaxLength(DataSchemaLength.ExtraLarge);
+        entity
+            .Property(x => x.RowVersion)
+            .HasColumnName("xmin")
+            .HasColumnType("xid")
+            .IsRowVersion();
     }
 }
