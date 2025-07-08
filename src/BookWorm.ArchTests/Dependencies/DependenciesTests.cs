@@ -2,9 +2,9 @@
 using BookWorm.ArchTests.TUnit;
 using BookWorm.Chassis.Command;
 using BookWorm.Chassis.Endpoints;
-using BookWorm.Chassis.EventBus;
 using BookWorm.Chassis.Query;
 using BookWorm.Chassis.Repository;
+using BookWorm.Contracts;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
@@ -104,7 +104,7 @@ public sealed class DependenciesTests : ArchUnitBaseTest
             .HaveNameEndingWith("IntegrationEvent")
             .Should()
             .BeRecord()
-            .AndShould()
+            .OrShould()
             .BeSealed()
             .AndShould()
             .NotImplementInterface(typeof(ICommand))

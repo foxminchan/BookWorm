@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using BookWorm.Contracts;
 using BookWorm.Ordering.Infrastructure.EventStore.Diagnostic;
 
 namespace BookWorm.Ordering.Infrastructure.EventStore.Extensions;
@@ -57,6 +58,7 @@ internal static class DocumentSessionWithTelemetryExtensions
                     stream => stream.AppendOne(@event),
                     token
                 );
+                await documentSession.SaveChangesAsync(token);
             },
             cancellationToken
         );
@@ -78,6 +80,7 @@ internal static class DocumentSessionWithTelemetryExtensions
                     stream => stream.AppendOne(@event),
                     token
                 );
+                await documentSession.SaveChangesAsync(token);
             },
             cancellationToken
         );
