@@ -9,8 +9,8 @@ public sealed class UpdateBookPreProcessor(IBlobService blobService)
     {
         if (request.Image is not null)
         {
-            var imageUrl = await blobService.UploadFileAsync(request.Image, cancellationToken);
-            request.ImageName = imageUrl;
+            var urn = await blobService.UploadFileAsync(request.Image, cancellationToken);
+            request.ImageUrn = urn;
         }
     }
 }

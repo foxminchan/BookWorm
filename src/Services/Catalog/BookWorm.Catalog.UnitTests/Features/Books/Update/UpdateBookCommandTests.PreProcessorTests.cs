@@ -36,7 +36,7 @@ public sealed class UpdateBookPreProcessorTests
         await handler.Process(command, CancellationToken.None);
 
         // Assert
-        command.ImageName.ShouldBe(expectedImageUrl);
+        command.ImageUrn.ShouldBe(expectedImageUrl);
         blobService.Verify(
             x => x.UploadFileAsync(formFile.Object, It.IsAny<CancellationToken>()),
             Times.Once
@@ -67,7 +67,7 @@ public sealed class UpdateBookPreProcessorTests
         await handler.Process(command, CancellationToken.None);
 
         // Assert
-        command.ImageName.ShouldBeNull();
+        command.ImageUrn.ShouldBeNull();
         blobService.Verify(
             x => x.UploadFileAsync(It.IsAny<IFormFile>(), It.IsAny<CancellationToken>()),
             Times.Never

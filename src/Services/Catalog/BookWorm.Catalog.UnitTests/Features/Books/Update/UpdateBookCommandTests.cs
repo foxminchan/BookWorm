@@ -173,7 +173,7 @@ public sealed class UpdateBookCommandTests
             [.. book.BookAuthors.Select(x => x.AuthorId)]
         )
         {
-            ImageName = "new-image.jpg",
+            ImageUrn = "new-image.jpg",
         }; // Simulating a new image upload
 
         var handler = new UpdateBookHandler(repository.Object);

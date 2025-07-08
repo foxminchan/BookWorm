@@ -9,7 +9,7 @@ public sealed class DomainToDtoMapper(IBlobService blobService) : IMapper<Book, 
 {
     public BookDto Map(Book book)
     {
-        var imageUrl = book.Image is not null ? blobService.GetFileUrl(book.Image) : null;
+        var imageUrl = book.Image is not null ? blobService.GetFileSasUrl(book.Image) : null;
 
         return new(
             book.Id,
