@@ -3,8 +3,7 @@ using MassTransit;
 
 namespace BookWorm.Chassis.EventBus.Dispatcher;
 
-public sealed class EventDispatcher(IPublishEndpoint publishEndpoint, IEventMapper eventMapper)
-    : IEventDispatcher
+public sealed class EventDispatcher(IBus bus, IEventMapper eventMapper) : IEventDispatcher
 {
     public async Task DispatchAsync(
         DomainEvent @event,
@@ -18,6 +17,6 @@ public sealed class EventDispatcher(IPublishEndpoint publishEndpoint, IEventMapp
             ?? throw new InvalidOperationException(
                 $"No integration event mapping found for '{@event.GetType().Name}'."
             );
-        await publishEndpoint.Publish(integrationEvent, cancellationToken);
+        await bus.Publish(integrationEvent, cancellationToken);
     }
 }

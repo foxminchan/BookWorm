@@ -15,5 +15,6 @@ public sealed class OrderStateMachineDefinition : SagaDefinition<OrderState>
     )
     {
         endpointConfigurator.UseMessageRetry(r => r.Intervals(500, 5000, 10000));
+        endpointConfigurator.UseEntityFrameworkOutbox<FinanceDbContext>(context);
     }
 }

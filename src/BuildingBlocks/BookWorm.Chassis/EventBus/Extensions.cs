@@ -13,7 +13,8 @@ public static class Extensions
     public static void AddEventBus(
         this IHostApplicationBuilder builder,
         Type type,
-        Action<IBusRegistrationConfigurator>? configure = null
+        Action<IBusRegistrationConfigurator>? busConfigure = null,
+        Action<IBusRegistrationContext, IRabbitMqBusFactoryConfigurator>? rabbitMqConfigure = null
     )
     {
         var connectionString = builder.Configuration.GetConnectionString(Components.Queue);
@@ -29,8 +30,6 @@ public static class Extensions
 
             config.AddConsumers(type.Assembly);
 
-            config.AddSagas(type.Assembly);
-
             config.AddActivities(type.Assembly);
 
             config.AddRequestClient(type);
@@ -41,10 +40,11 @@ public static class Extensions
                     configurator.Host(new Uri(connectionString));
                     configurator.ConfigureEndpoints(context);
                     configurator.UseMessageRetry(AddRetryConfiguration);
+                    rabbitMqConfigure?.Invoke(context, configurator);
                 }
             );
 
-            configure?.Invoke(config);
+            busConfigure?.Invoke(config);
         });
 
         builder

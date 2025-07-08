@@ -1,9 +1,7 @@
 ﻿using BookWorm.SharedKernel.Helpers;
-using MassTransit;
 
-namespace BookWorm.Chassis.EventBus;
+namespace BookWorm.Contracts;
 
-[ExcludeFromTopology]
 public abstract record IntegrationEvent
 {
     public Guid Id { get; } = Guid.CreateVersion7();

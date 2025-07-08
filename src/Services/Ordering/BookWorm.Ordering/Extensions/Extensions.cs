@@ -67,10 +67,17 @@ internal static class Extensions
                 {
                     o.QueryDelay = TimeSpan.FromSeconds(1);
 
+                    o.DuplicateDetectionWindow = TimeSpan.FromMinutes(5);
+
                     o.UsePostgres();
 
                     o.UseBusOutbox();
                 });
+
+                cfg.AddConfigureEndpointsCallback(
+                    (context, _, configurator) =>
+                        configurator.UseEntityFrameworkOutbox<OrderingDbContext>(context)
+                );
             }
         );
 

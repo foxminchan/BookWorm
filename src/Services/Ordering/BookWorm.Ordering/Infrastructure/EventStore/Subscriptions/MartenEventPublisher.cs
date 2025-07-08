@@ -6,7 +6,7 @@ using Microsoft.Extensions.Diagnostics.Buffering;
 namespace BookWorm.Ordering.Infrastructure.EventStore.Subscriptions;
 
 public sealed class MartenEventPublisher(
-    IServiceProvider serviceProvider,
+    IServiceScopeFactory scopeFactory,
     IActivityScope activityScope,
     ILogger<MartenEventPublisher> logger,
     GlobalLogBuffer logBuffer
@@ -35,15 +35,20 @@ public sealed class MartenEventPublisher(
                         $"{nameof(MartenEventPublisher)}/{nameof(ProcessEventsAsync)}",
                         async (_, ct) =>
                         {
-                            using var scope = serviceProvider.CreateScope();
+                            using var scope = scopeFactory.CreateScope();
                             var eventDispatcher =
                                 scope.ServiceProvider.GetRequiredService<IEventDispatcher>();
+
+                            var dbContext =
+                                scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
 
                             if (@event.Data is DomainEvent domainEvent)
                             {
                                 await eventDispatcher
                                     .DispatchAsync(domainEvent, ct)
                                     .ConfigureAwait(false);
+
+                                await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
                             }
                         },
                         new()

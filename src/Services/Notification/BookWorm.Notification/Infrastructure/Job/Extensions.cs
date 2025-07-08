@@ -38,6 +38,9 @@ internal static class Extensions
 
         services.AddQuartz(q =>
         {
+            q.SchedulerName = nameof(Notification);
+            q.SchedulerId = $"{nameof(Notification)}Scheduler";
+            q.UseDefaultThreadPool(tp => tp.MaxConcurrency = 10);
             q.AddJobConfigurator<CleanUpSentEmailWorker>(jobOptions.CleanUpSentEmailCronExpression);
             q.AddJobConfigurator<ResendErrorEmailWorker>(jobOptions.ResendErrorEmailCronExpression);
         });
