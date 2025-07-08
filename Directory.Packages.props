@@ -7,7 +7,7 @@
   </PropertyGroup>
   <ItemGroup Label="Aspire Packages">
     <!-- Aspire Hosting -->
-    <PackageVersion Include="Scalar.Aspire" Version="0.1.5" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.1.6" />
     <PackageVersion Include="Aspire.Hosting.Qdrant" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.AppHost" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="$(AspireVersion)" />
@@ -87,6 +87,7 @@
     <PackageVersion Include="Grpc.Tools" Version="2.72.0" PrivateAssets="All" />
     <PackageVersion Include="Google.Protobuf" Version="3.31.1" />
     <!-- MassTransit -->
+    <PackageVersion Include="MassTransit.Quartz" Version="$(MassTransitVersion)" />
     <PackageVersion Include="MassTransit.RabbitMQ" Version="$(MassTransitVersion)" />
     <PackageVersion Include="MassTransit.TestFramework" Version="$(MassTransitVersion)" />
     <PackageVersion Include="MassTransit.EntityFrameworkCore" Version="$(MassTransitVersion)" />
@@ -94,7 +95,7 @@
     <!-- Miscellaneous -->
     <PackageVersion Include="CliWrap" Version="3.9.0" />
     <PackageVersion Include="MailKit" Version="4.13.0" />
-    <PackageVersion Include="Mjml.Net" Version="4.9.0" />
+    <PackageVersion Include="Mjml.Net" Version="4.10.0" />
     <PackageVersion Include="SendGrid" Version="9.29.3" />
     <PackageVersion Include="AspNetCore.HealthChecks.SendGrid" Version="$(HealthChecksVersion)" />
     <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.3.0-preview.2" />
