@@ -26,7 +26,7 @@ public sealed class UpdateBookPostProcessorTests
             true // IsRemoveImage = true
         )
         {
-            ImageName = imageName,
+            ImageUrn = imageName,
         };
 
         var handler = new UpdateBookPostProcessor(blobService.Object);
@@ -60,7 +60,7 @@ public sealed class UpdateBookPostProcessorTests
             [Guid.CreateVersion7()] // IsRemoveImage = false
         )
         {
-            ImageName = imageName,
+            ImageUrn = imageName,
         };
 
         var handler = new UpdateBookPostProcessor(blobService.Object);

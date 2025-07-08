@@ -16,7 +16,7 @@ public sealed record UpdateBookCommand(
 ) : ICommand
 {
     [JsonIgnore]
-    public string? ImageName { get; set; }
+    public string? ImageUrn { get; set; }
 }
 
 public sealed class UpdateBookHandler(IBookRepository repository)
@@ -28,7 +28,7 @@ public sealed class UpdateBookHandler(IBookRepository repository)
 
         Guard.Against.NotFound(book, request.Id);
 
-        var imageName = request.IsRemoveImage ? null : request.ImageName ?? book.Image;
+        var imageName = request.IsRemoveImage ? null : request.ImageUrn ?? book.Image;
 
         book.Update(
             request.Name,

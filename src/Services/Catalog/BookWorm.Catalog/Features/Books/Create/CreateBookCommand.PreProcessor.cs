@@ -9,8 +9,8 @@ public sealed class CreateBookPreProcessor(IBlobService blobService)
     {
         if (request.Image is not null)
         {
-            var imageUrl = await blobService.UploadFileAsync(request.Image, cancellationToken);
-            request.ImageName = imageUrl;
+            var url = await blobService.UploadFileAsync(request.Image, cancellationToken);
+            request.ImageName = url;
         }
     }
 }

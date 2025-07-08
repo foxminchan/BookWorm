@@ -11,9 +11,9 @@ public sealed class UpdateBookPostProcessor(IBlobService blobService)
         CancellationToken cancellationToken
     )
     {
-        if (request is { IsRemoveImage: true, ImageName: not null })
+        if (request is { IsRemoveImage: true, ImageUrn: not null })
         {
-            await blobService.DeleteFileAsync(request.ImageName, cancellationToken);
+            await blobService.DeleteFileAsync(request.ImageUrn, cancellationToken);
         }
     }
 }

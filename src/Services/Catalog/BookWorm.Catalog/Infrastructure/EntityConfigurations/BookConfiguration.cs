@@ -14,7 +14,7 @@ internal sealed class BookConfiguration : IEntityTypeConfiguration<Book>
 
         builder.Property(p => p.Description).HasMaxLength(DataSchemaLength.Max).IsRequired();
 
-        builder.Property(x => x.Image).HasMaxLength(DataSchemaLength.Large);
+        builder.Property(x => x.Image).HasMaxLength(DataSchemaLength.ExtraLarge);
 
         builder.OwnsOne(
             p => p.Price,
