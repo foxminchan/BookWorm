@@ -12,5 +12,5 @@ public sealed record OrderDetailDto(
 
 public sealed record OrderItemDto(Guid Id, int Quantity, decimal Price)
 {
-    public string? Name { get; init; }
+    public string? Name { get; set; }
 }

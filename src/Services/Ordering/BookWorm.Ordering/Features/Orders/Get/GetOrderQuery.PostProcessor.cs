@@ -27,20 +27,12 @@ public sealed class GetOrderPostProcessor(IBookService bookService)
 
         var bookLookup = bookResponses.Books.ToDictionary(b => b.Id);
 
-        var updatedItems = response
-            .Items.Select(item =>
-                bookLookup.TryGetValue(item.Id.ToString(), out var bookResponse)
-                    ? item with
-                    {
-                        Name = bookResponse.Name,
-                    }
-                    : item
-            )
-            .ToList();
-
-        // Since we can't mutate the response directly, we need to use reflection
-        // or consider returning a new response type
-        var itemsProperty = response.GetType().GetProperty(nameof(response.Items));
-        itemsProperty?.SetValue(response, updatedItems);
+        foreach (var item in response.Items)
+        {
+            if (bookLookup.TryGetValue(item.Id.ToString(), out var bookResponse))
+            {
+                item.Name = bookResponse.Name;
+            }
+        }
     }
 }
