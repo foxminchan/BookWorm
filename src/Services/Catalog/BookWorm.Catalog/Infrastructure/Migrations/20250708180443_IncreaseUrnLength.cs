@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace BookWorm.Catalog.Migrations
+namespace BookWorm.Catalog.Infrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class IncreaseUrnLength : Migration

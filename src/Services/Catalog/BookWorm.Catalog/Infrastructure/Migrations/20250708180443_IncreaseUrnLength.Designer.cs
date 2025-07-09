@@ -9,7 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace BookWorm.Catalog.Migrations
+namespace BookWorm.Catalog.Infrastructure.Migrations
 {
     [DbContext(typeof(CatalogDbContext))]
     [Migration("20250708180443_IncreaseUrnLength")]
