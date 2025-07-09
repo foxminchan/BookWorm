@@ -145,6 +145,7 @@ public sealed class OrderStateMachineTests
         instance.Email.ShouldBe(DefaultTestEmail);
         instance.TotalMoney.ShouldBe(totalMoney);
         instance.Version.ShouldBeGreaterThanOrEqualTo(0);
+        instance.RowVersion.ShouldBeGreaterThanOrEqualTo(0u);
         instance.CurrentState.ShouldBe(_sagaHarness.StateMachine.Placed.Name);
         instance.OrderPlacedDate.ShouldNotBe(DateTime.MinValue);
 
@@ -183,6 +184,7 @@ public sealed class OrderStateMachineTests
         instance.BasketId.ShouldBe(basketId);
         instance.TotalMoney.ShouldBe(totalMoney);
         instance.Version.ShouldBeGreaterThanOrEqualTo(0);
+        instance.RowVersion.ShouldBeGreaterThanOrEqualTo(0u);
         instance.CurrentState.ShouldBe(_sagaHarness.StateMachine.Placed.Name);
         instance.OrderPlacedDate.ShouldNotBe(DateTime.MinValue);
 
@@ -222,6 +224,7 @@ public sealed class OrderStateMachineTests
         instance.BasketId.ShouldBe(basketId);
         instance.TotalMoney.ShouldBe(totalMoney);
         instance.Version.ShouldBeGreaterThanOrEqualTo(0);
+        instance.RowVersion.ShouldBeGreaterThanOrEqualTo(0u);
         instance.CurrentState.ShouldBe(_sagaHarness.StateMachine.Failed.Name);
         instance.OrderPlacedDate.ShouldNotBe(DateTime.MinValue);
 
@@ -441,6 +444,7 @@ public sealed class OrderStateMachineTests
         instance.BasketId.ShouldBe(basketId);
         instance.Email.ShouldBe(DefaultTestEmail);
         instance.TotalMoney.ShouldBe(totalMoney);
+        instance.RowVersion.ShouldBeGreaterThanOrEqualTo(0u);
         instance.CurrentState.ShouldBe(_sagaHarness.StateMachine.Placed.Name);
 
         // Should only publish PlaceOrderCommand once, not twice (this is the key idempotency test)
@@ -503,6 +507,7 @@ public sealed class OrderStateMachineTests
         instance.BasketId.ShouldBe(basketId);
         instance.Email.ShouldBe(email);
         instance.TotalMoney.ShouldBe(totalMoney);
+        instance.RowVersion.ShouldBeGreaterThanOrEqualTo(0u);
         instance.OrderPlacedDate.ShouldNotBeNull();
         var now = DateTimeHelper.UtcNow();
         instance.OrderPlacedDate.Value.ShouldBeInRange(now.AddMinutes(-1), now.AddMinutes(1));
@@ -567,6 +572,7 @@ public sealed class OrderStateMachineTests
 
             // Verify saga state consistency
             instance.OrderId.ShouldBe(orderId);
+            instance.RowVersion.ShouldBeGreaterThanOrEqualTo(0u);
             instance.CurrentState.ShouldBe(_sagaHarness.StateMachine.Placed.Name);
             instance.OrderPlacedDate.ShouldNotBeNull();
         }
@@ -691,6 +697,7 @@ public sealed class OrderStateMachineTests
 
         // Verify retry count was incremented
         instance.TimeoutRetryCount.ShouldBe(1);
+        instance.RowVersion.ShouldBeGreaterThanOrEqualTo(0u);
 
         // Should have published another PlaceOrderCommand (retry)
         var publishedCommands = _harness.Published.Select<PlaceOrderCommand>().ToList();
@@ -749,6 +756,7 @@ public sealed class OrderStateMachineTests
         {
             instance.CurrentState.ShouldBe(_sagaHarness.StateMachine.Failed.Name);
             instance.TimeoutRetryCount.ShouldBe(3);
+            instance.RowVersion.ShouldBeGreaterThanOrEqualTo(0u);
         }
         else
         {
@@ -804,6 +812,7 @@ public sealed class OrderStateMachineTests
         // Verify we're still in Placed state with retry count incremented
         var instanceAfterTimeout = AssertSagaInState(orderId, _sagaHarness.StateMachine.Placed);
         instanceAfterTimeout.TimeoutRetryCount.ShouldBe(1);
+        instanceAfterTimeout.RowVersion.ShouldBeGreaterThanOrEqualTo(0u);
 
         // Act - Now complete the order
         var completeEvent = new OrderStatusChangedToCompleteIntegrationEvent(

@@ -1,5 +1,6 @@
 ﻿using BookWorm.Chassis.Mediator;
 using BookWorm.Rating.Agents;
+using BookWorm.Rating.Infrastructure.Summarizer;
 
 namespace BookWorm.Rating.Extensions;
 
@@ -59,5 +60,6 @@ internal static class Extensions
         builder.AddDefaultAsyncApi([typeof(IRatingApiMarker)]);
 
         builder.AddAgents();
+        services.AddSingleton<ISummarizer, RatingSummarizer>();
     }
 }
