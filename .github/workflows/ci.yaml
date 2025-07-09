@@ -6,6 +6,11 @@ on:
     paths:
       - "src/**"
       - ".github/workflows/ci.yaml"
+      - "Directory.Packages.props"
+      - "Directory.Build.props"
+      - "global.json"
+      - "Versions.props"
+      - ".config/dotnet-tools.json"
       - "!**.md"
   workflow_dispatch:
 
