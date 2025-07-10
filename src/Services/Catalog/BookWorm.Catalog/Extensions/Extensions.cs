@@ -69,7 +69,27 @@ internal static class Extensions
         services.AddMapper(typeof(ICatalogApiMarker));
 
         // Configure EventBus
-        builder.AddEventBus(typeof(ICatalogApiMarker), cfg => cfg.AddInMemoryInboxOutbox());
+        builder.AddEventBus(
+            typeof(ICatalogApiMarker),
+            cfg =>
+            {
+                cfg.AddEntityFrameworkOutbox<CatalogDbContext>(o =>
+                {
+                    o.QueryDelay = TimeSpan.FromSeconds(1);
+
+                    o.DuplicateDetectionWindow = TimeSpan.FromMinutes(5);
+
+                    o.UsePostgres();
+
+                    o.UseBusOutbox();
+                });
+
+                cfg.AddConfigureEndpointsCallback(
+                    (context, _, configurator) =>
+                        configurator.UseEntityFrameworkOutbox<CatalogDbContext>(context)
+                );
+            }
+        );
 
         builder.AddDefaultAsyncApi([typeof(ICatalogApiMarker)]);
     }

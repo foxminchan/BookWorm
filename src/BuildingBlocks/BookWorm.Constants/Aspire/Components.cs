@@ -2,6 +2,7 @@
 
 public static class Components
 {
+    public const string McpInspector = "mcp-inspector";
     public static readonly string Redis = nameof(Redis).ToLowerInvariant();
     public static readonly string Postgres = nameof(Postgres).ToLowerInvariant();
     public static readonly string VectorDb = nameof(VectorDb).ToLowerInvariant();

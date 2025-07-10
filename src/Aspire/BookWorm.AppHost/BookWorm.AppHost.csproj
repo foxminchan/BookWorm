@@ -26,6 +26,7 @@
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.k6" />
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.Ollama" />
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.MailPit" />
+    <PackageReference Include="CommunityToolkit.Aspire.Hosting.McpInspector" />
   </ItemGroup>
   <ItemGroup Label="Services">
     <ProjectReference Include="..\..\Integrations\BookWorm.McpTools\BookWorm.McpTools.csproj" />
