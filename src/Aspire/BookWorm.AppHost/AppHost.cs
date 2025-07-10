@@ -236,6 +236,8 @@ if (builder.ExecutionContext.IsRunMode)
         .WithApi(financeApi);
 
     builder.AddK6(gateway);
+
+    builder.AddMcpInspector(Components.McpInspector).WithMcpServer(mcp).WaitFor(mcp);
 }
 
 builder.Build().Run();

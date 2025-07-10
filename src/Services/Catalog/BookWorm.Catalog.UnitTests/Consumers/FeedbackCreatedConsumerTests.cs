@@ -107,10 +107,7 @@ public sealed class FeedbackCreatedConsumerTests
             x => x.GetByIdAsync(_bookId, It.IsAny<CancellationToken>()),
             Times.Once
         );
-        _unitOfWorkMock.Verify(
-            x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
-            Times.Never
-        );
+        _unitOfWorkMock.Verify(x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()), Times.Once);
 
         await harness.Stop();
     }

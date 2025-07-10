@@ -47,7 +47,27 @@ internal static class Extensions
         services.AddSingleton<QueryHandlerMetrics>();
 
         // Configure EventBus first
-        builder.AddEventBus(typeof(IRatingApiMarker), cfg => cfg.AddInMemoryInboxOutbox());
+        builder.AddEventBus(
+            typeof(IRatingApiMarker),
+            cfg =>
+            {
+                cfg.AddEntityFrameworkOutbox<RatingDbContext>(o =>
+                {
+                    o.QueryDelay = TimeSpan.FromSeconds(1);
+
+                    o.DuplicateDetectionWindow = TimeSpan.FromMinutes(5);
+
+                    o.UsePostgres();
+
+                    o.UseBusOutbox();
+                });
+
+                cfg.AddConfigureEndpointsCallback(
+                    (context, _, configurator) =>
+                        configurator.UseEntityFrameworkOutbox<RatingDbContext>(context)
+                );
+            }
+        );
 
         // Then register event-related services
         services.AddScoped<IEventMapper, EventMapper>();

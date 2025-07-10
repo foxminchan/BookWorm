@@ -31,6 +31,7 @@
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.k6" Version="$(ToolKitVersion)" />
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.Ollama" Version="$(ToolKitVersion)" />
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.MailPit" Version="$(ToolKitVersion)" />
+    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.McpInspector" Version="9.6.0-beta.324" />
     <PackageVersion Include="CommunityToolkit.Aspire.OllamaSharp" Version="$(ToolKitVersion)" />
   </ItemGroup>
   <ItemGroup Label="Core Packages">
@@ -39,7 +40,7 @@
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="$(MsExtVersion)" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="$(AspireVersion)" />
     <PackageVersion Include="Microsoft.Extensions.Compliance.Redaction" Version="$(MsExtVersion)" />
-    <PackageVersion Include="Microsoft.FeatureManagement.AspNetCore" Version="4.2.0" />
+    <PackageVersion Include="Microsoft.FeatureManagement.AspNetCore" Version="4.2.1" />
     <!-- ASP.NET Core -->
     <PackageVersion Include="Asp.Versioning.Http.Client" Version="$(ApiVersioningVersion)" />
     <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer" Version="$(ApiVersioningVersion)" />

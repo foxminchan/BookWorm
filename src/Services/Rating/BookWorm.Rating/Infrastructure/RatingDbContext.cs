@@ -15,6 +15,9 @@ public sealed class RatingDbContext(DbContextOptions<RatingDbContext> options)
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.AddInboxStateEntity();
+        modelBuilder.AddOutboxMessageEntity();
+        modelBuilder.AddOutboxStateEntity();
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(RatingDbContext).Assembly);
     }
 }

@@ -4,7 +4,7 @@ using Saunter.Attributes;
 namespace BookWorm.Catalog.IntegrationEvents.EventHandlers;
 
 [AsyncApi]
-public sealed class FeedbackCreatedIntegrationEventHandler(IBookRepository bookRepository)
+public sealed class FeedbackCreatedIntegrationEventHandler(IBookRepository repository)
     : IConsumer<FeedbackCreatedIntegrationEvent>
 {
     [Channel("catalog-feedback-created")]
@@ -18,17 +18,16 @@ public sealed class FeedbackCreatedIntegrationEventHandler(IBookRepository bookR
     {
         var @event = context.Message;
 
-        var book = await bookRepository.GetByIdAsync(@event.BookId, context.CancellationToken);
+        var book = await repository.GetByIdAsync(@event.BookId, context.CancellationToken);
 
         if (book is null)
         {
-            await PublishFailedEvent(context, @event.FeedbackId);
+            await PublishFailedEvent(repository, context, @event.FeedbackId);
             return;
         }
 
         book.AddRating(@event.Rating);
-
-        await bookRepository.UnitOfWork.SaveEntitiesAsync(context.CancellationToken);
+        await repository.UnitOfWork.SaveEntitiesAsync(context.CancellationToken);
     }
 
     [Channel("rating-book-updated-rating-failed")]
@@ -39,6 +38,7 @@ public sealed class FeedbackCreatedIntegrationEventHandler(IBookRepository bookR
         Description = "Represents a failed integration event when updating a book's rating in the system"
     )]
     private static async Task PublishFailedEvent(
+        IBookRepository bookRepository,
         ConsumeContext<FeedbackCreatedIntegrationEvent> context,
         Guid feedbackId
     )
@@ -47,6 +47,7 @@ public sealed class FeedbackCreatedIntegrationEventHandler(IBookRepository bookR
             new BookUpdatedRatingFailedIntegrationEvent(feedbackId),
             context.CancellationToken
         );
+        await bookRepository.UnitOfWork.SaveEntitiesAsync(context.CancellationToken);
     }
 }
 

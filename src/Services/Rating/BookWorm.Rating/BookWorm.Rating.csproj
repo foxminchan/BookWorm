@@ -3,6 +3,7 @@
     <NoWarn>SKEXP0001,SKEXP0070,SKEXP0110,SKEXP0130</NoWarn>
   </PropertyGroup>
   <ItemGroup Label="Project">
+    <PackageReference Include="MassTransit.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
   </ItemGroup>
   <ItemGroup Label="AI">

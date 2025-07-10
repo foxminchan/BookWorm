@@ -5,8 +5,10 @@ using Saunter.Attributes;
 namespace BookWorm.Rating.Domain.EventHandlers;
 
 [AsyncApi]
-public sealed class FeedbackDeletedEventHandler(IEventDispatcher eventDispatcher)
-    : INotificationHandler<FeedbackDeletedEvent>
+public sealed class FeedbackDeletedEventHandler(
+    IEventDispatcher eventDispatcher,
+    RatingDbContext dbContext
+) : INotificationHandler<FeedbackDeletedEvent>
 {
     [Channel("catalog-feedback-deleted")]
     [SubscribeOperation(
@@ -18,5 +20,6 @@ public sealed class FeedbackDeletedEventHandler(IEventDispatcher eventDispatcher
     public async Task Handle(FeedbackDeletedEvent notification, CancellationToken cancellationToken)
     {
         await eventDispatcher.DispatchAsync(notification, cancellationToken);
+        await dbContext.SaveEntitiesAsync(cancellationToken);
     }
 }
