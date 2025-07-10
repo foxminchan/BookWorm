@@ -15,9 +15,9 @@ internal static class Extensions
 
         builder.AddSkTelemetry();
 
-        builder.AddEmbeddingGenerator();
-
         builder.AddChatCompletion();
+
+        builder.AddEmbeddingGenerator();
 
         services.AddScoped<IIngestionSource<Book>, BookDataIngestor>();
 
