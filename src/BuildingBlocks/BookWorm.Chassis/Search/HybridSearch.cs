@@ -21,9 +21,9 @@ public sealed class HybridSearch(
             cancellationToken: cancellationToken
         );
 
-        var vectorCollection =
-            (IKeywordHybridSearchable<TextSnippet>)
-                vectorStore.GetCollection<Guid, TextSnippet>(collectionName);
+        var collection = vectorStore.GetCollection<Guid, TextSnippet>(collectionName);
+        await collection.EnsureCollectionExistsAsync(cancellationToken);
+        var vectorCollection = (IKeywordHybridSearchable<TextSnippet>)collection;
 
         var options = new HybridSearchOptions<TextSnippet>
         {

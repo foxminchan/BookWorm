@@ -34,8 +34,7 @@ public static class Extensions
 
     public static void AddEmbeddingGenerator(this IHostApplicationBuilder builder)
     {
-        builder.AddOllamaApiClient(Components.Ollama.Embedding);
-        builder.Services.AddOllamaEmbeddingGenerator();
+        builder.AddOllamaApiClient(Components.Ollama.Embedding).AddEmbeddingGenerator();
     }
 
     public static async Task<A2AAgent> CreateAgentAsync(this string agentUri)
