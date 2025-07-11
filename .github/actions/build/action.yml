@@ -21,6 +21,11 @@ runs:
       with:
         dotnet-version: ${{ inputs.dotnet-version }}
 
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version-file: ".bun-version"
+
     - name: Install Tools
       shell: bash
       run: dotnet tool restore

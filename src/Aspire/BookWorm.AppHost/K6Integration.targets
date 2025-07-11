@@ -2,20 +2,20 @@
   <Target Name="BuildK6Container" BeforeTargets="Build">
     <Message Text="Installing node packages" Importance="high" />
     <Exec
-      Command="npm install"
+      Command="bun install --frozen-lockfile"
       WorkingDirectory="Container/k6"
       Condition="Exists('Container/k6/package.json')"
     />
     <Message Text="Formatting K6 code" Importance="high" />
     <Exec
-      Command="npm run format:check"
+      Command="bun run format:check"
       WorkingDirectory="Container/k6"
       Condition="Exists('Container/k6/package.json')"
       ContinueOnError="true"
     />
     <Message Text="Bundle k6 scripts" Importance="high" />
     <Exec
-      Command="npm run build"
+      Command="bun run build"
       WorkingDirectory="Container/k6"
       Condition="Exists('Container/k6/package.json')"
     />

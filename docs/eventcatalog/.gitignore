@@ -21,9 +21,18 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+**/*.trace
+**/*.zip
+**/*.tar.gz
+**/*.tgz
+**/*.log
+**/*.bun
+
 .eventcatalog-core
 
 *.env
 *.env.local
 *.env.development.local
-public/ai/
+
+generated-ai/
+public/ai/generated-ai/

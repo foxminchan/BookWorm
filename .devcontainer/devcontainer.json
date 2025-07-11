@@ -1,6 +1,7 @@
 {
   "name": "BookWorm",
-  "image": "mcr.microsoft.com/devcontainers/dotnet:dev-9.0-bookworm",  "features": {
+  "image": "mcr.microsoft.com/devcontainers/dotnet:dev-9.0-bookworm",
+  "features": {
     "ghcr.io/azure/azure-dev/azd:latest": {},
     "ghcr.io/devcontainers/features/azure-cli:1": {},
     "ghcr.io/devcontainers/features/docker-in-docker:2": {},
@@ -10,6 +11,9 @@
       "nodeGypDependencies": true,
       "version": "lts",
       "nvmVersion": "latest"
+    },
+    "ghcr.io/oven-sh/bun:1": {
+      "version": "latest"
     },
     "ghcr.io/devcontainers/features/git:1": {
       "ppa": true,

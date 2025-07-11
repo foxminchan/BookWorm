@@ -1,7 +1,7 @@
 [build]
 base = "docs/eventcatalog"
 publish = "dist"
-command = "npm run build"
+command = "bun run build"
 
 [functions]
 directory = "docs/eventcatalog/netlify/functions"

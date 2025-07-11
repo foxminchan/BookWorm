@@ -6,11 +6,11 @@
   "scripts": {
     "build": "webpack",
     "build:watch": "webpack --watch",
-    "deploy": "npm run build && echo 'TypeScript build completed successfully'",
+    "deploy": "bun run build && echo 'TypeScript build completed successfully'",
     "format": "prettier --write \"src/**/*.{ts,js,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,js,json}\"",
     "lint": "prettier --check \"src/**/*.{ts,js,json}\"",
-    "precommit": "npm run format && npm run build"
+    "precommit": "bun run format && bun run build"
   },
   "author": "Nhan Nguyen",
   "license": "MIT",
