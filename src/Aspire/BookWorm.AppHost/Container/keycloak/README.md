@@ -59,49 +59,6 @@ sequenceDiagram
 - **No Client Secret Required**: Perfect for public clients that cannot securely store secrets
 - **Dynamic Challenge**: Each authentication flow uses a unique code challenge/verifier pair
 
-## Folder Structure
-
-```
-src/Aspire/BookWorm.AppHost/Container/keycloak/
-├── README.md                          # This documentation file
-├── realms/
-│   └── BookWormRealms.json            # Realm configuration with clients and settings
-└── themes/
-    └── BookWormThemes.jar             # Custom BookWorm login theme
-
-Related Configuration Files:
-├── BookWorm.AppHost/
-│   └── Extensions/
-│       └── KeycloakExtensions.cs      # Aspire Keycloak resource setup
-└── BookWorm.ServiceDefaults/
-    ├── Auth/
-    │   └── AuthenticationExtensions.cs # JWT Bearer authentication setup
-    ├── Keycloak/
-    │   └── KeycloakUrls.cs            # URL generation service
-    └── ApiSpecification/OpenApi/
-        └── OpenApiOptionsExtensions.cs # OAuth2 documentation integration
-```
-
-### File Descriptions
-
-- **`BookWormRealms.json`**: Complete realm configuration including:
-
-    - Client definitions (public and confidential clients)
-    - PKCE settings (`pkce.code.challenge.method": "S256"`)
-    - Custom theme configuration (`"loginTheme": "bookworm"`)
-    - Role mappings and user federation settings
-
-- **`BookWormThemes.jar`**: Custom theme package containing:
-
-    - Branded login pages
-    - CSS styling matching BookWorm design
-    - Custom templates and resources
-
-- **`KeycloakExtensions.cs`**: Aspire integration that:
-    - Sets up Keycloak container with proper configuration
-    - Mounts realm and theme files
-    - Configures environment variables
-
 ## Custom Theme Introduction
 
 The BookWorm application includes a custom Keycloak theme to provide a branded authentication experience that matches

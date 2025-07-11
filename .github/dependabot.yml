@@ -5,6 +5,7 @@
 # https://containers.dev/guide/dependabot
 
 version: 2
+enable-beta-ecosystems: true
 registries:
   public-nuget:
     type: nuget-feed
@@ -51,19 +52,19 @@ updates:
     schedule:
       interval: weekly
     commit-message:
-      prefix: "NPM (Event Catalog)"
+      prefix: "Node (Event Catalog)"
   - package-ecosystem: "npm"
     directory: "/docs"
     schedule:
       interval: weekly
     commit-message:
-      prefix: "NPM (VuePress)"
+      prefix: "Node (VuePress)"
   - package-ecosystem: "npm"
     directory: "/src/Aspire/BookWorm.AppHost/Container/k6"
     schedule:
       interval: weekly
     commit-message:
-      prefix: "NPM (k6)"
+      prefix: "Node (k6)"
   - package-ecosystem: github-actions
     directory: "/"
     schedule:

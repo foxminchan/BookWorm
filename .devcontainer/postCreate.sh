@@ -36,37 +36,26 @@ fi
 echo "🔒 Configuring Git safe directory..."
 git config --global --add safe.directory /workspaces/BookWorm
 
-# Verify Node.js and npm installation
-echo "🔧 Verifying Node.js and npm installation..."
+# Verify Node.js and bun installation
+echo "🔧 Verifying Node.js and bun installation..."
 if command -v node >/dev/null 2>&1; then
     echo "✅ Node.js version: $(node --version)"
 else
     echo "❌ Node.js not found"
 fi
 
-if command -v npm >/dev/null 2>&1; then
-    echo "✅ npm version: $(npm --version)"
+if command -v bun >/dev/null 2>&1; then
+    echo "✅ bun version: $(bun --version)"
 else
-    echo "❌ npm not found, attempting to install..."
-    # Try to source nvm if it exists
-    if [ -s "$HOME/.nvm/nvm.sh" ]; then
-        source "$HOME/.nvm/nvm.sh"
-        echo "✅ Sourced nvm, npm version: $(npm --version)"
-    fi
-fi
-
-# Update npm to latest version
-echo "📦 Updating npm to latest version..."
-if command -v npm >/dev/null 2>&1; then
-    npm install -g npm@latest
+    echo "❌ bun not found"
 fi
 
 # Install Just task runner
 echo "🔧 Installing Just task runner..."
-if command -v npm >/dev/null 2>&1; then
-    npm install -g rust-just
-    echo "✅ Just installed via npm"
-    
+if command -v bun >/dev/null 2>&1; then
+    bun install -g rust-just
+    echo "✅ Just installed via bun"
+
     # Verify Just installation
     if command -v just >/dev/null 2>&1; then
         echo "✅ Just version: $(just --version)"
@@ -74,7 +63,7 @@ if command -v npm >/dev/null 2>&1; then
         echo "⚠️ Just installed but not found in PATH. You may need to restart your terminal."
     fi
 else
-    echo "❌ npm not available, skipping Just installation"
+    echo "❌ bun not available, skipping Just installation"
 fi
 
 # Restore .NET tools and packages
@@ -98,11 +87,11 @@ echo "📦 Installing EventCatalog dependencies..."
 if [ -d "eventcatalog" ]; then
     cd eventcatalog
     if [ -f "package.json" ]; then
-        if command -v npm >/dev/null 2>&1; then
-            npm install
+        if command -v bun >/dev/null 2>&1; then
+            bun install --frozen-lockfile
             echo "✅ EventCatalog dependencies installed"
         else
-            echo "❌ npm not available, skipping EventCatalog dependencies"
+            echo "❌ bun not available, skipping EventCatalog dependencies"
         fi
     fi
     cd ..
@@ -113,11 +102,11 @@ echo "📦 Installing k6 test dependencies..."
 if [ -d "src/Aspire/BookWorm.AppHost/Container/k6" ]; then
     cd src/Aspire/BookWorm.AppHost/Container/k6
     if [ -f "package.json" ]; then
-        if command -v npm >/dev/null 2>&1; then
-            npm install
+        if command -v bun >/dev/null 2>&1; then
+            bun install --frozen-lockfile
             echo "✅ k6 test dependencies installed"
         else
-            echo "❌ npm not available, skipping k6 test dependencies"
+            echo "❌ bun not available, skipping k6 test dependencies"
         fi
     fi
     cd ../../../../..
@@ -125,17 +114,17 @@ fi
 
 # Install Node.js dependencies for docs
 echo "📦 Installing documentation dependencies..."
-if [ -d "docs" ]; then
-    cd docs
+if [ -d "docs/vuepress" ]; then
+    cd docs/vuepress
     if [ -f "package.json" ]; then
-        if command -v npm >/dev/null 2>&1; then
-            npm install
+        if command -v bun >/dev/null 2>&1; then
+            bun install --frozen-lockfile
             echo "✅ Documentation dependencies installed"
         else
-            echo "❌ npm not available, skipping documentation dependencies"
+            echo "❌ bun not available, skipping documentation dependencies"
         fi
     fi
-    cd ..
+    cd ../..
 fi
 
 # Create helpful aliases
@@ -176,13 +165,13 @@ alias db='dotnet build'
 alias dt='dotnet test'
 alias dw='dotnet watch'
 
-# Node.js/npm aliases
-alias ni='npm install'
-alias nr='npm run'
-alias ns='npm start'
-alias nt='npm test'
-alias nb='npm run build'
-alias nci='npm ci'
+# Node.js/bun aliases
+alias bi='bun install'
+alias br='bun run'
+alias bs='bun start'
+alias bt='bun test'
+alias bb='bun run build'
+alias bci='bun install --frozen-lockfile'
 
 # Navigation aliases
 alias gotoapi='cd src/Services'
@@ -210,10 +199,10 @@ echo "  just test         - Run all tests"
 echo "  just format       - Format code"
 echo "  just help         - Show all available commands"
 echo ""
-echo "📦 Node.js/npm Commands:"
-echo "  cd eventcatalog && npm start  - Start EventCatalog dev server"
-echo "  cd docs && npm start          - Start documentation dev server"
-echo "  npm install                   - Install dependencies"
+echo "📦 Node.js/bun Commands:"
+echo "  cd eventcatalog && bun start  - Start EventCatalog dev server"
+echo "  cd docs && bun start          - Start documentation dev server"
+echo "  bun install                   - Install dependencies"
 echo ""
 echo "📚 Documentation:"
 echo "  docs/            - Architecture documentation"

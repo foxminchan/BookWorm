@@ -38,7 +38,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup .NET
+      - name: Setup Environment
         uses: ./.github/actions/setup
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}

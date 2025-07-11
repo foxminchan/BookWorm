@@ -54,9 +54,11 @@
 ### Prerequisites
 
 - [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- [Docker](https://www.docker.com/get-started)
+- [Node.js](https://nodejs.org/en/download/)
+- [Bun](https://bun.sh/)
 - [Just](https://github.com/casey/just)
 - [Gitleaks](https://gitleaks.io/)
-- [Docker](https://www.docker.com/get-started) or [Podman](https://podman-desktop.io/)
 
 > [!NOTE]
 >
@@ -84,7 +86,7 @@
 
 > [!IMPORTANT]
 >
-> - Docker or Podman must be running on your machine before starting the application.
+> - Docker must be running on your machine before starting the application.
 > - For GPU support with AI components, install GPU drivers and run `just gpu 1`.
 > - Run `just help` to see all available commands.
 

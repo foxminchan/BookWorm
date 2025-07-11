@@ -29,6 +29,11 @@ jobs:
         with:
           dotnet-version: 9.0.x
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: ".bun-version"
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
