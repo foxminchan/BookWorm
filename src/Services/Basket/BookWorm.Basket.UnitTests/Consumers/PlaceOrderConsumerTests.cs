@@ -21,9 +21,10 @@ public sealed class PlaceOrderConsumerTests
         _orderId = Guid.CreateVersion7();
         _basketId = Guid.CreateVersion7();
         _email = "test@example.com";
+        const string fullName = "Test User";
         _totalMoney = 99.99m;
         _repositoryMock = new();
-        _command = new(_basketId, _email, _orderId, _totalMoney);
+        _command = new(_basketId, fullName, _email, _orderId, _totalMoney);
     }
 
     [Test]

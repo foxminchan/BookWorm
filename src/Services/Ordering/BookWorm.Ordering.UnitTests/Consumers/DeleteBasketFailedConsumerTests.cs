@@ -13,6 +13,7 @@ public sealed class DeleteBasketFailedConsumerTests
     private readonly Guid _basketId;
     private readonly string _email;
     private readonly Guid _orderId;
+    private readonly decimal _totalMoney;
     private readonly Mock<IOrderRepository> _repositoryMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
 
@@ -21,6 +22,7 @@ public sealed class DeleteBasketFailedConsumerTests
         _orderId = Guid.CreateVersion7();
         _basketId = Guid.CreateVersion7();
         _email = "test@example.com";
+        _totalMoney = 100.00m;
 
         _unitOfWorkMock = new();
         _unitOfWorkMock
@@ -35,13 +37,13 @@ public sealed class DeleteBasketFailedConsumerTests
     public async Task GivenValidDeleteBasketFailedCommand_WhenHandling_ThenShouldDeleteOrder()
     {
         // Arrange
-        var order = new Order(_orderId, default, []);
+        var order = new Order(_orderId, null, []);
 
         _repositoryMock
             .Setup(x => x.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(order);
 
-        var command = new DeleteBasketFailedCommand(_basketId, _email, _orderId);
+        var command = new DeleteBasketFailedCommand(_basketId, _email, _orderId, _totalMoney);
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => x.AddConsumer<DeleteBasketFailedCommandHandler>())
@@ -79,7 +81,7 @@ public sealed class DeleteBasketFailedConsumerTests
             .Setup(x => x.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Order?)null);
 
-        var command = new DeleteBasketFailedCommand(_basketId, _email, _orderId);
+        var command = new DeleteBasketFailedCommand(_basketId, _email, _orderId, _totalMoney);
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => x.AddConsumer<DeleteBasketFailedCommandHandler>())
