@@ -231,7 +231,7 @@ builder
 if (builder.ExecutionContext.IsRunMode)
 {
     builder
-        .AddScalar(keycloak)
+        .AddScalar()
         .WithApi(basketApi)
         .WithApi(catalogApi)
         .WithApi(chatApi)
