@@ -17,12 +17,13 @@ public sealed class OrderingDomainTests : ArchUnitBaseTest
     {
         Classes()
             .That()
-            .ResideInNamespace(DomainNamespace, true)
+            .ResideInNamespaceMatching(DomainNamespace)
             .Should()
             .BeSealed()
             .Because(
                 "Classes in the domain layer should be sealed to prevent inheritance, ensuring that the domain model remains consistent and predictable."
             )
+            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -31,12 +32,13 @@ public sealed class OrderingDomainTests : ArchUnitBaseTest
     {
         Classes()
             .That()
-            .ResideInNamespace(DomainNamespace, true)
+            .ResideInNamespaceMatching(DomainNamespace)
             .Should()
             .BePublic()
             .Because(
                 "Classes in the domain layer should be public to allow access from other layers, such as application and infrastructure."
             )
+            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -47,7 +49,7 @@ public sealed class OrderingDomainTests : ArchUnitBaseTest
             .That()
             .HaveNameEndingWith("Repository")
             .And()
-            .ResideInNamespace(DomainNamespace, true)
+            .ResideInNamespaceMatching(DomainNamespace)
             .Should()
             .HaveNameStartingWith("I")
             .AndShould()
@@ -55,6 +57,7 @@ public sealed class OrderingDomainTests : ArchUnitBaseTest
             .Because(
                 "Repository interfaces should be public and follow the naming convention of starting with 'I' to indicate they are interfaces."
             )
+            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -63,7 +66,7 @@ public sealed class OrderingDomainTests : ArchUnitBaseTest
     {
         Classes()
             .That()
-            .ResideInNamespace(DomainNamespace, true)
+            .ResideInNamespaceMatching(DomainNamespace)
             .And()
             .HaveNameEndingWith(nameof(Exception))
             .Should()
@@ -75,6 +78,7 @@ public sealed class OrderingDomainTests : ArchUnitBaseTest
             .Because(
                 "Domain exceptions should be public, sealed, and derive from System.Exception to ensure proper error handling and reporting."
             )
+            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -83,7 +87,7 @@ public sealed class OrderingDomainTests : ArchUnitBaseTest
     {
         Classes()
             .That()
-            .ResideInNamespace(DomainNamespace, true)
+            .ResideInNamespaceMatching(DomainNamespace)
             .And()
             .HaveName(nameof(Order))
             .Or()
@@ -93,6 +97,7 @@ public sealed class OrderingDomainTests : ArchUnitBaseTest
             .Because(
                 "Aggregate root entities should implement IAggregateRoot to mark them as the root entity of an aggregate in the domain."
             )
+            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -101,7 +106,7 @@ public sealed class OrderingDomainTests : ArchUnitBaseTest
     {
         Classes()
             .That()
-            .ResideInNamespace(DomainNamespace, true)
+            .ResideInNamespaceMatching(DomainNamespace)
             .And()
             .HaveName(nameof(Order))
             .Should()
@@ -109,6 +114,7 @@ public sealed class OrderingDomainTests : ArchUnitBaseTest
             .Because(
                 "The Order entity should have a collection of OrderItems as part of its aggregate."
             )
+            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -117,7 +123,7 @@ public sealed class OrderingDomainTests : ArchUnitBaseTest
     {
         Classes()
             .That()
-            .ResideInNamespace(DomainNamespace, true)
+            .ResideInNamespaceMatching(DomainNamespace)
             .And()
             .HaveName(nameof(Address))
             .Should()
@@ -125,6 +131,7 @@ public sealed class OrderingDomainTests : ArchUnitBaseTest
             .Because(
                 "Value objects should be immutable and sealed to ensure they cannot be modified after creation."
             )
+            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -133,7 +140,7 @@ public sealed class OrderingDomainTests : ArchUnitBaseTest
     {
         Classes()
             .That()
-            .ResideInNamespace($"{DomainNamespace}.Events", true)
+            .ResideInNamespaceMatching($"{DomainNamespace}.Events")
             .Should()
             .BeSealed()
             .AndShould()
@@ -141,6 +148,7 @@ public sealed class OrderingDomainTests : ArchUnitBaseTest
             .Because(
                 "Domain events should be sealed and follow the naming convention of ending with 'Event'."
             )
+            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -149,7 +157,7 @@ public sealed class OrderingDomainTests : ArchUnitBaseTest
     {
         Classes()
             .That()
-            .ResideInNamespace($"{DomainNamespace}.Specifications", true)
+            .ResideInNamespaceMatching($"{DomainNamespace}.Specifications")
             .Should()
             .BePublic()
             .AndShould()
@@ -159,6 +167,7 @@ public sealed class OrderingDomainTests : ArchUnitBaseTest
             .Because(
                 "Specifications should be public, sealed, and concrete to ensure they can be instantiated and used in the domain layer."
             )
+            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -174,12 +183,13 @@ public sealed class OrderingDomainTests : ArchUnitBaseTest
     {
         Types()
             .That()
-            .ResideInNamespace(DomainNamespace, true)
+            .ResideInNamespaceMatching(DomainNamespace)
             .Should()
-            .NotDependOnAny(namespacePattern)
+            .NotDependOnAny(Types().That().ResideInNamespaceMatching(namespacePattern))
             .Because(
                 $"The domain layer ({DomainNamespace}) should be isolated from application, infrastructure, UI concerns, and specific implementation frameworks not part of core domain logic."
             )
+            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 }

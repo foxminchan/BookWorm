@@ -15,12 +15,13 @@ public sealed class BasketDomainTests : ArchUnitBaseTest
     {
         Classes()
             .That()
-            .ResideInNamespace(DomainNamespace)
+            .ResideInNamespaceMatching(DomainNamespace)
             .Should()
             .BeSealed()
             .Because(
                 "Classes in the domain layer should be sealed to prevent inheritance, ensuring that the domain model remains consistent and predictable."
             )
+            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -29,12 +30,13 @@ public sealed class BasketDomainTests : ArchUnitBaseTest
     {
         Classes()
             .That()
-            .ResideInNamespace(DomainNamespace)
+            .ResideInNamespaceMatching(DomainNamespace)
             .Should()
             .BePublic()
             .Because(
                 "Classes in the domain layer should be public to allow access from other layers, such as application and infrastructure."
             )
+            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -43,9 +45,10 @@ public sealed class BasketDomainTests : ArchUnitBaseTest
     {
         Classes()
             .That()
-            .ResideInNamespace(DomainNamespace)
+            .ResideInNamespaceMatching(DomainNamespace)
             .Should()
             .NotBeAbstract()
+            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -56,7 +59,7 @@ public sealed class BasketDomainTests : ArchUnitBaseTest
             .That()
             .HaveNameEndingWith("Repository")
             .And()
-            .ResideInNamespace(DomainNamespace)
+            .ResideInNamespaceMatching(DomainNamespace)
             .Should()
             .HaveNameStartingWith("I")
             .AndShould()
@@ -64,6 +67,7 @@ public sealed class BasketDomainTests : ArchUnitBaseTest
             .Because(
                 "Repository interfaces should be public and follow the naming convention of starting with 'I' to indicate they are interfaces."
             )
+            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -72,9 +76,8 @@ public sealed class BasketDomainTests : ArchUnitBaseTest
     {
         Classes()
             .That()
-            .ResideInNamespace(
-                $"{nameof(BookWorm)}.{nameof(Basket)}.Infrastructure.Exceptions",
-                true
+            .ResideInNamespaceMatching(
+                $"{nameof(BookWorm)}.{nameof(Basket)}.Infrastructure.Exceptions"
             )
             .And()
             .HaveNameEndingWith(nameof(Exception))
@@ -87,6 +90,7 @@ public sealed class BasketDomainTests : ArchUnitBaseTest
             .Because(
                 "Domain exceptions should be public, sealed, and derive from System.Exception to ensure proper error handling and reporting."
             )
+            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -97,12 +101,13 @@ public sealed class BasketDomainTests : ArchUnitBaseTest
             .That()
             .HaveName(nameof(BasketItem))
             .And()
-            .ResideInNamespace(DomainNamespace)
+            .ResideInNamespaceMatching(DomainNamespace)
             .Should()
             .ImplementInterface(typeof(IValidatableObject))
             .Because(
                 $"The BasketItem class should implement the {nameof(IValidatableObject)} interface to support validation logic."
             )
+            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -117,9 +122,9 @@ public sealed class BasketDomainTests : ArchUnitBaseTest
     {
         Types()
             .That()
-            .ResideInNamespace(DomainNamespace)
+            .ResideInNamespaceMatching(DomainNamespace)
             .Should()
-            .NotDependOnAny(namespacePattern)
+            .NotDependOnAny(Types().That().ResideInNamespaceMatching(namespacePattern))
             .Because(
                 $"The domain layer ({DomainNamespace}) should be isolated from application, infrastructure, UI concerns, and specific implementation frameworks not part of core domain logic. It should primarily depend on itself, .NET base libraries, and approved shared kernels."
             )

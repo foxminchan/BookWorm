@@ -7,7 +7,7 @@
   </PropertyGroup>
   <ItemGroup Label="Aspire Packages">
     <!-- Aspire Hosting -->
-    <PackageVersion Include="Scalar.Aspire" Version="0.1.6" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.1.7" />
     <PackageVersion Include="Aspire.Hosting.Qdrant" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.AppHost" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="$(AspireVersion)" />
@@ -31,7 +31,7 @@
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.k6" Version="$(ToolKitVersion)" />
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.Ollama" Version="$(ToolKitVersion)" />
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.MailPit" Version="$(ToolKitVersion)" />
-    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.McpInspector" Version="9.6.0-beta.324" />
+    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.McpInspector" Version="$(ToolKitVersion)" />
     <PackageVersion Include="CommunityToolkit.Aspire.OllamaSharp" Version="$(ToolKitVersion)" />
   </ItemGroup>
   <ItemGroup Label="Core Packages">
@@ -48,7 +48,6 @@
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.7" />
     <PackageVersion Include="Microsoft.Azure.SignalR.Management" Version="1.30.3" />
     <!-- Semantic Kernel -->
-    <PackageVersion Include="SharpA2A.AspNetCore" Version="0.2.2-preview.1" />
     <PackageVersion Include="Microsoft.SemanticKernel.Agents.Core" Version="1.60.0" />
     <PackageVersion Include="Microsoft.SemanticKernel.Agents.A2A" Version="1.60.0-alpha" />
     <PackageVersion Include="Microsoft.SemanticKernel.Agents.Orchestration" Version="1.60.0-preview" />
@@ -100,6 +99,7 @@
     <PackageVersion Include="SendGrid" Version="9.29.3" />
     <PackageVersion Include="AspNetCore.HealthChecks.SendGrid" Version="$(HealthChecksVersion)" />
     <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.3.0-preview.2" />
+    <PackageVersion Include="SharpA2A.AspNetCore" Version="0.2.2-preview.1" />
   </ItemGroup>
   <ItemGroup Label="Testing">
     <!-- Testing packages -->
@@ -107,7 +107,7 @@
     <PackageVersion Include="Bogus" Version="35.6.3" />
     <PackageVersion Include="TUnit" Version="0.25.21" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
-    <PackageVersion Include="TngTech.ArchUnitNET" Version="0.11.4" />
+    <PackageVersion Include="TngTech.ArchUnitNET" Version="0.12.0" />
     <PackageVersion Include="GitHubActionsTestLogger" Version="2.4.1" />
     <!-- Testing Platform -->
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2" />
