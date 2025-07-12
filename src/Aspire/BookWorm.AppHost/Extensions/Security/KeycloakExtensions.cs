@@ -29,8 +29,8 @@ public static class KeycloakExtensions
     /// </remarks>
     public static IResourceBuilder<KeycloakResource> WithSampleRealmImport(
         this IResourceBuilder<KeycloakResource> builder,
-        string realmName,
-        string displayName
+        IResourceBuilder<ParameterResource> realmName,
+        IResourceBuilder<ParameterResource> displayName
     )
     {
         builder
@@ -62,7 +62,7 @@ public static class KeycloakExtensions
     /// </remarks>
     public static IResourceBuilder<KeycloakResource> WithCustomTheme(
         this IResourceBuilder<KeycloakResource> builder,
-        string themeName
+        IResourceBuilder<ParameterResource> themeName
     )
     {
         var importFullPath = Path.GetFullPath(
@@ -127,6 +127,7 @@ public static class KeycloakExtensions
     /// </summary>
     /// <param name="builder">The project resource builder.</param>
     /// <param name="keycloak">The Keycloak resource builder to configure as an IdP.</param>
+    /// <param name="realmName">The realm name parameter resource builder.</param>
     /// <returns>The project resource builder for method chaining.</returns>
     /// <remarks>
     ///     This method sets up environment variables required for Keycloak integration,
@@ -135,7 +136,8 @@ public static class KeycloakExtensions
     /// </remarks>
     public static IResourceBuilder<ProjectResource> WithIdP(
         this IResourceBuilder<ProjectResource> builder,
-        IResourceBuilder<KeycloakResource> keycloak
+        IResourceBuilder<KeycloakResource> keycloak,
+        IResourceBuilder<ParameterResource> realmName
     )
     {
         var clientId = builder.Resource.Name;
@@ -166,6 +168,67 @@ public static class KeycloakExtensions
 
         return builder
             .WithReference(keycloak)
+            .WithEnvironment("Identity__Realm", realmName)
             .WithEnvironment($"Identity__Scopes__{clientId}", clientId.ToClientName("API"));
+    }
+
+    /// <summary>
+    ///     Builds the OpenID Connect authorization endpoint URL for the specified Keycloak realm.
+    ///     Uses localhost for user interaction to address Scalar documentation generation issues.
+    /// </summary>
+    /// <param name="builder">
+    ///     The <see cref="IResourceBuilder{KeycloakResource}"/> used to resolve the Keycloak endpoint.
+    /// </param>
+    /// <param name="realmName">
+    ///     The <see cref="IResourceBuilder{ParameterResource}"/> containing the realm name.
+    /// </param>
+    /// <param name="protocol">Specifies the protocol to use (e.g., "http" or "https").</param>
+    /// <returns>
+    ///     The authorization endpoint URL for the given realm.
+    /// </returns>
+    /// <remarks>
+    ///     Implementation uses localhost for user interaction.
+    ///     Related issue: https://github.com/scalar/scalar/issues/6225
+    /// </remarks>
+    public static string GetAuthorizationEndpoint(
+        this IResourceBuilder<KeycloakResource> builder,
+        string protocol,
+        IResourceBuilder<ParameterResource> realmName
+    )
+    {
+        var keycloakUrl = builder.GetEndpoint(protocol).Url;
+
+        var realm = realmName.Resource.Value;
+
+        return $"{keycloakUrl}/realms/{realm}/protocol/openid-connect/auth";
+    }
+
+    /// <summary>
+    ///     Builds the OpenID Connect token endpoint URL for the specified Keycloak realm.
+    ///     Uses the Keycloak resource name for proxy configuration to address Scalar documentation generation issues.
+    /// </summary>
+    /// <param name="builder">
+    ///     The <see cref="IResourceBuilder{KeycloakResource}"/> used to resolve the Keycloak endpoint.
+    /// </param>
+    /// <param name="realmName">
+    ///     The <see cref="IResourceBuilder{ParameterResource}"/> containing the realm name.
+    /// </param>
+    /// <param name="protocol">Specifies the protocol to use (e.g., "http" or "https").</param>
+    /// <returns>
+    ///     The token endpoint URL for the given realm.
+    /// </returns>
+    /// <remarks>
+    ///     Implementation uses Keycloak resource name for proxy configuration.
+    ///     Related issue: https://github.com/scalar/scalar/issues/6225
+    /// </remarks>
+    public static string GetTokenEndpoint(
+        this IResourceBuilder<KeycloakResource> builder,
+        string protocol,
+        IResourceBuilder<ParameterResource> realmName
+    )
+    {
+        var realm = realmName.Resource.Value;
+
+        return $"{protocol}://{builder.Resource.Name}/realms/{realm}/protocol/openid-connect/token";
     }
 }
