@@ -9,18 +9,14 @@ public static class ScalarExtensions
     ///     Adds a Scalar API reference to the distributed application builder with predefined theme and font settings.
     /// </summary>
     /// <param name="builder">The distributed application builder to extend.</param>
-    /// <param name="keycloak">The Keycloak resource builder to reference for OAuth configuration.</param>
     /// <returns>An <see cref="IResourceBuilder{ScalarResource}" /> configured with the specified theme and font settings.</returns>
     public static IResourceBuilder<ScalarResource> AddScalar(
-        this IDistributedApplicationBuilder builder,
-        IResourceBuilder<KeycloakResource> keycloak
+        this IDistributedApplicationBuilder builder
     )
     {
-        return builder
-            .AddScalarApiReference(options =>
-                options.WithTheme(ScalarTheme.BluePlanet).WithDefaultFonts(false)
-            )
-            .WithReference(keycloak);
+        return builder.AddScalarApiReference(options =>
+            options.WithTheme(ScalarTheme.BluePlanet).WithDefaultFonts(false)
+        );
     }
 
     /// <summary>
