@@ -59,23 +59,56 @@ sequenceDiagram
 - **No Client Secret Required**: Perfect for public clients that cannot securely store secrets
 - **Dynamic Challenge**: Each authentication flow uses a unique code challenge/verifier pair
 
-## Custom Theme Introduction
+## Custom Theme with Keycloakify
 
-The BookWorm application includes a custom Keycloak theme to provide a branded authentication experience that matches
-the application's design language.
+The BookWorm application includes a custom Keycloak theme built with [Keycloakify](https://www.keycloakify.dev/), a modern React-based framework for creating Keycloak themes. This provides a branded authentication experience that matches the application's design language.
 
 ![BookWorm Custom Theme](../../../../../assets/keycloak-theme.jpg)
 
+### Keycloakify Project Structure
+
+The theme is developed as a separate TypeScript/React project located in the `keycloakify/` directory:
+
+```
+keycloakify/
+├── src/
+│   ├── login/           # Login page components
+│   ├── email/           # Email template components
+│   ├── kc.gen.tsx       # Generated Keycloak context
+│   └── main.tsx         # Theme entry point
+├── package.json         # Dependencies and build scripts
+├── vite.config.ts       # Vite configuration with Keycloakify plugin
+├── tailwind.config.js   # Tailwind CSS configuration
+└── tsconfig.json        # TypeScript configuration
+```
+
 ### Theme Features
 
-- **Custom UI**: Tailored login and registration forms using [Keycloakify](https://www.keycloakify.dev/)
-- **Responsive Design**: Mobile-friendly login forms
+- **Modern React Development**: Built with React, TypeScript, and Tailwind CSS
+- **Component-Based Architecture**: Modular and maintainable theme components
+- **Hot Reloading**: Fast development experience with Vite
+- **Custom UI**: Tailored login and registration forms
+- **Responsive Design**: Mobile-friendly login forms with Tailwind CSS
 - **Consistent UX**: Matches the main application's look and feel
 - **Professional Appearance**: Enhanced user trust and brand recognition
+- **Email Templates**: Custom branded email notifications
 
 ### Theme Configuration
 
-The custom theme is configured in the realm settings:
+The Keycloakify theme is configured in `vite.config.ts`:
+
+```typescript
+keycloakify({
+  themeName: "bookworm",
+  themeVersion: "1.0.0",
+  groupId: "com.foxminchan.bookworm.keycloak",
+  artifactId: "keycloak-theme-bookworm",
+  accountThemeImplementation: "none",
+  keycloakifyBuildDirPath: "../themes",
+});
+```
+
+The theme is applied to the realm in the realm configuration:
 
 ```json
 {
@@ -85,26 +118,71 @@ The custom theme is configured in the realm settings:
 }
 ```
 
-### Theme Deployment
+### Theme Development & Deployment
 
-1. **JAR Package**: The theme is packaged as `BookWormThemes.jar`
-2. **Container Mount**: Mounted to `/opt/keycloak/providers/` in the Keycloak container
-3. **Automatic Loading**: Keycloak automatically loads themes from the providers directory
-4. **Realm Assignment**: The theme is assigned to the BookWorm realm via configuration
+#### Development Workflow
+
+1. **Setup**: Navigate to the `keycloakify/` directory and install dependencies
+
+   ```bash
+   cd keycloakify
+   bun install
+   ```
+
+2. **Development**: Start the development server with hot reloading
+
+   ```bash
+   bun run dev
+   ```
+
+3. **Storybook**: Use Storybook for component development and testing
+
+   ```bash
+   bun run storybook
+   ```
+
+4. **Build Theme**: Generate the Keycloak theme artifacts
+   ```bash
+   bun run build-keycloak-theme
+   ```
+
+> [!WARNING]
+> Maven is required to build the Keycloak theme. Please ensure you have Maven installed and configured.
+
+#### Deployment Process
+
+1. **Theme Build**: The Keycloakify build process generates theme files in the `../themes/` directory
+2. **Delete Old Theme**: Remove any existing theme files to avoid conflicts
+3. **Rename Build Files**: Ensure the theme files are named `BookWormThemes.jar` to match the Keycloak theme configuration
+4. **Container Integration**: Theme files are automatically available to the Keycloak container
+5. **Realm Configuration**: The theme is applied through realm settings
+6. **Hot Deployment**: Changes are reflected when Keycloak restarts or reloads
+
+#### Technology Stack
+
+- **Keycloakify**: React-based Keycloak theme framework
+- **React**: UI component library
+- **TypeScript**: Type-safe development
+- **Tailwind CSS**: Utility-first CSS framework
+- **Vite**: Fast build tool and dev server
+- **Storybook**: Component development environment
 
 ### Customization Areas
 
-The BookWorm theme customizes several Keycloak pages:
+The BookWorm Keycloakify theme customizes several Keycloak pages through React components:
 
-- **Login Page**: Main authentication form
-- **Registration**: User signup form
-- **Password Reset**: Forgot password flow
-- **Error Pages**: Branded error messaging
-- **Email Templates**: Consistent email styling
+- **Login Page**: Modern React-based authentication form (`src/login/`)
+- **Registration**: User signup form with custom validation
+- **Password Reset**: Forgot password flow with branded styling
+- **Error Pages**: Branded error messaging components
+- **Email Templates**: React-based email components (`src/email/`)
 
 ### Development Notes
 
-- Theme files are pre-built and packaged in the JAR
-- Changes to the theme require rebuilding the JAR file
-- The theme follows Keycloak's theme structure and templating system
-- CSS and JavaScript customizations are included for enhanced UX
+- **Component-Based**: Each Keycloak page is implemented as a React component
+- **TypeScript Support**: Full type safety with Keycloak context types
+- **Tailwind Styling**: Utility-first CSS for rapid UI development
+- **Hot Reloading**: Instant feedback during development
+- **Storybook Integration**: Isolated component development and testing
+- **Build Automation**: Vite handles bundling and optimization
+- **Theme Generation**: Keycloakify automatically generates compatible Keycloak theme files
