@@ -65,6 +65,12 @@ updates:
       interval: weekly
     commit-message:
       prefix: "Node (k6)"
+  - package-ecosystem: "npm"
+    directory: "/src/Aspire/BookWorm.AppHost/Container/keycloak"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "Node (Keycloakify)"
   - package-ecosystem: github-actions
     directory: "/"
     schedule:

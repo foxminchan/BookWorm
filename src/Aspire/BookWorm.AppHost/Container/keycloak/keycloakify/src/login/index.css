@@ -1,0 +1,61 @@
+@import url(./assets/fonts/geist/index.css);
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body.kcBodyClass {
+  @apply bg-[url(./assets/img/background.jpg)] bg-no-repeat bg-center bg-fixed;
+  @apply font-geist;
+}
+
+.kcHeaderWrapperClass {
+  @apply text-3xl font-bold underline;
+}
+
+.kcButtonClass {
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: #ffffff;
+  background: linear-gradient(45deg, #6a11cb, #2575fc);
+  border: none;
+  border-radius: 25px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+  cursor: pointer;
+  width: 100%;
+}
+
+.kcButtonClass:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+}
+
+.kcButtonClass:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.kcButtonClass:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 117, 252, 0.5);
+}
+
+.kcButtonClass:disabled {
+  background: linear-gradient(45deg, #aaa, #ccc);
+  color: #666;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+  opacity: 0.6;
+}
+
+.kcButtonClass:disabled:hover,
+.kcButtonClass:disabled:active {
+  transform: none;
+  box-shadow: none;
+}
