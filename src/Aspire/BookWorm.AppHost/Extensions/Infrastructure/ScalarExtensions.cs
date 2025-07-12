@@ -39,19 +39,51 @@ public static class ScalarExtensions
             )
             ?.Value;
 
+        var keycloak =
+            builder
+                .ApplicationBuilder.Resources.OfType<KeycloakResource>()
+                .Select(builder.ApplicationBuilder.CreateResourceBuilder)
+                .SingleOrDefault()
+            ?? throw new InvalidOperationException("Keycloak resource not found.");
+
+        var realmName =
+            builder
+                .ApplicationBuilder.Resources.OfType<ParameterResource>()
+                .FirstOrDefault(r =>
+                    string.Equals(r.Name, "kc-realm", StringComparison.OrdinalIgnoreCase)
+                )
+            ?? throw new InvalidOperationException(
+                "Keycloak realm parameter 'kc-realm' not found."
+            );
+
+        var realmNameBuilder = builder.ApplicationBuilder.CreateResourceBuilder(realmName);
+
         return builder.WithApiReference(
             api,
             options =>
+            {
                 options
                     .AddPreferredSecuritySchemes(OAuthDefaults.DisplayName)
                     .AddAuthorizationCodeFlow(
                         OAuthDefaults.DisplayName,
                         flow =>
+                        {
                             flow.WithPkce(Pkce.Sha256)
-                                .WithClientId(clientId)
-                                .WithClientSecret(secret)
-                                .WithSelectedScopes(clientId)
-                    )
+                                .WithAuthorizationUrl(
+                                    keycloak.GetAuthorizationEndpoint(realmNameBuilder)
+                                )
+                                .WithTokenUrl(keycloak.GetTokenEndpoint(realmNameBuilder))
+                                .WithClientId(clientId);
+
+                            if (secret is not null)
+                            {
+                                flow.WithClientSecret(secret);
+                            }
+
+                            flow.WithSelectedScopes(clientId);
+                        }
+                    );
+            }
         );
     }
 }

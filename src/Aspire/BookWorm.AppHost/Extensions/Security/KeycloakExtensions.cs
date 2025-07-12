@@ -29,8 +29,8 @@ public static class KeycloakExtensions
     /// </remarks>
     public static IResourceBuilder<KeycloakResource> WithSampleRealmImport(
         this IResourceBuilder<KeycloakResource> builder,
-        string realmName,
-        string displayName
+        IResourceBuilder<ParameterResource> realmName,
+        IResourceBuilder<ParameterResource> displayName
     )
     {
         builder
@@ -62,7 +62,7 @@ public static class KeycloakExtensions
     /// </remarks>
     public static IResourceBuilder<KeycloakResource> WithCustomTheme(
         this IResourceBuilder<KeycloakResource> builder,
-        string themeName
+        IResourceBuilder<ParameterResource> themeName
     )
     {
         var importFullPath = Path.GetFullPath(
@@ -167,5 +167,61 @@ public static class KeycloakExtensions
         return builder
             .WithReference(keycloak)
             .WithEnvironment($"Identity__Scopes__{clientId}", clientId.ToClientName("API"));
+    }
+
+    /// <summary>
+    ///     Builds the OpenID Connect authorization endpoint URL for the specified Keycloak realm.
+    /// </summary>
+    /// <param name="builder">
+    ///     The <see cref="IResourceBuilder{KeycloakResource}"/> used to resolve the Keycloak endpoint.
+    /// </param>
+    /// <param name="realmName">
+    ///     The <see cref="IResourceBuilder{ParameterResource}"/> containing the realm name.
+    /// </param>
+    /// <returns>
+    ///     The authorization endpoint URL for the given realm.
+    /// </returns>
+    public static string GetAuthorizationEndpoint(
+        this IResourceBuilder<KeycloakResource> builder,
+        IResourceBuilder<ParameterResource> realmName
+    )
+    {
+        var endpointName = builder.ApplicationBuilder.IsHttpsLaunchProfile()
+            ? Protocol.Https
+            : Protocol.Http;
+
+        var endpoint = builder.GetEndpoint(endpointName);
+
+        var realm = realmName.Resource.Value;
+
+        return $"{endpoint.Url}/realms/{realm}/protocol/openid-connect/auth";
+    }
+
+    /// <summary>
+    ///     Builds the OpenID Connect token endpoint URL for the specified Keycloak realm.
+    /// </summary>
+    /// <param name="builder">
+    ///     The <see cref="IResourceBuilder{KeycloakResource}"/> used to resolve the Keycloak endpoint.
+    /// </param>
+    /// <param name="realmName">
+    ///     The <see cref="IResourceBuilder{ParameterResource}"/> containing the realm name.
+    /// </param>
+    /// <returns>
+    ///     The token endpoint URL for the given realm.
+    /// </returns>
+    public static string GetTokenEndpoint(
+        this IResourceBuilder<KeycloakResource> builder,
+        IResourceBuilder<ParameterResource> realmName
+    )
+    {
+        var endpointName = builder.ApplicationBuilder.IsHttpsLaunchProfile()
+            ? Protocol.Https
+            : Protocol.Http;
+
+        var endpoint = builder.GetEndpoint(endpointName);
+
+        var realm = realmName.Resource.Value;
+
+        return $"{endpoint.Url}/realms/{realm}/protocol/openid-connect/token";
     }
 }

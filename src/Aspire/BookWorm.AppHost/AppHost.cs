@@ -10,6 +10,10 @@ if (builder.ExecutionContext.IsPublishMode)
     builder.AddAzureContainerAppEnvironment(Components.Azure.ContainerApp).ProvisionAsService();
 }
 
+var kcRealmName = builder.AddParameter("kc-realm", nameof(BookWorm).ToLowerInvariant());
+var kcThemeName = builder.AddParameter("kc-theme", nameof(BookWorm).ToLowerInvariant());
+var kcThemeDisplayName = builder.AddParameter("kc-theme-display-name", nameof(BookWorm));
+
 var postgres = builder
     .AddAzurePostgresFlexibleServer(Components.Postgres)
     .RunAsContainer()
@@ -64,10 +68,10 @@ builder.AddOllama(configure =>
 var keycloak = builder
     .AddKeycloak(Components.KeyCloak)
     .WithDataVolume()
-    .WithCustomTheme(nameof(BookWorm).ToLowerInvariant())
+    .WithCustomTheme(kcThemeName)
     .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent)
-    .WithSampleRealmImport(nameof(BookWorm).ToLowerInvariant(), nameof(BookWorm))
+    .WithSampleRealmImport(kcRealmName, kcThemeDisplayName)
     .RunWithHttpsDevCertificate();
 
 var catalogApi = builder
