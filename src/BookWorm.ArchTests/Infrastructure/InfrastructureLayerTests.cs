@@ -14,7 +14,7 @@ public sealed class InfrastructureLayerTests : ArchUnitBaseTest
     {
         Classes()
             .That()
-            .ResideInNamespace(InfrastructureNamespace, true)
+            .ResideInNamespaceMatching(InfrastructureNamespace)
             .And()
             .AreAssignableTo(typeof(DbContext))
             .Should()
@@ -22,6 +22,7 @@ public sealed class InfrastructureLayerTests : ArchUnitBaseTest
             .OrShould()
             .HaveNameEndingWith("Context")
             .Because("DbContext classes should follow the naming convention for clarity.")
+            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 }

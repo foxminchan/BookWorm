@@ -81,9 +81,13 @@ public sealed class DomainEventTests : ArchUnitBaseTest
             .That()
             .AreAssignableTo(typeof(DomainEvent))
             .Should()
-            .NotDependOnAny($"{nameof(BookWorm)}.*.Infrastructure")
+            .NotDependOnAny(
+                Types().That().ResideInNamespaceMatching($"{nameof(BookWorm)}.*.Infrastructure")
+            )
             .AndShould()
-            .NotDependOnAny($"{nameof(BookWorm)}.*.Features")
+            .NotDependOnAny(
+                Types().That().ResideInNamespaceMatching($"{nameof(BookWorm)}.*.Features")
+            )
             .Because(
                 "Domain events should only depend on domain concepts and not on infrastructure or application concerns."
             )
@@ -149,7 +153,7 @@ public sealed class DomainEventTests : ArchUnitBaseTest
             .That()
             .HaveNameEndingWith("Service")
             .And()
-            .ResideInNamespace($"{nameof(BookWorm)}", true)
+            .ResideInNamespaceMatching($"{nameof(BookWorm)}")
             .Should()
             .BePublic()
             .OrShould()
@@ -159,6 +163,7 @@ public sealed class DomainEventTests : ArchUnitBaseTest
             .Because(
                 "Domain services should be public and sealed to provide specific domain operations."
             )
+            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -169,11 +174,11 @@ public sealed class DomainEventTests : ArchUnitBaseTest
             .That()
             .HaveNameEndingWith(nameof(Exception))
             .And()
-            .ResideInNamespace($"{nameof(BookWorm)}", true)
+            .ResideInNamespaceMatching($"{nameof(BookWorm)}")
             .And()
-            .DoNotResideInNamespace($"{nameof(BookWorm)}.Chassis.*", true)
+            .DoNotResideInNamespaceMatching($"{nameof(BookWorm)}.Chassis.*")
             .And()
-            .DoNotResideInNamespace($"{nameof(BookWorm)}.*.Infrastructure.*", true)
+            .DoNotResideInNamespaceMatching($"{nameof(BookWorm)}.*.Infrastructure.*")
             .Should()
             .BePublic()
             .AndShould()
@@ -183,6 +188,7 @@ public sealed class DomainEventTests : ArchUnitBaseTest
             .Because(
                 "Domain exceptions should be public, sealed, and derive from System.Exception."
             )
+            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -198,7 +204,7 @@ public sealed class DomainEventTests : ArchUnitBaseTest
             .That()
             .AreAssignableTo(typeof(DomainEvent))
             .Should()
-            .NotDependOnAny(namespacePattern)
+            .NotDependOnAny(Types().That().ResideInNamespaceMatching(namespacePattern))
             .Because(
                 $"Domain events should not depend on higher architectural layers like {namespacePattern}."
             )
@@ -210,7 +216,7 @@ public sealed class DomainEventTests : ArchUnitBaseTest
     {
         Classes()
             .That()
-            .ResideInNamespace($"{nameof(BookWorm)}.*.Infrastructure", true)
+            .ResideInNamespaceMatching($"{nameof(BookWorm)}.*.Infrastructure")
             .And()
             .HaveNameEndingWith("Repository")
             .And()
@@ -223,6 +229,7 @@ public sealed class DomainEventTests : ArchUnitBaseTest
             .Because(
                 "Infrastructure repository implementations should implement domain repository interfaces."
             )
+            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 }

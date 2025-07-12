@@ -23,12 +23,17 @@ public sealed class CrossDomainDependencyTests : ArchUnitBaseTest
     {
         Types()
             .That()
-            .ResideInNamespace($"{nameof(BookWorm)}.{sourceDomain}.Domain", true)
+            .ResideInNamespaceMatching($"{nameof(BookWorm)}.{sourceDomain}.Domain")
             .Should()
-            .NotDependOnAny($"{nameof(BookWorm)}.{targetDomain}.Domain")
+            .NotDependOnAny(
+                Types()
+                    .That()
+                    .ResideInNamespaceMatching($"{nameof(BookWorm)}.{targetDomain}.Domain")
+            )
             .Because(
                 $"Domain {sourceDomain} should not depend on domain {targetDomain} to maintain proper bounded context separation."
             )
+            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 }
