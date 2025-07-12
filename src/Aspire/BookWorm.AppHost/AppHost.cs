@@ -10,6 +10,10 @@ if (builder.ExecutionContext.IsPublishMode)
     builder.AddAzureContainerAppEnvironment(Components.Azure.ContainerApp).ProvisionAsService();
 }
 
+var kcRealmName = builder.AddParameter("kc-realm", nameof(BookWorm).ToLowerInvariant());
+var kcThemeName = builder.AddParameter("kc-theme", nameof(BookWorm).ToLowerInvariant());
+var kcThemeDisplayName = builder.AddParameter("kc-theme-display-name", nameof(BookWorm));
+
 var postgres = builder
     .AddAzurePostgresFlexibleServer(Components.Postgres)
     .RunAsContainer()
@@ -64,10 +68,10 @@ builder.AddOllama(configure =>
 var keycloak = builder
     .AddKeycloak(Components.KeyCloak)
     .WithDataVolume()
-    .WithCustomTheme(nameof(BookWorm).ToLowerInvariant())
+    .WithCustomTheme(kcThemeName)
     .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent)
-    .WithSampleRealmImport(nameof(BookWorm).ToLowerInvariant(), nameof(BookWorm))
+    .WithSampleRealmImport(kcRealmName, kcThemeDisplayName)
     .RunWithHttpsDevCertificate();
 
 var catalogApi = builder
@@ -82,7 +86,7 @@ var catalogApi = builder
     .WaitFor(qdrant)
     .WithReference(redis)
     .WaitFor(redis)
-    .WithIdP(keycloak)
+    .WithIdP(keycloak, kcRealmName)
     .WithReference(blobStorage)
     .WaitFor(blobStorage)
     .WithRoleAssignments(
@@ -112,7 +116,7 @@ var chatApi = builder
     .WaitFor(mcp)
     .WithReference(chatDb)
     .WaitFor(chatDb)
-    .WithIdP(keycloak)
+    .WithIdP(keycloak, kcRealmName)
     .WithReference(signalR)
     .WaitFor(signalR)
     .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor)
@@ -129,7 +133,7 @@ var basketApi = builder
     .WithReference(queue)
     .WaitFor(queue)
     .WithReference(catalogApi)
-    .WithIdP(keycloak)
+    .WithIdP(keycloak, kcRealmName)
     .WithAzApplicationInsights()
     .WithOpenApi()
     .WithAsyncApi()
@@ -155,7 +159,7 @@ var orderingApi = builder
     .WaitFor(queue)
     .WithReference(redis)
     .WaitFor(redis)
-    .WithIdP(keycloak)
+    .WithIdP(keycloak, kcRealmName)
     .WithReference(catalogApi)
     .WithReference(basketApi)
     .WithReference(signalR)
@@ -173,7 +177,7 @@ var ratingApi = builder
     .WaitFor(ratingDb)
     .WithReference(queue)
     .WaitFor(queue)
-    .WithIdP(keycloak)
+    .WithIdP(keycloak, kcRealmName)
     .WithReference(chatApi)
     .WithAzApplicationInsights()
     .WithOpenApi()
@@ -188,7 +192,7 @@ var financeApi = builder
     .WaitFor(financeDb)
     .WithReference(queue)
     .WaitFor(queue)
-    .WithIdP(keycloak)
+    .WithIdP(keycloak, kcRealmName)
     .WithAzApplicationInsights()
     .WithOpenApi()
     .WithAsyncApi()
@@ -227,7 +231,7 @@ builder
 if (builder.ExecutionContext.IsRunMode)
 {
     builder
-        .AddScalar()
+        .AddScalar(keycloak)
         .WithApi(basketApi)
         .WithApi(catalogApi)
         .WithApi(chatApi)

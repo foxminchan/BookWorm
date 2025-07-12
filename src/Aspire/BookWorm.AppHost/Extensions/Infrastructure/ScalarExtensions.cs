@@ -5,18 +5,27 @@ namespace BookWorm.AppHost.Extensions.Infrastructure;
 
 public static class ScalarExtensions
 {
+    private static readonly Dictionary<
+        IDistributedApplicationBuilder,
+        (IResourceBuilder<KeycloakResource> Keycloak, IResourceBuilder<ParameterResource> RealmName)
+    > _cachedResources = [];
+
     /// <summary>
     ///     Adds a Scalar API reference to the distributed application builder with predefined theme and font settings.
     /// </summary>
     /// <param name="builder">The distributed application builder to extend.</param>
+    /// <param name="keycloak">The Keycloak resource builder to use for authentication.</param>
     /// <returns>An <see cref="IResourceBuilder{ScalarResource}" /> configured with the specified theme and font settings.</returns>
     public static IResourceBuilder<ScalarResource> AddScalar(
-        this IDistributedApplicationBuilder builder
+        this IDistributedApplicationBuilder builder,
+        IResourceBuilder<KeycloakResource> keycloak
     )
     {
-        return builder.AddScalarApiReference(options =>
-            options.WithTheme(ScalarTheme.BluePlanet).WithDefaultFonts(false)
-        );
+        return builder
+            .AddScalarApiReference(options =>
+                options.WithTheme(ScalarTheme.BluePlanet).WithDefaultFonts(false)
+            )
+            .WithReference(keycloak);
     }
 
     /// <summary>
@@ -39,19 +48,68 @@ public static class ScalarExtensions
             )
             ?.Value;
 
+        var (keycloak, realmName) = GetCachedResources(builder.ApplicationBuilder);
+
         return builder.WithApiReference(
             api,
             options =>
+            {
                 options
                     .AddPreferredSecuritySchemes(OAuthDefaults.DisplayName)
                     .AddAuthorizationCodeFlow(
                         OAuthDefaults.DisplayName,
                         flow =>
+                        {
                             flow.WithPkce(Pkce.Sha256)
-                                .WithClientId(clientId)
-                                .WithClientSecret(secret)
-                                .WithSelectedScopes(clientId)
-                    )
+                                .WithAuthorizationUrl(
+                                    keycloak.GetAuthorizationEndpoint(Protocol.Http, realmName)
+                                )
+                                .WithTokenUrl(keycloak.GetTokenEndpoint(Protocol.Http, realmName))
+                                .WithClientId(clientId);
+
+                            if (secret is not null)
+                            {
+                                flow.WithClientSecret(secret);
+                            }
+
+                            flow.WithSelectedScopes(clientId);
+                        }
+                    );
+            }
         );
+    }
+
+    private static (
+        IResourceBuilder<KeycloakResource> Keycloak,
+        IResourceBuilder<ParameterResource> RealmName
+    ) GetCachedResources(IDistributedApplicationBuilder builder)
+    {
+        if (_cachedResources.TryGetValue(builder, out var cached))
+        {
+            return cached;
+        }
+
+        var keycloak =
+            builder
+                .Resources.OfType<KeycloakResource>()
+                .Select(builder.CreateResourceBuilder)
+                .FirstOrDefault()
+            ?? throw new InvalidOperationException("Keycloak resource not found.");
+
+        var realmName =
+            builder
+                .Resources.OfType<ParameterResource>()
+                .FirstOrDefault(r =>
+                    string.Equals(r.Name, "kc-realm", StringComparison.OrdinalIgnoreCase)
+                )
+            ?? throw new InvalidOperationException(
+                "Keycloak realm parameter 'kc-realm' not found."
+            );
+
+        var realmNameBuilder = builder.CreateResourceBuilder(realmName);
+
+        var result = (keycloak, realmNameBuilder);
+        _cachedResources[builder] = result;
+        return result;
     }
 }

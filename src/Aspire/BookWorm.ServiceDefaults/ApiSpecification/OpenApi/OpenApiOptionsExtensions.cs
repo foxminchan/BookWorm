@@ -1,5 +1,4 @@
 ﻿using Asp.Versioning.ApiExplorer;
-using BookWorm.ServiceDefaults.Keycloak;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi.Models;
@@ -127,48 +126,26 @@ internal static class OpenApiOptionsExtensions
         );
     }
 
-    private sealed class SecuritySchemeDefinitionsTransformer(
-        IdentityOptions identityOptions,
-        IKeycloakUrls keycloakUrls
-    ) : IOpenApiDocumentTransformer
+    private sealed class SecuritySchemeDefinitionsTransformer(IdentityOptions identityOptions)
+        : IOpenApiDocumentTransformer
     {
-        public async Task TransformAsync(
+        public Task TransformAsync(
             OpenApiDocument document,
             OpenApiDocumentTransformerContext context,
             CancellationToken cancellationToken
         )
         {
-            var scopes = identityOptions.Scopes;
-
-            var authorizationUrlTask = keycloakUrls.GetAuthorizationUrlAsync(
-                Components.KeyCloak,
-                cancellationToken
-            );
-
-            var tokenUrlTask = keycloakUrls.GetTokenUrlAsync(
-                Components.KeyCloak,
-                cancellationToken
-            );
-
-            await Task.WhenAll(authorizationUrlTask, tokenUrlTask).ConfigureAwait(false);
-
             var securityScheme = new OpenApiSecurityScheme
             {
                 Type = SecuritySchemeType.OAuth2,
                 Description = "OAuth2 security scheme for the BookWorm API",
-                Flows = new()
-                {
-                    AuthorizationCode = new()
-                    {
-                        AuthorizationUrl = new(authorizationUrlTask.Result),
-                        TokenUrl = new(tokenUrlTask.Result),
-                        Scopes = scopes,
-                    },
-                },
+                Flows = new() { AuthorizationCode = new() { Scopes = identityOptions.Scopes } },
             };
 
             document.Components ??= new();
             document.Components.SecuritySchemes.Add(OAuthDefaults.DisplayName, securityScheme);
+
+            return Task.CompletedTask;
         }
     }
 }

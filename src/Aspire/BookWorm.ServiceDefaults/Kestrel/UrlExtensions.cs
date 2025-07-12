@@ -8,6 +8,7 @@ public static class UrlExtensions
         this ServiceEndpointResolver serviceEndpointResolver,
         string uri,
         string? additionalPath = null,
+        string? preferredProtocol = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -25,14 +26,27 @@ public static class UrlExtensions
         );
         var serviceAddresses = endpoints.Endpoints.Select(e => e.EndPoint.ToString()).ToArray();
 
-        var baseEndpoint =
-            serviceAddresses.FirstOrDefault(e => e?.StartsWith($"{Protocol.Https}://") == true)
-            ?? serviceAddresses.FirstOrDefault(e => e?.StartsWith($"{Protocol.Http}://") == true)
-            ?? throw new InvalidOperationException(
-                $"No HTTP(S) endpoints found for service '{serviceName}'."
-            );
+        var baseEndpoint = preferredProtocol switch
+        {
+            _ when preferredProtocol == Protocol.Http => serviceAddresses.FirstOrDefault(e =>
+                e?.StartsWith($"{Protocol.Http}://") == true
+            )
+                ?? serviceAddresses.FirstOrDefault(e =>
+                    e?.StartsWith($"{Protocol.Https}://") == true
+                ),
+            _ when preferredProtocol == Protocol.Https => serviceAddresses.FirstOrDefault(e =>
+                e?.StartsWith($"{Protocol.Https}://") == true
+            ) ?? serviceAddresses.FirstOrDefault(e => e?.StartsWith($"{Protocol.Http}://") == true),
+            _ => serviceAddresses.FirstOrDefault(e => e?.StartsWith($"{Protocol.Https}://") == true)
+                ?? serviceAddresses.FirstOrDefault(e =>
+                    e?.StartsWith($"{Protocol.Http}://") == true
+                ),
+        };
 
-        // Reconstruct the full URL with the original path
-        return $"{baseEndpoint.TrimEnd('/')}{parsedUri.PathAndQuery}{additionalPath}";
+        return baseEndpoint is null
+            ? throw new InvalidOperationException(
+                $"No HTTP(S) endpoints found for service '{serviceName}'."
+            )
+            : $"{baseEndpoint.TrimEnd('/')}{parsedUri.PathAndQuery}{additionalPath}";
     }
 }
