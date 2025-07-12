@@ -16,4 +16,29 @@ public interface IKeycloakUrls
         string serviceName,
         CancellationToken cancellationToken = default
     );
+
+    Task<string> GetIntrospectionUrlAsync(
+        string serviceName,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<string> GetUserInfoUrlAsync(
+        string serviceName,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<string> GetEndSessionUrlAsync(
+        string serviceName,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<string> GetRegistrationUrlAsync(
+        string serviceName,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<string> GetMetadataUrlAsync(
+        string serviceName,
+        CancellationToken cancellationToken = default
+    );
 }

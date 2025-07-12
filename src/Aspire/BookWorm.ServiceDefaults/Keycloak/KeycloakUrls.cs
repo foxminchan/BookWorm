@@ -3,11 +3,11 @@ using Microsoft.Extensions.ServiceDiscovery;
 
 namespace BookWorm.ServiceDefaults.Keycloak;
 
-public sealed class KeycloakUrls(ServiceEndpointResolver serviceEndpointResolver) : IKeycloakUrls
+public sealed class KeycloakUrls(
+    ServiceEndpointResolver serviceEndpointResolver,
+    IdentityOptions identity
+) : IKeycloakUrls
 {
-    private readonly string _realmName =
-        Environment.GetEnvironmentVariable("REALM") ?? nameof(BookWorm).ToLowerInvariant();
-
     public async Task<string> GetAccountConsoleUrlAsync(
         string serviceName,
         CancellationToken cancellationToken = default
@@ -40,18 +40,66 @@ public sealed class KeycloakUrls(ServiceEndpointResolver serviceEndpointResolver
         );
     }
 
+    public Task<string> GetIntrospectionUrlAsync(
+        string serviceName,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return GetRealmUrlAsync(
+            serviceName,
+            "protocol/openid-connect/token/introspect",
+            cancellationToken
+        );
+    }
+
+    public Task<string> GetUserInfoUrlAsync(
+        string serviceName,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return GetRealmUrlAsync(serviceName, "protocol/openid-connect/userinfo", cancellationToken);
+    }
+
+    public Task<string> GetEndSessionUrlAsync(
+        string serviceName,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return GetRealmUrlAsync(serviceName, "protocol/openid-connect/logout", cancellationToken);
+    }
+
+    public Task<string> GetRegistrationUrlAsync(
+        string serviceName,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return GetRealmUrlAsync(
+            serviceName,
+            "protocol/openid-connect/registrations",
+            cancellationToken
+        );
+    }
+
+    public Task<string> GetMetadataUrlAsync(
+        string serviceName,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return GetRealmUrlAsync(serviceName, ".well-known/openid-configuration", cancellationToken);
+    }
+
     private async Task<string> GetRealmUrlAsync(
         string serviceName,
         string? path = null,
         CancellationToken cancellationToken = default
     )
     {
-        var baseUri = $"{Protocol.HttpOrHttps}://{serviceName}/realms/{_realmName}";
+        var baseUri = $"{Protocol.HttpOrHttps}://{serviceName}/realms/{identity.Realm}";
         var realmPath = string.IsNullOrWhiteSpace(path) ? null : $"/{path}";
         return await serviceEndpointResolver.ResolveServiceEndpointUrl(
             baseUri,
             realmPath,
-            cancellationToken
+            cancellationToken: cancellationToken
         );
     }
 }
