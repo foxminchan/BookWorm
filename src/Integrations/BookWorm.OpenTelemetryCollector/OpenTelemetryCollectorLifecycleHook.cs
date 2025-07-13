@@ -11,7 +11,7 @@ internal sealed class OpenTelemetryCollectorLifecycleHook(
 
     public Task AfterEndpointsAllocatedAsync(
         DistributedApplicationModel appModel,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken = default
     )
     {
         var collectorResource = appModel

@@ -1,4 +1,5 @@
 ﻿using BookWorm.Constants.Aspire;
+using BookWorm.Constants.Core;
 
 namespace BookWorm.OpenTelemetryCollector;
 
@@ -6,7 +7,8 @@ public static class OpenTelemetryCollectorResourceBuilderExtensions
 {
     private const string DashboardOtlpUrlVariableName = "ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL";
     private const string DashboardOtlpApiKeyVariableName = "AppHost:OtlpApiKey";
-    private const string DashboardOtlpUrlDefaultValue = "http://localhost:18889";
+    private static readonly string _dashboardOtlpUrlDefaultValue =
+        $"{Protocol.Http}://{Restful.Host.Localhost}:18889";
 
     public static IResourceBuilder<OpenTelemetryCollectorResource> AddOpenTelemetryCollector(
         this IDistributedApplicationBuilder builder,
@@ -17,7 +19,7 @@ public static class OpenTelemetryCollectorResourceBuilderExtensions
         builder.AddOpenTelemetryCollectorInfrastructure();
 
         var url =
-            builder.Configuration[DashboardOtlpUrlVariableName] ?? DashboardOtlpUrlDefaultValue;
+            builder.Configuration[DashboardOtlpUrlVariableName] ?? _dashboardOtlpUrlDefaultValue;
         var isHttpsEnabled = url.StartsWith(Protocol.Https, StringComparison.OrdinalIgnoreCase);
 
         var dashboardOtlpEndpoint = new HostUrl(url);
