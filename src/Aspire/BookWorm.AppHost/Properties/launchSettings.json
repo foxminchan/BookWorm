@@ -10,8 +10,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development",
         "DOTNET_ENVIRONMENT": "Development",
         "DOTNET_DASHBOARD_OTLP_ENDPOINT_URL": "https://localhost:21066",
-        "DOTNET_RESOURCE_SERVICE_ENDPOINT_URL": "https://localhost:22003",
-        "ASPIRE_ALLOW_UNSECURED_TRANSPORT": "true"
+        "DOTNET_RESOURCE_SERVICE_ENDPOINT_URL": "https://localhost:22003"
       }
     },
     "http": {
@@ -24,7 +23,16 @@
         "DOTNET_ENVIRONMENT": "Development",
         "DOTNET_DASHBOARD_OTLP_ENDPOINT_URL": "http://localhost:19005",
         "DOTNET_RESOURCE_SERVICE_ENDPOINT_URL": "http://localhost:20237",
-        "ALLOW_INSECURE_TRANSPORT": "true"
+        "ASPIRE_ALLOW_UNSECURED_TRANSPORT": "true"
+      }
+    },
+    "generate-manifest": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "commandLineArgs": "--publisher manifest --output-path aspire-manifest.json",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DOTNET_ENVIRONMENT": "Development"
       }
     }
   }
