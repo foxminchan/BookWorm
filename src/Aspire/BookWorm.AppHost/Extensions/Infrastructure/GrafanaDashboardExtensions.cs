@@ -1,5 +1,4 @@
 ﻿using BookWorm.OpenTelemetryCollector;
-using Microsoft.Extensions.Hosting;
 
 namespace BookWorm.AppHost.Extensions.Infrastructure;
 
@@ -33,10 +32,10 @@ public static class GrafanaDashboardExtensions
             .WithBindMount("Container/grafana/config", "/etc/grafana", true)
             .WithBindMount("Container/grafana/dashboards", "/var/lib/grafana/dashboards", true)
             .WithEnvironment("PROMETHEUS_ENDPOINT", prometheus.GetEndpoint(Protocol.Http))
-            .WithHttpEndpoint(targetPort: 3000, name: Protocol.Http);
+            .WithHttpEndpoint(targetPort: 3000, name: Protocol.Http)
+            .WaitFor(prometheus);
 
-        prometheus.WithParentRelationship(grafana);
-        otel.WithReferenceRelationship(prometheus);
+        prometheus.WithParentRelationship(grafana).WaitFor(otel);
 
         return grafana;
     }
@@ -84,7 +83,6 @@ public static class GrafanaDashboardExtensions
         if (
             builder.IsHttpsLaunchProfile()
             && builder.ExecutionContext.IsRunMode
-            && builder.Environment.IsDevelopment()
         )
         {
             otel.RunWithHttpsDevCertificate(

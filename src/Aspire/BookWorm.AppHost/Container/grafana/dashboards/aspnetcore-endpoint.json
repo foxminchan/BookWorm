@@ -1,4 +1,4 @@
-﻿{
+{
   "__inputs": [
     {
       "name": "DS_PROMETHEUS",
@@ -160,7 +160,9 @@
               "id": "byNames",
               "options": {
                 "mode": "exclude",
-                "names": ["p50"],
+                "names": [
+                  "p50"
+                ],
                 "prefix": "All except:",
                 "readOnly": true
               }
@@ -187,7 +189,11 @@
       "id": 40,
       "options": {
         "legend": {
-          "calcs": ["lastNotNull", "min", "max"],
+          "calcs": [
+            "lastNotNull",
+            "min",
+            "max"
+          ],
           "displayMode": "table",
           "placement": "right",
           "showLegend": true
@@ -410,7 +416,11 @@
       "id": 46,
       "options": {
         "legend": {
-          "calcs": ["lastNotNull", "min", "max"],
+          "calcs": [
+            "lastNotNull",
+            "min",
+            "max"
+          ],
           "displayMode": "table",
           "placement": "right",
           "showLegend": true
@@ -551,7 +561,9 @@
         "footer": {
           "countRows": false,
           "fields": "",
-          "reducer": ["sum"],
+          "reducer": [
+            "sum"
+          ],
           "show": false
         },
         "showHeader": true,
@@ -646,7 +658,9 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["max"],
+          "calcs": [
+            "max"
+          ],
           "fields": "",
           "values": false
         },
@@ -711,7 +725,9 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["max"],
+          "calcs": [
+            "max"
+          ],
           "fields": "",
           "values": false
         },
@@ -776,7 +792,9 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["max"],
+          "calcs": [
+            "max"
+          ],
           "fields": "",
           "values": false
         },
@@ -803,7 +821,11 @@
   "refresh": "10s",
   "revision": 1,
   "schemaVersion": 39,
-  "tags": ["dotnet", "prometheus", "aspnetcore"],
+  "tags": [
+    "dotnet",
+    "prometheus",
+    "aspnetcore"
+  ],
   "templating": {
     "list": [
       {

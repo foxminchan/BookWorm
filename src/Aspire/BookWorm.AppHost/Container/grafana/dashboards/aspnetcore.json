@@ -1,4 +1,4 @@
-﻿{
+{
   "__inputs": [
     {
       "name": "DS_PROMETHEUS",
@@ -148,7 +148,9 @@
               "id": "byNames",
               "options": {
                 "mode": "exclude",
-                "names": ["p50"],
+                "names": [
+                  "p50"
+                ],
                 "prefix": "All except:",
                 "readOnly": true
               }
@@ -175,7 +177,11 @@
       "id": 40,
       "options": {
         "legend": {
-          "calcs": ["lastNotNull", "min", "max"],
+          "calcs": [
+            "lastNotNull",
+            "min",
+            "max"
+          ],
           "displayMode": "table",
           "placement": "right",
           "showLegend": true
@@ -397,7 +403,11 @@
       "id": 47,
       "options": {
         "legend": {
-          "calcs": ["lastNotNull", "min", "max"],
+          "calcs": [
+            "lastNotNull",
+            "min",
+            "max"
+          ],
           "displayMode": "table",
           "placement": "right",
           "showLegend": true
@@ -679,7 +689,9 @@
         "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -747,7 +759,9 @@
         "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -815,7 +829,9 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["max"],
+          "calcs": [
+            "max"
+          ],
           "fields": "",
           "values": false
         },
@@ -880,7 +896,9 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["max"],
+          "calcs": [
+            "max"
+          ],
           "fields": "",
           "values": false
         },
@@ -1018,7 +1036,9 @@
         "footer": {
           "countRows": false,
           "fields": "",
-          "reducer": ["sum"],
+          "reducer": [
+            "sum"
+          ],
           "show": false
         },
         "showHeader": true,
@@ -1191,7 +1211,9 @@
         "footer": {
           "countRows": false,
           "fields": "",
-          "reducer": ["sum"],
+          "reducer": [
+            "sum"
+          ],
           "show": false
         },
         "showHeader": true,
@@ -1251,7 +1273,11 @@
   "refresh": "10s",
   "revision": 1,
   "schemaVersion": 39,
-  "tags": ["dotnet", "prometheus", "aspnetcore"],
+  "tags": [
+    "dotnet",
+    "prometheus",
+    "aspnetcore"
+  ],
   "templating": {
     "list": [
       {
