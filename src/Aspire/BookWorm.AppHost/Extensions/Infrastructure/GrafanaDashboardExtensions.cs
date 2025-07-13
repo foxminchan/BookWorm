@@ -2,9 +2,9 @@
 
 namespace BookWorm.AppHost.Extensions.Infrastructure;
 
-public static class GrafanaExtensions
+public static class GrafanaDashboardExtensions
 {
-    public static IResourceBuilder<ContainerResource> AddGrafana(
+    public static IResourceBuilder<ContainerResource> AddGrafanaDashboard(
         this IDistributedApplicationBuilder builder
     )
     {

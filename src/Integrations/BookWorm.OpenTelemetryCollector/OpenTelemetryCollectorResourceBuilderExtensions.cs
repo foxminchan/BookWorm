@@ -59,5 +59,5 @@ public static class OpenTelemetryCollectorDefaults
     public const string ContainerImageName =
         "open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib";
 
-    public const string ContainerImageTag = "0.129.0";
+    public const string ContainerImageTag = "0.129.1";
 }

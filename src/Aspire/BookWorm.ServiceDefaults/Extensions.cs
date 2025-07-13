@@ -236,6 +236,9 @@ public static class Extensions
                 // https://learn.microsoft.com/aspnet/core/host-and-deploy/health-checks?view=aspnetcore-8.0#use-health-checks-routing
                 .RequireHost(pathToHostsMap[path]);
         }
+
+        app.MapGet("startup", () => new { GrafanaUrl = app.Configuration["GRAFANA_URL"]! })
+            .ExcludeFromDescription();
     }
 
     private static Dictionary<string, string[]> GetPathToHostsMap(string healthChecksUrls)

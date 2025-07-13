@@ -70,6 +70,10 @@ var keycloak = builder
     .WithSampleRealmImport(nameof(BookWorm).ToLowerInvariant(), nameof(BookWorm))
     .RunWithHttpsDevCertificate();
 
+var grafana = builder.AddGrafanaDashboard();
+
+var grafanaEndpoint = grafana.GetEndpoint(Protocol.Http);
+
 var catalogApi = builder
     .AddProject<BookWorm_Catalog>(Application.Catalog)
     .WithReplicas(builder.ExecutionContext.IsRunMode ? 1 : 2)
@@ -93,7 +97,8 @@ var catalogApi = builder
     .WithAzApplicationInsights()
     .WithOpenApi()
     .WithAsyncApi()
-    .WithHealthCheck();
+    .WithHealthCheck()
+    .WithEnvironment("GRAFANA_URL", grafanaEndpoint);
 
 qdrant.WithParentRelationship(catalogApi);
 
@@ -101,7 +106,8 @@ var mcp = builder
     .AddProject<BookWorm_McpTools>(Application.McpTools)
     .WithReference(catalogApi)
     .WaitFor(catalogApi)
-    .WithAzApplicationInsights();
+    .WithAzApplicationInsights()
+    .WithEnvironment("GRAFANA_URL", grafanaEndpoint);
 
 var chatApi = builder
     .AddProject<BookWorm_Chat>(Application.Chatting)
@@ -118,7 +124,8 @@ var chatApi = builder
     .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor)
     .WithAzApplicationInsights()
     .WithOpenApi()
-    .WithHealthCheck();
+    .WithHealthCheck()
+    .WithEnvironment("GRAFANA_URL", grafanaEndpoint);
 
 mcp.WithParentRelationship(chatApi);
 
@@ -133,7 +140,8 @@ var basketApi = builder
     .WithAzApplicationInsights()
     .WithOpenApi()
     .WithAsyncApi()
-    .WithHealthCheck();
+    .WithHealthCheck()
+    .WithEnvironment("GRAFANA_URL", grafanaEndpoint);
 
 var notificationApi = builder
     .AddProject<BookWorm_Notification>(Application.Notification)
@@ -145,7 +153,8 @@ var notificationApi = builder
     .WithRoleAssignments(storage, StorageBuiltInRole.StorageTableDataContributor)
     .WithAzApplicationInsights()
     .WithAsyncApi(true)
-    .WithHealthCheck();
+    .WithHealthCheck()
+    .WithEnvironment("GRAFANA_URL", grafanaEndpoint);
 
 var orderingApi = builder
     .AddProject<BookWorm_Ordering>(Application.Ordering)
@@ -165,7 +174,8 @@ var orderingApi = builder
     .WithOpenApi()
     .WithAsyncApi()
     .WithHmacSecret()
-    .WithHealthCheck();
+    .WithHealthCheck()
+    .WithEnvironment("GRAFANA_URL", grafanaEndpoint);
 
 var ratingApi = builder
     .AddProject<BookWorm_Rating>(Application.Rating)
@@ -178,7 +188,8 @@ var ratingApi = builder
     .WithAzApplicationInsights()
     .WithOpenApi()
     .WithAsyncApi()
-    .WithHealthCheck();
+    .WithHealthCheck()
+    .WithEnvironment("GRAFANA_URL", grafanaEndpoint);
 
 chatApi.WithReference(ratingApi).WaitFor(ratingApi);
 
@@ -192,7 +203,8 @@ var financeApi = builder
     .WithAzApplicationInsights()
     .WithOpenApi()
     .WithAsyncApi()
-    .WithHealthCheck();
+    .WithHealthCheck()
+    .WithEnvironment("GRAFANA_URL", grafanaEndpoint);
 
 var gateway = builder
     .AddYarp(Application.Gateway)
