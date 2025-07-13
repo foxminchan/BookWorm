@@ -80,10 +80,7 @@ public static class GrafanaDashboardExtensions
             "Container/otelcollector/config.yaml"
         );
 
-        if (
-            builder.IsHttpsLaunchProfile()
-            && builder.ExecutionContext.IsRunMode
-        )
+        if (builder.IsHttpsLaunchProfile() && builder.ExecutionContext.IsRunMode)
         {
             otel.RunWithHttpsDevCertificate(
                 "HTTPS_CERT_FILE",
