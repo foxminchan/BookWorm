@@ -2,8 +2,6 @@
 using System.IO.Hashing;
 using System.Text;
 using CliWrap;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace BookWorm.AppHost.Extensions.Security;
 
@@ -99,7 +97,8 @@ public static class HostingExtensions
     public static IResourceBuilder<TResource> RunWithHttpsDevCertificate<TResource>(
         this IResourceBuilder<TResource> builder,
         string certFileEnv,
-        string certKeyFileEnv
+        string certKeyFileEnv,
+        Action<string, string>? onSuccessfulExport = null
     )
         where TResource : IResourceWithEnvironment
     {
@@ -114,18 +113,6 @@ public static class HostingExtensions
         // and configure it to use them via the specified environment variables.
         var (certPath, keyPath) = ExportDevCertificateSync(applicationBuilder);
 
-        var logger = applicationBuilder
-            .Services.BuildServiceProvider()
-            .GetRequiredService<ILogger<Program>>();
-        if (logger.IsEnabled(LogLevel.Debug))
-        {
-            logger.LogDebug(
-                "Exported ASP.NET Core HTTPS development certificate to {CertPath} with key {KeyPath}",
-                certPath,
-                keyPath
-            );
-        }
-
         var bindSource = Path.GetDirectoryName(certPath) ?? throw new UnreachableException();
 
         if (builder.Resource is ContainerResource containerResource)
@@ -138,6 +125,8 @@ public static class HostingExtensions
         builder
             .WithEnvironment(certFileEnv, $"/{DevCertDir}/{DevCertPem}")
             .WithEnvironment(certKeyFileEnv, $"/{DevCertDir}/{DevCertKey}");
+
+        onSuccessfulExport?.Invoke(certPath, keyPath);
 
         return builder;
     }
