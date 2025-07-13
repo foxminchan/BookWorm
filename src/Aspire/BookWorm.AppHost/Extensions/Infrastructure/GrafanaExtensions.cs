@@ -14,15 +14,17 @@ public static class GrafanaExtensions
             .AddOtelCollector()
             .WithEnvironment(
                 "PROMETHEUS_ENDPOINT",
-                ReferenceExpression.Create(
-                    $"{prometheus.GetEndpoint(Protocol.Http)}/api/v1/otlp"
-                )
+                ReferenceExpression.Create($"{prometheus.GetEndpoint(Protocol.Http)}/api/v1/otlp")
             );
 
         var grafana = builder
             .AddContainer("grafana", "grafana/grafana", "12.0.2")
             .WithBindMount("Container/grafana/config", "/etc/grafana", isReadOnly: true)
-            .WithBindMount("Container/grafana/dashboards", "/var/lib/grafana/dashboards", isReadOnly: true)
+            .WithBindMount(
+                "Container/grafana/dashboards",
+                "/var/lib/grafana/dashboards",
+                isReadOnly: true
+            )
             .WithEnvironment("PROMETHEUS_ENDPOINT", prometheus.GetEndpoint(Protocol.Http))
             .WithHttpEndpoint(targetPort: 3000, name: Protocol.Http);
 
