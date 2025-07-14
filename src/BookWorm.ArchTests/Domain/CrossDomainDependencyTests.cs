@@ -33,7 +33,6 @@ public sealed class CrossDomainDependencyTests : ArchUnitBaseTest
             .Because(
                 $"Domain {sourceDomain} should not depend on domain {targetDomain} to maintain proper bounded context separation."
             )
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 }

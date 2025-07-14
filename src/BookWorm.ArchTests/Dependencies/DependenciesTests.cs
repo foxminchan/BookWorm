@@ -37,7 +37,6 @@ public sealed class DependenciesTests : ArchUnitBaseTest
             .Because(
                 "Command handlers should not have List or Get methods, as they are responsible for handling commands and not for querying data."
             )
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -60,7 +59,6 @@ public sealed class DependenciesTests : ArchUnitBaseTest
             .Because(
                 "Query handlers should contain List, Get, or Summarize methods, as they are responsible for querying data and not for modifying it."
             )
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -77,7 +75,6 @@ public sealed class DependenciesTests : ArchUnitBaseTest
             .Because(
                 $"Endpoints should implement the {nameof(IEndpoint)} interface to ensure they follow the required structure and behavior."
             )
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -94,7 +91,6 @@ public sealed class DependenciesTests : ArchUnitBaseTest
             .Because(
                 $"Validators should implement the {nameof(IValidator)} interface to ensure they follow the required structure and behavior."
             )
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -123,7 +119,6 @@ public sealed class DependenciesTests : ArchUnitBaseTest
             .Because(
                 $"Integration events should extend the {nameof(IntegrationEvent)} class to ensure they follow the required structure and behavior."
             )
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -148,7 +143,6 @@ public sealed class DependenciesTests : ArchUnitBaseTest
             .Because(
                 $"Repositories should not implement the IQuery or {nameof(ICommand)} interfaces to ensure they follow the required structure and behavior."
             )
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -165,7 +159,6 @@ public sealed class DependenciesTests : ArchUnitBaseTest
             .Because(
                 "Extensions should not be abstract or sealed to ensure they can be extended and used as intended."
             )
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -188,7 +181,6 @@ public sealed class DependenciesTests : ArchUnitBaseTest
             .Because(
                 "Entity configurations should implement the IEntityTypeConfiguration interface to ensure they follow the required structure and behavior."
             )
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 }

@@ -25,7 +25,6 @@ public sealed class EntityTests : ArchUnitBaseTest
             .Because(
                 "All concrete entities must inherit from Entity base class which provides Id property."
             )
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -42,7 +41,6 @@ public sealed class EntityTests : ArchUnitBaseTest
             .Should()
             .BeAssignableTo(typeof(HasDomainEventsBase))
             .Because("Entities should be able to raise domain events through HasDomainEventsBase.")
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -61,7 +59,6 @@ public sealed class EntityTests : ArchUnitBaseTest
             .Because(
                 "Entities should not expose mutable collections directly; use IReadOnlyCollection instead."
             )
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 }

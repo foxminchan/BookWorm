@@ -163,7 +163,6 @@ public sealed class DomainEventTests : ArchUnitBaseTest
             .Because(
                 "Domain services should be public and sealed to provide specific domain operations."
             )
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -188,7 +187,6 @@ public sealed class DomainEventTests : ArchUnitBaseTest
             .Because(
                 "Domain exceptions should be public, sealed, and derive from System.Exception."
             )
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -208,6 +206,7 @@ public sealed class DomainEventTests : ArchUnitBaseTest
             .Because(
                 $"Domain events should not depend on higher architectural layers like {namespacePattern}."
             )
+            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -229,7 +228,6 @@ public sealed class DomainEventTests : ArchUnitBaseTest
             .Because(
                 "Infrastructure repository implementations should implement domain repository interfaces."
             )
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 }

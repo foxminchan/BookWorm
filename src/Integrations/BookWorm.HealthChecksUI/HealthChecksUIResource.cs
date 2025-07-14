@@ -5,7 +5,7 @@
 ///     See https://github.com/Xabaril/AspNetCore.Diagnostics.HealthChecks?tab=readme-ov-file#HealthCheckUI
 /// </summary>
 /// <param name="name">The resource name.</param>
-public class HealthChecksUIResource(string name)
+public sealed class HealthChecksUIResource(string name)
     : ContainerResource(name),
         IResourceWithServiceDiscovery
 {
