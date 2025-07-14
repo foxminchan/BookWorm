@@ -1,0 +1,127 @@
+﻿@page "/orders"
+@inject HttpClient HttpClient
+@inject ILogger<Orders> Logger
+
+<PageTitle>Orders Management - BookWorm Admin</PageTitle>
+
+<h1>Orders Management</h1>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <p>View and manage customer orders</p>
+    <div>
+        <select class="form-select" style="width: auto;">
+            <option value="">All Orders</option>
+            <option value="pending">Pending</option>
+            <option value="processing">Processing</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
+            <option value="cancelled">Cancelled</option>
+        </select>
+    </div>
+</div>
+
+@if (orders == null)
+{
+    <div class="d-flex justify-content-center">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else if (!orders.Any())
+{
+    <div class="alert alert-info">
+        <h4>No orders found</h4>
+        <p>There are no orders to display.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Date</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var order in orders)
+                {
+                    <tr>
+                        <td>#@order.Id</td>
+                        <td>@order.CustomerName</td>
+                        <td>@order.OrderDate.ToString("MMM dd, yyyy")</td>
+                        <td>@order.ItemCount items</td>
+                        <td>@order.Total.ToString("C")</td>
+                        <td>
+                            <span class="badge bg-@GetStatusColor(order.Status)">
+                                @order.Status
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1">View</button>
+                            <button class="btn btn-sm btn-outline-secondary">Update</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<OrderDto>? orders;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // For now, simulate data loading
+            await Task.Delay(1000);
+            orders = GetSampleOrders();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading orders");
+            orders = new List<OrderDto>();
+        }
+    }
+
+    private static string GetStatusColor(string status) => status.ToLower() switch
+    {
+        "pending" => "warning",
+        "processing" => "info",
+        "shipped" => "primary",
+        "delivered" => "success",
+        "cancelled" => "danger",
+        _ => "secondary"
+    };
+
+    private static List<OrderDto> GetSampleOrders()
+    {
+        return new List<OrderDto>
+        {
+            new() { Id = 10001, CustomerName = "John Doe", OrderDate = DateTime.Now.AddDays(-1), ItemCount = 3, Total = 147.97m, Status = "Processing" },
+            new() { Id = 10002, CustomerName = "Jane Smith", OrderDate = DateTime.Now.AddDays(-2), ItemCount = 1, Total = 45.99m, Status = "Shipped" },
+            new() { Id = 10003, CustomerName = "Bob Johnson", OrderDate = DateTime.Now.AddDays(-3), ItemCount = 2, Total = 98.98m, Status = "Delivered" },
+            new() { Id = 10004, CustomerName = "Alice Brown", OrderDate = DateTime.Now.AddDays(-1), ItemCount = 1, Total = 52.99m, Status = "Pending" },
+            new() { Id = 10005, CustomerName = "Charlie Wilson", OrderDate = DateTime.Now.AddDays(-5), ItemCount = 4, Total = 203.96m, Status = "Cancelled" }
+        };
+    }
+
+    private class OrderDto
+    {
+        public int Id { get; set; }
+        public string CustomerName { get; set; } = string.Empty;
+        public DateTime OrderDate { get; set; }
+        public int ItemCount { get; set; }
+        public decimal Total { get; set; }
+        public string Status { get; set; } = string.Empty;
+    }
+}

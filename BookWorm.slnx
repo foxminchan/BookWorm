@@ -8,6 +8,9 @@
     <Project Path="src/BuildingBlocks/BookWorm.Constants/BookWorm.Constants.csproj" />
     <Project Path="src/BuildingBlocks/BookWorm.SharedKernel/BookWorm.SharedKernel.csproj" />
   </Folder>
+  <Folder Name="/Clients/">
+    <Project Path="src/Clients/BookWorm.BackOffice/BookWorm.BackOffice.csproj" />
+  </Folder>
   <Folder Name="/Integrations/">
     <Project Path="src/Integrations/BookWorm.HealthChecksUI/BookWorm.HealthChecksUI.csproj" />
     <Project Path="src/Integrations/BookWorm.McpTools/BookWorm.McpTools.csproj" />

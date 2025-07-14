@@ -1,0 +1,121 @@
+﻿@page "/users"
+@inject HttpClient HttpClient
+@inject ILogger<Users> Logger
+
+<PageTitle>Users Management - BookWorm Admin</PageTitle>
+
+<h1>Users Management</h1>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <p>Manage user accounts and permissions</p>
+    <button class="btn btn-primary">Add New User</button>
+</div>
+
+@if (users == null)
+{
+    <div class="d-flex justify-content-center">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else if (!users.Any())
+{
+    <div class="alert alert-info">
+        <h4>No users found</h4>
+        <p>There are no users to display.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Registration Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in users)
+                {
+                    <tr>
+                        <td>@user.FullName</td>
+                        <td>@user.Email</td>
+                        <td>
+                            <span class="badge bg-@GetRoleColor(user.Role)">
+                                @user.Role
+                            </span>
+                        </td>
+                        <td>@user.RegistrationDate.ToString("MMM dd, yyyy")</td>
+                        <td>
+                            <span class="badge bg-@(user.IsActive ? "success" : "secondary")">
+                                @(user.IsActive ? "Active" : "Inactive")
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1">Edit</button>
+                            <button class="btn btn-sm btn-outline-warning me-1">Reset Password</button>
+                            <button class="btn btn-sm btn-outline-@(user.IsActive ? "secondary" : "success")">
+                                @(user.IsActive ? "Deactivate" : "Activate")
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<UserDto>? users;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // For now, simulate data loading
+            await Task.Delay(1000);
+            users = GetSampleUsers();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading users");
+            users = new List<UserDto>();
+        }
+    }
+
+    private static string GetRoleColor(string role) => role.ToLower() switch
+    {
+        "admin" => "danger",
+        "manager" => "warning",
+        "customer" => "primary",
+        _ => "secondary"
+    };
+
+    private static List<UserDto> GetSampleUsers()
+    {
+        return new List<UserDto>
+        {
+            new() { Id = 1, FullName = "Admin User", Email = "admin@bookworm.com", Role = "Admin", RegistrationDate = DateTime.Now.AddDays(-365), IsActive = true },
+            new() { Id = 2, FullName = "John Manager", Email = "john.manager@bookworm.com", Role = "Manager", RegistrationDate = DateTime.Now.AddDays(-200), IsActive = true },
+            new() { Id = 3, FullName = "Jane Doe", Email = "jane.doe@email.com", Role = "Customer", RegistrationDate = DateTime.Now.AddDays(-30), IsActive = true },
+            new() { Id = 4, FullName = "Bob Smith", Email = "bob.smith@email.com", Role = "Customer", RegistrationDate = DateTime.Now.AddDays(-15), IsActive = true },
+            new() { Id = 5, FullName = "Alice Brown", Email = "alice.brown@email.com", Role = "Customer", RegistrationDate = DateTime.Now.AddDays(-60), IsActive = false }
+        };
+    }
+
+    private class UserDto
+    {
+        public int Id { get; set; }
+        public string FullName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public DateTime RegistrationDate { get; set; }
+        public bool IsActive { get; set; }
+    }
+}

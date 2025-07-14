@@ -1,0 +1,106 @@
+﻿@page "/books"
+@inject HttpClient HttpClient
+@inject ILogger<Books> Logger
+
+<PageTitle>Books Management - BookWorm Admin</PageTitle>
+
+<h1>Books Management</h1>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <p>Manage all books in the catalog</p>
+    <button class="btn btn-primary">Add New Book</button>
+</div>
+
+@if (books == null)
+{
+    <div class="d-flex justify-content-center">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else if (!books.Any())
+{
+    <div class="alert alert-info">
+        <h4>No books found</h4>
+        <p>There are no books in the catalog yet.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var book in books)
+                {
+                    <tr>
+                        <td>@book.Title</td>
+                        <td>@book.Author</td>
+                        <td>@book.Price.ToString("C")</td>
+                        <td>@book.Stock</td>
+                        <td>
+                            <span class="badge bg-@(book.IsActive ? "success" : "secondary")">
+                                @(book.IsActive ? "Active" : "Inactive")
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1">Edit</button>
+                            <button class="btn btn-sm btn-outline-danger">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<BookDto>? books;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // For now, simulate data loading
+            await Task.Delay(1000);
+            books = GetSampleBooks();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading books");
+            books = new List<BookDto>();
+        }
+    }
+
+    private static List<BookDto> GetSampleBooks()
+    {
+        return new List<BookDto>
+        {
+            new() { Id = 1, Title = "Clean Code", Author = "Robert C. Martin", Price = 45.99m, Stock = 15, IsActive = true },
+            new() { Id = 2, Title = "Design Patterns", Author = "Gang of Four", Price = 52.99m, Stock = 8, IsActive = true },
+            new() { Id = 3, Title = "Refactoring", Author = "Martin Fowler", Price = 49.99m, Stock = 12, IsActive = true },
+            new() { Id = 4, Title = "The Pragmatic Programmer", Author = "Dave Thomas", Price = 42.99m, Stock = 20, IsActive = true },
+            new() { Id = 5, Title = "Code Complete", Author = "Steve McConnell", Price = 55.99m, Stock = 5, IsActive = false }
+        };
+    }
+
+    private class BookDto
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Author { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+        public int Stock { get; set; }
+        public bool IsActive { get; set; }
+    }
+}

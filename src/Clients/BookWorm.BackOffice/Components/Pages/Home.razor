@@ -1,0 +1,68 @@
+﻿@page "/"
+
+<PageTitle>Admin Dashboard - BookWorm</PageTitle>
+
+<h1>BookWorm Admin Dashboard</h1>
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary mb-3">
+            <div class="card-header">Total Books</div>
+            <div class="card-body">
+                <h4 class="card-title">Loading...</h4>
+                <p class="card-text">Books in catalog</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-header">Total Orders</div>
+            <div class="card-body">
+                <h4 class="card-title">Loading...</h4>
+                <p class="card-text">Orders placed</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning mb-3">
+            <div class="card-header">Active Users</div>
+            <div class="card-body">
+                <h4 class="card-title">Loading...</h4>
+                <p class="card-text">Registered users</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info mb-3">
+            <div class="card-header">Revenue</div>
+            <div class="card-body">
+                <h4 class="card-title">Loading...</h4>
+                <p class="card-text">Total revenue</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <a href="/books" class="btn btn-primary me-2">Manage Books</a>
+                <a href="/orders" class="btn btn-success me-2">View Orders</a>
+                <a href="/users" class="btn btn-warning me-2">Manage Users</a>
+                <a href="/reports" class="btn btn-info">View Reports</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        // TODO: Load dashboard statistics from microservices
+        await base.OnInitializedAsync();
+    }
+}

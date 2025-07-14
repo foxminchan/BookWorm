@@ -215,6 +215,18 @@ var gateway = builder
     .WaitFor(financeApi)
     .WithReference(keycloak);
 
+var backOffice = builder
+    .AddProject<BookWorm_BackOffice>(Application.BackOffice)
+    .WithReference(catalogApi)
+    .WaitFor(catalogApi)
+    .WithReference(orderingApi)
+    .WaitFor(orderingApi)
+    .WithReference(basketApi)
+    .WaitFor(basketApi)
+    .WithReference(financeApi)
+    .WaitFor(financeApi)
+    .WithHealthCheck();
+
 builder
     .AddHealthChecksUI()
     .WithExternalHttpEndpoints()
