@@ -3,6 +3,94 @@ import { createKcPageStory } from "../KcPageStory";
 
 const { KcPageStory } = createKcPageStory({ pageId: "login.ftl" });
 
+// Common social providers to avoid duplication
+const SOCIAL_PROVIDERS = [
+  {
+    loginUrl: "google",
+    alias: "google",
+    providerId: "google",
+    displayName: "Google",
+    iconClasses: "fa fa-google",
+  },
+  {
+    loginUrl: "microsoft",
+    alias: "microsoft",
+    providerId: "microsoft",
+    displayName: "Microsoft",
+    iconClasses: "fa fa-windows",
+  },
+  {
+    loginUrl: "facebook",
+    alias: "facebook",
+    providerId: "facebook",
+    displayName: "Facebook",
+    iconClasses: "fa fa-facebook",
+  },
+  {
+    loginUrl: "instagram",
+    alias: "instagram",
+    providerId: "instagram",
+    displayName: "Instagram",
+    iconClasses: "fa fa-instagram",
+  },
+  {
+    loginUrl: "twitter",
+    alias: "twitter",
+    providerId: "twitter",
+    displayName: "Twitter",
+    iconClasses: "fa fa-twitter",
+  },
+  {
+    loginUrl: "linkedin",
+    alias: "linkedin",
+    providerId: "linkedin",
+    displayName: "LinkedIn",
+    iconClasses: "fa fa-linkedin",
+  },
+  {
+    loginUrl: "stackoverflow",
+    alias: "stackoverflow",
+    providerId: "stackoverflow",
+    displayName: "Stackoverflow",
+    iconClasses: "fa fa-stack-overflow",
+  },
+  {
+    loginUrl: "github",
+    alias: "github",
+    providerId: "github",
+    displayName: "Github",
+    iconClasses: "fa fa-github",
+  },
+  {
+    loginUrl: "gitlab",
+    alias: "gitlab",
+    providerId: "gitlab",
+    displayName: "Gitlab",
+    iconClasses: "fa fa-gitlab",
+  },
+  {
+    loginUrl: "bitbucket",
+    alias: "bitbucket",
+    providerId: "bitbucket",
+    displayName: "Bitbucket",
+    iconClasses: "fa fa-bitbucket",
+  },
+  {
+    loginUrl: "paypal",
+    alias: "paypal",
+    providerId: "paypal",
+    displayName: "PayPal",
+    iconClasses: "fa fa-paypal",
+  },
+  {
+    loginUrl: "openshift",
+    alias: "openshift",
+    providerId: "openshift",
+    displayName: "OpenShift",
+    iconClasses: "fa fa-cloud",
+  },
+];
+
 const meta = {
   title: "login/login.ftl",
   component: KcPageStory,
@@ -118,92 +206,7 @@ export const WithSocialProviders: Story = {
       kcContext={{
         social: {
           displayInfo: true,
-          providers: [
-            {
-              loginUrl: "google",
-              alias: "google",
-              providerId: "google",
-              displayName: "Google",
-              iconClasses: "fa fa-google",
-            },
-            {
-              loginUrl: "microsoft",
-              alias: "microsoft",
-              providerId: "microsoft",
-              displayName: "Microsoft",
-              iconClasses: "fa fa-windows",
-            },
-            {
-              loginUrl: "facebook",
-              alias: "facebook",
-              providerId: "facebook",
-              displayName: "Facebook",
-              iconClasses: "fa fa-facebook",
-            },
-            {
-              loginUrl: "instagram",
-              alias: "instagram",
-              providerId: "instagram",
-              displayName: "Instagram",
-              iconClasses: "fa fa-instagram",
-            },
-            {
-              loginUrl: "twitter",
-              alias: "twitter",
-              providerId: "twitter",
-              displayName: "Twitter",
-              iconClasses: "fa fa-twitter",
-            },
-            {
-              loginUrl: "linkedin",
-              alias: "linkedin",
-              providerId: "linkedin",
-              displayName: "LinkedIn",
-              iconClasses: "fa fa-linkedin",
-            },
-            {
-              loginUrl: "stackoverflow",
-              alias: "stackoverflow",
-              providerId: "stackoverflow",
-              displayName: "Stackoverflow",
-              iconClasses: "fa fa-stack-overflow",
-            },
-            {
-              loginUrl: "github",
-              alias: "github",
-              providerId: "github",
-              displayName: "Github",
-              iconClasses: "fa fa-github",
-            },
-            {
-              loginUrl: "gitlab",
-              alias: "gitlab",
-              providerId: "gitlab",
-              displayName: "Gitlab",
-              iconClasses: "fa fa-gitlab",
-            },
-            {
-              loginUrl: "bitbucket",
-              alias: "bitbucket",
-              providerId: "bitbucket",
-              displayName: "Bitbucket",
-              iconClasses: "fa fa-bitbucket",
-            },
-            {
-              loginUrl: "paypal",
-              alias: "paypal",
-              providerId: "paypal",
-              displayName: "PayPal",
-              iconClasses: "fa fa-paypal",
-            },
-            {
-              loginUrl: "openshift",
-              alias: "openshift",
-              providerId: "openshift",
-              displayName: "OpenShift",
-              iconClasses: "fa fa-cloud",
-            },
-          ],
+          providers: SOCIAL_PROVIDERS,
         },
       }}
     />
@@ -241,15 +244,7 @@ export const WithOneSocialProvider: Story = {
       kcContext={{
         social: {
           displayInfo: true,
-          providers: [
-            {
-              loginUrl: "google",
-              alias: "google",
-              providerId: "google",
-              displayName: "Google",
-              iconClasses: "fa fa-google",
-            },
-          ],
+          providers: [SOCIAL_PROVIDERS[0]], // Just Google
         },
       }}
     />
@@ -263,22 +258,7 @@ export const WithTwoSocialProviders: Story = {
       kcContext={{
         social: {
           displayInfo: true,
-          providers: [
-            {
-              loginUrl: "google",
-              alias: "google",
-              providerId: "google",
-              displayName: "Google",
-              iconClasses: "fa fa-google",
-            },
-            {
-              loginUrl: "microsoft",
-              alias: "microsoft",
-              providerId: "microsoft",
-              displayName: "Microsoft",
-              iconClasses: "fa fa-windows",
-            },
-          ],
+          providers: SOCIAL_PROVIDERS.slice(0, 2), // Google and Microsoft
         },
       }}
     />
@@ -304,36 +284,7 @@ export const WithMoreThanTwoSocialProviders: Story = {
       kcContext={{
         social: {
           displayInfo: true,
-          providers: [
-            {
-              loginUrl: "google",
-              alias: "google",
-              providerId: "google",
-              displayName: "Google",
-              iconClasses: "fa fa-google",
-            },
-            {
-              loginUrl: "microsoft",
-              alias: "microsoft",
-              providerId: "microsoft",
-              displayName: "Microsoft",
-              iconClasses: "fa fa-windows",
-            },
-            {
-              loginUrl: "facebook",
-              alias: "facebook",
-              providerId: "facebook",
-              displayName: "Facebook",
-              iconClasses: "fa fa-facebook",
-            },
-            {
-              loginUrl: "twitter",
-              alias: "twitter",
-              providerId: "twitter",
-              displayName: "Twitter",
-              iconClasses: "fa fa-twitter",
-            },
-          ],
+          providers: SOCIAL_PROVIDERS.slice(0, 4), // Google, Microsoft, Facebook, Twitter
         },
       }}
     />
@@ -346,15 +297,7 @@ export const WithSocialProvidersAndWithoutRememberMe: Story = {
       kcContext={{
         social: {
           displayInfo: true,
-          providers: [
-            {
-              loginUrl: "google",
-              alias: "google",
-              providerId: "google",
-              displayName: "Google",
-              iconClasses: "fa fa-google",
-            },
-          ],
+          providers: [SOCIAL_PROVIDERS[0]], // Just Google
         },
         realm: { rememberMe: false },
       }}
