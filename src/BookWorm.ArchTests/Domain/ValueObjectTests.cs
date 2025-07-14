@@ -64,7 +64,6 @@ public sealed class ValueObjectTests : ArchUnitBaseTest
             .Should()
             .BeAssignableTo(typeof(ValueObject))
             .Because("All value objects must properly inherit from the ValueObject base class")
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -83,7 +82,6 @@ public sealed class ValueObjectTests : ArchUnitBaseTest
             .Because(
                 "Value objects should have names that clearly distinguish them from entities and services"
             )
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 

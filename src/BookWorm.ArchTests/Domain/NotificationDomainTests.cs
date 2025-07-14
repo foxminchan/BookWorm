@@ -20,7 +20,6 @@ public sealed class NotificationDomainTests : ArchUnitBaseTest
             .Because(
                 "Classes in the domain layer should be sealed to prevent inheritance, ensuring that the domain model remains consistent and predictable."
             )
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -35,7 +34,6 @@ public sealed class NotificationDomainTests : ArchUnitBaseTest
             .Because(
                 "Classes in the domain layer should be public to allow access from other layers, such as application and infrastructure."
             )
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -56,7 +54,6 @@ public sealed class NotificationDomainTests : ArchUnitBaseTest
             .Because(
                 "Domain exceptions should be public, sealed, and derive from System.Exception to ensure proper error handling and reporting."
             )
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 }

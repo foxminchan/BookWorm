@@ -25,7 +25,6 @@ public sealed class CatalogDomainTests : ArchUnitBaseTest
             .Because(
                 "Classes in the domain layer should be sealed to prevent inheritance, ensuring that the domain model remains consistent and predictable."
             )
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -40,7 +39,6 @@ public sealed class CatalogDomainTests : ArchUnitBaseTest
             .Because(
                 "Classes in the domain layer should be public to allow access from other layers, such as application and infrastructure."
             )
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -59,7 +57,6 @@ public sealed class CatalogDomainTests : ArchUnitBaseTest
             .Because(
                 "Repository interfaces should be public and follow the naming convention of starting with 'I' to indicate they are interfaces."
             )
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -80,7 +77,6 @@ public sealed class CatalogDomainTests : ArchUnitBaseTest
             .Because(
                 "Domain exceptions should be public, sealed, and derive from System.Exception to ensure proper error handling and reporting."
             )
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -101,7 +97,6 @@ public sealed class CatalogDomainTests : ArchUnitBaseTest
             .Because(
                 $"The domain layer ({DomainNamespace}) should be isolated from application, infrastructure, UI concerns, and specific implementation frameworks not part of core domain logic. It should primarily depend on itself, .NET base libraries, and approved shared kernels."
             )
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -160,7 +155,6 @@ public sealed class CatalogDomainTests : ArchUnitBaseTest
             .Because(
                 "Specifications should be public, sealed, and concrete to ensure they can be instantiated and used in the domain layer."
             )
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 }
