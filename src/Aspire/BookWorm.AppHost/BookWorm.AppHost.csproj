@@ -29,7 +29,6 @@
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.McpInspector" />
   </ItemGroup>
   <ItemGroup Label="Services">
-    <ProjectReference Include="..\..\Integrations\BookWorm.McpTools\BookWorm.McpTools.csproj" />
     <ProjectReference Include="..\..\Services\Basket\BookWorm.Basket\BookWorm.Basket.csproj" />
     <ProjectReference Include="..\..\Services\Catalog\BookWorm.Catalog\BookWorm.Catalog.csproj" />
     <ProjectReference Include="..\..\Services\Chat\BookWorm.Chat\BookWorm.Chat.csproj" />
@@ -42,6 +41,7 @@
     <PackageReference Include="CliWrap" />
   </ItemGroup>
   <ItemGroup Label="Integrations">
+    <ProjectReference Include="..\..\Integrations\BookWorm.McpTools\BookWorm.McpTools.csproj" />
     <ProjectReference
       Include="..\..\BuildingBlocks\BookWorm.Constants\BookWorm.Constants.csproj"
       IsAspireProjectResource="false"

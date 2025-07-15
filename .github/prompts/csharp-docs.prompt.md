@@ -6,7 +6,7 @@ description: "Ensure that C# types are documented with XML comments and follow b
 
 # C# Documentation Best Practices
 
-- Public members should be documented with XML comments.
+- **Public** members should be documented with XML comments.
 - It is encouraged to document internal members as well, especially if they are complex or not self-explanatory.
 - Use `<summary>` for method descriptions. This should be a brief overview of what the method does.
 - Use `<param>` for method parameters.

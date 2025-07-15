@@ -13,6 +13,25 @@ public static class RedisResourceExtensions
     /// </summary>
     /// <param name="builder">The resource builder for <see cref="RedisResource" />.</param>
     /// <returns>The same <see cref="IResourceBuilder{RedisResource}" /> instance for chaining.</returns>
+    /// <remarks>
+    ///     This method registers a management command that provides the following functionality:
+    ///     - Executes Redis <c>FLUSHALL</c> command to clear all databases
+    ///     - Includes safety confirmation dialog to prevent accidental data loss
+    ///     - Command is only enabled when Redis resource is in healthy state
+    ///     - Uses "DeleteOff" icon with filled variant for visual identification
+    ///     - Provides logging for resource state updates during command execution
+    ///     - Establishes connection using the resource's connection string
+    /// </remarks>
+    /// <example>
+    ///     <code>
+    ///     builder.AddRedis("redis")
+    ///            .WithClearCommand()
+    ///            .WithRedisInsight();
+    ///     </code>
+    /// </example>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when the Redis connection string cannot be retrieved from the resource.
+    /// </exception>
     public static IResourceBuilder<RedisResource> WithClearCommand(
         this IResourceBuilder<RedisResource> builder
     )

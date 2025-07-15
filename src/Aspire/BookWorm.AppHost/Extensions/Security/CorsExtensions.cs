@@ -8,7 +8,28 @@ public static class CorsExtensions
     ///     Configures Cross-Origin Resource Sharing (CORS) settings for the distributed application.
     ///     Adds environment variables for BackOffice and StoreFront URLs when in publish mode.
     /// </summary>
-    /// <param name="builder">The distributed application builder instance.</param>
+    /// <param name="builder">The distributed application builder instance to configure with CORS settings.</param>
+    /// <remarks>
+    ///     This method provides comprehensive CORS configuration for multi-frontend applications:
+    ///     - Subscribes to <see cref="BeforeStartEvent" /> for startup-time configuration
+    ///     - Creates secure parameters for backoffice and storefront domain URLs (marked as secrets)
+    ///     - Applies environment variables to all project resources for runtime CORS configuration
+    ///     - Configures Azure Container App ingress CORS policies with:
+    ///     - Allowed origins from backoffice and storefront domain parameters
+    ///     - Standard RESTful HTTP methods (GET, POST, PUT, PATCH, DELETE, OPTIONS)
+    ///     - Environment and project tags for resource management
+    ///     - Enables secure cross-origin requests between different frontend applications and APIs
+    ///     - Supports both development and production deployment scenarios
+    /// </remarks>
+    /// <example>
+    ///     <code>
+    ///     var builder = DistributedApplication.CreateBuilder(args);
+    ///
+    ///     builder.ConfigureCors();
+    ///
+    ///     builder.Build().Run();
+    ///     </code>
+    /// </example>
     public static void ConfigureCors(this IDistributedApplicationBuilder builder)
     {
         builder.Eventing.Subscribe<BeforeStartEvent>(

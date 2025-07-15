@@ -24,9 +24,24 @@ public static class KeycloakExtensions
     /// <param name="displayName">The display name of the realm.</param>
     /// <returns>The Keycloak resource builder for method chaining.</returns>
     /// <remarks>
-    ///     This extension only imports the realm when running in execution mode,
-    ///     not during build or design time.
+    ///     This method configures Keycloak with realm import functionality and development-specific settings:
+    ///     - Imports realm configuration from <c>{BaseContainerPath}/realms</c> directory
+    ///     - Only applies realm import when running in execution mode (not during build/design time)
+    ///     - Configures HSTS (HTTP Strict Transport Security) based on execution context:
+    ///     - <strong>Run mode:</strong> Disables HSTS to avoid browser caching issues during development
+    ///     - <strong>Publish mode:</strong> Enables HSTS with 1-year max-age and includeSubDomains directive
+    ///     - Sets up environment variables for realm name and display name configuration
+    ///     - Addresses known Keycloak HSTS issue (https://github.com/keycloak/keycloak/issues/32366)
     /// </remarks>
+    /// <example>
+    ///     <code>
+    ///     var realmName = builder.AddParameter("realm-name");
+    ///     var displayName = builder.AddParameter("realm-display");
+    ///
+    ///     builder.AddKeycloak("keycloak", 8080)
+    ///            .WithSampleRealmImport(realmName, displayName);
+    ///     </code>
+    /// </example>
     public static IResourceBuilder<KeycloakResource> WithSampleRealmImport(
         this IResourceBuilder<KeycloakResource> builder,
         IResourceBuilder<ParameterResource> realmName,
@@ -56,10 +71,22 @@ public static class KeycloakExtensions
     /// <param name="themeName">The name of the custom theme to use.</param>
     /// <returns>The Keycloak resource builder for method chaining.</returns>
     /// <remarks>
-    ///     This extension mounts the custom themes directory from the host machine
-    ///     to the Keycloak container's providers directory.
-    ///     The mount is only performed if the themes directory exists on the host machine.
+    ///     This method enables custom theme integration for Keycloak branding and UI customization:
+    ///     - Checks for themes directory existence at <c>{BaseContainerPath}/themes</c> relative to AppHost directory
+    ///     - Creates bind mount from host themes directory to <c>/opt/keycloak/providers/</c> in container
+    ///     - Only applies theme configuration if the themes directory exists on the host machine
+    ///     - Sets read-only bind mount to prevent accidental container modifications
+    ///     - Configures theme name environment variable for Keycloak theme selection
+    ///     - Enables hot-reload of theme changes during development
     /// </remarks>
+    /// <example>
+    ///     <code>
+    ///     var themeName = builder.AddParameter("theme-name");
+    ///
+    ///     builder.AddKeycloak("keycloak", 8080)
+    ///            .WithCustomTheme(themeName);
+    ///     </code>
+    /// </example>
     public static IResourceBuilder<KeycloakResource> WithCustomTheme(
         this IResourceBuilder<KeycloakResource> builder,
         IResourceBuilder<ParameterResource> themeName
@@ -87,9 +114,23 @@ public static class KeycloakExtensions
     /// <param name="targetPort">The target port for the HTTPS endpoint. Defaults to 8443.</param>
     /// <returns>The Keycloak resource builder for method chaining.</returns>
     /// <remarks>
-    ///     This method sets up Keycloak to use a development HTTPS certificate when running in execution mode.
-    ///     It also configures necessary environment variables to avoid common issues such as HTTP 431 errors.
+    ///     This method sets up comprehensive HTTPS and HTTP configuration for Keycloak:
+    ///     - <strong>Run mode only:</strong> Applies HTTPS development certificate configuration only during local development
+    ///     - <strong>HTTPS setup:</strong> Configures development certificate with specified target port (default 8443)
+    ///     - <strong>Hostname configuration:</strong> Sets hostname to localhost for local development
+    ///     - <strong>HTTP/2 workaround:</strong> Disables HTTP/2 to prevent HTTP 431 "Header too large" errors in Keycloak
+    ///     - <strong>Production settings:</strong> Enables HTTP support, configures proxy headers for load balancers
+    ///     - <strong>Development optimizations:</strong> Disables hostname strict checking for flexible development
+    ///     - <strong>URL visibility:</strong> Hides HTTP endpoints in summary view to encourage HTTPS usage
+    ///     - Addresses known issues: https://github.com/keycloak/keycloak/discussions/10236,
+    ///     https://github.com/keycloak/keycloak/issues/13933
     /// </remarks>
+    /// <example>
+    ///     <code>
+    ///     builder.AddKeycloak("keycloak", 8080)
+    ///            .RunWithHttpsDevCertificate(8443);
+    ///     </code>
+    /// </example>
     public static IResourceBuilder<KeycloakResource> RunWithHttpsDevCertificate(
         this IResourceBuilder<KeycloakResource> builder,
         int targetPort = 8443
@@ -130,10 +171,25 @@ public static class KeycloakExtensions
     /// <param name="realmName">The realm name parameter resource builder.</param>
     /// <returns>The project resource builder for method chaining.</returns>
     /// <remarks>
-    ///     This method sets up environment variables required for Keycloak integration,
-    ///     including client ID, client secret, and URLs.
-    ///     It generates a secure client secret and configures endpoints based on the application's launch profile.
+    ///     This method establishes comprehensive Keycloak integration for OpenID Connect authentication:
+    ///     - <strong>Client configuration:</strong> Uses project name as OAuth client ID for consistency
+    ///     - <strong>Security:</strong> Generates secure 32-character client secret (no special characters)
+    ///     - <strong>Environment setup:</strong> Configures Keycloak with client ID, name, secret, and URLs
+    ///     - <strong>Endpoint resolution:</strong> Handles different URL formats for publish vs. run modes
+    ///     - <strong>Container networking:</strong> Sets up container-host URL for internal communication
+    ///     - <strong>Project integration:</strong> Configures project with Identity realm and API scopes
+    ///     - <strong>Naming conventions:</strong> Transforms client names using <c>ToClientName()</c> extension
+    ///     - Creates secure reference between project and Keycloak resources
     /// </remarks>
+    /// <example>
+    ///     <code>
+    ///     var keycloak = builder.AddKeycloak("keycloak", 8080);
+    ///     var realmName = builder.AddParameter("realm-name");
+    ///
+    ///     builder.AddProject&lt;WebApi&gt;("api")
+    ///            .WithIdP(keycloak, realmName);
+    ///     </code>
+    /// </example>
     public static IResourceBuilder<ProjectResource> WithIdP(
         this IResourceBuilder<ProjectResource> builder,
         IResourceBuilder<KeycloakResource> keycloak,
@@ -154,9 +210,7 @@ public static class KeycloakExtensions
             .WithEnvironment($"CLIENT_{clientEnv}_SECRET", clientSecret)
             .WithEnvironment(context =>
             {
-                var endpoint = builder.GetEndpoint(
-                    applicationBuilder.IsHttpsLaunchProfile() ? Protocol.Https : Protocol.Http
-                );
+                var endpoint = builder.GetEndpoint(applicationBuilder.GetLaunchProfileName());
 
                 context.EnvironmentVariables[$"CLIENT_{clientEnv}_URL"] = context
                     .ExecutionContext
@@ -177,19 +231,29 @@ public static class KeycloakExtensions
     ///     Uses localhost for user interaction to address Scalar documentation generation issues.
     /// </summary>
     /// <param name="builder">
-    ///     The <see cref="IResourceBuilder{KeycloakResource}"/> used to resolve the Keycloak endpoint.
+    ///     The <see cref="IResourceBuilder{KeycloakResource}" /> used to resolve the Keycloak endpoint.
     /// </param>
     /// <param name="realmName">
-    ///     The <see cref="IResourceBuilder{ParameterResource}"/> containing the realm name.
+    ///     The <see cref="IResourceBuilder{ParameterResource}" /> containing the realm name.
     /// </param>
     /// <param name="protocol">Specifies the protocol to use (e.g., "http" or "https").</param>
     /// <returns>
     ///     The authorization endpoint URL for the given realm.
     /// </returns>
     /// <remarks>
-    ///     Implementation uses localhost for user interaction.
-    ///     Related issue: https://github.com/scalar/scalar/issues/6225
+    ///     This method constructs the OpenID Connect authorization endpoint for OAuth flows:
+    ///     - Resolves Keycloak base URL using the specified protocol
+    ///     - Constructs standard OpenID Connect authorization endpoint path
+    ///     - Uses localhost for user interaction to ensure browser compatibility
+    ///     - Addresses Scalar documentation generation limitations (https://github.com/scalar/scalar/issues/6225)
+    ///     - Returns fully qualified URL suitable for OAuth authorization code flow
     /// </remarks>
+    /// <example>
+    ///     <code>
+    ///     var authUrl = keycloak.GetAuthorizationEndpoint(Protocol.Https, realmName);
+    ///     // Returns: https://localhost:8443/realms/myrealm/protocol/openid-connect/auth
+    ///     </code>
+    /// </example>
     public static string GetAuthorizationEndpoint(
         this IResourceBuilder<KeycloakResource> builder,
         string protocol,
@@ -208,19 +272,30 @@ public static class KeycloakExtensions
     ///     Uses the Keycloak resource name for proxy configuration to address Scalar documentation generation issues.
     /// </summary>
     /// <param name="builder">
-    ///     The <see cref="IResourceBuilder{KeycloakResource}"/> used to resolve the Keycloak endpoint.
+    ///     The <see cref="IResourceBuilder{KeycloakResource}" /> used to resolve the Keycloak endpoint.
     /// </param>
     /// <param name="realmName">
-    ///     The <see cref="IResourceBuilder{ParameterResource}"/> containing the realm name.
+    ///     The <see cref="IResourceBuilder{ParameterResource}" /> containing the realm name.
     /// </param>
     /// <param name="protocol">Specifies the protocol to use (e.g., "http" or "https").</param>
     /// <returns>
     ///     The token endpoint URL for the given realm.
     /// </returns>
     /// <remarks>
-    ///     Implementation uses Keycloak resource name for proxy configuration.
-    ///     Related issue: https://github.com/scalar/scalar/issues/6225
+    ///     This method constructs the OpenID Connect token endpoint for OAuth flows:
+    ///     - Uses Keycloak resource name instead of resolved URL for proxy configuration
+    ///     - Constructs standard OpenID Connect token endpoint path
+    ///     - Optimized for internal service-to-service communication within container networks
+    ///     - Addresses Scalar documentation generation limitations (https://github.com/scalar/scalar/issues/6225)
+    ///     - Returns URL suitable for OAuth token exchange and refresh operations
+    ///     - Enables proper proxy routing in containerized environments
     /// </remarks>
+    /// <example>
+    ///     <code>
+    ///     var tokenUrl = keycloak.GetTokenEndpoint(Protocol.Http, realmName);
+    ///     // Returns: http://keycloak/realms/myrealm/protocol/openid-connect/token
+    ///     </code>
+    /// </example>
     public static string GetTokenEndpoint(
         this IResourceBuilder<KeycloakResource> builder,
         string protocol,

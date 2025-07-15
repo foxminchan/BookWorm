@@ -6,36 +6,25 @@ using RedisResource = Azure.Provisioning.Redis.RedisResource;
 
 namespace BookWorm.AppHost.Extensions.Infrastructure;
 
-/// <summary>
-///     Provides extension methods for configuring Azure resources for production deployment provisioning.
-///     This partial class handles infrastructure configuration, SKU settings, capacity planning,
-///     and tagging strategies for Azure services when deployed to the cloud.
-/// </summary>
-/// <remarks>
-///     <para>
-///         This class focuses on production-ready configurations for Azure resources including
-///         - Storage accounts with Premium ZRS and Hot access tier
-///         - SignalR services with Premium_P1 SKU and 10 capacity units
-///         - PostgreSQL Flexible Servers with Standard_B1ms burstable tier
-///         - Redis Cache with Basic SKU and 1 capacity unit
-///         - Container App Environments with standardized naming and tagging
-///     </para>
-///     <para>
-///         All provisioned resources are automatically tagged with environment and project information
-///         for resource management and cost tracking purposes.
-///     </para>
-///     <para>
-///         These methods only affect resource provisioning during Azure deployment (publish mode)
-///         and have no impact on local development execution.
-///     </para>
-/// </remarks>
 public static partial class AzureExtensions
 {
     /// <summary>
     ///     Configures the Azure Storage resource to be provisioned as a service with specific infrastructure settings.
     /// </summary>
     /// <param name="builder">The resource builder for Azure Storage.</param>
-    /// <returns>The updated resource builder.</returns>
+    /// <returns>The updated resource builder with configured infrastructure settings.</returns>
+    /// <remarks>
+    ///     This method configures the Azure Storage Account with:
+    ///     - Standard LRS (Locally Redundant Storage) SKU for cost efficiency
+    ///     - Environment and project tags for resource management
+    ///     - Production-ready settings for cloud deployment
+    /// </remarks>
+    /// <example>
+    ///     <code>
+    ///     builder.AddAzureStorage("storage")
+    ///            .ProvisionAsService();
+    ///     </code>
+    /// </example>
     public static IResourceBuilder<AzureStorageResource> ProvisionAsService(
         this IResourceBuilder<AzureStorageResource> builder
     )
@@ -60,7 +49,19 @@ public static partial class AzureExtensions
     ///     Configures the Azure SignalR resource to be provisioned as a service with specific infrastructure settings.
     /// </summary>
     /// <param name="builder">The resource builder for Azure SignalR.</param>
-    /// <returns>The updated resource builder.</returns>
+    /// <returns>The updated resource builder with configured infrastructure settings.</returns>
+    /// <remarks>
+    ///     This method configures the Azure SignalR Service with:
+    ///     - Free F1 SKU for development and testing
+    ///     - Public network access enabled for client connections
+    ///     - Environment and project tags for resource management
+    /// </remarks>
+    /// <example>
+    ///     <code>
+    ///     builder.AddAzureSignalR("signalr")
+    ///            .ProvisionAsService();
+    ///     </code>
+    /// </example>
     public static IResourceBuilder<AzureSignalRResource> ProvisionAsService(
         this IResourceBuilder<AzureSignalRResource> builder
     )
@@ -87,7 +88,19 @@ public static partial class AzureExtensions
     ///     infrastructure settings.
     /// </summary>
     /// <param name="builder">The resource builder for Azure PostgreSQL Flexible Server.</param>
-    /// <returns>The updated resource builder.</returns>
+    /// <returns>The updated resource builder with configured infrastructure settings.</returns>
+    /// <remarks>
+    ///     This method configures the Azure PostgreSQL Flexible Server with:
+    ///     - Standard_B1ms SKU with Burstable tier for cost-effective performance
+    ///     - Environment and project tags for resource management
+    ///     - Production-ready database settings for cloud deployment
+    /// </remarks>
+    /// <example>
+    ///     <code>
+    ///     builder.AddAzurePostgresFlexibleServer("postgres")
+    ///            .ProvisionAsService();
+    ///     </code>
+    /// </example>
     public static IResourceBuilder<AzurePostgresFlexibleServerResource> ProvisionAsService(
         this IResourceBuilder<AzurePostgresFlexibleServerResource> builder
     )
@@ -119,7 +132,19 @@ public static partial class AzureExtensions
     ///     Configures the Azure Redis Cache resource to be provisioned as a service with specific infrastructure settings.
     /// </summary>
     /// <param name="builder">The resource builder for Azure Redis Cache.</param>
-    /// <returns>The updated resource builder.</returns>
+    /// <returns>The updated resource builder with configured infrastructure settings.</returns>
+    /// <remarks>
+    ///     This method configures the Azure Redis Cache with:
+    ///     - Basic SKU with 1GB capacity for cost-effective caching
+    ///     - BasicOrStandard family for development and production workloads
+    ///     - Environment and project tags for resource management
+    /// </remarks>
+    /// <example>
+    ///     <code>
+    ///     builder.AddAzureRedis("redis")
+    ///            .ProvisionAsService();
+    ///     </code>
+    /// </example>
     public static IResourceBuilder<AzureRedisCacheResource> ProvisionAsService(
         this IResourceBuilder<AzureRedisCacheResource> builder
     )
@@ -150,7 +175,18 @@ public static partial class AzureExtensions
     ///     settings.
     /// </summary>
     /// <param name="builder">The resource builder for Azure Container App Environment.</param>
-    /// <returns>The updated resource builder.</returns>
+    /// <remarks>
+    ///     This method configures the Azure Container App Environment with:
+    ///     - Azure Developer CLI (azd) resource naming conventions
+    ///     - Environment and project tags for resource management
+    ///     - Production-ready container hosting environment
+    /// </remarks>
+    /// <example>
+    ///     <code>
+    ///     builder.AddAzureContainerAppEnvironment("env")
+    ///            .ProvisionAsService();
+    ///     </code>
+    /// </example>
     public static void ProvisionAsService(
         this IResourceBuilder<AzureContainerAppEnvironmentResource> builder
     )
@@ -178,6 +214,19 @@ public static partial class AzureExtensions
     /// </summary>
     /// <param name="builder">The resource builder for the project resource.</param>
     /// <returns>The updated resource builder with Application Insights configured.</returns>
+    /// <remarks>
+    ///     This method conditionally configures Application Insights integration:
+    ///     - Only applies when in publish mode (cloud deployment)
+    ///     - Automatically locates existing Application Insights resource
+    ///     - Creates reference for telemetry and monitoring integration
+    ///     - Returns unchanged builder if not in publish mode
+    /// </remarks>
+    /// <example>
+    ///     <code>
+    ///     builder.AddProject&lt;WebApi&gt;("api")
+    ///            .WithAzApplicationInsights();
+    ///     </code>
+    /// </example>
     public static IResourceBuilder<ProjectResource> WithAzApplicationInsights(
         this IResourceBuilder<ProjectResource> builder
     )

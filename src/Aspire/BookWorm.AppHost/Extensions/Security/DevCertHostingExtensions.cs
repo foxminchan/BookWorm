@@ -13,25 +13,39 @@ public static class DevCertHostingExtensions
     ///     Configures a resource to use the ASP.NET Core HTTPS development certificate for secure connections.
     /// </summary>
     /// <typeparam name="TResource">The type of resource that implements <see cref="IResourceWithEnvironment" />.</typeparam>
-    /// <param name="builder">The resource builder to configure.</param>
+    /// <param name="builder">The resource builder to configure with HTTPS development certificate support.</param>
     /// <param name="certFileEnv">The environment variable name for the certificate file path.</param>
     /// <param name="certKeyFileEnv">The environment variable name for the certificate key file path.</param>
     /// <param name="onSuccessfulExport">
     ///     Optional callback invoked when the certificate is successfully exported, receiving the
     ///     certificate and key file paths.
     /// </param>
+    /// <returns>The configured resource builder with HTTPS development certificate integration.</returns>
     /// <remarks>
-    ///     This method automatically exports the ASP.NET Core HTTPS development certificate to PEM files during development
-    ///     mode.
-    ///     For container resources, it creates bind mounts to make the certificate files available inside the container.
-    ///     For non-container resources, it sets environment variables with the local file paths.
-    ///     The certificate export only occurs when running in development mode.
+    ///     This method provides comprehensive HTTPS development certificate management:
+    ///     - <strong>Development mode only:</strong> Only applies configuration when running in development environment
+    ///     - <strong>Automatic certificate export:</strong> Uses <c>dotnet dev-certs https</c> command to export certificates
+    ///     to PEM format
+    ///     - <strong>Platform-specific handling:</strong> Attempts to find existing certificates on macOS and Linux before
+    ///     exporting
+    ///     - <strong>Container support:</strong> Creates bind mounts to <c>/dev-certs</c> directory for container resources
+    ///     - <strong>Non-container support:</strong> Sets environment variables with local file paths for non-container
+    ///     resources
+    ///     - <strong>Caching mechanism:</strong> Reuses previously exported certificates to avoid unnecessary exports
+    ///     - <strong>Error handling:</strong> Gracefully handles export failures and timeouts with comprehensive logging
+    ///     - <strong>Cross-platform compatibility:</strong> Works on Windows, macOS, and Linux with platform-specific
+    ///     optimizations
     /// </remarks>
     /// <example>
     ///     <code>
-    /// builder.AddContainer("myapp", "my-image")
-    ///     .RunWithHttpsDevCertificate("CERT_FILE", "CERT_KEY_FILE");
-    /// </code>
+    ///     builder.AddContainer("api", "my-api-image")
+    ///            .RunWithHttpsDevCertificate("HTTPS_CERT_FILE", "HTTPS_CERT_KEY_FILE");
+    ///
+    ///     // With success callback
+    ///     builder.AddContainer("web", "my-web-image")
+    ///            .RunWithHttpsDevCertificate("CERT_PATH", "KEY_PATH",
+    ///                (certPath, keyPath) => Console.WriteLine($"Cert: {certPath}, Key: {keyPath}"));
+    ///     </code>
     /// </example>
     public static IResourceBuilder<TResource> RunWithHttpsDevCertificate<TResource>(
         this IResourceBuilder<TResource> builder,
