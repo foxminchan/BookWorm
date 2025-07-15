@@ -9,10 +9,23 @@ public static class EndpointExtensions
     ///     The distributed application builder to configure.
     /// </param>
     /// <remarks>
-    ///     This method subscribes to the <see cref="BeforeStartEvent" /> and updates the display location of HTTP endpoints
-    ///     to <see cref="UrlDisplayLocation.DetailsOnly" /> for all resources of type <see cref="IResourceWithEndpoints" />.
-    ///     This ensures that
+    ///     This method improves security and user experience by hiding insecure HTTP endpoints in HTTPS environments:
+    ///     - Only applies when the application is launched with an HTTPS profile
+    ///     - Subscribes to the <see cref="BeforeStartEvent" /> for startup-time configuration
+    ///     - Updates HTTP endpoint display location to <see cref="UrlDisplayLocation.DetailsOnly" /> for all project resources
+    ///     - Ensures HTTP endpoints are still accessible but not prominently displayed in the main interface
+    ///     - Encourages developers to use secure HTTPS connections by default
+    ///     - Applies to all resources implementing <see cref="IResourceWithEndpoints" />
     /// </remarks>
+    /// <example>
+    ///     <code>
+    ///     var builder = DistributedApplication.CreateBuilder(args);
+    ///
+    ///     builder.HidePlainHttpLink();
+    ///
+    ///     builder.Build().Run();
+    ///     </code>
+    /// </example>
     public static void HidePlainHttpLink(this IDistributedApplicationBuilder builder)
     {
         if (builder.IsHttpsLaunchProfile())
@@ -44,150 +57,40 @@ public static class EndpointExtensions
     }
 
     /// <summary>
-    ///     Configures the resource builder to update the display text for HTTP and HTTPS endpoints
-    ///     with the specified template for Open API.
+    ///     Adds an AsyncAPI UI endpoint to the project resource for API documentation and testing.
     /// </summary>
-    /// <typeparam name="T">
-    ///     The type of the resource, which must inherit from <see cref="ProjectResource" />.
-    /// </typeparam>
-    /// <param name="builder">
-    ///     The resource builder to configure.
-    /// </param>
-    /// <returns>
-    ///     The configured <see cref="IResourceBuilder{T}" /> instance.
-    /// </returns>
+    /// <param name="builder">The project resource builder to configure with AsyncAPI UI.</param>
+    /// <returns>The updated project resource builder with AsyncAPI UI endpoint configured.</returns>
     /// <remarks>
-    ///     This method checks if the application is running in the execution context's run mode.
-    ///     If so, it updates the display text for HTTP and HTTPS endpoints using the provided template.
+    ///     This method configures an AsyncAPI UI endpoint with the following features:
+    ///     - Creates a dedicated endpoint at <c>/asyncapi/ui</c> for interactive API documentation
+    ///     - Uses the current launch profile name to determine the appropriate endpoint
+    ///     - Displays with uppercase endpoint name formatting for visual consistency
+    ///     - Sets display location to show in both summary and details views for easy access
+    ///     - Provides interactive interface for testing asynchronous API operations
+    ///     - Integrates with the project's existing endpoint configuration
     /// </remarks>
-    public static IResourceBuilder<T> WithOpenApi<T>(this IResourceBuilder<T> builder)
-        where T : ProjectResource
-    {
-        if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
-        {
-            builder.UpdateHttpAndHttpsEndpoints("Open API ({0})");
-        }
-
-        return builder;
-    }
-
-    /// <summary>
-    ///     Configures the resource builder to add health check endpoints to the resource representation.
-    /// </summary>
-    /// <typeparam name="T">
-    ///     The type of the resource, which must inherit from <see cref="ProjectResource" />.
-    /// </typeparam>
-    /// <param name="builder">
-    ///     The resource builder to configure.
-    /// </param>
-    /// <returns>
-    ///     The configured <see cref="IResourceBuilder{T}" /> instance.
-    /// </returns>
-    /// <remarks>
-    ///     This method adds two health check endpoints:
-    ///     1. A "healthchecks" endpoint displayed only in the details view.
-    ///     2. A "/health" endpoint with a display text of "Health Checks", displayed only in the details view.
-    ///     The protocol for the "/health" endpoint is determined based on whether the application is running with an HTTPS
-    ///     launch profile.
-    /// </remarks>
-    public static IResourceBuilder<T> WithHealthCheck<T>(this IResourceBuilder<T> builder)
-        where T : ProjectResource
-    {
-        builder
-            .WithUrlForEndpoint(
-                "healthchecks",
-                url => url.DisplayLocation = UrlDisplayLocation.DetailsOnly
-            )
-            .WithUrlForEndpoint(
-                builder.ApplicationBuilder.IsHttpsLaunchProfile() ? Protocol.Https : Protocol.Http,
-                _ =>
-                    new()
-                    {
-                        Url = "/health",
-                        DisplayText = "Health Checks",
-                        DisplayLocation = UrlDisplayLocation.DetailsOnly,
-                    }
-            );
-
-        return builder;
-    }
-
-    /// <summary>
-    ///     Configures the resource builder to add an Async API endpoint to the resource representation.
-    /// </summary>
-    /// <typeparam name="T">
-    ///     The type of the resource, which must inherit from <see cref="ProjectResource" />.
-    /// </typeparam>
-    /// <param name="builder">
-    ///     The resource builder to configure.
-    /// </param>
-    /// <param name="isOnlyAsyncApi">
-    ///     A boolean indicating whether only the Async API endpoint should be updated.
-    ///     If <c>true</c>, the display text for HTTP and HTTPS endpoints is updated with "Async API ({0})".
-    ///     If <c>false</c>, an Async API UI endpoint is added.
-    /// </param>
-    /// <returns>
-    ///     The configured <see cref="IResourceBuilder{T}" /> instance.
-    /// </returns>
-    /// <remarks>
-    ///     This method checks if the application is running in the execution context's run mode.
-    ///     If <paramref name="isOnlyAsyncApi" /> is <c>true</c>, it updates the display text for HTTP and HTTPS endpoints.
-    ///     Otherwise, it adds an Async API UI endpoint with a display text based on the protocol.
-    /// </remarks>
-    public static IResourceBuilder<T> WithAsyncApi<T>(
-        this IResourceBuilder<T> builder,
-        bool isOnlyAsyncApi = false
+    /// <example>
+    ///     <code>
+    ///     builder.AddProject&lt;WebApi&gt;("api")
+    ///            .WithAsyncAPIUI();
+    ///     </code>
+    /// </example>
+    public static IResourceBuilder<ProjectResource> WithAsyncAPIUI(
+        this IResourceBuilder<ProjectResource> builder
     )
-        where T : ProjectResource
     {
-        if (!builder.ApplicationBuilder.ExecutionContext.IsRunMode)
-        {
-            return builder;
-        }
+        var endpointName = builder.ApplicationBuilder.GetLaunchProfileName();
 
-        if (isOnlyAsyncApi)
-        {
-            builder.UpdateHttpAndHttpsEndpoints("Async API ({0})");
-        }
-        else
-        {
-            var endpointName = builder.ApplicationBuilder.IsHttpsLaunchProfile()
-                ? Protocol.Https
-                : Protocol.Http;
-
-            builder.WithUrlForEndpoint(
-                endpointName,
-                _ =>
-                    new()
-                    {
-                        Url = "/asyncapi/ui",
-                        DisplayText = $"Async API ({endpointName.ToUpperInvariant()})",
-                        DisplayLocation = UrlDisplayLocation.SummaryAndDetails,
-                    }
-            );
-        }
-
-        return builder;
-    }
-
-    private static void UpdateHttpAndHttpsEndpoints<T>(
-        this IResourceBuilder<T> builder,
-        string displayTextTemplate
-    )
-        where T : ProjectResource
-    {
-        builder.WithUrls(c =>
-            c.Urls.Where(u =>
-                    u.Endpoint?.EndpointName == Protocol.Http
-                    || u.Endpoint?.EndpointName == Protocol.Https
-                )
-                .ToList()
-                .ForEach(u =>
-                    u.DisplayText = string.Format(
-                        displayTextTemplate,
-                        u.Endpoint?.EndpointName.ToUpperInvariant()
-                    )
-                )
+        return builder.WithUrlForEndpoint(
+            endpointName,
+            _ =>
+                new()
+                {
+                    Url = "/asyncapi/ui",
+                    DisplayText = $"Async API ({endpointName.ToUpperInvariant()})",
+                    DisplayLocation = UrlDisplayLocation.SummaryAndDetails,
+                }
         );
     }
 }

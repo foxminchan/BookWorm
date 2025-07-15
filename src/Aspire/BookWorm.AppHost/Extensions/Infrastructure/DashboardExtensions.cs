@@ -7,15 +7,26 @@ public static class DashboardExtensions
     private const string OtelServiceName = "OTEL_SERVICE_NAME";
 
     /// <summary>
-    ///     Adds the Aspire dashboard to the distributed application.
+    ///     Adds the Aspire dashboard to the distributed application with comprehensive telemetry integration.
     /// </summary>
-    /// <param name="builder">The distributed application builder.</param>
+    /// <param name="builder">The distributed application builder to configure with dashboard capabilities.</param>
     /// <remarks>
-    ///     The dashboard is only added in publishing mode.
-    ///     It provides monitoring and telemetry
-    ///     capabilities for the distributed application by configuring OpenTelemetry (OTLP)
-    ///     endpoints for all resources.
+    ///     This method configures a containerized Aspire dashboard with the following features:
+    ///     - Creates dashboard container with HTTP endpoints for web UI and OTLP telemetry ingestion
+    ///     - Automatically configures OpenTelemetry environment variables for all application resources
+    ///     - Sets up OTLP endpoint, protocol (gRPC), and service name for each resource
+    ///     - Provides centralized monitoring and observability for the entire distributed application
+    ///     - Uses Microsoft's official nightly Aspire dashboard container image
     /// </remarks>
+    /// <example>
+    ///     <code>
+    ///     var builder = DistributedApplication.CreateBuilder(args);
+    ///
+    ///     builder.AddDashboard();
+    ///
+    ///     builder.Build().Run();
+    ///     </code>
+    /// </example>
     public static void AddDashboard(this IDistributedApplicationBuilder builder)
     {
         var dashboard = builder

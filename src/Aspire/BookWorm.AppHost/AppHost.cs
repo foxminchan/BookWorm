@@ -2,14 +2,6 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 builder.HidePlainHttpLink();
 
-if (builder.ExecutionContext.IsPublishMode)
-{
-    builder.AddDashboard();
-    builder.ConfigureCors();
-    builder.AddAzureApplicationInsights(Components.Azure.ApplicationInsights);
-    builder.AddAzureContainerAppEnvironment(Components.Azure.ContainerApp).ProvisionAsService();
-}
-
 var kcRealmName = builder.AddParameter("kc-realm", nameof(BookWorm).ToLowerInvariant());
 var kcThemeName = builder.AddParameter("kc-theme", nameof(BookWorm).ToLowerInvariant());
 var kcThemeDisplayName = builder.AddParameter("kc-theme-display-name", nameof(BookWorm));
@@ -95,11 +87,7 @@ var catalogApi = builder
         StorageBuiltInRole.StorageBlobDataOwner
     )
     .WithAzApplicationInsights()
-    .WithOpenApi()
-    .WithAsyncApi()
-    .WithHealthCheck();
-
-qdrant.WithParentRelationship(catalogApi);
+    .WithAsyncAPIUI();
 
 var mcp = builder
     .AddProject<BookWorm_McpTools>(Application.McpTools)
@@ -120,9 +108,7 @@ var chatApi = builder
     .WithReference(signalR)
     .WaitFor(signalR)
     .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor)
-    .WithAzApplicationInsights()
-    .WithOpenApi()
-    .WithHealthCheck();
+    .WithAzApplicationInsights();
 
 mcp.WithParentRelationship(chatApi);
 
@@ -135,9 +121,7 @@ var basketApi = builder
     .WithReference(catalogApi)
     .WithIdP(keycloak, kcRealmName)
     .WithAzApplicationInsights()
-    .WithOpenApi()
-    .WithAsyncApi()
-    .WithHealthCheck();
+    .WithAsyncAPIUI();
 
 var notificationApi = builder
     .AddProject<BookWorm_Notification>(Application.Notification)
@@ -148,8 +132,7 @@ var notificationApi = builder
     .WaitFor(tableStorage)
     .WithRoleAssignments(storage, StorageBuiltInRole.StorageTableDataContributor)
     .WithAzApplicationInsights()
-    .WithAsyncApi(true)
-    .WithHealthCheck();
+    .WithAsyncAPIUI();
 
 var orderingApi = builder
     .AddProject<BookWorm_Ordering>(Application.Ordering)
@@ -166,10 +149,8 @@ var orderingApi = builder
     .WaitFor(signalR)
     .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor)
     .WithAzApplicationInsights()
-    .WithOpenApi()
-    .WithAsyncApi()
     .WithHmacSecret()
-    .WithHealthCheck();
+    .WithAsyncAPIUI();
 
 var ratingApi = builder
     .AddProject<BookWorm_Rating>(Application.Rating)
@@ -180,9 +161,7 @@ var ratingApi = builder
     .WithIdP(keycloak, kcRealmName)
     .WithReference(chatApi)
     .WithAzApplicationInsights()
-    .WithOpenApi()
-    .WithAsyncApi()
-    .WithHealthCheck();
+    .WithAsyncAPIUI();
 
 chatApi.WithReference(ratingApi).WaitFor(ratingApi);
 
@@ -194,9 +173,7 @@ var financeApi = builder
     .WaitFor(queue)
     .WithIdP(keycloak, kcRealmName)
     .WithAzApplicationInsights()
-    .WithOpenApi()
-    .WithAsyncApi()
-    .WithHealthCheck();
+    .WithAsyncAPIUI();
 
 var gateway = builder
     .AddYarp(Application.Gateway)
@@ -232,16 +209,23 @@ if (builder.ExecutionContext.IsRunMode)
 {
     builder
         .AddScalar(keycloak)
-        .WithApi(basketApi)
-        .WithApi(catalogApi)
-        .WithApi(chatApi)
-        .WithApi(orderingApi)
-        .WithApi(ratingApi)
-        .WithApi(financeApi);
+        .WithOpenAPI(basketApi)
+        .WithOpenAPI(catalogApi)
+        .WithOpenAPI(chatApi)
+        .WithOpenAPI(orderingApi)
+        .WithOpenAPI(ratingApi)
+        .WithOpenAPI(financeApi);
 
     builder.AddK6(gateway);
 
     builder.AddMcpInspector(Components.McpInspector).WithMcpServer(mcp).WaitFor(mcp);
+}
+else
+{
+    builder.AddDashboard();
+    builder.ConfigureCors();
+    builder.AddAzureApplicationInsights(Components.Azure.ApplicationInsights);
+    builder.AddAzureContainerAppEnvironment(Components.Azure.ContainerApp).ProvisionAsService();
 }
 
 builder.Build().Run();
