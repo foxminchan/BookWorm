@@ -202,11 +202,16 @@ public sealed class DomainEventTests : ArchUnitBaseTest
             .That()
             .AreAssignableTo(typeof(DomainEvent))
             .Should()
-            .NotDependOnAny(Types().That().ResideInNamespaceMatching(namespacePattern))
+            .NotDependOnAny(
+                Types()
+                    .That()
+                    .ResideInNamespaceMatching(namespacePattern)
+                    .And()
+                    .DoNotHaveFullNameMatching("Microsoft.CodeCoverage.*")
+            )
             .Because(
                 $"Domain events should not depend on higher architectural layers like {namespacePattern}."
             )
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
