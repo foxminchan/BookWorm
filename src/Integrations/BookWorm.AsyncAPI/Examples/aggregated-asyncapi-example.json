@@ -1,0 +1,146 @@
+{
+  "asyncapi": "2.6.0",
+  "info": {
+    "title": "BookWorm Aggregated AsyncAPI",
+    "version": "1.0.0",
+    "description": "Aggregated AsyncAPI specifications from all BookWorm services"
+  },
+  "channels": {
+    "catalog.book-created": {
+      "description": "Channel for book creation events from Catalog service",
+      "publish": {
+        "operationId": "onBookCreated",
+        "message": {
+          "$ref": "#/components/messages/catalog.BookCreatedMessage"
+        }
+      }
+    },
+    "catalog.book-updated": {
+      "description": "Channel for book update events from Catalog service",
+      "publish": {
+        "operationId": "onBookUpdated",
+        "message": {
+          "$ref": "#/components/messages/catalog.BookUpdatedMessage"
+        }
+      }
+    },
+    "basket.item-added": {
+      "description": "Channel for basket item addition events from Basket service",
+      "publish": {
+        "operationId": "onBasketItemAdded",
+        "message": {
+          "$ref": "#/components/messages/basket.BasketItemAddedMessage"
+        }
+      }
+    },
+    "ordering.order-placed": {
+      "description": "Channel for order placement events from Ordering service",
+      "publish": {
+        "operationId": "onOrderPlaced",
+        "message": {
+          "$ref": "#/components/messages/ordering.OrderPlacedMessage"
+        }
+      }
+    },
+    "notification.email-sent": {
+      "description": "Channel for email notification events from Notification service",
+      "publish": {
+        "operationId": "onEmailSent",
+        "message": {
+          "$ref": "#/components/messages/notification.EmailSentMessage"
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "catalog.BookCreatedEvent": {
+        "type": "object",
+        "properties": {
+          "bookId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string"
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["bookId", "title", "author", "publishedAt"]
+      },
+      "basket.BasketItemAddedEvent": {
+        "type": "object",
+        "properties": {
+          "basketId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bookId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "addedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["basketId", "bookId", "quantity", "addedAt"]
+      },
+      "ordering.OrderPlacedEvent": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "customerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "totalAmount": {
+            "type": "number",
+            "format": "decimal"
+          },
+          "placedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["orderId", "customerId", "totalAmount", "placedAt"]
+      }
+    },
+    "messages": {
+      "catalog.BookCreatedMessage": {
+        "payload": {
+          "$ref": "#/components/schemas/catalog.BookCreatedEvent"
+        },
+        "contentType": "application/json",
+        "description": "Message published when a new book is created in the catalog"
+      },
+      "basket.BasketItemAddedMessage": {
+        "payload": {
+          "$ref": "#/components/schemas/basket.BasketItemAddedEvent"
+        },
+        "contentType": "application/json",
+        "description": "Message published when an item is added to a basket"
+      },
+      "ordering.OrderPlacedMessage": {
+        "payload": {
+          "$ref": "#/components/schemas/ordering.OrderPlacedEvent"
+        },
+        "contentType": "application/json",
+        "description": "Message published when an order is placed"
+      }
+    }
+  }
+}

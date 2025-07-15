@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  
+  <ItemGroup Label="Testing">
+    <PackageReference Include="TUnit" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
+    <PackageReference Include="GitHubActionsTestLogger" />
+  </ItemGroup>
+  
+  <ItemGroup Label="Project References">
+    <ProjectReference Include="..\BookWorm.AsyncAPI\BookWorm.AsyncAPI.csproj" />
+  </ItemGroup>
+</Project>
