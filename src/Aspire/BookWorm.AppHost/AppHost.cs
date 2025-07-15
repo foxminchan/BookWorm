@@ -215,6 +215,26 @@ var gateway = builder
     .WaitFor(financeApi)
     .WithReference(keycloak);
 
+var asyncApiService = builder
+    .AddProject<BookWorm_AsyncAPI>(Application.AsyncAPI)
+    .WithReference(catalogApi)
+    .WithReference(chatApi)
+    .WithReference(orderingApi)
+    .WithReference(ratingApi)
+    .WithReference(basketApi)
+    .WithReference(financeApi)
+    .WithReference(notificationApi)
+    .WaitFor(catalogApi)
+    .WaitFor(chatApi)
+    .WaitFor(orderingApi)
+    .WaitFor(ratingApi)
+    .WaitFor(basketApi)
+    .WaitFor(financeApi)
+    .WaitFor(notificationApi)
+    .WithAzApplicationInsights()
+    .WithAsyncApi(true)
+    .WithHealthCheck();
+
 builder
     .AddHealthChecksUI()
     .WithExternalHttpEndpoints()
@@ -226,7 +246,8 @@ builder
     .WithReference(ratingApi)
     .WithReference(basketApi)
     .WithReference(notificationApi)
-    .WithReference(financeApi);
+    .WithReference(financeApi)
+    .WithReference(asyncApiService);
 
 if (builder.ExecutionContext.IsRunMode)
 {

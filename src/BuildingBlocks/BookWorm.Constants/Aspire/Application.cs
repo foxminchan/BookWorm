@@ -11,6 +11,7 @@ public static class Application
     public static readonly string Gateway = nameof(Gateway).ToLowerInvariant();
     public static readonly string Chatting = nameof(Chatting).ToLowerInvariant();
     public static readonly string McpTools = nameof(McpTools).ToLowerInvariant();
+    public static readonly string AsyncAPI = nameof(AsyncAPI).ToLowerInvariant();
 
     public static string ToClientName(this string application, string? suffix = null)
     {

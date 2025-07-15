@@ -30,6 +30,7 @@
   </ItemGroup>
   <ItemGroup Label="Services">
     <ProjectReference Include="..\..\Integrations\BookWorm.McpTools\BookWorm.McpTools.csproj" />
+    <ProjectReference Include="..\..\Integrations\BookWorm.AsyncAPI\BookWorm.AsyncAPI.csproj" />
     <ProjectReference Include="..\..\Services\Basket\BookWorm.Basket\BookWorm.Basket.csproj" />
     <ProjectReference Include="..\..\Services\Catalog\BookWorm.Catalog\BookWorm.Catalog.csproj" />
     <ProjectReference Include="..\..\Services\Chat\BookWorm.Chat\BookWorm.Chat.csproj" />
