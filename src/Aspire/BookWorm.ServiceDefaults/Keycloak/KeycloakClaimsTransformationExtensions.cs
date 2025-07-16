@@ -8,7 +8,6 @@ public static class KeycloakClaimsTransformationExtensions
     /// </summary>
     public static void AddKeycloakClaimsTransformation(this IHostApplicationBuilder builder)
     {
-        builder.Services.AddTransient<IKeycloakUrls, KeycloakUrls>();
         builder.Services.AddTransient<IClaimsTransformation, KeycloakRolesClaimsTransformation>();
     }
 }

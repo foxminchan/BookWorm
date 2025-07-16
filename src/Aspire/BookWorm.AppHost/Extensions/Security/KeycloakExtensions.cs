@@ -220,8 +220,11 @@ public static class KeycloakExtensions
                 context.EnvironmentVariables[$"CLIENT_{clientEnv}_URL_CONTAINERHOST"] = endpoint;
             });
 
+        // If the Keycloak resource is running in HTTPS container, please remove the WaitFor() call.
+        // https://github.com/dotnet/aspire/issues/6890
         return builder
             .WithReference(keycloak)
+            .WaitFor(keycloak)
             .WithEnvironment("Identity__Realm", realmName)
             .WithEnvironment($"Identity__Scopes__{clientId}", clientId.ToClientName("API"));
     }

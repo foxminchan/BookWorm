@@ -34,11 +34,14 @@ public static class ScalarExtensions
         IResourceBuilder<KeycloakResource> keycloak
     )
     {
+        // If the Keycloak resource is running in HTTPS container, please remove the WaitFor() call.
+        // https://github.com/dotnet/aspire/issues/6890
         return builder
             .AddScalarApiReference(options =>
                 options.WithTheme(ScalarTheme.BluePlanet).WithDefaultFonts(false)
             )
-            .WithReference(keycloak);
+            .WithReference(keycloak)
+            .WaitFor(keycloak);
     }
 
     /// <summary>
