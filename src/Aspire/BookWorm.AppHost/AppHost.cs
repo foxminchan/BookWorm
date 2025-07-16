@@ -63,8 +63,7 @@ var keycloak = builder
     .WithCustomTheme(kcThemeName)
     .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent)
-    .WithSampleRealmImport(kcRealmName, kcThemeDisplayName)
-    .RunWithHttpsDevCertificate();
+    .WithSampleRealmImport(kcRealmName, kcThemeDisplayName);
 
 var catalogApi = builder
     .AddProject<BookWorm_Catalog>(Application.Catalog)
