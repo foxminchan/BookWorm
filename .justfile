@@ -29,7 +29,8 @@ help:
     echo " update-eventcatalog - Update EventCatalog bun packages"
     echo " update-vuepress - Update VuePress bun packages"
     echo " update-k6 - Update K6 bun packages"
-    echo " update - Update all bun packages (eventcatalog, vuepress, k6)"
+    echo " update-keycloakify - Update Keycloakify bun packages"
+    echo " update - Update all bun packages (eventcatalog, vuepress, k6, keycloakify)"
 
 # Restore NuGet packages and tools
 
@@ -116,12 +117,12 @@ update-eventcatalog:
 # Update EventCatalog packages (Windows)
 
 _update-eventcatalog-windows:
-    cd docs/eventcatalog && bun upgrade
+    cd docs/eventcatalog && bun update
 
 # Update EventCatalog packages (Linux/macOS)
 
 _update-eventcatalog-linux _update-eventcatalog-macos:
-    cd docs/eventcatalog && bun upgrade
+    cd docs/eventcatalog && bun update
 
 # Update VuePress bun packages
 
@@ -155,7 +156,23 @@ _update-k6-windows:
 _update-k6-linux _update-k6-macos:
     cd src/Aspire/BookWorm.AppHost/Container/k6 && bun update
 
+# Update Keycloakify bun packages
+
+update-keycloakify:
+    echo "Updating Keycloakify bun packages..."
+    just _update-keycloakify-{{ os() }}
+
+# Update Keycloakify packages (Windows)
+
+_update-keycloakify-windows:
+    cd src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify && bun update
+
+# Update Keycloakify packages (Linux/macOS)
+
+_update-keycloakify-linux _update-keycloakify-macos:
+    cd src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify && bun update
+
 # Update all bun packages
 
-update: update-eventcatalog update-vuepress update-k6
+update: update-eventcatalog update-vuepress update-k6 update-keycloakify
     echo "All bun packages updated successfully!"

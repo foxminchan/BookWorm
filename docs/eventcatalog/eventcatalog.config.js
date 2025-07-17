@@ -11,7 +11,8 @@ export default {
     "This internal platform provides a comprehensive view of our event-driven architecture across all systems. Use this portal to discover existing domains, explore services and their dependencies, and understand the message contracts that connect our infrastructure",
   organizationName: "BookWorm",
   homepageLink: "https://github.com/foxminchan/BookWorm/",
-  editUrl: "https://github.com/foxminchan/BookWorm/edit/main/",
+  repositoryUrl: "https://github.com/foxminchan/BookWorm",
+  editUrl: "https://github.com/foxminchan/BookWorm/edit/main/docs/eventcatalog",
   trailingSlash: false,
   base: "/",
   mdxOptimize: true,
@@ -225,4 +226,7 @@ export default {
       shortName: "Prod",
     },
   ],
+  llmsTxt: {
+    enabled: true,
+  },
 };
