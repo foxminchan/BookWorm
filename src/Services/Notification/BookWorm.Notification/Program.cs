@@ -8,13 +8,13 @@ builder.AddApplicationServices();
 
 var app = builder.Build();
 
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
 {
-    app.UseHsts();
+    app.MapGet("/", () => Results.Redirect("/asyncapi/ui")).ExcludeFromDescription();
 }
 else
 {
-    app.MapGet("/", () => Results.Redirect("/asyncapi/ui")).ExcludeFromDescription();
+    app.UseHsts();
 }
 
 app.UseExceptionHandler();
