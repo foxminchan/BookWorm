@@ -81,5 +81,7 @@ internal static class Extensions
 
         builder.AddAgents();
         services.AddSingleton<ISummarizer, RatingSummarizer>();
+
+        services.AddScoped<KeycloakTokenIntrospectionMiddleware>();
     }
 }
