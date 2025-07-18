@@ -5,7 +5,6 @@ public interface ISearch
     Task<IReadOnlyList<TextSnippet>> SearchAsync(
         string text,
         ICollection<string> keywords,
-        string collectionName,
         int maxResults = 20,
         CancellationToken cancellationToken = default
     );

@@ -12,7 +12,6 @@ public sealed class ListBooksQueryTests
 {
     private const int MaxResults = 20;
     private static readonly string[] _defaultKeyword = [nameof(Book)];
-    private readonly string _collectionName = nameof(Book).ToLowerInvariant();
     private BookDto[] _bookDtos = null!;
     private List<Book> _books = null!;
     private ListBooksHandler _handler = null!;
@@ -86,7 +85,6 @@ public sealed class ListBooksQueryTests
                 s.SearchAsync(
                     It.IsAny<string>(),
                     _defaultKeyword,
-                    _collectionName,
                     MaxResults,
                     It.IsAny<CancellationToken>()
                 ),
@@ -111,7 +109,6 @@ public sealed class ListBooksQueryTests
                 s.SearchAsync(
                     searchTerm,
                     new[] { nameof(Book), searchTerm },
-                    _collectionName,
                     MaxResults,
                     It.IsAny<CancellationToken>()
                 )
@@ -137,7 +134,6 @@ public sealed class ListBooksQueryTests
                 s.SearchAsync(
                     searchTerm,
                     new[] { nameof(Book), searchTerm },
-                    _collectionName,
                     MaxResults,
                     It.IsAny<CancellationToken>()
                 ),

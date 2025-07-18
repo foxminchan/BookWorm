@@ -1,4 +1,5 @@
-﻿using BookWorm.Constants.Aspire;
+﻿using BookWorm.Chassis.Search;
+using BookWorm.Constants.Aspire;
 
 namespace BookWorm.Catalog.Infrastructure;
 
@@ -28,7 +29,7 @@ internal static class Extensions
 
         // Configure Qdrant
         builder.AddQdrantClient(Components.VectorDb);
-        services.AddQdrantVectorStore();
+        services.AddQdrantCollection<Guid, TextSnippet>(nameof(Book).ToLowerInvariant());
 
         // Configure Redis Cache
         builder.AddRedisClient(Components.Redis);
