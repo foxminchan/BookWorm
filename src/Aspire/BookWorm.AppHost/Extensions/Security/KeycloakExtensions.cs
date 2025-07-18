@@ -226,6 +226,8 @@ public static class KeycloakExtensions
             .WithReference(keycloak)
             .WaitFor(keycloak)
             .WithEnvironment("Identity__Realm", realmName)
+            .WithEnvironment("Identity__ClientId", clientId)
+            .WithEnvironment("Identity__ClientSecret", clientSecret)
             .WithEnvironment($"Identity__Scopes__{clientId}", clientId.ToClientName("API"));
     }
 
@@ -254,7 +256,7 @@ public static class KeycloakExtensions
     /// <example>
     ///     <code>
     ///     var authUrl = keycloak.GetAuthorizationEndpoint(Protocol.Https, realmName);
-    ///     // Returns: https://localhost:8443/realms/myrealm/protocol/openid-connect/auth
+    ///     // Returns: https://localhost:8443/realms/my-realm/protocol/openid-connect/auth
     ///     </code>
     /// </example>
     public static string GetAuthorizationEndpoint(

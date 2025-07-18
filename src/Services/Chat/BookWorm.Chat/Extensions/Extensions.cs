@@ -56,5 +56,7 @@ internal static class Extensions
         services.AddSignalR().AddNamedAzureSignalR(Components.Azure.SignalR);
 
         builder.AddChatStreamingServices();
+
+        services.AddScoped<KeycloakTokenIntrospectionMiddleware>();
     }
 }

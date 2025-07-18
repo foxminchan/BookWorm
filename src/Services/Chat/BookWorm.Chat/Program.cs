@@ -10,6 +10,8 @@ builder.AddApplicationServices();
 
 var app = builder.Build();
 
+app.UseMiddleware<KeycloakTokenIntrospectionMiddleware>();
+
 app.UseRateLimiter();
 
 app.MapDefaultEndpoints();

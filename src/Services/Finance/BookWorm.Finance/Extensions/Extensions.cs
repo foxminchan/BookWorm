@@ -37,5 +37,7 @@ internal static class Extensions
         services.AddEndpoints(typeof(IFinanceApiMarker));
 
         builder.AddDefaultAsyncApi([typeof(IFinanceApiMarker)]);
+
+        services.AddScoped<KeycloakTokenIntrospectionMiddleware>();
     }
 }
