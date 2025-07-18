@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
 using System.Text.Json;
-using Microsoft.AspNetCore.Mvc;
 
 namespace BookWorm.ServiceDefaults.Keycloak;
 
@@ -14,18 +13,25 @@ public sealed class KeycloakTokenIntrospectionMiddleware(
         var traceId = Activity.Current?.Id ?? context.TraceIdentifier;
         var authHeader = context.Request.Headers.Authorization.FirstOrDefault();
 
-        var token = authHeader?.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) is true
-            ? authHeader["Bearer ".Length..].Trim()
+        var token = authHeader?.StartsWith(
+            $"{JwtBearerDefaults.AuthenticationScheme} ",
+            StringComparison.OrdinalIgnoreCase
+        )
+            is true
+            ? authHeader[$"{JwtBearerDefaults.AuthenticationScheme} ".Length..].Trim()
             : null;
 
         if (!string.IsNullOrWhiteSpace(token))
         {
-            var authorityUri =
-                $"{Protocol.HttpOrHttps}://{Components.KeyCloak}/realms/{identityOptions.Realm}";
+            var keycloakUri = $"{Protocol.HttpOrHttps}://{Components.KeyCloak}";
 
-            var introspectionEndpoint = $"{authorityUri}/protocol/openid-connect/token/introspect";
+            var introspectionEndpoint =
+                $"realms/{identityOptions.Realm}/protocol/openid-connect/token/introspect";
 
             using var httpClient = httpClientFactory.CreateClient();
+
+            httpClient.BaseAddress = new(keycloakUri);
+            httpClient.Timeout = TimeSpan.FromSeconds(30);
 
             var requestContent = new FormUrlEncodedContent(
                 [
@@ -36,32 +42,35 @@ public sealed class KeycloakTokenIntrospectionMiddleware(
             );
 
             var response = await httpClient.PostAsync(introspectionEndpoint, requestContent);
+
             if (!response.IsSuccessStatusCode)
             {
-                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                await TypedResults
+                    .Problem(
+                        statusCode: StatusCodes.Status401Unauthorized,
+                        title: "Token introspection failed",
+                        extensions: new Dictionary<string, object?> { { nameof(traceId), traceId } }
+                    )
+                    .ExecuteAsync(context);
                 return;
             }
 
             var content = await response.Content.ReadAsStringAsync();
             using var tokenResponse = JsonDocument.Parse(content);
-            var root = tokenResponse.RootElement;
 
             var isActive =
-                root.TryGetProperty("active", out var activeElement) && activeElement.GetBoolean();
+                tokenResponse.RootElement.TryGetProperty("active", out var activeElement)
+                && activeElement.GetBoolean();
+
             if (!isActive)
             {
-                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                await context.Response.WriteAsJsonAsync(
-                    new ProblemDetails
-                    {
-                        Status = StatusCodes.Status401Unauthorized,
-                        Title = "Token is not active",
-                        Extensions = new Dictionary<string, object?>
-                        {
-                            { nameof(traceId), traceId },
-                        },
-                    }
-                );
+                await TypedResults
+                    .Problem(
+                        statusCode: StatusCodes.Status401Unauthorized,
+                        title: "Token is not active",
+                        extensions: new Dictionary<string, object?> { { nameof(traceId), traceId } }
+                    )
+                    .ExecuteAsync(context);
                 return;
             }
         }
