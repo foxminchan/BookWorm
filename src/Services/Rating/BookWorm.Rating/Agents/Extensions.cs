@@ -37,29 +37,19 @@ public static class Extensions
     public static void MapHostRatingAgent(this WebApplication app)
     {
         var agent = app.Services.GetRequiredKeyedService<ChatCompletionAgent>(nameof(RatingAgent));
+
         var hostAgent = new A2AHostAgent(agent, RatingAgent.GetAgentCard());
 
-        var apiVersionSet = app.NewApiVersionSet()
-            .HasApiVersion(new(1, 0))
-            .ReportApiVersions()
-            .Build();
+        app.MapA2A(hostAgent.TaskManager!, "/agents/rating").WithTags(nameof(RatingAgent));
 
-        app.MapA2A(hostAgent.TaskManager!, "/api/v{version:apiVersion}/agents/rating")
-            .WithApiVersionSet(apiVersionSet)
-            .MapToApiVersion(new(1, 0))
-            .WithTags(nameof(RatingAgent));
-
-        app.MapHttpA2A(hostAgent.TaskManager!, "/api/v{version:apiVersion}/agents/rating")
-            .WithApiVersionSet(apiVersionSet)
-            .MapToApiVersion(new(1, 0))
-            .WithTags(nameof(RatingAgent));
+        app.MapHttpA2A(hostAgent.TaskManager!, "/agents/rating").WithTags(nameof(RatingAgent));
     }
 
     private static async Task<KernelPlugin> GetRemoteAgentPlugin(
         this IHostApplicationBuilder builder
     )
     {
-        var baseUri = $"{Protocol.HttpOrHttps}://{Application.Chatting}/api/v1/agents";
+        var baseUri = $"{Protocol.HttpOrHttps}://{Application.Chatting}/agents";
 
         var sentimentPlugin = await builder.ConnectRemoteAgent(
             [$"{baseUri}/summarize", $"{baseUri}/sentiment"]

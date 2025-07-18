@@ -4,7 +4,6 @@ using BookWorm.Chassis.ActivityScope;
 using BookWorm.Chassis.Logging;
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.ServiceDefaults.ApiSpecification;
-using BookWorm.ServiceDefaults.Kestrel;
 using HealthChecks.UI.Client;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;
@@ -179,23 +178,6 @@ public static class Extensions
 
     public static void MapDefaultEndpoints(this WebApplication app)
     {
-        if (!app.Environment.IsDevelopment())
-        {
-            // The default HSTS value is 30 days.
-            // You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-            app.UseHsts();
-        }
-
-        app.UseExceptionHandler();
-
-        app.UseStatusCodePages();
-
-        app.UseDefaultCors();
-
-        app.UseRequestTimeouts();
-
-        app.UseOutputCache();
-
         // Configure the health checks
         var healthChecks = app.MapGroup("");
 
@@ -235,6 +217,11 @@ public static class Extensions
                 // See this documentation to learn more about restricting access to health checks endpoints via routing:
                 // https://learn.microsoft.com/aspnet/core/host-and-deploy/health-checks?view=aspnetcore-8.0#use-health-checks-routing
                 .RequireHost(pathToHostsMap[path]);
+        }
+
+        if (!app.Environment.IsDevelopment())
+        {
+            app.MapGet("/", () => Results.Redirect(HealthEndpointPath)).ExcludeFromDescription();
         }
     }
 

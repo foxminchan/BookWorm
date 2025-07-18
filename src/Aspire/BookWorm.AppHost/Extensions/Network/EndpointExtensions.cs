@@ -80,6 +80,11 @@ public static class EndpointExtensions
         this IResourceBuilder<ProjectResource> builder
     )
     {
+        if (!builder.ApplicationBuilder.ExecutionContext.IsRunMode)
+        {
+            return builder;
+        }
+
         var endpointName = builder.ApplicationBuilder.GetLaunchProfileName();
 
         return builder.WithUrlForEndpoint(
