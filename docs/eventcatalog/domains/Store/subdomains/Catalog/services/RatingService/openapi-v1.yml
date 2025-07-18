@@ -331,7 +331,7 @@ paths:
                     title: "Not found"
                     status: 404
                     detail: "Feedback with id 01961eb4-668d-7e7e-ae25-0fab379614f7 not found."
-  "/api/v1/agents/rating/.well-known/agent.json":
+  "/agents/rating/.well-known/agent.json":
     get:
       tags:
         - RatingAgent
@@ -341,7 +341,7 @@ paths:
       responses:
         "200":
           description: OK
-  "/api/v1/agents/rating":
+  "/agents/rating":
     post:
       tags:
         - RatingAgent
@@ -357,7 +357,7 @@ paths:
       responses:
         "200":
           description: OK
-  "/api/v1/agents/rating/tasks/{id}":
+  "/agents/rating/tasks/{id}":
     get:
       tags:
         - RatingAgent
@@ -386,7 +386,7 @@ paths:
       responses:
         "200":
           description: OK
-  "/api/v1/agents/rating/tasks/{id}/cancel":
+  "/agents/rating/tasks/{id}/cancel":
     post:
       tags:
         - RatingAgent
@@ -402,7 +402,7 @@ paths:
       responses:
         "200":
           description: OK
-  "/api/v1/agents/rating/send":
+  "/agents/rating/send":
     post:
       tags:
         - RatingAgent
@@ -428,7 +428,7 @@ paths:
       responses:
         "200":
           description: OK
-  "/api/v1/agents/rating/tasks/{id}/send":
+  "/agents/rating/tasks/{id}/send":
     post:
       tags:
         - RatingAgent
@@ -459,7 +459,7 @@ paths:
       responses:
         "200":
           description: OK
-  "/api/v1/agents/rating/tasks/{id}/sendSubscribe":
+  "/agents/rating/tasks/{id}/sendSubscribe":
     post:
       tags:
         - RatingAgent
@@ -490,7 +490,7 @@ paths:
       responses:
         "200":
           description: OK
-  "/api/v1/agents/rating/tasks/{id}/resubscribe":
+  "/agents/rating/tasks/{id}/resubscribe":
     post:
       tags:
         - RatingAgent
@@ -506,7 +506,7 @@ paths:
       responses:
         "200":
           description: OK
-  "/api/v1/agents/rating/tasks/{id}/pushNotification":
+  "/agents/rating/tasks/{id}/pushNotification":
     put:
       tags:
         - RatingAgent

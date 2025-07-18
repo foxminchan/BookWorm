@@ -12,9 +12,13 @@ public sealed class KeycloakTokenIntrospectionMiddleware(
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
         var traceId = Activity.Current?.Id ?? context.TraceIdentifier;
-        var token = context.Request.Headers.Authorization.FirstOrDefault()?.Split(' ').Last();
+        var authHeader = context.Request.Headers.Authorization.FirstOrDefault();
 
-        if (token is not null)
+        var token = authHeader?.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) is true
+            ? authHeader["Bearer ".Length..].Trim()
+            : null;
+
+        if (!string.IsNullOrWhiteSpace(token))
         {
             var authorityUri =
                 $"{Protocol.HttpOrHttps}://{Components.KeyCloak}/realms/{identityOptions.Realm}";
@@ -51,28 +55,7 @@ public sealed class KeycloakTokenIntrospectionMiddleware(
                     new ProblemDetails
                     {
                         Status = StatusCodes.Status401Unauthorized,
-                        Title = "The provided token is not active or valid",
-                        Extensions = new Dictionary<string, object?>
-                        {
-                            { nameof(traceId), traceId },
-                        },
-                    }
-                );
-                return;
-            }
-
-            var scopes = root.TryGetProperty("scope", out var scopeElement)
-                ? scopeElement.GetString()?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? []
-                : [];
-
-            if (!identityOptions.Scopes.Any(scope => scopes.Contains(scope.Key)))
-            {
-                context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                await context.Response.WriteAsJsonAsync(
-                    new ProblemDetails
-                    {
-                        Status = StatusCodes.Status403Forbidden,
-                        Title = "The token does not include the required scopes",
+                        Title = "Token is not active",
                         Extensions = new Dictionary<string, object?>
                         {
                             { nameof(traceId), traceId },

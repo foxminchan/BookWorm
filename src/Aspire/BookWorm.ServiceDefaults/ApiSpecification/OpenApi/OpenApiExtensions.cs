@@ -30,6 +30,11 @@ public static class OpenApiExtensions
 
     public static void UseDefaultOpenApi(this WebApplication app)
     {
+        if (!app.Environment.IsDevelopment())
+        {
+            return;
+        }
+
         app.MapOpenApi();
         app.MapGet("/", () => Results.Redirect("openapi/v1.json")).ExcludeFromDescription();
     }

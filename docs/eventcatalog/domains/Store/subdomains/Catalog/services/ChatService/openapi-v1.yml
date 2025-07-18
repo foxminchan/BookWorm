@@ -368,7 +368,7 @@ paths:
               example: "Chat stream endpoint is available."
         "401":
           description: Unauthorized - Access token is missing or invalid.
-  "/api/v1/agents/summarize/.well-known/agent.json":
+  "/agents/summarize/.well-known/agent.json":
     get:
       tags:
         - SummarizeAgent
@@ -378,7 +378,7 @@ paths:
       responses:
         "200":
           description: OK
-  "/api/v1/agents/summarize":
+  "/agents/summarize":
     post:
       tags:
         - SummarizeAgent
@@ -394,7 +394,7 @@ paths:
       responses:
         "200":
           description: OK
-  "/api/v1/agents/summarize/tasks/{id}":
+  "/agents/summarize/tasks/{id}":
     get:
       tags:
         - SummarizeAgent
@@ -421,7 +421,7 @@ paths:
       responses:
         "200":
           description: OK
-  "/api/v1/agents/summarize/tasks/{id}/cancel":
+  "/agents/summarize/tasks/{id}/cancel":
     post:
       tags:
         - SummarizeAgent
@@ -437,7 +437,7 @@ paths:
       responses:
         "200":
           description: OK
-  "/api/v1/agents/summarize/send":
+  "/agents/summarize/send":
     post:
       tags:
         - SummarizeAgent
@@ -463,7 +463,7 @@ paths:
       responses:
         "200":
           description: OK
-  "/api/v1/agents/summarize/tasks/{id}/send":
+  "/agents/summarize/tasks/{id}/send":
     post:
       tags:
         - SummarizeAgent
@@ -494,7 +494,7 @@ paths:
       responses:
         "200":
           description: OK
-  "/api/v1/agents/summarize/tasks/{id}/sendSubscribe":
+  "/agents/summarize/tasks/{id}/sendSubscribe":
     post:
       tags:
         - SummarizeAgent
@@ -525,7 +525,7 @@ paths:
       responses:
         "200":
           description: OK
-  "/api/v1/agents/summarize/tasks/{id}/resubscribe":
+  "/agents/summarize/tasks/{id}/resubscribe":
     post:
       tags:
         - SummarizeAgent
@@ -541,7 +541,7 @@ paths:
       responses:
         "200":
           description: OK
-  "/api/v1/agents/summarize/tasks/{id}/pushNotification":
+  "/agents/summarize/tasks/{id}/pushNotification":
     put:
       tags:
         - SummarizeAgent
@@ -578,7 +578,7 @@ paths:
       responses:
         "200":
           description: OK
-  "/api/v1/agents/sentiment/.well-known/agent.json":
+  "/agents/sentiment/.well-known/agent.json":
     get:
       tags:
         - SentimentAgent
@@ -588,7 +588,7 @@ paths:
       responses:
         "200":
           description: OK
-  "/api/v1/agents/sentiment":
+  "/agents/sentiment":
     post:
       tags:
         - SentimentAgent
@@ -604,7 +604,7 @@ paths:
       responses:
         "200":
           description: OK
-  "/api/v1/agents/sentiment/tasks/{id}":
+  "/agents/sentiment/tasks/{id}":
     get:
       tags:
         - SentimentAgent
@@ -631,7 +631,7 @@ paths:
       responses:
         "200":
           description: OK
-  "/api/v1/agents/sentiment/tasks/{id}/cancel":
+  "/agents/sentiment/tasks/{id}/cancel":
     post:
       tags:
         - SentimentAgent
@@ -647,7 +647,7 @@ paths:
       responses:
         "200":
           description: OK
-  "/api/v1/agents/sentiment/send":
+  "/agents/sentiment/send":
     post:
       tags:
         - SentimentAgent
@@ -673,7 +673,7 @@ paths:
       responses:
         "200":
           description: OK
-  "/api/v1/agents/sentiment/tasks/{id}/send":
+  "/agents/sentiment/tasks/{id}/send":
     post:
       tags:
         - SentimentAgent
@@ -704,7 +704,7 @@ paths:
       responses:
         "200":
           description: OK
-  "/api/v1/agents/sentiment/tasks/{id}/sendSubscribe":
+  "/agents/sentiment/tasks/{id}/sendSubscribe":
     post:
       tags:
         - SentimentAgent
@@ -735,7 +735,7 @@ paths:
       responses:
         "200":
           description: OK
-  "/api/v1/agents/sentiment/tasks/{id}/resubscribe":
+  "/agents/sentiment/tasks/{id}/resubscribe":
     post:
       tags:
         - SentimentAgent
@@ -751,7 +751,7 @@ paths:
       responses:
         "200":
           description: OK
-  "/api/v1/agents/sentiment/tasks/{id}/pushNotification":
+  "/agents/sentiment/tasks/{id}/pushNotification":
     put:
       tags:
         - SentimentAgent
