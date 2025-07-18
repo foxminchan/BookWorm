@@ -55,7 +55,7 @@ public sealed class ListBooksHandler(
             var response = await search.SearchAsync(
                 request.Search,
                 [nameof(Book), request.Search],
-                nameof(Book).ToLowerInvariant(),
+                request.PageSize,
                 cancellationToken: cancellationToken
             );
 

@@ -6,17 +6,14 @@ namespace BookWorm.Catalog.Infrastructure.GenAi.Ingestion;
 
 public sealed class BookDataIngestor(
     IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
-    VectorStore vectorStore
+    VectorStoreCollection<Guid, TextSnippet> vectorCollection
 ) : IIngestionSource<Book>
 {
-    private readonly string _collectionName = nameof(Book).ToLowerInvariant();
-
     public async Task IngestDataAsync(Book data, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrEmpty(data.Name);
         ArgumentException.ThrowIfNullOrEmpty(data.Description);
 
-        var vectorCollection = vectorStore.GetCollection<Guid, TextSnippet>(_collectionName);
         await vectorCollection.EnsureCollectionExistsAsync(cancellationToken);
 
         var text = $"{data.Name} {data.Description}";
