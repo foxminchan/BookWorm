@@ -38,7 +38,7 @@ jobs:
         uses: actions/configure-pages@v5
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install
         working-directory: docs/vuepress
 
       - name: Build documentation
