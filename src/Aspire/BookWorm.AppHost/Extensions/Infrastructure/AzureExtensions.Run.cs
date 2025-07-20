@@ -18,10 +18,10 @@ public static partial class AzureExtensions
     /// <example>
     ///     <code>
     ///     builder.AddAzureStorage("storage")
-    ///            .RunAsContainer();
+    ///            .RunAsLocalContainer();
     ///     </code>
     /// </example>
-    public static IResourceBuilder<AzureStorageResource> RunAsContainer(
+    public static IResourceBuilder<AzureStorageResource> RunAsLocalContainer(
         this IResourceBuilder<AzureStorageResource> builder
     )
     {
@@ -54,10 +54,10 @@ public static partial class AzureExtensions
     /// <example>
     ///     <code>
     ///     builder.AddAzureSignalR("signalr")
-    ///            .RunAsContainer();
+    ///            .RunAsLocalContainer();
     ///     </code>
     /// </example>
-    public static IResourceBuilder<AzureSignalRResource> RunAsContainer(
+    public static IResourceBuilder<AzureSignalRResource> RunAsLocalContainer(
         this IResourceBuilder<AzureSignalRResource> builder
     )
     {
@@ -78,6 +78,7 @@ public static partial class AzureExtensions
     ///     on the execution context.
     /// </summary>
     /// <param name="builder">The resource builder for Azure PostgreSQL Flexible Server.</param>
+    /// <param name="configure">Optional action to configure additional PostgreSQL container settings.</param>
     /// <returns>The updated resource builder with appropriate configuration for the execution context.</returns>
     /// <remarks>
     ///     This method provides dual configuration based on execution context:
@@ -86,29 +87,35 @@ public static partial class AzureExtensions
     ///     - <strong>Publish mode (cloud deployment):</strong> Configures password authentication for cloud PostgreSQL
     ///     instance
     ///     - Includes persistent container lifetime and always pulls latest images in run mode
+    ///     - Supports additional configuration through the optional configure parameter
     /// </remarks>
     /// <example>
     ///     <code>
+    ///     // Basic usage
     ///     builder.AddAzurePostgresFlexibleServer("postgres")
-    ///            .RunAsContainer();
+    ///            .RunAsLocalContainer();
+    ///
+    ///     // With custom configuration
+    ///     builder.AddAzurePostgresFlexibleServer("postgres")
+    ///            .RunAsLocalContainer(cfg => cfg.WithInitBindMount("./init.sql"));
     ///     </code>
     /// </example>
-    public static IResourceBuilder<AzurePostgresFlexibleServerResource> RunAsContainer(
-        this IResourceBuilder<AzurePostgresFlexibleServerResource> builder
+    public static IResourceBuilder<AzurePostgresFlexibleServerResource> RunAsLocalContainer(
+        this IResourceBuilder<AzurePostgresFlexibleServerResource> builder,
+        Action<IResourceBuilder<PostgresServerResource>>? configure = null
     )
     {
         if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
         {
             builder.RunAsContainer(cfg =>
+            {
                 cfg.WithPgWeb()
                     .WithDataVolume()
                     .WithImagePullPolicy(ImagePullPolicy.Always)
-                    .WithLifetime(ContainerLifetime.Persistent)
-            );
-        }
-        else
-        {
-            builder.WithPasswordAuthentication();
+                    .WithLifetime(ContainerLifetime.Persistent);
+
+                configure?.Invoke(cfg);
+            });
         }
 
         return builder;
@@ -131,10 +138,10 @@ public static partial class AzureExtensions
     /// <example>
     ///     <code>
     ///     builder.AddAzureRedis("redis")
-    ///            .RunAsContainer();
+    ///            .RunAsLocalContainer();
     ///     </code>
     /// </example>
-    public static IResourceBuilder<AzureRedisCacheResource> RunAsContainer(
+    public static IResourceBuilder<AzureRedisCacheResource> RunAsLocalContainer(
         this IResourceBuilder<AzureRedisCacheResource> builder
     )
     {

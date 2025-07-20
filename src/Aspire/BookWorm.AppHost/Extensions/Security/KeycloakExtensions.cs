@@ -13,8 +13,12 @@ public static class KeycloakExtensions
     private const string KeycloakHostnameEnvVarName = "KC_HOSTNAME";
     private const string HostNameStrictEnvVarName = "KC_HOSTNAME_STRICT";
     private const string QuarkusHttp2EnvVarName = "QUARKUS_HTTP_HTTP2";
-    private const string KeyCloakHttpsCertFileEnvVarName = "KC_HTTPS_CERTIFICATE_FILE";
-    private const string KeyCloakHttpsCertKeyFileEnvVarName = "KC_HTTPS_CERTIFICATE_KEY_FILE";
+    private const string KeycloakHttpsCertFileEnvVarName = "KC_HTTPS_CERTIFICATE_FILE";
+    private const string KeycloakHttpsCertKeyFileEnvVarName = "KC_HTTPS_CERTIFICATE_KEY_FILE";
+    private const string KeycloakDatabaseEnvVarName = "KC_DB";
+    private const string KeycloakDatabaseUsernameEnvVarName = "KC_DB_USERNAME";
+    private const string KeycloakDatabasePasswordEnvVarName = "KC_DB_PASSWORD";
+    private const string KeycloakDatabaseUrlEnvVarName = "KC_DB_URL";
 
     /// <summary>
     ///     Configures a Keycloak resource with a sample realm import.
@@ -108,6 +112,71 @@ public static class KeycloakExtensions
     }
 
     /// <summary>
+    ///     Configures a Keycloak resource to use an external PostgreSQL database.
+    /// </summary>
+    /// <param name="builder">The Keycloak resource builder.</param>
+    /// <param name="dbHost">The database host reference expression.</param>
+    /// <param name="dbUsername">The database username parameter resource builder.</param>
+    /// <param name="dbPassword">The database password parameter resource builder.</param>
+    /// <param name="dbName">The database resource builder.</param>
+    /// <param name="provider">The database provider type (default is "postgres").</param>
+    /// <returns>The Keycloak resource builder for method chaining.</returns>
+    /// <remarks>
+    ///     This method configures Keycloak to connect to an external PostgreSQL database instead of using the default H2 database:
+    ///     - <strong>Database type:</strong> Sets Keycloak database type to PostgreSQL
+    ///     - <strong>Connection string:</strong> Constructs JDBC URL using provided host and database name
+    ///     - <strong>Authentication:</strong> Configures database username and password from parameter resources
+    ///     - <strong>Dependency management:</strong> Ensures Keycloak waits for database availability before starting
+    ///     - <strong>Production ready:</strong> Enables persistent storage suitable for production deployments
+    ///     - Replaces default embedded H2 database with external PostgreSQL for scalability and persistence
+    /// </remarks>
+    /// <example>
+    ///     <code>
+    ///     var dbHost = ReferenceExpression.Create("my-postgres-host");
+    ///     var dbUsername = builder.AddParameter("db-username");
+    ///     var dbPassword = builder.AddParameter("db-password", true);
+    ///     var database = builder.AddAzurePostgresFlexibleServerDatabase("keycloak-db");
+    ///
+    ///     builder.AddKeycloak("keycloak", 8080)
+    ///            .WithExternalDatabase(dbHost, dbUsername, dbPassword, database);
+    ///     </code>
+    /// </example>
+    public static IResourceBuilder<KeycloakResource> WithExternalDatabase(
+        this IResourceBuilder<KeycloakResource> builder,
+        ReferenceExpression dbHost,
+        IResourceBuilder<ParameterResource> dbUsername,
+        IResourceBuilder<ParameterResource> dbPassword,
+        IResourceBuilder<IResourceWithConnectionString> dbName,
+        string provider = "postgres"
+    )
+    {
+        var jdbcProvider = provider switch
+        {
+            "postgres" or "postgresql" => "postgresql",
+            "mysql" => "mysql",
+            "oracle" => "oracle",
+            "mariadb" => "mariadb",
+            "sqlserver" => "sqlserver",
+            _ => throw new ArgumentException($"Unsupported database provider: {provider}"),
+        };
+
+        return builder
+            .WithEnvironment(context =>
+            {
+                context.EnvironmentVariables.Add(KeycloakDatabaseEnvVarName, provider);
+                context.EnvironmentVariables.Add(KeycloakDatabaseUsernameEnvVarName, dbUsername);
+                context.EnvironmentVariables.Add(KeycloakDatabasePasswordEnvVarName, dbPassword);
+                context.EnvironmentVariables.Add(
+                    KeycloakDatabaseUrlEnvVarName,
+                    ReferenceExpression.Create(
+                        $"jdbc:{jdbcProvider}://{dbHost}/{dbName.Resource.Name}"
+                    )
+                );
+            })
+            .WaitFor(dbName);
+    }
+
+    /// <summary>
     ///     Configures the Keycloak resource to run with an HTTPS development certificate.
     /// </summary>
     /// <param name="builder">The Keycloak resource builder.</param>
@@ -140,8 +209,8 @@ public static class KeycloakExtensions
         {
             builder
                 .RunWithHttpsDevCertificate(
-                    KeyCloakHttpsCertFileEnvVarName,
-                    KeyCloakHttpsCertKeyFileEnvVarName
+                    KeycloakHttpsCertFileEnvVarName,
+                    KeycloakHttpsCertKeyFileEnvVarName
                 )
                 .WithHttpsEndpoint(env: KeycloakHttpsPortEnvVarName, targetPort: targetPort)
                 .WithEnvironment(KeycloakHostnameEnvVarName, "localhost")
