@@ -2,7 +2,7 @@
 language: "en-US"
 early_access: false
 tone_instructions: |
-  Expert .NET/C# 13 reviewer. Focus on Clean Architecture, DDD, SOLID principles, security, and performance. Flag vulnerabilities and anti-patterns.
+  Expert .NET/C# 13 reviewer. Focus on Clean Architecture, DDD, SOLID principles, security, performance, and enterprise patterns.
 reviews:
   profile: "chill"
   request_changes_workflow: true
@@ -16,16 +16,6 @@ reviews:
     drafts: false
     base_branches:
       - main
-  path_filters:
-    - "!**/bin/**"
-    - "!**/obj/**"
-    - "!**/node_modules/**"
-    - "!**/*.min.js"
-    - "!**/*.min.css"
-    - "!**/coverage/**"
-    - "!**/TestResults/**"
-    - "!**/.vs/**"
-    - "!**/*.user"
   path_instructions:
     - path: "src/Services/**/Domain/**"
       instructions: |
