@@ -16,19 +16,6 @@ public static class ScalarExtensions
     /// <param name="builder">The distributed application builder to extend.</param>
     /// <param name="keycloak">The Keycloak resource builder to use for authentication.</param>
     /// <returns>An <see cref="IResourceBuilder{ScalarResource}" /> configured with the specified theme and font settings.</returns>
-    /// <remarks>
-    ///     This method creates a Scalar API documentation resource with the following configuration:
-    ///     - Sets the theme to BluePlanet for visual consistency
-    ///     - Disables default fonts to allow custom font configuration
-    ///     - Establishes a reference to the provided Keycloak resource for authentication
-    ///     - Provides a foundation for API documentation with OAuth integration
-    /// </remarks>
-    /// <example>
-    ///     <code>
-    ///     var keycloak = builder.AddKeycloak("keycloak", 8080);
-    ///     var scalar = builder.AddScalar(keycloak);
-    ///     </code>
-    /// </example>
     public static IResourceBuilder<ScalarResource> AddScalar(
         this IDistributedApplicationBuilder builder,
         IResourceBuilder<KeycloakResource> keycloak
@@ -50,23 +37,6 @@ public static class ScalarExtensions
     /// <param name="builder">The Scalar resource builder to configure.</param>
     /// <param name="api">The project resource builder representing the API project.</param>
     /// <returns>The configured Scalar resource builder with OAuth authorization.</returns>
-    /// <remarks>
-    ///     This method establishes comprehensive OAuth integration for API documentation:
-    ///     - Configures OAuth as the preferred security scheme using <c>OAuthDefaults.DisplayName</c>
-    ///     - Sets up Authorization Code flow with PKCE (SHA256) for enhanced security
-    ///     - Uses the API project name as the OAuth client ID
-    ///     - Automatically locates and uses client secret parameter if available (format: "{clientId}-secret")
-    ///     - Retrieves Keycloak authorization and token endpoints from cached resources
-    ///     - Configures selected scopes to match the client ID for proper access control
-    ///     - Caches Keycloak and realm resources for performance optimization
-    /// </remarks>
-    /// <example>
-    ///     <code>
-    ///     var api = builder.AddProject&lt;WebApi&gt;("api");
-    ///     var scalar = builder.AddScalar(keycloak)
-    ///                         .WithOpenAPI(api);
-    ///     </code>
-    /// </example>
     /// <exception cref="InvalidOperationException">
     ///     Thrown when Keycloak resource is not found in the application builder or when the required 'kc-realm' parameter is
     ///     not configured.

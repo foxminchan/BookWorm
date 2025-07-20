@@ -21,32 +21,6 @@ public static class DevCertHostingExtensions
     ///     certificate and key file paths.
     /// </param>
     /// <returns>The configured resource builder with HTTPS development certificate integration.</returns>
-    /// <remarks>
-    ///     This method provides comprehensive HTTPS development certificate management:
-    ///     - <strong>Development mode only:</strong> Only applies configuration when running in development environment
-    ///     - <strong>Automatic certificate export:</strong> Uses <c>dotnet dev-certs https</c> command to export certificates
-    ///     to PEM format
-    ///     - <strong>Platform-specific handling:</strong> Attempts to find existing certificates on macOS and Linux before
-    ///     exporting
-    ///     - <strong>Container support:</strong> Creates bind mounts to <c>/dev-certs</c> directory for container resources
-    ///     - <strong>Non-container support:</strong> Sets environment variables with local file paths for non-container
-    ///     resources
-    ///     - <strong>Caching mechanism:</strong> Reuses previously exported certificates to avoid unnecessary exports
-    ///     - <strong>Error handling:</strong> Gracefully handles export failures and timeouts with comprehensive logging
-    ///     - <strong>Cross-platform compatibility:</strong> Works on Windows, macOS, and Linux with platform-specific
-    ///     optimizations
-    /// </remarks>
-    /// <example>
-    ///     <code>
-    ///     builder.AddContainer("api", "my-api-image")
-    ///            .RunWithHttpsDevCertificate("HTTPS_CERT_FILE", "HTTPS_CERT_KEY_FILE");
-    ///
-    ///     // With success callback
-    ///     builder.AddContainer("web", "my-web-image")
-    ///            .RunWithHttpsDevCertificate("CERT_PATH", "KEY_PATH",
-    ///                (certPath, keyPath) => Console.WriteLine($"Cert: {certPath}, Key: {keyPath}"));
-    ///     </code>
-    /// </example>
     public static IResourceBuilder<TResource> RunWithHttpsDevCertificate<TResource>(
         this IResourceBuilder<TResource> builder,
         string certFileEnv,

@@ -12,6 +12,7 @@ on:
       - "Versions.props"
       - ".config/dotnet-tools.json"
       - "!**.md"
+      - "!src/Aspire/BookWorm.AppHost/Container/**"
   workflow_dispatch:
 
 env:

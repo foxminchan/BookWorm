@@ -8,24 +8,6 @@ public static class EndpointExtensions
     /// <param name="builder">
     ///     The distributed application builder to configure.
     /// </param>
-    /// <remarks>
-    ///     This method improves security and user experience by hiding insecure HTTP endpoints in HTTPS environments:
-    ///     - Only applies when the application is launched with an HTTPS profile
-    ///     - Subscribes to the <see cref="BeforeStartEvent" /> for startup-time configuration
-    ///     - Updates HTTP endpoint display location to <see cref="UrlDisplayLocation.DetailsOnly" /> for all project resources
-    ///     - Ensures HTTP endpoints are still accessible but not prominently displayed in the main interface
-    ///     - Encourages developers to use secure HTTPS connections by default
-    ///     - Applies to all resources implementing <see cref="IResourceWithEndpoints" />
-    /// </remarks>
-    /// <example>
-    ///     <code>
-    ///     var builder = DistributedApplication.CreateBuilder(args);
-    ///
-    ///     builder.HidePlainHttpLink();
-    ///
-    ///     builder.Build().Run();
-    ///     </code>
-    /// </example>
     public static void HidePlainHttpLink(this IDistributedApplicationBuilder builder)
     {
         if (builder.IsHttpsLaunchProfile())
@@ -61,21 +43,6 @@ public static class EndpointExtensions
     /// </summary>
     /// <param name="builder">The project resource builder to configure with AsyncAPI UI.</param>
     /// <returns>The updated project resource builder with AsyncAPI UI endpoint configured.</returns>
-    /// <remarks>
-    ///     This method configures an AsyncAPI UI endpoint with the following features:
-    ///     - Creates a dedicated endpoint at <c>/asyncapi/ui</c> for interactive API documentation
-    ///     - Uses the current launch profile name to determine the appropriate endpoint
-    ///     - Displays with uppercase endpoint name formatting for visual consistency
-    ///     - Sets display location to show in both summary and details views for easy access
-    ///     - Provides interactive interface for testing asynchronous API operations
-    ///     - Integrates with the project's existing endpoint configuration
-    /// </remarks>
-    /// <example>
-    ///     <code>
-    ///     builder.AddProject&lt;WebApi&gt;("api")
-    ///            .WithAsyncAPIUI();
-    ///     </code>
-    /// </example>
     public static IResourceBuilder<ProjectResource> WithAsyncAPIUI(
         this IResourceBuilder<ProjectResource> builder
     )

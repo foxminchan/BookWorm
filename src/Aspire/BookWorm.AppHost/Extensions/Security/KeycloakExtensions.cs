@@ -27,25 +27,6 @@ public static class KeycloakExtensions
     /// <param name="realmName">The name of the realm to import.</param>
     /// <param name="displayName">The display name of the realm.</param>
     /// <returns>The Keycloak resource builder for method chaining.</returns>
-    /// <remarks>
-    ///     This method configures Keycloak with realm import functionality and development-specific settings:
-    ///     - Imports realm configuration from <c>{BaseContainerPath}/realms</c> directory
-    ///     - Only applies realm import when running in execution mode (not during build/design time)
-    ///     - Configures HSTS (HTTP Strict Transport Security) based on execution context:
-    ///     - <strong>Run mode:</strong> Disables HSTS to avoid browser caching issues during development
-    ///     - <strong>Publish mode:</strong> Enables HSTS with 1-year max-age and includeSubDomains directive
-    ///     - Sets up environment variables for realm name and display name configuration
-    ///     - Addresses known Keycloak HSTS issue (https://github.com/keycloak/keycloak/issues/32366)
-    /// </remarks>
-    /// <example>
-    ///     <code>
-    ///     var realmName = builder.AddParameter("realm-name");
-    ///     var displayName = builder.AddParameter("realm-display");
-    ///
-    ///     builder.AddKeycloak("keycloak", 8080)
-    ///            .WithSampleRealmImport(realmName, displayName);
-    ///     </code>
-    /// </example>
     public static IResourceBuilder<KeycloakResource> WithSampleRealmImport(
         this IResourceBuilder<KeycloakResource> builder,
         IResourceBuilder<ParameterResource> realmName,
@@ -74,23 +55,6 @@ public static class KeycloakExtensions
     /// <param name="builder">The Keycloak resource builder.</param>
     /// <param name="themeName">The name of the custom theme to use.</param>
     /// <returns>The Keycloak resource builder for method chaining.</returns>
-    /// <remarks>
-    ///     This method enables custom theme integration for Keycloak branding and UI customization:
-    ///     - Checks for themes directory existence at <c>{BaseContainerPath}/themes</c> relative to AppHost directory
-    ///     - Creates bind mount from host themes directory to <c>/opt/keycloak/providers/</c> in container
-    ///     - Only applies theme configuration if the themes directory exists on the host machine
-    ///     - Sets read-only bind mount to prevent accidental container modifications
-    ///     - Configures theme name environment variable for Keycloak theme selection
-    ///     - Enables hot-reload of theme changes during development
-    /// </remarks>
-    /// <example>
-    ///     <code>
-    ///     var themeName = builder.AddParameter("theme-name");
-    ///
-    ///     builder.AddKeycloak("keycloak", 8080)
-    ///            .WithCustomTheme(themeName);
-    ///     </code>
-    /// </example>
     public static IResourceBuilder<KeycloakResource> WithCustomTheme(
         this IResourceBuilder<KeycloakResource> builder,
         IResourceBuilder<ParameterResource> themeName
@@ -118,62 +82,40 @@ public static class KeycloakExtensions
     /// <param name="dbHost">The database host reference expression.</param>
     /// <param name="dbUsername">The database username parameter resource builder.</param>
     /// <param name="dbPassword">The database password parameter resource builder.</param>
-    /// <param name="dbName">The database resource builder.</param>
-    /// <param name="provider">The database provider type (default is "postgres").</param>
+    /// <param name="dbSchema">The database resource builder.</param>
+    /// <param name="dbProvider">The database provider type (default is "postgres").</param>
     /// <returns>The Keycloak resource builder for method chaining.</returns>
-    /// <remarks>
-    ///     This method configures Keycloak to connect to an external PostgreSQL database instead of using the default H2 database:
-    ///     - <strong>Database type:</strong> Sets Keycloak database type to PostgreSQL
-    ///     - <strong>Connection string:</strong> Constructs JDBC URL using provided host and database name
-    ///     - <strong>Authentication:</strong> Configures database username and password from parameter resources
-    ///     - <strong>Dependency management:</strong> Ensures Keycloak waits for database availability before starting
-    ///     - <strong>Production ready:</strong> Enables persistent storage suitable for production deployments
-    ///     - Replaces default embedded H2 database with external PostgreSQL for scalability and persistence
-    /// </remarks>
-    /// <example>
-    ///     <code>
-    ///     var dbHost = ReferenceExpression.Create("my-postgres-host");
-    ///     var dbUsername = builder.AddParameter("db-username");
-    ///     var dbPassword = builder.AddParameter("db-password", true);
-    ///     var database = builder.AddAzurePostgresFlexibleServerDatabase("keycloak-db");
-    ///
-    ///     builder.AddKeycloak("keycloak", 8080)
-    ///            .WithExternalDatabase(dbHost, dbUsername, dbPassword, database);
-    ///     </code>
-    /// </example>
     public static IResourceBuilder<KeycloakResource> WithExternalDatabase(
         this IResourceBuilder<KeycloakResource> builder,
         ReferenceExpression dbHost,
         IResourceBuilder<ParameterResource> dbUsername,
         IResourceBuilder<ParameterResource> dbPassword,
-        IResourceBuilder<IResourceWithConnectionString> dbName,
-        string provider = "postgres"
+        IResourceBuilder<IResourceWithConnectionString> dbSchema,
+        string dbProvider = "postgres"
     )
     {
-        var jdbcProvider = provider switch
+        var dbType = dbProvider switch
         {
             "postgres" or "postgresql" => "postgresql",
             "mysql" => "mysql",
             "oracle" => "oracle",
             "mariadb" => "mariadb",
             "sqlserver" => "sqlserver",
-            _ => throw new ArgumentException($"Unsupported database provider: {provider}"),
+            _ => throw new ArgumentException($"Unsupported database provider: {dbProvider}"),
         };
 
         return builder
             .WithEnvironment(context =>
             {
-                context.EnvironmentVariables.Add(KeycloakDatabaseEnvVarName, provider);
+                context.EnvironmentVariables.Add(KeycloakDatabaseEnvVarName, dbProvider);
                 context.EnvironmentVariables.Add(KeycloakDatabaseUsernameEnvVarName, dbUsername);
                 context.EnvironmentVariables.Add(KeycloakDatabasePasswordEnvVarName, dbPassword);
                 context.EnvironmentVariables.Add(
                     KeycloakDatabaseUrlEnvVarName,
-                    ReferenceExpression.Create(
-                        $"jdbc:{jdbcProvider}://{dbHost}/{dbName.Resource.Name}"
-                    )
+                    ReferenceExpression.Create($"jdbc:{dbType}://{dbHost}/{dbSchema.Resource.Name}")
                 );
             })
-            .WaitFor(dbName);
+            .WaitFor(dbSchema);
     }
 
     /// <summary>
@@ -182,24 +124,6 @@ public static class KeycloakExtensions
     /// <param name="builder">The Keycloak resource builder.</param>
     /// <param name="targetPort">The target port for the HTTPS endpoint. Defaults to 8443.</param>
     /// <returns>The Keycloak resource builder for method chaining.</returns>
-    /// <remarks>
-    ///     This method sets up comprehensive HTTPS and HTTP configuration for Keycloak:
-    ///     - <strong>Run mode only:</strong> Applies HTTPS development certificate configuration only during local development
-    ///     - <strong>HTTPS setup:</strong> Configures development certificate with specified target port (default 8443)
-    ///     - <strong>Hostname configuration:</strong> Sets hostname to localhost for local development
-    ///     - <strong>HTTP/2 workaround:</strong> Disables HTTP/2 to prevent HTTP 431 "Header too large" errors in Keycloak
-    ///     - <strong>Production settings:</strong> Enables HTTP support, configures proxy headers for load balancers
-    ///     - <strong>Development optimizations:</strong> Disables hostname strict checking for flexible development
-    ///     - <strong>URL visibility:</strong> Hides HTTP endpoints in summary view to encourage HTTPS usage
-    ///     - Addresses known issues: https://github.com/keycloak/keycloak/discussions/10236,
-    ///     https://github.com/keycloak/keycloak/issues/13933
-    /// </remarks>
-    /// <example>
-    ///     <code>
-    ///     builder.AddKeycloak("keycloak", 8080)
-    ///            .RunWithHttpsDevCertificate(8443);
-    ///     </code>
-    /// </example>
     public static IResourceBuilder<KeycloakResource> RunWithHttpsDevCertificate(
         this IResourceBuilder<KeycloakResource> builder,
         int targetPort = 8443
@@ -239,26 +163,6 @@ public static class KeycloakExtensions
     /// <param name="keycloak">The Keycloak resource builder to configure as an IdP.</param>
     /// <param name="realmName">The realm name parameter resource builder.</param>
     /// <returns>The project resource builder for method chaining.</returns>
-    /// <remarks>
-    ///     This method establishes comprehensive Keycloak integration for OpenID Connect authentication:
-    ///     - <strong>Client configuration:</strong> Uses project name as OAuth client ID for consistency
-    ///     - <strong>Security:</strong> Generates secure 32-character client secret (no special characters)
-    ///     - <strong>Environment setup:</strong> Configures Keycloak with client ID, name, secret, and URLs
-    ///     - <strong>Endpoint resolution:</strong> Handles different URL formats for publish vs. run modes
-    ///     - <strong>Container networking:</strong> Sets up container-host URL for internal communication
-    ///     - <strong>Project integration:</strong> Configures project with Identity realm and API scopes
-    ///     - <strong>Naming conventions:</strong> Transforms client names using <c>ToClientName()</c> extension
-    ///     - Creates secure reference between project and Keycloak resources
-    /// </remarks>
-    /// <example>
-    ///     <code>
-    ///     var keycloak = builder.AddKeycloak("keycloak", 8080);
-    ///     var realmName = builder.AddParameter("realm-name");
-    ///
-    ///     builder.AddProject&lt;WebApi&gt;("api")
-    ///            .WithIdP(keycloak, realmName);
-    ///     </code>
-    /// </example>
     public static IResourceBuilder<ProjectResource> WithIdP(
         this IResourceBuilder<ProjectResource> builder,
         IResourceBuilder<KeycloakResource> keycloak,
@@ -314,20 +218,6 @@ public static class KeycloakExtensions
     /// <returns>
     ///     The authorization endpoint URL for the given realm.
     /// </returns>
-    /// <remarks>
-    ///     This method constructs the OpenID Connect authorization endpoint for OAuth flows:
-    ///     - Resolves Keycloak base URL using the specified protocol
-    ///     - Constructs standard OpenID Connect authorization endpoint path
-    ///     - Uses localhost for user interaction to ensure browser compatibility
-    ///     - Addresses Scalar documentation generation limitations (https://github.com/scalar/scalar/issues/6225)
-    ///     - Returns fully qualified URL suitable for OAuth authorization code flow
-    /// </remarks>
-    /// <example>
-    ///     <code>
-    ///     var authUrl = keycloak.GetAuthorizationEndpoint(Protocol.Https, realmName);
-    ///     // Returns: https://localhost:8443/realms/my-realm/protocol/openid-connect/auth
-    ///     </code>
-    /// </example>
     public static string GetAuthorizationEndpoint(
         this IResourceBuilder<KeycloakResource> builder,
         string protocol,
@@ -355,21 +245,6 @@ public static class KeycloakExtensions
     /// <returns>
     ///     The token endpoint URL for the given realm.
     /// </returns>
-    /// <remarks>
-    ///     This method constructs the OpenID Connect token endpoint for OAuth flows:
-    ///     - Uses Keycloak resource name instead of resolved URL for proxy configuration
-    ///     - Constructs standard OpenID Connect token endpoint path
-    ///     - Optimized for internal service-to-service communication within container networks
-    ///     - Addresses Scalar documentation generation limitations (https://github.com/scalar/scalar/issues/6225)
-    ///     - Returns URL suitable for OAuth token exchange and refresh operations
-    ///     - Enables proper proxy routing in containerized environments
-    /// </remarks>
-    /// <example>
-    ///     <code>
-    ///     var tokenUrl = keycloak.GetTokenEndpoint(Protocol.Http, realmName);
-    ///     // Returns: http://keycloak/realms/myrealm/protocol/openid-connect/token
-    ///     </code>
-    /// </example>
     public static string GetTokenEndpoint(
         this IResourceBuilder<KeycloakResource> builder,
         string protocol,

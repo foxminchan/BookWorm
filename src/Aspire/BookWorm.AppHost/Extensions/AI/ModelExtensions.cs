@@ -7,23 +7,6 @@ public static class ModelExtensions
     /// </summary>
     /// <param name="builder">The distributed application builder to add the Ollama instance to.</param>
     /// <param name="configure">Optional action to further configure the Ollama resource.</param>
-    /// <remarks>
-    ///     This method configures an Ollama container with sensible defaults:
-    ///     - Creates a persistent data volume
-    ///     - Enables the OpenWebUI interface
-    ///     - Always pulls the latest image
-    ///     - Configures the container with persistent lifetime
-    ///     - Automatically enables GPU support on non-macOS systems when <c>OLLAMA_USE_GPU</c> environment variable is set to
-    ///     1
-    /// </remarks>
-    /// <example>
-    ///     <code>
-    ///     builder.AddOllama(ollama =>
-    ///     {
-    ///         ollama.WithCustomConfiguration();
-    ///     });
-    ///     </code>
-    /// </example>
     public static void AddOllama(
         this IDistributedApplicationBuilder builder,
         Action<IResourceBuilder<OllamaResource>>? configure = null
@@ -50,17 +33,6 @@ public static class ModelExtensions
     /// </summary>
     /// <param name="builder">The project resource builder to be configured.</param>
     /// <returns>The configured project resource builder with Ollama model references.</returns>
-    /// <remarks>
-    ///     This method locates an existing Ollama resource in the application,
-    ///     adds the specified models to it, and configures the project to reference
-    ///     and wait for these models to be loaded before proceeding.
-    /// </remarks>
-    /// <example>
-    ///     <code>
-    ///     builder.AddProject&lt;MyProject&gt;("myproject")
-    ///            .WithOllama();
-    ///     </code>
-    /// </example>
     public static IResourceBuilder<ProjectResource> WithOllama(
         this IResourceBuilder<ProjectResource> builder
     )
