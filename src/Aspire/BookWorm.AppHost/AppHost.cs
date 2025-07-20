@@ -2,16 +2,38 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 builder.HidePlainHttpLink();
 
-var kcRealmName = builder.AddParameter("kc-realm", nameof(BookWorm).ToLowerInvariant());
-var kcThemeName = builder.AddParameter("kc-theme", nameof(BookWorm).ToLowerInvariant());
-var kcThemeDisplayName = builder.AddParameter("kc-theme-display-name", nameof(BookWorm));
+var kcRealmName = builder.AddParameter("kc-realm", nameof(BookWorm).ToLowerInvariant(), true);
+var kcThemeName = builder.AddParameter("kc-theme", nameof(BookWorm).ToLowerInvariant(), true);
+var kcThemeDisplayName = builder.AddParameter("kc-theme-display-name", nameof(BookWorm), true);
+var pgUser = builder.AddParameter("pg-user", "postgres", true);
+var pgPassword = builder
+    .AddParameter("pg-password", true)
+    .WithGeneratedDefault(
+        new()
+        {
+            MinLength = 16,
+            MinUpper = 2,
+            MinLower = 2,
+            MinNumeric = 2,
+            MinSpecial = 2,
+        }
+    );
+
+ReferenceExpression? pgEndpoint = null;
 
 var postgres = builder
     .AddAzurePostgresFlexibleServer(Components.Postgres)
-    .RunAsContainer()
+    .WithPasswordAuthentication(pgUser, pgPassword)
+    .RunAsLocalContainer(cfg =>
+        pgEndpoint = ReferenceExpression.Create(
+            $"{cfg.Resource.PrimaryEndpoint.Property(EndpointProperty.Host)}:{cfg.Resource.PrimaryEndpoint.Property(EndpointProperty.Port)}"
+        )
+    )
     .ProvisionAsService();
 
-var redis = builder.AddAzureRedis(Components.Redis).RunAsContainer().ProvisionAsService();
+pgEndpoint ??= ReferenceExpression.Create($"{postgres.GetOutput("hostname")}");
+
+var redis = builder.AddAzureRedis(Components.Redis).RunAsLocalContainer().ProvisionAsService();
 
 var qdrant = builder
     .AddQdrant(Components.VectorDb)
@@ -28,12 +50,12 @@ var queue = builder
 
 var storage = builder
     .AddAzureStorage(Components.Azure.Storage.Resource)
-    .RunAsContainer()
+    .RunAsLocalContainer()
     .ProvisionAsService();
 
 var signalR = builder
     .AddAzureSignalR(Components.Azure.SignalR)
-    .RunAsContainer()
+    .RunAsLocalContainer()
     .ProvisionAsService();
 
 var blobStorage = storage
@@ -46,6 +68,7 @@ var orderingDb = postgres.AddDatabase(Components.Database.Ordering);
 var financeDb = postgres.AddDatabase(Components.Database.Finance);
 var ratingDb = postgres.AddDatabase(Components.Database.Rating);
 var chatDb = postgres.AddDatabase(Components.Database.Chat);
+var userDb = postgres.AddDatabase(Components.Database.User);
 var healthDb = postgres.AddDatabase(Components.Database.Health);
 
 builder.AddOllama(configure =>
@@ -63,7 +86,8 @@ var keycloak = builder
     .WithCustomTheme(kcThemeName)
     .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent)
-    .WithSampleRealmImport(kcRealmName, kcThemeDisplayName);
+    .WithSampleRealmImport(kcRealmName, kcThemeDisplayName)
+    .WithExternalDatabase(pgEndpoint, pgUser, pgPassword, userDb);
 
 var catalogApi = builder
     .AddProject<BookWorm_Catalog>(Application.Catalog)
