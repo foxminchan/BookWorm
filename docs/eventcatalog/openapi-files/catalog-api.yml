@@ -1723,6 +1723,10 @@ components:
           tokenUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/token"
           scopes:
             catalog: "Catalog API"
+          x-usePkce: "SHA-256"
+          x-scalar-client-id: "catalog"
+          x-scalar-security-body:
+            audience: "account"
 tags:
   - name: Publisher
     description: Operations related to publishers

@@ -1147,7 +1147,11 @@ components:
           authorizationUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/auth"
           tokenUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/token"
           scopes:
-            order: "Order API"
+            ordering: "Ordering API"
+          x-usePkce: "SHA-256"
+          x-scalar-client-id: "ordering"
+          x-scalar-security-body:
+            audience: "account"
 tags:
   - name: Buyer
     description: Endpoints for managing buyer information, including profile details, shipping addresses, and purchase history for customers of the BookWorm platform

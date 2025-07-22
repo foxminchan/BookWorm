@@ -90,6 +90,10 @@ components:
           tokenUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/token"
           scopes:
             finance: "Finance API"
+          x-usePkce: "SHA-256"
+          x-scalar-client-id: "finance"
+          x-scalar-security-body:
+            audience: "account"
 tags:
   - name: OrderState
     description: Operations related to order state management
