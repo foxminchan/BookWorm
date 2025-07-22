@@ -10,7 +10,11 @@ internal static class Extensions
     {
         var services = builder.Services;
 
-        services.AddGrpc(options => options.EnableDetailedErrors = true);
+        services.AddGrpc(options =>
+        {
+            options.EnableDetailedErrors = true;
+            options.Interceptors.Add<GrpcExceptionInterceptor>();
+        });
 
         services.AddGrpcHealthChecks();
 
