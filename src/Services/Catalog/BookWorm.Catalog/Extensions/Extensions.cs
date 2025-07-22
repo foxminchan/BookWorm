@@ -20,7 +20,11 @@ internal static class Extensions
 
         services.AddRateLimiting();
 
-        services.AddGrpc(options => options.EnableDetailedErrors = true);
+        services.AddGrpc(options =>
+        {
+            options.EnableDetailedErrors = true;
+            options.Interceptors.Add<GrpcExceptionInterceptor>();
+        });
         services.AddGrpcHealthChecks();
 
         builder.AddDefaultOpenApi();
