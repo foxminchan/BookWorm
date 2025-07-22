@@ -1056,6 +1056,10 @@ components:
           tokenUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/token"
           scopes:
             chatting: "Chatting API"
+          x-usePkce: "SHA-256"
+          x-scalar-client-id: "chatting"
+          x-scalar-security-body:
+            audience: "account"
 tags:
   - name: Chat
     description: Endpoints for handling book-related discussions and user interactions in chat format

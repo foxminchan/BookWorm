@@ -905,6 +905,10 @@ components:
           tokenUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/token"
           scopes:
             rating: "Rating API"
+          x-usePkce: "SHA-256"
+          x-scalar-client-id: "rating"
+          x-scalar-security-body:
+            audience: "account"
 tags:
   - name: Feedback
     description: Endpoints for managing user ratings and feedback for books on the BookWorm platform

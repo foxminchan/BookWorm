@@ -72,7 +72,8 @@ public static class ScalarExtensions
                                     keycloak.GetAuthorizationEndpoint(Protocol.Http, realmName)
                                 )
                                 .WithTokenUrl(keycloak.GetTokenEndpoint(Protocol.Http, realmName))
-                                .WithClientId(clientId);
+                                .WithClientId(clientId)
+                                .AddBodyParameter("audience", "account");
 
                             if (secret is not null)
                             {

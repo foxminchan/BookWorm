@@ -553,6 +553,10 @@ components:
           tokenUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/token"
           scopes:
             basket: "Basket API"
+          x-usePkce: "SHA-256"
+          x-scalar-client-id: "basket"
+          x-scalar-security-body:
+            audience: "account"
 tags:
   - name: Basket
     description: Manages shopping baskets for customers, allowing them to add, update, and remove items before checkout
