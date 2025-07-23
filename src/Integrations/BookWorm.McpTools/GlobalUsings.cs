@@ -1,7 +1,11 @@
 ﻿global using System.ComponentModel;
 global using BookWorm.Chassis.Exceptions;
 global using BookWorm.Constants.Aspire;
+global using BookWorm.McpTools.Extensions;
+global using BookWorm.McpTools.OpenApi;
 global using BookWorm.McpTools.Services;
 global using BookWorm.ServiceDefaults;
+global using BookWorm.ServiceDefaults.ApiSpecification;
+global using BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
 global using BookWorm.ServiceDefaults.Kestrel;
 global using Microsoft.Extensions.Diagnostics.HealthChecks;

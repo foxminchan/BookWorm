@@ -7,6 +7,8 @@ internal static class Extensions
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;
+        var serviceProvider = services.BuildServiceProvider();
+        var apiVersionDescriptions = serviceProvider.GetApiVersionDescription();
 
         builder.AddDefaultCors();
 
@@ -22,7 +24,11 @@ internal static class Extensions
 
         services
             .AddMcpServer(o =>
-                o.ServerInfo = new() { Name = Application.McpTools, Version = "1.0.0" }
+                o.ServerInfo = new()
+                {
+                    Name = Application.McpTools,
+                    Version = apiVersionDescriptions[0].ApiVersion.ToString(),
+                }
             )
             .WithHttpTransport()
             .WithToolsFromAssembly()
@@ -32,5 +38,27 @@ internal static class Extensions
             .AddOpenTelemetry()
             .WithMetrics(m => m.AddMeter(ActivitySourceName))
             .WithTracing(t => t.AddSource(ActivitySourceName));
+
+        services.AddHttpContextAccessor().AddMcpOpenApi();
+    }
+
+    private static void AddMcpOpenApi(this IServiceCollection services)
+    {
+        var sp = services.BuildServiceProvider();
+
+        var document = sp.GetRequiredService<DocumentOptions>();
+
+        foreach (var version in sp.GetApiVersionDescription())
+        {
+            services.AddOpenApi(
+                version.GroupName,
+                options =>
+                {
+                    options.ApplyApiVersionInfo(document, version);
+                    options.ApplySchemaNullableFalse();
+                    options.AddDocumentTransformer<McpDocumentTransformer>();
+                }
+            );
+        }
     }
 }

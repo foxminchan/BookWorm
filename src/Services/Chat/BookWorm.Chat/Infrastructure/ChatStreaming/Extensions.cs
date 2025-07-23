@@ -32,7 +32,7 @@ internal static class Extensions
 
             McpClientOptions mcpClientOptions = new()
             {
-                ClientInfo = new() { Name = Application.McpTools, Version = "1.0.0" },
+                ClientInfo = new() { Name = Application.McpTools, Version = "1.0" },
             };
 
             var client = new HttpClient
@@ -43,7 +43,7 @@ internal static class Extensions
             SseClientTransportOptions sseTransportOptions = new()
             {
                 Name = "AspNetCoreSse",
-                Endpoint = client.BaseAddress,
+                Endpoint = new(client.BaseAddress, "mcp"),
             };
 
             SseClientTransport sseClientTransport = new(sseTransportOptions, loggerFactory);
