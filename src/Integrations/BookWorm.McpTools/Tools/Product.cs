@@ -8,7 +8,7 @@ namespace BookWorm.McpTools.Tools;
 [McpServerToolType]
 public sealed class Product(ICatalogApi catalogApi)
 {
-    [McpServerTool(Name = "SearchCatalog")]
+    [McpServerTool(Name = "SearchCatalog", Title = "Search BookWorm Catalog")]
     [Description("Searches the BookWorm catalog for a provided book description")]
     public async Task<string> SearchCatalogAsync(
         [Description("The product description for which to search")] string description

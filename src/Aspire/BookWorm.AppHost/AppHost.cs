@@ -237,7 +237,8 @@ if (builder.ExecutionContext.IsRunMode)
         .WithOpenAPI(chatApi)
         .WithOpenAPI(orderingApi)
         .WithOpenAPI(ratingApi)
-        .WithOpenAPI(financeApi);
+        .WithOpenAPI(financeApi)
+        .WithOpenAPI(mcp);
 
     builder.AddK6(gateway);
 

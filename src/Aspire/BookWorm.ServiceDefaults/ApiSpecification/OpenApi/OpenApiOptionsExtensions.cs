@@ -5,7 +5,7 @@ using Microsoft.OpenApi.Models;
 
 namespace BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
 
-internal static class OpenApiOptionsExtensions
+public static class OpenApiOptionsExtensions
 {
     public static void ApplyApiVersionInfo(
         this OpenApiOptions options,

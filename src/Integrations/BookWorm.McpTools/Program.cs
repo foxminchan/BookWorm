@@ -1,5 +1,3 @@
-using BookWorm.McpTools.Extensions;
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
@@ -10,6 +8,8 @@ var app = builder.Build();
 
 app.MapDefaultEndpoints();
 
-app.MapMcp();
+app.UseDefaultOpenApi();
+
+app.MapMcp("/mcp");
 
 app.Run();
