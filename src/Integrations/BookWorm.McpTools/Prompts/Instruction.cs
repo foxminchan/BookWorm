@@ -6,7 +6,7 @@ namespace BookWorm.McpTools.Prompts;
 [McpServerPromptType]
 public sealed class Instruction
 {
-    [McpServerPrompt(Name = "SystemPrompt")]
+    [McpServerPrompt(Name = "SystemPrompt", Title = "BookWorm System Prompt")]
     [Description("The system prompt for the BookWorm assistant")]
     public static IEnumerable<ChatMessage> InstructionPrompt()
     {
