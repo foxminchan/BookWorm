@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "src/**"
+      - "tests/**"
       - ".github/workflows/ci.yaml"
       - "Directory.Packages.props"
       - "Directory.Build.props"

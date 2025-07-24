@@ -7,6 +7,10 @@ Thank you for your interest in contributing to BookWorm! This document provides 
 1. **Fork the Repository**: Start by forking the main BookWorm repository.
 2. **Clone Your Fork**: git clone `https://github.com/YOUR-USERNAME/BookWorm.git`
 3. **Add Upstream Remote**: git remote add upstream `https://github.com/ORIGINAL-OWNER/BookWorm.git`
+4. **Auto LFE**: Ensure your Git configuration is set to handle line endings correctly:
+   ```bash
+   git config --global core.autocrlf input
+   ```
 
 # Project Dependencies Diagram
 

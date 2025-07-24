@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "src/**"
+      - "tests/**"
       - ".github/workflows/sonar.yml"
   pull_request:
     types:

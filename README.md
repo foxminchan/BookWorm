@@ -6,12 +6,12 @@
 
 ## Introduction
 
-<p align="justify">
+<p style="text-align:justify;">
 ⭐ BookWorm demonstrates the practical implementation of .NET Aspire in a cloud-native application. The project employs Domain-Driven Design (DDD) and Vertical Slice Architecture to organize the codebase effectively.
 </p>
 
 <div>
-  <a href="https://codespaces.new/foxminchan/BookWorm?quickstart=1">
+  <a href="https://codespaces.new/foxminchan/BookWorm?quickstart=1" target="_blank">
     <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg">
   </a>
 </div>
@@ -62,7 +62,8 @@
 
 > [!NOTE]
 >
-> Email services use [SendGrid](https://sendgrid.com/) in production and [Mailpit](https://mailpit.axllent.org/) locally.
+> - Email services use [SendGrid](https://sendgrid.com/) in production and [Mailpit](https://mailpit.axllent.org/) locally.
+> - When running on Mac with Apple Silicon (M series processor), Rosetta 2 for grpc-tools.
 
 ### Run the Application
 

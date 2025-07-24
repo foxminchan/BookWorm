@@ -16,12 +16,12 @@
     <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Services\Chat\BookWorm.Chat\BookWorm.Chat.csproj" />
-    <ProjectReference Include="..\Services\Basket\BookWorm.Basket\BookWorm.Basket.csproj" />
-    <ProjectReference Include="..\Services\Rating\BookWorm.Rating\BookWorm.Rating.csproj" />
-    <ProjectReference Include="..\Services\Catalog\BookWorm.Catalog\BookWorm.Catalog.csproj" />
-    <ProjectReference Include="..\Services\Finance\BookWorm.Finance\BookWorm.Finance.csproj" />
-    <ProjectReference Include="..\Services\Ordering\BookWorm.Ordering\BookWorm.Ordering.csproj" />
-    <ProjectReference Include="..\Services\Notification\BookWorm.Notification\BookWorm.Notification.csproj" />
+    <ProjectReference Include="..\..\src\Services\Chat\BookWorm.Chat\BookWorm.Chat.csproj" />
+    <ProjectReference Include="..\..\src\Services\Basket\BookWorm.Basket\BookWorm.Basket.csproj" />
+    <ProjectReference Include="..\..\src\Services\Rating\BookWorm.Rating\BookWorm.Rating.csproj" />
+    <ProjectReference Include="..\..\src\Services\Catalog\BookWorm.Catalog\BookWorm.Catalog.csproj" />
+    <ProjectReference Include="..\..\src\Services\Finance\BookWorm.Finance\BookWorm.Finance.csproj" />
+    <ProjectReference Include="..\..\src\Services\Ordering\BookWorm.Ordering\BookWorm.Ordering.csproj" />
+    <ProjectReference Include="..\..\src\Services\Notification\BookWorm.Notification\BookWorm.Notification.csproj" />
   </ItemGroup>
 </Project>
