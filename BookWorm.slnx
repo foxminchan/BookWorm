@@ -8,6 +8,9 @@
     <Project Path="src/BuildingBlocks/BookWorm.Constants/BookWorm.Constants.csproj" />
     <Project Path="src/BuildingBlocks/BookWorm.SharedKernel/BookWorm.SharedKernel.csproj" />
   </Folder>
+  <Folder Name="/E2E/">
+    <Project Path="tests/BookWorm.ArchTests/BookWorm.ArchTests.csproj" />
+  </Folder>
   <Folder Name="/Integrations/">
     <Project Path="src/Integrations/BookWorm.HealthChecksUI/BookWorm.HealthChecksUI.csproj" />
     <Project Path="src/Integrations/BookWorm.McpTools/BookWorm.McpTools.csproj" />
@@ -46,6 +49,6 @@
     <File Path="Directory.Packages.props" />
     <File Path=".editorconfig" />
     <File Path="Versions.props" />
+    <File Path="README.md" />
   </Folder>
-  <Project Path="src/BookWorm.ArchTests/BookWorm.ArchTests.csproj" />
 </Solution>
