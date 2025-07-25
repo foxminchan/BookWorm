@@ -141,15 +141,13 @@ azd up
 az group delete --name rg-<your-environment-name> --yes --no-wait
 ```
 
-### Event-Driven Architecture
+### Documentation
 
-Explore our [event catalog](https://bookwormdev.netlify.app/) for messaging patterns and API details.
+For comprehensive project documentation, visit our [GitHub Wiki](https://github.com/foxminchan/BookWorm/wiki).
 
-### Architecture Documentation
+## Contribution
 
-For comprehensive architecture documentation, refer to the [arc42 documentation](https://foxminchan.github.io/BookWorm/).
-
-## Contributing
+Thanks to all [contributors](https://github.com/foxminchan/BookWorm/graphs/contributors), your help is greatly appreciated!
 
 Contributions are welcome! Please read the [contribution guidelines](./.github/CONTRIBUTING.md) and [code of conduct](./.github/CODE-OF-CONDUCT.md) to learn how to participate.
 
@@ -160,4 +158,4 @@ Contributions are welcome! Please read the [contribution guidelines](./.github/C
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
