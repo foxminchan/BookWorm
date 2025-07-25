@@ -22,7 +22,7 @@ internal static class Extensions
                 var mcpClient = sp.GetRequiredService<IMcpClient>();
                 var resolver = sp.GetRequiredService<ServiceEndpointResolver>();
                 return BookAgent
-                    .CreateAgentWithPluginsAsync(kernel, mcpClient, resolver)
+                    .CreateAgentAsync(kernel, mcpClient, resolver)
                     .GetAwaiter()
                     .GetResult();
             }

@@ -40,7 +40,7 @@ public static class BookAgent
         Whether users are searching for specific books or looking for recommendations, help them discover their next great read!
         """;
 
-    public static async Task<ChatCompletionAgent> CreateAgentWithPluginsAsync(
+    public static async Task<ChatCompletionAgent> CreateAgentAsync(
         Kernel kernel,
         IMcpClient mcpClient,
         ServiceEndpointResolver resolver
