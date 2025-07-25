@@ -1,4 +1,6 @@
 ﻿using BookWorm.Chassis.AI;
+using BookWorm.Rating.Plugins;
+using Microsoft.Extensions.ServiceDiscovery;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.Ollama;
@@ -42,8 +44,22 @@ public static class RatingAgent
         - Handle edge cases like products with very few but high ratings
         """;
 
-    public static ChatCompletionAgent CreateAgent(Kernel kernel)
+    public static async Task<ChatCompletionAgent> CreateAgentAsync(
+        Kernel kernel,
+        ServiceEndpointResolver resolver
+    )
     {
+        var agentKernel = kernel.Clone();
+
+        var baseUri = $"{Protocol.HttpOrHttps}://{Application.Chatting}/agents";
+
+        var sentimentPlugin = await resolver.ConnectRemoteAgent(
+            [$"{baseUri}/summarize", $"{baseUri}/sentiment"]
+        );
+
+        agentKernel.Plugins.AddFromType<ReviewPlugin>();
+        agentKernel.Plugins.Add(sentimentPlugin);
+
         return new()
         {
             Instructions = Instructions,
@@ -92,5 +108,26 @@ public static class RatingAgent
             Capabilities = capabilities,
             Skills = [rating],
         };
+    }
+
+    private static async Task<KernelPlugin> ConnectRemoteAgent(
+        this ServiceEndpointResolver resolver,
+        string[] agentUris
+    )
+    {
+        List<string> endpointUrls = [];
+
+        endpointUrls.AddRange(
+            await Task.WhenAll(
+                agentUris.Select(uri => resolver.ResolveServiceEndpointUrl(uri, "/"))
+            )
+        );
+
+        var agents = await Task.WhenAll(endpointUrls.Select(uri => uri.CreateAgentAsync()));
+        var agentFunctions = agents.Select(agent =>
+            AgentKernelFunctionFactory.CreateFromAgent(agent)
+        );
+
+        return KernelPluginFactory.CreateFromFunctions("AgentPlugin", agentFunctions);
     }
 }
