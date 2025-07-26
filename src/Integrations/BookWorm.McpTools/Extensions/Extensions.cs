@@ -18,7 +18,7 @@ internal static class Extensions
 
         // Configure HTTP client
         services.AddHttpServiceReference<ICatalogApi>(
-            $"{Protocol.HttpOrHttps}://{Application.Catalog}",
+            $"{Protocol.HttpOrHttps}://{Constants.Aspire.Services.Catalog}",
             HealthStatus.Degraded
         );
 
@@ -26,7 +26,7 @@ internal static class Extensions
             .AddMcpServer(o =>
                 o.ServerInfo = new()
                 {
-                    Name = Application.McpTools,
+                    Name = Constants.Aspire.Services.McpTools,
                     Version = apiVersionDescriptions[0].ApiVersion.ToString(),
                 }
             )

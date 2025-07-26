@@ -90,7 +90,7 @@ var keycloak = builder
     .WithExternalDatabase(pgEndpoint, pgUser, pgPassword, userDb);
 
 var catalogApi = builder
-    .AddProject<BookWorm_Catalog>(Application.Catalog)
+    .AddProject<Catalog>(Services.Catalog)
     .WithReplicas(builder.ExecutionContext.IsRunMode ? 1 : 2)
     .WithOllama()
     .WithReference(queue)
@@ -113,13 +113,13 @@ var catalogApi = builder
     .WithAsyncAPIUI();
 
 var mcp = builder
-    .AddProject<BookWorm_McpTools>(Application.McpTools)
+    .AddProject<McpTools>(Services.McpTools)
     .WithReference(catalogApi)
     .WaitFor(catalogApi)
     .WithAzApplicationInsights();
 
 var chatApi = builder
-    .AddProject<BookWorm_Chat>(Application.Chatting)
+    .AddProject<Chat>(Services.Chatting)
     .WithOllama()
     .WithReference(redis)
     .WaitFor(redis)
@@ -136,7 +136,7 @@ var chatApi = builder
 mcp.WithParentRelationship(chatApi);
 
 var basketApi = builder
-    .AddProject<BookWorm_Basket>(Application.Basket)
+    .AddProject<Basket>(Services.Basket)
     .WithReference(redis)
     .WaitFor(redis)
     .WithReference(queue)
@@ -147,7 +147,7 @@ var basketApi = builder
     .WithAsyncAPIUI();
 
 var notificationApi = builder
-    .AddProject<BookWorm_Notification>(Application.Notification)
+    .AddProject<Notification>(Services.Notification)
     .WithEmailProvider()
     .WithReference(queue)
     .WaitFor(queue)
@@ -158,7 +158,7 @@ var notificationApi = builder
     .WithAsyncAPIUI();
 
 var orderingApi = builder
-    .AddProject<BookWorm_Ordering>(Application.Ordering)
+    .AddProject<Ordering>(Services.Ordering)
     .WithReference(orderingDb)
     .WaitFor(orderingDb)
     .WithReference(queue)
@@ -176,7 +176,7 @@ var orderingApi = builder
     .WithAsyncAPIUI();
 
 var ratingApi = builder
-    .AddProject<BookWorm_Rating>(Application.Rating)
+    .AddProject<Rating>(Services.Rating)
     .WithReference(ratingDb)
     .WaitFor(ratingDb)
     .WithReference(queue)
@@ -189,7 +189,7 @@ var ratingApi = builder
 chatApi.WithReference(ratingApi).WaitFor(ratingApi);
 
 var financeApi = builder
-    .AddProject<BookWorm_Finance>(Application.Finance)
+    .AddProject<Finance>(Services.Finance)
     .WithReference(financeDb)
     .WaitFor(financeDb)
     .WithReference(queue)
@@ -199,7 +199,7 @@ var financeApi = builder
     .WithAsyncAPIUI();
 
 var gateway = builder
-    .AddYarp(Application.Gateway)
+    .AddYarp(Services.Gateway)
     .WithConfigFile("Container/proxy/yarp.json")
     .WithReference(catalogApi)
     .WaitFor(catalogApi)

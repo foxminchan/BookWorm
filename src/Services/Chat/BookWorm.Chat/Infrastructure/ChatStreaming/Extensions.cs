@@ -32,12 +32,12 @@ internal static class Extensions
 
             McpClientOptions mcpClientOptions = new()
             {
-                ClientInfo = new() { Name = Application.McpTools, Version = "1.0" },
+                ClientInfo = new() { Name = Services.McpTools, Version = "1.0" },
             };
 
             var client = new HttpClient
             {
-                BaseAddress = new($"{Protocol.HttpOrHttps}://{Application.McpTools}"),
+                BaseAddress = new($"{Protocol.HttpOrHttps}://{Services.McpTools}"),
             };
 
             SseClientTransportOptions sseTransportOptions = new()
