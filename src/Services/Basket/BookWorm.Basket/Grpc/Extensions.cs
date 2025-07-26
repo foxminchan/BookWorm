@@ -19,7 +19,7 @@ internal static class Extensions
         services.AddGrpcHealthChecks();
 
         services.AddGrpcServiceReference<BookGrpcService.BookGrpcServiceClient>(
-            $"{builder.GetScheme()}://{Application.Catalog}",
+            $"{builder.GetScheme()}://{Constants.Aspire.Services.Catalog}",
             HealthStatus.Degraded
         );
 

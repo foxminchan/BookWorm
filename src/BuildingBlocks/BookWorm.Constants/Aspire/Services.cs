@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Constants.Aspire;
 
-public static class Application
+public static class Services
 {
     public static readonly string Catalog = nameof(Catalog).ToLowerInvariant();
     public static readonly string Basket = nameof(Basket).ToLowerInvariant();
@@ -14,7 +14,6 @@ public static class Application
 
     public static string ToClientName(this string application, string? suffix = null)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(application);
         var clientName = char.ToUpperInvariant(application[0]) + application[1..];
         return string.IsNullOrWhiteSpace(suffix) ? clientName : $"{clientName} {suffix}";
     }

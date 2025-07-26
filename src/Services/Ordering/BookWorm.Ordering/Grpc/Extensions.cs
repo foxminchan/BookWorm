@@ -16,7 +16,7 @@ internal static class Extensions
         });
 
         services.AddGrpcServiceReference<BookGrpcService.BookGrpcServiceClient>(
-            $"{builder.GetScheme()}://{Application.Catalog}",
+            $"{builder.GetScheme()}://{Constants.Aspire.Services.Catalog}",
             HealthStatus.Degraded
         );
 
@@ -24,7 +24,7 @@ internal static class Extensions
 
         services
             .AddGrpcServiceReference<BasketGrpcService.BasketGrpcServiceClient>(
-                $"{builder.GetScheme()}://{Application.Basket}",
+                $"{builder.GetScheme()}://{Constants.Aspire.Services.Basket}",
                 HealthStatus.Degraded
             )
             .AddAuthToken();

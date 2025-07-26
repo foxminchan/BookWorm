@@ -42,7 +42,7 @@ public static class Components
             public static readonly string Resource = nameof(Storage).ToLowerInvariant();
             public static readonly string Blob = nameof(Blob).ToLowerInvariant();
             public static readonly string Table = nameof(Table).ToLowerInvariant();
-            public static readonly string BlobContainer = $"{Application.Catalog}-{Blob}";
+            public static readonly string BlobContainer = $"{Services.Catalog}-{Blob}";
         }
     }
 }

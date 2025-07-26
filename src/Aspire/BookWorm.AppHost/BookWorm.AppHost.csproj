@@ -28,20 +28,44 @@
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.MailPit" />
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.McpInspector" />
   </ItemGroup>
-  <ItemGroup Label="Services">
-    <ProjectReference Include="..\..\Services\Basket\BookWorm.Basket\BookWorm.Basket.csproj" />
-    <ProjectReference Include="..\..\Services\Catalog\BookWorm.Catalog\BookWorm.Catalog.csproj" />
-    <ProjectReference Include="..\..\Services\Chat\BookWorm.Chat\BookWorm.Chat.csproj" />
-    <ProjectReference Include="..\..\Services\Finance\BookWorm.Finance\BookWorm.Finance.csproj" />
-    <ProjectReference Include="..\..\Services\Notification\BookWorm.Notification\BookWorm.Notification.csproj" />
-    <ProjectReference Include="..\..\Services\Ordering\BookWorm.Ordering\BookWorm.Ordering.csproj" />
-    <ProjectReference Include="..\..\Services\Rating\BookWorm.Rating\BookWorm.Rating.csproj" />
-  </ItemGroup>
   <ItemGroup Label="Other">
     <PackageReference Include="CliWrap" />
   </ItemGroup>
+  <ItemGroup Label="Services">
+    <ProjectReference
+      Include="..\..\Services\Basket\BookWorm.Basket\BookWorm.Basket.csproj"
+      AspireProjectMetadataTypeName="Basket"
+    />
+    <ProjectReference
+      Include="..\..\Services\Catalog\BookWorm.Catalog\BookWorm.Catalog.csproj"
+      AspireProjectMetadataTypeName="Catalog"
+    />
+    <ProjectReference
+      Include="..\..\Services\Chat\BookWorm.Chat\BookWorm.Chat.csproj"
+      AspireProjectMetadataTypeName="Chat"
+    />
+    <ProjectReference
+      Include="..\..\Services\Finance\BookWorm.Finance\BookWorm.Finance.csproj"
+      AspireProjectMetadataTypeName="Finance"
+    />
+    <ProjectReference
+      Include="..\..\Services\Notification\BookWorm.Notification\BookWorm.Notification.csproj"
+      AspireProjectMetadataTypeName="Notification"
+    />
+    <ProjectReference
+      Include="..\..\Services\Ordering\BookWorm.Ordering\BookWorm.Ordering.csproj"
+      AspireProjectMetadataTypeName="Ordering"
+    />
+    <ProjectReference
+      Include="..\..\Services\Rating\BookWorm.Rating\BookWorm.Rating.csproj"
+      AspireProjectMetadataTypeName="Rating"
+    />
+  </ItemGroup>
   <ItemGroup Label="Integrations">
-    <ProjectReference Include="..\..\Integrations\BookWorm.McpTools\BookWorm.McpTools.csproj" />
+    <ProjectReference
+      Include="..\..\Integrations\BookWorm.McpTools\BookWorm.McpTools.csproj"
+      AspireProjectMetadataTypeName="McpTools"
+    />
     <ProjectReference
       Include="..\..\BuildingBlocks\BookWorm.Constants\BookWorm.Constants.csproj"
       IsAspireProjectResource="false"
