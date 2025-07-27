@@ -14,13 +14,12 @@
   <ItemGroup Label="HTTP">
     <PackageReference Include="Refit.HttpClientFactory" />
     <PackageReference Include="AspNetCore.HealthChecks.Uris" />
-    <PackageReference Include="Grpc.AspNetCore.Server.ClientFactory" />
     <PackageReference Include="Grpc.AspNetCore.HealthChecks" />
-  </ItemGroup>
-  <ItemGroup Label="Aspire">
+    <PackageReference Include="Grpc.AspNetCore.Server.ClientFactory" />
     <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
     <PackageReference Include="Microsoft.Extensions.ServiceDiscovery" />
-    <PackageReference Include="Azure.Monitor.OpenTelemetry.AspNetCore" />
+  </ItemGroup>
+  <ItemGroup Label="OpenTelemetry">
     <PackageReference Include="OpenTelemetry.Instrumentation.GrpcNetClient" />
     <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" />

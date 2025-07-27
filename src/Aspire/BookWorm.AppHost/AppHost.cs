@@ -109,14 +109,12 @@ var catalogApi = builder
         StorageBuiltInRole.StorageBlobDataContributor,
         StorageBuiltInRole.StorageBlobDataOwner
     )
-    .WithAzApplicationInsights()
     .WithAsyncAPIUI();
 
 var mcp = builder
     .AddProject<McpTools>(Services.McpTools)
     .WithReference(catalogApi)
-    .WaitFor(catalogApi)
-    .WithAzApplicationInsights();
+    .WaitFor(catalogApi);
 
 var chatApi = builder
     .AddProject<Chat>(Services.Chatting)
@@ -130,8 +128,7 @@ var chatApi = builder
     .WithIdP(keycloak, kcRealmName)
     .WithReference(signalR)
     .WaitFor(signalR)
-    .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor)
-    .WithAzApplicationInsights();
+    .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor);
 
 mcp.WithParentRelationship(chatApi);
 
@@ -143,7 +140,6 @@ var basketApi = builder
     .WaitFor(queue)
     .WithReference(catalogApi)
     .WithIdP(keycloak, kcRealmName)
-    .WithAzApplicationInsights()
     .WithAsyncAPIUI();
 
 var notificationApi = builder
@@ -154,7 +150,6 @@ var notificationApi = builder
     .WithReference(tableStorage)
     .WaitFor(tableStorage)
     .WithRoleAssignments(storage, StorageBuiltInRole.StorageTableDataContributor)
-    .WithAzApplicationInsights()
     .WithAsyncAPIUI();
 
 var orderingApi = builder
@@ -171,7 +166,6 @@ var orderingApi = builder
     .WithReference(signalR)
     .WaitFor(signalR)
     .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor)
-    .WithAzApplicationInsights()
     .WithHmacSecret()
     .WithAsyncAPIUI();
 
@@ -183,7 +177,6 @@ var ratingApi = builder
     .WaitFor(queue)
     .WithIdP(keycloak, kcRealmName)
     .WithReference(chatApi)
-    .WithAzApplicationInsights()
     .WithAsyncAPIUI();
 
 chatApi.WithReference(ratingApi).WaitFor(ratingApi);
@@ -195,7 +188,6 @@ var financeApi = builder
     .WithReference(queue)
     .WaitFor(queue)
     .WithIdP(keycloak, kcRealmName)
-    .WithAzApplicationInsights()
     .WithAsyncAPIUI();
 
 var gateway = builder
@@ -241,14 +233,11 @@ if (builder.ExecutionContext.IsRunMode)
         .WithOpenAPI(mcp);
 
     builder.AddK6(gateway);
-
-    builder.AddMcpInspector(Components.McpInspector).WithMcpServer(mcp).WaitFor(mcp);
 }
 else
 {
     builder.AddDashboard();
     builder.ConfigureCors();
-    builder.AddAzureApplicationInsights(Components.Azure.ApplicationInsights);
     builder.AddAzureContainerAppEnvironment(Components.Azure.ContainerApp).ProvisionAsService();
 }
 
