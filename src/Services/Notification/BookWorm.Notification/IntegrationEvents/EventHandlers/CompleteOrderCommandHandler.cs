@@ -1,16 +1,8 @@
 ﻿namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
 
-[AsyncApi]
 public sealed class CompleteOrderCommandHandler(ISender sender, IRenderer renderer)
     : IConsumer<CompleteOrderCommand>
 {
-    [Channel("notification-complete-order")]
-    [PublishOperation(
-        typeof(CompleteOrderCommand),
-        OperationId = nameof(CompleteOrderCommand),
-        Summary = "Complete order notification",
-        Description = "Represents a successful integration event when a user completes an order"
-    )]
     public async Task Consume(ConsumeContext<CompleteOrderCommand> context)
     {
         var message = context.Message;

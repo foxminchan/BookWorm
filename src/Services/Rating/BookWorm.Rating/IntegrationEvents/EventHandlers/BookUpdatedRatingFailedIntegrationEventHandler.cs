@@ -1,17 +1,10 @@
 ﻿using BookWorm.Contracts;
-using Saunter.Attributes;
 
 namespace BookWorm.Rating.IntegrationEvents.EventHandlers;
 
-[AsyncApi]
 public sealed class BookUpdatedRatingFailedIntegrationEventHandler(IFeedbackRepository repository)
     : IConsumer<BookUpdatedRatingFailedIntegrationEvent>
 {
-    [Channel("rating-book-updated-rating-failed")]
-    [PublishOperation(
-        typeof(BookUpdatedRatingFailedIntegrationEvent),
-        OperationId = nameof(BookUpdatedRatingFailedIntegrationEvent)
-    )]
     public async Task Consume(ConsumeContext<BookUpdatedRatingFailedIntegrationEvent> context)
     {
         var @event = context.Message;

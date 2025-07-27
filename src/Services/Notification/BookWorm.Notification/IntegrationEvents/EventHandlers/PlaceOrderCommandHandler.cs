@@ -1,16 +1,8 @@
 ﻿namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
 
-[AsyncApi]
 public sealed class PlaceOrderCommandHandler(ISender sender, IRenderer renderer)
     : IConsumer<PlaceOrderCommand>
 {
-    [Channel("notification-place-order")]
-    [PublishOperation(
-        typeof(PlaceOrderCommand),
-        OperationId = nameof(PlaceOrderCommand),
-        Summary = "Place order notification",
-        Description = "Represents a successful integration event when a user places an order"
-    )]
     public async Task Consume(ConsumeContext<PlaceOrderCommand> context)
     {
         var message = context.Message;

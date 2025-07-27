@@ -1,19 +1,10 @@
 ﻿using BookWorm.Contracts;
-using Saunter.Attributes;
 
 namespace BookWorm.Catalog.IntegrationEvents.EventHandlers;
 
-[AsyncApi]
 public sealed class FeedbackDeletedIntegrationEventHandler(IBookRepository repository)
     : IConsumer<FeedbackDeletedIntegrationEvent>
 {
-    [Channel("catalog-feedback-deleted")]
-    [PublishOperation(
-        typeof(FeedbackDeletedIntegrationEvent),
-        OperationId = nameof(FeedbackDeletedIntegrationEvent),
-        Summary = "Update book rating",
-        Description = "Represents a successful integration event when deleting a feedback in the system"
-    )]
     public async Task Consume(ConsumeContext<FeedbackDeletedIntegrationEvent> context)
     {
         var @event = context.Message;

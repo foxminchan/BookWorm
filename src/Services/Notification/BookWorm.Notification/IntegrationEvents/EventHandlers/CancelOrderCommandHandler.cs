@@ -1,16 +1,8 @@
 ﻿namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
 
-[AsyncApi]
 public sealed class CancelOrderCommandHandler(ISender sender, IRenderer renderer)
     : IConsumer<CancelOrderCommand>
 {
-    [Channel("notification-cancel-order")]
-    [PublishOperation(
-        typeof(CancelOrderCommand),
-        OperationId = nameof(CancelOrderCommand),
-        Summary = "Cancel order notification",
-        Description = "Represents a successful integration event when a user cancels an order"
-    )]
     public async Task Consume(ConsumeContext<CancelOrderCommand> context)
     {
         var message = context.Message;

@@ -43,7 +43,5 @@ internal static class Extensions
         builder.AddCronJobServices();
 
         builder.AddEventBus(typeof(INotificationApiMarker), cfg => cfg.AddInMemoryInboxOutbox());
-
-        builder.AddDefaultAsyncApi([typeof(INotificationApiMarker)]);
     }
 }

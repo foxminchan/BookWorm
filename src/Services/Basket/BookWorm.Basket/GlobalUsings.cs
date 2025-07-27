@@ -16,7 +16,6 @@ global using BookWorm.Chassis.Query;
 global using BookWorm.Chassis.Versioning;
 global using BookWorm.Constants.Aspire;
 global using BookWorm.ServiceDefaults;
-global using BookWorm.ServiceDefaults.ApiSpecification.AsyncApi;
 global using BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
 global using BookWorm.ServiceDefaults.Auth;
 global using BookWorm.ServiceDefaults.Kestrel;

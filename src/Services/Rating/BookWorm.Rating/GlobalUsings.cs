@@ -16,7 +16,6 @@ global using BookWorm.Rating.Domain.FeedbackAggregator;
 global using BookWorm.Rating.Infrastructure;
 global using BookWorm.Rating.Infrastructure.Services;
 global using BookWorm.ServiceDefaults;
-global using BookWorm.ServiceDefaults.ApiSpecification.AsyncApi;
 global using BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
 global using BookWorm.ServiceDefaults.Auth;
 global using BookWorm.ServiceDefaults.Kestrel;

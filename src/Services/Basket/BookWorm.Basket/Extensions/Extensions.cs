@@ -57,8 +57,6 @@ internal static class Extensions
         // Configure EventBus
         builder.AddEventBus(typeof(IBasketApiMarker), cfg => cfg.AddInMemoryInboxOutbox());
 
-        builder.AddDefaultAsyncApi([typeof(IBasketApiMarker)]);
-
         services.AddScoped<KeycloakTokenIntrospectionMiddleware>();
     }
 }
