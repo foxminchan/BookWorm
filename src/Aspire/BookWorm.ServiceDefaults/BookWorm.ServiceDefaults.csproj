@@ -6,7 +6,6 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
   <ItemGroup Label="Integration">
-    <PackageReference Include="Saunter" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Aspire.Keycloak.Authentication" />
     <PackageReference Include="AspNetCore.HealthChecks.UI.Client" />

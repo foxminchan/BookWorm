@@ -77,8 +77,6 @@ internal static class Extensions
         services.AddVersioning();
         services.AddEndpoints(typeof(IRatingApiMarker));
 
-        builder.AddDefaultAsyncApi([typeof(IRatingApiMarker)]);
-
         builder.AddAgents();
         services.AddSingleton<ISummarizer, RatingSummarizer>();
 

@@ -11,7 +11,6 @@ global using BookWorm.Chassis.Versioning;
 global using BookWorm.Finance.Infrastructure;
 global using BookWorm.Finance.Saga;
 global using BookWorm.ServiceDefaults;
-global using BookWorm.ServiceDefaults.ApiSpecification.AsyncApi;
 global using BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
 global using BookWorm.ServiceDefaults.Auth;
 global using BookWorm.ServiceDefaults.Configuration;

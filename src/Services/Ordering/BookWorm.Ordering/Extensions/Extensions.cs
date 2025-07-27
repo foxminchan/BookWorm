@@ -99,8 +99,6 @@ internal static class Extensions
             )
         );
 
-        builder.AddDefaultAsyncApi([typeof(IOrderingApiMarker)]);
-
         services.AddScoped<KeycloakTokenIntrospectionMiddleware>();
     }
 }

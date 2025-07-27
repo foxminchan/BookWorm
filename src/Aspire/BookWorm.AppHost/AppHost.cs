@@ -108,8 +108,7 @@ var catalogApi = builder
         storage,
         StorageBuiltInRole.StorageBlobDataContributor,
         StorageBuiltInRole.StorageBlobDataOwner
-    )
-    .WithAsyncAPIUI();
+    );
 
 var mcp = builder
     .AddProject<McpTools>(Services.McpTools)
@@ -139,8 +138,7 @@ var basketApi = builder
     .WithReference(queue)
     .WaitFor(queue)
     .WithReference(catalogApi)
-    .WithIdP(keycloak, kcRealmName)
-    .WithAsyncAPIUI();
+    .WithIdP(keycloak, kcRealmName);
 
 var notificationApi = builder
     .AddProject<Notification>(Services.Notification)
@@ -149,8 +147,7 @@ var notificationApi = builder
     .WaitFor(queue)
     .WithReference(tableStorage)
     .WaitFor(tableStorage)
-    .WithRoleAssignments(storage, StorageBuiltInRole.StorageTableDataContributor)
-    .WithAsyncAPIUI();
+    .WithRoleAssignments(storage, StorageBuiltInRole.StorageTableDataContributor);
 
 var orderingApi = builder
     .AddProject<Ordering>(Services.Ordering)
@@ -166,8 +163,7 @@ var orderingApi = builder
     .WithReference(signalR)
     .WaitFor(signalR)
     .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor)
-    .WithHmacSecret()
-    .WithAsyncAPIUI();
+    .WithHmacSecret();
 
 var ratingApi = builder
     .AddProject<Rating>(Services.Rating)
@@ -176,8 +172,7 @@ var ratingApi = builder
     .WithReference(queue)
     .WaitFor(queue)
     .WithIdP(keycloak, kcRealmName)
-    .WithReference(chatApi)
-    .WithAsyncAPIUI();
+    .WithReference(chatApi);
 
 chatApi.WithReference(ratingApi).WaitFor(ratingApi);
 
@@ -187,8 +182,7 @@ var financeApi = builder
     .WaitFor(financeDb)
     .WithReference(queue)
     .WaitFor(queue)
-    .WithIdP(keycloak, kcRealmName)
-    .WithAsyncAPIUI();
+    .WithIdP(keycloak, kcRealmName);
 
 var gateway = builder
     .AddYarp(Services.Gateway)

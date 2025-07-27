@@ -40,6 +40,4 @@ app.MapDefaultEndpoints();
 
 app.UseDefaultOpenApi();
 
-app.UseDefaultAsyncApi();
-
 app.Run();

@@ -34,7 +34,6 @@ global using BookWorm.Ordering.Infrastructure.Filters;
 global using BookWorm.Ordering.Infrastructure.Idempotency;
 global using BookWorm.Ordering.Infrastructure.Services;
 global using BookWorm.ServiceDefaults;
-global using BookWorm.ServiceDefaults.ApiSpecification.AsyncApi;
 global using BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
 global using BookWorm.ServiceDefaults.Auth;
 global using BookWorm.ServiceDefaults.Configuration;
