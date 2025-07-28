@@ -42,6 +42,7 @@ security:
 paths:
   "/api/v1/order-state-machine":
     get:
+      deprecated: true
       tags:
         - OrderState
       summary: Get Order State Machine

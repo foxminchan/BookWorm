@@ -1,8 +1,6 @@
 ﻿using System.Threading.RateLimiting;
-using Ganss.Xss;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.Extensions.Logging;
 
 namespace BookWorm.ServiceDefaults.Kestrel;
 
@@ -125,18 +123,6 @@ public static class RateLimiterExtensions
                 );
 
                 await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
-
-                var logger = serviceProvider.GetRequiredService<ILogger<RateLimiter>>();
-
-                if (logger.IsEnabled(LogLevel.Warning))
-                {
-                    logger.LogWarning(
-                        "Rate limit exceeded for {Path} from {IpAddress} by User {User}",
-                        new HtmlSanitizer().Sanitize(httpContext.Request.Path),
-                        httpContext.Connection.RemoteIpAddress,
-                        httpContext.User.Identity?.Name
-                    );
-                }
             }
         };
     }

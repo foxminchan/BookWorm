@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.Mediator;
+﻿using BookWorm.Constants.Aspire;
 
 namespace BookWorm.Finance.Extensions;
 
@@ -8,34 +8,17 @@ internal static class Extensions
     {
         var services = builder.Services;
 
-        builder.AddDefaultCors();
-
-        builder.AddDefaultOpenApi();
-
-        builder.AddDefaultAuthentication().AddKeycloakClaimsTransformation();
-
-        services.AddRateLimiting();
-
         // Add exception handlers
-        services.AddExceptionHandler<ValidationExceptionHandler>();
-        services.AddExceptionHandler<NotFoundExceptionHandler>();
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails();
 
-        // Configure MediatR
-        services.AddMediatR<IFinanceApiMarker>();
+        builder.AddAzureNpgsqlDbContext<FinanceDbContext>(
+            Components.Database.Finance,
+            configureDbContextOptions: options => options.UseSnakeCaseNamingConvention()
+        );
 
-        services.AddSingleton<IActivityScope, ActivityScope>();
-        services.AddSingleton<CommandHandlerMetrics>();
-        services.AddSingleton<QueryHandlerMetrics>();
+        services.AddMigration<FinanceDbContext>();
 
-        builder.AddPersistenceServices();
         builder.AddSagaStateMachineServices();
-
-        // Configure endpoints
-        services.AddVersioning();
-        services.AddEndpoints(typeof(IFinanceApiMarker));
-
-        services.AddScoped<KeycloakTokenIntrospectionMiddleware>();
     }
 }
