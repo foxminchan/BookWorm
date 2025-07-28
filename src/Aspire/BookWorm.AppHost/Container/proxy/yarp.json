@@ -133,31 +133,6 @@
           }
         ]
       },
-      "financeApi": {
-        "ClusterId": "financeApi",
-        "Match": {
-          "Path": "/finance/{**remainder}"
-        },
-        "Transforms": [
-          {
-            "PathRemovePrefix": "/finance"
-          },
-          {
-            "PathPrefix": "/"
-          },
-          {
-            "RequestHeaderOriginalHost": "true"
-          },
-          {
-            "X-Forwarded": "Append",
-            "HeaderPrefix": "trace-id"
-          },
-          {
-            "X-Forwarded": "Append",
-            "HeaderPrefix": "TraceId"
-          }
-        ]
-      },
       "identityApi": {
         "ClusterId": "identityApi",
         "Match": {
@@ -222,14 +197,6 @@
           "base_destination": {
             "Address": "http+https://rating",
             "Health": "http+https://rating/health"
-          }
-        }
-      },
-      "financeApi": {
-        "Destinations": {
-          "base_destination": {
-            "Address": "http+https://finance",
-            "Health": "http+https://finance/health"
           }
         }
       },

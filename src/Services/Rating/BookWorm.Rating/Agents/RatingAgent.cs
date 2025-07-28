@@ -57,7 +57,9 @@ public static class RatingAgent
             [$"{baseUri}/summarize", $"{baseUri}/sentiment"]
         );
 
-        agentKernel.Plugins.AddFromType<ReviewPlugin>();
+        var reviewPlugin = new ReviewPlugin(kernel.Services.GetRequiredService<ISender>());
+
+        agentKernel.Plugins.AddFromObject(reviewPlugin);
         agentKernel.Plugins.Add(sentimentPlugin);
 
         return new()

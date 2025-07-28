@@ -9,7 +9,7 @@ public sealed class OrderMimeMessageBuilder
 
     private OrderMimeMessageBuilder() { }
 
-    private string Subject { get; set; } = string.Empty;
+    private string? Subject { get; set; } = string.Empty;
     private MimeEntity Body { get; set; } = new TextPart(TextFormat.Html) { Text = string.Empty };
     private MailboxAddress To { get; set; } = new(string.Empty, string.Empty);
 
@@ -18,7 +18,7 @@ public sealed class OrderMimeMessageBuilder
         return new();
     }
 
-    public OrderMimeMessageBuilder WithTo(string fullName, string email)
+    public OrderMimeMessageBuilder WithTo(string? fullName, string? email)
     {
         To = new(fullName, email);
         return this;
@@ -36,7 +36,7 @@ public sealed class OrderMimeMessageBuilder
         return this;
     }
 
-    public OrderMimeMessageBuilder WithSubject(string subject)
+    public OrderMimeMessageBuilder WithSubject(string? subject)
     {
         Subject = subject;
         return this;
@@ -50,7 +50,7 @@ public sealed class OrderMimeMessageBuilder
         return this;
     }
 
-    public OrderMimeMessageBuilder WithBody(string body)
+    public OrderMimeMessageBuilder WithBody(string? body)
     {
         var bb = new BodyBuilder { HtmlBody = body };
         Body = bb.ToMessageBody();

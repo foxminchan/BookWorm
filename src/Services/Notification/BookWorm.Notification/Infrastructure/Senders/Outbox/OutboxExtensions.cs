@@ -16,17 +16,15 @@ internal static class OutboxExtensions
     /// <param name="builder">The <see cref="IHostApplicationBuilder" /> to configure.</param>
     public static void AddEmailOutbox(this IHostApplicationBuilder builder)
     {
-        builder.AddTableService();
-
         builder.Services.AddScoped<ISender>(sp =>
         {
-            var tableService = sp.GetRequiredService<ITableService>();
+            var dbContext = sp.GetRequiredService<INotificationDbContext>();
 
             ISender underlyingSender = builder.Environment.IsDevelopment()
                 ? sp.GetRequiredService<MailKitSender>()
                 : sp.GetRequiredService<SendGridSender>();
 
-            return new EmailOutboxService(tableService, underlyingSender);
+            return new EmailOutboxService(dbContext, underlyingSender);
         });
     }
 }

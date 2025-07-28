@@ -9,4 +9,5 @@ public static class DataSchemaLength
     public const int ExtraLarge = 255;
     public const int SuperLarge = 500;
     public const int Max = 1000;
+    public const int MaxText = 10000;
 }
