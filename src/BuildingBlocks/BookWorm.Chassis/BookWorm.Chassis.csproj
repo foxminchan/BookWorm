@@ -19,7 +19,6 @@
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" />
   </ItemGroup>
   <ItemGroup Label="Telemetry">
-    <PackageReference Include="HtmlSanitizer" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.Middleware" />
