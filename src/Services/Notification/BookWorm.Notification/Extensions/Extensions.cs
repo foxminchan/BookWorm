@@ -1,6 +1,9 @@
-﻿using BookWorm.Notification.Infrastructure.Senders.MailKit;
+﻿using BookWorm.Chassis.EF;
+using BookWorm.Notification.Infrastructure;
+using BookWorm.Notification.Infrastructure.Senders.MailKit;
 using BookWorm.Notification.Infrastructure.Senders.Outbox;
 using BookWorm.Notification.Infrastructure.Senders.SendGrid;
+using Microsoft.EntityFrameworkCore;
 
 namespace BookWorm.Notification.Extensions;
 
@@ -21,6 +24,17 @@ internal static class Extensions
         );
 
         services.AddSingleton<IActivityScope, ActivityScope>();
+
+        builder.AddAzureNpgsqlDbContext<NotificationDbContext>(
+            Components.Database.Notification,
+            configureDbContextOptions: options => options.UseSnakeCaseNamingConvention()
+        );
+
+        services.AddMigration<NotificationDbContext>();
+
+        services.AddScoped<INotificationDbContext>(sp =>
+            sp.GetRequiredService<NotificationDbContext>()
+        );
 
         // Resilience pipeline for the notification service
         builder.AddMailResiliencePipeline();

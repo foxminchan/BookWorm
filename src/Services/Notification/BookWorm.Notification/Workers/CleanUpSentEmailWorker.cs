@@ -1,4 +1,7 @@
-﻿namespace BookWorm.Notification.Workers;
+﻿using BookWorm.Notification.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+
+namespace BookWorm.Notification.Workers;
 
 [DisallowConcurrentExecution]
 public sealed class CleanUpSentEmailWorker(
@@ -13,8 +16,24 @@ public sealed class CleanUpSentEmailWorker(
         {
             logger.LogDebug("Starting cleanup of sent emails...");
             using var scope = scopeFactory.CreateScope();
-            var tableService = scope.ServiceProvider.GetRequiredService<ITableService>();
-            await tableService.BulkDeleteAsync(TablePartition.Processed, context.CancellationToken);
+            var dbContext = scope.ServiceProvider.GetRequiredService<INotificationDbContext>();
+
+            var sentEmails = await dbContext
+                .Outboxes.Where(e => e.IsSent)
+                .OrderBy(e => e.SequenceNumber)
+                .ToListAsync(context.CancellationToken);
+
+            if (sentEmails.Count != 0)
+            {
+                logger.LogDebug("Found {Count} sent emails to delete", sentEmails.Count);
+                dbContext.Outboxes.RemoveRange(sentEmails);
+                await dbContext.SaveChangesAsync(context.CancellationToken);
+                logger.LogInformation("Successfully cleaned up sent emails");
+            }
+            else
+            {
+                logger.LogDebug("No sent emails found for cleanup");
+            }
         }
         catch (Exception ex)
         {

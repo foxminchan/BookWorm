@@ -2,23 +2,6 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Build projects",
-      "command": "dotnet",
-      "type": "process",
-      "args": [
-        "build",
-        "${workspaceFolder}/BookWorm.slnx",
-        "/property:GenerateFullPaths=true",
-        "/consoleloggerparameters:NoSummary;ForceNoAlign"
-      ],
-      "problemMatcher": "$msCompile",
-      "group": "build",
-      "presentation": {
-        "reveal": "always",
-        "panel": "new"
-      }
-    },
-    {
       "label": "Restore projects",
       "command": "dotnet",
       "type": "process",
@@ -35,38 +18,10 @@
       }
     },
     {
-      "label": "Run tests",
-      "command": "dotnet",
-      "type": "process",
-      "args": [
-        "test",
-        "${workspaceFolder}/BookWorm.slnx",
-        "/property:GenerateFullPaths=true",
-        "/consoleloggerparameters:NoSummary;ForceNoAlign"
-      ],
-      "problemMatcher": "$msCompile",
-      "group": "test",
-      "presentation": {
-        "reveal": "always",
-        "panel": "new"
-      }
-    },
-    {
       "label": "Start Aspire",
       "command": "dotnet",
       "type": "process",
       "args": ["aspire", "run"],
-      "problemMatcher": "$msCompile",
-      "presentation": {
-        "reveal": "always",
-        "panel": "new"
-      }
-    },
-    {
-      "label": "Format C# files",
-      "command": "dotnet",
-      "type": "process",
-      "args": ["csharpier", "format", "."],
       "problemMatcher": "$msCompile",
       "presentation": {
         "reveal": "always",
