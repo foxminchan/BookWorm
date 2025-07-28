@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup Label="Unit Test">
     <PackageReference Include="Moq" />
+    <PackageReference Include="MockQueryable.Moq" />
     <PackageReference Include="TUnit" />
     <PackageReference Include="Bogus" />
     <PackageReference Include="Shouldly" />
@@ -22,6 +23,7 @@
   </ItemGroup>
   <ItemGroup>
     <Using Include="Moq" />
+    <Using Include="MockQueryable.Moq" />
     <Using Include="Bogus" />
     <Using Include="Shouldly" />
   </ItemGroup>

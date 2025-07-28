@@ -50,7 +50,7 @@ test: build
 
 # Format C# code
 
-format: build
+format:
     dotnet csharpier format .
 
 # Clean build artifacts

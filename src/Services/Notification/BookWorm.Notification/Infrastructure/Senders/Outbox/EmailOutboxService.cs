@@ -1,6 +1,7 @@
 ﻿namespace BookWorm.Notification.Infrastructure.Senders.Outbox;
 
-internal sealed class EmailOutboxService(ITableService tableService, ISender sender) : ISender
+internal sealed class EmailOutboxService(INotificationDbContext dbContext, ISender actualSender)
+    : ISender
 {
     public async Task SendAsync(
         MimeMessage mailMessage,
@@ -21,25 +22,12 @@ internal sealed class EmailOutboxService(ITableService tableService, ISender sen
             mailMessage.HtmlBody
         );
 
-        // Store in pending partition first
-        var entityId = await tableService.UpsertAsync(
-            outbox,
-            TablePartition.Pending,
-            cancellationToken
-        );
+        await dbContext.Outboxes.AddAsync(outbox, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
 
-        await sender.SendAsync(mailMessage, cancellationToken);
+        await actualSender.SendAsync(mailMessage, cancellationToken);
 
         outbox.MarkAsSent();
-
-        // Move to sent partition
-        await tableService.UpsertAsync(outbox, TablePartition.Processed, cancellationToken);
-
-        // Remove from pending partition
-        await tableService.DeleteAsync(
-            TablePartition.Pending,
-            entityId.ToString(),
-            cancellationToken
-        );
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

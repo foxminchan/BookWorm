@@ -23,7 +23,6 @@
     <PackageVersion Include="Aspire.Azure.Npgsql" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="$(AspireVersion)" />
-    <PackageVersion Include="Aspire.Azure.Data.Tables" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Qdrant.Client" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.StackExchange.Redis" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Keycloak.Authentication" Version="$(AspireUnstableVersion)" />
@@ -99,6 +98,7 @@
   <ItemGroup Label="Testing">
     <!-- Testing packages -->
     <PackageVersion Include="Moq" Version="4.20.72" />
+    <PackageVersion Include="MockQueryable.Moq" Version="8.0.0" />
     <PackageVersion Include="Bogus" Version="35.6.3" />
     <PackageVersion Include="TUnit" Version="0.25.21" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />

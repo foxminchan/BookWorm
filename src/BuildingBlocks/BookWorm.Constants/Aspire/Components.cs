@@ -21,6 +21,9 @@ public static class Components
         public static readonly string Chat = $"{nameof(Chat).ToLowerInvariant()}{Suffix}";
         public static readonly string User = $"{nameof(User).ToLowerInvariant()}{Suffix}";
         public static readonly string Health = $"{nameof(Health).ToLowerInvariant()}{Suffix}";
+
+        public static readonly string Notification =
+            $"{nameof(Notification).ToLowerInvariant()}{Suffix}";
     }
 
     public static class Ollama
@@ -34,6 +37,7 @@ public static class Components
     {
         public const string ContainerApp = "aca";
         public static readonly string SignalR = nameof(SignalR).ToLowerInvariant();
+
         public static readonly string ApplicationInsights = nameof(ApplicationInsights)
             .ToLowerInvariant();
 

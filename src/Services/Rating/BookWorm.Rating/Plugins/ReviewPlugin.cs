@@ -1,13 +1,12 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
-using BookWorm.Rating.Domain.FeedbackAggregator.Specifications;
 using BookWorm.Rating.Features;
+using BookWorm.Rating.Features.List;
 using Microsoft.SemanticKernel;
 
 namespace BookWorm.Rating.Plugins;
 
-[ExcludeFromCodeCoverage]
-public sealed class ReviewPlugin(IServiceScopeFactory factory)
+public sealed class ReviewPlugin(ISender sender)
 {
     [KernelFunction(nameof(GetCustomerReviews))]
     [Description(
@@ -17,14 +16,11 @@ public sealed class ReviewPlugin(IServiceScopeFactory factory)
         [Description("The ID of the book to get the review for")] Guid bookId
     )
     {
-        using var scope = factory.CreateScope();
-        var repository = scope.ServiceProvider.GetRequiredService<IFeedbackRepository>();
+        var reviews = await sender.Send(new ListFeedbacksQuery(bookId, 1, int.MaxValue));
 
-        var reviews = await repository.ListAsync(new FeedbackFilterSpec(bookId, null, false));
-
-        return reviews.Any()
+        return reviews.Items.Any()
             ? JsonSerializer.Serialize(
-                reviews.ToFeedbackDtos(),
+                reviews.Items,
                 FeedbackSerializationContext.Default.IReadOnlyListFeedbackDto
             )
             : "No reviews found for this book";

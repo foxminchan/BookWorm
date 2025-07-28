@@ -13,7 +13,6 @@ global using BookWorm.Notification.Domain.Exceptions;
 global using BookWorm.Notification.Infrastructure.Job;
 global using BookWorm.Notification.Infrastructure.Render;
 global using BookWorm.Notification.Infrastructure.Senders;
-global using BookWorm.Notification.Infrastructure.Table;
 global using BookWorm.Notification.Workers;
 global using BookWorm.ServiceDefaults;
 global using BookWorm.ServiceDefaults.Configuration;
