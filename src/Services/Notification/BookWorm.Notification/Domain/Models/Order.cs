@@ -6,7 +6,7 @@ namespace BookWorm.Notification.Domain.Models;
 public sealed record Order(
     Guid Id,
     string FullName,
-    [property: Format("C", "en-US")] decimal TotalMoney,
+    [property: Format("C")] decimal TotalMoney,
     Status Status
 )
 {

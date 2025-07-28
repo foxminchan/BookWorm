@@ -40,10 +40,7 @@ internal static class MailKitExtensions
 
         var settings = services.BuildServiceProvider().GetRequiredService<MailKitSettings>();
 
-        if (
-            builder.Configuration.GetRequiredConnectionString(connectionName) is
-            { } connectionString
-        )
+        if (builder.Configuration.GetConnectionString(connectionName) is { } connectionString)
         {
             settings.ParseConnectionString(connectionString);
         }

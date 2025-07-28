@@ -62,14 +62,14 @@ var blobStorage = storage
     .AddBlobs(Components.Azure.Storage.Blob)
     .AddBlobContainer(Components.Azure.Storage.BlobContainer);
 
-var tableStorage = storage.AddTables(Components.Azure.Storage.Table);
-var catalogDb = postgres.AddDatabase(Components.Database.Catalog);
-var orderingDb = postgres.AddDatabase(Components.Database.Ordering);
-var financeDb = postgres.AddDatabase(Components.Database.Finance);
-var ratingDb = postgres.AddDatabase(Components.Database.Rating);
 var chatDb = postgres.AddDatabase(Components.Database.Chat);
 var userDb = postgres.AddDatabase(Components.Database.User);
+var ratingDb = postgres.AddDatabase(Components.Database.Rating);
 var healthDb = postgres.AddDatabase(Components.Database.Health);
+var catalogDb = postgres.AddDatabase(Components.Database.Catalog);
+var financeDb = postgres.AddDatabase(Components.Database.Finance);
+var orderingDb = postgres.AddDatabase(Components.Database.Ordering);
+var notificationDb = postgres.AddDatabase(Components.Database.Notification);
 
 builder.AddOllama(configure =>
 {
@@ -145,9 +145,8 @@ var notificationApi = builder
     .WithEmailProvider()
     .WithReference(queue)
     .WaitFor(queue)
-    .WithReference(tableStorage)
-    .WaitFor(tableStorage)
-    .WithRoleAssignments(storage, StorageBuiltInRole.StorageTableDataContributor);
+    .WithReference(notificationDb)
+    .WaitFor(notificationDb);
 
 var orderingApi = builder
     .AddProject<Ordering>(Services.Ordering)
@@ -197,13 +196,11 @@ var gateway = builder
     .WaitFor(ratingApi)
     .WithReference(basketApi)
     .WaitFor(basketApi)
-    .WithReference(financeApi)
-    .WaitFor(financeApi)
-    .WithReference(keycloak);
+    .WithReference(keycloak)
+    .WithExternalHttpEndpoints();
 
 builder
     .AddHealthChecksUI()
-    .WithExternalHttpEndpoints()
     .WithStorageProvider(healthDb)
     .WithReference(catalogApi)
     .WithReference(chatApi)
@@ -212,7 +209,8 @@ builder
     .WithReference(ratingApi)
     .WithReference(basketApi)
     .WithReference(notificationApi)
-    .WithReference(financeApi);
+    .WithReference(financeApi)
+    .WithExternalHttpEndpoints();
 
 if (builder.ExecutionContext.IsRunMode)
 {
