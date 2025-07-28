@@ -1,11 +1,9 @@
 ﻿using System.Text.Json;
-using Ganss.Xss;
 using StackExchange.Redis;
 
 namespace BookWorm.Ordering.Infrastructure.Idempotency;
 
-internal sealed class RequestManager(ILogger<RequestManager> logger, IConnectionMultiplexer redis)
-    : IRequestManager
+internal sealed class RequestManager(IConnectionMultiplexer redis) : IRequestManager
 {
     private const int DefaultExpirationTime = 3600;
 
@@ -32,20 +30,11 @@ internal sealed class RequestManager(ILogger<RequestManager> logger, IConnection
             IdempotencySerializationContext.Default.ClientRequest
         );
 
-        var created = await database.StringSetAsync(
+        await database.StringSetAsync(
             clientRequest.Id,
             json,
             TimeSpan.FromSeconds(DefaultExpirationTime)
         );
-
-        if (!created)
-        {
-            logger.LogError(
-                "[{RequestManager}] Failed to create request for {IdempotencyKey}",
-                nameof(RequestManager),
-                new HtmlSanitizer().Sanitize(clientRequest.Id)
-            );
-        }
     }
 
     private async Task<IDatabase> GetDatabaseAsync()
