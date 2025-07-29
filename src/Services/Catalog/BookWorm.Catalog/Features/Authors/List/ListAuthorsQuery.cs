@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Catalog.Features.Authors.List;
+﻿using BookWorm.Chassis.CQRS.Query;
+
+namespace BookWorm.Catalog.Features.Authors.List;
 
 public sealed record ListAuthorsQuery : IQuery<IReadOnlyList<AuthorDto>>;
 

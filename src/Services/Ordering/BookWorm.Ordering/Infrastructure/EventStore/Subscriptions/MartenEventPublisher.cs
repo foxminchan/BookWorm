@@ -1,4 +1,5 @@
 using BookWorm.Chassis.OpenTelemetry;
+using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using JasperFx.Events.Daemon;
 using Marten.Subscriptions;
 using Microsoft.Extensions.Diagnostics.Buffering;

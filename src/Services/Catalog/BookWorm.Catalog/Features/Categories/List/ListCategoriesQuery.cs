@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Catalog.Features.Categories.List;
+﻿using BookWorm.Chassis.CQRS.Query;
+
+namespace BookWorm.Catalog.Features.Categories.List;
 
 public sealed record ListCategoriesQuery : IQuery<IReadOnlyList<CategoryDto>>;
 

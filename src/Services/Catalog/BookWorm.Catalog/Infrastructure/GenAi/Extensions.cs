@@ -1,7 +1,7 @@
 ﻿using BookWorm.Catalog.Infrastructure.GenAi.Ingestion;
-using BookWorm.Chassis.AI;
-using BookWorm.Chassis.Ingestion;
-using BookWorm.Chassis.Search;
+using BookWorm.Chassis.RAG;
+using BookWorm.Chassis.RAG.Ingestion;
+using BookWorm.Chassis.RAG.Search;
 
 namespace BookWorm.Catalog.Infrastructure.GenAi;
 

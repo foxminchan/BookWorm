@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Basket.Features.Update;
+﻿using BookWorm.Chassis.CQRS.Command;
+
+namespace BookWorm.Basket.Features.Update;
 
 public sealed record UpdateBasketCommand(List<BasketItemRequest> Items) : ICommand;
 

@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chat.Domain.AggregatesModel;
 using BookWorm.Chat.Domain.AggregatesModel.Specifications;
 using BookWorm.Chat.Infrastructure.Helpers;

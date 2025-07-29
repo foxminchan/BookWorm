@@ -1,5 +1,4 @@
-﻿using BookWorm.Contracts;
-using BookWorm.SharedKernel.SeedWork;
+﻿using BookWorm.SharedKernel.SeedWork;
 
 namespace BookWorm.Chassis.EventBus.Dispatcher;
 

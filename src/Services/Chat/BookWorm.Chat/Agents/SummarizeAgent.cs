@@ -1,5 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using BookWorm.Chassis.AI;
+using BookWorm.Chassis.RAG.Agent;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.Ollama;

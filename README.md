@@ -47,7 +47,7 @@
 
 ## Project Architecture
 
-![Project Architecture](assets/architecture.png)
+![Project Architecture](assets/BookWorm.png)
 
 ## Getting Started
 

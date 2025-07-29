@@ -1,4 +1,5 @@
 ﻿using BookWorm.Basket.Infrastructure.Exceptions;
+using BookWorm.Chassis.CQRS.Command;
 
 namespace BookWorm.Basket.Features.Create;
 

@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Catalog.Features.Publishers.Create;
+﻿using BookWorm.Chassis.CQRS.Command;
+
+namespace BookWorm.Catalog.Features.Publishers.Create;
 
 public sealed record CreatePublisherCommand(string Name) : ICommand<Guid>;
 

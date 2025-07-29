@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.AI;
+﻿using BookWorm.Chassis.RAG;
 using BookWorm.Chat.Agents;
 
 namespace BookWorm.Chat.Infrastructure.ChatStreaming;

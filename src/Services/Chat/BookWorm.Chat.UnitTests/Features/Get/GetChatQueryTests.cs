@@ -1,5 +1,5 @@
-﻿using BookWorm.Chassis.Exceptions;
-using BookWorm.Chassis.Query;
+﻿using BookWorm.Chassis.CQRS.Query;
+using BookWorm.Chassis.Exceptions;
 using BookWorm.Chat.Domain.AggregatesModel;
 using BookWorm.Chat.Features;
 using BookWorm.Chat.Features.Get;

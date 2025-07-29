@@ -2,7 +2,7 @@
 using BookWorm.Basket.Domain;
 using BookWorm.Basket.Features.Delete;
 using BookWorm.Basket.UnitTests.Fakers;
-using BookWorm.Chassis.Command;
+using BookWorm.Chassis.CQRS.Command;
 using BookWorm.Chassis.Exceptions;
 using MediatR;
 

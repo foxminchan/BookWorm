@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Caching.Hybrid;
+﻿using BookWorm.Chassis.CQRS.Query;
+using Microsoft.Extensions.Caching.Hybrid;
 
 namespace BookWorm.Catalog.Features.Books.Get;
 

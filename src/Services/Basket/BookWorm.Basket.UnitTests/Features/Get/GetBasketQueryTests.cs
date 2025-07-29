@@ -3,8 +3,8 @@ using BookWorm.Basket.Domain;
 using BookWorm.Basket.Features;
 using BookWorm.Basket.Features.Get;
 using BookWorm.Basket.UnitTests.Fakers;
+using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chassis.Exceptions;
-using BookWorm.Chassis.Query;
 
 namespace BookWorm.Basket.UnitTests.Features.Get;
 

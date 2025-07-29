@@ -1,4 +1,8 @@
-﻿using BookWorm.Chassis.Mediator;
+﻿using BookWorm.Chassis.CQRS.Command;
+using BookWorm.Chassis.CQRS.Mediator;
+using BookWorm.Chassis.CQRS.Pipelines;
+using BookWorm.Chassis.CQRS.Query;
+using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using BookWorm.Chat.Infrastructure.Backplane;
 
 namespace BookWorm.Chat.Extensions;

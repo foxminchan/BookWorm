@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Ordering.Features.Orders.Delete;
+﻿using BookWorm.Chassis.CQRS.Command;
+
+namespace BookWorm.Ordering.Features.Orders.Delete;
 
 public sealed record DeleteOrderCommand(Guid Id) : ICommand;
 

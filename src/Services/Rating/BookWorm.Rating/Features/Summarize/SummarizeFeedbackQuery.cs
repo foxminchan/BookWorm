@@ -1,4 +1,5 @@
-﻿using BookWorm.Rating.Infrastructure.Summarizer;
+﻿using BookWorm.Chassis.CQRS.Query;
+using BookWorm.Rating.Infrastructure.Summarizer;
 
 namespace BookWorm.Rating.Features.Summarize;
 

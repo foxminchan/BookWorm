@@ -1,8 +1,9 @@
 ﻿using BookWorm.ArchTests.Abstractions;
 using BookWorm.ArchTests.TUnit;
-using BookWorm.Chassis.Command;
+using BookWorm.Chassis.CQRS.Command;
+using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chassis.Endpoints;
-using BookWorm.Chassis.Query;
+using BookWorm.Chassis.EventBus;
 using BookWorm.Chassis.Repository;
 using BookWorm.Contracts;
 using FluentValidation;

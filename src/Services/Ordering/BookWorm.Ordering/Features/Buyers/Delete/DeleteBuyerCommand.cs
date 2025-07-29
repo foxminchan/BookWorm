@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Ordering.Features.Buyers.Delete;
+﻿using BookWorm.Chassis.CQRS.Command;
+
+namespace BookWorm.Ordering.Features.Buyers.Delete;
 
 public sealed record DeleteBuyerCommand(Guid Id) : ICommand;
 

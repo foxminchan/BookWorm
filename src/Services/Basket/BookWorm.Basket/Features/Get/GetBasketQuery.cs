@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Basket.Features.Get;
+﻿using BookWorm.Chassis.CQRS.Query;
+
+namespace BookWorm.Basket.Features.Get;
 
 public sealed record GetBasketQuery : IQuery<CustomerBasketDto>;
 

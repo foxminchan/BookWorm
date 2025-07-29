@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Catalog.Features.Categories.Delete;
+﻿using BookWorm.Chassis.CQRS.Command;
+
+namespace BookWorm.Catalog.Features.Categories.Delete;
 
 public sealed record DeleteCategoryCommand(Guid Id) : ICommand;
 

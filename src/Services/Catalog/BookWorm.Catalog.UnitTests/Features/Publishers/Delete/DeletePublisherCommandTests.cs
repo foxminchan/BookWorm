@@ -1,7 +1,7 @@
 ﻿using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
 using BookWorm.Catalog.Features.Publishers.Delete;
 using BookWorm.Catalog.UnitTests.Fakers;
-using BookWorm.Chassis.Command;
+using BookWorm.Chassis.CQRS.Command;
 using BookWorm.Chassis.Exceptions;
 using MediatR;
 
