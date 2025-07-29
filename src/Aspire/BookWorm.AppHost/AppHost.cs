@@ -1,13 +1,30 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-builder.HidePlainHttpLink();
+if (builder.ExecutionContext.IsPublishMode)
+{
+    builder.ConfigureCors();
+    builder.AddAzureContainerAppEnvironment(Components.Azure.ContainerApp).ProvisionAsService();
+}
 
-var kcRealmName = builder.AddParameter("kc-realm", nameof(BookWorm).ToLowerInvariant(), true);
-var kcThemeName = builder.AddParameter("kc-theme", nameof(BookWorm).ToLowerInvariant(), true);
-var kcThemeDisplayName = builder.AddParameter("kc-theme-display-name", nameof(BookWorm), true);
-var pgUser = builder.AddParameter("pg-user", "postgres", true);
+var kcRealmName = builder
+    .AddParameter("kc-realm", nameof(BookWorm).ToLowerInvariant(), true)
+    .WithDescription("Keycloak realm name to use for the BookWorm application");
+
+var kcThemeName = builder
+    .AddParameter("kc-theme", nameof(BookWorm).ToLowerInvariant(), true)
+    .WithDescription("Keycloak theme name to use for the BookWorm application");
+
+var kcThemeDisplayName = builder
+    .AddParameter("kc-theme-display-name", nameof(BookWorm), true)
+    .WithDescription("Keycloak theme display name to use for the BookWorm application");
+
+var pgUser = builder
+    .AddParameter("pg-user", "postgres", true)
+    .WithDescription("The PostgreSQL user to use for the BookWorm application");
+
 var pgPassword = builder
     .AddParameter("pg-password", true)
+    .WithDescription("The password for the PostgreSQL user")
     .WithGeneratedDefault(
         new()
         {
@@ -31,6 +48,9 @@ var postgres = builder
     )
     .ProvisionAsService();
 
+pgUser.WithParentRelationship(postgres);
+pgPassword.WithParentRelationship(postgres);
+
 pgEndpoint ??= ReferenceExpression.Create($"{postgres.GetOutput("hostname")}");
 
 var redis = builder.AddAzureRedis(Components.Redis).RunAsLocalContainer().ProvisionAsService();
@@ -38,6 +58,7 @@ var redis = builder.AddAzureRedis(Components.Redis).RunAsLocalContainer().Provis
 var qdrant = builder
     .AddQdrant(Components.VectorDb)
     .WithDataVolume()
+    .WithImageTag("v1.15.1")
     .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent);
 
@@ -58,9 +79,7 @@ var signalR = builder
     .RunAsLocalContainer()
     .ProvisionAsService();
 
-var blobStorage = storage
-    .AddBlobs(Components.Azure.Storage.Blob)
-    .AddBlobContainer(Components.Azure.Storage.BlobContainer);
+var blobStorage = storage.AddBlobContainer(Components.Azure.Storage.BlobContainer);
 
 var chatDb = postgres.AddDatabase(Components.Database.Chat);
 var userDb = postgres.AddDatabase(Components.Database.User);
@@ -71,7 +90,7 @@ var financeDb = postgres.AddDatabase(Components.Database.Finance);
 var orderingDb = postgres.AddDatabase(Components.Database.Ordering);
 var notificationDb = postgres.AddDatabase(Components.Database.Notification);
 
-builder.AddOllama(configure =>
+await builder.AddOllama(configure =>
 {
     configure.AddModel(Components.Ollama.Embedding, "nomic-embed-text:latest");
     configure.AddModel(
@@ -88,6 +107,10 @@ var keycloak = builder
     .WithLifetime(ContainerLifetime.Persistent)
     .WithSampleRealmImport(kcRealmName, kcThemeDisplayName)
     .WithExternalDatabase(pgEndpoint, pgUser, pgPassword, userDb);
+
+kcRealmName.WithParentRelationship(keycloak);
+kcThemeName.WithParentRelationship(keycloak);
+kcThemeDisplayName.WithParentRelationship(keycloak);
 
 var catalogApi = builder
     .AddProject<Catalog>(Services.Catalog)
@@ -184,20 +207,13 @@ var financeApi = builder
     .WithIdP(keycloak, kcRealmName);
 
 var gateway = builder
-    .AddYarp(Services.Gateway)
-    .WithConfigFile("Container/proxy/yarp.json")
-    .WithReference(catalogApi)
-    .WaitFor(catalogApi)
-    .WithReference(chatApi)
-    .WaitFor(chatApi)
-    .WithReference(orderingApi)
-    .WaitFor(orderingApi)
-    .WithReference(ratingApi)
-    .WaitFor(ratingApi)
-    .WithReference(basketApi)
-    .WaitFor(basketApi)
-    .WithReference(keycloak)
-    .WithExternalHttpEndpoints();
+    .AddApiGatewayProxy()
+    .WithService(catalogApi, true)
+    .WithService(chatApi)
+    .WithService(orderingApi)
+    .WithService(basketApi, true)
+    .WithService(ratingApi)
+    .WithService(keycloak);
 
 builder
     .AddHealthChecksUI()
@@ -224,11 +240,6 @@ if (builder.ExecutionContext.IsRunMode)
         .WithOpenAPI(mcp);
 
     builder.AddK6(gateway);
-}
-else
-{
-    builder.ConfigureCors();
-    builder.AddAzureContainerAppEnvironment(Components.Azure.ContainerApp).ProvisionAsService();
 }
 
 builder.Build().Run();

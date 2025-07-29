@@ -1,6 +1,8 @@
 ﻿using Asp.Versioning.ApiExplorer;
+using BookWorm.ServiceDefaults.Kestrel;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.OpenApi;
+using Microsoft.Extensions.ServiceDiscovery;
 using Microsoft.OpenApi.Models;
 
 namespace BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
@@ -126,26 +128,46 @@ public static class OpenApiOptionsExtensions
         );
     }
 
-    private sealed class SecuritySchemeDefinitionsTransformer(IdentityOptions identityOptions)
-        : IOpenApiDocumentTransformer
+    private sealed class SecuritySchemeDefinitionsTransformer(
+        IdentityOptions identityOptions,
+        ServiceEndpointResolver resolver
+    ) : IOpenApiDocumentTransformer
     {
-        public Task TransformAsync(
+        public async Task TransformAsync(
             OpenApiDocument document,
             OpenApiDocumentTransformerContext context,
             CancellationToken cancellationToken
         )
         {
+            // Please refer: https://github.com/scalar/scalar/issues/6225
+            var baseUrl = $"{Protocol.Http}://{Components.KeyCloak}/realms/{identityOptions.Realm}";
+
+            var authorizationUrl = await resolver.ResolveServiceEndpointUrl(
+                $"{baseUrl}",
+                "/protocol/openid-connect/auth",
+                Protocol.Http,
+                cancellationToken
+            );
+
+            var tokenUrl = $"{baseUrl}/protocol/openid-connect/token";
+
             var securityScheme = new OpenApiSecurityScheme
             {
                 Type = SecuritySchemeType.OAuth2,
                 Description = "OAuth2 security scheme for the BookWorm API",
-                Flows = new() { AuthorizationCode = new() { Scopes = identityOptions.Scopes } },
+                Flows = new()
+                {
+                    AuthorizationCode = new()
+                    {
+                        Scopes = identityOptions.Scopes,
+                        AuthorizationUrl = new(authorizationUrl),
+                        TokenUrl = new(tokenUrl),
+                    },
+                },
             };
 
             document.Components ??= new();
             document.Components.SecuritySchemes.Add(OAuthDefaults.DisplayName, securityScheme);
-
-            return Task.CompletedTask;
         }
     }
 }
