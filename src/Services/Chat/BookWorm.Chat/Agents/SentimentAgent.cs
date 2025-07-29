@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using BookWorm.Chassis.RAG.Agent;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.Ollama;
@@ -73,7 +72,7 @@ public static class SentimentAgent
             Name = Name,
             Description = Description,
             Version = "1.0.0",
-            Provider = BookWormAgentProvider.Create(),
+            Provider = new() { Organization = nameof(BookWorm) },
             DefaultInputModes = ["text"],
             DefaultOutputModes = ["text"],
             Capabilities = capabilities,

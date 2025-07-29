@@ -140,6 +140,7 @@ public static partial class AzureExtensions
     )
     {
         builder
+            .WithDashboard()
             .WithAzdResourceNaming()
             .ConfigureInfrastructure(infra =>
             {

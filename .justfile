@@ -18,13 +18,13 @@ default: run
 help:
     echo Available recipes:
     echo " restore - Restore NuGet packages and tools"
+    echo " features - Enable features for Aspire"
     echo " build - Build the solution"
     echo " test - Run all tests"
     echo " format - Format C# code"
     echo " trust - Trust the development certificate"
     echo " hook - Setup pre-commit hooks"
     echo " clean - Clean build artifacts"
-    echo " gpu [value] - Configure GPU support for Ollama (1=enable, 0=disable, default=0)"
     echo " run - Run the application (default)"
     echo " update-eventcatalog - Update EventCatalog bun packages"
     echo " update-vuepress - Update VuePress bun packages"
@@ -38,9 +38,15 @@ restore:
     dotnet restore
     dotnet tool restore
 
+# Enable features for Aspire
+
+features: restore
+    dotnet aspire config set features.execCommandEnabled true
+    dotnet aspire config set features.deployCommandEnabled true
+
 # Build the solution
 
-build: restore
+build: features
     dotnet build {{ solution }}
 
 # Run tests
@@ -84,29 +90,6 @@ _hook-linux _hook-macos:
 
 run: restore trust hook
     dotnet aspire run
-
-# Enable/Disable GPU support for Ollama
-
-gpu value="":
-    echo "Configuring GPU support for Ollama..."
-    just _gpu-{{ os() }} "{{ value }}"
-
-# GPU support configuration (Windows)
-
-_gpu-windows value="":
-    powershell -Command "if ('{{ value }}' -eq '1') { [Environment]::SetEnvironmentVariable('OLLAMA_USE_GPU', '1', 'Process'); Write-Host 'GPU support enabled' } else { [Environment]::SetEnvironmentVariable('OLLAMA_USE_GPU', '0', 'Process'); Write-Host 'GPU support disabled' }"
-
-# GPU support configuration (Linux/macOS)
-
-_gpu-linux _gpu-macos value="":
-    #!/usr/bin/env bash
-    if [ "{{ value }}" = "1" ]; then
-        export OLLAMA_USE_GPU="1"
-        echo "GPU support enabled"
-    else
-        export OLLAMA_USE_GPU="0"
-        echo "GPU support disabled"
-    fi
 
 # Update EventCatalog bun packages
 
