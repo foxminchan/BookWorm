@@ -88,7 +88,6 @@ public static partial class AzureExtensions
             builder.RunAsContainer(config =>
                 config
                     .WithDataVolume()
-                    .WithClearCommand()
                     .WithRedisInsight()
                     .WithImagePullPolicy(ImagePullPolicy.Always)
                     .WithLifetime(ContainerLifetime.Persistent)

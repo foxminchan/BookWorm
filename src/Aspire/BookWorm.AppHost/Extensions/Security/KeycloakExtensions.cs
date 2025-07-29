@@ -34,7 +34,7 @@ public static class KeycloakExtensions
     )
     {
         builder
-            .WithRealmImport($"{BaseContainerPath}/realms", true)
+            .WithRealmImport($"{BaseContainerPath}/realms")
             .WithEnvironment(RealmName, realmName)
             .WithEnvironment(RealmDisplayName, displayName)
             // Ensure HSTS is not enabled in run mode to avoid browser caching issues when developing.
@@ -143,17 +143,14 @@ public static class KeycloakExtensions
                 // https://github.com/keycloak/keycloak/discussions/10236
                 // https://github.com/keycloak/keycloak/issues/13933
                 // https://github.com/quarkusio/quarkus/issues/33692
-                .WithEnvironment(QuarkusHttp2EnvVarName, "false");
+                .WithEnvironment(QuarkusHttp2EnvVarName, "false")
+                .WithUrlForEndpoint(
+                    Protocol.Http,
+                    url => url.DisplayLocation = UrlDisplayLocation.DetailsOnly
+                );
         }
 
-        return builder
-            .WithEnvironment(HttpEnabledEnvVarName, "true")
-            .WithEnvironment(ProxyHeadersEnvVarName, "xforwarded")
-            .WithEnvironment(HostNameStrictEnvVarName, "false")
-            .WithUrlForEndpoint(
-                Protocol.Http,
-                url => url.DisplayLocation = UrlDisplayLocation.DetailsOnly
-            );
+        return builder;
     }
 
     /// <summary>
@@ -178,20 +175,36 @@ public static class KeycloakExtensions
         var clientEnv = clientId.ToUpperInvariant();
 
         keycloak
+            .WithEnvironment(HttpEnabledEnvVarName, "true")
+            .WithEnvironment(ProxyHeadersEnvVarName, "xforwarded")
+            .WithEnvironment(HostNameStrictEnvVarName, "false")
             .WithEnvironment($"CLIENT_{clientEnv}_ID", clientId)
             .WithEnvironment($"CLIENT_{clientEnv}_NAME", clientId.ToClientName())
             .WithEnvironment($"CLIENT_{clientEnv}_SECRET", clientSecret)
-            .WithEnvironment(context =>
-            {
-                var endpoint = builder.GetEndpoint(applicationBuilder.GetLaunchProfileName());
+            .OnResourceEndpointsAllocated(
+                (resource, _, _) =>
+                {
+                    var resourceBuilder = builder.ApplicationBuilder.CreateResourceBuilder(
+                        resource
+                    );
 
-                context.EnvironmentVariables[$"CLIENT_{clientEnv}_URL"] = context
-                    .ExecutionContext
-                    .IsPublishMode
-                    ? endpoint
-                    : endpoint.Url;
-                context.EnvironmentVariables[$"CLIENT_{clientEnv}_URL_CONTAINERHOST"] = endpoint;
-            });
+                    resourceBuilder.WithEnvironment(context =>
+                    {
+                        var endpoint = builder.GetEndpoint(Protocol.Http);
+
+                        context.EnvironmentVariables[$"CLIENT_{clientEnv}_URL"] = context
+                            .ExecutionContext
+                            .IsPublishMode
+                            ? endpoint
+                            : endpoint.Url;
+
+                        context.EnvironmentVariables[$"CLIENT_{clientEnv}_URL_CONTAINERHOST"] =
+                            endpoint;
+                    });
+
+                    return Task.CompletedTask;
+                }
+            );
 
         // If the Keycloak resource is running in HTTPS container, please remove the WaitFor() call.
         // https://github.com/dotnet/aspire/issues/6890
@@ -202,57 +215,5 @@ public static class KeycloakExtensions
             .WithEnvironment("Identity__ClientId", clientId)
             .WithEnvironment("Identity__ClientSecret", clientSecret)
             .WithEnvironment($"Identity__Scopes__{clientId}", clientId.ToClientName("API"));
-    }
-
-    /// <summary>
-    ///     Builds the OpenID Connect authorization endpoint URL for the specified Keycloak realm.
-    ///     Uses localhost for user interaction to address Scalar documentation generation issues.
-    /// </summary>
-    /// <param name="builder">
-    ///     The <see cref="IResourceBuilder{KeycloakResource}" /> used to resolve the Keycloak endpoint.
-    /// </param>
-    /// <param name="realmName">
-    ///     The <see cref="IResourceBuilder{ParameterResource}" /> containing the realm name.
-    /// </param>
-    /// <param name="protocol">Specifies the protocol to use (e.g., "http" or "https").</param>
-    /// <returns>
-    ///     The authorization endpoint URL for the given realm.
-    /// </returns>
-    public static string GetAuthorizationEndpoint(
-        this IResourceBuilder<KeycloakResource> builder,
-        string protocol,
-        IResourceBuilder<ParameterResource> realmName
-    )
-    {
-        var keycloakUrl = builder.GetEndpoint(protocol).Url;
-
-        var realm = realmName.Resource.Value;
-
-        return $"{keycloakUrl}/realms/{realm}/protocol/openid-connect/auth";
-    }
-
-    /// <summary>
-    ///     Builds the OpenID Connect token endpoint URL for the specified Keycloak realm.
-    ///     Uses the Keycloak resource name for proxy configuration to address Scalar documentation generation issues.
-    /// </summary>
-    /// <param name="builder">
-    ///     The <see cref="IResourceBuilder{KeycloakResource}" /> used to resolve the Keycloak endpoint.
-    /// </param>
-    /// <param name="realmName">
-    ///     The <see cref="IResourceBuilder{ParameterResource}" /> containing the realm name.
-    /// </param>
-    /// <param name="protocol">Specifies the protocol to use (e.g., "http" or "https").</param>
-    /// <returns>
-    ///     The token endpoint URL for the given realm.
-    /// </returns>
-    public static string GetTokenEndpoint(
-        this IResourceBuilder<KeycloakResource> builder,
-        string protocol,
-        IResourceBuilder<ParameterResource> realmName
-    )
-    {
-        var realm = realmName.Resource.Value;
-
-        return $"{protocol}://{builder.Resource.Name}/realms/{realm}/protocol/openid-connect/token";
     }
 }

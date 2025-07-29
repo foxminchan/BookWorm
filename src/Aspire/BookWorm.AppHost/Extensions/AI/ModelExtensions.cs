@@ -7,7 +7,7 @@ public static class ModelExtensions
     /// </summary>
     /// <param name="builder">The distributed application builder to add the Ollama instance to.</param>
     /// <param name="configure">Optional action to further configure the Ollama resource.</param>
-    public static void AddOllama(
+    public static async Task AddOllama(
         this IDistributedApplicationBuilder builder,
         Action<IResourceBuilder<OllamaResource>>? configure = null
     )
@@ -18,9 +18,9 @@ public static class ModelExtensions
             .WithOpenWebUI()
             .WithImagePullPolicy(ImagePullPolicy.Always)
             .WithLifetime(ContainerLifetime.Persistent)
-            .PublishAsContainer();
+            .PublishAsAzureContainerApp((_, app) => app.Template.Scale.MinReplicas = 0);
 
-        if (IsUseGpu())
+        if (await ollama.IsUseGpu())
         {
             ollama.WithGPUSupport();
         }
@@ -49,14 +49,20 @@ public static class ModelExtensions
         return builder;
     }
 
-    private static bool IsUseGpu()
+    private static async Task<bool> IsUseGpu(this IResourceBuilder<OllamaResource> builder)
     {
         if (OperatingSystem.IsMacOS())
         {
             return false;
         }
 
-        var envVar = Environment.GetEnvironmentVariable("OLLAMA_USE_GPU");
+        var parameter = builder.ApplicationBuilder.AddParameterFromConfiguration(
+            $"{builder.Resource.Name}-use-gpu",
+            "UseGPU"
+        );
+
+        var envVar = await parameter.Resource.GetValueAsync(CancellationToken.None);
+
         return int.TryParse(envVar, out var useGpu) && useGpu == 1;
     }
 }

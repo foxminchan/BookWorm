@@ -38,14 +38,10 @@ public static class Components
         public const string ContainerApp = "aca";
         public static readonly string SignalR = nameof(SignalR).ToLowerInvariant();
 
-        public static readonly string ApplicationInsights = nameof(ApplicationInsights)
-            .ToLowerInvariant();
-
         public static class Storage
         {
             public static readonly string Resource = nameof(Storage).ToLowerInvariant();
             public static readonly string Blob = nameof(Blob).ToLowerInvariant();
-            public static readonly string Table = nameof(Table).ToLowerInvariant();
             public static readonly string BlobContainer = $"{Services.Catalog}-{Blob}";
         }
     }

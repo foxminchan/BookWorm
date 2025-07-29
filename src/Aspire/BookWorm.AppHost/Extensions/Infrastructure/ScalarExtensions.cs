@@ -5,11 +5,6 @@ namespace BookWorm.AppHost.Extensions.Infrastructure;
 
 public static class ScalarExtensions
 {
-    private static readonly Dictionary<
-        IDistributedApplicationBuilder,
-        (IResourceBuilder<KeycloakResource> Keycloak, IResourceBuilder<ParameterResource> RealmName)
-    > _cachedResources = [];
-
     /// <summary>
     ///     Adds a Scalar API reference to the distributed application builder with predefined theme and font settings.
     /// </summary>
@@ -48,14 +43,17 @@ public static class ScalarExtensions
     {
         var clientId = api.Resource.Name;
 
-        var secret = builder
+        var parameter = builder
             .ApplicationBuilder.Resources.OfType<ParameterResource>()
             .FirstOrDefault(r =>
                 string.Equals(r.Name, $"{clientId}-secret", StringComparison.OrdinalIgnoreCase)
-            )
-            ?.Value;
+            );
 
-        var (keycloak, realmName) = GetCachedResources(builder.ApplicationBuilder);
+        var clientSecret = parameter
+            ?.GetValueAsync(CancellationToken.None)
+            .Preserve()
+            .GetAwaiter()
+            .GetResult();
 
         return builder.WithApiReference(
             api,
@@ -68,16 +66,12 @@ public static class ScalarExtensions
                         flow =>
                         {
                             flow.WithPkce(Pkce.Sha256)
-                                .WithAuthorizationUrl(
-                                    keycloak.GetAuthorizationEndpoint(Protocol.Http, realmName)
-                                )
-                                .WithTokenUrl(keycloak.GetTokenEndpoint(Protocol.Http, realmName))
                                 .WithClientId(clientId)
                                 .AddBodyParameter("audience", "account");
 
-                            if (secret is not null)
+                            if (!string.IsNullOrWhiteSpace(clientSecret))
                             {
-                                flow.WithClientSecret(secret);
+                                flow.WithClientSecret(clientSecret);
                             }
 
                             flow.WithSelectedScopes(clientId);
@@ -85,39 +79,5 @@ public static class ScalarExtensions
                     );
             }
         );
-    }
-
-    private static (
-        IResourceBuilder<KeycloakResource> Keycloak,
-        IResourceBuilder<ParameterResource> RealmName
-    ) GetCachedResources(IDistributedApplicationBuilder builder)
-    {
-        if (_cachedResources.TryGetValue(builder, out var cached))
-        {
-            return cached;
-        }
-
-        var keycloak =
-            builder
-                .Resources.OfType<KeycloakResource>()
-                .Select(builder.CreateResourceBuilder)
-                .FirstOrDefault()
-            ?? throw new InvalidOperationException("Keycloak resource not found.");
-
-        var realmName =
-            builder
-                .Resources.OfType<ParameterResource>()
-                .FirstOrDefault(r =>
-                    string.Equals(r.Name, "kc-realm", StringComparison.OrdinalIgnoreCase)
-                )
-            ?? throw new InvalidOperationException(
-                "Keycloak realm parameter 'kc-realm' not found."
-            );
-
-        var realmNameBuilder = builder.CreateResourceBuilder(realmName);
-
-        var result = (keycloak, realmNameBuilder);
-        _cachedResources[builder] = result;
-        return result;
     }
 }

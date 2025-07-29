@@ -1,5 +1,4 @@
-﻿using BookWorm.Chassis.RAG;
-using BookWorm.Chassis.RAG.Agent;
+﻿using BookWorm.Chassis.RAG.Agent;
 using BookWorm.Rating.Plugins;
 using Microsoft.Extensions.ServiceDiscovery;
 using Microsoft.SemanticKernel;
@@ -105,7 +104,7 @@ public static class RatingAgent
             Name = Name,
             Description = Description,
             Version = "1.0.0",
-            Provider = BookWormAgentProvider.Create(),
+            Provider = new() { Organization = nameof(BookWorm) },
             DefaultInputModes = ["text"],
             DefaultOutputModes = ["text"],
             Capabilities = capabilities,

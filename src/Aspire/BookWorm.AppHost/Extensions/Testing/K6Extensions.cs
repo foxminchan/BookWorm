@@ -26,7 +26,7 @@ public static class K6Extensions
             .WithBindMount($"{BaseContainerPath}", "/scripts", true)
             .WithBindMount($"{BaseContainerPath}/dist", "/home/k6")
             .WithScript("/scripts/dist/main.js", vus)
-            .WithReference(entryPoint.Resource.GetEndpoint(builder.GetLaunchProfileName()))
+            .WithReference(entryPoint.Resource.GetEndpoint(Protocol.Http))
             .WithEnvironment(K6WebDashboard, "true")
             .WithEnvironment(K6WebDashboardExport, "dashboard-report.html")
             .WithHttpEndpoint(
@@ -35,7 +35,8 @@ public static class K6Extensions
             )
             .WithUrlForEndpoint(K6DashboardDefaults.Name, url => url.DisplayText = "K6 Dashboard")
             .WithK6OtlpEnvironment()
-            .WaitFor(entryPoint);
+            .WaitFor(entryPoint)
+            .WithExplicitStart();
     }
 
     private static class K6DashboardDefaults
