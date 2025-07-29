@@ -2,7 +2,7 @@
 using BookWorm.Catalog.Features.Publishers;
 using BookWorm.Catalog.Features.Publishers.List;
 using BookWorm.Catalog.UnitTests.Fakers;
-using BookWorm.Chassis.Query;
+using BookWorm.Chassis.CQRS.Query;
 
 namespace BookWorm.Catalog.UnitTests.Features.Publishers.List;
 

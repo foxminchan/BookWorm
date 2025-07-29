@@ -1,4 +1,5 @@
-﻿using BookWorm.Chat.Infrastructure.Backplane.Contracts;
+﻿using BookWorm.Chassis.CQRS.Command;
+using BookWorm.Chat.Infrastructure.Backplane.Contracts;
 
 namespace BookWorm.Chat.Features.Cancel;
 

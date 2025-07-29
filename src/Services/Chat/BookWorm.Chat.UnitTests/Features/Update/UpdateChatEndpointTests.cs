@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.Command;
+﻿using BookWorm.Chassis.CQRS.Command;
 using BookWorm.Chassis.Endpoints;
 using BookWorm.Chat.Features;
 using BookWorm.Chat.Features.Update;

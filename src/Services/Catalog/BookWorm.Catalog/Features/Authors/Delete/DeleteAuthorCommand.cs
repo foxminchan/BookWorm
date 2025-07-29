@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Catalog.Features.Authors.Delete;
+﻿using BookWorm.Chassis.CQRS.Command;
+
+namespace BookWorm.Catalog.Features.Authors.Delete;
 
 public sealed record DeleteAuthorCommand(Guid Id) : ICommand;
 

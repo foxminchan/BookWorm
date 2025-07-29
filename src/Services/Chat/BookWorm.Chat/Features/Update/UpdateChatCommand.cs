@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Chat.Features.Update;
+﻿using BookWorm.Chassis.CQRS.Command;
+
+namespace BookWorm.Chat.Features.Update;
 
 public sealed record UpdateChatCommand(Guid Id, Prompt Prompt) : ICommand;
 

@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Catalog.Features.Authors.Create;
+﻿using BookWorm.Chassis.CQRS.Command;
+
+namespace BookWorm.Catalog.Features.Authors.Create;
 
 public sealed record CreateAuthorCommand(string Name) : ICommand<Guid>;
 

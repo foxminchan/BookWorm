@@ -1,4 +1,5 @@
-﻿using BookWorm.Chat.Domain.AggregatesModel;
+﻿using BookWorm.Chassis.CQRS.Command;
+using BookWorm.Chat.Domain.AggregatesModel;
 
 namespace BookWorm.Chat.Features.Delete;
 

@@ -1,5 +1,6 @@
 ﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
-using BookWorm.Chassis.Search;
+using BookWorm.Chassis.CQRS.Query;
+using BookWorm.Chassis.RAG.Search;
 using BookWorm.Constants.Core;
 using BookWorm.SharedKernel.Results;
 

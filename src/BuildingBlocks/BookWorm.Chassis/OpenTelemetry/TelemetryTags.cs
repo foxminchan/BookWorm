@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.ActivityScope;
+﻿using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 
 namespace BookWorm.Chassis.OpenTelemetry;
 

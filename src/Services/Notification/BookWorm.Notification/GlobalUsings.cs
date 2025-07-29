@@ -2,7 +2,6 @@
 global using System.Diagnostics.CodeAnalysis;
 global using System.Net;
 global using System.Text.Json;
-global using BookWorm.Chassis.ActivityScope;
 global using BookWorm.Chassis.Converters;
 global using BookWorm.Chassis.EventBus;
 global using BookWorm.Chassis.Exceptions;

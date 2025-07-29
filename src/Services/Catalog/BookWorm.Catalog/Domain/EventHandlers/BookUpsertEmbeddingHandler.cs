@@ -1,6 +1,6 @@
 ﻿using BookWorm.Catalog.Domain.Events;
 using BookWorm.Catalog.Extensions;
-using BookWorm.Chassis.Ingestion;
+using BookWorm.Chassis.RAG.Ingestion;
 
 namespace BookWorm.Catalog.Domain.EventHandlers;
 

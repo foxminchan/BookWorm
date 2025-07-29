@@ -2,15 +2,10 @@
 global using System.Runtime.CompilerServices;
 global using System.Security.Claims;
 global using System.Text.Json;
-global using BookWorm.Chassis.ActivityScope;
-global using BookWorm.Chassis.Command;
 global using BookWorm.Chassis.Endpoints;
 global using BookWorm.Chassis.Exceptions;
 global using BookWorm.Chassis.Guards;
-global using BookWorm.Chassis.Pipelines;
-global using BookWorm.Chassis.Query;
 global using BookWorm.Chassis.Repository;
-global using BookWorm.Chassis.Versioning;
 global using BookWorm.Chat.Infrastructure;
 global using BookWorm.Chat.Infrastructure.ChatStreaming;
 global using BookWorm.Constants.Aspire;

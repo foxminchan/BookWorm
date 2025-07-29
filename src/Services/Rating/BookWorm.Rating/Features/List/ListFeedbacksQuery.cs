@@ -1,4 +1,5 @@
-﻿using BookWorm.Constants.Core;
+﻿using BookWorm.Chassis.CQRS.Query;
+using BookWorm.Constants.Core;
 using BookWorm.Rating.Domain.FeedbackAggregator.Specifications;
 using BookWorm.SharedKernel.Results;
 

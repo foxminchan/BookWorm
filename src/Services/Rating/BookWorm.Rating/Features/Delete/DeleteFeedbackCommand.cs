@@ -1,4 +1,5 @@
-﻿using BookWorm.Chassis.Guards;
+﻿using BookWorm.Chassis.CQRS.Command;
+using BookWorm.Chassis.Guards;
 
 namespace BookWorm.Rating.Features.Delete;
 

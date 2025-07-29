@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Rating.Features.Create;
+﻿using BookWorm.Chassis.CQRS.Command;
+
+namespace BookWorm.Rating.Features.Create;
 
 public sealed record CreateFeedbackCommand(
     Guid BookId,

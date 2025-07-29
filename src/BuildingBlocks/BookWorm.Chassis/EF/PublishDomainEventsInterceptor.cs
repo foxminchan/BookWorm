@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.Mediator;
+﻿using BookWorm.Chassis.CQRS.Mediator;
 using MediatR;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 

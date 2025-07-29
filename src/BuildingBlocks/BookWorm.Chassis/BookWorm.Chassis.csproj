@@ -32,4 +32,7 @@
     <ProjectReference Include="..\BookWorm.Constants\BookWorm.Constants.csproj" />
     <ProjectReference Include="..\BookWorm.SharedKernel\BookWorm.SharedKernel.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="CQRS\" />
+  </ItemGroup>
 </Project>

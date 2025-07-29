@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.Command;
+﻿using BookWorm.Chassis.CQRS.Command;
 using BookWorm.Chat.Features;
 using BookWorm.Chat.Features.Update;
 using BookWorm.Chat.Infrastructure.ChatStreaming;

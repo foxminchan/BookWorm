@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.Command;
+﻿using BookWorm.Chassis.CQRS.Command;
 using BookWorm.Chassis.Exceptions;
 using BookWorm.Chassis.Repository;
 using BookWorm.Chat.Domain.AggregatesModel;

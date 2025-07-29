@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Basket.Features.Delete;
+﻿using BookWorm.Chassis.CQRS.Command;
+
+namespace BookWorm.Basket.Features.Delete;
 
 public sealed record DeleteBasketCommand : ICommand;
 

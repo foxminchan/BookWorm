@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Catalog.Features.Categories.Create;
+﻿using BookWorm.Chassis.CQRS.Command;
+
+namespace BookWorm.Catalog.Features.Categories.Create;
 
 public sealed record CreateCategoryCommand(string Name) : ICommand<Guid>;
 

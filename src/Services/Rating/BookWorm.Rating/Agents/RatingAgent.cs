@@ -1,4 +1,5 @@
-﻿using BookWorm.Chassis.AI;
+﻿using BookWorm.Chassis.RAG;
+using BookWorm.Chassis.RAG.Agent;
 using BookWorm.Rating.Plugins;
 using Microsoft.Extensions.ServiceDiscovery;
 using Microsoft.SemanticKernel;

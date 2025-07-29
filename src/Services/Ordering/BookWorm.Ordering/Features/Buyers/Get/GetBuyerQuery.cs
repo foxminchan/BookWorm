@@ -1,4 +1,5 @@
-﻿using BookWorm.Ordering.Infrastructure.Helpers;
+﻿using BookWorm.Chassis.CQRS.Query;
+using BookWorm.Ordering.Infrastructure.Helpers;
 
 namespace BookWorm.Ordering.Features.Buyers.Get;
 

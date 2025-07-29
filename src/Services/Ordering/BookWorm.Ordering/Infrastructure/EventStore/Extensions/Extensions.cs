@@ -1,4 +1,5 @@
-﻿using BookWorm.Ordering.Infrastructure.EventStore.Configs;
+﻿using BookWorm.Chassis.OpenTelemetry.ActivityScope;
+using BookWorm.Ordering.Infrastructure.EventStore.Configs;
 using BookWorm.Ordering.Infrastructure.EventStore.Diagnostic;
 using BookWorm.Ordering.Infrastructure.EventStore.Subscriptions;
 using JasperFx.CodeGeneration;

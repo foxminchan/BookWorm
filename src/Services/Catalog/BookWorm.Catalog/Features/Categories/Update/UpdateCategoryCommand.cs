@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Catalog.Features.Categories.Update;
+﻿using BookWorm.Chassis.CQRS.Command;
+
+namespace BookWorm.Catalog.Features.Categories.Update;
 
 public sealed record UpdateCategoryCommand(Guid Id, string Name) : ICommand;
 

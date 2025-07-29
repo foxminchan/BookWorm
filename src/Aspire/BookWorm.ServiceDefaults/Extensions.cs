@@ -1,7 +1,7 @@
 using System.Diagnostics;
-using BookWorm.Chassis.ActivityScope;
 using BookWorm.Chassis.Logging;
 using BookWorm.Chassis.OpenTelemetry;
+using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using BookWorm.ServiceDefaults.ApiSpecification;
 using HealthChecks.UI.Client;
 using Microsoft.Extensions.Logging;

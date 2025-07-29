@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Catalog.Features.Authors.Update;
+﻿using BookWorm.Chassis.CQRS.Command;
+
+namespace BookWorm.Catalog.Features.Authors.Update;
 
 public sealed record UpdateAuthorCommand(Guid Id, string Name) : ICommand;
 

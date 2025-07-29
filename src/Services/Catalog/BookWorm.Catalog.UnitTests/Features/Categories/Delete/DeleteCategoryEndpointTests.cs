@@ -1,5 +1,5 @@
 ﻿using BookWorm.Catalog.Features.Categories.Delete;
-using BookWorm.Chassis.Command;
+using BookWorm.Chassis.CQRS.Command;
 using BookWorm.Chassis.Endpoints;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;

@@ -1,4 +1,5 @@
-﻿using BookWorm.Chat.Domain.AggregatesModel;
+﻿using BookWorm.Chassis.CQRS.Command;
+using BookWorm.Chat.Domain.AggregatesModel;
 using BookWorm.Chat.Infrastructure.Helpers;
 
 namespace BookWorm.Chat.Features.Create;

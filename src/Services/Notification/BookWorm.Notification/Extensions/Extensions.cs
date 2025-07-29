@@ -1,4 +1,5 @@
 ﻿using BookWorm.Chassis.EF;
+using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using BookWorm.Notification.Infrastructure;
 using BookWorm.Notification.Infrastructure.Senders.MailKit;
 using BookWorm.Notification.Infrastructure.Senders.Outbox;

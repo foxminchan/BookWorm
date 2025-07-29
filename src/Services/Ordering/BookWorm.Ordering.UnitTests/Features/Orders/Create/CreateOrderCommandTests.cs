@@ -1,5 +1,5 @@
 ﻿using System.Security.Claims;
-using BookWorm.Chassis.Command;
+using BookWorm.Chassis.CQRS.Command;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Features.Orders.Create;
 using BookWorm.Ordering.Infrastructure.Helpers;

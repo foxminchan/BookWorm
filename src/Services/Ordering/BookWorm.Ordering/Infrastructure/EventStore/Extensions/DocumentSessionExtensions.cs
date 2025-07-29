@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using BookWorm.Contracts;
 using BookWorm.Ordering.Infrastructure.EventStore.Diagnostic;
 

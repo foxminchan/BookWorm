@@ -1,6 +1,6 @@
 ﻿using BookWorm.SharedKernel.Helpers;
 
-namespace BookWorm.Contracts;
+namespace BookWorm.Chassis.EventBus;
 
 public abstract record IntegrationEvent
 {

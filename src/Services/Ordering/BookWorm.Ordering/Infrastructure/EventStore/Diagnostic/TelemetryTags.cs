@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Ordering.Infrastructure.EventStore.Diagnostic;
+﻿using BookWorm.Chassis.OpenTelemetry.ActivityScope;
+
+namespace BookWorm.Ordering.Infrastructure.EventStore.Diagnostic;
 
 public static class TelemetryTags
 {
