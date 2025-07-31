@@ -1,9 +1,9 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using Microsoft.Extensions.ServiceDiscovery;
+using A2A;
+using A2A.AspNetCore;
+using BookWorm.Chassis.RAG.A2A;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
-using Microsoft.SemanticKernel.Agents.A2A;
-using SharpA2A.AspNetCore;
 
 namespace BookWorm.Chat.Agents;
 
@@ -14,17 +14,14 @@ internal static class Extensions
     {
         var services = builder.Services;
 
+        services.AddHttpClient();
+
         services.AddKeyedSingleton(
             nameof(BookAgent),
             (sp, _) =>
             {
                 var kernel = sp.GetRequiredService<Kernel>();
-                var mcpClient = sp.GetRequiredService<IMcpClient>();
-                var resolver = sp.GetRequiredService<ServiceEndpointResolver>();
-                return BookAgent
-                    .CreateAgentAsync(kernel, mcpClient, resolver)
-                    .GetAwaiter()
-                    .GetResult();
+                return BookAgent.CreateAgentAsync(kernel).GetAwaiter().GetResult();
             }
         );
 
@@ -54,6 +51,14 @@ internal static class Extensions
                 return SentimentAgent.CreateAgent(kernel);
             }
         );
+
+        services
+            .AddOpenTelemetry()
+            .WithTracing(tracing =>
+                tracing
+                    .AddSource(TaskManager.ActivitySource.Name)
+                    .AddSource(A2AJsonRpcProcessor.ActivitySource.Name)
+            );
     }
 
     public static void MapHostSummarizeAgent(this WebApplication app)
@@ -64,23 +69,8 @@ internal static class Extensions
 
         var hostAgent = new A2AHostAgent(agent, SummarizeAgent.GetAgentCard());
 
-        app.MapA2A(hostAgent.TaskManager!, "/agents/summarize").WithTags(nameof(SummarizeAgent));
+        app.MapA2A(hostAgent.TaskManager!, "/").WithTags(nameof(SummarizeAgent));
 
-        app.MapHttpA2A(hostAgent.TaskManager!, "/agents/summarize")
-            .WithTags(nameof(SummarizeAgent));
-    }
-
-    public static void MapHostSentimentAgent(this WebApplication app)
-    {
-        var agent = app.Services.GetRequiredKeyedService<ChatCompletionAgent>(
-            nameof(SentimentAgent)
-        );
-
-        var hostAgent = new A2AHostAgent(agent, SentimentAgent.GetAgentCard());
-
-        app.MapA2A(hostAgent.TaskManager!, "/agents/sentiment").WithTags(nameof(SentimentAgent));
-
-        app.MapHttpA2A(hostAgent.TaskManager!, "/agents/sentiment")
-            .WithTags(nameof(SentimentAgent));
+        app.MapHttpA2A(hostAgent.TaskManager!, "/").WithTags(nameof(SummarizeAgent));
     }
 }

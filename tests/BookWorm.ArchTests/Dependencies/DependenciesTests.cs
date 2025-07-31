@@ -5,7 +5,6 @@ using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chassis.Endpoints;
 using BookWorm.Chassis.EventBus;
 using BookWorm.Chassis.Repository;
-using BookWorm.Contracts;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;

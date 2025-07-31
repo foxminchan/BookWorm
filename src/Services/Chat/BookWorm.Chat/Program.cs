@@ -35,8 +35,6 @@ app.MapEndpoints(apiVersionSet, "chats");
 
 app.MapHostSummarizeAgent();
 
-app.MapHostSentimentAgent();
-
 app.MapDefaultEndpoints();
 
 app.UseDefaultOpenApi();

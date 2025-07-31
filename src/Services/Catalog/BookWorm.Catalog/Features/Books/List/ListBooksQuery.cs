@@ -57,7 +57,7 @@ public sealed class ListBooksHandler(
                 request.Search,
                 [nameof(Book), request.Search],
                 request.PageSize,
-                cancellationToken: cancellationToken
+                cancellationToken
             );
 
             ids = [.. response.Select(x => x.Id)];
