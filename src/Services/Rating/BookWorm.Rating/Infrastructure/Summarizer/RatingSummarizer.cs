@@ -14,19 +14,20 @@ public sealed class RatingSummarizer(
     {
         ChatHistoryAgentThread agentThread = new();
 
-        var result = await agent
-            .InvokeAsync(
-                $"Summarize the following content: {content}",
-                agentThread,
-                cancellationToken: cancellationToken
-            )
-            .FirstOrDefaultAsync(cancellationToken);
+        var agentResponse = agent.InvokeAsync(
+            $"Summarize the following content: {content}",
+            agentThread,
+            cancellationToken: cancellationToken
+        );
 
-        if (result is null || string.IsNullOrWhiteSpace(result.Message.Content))
+        await foreach (var item in agentResponse.ConfigureAwait(false))
         {
-            return null;
+            if (!string.IsNullOrWhiteSpace(item.Message.Content))
+            {
+                return item.Message.Content;
+            }
         }
 
-        return result.Message.Content;
+        return null;
     }
 }

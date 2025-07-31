@@ -9,15 +9,15 @@ namespace BookWorm.Rating.UnitTests.Plugins;
 
 public sealed class ReviewPluginTests
 {
-    private readonly Mock<ISender> _senderMock;
-    private readonly ReviewPlugin _reviewPlugin;
-    private readonly Guid _validBookId;
-
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     };
+
+    private readonly ReviewPlugin _reviewPlugin;
+    private readonly Mock<ISender> _senderMock;
+    private readonly Guid _validBookId;
 
     public ReviewPluginTests()
     {

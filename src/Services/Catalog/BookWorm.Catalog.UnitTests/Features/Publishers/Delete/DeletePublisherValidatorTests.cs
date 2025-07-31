@@ -21,7 +21,7 @@ public sealed class DeletePublisherValidatorTests
     public async Task GivenValidCommandWithNoBooks_WhenValidating_ThenShouldBeValid()
     {
         // Arrange
-        var publisherId = Guid.NewGuid();
+        var publisherId = Guid.CreateVersion7();
         var command = new DeletePublisherCommand(publisherId);
 
         _mockRepository
@@ -40,7 +40,7 @@ public sealed class DeletePublisherValidatorTests
     public async Task GivenValidCommandWithExistingBooks_WhenValidating_ThenShouldBeInvalid()
     {
         // Arrange
-        var publisherId = Guid.NewGuid();
+        var publisherId = Guid.CreateVersion7();
         var command = new DeletePublisherCommand(publisherId);
         var bookFaker = new BookFaker();
         List<Book> existingBooks = [bookFaker.Generate(1)[0]];
@@ -83,7 +83,7 @@ public sealed class DeletePublisherValidatorTests
     public async Task GivenRepositoryThrowsException_WhenValidating_ThenShouldPropagateException()
     {
         // Arrange
-        var publisherId = Guid.NewGuid();
+        var publisherId = Guid.CreateVersion7();
         var command = new DeletePublisherCommand(publisherId);
         var expectedException = new InvalidOperationException("Database error");
 
@@ -103,7 +103,7 @@ public sealed class DeletePublisherValidatorTests
     public async Task GivenCancellationToken_WhenValidating_ThenShouldPassTokenToRepository()
     {
         // Arrange
-        var publisherId = Guid.NewGuid();
+        var publisherId = Guid.CreateVersion7();
         var command = new DeletePublisherCommand(publisherId);
         var cancellationToken = new CancellationToken(true);
 
@@ -122,7 +122,7 @@ public sealed class DeletePublisherValidatorTests
     public async Task GivenPublisherIdWithNoBooks_WhenValidatingDirectly_ThenShouldBeValid()
     {
         // Arrange
-        var publisherId = Guid.NewGuid();
+        var publisherId = Guid.CreateVersion7();
 
         _mockRepository
             .Setup(x => x.ListAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
@@ -140,7 +140,7 @@ public sealed class DeletePublisherValidatorTests
     public async Task GivenPublisherIdWithExistingBooks_WhenValidatingDirectly_ThenShouldBeInvalid()
     {
         // Arrange
-        var publisherId = Guid.NewGuid();
+        var publisherId = Guid.CreateVersion7();
         var bookFaker = new BookFaker();
         var existingBooks = bookFaker.Generate(2);
 
@@ -181,7 +181,7 @@ public sealed class DeletePublisherValidatorTests
     public async Task GivenRepositoryReturnsNull_WhenValidatingDirectly_ThenShouldHandleGracefully()
     {
         // Arrange
-        var publisherId = Guid.NewGuid();
+        var publisherId = Guid.CreateVersion7();
 
         _mockRepository
             .Setup(x => x.ListAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
@@ -197,8 +197,8 @@ public sealed class DeletePublisherValidatorTests
     public async Task GivenMultipleValidationCalls_WhenValidatingDirectly_ThenShouldCallRepositoryForEach()
     {
         // Arrange
-        var publisherId1 = Guid.NewGuid();
-        var publisherId2 = Guid.NewGuid();
+        var publisherId1 = Guid.CreateVersion7();
+        var publisherId2 = Guid.CreateVersion7();
 
         _mockRepository
             .Setup(x => x.ListAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
@@ -219,7 +219,7 @@ public sealed class DeletePublisherValidatorTests
     public async Task GivenRepositoryTimeout_WhenValidatingDirectly_ThenShouldRespectCancellation()
     {
         // Arrange
-        var publisherId = Guid.NewGuid();
+        var publisherId = Guid.CreateVersion7();
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
 
         _mockRepository

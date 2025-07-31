@@ -13,8 +13,8 @@ public sealed class DeleteBasketFailedConsumerTests
     private readonly Guid _basketId;
     private readonly string _email;
     private readonly Guid _orderId;
-    private readonly decimal _totalMoney;
     private readonly Mock<IOrderRepository> _repositoryMock;
+    private readonly decimal _totalMoney;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
 
     public DeleteBasketFailedConsumerTests()

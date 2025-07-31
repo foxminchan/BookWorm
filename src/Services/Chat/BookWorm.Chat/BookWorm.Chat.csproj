@@ -8,9 +8,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
   </ItemGroup>
   <ItemGroup Label="AI">
-    <PackageReference Include="SharpA2A.AspNetCore" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
-    <PackageReference Include="Microsoft.SemanticKernel.Agents.Core" />
     <PackageReference Include="Microsoft.SemanticKernel.Agents.Orchestration" />
     <PackageReference Include="Microsoft.SemanticKernel.Agents.Runtime.InProcess" />
   </ItemGroup>

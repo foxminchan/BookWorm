@@ -1,10 +1,10 @@
-﻿using BookWorm.Chassis.RAG.Agent;
+﻿using A2A;
+using BookWorm.Chassis.RAG.A2A;
 using BookWorm.Rating.Plugins;
 using Microsoft.Extensions.ServiceDiscovery;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.Ollama;
-using SharpA2A.Core;
 
 namespace BookWorm.Rating.Agents;
 
@@ -44,17 +44,21 @@ public static class RatingAgent
         - Handle edge cases like products with very few but high ratings
         """;
 
-    public static async Task<ChatCompletionAgent> CreateAgentAsync(
-        Kernel kernel,
-        ServiceEndpointResolver resolver
-    )
+    public static async Task<ChatCompletionAgent> CreateAgentAsync(Kernel kernel)
     {
         var agentKernel = kernel.Clone();
 
-        var baseUri = $"{Protocols.HttpOrHttps}://{Services.Chatting}/agents";
+        var resolver = kernel.Services.GetRequiredService<ServiceEndpointResolver>();
+        var httpClient = kernel.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
 
-        var sentimentPlugin = await resolver.ConnectRemoteAgent(
-            [$"{baseUri}/summarize", $"{baseUri}/sentiment"]
+        var resolvedUrl = await resolver.ResolveServiceEndpointUrl(
+            $"{Protocols.HttpOrHttps}://{Services.Chatting}"
+        );
+        var agent = await A2AClientFactory.CreateAgentAsync(resolvedUrl, httpClient);
+
+        var sentimentPlugin = KernelPluginFactory.CreateFromFunctions(
+            "AgentPlugin",
+            [AgentKernelFunctionFactory.CreateFromAgent(agent)]
         );
 
         var reviewPlugin = new ReviewPlugin(kernel.Services.GetRequiredService<ISender>());
@@ -110,26 +114,5 @@ public static class RatingAgent
             Capabilities = capabilities,
             Skills = [rating],
         };
-    }
-
-    private static async Task<KernelPlugin> ConnectRemoteAgent(
-        this ServiceEndpointResolver resolver,
-        string[] agentUris
-    )
-    {
-        List<string> endpointUrls = [];
-
-        endpointUrls.AddRange(
-            await Task.WhenAll(
-                agentUris.Select(uri => resolver.ResolveServiceEndpointUrl(uri, "/"))
-            )
-        );
-
-        var agents = await Task.WhenAll(endpointUrls.Select(uri => uri.CreateAgentAsync()));
-        var agentFunctions = agents.Select(agent =>
-            AgentKernelFunctionFactory.CreateFromAgent(agent)
-        );
-
-        return KernelPluginFactory.CreateFromFunctions("AgentPlugin", agentFunctions);
     }
 }

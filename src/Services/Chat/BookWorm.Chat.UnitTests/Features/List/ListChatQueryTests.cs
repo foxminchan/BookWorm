@@ -17,8 +17,8 @@ public sealed class ListChatHandlerTests
     public async Task GivenNonAdminUser_WhenHandlingListChat_ThenShouldOverrideUserIdWithCurrentUser()
     {
         // Arrange
-        var currentUserId = Guid.NewGuid();
-        var providedUserId = Guid.NewGuid();
+        var currentUserId = Guid.CreateVersion7();
+        var providedUserId = Guid.CreateVersion7();
         var claimsPrincipal = CreateClaimsPrincipal(
             [Authorization.Roles.User],
             currentUserId.ToString()
@@ -54,8 +54,8 @@ public sealed class ListChatHandlerTests
     public async Task GivenAdminUser_WhenHandlingListChatWithUserId_ThenShouldUseProvidedUserId()
     {
         // Arrange
-        var currentUserId = Guid.NewGuid();
-        var providedUserId = Guid.NewGuid();
+        var currentUserId = Guid.CreateVersion7();
+        var providedUserId = Guid.CreateVersion7();
         var claimsPrincipal = CreateClaimsPrincipal(
             [Authorization.Roles.Admin],
             currentUserId.ToString()
@@ -91,7 +91,7 @@ public sealed class ListChatHandlerTests
     public async Task GivenAdminUser_WhenHandlingListChatWithoutUserId_ThenShouldUseNullUserId()
     {
         // Arrange
-        var currentUserId = Guid.NewGuid();
+        var currentUserId = Guid.CreateVersion7();
         var claimsPrincipal = CreateClaimsPrincipal(
             [Authorization.Roles.Admin],
             currentUserId.ToString()
@@ -127,7 +127,7 @@ public sealed class ListChatHandlerTests
     public async Task GivenQueryWithName_WhenHandlingListChat_ThenShouldFilterByName()
     {
         // Arrange
-        var currentUserId = Guid.NewGuid();
+        var currentUserId = Guid.CreateVersion7();
         const string conversationName = "Test Conversation";
         var claimsPrincipal = CreateClaimsPrincipal(
             [Authorization.Roles.Admin],
@@ -164,7 +164,7 @@ public sealed class ListChatHandlerTests
     public async Task GivenQueryWithIncludeMessages_WhenHandlingListChat_ThenShouldIncludeMessages()
     {
         // Arrange
-        var currentUserId = Guid.NewGuid();
+        var currentUserId = Guid.CreateVersion7();
         var claimsPrincipal = CreateClaimsPrincipal(
             [Authorization.Roles.Admin],
             currentUserId.ToString()
@@ -200,7 +200,7 @@ public sealed class ListChatHandlerTests
     public async Task GivenValidQuery_WhenHandlingListChat_ThenShouldReturnMappedDtos()
     {
         // Arrange
-        var currentUserId = Guid.NewGuid();
+        var currentUserId = Guid.CreateVersion7();
         var claimsPrincipal = CreateClaimsPrincipal(
             [Authorization.Roles.Admin],
             currentUserId.ToString()
@@ -241,9 +241,9 @@ public sealed class ListChatHandlerTests
     public async Task GivenComplexQuery_WhenHandlingListChat_ThenShouldApplyAllFilters()
     {
         // Arrange
-        var currentUserId = Guid.NewGuid();
+        var currentUserId = Guid.CreateVersion7();
         const string conversationName = "Complex Test";
-        var targetUserId = Guid.NewGuid();
+        var targetUserId = Guid.CreateVersion7();
 
         var claimsPrincipal = CreateClaimsPrincipal(
             [Authorization.Roles.Admin],
@@ -280,7 +280,7 @@ public sealed class ListChatHandlerTests
     public async Task GivenEmptyRepository_WhenHandlingListChat_ThenShouldReturnEmptyList()
     {
         // Arrange
-        var currentUserId = Guid.NewGuid();
+        var currentUserId = Guid.CreateVersion7();
         var claimsPrincipal = CreateClaimsPrincipal(
             [Authorization.Roles.Admin],
             currentUserId.ToString()

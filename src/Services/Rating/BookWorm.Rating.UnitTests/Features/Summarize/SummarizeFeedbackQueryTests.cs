@@ -7,8 +7,8 @@ namespace BookWorm.Rating.UnitTests.Features.Summarize;
 
 public sealed class SummarizeFeedbackQueryTests
 {
-    private readonly Mock<ISummarizer> _summarizerMock = new();
     private readonly SummarizeFeedbackHandler _handler;
+    private readonly Mock<ISummarizer> _summarizerMock = new();
     private readonly Guid _validBookId = Guid.CreateVersion7();
 
     public SummarizeFeedbackQueryTests()

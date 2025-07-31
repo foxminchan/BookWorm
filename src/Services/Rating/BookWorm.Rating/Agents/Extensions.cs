@@ -1,9 +1,9 @@
-﻿using BookWorm.Chassis.RAG;
-using Microsoft.Extensions.ServiceDiscovery;
+﻿using A2A;
+using A2A.AspNetCore;
+using BookWorm.Chassis.RAG;
+using BookWorm.Chassis.RAG.A2A;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
-using Microsoft.SemanticKernel.Agents.A2A;
-using SharpA2A.AspNetCore;
 
 namespace BookWorm.Rating.Agents;
 
@@ -15,6 +15,7 @@ public static class Extensions
         var services = builder.Services;
 
         services.AddKernel();
+        services.AddHttpClient();
         builder.AddSkTelemetry();
         builder.AddChatCompletion();
         builder.AddEmbeddingGenerator();
@@ -24,10 +25,17 @@ public static class Extensions
             (sp, _) =>
             {
                 var kernel = sp.GetRequiredService<Kernel>();
-                var resolver = sp.GetRequiredService<ServiceEndpointResolver>();
-                return RatingAgent.CreateAgentAsync(kernel, resolver).GetAwaiter().GetResult();
+                return RatingAgent.CreateAgentAsync(kernel).GetAwaiter().GetResult();
             }
         );
+
+        services
+            .AddOpenTelemetry()
+            .WithTracing(tracing =>
+                tracing
+                    .AddSource(TaskManager.ActivitySource.Name)
+                    .AddSource(A2AJsonRpcProcessor.ActivitySource.Name)
+            );
     }
 
     public static void MapHostRatingAgent(this WebApplication app)
@@ -36,8 +44,8 @@ public static class Extensions
 
         var hostAgent = new A2AHostAgent(agent, RatingAgent.GetAgentCard());
 
-        app.MapA2A(hostAgent.TaskManager!, "/agents/rating").WithTags(nameof(RatingAgent));
+        app.MapA2A(hostAgent.TaskManager!, "/").WithTags(nameof(RatingAgent));
 
-        app.MapHttpA2A(hostAgent.TaskManager!, "/agents/rating").WithTags(nameof(RatingAgent));
+        app.MapHttpA2A(hostAgent.TaskManager!, "/").WithTags(nameof(RatingAgent));
     }
 }
