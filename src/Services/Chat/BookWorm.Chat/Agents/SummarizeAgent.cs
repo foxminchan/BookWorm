@@ -1,8 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
+using A2A;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.Ollama;
-using SharpA2A.Core;
 
 namespace BookWorm.Chat.Agents;
 

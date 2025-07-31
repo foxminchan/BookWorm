@@ -1,5 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using BookWorm.Chassis.RAG.Agent;
+using BookWorm.Chassis.RAG.A2A;
 using Microsoft.Extensions.ServiceDiscovery;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
@@ -40,26 +40,30 @@ public static class BookAgent
         Whether users are searching for specific books or looking for recommendations, help them discover their next great read!
         """;
 
-    public static async Task<ChatCompletionAgent> CreateAgentAsync(
-        Kernel kernel,
-        IMcpClient mcpClient,
-        ServiceEndpointResolver resolver
-    )
+    public static async Task<ChatCompletionAgent> CreateAgentAsync(Kernel kernel)
     {
         var agentKernel = kernel.Clone();
 
-        var toolsTask = mcpClient.ListToolsAsync().AsTask();
-        var ratingAgentTask = resolver.ConnectRemoteAgent(
-            $"{Protocols.HttpOrHttps}://{Services.Rating}/agents/rating"
+        var mcpClient = kernel.Services.GetRequiredService<IMcpClient>();
+        var resolver = kernel.Services.GetRequiredService<ServiceEndpointResolver>();
+        var httpClient = kernel.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
+
+        var tools = await mcpClient.ListToolsAsync();
+        var resolvedUrl = await resolver.ResolveServiceEndpointUrl(
+            $"{Protocols.HttpOrHttps}://{Services.Rating}"
         );
-        await Task.WhenAll(toolsTask, ratingAgentTask);
+        var agent = await A2AClientFactory.CreateAgentAsync(resolvedUrl, httpClient);
+
+        var ratingAgent = KernelPluginFactory.CreateFromFunctions(
+            "AgentPlugin",
+            [AgentKernelFunctionFactory.CreateFromAgent(agent)]
+        );
 
         agentKernel.Plugins.AddFromFunctions(
             nameof(BookWorm),
-            (await toolsTask).Select(aiFunction => aiFunction.AsKernelFunction())
+            tools.Select(aiFunction => aiFunction.AsKernelFunction())
         );
-
-        agentKernel.Plugins.Add(await ratingAgentTask);
+        agentKernel.Plugins.Add(ratingAgent);
 
         return new()
         {
@@ -77,16 +81,5 @@ public static class BookAgent
                 }
             ),
         };
-    }
-
-    private static async Task<KernelPlugin> ConnectRemoteAgent(
-        this ServiceEndpointResolver resolver,
-        string agentUri
-    )
-    {
-        var resolvedUrl = await resolver.ResolveServiceEndpointUrl(agentUri, "/");
-        var agent = await resolvedUrl.CreateAgentAsync();
-        var agentFunction = AgentKernelFunctionFactory.CreateFromAgent(agent);
-        return KernelPluginFactory.CreateFromFunctions("AgentPlugin", [agentFunction]);
     }
 }

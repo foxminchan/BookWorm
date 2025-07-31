@@ -11,7 +11,7 @@ public sealed class OrderState : SagaStateMachineInstance, ISagaVersion
     public DateTime? OrderPlacedDate { get; set; }
     public Guid? PlaceOrderTimeoutTokenId { get; set; }
     public int TimeoutRetryCount { get; set; }
+    public uint RowVersion { get; set; }
     public int Version { get; set; }
     public Guid CorrelationId { get; set; }
-    public uint RowVersion { get; set; }
 }

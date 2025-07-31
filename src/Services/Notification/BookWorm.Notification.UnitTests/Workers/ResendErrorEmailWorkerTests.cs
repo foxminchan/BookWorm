@@ -86,7 +86,7 @@ public class ResendErrorEmailWorkerTests
 
         _senderMock
             .Setup(x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new Exception("Send failed"));
+            .ThrowsAsync(new("Send failed"));
 
         // Act
         await _worker.Execute(Mock.Of<IJobExecutionContext>());
