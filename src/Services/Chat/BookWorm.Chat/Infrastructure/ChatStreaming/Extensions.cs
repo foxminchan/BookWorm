@@ -37,7 +37,7 @@ internal static class Extensions
 
             var client = new HttpClient
             {
-                BaseAddress = new($"{Protocol.HttpOrHttps}://{Services.McpTools}"),
+                BaseAddress = new($"{Protocols.HttpOrHttps}://{Services.McpTools}"),
             };
 
             SseClientTransportOptions sseTransportOptions = new()

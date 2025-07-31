@@ -50,7 +50,7 @@ public static class BookAgent
 
         var toolsTask = mcpClient.ListToolsAsync().AsTask();
         var ratingAgentTask = resolver.ConnectRemoteAgent(
-            $"{Protocol.HttpOrHttps}://{Services.Rating}/agents/rating"
+            $"{Protocols.HttpOrHttps}://{Services.Rating}/agents/rating"
         );
         await Task.WhenAll(toolsTask, ratingAgentTask);
 

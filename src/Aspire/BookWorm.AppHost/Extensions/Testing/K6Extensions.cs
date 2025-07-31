@@ -26,7 +26,7 @@ public static class K6Extensions
             .WithBindMount($"{BaseContainerPath}", "/scripts", true)
             .WithBindMount($"{BaseContainerPath}/dist", "/home/k6")
             .WithScript("/scripts/dist/main.js", vus)
-            .WithReference(entryPoint.Resource.GetEndpoint(Protocol.Http))
+            .WithReference(entryPoint.Resource.GetEndpoint(Protocols.Http))
             .WithEnvironment(K6WebDashboard, "true")
             .WithEnvironment(K6WebDashboardExport, "dashboard-report.html")
             .WithHttpEndpoint(

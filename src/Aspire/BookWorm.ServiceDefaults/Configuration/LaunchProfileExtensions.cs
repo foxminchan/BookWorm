@@ -4,11 +4,11 @@ public static class LaunchProfileExtensions
 {
     public static bool IsHttpsLaunchProfile(this IHostApplicationBuilder builder)
     {
-        return builder.Configuration["DOTNET_LAUNCH_PROFILE"] == Protocol.Https;
+        return builder.Configuration["DOTNET_LAUNCH_PROFILE"] == Protocols.Https;
     }
 
     public static string GetScheme(this IHostApplicationBuilder builder)
     {
-        return builder.IsHttpsLaunchProfile() ? Protocol.Https : Protocol.Http;
+        return builder.IsHttpsLaunchProfile() ? Protocols.Https : Protocols.Http;
     }
 }

@@ -217,7 +217,7 @@ public static class DevCertHostingExtensions
     {
         // Try to find existing ASP.NET Core HTTPS development certificates on macOS and Linux
         var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var httpsDir = Protocol.Https;
+        var httpsDir = Protocols.Https;
 
         // Common locations where ASP.NET Core dev certificates might be stored
         Span<string> possibleLocations = RuntimeInformation.IsOSPlatform(OSPlatform.OSX)

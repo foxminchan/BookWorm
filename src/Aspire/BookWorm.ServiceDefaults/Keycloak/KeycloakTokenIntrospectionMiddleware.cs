@@ -23,7 +23,7 @@ public sealed class KeycloakTokenIntrospectionMiddleware(
 
         if (!string.IsNullOrWhiteSpace(token))
         {
-            var keycloakUri = $"{Protocol.HttpOrHttps}://{Components.KeyCloak}";
+            var keycloakUri = $"{Protocols.HttpOrHttps}://{Components.KeyCloak}";
 
             var introspectionEndpoint =
                 $"realms/{identityOptions.Realm}/protocol/openid-connect/token/introspect";

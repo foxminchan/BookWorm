@@ -23,17 +23,7 @@ public static class EmailExtensions
         {
             var apiKey = applicationBuilder
                 .AddParameter("api-key", true)
-                .WithDescription(
-                    """
-                    SendGrid API key for authentication.
-                    You can obtain it from your SendGrid account.
-
-                    - For more information, visit: https://app.sendgrid.com/settings/api_keys
-                    - To create a new API key, go to: https://app.sendgrid.com/settings/api_keys/create
-                    - Ensure the API key has 'Mail Send' permissions.
-                    """,
-                    true
-                )
+                .WithDescription(ParameterDescriptions.SendGrid.ApiKey, true)
                 .WithCustomInput(_ =>
                     new()
                     {
@@ -45,16 +35,7 @@ public static class EmailExtensions
 
             var email = applicationBuilder
                 .AddParameter("email")
-                .WithDescription(
-                    """
-                    Sender email address for outgoing emails.
-                    This should be a verified email address in your SendGrid account.
-
-                    - For more information, visit: https://app.sendgrid.com/settings/sender_auth
-                    - To verify a new sender email, go to: https://app.sendgrid.com/settings/sender_auth/single_sender
-                    """,
-                    true
-                )
+                .WithDescription(ParameterDescriptions.SendGrid.SenderEmail, true)
                 .WithCustomInput(_ =>
                     new()
                     {
@@ -67,15 +48,7 @@ public static class EmailExtensions
 
             var senderName = applicationBuilder
                 .AddParameter("sender-name")
-                .WithDescription(
-                    """
-                    Sender name for outgoing emails.
-                    This is the name that will appear in the 'From' field of the email.
-
-                    - For more information, visit: https://app.sendgrid.com/settings/sender_auth
-                    """,
-                    true
-                )
+                .WithDescription(ParameterDescriptions.SendGrid.SenderName, true)
                 .WithCustomInput(_ =>
                     new()
                     {
