@@ -28,18 +28,23 @@ public static class UrlExtensions
 
         var baseEndpoint = preferredProtocol switch
         {
-            _ when preferredProtocol == Protocol.Http => serviceAddresses.FirstOrDefault(e =>
-                e?.StartsWith($"{Protocol.Http}://") == true
+            _ when preferredProtocol == Protocols.Http => serviceAddresses.FirstOrDefault(e =>
+                e?.StartsWith($"{Protocols.Http}://") == true
             )
                 ?? serviceAddresses.FirstOrDefault(e =>
-                    e?.StartsWith($"{Protocol.Https}://") == true
+                    e?.StartsWith($"{Protocols.Https}://") == true
                 ),
-            _ when preferredProtocol == Protocol.Https => serviceAddresses.FirstOrDefault(e =>
-                e?.StartsWith($"{Protocol.Https}://") == true
-            ) ?? serviceAddresses.FirstOrDefault(e => e?.StartsWith($"{Protocol.Http}://") == true),
-            _ => serviceAddresses.FirstOrDefault(e => e?.StartsWith($"{Protocol.Https}://") == true)
+            _ when preferredProtocol == Protocols.Https => serviceAddresses.FirstOrDefault(e =>
+                e?.StartsWith($"{Protocols.Https}://") == true
+            )
                 ?? serviceAddresses.FirstOrDefault(e =>
-                    e?.StartsWith($"{Protocol.Http}://") == true
+                    e?.StartsWith($"{Protocols.Http}://") == true
+                ),
+            _ => serviceAddresses.FirstOrDefault(e =>
+                e?.StartsWith($"{Protocols.Https}://") == true
+            )
+                ?? serviceAddresses.FirstOrDefault(e =>
+                    e?.StartsWith($"{Protocols.Http}://") == true
                 ),
         };
 

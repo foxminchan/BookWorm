@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Constants.Aspire;
 
-public static class Protocol
+public static class Protocols
 {
     public static readonly string Http = nameof(Http).ToLowerInvariant();
     public static readonly string Https = nameof(Https).ToLowerInvariant();

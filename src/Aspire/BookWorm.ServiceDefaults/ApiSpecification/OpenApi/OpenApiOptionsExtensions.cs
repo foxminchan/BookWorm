@@ -140,12 +140,13 @@ public static class OpenApiOptionsExtensions
         )
         {
             // Please refer: https://github.com/scalar/scalar/issues/6225
-            var baseUrl = $"{Protocol.Http}://{Components.KeyCloak}/realms/{identityOptions.Realm}";
+            var baseUrl =
+                $"{Protocols.Http}://{Components.KeyCloak}/realms/{identityOptions.Realm}";
 
             var authorizationUrl = await resolver.ResolveServiceEndpointUrl(
                 $"{baseUrl}",
                 "/protocol/openid-connect/auth",
-                Protocol.Http,
+                Protocols.Http,
                 cancellationToken
             );
 

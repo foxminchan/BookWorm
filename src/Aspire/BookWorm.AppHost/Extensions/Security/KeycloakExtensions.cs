@@ -145,7 +145,7 @@ public static class KeycloakExtensions
                 // https://github.com/quarkusio/quarkus/issues/33692
                 .WithEnvironment(QuarkusHttp2EnvVarName, "false")
                 .WithUrlForEndpoint(
-                    Protocol.Http,
+                    Protocols.Http,
                     url => url.DisplayLocation = UrlDisplayLocation.DetailsOnly
                 );
         }
@@ -190,7 +190,7 @@ public static class KeycloakExtensions
 
                     resourceBuilder.WithEnvironment(context =>
                     {
-                        var endpoint = builder.GetEndpoint(Protocol.Http);
+                        var endpoint = builder.GetEndpoint(Protocols.Http);
 
                         context.EnvironmentVariables[$"CLIENT_{clientEnv}_URL"] = context
                             .ExecutionContext

@@ -51,7 +51,7 @@ public static class RatingAgent
     {
         var agentKernel = kernel.Clone();
 
-        var baseUri = $"{Protocol.HttpOrHttps}://{Services.Chatting}/agents";
+        var baseUri = $"{Protocols.HttpOrHttps}://{Services.Chatting}/agents";
 
         var sentimentPlugin = await resolver.ConnectRemoteAgent(
             [$"{baseUri}/summarize", $"{baseUri}/sentiment"]

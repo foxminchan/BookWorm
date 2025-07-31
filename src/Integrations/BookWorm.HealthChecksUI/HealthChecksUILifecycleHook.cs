@@ -42,7 +42,7 @@ internal sealed class HealthChecksUILifecycleHook(
                     {
                         // Running during dev inner-loop
                         var containerHost = healthChecksUIResource
-                            .GetEndpoint(Protocol.Http)
+                            .GetEndpoint(Protocols.Http)
                             .ContainerHost;
                         var fromContainerUriBuilder = new UriBuilder(healthChecksEndpoint.Url)
                         {

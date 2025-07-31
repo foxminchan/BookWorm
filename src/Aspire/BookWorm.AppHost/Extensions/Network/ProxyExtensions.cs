@@ -49,7 +49,7 @@ public static class ProxyExtensions
 
                 yarpBuilder.AddRoute(
                     "/identity/{**remainder}",
-                    container.GetEndpoint(Protocol.Http)
+                    container.GetEndpoint(Protocols.Http)
                 );
             });
 

@@ -22,7 +22,7 @@ public sealed class McpDocumentTransformer(IHttpContextAccessor accessor)
             {
                 Url = accessor.HttpContext is not null
                     ? $"{accessor.HttpContext.Request.Scheme}://{accessor.HttpContext.Request.Host}/"
-                    : $"{Protocol.Https}://{Restful.Host.Localhost}:8080/",
+                    : $"{Protocols.Https}://{Restful.Host.Localhost}:8080/",
             },
         ];
 

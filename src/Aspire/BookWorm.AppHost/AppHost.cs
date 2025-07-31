@@ -8,23 +8,23 @@ if (builder.ExecutionContext.IsPublishMode)
 
 var kcRealmName = builder
     .AddParameter("kc-realm", nameof(BookWorm).ToLowerInvariant(), true)
-    .WithDescription("Keycloak realm name to use for the BookWorm application");
+    .WithDescription(ParameterDescriptions.Keycloak.Realm, true);
 
 var kcThemeName = builder
     .AddParameter("kc-theme", nameof(BookWorm).ToLowerInvariant(), true)
-    .WithDescription("Keycloak theme name to use for the BookWorm application");
+    .WithDescription(ParameterDescriptions.Keycloak.Theme, true);
 
 var kcThemeDisplayName = builder
     .AddParameter("kc-theme-display-name", nameof(BookWorm), true)
-    .WithDescription("Keycloak theme display name to use for the BookWorm application");
+    .WithDescription(ParameterDescriptions.Keycloak.ThemeDisplayName, true);
 
 var pgUser = builder
     .AddParameter("pg-user", "postgres", true)
-    .WithDescription("The PostgreSQL user to use for the BookWorm application");
+    .WithDescription(ParameterDescriptions.Postgres.User, true);
 
 var pgPassword = builder
     .AddParameter("pg-password", true)
-    .WithDescription("The password for the PostgreSQL user")
+    .WithDescription(ParameterDescriptions.Postgres.Password, true)
     .WithGeneratedDefault(
         new()
         {
@@ -67,7 +67,7 @@ var queue = builder
     .WithManagementPlugin()
     .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent)
-    .WithEndpoint(Protocol.Tcp, e => e.Port = 5672);
+    .WithEndpoint(Protocols.Tcp, e => e.Port = 5672);
 
 var storage = builder
     .AddAzureStorage(Components.Azure.Storage.Resource)
