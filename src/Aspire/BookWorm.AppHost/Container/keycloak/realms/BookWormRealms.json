@@ -363,16 +363,6 @@
           "attributes": {}
         }
       ],
-      "${CLIENT_FINANCE_ID}": [
-        {
-          "id": "d94f2b6a-b5d2-438f-9e42-5d4fa9ebd2be",
-          "name": "uma_protection",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "1b54c9d9-3144-45d1-ab6e-762dcce7823f",
-          "attributes": {}
-        }
-      ],
       "account": [
         {
           "id": "c6c10175-c451-4e10-bed9-5f695534689e",
@@ -562,23 +552,6 @@
       "realmRoles": ["default-roles-${REALM_NAME}"],
       "clientRoles": {
         "${CLIENT_CHATTING_ID}": ["uma_protection"]
-      },
-      "notBefore": 0,
-      "groups": []
-    },
-    {
-      "id": "76536746-d26a-4255-8189-5b91096bdcdf",
-      "username": "service-account-${CLIENT_FINANCE_ID}",
-      "emailVerified": false,
-      "createdTimestamp": 1748889200822,
-      "enabled": true,
-      "totp": false,
-      "serviceAccountClientId": "${CLIENT_FINANCE_ID}",
-      "disableableCredentialTypes": [],
-      "requiredActions": [],
-      "realmRoles": ["default-roles-${REALM_NAME}"],
-      "clientRoles": {
-        "${CLIENT_FINANCE_ID}": ["uma_protection"]
       },
       "notBefore": 0,
       "groups": []
@@ -1047,80 +1020,6 @@
         "organization",
         "offline_access",
         "microprofile-jwt"
-      ]
-    },
-    {
-      "id": "1b54c9d9-3144-45d1-ab6e-762dcce7823f",
-      "clientId": "${CLIENT_FINANCE_ID}",
-      "name": "${CLIENT_FINANCE_NAME}",
-      "description": "Orchestrates order processing and financial transactions for BookWorm",
-      "rootUrl": "${CLIENT_FINANCE_URL}",
-      "adminUrl": "${CLIENT_FINANCE_URL_CONTAINERHOST}",
-      "baseUrl": "/",
-      "surrogateAuthRequired": false,
-      "enabled": true,
-      "alwaysDisplayInConsole": true,
-      "clientAuthenticatorType": "client-secret",
-      "secret": "${CLIENT_FINANCE_SECRET}",
-      "redirectUris": ["*"],
-      "webOrigins": ["*"],
-      "notBefore": 0,
-      "bearerOnly": false,
-      "consentRequired": false,
-      "standardFlowEnabled": true,
-      "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": true,
-      "serviceAccountsEnabled": true,
-      "publicClient": false,
-      "frontchannelLogout": true,
-      "protocol": "openid-connect",
-      "attributes": {
-        "request.object.signature.alg": "any",
-        "post.logout.redirect.uris": "*",
-        "frontchannel.logout.session.required": "true",
-        "oauth2.device.authorization.grant.enabled": "false",
-        "use.jwks.url": "false",
-        "backchannel.logout.revoke.offline.tokens": "false",
-        "use.refresh.tokens": "true",
-        "realm_client": "false",
-        "oidc.ciba.grant.enabled": "false",
-        "backchannel.logout.session.required": "true",
-        "client_credentials.use_refresh_token": "false",
-        "require.pushed.authorization.requests": "false",
-        "request.object.encryption.enc": "any",
-        "pkce.code.challenge.method": "S256",
-        "client.secret.creation.time": "1748889200",
-        "request.object.encryption.alg": "any",
-        "client.introspection.response.allow.jwt.claim.enabled": "false",
-        "standard.token.exchange.enabled": "false",
-        "login_theme": "${THEME_NAME}",
-        "client.use.lightweight.access.token.enabled": "false",
-        "request.object.required": "not required",
-        "access.token.header.type.rfc9068": "false",
-        "tls.client.certificate.bound.access.tokens": "false",
-        "acr.loa.map": "{}",
-        "display.on.consent.screen": "false",
-        "token.response.type.bearer.lower-case": "false"
-      },
-      "authenticationFlowBindingOverrides": {},
-      "fullScopeAllowed": true,
-      "nodeReRegistrationTimeout": -1,
-      "defaultClientScopes": [
-        "service_account",
-        "web-origins",
-        "acr",
-        "roles",
-        "profile",
-        "basic",
-        "email"
-      ],
-      "optionalClientScopes": [
-        "address",
-        "phone",
-        "organization",
-        "offline_access",
-        "microprofile-jwt",
-        "${CLIENT_FINANCE_ID}"
       ]
     },
     {
@@ -1882,18 +1781,6 @@
       "id": "847b3b8e-aa0d-43c7-af3a-e57b5b938bec",
       "name": "${CLIENT_ORDERING_ID}",
       "description": "${CLIENT_ORDERING_NAME}",
-      "protocol": "openid-connect",
-      "attributes": {
-        "include.in.token.scope": "true",
-        "display.on.consent.screen": "true",
-        "gui.order": "",
-        "consent.screen.text": ""
-      }
-    },
-    {
-      "id": "a20ce209-69ca-491e-87ce-e991ce42e54c",
-      "name": "${CLIENT_FINANCE_ID}",
-      "description": "${CLIENT_FINANCE_NAME}",
       "protocol": "openid-connect",
       "attributes": {
         "include.in.token.scope": "true",

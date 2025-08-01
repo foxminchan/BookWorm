@@ -4,13 +4,12 @@ using BookWorm.SharedKernel.Helpers;
 using MassTransit;
 using MassTransit.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using static BookWorm.Finance.UnitTests.OrderStateMachineTestHelper;
 
 namespace BookWorm.Finance.UnitTests;
 
 public sealed class OrderStateMachineTests
 {
-    private const string? DefaultTestEmail = "example@email.com";
-    private const string DefaultTestFullName = "John Doe";
     private ITestHarness _harness = null!;
     private ServiceProvider _provider = null!;
     private ISagaStateMachineTestHarness<OrderStateMachine, OrderState> _sagaHarness = null!;
@@ -27,13 +26,16 @@ public sealed class OrderStateMachineTests
         _provider = new ServiceCollection()
             .AddSingleton(settings)
             .AddMassTransitTestHarness(cfg =>
-                cfg.AddSagaStateMachine<OrderStateMachine, OrderState>()
-            )
+            {
+                cfg.AddSagaStateMachine<OrderStateMachine, OrderState>();
+                cfg.SetTestTimeouts(testInactivityTimeout: TimeSpan.FromSeconds(60));
+            })
             .BuildServiceProvider(true);
 
         _harness = _provider.GetRequiredService<ITestHarness>();
-        await _harness.Start();
+        _harness.TestInactivityTimeout = TimeSpan.FromSeconds(60);
 
+        await _harness.Start();
         _sagaHarness = _harness.GetSagaStateMachineHarness<OrderStateMachine, OrderState>();
     }
 
@@ -44,197 +46,105 @@ public sealed class OrderStateMachineTests
         await _provider.DisposeAsync();
     }
 
-    private async Task InitializeSagaToPlacedState(
-        Guid? orderId = null,
-        Guid? basketId = null,
-        string? email = DefaultTestEmail,
-        string? fullName = DefaultTestFullName,
-        decimal totalMoney = 100.0m
-    )
-    {
-        orderId ??= Guid.CreateVersion7();
-        basketId ??= Guid.CreateVersion7();
-
-        var checkoutEvent = new UserCheckedOutIntegrationEvent(
-            orderId.Value,
-            basketId.Value,
-            fullName,
-            email,
-            totalMoney
-        );
-
-        await _harness.Bus.Publish(checkoutEvent);
-
-        // Wait for the saga to be created and transition to Placed state
-        await _sagaHarness.Created.Any(x => x.CorrelationId == orderId);
-    }
-
-    private async Task AssertEventConsumed<TEvent>()
-        where TEvent : class
-    {
-        // Use CancellationToken with timeout for more reliable testing
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-
-        // The primary assertion is that the saga consumed the event
-        // This is the most important check for saga state machine tests
-        (await _sagaHarness.Consumed.Any<TEvent>(cts.Token)).ShouldBeTrue();
-
-        // Secondary check for general harness consumption
-        // This verifies the message was published and consumed in the system
-        (await _harness.Consumed.Any<TEvent>(cts.Token)).ShouldBeTrue();
-    }
-
-    private async Task<bool> WaitForCommandPublished<TCommand>(TimeSpan? timeout = null)
-        where TCommand : class
-    {
-        timeout ??= TimeSpan.FromSeconds(30);
-        using var cts = new CancellationTokenSource(timeout.Value);
-
-        try
-        {
-            return await _harness.Published.Any<TCommand>(cts.Token);
-        }
-        catch (OperationCanceledException)
-        {
-            return false;
-        }
-    }
-
-    private OrderState AssertSagaInState(Guid orderId, State state)
-    {
-        var instance = _sagaHarness.Created.ContainsInState(
-            orderId,
-            _sagaHarness.StateMachine,
-            state
-        );
-
-        instance.ShouldNotBeNull();
-        instance.CurrentState.ShouldBe(state.Name);
-
-        return instance;
-    }
-
     [Test]
     [Retry(2)]
     public async Task GivenUserCheckedOutIntegrationEvent_WhenConsuming_ThenShouldCreateOrderStateAndPublishPlaceOrderCommand()
     {
         // Arrange
-        var orderId = Guid.CreateVersion7();
-        var basketId = Guid.CreateVersion7();
-        const decimal totalMoney = 100.0m;
-
+        var testData = CreateTestOrderData();
         var @event = new UserCheckedOutIntegrationEvent(
-            orderId,
-            basketId,
-            DefaultTestFullName,
-            DefaultTestEmail,
-            totalMoney
+            testData.OrderId,
+            testData.BasketId,
+            testData.FullName,
+            testData.Email,
+            testData.TotalMoney
         );
 
         // Act
         await _harness.Bus.Publish(@event);
 
         // Assert
-        await AssertEventConsumed<UserCheckedOutIntegrationEvent>();
-        (await _sagaHarness.Created.Any(x => x.CorrelationId == orderId)).ShouldBeTrue();
+        await _harness.AssertEventConsumed<UserCheckedOutIntegrationEvent>();
+        (await _sagaHarness.Created.Any(x => x.CorrelationId == testData.OrderId)).ShouldBeTrue();
 
-        var instance = AssertSagaInState(orderId, _sagaHarness.StateMachine.Placed);
-
-        instance.OrderId.ShouldBe(orderId);
-        instance.BasketId.ShouldBe(basketId);
-        instance.Email.ShouldBe(DefaultTestEmail);
-        instance.TotalMoney.ShouldBe(totalMoney);
-        instance.Version.ShouldBeGreaterThanOrEqualTo(0);
-        instance.RowVersion.ShouldBeGreaterThanOrEqualTo(0u);
+        var instance = _sagaHarness.AssertSagaInState(
+            testData.OrderId,
+            _sagaHarness.StateMachine.Placed
+        );
+        AssertOrderState(instance, testData);
         instance.CurrentState.ShouldBe(_sagaHarness.StateMachine.Placed.Name);
-        instance.OrderPlacedDate.ShouldNotBe(DateTime.MinValue);
 
-        (await WaitForCommandPublished<PlaceOrderCommand>()).ShouldBeTrue();
-
-        var publishedMessage = _harness.Published.Select<PlaceOrderCommand>().First();
-        var message = publishedMessage.Context.Message;
-        message.BasketId.ShouldBe(basketId);
-        message.OrderId.ShouldBe(orderId);
-        message.FullName.ShouldBe(DefaultTestFullName);
-        message.Email.ShouldBe(DefaultTestEmail);
-        message.TotalMoney.ShouldBe(totalMoney);
+        var command = await _harness.AssertCommandPublished<PlaceOrderCommand>();
+        command.BasketId.ShouldBe(testData.BasketId);
+        command.OrderId.ShouldBe(testData.OrderId);
+        command.FullName.ShouldBe(testData.FullName);
+        command.Email.ShouldBe(testData.Email);
+        command.TotalMoney.ShouldBe(testData.TotalMoney);
     }
 
     [Test]
     public async Task GivenBasketDeletedCompleteIntegrationEvent_WhenConsuming_ThenShouldPublishDeleteBasketCompleteCommand()
     {
         // Arrange
-        var orderId = Guid.CreateVersion7();
-        var basketId = Guid.CreateVersion7();
-        const decimal totalMoney = 100.0m;
+        var testData = CreateTestOrderData();
+        await (_harness, _sagaHarness).InitializeSagaToPlacedState(testData);
 
-        await InitializeSagaToPlacedState(orderId, basketId);
-
-        var @event = new BasketDeletedCompleteIntegrationEvent(orderId, basketId, totalMoney);
-
-        // Act
-        await _harness.Bus.Publish(@event);
-
-        // Assert
-        await AssertEventConsumed<BasketDeletedCompleteIntegrationEvent>();
-
-        var instance = AssertSagaInState(orderId, _sagaHarness.StateMachine.Placed);
-
-        instance.OrderId.ShouldBe(orderId);
-        instance.BasketId.ShouldBe(basketId);
-        instance.TotalMoney.ShouldBe(totalMoney);
-        instance.Version.ShouldBeGreaterThanOrEqualTo(0);
-        instance.RowVersion.ShouldBeGreaterThanOrEqualTo(0u);
-        instance.CurrentState.ShouldBe(_sagaHarness.StateMachine.Placed.Name);
-        instance.OrderPlacedDate.ShouldNotBe(DateTime.MinValue);
-
-        (await WaitForCommandPublished<DeleteBasketCompleteCommand>()).ShouldBeTrue();
-        var publishedMessage = _harness.Published.Select<DeleteBasketCompleteCommand>().First();
-        var message = publishedMessage.Context.Message;
-        message.OrderId.ShouldBe(orderId);
-        message.TotalMoney.ShouldBe(totalMoney);
-    }
-
-    [Test]
-    public async Task GivenBasketDeletedFailedIntegrationEvent_WhenConsuming_ThenShouldPublishDeleteBasketFailedCommand()
-    {
-        // Arrange
-        var orderId = Guid.CreateVersion7();
-        var basketId = Guid.CreateVersion7();
-        const decimal totalMoney = 100.0m;
-
-        await InitializeSagaToPlacedState(orderId, basketId);
-
-        var @event = new BasketDeletedFailedIntegrationEvent(
-            orderId,
-            basketId,
-            DefaultTestEmail,
-            totalMoney
+        var @event = new BasketDeletedCompleteIntegrationEvent(
+            testData.OrderId,
+            testData.BasketId,
+            testData.TotalMoney
         );
 
         // Act
         await _harness.Bus.Publish(@event);
 
         // Assert
-        await AssertEventConsumed<BasketDeletedFailedIntegrationEvent>();
+        await _harness.AssertEventConsumed<BasketDeletedCompleteIntegrationEvent>();
 
-        var instance = AssertSagaInState(orderId, _sagaHarness.StateMachine.Failed);
+        var instance = _sagaHarness.AssertSagaInState(
+            testData.OrderId,
+            _sagaHarness.StateMachine.Placed
+        );
+        AssertOrderState(instance, testData);
+        instance.CurrentState.ShouldBe(_sagaHarness.StateMachine.Placed.Name);
 
-        instance.OrderId.ShouldBe(orderId);
-        instance.BasketId.ShouldBe(basketId);
-        instance.TotalMoney.ShouldBe(totalMoney);
-        instance.Version.ShouldBeGreaterThanOrEqualTo(0);
-        instance.RowVersion.ShouldBeGreaterThanOrEqualTo(0u);
+        var command = await _harness.AssertCommandPublished<DeleteBasketCompleteCommand>();
+        command.OrderId.ShouldBe(testData.OrderId);
+        command.TotalMoney.ShouldBe(testData.TotalMoney);
+    }
+
+    [Test]
+    public async Task GivenBasketDeletedFailedIntegrationEvent_WhenConsuming_ThenShouldPublishDeleteBasketFailedCommand()
+    {
+        // Arrange
+        var testData = CreateTestOrderData();
+        await (_harness, _sagaHarness).InitializeSagaToPlacedState(testData);
+
+        var @event = new BasketDeletedFailedIntegrationEvent(
+            testData.OrderId,
+            testData.BasketId,
+            testData.Email,
+            testData.TotalMoney
+        );
+
+        // Act
+        await _harness.Bus.Publish(@event);
+
+        // Assert
+        await _harness.AssertEventConsumed<BasketDeletedFailedIntegrationEvent>();
+
+        var instance = _sagaHarness.AssertSagaInState(
+            testData.OrderId,
+            _sagaHarness.StateMachine.Failed
+        );
+        AssertOrderState(instance, testData);
         instance.CurrentState.ShouldBe(_sagaHarness.StateMachine.Failed.Name);
-        instance.OrderPlacedDate.ShouldNotBe(DateTime.MinValue);
 
-        (await WaitForCommandPublished<DeleteBasketFailedCommand>()).ShouldBeTrue();
-        var publishedMessage = _harness.Published.Select<DeleteBasketFailedCommand>().First();
-        var message = publishedMessage.Context.Message;
-        message.OrderId.ShouldBe(orderId);
-        message.BasketId.ShouldBe(basketId);
-        message.Email.ShouldBe(DefaultTestEmail);
-        message.TotalMoney.ShouldBe(totalMoney);
+        var command = await _harness.AssertCommandPublished<DeleteBasketFailedCommand>();
+        command.OrderId.ShouldBe(testData.OrderId);
+        command.BasketId.ShouldBe(testData.BasketId);
+        command.Email.ShouldBe(testData.Email);
+        command.TotalMoney.ShouldBe(testData.TotalMoney);
     }
 
     [Test]
@@ -246,77 +156,35 @@ public sealed class OrderStateMachineTests
     )
     {
         // Arrange
-        var orderId = Guid.CreateVersion7();
-        var basketId = Guid.CreateVersion7();
-        const decimal totalMoney = 100.0m;
-
-        await InitializeSagaToPlacedState(orderId, basketId, email);
+        var testData = CreateTestOrderData(email: email);
+        await (_harness, _sagaHarness).InitializeSagaToPlacedState(testData);
 
         var @event = new OrderStatusChangedToCompleteIntegrationEvent(
-            orderId,
-            basketId,
-            DefaultTestFullName,
+            testData.OrderId,
+            testData.BasketId,
+            testData.FullName,
             email,
-            totalMoney
+            testData.TotalMoney
         );
 
         // Act
         await _harness.Bus.Publish(@event);
 
         // Assert
-        await AssertEventConsumed<OrderStatusChangedToCompleteIntegrationEvent>();
+        await _harness.AssertEventConsumed<OrderStatusChangedToCompleteIntegrationEvent>();
+        _sagaHarness.AssertSagaFinalized(testData.OrderId);
 
-        // The saga should be finalized after completion - check that it's not in any active state
-        var sagaNotInPlaced =
-            _sagaHarness.Created.ContainsInState(
-                orderId,
-                _sagaHarness.StateMachine,
-                _sagaHarness.StateMachine.Placed
-            )
-                is null;
-        var sagaNotInCompleted =
-            _sagaHarness.Created.ContainsInState(
-                orderId,
-                _sagaHarness.StateMachine,
-                _sagaHarness.StateMachine.Completed
-            )
-                is null;
-        var sagaNotInCancelled =
-            _sagaHarness.Created.ContainsInState(
-                orderId,
-                _sagaHarness.StateMachine,
-                _sagaHarness.StateMachine.Cancelled
-            )
-                is null;
-        var sagaNotInFailed =
-            _sagaHarness.Created.ContainsInState(
-                orderId,
-                _sagaHarness.StateMachine,
-                _sagaHarness.StateMachine.Failed
-            )
-                is null;
-
-        // Saga should be finalized (not in any state) or in a final state but not testable due to finalization
-        (
-            sagaNotInPlaced && sagaNotInCompleted && sagaNotInCancelled && sagaNotInFailed
-        ).ShouldBeTrue();
-
-        // But we can verify it was completed by checking the published command
         if (email is not null)
         {
-            (await WaitForCommandPublished<CompleteOrderCommand>()).ShouldBeTrue();
-            var publishedMessage = _harness.Published.Select<CompleteOrderCommand>().First();
-            var message = publishedMessage.Context.Message;
-            message.OrderId.ShouldBe(orderId);
-            message.FullName.ShouldBe(DefaultTestFullName);
-            message.Email.ShouldBe(email);
-            message.TotalMoney.ShouldBe(totalMoney);
+            var command = await _harness.AssertCommandPublished<CompleteOrderCommand>();
+            command.OrderId.ShouldBe(testData.OrderId);
+            command.FullName.ShouldBe(testData.FullName);
+            command.Email.ShouldBe(email);
+            command.TotalMoney.ShouldBe(testData.TotalMoney);
         }
         else
         {
-            (
-                await WaitForCommandPublished<CompleteOrderCommand>(TimeSpan.FromSeconds(5))
-            ).ShouldBeFalse();
+            await _harness.AssertCommandNotPublished<CompleteOrderCommand>();
         }
     }
 
@@ -329,80 +197,36 @@ public sealed class OrderStateMachineTests
     )
     {
         // Arrange
-        var orderId = Guid.CreateVersion7();
-        var basketId = Guid.CreateVersion7();
-        const decimal totalMoney = 100.0m;
-
-        await InitializeSagaToPlacedState(orderId, basketId, email);
+        var testData = CreateTestOrderData(email: email);
+        await (_harness, _sagaHarness).InitializeSagaToPlacedState(testData);
 
         var @event = new OrderStatusChangedToCancelIntegrationEvent(
-            orderId,
-            basketId,
-            DefaultTestFullName,
+            testData.OrderId,
+            testData.BasketId,
+            testData.FullName,
             email,
-            totalMoney
+            testData.TotalMoney
         );
 
         // Act
         await _harness.Bus.Publish(@event);
 
         // Assert
-        await AssertEventConsumed<OrderStatusChangedToCancelIntegrationEvent>();
-
-        // Add explicit wait for command processing in case email/fullName validation affects timing
+        await _harness.AssertEventConsumed<OrderStatusChangedToCancelIntegrationEvent>();
         await Task.Delay(100); // Small delay to ensure all processing is complete
+        _sagaHarness.AssertSagaFinalized(testData.OrderId);
 
-        // The saga should be finalized after cancellation - check that it's not in any active state
-        var sagaNotInPlaced =
-            _sagaHarness.Created.ContainsInState(
-                orderId,
-                _sagaHarness.StateMachine,
-                _sagaHarness.StateMachine.Placed
-            )
-                is null;
-        var sagaNotInCompleted =
-            _sagaHarness.Created.ContainsInState(
-                orderId,
-                _sagaHarness.StateMachine,
-                _sagaHarness.StateMachine.Completed
-            )
-                is null;
-        var sagaNotInCancelled =
-            _sagaHarness.Created.ContainsInState(
-                orderId,
-                _sagaHarness.StateMachine,
-                _sagaHarness.StateMachine.Cancelled
-            )
-                is null;
-        var sagaNotInFailed =
-            _sagaHarness.Created.ContainsInState(
-                orderId,
-                _sagaHarness.StateMachine,
-                _sagaHarness.StateMachine.Failed
-            )
-                is null;
-
-        // Saga should be finalized (not in any state) or in a final state but not testable due to finalization
-        (
-            sagaNotInPlaced && sagaNotInCompleted && sagaNotInCancelled && sagaNotInFailed
-        ).ShouldBeTrue();
-
-        // But we can verify it was cancelled by checking the published command
         if (email is not null)
         {
-            (await WaitForCommandPublished<CancelOrderCommand>()).ShouldBeTrue();
-            var publishedMessage = _harness.Published.Select<CancelOrderCommand>().First();
-            var message = publishedMessage.Context.Message;
-            message.OrderId.ShouldBe(orderId);
-            message.FullName.ShouldBe(DefaultTestFullName);
-            message.Email.ShouldBe(email);
-            message.TotalMoney.ShouldBe(totalMoney);
+            var command = await _harness.AssertCommandPublished<CancelOrderCommand>();
+            command.OrderId.ShouldBe(testData.OrderId);
+            command.FullName.ShouldBe(testData.FullName);
+            command.Email.ShouldBe(email);
+            command.TotalMoney.ShouldBe(testData.TotalMoney);
         }
         else
         {
-            (
-                await WaitForCommandPublished<CancelOrderCommand>(TimeSpan.FromSeconds(5))
-            ).ShouldBeFalse();
+            await _harness.AssertCommandNotPublished<CancelOrderCommand>();
         }
     }
 
@@ -410,104 +234,89 @@ public sealed class OrderStateMachineTests
     public async Task GivenDuplicateOrderEvent_WhenConsuming_ThenShouldHandleGracefully()
     {
         // Arrange
-        var orderId = Guid.CreateVersion7();
-        var basketId = Guid.CreateVersion7();
-        const decimal totalMoney = 100.0m;
-
+        var testData = CreateTestOrderData();
         var checkoutEvent = new UserCheckedOutIntegrationEvent(
-            orderId,
-            basketId,
-            DefaultTestFullName,
-            DefaultTestEmail,
-            totalMoney
+            testData.OrderId,
+            testData.BasketId,
+            testData.FullName,
+            testData.Email,
+            testData.TotalMoney
         );
 
         // Act - Send the first event
         await _harness.Bus.Publish(checkoutEvent);
-
-        // Wait for the saga to be created and transition to Placed state
-        await _sagaHarness.Created.Any(x => x.CorrelationId == orderId);
+        await _sagaHarness.Created.Any(x => x.CorrelationId == testData.OrderId);
 
         // Send the duplicate event
         await _harness.Bus.Publish(checkoutEvent);
 
         // Assert
-        await AssertEventConsumed<UserCheckedOutIntegrationEvent>();
+        await _harness.AssertEventConsumed<UserCheckedOutIntegrationEvent>();
+        (await _sagaHarness.Created.Any(x => x.CorrelationId == testData.OrderId)).ShouldBeTrue();
 
-        // Should only create one saga instance, not two
-        (await _sagaHarness.Created.Any(x => x.CorrelationId == orderId)).ShouldBeTrue();
-
-        var instance = AssertSagaInState(orderId, _sagaHarness.StateMachine.Placed);
-
-        // Verify saga properties are correct
-        instance.OrderId.ShouldBe(orderId);
-        instance.BasketId.ShouldBe(basketId);
-        instance.Email.ShouldBe(DefaultTestEmail);
-        instance.TotalMoney.ShouldBe(totalMoney);
-        instance.RowVersion.ShouldBeGreaterThanOrEqualTo(0u);
+        var instance = _sagaHarness.AssertSagaInState(
+            testData.OrderId,
+            _sagaHarness.StateMachine.Placed
+        );
+        AssertOrderState(instance, testData);
         instance.CurrentState.ShouldBe(_sagaHarness.StateMachine.Placed.Name);
 
-        // Should only publish PlaceOrderCommand once, not twice (this is the key idempotency test)
+        // Should only publish PlaceOrderCommand once, not twice (key idempotency test)
         (await _harness.Published.Any<PlaceOrderCommand>()).ShouldBeTrue();
         var publishedCommands = _harness.Published.Select<PlaceOrderCommand>().ToList();
         publishedCommands.Count.ShouldBe(1);
 
         var command = publishedCommands[0].Context.Message;
-        command.OrderId.ShouldBe(orderId);
-        command.BasketId.ShouldBe(basketId);
-        command.Email.ShouldBe(DefaultTestEmail);
-        command.TotalMoney.ShouldBe(totalMoney);
+        command.OrderId.ShouldBe(testData.OrderId);
+        command.BasketId.ShouldBe(testData.BasketId);
+        command.Email.ShouldBe(testData.Email);
+        command.TotalMoney.ShouldBe(testData.TotalMoney);
     }
 
     [Test]
     public async Task GivenPlaceOrderCommand_WhenPublished_ThenShouldContainCorrectBusinessData()
     {
         // Arrange
-        var orderId = Guid.CreateVersion7();
-        var basketId = Guid.CreateVersion7();
-        const string fullName = "Jane Smith";
-        const string email = "jane.smith@example.com";
-        const decimal totalMoney = 299.99m;
+        var testData = CreateTestOrderData(
+            fullName: "Jane Smith",
+            email: "jane.smith@example.com",
+            totalMoney: 299.99m
+        );
 
         var checkoutEvent = new UserCheckedOutIntegrationEvent(
-            orderId,
-            basketId,
-            fullName,
-            email,
-            totalMoney
+            testData.OrderId,
+            testData.BasketId,
+            testData.FullName,
+            testData.Email,
+            testData.TotalMoney
         );
 
         // Act
         await _harness.Bus.Publish(checkoutEvent);
 
         // Assert
-        await AssertEventConsumed<UserCheckedOutIntegrationEvent>();
-        (await _sagaHarness.Created.Any(x => x.CorrelationId == orderId)).ShouldBeTrue();
+        await _harness.AssertEventConsumed<UserCheckedOutIntegrationEvent>();
+        (await _sagaHarness.Created.Any(x => x.CorrelationId == testData.OrderId)).ShouldBeTrue();
 
-        var instance = AssertSagaInState(orderId, _sagaHarness.StateMachine.Placed);
+        var instance = _sagaHarness.AssertSagaInState(
+            testData.OrderId,
+            _sagaHarness.StateMachine.Placed
+        );
 
-        // Verify PlaceOrderCommand was published with correct business logic applied
-        (await _harness.Published.Any<PlaceOrderCommand>()).ShouldBeTrue();
+        var command = await _harness.AssertCommandPublished<PlaceOrderCommand>();
+        command.OrderId.ShouldBe(testData.OrderId);
+        command.BasketId.ShouldBe(testData.BasketId);
+        command.FullName.ShouldBe(testData.FullName);
+        command.Email.ShouldBe(testData.Email);
+        command.TotalMoney.ShouldBe(testData.TotalMoney);
+
+        // Verify command has proper message envelope
         var publishedMessage = _harness.Published.Select<PlaceOrderCommand>().First();
-        var command = publishedMessage.Context.Message;
-
-        // Validate all business data is correctly transferred
-        command.OrderId.ShouldBe(orderId);
-        command.BasketId.ShouldBe(basketId);
-        command.FullName.ShouldBe(fullName);
-        command.Email.ShouldBe(email);
-        command.TotalMoney.ShouldBe(totalMoney);
-
-        // Verify command has proper message envelope (what we can reliably test)
         publishedMessage.Context.Message.ShouldNotBeNull();
         publishedMessage.Context.MessageId.ShouldNotBeNull();
 
         // Validate saga state reflects the command execution
-        instance.OrderId.ShouldBe(orderId);
-        instance.BasketId.ShouldBe(basketId);
-        instance.Email.ShouldBe(email);
-        instance.TotalMoney.ShouldBe(totalMoney);
-        instance.RowVersion.ShouldBeGreaterThanOrEqualTo(0u);
+        AssertOrderState(instance, testData);
         instance.OrderPlacedDate.ShouldNotBeNull();
         var now = DateTimeHelper.UtcNow();
         instance.OrderPlacedDate.Value.ShouldBeInRange(now.AddMinutes(-1), now.AddMinutes(1));
@@ -560,7 +369,7 @@ public sealed class OrderStateMachineTests
 
         // Assert
         // Verify all events were consumed
-        await AssertEventConsumed<UserCheckedOutIntegrationEvent>();
+        await _harness.AssertEventConsumed<UserCheckedOutIntegrationEvent>();
 
         // Each order should have exactly one saga instance
         foreach (var orderId in orderIds)
@@ -568,7 +377,10 @@ public sealed class OrderStateMachineTests
             (
                 await _sagaHarness.Created.Any(x => x.CorrelationId == orderId, cancellationToken)
             ).ShouldBeTrue();
-            var instance = AssertSagaInState(orderId, _sagaHarness.StateMachine.Placed);
+            var instance = _sagaHarness.AssertSagaInState(
+                orderId,
+                _sagaHarness.StateMachine.Placed
+            );
 
             // Verify saga state consistency
             instance.OrderId.ShouldBe(orderId);
@@ -677,25 +489,21 @@ public sealed class OrderStateMachineTests
     public async Task GivenOrderTimeout_WhenRetryCountLessThanMax_ThenShouldRetryOrderProcessing()
     {
         // Arrange
-        var orderId = Guid.CreateVersion7();
-        var basketId = Guid.CreateVersion7();
-        const decimal totalMoney = 100.0m;
+        var testData = CreateTestOrderData();
+        await (_harness, _sagaHarness).InitializeSagaToPlacedState(testData);
 
-        await InitializeSagaToPlacedState(orderId, basketId);
-
-        // Create a timeout event
-        var timeoutEvent = new PlaceOrderTimeoutIntegrationEvent(orderId);
+        var timeoutEvent = new PlaceOrderTimeoutIntegrationEvent(testData.OrderId);
 
         // Act - Send first timeout (should trigger retry)
         await _harness.Bus.Publish(timeoutEvent);
 
         // Assert
-        await AssertEventConsumed<PlaceOrderTimeoutIntegrationEvent>();
+        await _harness.AssertEventConsumed<PlaceOrderTimeoutIntegrationEvent>();
 
-        // Should still be in Placed state (not Failed)
-        var instance = AssertSagaInState(orderId, _sagaHarness.StateMachine.Placed);
-
-        // Verify retry count was incremented
+        var instance = _sagaHarness.AssertSagaInState(
+            testData.OrderId,
+            _sagaHarness.StateMachine.Placed
+        );
         instance.TimeoutRetryCount.ShouldBe(1);
         instance.RowVersion.ShouldBeGreaterThanOrEqualTo(0u);
 
@@ -703,11 +511,10 @@ public sealed class OrderStateMachineTests
         var publishedCommands = _harness.Published.Select<PlaceOrderCommand>().ToList();
         publishedCommands.Count.ShouldBe(2); // Initial + 1 retry
 
-        // Verify the retry command has correct data
         var retryCommand = publishedCommands[^1].Context.Message;
-        retryCommand.OrderId.ShouldBe(orderId);
-        retryCommand.BasketId.ShouldBe(basketId);
-        retryCommand.TotalMoney.ShouldBe(totalMoney);
+        retryCommand.OrderId.ShouldBe(testData.OrderId);
+        retryCommand.BasketId.ShouldBe(testData.BasketId);
+        retryCommand.TotalMoney.ShouldBe(testData.TotalMoney);
     }
 
     [Test]
@@ -715,39 +522,30 @@ public sealed class OrderStateMachineTests
     public async Task GivenOrderTimeout_WhenRetryCountReachesMax_ThenShouldTransitionToFailedAndCancel()
     {
         // Arrange
-        var orderId = Guid.CreateVersion7();
-        var basketId = Guid.CreateVersion7();
-        const decimal totalMoney = 100.0m;
+        var testData = CreateTestOrderData();
+        await (_harness, _sagaHarness).InitializeSagaToPlacedState(testData);
 
-        await InitializeSagaToPlacedState(orderId, basketId);
-
-        var timeoutEvent = new PlaceOrderTimeoutIntegrationEvent(orderId);
+        var timeoutEvent = new PlaceOrderTimeoutIntegrationEvent(testData.OrderId);
 
         // Act - Send 3 timeouts to exhaust retries
         for (var i = 0; i < 3; i++)
         {
             await _harness.Bus.Publish(timeoutEvent);
-            // Add small delay between timeout events to ensure proper processing
-            await Task.Delay(50);
+            await Task.Delay(50); // Small delay between timeout events to ensure proper processing
         }
 
         // Assert
-        await AssertEventConsumed<PlaceOrderTimeoutIntegrationEvent>();
+        await _harness.AssertEventConsumed<PlaceOrderTimeoutIntegrationEvent>();
 
-        // After max retries, the order should be cancelled
-        // The most important behavior is that CancelOrderCommand is published
-        (await WaitForCommandPublished<CancelOrderCommand>()).ShouldBeTrue();
-        var cancelCommand = _harness.Published.Select<CancelOrderCommand>().First();
-        var message = cancelCommand.Context.Message;
-        message.OrderId.ShouldBe(orderId);
-        message.FullName.ShouldBe(DefaultTestFullName);
-        message.Email.ShouldBe(DefaultTestEmail);
-        message.TotalMoney.ShouldBe(totalMoney);
+        var command = await _harness.AssertCommandPublished<CancelOrderCommand>();
+        command.OrderId.ShouldBe(testData.OrderId);
+        command.FullName.ShouldBe(testData.FullName);
+        command.Email.ShouldBe(testData.Email);
+        command.TotalMoney.ShouldBe(testData.TotalMoney);
 
         // Verify the saga transitioned to Failed state or was finalized
-        // Try to get the saga instance to check its state
         var instance = _sagaHarness.Created.ContainsInState(
-            orderId,
+            testData.OrderId,
             _sagaHarness.StateMachine,
             _sagaHarness.StateMachine.Failed
         );
@@ -760,119 +558,8 @@ public sealed class OrderStateMachineTests
         }
         else
         {
-            // If the saga was finalized, it won't be in any state
-            var sagaNotInPlaced =
-                _sagaHarness.Created.ContainsInState(
-                    orderId,
-                    _sagaHarness.StateMachine,
-                    _sagaHarness.StateMachine.Placed
-                )
-                    is null;
-            var sagaNotInCompleted =
-                _sagaHarness.Created.ContainsInState(
-                    orderId,
-                    _sagaHarness.StateMachine,
-                    _sagaHarness.StateMachine.Completed
-                )
-                    is null;
-            var sagaNotInCancelled =
-                _sagaHarness.Created.ContainsInState(
-                    orderId,
-                    _sagaHarness.StateMachine,
-                    _sagaHarness.StateMachine.Cancelled
-                )
-                    is null;
-
-            // Saga should be finalized (not in any state)
-            (sagaNotInPlaced && sagaNotInCompleted && sagaNotInCancelled).ShouldBeTrue();
+            _sagaHarness.AssertSagaFinalized(testData.OrderId);
         }
-    }
-
-    [Test]
-    [Retry(3)]
-    [Timeout(30_000)] // 30 seconds for timeout handling test
-    public async Task GivenTimeoutRetryAttempts_WhenOrderCompletes_ThenShouldUnscheduleTimeoutAndComplete(
-        CancellationToken cancellationToken
-    )
-    {
-        // Arrange
-        var orderId = Guid.CreateVersion7();
-        var basketId = Guid.CreateVersion7();
-        const decimal totalMoney = 100.0m;
-
-        await InitializeSagaToPlacedState(orderId, basketId);
-
-        // Send one timeout to increment retry count
-        var timeoutEvent = new PlaceOrderTimeoutIntegrationEvent(orderId);
-        await _harness.Bus.Publish(timeoutEvent, cancellationToken);
-
-        // Wait for timeout event to be consumed
-        await AssertEventConsumed<PlaceOrderTimeoutIntegrationEvent>();
-
-        // Verify we're still in Placed state with retry count incremented
-        var instanceAfterTimeout = AssertSagaInState(orderId, _sagaHarness.StateMachine.Placed);
-        instanceAfterTimeout.TimeoutRetryCount.ShouldBe(1);
-        instanceAfterTimeout.RowVersion.ShouldBeGreaterThanOrEqualTo(0u);
-
-        // Act - Now complete the order
-        var completeEvent = new OrderStatusChangedToCompleteIntegrationEvent(
-            orderId,
-            basketId,
-            DefaultTestFullName,
-            DefaultTestEmail,
-            totalMoney
-        );
-        await _harness.Bus.Publish(completeEvent, cancellationToken);
-
-        // Assert
-        // Wait for the event to be consumed first
-        await AssertEventConsumed<OrderStatusChangedToCompleteIntegrationEvent>();
-
-        // Add explicit delay to ensure command publishing completes
-        await Task.Delay(100, cancellationToken);
-
-        // Verify completion command is published (this indirectly confirms the event was consumed)
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-        (await _harness.Published.Any<CompleteOrderCommand>(cts.Token)).ShouldBeTrue();
-
-        // Should transition to Completed state and then be finalized
-        // We can't check the final state because finalized sagas are removed, but we can verify behavior
-        var sagaNotInPlaced =
-            _sagaHarness.Created.ContainsInState(
-                orderId,
-                _sagaHarness.StateMachine,
-                _sagaHarness.StateMachine.Placed
-            )
-                is null;
-        var sagaNotInCompleted =
-            _sagaHarness.Created.ContainsInState(
-                orderId,
-                _sagaHarness.StateMachine,
-                _sagaHarness.StateMachine.Completed
-            )
-                is null;
-        var sagaNotInCancelled =
-            _sagaHarness.Created.ContainsInState(
-                orderId,
-                _sagaHarness.StateMachine,
-                _sagaHarness.StateMachine.Cancelled
-            )
-                is null;
-        var sagaNotInFailed =
-            _sagaHarness.Created.ContainsInState(
-                orderId,
-                _sagaHarness.StateMachine,
-                _sagaHarness.StateMachine.Failed
-            )
-                is null;
-
-        // Saga should be finalized (not in any state)
-        (
-            sagaNotInPlaced && sagaNotInCompleted && sagaNotInCancelled && sagaNotInFailed
-        ).ShouldBeTrue();
-
-        // Should have published CompleteOrderCommand
-        (await _harness.Published.Any<CompleteOrderCommand>(cts.Token)).ShouldBeTrue();
     }
 
     [Test]
@@ -885,30 +572,31 @@ public sealed class OrderStateMachineTests
     )
     {
         // Arrange
-        var orderId = Guid.CreateVersion7();
-        var basketId = Guid.CreateVersion7();
-        const decimal totalMoney = 100.0m;
-
-        await InitializeSagaToPlacedState(orderId, basketId, email, fullName);
+        var testData = CreateTestOrderData(email: email, fullName: fullName);
+        await (_harness, _sagaHarness).InitializeSagaToPlacedState(testData);
 
         var @event = new OrderStatusChangedToCompleteIntegrationEvent(
-            orderId,
-            basketId,
+            testData.OrderId,
+            testData.BasketId,
             fullName,
             email,
-            totalMoney
+            testData.TotalMoney
         );
 
         // Act
         await _harness.Bus.Publish(@event);
 
         // Assert
-        await AssertEventConsumed<OrderStatusChangedToCompleteIntegrationEvent>();
+        await Task.Delay(1000); // Give extra time for CI environments
+        using var eventCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        (
+            await _harness.Consumed.Any<OrderStatusChangedToCompleteIntegrationEvent>(
+                eventCts.Token
+            )
+        ).ShouldBeTrue();
 
         // Should not publish CompleteOrderCommand when FullName is null/empty
-        (
-            await WaitForCommandPublished<CompleteOrderCommand>(TimeSpan.FromSeconds(5))
-        ).ShouldBeFalse();
+        await _harness.AssertCommandNotPublished<CompleteOrderCommand>();
     }
 
     [Test]
@@ -921,30 +609,29 @@ public sealed class OrderStateMachineTests
     )
     {
         // Arrange
-        var orderId = Guid.CreateVersion7();
-        var basketId = Guid.CreateVersion7();
-        const decimal totalMoney = 100.0m;
-
-        await InitializeSagaToPlacedState(orderId, basketId, email, fullName);
+        var testData = CreateTestOrderData(email: email, fullName: fullName);
+        await (_harness, _sagaHarness).InitializeSagaToPlacedState(testData);
 
         var @event = new OrderStatusChangedToCancelIntegrationEvent(
-            orderId,
-            basketId,
+            testData.OrderId,
+            testData.BasketId,
             fullName,
             email,
-            totalMoney
+            testData.TotalMoney
         );
 
         // Act
         await _harness.Bus.Publish(@event);
 
         // Assert
-        await AssertEventConsumed<OrderStatusChangedToCancelIntegrationEvent>();
+        await Task.Delay(1000); // Give extra time for CI environments
+        using var eventCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        (
+            await _harness.Consumed.Any<OrderStatusChangedToCancelIntegrationEvent>(eventCts.Token)
+        ).ShouldBeTrue();
 
         // Should not publish CancelOrderCommand when FullName is null/empty
-        (
-            await WaitForCommandPublished<CancelOrderCommand>(TimeSpan.FromSeconds(5))
-        ).ShouldBeFalse();
+        await _harness.AssertCommandNotPublished<CancelOrderCommand>();
     }
 
     [Test]
@@ -957,27 +644,22 @@ public sealed class OrderStateMachineTests
     )
     {
         // Arrange
-        var orderId = Guid.CreateVersion7();
-        var basketId = Guid.CreateVersion7();
+        var testData = CreateTestOrderData(email: email, fullName: fullName);
+        await (_harness, _sagaHarness).InitializeSagaToPlacedState(testData);
 
-        await InitializeSagaToPlacedState(orderId, basketId, email, fullName);
-
-        var timeoutEvent = new PlaceOrderTimeoutIntegrationEvent(orderId);
+        var timeoutEvent = new PlaceOrderTimeoutIntegrationEvent(testData.OrderId);
 
         // Act - Send 3 timeouts to exhaust retries
         for (var i = 0; i < 3; i++)
         {
             await _harness.Bus.Publish(timeoutEvent);
-            // Add small delay between timeout events to ensure proper processing
-            await Task.Delay(50);
+            await Task.Delay(50); // Small delay between timeout events to ensure proper processing
         }
 
         // Assert
-        await AssertEventConsumed<PlaceOrderTimeoutIntegrationEvent>();
+        await _harness.AssertEventConsumed<PlaceOrderTimeoutIntegrationEvent>();
 
         // Should not publish CancelOrderCommand when Email or FullName is null
-        (
-            await WaitForCommandPublished<CancelOrderCommand>(TimeSpan.FromSeconds(5))
-        ).ShouldBeFalse();
+        await _harness.AssertCommandNotPublished<CancelOrderCommand>();
     }
 }

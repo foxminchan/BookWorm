@@ -4,16 +4,7 @@
     <ExcludeFromCodeCoverage>true</ExcludeFromCodeCoverage>
   </PropertyGroup>
   <ItemGroup Label="Unit Test">
-    <PackageReference Include="TUnit" />
-    <PackageReference Include="Shouldly" />
     <PackageReference Include="TngTech.ArchUnitNET" />
-    <PackageReference Include="GitHubActionsTestLogger" />
-  </ItemGroup>
-  <ItemGroup Label="Test Platforms">
-    <PackageReference Include="Microsoft.Testing.Extensions.HangDump" />
-    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" />
-    <PackageReference Include="Microsoft.Testing.Extensions.CrashDump" />
-    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Services\Chat\BookWorm.Chat\BookWorm.Chat.csproj" />
@@ -22,6 +13,7 @@
     <ProjectReference Include="..\..\src\Services\Catalog\BookWorm.Catalog\BookWorm.Catalog.csproj" />
     <ProjectReference Include="..\..\src\Services\Finance\BookWorm.Finance\BookWorm.Finance.csproj" />
     <ProjectReference Include="..\..\src\Services\Ordering\BookWorm.Ordering\BookWorm.Ordering.csproj" />
+    <ProjectReference Include="..\..\src\Services\Scheduler\BookWorm.Scheduler\BookWorm.Scheduler.csproj" />
     <ProjectReference Include="..\..\src\Services\Notification\BookWorm.Notification\BookWorm.Notification.csproj" />
   </ItemGroup>
 </Project>

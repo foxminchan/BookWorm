@@ -7,7 +7,7 @@
   </PropertyGroup>
   <ItemGroup Label="Aspire Packages">
     <!-- Aspire Hosting -->
-    <PackageVersion Include="Scalar.Aspire" Version="0.2.0" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.3.0" />
     <PackageVersion Include="Aspire.Hosting.Qdrant" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Testing" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.AppHost" Version="$(AspireVersion)" />
@@ -58,7 +58,6 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.12.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.12.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.12.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Quartz" Version="1.12.0-beta.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.GrpcNetClient" Version="1.12.0-beta.1" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.12.0" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.12.0" />
@@ -66,7 +65,6 @@
     <PackageVersion Include="Scrutor" Version="6.1.0" />
     <PackageVersion Include="MediatR" Version="[12.5.0]" />
     <PackageVersion Include="Marten.AspNetCore" Version="8.5.0" />
-    <PackageVersion Include="Quartz.AspNetCore" Version="3.14.0" />
     <PackageVersion Include="DistributedLock.Redis" Version="1.0.3" />
     <PackageVersion Include="Refit.HttpClientFactory" Version="8.0.0" />
     <PackageVersion Include="AspNetCore.HealthChecks.Uris" Version="$(HealthChecksVersion)" />
@@ -81,10 +79,13 @@
     <PackageVersion Include="Grpc.Tools" Version="2.72.0" PrivateAssets="All" />
     <PackageVersion Include="Google.Protobuf" Version="3.31.1" />
     <!-- MassTransit -->
-    <PackageVersion Include="MassTransit.Quartz" Version="$(MassTransitVersion)" />
     <PackageVersion Include="MassTransit.RabbitMQ" Version="$(MassTransitVersion)" />
     <PackageVersion Include="MassTransit.TestFramework" Version="$(MassTransitVersion)" />
     <PackageVersion Include="MassTransit.EntityFrameworkCore" Version="$(MassTransitVersion)" />
+    <!-- TickerQ -->
+    <PackageVersion Include="TickerQ" Version="$(TickerQVersion)" />
+    <PackageVersion Include="TickerQ.Dashboard" Version="$(TickerQVersion)" />
+    <PackageVersion Include="TickerQ.EntityFrameworkCore" Version="$(TickerQVersion)" />
     <!-- Miscellaneous -->
     <PackageVersion Include="CliWrap" Version="3.9.0" />
     <PackageVersion Include="MailKit" Version="4.13.0" />
@@ -97,7 +98,6 @@
   <ItemGroup Label="Testing">
     <!-- Testing packages -->
     <PackageVersion Include="Moq" Version="4.20.72" />
-    <PackageVersion Include="MockQueryable.Moq" Version="8.0.0" />
     <PackageVersion Include="Bogus" Version="35.6.3" />
     <PackageVersion Include="TUnit" Version="0.25.21" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />

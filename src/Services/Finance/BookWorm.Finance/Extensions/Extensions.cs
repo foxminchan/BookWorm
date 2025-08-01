@@ -8,16 +8,11 @@ internal static class Extensions
     {
         var services = builder.Services;
 
-        // Add exception handlers
-        services.AddExceptionHandler<GlobalExceptionHandler>();
-        services.AddProblemDetails();
-
-        builder.AddAzureNpgsqlDbContext<FinanceDbContext>(
+        builder.AddAzurePostgresDbContext<FinanceDbContext>(
             Components.Database.Finance,
-            configureDbContextOptions: options => options.UseSnakeCaseNamingConvention()
+            _ => services.AddMigration<FinanceDbContext>(),
+            true
         );
-
-        services.AddMigration<FinanceDbContext>();
 
         builder.AddSagaStateMachineServices();
     }

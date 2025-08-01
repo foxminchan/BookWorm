@@ -2,29 +2,26 @@
   <PropertyGroup Label="Framework">
     <TargetFramework>net9.0</TargetFramework>
     <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-  </PropertyGroup>
-  <PropertyGroup Label="Product">
-    <Product>BookWorm</Product>
-    <Authors>Nhan Nguyen</Authors>
-    <PackageLicenseUrl>https://github.com/foxminchan/BookWorm/blob/main/LICENSE</PackageLicenseUrl>
-    <PackageReadmeFile>https://github.com/foxminchan/BookWorm/blob/main/README.md</PackageReadmeFile>
-    <RepositoryUrl>https://github.com/foxminchan/BookWorm</RepositoryUrl>
-    <RepositoryType>Git</RepositoryType>
-  </PropertyGroup>
-  <PropertyGroup Label="Debug">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>embedded</DebugType>
   </PropertyGroup>
   <PropertyGroup Label="Build">
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <WarnOnPackingNonPackableProject>false</WarnOnPackingNonPackableProject>
-    <Nullable>enable</Nullable>
     <!-- Temporarily disable security warnings for transitive packages. -->
     <NoWarn>NU1608</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
+  <ItemGroup Condition="$(MSBuildProjectFullPath.Contains('Tests'))" Label="Testing">
+    <PackageReference Include="TUnit" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="GitHubActionsTestLogger" />
+    <PackageReference Include="Microsoft.Testing.Extensions.HangDump" />
+    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CrashDump" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
+  </ItemGroup>
 </Project>

@@ -1,6 +1,8 @@
-﻿namespace BookWorm.Notification.Infrastructure.Senders.Outbox;
+﻿using BookWorm.Notification.Domain.Models;
 
-internal sealed class EmailOutboxService(INotificationDbContext dbContext, ISender actualSender)
+namespace BookWorm.Notification.Infrastructure.Senders.Outbox;
+
+internal sealed class EmailOutboxService(IOutboxRepository repository, ISender actualSender)
     : ISender
 {
     public async Task SendAsync(
@@ -22,12 +24,12 @@ internal sealed class EmailOutboxService(INotificationDbContext dbContext, ISend
             mailMessage.HtmlBody
         );
 
-        await dbContext.Outboxes.AddAsync(outbox, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await repository.AddAsync(outbox, cancellationToken);
+        await repository.UnitOfWork.SaveChangesAsync(cancellationToken);
 
         await actualSender.SendAsync(mailMessage, cancellationToken);
 
         outbox.MarkAsSent();
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await repository.UnitOfWork.SaveChangesAsync(cancellationToken);
     }
 }

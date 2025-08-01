@@ -4,11 +4,10 @@
     <PackageReference Include="Mjml.Net" />
     <PackageReference Include="SendGrid" />
     <PackageReference Include="AspNetCore.HealthChecks.SendGrid" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
   </ItemGroup>
-  <ItemGroup Label="Quartz">
-    <PackageReference Include="Quartz.AspNetCore" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.Quartz" />
+  <ItemGroup Label="EF Core">
+    <PackageReference Include="MassTransit.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\Aspire\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj" />

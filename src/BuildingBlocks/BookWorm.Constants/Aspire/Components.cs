@@ -14,13 +14,15 @@ public static class Components
     public static class Database
     {
         private const string Suffix = "db";
-        public static readonly string Catalog = $"{nameof(Catalog).ToLowerInvariant()}{Suffix}";
-        public static readonly string Ordering = $"{nameof(Ordering).ToLowerInvariant()}{Suffix}";
-        public static readonly string Rating = $"{nameof(Rating).ToLowerInvariant()}{Suffix}";
-        public static readonly string Finance = $"{nameof(Finance).ToLowerInvariant()}{Suffix}";
+
         public static readonly string Chat = $"{nameof(Chat).ToLowerInvariant()}{Suffix}";
         public static readonly string User = $"{nameof(User).ToLowerInvariant()}{Suffix}";
+        public static readonly string Rating = $"{nameof(Rating).ToLowerInvariant()}{Suffix}";
         public static readonly string Health = $"{nameof(Health).ToLowerInvariant()}{Suffix}";
+        public static readonly string Finance = $"{nameof(Finance).ToLowerInvariant()}{Suffix}";
+        public static readonly string Catalog = $"{nameof(Catalog).ToLowerInvariant()}{Suffix}";
+        public static readonly string Ordering = $"{nameof(Ordering).ToLowerInvariant()}{Suffix}";
+        public static readonly string Scheduler = $"{nameof(Scheduler).ToLowerInvariant()}{Suffix}";
 
         public static readonly string Notification =
             $"{nameof(Notification).ToLowerInvariant()}{Suffix}";

@@ -1,15 +1,10 @@
 ﻿global using System.Diagnostics.CodeAnalysis;
 global using BookWorm.Chassis.EF;
-global using BookWorm.Chassis.Endpoints;
 global using BookWorm.Chassis.EventBus;
 global using BookWorm.Chassis.Exceptions;
 global using BookWorm.Finance.Infrastructure;
 global using BookWorm.Finance.Saga;
 global using BookWorm.ServiceDefaults;
-global using BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
-global using BookWorm.ServiceDefaults.Auth;
 global using BookWorm.ServiceDefaults.Configuration;
-global using BookWorm.ServiceDefaults.Kestrel;
-global using BookWorm.ServiceDefaults.Keycloak;
 global using MassTransit;
 global using Microsoft.EntityFrameworkCore;

@@ -74,6 +74,7 @@ public static class HealthChecksUIExtensions
         string storageProvider = "PostgreSql"
     )
     {
+        builder.WaitFor(source);
         builder.WithEnvironment("storage_provider", storageProvider);
         builder.WithEnvironment("storage_connection", source);
         return builder;

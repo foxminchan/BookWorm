@@ -1,6 +1,4 @@
 ﻿using BookWorm.Constants.Aspire;
-using OpenTelemetry.Trace;
-using Quartz;
 
 namespace BookWorm.Finance.Saga;
 
@@ -15,20 +13,11 @@ public static class SagaExtensions
             OrderStateMachineSettings.ConfigurationSection
         );
 
-        services.AddQuartz(q =>
-        {
-            q.SchedulerName = nameof(Finance);
-            q.SchedulerId = $"{nameof(Finance)}Scheduler";
-            q.UseDefaultThreadPool(tp => tp.MaxConcurrency = 10);
-        });
-
         builder.AddEventBus(
             typeof(IFinanceApiMarker),
             configurator =>
             {
-                configurator.AddPublishMessageScheduler();
-
-                configurator.AddQuartzConsumers();
+                configurator.AddDelayedMessageScheduler();
 
                 configurator
                     .AddSagaStateMachine<
@@ -46,12 +35,8 @@ public static class SagaExtensions
 
                 configurator.AddEntityFrameworkOutbox();
             },
-            (_, configure) => configure.UsePublishMessageScheduler()
+            (_, configure) => configure.UseDelayedMessageScheduler()
         );
-
-        services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
-
-        services.AddOpenTelemetry().WithTracing(t => t.AddQuartzInstrumentation());
     }
 
     private static void AddEntityFrameworkOutbox(this IBusRegistrationConfigurator configurator)
