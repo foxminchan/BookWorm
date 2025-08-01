@@ -1,4 +1,5 @@
-﻿using BookWorm.Notification.Infrastructure.Senders.MailKit;
+﻿using BookWorm.Notification.Domain.Models;
+using BookWorm.Notification.Infrastructure.Senders.MailKit;
 using BookWorm.Notification.Infrastructure.Senders.SendGrid;
 
 namespace BookWorm.Notification.Infrastructure.Senders.Outbox;
@@ -18,13 +19,13 @@ internal static class OutboxExtensions
     {
         builder.Services.AddScoped<ISender>(sp =>
         {
-            var dbContext = sp.GetRequiredService<INotificationDbContext>();
+            var repository = sp.GetRequiredService<IOutboxRepository>();
 
             ISender underlyingSender = builder.Environment.IsDevelopment()
                 ? sp.GetRequiredService<MailKitSender>()
                 : sp.GetRequiredService<SendGridSender>();
 
-            return new EmailOutboxService(dbContext, underlyingSender);
+            return new EmailOutboxService(repository, underlyingSender);
         });
     }
 }

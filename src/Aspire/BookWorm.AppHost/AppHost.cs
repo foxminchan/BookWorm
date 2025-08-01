@@ -36,6 +36,24 @@ var pgPassword = builder
         }
     );
 
+var schedulerUserName = builder
+    .AddParameter("scheduler-user", "admin", true)
+    .WithDescription(ParameterDescriptions.Scheduler.UserName, true);
+
+var schedulerPassword = builder
+    .AddParameter("scheduler-password", true)
+    .WithDescription(ParameterDescriptions.Scheduler.Password, true)
+    .WithGeneratedDefault(
+        new()
+        {
+            MinLength = 16,
+            MinUpper = 2,
+            MinLower = 2,
+            MinNumeric = 2,
+            MinSpecial = 2,
+        }
+    );
+
 ReferenceExpression? pgEndpoint = null;
 
 var postgres = builder
@@ -49,7 +67,6 @@ var postgres = builder
     .ProvisionAsService();
 
 pgUser.WithParentRelationship(postgres);
-pgPassword.WithParentRelationship(postgres);
 
 pgEndpoint ??= ReferenceExpression.Create($"{postgres.GetOutput("hostname")}");
 
@@ -88,6 +105,7 @@ var healthDb = postgres.AddDatabase(Components.Database.Health);
 var catalogDb = postgres.AddDatabase(Components.Database.Catalog);
 var financeDb = postgres.AddDatabase(Components.Database.Finance);
 var orderingDb = postgres.AddDatabase(Components.Database.Ordering);
+var schedulerDb = postgres.AddDatabase(Components.Database.Scheduler);
 var notificationDb = postgres.AddDatabase(Components.Database.Notification);
 
 await builder.AddOllama(configure =>
@@ -203,41 +221,53 @@ var financeApi = builder
     .WithReference(financeDb)
     .WaitFor(financeDb)
     .WithReference(queue)
+    .WaitFor(queue);
+
+var schedulerApi = builder
+    .AddProject<Scheduler>(Services.Scheduler)
+    .WithReference(schedulerDb)
+    .WaitFor(schedulerDb)
+    .WithReference(queue)
     .WaitFor(queue)
-    .WithIdP(keycloak, kcRealmName);
+    .WithEnvironment("TickerQBasicAuth__Username", schedulerUserName)
+    .WithEnvironment("TickerQBasicAuth__Password", schedulerPassword);
+
+schedulerUserName.WithParentRelationship(schedulerApi);
 
 var gateway = builder
     .AddApiGatewayProxy()
-    .WithService(catalogApi, true)
     .WithService(chatApi)
-    .WithService(orderingApi)
-    .WithService(basketApi, true)
     .WithService(ratingApi)
+    .WithService(orderingApi)
+    .WithService(schedulerApi)
+    .WithService(basketApi, true)
+    .WithService(catalogApi, true)
     .WithService(keycloak);
 
 builder
     .AddHealthChecksUI()
     .WithStorageProvider(healthDb)
-    .WithReference(catalogApi)
-    .WithReference(chatApi)
     .WithReference(mcp)
-    .WithReference(orderingApi)
+    .WithReference(chatApi)
     .WithReference(ratingApi)
     .WithReference(basketApi)
-    .WithReference(notificationApi)
+    .WithReference(catalogApi)
     .WithReference(financeApi)
+    .WithReference(orderingApi)
+    .WithReference(schedulerApi)
+    .WithReference(notificationApi)
     .WithExternalHttpEndpoints();
 
 if (builder.ExecutionContext.IsRunMode)
 {
     builder
         .AddScalar(keycloak)
-        .WithOpenAPI(basketApi)
-        .WithOpenAPI(catalogApi)
+        .WithOpenAPI(mcp)
         .WithOpenAPI(chatApi)
-        .WithOpenAPI(orderingApi)
+        .WithOpenAPI(basketApi)
         .WithOpenAPI(ratingApi)
-        .WithOpenAPI(mcp);
+        .WithOpenAPI(catalogApi)
+        .WithOpenAPI(orderingApi);
 
     builder.AddK6(gateway);
 }

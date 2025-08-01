@@ -11,14 +11,18 @@ public static class DbContextExtensions
     public static void AddAzurePostgresDbContext<TDbContext>(
         this IHostApplicationBuilder builder,
         string name,
-        Action<IHostApplicationBuilder>? action = null
+        Action<IHostApplicationBuilder>? action = null,
+        bool excludeDefaultInterceptors = false
     )
         where TDbContext : DbContext
     {
         var services = builder.Services;
 
-        services.AddScoped<DbCommandInterceptor, QueryPerformanceInterceptor>();
-        services.AddScoped<ISaveChangesInterceptor, PublishDomainEventsInterceptor>();
+        if (!excludeDefaultInterceptors)
+        {
+            services.AddScoped<DbCommandInterceptor, QueryPerformanceInterceptor>();
+            services.AddSingleton<ISaveChangesInterceptor, PublishDomainEventsInterceptor>();
+        }
 
         services.AddDbContext<TDbContext>(
             (sp, options) =>
