@@ -5,16 +5,7 @@
   </PropertyGroup>
   <ItemGroup Label="Unit Test">
     <PackageReference Include="Moq" />
-    <PackageReference Include="TUnit" />
     <PackageReference Include="Bogus" />
-    <PackageReference Include="Shouldly" />
-    <PackageReference Include="GitHubActionsTestLogger" />
-  </ItemGroup>
-  <ItemGroup Label="Test Platforms">
-    <PackageReference Include="Microsoft.Testing.Extensions.HangDump" />
-    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" />
-    <PackageReference Include="Microsoft.Testing.Extensions.CrashDump" />
-    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BookWorm.Basket\BookWorm.Basket.csproj" />

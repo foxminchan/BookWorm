@@ -15,6 +15,7 @@ public abstract class ArchUnitBaseTest : BaseTest
             NotificationAssembly,
             OrderingAssembly,
             RatingAssembly,
+            SchedulerAssembly,
             ChassisAssembly,
             ConstantsAssembly,
             SharedKernelAssembly
@@ -62,6 +63,12 @@ public abstract class ArchUnitBaseTest : BaseTest
         .That()
         .ResideInAssembly(RatingAssembly)
         .As(nameof(Rating));
+
+    protected static readonly IObjectProvider<IType> SchedulerServiceTypes = ArchRuleDefinition
+        .Types()
+        .That()
+        .ResideInAssembly(SchedulerAssembly)
+        .As(nameof(Scheduler));
 
     protected static readonly IObjectProvider<IType> ChassisServiceTypes = ArchRuleDefinition
         .Types()

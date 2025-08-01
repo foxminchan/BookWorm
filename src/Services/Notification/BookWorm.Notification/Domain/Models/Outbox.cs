@@ -1,8 +1,9 @@
 ﻿using BookWorm.SharedKernel.Helpers;
+using BookWorm.SharedKernel.SeedWork;
 
 namespace BookWorm.Notification.Domain.Models;
 
-public sealed class Outbox()
+public sealed class Outbox() : IAggregateRoot
 {
     public Outbox(string toName, string toEmail, string subject, string body)
         : this()

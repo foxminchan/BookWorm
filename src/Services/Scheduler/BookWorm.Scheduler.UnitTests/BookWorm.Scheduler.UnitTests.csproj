@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <ExcludeFromCodeCoverage>true</ExcludeFromCodeCoverage>
+  </PropertyGroup>
+  <ItemGroup Label="Unit Test">
+    <PackageReference Include="Moq" />
+    <PackageReference Include="Bogus" />
+    <PackageReference Include="MassTransit.TestFramework" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BookWorm.Scheduler\BookWorm.Scheduler.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Moq" />
+    <Using Include="Bogus" />
+    <Using Include="Shouldly" />
+  </ItemGroup>
+</Project>

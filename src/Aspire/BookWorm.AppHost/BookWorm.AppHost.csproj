@@ -58,6 +58,10 @@
       Include="..\..\Services\Rating\BookWorm.Rating\BookWorm.Rating.csproj"
       AspireProjectMetadataTypeName="Rating"
     />
+    <ProjectReference
+      Include="..\..\Services\Scheduler\BookWorm.Scheduler\BookWorm.Scheduler.csproj"
+      AspireProjectMetadataTypeName="Scheduler"
+    />
   </ItemGroup>
   <ItemGroup Label="Integrations">
     <ProjectReference

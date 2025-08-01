@@ -6,6 +6,7 @@ public sealed class OrderStateMachineDefinition : SagaDefinition<OrderState>
     public OrderStateMachineDefinition()
     {
         ConcurrentMessageLimit = 12;
+        EndpointName = "finance-order-state-machine";
     }
 
     protected override void ConfigureSaga(

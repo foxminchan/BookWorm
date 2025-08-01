@@ -13,10 +13,6 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseExceptionHandler();
-
-app.UseStatusCodePages();
-
 app.UseOutputCache();
 
 app.MapDefaultEndpoints();

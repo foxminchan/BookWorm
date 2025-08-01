@@ -130,4 +130,30 @@ public static class ParameterDescriptions
             - Email deliverability best practices: https://docs.sendgrid.com/ui/sending-email/deliverability
             """;
     }
+
+    public static class Scheduler
+    {
+        public const string UserName = """
+            👤 The username for the BookWorm scheduler application.
+            This user will be used to authenticate with the scheduler service.
+
+            💡 Default: 'admin' (not recommended for production)
+            📋 Example: 'scheduler_user' or 'bookworm_scheduler'
+
+            ⚠️  Important: Use a unique username for the scheduler service
+            """;
+
+        public const string Password = """
+            🔑 The password for the BookWorm scheduler application.
+            Ensure this password meets your security requirements.
+
+            🔒 Security requirements:
+            - Minimum 16 characters recommended
+            - Mix of uppercase, lowercase, numbers, and special characters
+            - Avoid common passwords and dictionary words
+
+            ⚠️  Important: Store securely and rotate regularly in production
+            🛡️  Consider using Azure Key Vault or similar secret management
+            """;
+    }
 }

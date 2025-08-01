@@ -7,6 +7,7 @@ using BookWorm.Finance;
 using BookWorm.Notification;
 using BookWorm.Ordering;
 using BookWorm.Rating;
+using BookWorm.Scheduler;
 using BookWorm.SharedKernel;
 using Assembly = System.Reflection.Assembly;
 
@@ -24,6 +25,7 @@ public abstract class BaseTest
 
     protected static readonly Assembly OrderingAssembly = typeof(IOrderingApiMarker).Assembly;
     protected static readonly Assembly RatingAssembly = typeof(IRatingApiMarker).Assembly;
+    protected static readonly Assembly SchedulerAssembly = typeof(ISchedulerApiMarker).Assembly;
     protected static readonly Assembly ChassisAssembly = typeof(IChassisMarker).Assembly;
     protected static readonly Assembly ConstantsAssembly = typeof(IConstantsMarker).Assembly;
     protected static readonly Assembly SharedKernelAssembly = typeof(ISharedKernelMarker).Assembly;
