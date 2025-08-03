@@ -14,8 +14,31 @@ public static class CorsExtensions
         builder.Eventing.Subscribe<BeforeStartEvent>(
             (e, _) =>
             {
-                var backofficeParam = builder.AddParameter("backoffice-domain", true);
-                var storefrontParam = builder.AddParameter("storefront-domain", true);
+                var backofficeParam = builder
+                    .AddParameter("backoffice-domain", true)
+                    .WithDescription(ParameterDescriptions.Cors.BackOfficeUrl, true)
+                    .WithCustomInput(_ =>
+                        new()
+                        {
+                            Label = "BackOffice Domain",
+                            InputType = InputType.Text,
+                            Value = "https://admin.bookworm.com",
+                            Description = "Enter the BackOffice domain URL",
+                        }
+                    );
+
+                var storefrontParam = builder
+                    .AddParameter("storefront-domain", true)
+                    .WithDescription(ParameterDescriptions.Cors.StoreFrontUrl, true)
+                    .WithCustomInput(_ =>
+                        new()
+                        {
+                            Label = "StoreFront Domain",
+                            InputType = InputType.Text,
+                            Value = "https://bookworm.com",
+                            Description = "Enter the StoreFront domain URL",
+                        }
+                    );
 
                 foreach (var project in e.Model.Resources.OfType<ProjectResource>())
                 {
