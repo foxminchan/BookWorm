@@ -156,4 +156,33 @@ public static class ParameterDescriptions
             🛡️  Consider using Azure Key Vault or similar secret management
             """;
     }
+
+    public static class Cors
+    {
+        public const string BackOfficeUrl = """
+            🌐 The URL of the BackOffice application for CORS configuration.
+            This allows the BookWorm API to accept requests from the BackOffice domain.
+
+            💡 Example: 'https://admin.bookworm.com'
+            ⚠️  Important: Must match the actual BackOffice URL in production
+            📋 Format: Must be a valid URL (including protocol)
+
+            📚 Resources:
+            - For more information, visit: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+            - CORS configuration guide: https://docs.microsoft.com/en-us/aspnet/core/security/cors
+            """;
+
+        public const string StoreFrontUrl = """
+            🌐 The URL of the StoreFront application for CORS configuration.
+            This allows the BookWorm API to accept requests from the StoreFront domain.
+
+            💡 Example: 'https://bookworm.com'
+            ⚠️  Important: Must match the actual StoreFront URL in production
+            📋 Format: Must be a valid URL (including protocol)
+
+            📚 Resources:
+            - For more information, visit: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+            - CORS configuration guide: https://docs.microsoft.com/en-us/aspnet/core/security/cors
+            """;
+    }
 }

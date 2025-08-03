@@ -14,8 +14,6 @@ internal static class Extensions
     {
         var services = builder.Services;
 
-        services.AddHttpClient();
-
         services.AddKeyedSingleton(
             nameof(BookAgent),
             (sp, _) =>

@@ -15,9 +15,11 @@ public static class Extensions
         var services = builder.Services;
 
         services.AddKernel();
-        services.AddHttpClient();
+
         builder.AddSkTelemetry();
+
         builder.AddChatCompletion();
+
         builder.AddEmbeddingGenerator();
 
         services.AddKeyedSingleton(
