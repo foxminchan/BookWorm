@@ -1,4 +1,5 @@
-﻿using BookWorm.Contracts;
+﻿using BookWorm.Common;
+using BookWorm.Contracts;
 using BookWorm.Ordering.IntegrationEvents.EventHandlers;
 using MassTransit;
 using MassTransit.Testing;
@@ -7,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Ordering.UnitTests.Consumers;
 
-public sealed class DeleteBasketCompleteConsumerTests
+public sealed class DeleteBasketCompleteConsumerTests : SnapshotTestBase
 {
     private const decimal TotalMoney = 125.99m;
     private readonly Mock<ILogger<DeleteBasketCompleteCommandHandler>> _loggerMock = new();
@@ -52,6 +53,10 @@ public sealed class DeleteBasketCompleteConsumerTests
             Times.Once
         );
 
+        // Contract verification with deterministic data
+        var contractCommand = new DeleteBasketCompleteCommand(Guid.CreateVersion7(), 100.00m);
+        await VerifySnapshot(contractCommand);
+
         await harness.Stop();
     }
 
@@ -80,6 +85,10 @@ public sealed class DeleteBasketCompleteConsumerTests
 
         // No fault should be published (since the handler only logs and returns Task.CompletedTask)
         (await harness.Published.Any<Fault<DeleteBasketCompleteCommand>>()).ShouldBeFalse();
+
+        // Contract verification with deterministic data
+        var contractCommand = new DeleteBasketCompleteCommand(Guid.CreateVersion7(), 250.00m);
+        await VerifySnapshot(contractCommand);
 
         await harness.Stop();
     }
@@ -130,6 +139,15 @@ public sealed class DeleteBasketCompleteConsumerTests
                 ),
             Times.Exactly(3)
         );
+
+        // Contract verification with deterministic data for multiple commands
+        var contractCommands = new List<DeleteBasketCompleteCommand>
+        {
+            new(Guid.CreateVersion7(), 100.00m),
+            new(Guid.CreateVersion7(), 150.00m),
+            new(Guid.CreateVersion7(), 200.00m),
+        };
+        await VerifySnapshot(contractCommands);
 
         await harness.Stop();
     }

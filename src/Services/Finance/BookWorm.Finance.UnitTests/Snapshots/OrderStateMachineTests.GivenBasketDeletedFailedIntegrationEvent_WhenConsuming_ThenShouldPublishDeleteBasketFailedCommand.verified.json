@@ -1,0 +1,34 @@
+﻿{
+  "InputEventType": "BasketDeletedFailedIntegrationEvent",
+  "InputProperties": {
+    "OrderId": "Guid_1",
+    "BasketId": "Guid_2",
+    "Email": "example@email.com",
+    "TotalMoney": 100.0
+  },
+  "InputSchema": {
+    "OrderIdType": "Guid",
+    "BasketIdType": "Guid",
+    "EmailType": "String",
+    "TotalMoneyType": "Decimal",
+    "HasId": true,
+    "HasCreationDate": true,
+    "IsIntegrationEvent": true
+  },
+  "OutputCommandType": "DeleteBasketFailedCommand",
+  "OutputProperties": {
+    "OrderId": "Guid_1",
+    "BasketId": "Guid_2",
+    "Email": "example@email.com",
+    "TotalMoney": 100.0
+  },
+  "OutputSchema": {
+    "OrderIdType": "Guid",
+    "BasketIdType": "Guid",
+    "EmailType": "String",
+    "TotalMoneyType": "Decimal",
+    "HasId": true,
+    "HasCreationDate": true,
+    "IsIntegrationEvent": true
+  }
+}

@@ -247,8 +247,8 @@ public sealed class CancelChatCommandTests
         await Task.WhenAll(task1, task2);
 
         // Assert
-        task1.Result.ShouldBe(Unit.Value);
-        task2.Result.ShouldBe(Unit.Value);
+        (await task1).ShouldBe(Unit.Value);
+        (await task2).ShouldBe(Unit.Value);
         _cancellationManagerMock.Verify(cm => cm.CancelAsync(chatId1), Times.Once);
         _cancellationManagerMock.Verify(cm => cm.CancelAsync(chatId2), Times.Once);
     }

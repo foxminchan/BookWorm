@@ -1,5 +1,6 @@
 ﻿using BookWorm.Basket.Domain;
 using BookWorm.Basket.IntegrationEvents.EventHandlers;
+using BookWorm.Common;
 using BookWorm.Contracts;
 using MassTransit;
 using MassTransit.Testing;
@@ -7,24 +8,21 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Basket.UnitTests.Consumers;
 
-public sealed class PlaceOrderConsumerTests
+public sealed class PlaceOrderConsumerTests : SnapshotTestBase
 {
     private readonly Guid _basketId;
     private readonly PlaceOrderCommand _command;
-    private readonly string _email;
-    private readonly Guid _orderId;
     private readonly Mock<IBasketRepository> _repositoryMock;
-    private readonly decimal _totalMoney;
 
     public PlaceOrderConsumerTests()
     {
-        _orderId = Guid.CreateVersion7();
+        var orderId = Guid.CreateVersion7();
         _basketId = Guid.CreateVersion7();
-        _email = "test@example.com";
+        const string email = "test@example.com";
         const string fullName = "Test User";
-        _totalMoney = 99.99m;
+        const decimal totalMoney = 99.99m;
         _repositoryMock = new();
-        _command = new(_basketId, fullName, _email, _orderId, _totalMoney);
+        _command = new(_basketId, fullName, email, orderId, totalMoney);
     }
 
     [Test]
@@ -55,9 +53,27 @@ public sealed class PlaceOrderConsumerTests
             .Published.Select<BasketDeletedCompleteIntegrationEvent>()
             .First();
 
-        publishedMessage.Context.Message.OrderId.ShouldBe(_orderId);
-        publishedMessage.Context.Message.BasketId.ShouldBe(_basketId);
-        publishedMessage.Context.Message.TotalMoney.ShouldBe(_totalMoney);
+        // Verify contract structure and properties
+        await VerifySnapshot(
+            new
+            {
+                EventType = nameof(BasketDeletedCompleteIntegrationEvent),
+                Properties = new
+                {
+                    publishedMessage.Context.Message.OrderId,
+                    publishedMessage.Context.Message.BasketId,
+                    publishedMessage.Context.Message.TotalMoney,
+                },
+                Schema = new
+                {
+                    OrderIdType = publishedMessage.Context.Message.OrderId.GetType().Name,
+                    BasketIdType = publishedMessage.Context.Message.BasketId.GetType().Name,
+                    TotalMoneyType = publishedMessage.Context.Message.TotalMoney.GetType().Name,
+                    HasId = publishedMessage.Context.Message.Id != Guid.Empty,
+                    HasCreationDate = publishedMessage.Context.Message.CreationDate != default,
+                },
+            }
+        );
 
         _repositoryMock.Verify(x => x.DeleteBasketAsync(_basketId.ToString()), Times.Once);
 
@@ -92,10 +108,29 @@ public sealed class PlaceOrderConsumerTests
             .Published.Select<BasketDeletedFailedIntegrationEvent>()
             .First();
 
-        publishedMessage.Context.Message.OrderId.ShouldBe(_orderId);
-        publishedMessage.Context.Message.BasketId.ShouldBe(_basketId);
-        publishedMessage.Context.Message.Email.ShouldBe(_email);
-        publishedMessage.Context.Message.TotalMoney.ShouldBe(_totalMoney);
+        // Verify contract structure and properties
+        await VerifySnapshot(
+            new
+            {
+                EventType = nameof(BasketDeletedFailedIntegrationEvent),
+                Properties = new
+                {
+                    publishedMessage.Context.Message.OrderId,
+                    publishedMessage.Context.Message.BasketId,
+                    publishedMessage.Context.Message.Email,
+                    publishedMessage.Context.Message.TotalMoney,
+                },
+                Schema = new
+                {
+                    OrderIdType = publishedMessage.Context.Message.OrderId.GetType().Name,
+                    BasketIdType = publishedMessage.Context.Message.BasketId.GetType().Name,
+                    EmailType = publishedMessage.Context.Message.Email?.GetType().Name,
+                    TotalMoneyType = publishedMessage.Context.Message.TotalMoney.GetType().Name,
+                    HasId = publishedMessage.Context.Message.Id != Guid.Empty,
+                    HasCreationDate = publishedMessage.Context.Message.CreationDate != default,
+                },
+            }
+        );
 
         _repositoryMock.Verify(x => x.DeleteBasketAsync(_basketId.ToString()), Times.Once);
 
@@ -129,5 +164,36 @@ public sealed class PlaceOrderConsumerTests
         _repositoryMock.Verify(x => x.DeleteBasketAsync(_basketId.ToString()), Times.Once);
 
         await harness.Stop();
+    }
+
+    [Test]
+    public async Task GivenPlaceOrderCommand_ThenShouldVerifyInputContract()
+    {
+        // Verify the input command structure to ensure consumer contract compatibility
+        await VerifySnapshot(
+            new
+            {
+                CommandType = nameof(PlaceOrderCommand),
+                Properties = new
+                {
+                    _command.BasketId,
+                    _command.FullName,
+                    _command.Email,
+                    _command.OrderId,
+                    _command.TotalMoney,
+                },
+                Schema = new
+                {
+                    BasketIdType = _command.BasketId.GetType().Name,
+                    FullNameType = _command.FullName?.GetType().Name,
+                    EmailType = _command.Email?.GetType().Name,
+                    OrderIdType = _command.OrderId.GetType().Name,
+                    TotalMoneyType = _command.TotalMoney.GetType().Name,
+                    HasId = _command.Id != Guid.Empty,
+                    HasCreationDate = _command.CreationDate != default,
+                    IsIntegrationEvent = true,
+                },
+            }
+        );
     }
 }

@@ -1,4 +1,5 @@
-﻿using BookWorm.Contracts;
+﻿using BookWorm.Common;
+using BookWorm.Contracts;
 using BookWorm.Notification.Domain.Models;
 using BookWorm.Notification.Infrastructure.Senders;
 using BookWorm.Notification.IntegrationEvents.EventHandlers;
@@ -11,7 +12,7 @@ using MimeKit;
 
 namespace BookWorm.Notification.UnitTests.Consumers;
 
-public sealed class ResendErrorEmailConsumerTests
+public sealed class ResendErrorEmailConsumerTests : SnapshotTestBase
 {
     private readonly Mock<GlobalLogBuffer> _logBufferMock = new();
     private readonly Mock<ILogger<ResendErrorEmailIntegrationEventHandler>> _loggerMock = new();
@@ -34,6 +35,9 @@ public sealed class ResendErrorEmailConsumerTests
             .ReturnsAsync(failedEmails);
 
         var command = new ResendErrorEmailIntegrationEvent();
+
+        // Contract verification - input event
+        await VerifySnapshot(command);
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x =>
@@ -143,6 +147,9 @@ public sealed class ResendErrorEmailConsumerTests
 
         // No flush should be called when no successes
         _logBufferMock.Verify(x => x.Flush(), Times.Never);
+
+        // Contract verification - ResendErrorEmailIntegrationEvent has no parameters so it's deterministic
+        await VerifySnapshot(command);
 
         await harness.Stop();
     }

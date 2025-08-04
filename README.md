@@ -41,6 +41,7 @@
   - [x] Utilized EventCatalog for centralized architecture documentation
 - [x] Established a testing strategy:
   - [x] Conducted service unit tests
+  - [x] Implemented contract tests
   - [x] Established architecture testing strategy
   - [x] Performed load testing with k6 (see [testing suite](./src/Aspire/BookWorm.AppHost/Container/k6/README.md))
   - [ ] Planned integration tests

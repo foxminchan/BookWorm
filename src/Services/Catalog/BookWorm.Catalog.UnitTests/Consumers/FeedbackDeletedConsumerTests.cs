@@ -2,6 +2,7 @@
 using BookWorm.Catalog.IntegrationEvents.EventHandlers;
 using BookWorm.Catalog.UnitTests.Fakers;
 using BookWorm.Chassis.Repository;
+using BookWorm.Common;
 using BookWorm.Contracts;
 using MassTransit;
 using MassTransit.Testing;
@@ -9,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Catalog.UnitTests.Consumers;
 
-public sealed class FeedbackDeletedConsumerTests
+public sealed class FeedbackDeletedConsumerTests : SnapshotTestBase
 {
     private readonly Guid _bookId;
     private readonly Guid _feedbackId;
@@ -60,6 +61,29 @@ public sealed class FeedbackDeletedConsumerTests
 
         (await consumerHarness.Consumed.Any<FeedbackDeletedIntegrationEvent>()).ShouldBeTrue();
 
+        // Verify the input event structure to ensure consumer contract compatibility
+        await VerifySnapshot(
+            new
+            {
+                EventType = nameof(FeedbackDeletedIntegrationEvent),
+                Properties = new
+                {
+                    integrationEvent.BookId,
+                    integrationEvent.Rating,
+                    integrationEvent.FeedbackId,
+                },
+                Schema = new
+                {
+                    BookIdType = integrationEvent.BookId.GetType().Name,
+                    RatingType = integrationEvent.Rating.GetType().Name,
+                    FeedbackIdType = integrationEvent.FeedbackId.GetType().Name,
+                    HasId = integrationEvent.Id != Guid.Empty,
+                    HasCreationDate = integrationEvent.CreationDate != default,
+                    IsIntegrationEvent = true,
+                },
+            }
+        );
+
         _repositoryMock.Verify(
             x => x.GetByIdAsync(book.Id, It.IsAny<CancellationToken>()),
             Times.Once
@@ -96,6 +120,29 @@ public sealed class FeedbackDeletedConsumerTests
 
         (await consumerHarness.Consumed.Any<FeedbackDeletedIntegrationEvent>()).ShouldBeTrue();
 
+        // Verify the input event structure to ensure consumer contract compatibility
+        await VerifySnapshot(
+            new
+            {
+                EventType = nameof(FeedbackDeletedIntegrationEvent),
+                Properties = new
+                {
+                    integrationEvent.BookId,
+                    integrationEvent.Rating,
+                    integrationEvent.FeedbackId,
+                },
+                Schema = new
+                {
+                    BookIdType = integrationEvent.BookId.GetType().Name,
+                    RatingType = integrationEvent.Rating.GetType().Name,
+                    FeedbackIdType = integrationEvent.FeedbackId.GetType().Name,
+                    HasId = integrationEvent.Id != Guid.Empty,
+                    HasCreationDate = integrationEvent.CreationDate != default,
+                    IsIntegrationEvent = true,
+                },
+            }
+        );
+
         _repositoryMock.Verify(
             x => x.GetByIdAsync(_bookId, It.IsAny<CancellationToken>()),
             Times.Once
@@ -107,5 +154,35 @@ public sealed class FeedbackDeletedConsumerTests
         );
 
         await harness.Stop();
+    }
+
+    [Test]
+    public async Task GivenFeedbackDeletedIntegrationEvent_ThenShouldVerifyInputContract()
+    {
+        // Arrange
+        var integrationEvent = new FeedbackDeletedIntegrationEvent(_bookId, _rating, _feedbackId);
+
+        // Verify the input event structure to ensure consumer contract compatibility
+        await VerifySnapshot(
+            new
+            {
+                EventType = nameof(FeedbackDeletedIntegrationEvent),
+                Properties = new
+                {
+                    integrationEvent.BookId,
+                    integrationEvent.Rating,
+                    integrationEvent.FeedbackId,
+                },
+                Schema = new
+                {
+                    BookIdType = integrationEvent.BookId.GetType().Name,
+                    RatingType = integrationEvent.Rating.GetType().Name,
+                    FeedbackIdType = integrationEvent.FeedbackId.GetType().Name,
+                    HasId = integrationEvent.Id != Guid.Empty,
+                    HasCreationDate = integrationEvent.CreationDate != default,
+                    IsIntegrationEvent = true,
+                },
+            }
+        );
     }
 }
