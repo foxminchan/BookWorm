@@ -1,4 +1,5 @@
 ﻿using BookWorm.Chassis.Repository;
+using BookWorm.Common;
 using BookWorm.Contracts;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.IntegrationEvents.EventHandlers;
@@ -8,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Ordering.UnitTests.Consumers;
 
-public sealed class DeleteBasketFailedConsumerTests
+public sealed class DeleteBasketFailedConsumerTests : SnapshotTestBase
 {
     private readonly Guid _basketId;
     private readonly string _email;
@@ -70,6 +71,15 @@ public sealed class DeleteBasketFailedConsumerTests
 
         _unitOfWorkMock.Verify(x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()), Times.Once);
 
+        // Contract verification with deterministic data
+        var contractCommand = new DeleteBasketFailedCommand(
+            Guid.CreateVersion7(),
+            "user@example.com",
+            Guid.CreateVersion7(),
+            150.00m
+        );
+        await VerifySnapshot(contractCommand);
+
         await harness.Stop();
     }
 
@@ -110,6 +120,15 @@ public sealed class DeleteBasketFailedConsumerTests
             x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
             Times.Never
         );
+
+        // Contract verification with deterministic data
+        var contractCommand = new DeleteBasketFailedCommand(
+            Guid.CreateVersion7(),
+            "faileduser@example.com",
+            Guid.CreateVersion7(),
+            200.00m
+        );
+        await VerifySnapshot(contractCommand);
 
         await harness.Stop();
     }

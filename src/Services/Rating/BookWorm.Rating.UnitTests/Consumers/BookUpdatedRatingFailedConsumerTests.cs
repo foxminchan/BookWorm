@@ -1,4 +1,5 @@
 ﻿using BookWorm.Chassis.Repository;
+using BookWorm.Common;
 using BookWorm.Contracts;
 using BookWorm.Rating.Domain.FeedbackAggregator;
 using BookWorm.Rating.IntegrationEvents.EventHandlers;
@@ -8,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Rating.UnitTests.Consumers;
 
-public sealed class BookUpdatedRatingFailedConsumerTests
+public sealed class BookUpdatedRatingFailedConsumerTests : SnapshotTestBase
 {
     private readonly Guid _feedbackId;
     private readonly Mock<IFeedbackRepository> _repositoryMock;
@@ -69,6 +70,10 @@ public sealed class BookUpdatedRatingFailedConsumerTests
 
         _unitOfWorkMock.Verify(x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()), Times.Once);
 
+        // Contract verification with deterministic data
+        var contractEvent = new BookUpdatedRatingFailedIntegrationEvent(Guid.CreateVersion7());
+        await VerifySnapshot(contractEvent);
+
         await harness.Stop();
     }
 
@@ -114,6 +119,10 @@ public sealed class BookUpdatedRatingFailedConsumerTests
             x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
             Times.Never
         );
+
+        // Contract verification with deterministic data
+        var contractEvent = new BookUpdatedRatingFailedIntegrationEvent(Guid.CreateVersion7());
+        await VerifySnapshot(contractEvent);
 
         await harness.Stop();
     }

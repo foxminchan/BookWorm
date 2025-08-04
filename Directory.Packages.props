@@ -7,7 +7,7 @@
   </PropertyGroup>
   <ItemGroup Label="Aspire Packages">
     <!-- Aspire Hosting -->
-    <PackageVersion Include="Scalar.Aspire" Version="0.3.1" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.3.2" />
     <PackageVersion Include="Aspire.Hosting.Qdrant" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Testing" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.AppHost" Version="$(AspireVersion)" />
@@ -80,7 +80,6 @@
     <PackageVersion Include="Google.Protobuf" Version="3.31.1" />
     <!-- MassTransit -->
     <PackageVersion Include="MassTransit.RabbitMQ" Version="$(MassTransitVersion)" />
-    <PackageVersion Include="MassTransit.TestFramework" Version="$(MassTransitVersion)" />
     <PackageVersion Include="MassTransit.EntityFrameworkCore" Version="$(MassTransitVersion)" />
     <!-- TickerQ -->
     <PackageVersion Include="TickerQ" Version="$(TickerQVersion)" />
@@ -101,6 +100,7 @@
     <PackageVersion Include="Bogus" Version="35.6.3" />
     <PackageVersion Include="TUnit" Version="0.25.21" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
+    <PackageVersion Include="Verify.TUnit" Version="30.5.0" />
     <PackageVersion Include="TngTech.ArchUnitNET" Version="0.12.1" />
     <PackageVersion Include="GitHubActionsTestLogger" Version="2.4.1" />
     <!-- Testing Platform -->

@@ -1,4 +1,5 @@
-﻿using BookWorm.Contracts;
+﻿using BookWorm.Common;
+using BookWorm.Contracts;
 using BookWorm.Notification.Domain.Models;
 using BookWorm.Notification.Infrastructure.Render;
 using BookWorm.Notification.Infrastructure.Senders;
@@ -12,7 +13,7 @@ using MimeKit;
 
 namespace BookWorm.Notification.UnitTests.Consumers;
 
-public sealed class PlaceOrderConsumerTests
+public sealed class PlaceOrderConsumerTests : SnapshotTestBase
 {
     private readonly MailKitSettings _mailKitSettings;
     private readonly Mock<IRenderer> _rendererMock;
@@ -70,6 +71,16 @@ public sealed class PlaceOrderConsumerTests
                 x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
                 Times.Once
             );
+
+            // Contract verification - using deterministic data for snapshot consistency
+            var contractCommand = new PlaceOrderCommand(
+                Guid.CreateVersion7(), // BasketId
+                "John Doe", // FullName
+                "john.doe@example.com", // Email
+                Guid.CreateVersion7(), // OrderId
+                99.99m // TotalMoney
+            );
+            await VerifySnapshot(contractCommand);
         }
         finally
         {
@@ -97,6 +108,16 @@ public sealed class PlaceOrderConsumerTests
                 x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
                 Times.Never
             );
+
+            // Contract verification - using deterministic data for snapshot consistency
+            var contractCommand = new PlaceOrderCommand(
+                Guid.CreateVersion7(), // BasketId
+                "John Doe", // FullName
+                null, // Email (null for this test)
+                Guid.CreateVersion7(), // OrderId
+                99.99m // TotalMoney
+            );
+            await VerifySnapshot(contractCommand);
         }
         finally
         {
@@ -124,6 +145,16 @@ public sealed class PlaceOrderConsumerTests
                 x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
                 Times.Never
             );
+
+            // Contract verification - using deterministic data for snapshot consistency
+            var contractCommand = new PlaceOrderCommand(
+                Guid.CreateVersion7(), // BasketId
+                "John Doe", // FullName
+                "", // Email (empty for this test)
+                Guid.CreateVersion7(), // OrderId
+                99.99m // TotalMoney
+            );
+            await VerifySnapshot(contractCommand);
         }
         finally
         {

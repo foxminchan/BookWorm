@@ -1,4 +1,5 @@
-﻿using BookWorm.Contracts;
+﻿using BookWorm.Common;
+using BookWorm.Contracts;
 using BookWorm.Notification.Domain.Models;
 using BookWorm.Notification.Infrastructure.Render;
 using BookWorm.Notification.Infrastructure.Senders;
@@ -11,7 +12,7 @@ using MimeKit;
 
 namespace BookWorm.Notification.UnitTests.Consumers;
 
-public sealed class CancelOrderConsumerTests
+public sealed class CancelOrderConsumerTests : SnapshotTestBase
 {
     private readonly string _email;
     private readonly string _fullName;
@@ -69,6 +70,15 @@ public sealed class CancelOrderConsumerTests
             Times.Once
         );
 
+        // Contract verification - using deterministic data for snapshot consistency
+        var contractCommand = new CancelOrderCommand(
+            Guid.CreateVersion7(), // OrderId
+            "John Doe", // FullName
+            "john.doe@example.com", // Email
+            99.99m // TotalMoney
+        );
+        await VerifySnapshot(contractCommand);
+
         await harness.Stop();
     }
 
@@ -100,6 +110,15 @@ public sealed class CancelOrderConsumerTests
             Times.Never
         );
 
+        // Contract verification - using deterministic data for snapshot consistency
+        var contractCommand = new CancelOrderCommand(
+            Guid.CreateVersion7(),
+            "John Doe", // FullName
+            null, // Email (null for this test)
+            99.99m // TotalMoney
+        );
+        await VerifySnapshot(contractCommand);
+
         await harness.Stop();
     }
 
@@ -130,6 +149,15 @@ public sealed class CancelOrderConsumerTests
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
             Times.Never
         );
+
+        // Contract verification - using deterministic data for snapshot consistency
+        var contractCommand = new CancelOrderCommand(
+            Guid.CreateVersion7(), // OrderId
+            "John Doe", // FullName
+            "", // Email (empty for this test)
+            99.99m // TotalMoney
+        );
+        await VerifySnapshot(contractCommand);
 
         await harness.Stop();
     }

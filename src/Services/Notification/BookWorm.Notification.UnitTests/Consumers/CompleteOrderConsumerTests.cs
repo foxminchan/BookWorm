@@ -1,4 +1,5 @@
-﻿using BookWorm.Contracts;
+﻿using BookWorm.Common;
+using BookWorm.Contracts;
 using BookWorm.Notification.Domain.Builders;
 using BookWorm.Notification.Domain.Exceptions;
 using BookWorm.Notification.Domain.Models;
@@ -13,7 +14,7 @@ using MimeKit;
 
 namespace BookWorm.Notification.UnitTests.Consumers;
 
-public sealed class CompleteOrderConsumerTests
+public sealed class CompleteOrderConsumerTests : SnapshotTestBase
 {
     private const decimal TotalMoney = 150.99m;
     private const string FullName = "John Doe";
@@ -62,6 +63,15 @@ public sealed class CompleteOrderConsumerTests
             Times.Once
         );
 
+        // Contract verification - using deterministic data for snapshot consistency
+        var contractCommand = new CompleteOrderCommand(
+            Guid.CreateVersion7(), // OrderId
+            "John Doe", // FullName
+            "john.doe@example.com", // Email
+            99.99m // TotalMoney
+        );
+        await VerifySnapshot(contractCommand);
+
         await harness.Stop();
     }
 
@@ -93,6 +103,15 @@ public sealed class CompleteOrderConsumerTests
             Times.Never
         );
 
+        // Contract verification - using deterministic data for snapshot consistency
+        var contractCommand = new CompleteOrderCommand(
+            Guid.CreateVersion7(), // OrderId
+            "John Doe", // FullName
+            "", // Email (empty for this test)
+            99.99m // TotalMoney
+        );
+        await VerifySnapshot(contractCommand);
+
         await harness.Stop();
     }
 
@@ -123,6 +142,15 @@ public sealed class CompleteOrderConsumerTests
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
             Times.Never
         );
+
+        // Contract verification - using deterministic data for snapshot consistency
+        var contractCommand = new CompleteOrderCommand(
+            Guid.CreateVersion7(), // OrderId
+            "John Doe", // FullName
+            null, // Email (null for this test)
+            99.99m // TotalMoney
+        );
+        await VerifySnapshot(contractCommand);
 
         await harness.Stop();
     }

@@ -1,0 +1,17 @@
+﻿{
+  "EventType": "BasketDeletedFailedIntegrationEvent",
+  "Properties": {
+    "OrderId": "Guid_1",
+    "BasketId": "Guid_2",
+    "Email": "test@example.com",
+    "TotalMoney": 99.99
+  },
+  "Schema": {
+    "OrderIdType": "Guid",
+    "BasketIdType": "Guid",
+    "EmailType": "String",
+    "TotalMoneyType": "Decimal",
+    "HasId": true,
+    "HasCreationDate": true
+  }
+}
