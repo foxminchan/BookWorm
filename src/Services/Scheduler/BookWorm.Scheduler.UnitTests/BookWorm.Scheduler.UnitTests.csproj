@@ -6,7 +6,6 @@
   <ItemGroup Label="Unit Test">
     <PackageReference Include="Moq" />
     <PackageReference Include="Bogus" />
-    <PackageReference Include="MassTransit.TestFramework" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BookWorm.Scheduler\BookWorm.Scheduler.csproj" />

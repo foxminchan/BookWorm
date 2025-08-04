@@ -1,0 +1,20 @@
+﻿{
+  "CommandType": "PlaceOrderCommand",
+  "Properties": {
+    "BasketId": "Guid_1",
+    "FullName": "Test User",
+    "Email": "test@example.com",
+    "OrderId": "Guid_2",
+    "TotalMoney": 99.99
+  },
+  "Schema": {
+    "BasketIdType": "Guid",
+    "FullNameType": "String",
+    "EmailType": "String",
+    "OrderIdType": "Guid",
+    "TotalMoneyType": "Decimal",
+    "HasId": true,
+    "HasCreationDate": true,
+    "IsIntegrationEvent": true
+  }
+}

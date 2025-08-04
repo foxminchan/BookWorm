@@ -5,9 +5,13 @@
   </PropertyGroup>
   <ItemGroup Label="Unit Test">
     <PackageReference Include="Moq" />
-    <PackageReference Include="MassTransit.TestFramework" />
+    <PackageReference Include="Verify.TUnit" />
   </ItemGroup>
   <ItemGroup>
+    <Compile
+      Include="$(SolutionDir)\tests\BookWorm.Common\SnapshotTestBase.cs"
+      Link="SnapshotTestBase.cs"
+    />
     <ProjectReference Include="..\BookWorm.Finance\BookWorm.Finance.csproj" />
   </ItemGroup>
   <ItemGroup>

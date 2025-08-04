@@ -1,5 +1,6 @@
 ﻿using BookWorm.Chassis.Repository;
 using BookWorm.Chassis.Specification;
+using BookWorm.Common;
 using BookWorm.Contracts;
 using BookWorm.Notification.Domain.Models;
 using BookWorm.Notification.IntegrationEvents.EventHandlers;
@@ -11,7 +12,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Notification.UnitTests.Consumers;
 
-public sealed class CleanUpSentEmailConsumerTests
+public sealed class CleanUpSentEmailConsumerTests : SnapshotTestBase
 {
     private readonly Mock<GlobalLogBuffer> _logBufferMock;
     private readonly Mock<ILogger<CleanUpSentEmailIntegrationEventHandler>> _loggerMock;
@@ -84,6 +85,9 @@ public sealed class CleanUpSentEmailConsumerTests
         VerifyLogMessage(LogLevel.Debug, "Found 3 sent emails to delete", Times.Once());
         VerifyLogMessage(LogLevel.Information, "Successfully cleaned up sent emails", Times.Once());
 
+        // Contract verification - CleanUpSentEmailIntegrationEvent has no parameters so it's deterministic
+        await VerifySnapshot(command);
+
         await harness.Stop();
     }
 
@@ -130,6 +134,9 @@ public sealed class CleanUpSentEmailConsumerTests
 
         VerifyLogMessage(LogLevel.Debug, "Starting cleanup of sent emails", Times.Once());
         VerifyLogMessage(LogLevel.Debug, "No sent emails found for cleanup", Times.Once());
+
+        // Contract verification - CleanUpSentEmailIntegrationEvent has no parameters so it's deterministic
+        await VerifySnapshot(command);
 
         await harness.Stop();
     }

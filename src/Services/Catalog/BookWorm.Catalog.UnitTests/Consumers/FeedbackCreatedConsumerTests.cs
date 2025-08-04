@@ -2,6 +2,7 @@
 using BookWorm.Catalog.IntegrationEvents.EventHandlers;
 using BookWorm.Catalog.UnitTests.Fakers;
 using BookWorm.Chassis.Repository;
+using BookWorm.Common;
 using BookWorm.Contracts;
 using MassTransit;
 using MassTransit.Testing;
@@ -9,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Catalog.UnitTests.Consumers;
 
-public sealed class FeedbackCreatedConsumerTests
+public sealed class FeedbackCreatedConsumerTests : SnapshotTestBase
 {
     private readonly Guid _bookId;
     private readonly Guid _feedbackId;
@@ -62,6 +63,29 @@ public sealed class FeedbackCreatedConsumerTests
 
         (await harness.Published.Any<BookUpdatedRatingFailedIntegrationEvent>()).ShouldBeFalse();
 
+        // Verify the input event structure to ensure consumer contract compatibility
+        await VerifySnapshot(
+            new
+            {
+                EventType = nameof(FeedbackCreatedIntegrationEvent),
+                Properties = new
+                {
+                    integrationEvent.BookId,
+                    integrationEvent.Rating,
+                    integrationEvent.FeedbackId,
+                },
+                Schema = new
+                {
+                    BookIdType = integrationEvent.BookId.GetType().Name,
+                    RatingType = integrationEvent.Rating.GetType().Name,
+                    FeedbackIdType = integrationEvent.FeedbackId.GetType().Name,
+                    HasId = integrationEvent.Id != Guid.Empty,
+                    HasCreationDate = integrationEvent.CreationDate != default,
+                    IsIntegrationEvent = true,
+                },
+            }
+        );
+
         _repositoryMock.Verify(
             x => x.GetByIdAsync(book.Id, It.IsAny<CancellationToken>()),
             Times.Once
@@ -103,6 +127,21 @@ public sealed class FeedbackCreatedConsumerTests
             .First();
         publishedMessage.Context.Message.FeedbackId.ShouldBe(_feedbackId);
 
+        // Verify contract structure and properties for the failed event
+        await VerifySnapshot(
+            new
+            {
+                EventType = nameof(BookUpdatedRatingFailedIntegrationEvent),
+                Properties = new { publishedMessage.Context.Message.FeedbackId },
+                Schema = new
+                {
+                    FeedbackIdType = publishedMessage.Context.Message.FeedbackId.GetType().Name,
+                    HasId = publishedMessage.Context.Message.Id != Guid.Empty,
+                    HasCreationDate = publishedMessage.Context.Message.CreationDate != default,
+                },
+            }
+        );
+
         _repositoryMock.Verify(
             x => x.GetByIdAsync(_bookId, It.IsAny<CancellationToken>()),
             Times.Once
@@ -110,5 +149,35 @@ public sealed class FeedbackCreatedConsumerTests
         _unitOfWorkMock.Verify(x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()), Times.Once);
 
         await harness.Stop();
+    }
+
+    [Test]
+    public async Task GivenFeedbackCreatedIntegrationEvent_ThenShouldVerifyInputContract()
+    {
+        // Arrange
+        var integrationEvent = new FeedbackCreatedIntegrationEvent(_bookId, _rating, _feedbackId);
+
+        // Verify the input event structure to ensure consumer contract compatibility
+        await VerifySnapshot(
+            new
+            {
+                EventType = nameof(FeedbackCreatedIntegrationEvent),
+                Properties = new
+                {
+                    integrationEvent.BookId,
+                    integrationEvent.Rating,
+                    integrationEvent.FeedbackId,
+                },
+                Schema = new
+                {
+                    BookIdType = integrationEvent.BookId.GetType().Name,
+                    RatingType = integrationEvent.Rating.GetType().Name,
+                    FeedbackIdType = integrationEvent.FeedbackId.GetType().Name,
+                    HasId = integrationEvent.Id != Guid.Empty,
+                    HasCreationDate = integrationEvent.CreationDate != default,
+                    IsIntegrationEvent = true,
+                },
+            }
+        );
     }
 }

@@ -1,0 +1,28 @@
+﻿{
+  "InputEventType": "BasketDeletedCompleteIntegrationEvent",
+  "InputProperties": {
+    "OrderId": "Guid_1",
+    "BasketId": "Guid_2",
+    "TotalMoney": 100.0
+  },
+  "InputSchema": {
+    "OrderIdType": "Guid",
+    "BasketIdType": "Guid",
+    "TotalMoneyType": "Decimal",
+    "HasId": true,
+    "HasCreationDate": true,
+    "IsIntegrationEvent": true
+  },
+  "OutputCommandType": "DeleteBasketCompleteCommand",
+  "OutputProperties": {
+    "OrderId": "Guid_1",
+    "TotalMoney": 100.0
+  },
+  "OutputSchema": {
+    "OrderIdType": "Guid",
+    "TotalMoneyType": "Decimal",
+    "HasId": true,
+    "HasCreationDate": true,
+    "IsIntegrationEvent": true
+  }
+}
