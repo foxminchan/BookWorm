@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using BookWorm.Chassis.RAG.A2A;
-using Microsoft.Extensions.ServiceDiscovery;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.Ollama;
@@ -45,14 +44,15 @@ public static class BookAgent
         var agentKernel = kernel.Clone();
 
         var mcpClient = kernel.Services.GetRequiredService<IMcpClient>();
-        var resolver = kernel.Services.GetRequiredService<ServiceEndpointResolver>();
-        var httpClient = kernel.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
+        var httpClient = kernel
+            .Services.GetRequiredService<IHttpClientFactory>()
+            .CreateClient("RatingAgent");
 
         var tools = await mcpClient.ListToolsAsync();
-        var resolvedUrl = await resolver.ResolveServiceEndpointUrl(
-            $"{Protocols.HttpOrHttps}://{Services.Rating}"
+        var agent = await A2AClientFactory.CreateAgentAsync(
+            httpClient.BaseAddress!.ToString(),
+            httpClient
         );
-        var agent = await A2AClientFactory.CreateAgentAsync(resolvedUrl, httpClient);
 
         var ratingAgent = KernelPluginFactory.CreateFromFunctions(
             "AgentPlugin",

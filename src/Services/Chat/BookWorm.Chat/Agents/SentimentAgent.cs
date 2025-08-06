@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using A2A;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.Ollama;
@@ -46,37 +45,6 @@ public static class SentimentAgent
             Description = Description,
             Kernel = kernel,
             Arguments = new(new OllamaPromptExecutionSettings { Temperature = 0.2f }),
-        };
-    }
-
-    public static AgentCard GetAgentCard()
-    {
-        var capabilities = new AgentCapabilities { Streaming = false, PushNotifications = false };
-
-        var sentiment = new AgentSkill
-        {
-            Id = "id_sentiment_agent",
-            Name = Name,
-            Description = Description,
-            Tags = ["sentiment", "analysis", "chat", "semantic-kernel"],
-            Examples =
-            [
-                "Analyze the sentiment of this customer feedback about a book.",
-                "Is this review positive or negative?",
-                "What is the emotional tone of this message?",
-            ],
-        };
-
-        return new()
-        {
-            Name = Name,
-            Description = Description,
-            Version = "1.0.0",
-            Provider = new() { Organization = nameof(BookWorm) },
-            DefaultInputModes = ["text"],
-            DefaultOutputModes = ["text"],
-            Capabilities = capabilities,
-            Skills = [sentiment],
         };
     }
 }

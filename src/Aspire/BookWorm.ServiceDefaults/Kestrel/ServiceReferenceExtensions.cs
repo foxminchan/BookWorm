@@ -47,16 +47,67 @@ public static class ServiceReferenceExtensions
         services.AddHealthChecks().AddCheck<GrpcServiceHealthCheck>(healthCheckName, failureStatus);
     }
 
+    public static void AddHttpServiceReference(
+        this IServiceCollection services,
+        string name,
+        string address,
+        HealthStatus failureStatus,
+        string? healthRelativePath = null
+    )
+    {
+        if (!Uri.IsWellFormedUriString(address, UriKind.Absolute))
+        {
+            throw new ArgumentException("Address must be a valid absolute URI.", nameof(address));
+        }
+
+        if (
+            !string.IsNullOrEmpty(healthRelativePath)
+            && !Uri.IsWellFormedUriString(healthRelativePath, UriKind.Relative)
+        )
+        {
+            throw new ArgumentException(
+                "Health check path must be a valid relative URI.",
+                nameof(healthRelativePath)
+            );
+        }
+
+        var uri = new Uri(address);
+
+        services.AddHttpClient(name, c => c.BaseAddress = uri);
+
+        services
+            .AddHealthChecks()
+            .AddUrlGroup(
+                new Uri(uri, healthRelativePath ?? _healthCheckName),
+                name,
+                failureStatus,
+                configurePrimaryHttpMessageHandler: s =>
+                    s.GetRequiredService<IHttpMessageHandlerFactory>().CreateHandler()
+            );
+    }
+
     public static void AddHttpServiceReference<TClient>(
         this IServiceCollection services,
         string address,
-        HealthStatus failureStatus
+        HealthStatus failureStatus,
+        string? healthRelativePath = null
     )
         where TClient : class
     {
         if (!Uri.IsWellFormedUriString(address, UriKind.Absolute))
         {
             throw new ArgumentException("Address must be a valid absolute URI.", nameof(address));
+        }
+
+        if (
+            !string.IsNullOrEmpty(healthRelativePath)
+            && !Uri.IsWellFormedUriString(healthRelativePath, UriKind.Relative)
+        )
+        {
+            throw new ArgumentException(
+                "Health check path must be a valid relative URI.",
+                nameof(healthRelativePath)
+            );
         }
 
         var uri = new Uri(address);
@@ -66,7 +117,7 @@ public static class ServiceReferenceExtensions
         services
             .AddHealthChecks()
             .AddUrlGroup(
-                new Uri(uri, _healthCheckName),
+                new Uri(uri, healthRelativePath ?? _healthCheckName),
                 $"{typeof(TClient).Name}-{_healthCheckName}",
                 failureStatus,
                 configurePrimaryHttpMessageHandler: s =>
