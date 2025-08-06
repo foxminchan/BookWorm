@@ -61,10 +61,22 @@
 - [Bun](https://bun.sh/)
 - [Just](https://github.com/casey/just)
 
+Install the `Aspire CLI` tool:
+
+```bash
+# Bash
+curl -sSL https://aspire.dev/install.sh | bash
+
+# PowerShell
+iex "& { $(irm https://aspire.dev/install.ps1) }"
+```
+
+Please refer to the [Aspire CLI documentation](https://learn.microsoft.com/en-us/dotnet/aspire/cli/install) for more details.
+
 > [!NOTE]
 >
 > - Email services use [SendGrid](https://sendgrid.com/) in production and [Mailpit](https://mailpit.axllent.org/) locally.
-> - When running on Mac with Apple Silicon (M series processor), Rosetta 2 for grpc-tools.
+> - When running on Mac with Apple Silicon (M series processor), you need to install Rosetta 2 for grpc-tools compatibility.
 
 ### Run the Application
 

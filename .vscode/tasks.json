@@ -16,17 +16,6 @@
         "reveal": "always",
         "panel": "new"
       }
-    },
-    {
-      "label": "Start Aspire",
-      "command": "dotnet",
-      "type": "process",
-      "args": ["aspire", "run"],
-      "problemMatcher": "$msCompile",
-      "presentation": {
-        "reveal": "always",
-        "panel": "new"
-      }
     }
   ]
 }
