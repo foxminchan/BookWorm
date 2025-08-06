@@ -2,6 +2,7 @@
 using A2A.AspNetCore;
 using BookWorm.Chassis.RAG;
 using BookWorm.Chassis.RAG.A2A;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 
@@ -15,6 +16,12 @@ public static class Extensions
         var services = builder.Services;
 
         services.AddKernel();
+
+        services.AddHttpServiceReference(
+            "SummarizeAgent",
+            $"{Protocols.HttpOrHttps}://{Services.Chatting}",
+            HealthStatus.Degraded
+        );
 
         builder.AddSkTelemetry();
 
