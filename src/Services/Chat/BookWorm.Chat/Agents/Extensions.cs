@@ -2,6 +2,7 @@
 using A2A;
 using A2A.AspNetCore;
 using BookWorm.Chassis.RAG.A2A;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 
@@ -13,6 +14,12 @@ internal static class Extensions
     public static void AddAgents(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;
+
+        services.AddHttpServiceReference(
+            "RatingAgent",
+            $"{Protocols.HttpOrHttps}://{Services.Rating}",
+            HealthStatus.Degraded
+        );
 
         services.AddKeyedSingleton(
             nameof(BookAgent),
