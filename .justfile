@@ -41,8 +41,8 @@ restore:
 # Enable features for Aspire
 
 features: restore
-    dotnet aspire config set features.execCommandEnabled true
-    dotnet aspire config set features.deployCommandEnabled true
+    aspire config set features.execCommandEnabled true
+    aspire config set features.deployCommandEnabled true
 
 # Build the solution
 
@@ -89,7 +89,7 @@ _hook-linux _hook-macos:
 # Run the application
 
 run: restore trust hook
-    dotnet aspire run
+    aspire run
 
 # Update EventCatalog bun packages
 

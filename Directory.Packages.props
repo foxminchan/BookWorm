@@ -43,9 +43,9 @@
     <PackageVersion Include="Asp.Versioning.Http.Client" Version="$(ApiVersioningVersion)" />
     <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer" Version="$(ApiVersioningVersion)" />
     <PackageVersion Include="Microsoft.AspNetCore.Diagnostics.Middleware" Version="$(MsExtVersion)" />
-    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.7" />
-    <PackageVersion Include="Microsoft.Azure.SignalR.Management" Version="1.30.3" />
-    <!-- Semantic Kernel -->
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.8" />
+    <PackageVersion Include="Microsoft.Azure.SignalR.Management" Version="1.31.0" />
+    <!-- Semantic Kernel --> 
     <PackageVersion Include="Microsoft.SemanticKernel.Agents.Core" Version="1.61.0" />
     <PackageVersion Include="Microsoft.SemanticKernel.Agents.Orchestration" Version="1.61.0-preview" />
     <PackageVersion Include="Microsoft.SemanticKernel.Agents.Runtime.InProcess" Version="1.61.0-preview" />
@@ -53,7 +53,7 @@
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Ollama" Version="1.61.0-alpha" />
     <!-- Entity Framework Core -->
     <PackageVersion Include="EFCore.NamingConventions" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.7" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.8" />
     <!-- OpenTelemetry -->
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.12.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.12.0" />
