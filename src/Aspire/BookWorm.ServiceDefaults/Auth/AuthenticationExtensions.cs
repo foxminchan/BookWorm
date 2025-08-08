@@ -8,7 +8,14 @@ public static class AuthenticationExtensions
     {
         var services = builder.Services;
 
+        services.Configure<IdentityOptions>(IdentityOptions.ConfigurationSection);
+
         var realm = services.BuildServiceProvider().GetRequiredService<IdentityOptions>().Realm;
+
+        services.AddHttpClient(
+            Components.KeyCloak,
+            client => client.BaseAddress = new($"{Protocols.HttpOrHttps}://{Components.KeyCloak}")
+        );
 
         services
             .AddAuthentication(options =>

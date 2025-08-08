@@ -43,18 +43,10 @@ public static class RatingAgent
         - Handle edge cases like products with very few but high ratings
         """;
 
-    public static async Task<ChatCompletionAgent> CreateAgentAsync(Kernel kernel)
+    public static ChatCompletionAgent CreateAgent(Kernel kernel)
     {
         var agentKernel = kernel.Clone();
-
-        var httpClient = kernel
-            .Services.GetRequiredService<IHttpClientFactory>()
-            .CreateClient("SummarizeAgent");
-
-        var agent = await A2AClientFactory.CreateAgentAsync(
-            httpClient.BaseAddress!.ToString(),
-            httpClient
-        );
+        var agent = kernel.Services.GetRequiredKeyedService<A2AAgent>("SummarizeAgent");
 
         var sentimentPlugin = KernelPluginFactory.CreateFromFunctions(
             "AgentPlugin",

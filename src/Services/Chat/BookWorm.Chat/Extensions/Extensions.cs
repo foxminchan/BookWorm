@@ -23,9 +23,9 @@ internal static class Extensions
 
         builder.AddDefaultCors();
 
-        builder.AddDefaultOpenApi();
-
         builder.AddDefaultAuthentication().AddKeycloakClaimsTransformation();
+
+        builder.AddDefaultOpenApi();
 
         // Add exception handlers
         services.AddExceptionHandler<ValidationExceptionHandler>();
