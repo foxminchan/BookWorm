@@ -6,11 +6,9 @@ public static class OpenApiExtensions
     {
         var services = builder.Services;
 
-        services.Configure<IdentityOptions>(IdentityOptions.ConfigurationSection);
-
         var sp = services.BuildServiceProvider();
         var document = sp.GetRequiredService<DocumentOptions>();
-        var identity = sp.GetRequiredService<IdentityOptions>();
+        var identity = sp.GetService<IdentityOptions>();
 
         foreach (var version in sp.GetApiVersionDescription())
         {
@@ -21,7 +19,12 @@ public static class OpenApiExtensions
                     options.ApplyApiVersionInfo(document, version);
                     options.ApplySchemaNullableFalse();
                     options.ApplySecuritySchemeDefinitions();
-                    options.ApplyAuthorizationChecks([.. identity.Scopes.Keys]);
+
+                    if (identity is not null)
+                    {
+                        options.ApplyAuthorizationChecks([.. identity.Scopes.Keys]);
+                    }
+
                     options.ApplyOperationDeprecatedStatus();
                 }
             );

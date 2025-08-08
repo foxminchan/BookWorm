@@ -2,7 +2,6 @@
 using A2A.AspNetCore;
 using BookWorm.Chassis.RAG;
 using BookWorm.Chassis.RAG.A2A;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 
@@ -17,24 +16,20 @@ public static class Extensions
 
         services.AddKernel();
 
-        services.AddHttpServiceReference(
-            "SummarizeAgent",
-            $"{Protocols.HttpOrHttps}://{Services.Chatting}",
-            HealthStatus.Degraded
-        );
-
         builder.AddSkTelemetry();
 
         builder.AddChatCompletion();
 
         builder.AddEmbeddingGenerator();
 
+        services.AddA2AClient("SummarizeAgent", $"{Protocols.HttpOrHttps}://{Services.Chatting}");
+
         services.AddKeyedSingleton(
             nameof(RatingAgent),
             (sp, _) =>
             {
                 var kernel = sp.GetRequiredService<Kernel>();
-                return RatingAgent.CreateAgentAsync(kernel).GetAwaiter().GetResult();
+                return RatingAgent.CreateAgent(kernel);
             }
         );
 

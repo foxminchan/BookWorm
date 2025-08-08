@@ -23,15 +23,10 @@ public sealed class KeycloakTokenIntrospectionMiddleware(
 
         if (!string.IsNullOrWhiteSpace(token))
         {
-            var keycloakUri = $"{Protocols.HttpOrHttps}://{Components.KeyCloak}";
+            var realmPath = $"realms/{identityOptions.Realm}";
+            var introspectionEndpoint = $"{realmPath}/protocol/openid-connect/token/introspect";
 
-            var introspectionEndpoint =
-                $"realms/{identityOptions.Realm}/protocol/openid-connect/token/introspect";
-
-            using var httpClient = httpClientFactory.CreateClient();
-
-            httpClient.BaseAddress = new(keycloakUri);
-            httpClient.Timeout = TimeSpan.FromSeconds(30);
+            using var httpClient = httpClientFactory.CreateClient(Components.KeyCloak);
 
             var requestContent = new FormUrlEncodedContent(
                 [

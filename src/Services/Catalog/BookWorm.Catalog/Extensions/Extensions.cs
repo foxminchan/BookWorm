@@ -24,6 +24,8 @@ internal static class Extensions
 
         services.AddRateLimiting();
 
+        builder.AddDefaultAuthentication().AddKeycloakClaimsTransformation();
+
         services.AddGrpc(options =>
         {
             options.EnableDetailedErrors = true;
@@ -34,8 +36,6 @@ internal static class Extensions
         builder.AddDefaultOpenApi();
 
         services.AddFeatureManagement();
-
-        builder.AddDefaultAuthentication().AddKeycloakClaimsTransformation();
 
         services.AddSingleton(
             new JsonSerializerOptions { Converters = { new StringTrimmerJsonConverter() } }

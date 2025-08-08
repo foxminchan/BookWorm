@@ -34,58 +34,6 @@ public static class ServiceReferenceExtensions
         return builder;
     }
 
-    private static void AddGrpcHealthChecks(
-        IServiceCollection services,
-        Uri uri,
-        string healthCheckName,
-        HealthStatus failureStatus = default
-    )
-    {
-        services
-            .AddGrpcClient<Health.HealthClient>(o => o.Address = uri)
-            .AddStandardResilienceHandler();
-        services.AddHealthChecks().AddCheck<GrpcServiceHealthCheck>(healthCheckName, failureStatus);
-    }
-
-    public static void AddHttpServiceReference(
-        this IServiceCollection services,
-        string name,
-        string address,
-        HealthStatus failureStatus,
-        string? healthRelativePath = null
-    )
-    {
-        if (!Uri.IsWellFormedUriString(address, UriKind.Absolute))
-        {
-            throw new ArgumentException("Address must be a valid absolute URI.", nameof(address));
-        }
-
-        if (
-            !string.IsNullOrEmpty(healthRelativePath)
-            && !Uri.IsWellFormedUriString(healthRelativePath, UriKind.Relative)
-        )
-        {
-            throw new ArgumentException(
-                "Health check path must be a valid relative URI.",
-                nameof(healthRelativePath)
-            );
-        }
-
-        var uri = new Uri(address);
-
-        services.AddHttpClient(name, c => c.BaseAddress = uri);
-
-        services
-            .AddHealthChecks()
-            .AddUrlGroup(
-                new Uri(uri, healthRelativePath ?? _healthCheckName),
-                name,
-                failureStatus,
-                configurePrimaryHttpMessageHandler: s =>
-                    s.GetRequiredService<IHttpMessageHandlerFactory>().CreateHandler()
-            );
-    }
-
     public static void AddHttpServiceReference<TClient>(
         this IServiceCollection services,
         string address,
@@ -123,6 +71,19 @@ public static class ServiceReferenceExtensions
                 configurePrimaryHttpMessageHandler: s =>
                     s.GetRequiredService<IHttpMessageHandlerFactory>().CreateHandler()
             );
+    }
+
+    private static void AddGrpcHealthChecks(
+        IServiceCollection services,
+        Uri uri,
+        string healthCheckName,
+        HealthStatus failureStatus = default
+    )
+    {
+        services
+            .AddGrpcClient<Health.HealthClient>(o => o.Address = uri)
+            .AddStandardResilienceHandler();
+        services.AddHealthChecks().AddCheck<GrpcServiceHealthCheck>(healthCheckName, failureStatus);
     }
 
     private sealed class GrpcServiceHealthCheck(Health.HealthClient healthClient) : IHealthCheck

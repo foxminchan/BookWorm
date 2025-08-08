@@ -19,13 +19,13 @@ internal static class Extensions
 
         services.AddFeatureManagement();
 
-        builder.AddDefaultOpenApi();
-
-        builder.AddRedaction();
+        services.AddRateLimiting();
 
         builder.AddDefaultAuthentication().AddKeycloakClaimsTransformation();
 
-        services.AddRateLimiting();
+        builder.AddDefaultOpenApi();
+
+        builder.AddRedaction();
 
         services.AddSignalR().AddNamedAzureSignalR(Components.Azure.SignalR);
 

@@ -9,7 +9,6 @@ public static class Components
     public static readonly string Postgres = nameof(Postgres).ToLowerInvariant();
     public static readonly string VectorDb = nameof(VectorDb).ToLowerInvariant();
     public static readonly string KeyCloak = nameof(KeyCloak).ToLowerInvariant();
-    public static readonly string McpInspector = nameof(McpInspector).ToLowerInvariant();
 
     public static class Database
     {
