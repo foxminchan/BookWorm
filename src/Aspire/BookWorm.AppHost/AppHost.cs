@@ -239,7 +239,6 @@ var gateway = builder
     .WithService(chatApi)
     .WithService(ratingApi)
     .WithService(orderingApi)
-    .WithService(schedulerApi)
     .WithService(basketApi, true)
     .WithService(catalogApi, true)
     .WithService(keycloak);
