@@ -44,15 +44,9 @@ public static class BookAgent
         var agentKernel = kernel.Clone();
 
         var mcpClient = kernel.Services.GetRequiredService<IMcpClient>();
-        var httpClient = kernel
-            .Services.GetRequiredService<IHttpClientFactory>()
-            .CreateClient("RatingAgent");
+        var agent = kernel.Services.GetRequiredKeyedService<A2AAgent>("RatingAgent");
 
         var tools = await mcpClient.ListToolsAsync();
-        var agent = await A2AClientFactory.CreateAgentAsync(
-            httpClient.BaseAddress!.ToString(),
-            httpClient
-        );
 
         var ratingAgent = KernelPluginFactory.CreateFromFunctions(
             "AgentPlugin",
