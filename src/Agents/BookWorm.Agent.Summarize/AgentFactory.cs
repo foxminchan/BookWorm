@@ -71,7 +71,7 @@ public static class AgentFactory
         {
             Name = Name,
             Description = Description,
-            Version = "1.0.0",
+            Version = "1.0",
             Provider = new() { Organization = nameof(BookWorm) },
             DefaultInputModes = ["text"],
             DefaultOutputModes = ["text"],
