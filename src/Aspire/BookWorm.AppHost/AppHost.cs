@@ -234,6 +234,8 @@ var schedulerApi = builder
 
 schedulerUserName.WithParentRelationship(schedulerApi);
 
+var summarizeAgent = builder.AddProject<SummarizeAgent>("SummarizeAgent").WithOllama();
+
 var gateway = builder
     .AddApiGatewayProxy()
     .WithService(chatApi)
@@ -255,6 +257,7 @@ builder
     .WithReference(orderingApi)
     .WithReference(schedulerApi)
     .WithReference(notificationApi)
+    .WithReference(summarizeAgent)
     .WithExternalHttpEndpoints();
 
 if (builder.ExecutionContext.IsRunMode)

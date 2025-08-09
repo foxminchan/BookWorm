@@ -63,6 +63,12 @@
       AspireProjectMetadataTypeName="Scheduler"
     />
   </ItemGroup>
+  <ItemGroup Label="Agents">
+    <ProjectReference
+      Include="..\..\Agents\BookWorm.Agent.Summarize\BookWorm.Agent.Summarize.csproj"
+      AspireProjectMetadataTypeName="SummarizeAgent"
+    />
+  </ItemGroup>
   <ItemGroup Label="Integrations">
     <ProjectReference
       Include="..\..\Integrations\BookWorm.McpTools\BookWorm.McpTools.csproj"
