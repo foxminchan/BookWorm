@@ -5,7 +5,6 @@
   <ItemGroup Label="Project">
     <PackageReference Include="Aspire.StackExchange.Redis" />
     <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
-    <PackageReference Include="Google.Protobuf" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\Aspire\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj" />
