@@ -1,17 +1,10 @@
-using System.Text;
-using A2A.AspNetCore;
-using BookWorm.Chassis.Endpoints;
-using BookWorm.Chassis.RAG;
-using BookWorm.Chassis.RAG.A2A;
-using BookWorm.ServiceDefaults;
-using BookWorm.SharedKernel.Models;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.ChatCompletion;
-using Agent = BookWorm.Agent.Summarize.Agent;
+using BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
 
-var builder = WebApplication.CreateSlimBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+
+builder.AddDefaultOpenApi();
 
 builder.Services.AddKernel();
 
@@ -19,21 +12,22 @@ builder.AddSkTelemetry();
 
 builder.AddChatCompletion();
 
-builder.Services.AddVersioning();
-
 var app = builder.Build();
 
+var tag = AgentFactory.GetAgentName();
+
+app.UseOutputCache();
+
 app.MapPost(
-        "/api/summary",
+        "/api/summarize/summary",
         async (Kernel kernel, SummarizeRequest summarizeRequest) =>
         {
-            var summaryAgent = Agent.CreateAgent(kernel);
+            var summaryAgent = AgentFactory.CreateAgent(kernel);
 
-            // Add a user message to the conversation
             var message = new ChatMessageContent(AuthorRole.User, summarizeRequest.TextToSummarize);
 
-            // Generate the agent response(s)
             var responseBuilder = new StringBuilder();
+
             await foreach (
                 ChatMessageContent response in summaryAgent
                     .InvokeAsync(message)
@@ -49,17 +43,20 @@ app.MapPost(
             return responseBuilder.Length > 0 ? responseBuilder.ToString() : null;
         }
     )
-    .WithTags("SummarizeAgent");
+    .Produces<string>(contentType: MediaTypeNames.Text.Plain)
+    .WithTags(tag);
 
 var hostAgent = new A2AHostAgent(
-    Agent.CreateAgent(app.Services.GetRequiredService<Kernel>()),
-    Agent.GetAgentCard()
+    AgentFactory.CreateAgent(app.Services.GetRequiredService<Kernel>()),
+    AgentFactory.GetAgentCard()
 );
 
-app.MapA2A(hostAgent.TaskManager!, "/").WithTags("SummarizeAgent");
+app.MapA2A(hostAgent.TaskManager!, "/").WithTags(tag);
 
-app.MapHttpA2A(hostAgent.TaskManager!, "/").WithTags("SummarizeAgent");
+app.MapHttpA2A(hostAgent.TaskManager!, "/").WithTags(tag);
 
 app.MapDefaultEndpoints();
+
+app.UseDefaultOpenApi();
 
 app.Run();

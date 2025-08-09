@@ -68,6 +68,10 @@
       Include="..\..\Agents\BookWorm.Agent.Summarize\BookWorm.Agent.Summarize.csproj"
       AspireProjectMetadataTypeName="SummarizeAgent"
     />
+    <ProjectReference
+      Include="..\..\Agents\BookWorm.Agent.Sentiment\BookWorm.Agent.Sentiment.csproj"
+      AspireProjectMetadataTypeName="SentimentAgent"
+    />
   </ItemGroup>
   <ItemGroup Label="Integrations">
     <ProjectReference

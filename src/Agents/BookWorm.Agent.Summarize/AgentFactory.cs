@@ -1,13 +1,10 @@
-using System.Diagnostics.CodeAnalysis;
 using A2A;
-using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.Ollama;
 
 namespace BookWorm.Agent.Summarize;
 
-[ExcludeFromCodeCoverage]
-public static class Agent
+public static class AgentFactory
 {
     private const string Name = "SummarizeAgent";
 
@@ -37,6 +34,8 @@ public static class Agent
 
         Your summaries help the Book Agent understand user needs efficiently and provide better responses.
         """;
+
+    public static string GetAgentName() => Name;
 
     public static ChatCompletionAgent CreateAgent(Kernel kernel)
     {

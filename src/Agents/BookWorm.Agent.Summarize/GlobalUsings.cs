@@ -1,0 +1,10 @@
+﻿global using System.Net.Mime;
+global using System.Text;
+global using A2A.AspNetCore;
+global using BookWorm.Agent.Summarize;
+global using BookWorm.Chassis.RAG;
+global using BookWorm.Chassis.RAG.A2A;
+global using BookWorm.ServiceDefaults;
+global using BookWorm.SharedKernel.Models;
+global using Microsoft.SemanticKernel;
+global using Microsoft.SemanticKernel.ChatCompletion;

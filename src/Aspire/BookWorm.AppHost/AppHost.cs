@@ -234,7 +234,9 @@ var schedulerApi = builder
 
 schedulerUserName.WithParentRelationship(schedulerApi);
 
-var summarizeAgent = builder.AddProject<SummarizeAgent>("SummarizeAgent").WithOllama();
+var summarizeAgent = builder.AddProject<SummarizeAgent>(Agents.Summarize).WithOllama();
+
+var sentimentAgent = builder.AddProject<SentimentAgent>(Agents.Sentiment).WithOllama();
 
 var gateway = builder
     .AddApiGatewayProxy()
@@ -258,6 +260,7 @@ builder
     .WithReference(schedulerApi)
     .WithReference(notificationApi)
     .WithReference(summarizeAgent)
+    .WithReference(sentimentAgent)
     .WithExternalHttpEndpoints();
 
 if (builder.ExecutionContext.IsRunMode)
@@ -269,7 +272,9 @@ if (builder.ExecutionContext.IsRunMode)
         .WithOpenAPI(basketApi)
         .WithOpenAPI(ratingApi)
         .WithOpenAPI(catalogApi)
-        .WithOpenAPI(orderingApi);
+        .WithOpenAPI(orderingApi)
+        .WithOpenAPI(summarizeAgent)
+        .WithOpenAPI(sentimentAgent);
 
     builder.AddK6(gateway);
 }
