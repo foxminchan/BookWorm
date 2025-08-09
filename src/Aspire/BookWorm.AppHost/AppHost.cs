@@ -214,6 +214,8 @@ var ratingApi = builder
     .WithIdP(keycloak, kcRealmName)
     .WithReference(chatApi);
 
+mcp.WithReference(ratingApi).WaitFor(ratingApi);
+
 chatApi.WithReference(ratingApi).WaitFor(ratingApi);
 
 var financeApi = builder
@@ -233,6 +235,28 @@ var schedulerApi = builder
     .WithEnvironment("TickerQBasicAuth__Password", schedulerPassword);
 
 schedulerUserName.WithParentRelationship(schedulerApi);
+
+var summarizeAgent = builder.AddProject<SummarizeAgent>(Agents.Summarize).WithOllama();
+
+var sentimentAgent = builder.AddProject<SentimentAgent>(Agents.Sentiment).WithOllama();
+
+var languageAgent = builder.AddProject<LanguageAgent>(Agents.Language).WithOllama();
+
+var ratingAgent = builder
+    .AddProject<RatingAgent>(Agents.Rating)
+    .WithOllama()
+    .WithReference(summarizeAgent)
+    .WaitFor(summarizeAgent)
+    .WithReference(mcp)
+    .WaitFor(mcp);
+
+var bookAgent = builder
+    .AddProject<BookAgent>(Agents.Book)
+    .WithOllama()
+    .WithReference(ratingAgent)
+    .WaitFor(ratingAgent)
+    .WithReference(mcp)
+    .WaitFor(mcp);
 
 var gateway = builder
     .AddApiGatewayProxy()
@@ -255,6 +279,11 @@ builder
     .WithReference(orderingApi)
     .WithReference(schedulerApi)
     .WithReference(notificationApi)
+    .WithReference(bookAgent)
+    .WithReference(ratingAgent)
+    .WithReference(languageAgent)
+    .WithReference(summarizeAgent)
+    .WithReference(sentimentAgent)
     .WithExternalHttpEndpoints();
 
 if (builder.ExecutionContext.IsRunMode)
@@ -266,7 +295,12 @@ if (builder.ExecutionContext.IsRunMode)
         .WithOpenAPI(basketApi)
         .WithOpenAPI(ratingApi)
         .WithOpenAPI(catalogApi)
-        .WithOpenAPI(orderingApi);
+        .WithOpenAPI(orderingApi)
+        .WithOpenAPI(bookAgent)
+        .WithOpenAPI(ratingAgent)
+        .WithOpenAPI(languageAgent)
+        .WithOpenAPI(summarizeAgent)
+        .WithOpenAPI(sentimentAgent);
 
     builder.AddK6(gateway);
 }

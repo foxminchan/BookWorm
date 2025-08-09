@@ -63,6 +63,28 @@
       AspireProjectMetadataTypeName="Scheduler"
     />
   </ItemGroup>
+  <ItemGroup Label="Agents">
+    <ProjectReference
+      Include="..\..\Agents\BookWorm.Agent.Summarize\BookWorm.Agent.Summarize.csproj"
+      AspireProjectMetadataTypeName="SummarizeAgent"
+    />
+    <ProjectReference
+      Include="..\..\Agents\BookWorm.Agent.Sentiment\BookWorm.Agent.Sentiment.csproj"
+      AspireProjectMetadataTypeName="SentimentAgent"
+    />
+    <ProjectReference
+      Include="..\..\Agents\BookWorm.Agent.Language\BookWorm.Agent.Language.csproj"
+      AspireProjectMetadataTypeName="LanguageAgent"
+    />
+    <ProjectReference
+      Include="..\..\Agents\BookWorm.Agent.Book\BookWorm.Agent.Book.csproj"
+      AspireProjectMetadataTypeName="BookAgent"
+    />
+    <ProjectReference
+      Include="..\..\Agents\BookWorm.Agent.Rating\BookWorm.Agent.Rating.csproj"
+      AspireProjectMetadataTypeName="RatingAgent"
+    />
+  </ItemGroup>
   <ItemGroup Label="Integrations">
     <ProjectReference
       Include="..\..\Integrations\BookWorm.McpTools\BookWorm.McpTools.csproj"

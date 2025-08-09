@@ -18,10 +18,10 @@ public static class OpenApiExtensions
                 {
                     options.ApplyApiVersionInfo(document, version);
                     options.ApplySchemaNullableFalse();
-                    options.ApplySecuritySchemeDefinitions();
 
                     if (identity is not null)
                     {
+                        options.ApplySecuritySchemeDefinitions();
                         options.ApplyAuthorizationChecks([.. identity.Scopes.Keys]);
                     }
 

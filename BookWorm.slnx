@@ -1,4 +1,11 @@
 <Solution>
+  <Folder Name="/Agents/">
+    <Project Path="src/Agents/BookWorm.Agent.Book/BookWorm.Agent.Book.csproj" />
+    <Project Path="src/Agents/BookWorm.Agent.Language/BookWorm.Agent.Language.csproj" />
+    <Project Path="src/Agents/BookWorm.Agent.Sentiment/BookWorm.Agent.Sentiment.csproj" />
+    <Project Path="src/Agents/BookWorm.Agent.Summarize/BookWorm.Agent.Summarize.csproj" />
+    <Project Path="src/Agents/BookWorm.Agent.Rating/BookWorm.Agent.Rating.csproj" />
+  </Folder>
   <Folder Name="/Aspire/">
     <Project Path="src/Aspire/BookWorm.AppHost/BookWorm.AppHost.csproj" />
     <Project Path="src/Aspire/BookWorm.ServiceDefaults/BookWorm.ServiceDefaults.csproj" />
