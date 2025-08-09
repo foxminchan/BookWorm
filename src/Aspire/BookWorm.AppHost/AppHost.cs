@@ -238,6 +238,8 @@ var summarizeAgent = builder.AddProject<SummarizeAgent>(Agents.Summarize).WithOl
 
 var sentimentAgent = builder.AddProject<SentimentAgent>(Agents.Sentiment).WithOllama();
 
+var languageAgent = builder.AddProject<LanguageAgent>(Agents.Language).WithOllama();
+
 var gateway = builder
     .AddApiGatewayProxy()
     .WithService(chatApi)
@@ -261,6 +263,7 @@ builder
     .WithReference(notificationApi)
     .WithReference(summarizeAgent)
     .WithReference(sentimentAgent)
+    .WithReference(languageAgent)
     .WithExternalHttpEndpoints();
 
 if (builder.ExecutionContext.IsRunMode)
@@ -273,6 +276,7 @@ if (builder.ExecutionContext.IsRunMode)
         .WithOpenAPI(ratingApi)
         .WithOpenAPI(catalogApi)
         .WithOpenAPI(orderingApi)
+        .WithOpenAPI(languageAgent)
         .WithOpenAPI(summarizeAgent)
         .WithOpenAPI(sentimentAgent);
 

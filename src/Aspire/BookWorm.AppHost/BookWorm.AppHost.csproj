@@ -72,6 +72,10 @@
       Include="..\..\Agents\BookWorm.Agent.Sentiment\BookWorm.Agent.Sentiment.csproj"
       AspireProjectMetadataTypeName="SentimentAgent"
     />
+    <ProjectReference
+      Include="..\..\Agents\BookWorm.Agent.Language\BookWorm.Agent.Language.csproj"
+      AspireProjectMetadataTypeName="LanguageAgent"
+    />
   </ItemGroup>
   <ItemGroup Label="Integrations">
     <ProjectReference
