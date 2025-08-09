@@ -64,7 +64,7 @@
     <!-- Miscellaneous -->
     <PackageVersion Include="Scrutor" Version="6.1.0" />
     <PackageVersion Include="MediatR" Version="[12.5.0]" />
-    <PackageVersion Include="Marten.AspNetCore" Version="8.6.0" />
+    <PackageVersion Include="Marten.AspNetCore" Version="8.7.0" />
     <PackageVersion Include="DistributedLock.Redis" Version="1.0.3" />
     <PackageVersion Include="Refit.HttpClientFactory" Version="8.0.0" />
     <PackageVersion Include="AspNetCore.HealthChecks.Uris" Version="$(HealthChecksVersion)" />
@@ -73,11 +73,9 @@
   </ItemGroup>
   <ItemGroup Label="Integration Packages">
     <!-- Grpc -->
-    <PackageVersion Include="Grpc.AspNetCore" Version="$(GrpcVersion)" />
     <PackageVersion Include="Grpc.AspNetCore.HealthChecks" Version="$(GrpcVersion)" />
     <PackageVersion Include="Grpc.AspNetCore.Server.ClientFactory" Version="$(GrpcVersion)" />
     <PackageVersion Include="Grpc.Tools" Version="2.72.0" PrivateAssets="All" />
-    <PackageVersion Include="Google.Protobuf" Version="3.31.1" />
     <!-- MassTransit -->
     <PackageVersion Include="MassTransit.RabbitMQ" Version="$(MassTransitVersion)" />
     <PackageVersion Include="MassTransit.EntityFrameworkCore" Version="$(MassTransitVersion)" />
@@ -98,7 +96,7 @@
     <!-- Testing packages -->
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Bogus" Version="35.6.3" />
-    <PackageVersion Include="TUnit" Version="0.52.64" />
+    <PackageVersion Include="TUnit" Version="0.53.0" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="Verify.TUnit" Version="30.6.1" />
     <PackageVersion Include="TngTech.ArchUnitNET" Version="0.12.1" />
