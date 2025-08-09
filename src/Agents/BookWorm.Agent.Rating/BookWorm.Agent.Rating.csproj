@@ -1,4 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <NoWarn>SKEXP0001,SKEXP0110,SKEXP0130</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol.AspNetCore" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Aspire\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj" />
   </ItemGroup>

@@ -1,14 +1,10 @@
+using BookWorm.Agent.Language.Extensions;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-builder.AddDefaultOpenApi();
-
-builder.Services.AddKernel();
-
-builder.AddSkTelemetry();
-
-builder.AddChatCompletion();
+builder.AddApplicationServices();
 
 var app = builder.Build();
 

@@ -22,6 +22,11 @@ internal static class Extensions
             HealthStatus.Degraded
         );
 
+        services.AddHttpServiceReference<IRatingApi>(
+            $"{Protocols.HttpOrHttps}://{Constants.Aspire.Services.Rating}",
+            HealthStatus.Degraded
+        );
+
         services
             .AddMcpServer(o =>
                 o.ServerInfo = new()

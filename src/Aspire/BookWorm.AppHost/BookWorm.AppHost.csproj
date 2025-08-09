@@ -76,6 +76,14 @@
       Include="..\..\Agents\BookWorm.Agent.Language\BookWorm.Agent.Language.csproj"
       AspireProjectMetadataTypeName="LanguageAgent"
     />
+    <ProjectReference
+      Include="..\..\Agents\BookWorm.Agent.Book\BookWorm.Agent.Book.csproj"
+      AspireProjectMetadataTypeName="BookAgent"
+    />
+    <ProjectReference
+      Include="..\..\Agents\BookWorm.Agent.Rating\BookWorm.Agent.Rating.csproj"
+      AspireProjectMetadataTypeName="RatingAgent"
+    />
   </ItemGroup>
   <ItemGroup Label="Integrations">
     <ProjectReference

@@ -1,16 +1,11 @@
+using BookWorm.Agent.Summarize.Extensions;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-builder.AddDefaultOpenApi();
-
-builder.Services.AddKernel();
-
-builder.AddSkTelemetry();
-
-builder.AddChatCompletion();
+builder.AddApplicationServices();
 
 var app = builder.Build();
 
@@ -46,14 +41,7 @@ app.MapPost(
     .Produces<string>(contentType: MediaTypeNames.Text.Plain)
     .WithTags(tag);
 
-var hostAgent = new A2AHostAgent(
-    AgentFactory.CreateAgent(app.Services.GetRequiredService<Kernel>()),
-    AgentFactory.GetAgentCard()
-);
-
-app.MapA2A(hostAgent.TaskManager!, "/").WithTags(tag);
-
-app.MapHttpA2A(hostAgent.TaskManager!, "/").WithTags(tag);
+app.MapA2AEndpoints(tag);
 
 app.MapDefaultEndpoints();
 

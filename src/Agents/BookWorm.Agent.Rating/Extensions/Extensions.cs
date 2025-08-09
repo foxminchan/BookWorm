@@ -1,9 +1,10 @@
-﻿using BookWorm.Chassis.RAG;
+﻿using A2A.AspNetCore;
+using BookWorm.Chassis.RAG;
 using BookWorm.Chassis.RAG.A2A;
 using BookWorm.Constants.Aspire;
 using ModelContextProtocol.Client;
 
-namespace BookWorm.Agent.Book.Extensions;
+namespace BookWorm.Agent.Rating.Extensions;
 
 internal static class Extensions
 {
@@ -21,7 +22,22 @@ internal static class Extensions
 
         builder.AddMcpClient();
 
-        services.AddA2AClient(Agents.Rating, $"{Protocols.HttpOrHttps}://{Agents.Rating}");
+        services.AddA2AClient(Agents.Summarize, $"{Protocols.HttpOrHttps}://{Agents.Summarize}");
+    }
+
+    public static void MapA2AEndpoints(this WebApplication app, string tag)
+    {
+        var hostAgent = new A2AHostAgent(
+            AgentFactory
+                .CreateAgentAsync(app.Services.GetRequiredService<Kernel>())
+                .GetAwaiter()
+                .GetResult(),
+            AgentFactory.GetAgentCard()
+        );
+
+        app.MapA2A(hostAgent.TaskManager!, "/").WithTags(tag);
+
+        app.MapHttpA2A(hostAgent.TaskManager!, "/").WithTags(tag);
     }
 
     private static void AddMcpClient(this IHostApplicationBuilder builder)

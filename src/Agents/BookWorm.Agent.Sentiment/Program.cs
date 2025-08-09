@@ -1,14 +1,10 @@
+using BookWorm.Agent.Sentiment.Extensions;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-builder.AddDefaultOpenApi();
-
-builder.Services.AddKernel();
-
-builder.AddSkTelemetry();
-
-builder.AddChatCompletion();
+builder.AddApplicationServices();
 
 var app = builder.Build();
 
@@ -20,14 +16,14 @@ app.MapPost(
         "/api/sentiment/evaluate",
         async (Kernel kernel, SentimentRequest sentimentRequest) =>
         {
-            var summaryAgent = AgentFactory.CreateAgent(kernel);
+            var sentimentAgent = AgentFactory.CreateAgent(kernel);
 
             var message = new ChatMessageContent(AuthorRole.User, sentimentRequest.TextToEvaluate);
 
             var responseBuilder = new StringBuilder();
 
             await foreach (
-                ChatMessageContent response in summaryAgent
+                ChatMessageContent response in sentimentAgent
                     .InvokeAsync(message)
                     .ConfigureAwait(false)
             )
