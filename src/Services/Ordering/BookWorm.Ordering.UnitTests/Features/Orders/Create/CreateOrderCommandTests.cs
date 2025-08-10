@@ -2,9 +2,8 @@
 using BookWorm.Chassis.CQRS.Command;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Features.Orders.Create;
+using BookWorm.Ordering.Infrastructure.DistributedLock;
 using BookWorm.Ordering.Infrastructure.Helpers;
-using BookWorm.Ordering.UnitTests.Mocks;
-using Medallion.Threading;
 
 namespace BookWorm.Ordering.UnitTests.Features.Orders.Create;
 
@@ -13,7 +12,7 @@ public sealed class CreateOrderCommandTests
     private readonly Mock<ClaimsPrincipal> _claimsPrincipalMock;
     private readonly CreateOrderCommand _command;
     private readonly CreateOrderHandler _handler;
-    private readonly Mock<IDistributedLockProvider> _lockProviderMock;
+    private readonly Mock<IDistributedAccessLockProvider> _lockProviderMock;
     private readonly Mock<IOrderRepository> _repositoryMock;
     private readonly string _userId;
 
@@ -77,10 +76,18 @@ public sealed class CreateOrderCommandTests
     {
         // Arrange
         var expectedOrder = new Order(_userId.ToBuyerId(), null, _command.Items);
+        var mockLock = new Mock<IDistributedAccessLock>();
+        mockLock.Setup(x => x.IsAcquired).Returns(false);
 
         _lockProviderMock
-            .Setup(x => x.CreateLock(It.IsAny<string>()))
-            .Returns(Mock.Of<IDistributedLock>());
+            .Setup(x =>
+                x.TryAcquireAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<TimeSpan>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(mockLock.Object);
 
         _repositoryMock
             .Setup(x => x.AddAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
@@ -99,22 +106,26 @@ public sealed class CreateOrderCommandTests
     {
         // Arrange
         var expectedOrder = new Order(_userId.ToBuyerId(), null, _command.Items);
-        var mockLock = new Mock<IDistributedSynchronizationHandle>();
+        var mockLock = new Mock<IDistributedAccessLock>();
+        mockLock.Setup(x => x.IsAcquired).Returns(true);
         mockLock.Setup(x => x.DisposeAsync()).Returns(ValueTask.CompletedTask).Verifiable();
 
-        var lockProvider = new DistributedLockProviderMock(mockLock.Object);
-        var handler = new CreateOrderHandler(
-            _repositoryMock.Object,
-            _claimsPrincipalMock.Object,
-            lockProvider
-        );
+        _lockProviderMock
+            .Setup(x =>
+                x.TryAcquireAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<TimeSpan>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(mockLock.Object);
 
         _repositoryMock
             .Setup(x => x.AddAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedOrder);
 
         // Act
-        var result = await handler.Handle(_command, CancellationToken.None);
+        var result = await _handler.Handle(_command, CancellationToken.None);
 
         // Assert
         result.ShouldBe(expectedOrder.Id);

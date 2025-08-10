@@ -26,9 +26,6 @@
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.Ollama" />
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.MailPit" />
   </ItemGroup>
-  <ItemGroup Label="Other">
-    <PackageReference Include="CliWrap" />
-  </ItemGroup>
   <ItemGroup Label="Services">
     <ProjectReference
       Include="..\..\Services\Basket\BookWorm.Basket\BookWorm.Basket.csproj"

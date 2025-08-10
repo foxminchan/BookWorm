@@ -1,4 +1,5 @@
 ﻿using BookWorm.Chassis.CQRS.Command;
+using BookWorm.Ordering.Infrastructure.DistributedLock;
 using BookWorm.Ordering.Infrastructure.Helpers;
 
 namespace BookWorm.Ordering.Features.Orders.Create;
@@ -12,7 +13,7 @@ public sealed class CreateOrderCommand : ICommand<Guid>
 public sealed class CreateOrderHandler(
     IOrderRepository repository,
     ClaimsPrincipal claimsPrincipal,
-    IDistributedLockProvider lockProvider
+    IDistributedAccessLockProvider lockProvider
 ) : ICommandHandler<CreateOrderCommand, Guid>
 {
     public async Task<Guid> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
@@ -23,14 +24,14 @@ public sealed class CreateOrderHandler(
 
         Order result;
         await using (
-            var handle = await lockProvider.TryAcquireLockAsync(
+            var handle = await lockProvider.TryAcquireAsync(
                 userId.ToString(),
                 TimeSpan.FromMinutes(1),
                 cancellationToken
             )
         )
         {
-            if (handle is not null)
+            if (handle.IsAcquired)
             {
                 result = await repository.AddAsync(order, cancellationToken);
             }

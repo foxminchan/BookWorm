@@ -4,17 +4,12 @@ public static class KeycloakExtensions
 {
     private const string BaseContainerPath = "Container/keycloak";
     private const string RealmName = "REALM_NAME";
-    private const string RealmDisplayName = "REALM_DISPLAY_NAME";
     private const string RealmHsts = "REALM_HSTS";
     private const string ThemeName = "THEME_NAME";
+    private const string RealmDisplayName = "REALM_DISPLAY_NAME";
     private const string HttpEnabledEnvVarName = "KC_HTTP_ENABLED";
     private const string ProxyHeadersEnvVarName = "KC_PROXY_HEADERS";
-    private const string KeycloakHttpsPortEnvVarName = "KC_HTTPS_PORT";
-    private const string KeycloakHostnameEnvVarName = "KC_HOSTNAME";
     private const string HostNameStrictEnvVarName = "KC_HOSTNAME_STRICT";
-    private const string QuarkusHttp2EnvVarName = "QUARKUS_HTTP_HTTP2";
-    private const string KeycloakHttpsCertFileEnvVarName = "KC_HTTPS_CERTIFICATE_FILE";
-    private const string KeycloakHttpsCertKeyFileEnvVarName = "KC_HTTPS_CERTIFICATE_KEY_FILE";
     private const string KeycloakDatabaseEnvVarName = "KC_DB";
     private const string KeycloakDatabaseUsernameEnvVarName = "KC_DB_USERNAME";
     private const string KeycloakDatabasePasswordEnvVarName = "KC_DB_PASSWORD";
@@ -116,41 +111,6 @@ public static class KeycloakExtensions
                 );
             })
             .WaitFor(dbSchema);
-    }
-
-    /// <summary>
-    ///     Configures the Keycloak resource to run with an HTTPS development certificate.
-    /// </summary>
-    /// <param name="builder">The Keycloak resource builder.</param>
-    /// <param name="targetPort">The target port for the HTTPS endpoint. Defaults to 8443.</param>
-    /// <returns>The Keycloak resource builder for method chaining.</returns>
-    public static IResourceBuilder<KeycloakResource> RunWithHttpsDevCertificate(
-        this IResourceBuilder<KeycloakResource> builder,
-        int targetPort = 8443
-    )
-    {
-        if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
-        {
-            builder
-                .RunWithHttpsDevCertificate(
-                    KeycloakHttpsCertFileEnvVarName,
-                    KeycloakHttpsCertKeyFileEnvVarName
-                )
-                .WithHttpsEndpoint(env: KeycloakHttpsPortEnvVarName, targetPort: targetPort)
-                .WithEnvironment(KeycloakHostnameEnvVarName, "localhost")
-                // Without disabling HTTP/2, you can hit HTTP 431 Header too large errors in Keycloak.
-                // Related issues:
-                // https://github.com/keycloak/keycloak/discussions/10236
-                // https://github.com/keycloak/keycloak/issues/13933
-                // https://github.com/quarkusio/quarkus/issues/33692
-                .WithEnvironment(QuarkusHttp2EnvVarName, "false")
-                .WithUrlForEndpoint(
-                    Protocols.Http,
-                    url => url.DisplayLocation = UrlDisplayLocation.DetailsOnly
-                );
-        }
-
-        return builder;
     }
 
     /// <summary>

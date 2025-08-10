@@ -5,7 +5,7 @@ using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using BookWorm.Ordering.Features.Orders.Create;
 using BookWorm.Ordering.Features.Orders.Get;
-using StackExchange.Redis;
+using BookWorm.Ordering.Infrastructure.DistributedLock;
 
 namespace BookWorm.Ordering.Extensions;
 
@@ -94,14 +94,7 @@ internal static class Extensions
         builder.AddGrpcServices();
 
         // Configure Redis distributed lock
-        services.AddSingleton<IDistributedLockProvider>(
-            _ => new RedisDistributedSynchronizationProvider(
-                services
-                    .BuildServiceProvider()
-                    .GetRequiredService<IConnectionMultiplexer>()
-                    .GetDatabase()
-            )
-        );
+        builder.AddDistributedLock();
 
         services.AddScoped<KeycloakTokenIntrospectionMiddleware>();
     }
