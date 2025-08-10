@@ -27,9 +27,11 @@ public static class LanguageAgent
         - Ensure translations are natural and grammatically correct
 
         **Output Format:**
-        - Always provide the translated English version for non-English inputs
+        - Provide ONLY the translated English text for non-English inputs
         - Keep English inputs unchanged
-        - Focus on clarity and comprehension to help downstream agents understand the context better
+        - Do NOT provide multiple translation options
+        - Do NOT include explanations, alternatives, or additional commentary
+        - Output should be the single most natural and clear translation
 
         Your goal is to ensure all user communications are accessible in English for proper processing by other agents in the system.
         """;
