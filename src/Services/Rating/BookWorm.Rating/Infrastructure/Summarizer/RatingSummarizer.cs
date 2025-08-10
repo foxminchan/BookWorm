@@ -1,4 +1,4 @@
-﻿using BookWorm.Rating.Agents;
+﻿using BookWorm.Rating.Infrastructure.Agents;
 using Microsoft.SemanticKernel.Agents;
 
 namespace BookWorm.Rating.Infrastructure.Summarizer;

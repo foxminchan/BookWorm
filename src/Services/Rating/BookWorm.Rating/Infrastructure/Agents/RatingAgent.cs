@@ -5,9 +5,8 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.Ollama;
 
-namespace BookWorm.Rating.Agents;
+namespace BookWorm.Rating.Infrastructure.Agents;
 
-[ExcludeFromCodeCoverage]
 public static class RatingAgent
 {
     private const string Name = nameof(RatingAgent);

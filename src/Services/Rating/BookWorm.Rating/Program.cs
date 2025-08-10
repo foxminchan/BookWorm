@@ -1,5 +1,5 @@
-using BookWorm.Rating.Agents;
 using BookWorm.Rating.Extensions;
+using BookWorm.Rating.Infrastructure.Agents;
 
 var builder = WebApplication.CreateBuilder(args);
 

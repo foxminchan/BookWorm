@@ -1,5 +1,5 @@
-using BookWorm.Chat.Agents;
 using BookWorm.Chat.Extensions;
+using BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
 using BookWorm.ServiceDefaults;
 
 var builder = WebApplication.CreateBuilder(args);

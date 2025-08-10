@@ -1,11 +1,9 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using Microsoft.SemanticKernel;
+﻿using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.Ollama;
 
-namespace BookWorm.Chat.Agents;
+namespace BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
 
-[ExcludeFromCodeCoverage]
 public static class LanguageAgent
 {
     private const string Name = nameof(LanguageAgent);

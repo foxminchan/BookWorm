@@ -1,13 +1,11 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using A2A;
+﻿using A2A;
 using A2A.AspNetCore;
 using BookWorm.Chassis.RAG.A2A;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 
-namespace BookWorm.Chat.Agents;
+namespace BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
 
-[ExcludeFromCodeCoverage]
 internal static class Extensions
 {
     public static void AddAgents(this IHostApplicationBuilder builder)

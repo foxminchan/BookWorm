@@ -1,12 +1,10 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using BookWorm.Chassis.RAG.A2A;
+﻿using BookWorm.Chassis.RAG.A2A;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.Ollama;
 
-namespace BookWorm.Chat.Agents;
+namespace BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
 
-[ExcludeFromCodeCoverage]
 public static class BookAgent
 {
     private const string Name = nameof(BookAgent);
