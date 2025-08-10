@@ -1,9 +1,9 @@
-using BookWorm.Chat.Agents;
+using BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
 using Microsoft.SemanticKernel.Agents;
 
-namespace BookWorm.Chat.Infrastructure.ChatStreaming;
+namespace BookWorm.Chat.Infrastructure.AgentOrchestration;
 
-public sealed class ChatAgents(
+public sealed class OrchestrateAgents(
     [FromKeyedServices(nameof(BookAgent))] ChatCompletionAgent bookAgent,
     [FromKeyedServices(nameof(LanguageAgent))] ChatCompletionAgent languageAgent,
     [FromKeyedServices(nameof(SentimentAgent))] ChatCompletionAgent sentimentAgent,

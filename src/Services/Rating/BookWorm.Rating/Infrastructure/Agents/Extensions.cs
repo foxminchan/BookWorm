@@ -5,9 +5,8 @@ using BookWorm.Chassis.RAG.A2A;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 
-namespace BookWorm.Rating.Agents;
+namespace BookWorm.Rating.Infrastructure.Agents;
 
-[ExcludeFromCodeCoverage]
 public static class Extensions
 {
     public static void AddAgents(this IHostApplicationBuilder builder)
@@ -22,7 +21,10 @@ public static class Extensions
 
         builder.AddEmbeddingGenerator();
 
-        services.AddA2AClient("SummarizeAgent", $"{Protocols.HttpOrHttps}://{Services.Chatting}");
+        services.AddA2AClient(
+            "SummarizeAgent",
+            $"{Protocols.HttpOrHttps}://{Constants.Aspire.Services.Chatting}"
+        );
 
         services.AddKeyedSingleton(
             nameof(RatingAgent),
