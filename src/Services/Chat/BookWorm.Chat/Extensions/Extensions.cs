@@ -53,9 +53,7 @@ internal static class Extensions
         services.AddBackplaneServices();
 
         // Configure ClaimsPrincipal
-        services.AddTransient<ClaimsPrincipal>(s =>
-            s.GetRequiredService<IHttpContextAccessor>().HttpContext!.User
-        );
+        services.AddTransient(s => s.GetRequiredService<IHttpContextAccessor>().HttpContext!.User);
 
         services.AddSignalR().AddNamedAzureSignalR(Components.Azure.SignalR);
 

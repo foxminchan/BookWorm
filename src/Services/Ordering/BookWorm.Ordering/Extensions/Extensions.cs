@@ -86,9 +86,7 @@ internal static class Extensions
         );
 
         // Configure ClaimsPrincipal
-        services.AddTransient<ClaimsPrincipal>(s =>
-            s.GetRequiredService<IHttpContextAccessor>().HttpContext!.User
-        );
+        services.AddTransient(s => s.GetRequiredService<IHttpContextAccessor>().HttpContext!.User);
 
         // Configure gRPC
         builder.AddGrpcServices();

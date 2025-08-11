@@ -15,12 +15,23 @@ public static class RatingAgent
         "Summarizes book ratings and evaluates product quality as bad, good, or best seller.";
 
     private const string Instructions = """
-        You are a Rating Agent responsible for processing and evaluating book ratings data.
+        You are a Rating Agent responsible for processing and evaluating book ratings data with contextual intelligence.
 
         **Primary Responsibilities**:
-        1. Analyze aggregated rating data for books/products
+        1. Analyze aggregated rating data for books/products using contextually selected functions
         2. Calculate summary statistics (average rating, total reviews, rating distribution)
         3. Evaluate and classify product quality based on rating metrics
+        4. Provide sentiment analysis and content summarization
+
+        **Available Functions for Contextual Selection**:
+        - **GetCustomerReviews**: Retrieves raw customer review data for analysis
+        - **SummarizeAgent functions**: Provides advanced text processing, summarization, and sentiment analysis
+
+        **Contextual Function Usage Guidelines**:
+        - Use GetCustomerReviews when you need actual customer feedback data
+        - Use SummarizeAgent functions for content analysis, sentiment evaluation, and text processing
+        - Select functions based on the specific analysis requirements and context
+        - Combine multiple functions for comprehensive rating assessment
 
         **Classification Rules**:
         - **Best Seller**: Average rating ≥ 4.5 with at least 50 reviews, or ≥ 4.0 with 200+ reviews
@@ -40,6 +51,7 @@ public static class RatingAgent
         - Consider review quality and authenticity indicators
         - Account for seasonal trends and promotional periods
         - Handle edge cases like products with very few but high ratings
+        - Use contextual intelligence to select the most relevant functions for each analysis task
         """;
 
     public static ChatCompletionAgent CreateAgent(Kernel kernel)
@@ -47,14 +59,13 @@ public static class RatingAgent
         var agentKernel = kernel.Clone();
         var agent = kernel.Services.GetRequiredKeyedService<A2AAgent>("SummarizeAgent");
 
+        var reviewPlugin = new ReviewPlugin(kernel.Services.GetRequiredService<ISender>());
+        agentKernel.Plugins.AddFromObject(reviewPlugin);
+
         var sentimentPlugin = KernelPluginFactory.CreateFromFunctions(
             "AgentPlugin",
             [AgentKernelFunctionFactory.CreateFromAgent(agent)]
         );
-
-        var reviewPlugin = new ReviewPlugin(kernel.Services.GetRequiredService<ISender>());
-
-        agentKernel.Plugins.AddFromObject(reviewPlugin);
         agentKernel.Plugins.Add(sentimentPlugin);
 
         return new()
@@ -62,7 +73,7 @@ public static class RatingAgent
             Instructions = Instructions,
             Name = Name,
             Description = Description,
-            Kernel = kernel,
+            Kernel = agentKernel,
             UseImmutableKernel = true,
             Arguments = new(
                 new OllamaPromptExecutionSettings
@@ -85,19 +96,22 @@ public static class RatingAgent
             Id = "id_rating_agent",
             Name = Name,
             Description = Description,
-            Tags = ["rating", "book", "semantic-kernel"],
+            Tags = ["rating", "book", "semantic-kernel", "contextual-selection", "a2a"],
             Examples =
             [
                 "What is the average rating for the book 'The Great Gatsby'?",
                 "Classify the product quality of '1984' by George Orwell.",
                 "How many reviews does 'To Kill a Mockingbird' have?",
+                "Analyze customer sentiment for reviews of a specific book.",
+                "Provide comprehensive rating analysis with quality classification.",
             ],
         };
 
         return new()
         {
             Name = Name,
-            Description = Description,
+            Description =
+                "Rating analysis agent with contextual function selection using existing plugins and A2A integration",
             Version = "1.0.0",
             Provider = new() { Organization = nameof(BookWorm) },
             DefaultInputModes = ["text"],
