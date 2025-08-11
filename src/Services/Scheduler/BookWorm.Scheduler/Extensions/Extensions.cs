@@ -46,6 +46,7 @@ internal static class Extensions
             opt.SetMaxConcurrency(Environment.ProcessorCount);
             opt.SetInstanceIdentifier(Environment.MachineName);
             opt.UpdateMissedJobCheckDelay(TimeSpan.FromMinutes(5));
+            // Commenting out the first times to apply the migrations
             opt.AddOperationalStore<SchedulerDbContext>(efOpt =>
             {
                 efOpt.UseModelCustomizerForMigrations();

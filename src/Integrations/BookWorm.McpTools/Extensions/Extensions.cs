@@ -30,7 +30,7 @@ internal static class Extensions
                     Version = apiVersionDescriptions[0].ApiVersion.ToString(),
                 }
             )
-            .WithHttpTransport()
+            .WithHttpTransport(o => o.Stateless = true)
             .WithToolsFromAssembly()
             .WithPromptsFromAssembly();
 
