@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: "Deployed site"
         run: curl -X POST -d {} ${{ secrets.NETLIFY_BUILD_HOOK }}
