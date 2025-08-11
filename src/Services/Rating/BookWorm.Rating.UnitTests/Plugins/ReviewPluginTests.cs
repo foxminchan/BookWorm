@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 using BookWorm.Rating.Features;
 using BookWorm.Rating.Features.List;
 using BookWorm.Rating.Plugins;
@@ -9,12 +10,6 @@ namespace BookWorm.Rating.UnitTests.Plugins;
 
 public sealed class ReviewPluginTests
 {
-    private static readonly JsonSerializerOptions _jsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-    };
-
     private readonly ReviewPlugin _reviewPlugin;
     private readonly Mock<ISender> _senderMock;
     private readonly Guid _validBookId;
@@ -242,7 +237,7 @@ public sealed class ReviewPluginTests
                         && q.PageIndex == 1
                         && q.PageSize == int.MaxValue
                         && q.OrderBy == "Rating"
-                        && q.IsDescending == false
+                        && !q.IsDescending
                     ),
                     It.IsAny<CancellationToken>()
                 ),
@@ -376,6 +371,17 @@ public sealed class ReviewPluginTests
 
     private static List<FeedbackDto> DeserializeFeedbackList(string json)
     {
-        return JsonSerializer.Deserialize<List<FeedbackDto>>(json, _jsonOptions) ?? [];
+        return JsonSerializer.Deserialize<List<FeedbackDto>>(
+                json,
+                TestFeedbackSerializationContext.Default.Options
+            ) ?? [];
     }
 }
+
+[JsonSerializable(typeof(FeedbackDto))]
+[JsonSerializable(typeof(List<FeedbackDto>))]
+[JsonSourceGenerationOptions(
+    PropertyNameCaseInsensitive = true,
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase
+)]
+internal sealed partial class TestFeedbackSerializationContext : JsonSerializerContext;
