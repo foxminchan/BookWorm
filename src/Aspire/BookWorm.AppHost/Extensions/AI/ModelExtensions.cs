@@ -61,6 +61,8 @@ public static class ModelExtensions
             "UseGPU"
         );
 
+        parameter.WithParentRelationship(builder);
+
         var envVar = await parameter.Resource.GetValueAsync(CancellationToken.None);
 
         return int.TryParse(envVar, out var useGpu) && useGpu == 1;

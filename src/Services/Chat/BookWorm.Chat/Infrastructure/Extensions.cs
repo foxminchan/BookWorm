@@ -39,24 +39,30 @@ internal static class Extensions
 
     private static void AddMcpClient(this IHostApplicationBuilder builder)
     {
-        builder.Services.AddSingleton(sp =>
+        var services = builder.Services;
+
+        services.AddHttpClient(
+            Services.McpTools,
+            client => client.BaseAddress = new($"{Protocols.HttpOrHttps}://{Services.McpTools}")
+        );
+
+        services.AddSingleton(sp =>
         {
             var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+
+            var client = sp.GetRequiredService<IHttpClientFactory>()
+                .CreateClient(Services.McpTools);
 
             McpClientOptions mcpClientOptions = new()
             {
                 ClientInfo = new() { Name = Services.McpTools, Version = "1.0" },
             };
 
-            var client = new HttpClient
-            {
-                BaseAddress = new($"{Protocols.HttpOrHttps}://{Services.McpTools}"),
-            };
-
             SseClientTransportOptions sseTransportOptions = new()
             {
-                Name = "AspNetCoreSse",
-                Endpoint = new(client.BaseAddress, "mcp"),
+                Name = "AspNetCoreSseClient",
+                TransportMode = HttpTransportMode.StreamableHttp,
+                Endpoint = new(client.BaseAddress!, "mcp"),
             };
 
             SseClientTransport sseClientTransport = new(sseTransportOptions, loggerFactory);
