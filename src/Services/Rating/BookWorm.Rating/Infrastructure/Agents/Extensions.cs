@@ -1,7 +1,7 @@
 ﻿using A2A;
 using A2A.AspNetCore;
-using BookWorm.Chassis.RAG;
 using BookWorm.Chassis.RAG.A2A;
+using BookWorm.Chassis.RAG.Extensions;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 
@@ -22,12 +22,12 @@ public static class Extensions
         builder.AddEmbeddingGenerator();
 
         services.AddA2AClient(
-            "SummarizeAgent",
+            Constants.Other.Agents.SummarizeAgent,
             $"{Protocols.HttpOrHttps}://{Constants.Aspire.Services.Chatting}"
         );
 
         services.AddKeyedSingleton(
-            nameof(RatingAgent),
+            Constants.Other.Agents.RatingAgent,
             (sp, _) =>
             {
                 var kernel = sp.GetRequiredService<Kernel>();
@@ -46,12 +46,14 @@ public static class Extensions
 
     public static void MapHostRatingAgent(this WebApplication app)
     {
-        var agent = app.Services.GetRequiredKeyedService<ChatCompletionAgent>(nameof(RatingAgent));
+        var agent = app.Services.GetRequiredKeyedService<ChatCompletionAgent>(
+            Constants.Other.Agents.RatingAgent
+        );
 
         var hostAgent = new A2AHostAgent(agent, RatingAgent.GetAgentCard());
 
-        app.MapA2A(hostAgent.TaskManager!, "/").WithTags(nameof(RatingAgent));
+        app.MapA2A(hostAgent.TaskManager!, "/").WithTags(Constants.Other.Agents.RatingAgent);
 
-        app.MapHttpA2A(hostAgent.TaskManager!, "/").WithTags(nameof(RatingAgent));
+        app.MapHttpA2A(hostAgent.TaskManager!, "/").WithTags(Constants.Other.Agents.RatingAgent);
     }
 }

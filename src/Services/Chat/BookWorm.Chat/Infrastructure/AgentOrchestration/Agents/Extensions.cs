@@ -1,6 +1,7 @@
 ﻿using A2A;
 using A2A.AspNetCore;
 using BookWorm.Chassis.RAG.A2A;
+using BookWorm.Chassis.RAG.Extensions;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 
@@ -12,19 +13,26 @@ internal static class Extensions
     {
         var services = builder.Services;
 
-        services.AddA2AClient("RatingAgent", $"{Protocols.HttpOrHttps}://{Services.Rating}");
+        services.AddA2AClient(
+            Constants.Other.Agents.RatingAgent,
+            $"{Protocols.HttpOrHttps}://{Services.Rating}"
+        );
 
         services.AddKeyedSingleton(
-            nameof(BookAgent),
+            Constants.Other.Agents.BookAgent,
             (sp, _) =>
             {
                 var kernel = sp.GetRequiredService<Kernel>();
-                return BookAgent.CreateAgentAsync(kernel).GetAwaiter().GetResult();
+                return BookAgent
+                    .CreateAgentAsync(kernel)
+                    .ConfigureAwait(false)
+                    .GetAwaiter()
+                    .GetResult();
             }
         );
 
         services.AddKeyedSingleton(
-            nameof(LanguageAgent),
+            Constants.Other.Agents.LanguageAgent,
             (sp, _) =>
             {
                 var kernel = sp.GetRequiredService<Kernel>();
@@ -33,7 +41,7 @@ internal static class Extensions
         );
 
         services.AddKeyedSingleton(
-            nameof(SummarizeAgent),
+            Constants.Other.Agents.SummarizeAgent,
             (sp, _) =>
             {
                 var kernel = sp.GetRequiredService<Kernel>();
@@ -42,7 +50,7 @@ internal static class Extensions
         );
 
         services.AddKeyedSingleton(
-            nameof(SentimentAgent),
+            Constants.Other.Agents.SentimentAgent,
             (sp, _) =>
             {
                 var kernel = sp.GetRequiredService<Kernel>();
@@ -62,13 +70,13 @@ internal static class Extensions
     public static void MapHostSummarizeAgent(this WebApplication app)
     {
         var agent = app.Services.GetRequiredKeyedService<ChatCompletionAgent>(
-            nameof(SummarizeAgent)
+            Constants.Other.Agents.SummarizeAgent
         );
 
         var hostAgent = new A2AHostAgent(agent, SummarizeAgent.GetAgentCard());
 
-        app.MapA2A(hostAgent.TaskManager!, "/").WithTags(nameof(SummarizeAgent));
+        app.MapA2A(hostAgent.TaskManager!, "/").WithTags(Constants.Other.Agents.SummarizeAgent);
 
-        app.MapHttpA2A(hostAgent.TaskManager!, "/").WithTags(nameof(SummarizeAgent));
+        app.MapHttpA2A(hostAgent.TaskManager!, "/").WithTags(Constants.Other.Agents.SummarizeAgent);
     }
 }

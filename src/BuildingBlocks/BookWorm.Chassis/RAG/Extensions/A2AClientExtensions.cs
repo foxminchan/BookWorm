@@ -1,7 +1,8 @@
 ﻿using A2A;
+using BookWorm.Chassis.RAG.A2A;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace BookWorm.Chassis.RAG.A2A;
+namespace BookWorm.Chassis.RAG.Extensions;
 
 public static class A2AClientExtensions
 {
@@ -30,7 +31,7 @@ public static class A2AClientExtensions
             {
                 var httpClient = sp.GetRequiredService<IHttpClientFactory>()
                     .CreateClient(agentName);
-                return CreateAgentAsync(httpClient).GetAwaiter().GetResult();
+                return CreateAgentAsync(httpClient).ConfigureAwait(false).GetAwaiter().GetResult();
             }
         );
     }

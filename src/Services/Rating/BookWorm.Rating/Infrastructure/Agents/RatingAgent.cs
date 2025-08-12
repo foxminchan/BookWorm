@@ -1,5 +1,5 @@
 ﻿using A2A;
-using BookWorm.Chassis.RAG.A2A;
+using BookWorm.Chassis.RAG.Extensions;
 using BookWorm.Rating.Plugins;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
@@ -9,7 +9,7 @@ namespace BookWorm.Rating.Infrastructure.Agents;
 
 public static class RatingAgent
 {
-    private const string Name = nameof(RatingAgent);
+    private const string Name = Constants.Other.Agents.RatingAgent;
 
     private const string Description =
         "Summarizes book ratings and evaluates product quality as bad, good, or best seller.";
@@ -57,16 +57,12 @@ public static class RatingAgent
     public static ChatCompletionAgent CreateAgent(Kernel kernel)
     {
         var agentKernel = kernel.Clone();
-        var agent = kernel.Services.GetRequiredKeyedService<A2AAgent>("SummarizeAgent");
 
         var reviewPlugin = new ReviewPlugin(kernel.Services.GetRequiredService<ISender>());
         agentKernel.Plugins.AddFromObject(reviewPlugin);
 
-        var sentimentPlugin = KernelPluginFactory.CreateFromFunctions(
-            "AgentPlugin",
-            [AgentKernelFunctionFactory.CreateFromAgent(agent)]
-        );
-        agentKernel.Plugins.Add(sentimentPlugin);
+        var summarizePlugin = agentKernel.MapToAgentPlugin(Constants.Other.Agents.SummarizeAgent);
+        agentKernel.Plugins.Add(summarizePlugin);
 
         return new()
         {
