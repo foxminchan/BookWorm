@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-  <ItemGroup>
+  <ItemGroup Label="TickerQ">
     <PackageReference Include="TickerQ" />
     <PackageReference Include="TickerQ.Dashboard" />
     <PackageReference Include="TickerQ.EntityFrameworkCore" />
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Label="EF Core">
     <PackageReference Include="MassTransit.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
   </ItemGroup>

@@ -2,10 +2,8 @@
   <PropertyGroup>
     <SuppressCheckGrpcNetClientFactoryVersion>true</SuppressCheckGrpcNetClientFactoryVersion>
   </PropertyGroup>
-  <ItemGroup Label="Project">
-    <PackageReference Include="ModelContextProtocol.AspNetCore" />
-  </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="ModelContextProtocol.AspNetCore" />
     <ProjectReference Include="..\..\Aspire\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj" />
   </ItemGroup>
 </Project>

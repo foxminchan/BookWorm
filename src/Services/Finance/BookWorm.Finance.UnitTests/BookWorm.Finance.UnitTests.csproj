@@ -3,7 +3,7 @@
     <OutputType>Exe</OutputType>
     <ExcludeFromCodeCoverage>true</ExcludeFromCodeCoverage>
   </PropertyGroup>
-  <ItemGroup Label="Unit Test">
+  <ItemGroup>
     <PackageReference Include="Moq" />
     <PackageReference Include="Verify.TUnit" />
   </ItemGroup>

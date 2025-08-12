@@ -2,29 +2,29 @@
   <PropertyGroup>
     <NoWarn>SKEXP0001,SKEXP0070,SKEXP0110</NoWarn>
   </PropertyGroup>
-  <ItemGroup>
+  <ItemGroup Label="Framework">
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
   <ItemGroup Label="Integration">
-    <PackageReference Include="Scrutor" />
-    <PackageReference Include="MassTransit.RabbitMQ" />
+    <PackageReference Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="EFCore.NamingConventions" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
-    <PackageReference Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="MassTransit.RabbitMQ" />
+    <PackageReference Include="Scrutor" />
   </ItemGroup>
   <ItemGroup Label="AI">
     <PackageReference Include="A2A.AspNetCore" />
-    <PackageReference Include="ModelContextProtocol.AspNetCore" />
     <PackageReference Include="CommunityToolkit.Aspire.OllamaSharp" />
     <PackageReference Include="Microsoft.SemanticKernel.Agents.Core" />
-    <PackageReference Include="Microsoft.SemanticKernel.Connectors.Qdrant" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.Qdrant" />
+    <PackageReference Include="ModelContextProtocol.AspNetCore" />
   </ItemGroup>
   <ItemGroup Label="Telemetry">
-    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.Middleware" />
     <PackageReference Include="Microsoft.Extensions.Compliance.Redaction" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
   </ItemGroup>
   <ItemGroup Label="Versioning">
     <PackageReference Include="Asp.Versioning.Http.Client" />

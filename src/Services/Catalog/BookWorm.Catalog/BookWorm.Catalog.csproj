@@ -2,7 +2,7 @@
   <PropertyGroup>
     <NoWarn>SKEXP0001,SKEXP0070</NoWarn>
   </PropertyGroup>
-  <ItemGroup Label="Project">
+  <ItemGroup Label="Core Dependencies">
     <PackageReference Include="MassTransit.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
