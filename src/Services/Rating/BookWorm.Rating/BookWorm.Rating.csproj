@@ -2,11 +2,11 @@
   <PropertyGroup>
     <NoWarn>SKEXP0001,SKEXP0070,SKEXP0110,SKEXP0130</NoWarn>
   </PropertyGroup>
-  <ItemGroup Label="Project">
+  <ItemGroup Label="Core Dependencies">
     <PackageReference Include="MassTransit.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
   </ItemGroup>
-  <ItemGroup Label="AI">
+  <ItemGroup Label="AI / Semantic Kernel">
     <PackageReference Include="Microsoft.SemanticKernel.Agents.Core" />
   </ItemGroup>
   <ItemGroup>

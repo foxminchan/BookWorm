@@ -2,7 +2,7 @@
   <PropertyGroup>
     <SuppressCheckGrpcNetClientFactoryVersion>true</SuppressCheckGrpcNetClientFactoryVersion>
   </PropertyGroup>
-  <ItemGroup Label="Project">
+  <ItemGroup Label="Core Dependencies">
     <PackageReference Include="Marten.AspNetCore" />
     <PackageReference Include="DistributedLock.Redis" />
     <PackageReference Include="Microsoft.Azure.SignalR.Management" />

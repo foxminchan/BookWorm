@@ -2,7 +2,7 @@
   <PropertyGroup>
     <IsAspireSharedProject>true</IsAspireSharedProject>
   </PropertyGroup>
-  <ItemGroup>
+  <ItemGroup Label="Framework">
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
   <ItemGroup Label="Integration">
@@ -10,7 +10,7 @@
     <PackageReference Include="Aspire.Keycloak.Authentication" />
     <PackageReference Include="AspNetCore.HealthChecks.UI.Client" />
   </ItemGroup>
-  <ItemGroup Label="HTTP">
+  <ItemGroup Label="HTTP Communication">
     <PackageReference Include="Refit.HttpClientFactory" />
     <PackageReference Include="AspNetCore.HealthChecks.Uris" />
     <PackageReference Include="Grpc.AspNetCore.HealthChecks" />

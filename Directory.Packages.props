@@ -6,104 +6,105 @@
     <AspireVersion>9.4.0</AspireVersion>
   </PropertyGroup>
   <ItemGroup Label="Aspire Packages">
-    <!-- Aspire Hosting -->
-    <PackageVersion Include="Scalar.Aspire" Version="0.3.3" />
-    <PackageVersion Include="Aspire.Hosting.Qdrant" Version="$(AspireVersion)" />
-    <PackageVersion Include="Aspire.Hosting.Testing" Version="$(AspireVersion)" />
+    <!-- Hosting -->
     <PackageVersion Include="Aspire.Hosting.AppHost" Version="$(AspireVersion)" />
-    <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="$(AspireVersion)" />
-    <PackageVersion Include="Aspire.Hosting.Yarp" Version="$(AspireUnstableVersion)" />
-    <PackageVersion Include="Aspire.Hosting.Keycloak" Version="$(AspireUnstableVersion)" />
-    <PackageVersion Include="Aspire.Hosting.Azure.Redis" Version="$(AspireVersion)" />
-    <PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="$(AspireVersion)" />
-    <PackageVersion Include="Aspire.Hosting.Azure.SignalR" Version="$(AspireVersion)" />
-    <PackageVersion Include="Aspire.Hosting.Azure.PostgreSQL" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Azure.AppContainers" Version="$(AspireVersion)" />
-    <!-- Aspire Client -->
+    <PackageVersion Include="Aspire.Hosting.Azure.PostgreSQL" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Hosting.Azure.Redis" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Hosting.Azure.SignalR" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Hosting.Keycloak" Version="$(AspireUnstableVersion)" />
+    <PackageVersion Include="Aspire.Hosting.Qdrant" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Hosting.Testing" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Hosting.Yarp" Version="$(AspireUnstableVersion)" />
+    <!-- Client -->
     <PackageVersion Include="Aspire.Azure.Npgsql" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Keycloak.Authentication" Version="$(AspireUnstableVersion)" />
     <PackageVersion Include="Aspire.Qdrant.Client" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.StackExchange.Redis" Version="$(AspireVersion)" />
-    <PackageVersion Include="Aspire.Keycloak.Authentication" Version="$(AspireUnstableVersion)" />
     <!-- Community Toolkit -->
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.k6" Version="$(ToolKitVersion)" />
-    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.Ollama" Version="$(ToolKitVersion)" />
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.MailPit" Version="$(ToolKitVersion)" />
+    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.Ollama" Version="$(ToolKitVersion)" />
     <PackageVersion Include="CommunityToolkit.Aspire.OllamaSharp" Version="$(ToolKitVersion)" />
+    <!-- Extra -->
+    <PackageVersion Include="Scalar.Aspire" Version="0.3.3" />
   </ItemGroup>
   <ItemGroup Label="Core Packages">
     <!-- Microsoft Extensions -->
     <PackageVersion Include="Microsoft.Extensions.Caching.Hybrid" Version="$(MsExtVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Compliance.Redaction" Version="$(MsExtVersion)" />
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="$(MsExtVersion)" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="$(AspireVersion)" />
-    <PackageVersion Include="Microsoft.Extensions.Compliance.Redaction" Version="$(MsExtVersion)" />
-    <PackageVersion Include="Microsoft.FeatureManagement.AspNetCore" Version="4.2.1" />
     <!-- ASP.NET Core -->
     <PackageVersion Include="Asp.Versioning.Http.Client" Version="$(ApiVersioningVersion)" />
     <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer" Version="$(ApiVersioningVersion)" />
     <PackageVersion Include="Microsoft.AspNetCore.Diagnostics.Middleware" Version="$(MsExtVersion)" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.8" />
     <PackageVersion Include="Microsoft.Azure.SignalR.Management" Version="1.31.0" />
-    <!-- Semantic Kernel -->
+    <!-- Data -->
+    <PackageVersion Include="EFCore.NamingConventions" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.8" />
+    <!-- Observability -->
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.12.0" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.12.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.12.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.GrpcNetClient" Version="1.12.0-beta.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.12.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.12.0" />
+    <!-- AI / Semantic Kernel -->
     <PackageVersion Include="Microsoft.SemanticKernel.Agents.Core" Version="1.61.0" />
     <PackageVersion Include="Microsoft.SemanticKernel.Agents.Orchestration" Version="1.61.0-preview" />
     <PackageVersion Include="Microsoft.SemanticKernel.Agents.Runtime.InProcess" Version="1.61.0-preview" />
-    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.61.0-preview" />
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Ollama" Version="1.61.0-alpha" />
-    <!-- Entity Framework Core -->
-    <PackageVersion Include="EFCore.NamingConventions" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.8" />
-    <!-- OpenTelemetry -->
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.12.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.12.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.12.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.GrpcNetClient" Version="1.12.0-beta.1" />
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.12.0" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.12.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.61.0-preview" />
     <!-- Miscellaneous -->
-    <PackageVersion Include="Scrutor" Version="6.1.0" />
-    <PackageVersion Include="MediatR" Version="[12.5.0]" />
-    <PackageVersion Include="Marten.AspNetCore" Version="8.7.0" />
-    <PackageVersion Include="DistributedLock.Redis" Version="1.1.0" />
-    <PackageVersion Include="Refit.HttpClientFactory" Version="8.0.0" />
-    <PackageVersion Include="AspNetCore.HealthChecks.Uris" Version="$(HealthChecksVersion)" />
     <PackageVersion Include="AspNetCore.HealthChecks.UI.Client" Version="$(HealthChecksVersion)" />
+    <PackageVersion Include="AspNetCore.HealthChecks.Uris" Version="$(HealthChecksVersion)" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0" />
+    <PackageVersion Include="Marten.AspNetCore" Version="8.7.0" />
+    <PackageVersion Include="MediatR" Version="[12.5.0]" />
+    <PackageVersion Include="Microsoft.FeatureManagement.AspNetCore" Version="4.2.1" />
+    <PackageVersion Include="Refit.HttpClientFactory" Version="8.0.0" />
+    <PackageVersion Include="Scrutor" Version="6.1.0" />
+    <PackageVersion Include="DistributedLock.Redis" Version="1.1.0" />
   </ItemGroup>
   <ItemGroup Label="Integration Packages">
-    <!-- Grpc -->
+    <!-- gRPC -->
     <PackageVersion Include="Grpc.AspNetCore.HealthChecks" Version="$(GrpcVersion)" />
     <PackageVersion Include="Grpc.AspNetCore.Server.ClientFactory" Version="$(GrpcVersion)" />
     <PackageVersion Include="Grpc.Tools" Version="2.72.0" PrivateAssets="All" />
     <!-- MassTransit -->
-    <PackageVersion Include="MassTransit.RabbitMQ" Version="$(MassTransitVersion)" />
     <PackageVersion Include="MassTransit.EntityFrameworkCore" Version="$(MassTransitVersion)" />
+    <PackageVersion Include="MassTransit.RabbitMQ" Version="$(MassTransitVersion)" />
     <!-- TickerQ -->
     <PackageVersion Include="TickerQ" Version="$(TickerQVersion)" />
     <PackageVersion Include="TickerQ.Dashboard" Version="$(TickerQVersion)" />
     <PackageVersion Include="TickerQ.EntityFrameworkCore" Version="$(TickerQVersion)" />
-    <!-- Miscellaneous -->
+    <!-- Email & Messaging -->
+    <PackageVersion Include="AspNetCore.HealthChecks.SendGrid" Version="$(HealthChecksVersion)" />
     <PackageVersion Include="MailKit" Version="4.13.0" />
     <PackageVersion Include="Mjml.Net" Version="4.10.0" />
     <PackageVersion Include="SendGrid" Version="9.29.3" />
-    <PackageVersion Include="AspNetCore.HealthChecks.SendGrid" Version="$(HealthChecksVersion)" />
-    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.3.0-preview.3" />
+    <!-- Other Integrations -->
     <PackageVersion Include="A2A.AspNetCore" Version="0.1.0-preview.2" />
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.3.0-preview.3" />
   </ItemGroup>
   <ItemGroup Label="Testing">
-    <!-- Testing packages -->
-    <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Bogus" Version="35.6.3" />
-    <PackageVersion Include="TUnit" Version="0.55.6" />
-    <PackageVersion Include="Shouldly" Version="4.3.0" />
-    <PackageVersion Include="Verify.TUnit" Version="30.6.1" />
-    <PackageVersion Include="TngTech.ArchUnitNET" Version="0.12.1" />
     <PackageVersion Include="GitHubActionsTestLogger" Version="2.4.1" />
-    <!-- Testing Platform -->
+    <PackageVersion Include="Moq" Version="4.20.72" />
+    <PackageVersion Include="Shouldly" Version="4.3.0" />
+    <PackageVersion Include="TngTech.ArchUnitNET" Version="0.12.1" />
+    <PackageVersion Include="TUnit" Version="0.55.6" />
+    <PackageVersion Include="Verify.TUnit" Version="30.6.1" />
+    <!-- Microsoft Testing Platform -->
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="$(MsTestVersion)" />
     <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="$(MsTestVersion)" />
     <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="$(MsTestVersion)" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="$(MsTestVersion)" />
   </ItemGroup>
 </Project>

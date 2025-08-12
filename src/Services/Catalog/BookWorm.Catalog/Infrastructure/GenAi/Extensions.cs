@@ -1,5 +1,4 @@
 ﻿using BookWorm.Catalog.Infrastructure.GenAi.Ingestion;
-using BookWorm.Chassis.RAG;
 using BookWorm.Chassis.RAG.Extensions;
 using BookWorm.Chassis.RAG.Ingestion;
 using BookWorm.Chassis.RAG.Search;

@@ -2,7 +2,7 @@
   <PropertyGroup>
     <SuppressCheckGrpcNetClientFactoryVersion>true</SuppressCheckGrpcNetClientFactoryVersion>
   </PropertyGroup>
-  <ItemGroup Label="Project">
+  <ItemGroup Label="Core Dependencies">
     <PackageReference Include="Aspire.StackExchange.Redis" />
     <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
   </ItemGroup>
