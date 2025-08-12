@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <NoWarn>SKEXP0070,SKEXP0110</NoWarn>
+    <NoWarn>SKEXP0001,SKEXP0070,SKEXP0110</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
@@ -14,6 +14,7 @@
   </ItemGroup>
   <ItemGroup Label="AI">
     <PackageReference Include="A2A.AspNetCore" />
+    <PackageReference Include="ModelContextProtocol.AspNetCore" />
     <PackageReference Include="CommunityToolkit.Aspire.OllamaSharp" />
     <PackageReference Include="Microsoft.SemanticKernel.Agents.Core" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.Qdrant" />

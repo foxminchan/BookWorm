@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.RAG.A2A;
+﻿using BookWorm.Chassis.RAG.Extensions;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.Ollama;
@@ -7,7 +7,7 @@ namespace BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
 
 public static class BookAgent
 {
-    private const string Name = nameof(BookAgent);
+    private const string Name = Constants.Other.Agents.BookAgent;
 
     private const string Description =
         "An agent that searches for books, provides relevant information, and offers personalized recommendations based on user preferences and behavior.";
@@ -41,21 +41,11 @@ public static class BookAgent
     {
         var agentKernel = kernel.Clone();
 
-        var mcpClient = kernel.Services.GetRequiredService<IMcpClient>();
-        var agent = kernel.Services.GetRequiredKeyedService<A2AAgent>("RatingAgent");
+        var tools = await agentKernel.MapToFunctionsAsync();
+        var plugins = agentKernel.MapToAgentPlugin(Constants.Other.Agents.RatingAgent);
 
-        var tools = await mcpClient.ListToolsAsync();
-
-        var ratingAgent = KernelPluginFactory.CreateFromFunctions(
-            "AgentPlugin",
-            [AgentKernelFunctionFactory.CreateFromAgent(agent)]
-        );
-
-        agentKernel.Plugins.AddFromFunctions(
-            nameof(BookWorm),
-            tools.Select(aiFunction => aiFunction.AsKernelFunction())
-        );
-        agentKernel.Plugins.Add(ratingAgent);
+        agentKernel.Plugins.AddFromFunctions(nameof(BookWorm), tools);
+        agentKernel.Plugins.Add(plugins);
 
         return new()
         {

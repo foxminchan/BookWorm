@@ -1,3 +1,4 @@
+using BookWorm.Chassis.RAG.Extensions;
 using BookWorm.Chat.Domain.AggregatesModel;
 using BookWorm.Chat.Features;
 using BookWorm.Chat.Infrastructure.Backplane;
@@ -106,20 +107,12 @@ public sealed class ChatHistoryService(
 
     public async Task<List<ChatMessage>> FetchPromptMessagesAsync(Guid conversationId, string text)
     {
-        var prompts = await mcpClient.ListPromptsAsync();
-
-        List<ChatMessage> promptMessages = [];
-
-        foreach (var prompt in prompts)
-        {
-            var chatMessages = (await prompt.GetAsync()).ToChatMessages();
-            promptMessages.AddRange(chatMessages);
-        }
+        var prompts = await mcpClient.MapToChatMessagesAsync();
 
         var messages = await SaveUserMessageAndGetHistoryAsync(conversationId, text);
 
-        promptMessages.AddRange(messages);
+        prompts.AddRange(messages);
 
-        return promptMessages;
+        return prompts;
     }
 }

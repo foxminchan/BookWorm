@@ -1,11 +1,14 @@
-﻿using BookWorm.Constants.Aspire;
+﻿using BookWorm.Chassis.RAG.A2A;
+using BookWorm.Constants.Aspire;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Agents;
+using ModelContextProtocol.Client;
 
-namespace BookWorm.Chassis.RAG;
+namespace BookWorm.Chassis.RAG.Extensions;
 
-public static class Extensions
+public static class KernelExtensions
 {
     private const string ActivitySourceName = "Microsoft.SemanticKernel*";
 
@@ -33,5 +36,25 @@ public static class Extensions
     public static void AddEmbeddingGenerator(this IHostApplicationBuilder builder)
     {
         builder.AddOllamaApiClient(Components.Ollama.Embedding).AddEmbeddingGenerator();
+    }
+
+    public static async Task<IReadOnlyList<KernelFunction>> MapToFunctionsAsync(this Kernel kernel)
+    {
+        var mcpClient = kernel.Services.GetRequiredService<IMcpClient>();
+        var tools = await mcpClient.ListToolsAsync().ConfigureAwait(false);
+        var functions = tools.Select(aiFunction => aiFunction.AsKernelFunction());
+        return [.. functions];
+    }
+
+    public static KernelPlugin MapToAgentPlugin(this Kernel kernel, string agentName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(agentName);
+
+        var agent = kernel.Services.GetRequiredKeyedService<A2AAgent>(agentName);
+
+        return KernelPluginFactory.CreateFromFunctions(
+            $"{agentName}Plugin",
+            [AgentKernelFunctionFactory.CreateFromAgent(agent)]
+        );
     }
 }

@@ -1,10 +1,9 @@
-﻿using BookWorm.Rating.Infrastructure.Agents;
-using Microsoft.SemanticKernel.Agents;
+﻿using Microsoft.SemanticKernel.Agents;
 
 namespace BookWorm.Rating.Infrastructure.Summarizer;
 
 public sealed class RatingSummarizer(
-    [FromKeyedServices(nameof(RatingAgent))] ChatCompletionAgent agent
+    [FromKeyedServices(Constants.Other.Agents.RatingAgent)] ChatCompletionAgent agent
 ) : ISummarizer
 {
     public async Task<string?> SummarizeAsync(
