@@ -1,9 +1,9 @@
-﻿using BookWorm.Chassis.RAG.A2A;
-using BookWorm.Constants.Aspire;
+﻿using BookWorm.Constants.Aspire;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
+using Microsoft.SemanticKernel.Agents.A2A;
 using ModelContextProtocol.Client;
 
 namespace BookWorm.Chassis.RAG.Extensions;
