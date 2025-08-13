@@ -1,0 +1,47 @@
+---
+sidebar_position: 1
+title: Overview
+last_update:
+  author: Nhan Nguyen
+---
+
+# Deployment View Overview
+
+The BookWorm application is built using .NET Aspire, a cloud-native application framework that orchestrates containerized services. The deployment architecture supports both local development and cloud production environments with Azure Container Apps.
+
+## Application Host
+
+The `BookWorm.AppHost` project serves as the orchestration layer, defining the entire application topology including:
+
+- **8 Microservices**: Catalog, Chat, Basket, Notification, Ordering, Rating, Finance, and Scheduler
+- **Infrastructure Components**: PostgreSQL, Redis, RabbitMQ, Qdrant Vector DB, Azure Storage
+- **Identity Provider**: Keycloak with custom theming
+- **AI Integration**: Ollama with Gemma 3 and Nomic Embed Text models
+- **API Gateway**: YARP-based reverse proxy
+- **Monitoring**: Health Checks UI, Scalar API documentation, K6 performance testing
+
+## Execution Contexts
+
+The application supports two primary execution contexts:
+
+### Development Mode (`IsRunMode`)
+- Local container orchestration using Docker
+- Single replica deployment for services
+- Emulated Azure services (Storage, SignalR, PostgreSQL)
+- K6 performance testing enabled
+- Scalar API documentation available
+
+### Production Mode (`IsPublishMode`)
+- Azure Container Apps deployment
+- Multi-replica service deployment (2+ replicas)
+- Native Azure services integration
+- CORS configuration for production domains
+- Optimized AI models (Gemma 3 4B instead of 1B)
+
+## Key Features
+
+- **Service Discovery**: Automatic service resolution using Aspire service discovery
+- **Configuration Management**: Parameterized deployment with secure secrets
+- **Health Monitoring**: Comprehensive health checks for all services and dependencies
+- **Observability**: OpenTelemetry integration for distributed tracing and metrics
+- **Security**: JWT-based authentication with Keycloak, RBAC for Azure resources

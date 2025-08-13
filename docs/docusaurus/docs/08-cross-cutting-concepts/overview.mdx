@@ -1,0 +1,37 @@
+---
+sidebar_position: 1
+title: Overview
+last_update:
+  author: Nhan Nguyen
+---
+
+# Cross-Cutting Concepts Overview
+
+This section describes the cross-cutting concepts that are implemented across all services in the BookWorm application. These concepts ensure consistency, maintainability, and operational excellence throughout the system.
+
+## Architecture Components
+
+The BookWorm application implements cross-cutting concerns through two main components:
+
+### BookWorm.Chassis
+A comprehensive building block library that provides core functionality for all microservices, including:
+- **CQRS Pattern Implementation** - Command and Query separation with MediatR
+- **Event-Driven Architecture** - Integration events with MassTransit and RabbitMQ
+- **Database Access** - Repository pattern with Entity Framework Core and PostgreSQL
+- **Domain-Driven Design** - Specifications, guards, and domain abstractions
+- **AI Integration** - Semantic Kernel, Ollama, and RAG capabilities
+- **Exception Handling** - Centralized error management and custom exceptions
+- **API Endpoints** - Minimal APIs with automatic registration and versioning
+- **Data Serialization** - JSON converters and type transformation
+- **Guards & Defensive Programming** - Input validation and security guards
+- **Repository & Specifications** - Data access abstraction with query composition
+
+### BookWorm.ServiceDefaults
+Aspire-based service defaults that standardize common configurations:
+- **Authentication & Authorization** - Keycloak integration with JWT tokens
+- **Service Discovery** - Aspire service discovery for microservice communication
+- **Health Checks** - Comprehensive health monitoring endpoints
+- **OpenAPI Documentation** - Automated API specification generation
+- **Telemetry** - OpenTelemetry integration for observability
+- **Rate Limiting & CORS** - API protection and cross-origin resource sharing
+- **HTTP Client Configuration** - Resilient HTTP communication patterns

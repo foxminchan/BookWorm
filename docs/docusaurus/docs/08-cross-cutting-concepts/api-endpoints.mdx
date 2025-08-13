@@ -1,0 +1,136 @@
+---
+sidebar_position: 10
+title: API Endpoints
+last_update:
+  author: Nhan Nguyen
+---
+
+# API Endpoints
+
+The BookWorm application implements a sophisticated endpoint management system that provides consistent API design, automatic registration, and standardized response patterns across all microservices.
+
+## Endpoint Architecture
+
+### Minimal APIs Pattern
+- **IEndpoint Interface** - Standardized endpoint contract
+- **Automatic Discovery** - Assembly scanning for endpoint registration
+- **Route Builder Extensions** - Fluent API for endpoint configuration
+- **Dependency Injection** - Full DI support for endpoint handlers
+
+### Endpoint Registration
+- **Assembly Scanning** - Automatic endpoint discovery and registration
+- **Transient Lifetime** - Lightweight endpoint instance management
+- **Type-Safe Registration** - Compile-time safety for endpoint definitions
+- **Conditional Registration** - Environment-specific endpoint availability
+
+## API Versioning
+
+### Version Management
+- **API Version Sets** - Centralized version configuration
+- **URL Path Versioning** - Version specification in API paths (/api/v1/, /api/v2/)
+- **Asp.Versioning Integration** - Industry-standard versioning framework
+- **Backward Compatibility** - Support for multiple API versions simultaneously
+
+### Version Strategy
+- **Semantic Versioning** - Clear version numbering scheme
+- **Deprecation Policy** - Graceful deprecation of older API versions
+- **Documentation Versioning** - Version-specific API documentation
+- **Client Migration** - Tools and guidance for API version migration
+
+## Response Standardization
+
+### HTTP Status Codes
+- **POST Operations** - 201 Created with location header
+- **PUT Operations** - 200 OK or 204 No Content
+- **DELETE Operations** - 204 No Content
+- **GET Operations** - 200 OK with data
+- **PATCH Operations** - 200 OK with updated data
+
+### Error Response Format
+- **Problem Details (RFC 7807)** - Standardized error response format
+- **Validation Problems** - Structured validation error responses
+- **Not Found Responses** - Consistent 404 error handling
+- **Conflict Responses** - Business rule violation responses
+
+### Response Extensions
+- **ProducesPost&lt;T&gt;()** - Standardized POST response configuration
+- **ProducesGet&lt;T&gt;()** - GET response with optional validation and not found handling
+- **ProducesPut()** - PUT operation response patterns
+- **ProducesDelete()** - DELETE operation response configuration
+- **ProducesPatch&lt;T&gt;()** - PATCH operation with validation support
+
+## Security Integration
+
+### Authentication
+- **JWT Bearer Tokens** - Token-based authentication for API endpoints
+- **Claims-Based Authorization** - Fine-grained access control
+- **Role-Based Security** - Role-based endpoint protection
+- **Anonymous Access** - Selective public endpoint access
+
+### Anti-Forgery Protection
+- **Development Environment** - Disabled for development flexibility
+- **Production Environment** - Enabled for CSRF protection
+- **Token Validation** - Automatic anti-forgery token verification
+- **Custom Token Handling** - Configurable token validation logic
+
+## Development Features
+
+### Development-Specific Features
+- **Anti-Forgery Disabled** - Simplified development workflow
+- **Enhanced Logging** - Detailed endpoint execution logging
+- **Error Details** - Full exception details in development responses
+- **Hot Reload Support** - Dynamic endpoint changes without restart
+
+### Debugging Support
+- **Request/Response Logging** - Comprehensive API call logging
+- **Performance Monitoring** - Endpoint execution time tracking
+- **Health Check Integration** - Endpoint health status monitoring
+- **Metrics Collection** - API usage and performance metrics
+
+## Resource Management
+
+### Route Organization
+- **Resource-Based Routing** - Logical grouping by business domain
+- **Nested Resources** - Hierarchical resource relationships
+- **Query Parameter Handling** - Standardized query parameter processing
+- **Route Constraints** - Type-safe route parameter validation
+
+### Content Negotiation
+- **Media Type Support** - JSON, XML, and other content types
+- **Accept Header Processing** - Client-driven content type selection
+- **Custom Formatters** - Support for domain-specific data formats
+- **Compression Support** - Response compression for performance
+
+## Performance Optimization
+
+### Endpoint Performance
+- **Minimal Overhead** - Lightweight endpoint execution
+- **Async/Await Patterns** - Non-blocking endpoint handlers
+- **Result Caching** - Response caching where appropriate
+- **Connection Pooling** - Efficient resource utilization
+
+### Scalability Features
+- **Stateless Design** - No server-side session state
+- **Load Balancer Friendly** - Compatible with load balancing strategies
+- **Circuit Breaker Integration** - Resilience for external dependencies
+- **Timeout Configuration** - Request timeout management
+
+## Best Practices
+
+### Endpoint Design
+- **RESTful Principles** - Follow REST architectural constraints
+- **Idempotency** - Safe retry behavior for appropriate operations
+- **Resource Naming** - Clear, consistent resource naming conventions
+- **HTTP Method Semantics** - Proper use of HTTP methods
+
+### Documentation
+- **OpenAPI Integration** - Automatic API documentation generation
+- **Example Requests** - Sample requests and responses
+- **Parameter Documentation** - Clear parameter descriptions
+- **Error Code Documentation** - Comprehensive error code reference
+
+### Testing
+- **Integration Tests** - End-to-end API testing
+- **Contract Testing** - API contract validation
+- **Load Testing** - Performance and scalability testing
+- **Security Testing** - Vulnerability assessment and penetration testing

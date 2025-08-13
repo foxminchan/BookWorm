@@ -106,7 +106,7 @@ repository:
 
 ## Overview
 
-The Catalog Service is a core bounded context within the BookWorm ecosystem that implements Domain-Driven Design principles to manage the book inventory and metadata, built on our [microservices architecture](https://foxminchan.github.io/BookWorm/architecture/adr/adr-001-microservices-architecture.html). This service is responsible for:
+The Catalog Service is a core bounded context within the BookWorm ecosystem that implements Domain-Driven Design principles to manage the book inventory and metadata, built on our [microservices architecture](https://foxminchan.github.io/BookWorm/architecture-decisions/adr-001-microservices-architecture). This service is responsible for:
 
 - Managing the book catalog, including details like title, ISBN, publication date, and price
 - Maintaining author profiles and their associated works
@@ -117,7 +117,7 @@ The Catalog Service is a core bounded context within the BookWorm ecosystem that
 
 The domain model follows strategic DDD patterns with clearly defined aggregates, entities, and value objects. The Catalog domain enforces business rules such as ISBN validation, category relationships, and author attribution.
 
-The service uses [PostgreSQL as the primary database](https://foxminchan.github.io/BookWorm/architecture/adr/adr-004-postgresql-database.html) for transactional data and publishes domain events via message broker integration following our [event-driven CQRS pattern](https://foxminchan.github.io/BookWorm/architecture/adr/adr-002-event-driven-cqrs.html) to notify other bounded contexts about catalog changes, maintaining eventual consistency across the system.
+The service uses [PostgreSQL as the primary database](https://foxminchan.github.io/BookWorm/architecture-decisions/adr-004-postgresql-database) for transactional data and publishes domain events via message broker integration following our [event-driven CQRS pattern](https://foxminchan.github.io/BookWorm/architecture-decisions/adr-002-event-driven-cqrs) to notify other bounded contexts about catalog changes, maintaining eventual consistency across the system.
 
 ## Component Diagram
 

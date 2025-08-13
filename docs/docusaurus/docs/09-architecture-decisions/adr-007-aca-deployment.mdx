@@ -1,0 +1,90 @@
+---
+sidebar_position: 8
+title: ADR-007 - Azure Container Apps Deployment
+last_update:
+  author: Nhan Nguyen
+---
+
+# ADR-007: Azure Container Apps Deployment
+
+## Status
+
+**Accepted** - July 2025
+
+## Context
+
+BookWorm requires a cloud deployment platform that supports containerized microservices with auto-scaling and service discovery. The deployment needs:
+
+- Container orchestration for .NET microservices
+- Auto-scaling based on demand
+- Service-to-service communication
+- Cost-effective serverless model
+- Simple deployment workflow
+
+## Decision
+
+Use **Azure Container Apps** as the deployment platform, deployed via **Azure Developer CLI (azd)** with .NET Aspire orchestration.
+
+## Implementation
+
+### Azure Developer CLI Setup
+
+BookWorm uses `azd` for streamlined Azure deployment:
+
+- **Configuration**: Single `azure.yaml` file defines the deployment
+- **Aspire Integration**: Automatic Bicep generation from Aspire AppHost
+- **Service Discovery**: Built-in service resolution within Container Apps environment
+- **Resource Provisioning**: Azure resources auto-provisioned with proper tagging
+
+### Container Apps Environment
+
+All services deploy to a shared Container Apps environment with:
+
+- **Auto-scaling**: Scale to zero when idle, scale up on demand
+- **Internal Communication**: Service-to-service communication via service discovery
+- **Health Checks**: Automatic health monitoring and restart
+- **Observability**: Integrated with Azure Monitor and Log Analytics
+
+### Service Configuration
+
+Each microservice deploys as a separate Container App:
+
+- **Catalog/Chat**: Public ingress for external access
+- **Other Services**: Internal-only for service-to-service communication
+- **Azure Resources**: PostgreSQL, Redis, SignalR, Storage provisioned as Azure services
+- **Keycloak**: Containerized identity provider with custom realm
+
+## Benefits
+
+- **Serverless**: Pay only for actual usage, scale to zero
+- **Managed**: No cluster management overhead
+- **Simple Deployment**: Single `azd up` command deploys everything
+- **Azure Native**: Full integration with Azure services and monitoring
+- **Cost Effective**: Optimized pricing for variable workloads
+
+## Alternatives Considered
+
+- **Azure Kubernetes Service**: Too complex for current scale
+- **Azure App Service**: Limited container orchestration
+- **Azure Functions**: Not suitable for long-running services
+- **Self-managed VMs**: High operational overhead
+
+## Consequences
+
+### Positive
+
+- Simplified deployment and operations
+- Automatic scaling and high availability
+- Integrated monitoring and observability
+- Cost optimization through serverless model
+
+### Challenges
+
+- Azure platform dependency
+- Limited customization compared to Kubernetes
+- Regional availability constraints
+
+## Related Decisions
+
+- [ADR-003: .NET Aspire for Cloud-Native Development](./adr-003-aspire-cloud-native)
+- [ADR-005: Keycloak for Identity Management](./adr-005-keycloak-identity)

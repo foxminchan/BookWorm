@@ -1,0 +1,66 @@
+---
+sidebar_position: 1
+title: Overview
+last_update:
+  author: Nhan Nguyen
+---
+
+# Building Block View Overview
+
+## Content
+
+The building block view shows the static decomposition of the BookWorm Store system into building blocks (services, components, modules, libraries, frameworks, etc.) as well as their dependencies and relationships.
+
+This view is essential for understanding the system architecture and serves as the foundation for technical discussions and implementation decisions.
+
+## Motivation
+
+The building block view helps us:
+
+- **Maintain system overview** by making the structure understandable through abstraction
+- **Enable effective communication** with stakeholders on an architectural level without exposing implementation details
+- **Support development teams** by providing clear boundaries and interfaces between components
+- **Facilitate system evolution** by understanding dependencies and impact of changes
+- **Guide deployment decisions** by showing service boundaries and scaling units
+
+## Form
+
+The building block view is organized hierarchically across three levels:
+
+### Level 1: Glass Box Overall System
+
+Shows the highest level decomposition of the BookWorm Store into major building blocks:
+
+- **Application Layer**: Contains all business services and API gateway
+- **Infrastructure Layer**: Provides messaging, data persistence, and cross-cutting concerns
+- **External Systems**: Third-party integrations for authentication and notifications
+
+This level provides the "big picture" view with the container diagram showing all services and their relationships.
+
+### Level 2: Detailed Service Decomposition
+
+Zooms into the most critical and complex services from Level 1:
+
+- **Catalog Service**: Product management, search, and inventory
+- **Order Service**: Order workflow and distributed transaction orchestration
+- **Finance Service**: Payment processing with security and compliance
+
+Each service is decomposed into its internal components showing responsibilities and interfaces.
+
+### Level 3: Component Deep Dive
+
+Provides implementation details for the most complex components:
+
+- **Saga Orchestrator**: Distributed transaction management with compensation
+- **Search Engine**: AI-powered vector search implementation
+- **Payment Processor**: Secure transaction workflow with fraud detection
+
+This level shows internal structure, algorithms, and design patterns used.
+
+## Navigation
+
+- **[Glass Box Overall System](./glassbox-overall-system)** - Level 1 system decomposition
+- **[Level 2 - Service Details](./level-2)** - Internal structure of key services
+- **[Level 3 - Component Implementation](./level-3)** - Deep dive into complex components
+
+Each level builds upon the previous one, providing increasing detail while maintaining clear abstraction boundaries.

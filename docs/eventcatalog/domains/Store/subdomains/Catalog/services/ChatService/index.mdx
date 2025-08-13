@@ -73,7 +73,7 @@ repository:
 
 ## Overview
 
-The Chat Service is a specialized bounded context within the BookWorm ecosystem that implements natural language processing capabilities to provide interactive conversations with users, following our [AI Integration Strategy](https://foxminchan.github.io/BookWorm/architecture/adr/adr-009-ai-integration.html). This service is responsible for:
+The Chat Service is a specialized bounded context within the BookWorm ecosystem that implements natural language processing capabilities to provide interactive conversations with users, following our [AI Integration Strategy](https://foxminchan.github.io/BookWorm/architecture-decisions/adr-009-ai-integration). This service is responsible for:
 
 - Processing user chat prompts and generating contextually relevant responses
 - Maintaining chat session state and history
@@ -88,7 +88,7 @@ The domain model follows strategic DDD patterns with clearly defined aggregates,
 - **Conversational AI**: Natural language understanding and generation using state-of-the-art LLMs
 - **Context Management**: Maintains conversation history and context for coherent multi-turn dialogues
 - **Tool Integration**: Leverages Model Context Protocol (MCP) for dynamic tool usage
-- **Streaming Responses**: Real-time streaming of AI responses using [SignalR](https://foxminchan.github.io/BookWorm/architecture/adr/adr-006-signalr-realtime.html) for better user experience
+- **Streaming Responses**: Real-time streaming of AI responses using [SignalR](https://foxminchan.github.io/BookWorm/architecture-decisions/adr-006-signalr-realtime) for better user experience
 
 ## Component Diagram
 

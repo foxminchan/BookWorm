@@ -1,0 +1,128 @@
+---
+sidebar_position: 7
+title: Mapper
+last_update:
+  author: Nhan Nguyen
+---
+
+# Mapper
+
+The BookWorm application uses mapping patterns to transform data between different layers and representations, ensuring clean separation of concerns and maintainable code architecture.
+
+## Mapping Architecture
+
+### Layer Separation
+- **Domain to DTO** - Transform domain entities to data transfer objects
+- **DTO to API Models** - Convert DTOs to API request/response models
+- **Entity to Domain** - Map database entities to domain models
+- **Command/Query Mapping** - Transform CQRS commands and queries
+
+### Mapping Strategies
+- **Manual Mapping** - Explicit mapping logic for complex transformations
+- **Extension Methods** - Fluent mapping extensions for common scenarios
+- **Factory Patterns** - Centralized object creation and mapping
+- **Builder Patterns** - Complex object construction with validation
+
+## Domain-Driven Design Mapping
+
+### Aggregate Mapping
+- **Aggregate Root Mapping** - Transform aggregate roots with their invariants
+- **Value Object Conversion** - Map value objects maintaining immutability
+- **Entity Relationships** - Preserve domain relationships and constraints
+- **Domain Events** - Map domain events for cross-boundary communication
+
+### Repository Pattern Integration
+- **Entity Framework Mapping** - Database entity to domain model conversion
+- **Specification Pattern** - Map query specifications to database queries
+- **Projection Mapping** - Transform query results to read models
+- **Change Tracking** - Map domain changes to database updates
+
+## CQRS Mapping Patterns
+
+### Command Mapping
+- **Command to Domain** - Transform API commands to domain operations
+- **Validation Integration** - Map validation results to command responses
+- **Event Sourcing** - Map commands to domain events
+- **Aggregate Updates** - Transform commands to aggregate modifications
+
+### Query Mapping
+- **Query to Projection** - Map queries to optimized database projections
+- **Response Mapping** - Transform query results to API responses
+- **Caching Integration** - Map cached data to response models
+- **Pagination Mapping** - Transform paged results with metadata
+
+## API Layer Mapping
+
+### Request/Response Transformation
+- **HTTP Models** - Map HTTP requests to internal commands/queries
+- **Validation Models** - Transform validation errors to API responses
+- **Error Mapping** - Convert internal exceptions to HTTP error responses
+- **Content Negotiation** - Support multiple response formats (JSON, XML)
+
+### Versioning Support
+- **API Version Mapping** - Transform between different API versions
+- **Backward Compatibility** - Maintain support for older API versions
+- **Schema Evolution** - Handle schema changes in mapping logic
+- **Deprecation Handling** - Graceful handling of deprecated properties
+
+## Performance Considerations
+
+### Mapping Optimization
+- **Lazy Loading** - Defer expensive mapping operations
+- **Bulk Mapping** - Optimize mapping for large datasets
+- **Memory Management** - Efficient object allocation and disposal
+- **Caching Strategies** - Cache frequently used mapping results
+
+### Expression Tree Usage
+- **Compiled Expressions** - Pre-compile mapping expressions for performance
+- **Query Optimization** - Use expressions for efficient database queries
+- **Dynamic Mapping** - Runtime mapping based on type information
+- **Reflection Minimization** - Reduce reflection overhead in mapping
+
+## Validation Integration
+
+### Mapping Validation
+- **FluentValidation Integration** - Validate objects during mapping
+- **Business Rule Validation** - Enforce domain rules in mapping logic
+- **Cross-Field Validation** - Validate relationships during transformation
+- **Conditional Mapping** - Map based on validation results
+
+### Error Handling
+- **Mapping Exceptions** - Handle transformation errors gracefully
+- **Validation Errors** - Map validation failures to meaningful responses
+- **Partial Mapping** - Handle scenarios with incomplete data
+- **Fallback Values** - Provide defaults for missing or invalid data
+
+## Testing Strategies
+
+### Mapping Tests
+- **Unit Tests** - Test individual mapping functions
+- **Property Tests** - Verify mapping properties and invariants
+- **Round-Trip Tests** - Ensure mapping reversibility where applicable
+- **Performance Tests** - Validate mapping performance under load
+
+### Test Data Management
+- **Object Builders** - Create test objects with valid data
+- **Factory Methods** - Generate test data for different scenarios
+- **Mock Integration** - Test mapping with mocked dependencies
+- **Snapshot Testing** - Verify mapping output consistency
+
+## Best Practices
+
+### Mapping Design
+- **Single Responsibility** - Each mapping function should have one purpose
+- **Immutability** - Prefer immutable objects in mapping operations
+- **Null Safety** - Handle null values appropriately in all mappings
+- **Type Safety** - Use strongly-typed mapping functions
+
+### Code Organization
+- **Mapping Extensions** - Organize mapping logic in extension methods
+- **Mapping Profiles** - Group related mappings together
+- **Namespace Organization** - Clear namespace structure for mapping code
+- **Documentation** - Document complex mapping logic and business rules
+
+### Performance Guidelines
+- **Avoid Over-Mapping** - Only map properties that are actually needed
+- **Batch Operations** - Group multiple mapping operations efficiently
+- **Memory Allocation** - Minimize object allocations in hot paths
+- **Profiling** - Regular performance profiling of mapping operations

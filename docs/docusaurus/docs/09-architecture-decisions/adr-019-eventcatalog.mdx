@@ -1,0 +1,215 @@
+---
+sidebar_position: 20
+title: ADR-019 - EventCatalog for Event Documentation
+last_update:
+  author: Nhan Nguyen
+---
+
+# ADR-019: EventCatalog for Event Documentation
+
+## Status
+
+**Accepted** - December 2025
+
+## Context
+
+BookWorm's event-driven microservices architecture produces numerous domain events, integration events, and system events that require comprehensive documentation and discoverability. The event documentation challenges include:
+
+- **Event Discovery**: Developers need to discover available events across the distributed system
+- **Schema Documentation**: Clear documentation of event schemas, payloads, and versioning
+- **Producer-Consumer Relationships**: Understanding which services produce and consume specific events
+- **Event Evolution**: Tracking event schema changes and backward compatibility
+- **Domain Knowledge**: Capturing business context and meaning behind each event
+- **Integration Guidance**: Helping developers understand how to integrate with existing events
+- **Event Governance**: Establishing standards and guidelines for event design
+- **Cross-Team Communication**: Facilitating communication between teams about event contracts
+- **Testing Support**: Providing examples and test data for event integration
+- **Monitoring Integration**: Connecting documentation with runtime event monitoring
+- **Onboarding**: Helping new developers understand the event-driven architecture
+
+The solution must provide a centralized, searchable, and maintainable event documentation platform.
+
+## Decision
+
+Adopt **EventCatalog** as the primary platform for documenting, discovering, and managing events across BookWorm's event-driven architecture, integrated with code generation and CI/CD pipelines.
+
+### Event Documentation Strategy
+
+#### Centralized Event Registry
+
+- **Event Catalog**: Single source of truth for all events in the system
+- **Schema Repository**: Centralized storage of event schemas with versioning
+- **Service Mapping**: Clear visualization of producer-consumer relationships
+- **Domain Context**: Events organized by bounded contexts and business domains
+
+#### Documentation Automation
+
+- **Schema Generation**: Automatic schema extraction from code and message definitions
+- **Documentation Updates**: Automated documentation updates through CI/CD pipelines
+- **Code Examples**: Generated code examples for event producers and consumers
+- **Test Data**: Automated generation of sample event data for testing
+
+### BookWorm Event Categories
+
+| Event Category         | Business Domain               | Example Events                           | Documentation Priority |
+| ---------------------- | ----------------------------- | ---------------------------------------- | ---------------------- |
+| **Domain Events**      | Core business logic           | OrderPlaced, BookAdded, PaymentProcessed | High                   |
+| **Integration Events** | Cross-service communication   | InventoryUpdated, CustomerNotified       | High                   |
+| **System Events**      | Infrastructure and operations | ServiceStarted, HealthCheckFailed        | Medium                 |
+| **Analytics Events**   | Business intelligence         | UserInteraction, SearchPerformed         | Medium                 |
+| **Audit Events**       | Compliance and security       | UserLoggedIn, DataAccessed               | Low                    |
+
+## Rationale
+
+### Why EventCatalog?
+
+#### Event-Driven Architecture Focus
+
+1. **Purpose-Built**: Specifically designed for documenting event-driven architectures
+2. **Event-Centric**: Native support for event schemas, producers, consumers, and relationships
+3. **AsyncAPI Integration**: Built-in support for AsyncAPI specifications and standards
+4. **Service Topology**: Visualization of event flows and service relationships
+5. **Event Versioning**: Comprehensive support for event schema evolution and versioning
+
+#### Developer Experience and Usability
+
+1. **Searchable Interface**: Powerful search capabilities for event discovery
+2. **Interactive Documentation**: Rich, interactive documentation with examples
+3. **Code Generation**: Automatic generation of client code and integration examples
+4. **Visual Design**: Clean, modern interface designed for developer productivity
+5. **Mobile Responsive**: Accessible documentation across different devices and contexts
+
+#### Integration and Automation
+
+1. **CI/CD Integration**: Automated documentation updates through build pipelines
+2. **Git Integration**: Version-controlled documentation stored alongside source code
+3. **API Integration**: REST API for programmatic access to event catalog data
+4. **Plugin System**: Extensible architecture for custom integrations and features
+5. **Static Site Generation**: Fast, deployable static sites for optimal performance
+
+### EventCatalog vs Alternative Solutions
+
+#### Advantages over Confluence/Wiki
+
+1. **Event-Specific Features**: Purpose-built features for event documentation
+2. **Schema Validation**: Built-in schema validation and compatibility checking
+3. **Automation**: Automated documentation generation vs manual maintenance
+4. **Developer Workflow**: Integrated with developer tools and CI/CD pipelines
+5. **Search Capabilities**: Advanced search and filtering for event discovery
+
+#### Advantages over AsyncAPI Studio
+
+1. **Multi-Service View**: Comprehensive view across entire event-driven architecture
+2. **Service Relationships**: Visualization of complex producer-consumer relationships
+3. **Business Context**: Rich documentation beyond technical specifications
+4. **Team Collaboration**: Collaborative features for cross-team communication
+5. **Event Lifecycle**: Complete event lifecycle documentation and management
+
+#### Integration with Development Workflow
+
+1. **Source Control**: Documentation stored in Git with version history
+2. **Code Reviews**: Event schema changes reviewed alongside code changes
+3. **Automated Updates**: CI/CD pipelines automatically update documentation
+4. **Development Tools**: Integration with IDEs and development environments
+5. **Testing Integration**: Event examples used for automated testing
+
+## Implementation
+
+### Documentation Automation
+
+- **Schema Extraction**: Automatic extraction of event schemas from C# classes and proto files
+- **Documentation Generation**: Automated generation of markdown documentation from code comments
+- **Example Generation**: Automatic creation of sample event payloads from schemas
+- **Relationship Mapping**: Analysis of code to identify producer-consumer relationships
+- **Version Tracking**: Automated tracking of schema changes and version updates
+
+### Integration Patterns
+
+- **AsyncAPI Integration**: Export event catalog as AsyncAPI specifications
+- **OpenAPI Integration**: Integration with REST API documentation where applicable
+- **Monitoring Integration**: Links to runtime metrics and event monitoring dashboards
+- **Testing Integration**: Event examples used for contract testing and integration tests
+- **Code Generation**: Generated client libraries and integration code from documented events
+
+## Configuration
+
+### EventCatalog Configuration
+
+```javascript
+// eventcatalog.config.js
+module.exports = {
+  title: 'BookWorm Event Catalog',
+  tagline: 'Discover and understand events in the BookWorm ecosystem',
+  organizationName: 'BookWorm',
+  projectName: 'BookWorm-Events',
+
+  editUrl: 'https://github.com/bookworm/eventcatalog/edit/main',
+
+  users: [
+    {
+      id: 'development-team',
+      name: 'Development Team',
+      avatarUrl: '/img/team-avatar.png',
+      role: 'Maintainer',
+    },
+  ],
+
+  footerLinks: [
+    {
+      label: 'GitHub',
+      href: 'https://github.com/bookworm/eventcatalog',
+    },
+    {
+      label: 'API Documentation',
+      href: 'https://api.bookworm.com/docs',
+    },
+  ],
+
+  generators: [
+    [
+      '@eventcatalog/generator-asyncapi',
+      {
+        pathToSpec: './asyncapi-specs',
+        versionEvents: true,
+        renderChangelog: true,
+      },
+    ],
+  ],
+};
+```
+
+## Consequences
+
+### Positive
+
+- **Event Discovery**: Centralized platform for discovering and understanding events
+- **Documentation Quality**: Rich, interactive documentation with examples and context
+- **Developer Productivity**: Reduced time to understand and integrate with events
+- **Schema Evolution**: Clear tracking of event schema changes and compatibility
+- **Team Collaboration**: Improved communication between teams about event contracts
+- **Automated Maintenance**: Reduced manual documentation maintenance overhead
+
+### Negative
+
+- **Initial Setup**: Significant upfront investment in documentation and tooling setup
+- **Maintenance Overhead**: Requires ongoing maintenance to keep documentation current
+- **Tool Learning Curve**: Team members need to learn EventCatalog concepts and workflow
+- **Integration Complexity**: Complex integration with existing development workflows
+- **Documentation Drift**: Risk of documentation becoming outdated without proper automation
+
+### Risks and Mitigation
+
+| Risk                   | Impact | Probability | Mitigation Strategy                                  |
+| ---------------------- | ------ | ----------- | ---------------------------------------------------- |
+| Documentation Drift    | High   | Medium      | Automated updates, CI/CD integration, regular audits |
+| Low Adoption           | Medium | Medium      | Training programs, integration with workflows        |
+| Maintenance Burden     | Medium | High        | Automation tools, clear ownership, templates         |
+| Tool Dependencies      | Low    | Low         | Static site generation, export capabilities          |
+| Schema Inconsistencies | High   | Low         | Automated validation, schema governance              |
+
+## References
+
+- [EventCatalog Documentation](https://www.eventcatalog.dev/)
+- [Event-Driven Architecture Patterns](https://microservices.io/patterns/data/event-driven-architecture.html)
+- [Event Sourcing Pattern](https://martinfowler.com/eaaDev/EventSourcing.html)
+- [Documentation as Code](https://www.writethedocs.org/guide/docs-as-code/)

@@ -1,0 +1,189 @@
+---
+sidebar_position: 4
+title: Level 3
+last_update:
+  author: Nhan Nguyen
+---
+
+# Level 3
+
+Here we dive deeper into the most complex and critical components from Level 2, showing their internal implementation details and patterns.
+
+## Saga Orchestrator - Internal Implementation
+
+The Saga Orchestrator is a critical component that manages distributed transactions across multiple services. It implements the Saga pattern to ensure data consistency in a microservices environment.
+
+```mermaid
+C4Container
+    title Saga Orchestrator - Internal Structure
+
+    Container_Boundary(saga, "Saga Orchestrator") {
+        Component(definition, "Saga Definition", "C#", "Defines saga workflow steps")
+        Component(state, "State Manager", "C#", "Manages saga execution state")
+        Component(coordinator, "Transaction Coordinator", "C#", "Coordinates distributed transactions")
+        Component(compensator, "Compensation Handler", "C#", "Handles rollback operations")
+        Component(timeout, "Timeout Manager", "C#", "Manages saga timeouts")
+        Component(persistence, "State Persistence", "C#", "Saga state storage")
+    }
+
+    ContainerDb(sagaDb, "Saga State Store", "PostgreSQL", "Saga execution state")
+    SystemQueue(eventBus, "Event Bus", "RabbitMQ", "Service communication")
+
+    Rel(definition, state, "Initializes")
+    Rel(state, coordinator, "Executes steps")
+    Rel(coordinator, eventBus, "Sends commands", "AMQP")
+    Rel(eventBus, state, "Receives events", "AMQP")
+    Rel(state, compensator, "Triggers on failure")
+    Rel(state, timeout, "Manages timeouts")
+    Rel(state, persistence, "Persists state")
+    Rel(persistence, sagaDb, "Stores", "TCP")
+```
+
+### Saga Definition
+
+**Purpose/Responsibility**
+Defines the workflow steps, compensation actions, and business rules for distributed transactions.
+
+**Implementation Details**
+
+- Fluent API for saga definition
+- Step dependencies and ordering
+- Compensation action mapping
+- Timeout configuration
+
+**Code Structure**
+
+```
+src/Services/Ordering/
+├── Sagas/
+│   ├── OrderProcessingSaga.cs
+│   ├── PaymentProcessingSaga.cs
+│   └── InventoryReservationSaga.cs
+├── SagaDefinitions/
+│   ├── OrderSagaDefinition.cs
+│   └── PaymentSagaDefinition.cs
+```
+
+### State Manager
+
+**Purpose/Responsibility**
+Tracks saga execution progress, manages state transitions, and ensures consistency.
+
+**Implementation Details**
+
+- State machine implementation
+- Event sourcing for state changes
+- Optimistic concurrency control
+- State snapshot capabilities
+
+### Transaction Coordinator
+
+**Purpose/Responsibility**
+Orchestrates the execution of saga steps across multiple services.
+
+**Implementation Details**
+
+- Command dispatching
+- Response correlation
+- Parallel step execution
+- Dependency resolution
+
+### Compensation Handler
+
+**Purpose/Responsibility**
+Executes compensation actions when saga steps fail, ensuring system consistency.
+
+**Implementation Details**
+
+- Reverse operation execution
+- Compensation ordering
+- Partial failure handling
+- Idempotent compensation
+
+## Search Engine - Vector Search Implementation
+
+The Search Engine implements sophisticated AI-powered search using vector embeddings and semantic similarity.
+
+```mermaid
+C4Container
+    title Search Engine - Internal Components
+
+    Container_Boundary(search, "Search Engine") {
+        Component(indexer, "Document Indexer", "C#", "Processes and indexes documents")
+        Component(embedder, "Embedding Generator", "Python", "Generates vector embeddings")
+        Component(query, "Query Processor", "C#", "Processes search queries")
+        Component(ranker, "Result Ranker", "C#", "Ranks and scores results")
+        Component(cache, "Search Cache", "C#", "Caches search results")
+    }
+
+    ContainerDb(vectorDb, "Vector Database", "Qdrant", "Vector embeddings")
+    ContainerDb(searchCache, "Redis Cache", "Redis", "Search result cache")
+    System_Ext(llm, "LLM Service", "OpenAI/Azure OpenAI", "Embedding generation")
+
+    Rel(indexer, embedder, "Requests embeddings")
+    Rel(embedder, llm, "Generates embeddings", "HTTPS")
+    Rel(indexer, vectorDb, "Stores vectors", "gRPC")
+    Rel(query, embedder, "Query embedding")
+    Rel(query, vectorDb, "Vector search", "gRPC")
+    Rel(query, ranker, "Ranks results")
+    Rel(ranker, cache, "Caches results")
+    Rel(cache, searchCache, "Stores", "TCP")
+```
+
+### Document Indexer
+
+**Purpose/Responsibility**
+Processes product documents and creates searchable index entries with vector embeddings.
+
+**Implementation Details**
+
+- Document parsing and normalization
+- Metadata extraction
+- Batch processing capabilities
+- Index update strategies
+
+**Processing Pipeline**
+
+1. Document preprocessing
+2. Text extraction and cleaning
+3. Embedding generation
+4. Vector storage
+5. Index optimization
+
+### Embedding Generator
+
+**Purpose/Responsibility**
+Converts text content into high-dimensional vector representations using machine learning models.
+
+**Implementation Details**
+
+- Integration with OpenAI/Azure OpenAI
+- Batch embedding generation
+- Caching of embeddings
+- Model version management
+
+**Quality Characteristics**
+
+- Sub-second embedding generation
+- High-dimensional vector space (1536 dimensions)
+- Semantic similarity preservation
+- Model consistency across updates
+
+### Query Processor
+
+**Purpose/Responsibility**
+Processes user search queries and converts them into vector search operations.
+
+**Implementation Details**
+
+- Query parsing and normalization
+- Intent recognition
+- Filter application
+- Hybrid search (vector + keyword)
+
+**Search Features**
+
+- Semantic similarity search
+- Faceted search with filters
+- Auto-completion suggestions
+- Search result personalization
