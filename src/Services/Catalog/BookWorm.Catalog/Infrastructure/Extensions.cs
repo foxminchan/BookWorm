@@ -28,7 +28,7 @@ internal static class Extensions
         );
 
         // Configure Qdrant
-        builder.AddQdrantClient(Components.VectorDb);
+        builder.AddQdrantClient(Components.VectorDb.Name);
         services.AddQdrantCollection<Guid, TextSnippet>(nameof(Book).ToLowerInvariant());
 
         // Configure Redis Cache

@@ -27,10 +27,10 @@ help:
     echo " clean - Clean build artifacts"
     echo " run - Run the application (default)"
     echo " update-eventcatalog - Update EventCatalog bun packages"
-    echo " update-vuepress - Update VuePress bun packages"
+    echo " update-docusaurus - Update Docusaurus bun packages"
     echo " update-k6 - Update K6 bun packages"
     echo " update-keycloakify - Update Keycloakify bun packages"
-    echo " update - Update all bun packages (eventcatalog, vuepress, k6, keycloakify)"
+    echo " update - Update all bun packages (eventcatalog, docusaurus, k6, keycloakify)"
 
 # Restore NuGet packages and tools
 
@@ -107,21 +107,21 @@ _update-eventcatalog-windows:
 _update-eventcatalog-linux _update-eventcatalog-macos:
     cd docs/eventcatalog && bun update
 
-# Update VuePress bun packages
+# Update Docusaurus bun packages
 
-update-vuepress:
-    echo "Updating VuePress bun packages..."
-    just _update-vuepress-{{ os() }}
+update-docusaurus:
+    echo "Updating Docusaurus bun packages..."
+    just _update-docusaurus-{{ os() }}
 
-# Update VuePress packages (Windows)
+# Update Docusaurus packages (Windows)
 
-_update-vuepress-windows:
-    cd docs/vuepress && bun run docs:update-package
+_update-docusaurus-windows:
+    cd docs/docusaurus && bun update
 
-# Update VuePress packages (Linux/macOS)
+# Update Docusaurus packages (Linux/macOS)
 
-_update-vuepress-linux _update-vuepress-macos:
-    cd docs/vuepress && bun run docs:update-package
+_update-docusaurus-linux _update-docusaurus-macos:
+    cd docs/docusaurus && bun update
 
 # Update K6 bun packages
 
@@ -157,5 +157,5 @@ _update-keycloakify-linux _update-keycloakify-macos:
 
 # Update all bun packages
 
-update: update-eventcatalog update-vuepress update-k6 update-keycloakify
+update: update-eventcatalog update-docusaurus update-k6 update-keycloakify
     echo "All bun packages updated successfully!"

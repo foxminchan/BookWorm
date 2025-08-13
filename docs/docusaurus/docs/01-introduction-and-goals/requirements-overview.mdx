@@ -1,0 +1,196 @@
+---
+sidebar_position: 2
+title: Requirements Overview
+last_update:
+  author: Nhan Nguyen
+---
+
+# Requirements Overview
+
+## Functional Requirements Overview
+
+### Core Business Functions
+
+| Function                     | Description                                                                          | Priority |
+| ---------------------------- | ------------------------------------------------------------------------------------ | -------- |
+| **Catalog Management**       | Browse, search, and filter books by various criteria (author, genre, price, ratings) | High     |
+| **User Account Management**  | Registration, authentication, profile management, and preferences                    | High     |
+| **Shopping Cart & Checkout** | Add/remove items, manage quantities, secure payment processing                       | High     |
+| **Order Management**         | Order placement, tracking, history, and status updates                               | High     |
+| **Notification System**      | Order confirmations, shipping updates, promotional alerts                            | Medium   |
+| **Rating & Review System**   | Customer reviews, ratings, and recommendation engine                                 | Medium   |
+| **Customer Support Chat**    | Real-time chat support for customer inquiries                                        | Medium   |
+| **Analytics & Reporting**    | Sales reports, user behavior analytics, inventory insights                           | Low      |
+
+### Key Use Cases
+
+#### UC-001: Book Discovery and Purchase
+
+- **Actor**: Customer
+- **Goal**: Find and purchase desired books
+- **Scenario**:
+  1. Customer searches for books using filters
+  2. Views book details, ratings, and reviews
+  3. Adds books to cart
+  4. Proceeds through secure checkout
+  5. Receives order confirmation and tracking
+
+#### UC-002: Account Management
+
+- **Actor**: Customer
+- **Goal**: Manage personal account and preferences
+- **Scenario**:
+  1. Customer registers/logs into account
+  2. Updates profile information and preferences
+  3. Views order history and tracking
+  4. Manages payment methods and addresses
+
+#### UC-003: Order Fulfillment
+
+- **Actor**: System, Customer
+- **Goal**: Process and fulfill customer orders
+- **Scenario**:
+  1. System validates order and payment
+  2. Updates inventory and generates fulfillment tasks
+  3. Sends notifications to customer
+  4. Tracks shipment and delivery status
+
+#### UC-004: Customer Support
+
+- **Actor**: Customer, Support Agent
+- **Goal**: Resolve customer inquiries and issues
+- **Scenario**:
+  1. Customer initiates chat support
+  2. AI Agent analyzes customer issue
+  3. Issue is resolved or escalated
+  4. Interaction is logged for future reference
+
+## Driving Forces
+
+### Business Drivers
+
+- **Market Competition**: Need for competitive features and user experience
+- **Scalability**: Support growing customer base and transaction volumes
+- **Cost Efficiency**: Optimize operational costs while maintaining quality
+- **Revenue Growth**: Increase sales through improved user experience and features
+
+### Technical Drivers
+
+- **Performance**: Fast response times for search, browse, and checkout operations
+- **Availability**: 24/7 system availability with minimal downtime
+- **Security**: Protect customer data and ensure secure transactions
+- **Maintainability**: Easy to update, extend, and debug system components
+
+### Regulatory Drivers
+
+- **Data Protection**: GDPR compliance for customer data handling
+- **Payment Security**: PCI DSS compliance for payment processing
+- **Accessibility**: WCAG guidelines for inclusive user experience
+- **Tax Compliance**: Automated tax calculation for different jurisdictions
+
+## Quality Requirements Extract
+
+| Quality Attribute | Requirement                        | Measurement                   |
+| ----------------- | ---------------------------------- | ----------------------------- |
+| **Performance**   | Page load times under 2 seconds    | 95th percentile response time |
+| **Scalability**   | Support 10,000 concurrent users    | Load testing verification     |
+| **Availability**  | 99.9% uptime                       | Monthly uptime monitoring     |
+| **Security**      | Zero data breaches                 | Security audit compliance     |
+| **Usability**     | Checkout completion rate above 85% | User analytics tracking       |
+
+## Non-Functional Requirements
+
+### Performance Requirements
+
+The BookWorm system must deliver exceptional performance across all user interactions:
+
+- **Response Time**: API endpoints must respond within 500ms for 95% of requests, measured through continuous load testing with realistic data volumes
+- **Page Load Speed**: Complete page rendering within 2 seconds, monitored via browser performance tools
+- **Search Efficiency**: Book search results delivered within 1 second, tracked through query execution metrics
+- **Transaction Throughput**: System capacity of 1,000 transactions per minute during peak periods
+- **Database Optimization**: Query execution under 100ms for 90% of database operations
+
+### Scalability & Reliability
+
+**Scalability Goals:**
+
+- Support 10,000 concurrent active users with auto-scaling capabilities
+- Handle 100% annual growth in data volume (catalog and user data)
+- Geographic distribution via CDN for global user base
+- Peak load tolerance: 5x normal traffic during sales events (Black Friday scenarios)
+- Horizontal scaling activation within 2 minutes of load increase
+
+**Reliability Standards:**
+
+- **Uptime Target**: 99.9% availability (maximum 8.76 hours downtime annually)
+- **Data Protection**: 99.999% data durability with automated backup systems
+- **Fault Tolerance**: Graceful degradation with single service failures
+- **Recovery**: System restoration within 15 minutes of major incidents
+- **Consistency**: Eventual data consistency across microservices within 5 minutes
+
+### Security & Compliance
+
+**Authentication & Access:**
+
+- Multi-factor authentication for sensitive operations
+- Role-based access control (RBAC) following least privilege principle
+- Regular access audits and permission reviews
+
+**Data Protection:**
+
+- AES-256 encryption for data at rest
+- TLS 1.3 for all data transmission
+- PCI DSS Level 1 compliance for payment processing
+- GDPR compliance with data portability and deletion capabilities
+
+**Security Operations:**
+
+- Monthly vulnerability scanning with 48-hour critical patch window
+- Continuous security monitoring and threat detection
+- Annual security audits and compliance certifications
+
+### User Experience & Accessibility
+
+**Usability Standards:**
+
+- Responsive design across desktop, tablet, and mobile platforms
+- WCAG 2.1 AA compliance for accessibility
+- Shopping cart abandonment rate below 15%
+- Checkout completion rate above 85%
+- Maximum 3-click navigation to any book from homepage
+
+**User Support:**
+
+- Context-sensitive help system throughout the platform
+- Real-time customer support chat integration
+- Comprehensive user journey analytics and optimization
+
+### Technical Compatibility
+
+**Platform Support:**
+
+- Latest 2 versions of major browsers (Chrome, Firefox, Safari, Edge)
+- Native-like mobile experience on iOS and Android
+- RESTful API design with backward compatibility versioning
+
+**Integration Capabilities:**
+
+- Seamless integration with major payment gateways
+- Support for common e-book formats (EPUB, PDF, MOBI)
+- Third-party shipping provider compatibility
+- Open API standards for partner integrations
+
+### Development & Operations
+
+**Code Quality Standards:**
+
+- Minimum 80% automated test coverage
+- Comprehensive API documentation with examples
+- Monthly technical debt assessment and remediation
+
+**Deployment & Monitoring:**
+
+- Zero-downtime automated CI/CD pipeline
+- Comprehensive system monitoring with proactive alerting
+- Regular security and dependency updates with minimal service impact
+- Performance baseline monitoring and optimization

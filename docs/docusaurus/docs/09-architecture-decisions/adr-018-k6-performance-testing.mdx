@@ -1,0 +1,216 @@
+---
+sidebar_position: 19
+title: ADR-018 - K6 Performance Testing Framework
+last_update:
+  author: Nhan Nguyen
+---
+
+# ADR-018: K6 Performance Testing Framework
+
+## Status
+
+**Accepted** - February 2025
+
+## Context
+
+BookWorm's microservices architecture requires comprehensive performance testing to ensure scalability, reliability, and optimal user experience under various load conditions. The performance testing requirements include:
+
+- **Load Testing**: Validate system behavior under expected production load levels
+- **Stress Testing**: Determine system breaking points and failure modes under extreme load
+- **Spike Testing**: Evaluate system response to sudden traffic increases
+- **Volume Testing**: Test system performance with large datasets and high data volumes
+- **Endurance Testing**: Validate system stability over extended periods
+- **API Testing**: Test individual microservice APIs and inter-service communication performance
+- **CI/CD Integration**: Automated performance testing as part of deployment pipeline
+- **Monitoring Integration**: Performance metrics collection and alerting
+- **Multi-Protocol Support**: Testing HTTP APIs, gRPC services, and WebSocket connections
+- **Realistic Scenarios**: User journey simulation with realistic data patterns
+- **Performance Budgets**: Automated performance regression detection
+- **Scalability Planning**: Data-driven capacity planning and scaling decisions
+
+The testing framework must integrate with existing monitoring infrastructure while providing developer-friendly scripting capabilities.
+
+## Decision
+
+Adopt **K6** as the primary performance testing framework with JavaScript-based test scripts, integrated with Prometheus monitoring and CI/CD pipeline automation for comprehensive performance validation.
+
+### Performance Testing Strategy
+
+#### Testing Pyramid Approach
+
+- **Unit Performance Tests**: Individual API endpoint performance validation
+- **Integration Performance Tests**: Cross-service communication performance testing
+- **End-to-End Performance Tests**: Complete user journey performance scenarios
+- **Infrastructure Performance Tests**: Database, cache, and messaging system performance
+
+#### Load Testing Scenarios
+
+- **Normal Load**: Typical production traffic patterns with realistic user behavior
+- **Peak Load**: Maximum expected production load during high-traffic periods
+- **Stress Load**: Beyond peak load to identify system breaking points
+- **Spike Load**: Sudden traffic increases to test auto-scaling capabilities
+
+### BookWorm Performance Testing Coverage
+
+| Service          | Test Scenarios                                  | Load Patterns                | Performance SLAs            |
+| ---------------- | ----------------------------------------------- | ---------------------------- | --------------------------- |
+| **Catalog API**  | Book search, category browsing, product details | High read, low write         | &lt;200ms p95, &gt;1000 RPS |
+| **Ordering API** | Order creation, status queries, history         | Moderate read/write          | &lt;500ms p95, &gt;500 RPS  |
+| **Basket API**   | Add/remove items, basket retrieval              | High read/write              | &lt;100ms p95, &gt;800 RPS  |
+| **Finance API**  | Payment processing, invoice generation          | Low volume, high reliability | &lt;1000ms p95, &gt;100 RPS |
+| **Chat API**     | Real-time messaging, WebSocket connections      | Sustained connections        | &lt;50ms message latency    |
+| **Rating API**   | Review submission, rating queries               | Moderate read/write          | &lt;300ms p95, &gt;300 RPS  |
+
+## Rationale
+
+### Why K6?
+
+#### Developer-Friendly Scripting
+
+1. **JavaScript Testing**: Familiar JavaScript syntax for test script development
+2. **Modular Architecture**: Reusable test modules and shared libraries
+3. **Rich API**: Comprehensive API for HTTP, WebSocket, and gRPC testing
+4. **Built-in Assertions**: Extensive assertion library for response validation
+5. **Data-Driven Testing**: CSV and JSON data import for realistic test scenarios
+
+#### Performance and Scalability
+
+1. **High Performance**: Go-based runtime capable of generating significant load from single instance
+2. **Resource Efficiency**: Lower resource usage compared to browser-based testing tools
+3. **Horizontal Scaling**: Distributed load testing across multiple machines
+4. **Protocol Support**: Native support for HTTP/1.1, HTTP/2, WebSocket, and gRPC
+5. **Load Generation**: Capable of generating thousands of concurrent virtual users
+
+#### Monitoring and Observability
+
+1. **Metrics Collection**: Comprehensive performance metrics with custom metric support
+2. **Real-time Monitoring**: Live test execution monitoring and alerting
+3. **Integration Ecosystem**: Native integration with Prometheus, Grafana, and InfluxDB
+4. **CI/CD Integration**: Seamless integration with GitHub Actions and deployment pipelines
+5. **Reporting**: Rich HTML reports and time-series data visualization
+
+### K6 vs Alternative Tools
+
+#### Advantages over JMeter
+
+1. **Resource Efficiency**: Lower memory and CPU usage for equivalent load generation
+2. **Modern Scripting**: JavaScript vs XML configuration for better developer experience
+3. **Version Control**: Text-based scripts work well with Git and code review processes
+4. **CI/CD Integration**: Better automation and pipeline integration capabilities
+5. **Cloud Native**: Designed for containerized and cloud-native environments
+
+#### Advantages over Artillery
+
+1. **Performance**: Superior load generation capabilities and lower resource usage
+2. **Protocol Support**: More comprehensive protocol support including gRPC
+3. **Ecosystem**: Larger ecosystem and more extensive integration options
+4. **Enterprise Features**: Advanced features for load testing at scale
+5. **Documentation**: More comprehensive documentation and community resources
+
+#### Integration with Monitoring Stack
+
+1. **Prometheus Integration**: Native metrics export to existing monitoring infrastructure
+2. **Grafana Dashboards**: Pre-built dashboards for performance test visualization
+3. **Alert Integration**: Performance threshold alerts integrated with existing alerting
+4. **Distributed Tracing**: Integration with Jaeger for end-to-end request tracing
+5. **APM Integration**: Correlation with application performance monitoring tools
+
+## Implementation
+
+### Performance Testing Levels
+
+- **Smoke Tests**: Basic functionality validation with minimal load
+- **Load Tests**: Normal production traffic simulation with realistic user patterns
+- **Stress Tests**: System breaking point identification with gradual load increase
+- **Spike Tests**: Sudden traffic spike simulation to test auto-scaling
+- **Volume Tests**: Large dataset performance validation
+- **Endurance Tests**: Long-duration testing for memory leaks and degradation
+
+### CI/CD Pipeline Integration
+
+- **Pull Request Testing**: Automated performance regression testing on code changes
+- **Staging Environment**: Comprehensive performance testing before production deployment
+- **Production Monitoring**: Continuous performance validation in production environment
+- **Performance Budgets**: Automated failure on performance regression beyond thresholds
+- **Deployment Gates**: Performance test success required for production deployment
+
+## Configuration
+
+### K6 Test Configuration
+
+```javascript
+// Load test configuration
+export let options = {
+  stages: [
+    { duration: '2m', target: 100 },   // Ramp up
+    { duration: '5m', target: 100 },   // Steady state
+    { duration: '2m', target: 200 },   // Peak load
+    { duration: '5m', target: 200 },   // Peak steady
+    { duration: '2m', target: 0 },     // Ramp down
+  ],
+  thresholds: {
+    http_req_duration: ['p(95)<200'],   // 95% under 200ms
+    http_req_failed: ['rate<0.1'],      // Error rate under 10%
+    http_reqs: ['rate>100'],            // Min 100 RPS
+  },
+};
+```
+
+### Environment Configuration
+
+```javascript
+// Environment-specific configuration
+const environments = {
+  development: {
+    baseUrl: 'https://dev-api.bookworm.local',
+    users: 50,
+    duration: '2m'
+  },
+  staging: {
+    baseUrl: 'https://staging-api.bookworm.com',
+    users: 200,
+    duration: '10m'
+  },
+  production: {
+    baseUrl: 'https://api.bookworm.com',
+    users: 500,
+    duration: '30m'
+  }
+};
+```
+
+## Consequences
+
+### Positive
+
+- **Developer Productivity**: JavaScript-based scripting familiar to development teams
+- **High Performance**: Efficient load generation with low resource usage
+- **CI/CD Integration**: Seamless automation and pipeline integration
+- **Comprehensive Metrics**: Rich performance metrics and monitoring integration
+- **Scalability**: Horizontal scaling for large-scale load testing
+- **Protocol Support**: Multi-protocol testing capabilities for modern architectures
+
+### Negative
+
+- **Learning Curve**: K6-specific APIs and concepts require team training
+- **Limited UI Testing**: No browser automation capabilities for UI performance testing
+- **JavaScript Limitations**: Some advanced testing scenarios may require workarounds
+- **Community Size**: Smaller community compared to established tools like JMeter
+- **Enterprise Features**: Some advanced features require paid subscriptions
+
+### Risks and Mitigation
+
+| Risk                         | Impact | Probability | Mitigation Strategy                            |
+| ---------------------------- | ------ | ----------- | ---------------------------------------------- |
+| False Negatives              | Medium | Medium      | Realistic test data, proper environment sizing |
+| Test Environment Differences | High   | Medium      | Production-like staging, infrastructure parity |
+| Performance Bottlenecks      | High   | Low         | Comprehensive monitoring, distributed testing  |
+| Script Maintenance           | Medium | High        | Modular scripts, automated updates             |
+| Load Generation Limits       | Medium | Low         | Distributed testing, cloud-based scaling       |
+
+## References
+
+- [K6 Documentation](https://k6.io/docs/)
+- [K6 Performance Testing Guide](https://k6.io/docs/testing-guides/)
+- [JavaScript API Reference](https://k6.io/docs/javascript-api/)
+- [K6 CI/CD Integration](https://k6.io/docs/integrations/)

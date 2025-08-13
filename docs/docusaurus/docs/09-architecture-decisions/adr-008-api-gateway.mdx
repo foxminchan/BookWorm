@@ -1,0 +1,214 @@
+---
+sidebar_position: 9
+title: ADR-008 - API Gateway Pattern Implementation
+last_update:
+  author: Nhan Nguyen
+---
+
+# ADR-008: API Gateway Pattern Implementation
+
+## Status
+
+**Accepted** - July 2024
+
+## Context
+
+BookWorm's microservices architecture consists of multiple services with different endpoints, authentication requirements, and communication protocols. Client applications need a unified way to interact with the distributed system while addressing several challenges:
+
+- **Service Discovery**: Clients need to know how to reach individual microservices
+- **Cross-Cutting Concerns**: Authentication, authorization, rate limiting, and logging should be centralized
+- **Protocol Translation**: Different services may use HTTP REST, gRPC, or other protocols
+- **Load Balancing**: Traffic distribution across service instances
+- **Request Routing**: Intelligent routing based on request characteristics
+- **API Versioning**: Managing different API versions across services
+- **Security**: Centralized security enforcement and threat protection
+- **Monitoring**: Unified observability and metrics collection
+- **Client Simplification**: Reduce client complexity by providing a single entry point
+- **Performance**: Request aggregation, caching, and response optimization
+
+Without a unified entry point, clients would need to maintain knowledge of all service endpoints, handle different authentication mechanisms, and manage complex service interactions directly.
+
+## Decision
+
+Implement an **API Gateway pattern** using **YARP (Yet Another Reverse Proxy)** integrated with **.NET Aspire** for service discovery and routing, providing a unified entry point for all BookWorm microservices.
+
+### Gateway Architecture Strategy
+
+#### YARP-Based Gateway Approach
+
+- **Single Gateway**: YARP-based reverse proxy for all service routing
+- **Aspire Integration**: Automatic service discovery and configuration
+- **Protocol Support**: HTTP/HTTPS and gRPC protocols
+- **Path-based Routing**: Route requests based on URL path patterns
+
+#### Service Routing Configuration
+
+BookWorm uses a fluent builder pattern to configure service routing:
+
+```csharp
+var gateway = builder
+    .AddApiGatewayProxy()
+    .WithService(chatApi)
+    .WithService(ratingApi)
+    .WithService(orderingApi)
+    .WithService(basketApi, useProtobuf: true)
+    .WithService(catalogApi, useProtobuf: true)
+    .WithService(keycloak);
+```
+
+## Rationale
+
+### Why YARP with .NET Aspire?
+
+#### YARP Advantages
+
+1. **.NET Native**: Perfect integration with .NET microservices ecosystem
+2. **High Performance**: Optimized reverse proxy built for .NET applications
+3. **Flexible Configuration**: Programmable routing and transformation pipeline
+4. **Service Discovery**: Seamless integration with .NET Aspire service discovery
+5. **Protocol Support**: Built-in support for HTTP/HTTPS and gRPC protocols
+
+#### Aspire Integration Benefits
+
+1. **Automatic Discovery**: Services automatically registered and discoverable
+2. **Configuration Management**: Centralized configuration and environment management
+3. **Health Checks**: Built-in health monitoring and service status tracking
+4. **Development Experience**: Simplified local development and testing
+5. **Observability**: Integrated telemetry, logging, and monitoring
+
+### Gateway Implementation Overview
+
+BookWorm's API Gateway uses a simple, effective approach:
+
+- **Path-based Routing**: Each service accessible via `/{service-name}/**` pattern
+- **Protocol Transformation**: Automatic handling of HTTP and gRPC protocols
+- **Header Management**: Automatic forwarding of trace headers and custom headers
+- **Identity Integration**: Special routing for Keycloak identity provider
+
+## Implementation Strategy
+
+### Core Implementation
+
+#### API Gateway Builder Pattern
+
+```csharp
+public static class ProxyExtensions
+{
+    public static ApiGatewayProxyBuilder AddApiGatewayProxy(
+        this IDistributedApplicationBuilder builder) => new(builder);
+}
+
+public sealed class ApiGatewayProxyBuilder
+{
+    public ApiGatewayProxyBuilder WithService(
+        IResourceBuilder<ProjectResource> service,
+        bool useProtobuf = false)
+    {
+        _services.Add(new Service
+        {
+            Name = service.Resource.Name,
+            Resource = service,
+            UseProtobuf = useProtobuf
+        });
+        return this;
+    }
+}
+```
+
+#### YARP Route Configuration
+
+```csharp
+internal static IResourceBuilder<YarpResource> BuildApiGatewayProxy(
+    this IDistributedApplicationBuilder builder,
+    IReadOnlyList<Service> services,
+    IResourceBuilder<ContainerResource> container)
+{
+    var yarp = builder
+        .AddYarp(Services.Gateway)
+        .WithExternalHttpEndpoints()
+        .WithConfiguration(yarpBuilder =>
+        {
+            foreach (var service in services)
+            {
+                var routeBuilder = yarpBuilder.AddRoute(
+                    $"/{service.Name}/{{**remainder}}", service.Resource);
+
+                if (service.UseProtobuf)
+                    routeBuilder.WithTransformForwarded();
+
+                routeBuilder
+                    .WithTransformPathPrefix("/")
+                    .WithTransformUseOriginalHostHeader()
+                    .WithTransformPathRemovePrefix($"/{service.Name}")
+                    .WithTransformXForwarded("trace-id")
+                    .WithTransformResponseHeader("X-Powered-By", "BookWorm Gateway");
+            }
+
+            // Special route for identity provider
+            yarpBuilder.AddRoute("/identity/{**remainder}", container.GetEndpoint(Protocols.Http));
+        });
+
+    return yarp;
+}
+```
+
+#### Gateway Configuration in AppHost
+
+```csharp
+var gateway = builder
+    .AddApiGatewayProxy()
+    .WithService(chatApi)
+    .WithService(ratingApi)
+    .WithService(orderingApi)
+    .WithService(basketApi, useProtobuf: true)
+    .WithService(catalogApi, useProtobuf: true)
+    .WithService(keycloak);
+```
+
+## Consequences
+
+### Positive Outcomes
+
+- **Simplified Routing**: Single entry point with automatic service discovery
+- **Protocol Flexibility**: Built-in support for HTTP and gRPC protocols
+- **Development Experience**: Seamless integration with .NET Aspire development workflow
+- **Observability**: Integrated tracing and monitoring through Aspire
+- **Maintainability**: Simple, declarative configuration through fluent API
+
+### Challenges and Considerations
+
+- **Single Point of Failure**: Gateway becomes critical infrastructure component
+- **Performance**: Additional network hop for all service communication
+- **Complexity**: Gateway configuration must be maintained as services evolve
+- **Dependencies**: Tight coupling with .NET Aspire orchestration platform
+
+### Risk Mitigation
+
+- **Aspire Integration**: Leverages .NET Aspire's built-in reliability features
+- **Health Checks**: Automatic health monitoring of downstream services
+- **Service Discovery**: Dynamic service registration and discovery
+- **Observability**: Built-in telemetry and logging through Aspire
+
+## Implementation Status
+
+### Current Implementation
+
+- ✅ YARP-based reverse proxy with .NET Aspire integration
+- ✅ Fluent API for service registration and configuration
+- ✅ Path-based routing with automatic prefix removal
+- ✅ gRPC and HTTP protocol support
+- ✅ Special identity provider routing
+- ✅ Built-in health checks and service discovery
+
+### Future Enhancements
+
+- Authentication and authorization middleware
+- Rate limiting and throttling
+- Advanced request/response transformation
+- Caching strategies and performance optimization
+
+## Related Architecture Decisions
+
+- [ADR-001: Microservices Architecture](./adr-001-microservices-architecture)
+- [ADR-005: Keycloak for Identity Management](./adr-005-keycloak-identity)
+- [ADR-007: Azure Container Apps Deployment](./adr-007-aca-deployment)

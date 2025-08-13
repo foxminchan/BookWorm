@@ -1,0 +1,302 @@
+---
+sidebar_position: 16
+title: ADR-015 - GitHub Actions CI/CD Pipeline
+last_update:
+  author: Nhan Nguyen
+---
+
+# ADR-015: GitHub Actions CI/CD Pipeline
+
+## Status
+
+**Accepted** - August 2024
+
+## Context
+
+BookWorm's microservices architecture requires a robust continuous integration and deployment pipeline to support rapid development, automated testing, and reliable deployments across multiple environments. The CI/CD requirements include:
+
+- **Multi-Service Builds**: Independent build and deployment of multiple .NET microservices
+- **Automated Testing**: Unit tests, integration tests, and end-to-end testing automation
+- **Security Scanning**: Static code analysis, dependency vulnerability scanning, and secrets detection
+- **Container Management**: Docker image building, scanning, and registry management
+- **Environment Promotion**: Automated deployment to development, staging, and production environments
+- **Quality Gates**: Code coverage thresholds, performance benchmarks, and deployment approvals
+- **Monitoring Integration**: Deployment notifications and rollback capabilities
+- **Developer Experience**: Fast feedback loops and self-service deployment capabilities
+- **Cost Optimization**: Efficient resource usage and parallel execution strategies
+- **Compliance**: Audit trails, approval workflows, and change management integration
+
+The CI/CD solution must integrate seamlessly with GitHub repositories while providing enterprise-grade features for a production microservices architecture.
+
+## Decision
+
+Adopt **GitHub Actions** as the primary CI/CD platform with custom workflows for each microservice and shared reusable workflows for common operations, integrated with Azure Container Registry and deployment targets.
+
+### CI/CD Strategy
+
+#### Multi-Service Pipeline Architecture
+
+- **Service-Specific Workflows**: Independent CI/CD pipelines for each microservice
+- **Shared Workflow Components**: Reusable workflows for common build, test, and deployment tasks
+- **Matrix Builds**: Parallel execution across services and environments
+- **Conditional Execution**: Smart triggering based on code changes and dependencies
+
+#### Quality and Security Integration
+
+- **Automated Testing Pipeline**: Unit, integration, and contract testing with coverage reporting
+- **Security Scanning**: Static analysis with SonarQube, dependency scanning with Dependabot
+- **Container Security**: Image vulnerability scanning and policy enforcement
+- **Code Quality Gates**: Automated quality checks with failure conditions
+
+### GitHub Actions Pipeline Architecture
+
+| Workflow               | Trigger                         | Purpose                                                                            | Key Features                                          |
+| ---------------------- | ------------------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| **BookWorm CI**        | Push to main, Workflow dispatch | Complete CI pipeline with build, test, security scanning, and container publishing | Multi-stage pipeline with reusable actions            |
+| **PR Validation**      | Pull requests                   | Validate changes before merge with subset of CI checks                             | Quality gates for pull request approval               |
+| **SonarQube**          | Push/PR                         | Code quality analysis and technical debt tracking                                  | Integration with SonarQube for comprehensive analysis |
+| **Container Security** | After CI completion             | Container vulnerability scanning for published images                              | Trivy scanning of all service containers              |
+| **Docs/EventCatalog**  | Documentation changes           | Automated documentation and event catalog deployment                               | Specialized workflows for documentation               |
+
+### CI Pipeline Stages
+
+1. **Setup Stage**: Environment preparation, .NET SDK setup, tool restoration, caching
+2. **Parallel Quality Checks**:
+   - Security scanning (Trivy, CodeQL, Gitleaks)
+   - Code formatting validation (Husky)
+   - Style checking (dotnet format)
+   - Static analysis (Roslyn analyzers)
+3. **Build & Test**: Service compilation and comprehensive test execution
+4. **Container Publishing**: Multi-service Docker image publishing to GitHub Container Registry
+
+## Rationale
+
+### Why GitHub Actions?
+
+#### Native GitHub Integration
+
+1. **Repository Integration**: Native integration with GitHub repositories, issues, and pull requests
+2. **Code Context**: Direct access to repository contents, history, and metadata
+3. **Security Model**: Built-in secrets management and fine-grained permissions
+4. **Marketplace Ecosystem**: Extensive marketplace of pre-built actions and integrations
+5. **Cost Efficiency**: Generous free tier with competitive pricing for private repositories
+
+#### Workflow Flexibility and Power
+
+1. **YAML Configuration**: Infrastructure-as-code approach with version-controlled workflows
+2. **Matrix Strategies**: Parallel execution across multiple dimensions (services, environments, versions)
+3. **Conditional Logic**: Complex conditional execution based on code changes and context
+4. **Environment Management**: Built-in environment protection rules and approval gates
+5. **Artifact Management**: Native artifact storage and sharing between workflow jobs
+
+#### Developer Experience Benefits
+
+1. **Integrated UI**: Workflow status, logs, and results directly in GitHub interface
+2. **Fast Feedback**: Quick pipeline execution with intelligent caching and parallelization
+3. **Self-Service**: Developers can trigger deployments and view pipeline status independently
+4. **Debugging Support**: Comprehensive logging and ability to re-run failed jobs
+5. **Branch Protection**: Integration with branch protection rules and status checks
+
+### CI/CD Architecture Advantages
+
+#### Multi-Stage CI/CD Pipeline
+
+1. **Concurrency Management**: Pipeline concurrency control with automatic cancellation of outdated runs
+2. **Smart Path Filtering**: Workflow triggers based on specific file patterns (src/**, tests/**, configuration files)
+3. **Dependency Caching**: Comprehensive caching for .NET packages, SDK installations, and build artifacts
+4. **Matrix Publishing**: Parallel container image publishing for all microservices and tools
+5. **Security-First Approach**: Multiple security scanning tools integrated into every pipeline run
+
+#### Integrated Tool Ecosystem
+
+1. **Code Quality**: SonarQube integration for technical debt and quality metrics
+2. **Security Scanning**: Trivy for vulnerability scanning, CodeQL for semantic analysis, Gitleaks for secrets detection
+3. **Container Management**: GitHub Container Registry (GHCR) for image storage with automated tagging
+4. **Development Tools**: Husky for commit hooks, dotnet format for code consistency
+5. **Monitoring Integration**: GitHub Actions native monitoring with custom timeout configurations
+
+#### Security and Quality Assurance
+
+1. **Security Scanning**: Integrated SAST, DAST, and dependency vulnerability scanning
+2. **Code Quality**: Automated code quality checks with SonarQube integration
+3. **Test Automation**: Comprehensive test execution with coverage reporting and quality gates
+4. **Container Security**: Image vulnerability scanning and security policy enforcement
+5. **Secrets Management**: Secure handling of deployment credentials and API keys
+
+## Implementation
+
+### Actual Workflow Structure
+
+```
+.github/
+├── workflows/
+│   ├── ci.yaml                     # Main CI pipeline (Build, Test, Publish)
+│   ├── pr-validation.yml           # Pull request validation workflow
+│   ├── sonar.yml                   # SonarQube analysis workflow
+│   ├── container.yml               # Container security scanning
+│   ├── docs.yaml                   # Documentation deployment
+│   ├── event-catalog.yml           # Event catalog deployment
+│   ├── azure.yml                   # Azure deployment workflow
+│   └── clean-up.yml                # Repository maintenance
+├── actions/
+│   ├── setup/                      # Environment setup (.NET, Bun, tools)
+│   ├── build/                      # .NET build with caching
+│   ├── test/                       # Test execution with multiple loggers
+│   ├── security-scan/              # Trivy, CodeQL, Gitleaks integration
+│   ├── format/                     # Code formatting validation
+│   ├── style/                      # Style checking
+│   ├── analyzers/                  # Static code analysis
+│   └── publish/                    # Container publishing to GHCR
+└── dependencies/
+    ├── dependabot.yml              # Automated dependency updates
+    └── CODEOWNERS                  # Code ownership configuration
+```
+
+### Service Publishing Matrix
+
+```yaml
+# Actual services published to GitHub Container Registry
+services:
+  - Basket: foxminchan/bookworm/basket
+  - Catalog: foxminchan/bookworm/catalog
+  - Finance: foxminchan/bookworm/finance
+  - Notification: foxminchan/bookworm/notification
+  - Ordering: foxminchan/bookworm/ordering
+  - Rating: foxminchan/bookworm/rating
+  - Chat: foxminchan/bookworm/chat
+  - MCP Tools: foxminchan/bookworm/mcptools
+```
+
+### Reusable Actions Implementation
+
+#### Setup Action
+
+- **.NET 9.0 SDK** setup with specific version management
+- **Bun runtime** setup for JavaScript tooling
+- **dotnet tool restore** for development tools installation
+- **Husky configuration** for Git hooks integration
+
+#### Security Scan Action
+
+- **Trivy vulnerability scanner** with SARIF output for critical/high severities
+- **CodeQL semantic analysis** for C# codebase
+- **Gitleaks secret scanning** with non-blocking warnings
+- **SARIF upload** to GitHub security tab
+
+#### Test Action
+
+- **Multiple loggers**: Console, TRX, HTML, GitHubActions
+- **Advanced test features**: Hang dump detection, crash dump collection
+- **Configurable timeouts**: Test hang timeout (7m) and session timeout (15m)
+- **Test result publishing** with EnricoMi/publish-unit-test-result-action
+
+#### Container Publishing
+
+- **GitHub Container Registry** (ghcr.io) integration
+- **Linux x64 runtime** targeting for container optimization
+- **PublishContainer** target for .NET container publishing
+- **Automatic tagging** with version/latest tag management
+
+## Configuration
+
+### Pipeline Execution Strategy
+
+```yaml
+# Concurrency Control
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
+  cancel-in-progress: true
+
+# Path-Based Triggering
+paths:
+  - "src/**"                        # Source code changes
+  - "tests/**"                      # Test code changes
+  - ".github/workflows/ci.yaml"     # Pipeline changes
+  - "Directory.Packages.props"      # Package management
+  - "global.json"                   # .NET SDK version
+  - "!**.md"                        # Exclude documentation
+  - "!src/Aspire/BookWorm.AppHost/Container/**"  # Exclude container assets
+```
+
+### Security and Quality Configuration
+
+```yaml
+# Security Scanning Configuration
+security_scanning:
+  trivy:
+    scan_type: "fs"                 # Filesystem scanning
+    format: "sarif"                 # SARIF output format
+    severity: "CRITICAL,HIGH"       # High-impact vulnerabilities only
+    ignore_unfixed: true            # Focus on actionable issues
+
+  codeql:
+    languages: ["csharp"]           # C# semantic analysis
+    category: "/language:csharp"    # Language-specific analysis
+
+  gitleaks:
+    version: "v8.27.2"             # Specific version pinning
+    exit_code: 0                    # Non-blocking for warnings
+
+# SonarQube Integration
+sonarqube:
+  project_key: "foxminchan_BookWorm"
+  organization: "foxminchan"
+  java_version: 17                  # Required JDK version
+```
+
+### Dependabot Configuration
+
+```yaml
+# Multi-Ecosystem Dependency Management
+ecosystems:
+  - devcontainers: weekly          # Development container updates
+  - nuget: weekly                  # .NET package updates (15 PRs max)
+  - npm: weekly                    # Node.js package updates
+  - docker: weekly                 # Container base image updates
+  - github-actions: monthly        # GitHub Actions version updates
+
+# Package Grouping Strategy
+groups:
+  - Aspire: "Aspire.*", "Microsoft.Extensions.ServiceDiscovery.*"
+  - AspNetCore: "Microsoft.AspNetCore.*", "Microsoft.Extensions.Features"
+  - OpenTelemetry: "OpenTelemetry.*"
+  - MassTransit: "MassTransit.*"
+  - EntityFrameworkCore: "Microsoft.EntityFrameworkCore.*"
+```
+
+## Consequences
+
+### Positive
+
+- **Native Integration**: Seamless integration with GitHub ecosystem and developer workflows
+- **Cost Efficiency**: Competitive pricing with generous free tier for open-source projects
+- **Developer Productivity**: Streamlined development workflow with fast feedback loops
+- **Flexibility**: Highly customizable workflows with extensive action marketplace
+- **Scalability**: Parallel execution and matrix strategies for efficient resource usage
+- **Security**: Built-in secrets management and fine-grained permission controls
+
+### Negative
+
+- **Platform Lock-in**: Tight coupling with GitHub platform and ecosystem
+- **Learning Curve**: YAML workflow syntax and GitHub Actions concepts require team training
+- **Debugging Complexity**: Complex workflows can be challenging to debug and troubleshoot
+- **Resource Limitations**: Build time and resource constraints on hosted runners
+- **Vendor Dependency**: Reliance on GitHub's infrastructure and service availability
+
+### Risks and Mitigation
+
+| Risk                | Impact | Probability | Mitigation Strategy                                  |
+| ------------------- | ------ | ----------- | ---------------------------------------------------- |
+| Service Outage      | High   | Low         | Self-hosted runners, workflow retry mechanisms       |
+| Build Failures      | Medium | Medium      | Comprehensive testing, staging environments          |
+| Security Breaches   | High   | Low         | Secrets scanning, limited permissions, audit logging |
+| Resource Limits     | Medium | Medium      | Self-hosted runners, workflow optimization           |
+| Workflow Complexity | Medium | High        | Documentation, templates, team training              |
+
+## References
+
+- [GitHub Actions Documentation](https://docs.github.com/en/actions)
+- [GitHub Actions Marketplace](https://github.com/marketplace?type=actions)
+- [Workflow Syntax Reference](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions)
+- [Security Hardening for GitHub Actions](https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions)
+- [CI/CD Best Practices for Microservices](https://docs.microsoft.com/en-us/azure/architecture/microservices/ci-cd)

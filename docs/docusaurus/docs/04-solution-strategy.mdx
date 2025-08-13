@@ -1,0 +1,272 @@
+---
+sidebar_position: 5
+title: Solution Strategy
+last_update:
+  author: Nhan Nguyen
+---
+
+# Solution Strategy
+
+This section summarizes the fundamental decisions and solution strategies that shape BookWorm's architecture. These cornerstone decisions provide the foundation for detailed implementation decisions and serve as guiding principles for the system's evolution.
+
+## Technology Decisions
+
+### Core Technology Stack
+
+The foundation of BookWorm is built on carefully selected technologies that align with modern cloud-native development practices:
+
+| Technology       | Decision Rationale                                                                       | Impact                                                                           |
+| ---------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| **ASP.NET Core** | Cross-platform, high-performance web framework with excellent cloud integration          | Scalable APIs, dependency injection, middleware pipeline                         |
+| **.NET Aspire**  | Cloud-native development framework with built-in observability and service orchestration | Simplified local development, integrated telemetry, streamlined Azure deployment |
+
+### Data Storage Strategy
+
+| Technology                 | Use Case                              | Rationale                                                                     |
+| -------------------------- | ------------------------------------- | ----------------------------------------------------------------------------- |
+| **PostgreSQL**             | Primary database for most services    | ACID compliance, JSON support, excellent .NET integration, proven scalability |
+| **Redis**                  | Caching and session storage           | High-performance in-memory storage, pub/sub capabilities, distributed caching |
+| **Azure Blob Storage**     | File storage and static assets        | Scalable object storage, CDN integration, cost-effective for large files      |
+| **Qdrant Vector Database** | AI-powered search and recommendations | Specialized vector storage for embeddings, semantic search capabilities       |
+
+### Communication Patterns
+
+| Pattern          | Technology                | Rationale                                                                    |
+| ---------------- | ------------------------- | ---------------------------------------------------------------------------- |
+| **Synchronous**  | HTTP/REST APIs            | Simple integration, excellent tooling, wide ecosystem support                |
+| **Asynchronous** | RabbitMQ with MassTransit | Reliable message delivery, event-driven architecture, decoupling             |
+| **Real-time**    | SignalR                   | Bi-directional communication, automatic transport fallback, .NET integration |
+
+## Architectural Patterns
+
+### Microservices Architecture
+
+**Decision**: Adopt domain-driven microservices architecture with clear service boundaries.
+
+**Rationale**:
+
+- **Educational Value**: Demonstrates modern enterprise patterns and cloud-native development
+- **Scalability**: Independent scaling of services based on different load characteristics
+- **Technology Diversity**: Enables showcasing various .NET technologies and patterns
+- **Team Autonomy**: Supports autonomous development teams with clear ownership boundaries
+- **Fault Isolation**: Failures in one service don't cascade to the entire system
+
+**Service Boundaries**:
+
+```mermaid
+graph TB
+    subgraph "Store Domain"
+        Catalog[Catalog Service<br/>Books & Authors]
+        Rating[Rating Service<br/>Reviews & Ratings]
+        Chat[Chat Service<br/>AI Support]
+    end
+
+    subgraph "Order Domain"
+        Basket[Basket Service<br/>Shopping Cart]
+        Order[Order Service<br/>Order Processing]
+        Finance[Finance Service<br/>Payments]
+        Notification[Notification Service<br/>Communications]
+    end
+
+    subgraph "Cross-Cutting"
+        Gateway[API Gateway<br/>Routing & Auth]
+        Scheduler[Scheduler Service<br/>Background Jobs]
+    end
+```
+
+### Event-Driven Architecture with CQRS
+
+**Decision**: Implement event-driven communication with Command Query Responsibility Segregation (CQRS).
+
+**Rationale**:
+
+- **Loose Coupling**: Services communicate through events without direct dependencies
+- **Scalability**: Read and write operations can be optimized independently
+- **Eventual Consistency**: Acceptable for business scenarios, enables better performance
+- **Audit Trail**: Events provide natural audit logging and replay capabilities
+- **Integration**: Events enable easy integration with external systems and analytics
+
+**Implementation Patterns**:
+
+- **Command Processing**: MediatR for in-process command handling
+- **Event Publishing**: Outbox pattern ensures reliable event delivery
+- **Event Consumption**: Inbox pattern for idempotent event processing
+- **Saga Orchestration**: For complex business processes spanning multiple services
+
+### Cloud-Native Development
+
+**Decision**: Use .NET Aspire as the primary cloud-native development framework.
+
+**Rationale**:
+
+- **Developer Experience**: Significantly reduces complexity of multi-service development
+- **Service Discovery**: Eliminates manual configuration with built-in service registration
+- **Observability**: Integrated OpenTelemetry without additional infrastructure setup
+- **Configuration Management**: Centralized configuration with environment-specific overrides
+- **Azure Integration**: Native support for Azure services with proper resource provisioning
+
+### AI Services Architecture
+
+- **Text Embedding**: Nomic Embed Text for semantic search capabilities
+- **Conversational AI**: LLM for intelligent chatbot interactions
+- **Search Enhancement**: AI-powered search with natural language understanding
+
+```mermaid
+graph LR
+    UserQuery[User Query] --> SearchService[Search Service]
+    SearchService --> Embedding[Text Embedding]
+    SearchService --> NLP[NLP Processing]
+    Embedding --> VectorDB[Vector Database]
+    NLP --> SearchIndex[Search Index]
+    VectorDB --> Results[Search Results]
+    SearchIndex --> Results
+    Results --> Ranking[AI Ranking]
+    Ranking --> UserResponse[User Response]
+```
+
+## Quality Goals Achievement
+
+### Testing Strategy
+
+```mermaid
+mindmap
+    root((Testing Strategy))
+        Unit Tests
+            Fast execution
+            Isolated testing
+            Comprehensive coverage
+            ✅ Most Coverage
+        Integration Tests
+            Service boundaries
+            API contracts
+            Database interactions
+            📈 More Coverage
+        Architecture Tests
+            Design compliance
+            Dependency rules
+            Vertical Slice Architecture
+            📝 Medium Coverage
+        Contract Tests
+            API compatibility
+            Event schemas
+            Consumer-driven
+            📝 Medium Coverage
+        E2E Tests
+            Critical user journeys
+            Full system validation
+            ⚠️ Few, Slow, Expensive
+        Load Tests
+            Performance validation
+            Scalability testing
+            Stress testing
+            ⚠️ Resource Intensive
+```
+
+### Performance Strategy
+
+| Goal                     | Strategy                                    | Implementation                                                 |
+| ------------------------ | ------------------------------------------- | -------------------------------------------------------------- |
+| **Sub-2s Response Time** | Multi-level caching, efficient queries, CDN | Redis caching, Entity Framework optimization, Azure Front Door |
+| **High Throughput**      | Horizontal scaling, async processing        | Container autoscaling, background job processing               |
+| **Low Latency**          | Regional deployment, connection pooling     | Azure regions, database connection management                  |
+
+### Scalability Strategy
+
+| Aspect                 | Approach                         | Technology                              |
+| ---------------------- | -------------------------------- | --------------------------------------- |
+| **Horizontal Scaling** | Stateless services, auto-scaling | Azure Container Apps, load balancers    |
+| **Data Scaling**       | Database sharding, read replicas | PostgreSQL clustering, Redis clustering |
+| **Caching Strategy**   | Multi-tier caching               | In-memory, Redis, CDN                   |
+
+### Security Strategy
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Gateway
+    participant Keycloak
+    participant Service
+
+    Client->>Gateway: Request with credentials
+    Gateway->>Keycloak: Validate token
+    Keycloak-->>Gateway: Token validation response
+    Gateway->>Service: Forward request with user context
+    Service-->>Gateway: Response
+    Gateway-->>Client: Response
+```
+
+### Security Measures
+
+| Layer                  | Implementation             | Technology                           |
+| ---------------------- | -------------------------- | ------------------------------------ |
+| **Authentication**     | External identity provider | Keycloak with OIDC/OAuth2            |
+| **Authorization**      | Role-based access control  | ASP.NET Core policies                |
+| **Transport Security** | End-to-end encryption      | TLS 1.3, certificate management      |
+| **Data Protection**    | Encryption at rest         | Azure Key Vault, database encryption |
+
+## Organizational Decisions
+
+### Development Process
+
+**Decision**: Adopt agile development with DevOps practices.
+
+**Implementation**:
+
+- **Sprint Planning**: 2-week iterations with clear goals
+- **Code Quality**: Peer reviews, automated testing, SonarQube analysis
+- **Continuous Integration**: GitHub Actions with automated builds and tests
+- **Continuous Deployment**: Automated deployment to staging and production environments
+
+### Team Structure
+
+**Decision**: Full-stack teams with service ownership.
+
+**Rationale**:
+
+- **End-to-End Responsibility**: Teams own services from development to production
+- **Reduced Handoffs**: Faster delivery with fewer coordination points
+- **Skill Development**: Cross-functional skills across the technology stack
+- **Business Alignment**: Teams aligned with business domains rather than technical layers
+
+### Third-Party Integration Strategy
+
+| Service Type           | Approach                     | Rationale                                           |
+| ---------------------- | ---------------------------- | --------------------------------------------------- |
+| **Authentication**     | External provider (Keycloak) | Specialized security expertise, reduced maintenance |
+| **Email Services**     | Cloud provider (SendGrid)    | Deliverability expertise, compliance handling       |
+| **AI/ML Services**     | External APIs                | Rapid innovation, specialized infrastructure        |
+| **Payment Processing** | External provider            | PCI compliance, fraud protection                    |
+
+## Key Constraints Impact
+
+### Technical Constraints
+
+| Constraint             | Impact                                   | Mitigation Strategy                                                 |
+| ---------------------- | ---------------------------------------- | ------------------------------------------------------------------- |
+| **.NET Ecosystem**     | Technology choices limited to .NET stack | Leverage extensive .NET ecosystem, use best-of-breed .NET libraries |
+| **Azure Platform**     | Cloud provider lock-in                   | Use standard protocols, containerization for portability            |
+| **Budget Limitations** | Infrastructure cost optimization         | Auto-scaling, reserved instances, cost monitoring                   |
+
+### Organizational Constraints
+
+| Constraint           | Impact                                   | Strategy                                                     |
+| -------------------- | ---------------------------------------- | ------------------------------------------------------------ |
+| **Team Size**        | Limited parallel development             | Clear service boundaries, minimal inter-service dependencies |
+| **Skill Level**      | Learning curve for cloud-native patterns | Comprehensive documentation, training, pair programming      |
+| **Time Constraints** | MVP prioritization                       | Iterative development, technical debt management             |
+
+## Future Evolution Strategy
+
+### Extensibility Points
+
+- **Service Addition**: Well-defined service templates and patterns
+- **Integration Patterns**: Standardized event schemas and API contracts
+- **Technology Updates**: Containerized deployment enables technology evolution
+- **Scale Requirements**: Horizontal scaling patterns and monitoring
+
+### Monitoring and Adaptation
+
+- **Performance Metrics**: Continuous monitoring of quality goals achievement
+- **Architecture Fitness**: Regular architecture reviews and fitness functions
+- **Technology Evolution**: Planned migration paths for technology updates
+- **Business Evolution**: Flexible patterns to accommodate changing business requirements

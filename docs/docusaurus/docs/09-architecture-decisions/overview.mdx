@@ -1,0 +1,293 @@
+---
+sidebar_position: 1
+title: Overview
+last_update:
+  date: 2025-08-16
+  author: Nhan Nguyen
+---
+
+# Architecture Decisions Overview
+
+## Introduction
+
+This section documents significant architectural decisions made for the BookWorm project using Architecture Decision Records (ADRs). Each ADR captures the context, decision, rationale, and consequences of important architectural choices that shape the system's design and implementation.
+
+## Decision Timeline
+
+```mermaid
+gantt
+    title BookWorm Architecture Decisions Timeline
+    dateFormat YYYY-MM-DD
+    section Foundation
+    Microservices           :done, foundation1, 2024-07-01, 30d
+    Event-Driven CQRS      :done, foundation2, 2024-07-15, 45d
+    .NET Aspire            :done, foundation3, 2024-08-01, 30d
+    section Data & Storage
+    PostgreSQL             :done, data1, 2024-07-20, 30d
+    Redis SignalR          :done, data2, 2024-08-15, 30d
+    RabbitMQ               :done, data3, 2024-09-01, 30d
+    section Security & Identity
+    Keycloak Identity      :done, security1, 2024-07-25, 45d
+    section Communication
+    SignalR Realtime       :done, comm1, 2024-08-01, 30d
+    API Gateway            :done, comm2, 2024-08-10, 30d
+    gRPC                   :done, comm3, 2024-10-01, 30d
+    section AI & Intelligence
+    AI Integration         :done, ai1, 2025-03-01, 45d
+    Ollama Runtime         :done, ai2, 2025-03-15, 30d
+    MCP Tools              :done, ai3, 2025-04-01, 30d
+    A2A Communication      :done, ai4, 2025-04-15, 30d
+    section Operations
+    Azure Container Apps   :done, ops1, 2024-07-30, 30d
+    GitHub Actions         :done, ops2, 2024-09-15, 30d
+    K6 Testing             :done, ops3, 2024-10-15, 30d
+    EventCatalog           :done, ops4, 2024-12-01, 30d
+    section Architecture
+    Domain-Driven Design   :done, arch1, 2024-07-01, 60d
+    Event Sourcing         :done, arch2, 2024-09-15, 45d
+    SendGrid Email         :done, arch3, 2024-09-20, 30d
+```
+
+## ADR Categories
+
+### 🏗️ Foundation Architecture
+
+| ADR                                             | Title                                    | Status   | Impact |
+| ----------------------------------------------- | ---------------------------------------- | -------- | ------ |
+| [ADR-001](./adr-001-microservices-architecture) | Microservices Architecture               | Accepted | High   |
+| [ADR-002](./adr-002-event-driven-cqrs)          | Event-Driven Architecture with CQRS      | Accepted | High   |
+| [ADR-003](./adr-003-aspire-cloud-native)        | .NET Aspire for Cloud-Native Development | Accepted | High   |
+| [ADR-016](./adr-016-ddd)                        | Domain-Driven Design Implementation      | Accepted | High   |
+
+### 💾 Data & Storage
+
+| ADR                                         | Title                          | Status   | Impact |
+| ------------------------------------------- | ------------------------------ | -------- | ------ |
+| [ADR-004](./adr-004-postgresql-database)    | PostgreSQL as Primary Database | Accepted | High   |
+| [ADR-010](./adr-010-redis-signalr-scale)    | Redis for SignalR Scaling      | Accepted | Medium |
+| [ADR-011](./adr-011-rabbitmq-message)       | RabbitMQ for Message Broker    | Accepted | High   |
+| [ADR-013](./adr-013-ordering-eventsoucring) | Event Sourcing for Ordering    | Accepted | Medium |
+
+### 🔒 Security & Identity
+
+| ADR                                    | Title                            | Status   | Impact |
+| -------------------------------------- | -------------------------------- | -------- | ------ |
+| [ADR-005](./adr-005-keycloak-identity) | Keycloak for Identity Management | Accepted | High   |
+
+### 🌐 Communication & Integration
+
+| ADR                                          | Title                               | Status   | Impact |
+| -------------------------------------------- | ----------------------------------- | -------- | ------ |
+| [ADR-006](./adr-006-signalr-realtime)        | SignalR for Real-time Communication | Accepted | Medium |
+| [ADR-008](./adr-008-api-gateway)             | API Gateway with YARP               | Accepted | High   |
+| [ADR-017](./adr-017-grpc)                    | gRPC for Service Communication      | Accepted | Medium |
+| [ADR-014](./adr-014-sendgrid-email-provider) | SendGrid Email Provider             | Accepted | Low    |
+
+### 🤖 AI & Intelligence
+
+| ADR                                         | Title                         | Status   | Impact |
+| ------------------------------------------- | ----------------------------- | -------- | ------ |
+| [ADR-009](./adr-009-ai-integration)         | AI Integration Strategy       | Accepted | High   |
+| [ADR-012](./adr-012-ollama-llm-runtime)     | Ollama for LLM Runtime        | Accepted | Medium |
+| [ADR-020](./adr-020-mcp-tools-standardize)  | MCP Tools for Standardization | Accepted | Medium |
+| [ADR-021](./adr-021-agent-to-agent-via-a2a) | Agent-to-Agent Communication  | Accepted | Medium |
+
+### ⚙️ Operations & Deployment
+
+| ADR                                         | Title                                | Status   | Impact |
+| ------------------------------------------- | ------------------------------------ | -------- | ------ |
+| [ADR-007](./adr-007-aca-deployment)         | Azure Container Apps Deployment      | Accepted | High   |
+| [ADR-015](./adr-015-githubaction-cicd)      | GitHub Actions for CI/CD             | Accepted | Medium |
+| [ADR-018](./adr-018-k6-performance-testing) | K6 Performance Testing Framework     | Accepted | Medium |
+| [ADR-019](./adr-019-eventcatalog)           | EventCatalog for Event Documentation | Accepted | Low    |
+
+## Decision Status Distribution
+
+```mermaid
+pie title ADR Status Distribution
+    "Accepted" : 21
+    "Deprecated" : 0
+    "Superseded" : 0
+    "Proposed" : 0
+```
+
+## Architecture Impact Analysis
+
+### High Impact Decisions (9 ADRs)
+
+These decisions fundamentally shape the system architecture and have wide-reaching consequences:
+
+- **Microservices Architecture** - Defines overall system structure
+- **Event-Driven CQRS** - Determines data flow and consistency patterns
+- **.NET Aspire** - Cloud-native development approach
+- **Domain-Driven Design** - Business domain alignment
+- **PostgreSQL Database** - Data persistence strategy
+- **RabbitMQ Message Broker** - Async communication backbone
+- **Keycloak Identity** - Security and authentication foundation
+- **API Gateway** - External interface and routing
+- **AI Integration Strategy** - Intelligence capabilities framework
+
+### Medium Impact Decisions (8 ADRs)
+
+These decisions significantly affect specific aspects or components:
+
+- **Redis SignalR Scaling** - Real-time communication scalability
+- **SignalR Realtime** - Bi-directional communication capability
+- **Event Sourcing** - Audit trail and temporal queries
+- **gRPC Communication** - High-performance inter-service calls
+- **Ollama Runtime** - Local LLM execution environment
+- **MCP Tools** - AI agent standardization
+- **A2A Communication** - Agent interaction protocols
+- **GitHub Actions CI/CD** - Deployment automation
+- **K6 Performance Testing** - Quality assurance framework
+
+### Low Impact Decisions (4 ADRs)
+
+These decisions address specific functional requirements:
+
+- **SendGrid Email** - Email delivery service
+- **EventCatalog Documentation** - Event schema documentation
+
+## Decision Dependencies
+
+```mermaid
+graph TD
+    A[ADR-001: Microservices] --> B[ADR-002: Event-Driven CQRS]
+    A --> C[ADR-016: Domain-Driven Design]
+    B --> D[ADR-011: RabbitMQ]
+    B --> E[ADR-013: Event Sourcing]
+    C --> F[ADR-004: PostgreSQL]
+
+    G[ADR-003: .NET Aspire] --> H[ADR-007: Azure Container Apps]
+    G --> I[ADR-008: API Gateway]
+
+    J[ADR-006: SignalR] --> K[ADR-010: Redis Scaling]
+
+    L[ADR-009: AI Integration] --> M[ADR-012: Ollama Runtime]
+    L --> N[ADR-020: MCP Tools]
+    N --> O[ADR-021: A2A Communication]
+
+    P[ADR-015: GitHub Actions] --> Q[ADR-018: K6 Testing]
+    B --> R[ADR-019: EventCatalog]
+
+    style A fill:#ffcdd2
+    style B fill:#ffcdd2
+    style G fill:#ffcdd2
+    style L fill:#e1f5fe
+```
+
+## Key Architectural Principles
+
+Based on the ADR decisions, BookWorm follows these core principles:
+
+### 🎯 Business Alignment
+
+- **Domain-Driven Design** ensures technical implementation matches business domain
+- **Event-Driven Architecture** reflects real-world business processes
+- **CQRS** separates read and write concerns for optimal user experience
+
+### 🔄 Scalability & Resilience
+
+- **Microservices** enable independent scaling and deployment
+- **Event Sourcing** provides complete audit trails and replay capabilities
+- **Container Apps** offer serverless scaling and high availability
+
+### 🤖 AI-First Approach
+
+- **Integrated AI Strategy** makes intelligence a core system capability
+- **Standardized Tools** ensure consistent AI agent interactions
+- **Local Runtime** provides control over AI model execution
+
+### ⚡ Performance & Quality
+
+- **Async Communication** via events and messaging
+- **Real-time Capabilities** through SignalR connections
+- **Comprehensive Testing** with automated performance validation
+
+## ADR Process
+
+### Creating New ADRs
+
+1. **Identify Decision Need**: Significant architectural choice with long-term impact
+2. **Research Context**: Gather requirements, constraints, and stakeholder input
+3. **Evaluate Alternatives**: Consider multiple options with pros/cons analysis
+4. **Document Decision**: Use standard ADR template with clear rationale
+5. **Review & Approval**: Get stakeholder review before marking as "Accepted"
+6. **Update Dependencies**: Link related ADRs and update overview
+
+### ADR Template Structure
+
+```markdown
+# ADR-XXX: [Decision Title]
+
+## Status
+
+**[Proposed|Accepted|Deprecated|Superseded]** - [Date]
+
+## Context
+
+[Describe the situation and constraints]
+
+## Decision
+
+[What was decided and key implementation details]
+
+## Rationale
+
+[Why this decision was made]
+
+## Implementation
+
+[How the decision is implemented]
+
+## Consequences
+
+### Positive
+
+[Benefits and positive outcomes]
+
+### Challenges
+
+[Drawbacks and risks]
+
+## Alternatives Considered
+
+[Other options that were evaluated]
+
+## Related Decisions
+
+[Links to other relevant ADRs]
+```
+
+## Change Management
+
+### Modifying Decisions
+
+- **Status Updates**: Change status to Deprecated or Superseded
+- **New ADRs**: Create new decisions that supersede old ones
+- **Impact Analysis**: Document effects on dependent decisions
+- **Migration Path**: Provide clear transition strategy
+
+### Decision Evolution
+
+ADRs evolve through their lifecycle:
+
+- **Proposed** → **Accepted** → **Implemented**
+- **Accepted** → **Deprecated** (when better alternatives emerge)
+- **Accepted** → **Superseded** (when replaced by new decisions)
+
+## Success Metrics
+
+The architecture decisions are validated through:
+
+- **System Performance**: Response times, throughput, scalability
+- **Development Velocity**: Time to implement features, deployment frequency
+- **Operational Metrics**: Uptime, error rates, recovery time
+- **Business Metrics**: User satisfaction, feature adoption, cost efficiency
+- **Quality Metrics**: Test coverage, security compliance, maintainability
+
+## Related Documentation
+
+- [Technical Risks and Debts](../risks-and-technical-debts): Risk analysis related to architectural decisions
+- [Quality Requirements](../quality-requirements/overview): Quality attributes addressed by ADRs
+- [Building Block View](../building-block-view/glassbox-overall-system): How ADRs shape system components

@@ -1,0 +1,203 @@
+---
+sidebar_position: 3
+title: Create Order
+last_update:
+  author: Nhan Nguyen
+---
+
+# Create Order Scenario
+
+The Create Order scenario represents the core business process of BookWorm, handling the complete journey from customer checkout to order fulfillment. This flow implements the **Saga pattern** to ensure data consistency across distributed services.
+
+## Overview
+
+This end-to-end flow orchestrates multiple microservices to process customer orders, focusing on proper inventory management, basket cleanup, and customer communication throughout the order lifecycle.
+
+## 🎯 Business Context
+
+### Objectives
+
+1. **Seamless Checkout**: Minimize friction in the purchase process
+2. **Inventory Accuracy**: Prevent overselling through proper reservation
+3. **Data Consistency**: Ensure proper basket cleanup after order creation
+4. **Customer Communication**: Keep customers informed throughout
+
+### Success Criteria
+
+- ✅ Order creation within 5 seconds
+- ✅ 99.9% success rate for valid orders
+- ✅ Proper basket cleanup after order completion
+- ✅ Confirmation notification within 1 minute
+
+## 🔄 Order Processing Flow
+
+The following sequence diagram illustrates the complete order creation and processing flow:
+
+```mermaid
+sequenceDiagram
+    participant User as User
+    participant OrderingService as Ordering Service
+    participant FinanceService as Finance Service
+    participant BasketService as Basket Service
+    participant NotificationService as Notification Service
+
+    User->>OrderingService: CreateOrderCommand
+    Note over OrderingService: Validate order and create order record
+
+    OrderingService->>FinanceService: UserCheckedOutEvent
+    Note over FinanceService: Orchestrate order processing workflow
+
+    FinanceService->>BasketService: PlaceOrderCommand
+    Note over BasketService: Reserve items and prepare basket deletion
+
+    alt Basket deletion successful
+        BasketService->>FinanceService: BasketDeletedCompletedEvent
+        FinanceService->>OrderingService: DeleteBasketCompleteCommand
+        FinanceService->>NotificationService: DeleteBasketCompleteCommand
+        Note over NotificationService: Send order confirmation
+    else Basket deletion failed
+        BasketService->>FinanceService: BasketDeletedFailedEvent
+        FinanceService->>OrderingService: DeleteBasketFailedCommand
+        Note over OrderingService: Rollback order and restore basket
+    end
+```
+
+## 📋 Detailed Process Steps
+
+### 1. Order Initiation
+
+```mermaid
+graph LR
+    A[User Creates Order] --> B[Validate Order Data]
+    B --> C[CreateOrderCommand]
+    C --> D[Ordering Service Processing]
+```
+
+**Actions:**
+
+- User submits order with selected items
+- System validates order data and business rules
+- CreateOrderCommand is generated and sent to Ordering Service
+
+### 2. Order Orchestration
+
+```mermaid
+graph LR
+    A[UserCheckedOutEvent] --> B[Finance Service]
+    B --> C[Order Processing Coordination]
+    C --> D[PlaceOrderCommand]
+```
+
+**Actions:**
+
+- Finance Service receives checkout event
+- Coordinates the order processing workflow
+- PlaceOrderCommand is sent to Basket Service
+
+### 3. Basket Management
+
+```mermaid
+graph LR
+    A[PlaceOrderCommand] --> B[Basket Service]
+    B --> C[Item Reservation]
+    C --> D{Deletion Success?}
+    D -->|Success| E[BasketDeletedCompletedEvent]
+    D -->|Failed| F[BasketDeletedFailedEvent]
+```
+
+**Actions:**
+
+- Basket Service reserves ordered items
+- Attempts to delete user's basket after order confirmation
+- Publishes appropriate event based on outcome
+
+### 4. Order Completion & Compensation
+
+```mermaid
+graph LR
+    A[Basket Status] --> B{Success?}
+    B -->|Complete| C[Confirm Order]
+    B -->|Failed| D[Rollback Order]
+    C --> E[Send Confirmation]
+    D --> F[Restore Basket]
+```
+
+**Actions:**
+
+- **Success Path**: Order confirmed, notification sent
+- **Failure Path**: Order rolled back, basket restored
+
+## 📋 Business Rules
+
+### Order Validation Rules
+
+| Rule                    | Description                   | Action on Violation        |
+| ----------------------- | ----------------------------- | -------------------------- |
+| **Minimum Order Value** | Orders must be >= $10         | Reject with error message  |
+| **Maximum Items**       | Max 50 unique items per order | Split into multiple orders |
+| **Stock Availability**  | All items must be in stock    | Suggest alternatives       |
+| **Shipping Address**    | Must be deliverable region    | Show supported regions     |
+
+### Compensation Rules
+
+When failures occur, the system automatically compensates:
+
+1. **Basket Clear Failed**:
+   - Cancel order record
+   - Restore basket contents
+   - Alert support team for investigation
+
+2. **Notification Failed**:
+   - Retry with exponential backoff
+   - Log for manual follow-up
+   - Order processing still completes successfully
+
+## 🏗️ Architecture Patterns
+
+### Saga Pattern Implementation
+
+The order flow implements the **Choreography-based Saga** pattern:
+
+- **Event-Driven**: Services communicate through domain events
+- **Autonomous**: Each service manages its own compensation logic
+- **Resilient**: Automatic retry and rollback mechanisms
+- **Observable**: Complete audit trail of all events
+
+## 📈 SLA Requirements
+
+### Service Level Agreement
+
+| Component                | Availability | Response Time | Error Rate |
+| ------------------------ | ------------ | ------------- | ---------- |
+| **API Gateway**          | 99.99%       | < 50ms        | < 0.01%    |
+| **Ordering Service**     | 99.9%        | < 200ms       | < 0.1%     |
+| **Finance Service**      | 99.9%        | < 200ms       | < 0.1%     |
+| **Basket Service**       | 99.9%        | < 100ms       | < 0.1%     |
+| **Notification Service** | 99.5%        | < 1000ms      | < 0.5%     |
+| **Overall Flow**         | 99.9%        | < 5s          | < 0.1%     |
+
+## 🛡️ Security Considerations
+
+### Data Protection
+
+- **Encryption at Rest**: Order data encrypted in database
+- **Access Control**: Role-based access to order information
+- **Data Retention**: Compliance with data retention policies
+- **GDPR Compliance**: Customer data protection rights
+
+## 🔍 Monitoring & Observability
+
+### Key Metrics
+
+- **Order Success Rate**: Percentage of successfully completed orders
+- **Average Processing Time**: Time from checkout to confirmation
+- **Basket Cleanup Rate**: Success rate of basket deletion after orders
+- **Compensation Events**: Frequency of rollback scenarios
+- **Customer Satisfaction**: Order fulfillment ratings
+
+### Alerting Thresholds
+
+- **Order Success Rate < 99%**: Critical alert
+- **Processing Time > 10s**: Warning alert
+- **Basket Cleanup Failures > 1%**: Investigation required
+- **Multiple Compensations**: Potential system issue

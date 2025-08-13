@@ -56,4 +56,4 @@ internal sealed class RequestManager(IConnectionMultiplexer redis) : IRequestMan
     WriteIndented = true,
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase
 )]
-public sealed partial class IdempotencySerializationContext : JsonSerializerContext;
+internal sealed partial class IdempotencySerializationContext : JsonSerializerContext;
