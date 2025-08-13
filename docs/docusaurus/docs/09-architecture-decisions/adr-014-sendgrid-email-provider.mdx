@@ -1,0 +1,306 @@
+---
+sidebar_position: 15
+title: ADR-014 - SendGrid Email Provider
+last_update:
+  author: Nhan Nguyen
+---
+
+# ADR-014: SendGrid Email Provider
+
+## Status
+
+**Accepted** - January 2024
+
+## Context
+
+BookWorm's Notification Service requires a robust email delivery solution to handle transactional communications across the microservices architecture. The email requirements include:
+
+- **Transactional Notifications**: Order confirmations, payment receipts, shipping updates, and account verifications
+- **System Communications**: Password resets, account activations, and security notifications
+- **Event-Driven Messaging**: Automated notifications triggered by business events across services
+- **Development vs Production**: Local development with testing capabilities and reliable production delivery
+- **Reliability Requirements**: Outbox pattern implementation for guaranteed delivery and audit trails
+- **Performance Needs**: High deliverability rates, fast sending speeds, and resilience to failures
+- **Environment-Specific**: Sandbox mode for staging and full delivery for production
+- **Integration Needs**: Seamless .NET integration with existing microservices and Aspire orchestration
+- **Observability**: Comprehensive logging, health checks, and error handling
+- **Configuration Management**: Secure API key management and environment-specific settings
+
+The email solution must integrate with BookWorm's event-driven architecture while providing reliable delivery guarantees.
+
+## Decision
+
+Adopt **SendGrid** as the production email service provider with **MailKit/MailPit** for development, implementing a dual-provider strategy with outbox pattern for reliable email delivery in the BookWorm Notification Service.
+
+### Email Service Strategy
+
+#### Dual-Provider Architecture
+
+- **Development Environment**: MailKit with MailPit for local testing and development
+- **Production/Staging Environment**: SendGrid for reliable transactional email delivery
+- **Environment Detection**: Automatic provider selection based on hosting environment
+- **Unified Interface**: `ISender` abstraction supporting both providers seamlessly
+
+#### Reliability and Resilience
+
+- **Outbox Pattern**: `EmailOutboxService` wrapper providing delivery guarantees and audit trails
+- **Resilience Pipeline**: Polly integration for retry policies and circuit breaker patterns
+- **Error Handling**: Comprehensive error logging with `GlobalLogBuffer` for immediate feedback
+- **Health Monitoring**: SendGrid health checks with degraded status handling
+
+### BookWorm Email Integration Architecture
+
+| Component                    | Purpose                    | Implementation                           | Environment        |
+| ---------------------------- | -------------------------- | ---------------------------------------- | ------------------ |
+| **SendGridSender**           | Production email delivery  | SendGrid API via HttpClient              | Production/Staging |
+| **MailKitSender**            | Development email testing  | SMTP via MailPit container               | Development        |
+| **EmailOutboxService**       | Delivery guarantee wrapper | Outbox pattern with database persistence | All environments   |
+| **InjectableSendGridClient** | Custom SendGrid client     | HttpClient-based with DI integration     | Production/Staging |
+
+## Rationale
+
+### Why SendGrid?
+
+#### Email Deliverability Excellence
+
+1. **Industry-Leading Reputation**: Established sender reputation with high inbox placement rates
+2. **Authentication Support**: Built-in SPF, DKIM, and DMARC configuration for domain authentication
+3. **Reputation Monitoring**: Proactive monitoring and management of sender reputation
+4. **Compliance Tools**: Built-in GDPR compliance features and unsubscribe management
+5. **Global Infrastructure**: Worldwide data centers ensuring reliable delivery across regions
+
+#### Advanced Email Features
+
+1. **Dynamic Templates**: Rich templating system with conditional logic and personalization
+2. **A/B Testing**: Built-in split testing for subject lines and email content
+3. **Marketing Automation**: Advanced automation workflows for customer engagement
+4. **Segmentation**: Advanced recipient segmentation for targeted communications
+5. **Real-Time Analytics**: Comprehensive email performance metrics and engagement tracking
+
+#### Integration with BookWorm Architecture
+
+1. **Event-Driven Communication**: Integrates with RabbitMQ and MassTransit for event-driven email notifications
+2. **Aspire Orchestration**: Native support for .NET Aspire with automatic provider configuration
+3. **Microservice Integration**: Centralized email service accessible to all BookWorm microservices
+4. **Configuration Management**: Azure Key Vault integration for secure API key management
+5. **Database Integration**: PostgreSQL-based outbox pattern for transactional email guarantees
+
+### Email Provider Architecture Benefits
+
+#### Development Experience
+
+1. **Local Testing**: MailPit provides web UI for email testing without external dependencies
+2. **Environment Parity**: Same `ISender` interface across development and production
+3. **Configuration Simplicity**: Automatic provider selection based on environment detection
+4. **Debugging Support**: Rich logging and error reporting for troubleshooting email issues
+5. **Container Integration**: MailPit runs as Docker container in development Aspire setup
+
+#### Production Reliability
+
+1. **Delivery Guarantees**: Outbox pattern ensures emails are persisted and delivered
+2. **Resilience Patterns**: Polly integration provides retry, circuit breaker, and timeout policies
+3. **Status Tracking**: Comprehensive status tracking with HTTP status code validation
+4. **Sandbox Support**: Automatic sandbox mode activation for staging environment
+5. **Health Monitoring**: Integrated health checks with degraded status for SendGrid issues
+
+## Implementation
+
+### Actual SendGrid Configuration
+
+```csharp
+// SendGrid Settings with validation
+[OptionsValidator]
+public sealed partial class SendGridSettings : IValidateOptions<SendGridSettings>
+{
+    internal const string ConfigurationSection = "SendGrid";
+
+    [Key, Required]
+    public string ApiKey { get; set; } = string.Empty;
+
+    [Required, EmailAddress]
+    public string SenderEmail { get; set; } = string.Empty;
+
+    [Required, MaxLength(DataSchemaLength.Medium)]
+    public string SenderName { get; set; } = string.Empty;
+}
+```
+
+### Environment-Specific Provider Registration
+
+```csharp
+public static void AddApplicationServices(this IHostApplicationBuilder builder)
+{
+    // Register appropriate email provider based on environment
+    if (builder.Environment.IsDevelopment())
+    {
+        builder.AddMailKitClient(Components.MailPit);
+    }
+    else
+    {
+        builder.AddSendGridClient();
+    }
+
+    // Add outbox wrapper for reliability
+    builder.AddEmailOutbox();
+}
+```
+
+### SendGrid Service Implementation
+
+```csharp
+internal sealed class SendGridSender(
+    ILogger<SendGridSender> logger,
+    SendGridSettings settings,
+    ISendGridClient sendGridClient,
+    GlobalLogBuffer logBuffer,
+    ResiliencePipelineProvider<string> provider,
+    IHostEnvironment environment
+) : ISender
+{
+    public async Task SendAsync(MimeMessage mailMessage, CancellationToken cancellationToken = default)
+    {
+        var message = new SendGridMessage
+        {
+            From = new(settings.SenderEmail, settings.SenderName),
+            Subject = mailMessage.Subject,
+            HtmlContent = mailMessage.HtmlBody,
+            SendAt = Math.Clamp(mailMessage.Date.ToUnixTimeSeconds(), 0, long.MaxValue),
+        };
+
+        foreach (var recipient in mailMessage.To.Mailboxes)
+        {
+            message.AddTo(new EmailAddress(recipient.Address, recipient.Name ?? string.Empty));
+        }
+
+        // Enable sandbox mode for staging
+        if (environment.IsStaging())
+        {
+            message.SetSandBoxMode(true);
+        }
+
+        var pipeline = provider.GetPipeline(nameof(Notification));
+        var response = await pipeline.ExecuteAsync(
+            async ct => await sendGridClient.SendEmailAsync(message, ct),
+            cancellationToken
+        );
+
+        if (response.StatusCode is not (HttpStatusCode.OK or HttpStatusCode.Accepted))
+        {
+            logger.LogError(
+                "Failed to send email to {Recipient} with subject {Subject}. Status code: {StatusCode}",
+                mailMessage.To.ToString(),
+                mailMessage.Subject,
+                response.StatusCode
+            );
+            logBuffer.Flush();
+            throw new NotificationException($"Failed to send email. Status code: {response.StatusCode}");
+        }
+    }
+}
+```
+
+### Injectable SendGrid Client
+
+```csharp
+internal sealed class InjectableSendGridClient(
+    HttpClient httpClient,
+    IOptions<SendGridClientOptions> options
+) : BaseClient(httpClient, options.Value);
+```
+
+### Outbox Pattern Implementation
+
+```csharp
+internal sealed class EmailOutboxService(IOutboxRepository repository, ISender actualSender) : ISender
+{
+    public async Task SendAsync(MimeMessage mailMessage, CancellationToken cancellationToken = default)
+    {
+        var mailbox = mailMessage.To.Mailboxes.FirstOrDefault()
+            ?? throw new ArgumentNullException(nameof(mailMessage), "Message must have at least one recipient");
+
+        // Persist to outbox first
+        var outbox = new Domain.Models.Outbox(
+            mailbox.Name ?? "Unknown",
+            mailbox.Address,
+            mailMessage.Subject,
+            mailMessage.HtmlBody
+        );
+
+        await repository.AddAsync(outbox, cancellationToken);
+        await repository.UnitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Send through actual provider
+        await actualSender.SendAsync(mailMessage, cancellationToken);
+
+        // Mark as sent
+        outbox.MarkAsSent();
+        await repository.UnitOfWork.SaveChangesAsync(cancellationToken);
+    }
+}
+```
+
+### Aspire Integration
+
+```csharp
+public static IResourceBuilder<ProjectResource> WithEmailProvider(this IResourceBuilder<ProjectResource> builder)
+{
+    var applicationBuilder = builder.ApplicationBuilder;
+
+    if (applicationBuilder.ExecutionContext.IsRunMode)
+    {
+        // Development: Use MailPit container
+        var mailpit = applicationBuilder.AddMailPit(Components.MailPit, smtpPort: 587);
+        builder.WithReference(mailpit).WaitFor(mailpit);
+    }
+    else
+    {
+        // Production: Configure SendGrid
+        var apiKey = applicationBuilder.AddParameter("api-key", true);
+        var email = applicationBuilder.AddParameter("email");
+        var senderName = applicationBuilder.AddParameter("sender-name");
+
+        builder
+            .WithEnvironment("SendGrid__ApiKey", apiKey)
+            .WithEnvironment("SendGrid__SenderEmail", email)
+            .WithEnvironment("SendGrid__SenderName", senderName);
+    }
+
+    return builder;
+}
+```
+
+## Consequences
+
+### Positive
+
+- **Environment Flexibility**: Seamless development experience with MailPit, reliable production with SendGrid
+- **Delivery Guarantees**: Outbox pattern ensures no email loss with audit trail capabilities
+- **Resilience**: Polly integration provides automatic retry, circuit breaker, and timeout handling
+- **Configuration Security**: Secure API key management through Azure Key Vault and Aspire parameters
+- **Health Monitoring**: Integrated health checks with degraded status handling for SendGrid issues
+- **Development Experience**: Local email testing without external dependencies through MailPit web UI
+
+### Negative
+
+- **Dual Provider Complexity**: Maintaining compatibility between MailKit and SendGrid implementations
+- **SendGrid Dependency**: Production relies on external SendGrid service availability
+- **Cost Considerations**: SendGrid costs scale with email volume
+- **Environment Configuration**: Additional complexity in managing environment-specific configurations
+
+### Risks and Mitigation
+
+| Risk                           | Impact | Probability | Mitigation Strategy                                                  |
+| ------------------------------ | ------ | ----------- | -------------------------------------------------------------------- |
+| SendGrid Service Outage        | High   | Low         | Outbox pattern retains emails for retry, health checks detect issues |
+| API Key Exposure               | High   | Low         | Azure Key Vault storage, parameter validation, secure configuration  |
+| Email Delivery Failures        | Medium | Medium      | Polly resilience pipeline, comprehensive error logging               |
+| Development Environment Issues | Low    | Medium      | MailPit container fallback, local SMTP testing                       |
+| Configuration Drift            | Medium | Low         | Environment-specific validation, Aspire configuration management     |
+
+## References
+
+- [SendGrid .NET SDK Documentation](https://docs.sendgrid.com/for-developers/sending-email/v3-csharp-code-example)
+- [MailKit Documentation](https://github.com/jstedfast/MailKit)
+- [MailPit Container](https://github.com/axllent/mailpit)
+- [Polly Resilience Patterns](https://www.pollydocs.org/)
+- [.NET Aspire Email Configuration](https://learn.microsoft.com/en-us/dotnet/aspire/)

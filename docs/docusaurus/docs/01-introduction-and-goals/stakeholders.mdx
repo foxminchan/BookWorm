@@ -1,0 +1,111 @@
+---
+sidebar_position: 4
+title: Stakeholders
+last_update:
+  author: Nhan Nguyen
+---
+
+# Stakeholders
+
+## Overview
+
+Table with role names, person names, and their expectations with respect to the architecture and its documentation.
+
+| Role/Name                               | Contact        | Expectations                                                                                                                                                                                                                                                             |
+| --------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **FullStack Developer & Project Owner** | Solo Developer | Comprehensive architecture documentation for future reference and maintenance. Clear technical decisions rationale for long-term project sustainability. Scalable design patterns for potential team expansion. Self-contained documentation for knowledge preservation. |
+
+## Additional Stakeholders
+
+While the BookWorm project is currently a solo development effort, the following external stakeholders still influence architectural decisions:
+
+| Role/Name                  | Contact              | Expectations                                                                                                                                                                   |
+| -------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **End Users (Customers)**  | Future Users         | Intuitive user experience and reliable performance. Fast response times and seamless book browsing/purchasing. Mobile-friendly responsive design. Secure payment processing.   |
+| **Cloud Platform (Azure)** | Microsoft Azure      | Compliance with Azure best practices. Efficient resource utilization. Proper use of Azure services and pricing models. Security and compliance standards adherence.            |
+| **Payment Providers**      | Stripe, PayPal, etc. | PCI DSS compliance for payment processing. Proper API integration and error handling. Secure data transmission and storage. Transaction monitoring and fraud prevention.       |
+| **Third-party APIs**       | Book Data Providers  | Efficient API usage within rate limits. Proper caching strategies to minimize API calls. Graceful handling of API failures and timeouts. Data synchronization and consistency. |
+| **Open Source Community**  | GitHub Contributors  | Clean, maintainable code for potential contributions. Comprehensive README and contribution guidelines. Proper licensing and attribution. Security vulnerability reporting.    |
+
+## Solo Developer Responsibilities
+
+As the sole team member, the developer assumes multiple roles and responsibilities:
+
+### **Technical Roles**
+
+- **Solution Architect**: Design system architecture and make technology decisions
+- **Frontend Developer**: Implement user interface and user experience
+- **Backend Developer**: Build APIs, business logic, and data management
+- **DevOps Engineer**: Set up CI/CD, deployment, and monitoring
+- **QA Engineer**: Write tests, perform quality assurance, and bug fixing
+- **Database Administrator**: Design data models and optimize performance
+
+### **Business Roles**
+
+- **Product Owner**: Define features, priorities, and business requirements
+- **Project Manager**: Plan timeline, manage scope, and track progress
+- **Business Analyst**: Research market needs and competitive analysis
+
+## Self-Documentation Strategy
+
+Since this is a solo project, documentation serves as future self-reference:
+
+### **Architecture Decision Records (ADRs)**
+
+- **Purpose**: Record reasoning behind major architectural decisions
+- **Audience**: Future self and potential collaborators
+- **Format**: Structured decision documentation with context and consequences
+
+### **Technical Documentation**
+
+- **Purpose**: Maintain comprehensive system knowledge
+- **Audience**: Future maintenance and development
+- **Format**: Living documentation in repository with code examples
+
+### **Project Journal**
+
+- **Purpose**: Track development progress and lessons learned
+- **Audience**: Personal reference and retrospectives
+- **Format**: Regular updates on challenges, solutions, and improvements
+
+### **Knowledge Preservation**
+
+- **Purpose**: Ensure project continuity and knowledge transfer
+- **Audience**: Future team members or project handover
+- **Format**: Comprehensive guides and architectural overviews
+
+## Solo Developer Impact Analysis
+
+### **High Priority Considerations**
+
+- **Self-Documentation**: Critical for future maintenance and development continuity
+- **End Users**: Ultimate success criteria for the application
+- **External Services**: Direct dependencies that impact system functionality
+
+### **Medium Priority Considerations**
+
+- **Cloud Platform**: Infrastructure efficiency and cost management
+- **Open Source Community**: Potential for collaboration and code sharing
+
+### **Monitoring Considerations**
+
+- **Payment Providers**: Compliance and integration requirements
+- **Third-party APIs**: Service dependencies and rate limiting
+
+## Decision-Making Process
+
+As a solo developer, architectural decisions are streamlined but require careful consideration:
+
+### **Self-Review Process**
+
+1. **Research Phase**: Evaluate multiple technical options
+2. **Documentation**: Record decision rationale in ADRs
+3. **Implementation**: Build with future scalability in mind
+4. **Validation**: Test assumptions and gather user feedback
+5. **Iteration**: Refine based on real-world usage
+
+### **External Validation**
+
+- **Community Feedback**: Leverage open source community for code reviews
+- **User Testing**: Gather feedback from beta users and stakeholders
+- **Best Practices**: Follow industry standards and Azure recommendations

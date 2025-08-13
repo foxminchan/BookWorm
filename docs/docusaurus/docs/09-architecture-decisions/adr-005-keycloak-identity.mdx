@@ -1,0 +1,87 @@
+---
+sidebar_position: 6
+title: ADR-005 - Keycloak for Identity Management
+last_update:
+  author: Nhan Nguyen
+---
+
+# ADR-005: Keycloak for Identity Management
+
+## Status
+
+**Accepted** - July 2024
+
+## Context
+
+BookWorm requires centralized identity management for its microservices architecture. The system needs:
+
+- Single sign-on (SSO) across services
+- JWT token authentication
+- Role-based access control
+- Easy .NET integration with Aspire
+- Custom theming support
+
+## Decision
+
+Use **Keycloak** as the identity provider, integrated with .NET Aspire for containerized deployment and service discovery.
+
+## Implementation
+
+### Aspire Integration
+
+Keycloak is configured as an Aspire resource with:
+
+- Realm configuration from `BookWormRealms.json`
+- Custom theme support via provider mount
+- PostgreSQL database integration
+- Service-to-service client setup
+
+### Authentication Flow
+
+1. Services validate JWT bearer tokens from Keycloak
+2. Claims transformation converts Keycloak roles to .NET roles
+3. Token introspection middleware for additional validation
+4. Automatic client configuration per service
+
+### Key Components
+
+- **KeycloakExtensions**: Aspire resource configuration
+- **KeycloakClaimsTransformation**: Role mapping for .NET authorization
+- **KeycloakTokenIntrospectionMiddleware**: Token validation
+- **Custom Theme**: Keycloakify-based UI customization
+
+## Benefits
+
+- Open source with no licensing costs
+- Full OAuth 2.0/OIDC compliance
+- Seamless .NET Aspire integration
+- Custom theming capabilities
+- PostgreSQL data persistence
+
+## Alternatives Considered
+
+- **Auth0**: Managed service but costly at scale
+- **Azure AD B2C**: Azure lock-in with complex pricing
+- **Custom Auth**: High development effort and security risks
+- **AWS Cognito**: AWS lock-in with limited customization
+
+## Consequences
+
+### Positive
+
+- Centralized identity management across services
+- Open source with no licensing fees
+- Standards-compliant OAuth 2.0/OIDC implementation
+- Easy .NET integration through Aspire
+- Custom theming and branding support
+
+### Challenges
+
+- Additional infrastructure component to manage
+- Single point of failure requiring high availability setup
+- Learning curve for Keycloak administration
+
+## Related Decisions
+
+- [ADR-003: .NET Aspire for Cloud-Native Development](./adr-003-aspire-cloud-native.mdx)
+- [ADR-006: SignalR for Real-time Communication](./adr-006-signalr-realtime.mdx)

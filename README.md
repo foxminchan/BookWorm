@@ -27,7 +27,7 @@
   - [x] Integrated event sourcing for storing domain events
   - [x] Implemented a microservices chassis for cross-cutting concerns and service infrastructure
 - [x] Implemented API versioning and feature flags for flexible application management
-- [x] Set up AuthN/AuthZ with Keycloak (see [here](./src/Aspire/BookWorm.AppHost/Container/keycloak/README.md))
+- [x] Set up AuthN/AuthZ with Keycloak
 - [x] Implemented caching with HybridCache
 - [x] Incorporated AI components:
   - [x] Text embedding with Nomic Embed Text
@@ -43,7 +43,7 @@
   - [x] Conducted service unit tests
   - [x] Implemented contract tests
   - [x] Established architecture testing strategy
-  - [x] Performed load testing with k6 (see [testing suite](./src/Aspire/BookWorm.AppHost/Container/k6/README.md))
+  - [x] Performed load testing with k6
   - [ ] Planned integration tests
 
 ## Project Architecture

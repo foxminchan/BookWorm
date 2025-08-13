@@ -73,9 +73,9 @@ pgEndpoint ??= ReferenceExpression.Create($"{postgres.GetOutput("hostname")}");
 var redis = builder.AddAzureRedis(Components.Redis).RunAsLocalContainer().ProvisionAsService();
 
 var qdrant = builder
-    .AddQdrant(Components.VectorDb)
+    .AddQdrant(Components.VectorDb.Name)
     .WithDataVolume()
-    .WithImageTag("v1.15.1")
+    .WithImageTag(Components.VectorDb.Version)
     .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent);
 

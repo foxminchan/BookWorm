@@ -1,0 +1,246 @@
+---
+slug: k6-performance-testing-suite
+title: BookWorm K6 Test Suite
+authors: [foxminchan]
+tags: [testing, performance, k6, typescript, devops]
+---
+
+import Image from '@theme/IdealImage';
+
+# BookWorm K6 Performance Testing Suite
+
+<p style={{ textAlign: "justify" }}>
+  This repository features a robust, maintainable K6 performance testing suite
+  for the BookWorm application, built with modern TypeScript. The suite replaces
+  the legacy single-file JavaScript approach with a modular, scalable project
+  structure—making it easier to extend, debug, and ensure code quality for
+  ongoing performance testing.
+</p>
+
+{/* truncate */}
+
+## What is K6?
+
+[K6](https://k6.io/) is a modern load testing tool designed for developers and DevOps teams. It uses JavaScript (and TypeScript) to define test scenarios, making it accessible to development teams while providing enterprise-grade performance testing capabilities. Unlike traditional testing tools, K6 is designed with developer experience in mind, offering:
+
+- **Developer-centric**: Write tests in JavaScript/TypeScript
+- **CI/CD friendly**: Easy integration with modern development workflows
+- **Cloud-native**: Built for microservices and distributed systems
+- **Performance-focused**: Efficiently handles high loads with minimal resource usage
+
+## Why Performance Testing for BookWorm?
+
+As an e-commerce bookstore application, BookWorm serves multiple user types simultaneously—customers browsing catalogs, searching for books, managing their baskets, and completing orders. Performance degradation can directly impact:
+
+- **User Experience**: Slow page loads lead to abandoned sessions
+- **Business Revenue**: Poor performance affects conversion rates
+- **System Reliability**: Understanding load limits prevents outages
+- **Scalability Planning**: Data-driven decisions for infrastructure scaling
+
+Our K6 suite ensures BookWorm maintains excellent performance under various load conditions, from normal browsing to peak shopping periods.
+
+## 🏗️ Project Structure
+
+```
+k6/
+├── src/
+│   ├── main.ts                 # Main entry point
+│   ├── types/
+│   │   ├── external-libs.d.ts  # Type declarations for external libraries
+│   │   └── index.ts            # TypeScript interface definitions
+│   ├── utils/
+│   │   ├── seeded-random.ts   # Secure pseudorandom number generator
+│   │   ├── test-data.ts       # Test data generators
+│   │   ├── validation.ts      # Response validation utilities
+│   │   └── helpers.ts         # Helper functions
+│   ├── scenarios/
+│   │   ├── browse-catalog.ts    # Browse catalog scenario
+│   │   ├── search-filter.ts     # Search & filter scenario
+│   │   ├── api-comprehensive.ts # Comprehensive API testing
+│   │   ├── stress-test.ts       # Stress testing scenario
+│   │   └── spike-test.ts        # Spike testing scenario
+│   └── config/
+│       └── index.ts           # K6 options and constants
+├── dist/
+│   ├── main.js                  # Compiled output (generated)
+│   ├── main.js.map              # Source map (generated)
+│   ├── summary.json             # Custom summary statistics (generated)
+│   ├── summary.html             # HTML report (generated)
+│   └── dashboard-report.html    # Dashboard report (generated)
+├── package.json              # Dependencies and scripts
+├── tsconfig.json             # TypeScript configuration
+├── .prettierrc.json          # Prettier configuration
+├── .prettierignore           # Files to ignore for Prettier
+└── webpack.config.js         # Webpack bundling configuration
+```
+
+💡 **Repository Location**: The complete K6 testing suite is available at [BookWorm/src/Aspire/BookWorm.AppHost/Container/k6](https://github.com/foxminchan/BookWorm/tree/main/src/Aspire/BookWorm.AppHost/Container/k6)
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+Before running the K6 performance tests, ensure you have:
+
+- **Node.js 18+**: Required for TypeScript compilation and package management
+- **Docker**: For running BookWorm application locally
+- **BookWorm Application**: Running locally or accessible test environment
+
+## 📊 Test Scenarios
+
+### 1. Browse Catalog 📚
+
+- **Purpose**: Simulates realistic user browsing patterns in the bookstore
+- **Load**: Light load (3-5 VUs for development, 20-50 VUs for staging)
+- **Duration**: 2 minutes
+- **Behavior**: Book listings, category navigation, author pages, pagination
+- **Key Metrics**: Page load times, catalog response rates, memory usage
+
+### 2. Search & Filter 🔍
+
+- **Purpose**: Tests search functionality and filtering under load
+- **Load**: Medium load (5-8 VUs for development, 30-60 VUs for staging)
+- **Duration**: 2 minutes
+- **Behavior**: Search queries, price/genre filters, sorting options, pagination
+- **Key Metrics**: Search response times, filter accuracy, database performance
+
+### 3. API Comprehensive 🔗
+
+- **Purpose**: Systematic validation of all API endpoints and their performance
+- **Load**: Medium load (3-6 VUs for development, 25-50 VUs for staging)
+- **Duration**: 1.5 minutes
+- **Behavior**: All REST endpoints, parameter combinations, edge cases, error handling
+- **Key Metrics**: API response times, error rates, throughput, data consistency
+
+### 4. Stress Test 💪
+
+- **Purpose**: High-intensity testing to identify breaking points
+- **Load**: High load (10-15 VUs for development, 100-200 VUs for staging)
+- **Duration**: 2 minutes
+- **Behavior**: Concurrent requests, complex operations, resource-intensive queries
+- **Key Metrics**: System stability, resource utilization, failure thresholds
+
+### 5. Spike Test 📈
+
+- **Purpose**: Tests system resilience during sudden traffic surges
+- **Load**: Sudden spike (2 → 12 → 2 VUs for development, 10 → 100 → 10 VUs for staging)
+- **Duration**: 1.5 minutes
+- **Behavior**: Rapid traffic changes, consecutive requests, recovery patterns
+- **Key Metrics**: Auto-scaling response, recovery time, service degradation
+
+## 📊 Dashboard Integration
+
+The K6 tests integrate seamlessly with the K6 Dashboard for real-time monitoring and comprehensive analysis. The dashboard provides:
+
+### Features
+
+- **Real-time Metrics**: Live visualization of test execution
+- **Historical Trends**: Track performance changes over time
+- **Alert Configuration**: Set thresholds for automatic notifications
+- **Team Collaboration**: Share results and insights across teams
+
+### Setup
+
+```bash
+# Install K6 with dashboard support
+k6 run --out dashboard dist/main.js
+
+# Or use the web dashboard
+k6 run --out web-dashboard=port=3000 dist/main.js
+```
+
+### Benefits
+
+- **Visual Analysis**: Charts and graphs for better understanding
+- **Bottleneck Identification**: Quickly spot performance issues
+- **Comparative Analysis**: Compare test runs across deployments
+- **Export Capabilities**: Generate reports for stakeholders
+
+<Image img={require("./img/k6-dashboard.png")} />
+
+## 📈 Performance Metrics & Reporting
+
+### Key Performance Indicators
+
+Our K6 suite tracks essential metrics to ensure BookWorm's optimal performance:
+
+| Metric                  | Target      | Critical Threshold | Description                            |
+| ----------------------- | ----------- | ------------------ | -------------------------------------- |
+| **Response Time (p95)** | < 500ms     | > 2000ms           | 95% of requests complete within target |
+| **Error Rate**          | < 1%        | > 5%               | Percentage of failed requests          |
+| **Throughput**          | > 100 req/s | < 50 req/s         | Requests handled per second            |
+| **Availability**        | > 99.9%     | < 95%              | System uptime percentage               |
+
+### Report Generation
+
+After running tests, comprehensive reports are automatically generated:
+
+- **summary.html**: Detailed HTML report with interactive charts and performance breakdowns
+- **dashboard-report.html**: Interactive dashboard with real-time metrics visualization
+- **summary.json**: Machine-readable JSON output for CI/CD integration and analysis
+- **Console output**: Real-time metrics, thresholds, and summary statistics during execution
+
+### Report Features
+
+The generated reports provide deep insights into system performance:
+
+- **Timeline Analysis**: Performance trends throughout test execution
+- **Error Breakdown**: Detailed error categorization and frequency
+- **Resource Utilization**: CPU, memory, and network usage patterns
+- **Threshold Violations**: Clear indication of performance targets missed
+- **Comparison Views**: Side-by-side analysis of different test runs
+
+<details>
+<summary><em>K6 Reporter</em></summary>
+
+<Image img={require("./img/k6-report.png")} />
+
+</details>
+
+<details>
+<summary><em>K6 Dashboard Reporter</em></summary>
+
+<Image img={require("./img/k6-dashboard-report.png")} />
+
+</details>
+
+## 🛠️ Development & Architecture
+
+### TypeScript Benefits
+
+Our TypeScript-first approach provides significant advantages over traditional JavaScript K6 tests:
+
+#### Type Safety
+
+- **Compile-time Error Detection**: Catch issues before test execution
+- **IntelliSense Support**: Enhanced IDE experience with autocompletion
+- **Refactoring Safety**: Confident code changes with type checking
+- **API Contract Validation**: Ensure request/response structure consistency
+
+#### Developer Experience
+
+- **Modern Syntax**: Async/await, destructuring, and ES modules support
+- **Code Organization**: Clean imports, interfaces, and modular structure
+- **Debugging**: Source maps enable debugging of original TypeScript code
+- **Maintainability**: Self-documenting code with clear type definitions
+
+### Project Architecture
+
+The project follows enterprise-grade patterns for scalability and maintainability:
+
+### Code Organization
+
+- **Types**: Centralized interface definitions for all data structures and API contracts
+- **Utils**: Reusable utilities for data generation, validation, and helper functions
+- **Scenarios**: Modular test scenarios for different load patterns and user journeys
+- **Config**: Centralized configuration for K6 options, environment variables, and constants
+
+### Build Process & Tooling
+
+The project uses a modern build pipeline optimized for K6 compatibility:
+
+1. **TypeScript Compilation**: Converts TS to ES2020 JavaScript with strict type checking
+2. **Webpack Bundling**: Creates a single `main.js` file with all dependencies included
+3. **Source Maps**: Enables debugging of original TypeScript code during test execution
+4. **External Libraries**: Properly handles K6-specific external imports and modules
+5. **Code Quality**: Prettier formatting and ESLint rules ensure consistent code style

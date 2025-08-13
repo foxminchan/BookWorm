@@ -1,0 +1,72 @@
+---
+sidebar_position: 3
+title: Quality Goals
+last_update:
+  author: Nhan Nguyen
+---
+
+# Quality Goals
+
+## Main Goals
+
+| Priority | Quality Goal    | Stakeholder                                   | Concrete Scenario                                                                                                                                                                                                                                                        |
+| -------- | --------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1        | **Scalability** | Business Owners, Operations Team              | The system must handle a 10x increase in concurrent users (from 1,000 to 10,000) during peak shopping periods (Black Friday, holiday sales) without degradation in response times. Auto-scaling should occur within 2 minutes of load increase.                          |
+| 2        | **Reliability** | End Users, Business Owners                    | The system must achieve 99.9% uptime (max 8.76 hours downtime per year). Critical user journeys (browse, add to cart, checkout) must have less than 0.1% failure rate. Data consistency must be maintained across all microservices even during partial system failures. |
+| 3        | **Security**    | End Users, Regulatory Bodies, Business Owners | All user data must be encrypted at rest and in transit. Payment processing must be PCI DSS compliant. User authentication must include MFA options. System must detect and block suspicious activities (fraud attempts, SQL injection) within 30 seconds.                |
+
+## Detailed Quality Scenarios
+
+### 1. Scalability Scenarios
+
+**Load Handling**
+
+- **Source**: Sudden traffic spike from marketing campaign
+- **Stimulus**: 5x normal traffic load within 10 minutes
+- **Environment**: Production environment during business hours
+- **Response**: System automatically scales horizontally, maintaining response times under 2 seconds
+- **Measure**: CPU utilization stays below 80%, memory usage below 85%
+
+**Data Growth**
+
+- **Source**: Increasing catalog size and user base
+- **Stimulus**: Database grows from 1TB to 10TB over 2 years
+- **Environment**: Normal operational conditions
+- **Response**: Query performance remains consistent through proper indexing and partitioning
+- **Measure**: 95th percentile query response time stays below 500ms
+
+### 2. Reliability Scenarios
+
+**Service Recovery**
+
+- **Source**: Individual microservice failure
+- **Stimulus**: One service becomes unavailable
+- **Environment**: Production environment with normal load
+- **Response**: Circuit breakers activate, fallback mechanisms engage, service auto-restarts
+- **Measure**: System continues operating with graceful degradation, under 30 seconds downtime
+
+**Data Consistency**
+
+- **Source**: Network partition between services
+- **Stimulus**: Temporary loss of connectivity between order and payment services
+- **Environment**: Distributed deployment across availability zones
+- **Response**: Eventual consistency maintained through event sourcing and compensating actions
+- **Measure**: No data loss, all transactions eventually reconciled within 5 minutes
+
+### 3. Security Scenarios
+
+**Authentication Attack**
+
+- **Source**: Malicious actor attempting brute force login
+- **Stimulus**: 100+ failed login attempts from same IP within 5 minutes
+- **Environment**: Public-facing web interface
+- **Response**: Account temporarily locked, IP blocked, security team notified
+- **Measure**: Attack blocked within 30 seconds, no unauthorized access
+
+**Data Breach Prevention**
+
+- **Source**: Attempted unauthorized database access
+- **Stimulus**: SQL injection or unauthorized API calls
+- **Environment**: Production database and API endpoints
+- **Response**: Input validation blocks malicious queries, intrusion detection alerts triggered
+- **Measure**: Zero successful unauthorized data access, alerts generated within 10 seconds

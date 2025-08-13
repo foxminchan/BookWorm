@@ -11,7 +11,7 @@ internal static class Extensions
 
         services.AddGrpc(options =>
         {
-            options.EnableDetailedErrors = true;
+            options.EnableDetailedErrors = builder.Environment.IsDevelopment();
             options.Interceptors.Add<GrpcExceptionInterceptor>();
         });
 

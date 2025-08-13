@@ -1,0 +1,128 @@
+---
+sidebar_position: 2
+title: Sign In
+last_update:
+  author: Nhan Nguyen
+---
+
+# Sign In Scenario
+
+The Sign In scenario demonstrates how BookWorm implements secure user authentication using Keycloak Identity and Access Management (IAM) with OAuth2 Authorization Code + PKCE flow.
+
+## Overview
+
+BookWorm leverages Keycloak for centralized authentication, providing a secure and seamless sign-in experience across all services. The implementation uses the OAuth2 Authorization Code flow with PKCE (Proof Key for Code Exchange) for enhanced security, particularly important for public clients like SPAs and mobile applications.
+
+## 🎯 Business Context
+
+### Objectives
+
+1. **Secure Authentication**: Implement industry-standard OAuth2 + PKCE flow
+2. **Seamless Experience**: Single sign-on (SSO) across all BookWorm services
+3. **Custom Branding**: Branded login experience using Keycloakify theme
+4. **Multi-Client Support**: Support web app, mobile app, and API clients
+
+### Success Criteria
+
+- ✅ Authentication within 3 seconds
+- ✅ 99.9% authentication success rate
+- ✅ Zero security vulnerabilities in auth flow
+- ✅ Consistent branded experience
+
+## 🔄 Authentication Flow
+
+The following sequence diagram illustrates the OAuth2 Authorization Code + PKCE flow:
+
+```mermaid
+sequenceDiagram
+    participant User as User
+    participant Client as BookWorm Client
+    participant Keycloak as Keycloak Server
+    participant API as BookWorm API
+
+    Note over Client: Generate code_verifier and code_challenge
+
+    User->>Client: Initiate Login
+    Client->>Client: Generate PKCE parameters<br/>code_verifier (random string)<br/>code_challenge = SHA256(code_verifier)
+
+    Client->>Keycloak: Authorization Request<br/>response_type=code<br/>client_id=bookworm-client<br/>redirect_uri=callback<br/>code_challenge=<hash><br/>code_challenge_method=S256<br/>scope=openid profile
+
+    Keycloak->>User: Present Login Form<br/>(Custom BookWorm Theme)
+    User->>Keycloak: Enter Credentials
+
+    Keycloak->>Keycloak: Validate Credentials
+    Keycloak->>Client: Authorization Code<br/>(via redirect_uri)
+
+    Client->>Keycloak: Token Request<br/>grant_type=authorization_code<br/>code=<auth_code><br/>client_id=bookworm-client<br/>code_verifier=<original_verifier><br/>redirect_uri=callback
+
+    Keycloak->>Keycloak: Verify PKCE<br/>SHA256(code_verifier) == code_challenge
+    Keycloak->>Client: Access Token + Refresh Token<br/>ID Token (JWT)
+
+    Client->>API: API Request<br/>Authorization: Bearer <access_token>
+    API->>Keycloak: Validate Token<br/>(JWT signature + claims)
+    API->>Client: Protected Resource
+```
+
+## 📋 Security Features
+
+### PKCE Security Benefits
+
+| Feature                 | Description                    | Security Benefit                         |
+| ----------------------- | ------------------------------ | ---------------------------------------- |
+| **Code Challenge**      | SHA256 hash of random verifier | Prevents authorization code interception |
+| **Dynamic Verifier**    | Unique per authentication flow | Eliminates replay attacks                |
+| **No Client Secret**    | Perfect for public clients     | Secure for SPAs and mobile apps          |
+| **Standard Compliance** | OAuth2.1 recommended flow      | Industry best practices                  |
+
+### Token Management
+
+- **Access Tokens**: Short-lived (15 minutes) for API access
+- **Refresh Tokens**: Longer-lived (30 days) for token renewal
+- **ID Tokens**: JWT with user identity information
+- **Token Rotation**: Automatic refresh token rotation on use
+
+## 🎨 Custom Authentication Experience
+
+BookWorm uses **Keycloakify** to provide a branded authentication experience:
+
+### Features
+
+- **Custom Theme**: Built with React, TypeScript, and Tailwind CSS
+- **Responsive Design**: Mobile-friendly login forms
+- **Brand Consistency**: Matches BookWorm's design language
+- **Component-Based**: Modular and maintainable React components
+
+### Supported Authentication Methods
+
+1. **Email/Password**: Traditional username and password authentication
+2. **Social Login**: Integration with Google, Facebook, GitHub
+3. **Multi-Factor Authentication**: TOTP and SMS-based 2FA
+4. **Remember Me**: Persistent session management
+
+## 📈 Performance Requirements
+
+### Service Level Agreement
+
+| Component               | Availability | Response Time | Error Rate |
+| ----------------------- | ------------ | ------------- | ---------- |
+| **Keycloak Server**     | 99.95%       | < 100ms       | < 0.01%    |
+| **Authentication Flow** | 99.9%        | < 3s          | < 0.1%     |
+| **Token Validation**    | 99.99%       | < 10ms        | < 0.001%   |
+| **Session Management**  | 99.9%        | < 50ms        | < 0.1%     |
+
+## 🛡️ Security Considerations
+
+### Implementation Details
+
+- **HTTPS Only**: All authentication flows use TLS encryption
+- **CSRF Protection**: State parameter prevents cross-site request forgery
+- **XSS Prevention**: Secure token storage and handling
+- **Session Security**: HttpOnly and Secure cookie flags
+- **Audit Logging**: Comprehensive authentication event logging
+
+### Compliance
+
+- **GDPR Compliant**: Data sovereignty and privacy controls
+- **OAuth2.1 Standard**: Latest security recommendations
+- **OpenID Connect**: Standardized identity layer
+- **PKCE Extension**: RFC 7636 implementation

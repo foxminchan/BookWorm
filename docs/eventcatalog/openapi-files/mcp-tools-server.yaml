@@ -1,0 +1,85 @@
+openapi: 3.0.1
+info:
+  title: MCP Tools Server 1.0
+  description: Provides tools for managing and interacting with BookWorm catalog
+    data, including book search and catalog operations
+  contact:
+    name: Nhan Nguyen
+    url: https://github.com/foxminchan
+    email: nguyenxuannhan407@gmail.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  version: "1.0"
+externalDocs:
+  description: Documentation
+  url: https://github.com/foxminchan/BookWorm
+servers:
+  - url: "{protocol}://{environment}.mcp.bookworm.com"
+    description: Before deploying to production, ensure the environment is set correctly
+    variables:
+      protocol:
+        enum:
+          - https
+          - http
+        default: https
+      environment:
+        enum:
+          - dev
+          - stg
+          - qa
+        default: dev
+  - url: "{protocol}://mcp.bookworm.com"
+    description: Production environment
+    variables:
+      protocol:
+        enum:
+          - https
+        default: https
+paths:
+  /mcp:
+    post:
+      tags:
+        - MCP
+      summary: Get MCP Components
+      operationId: InvokeMCP
+      requestBody:
+        content:
+          application/json:
+            schema:
+              required:
+                - method
+                - params
+                - jsonrpc
+                - id
+              type: object
+              properties:
+                method:
+                  type: string
+                params:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    arguments:
+                      type: object
+                jsonrpc:
+                  enum:
+                    - "1.0"
+                    - "2.0"
+                  type: string
+                  default: "2.0"
+                id:
+                  type: integer
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Bad Request
+        "406":
+          description: Not Acceptable
+      x-ms-agentic-protocol: mcp-streamable-1.0
+components: {}
+tags:
+  - name: MCP
+    description: MCP Tools Server API

@@ -1,0 +1,178 @@
+---
+sidebar_position: 18
+title: ADR-017 - gRPC for Inter-Service Communication
+last_update:
+  author: Nhan Nguyen
+---
+
+# ADR-017: gRPC for Inter-Service Communication
+
+## Status
+
+**Accepted** - August 2024
+
+## Context
+
+BookWorm's microservices architecture requires efficient, type-safe, and high-performance communication between services for synchronous operations. The inter-service communication requirements include:
+
+- **High Performance**: Low-latency communication for real-time operations like inventory checks and pricing queries
+- **Type Safety**: Strong typing and contract enforcement to prevent integration errors
+- **Service Discovery**: Dynamic service endpoint resolution in containerized environments
+- **Cross-Platform Support**: Communication between .NET services and potential future services in other languages
+- **Streaming Capabilities**: Support for real-time data streaming and bidirectional communication
+- **Load Balancing**: Client-side load balancing with health checking and failover
+- **Monitoring Integration**: Distributed tracing and metrics collection for observability
+- **Schema Evolution**: Backward-compatible API evolution with version management
+- **Security**: Authentication, authorization, and encrypted communication
+- **Developer Experience**: Code generation, tooling support, and debugging capabilities
+
+The solution must complement the existing event-driven architecture while providing efficient synchronous communication patterns.
+
+## Decision
+
+Adopt **gRPC** as the primary protocol for synchronous inter-service communication, with HTTP/JSON APIs reserved for external client communication and specific integration scenarios.
+
+### gRPC Implementation Strategy
+
+#### Service Communication Architecture
+
+- **Internal gRPC**: High-performance binary protocol for service-to-service communication
+- **External HTTP APIs**: RESTful APIs for web clients and external integrations
+- **Protocol Buffers**: Schema-first API design with code generation
+- **Service Mesh Integration**: Istio/Linkerd integration for traffic management and security
+
+#### Communication Patterns
+
+- **Unary RPCs**: Traditional request-response patterns for simple operations
+- **Server Streaming**: Real-time data feeds and large result set pagination
+- **Client Streaming**: Bulk data uploads and batch processing operations
+- **Bidirectional Streaming**: Real-time chat and collaborative features
+
+### BookWorm gRPC Service Map
+
+| Service      | gRPC APIs                       | Consumers                | Communication Pattern    |
+| ------------ | ------------------------------- | ------------------------ | ------------------------ |
+| **Catalog**  | BookService, CategoryService    | Ordering, Rating, Search | Unary RPC                |
+| **Ordering** | OrderService, OrderQueryService | Finance, Notification    | Unary + Server Streaming |
+| **Basket**   | BasketService                   | Ordering                 | Unary RPC                |
+
+## Rationale
+
+### Why gRPC?
+
+#### Performance and Efficiency
+
+1. **Binary Protocol**: HTTP/2-based binary protocol provides superior performance over JSON/HTTP
+2. **Connection Multiplexing**: Single connection supports multiple concurrent requests with lower overhead
+3. **Streaming Support**: Native support for streaming operations reduces memory usage and improves responsiveness
+4. **Compression**: Built-in message compression reduces network bandwidth usage
+5. **Connection Reuse**: Persistent connections reduce connection establishment overhead
+
+#### Type Safety and Contract Management
+
+1. **Protocol Buffers**: Strongly-typed schema definition with automatic code generation
+2. **Backward Compatibility**: Schema evolution with backward compatibility guarantees
+3. **Cross-Language Support**: Language-neutral schemas support polyglot microservices architecture
+4. **Contract Enforcement**: Compile-time validation prevents integration errors
+5. **Version Management**: Schema versioning with graceful handling of version mismatches
+
+#### Developer Experience and Tooling
+
+1. **Code Generation**: Automatic client and server stub generation from proto definitions
+2. **IDE Integration**: Excellent tooling support in Visual Studio and other IDEs
+3. **Testing Support**: Rich testing frameworks and mock generation capabilities
+4. **Documentation**: Self-documenting APIs through protocol buffer definitions
+5. **Debugging Tools**: Comprehensive debugging and introspection capabilities
+
+### gRPC vs Alternative Protocols
+
+#### Advantages over HTTP/JSON APIs
+
+1. **Performance**: 7-10x faster serialization and smaller message sizes
+2. **Type Safety**: Compile-time contract validation vs runtime errors
+3. **Streaming**: Native bidirectional streaming support
+4. **Generated Clients**: Automatic client generation vs manual HTTP client implementation
+5. **Network Efficiency**: Binary encoding and connection multiplexing
+
+#### Advantages over Message Queues
+
+1. **Synchronous Operations**: Direct request-response for immediate consistency requirements
+2. **Lower Latency**: Sub-millisecond response times for real-time operations
+3. **Simpler Flow Control**: Direct client-server communication without queue management
+4. **Error Handling**: Immediate error responses vs delayed error processing
+5. **Load Balancing**: Client-side load balancing with health checking
+
+#### Integration with Event-Driven Architecture
+
+1. **Complementary Patterns**: gRPC for synchronous operations, events for asynchronous integration
+2. **Command Query Separation**: gRPC for queries, events for state changes
+3. **Consistency Models**: Strong consistency via gRPC, eventual consistency via events
+4. **Performance Optimization**: Optimal protocol selection based on operation characteristics
+5. **Hybrid Communication**: Services can expose both gRPC and event interfaces
+
+## Implementation
+
+### Service Implementation Architecture
+
+- **Service Interface Definition**: Protocol buffer service definitions with comprehensive documentation
+- **Server Implementation**: ASP.NET Core gRPC services implementing the generated interfaces
+- **Client Integration**: Strongly-typed gRPC clients injected via dependency injection
+- **Interceptors**: Cross-cutting concerns like authentication, logging, and monitoring
+- **Health Checks**: Built-in health checking with service-specific health indicators
+
+### Cross-Cutting Concerns Integration
+
+- **Authentication**: JWT token-based authentication with interceptor implementation
+- **Authorization**: Role-based access control integrated with service methods
+- **Logging**: Structured logging with request/response correlation
+- **Monitoring**: Prometheus metrics and distributed tracing integration
+- **Rate Limiting**: Service-level rate limiting with circuit breaker patterns
+
+## Configuration
+
+### gRPC Service Configuration
+
+```csharp
+// Server configuration
+services.AddGrpc(options => options.EnableDetailedErrors = environment.IsDevelopment());
+
+// Client configuration
+services.AddGrpcClient<BookService.BookServiceClient>(options => options.Address = new Uri("https://catalog-service"));
+```
+
+## Consequences
+
+### Positive
+
+- **High Performance**: Superior performance compared to HTTP/JSON for service-to-service communication
+- **Type Safety**: Strong typing prevents integration errors and improves developer productivity
+- **Streaming Capabilities**: Native support for real-time and streaming operations
+- **Schema Evolution**: Backward-compatible API evolution with protocol buffers
+- **Cross-Platform**: Language-neutral schemas support future technology choices
+- **Tooling Support**: Excellent development and debugging tools
+
+### Negative
+
+- **Browser Limitations**: Limited browser support requires HTTP/JSON gateway for web clients
+- **Learning Curve**: Protocol buffers and gRPC concepts require team training
+- **Debugging Complexity**: Binary protocol makes network-level debugging more challenging
+- **Firewall Issues**: HTTP/2 may face firewall and proxy compatibility issues
+- **Load Balancer Compatibility**: Some load balancers may not fully support HTTP/2 features
+
+### Risks and Mitigation
+
+| Risk                    | Impact | Probability | Mitigation Strategy                           |
+| ----------------------- | ------ | ----------- | --------------------------------------------- |
+| HTTP/2 Compatibility    | Medium | Low         | HTTP/1.1 fallback, infrastructure testing     |
+| Schema Breaking Changes | High   | Medium      | Schema governance, compatibility testing      |
+| Performance Bottlenecks | Medium | Low         | Performance testing, monitoring, optimization |
+| Browser Integration     | Medium | High        | HTTP/JSON gateway, BFF pattern                |
+| Team Learning Curve     | Low    | High        | Training programs, documentation, mentoring   |
+
+## References
+
+- [gRPC Documentation](https://grpc.io/docs/)
+- [Protocol Buffers Guide](https://developers.google.com/protocol-buffers/docs/proto3)
+- [ASP.NET Core gRPC](https://docs.microsoft.com/en-us/aspnet/core/grpc/)
+- [gRPC Performance Best Practices](https://grpc.io/docs/guides/performance/)
+- [gRPC Load Balancing](https://grpc.io/blog/grpc-load-balancing/)

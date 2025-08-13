@@ -1,0 +1,556 @@
+---
+sidebar_position: 3
+title: Level 2
+last_update:
+  author: Nhan Nguyen
+---
+
+# Level 2 - Detailed Service Decomposition
+
+Here we zoom into the most important building blocks from Level 1, showing their internal structure and components based on the actual implementation. We focus on the core business services that represent the most complexity and business value.
+
+## Catalog Service - Internal Structure
+
+The Catalog Service manages product catalog, AI-powered search, and file storage with sophisticated AI integration.
+
+```mermaid
+C4Component
+    title Component diagram for Catalog Service
+
+    Container_Boundary(catalog, "Catalog Service") {
+        Container_Boundary(application, "Application") {
+            Component(catalogEndpoint, "Catalog Endpoints", ".NET", "Manages book catalog operations")
+            Component(catalogFacade, "Catalog Facade", ".NET", "Core business logic for catalog management")
+            Component(vectorService, "Vector Service", ".NET", "Manages vector embeddings for semantic search")
+            Component(storageService, "Storage Service", ".NET", "Manages book files and metadata")
+            Component(llmService, "LLM Service", ".NET", "Handles AI-powered recommendations")
+            Component(eventHandler, "Event Handler", ".NET", "Handles event publishing/subscribing")
+        }
+
+        Container_Boundary(infrastructure, "Infrastructure") {
+            ComponentDb(storageSystem, "Storage System", "Azure Blob Storage", "Stores book files and resources")
+            ComponentQueue(eventBus, "Event Bus", "RabbitMQ", "Handles async communication")
+
+            Container_Boundary(ai, "AI") {
+                Component(ollama, "Model Manager", "Ollama", "Get and run models")
+
+                Container_Boundary(model, "Model") {
+                    Component(chatModel, "Chat Model", "Gemma 3", "Handles chat interactions")
+                    Component(embeddingModel, "Embedding Model", "Nomic Embed Text", "Handles embedding operations")
+                }
+            }
+
+            Container_Boundary(database, "Database") {
+                ComponentDb(catalogDb, "Catalog DB", "PostgreSQL", "Stores book metadata and catalog information")
+                ComponentDb(vectorDb, "Vector DB", "Qdrant", "Stores vector embeddings")
+            }
+        }
+    }
+
+    Rel(catalogEndpoint, catalogFacade, "Uses", "Internal")
+    Rel(catalogFacade, storageService, "Uses", "Internal")
+    Rel(catalogFacade, vectorService, "Uses", "Internal")
+    Rel(catalogFacade, llmService, "Uses", "Internal")
+
+    Rel(ollama, chatModel, "Uses", "Internal")
+    Rel(ollama, embeddingModel, "Uses", "Internal")
+
+    Rel(catalogFacade, catalogDb, "Reads/Writes", "SQL")
+    Rel(vectorService, vectorDb, "Reads/Writes", "API")
+    Rel(llmService, vectorDb, "Reads/Writes", "API")
+    Rel(llmService, ollama, "Uses", "Internal")
+    Rel(storageService, storageSystem, "Reads/Writes", "File I/O")
+
+    BiRel(eventHandler, eventBus, "Publishes/Subscribes", "Async")
+    BiRel(catalogFacade, eventHandler, "Uses", "Internal")
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+```
+
+### Catalog Endpoints
+
+**Purpose/Responsibility**
+Exposes HTTP REST endpoints for catalog operations including book management, search, and metadata operations.
+
+**Interface(s)**
+
+- REST API for book CRUD operations
+- Search and filtering endpoints
+- File upload/download endpoints
+
+### Catalog Facade
+
+**Purpose/Responsibility**
+Core business logic coordinator that orchestrates operations across storage, vector, and LLM services.
+
+**Interface(s)**
+
+- Business operation coordination
+- Transaction management
+- Domain rule enforcement
+
+### Vector Service
+
+**Purpose/Responsibility**
+Manages vector embeddings for semantic search capabilities using AI models.
+
+**Interface(s)**
+
+- Vector embedding generation
+- Similarity search operations
+- Index management
+
+### Storage Service
+
+**Purpose/Responsibility**
+Manages book files and metadata storage in Azure Blob Storage.
+
+**Interface(s)**
+
+- File upload/download operations
+- Metadata management
+- Storage optimization
+
+### LLM Service
+
+**Purpose/Responsibility**
+Provides AI-powered recommendations and chat interactions using large language models.
+
+**Interface(s)**
+
+- AI recommendation generation
+- Chat model integration
+- Vector database queries
+
+## Order Service - Internal Structure
+
+The Order Service handles order lifecycle management with event-driven architecture.
+
+```mermaid
+C4Component
+    title Component diagram for Order Service
+
+    Container_Boundary(order, "Order Service") {
+        Container_Boundary(application, "Application") {
+            Component(orderEndpoint, "Order Endpoints", ".NET", "Manages order operations")
+            Component(orderFacade, "Order Facade", ".NET", "Core business logic for order management")
+            Component(eventPublisher, "Event Publisher", ".NET", "Publishes order events")
+        }
+
+        Container_Boundary(infrastructure, "Infrastructure") {
+            ComponentDb(orderDb, "Order DB", "PostgreSQL", "Stores order information and history")
+            ComponentQueue(eventBus, "Event Bus", "RabbitMQ", "Handles async communication")
+        }
+    }
+
+    Rel(orderEndpoint, orderFacade, "Uses", "Internal")
+    BiRel(orderFacade, eventPublisher, "Uses", "Internal")
+    Rel(orderFacade, orderDb, "Reads/Writes", "SQL")
+
+    BiRel(eventPublisher, eventBus, "Publishes/Subscribes", "Async")
+
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+```
+
+### Order Endpoints
+
+**Purpose/Responsibility**
+REST API endpoints for order management including creation, updates, queries, and buyer management.
+
+**Interface(s)**
+
+- Order CRUD operations
+- Buyer management endpoints
+- Order status tracking
+- Real-time order streaming
+
+### Order Facade
+
+**Purpose/Responsibility**
+Core business logic for order processing, state management, and business rule enforcement.
+
+**Interface(s)**
+
+- Order lifecycle management
+- Business rule validation
+- Integration with external services
+
+### Event Publisher
+
+**Purpose/Responsibility**
+Publishes domain events for order state changes to notify other services.
+
+**Interface(s)**
+
+- Event publishing to message bus
+- Event subscription handling
+- Message routing and delivery
+
+## Finance Service - Internal Structure
+
+The Finance Service implements saga orchestration for distributed transaction management.
+
+```mermaid
+C4Component
+    title Component diagram for Finance Service
+
+    Container_Boundary(finance, "Finance Service") {
+        Container_Boundary(application, "Application") {
+            Component(financeEndpoint, "Finance Endpoints", ".NET", "Get state machine")
+            Component(sagaOrchestrator, "Saga Orchestrator", ".NET", "Coordinates distributed transactions")
+        }
+
+        Container_Boundary(infrastructure, "Infrastructure") {
+            ComponentQueue(eventBus, "Event Bus", "RabbitMQ", "Handles async communication")
+            ComponentDb(financeDb, "Finance DB", "PostgreSQL", "Stores financial records and transactions")
+        }
+    }
+
+    Rel(financeEndpoint, sagaOrchestrator, "Uses", "Internal")
+    Rel(sagaOrchestrator, financeDb, "Reads/Writes", "SQL")
+    BiRel(sagaOrchestrator, eventBus, "Publishes/Subscribes", "Async")
+
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+```
+
+### Finance Endpoints
+
+**Purpose/Responsibility**
+Provides API endpoints for retrieving state machine information and financial operation status.
+
+**Interface(s)**
+
+- State machine query endpoints
+- Transaction status queries
+- Financial reporting APIs
+
+### Saga Orchestrator
+
+**Purpose/Responsibility**
+Coordinates distributed transactions across multiple services using the Saga pattern for order processing.
+
+**Interface(s)**
+
+- Saga workflow coordination
+- Distributed transaction management
+- Compensation action handling
+- State persistence and recovery
+
+## Chat Service - Internal Structure
+
+The Chat Service provides AI-powered conversational capabilities with advanced model integration.
+
+```mermaid
+C4Component
+    title Component diagram for Chat Service
+
+    Container_Boundary(chat, "Chat Service") {
+        Container_Boundary(application, "Application") {
+            Component(chatEndpoint, "Chat Endpoints", ".NET", "Manages chat operations")
+            Component(chatFacade, "Chat Facade", ".NET", "Core business logic for chat management")
+            Component(llmService, "LLM Service", ".NET", "Handles AI-powered conversations")
+        }
+
+        Container_Boundary(infrastructure, "Infrastructure") {
+            ComponentDb(chatDb, "Chat Database", "PostgreSQL", "Stores chat sessions and history")
+
+            Container_Boundary(ai, "AI") {
+                Component(ollama, "Ollama", "Ollama", "Get and run models")
+                Component(mcp, "MCP Server", "MCP C# SDK", "Get and run tools")
+
+                Container_Boundary(model, "Model") {
+                    Component(chatModel, "Chat Model", "Gemma 3", "Handles chat interactions")
+                }
+            }
+        }
+    }
+
+    Rel(chatEndpoint, chatFacade, "Uses", "Internal")
+    Rel(chatFacade, llmService, "Uses", "Internal")
+
+    Rel(ollama, chatModel, "Uses", "Internal")
+    Rel(mcp, llmService, "Uses", "MCP")
+
+    Rel(llmService, ollama, "Uses", "Internal")
+
+    Rel(llmService, chatDb, "Reads/Writes", "Internal")
+
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+```
+
+### Chat Endpoints
+
+**Purpose/Responsibility**
+REST API endpoints for chat session management and real-time conversation handling.
+
+**Interface(s)**
+
+- Chat session CRUD operations
+- Real-time chat streaming
+- Chat history retrieval
+
+### Chat Facade
+
+**Purpose/Responsibility**
+Core business logic for chat management, session handling, and conversation flow control.
+
+**Interface(s)**
+
+- Chat session orchestration
+- Business rule enforcement
+- Integration coordination
+
+### LLM Service
+
+**Purpose/Responsibility**
+Handles AI-powered conversations using large language models with tool integration capabilities.
+
+**Interface(s)**
+
+- AI conversation processing
+- Model Context Protocol (MCP) integration
+- Chat model interaction
+- Context management and persistence
+
+## Supporting Services
+
+### Basket Service
+
+```mermaid
+C4Component
+    title Component diagram for Basket Service
+
+    Container_Boundary(basket, "Basket Service") {
+      Container_Boundary(application, "Application") {
+        Component(basketEndpoint, "Basket Endpoints", ".NET", "Manages basket operations")
+        Component(basketFacade, "Basket Facade", ".NET", "Core business logic for basket management")
+        Component(eventPublisher, "Event Handler", ".NET", "Publishes basket events")
+      }
+
+      Container_Boundary(infrastructure, "Infrastructure") {
+        ComponentDb(basketDb, "Basket DB", "Redis", "Stores basket data")
+        ComponentQueue(eventBus, "Event Bus", "RabbitMQ", "Handles async communication")
+      }
+    }
+
+    Rel(basketEndpoint, basketFacade, "Uses", "Internal")
+    BiRel(basketFacade, eventPublisher, "Uses", "Internal")
+
+    Rel(basketFacade, basketDb, "Reads/Writes", "Redis Protocol")
+    BiRel(eventPublisher, eventBus, "Publishes/Subscribes", "Async")
+
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+```
+
+### Rating Service
+
+```mermaid
+C4Component
+    title Component diagram for Rating Service
+
+    Container_Boundary(rating, "Rating Service") {
+        Container_Boundary(application, "Application") {
+            Component(ratingEndpoint, "Rating Endpoints", ".NET", "Manages feedback and rating operations")
+            Component(ratingFacade, "Rating Manager", ".NET", "Core business logic for rating management")
+            Component(eventHandler, "Event Handler", ".NET", "Handles event publishing/subscribing")
+        }
+
+        Container_Boundary(infrastructure, "Infrastructure") {
+            ComponentDb(ratingDb, "Rating DB", "PostgreSQL", "Stores user feedback and ratings")
+            ComponentQueue(eventBus, "Event Bus", "RabbitMQ", "Handles async communication")
+        }
+    }
+
+    Rel(ratingEndpoint, ratingFacade, "Uses", "Internal")
+    Rel(ratingFacade, ratingDb, "Reads/Writes", "SQL")
+    Rel(ratingFacade, eventHandler, "Uses", "Internal")
+    BiRel(eventHandler, eventBus, "Publishes/Subscribes", "Async")
+
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+```
+
+### Notification Service
+
+```mermaid
+C4Component
+    title Component diagram for Notification Service
+
+    Container_Boundary(notification, "Notification Service") {
+        Container_Boundary(application, "Application") {
+            Component(smtpClient, "SMTP Client", ".NET", "Email delivery abstraction")
+            Component(emailService, "Email Service", ".NET", "Handles email composition and delivery")
+            Component(eventHandler, "Event Handler", ".NET", "Processes incoming events")
+            Component(templateEngine, "Template Engine", ".NET", "Manages email templates")
+        }
+
+        Container_Boundary(infrastructure, "Infrastructure") {
+            ComponentDb(notificationDb, "Notification DB", "Azure Table Storage", "Stores notification records")
+            ComponentQueue(eventBus, "Event Bus", "RabbitMQ", "Handles async communication")
+        }
+    }
+
+    System_Ext(sendGrid, "SendGrid", "Production email provider")
+
+    Rel(emailService, templateEngine, "Uses", "Internal")
+    Rel(emailService, smtpClient, "Uses", "Internal")
+    Rel(emailService, notificationDb, "Reads/Writes", "TCP")
+
+    Rel(eventBus, eventHandler, "Events", "Async")
+    Rel(eventHandler, emailService, "Uses", "Internal")
+    Rel(emailService, templateEngine, "Uses", "Internal")
+    Rel(emailService, smtpClient, "Uses", "Internal")
+    Rel(smtpClient, sendGrid, "Sends emails", "SMTP/API")
+
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+```
+
+### API Layer
+
+**Purpose/Responsibility**
+Exposes HTTP REST endpoints for catalog operations including product browsing, search, and catalog management.
+
+**Interface(s)**
+
+- HTTP REST API for external clients
+- OpenAPI/Swagger documentation
+- JWT authentication integration
+
+**Quality/Performance Characteristics**
+
+- Response caching for read operations
+- Rate limiting and throttling
+- Input validation and sanitization
+
+### gRPC Service
+
+**Purpose/Responsibility**
+Provides high-performance internal API for other services to retrieve product information.
+
+**Interface(s)**
+
+- gRPC protocol buffers interface
+- Service discovery integration
+- Load balancing support
+
+**Quality/Performance Characteristics**
+
+- Low-latency communication
+- Binary serialization
+- Connection pooling
+
+### Search Engine
+
+**Purpose/Responsibility**
+Implements AI-powered semantic search using vector embeddings for intelligent product discovery.
+
+**Interface(s)**
+
+- Vector similarity search
+- Text search with ranking
+- Filter and faceting capabilities
+
+**Quality/Performance Characteristics**
+
+- Sub-second search response times
+- Relevance scoring and ranking
+- Real-time index updates
+
+### Inventory Manager
+
+**Purpose/Responsibility**
+Manages product stock levels, availability, and inventory operations.
+
+**Interface(s)**
+
+- Stock level queries
+- Inventory reservation and release
+- Stock movement tracking
+
+**Quality/Performance Characteristics**
+
+- ACID transactions for stock operations
+- Optimistic concurrency control
+- Real-time stock updates
+
+## Order Service - Internal Structure
+
+The Order Service orchestrates the complex order fulfillment process across multiple services.
+
+```mermaid
+C4Container
+    title Order Service - Internal Components
+
+    Container_Boundary(order, "Order Service") {
+        Component(api, "Order API", "ASP.NET Core", "Order management endpoints")
+        Component(workflow, "Order Workflow", "Workflow Engine", "Order state management")
+        Component(saga, "Saga Orchestrator", "MassTransit", "Distributed transaction coordination")
+        Component(validation, "Order Validator", "C#", "Order validation logic")
+        Component(pricing, "Pricing Engine", "C#", "Price calculation and discounts")
+    }
+
+    ContainerDb(orderDb, "Order Database", "PostgreSQL", "Order data")
+    SystemQueue(eventBus, "Event Bus", "RabbitMQ", "Domain events")
+    System_Ext(catalog, "Catalog Service", "Product validation")
+    System_Ext(finance, "Finance Service", "Payment processing")
+
+    Rel(api, validation, "Validates")
+    Rel(api, pricing, "Calculates")
+    Rel(api, workflow, "Manages")
+    Rel(workflow, saga, "Coordinates")
+    Rel(saga, eventBus, "Publishes/Subscribes", "AMQP")
+    Rel(validation, catalog, "Validates products", "gRPC")
+    Rel(saga, finance, "Processes payment", "Events")
+
+    Rel(workflow, orderDb, "Persists", "TCP")
+    Rel(pricing, orderDb, "Reads", "TCP")
+````
+
+### Order API
+
+**Purpose/Responsibility**
+Provides RESTful endpoints for order creation, modification, tracking, and management.
+
+**Interface(s)**
+
+- CRUD operations for orders
+- Order status tracking
+- Order history and reporting
+
+**Quality/Performance Characteristics**
+
+- Idempotent operations
+- Request validation
+- Audit logging
+
+### Order Workflow
+
+**Purpose/Responsibility**
+Manages the order state machine and lifecycle from creation to completion.
+
+**Interface(s)**
+
+- State transition management
+- Business rule enforcement
+- Workflow persistence
+
+**Quality/Performance Characteristics**
+
+- Reliable state transitions
+- Compensation actions
+- Recovery from failures
+
+### Saga Orchestrator
+
+**Purpose/Responsibility**
+Coordinates distributed transactions across multiple services using the Saga pattern.
+
+**Interface(s)**
+
+- Saga definition and execution
+- Compensation transaction handling
+- Cross-service coordination
+
+**Quality/Performance Characteristics**
+
+- Eventually consistent transactions
+- Failure isolation
+- Automatic retry and compensation

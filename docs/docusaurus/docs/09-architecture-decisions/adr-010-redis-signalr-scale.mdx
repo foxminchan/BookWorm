@@ -1,0 +1,559 @@
+---
+sidebar_position: 11
+title: ADR-010 - Redis for SignalR Scale
+last_update:
+  author: Nhan Nguyen
+---
+
+# ADR-010: Redis and SignalR Scale
+
+## Status
+
+**Accepted** - March 2025
+
+## Context
+
+BookWorm's microservices architecture requires high-performance caching and real-time communication scaling capabilities. The system faces several performance and scalability challenges:
+
+- **Caching Requirements**: Fast data access for frequently requested catalog information, user sessions, and computed results
+- **SignalR Scaling**: Multi-instance SignalR deployment requires connection state synchronization
+- **Session Management**: Distributed session storage for user authentication and basket state
+- **Performance Optimization**: Sub-second response times for catalog queries and real-time features
+- **Horizontal Scaling**: Support for multiple service instances with shared state
+- **Data Consistency**: Maintain cache consistency across service instances
+- **Memory Efficiency**: Optimize memory usage for large datasets and connection state
+- **High Availability**: Ensure cache availability doesn't become a single point of failure
+- **Cost Optimization**: Balance performance benefits with operational costs
+
+Traditional in-memory caching doesn't scale across multiple instances, while database-only approaches can't meet the performance requirements for real-time features and high-traffic scenarios.
+
+## Decision
+
+Adopt **Redis** as the primary distributed caching and session storage solution, serving both as a high-performance cache for application data and as the backplane for SignalR horizontal scaling.
+
+### Redis Usage Strategy
+
+#### Multi-Purpose Redis Deployment
+
+- **Distributed Cache**: Application-level caching for frequently accessed data
+- **SignalR Backplane**: Connection state management for real-time communication
+- **Session Store**: User session and authentication state storage
+- **Basket Storage**: Shopping cart state management
+- **Rate Limiting**: Distributed rate limiting counters and windows
+
+#### Service Integration Pattern
+
+- **Cache-Aside**: Primary caching pattern for most services
+- **Write-Through**: Critical data with immediate consistency requirements
+- **Write-Behind**: High-throughput scenarios with eventual consistency
+- **Cache Warming**: Proactive loading of frequently accessed data
+
+### Service Redis Usage Map
+
+BookWorm uses Redis primarily for distributed state management and real-time communication scaling, with services utilizing Redis based on their specific needs:
+
+- **Chat Service**: Custom backplane implementation for conversation state and message buffering
+- **Caching Services**: Distributed caching for frequently accessed data
+- **Session Management**: User authentication and state storage
+
+## Rationale
+
+### Why Redis?
+
+#### Performance Advantages
+
+1. **In-Memory Speed**: Microsecond-level response times for cached data
+2. **Data Structure Support**: Rich data types (strings, hashes, lists, sets, sorted sets)
+3. **Atomic Operations**: Built-in atomic operations for counters and complex data manipulation
+4. **Pub/Sub Capabilities**: Real-time messaging for SignalR backplane and event notifications
+5. **Pipelining**: Batch operations for improved throughput
+
+#### Scalability Features
+
+1. **Horizontal Scaling**: Redis Cluster support for large-scale deployments
+2. **High Availability**: Master-replica setup with automatic failover
+3. **Memory Efficiency**: Optimized memory usage with compression and eviction policies
+4. **Connection Pooling**: Efficient connection management across multiple clients
+5. **Persistence Options**: Flexible persistence strategies for different use cases
+
+#### Ecosystem Integration
+
+1. **.NET Integration**: Excellent support through StackExchange.Redis
+2. **SignalR Backplane**: Native SignalR scaling support
+3. **ASP.NET Core**: Built-in distributed cache and session providers
+4. **Azure Integration**: Azure Cache for Redis with enterprise features
+5. **Monitoring**: Rich monitoring and diagnostics capabilities
+
+### Redis Architecture Overview
+
+BookWorm implements a custom Redis backplane for the Chat service, providing:
+
+- **Conversation State Management**: Redis-based message buffering and state persistence
+- **Real-time Communication**: Pub/Sub channels for cross-instance message delivery
+- **Cancellation Management**: Distributed cancellation token coordination
+- **Message Backlog**: Persistent storage for conversation history and replay
+
+The implementation focuses on scalable real-time chat functionality rather than traditional SignalR backplane patterns.
+
+## Implementation Strategy
+
+### Redis Configuration and Setup
+
+### Core Implementation
+
+#### Custom Redis Backplane Services
+
+```csharp
+internal static class Extensions
+{
+    public static void AddBackplaneServices(this IServiceCollection services)
+    {
+        services.AddSingleton<IConversationState, RedisConversationState>();
+        services.AddSingleton<ICancellationManager, RedisCancellationManager>();
+        services.AddSingleton<RedisBackplaneService>();
+    }
+}
+
+public sealed class RedisBackplaneService(
+    IConversationState conversationState,
+    ICancellationManager cancellationManager)
+{
+    public IConversationState ConversationState { get; } = conversationState;
+    public ICancellationManager CancellationManager { get; } = cancellationManager;
+}
+```
+
+#### Conversation State Management
+
+```csharp
+public interface IConversationState
+{
+    Task CompleteAsync(Guid conversationId, Guid messageId);
+    Task PublishFragmentAsync(Guid conversationId, ClientMessageFragment fragment);
+    IAsyncEnumerable<ClientMessageFragment> SubscribeAsync(
+        Guid conversationId, Guid? lastMessageId, CancellationToken cancellationToken = default);
+    Task<IList<ClientMessage>> GetUnpublishedMessagesAsync(Guid conversationId);
+}
+```
+
+#### Cancellation Management
+
+```csharp
+public interface ICancellationManager
+{
+    CancellationToken GetCancellationToken(Guid id);
+    Task CancelAsync(Guid id);
+}
+
+public sealed class RedisCancellationManager : ICancellationManager
+{
+    private readonly RedisChannel _channelName = RedisChannel.Literal(
+        $"{nameof(Chat).ToLowerInvariant()}-{nameof(CancellationToken).ToLowerInvariant()}");
+
+    public CancellationToken GetCancellationToken(Guid id)
+    {
+        var cts = new CancellationTokenSource();
+        _tokens[id] = cts;
+        return cts.Token;
+    }
+
+    public async Task CancelAsync(Guid id) =>
+        await _subscriber.PublishAsync(_channelName, id.ToString());
+}
+```
+
+## Advanced Features
+
+#### Connection Pool Configuration
+
+```csharp
+public class RedisConfiguration
+{
+    public static IServiceCollection AddRedisServices(
+        this IServiceCollection services,
+        string connectionString)
+    {
+        // Configure StackExchange.Redis
+        services.AddSingleton<IConnectionMultiplexer>(provider =>
+        {
+            var configuration = ConfigurationOptions.Parse(connectionString);
+            configuration.AbortOnConnectFail = false;
+            configuration.ConnectRetry = 3;
+            configuration.ConnectTimeout = 5000;
+            configuration.SyncTimeout = 5000;
+            configuration.ResponseTimeout = 5000;
+            configuration.KeepAlive = 180;
+
+            return ConnectionMultiplexer.Connect(configuration);
+        });
+
+        // Add distributed cache
+        services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = connectionString;
+            options.InstanceName = "BookWorm";
+        });
+
+        // Add session state
+        services.AddStackExchangeRedisDataProtection(options =>
+        {
+            options.Configuration = connectionString;
+        });
+
+        return services;
+    }
+}
+```
+
+### Caching Patterns Implementation
+
+#### Cache-Aside Pattern
+
+```csharp
+public class CatalogCacheService
+{
+    private readonly IDistributedCache _cache;
+    private readonly ICatalogRepository _repository;
+    private readonly ILogger<CatalogCacheService> _logger;
+
+    public async Task<Book> GetBookAsync(Guid bookId)
+    {
+        var cacheKey = $"book:{bookId}";
+
+        // Try to get from cache first
+        var cachedBook = await _cache.GetStringAsync(cacheKey);
+        if (!string.IsNullOrEmpty(cachedBook))
+        {
+            _logger.LogDebug("Cache hit for book {BookId}", bookId);
+            return JsonSerializer.Deserialize<Book>(cachedBook);
+        }
+
+        // Cache miss - get from database
+        _logger.LogDebug("Cache miss for book {BookId}", bookId);
+        var book = await _repository.GetByIdAsync(bookId);
+
+        if (book != null)
+        {
+            // Store in cache with TTL
+            var cacheOptions = new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30)
+            };
+
+            await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(book), cacheOptions);
+        }
+
+        return book;
+    }
+
+    public async Task InvalidateBookAsync(Guid bookId)
+    {
+        var cacheKey = $"book:{bookId}";
+        await _cache.RemoveAsync(cacheKey);
+        _logger.LogDebug("Invalidated cache for book {BookId}", bookId);
+    }
+}
+```
+
+#### Write-Through Pattern for Critical Data
+
+```csharp
+public class BasketCacheService
+{
+    private readonly IDatabase _database;
+    private readonly IBasketRepository _repository;
+
+    public async Task<Basket> UpdateBasketAsync(Basket basket)
+    {
+        // Update database first
+        var updatedBasket = await _repository.UpdateAsync(basket);
+
+        // Update cache immediately (write-through)
+        var cacheKey = $"basket:{basket.UserId}";
+        var cacheValue = JsonSerializer.Serialize(updatedBasket);
+
+        await _database.StringSetAsync(cacheKey, cacheValue, TimeSpan.FromHours(24));
+
+        return updatedBasket;
+    }
+
+    public async Task<Basket> GetBasketAsync(string userId)
+    {
+        var cacheKey = $"basket:{userId}";
+        var cachedBasket = await _database.StringGetAsync(cacheKey);
+
+        if (cachedBasket.HasValue)
+        {
+            return JsonSerializer.Deserialize<Basket>(cachedBasket);
+        }
+
+        // Load from database and cache
+        var basket = await _repository.GetByUserIdAsync(userId);
+        if (basket != null)
+        {
+            await _database.StringSetAsync(cacheKey, JsonSerializer.Serialize(basket),
+                TimeSpan.FromHours(24));
+        }
+
+        return basket;
+    }
+}
+```
+
+### SignalR Backplane Configuration
+
+#### SignalR Redis Backplane Setup
+
+```csharp
+public class SignalRConfiguration
+{
+    public static IServiceCollection AddSignalRWithRedis(
+        this IServiceCollection services,
+        string redisConnectionString)
+    {
+        services.AddSignalR(options =>
+        {
+            options.EnableDetailedErrors = true;
+            options.MaximumReceiveMessageSize = 1024 * 1024; // 1MB
+            options.StreamBufferCapacity = 10;
+            options.MaximumParallelInvocationsPerClient = 2;
+        })
+        .AddStackExchangeRedis(redisConnectionString, options =>
+        {
+            options.Configuration.ChannelPrefix = "BookWorm.SignalR";
+        });
+
+        return services;
+    }
+}
+```
+
+#### Connection State Management
+
+```csharp
+public class ChatHub : Hub<IChatClient>
+{
+    private readonly IDatabase _redis;
+    private readonly ILogger<ChatHub> _logger;
+
+    public override async Task OnConnectedAsync()
+    {
+        var userId = Context.User?.FindFirst("sub")?.Value;
+        if (!string.IsNullOrEmpty(userId))
+        {
+            // Store connection mapping in Redis
+            await _redis.HashSetAsync($"user:connections:{userId}",
+                Context.ConnectionId, DateTime.UtcNow.ToString());
+
+            // Add to user group
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"user:{userId}");
+
+            _logger.LogInformation("User {UserId} connected with connection {ConnectionId}",
+                userId, Context.ConnectionId);
+        }
+
+        await base.OnConnectedAsync();
+    }
+
+    public override async Task OnDisconnectedAsync(Exception exception)
+    {
+        var userId = Context.User?.FindFirst("sub")?.Value;
+        if (!string.IsNullOrEmpty(userId))
+        {
+            // Remove connection mapping
+            await _redis.HashDeleteAsync($"user:connections:{userId}", Context.ConnectionId);
+
+            _logger.LogInformation("User {UserId} disconnected from connection {ConnectionId}",
+                userId, Context.ConnectionId);
+        }
+
+        await base.OnDisconnectedAsync(exception);
+    }
+
+    public async Task SendMessageToUser(string targetUserId, string message)
+    {
+        // Get all connections for target user
+        var connections = await _redis.HashGetAllAsync($"user:connections:{targetUserId}");
+
+        if (connections.Any())
+        {
+            await Clients.Group($"user:{targetUserId}").ReceiveMessage(new ChatMessage
+            {
+                Content = message,
+                SenderId = Context.User?.FindFirst("sub")?.Value,
+                Timestamp = DateTime.UtcNow
+            });
+        }
+    }
+}
+```
+
+### Advanced Redis Features
+
+## Advanced Features
+
+#### Search Results Caching
+
+```csharp
+public class SearchCacheService
+{
+    private readonly IDatabase _database;
+    private readonly ILogger<SearchCacheService> _logger;
+
+    public async Task<SearchResults> GetCachedSearchResultsAsync(string query, SearchFilters filters)
+    {
+        var cacheKey = GenerateSearchCacheKey(query, filters);
+        var cachedResults = await _database.HashGetAllAsync(cacheKey);
+
+        if (cachedResults.Any())
+        {
+            var results = new SearchResults
+            {
+                Query = cachedResults["query"],
+                Results = JsonSerializer.Deserialize<List<Book>>(cachedResults["results"]),
+                TotalCount = cachedResults["total_count"],
+                CachedAt = DateTime.Parse(cachedResults["cached_at"])
+            };
+
+            _logger.LogDebug("Search cache hit for query: {Query}", query);
+            return results;
+        }
+
+        return null;
+    }
+
+    public async Task CacheSearchResultsAsync(
+        string query,
+        SearchFilters filters,
+        SearchResults results)
+    {
+        var cacheKey = GenerateSearchCacheKey(query, filters);
+        var cacheData = new HashEntry[]
+        {
+            new("query", query),
+            new("results", JsonSerializer.Serialize(results.Results)),
+            new("total_count", results.TotalCount.ToString()),
+            new("cached_at", DateTime.UtcNow.ToString("O"))
+        };
+
+        await _database.HashSetAsync(cacheKey, cacheData);
+        await _database.KeyExpireAsync(cacheKey, TimeSpan.FromMinutes(15));
+
+        _logger.LogDebug("Cached search results for query: {Query}", query);
+    }
+}
+```
+
+### Cache Warming and Preloading
+
+#### Proactive Cache Warming
+
+```csharp
+public class CacheWarmupService : BackgroundService
+{
+    private readonly ICatalogService _catalogService;
+    private readonly IDistributedCache _cache;
+    private readonly ILogger<CacheWarmupService> _logger;
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            try
+            {
+                await WarmupPopularBooks();
+                await WarmupCategories();
+                await WarmupFeaturedContent();
+
+                // Wait 1 hour before next warmup
+                await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during cache warmup");
+                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+            }
+        }
+    }
+
+    private async Task WarmupPopularBooks()
+    {
+        var popularBooks = await _catalogService.GetPopularBooksAsync(100);
+
+        var tasks = popularBooks.Select(async book =>
+        {
+            var cacheKey = $"book:{book.Id}";
+            var cacheOptions = new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(60)
+            };
+
+            await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(book), cacheOptions);
+        });
+
+        await Task.WhenAll(tasks);
+        _logger.LogInformation("Warmed up {Count} popular books", popularBooks.Count);
+    }
+}
+```
+
+## Consequences
+
+### Key Features
+
+#### Custom Chat Backplane
+
+- **Message Buffering**: Redis-based message fragment management and assembly
+- **Conversation State**: Persistent conversation state across service instances
+- **Pattern Subscriptions**: Redis pub/sub channels for cross-instance communication
+- **Cancellation Coordination**: Distributed cancellation token management
+
+#### Real-time Capabilities
+
+- **Message Replay**: Conversation backlog storage for reconnecting clients
+- **Connection Management**: User connection tracking across multiple instances
+- **Fragment Assembly**: Real-time message fragment streaming and assembly
+
+### Positive Outcomes
+
+- **Real-time Scaling**: Custom backplane enables horizontal scaling of chat functionality
+- **Message Reliability**: Redis-based buffering ensures message delivery across instances
+- **Connection Management**: Distributed connection state supports load balancing
+- **Performance**: Sub-millisecond message delivery for real-time chat features
+
+### Challenges and Considerations
+
+- **Complexity**: Custom backplane implementation requires careful management
+- **Memory Usage**: Message buffering and conversation state consume Redis memory
+- **Dependencies**: Redis availability directly impacts chat functionality
+- **Operational Overhead**: Additional monitoring and maintenance requirements
+
+### Risk Mitigation
+
+- **Monitoring**: Redis health checks and performance monitoring
+- **Graceful Degradation**: Fallback mechanisms when Redis is unavailable
+- **Message TTL**: Automatic cleanup of conversation backlogs
+- **Connection Recovery**: Robust reconnection and state restoration
+
+## Implementation Status
+
+### Current Implementation
+
+- ✅ Custom Redis backplane for Chat service
+- ✅ Conversation state management with message buffering
+- ✅ Distributed cancellation token coordination
+- ✅ Pattern-based pub/sub messaging
+- ✅ Message fragment assembly and streaming
+
+### Future Enhancements
+
+- Additional caching patterns for other services
+- Advanced monitoring and alerting
+- Performance optimization and scaling
+
+## Related Architecture Decisions
+
+- [ADR-001: Microservices Architecture](./adr-001-microservices-architecture)
+- [ADR-006: SignalR for Real-time Communication](./adr-006-signalr-realtime)
+- [ADR-008: API Gateway Pattern Implementation](./adr-008-api-gateway)
+- [ADR-007: Azure Container Apps Deployment](./adr-007-aca-deployment)

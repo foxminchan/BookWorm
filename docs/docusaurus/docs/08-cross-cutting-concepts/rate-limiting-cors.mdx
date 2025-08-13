@@ -1,0 +1,166 @@
+---
+sidebar_position: 16
+title: Rate Limiting & CORS
+last_update:
+  author: Nhan Nguyen
+---
+
+# Rate Limiting & CORS
+
+The BookWorm application implements comprehensive rate limiting and Cross-Origin Resource Sharing (CORS) policies to protect APIs from abuse, ensure fair resource usage, and enable secure cross-origin requests.
+
+## Rate Limiting
+
+### Rate Limiting Architecture
+- **Built-in ASP.NET Core Rate Limiting** - Native framework rate limiting support
+- **Policy-Based Configuration** - Flexible rate limiting policies for different scenarios
+- **Client Identification** - Multiple client identification strategies
+- **Distributed Rate Limiting** - Coordinated rate limiting across service instances
+
+### Rate Limiting Policies
+- **Fixed Window** - Allow specific number of requests per time window
+- **Sliding Window** - More granular request rate control with sliding time windows
+- **Token Bucket** - Allow burst requests with token replenishment
+- **Concurrency Limiting** - Limit concurrent request processing
+
+### Client Identification Strategies
+- **IP Address-Based** - Rate limit based on client IP address
+- **User-Based** - Rate limit based on authenticated user identity
+- **API Key-Based** - Rate limit based on API key or client identifier
+- **Custom Headers** - Rate limit based on custom request headers
+
+## CORS Configuration
+
+### CORS Policy Management
+- **Policy-Based Configuration** - Named CORS policies for different scenarios
+- **Environment-Specific Policies** - Different CORS policies for development and production
+- **Dynamic Policy Configuration** - Runtime CORS policy configuration
+- **Credential Support** - Handle requests with credentials appropriately
+
+### Origin Management
+- **Allowed Origins** - Configure specific allowed origins for cross-origin requests
+- **Wildcard Support** - Support for wildcard origins in development
+- **Subdomain Support** - Allow requests from subdomains
+- **Protocol Flexibility** - Support for HTTP/HTTPS protocol differences
+
+### CORS Headers Configuration
+- **Access-Control-Allow-Methods** - Configure allowed HTTP methods
+- **Access-Control-Allow-Headers** - Specify allowed request headers
+- **Access-Control-Expose-Headers** - Expose specific response headers to clients
+- **Access-Control-Max-Age** - Configure preflight request cache duration
+
+## Integration with Service Defaults
+
+### Kestrel Integration
+- **Server-Level Configuration** - Configure rate limiting at the Kestrel server level
+- **Middleware Pipeline Integration** - Proper ordering in middleware pipeline
+- **Performance Optimization** - Optimize rate limiting for high-throughput scenarios
+- **Resource Management** - Efficient memory and CPU usage for rate limiting
+
+### Authentication Integration
+- **Authenticated vs Anonymous** - Different rate limits for authenticated and anonymous users
+- **Role-Based Rate Limiting** - Different rate limits based on user roles
+- **Premium User Support** - Higher rate limits for premium or privileged users
+- **Service Account Support** - Special rate limits for service accounts
+
+## Rate Limiting Policies
+
+### API Endpoint Protection
+- **Per-Endpoint Policies** - Specific rate limits for different API endpoints
+- **Resource-Based Limiting** - Rate limits based on resource types and operations
+- **Method-Specific Limits** - Different limits for GET, POST, PUT, DELETE operations
+- **Critical Path Protection** - Enhanced protection for critical business operations
+
+### User Experience Optimization
+- **Graceful Degradation** - Provide meaningful responses when limits are exceeded
+- **Rate Limit Headers** - Include rate limit information in response headers
+- **Retry Guidance** - Provide retry-after information for clients
+- **Progressive Penalties** - Implement progressive penalty systems for repeated violations
+
+### Abuse Prevention
+- **Suspicious Activity Detection** - Detect and prevent abusive request patterns
+- **Automatic Blocking** - Temporarily block clients exceeding limits
+- **Whitelist Support** - Maintain whitelists for trusted clients
+- **Blacklist Support** - Block known bad actors
+
+## CORS Security
+
+### Secure CORS Configuration
+- **Principle of Least Privilege** - Allow only necessary origins and methods
+- **Credential Handling** - Secure handling of credentials in CORS requests
+- **Content Type Restrictions** - Restrict allowed content types for security
+- **Header Validation** - Validate and sanitize CORS headers
+
+### Attack Prevention
+- **CSRF Protection** - Prevent cross-site request forgery through CORS
+- **XSS Prevention** - Prevent cross-site scripting through proper CORS configuration
+- **Data Exfiltration Prevention** - Prevent unauthorized data access through CORS
+- **Origin Validation** - Strict validation of request origins
+
+## Monitoring and Analytics
+
+### Rate Limiting Metrics
+- **Request Rate Monitoring** - Track request rates and patterns
+- **Limit Violation Tracking** - Monitor rate limit violations and trends
+- **Client Behavior Analysis** - Analyze client request patterns
+- **Performance Impact Assessment** - Measure rate limiting impact on performance
+
+### CORS Monitoring
+- **CORS Request Tracking** - Monitor cross-origin request patterns
+- **Preflight Request Analysis** - Analyze preflight request efficiency
+- **Error Rate Monitoring** - Track CORS-related errors and failures
+- **Origin Analysis** - Monitor request origins and patterns
+
+### Alerting and Notifications
+- **Abuse Detection Alerts** - Alert on potential abuse or unusual patterns
+- **Rate Limit Threshold Alerts** - Notify when approaching rate limits
+- **CORS Configuration Alerts** - Alert on CORS configuration issues
+- **Performance Impact Alerts** - Alert on performance degradation
+
+## Configuration Management
+
+### Environment-Specific Configuration
+- **Development Configuration** - Relaxed policies for development environments
+- **Staging Configuration** - Production-like policies for staging
+- **Production Configuration** - Strict security policies for production
+- **Testing Configuration** - Special configuration for automated testing
+
+### Dynamic Configuration
+- **Runtime Configuration Changes** - Update policies without service restart
+- **Feature Flags** - Toggle rate limiting features based on conditions
+- **A/B Testing Support** - Test different rate limiting strategies
+- **Emergency Controls** - Quick policy changes during incidents
+
+## Error Handling
+
+### Rate Limiting Errors
+- **HTTP 429 Too Many Requests** - Standard response for rate limit violations
+- **Meaningful Error Messages** - Provide clear error descriptions
+- **Retry Information** - Include retry-after headers and guidance
+- **Context Preservation** - Maintain request context in error responses
+
+### CORS Errors
+- **CORS Policy Violations** - Handle CORS policy violations gracefully
+- **Preflight Failures** - Proper error handling for preflight request failures
+- **Origin Validation Errors** - Clear errors for invalid origins
+- **Method Not Allowed** - Appropriate responses for disallowed methods
+
+## Best Practices
+
+### Rate Limiting Best Practices
+- **Fair Usage Policies** - Implement fair and reasonable rate limits
+- **Gradual Enforcement** - Gradually enforce rate limits to avoid disruption
+- **Client Communication** - Clearly communicate rate limits to API consumers
+- **Performance Testing** - Test rate limiting under realistic load conditions
+
+### CORS Best Practices
+- **Minimal Permissions** - Grant minimum necessary CORS permissions
+- **Environment Awareness** - Use appropriate CORS policies for each environment
+- **Regular Review** - Regularly review and update CORS policies
+- **Security Assessment** - Regular security assessment of CORS configuration
+
+### Operational Excellence
+- **Monitoring and Alerting** - Comprehensive monitoring of rate limiting and CORS
+- **Documentation** - Document rate limiting and CORS policies clearly
+- **Client Support** - Provide support for clients dealing with rate limits
+- **Incident Response** - Have procedures for handling rate limiting incidents

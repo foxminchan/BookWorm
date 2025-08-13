@@ -1,0 +1,278 @@
+---
+sidebar_position: 12
+title: ADR-011 - RabbitMQ for Message Broker
+last_update:
+  author: Nhan Nguyen
+---
+
+# ADR-011: RabbitMQ for Message Broker
+
+## Status
+
+**Accepted** - July 2024
+
+## Context
+
+BookWorm's event-driven microservices architecture requires reliable asynchronous communication between services to maintain loose coupling and ensure system resilience. The messaging requirements include:
+
+- **Event-Driven Integration**: Domain and integration events between microservices
+- **Reliable Message Delivery**: Guarantee message delivery with durability and persistence
+- **Message Ordering**: Maintain message order for critical business processes
+- **Dead Letter Handling**: Manage failed message processing with retry mechanisms
+- **Scalability**: Support high message throughput and concurrent processing
+- **Transaction Support**: Ensure message delivery consistency with database operations
+- **Routing Flexibility**: Complex message routing based on content and metadata
+- **Monitoring**: Comprehensive visibility into message flows and system health
+- **Performance**: Low-latency message processing for real-time business operations
+- **Integration**: Seamless integration with .NET applications and existing infrastructure
+
+The choice of message broker significantly impacts system reliability, performance, and operational complexity across the entire distributed architecture.
+
+## Decision
+
+Adopt **RabbitMQ** as the primary message broker, integrated with **MassTransit** for .NET-based message handling, to provide reliable, scalable, and feature-rich asynchronous communication between BookWorm's microservices.
+
+### Messaging Architecture Strategy
+
+#### RabbitMQ Topology Design
+
+- **Virtual Hosts**: Logical separation for different environments and concerns
+- **Exchange Types**: Topic, direct, and fanout exchanges for flexible routing
+- **Queue Strategy**: Durable queues with appropriate TTL and dead letter configuration
+- **Message Persistence**: Persistent messages for critical business events
+
+#### MassTransit Integration Pattern
+
+- **Consumer Configuration**: Strongly-typed message consumers with error handling
+- **Sagas**: State machine implementation for complex workflows
+- **Outbox Pattern**: Ensure reliable message publishing with database transactions
+- **Retry Policies**: Configurable retry strategies with exponential backoff
+
+### Service Messaging Integration
+
+Services communicate through domain events that are mapped to integration events and published via RabbitMQ. Each service can both produce and consume events as needed.
+
+## Rationale
+
+### Why RabbitMQ?
+
+#### Reliability and Durability
+
+1. **Message Persistence**: Durable queues and persistent messages ensure no message loss
+2. **Acknowledgments**: Publisher and consumer acknowledgments guarantee delivery
+3. **Clustering**: High availability through RabbitMQ cluster configuration
+4. **Mirrored Queues**: Queue replication across cluster nodes for fault tolerance
+5. **Transaction Support**: AMQP transactions for critical message operations
+
+#### Advanced Messaging Features
+
+1. **Flexible Routing**: Advanced routing with topic exchanges and binding patterns
+2. **Dead Letter Exchanges**: Automatic handling of failed messages with retry logic
+3. **Message TTL**: Time-to-live configuration for message expiration
+4. **Priority Queues**: Message prioritization for critical operations
+5. **Message Deduplication**: Built-in support for message deduplication
+
+#### Performance and Scalability
+
+1. **High Throughput**: Capable of processing thousands of messages per second
+2. **Lazy Queues**: Memory-efficient handling of large message backlogs
+3. **Flow Control**: Automatic flow control to prevent memory exhaustion
+4. **Connection Multiplexing**: Efficient connection and channel management
+5. **Horizontal Scaling**: Scale consumers independently for different message types
+
+### Why MassTransit Integration?
+
+#### .NET Ecosystem Integration
+
+1. **Strongly-Typed Messages**: Type-safe message definition and handling
+2. **Dependency Injection**: Seamless integration with ASP.NET Core DI container
+3. **Configuration**: Fluent configuration API with convention-based setup
+4. **Testing Support**: Comprehensive testing framework for message-driven applications
+5. **Observability**: Built-in metrics, tracing, and health checks
+
+#### Enterprise Patterns
+
+1. **Saga State Machines**: Built-in support for complex workflow orchestration
+2. **Request/Response**: Synchronous-like patterns over asynchronous messaging
+3. **Routing Slip**: Choreography pattern for multi-step business processes
+4. **Outbox/Inbox**: Reliable messaging patterns with database integration
+5. **Circuit Breaker**: Fault tolerance patterns for message processing
+
+### Messaging Architecture Overview
+
+BookWorm uses a simplified event-driven architecture with RabbitMQ and MassTransit:
+
+- **Domain Events** are raised within services and mapped to **Integration Events**
+- **Integration Events** are published to RabbitMQ exchanges
+- Services consume relevant events through dedicated queues
+- Failed messages are handled through dead letter queues with retry policies
+
+## Implementation Strategy
+
+### RabbitMQ Configuration and Setup
+
+### Core Implementation
+
+#### Integration Event Base Class
+
+```csharp
+public abstract record IntegrationEvent
+{
+    public Guid Id { get; } = Guid.CreateVersion7();
+    public DateTime CreationDate { get; } = DateTimeHelper.UtcNow();
+}
+```
+
+#### Event Bus Configuration
+
+```csharp
+public static void AddEventBus(
+    this IHostApplicationBuilder builder,
+    Type type,
+    Action<IBusRegistrationConfigurator>? busConfigure = null,
+    Action<IBusRegistrationContext, IRabbitMqBusFactoryConfigurator>? rabbitMqConfigure = null)
+{
+    var connectionString = builder.Configuration.GetConnectionString(Components.Queue);
+
+    builder.Services.AddMassTransit(config =>
+    {
+        config.SetKebabCaseEndpointNameFormatter();
+        config.AddConsumers(type.Assembly);
+        config.AddActivities(type.Assembly);
+        config.AddRequestClient(type);
+
+        config.UsingRabbitMq((context, configurator) =>
+        {
+            configurator.Host(new Uri(connectionString));
+            configurator.ConfigureEndpoints(context);
+            configurator.UseMessageRetry(retryConfigurator =>
+                retryConfigurator
+                    .Exponential(3, TimeSpan.FromMilliseconds(200),
+                               TimeSpan.FromMinutes(120), TimeSpan.FromMilliseconds(200))
+                    .Ignore<ValidationException>());
+        });
+    });
+}
+```
+
+#### Event Dispatcher
+
+```csharp
+public sealed class EventDispatcher(IBus bus, IEventMapper eventMapper) : IEventDispatcher
+{
+    public async Task DispatchAsync(DomainEvent @event, CancellationToken cancellationToken = default)
+    {
+        var integrationEvent = eventMapper.MapToIntegrationEvent(@event)
+            ?? throw new InvalidOperationException($"No integration event mapping found for '{@event.GetType().Name}'.");
+
+        await bus.Publish(integrationEvent, cancellationToken);
+    }
+}
+```
+
+## Advanced Features
+
+#### Exchange and Queue Topology
+
+```csharp
+public class RabbitMQTopologyConfiguration
+{
+    public static void ConfigureTopology(IBusRegistrationConfigurator configurator)
+    {
+        // Configure main topic exchange for domain events
+        configurator.UsingRabbitMq((context, cfg) =>
+        {
+            cfg.Host("rabbitmq-cluster", "/bookworm", h =>
+            {
+                h.Username("bookworm");
+                h.Password("secure-password");
+                h.Heartbeat(TimeSpan.FromSeconds(30));
+                h.RequestedConnectionTimeout(TimeSpan.FromSeconds(30));
+            });
+
+            // Configure exchanges
+            cfg.Publish<BookCreatedIntegrationEvent>(p => p.ExchangeType = ExchangeType.Topic);
+            cfg.Publish<OrderPlacedIntegrationEvent>(p => p.ExchangeType = ExchangeType.Topic);
+            cfg.Publish<PaymentProcessedIntegrationEvent>(p => p.ExchangeType = ExchangeType.Topic);
+
+            // Configure dead letter handling
+            cfg.ReceiveEndpoint("bookworm.failed", e =>
+            {
+                e.ConfigureDeadLetterExchange("bookworm.events.failed");
+                e.Consumer<DeadLetterConsumer>();
+            });
+
+            cfg.ConfigureEndpoints(context);
+        });
+    }
+}
+```
+
+## Advanced Features
+
+### Message Routing and Filtering
+
+### Key Features
+
+#### Message Retry and Error Handling
+
+- **Exponential Backoff**: 3 retries with increasing delays (200ms to 120 minutes)
+- **Exception Filtering**: Validation exceptions are not retried
+- **Dead Letter Queues**: Failed messages are routed to dead letter exchanges
+
+#### Observability Integration
+
+- **OpenTelemetry**: Automatic tracing and metrics collection
+- **Distributed Tracing**: Message flows tracked across services
+- **Health Checks**: Built-in health monitoring for RabbitMQ connectivity
+
+## Consequences
+
+### Positive Outcomes
+
+- **Reliable Messaging**: Guaranteed message delivery with persistence and acknowledgments
+- **Loose Coupling**: Services communicate asynchronously without direct dependencies
+- **Scalability**: Independent scaling of message producers and consumers
+- **Flexibility**: Advanced routing and message transformation capabilities
+- **Fault Tolerance**: Dead letter handling and automatic retry mechanisms
+- **Observability**: Comprehensive monitoring of message flows and system health
+
+### Challenges and Considerations
+
+- **Operational Complexity**: Additional infrastructure component requiring specialized knowledge
+- **Message Ordering**: Complex ordering guarantees in distributed scenarios
+- **Debugging Difficulty**: Tracing message flows across multiple services and queues
+- **Resource Usage**: Memory and disk usage for message persistence and queuing
+- **Network Partitions**: Handling network splits in clustered deployments
+
+### Risk Mitigation
+
+- **Clustering**: High availability through RabbitMQ cluster configuration
+- **Monitoring**: Comprehensive monitoring of queue depths, processing rates, and errors
+- **Backup Strategy**: Regular backup of message definitions and configuration
+- **Circuit Breakers**: Prevent cascading failures with circuit breaker patterns
+- **Documentation**: Clear documentation of message contracts and routing patterns
+
+## Implementation Roadmap
+
+### Current Implementation
+
+- ✅ RabbitMQ integration with MassTransit
+- ✅ Basic event bus configuration and retry policies
+- ✅ Integration event base class with Version 7 GUIDs
+- ✅ Event dispatcher for domain-to-integration event mapping
+- ✅ OpenTelemetry integration for observability
+
+### Future Enhancements
+
+- Saga implementation for complex workflows
+- Outbox pattern for transactional messaging
+- Advanced routing and filtering capabilities
+- Performance optimization and connection pooling
+
+## Related Architecture Decisions
+
+- [ADR-002: Event-Driven Architecture with CQRS](./adr-002-event-driven-cqrs)
+- [ADR-013: Event Sourcing for Ordering Service](./adr-013-ordering-eventsourcing.mdx)
+- [ADR-014: SendGrid for Email Provider](./adr-014-sendgrid-email-provider)
+- [ADR-016: Domain-Driven Design](./adr-016-ddd)

@@ -1,0 +1,138 @@
+---
+sidebar_position: 8
+title: Observability
+last_update:
+  author: Nhan Nguyen
+---
+
+# Observability
+
+The BookWorm application implements comprehensive observability using OpenTelemetry, providing insights into application performance, behavior, and health across the distributed system.
+
+## Observability Pillars
+
+### Metrics
+- **Application Metrics** - Business KPIs and application-specific counters
+- **System Metrics** - CPU, memory, disk, and network utilization
+- **Runtime Metrics** - .NET runtime performance indicators
+- **Custom Metrics** - Domain-specific measurements and business metrics
+
+### Logging
+- **Structured Logging** - JSON-formatted logs with consistent schema
+- **Correlation IDs** - Request tracking across service boundaries
+- **Context Propagation** - Maintain context throughout request lifecycle
+- **Log Aggregation** - Centralized logging for distributed system analysis
+
+### Distributed Tracing
+- **Request Tracing** - End-to-end request flow visualization
+- **Service Dependencies** - Understand service interaction patterns
+- **Performance Analysis** - Identify bottlenecks and optimization opportunities
+- **Error Correlation** - Link errors to specific request contexts
+
+## OpenTelemetry Integration
+
+### Core Components
+- **OpenTelemetry.Extensions.Hosting** - Host integration for automatic setup
+- **OpenTelemetry.Exporter.OpenTelemetryProtocol** - OTLP export for observability platforms
+- **Custom Instrumentation** - Application-specific telemetry collection
+- **Auto-Instrumentation** - Automatic instrumentation for common libraries
+
+### Instrumentation Libraries
+- **OpenTelemetry.Instrumentation.AspNetCore** - HTTP request/response tracing
+- **OpenTelemetry.Instrumentation.Http** - HTTP client instrumentation
+- **OpenTelemetry.Instrumentation.GrpcNetClient** - gRPC client tracing
+- **OpenTelemetry.Instrumentation.Runtime** - .NET runtime metrics
+
+## Telemetry Configuration
+
+### Trace Configuration
+- **Activity Sources** - Custom trace sources for application components
+- **Sampling Strategies** - Intelligent sampling to manage trace volume
+- **Span Enrichment** - Add contextual information to traces
+- **Custom Processors** - Process and filter telemetry data
+
+### Metrics Configuration
+- **Meter Providers** - Metric collection and aggregation
+- **Histogram Buckets** - Configurable histogram boundaries
+- **Counter Aggregation** - Sum and rate calculations
+- **Gauge Metrics** - Point-in-time measurements
+
+### Export Configuration
+- **Multiple Exporters** - Send telemetry to multiple backends
+- **Batch Processing** - Efficient batching of telemetry data
+- **Retry Logic** - Handle export failures gracefully
+- **Compression** - Reduce network overhead for telemetry data
+
+## Custom Telemetry
+
+### Activity Scopes
+- **Request Scopes** - Track request lifecycle and context
+- **Business Operations** - Trace domain-specific operations
+- **Performance Monitoring** - Measure critical path performance
+- **Resource Utilization** - Track resource consumption patterns
+
+### Telemetry Tags
+- **Standard Tags** - Consistent tagging across all services
+- **Custom Tags** - Application-specific metadata
+- **Dynamic Tags** - Context-dependent tag values
+- **Cardinality Control** - Manage tag cardinality for performance
+
+### Telemetry Propagation
+- **Context Propagation** - Maintain trace context across services
+- **Baggage** - Carry application-specific data in trace context
+- **Custom Propagators** - Support for custom trace context formats
+- **Header Management** - HTTP header-based context propagation
+
+## Performance Optimization
+
+### Instrumentation Performance
+- **Sampling Strategies** - Reduce overhead with intelligent sampling
+- **Conditional Instrumentation** - Enable/disable instrumentation based on context
+- **Batch Processing** - Efficient telemetry data processing
+- **Memory Management** - Optimize memory usage for telemetry collection
+
+### Data Volume Management
+- **Attribute Limits** - Control span and metric attribute counts
+- **Event Limits** - Manage span event volumes
+- **Link Limits** - Control span link counts
+- **Sampling Configuration** - Balance observability needs with performance
+
+## Monitoring Integration
+
+### Observability Platforms
+- **Prometheus** - Metrics collection and alerting
+- **Grafana** - Visualization and dashboarding
+- **Jaeger** - Distributed tracing analysis
+- **Elastic Stack** - Log aggregation and search
+
+### Cloud Platforms
+- **Azure Monitor** - Azure-native observability
+- **AWS X-Ray** - AWS distributed tracing
+- **Google Cloud Monitoring** - GCP observability suite
+- **Datadog** - Third-party observability platform
+
+### Alerting and Notifications
+- **Metric-Based Alerts** - Threshold-based alerting on key metrics
+- **Trace-Based Alerts** - Alerting based on trace patterns
+- **Log-Based Alerts** - Error pattern detection in logs
+- **Composite Alerts** - Multi-signal alerting strategies
+
+## Best Practices
+
+### Telemetry Design
+- **Meaningful Names** - Use descriptive names for metrics and traces
+- **Consistent Units** - Standardize units across all metrics
+- **Appropriate Cardinality** - Balance detail with performance
+- **Context Enrichment** - Add relevant context to telemetry data
+
+### Performance Guidelines
+- **Minimize Overhead** - Keep instrumentation lightweight
+- **Lazy Initialization** - Initialize telemetry components on demand
+- **Resource Cleanup** - Properly dispose of telemetry resources
+- **Batch Operations** - Group telemetry operations efficiently
+
+### Operational Considerations
+- **Data Retention** - Configure appropriate data retention policies
+- **Security** - Protect sensitive information in telemetry data
+- **Compliance** - Ensure telemetry practices meet regulatory requirements
+- **Cost Management** - Monitor and optimize observability costs

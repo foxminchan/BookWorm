@@ -23,12 +23,12 @@ owners:
 
 ## Overview
 
-The Create Book endpoint allows administrators to add new books to the Catalog domain. This operation follows Domain-Driven Design principles and our [event-driven CQRS pattern](https://foxminchan.github.io/BookWorm/architecture/adr/adr-002-event-driven-cqrs.html) by:
+The Create Book endpoint allows administrators to add new books to the Catalog domain. This operation follows Domain-Driven Design principles and our [event-driven CQRS pattern](https://foxminchan.github.io/BookWorm/architecture-decisions/adr-002-event-driven-cqrs) by:
 
 1. Validating the book entity against domain rules and invariants
 2. Creating a new aggregate root in the Books collection
 3. Publishing a `BookCreatedEvent` that other bounded contexts can subscribe to
-4. Automatically generating embeddings for semantic search using our [AI integration capabilities](https://foxminchan.github.io/BookWorm/architecture/adr/adr-009-ai-integration.html)
+4. Automatically generating embeddings for semantic search using our [AI integration capabilities](https://foxminchan.github.io/BookWorm/architecture-decisions/adr-009-ai-integration)
 
 This endpoint represents the command side of our CQRS pattern implementation. The book entity becomes immediately available for queries after successful creation.
 
