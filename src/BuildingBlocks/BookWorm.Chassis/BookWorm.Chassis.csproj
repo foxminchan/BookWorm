@@ -15,6 +15,7 @@
   <ItemGroup Label="AI">
     <PackageReference Include="A2A.AspNetCore" />
     <PackageReference Include="CommunityToolkit.Aspire.OllamaSharp" />
+    <PackageReference Include="Microsoft.SemanticKernel.Agents.A2A" />
     <PackageReference Include="Microsoft.SemanticKernel.Agents.Core" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.Qdrant" />

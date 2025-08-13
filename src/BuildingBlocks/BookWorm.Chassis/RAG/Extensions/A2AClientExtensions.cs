@@ -1,6 +1,6 @@
 ﻿using A2A;
-using BookWorm.Chassis.RAG.A2A;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.SemanticKernel.Agents.A2A;
 
 namespace BookWorm.Chassis.RAG.Extensions;
 
