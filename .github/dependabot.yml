@@ -48,17 +48,17 @@ updates:
         patterns:
           - "Microsoft.EntityFrameworkCore.*"
   - package-ecosystem: "npm"
-    directory: "/eventcatalog"
+    directory: "/docs/eventcatalog"
     schedule:
       interval: weekly
     commit-message:
       prefix: "Node (Event Catalog)"
   - package-ecosystem: "npm"
-    directory: "/docs"
+    directory: "/docs/docusaurus"
     schedule:
       interval: weekly
     commit-message:
-      prefix: "Node (VuePress)"
+      prefix: "Node (Docusaurus)"
   - package-ecosystem: "npm"
     directory: "/src/Aspire/BookWorm.AppHost/Container/k6"
     schedule:
@@ -66,7 +66,7 @@ updates:
     commit-message:
       prefix: "Node (k6)"
   - package-ecosystem: "npm"
-    directory: "/src/Aspire/BookWorm.AppHost/Container/keycloak"
+    directory: "/src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify"
     schedule:
       interval: weekly
     commit-message:
