@@ -21,7 +21,7 @@ public sealed class BookService(IBookRepository repository, ILogger<BookService>
         }
 
         var book =
-            await repository.GetByIdAsync(Guid.Parse(request.BookId))
+            await repository.GetByIdAsync(Guid.Parse(request.BookId), context.CancellationToken)
             ?? throw new RpcException(
                 new(StatusCode.NotFound, $"Book with id {request.BookId} not found.")
             );
@@ -45,7 +45,8 @@ public sealed class BookService(IBookRepository repository, ILogger<BookService>
         }
 
         var books = await repository.ListAsync(
-            new BookFilterSpec(request.BookIds.Select(Guid.Parse).ToArray())
+            new BookFilterSpec([.. request.BookIds.Select(Guid.Parse)]),
+            context.CancellationToken
         );
 
         return MapToBookResponse(books);
@@ -57,7 +58,7 @@ public sealed class BookService(IBookRepository repository, ILogger<BookService>
         {
             Id = book.Id.ToString(),
             Name = book.Name,
-            Price = book.Price!.OriginalPrice,
+            Price = book.Price?.OriginalPrice,
             PriceSale = book.Price?.DiscountPrice,
             Status = book.Status == Status.InStock ? BookStatus.InStock : BookStatus.OutOfStock,
         };

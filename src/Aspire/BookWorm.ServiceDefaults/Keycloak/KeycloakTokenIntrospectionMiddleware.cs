@@ -12,6 +12,7 @@ public sealed class KeycloakTokenIntrospectionMiddleware(
     {
         var traceId = Activity.Current?.Id ?? context.TraceIdentifier;
         var authHeader = context.Request.Headers.Authorization.FirstOrDefault();
+        var cancellationToken = context.RequestAborted;
 
         var token = authHeader?.StartsWith(
             $"{JwtBearerDefaults.AuthenticationScheme} ",
@@ -36,7 +37,11 @@ public sealed class KeycloakTokenIntrospectionMiddleware(
                 ]
             );
 
-            var response = await httpClient.PostAsync(introspectionEndpoint, requestContent);
+            var response = await httpClient.PostAsync(
+                introspectionEndpoint,
+                requestContent,
+                cancellationToken
+            );
 
             if (!response.IsSuccessStatusCode)
             {
@@ -50,7 +55,7 @@ public sealed class KeycloakTokenIntrospectionMiddleware(
                 return;
             }
 
-            var content = await response.Content.ReadAsStringAsync();
+            var content = await response.Content.ReadAsStringAsync(cancellationToken);
             using var tokenResponse = JsonDocument.Parse(content);
 
             var isActive =
