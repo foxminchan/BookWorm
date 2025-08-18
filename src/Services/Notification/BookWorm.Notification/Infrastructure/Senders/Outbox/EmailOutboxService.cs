@@ -11,8 +11,7 @@ internal sealed class EmailOutboxService(IOutboxRepository repository, ISender a
     )
     {
         var mailbox =
-            mailMessage.To.Mailboxes.FirstOrDefault()
-            ?? throw new ArgumentNullException(
+            mailMessage.To.Mailboxes.FirstOrDefault() ?? throw new ArgumentNullException(
                 nameof(mailMessage),
                 "Message must have at least one recipient"
             );
