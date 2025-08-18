@@ -60,18 +60,7 @@
 - [Gitleaks](https://gitleaks.io/)
 - [Bun](https://bun.sh/)
 - [Just](https://github.com/casey/just)
-
-Install the `Aspire CLI` tool:
-
-```bash
-# Bash
-curl -sSL https://aspire.dev/install.sh | bash
-
-# PowerShell
-iex "& { $(irm https://aspire.dev/install.ps1) }"
-```
-
-Please refer to the [Aspire CLI documentation](https://learn.microsoft.com/en-us/dotnet/aspire/cli/install) for more details.
+- [Aspire CLI](https://learn.microsoft.com/en-us/dotnet/aspire/cli/install)
 
 > [!NOTE]
 >
