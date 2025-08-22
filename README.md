@@ -1,6 +1,11 @@
 [![CI](https://github.com/foxminchan/BookWorm/actions/workflows/ci.yaml/badge.svg)](https://github.com/foxminchan/BookWorm/actions/workflows/ci.yaml)
+[![Documentation](https://github.com/foxminchan/BookWorm/actions/workflows/docs.yaml/badge.svg)](https://github.com/foxminchan/BookWorm/actions/workflows/docs.yaml)
+[![Container Security](https://github.com/foxminchan/BookWorm/actions/workflows/container.yml/badge.svg)](https://github.com/foxminchan/BookWorm/actions/workflows/container.yml)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=coverage)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
 [![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
 
 # 📖 BookWorm: A Practical .NET Aspire Application
 
@@ -15,6 +20,75 @@
     <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg">
   </a>
 </div>
+
+## 🚀 Technology Stack
+
+<table>
+  <tr>
+    <td><strong>🏗️ Framework</strong></td>
+    <td><strong>🌐 Communication</strong></td>
+    <td><strong>💾 Data</strong></td>
+    <td><strong>☁️ Cloud & DevOps</strong></td>
+  </tr>
+  <tr>
+    <td>
+      • .NET 9 & ASP.NET Core<br>
+      • .NET Aspire<br>
+      • Vertical Slice Architecture<br>
+      • Domain-Driven Design
+    </td>
+    <td>
+      • gRPC<br>
+      • REST APIs (OpenAPI)<br>
+      • AsyncAPI<br>
+      • Event-Driven Architecture
+    </td>
+    <td>
+      • Entity Framework Core<br>
+      • Redis (HybridCache)<br>
+      • Event Sourcing<br>
+      • Outbox/Inbox Patterns
+    </td>
+    <td>
+      • Azure Container Apps<br>
+      • Docker & Kubernetes<br>
+      • GitHub Actions<br>
+      • SonarQube
+    </td>
+  </tr>
+  <tr>
+    <td><strong>🤖 AI & ML</strong></td>
+    <td><strong>🔐 Security</strong></td>
+    <td><strong>📊 Monitoring</strong></td>
+    <td><strong>📚 Documentation</strong></td>
+  </tr>
+  <tr>
+    <td>
+      • Nomic Embed Text<br>
+      • Gemma 3 Chatbot<br>
+      • Semantic Kernel<br>
+      • Model Context Protocol
+    </td>
+    <td>
+      • Keycloak (OAuth 2.0/OIDC)<br>
+      • JWT Authentication<br>
+      • RBAC Authorization<br>
+      • Security Scanning
+    </td>
+    <td>
+      • Health Checks<br>
+      • Distributed Tracing<br>
+      • Metrics Collection<br>
+      • Load Testing (k6)
+    </td>
+    <td>
+      • Docusaurus (arc42)<br>
+      • EventCatalog<br>
+      • GitHub Wiki<br>
+      • OpenAPI/AsyncAPI
+    </td>
+  </tr>
+</table>
 
 ## Project Goals
 
@@ -64,32 +138,27 @@
 
 > [!NOTE]
 >
-> - Email services use [SendGrid](https://sendgrid.com/) in production and [Mailpit](https://mailpit.axllent.org/) locally.
-> - When running on Mac with Apple Silicon (M series processor), you need to install Rosetta 2 for grpc-tools compatibility.
+> - 📧 Email services use [SendGrid](https://sendgrid.com/) in production and [Mailpit](https://mailpit.axllent.org/) locally
+> - 🍎 Mac with Apple Silicon users need [Rosetta 2](https://support.apple.com/en-us/102527) for grpc-tools compatibility
+> - 🐳 Docker Desktop must be running before starting the application
 
 ### Run the Application
 
-1. **Clone the repository**
+Follow these steps to get BookWorm running locally:
 
-   ```bash
-   git clone git@github.com:foxminchan/BookWorm.git
-   ```
+```bash
+# 1. Clone the repository
+git clone git@github.com:foxminchan/BookWorm.git
 
-2. **Navigate to the project directory**
+# 2. Navigate to the project directory
+cd BookWorm
 
-   ```bash
-   cd BookWorm
-   ```
+# 3. Run the application (starts all services)
+just run
+```
 
-3. **Run the application**
-
-   ```bash
-   just run
-   ```
-
-> [!IMPORTANT]
+> [!TIP]
 >
-> - Docker must be running on your machine before starting the application.
 > - Run `just help` to see all available commands.
 
 ### Deploy the application
