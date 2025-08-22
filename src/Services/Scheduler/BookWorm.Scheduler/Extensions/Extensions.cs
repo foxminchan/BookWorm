@@ -49,10 +49,14 @@ internal static class Extensions
             // Commenting out the first times to apply the migrations
             opt.AddOperationalStore<SchedulerDbContext>(efOpt =>
             {
+                efOpt.CancelMissedTickersOnAppStart();
                 efOpt.UseModelCustomizerForMigrations();
-                efOpt.CancelMissedTickersOnApplicationRestart();
             });
-            opt.AddDashboard("/tickerq").AddDashboardBasicAuth();
+            opt.AddDashboard(config =>
+            {
+                config.BasePath = "/tickerq";
+                config.EnableBasicAuth = true;
+            });
         });
     }
 }
