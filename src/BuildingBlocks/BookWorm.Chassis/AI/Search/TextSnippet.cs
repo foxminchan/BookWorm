@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.VectorData;
 using Microsoft.SemanticKernel.Data;
 
-namespace BookWorm.Chassis.RAG.Search;
+namespace BookWorm.Chassis.AI.Search;
 
 public sealed class TextSnippet
 {

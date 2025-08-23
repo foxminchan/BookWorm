@@ -1,5 +1,5 @@
-﻿using BookWorm.Chassis.EF;
-using BookWorm.Chassis.RAG.Extensions;
+﻿using BookWorm.Chassis.AI.Extensions;
+using BookWorm.Chassis.EF;
 using BookWorm.Chat.Infrastructure.AgentOrchestration;
 using BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
 using BookWorm.Chat.Infrastructure.ChatHistory;

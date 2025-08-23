@@ -6,7 +6,7 @@ using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Agents.A2A;
 using ModelContextProtocol.Client;
 
-namespace BookWorm.Chassis.RAG.Extensions;
+namespace BookWorm.Chassis.AI.Extensions;
 
 public static class KernelExtensions
 {

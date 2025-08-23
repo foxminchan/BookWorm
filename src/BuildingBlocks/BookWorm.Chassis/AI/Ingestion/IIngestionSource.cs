@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Chassis.RAG.Ingestion;
+﻿namespace BookWorm.Chassis.AI.Ingestion;
 
 public interface IIngestionSource<in T>
     where T : class

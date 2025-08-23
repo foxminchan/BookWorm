@@ -2,7 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel.Agents.A2A;
 
-namespace BookWorm.Chassis.RAG.Extensions;
+namespace BookWorm.Chassis.AI.Extensions;
 
 public static class A2AClientExtensions
 {

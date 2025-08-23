@@ -1,6 +1,6 @@
 ﻿using A2A;
 using A2A.AspNetCore;
-using BookWorm.Chassis.RAG.Extensions;
+using BookWorm.Chassis.AI.Extensions;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Agents.A2A;

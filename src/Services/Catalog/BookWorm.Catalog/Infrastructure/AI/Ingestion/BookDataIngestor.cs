@@ -1,8 +1,8 @@
-﻿using BookWorm.Chassis.RAG.Ingestion;
-using BookWorm.Chassis.RAG.Search;
+﻿using BookWorm.Chassis.AI.Ingestion;
+using BookWorm.Chassis.AI.Search;
 using Microsoft.Extensions.VectorData;
 
-namespace BookWorm.Catalog.Infrastructure.GenAi.Ingestion;
+namespace BookWorm.Catalog.Infrastructure.AI.Ingestion;
 
 public sealed class BookDataIngestor(
     IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,

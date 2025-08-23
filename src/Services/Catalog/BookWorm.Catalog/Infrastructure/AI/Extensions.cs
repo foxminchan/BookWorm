@@ -1,9 +1,9 @@
-﻿using BookWorm.Catalog.Infrastructure.GenAi.Ingestion;
-using BookWorm.Chassis.RAG.Extensions;
-using BookWorm.Chassis.RAG.Ingestion;
-using BookWorm.Chassis.RAG.Search;
+﻿using BookWorm.Catalog.Infrastructure.AI.Ingestion;
+using BookWorm.Chassis.AI.Extensions;
+using BookWorm.Chassis.AI.Ingestion;
+using BookWorm.Chassis.AI.Search;
 
-namespace BookWorm.Catalog.Infrastructure.GenAi;
+namespace BookWorm.Catalog.Infrastructure.AI;
 
 internal static class Extensions
 {
