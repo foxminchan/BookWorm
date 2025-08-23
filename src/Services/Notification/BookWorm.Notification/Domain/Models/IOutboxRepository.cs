@@ -12,5 +12,5 @@ public interface IOutboxRepository : IRepository<Outbox>
         CancellationToken cancellationToken = default
     );
 
-    void BulkDelete(IEnumerable<Outbox> outboxes, CancellationToken cancellationToken = default);
+    void BulkDelete(IEnumerable<Outbox> outboxes);
 }

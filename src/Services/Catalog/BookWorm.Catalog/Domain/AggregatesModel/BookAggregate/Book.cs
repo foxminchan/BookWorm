@@ -62,7 +62,7 @@ public sealed class Book() : AuditableEntity, IAggregateRoot, ISoftDelete
     /// <param name="categoryId">The category ID of the book.</param>
     /// <param name="publisherId">The publisher ID of the book.</param>
     /// <param name="authorIds">The list of author IDs associated with the book.</param>
-    public void SetMetadata(
+    public Book SetMetadata(
         string? description,
         Guid categoryId,
         Guid publisherId,
@@ -76,6 +76,7 @@ public sealed class Book() : AuditableEntity, IAggregateRoot, ISoftDelete
         PublisherId = publisherId;
         _bookAuthors.AddRange(authorIds.Select(authorId => new BookAuthor(authorId)));
         RegisterDomainEvent(new BookCreatedEvent(this));
+        return this;
     }
 
     /// <summary>
@@ -89,7 +90,7 @@ public sealed class Book() : AuditableEntity, IAggregateRoot, ISoftDelete
     /// <param name="categoryId">The category ID of the book.</param>
     /// <param name="publisherId">The publisher ID of the book.</param>
     /// <param name="authorIds">The list of author IDs associated with the book.</param>
-    public void Update(
+    public Book Update(
         string name,
         string? description,
         decimal price,
@@ -121,24 +122,26 @@ public sealed class Book() : AuditableEntity, IAggregateRoot, ISoftDelete
         }
 
         RegisterDomainEvent(new BookChangedEvent($"{nameof(Book).ToLowerInvariant()}:{Id}"));
+        return this;
     }
 
     /// <summary>
     ///     Adds a rating to the book and updates the average rating.
     /// </summary>
     /// <param name="rating">The rating to add.</param>
-    public void AddRating(int rating)
+    public Book AddRating(int rating)
     {
         AverageRating = ((AverageRating * TotalReviews) + rating) / (TotalReviews + 1);
         TotalReviews++;
         RegisterDomainEvent(new BookChangedEvent($"{nameof(Book).ToLowerInvariant()}:{Id}"));
+        return this;
     }
 
     /// <summary>
     ///     Removes a rating from the book and updates the average rating.
     /// </summary>
     /// <param name="rating">The rating to remove.</param>
-    public void RemoveRating(int rating)
+    public Book RemoveRating(int rating)
     {
         if (TotalReviews <= 1)
         {
@@ -152,5 +155,6 @@ public sealed class Book() : AuditableEntity, IAggregateRoot, ISoftDelete
         }
 
         RegisterDomainEvent(new BookChangedEvent($"{nameof(Book).ToLowerInvariant()}:{Id}"));
+        return this;
     }
 }

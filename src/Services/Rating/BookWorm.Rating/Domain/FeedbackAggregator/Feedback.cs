@@ -24,8 +24,13 @@ public sealed class Feedback() : AuditableEntity, IAggregateRoot
     public string? Comment { get; private set; }
     public int Rating { get; }
 
-    public void Remove()
+    /// <summary>
+    ///     Marks the feedback for removal and raises a domain event to notify that the feedback has been deleted.
+    /// </summary>
+    /// <returns>The current instance of <see cref="Feedback" /> after registering the deletion event.</returns>
+    public Feedback Remove()
     {
         RegisterDomainEvent(new FeedbackDeletedEvent(BookId, Rating, Id));
+        return this;
     }
 }

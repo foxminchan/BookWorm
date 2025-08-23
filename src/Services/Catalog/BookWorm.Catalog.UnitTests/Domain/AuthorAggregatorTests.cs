@@ -63,4 +63,18 @@ public sealed class AuthorAggregatorTests
         // Assert
         act.ShouldThrow<CatalogDomainException>();
     }
+
+    [Test]
+    public void GivenValidName_WhenUpdatingAuthorName_ThenShouldReturnSameInstance()
+    {
+        // Arrange
+        var author = new Author("Original Name");
+        const string newName = "Updated Name";
+
+        // Act
+        var result = author.UpdateName(newName);
+
+        // Assert
+        result.ShouldBeSameAs(author);
+    }
 }

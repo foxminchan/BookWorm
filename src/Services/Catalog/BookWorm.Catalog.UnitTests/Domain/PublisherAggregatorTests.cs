@@ -60,4 +60,18 @@ public sealed class PublisherAggregatorTests
         // Assert
         act.ShouldThrow<CatalogDomainException>();
     }
+
+    [Test]
+    public void GivenValidName_WhenUpdatingPublisherName_ShouldReturnSameInstance()
+    {
+        // Arrange
+        var publisher = new Publisher("Original Name");
+        const string newName = "Updated Name";
+
+        // Act
+        var result = publisher.UpdateName(newName);
+
+        // Assert
+        result.ShouldBeSameAs(publisher);
+    }
 }

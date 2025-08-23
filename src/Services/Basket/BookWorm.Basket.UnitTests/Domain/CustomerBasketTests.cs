@@ -37,10 +37,7 @@ public sealed class CustomerBasketTests
     public void GivenNewItems_WhenUpdatingBasket_ThenItemsShouldBeReplaced()
     {
         // Arrange
-        var basket = new CustomerBasket(
-            Guid.CreateVersion7().ToString(),
-            [new BasketItem("book-1", 2)]
-        );
+        var basket = new CustomerBasket(Guid.CreateVersion7().ToString(), [new("book-1", 2)]);
 
         List<BasketItem> newItems = [new("book-3", 1), new("book-4", 3)];
 
@@ -60,7 +57,7 @@ public sealed class CustomerBasketTests
         // Arrange
         var basket = new CustomerBasket(
             Guid.CreateVersion7().ToString(),
-            [new BasketItem("book-1", 2), new BasketItem("book-2", 1)]
+            [new("book-1", 2), new BasketItem("book-2", 1)]
         );
 
         // Act
@@ -68,6 +65,21 @@ public sealed class CustomerBasketTests
 
         // Assert
         basket.Items.ShouldBeEmpty();
+    }
+
+    [Test]
+    public void GivenItems_WhenUpdatingBasket_ThenShouldReturnSameInstance()
+    {
+        // Arrange
+        var basket = new CustomerBasket(Guid.CreateVersion7().ToString(), [new("book-1", 2)]);
+
+        List<BasketItem> newItems = [new("book-3", 1)];
+
+        // Act
+        var result = basket.Update(newItems);
+
+        // Assert
+        result.ShouldBeSameAs(basket); // Verifies it's the same object instance
     }
 
     [Test]

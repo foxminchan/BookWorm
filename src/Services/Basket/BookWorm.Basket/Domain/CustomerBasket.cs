@@ -23,9 +23,15 @@ public sealed class CustomerBasket() : AuditableEntity<string>
 
     public IReadOnlyCollection<BasketItem> Items => _basketItems.AsReadOnly();
 
-    public void Update(List<BasketItem> requestItems)
+    /// <summary>
+    ///     Updates the customer basket by replacing all existing items with the provided items.
+    /// </summary>
+    /// <param name="requestItems">The list of basket items to replace the current items with.</param>
+    /// <returns>The current instance of <see cref="CustomerBasket" /> with updated items.</returns>
+    public CustomerBasket Update(List<BasketItem> requestItems)
     {
         _basketItems.Clear();
         _basketItems.AddRange(requestItems);
+        return this;
     }
 }

@@ -16,5 +16,5 @@ public interface IConversationRepository : IRepository<Conversation>
         CancellationToken cancellationToken = default
     );
 
-    bool Delete(Conversation conversation, CancellationToken cancellationToken = default);
+    bool Delete(Conversation conversation);
 }

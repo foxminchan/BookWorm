@@ -71,11 +71,7 @@ public sealed class CleanUpSentEmailConsumerTests : SnapshotTestBase
         );
 
         _repositoryMock.Verify(
-            x =>
-                x.BulkDelete(
-                    It.Is<IEnumerable<Outbox>>(emails => emails.Count() == 3),
-                    It.IsAny<CancellationToken>()
-                ),
+            x => x.BulkDelete(It.Is<IEnumerable<Outbox>>(emails => emails.Count() == 3)),
             Times.Once
         );
 
@@ -125,10 +121,7 @@ public sealed class CleanUpSentEmailConsumerTests : SnapshotTestBase
             Times.Once
         );
 
-        _repositoryMock.Verify(
-            x => x.BulkDelete(It.IsAny<IEnumerable<Outbox>>(), It.IsAny<CancellationToken>()),
-            Times.Never
-        );
+        _repositoryMock.Verify(x => x.BulkDelete(It.IsAny<IEnumerable<Outbox>>()), Times.Never);
 
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
 
@@ -245,10 +238,7 @@ public sealed class CleanUpSentEmailConsumerTests : SnapshotTestBase
         consumedMessage.Exception.InnerException.ShouldBeOfType<InvalidOperationException>();
         consumedMessage.Exception.InnerException.Message.ShouldBe("Failed to save changes");
 
-        _repositoryMock.Verify(
-            x => x.BulkDelete(It.IsAny<IEnumerable<Outbox>>(), It.IsAny<CancellationToken>()),
-            Times.Once
-        );
+        _repositoryMock.Verify(x => x.BulkDelete(It.IsAny<IEnumerable<Outbox>>()), Times.Once);
 
         _logBufferMock.Verify(x => x.Flush(), Times.Once);
 
@@ -348,11 +338,7 @@ public sealed class CleanUpSentEmailConsumerTests : SnapshotTestBase
         );
 
         _repositoryMock.Verify(
-            x =>
-                x.BulkDelete(
-                    It.Is<IEnumerable<Outbox>>(emails => emails.Count() == 10),
-                    It.IsAny<CancellationToken>()
-                ),
+            x => x.BulkDelete(It.Is<IEnumerable<Outbox>>(emails => emails.Count() == 10)),
             Times.Once
         );
 
@@ -407,10 +393,7 @@ public sealed class CleanUpSentEmailConsumerTests : SnapshotTestBase
             Times.Once
         );
 
-        _repositoryMock.Verify(
-            x => x.BulkDelete(It.IsAny<IEnumerable<Outbox>>(), It.IsAny<CancellationToken>()),
-            Times.Once
-        );
+        _repositoryMock.Verify(x => x.BulkDelete(It.IsAny<IEnumerable<Outbox>>()), Times.Once);
 
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 
@@ -429,11 +412,7 @@ public sealed class CleanUpSentEmailConsumerTests : SnapshotTestBase
             .Setup(x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(sentEmails);
 
-        _repositoryMock
-            .Setup(x =>
-                x.BulkDelete(It.IsAny<IEnumerable<Outbox>>(), It.IsAny<CancellationToken>())
-            )
-            .Throws(exception);
+        _repositoryMock.Setup(x => x.BulkDelete(It.IsAny<IEnumerable<Outbox>>())).Throws(exception);
 
         var command = new CleanUpSentEmailIntegrationEvent();
 
@@ -473,10 +452,7 @@ public sealed class CleanUpSentEmailConsumerTests : SnapshotTestBase
             Times.Once
         );
 
-        _repositoryMock.Verify(
-            x => x.BulkDelete(It.IsAny<IEnumerable<Outbox>>(), It.IsAny<CancellationToken>()),
-            Times.Once
-        );
+        _repositoryMock.Verify(x => x.BulkDelete(It.IsAny<IEnumerable<Outbox>>()), Times.Once);
 
         // SaveChanges should never be called when BulkDelete fails
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);

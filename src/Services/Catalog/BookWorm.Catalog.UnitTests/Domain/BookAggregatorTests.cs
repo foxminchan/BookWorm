@@ -390,4 +390,108 @@ public sealed class BookAggregatorTests
         bookAuthor.Book.ShouldNotBeNull();
         bookAuthor.Book.ShouldBe(book);
     }
+
+    [Test]
+    public void GivenValidParameters_WhenSettingMetadata_ThenShouldReturnSameInstance()
+    {
+        // Arrange
+        var book = new Book(
+            "Test Book",
+            "Test Description",
+            "test.jpg",
+            19.99m,
+            15.99m,
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7()]
+        );
+
+        const string description = "New Description";
+        var categoryId = Guid.CreateVersion7();
+        var publisherId = Guid.CreateVersion7();
+        Guid[] authorIds = [Guid.CreateVersion7()];
+
+        // Act
+        var result = book.SetMetadata(description, categoryId, publisherId, authorIds);
+
+        // Assert
+        result.ShouldBeSameAs(book);
+    }
+
+    [Test]
+    public void GivenValidParameters_WhenUpdatingBook_ThenShouldReturnSameInstance()
+    {
+        // Arrange
+        var book = new Book(
+            "Original Name",
+            "Original Description",
+            "original.jpg",
+            19.99m,
+            15.99m,
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7()]
+        );
+
+        // Act
+        var result = book.Update(
+            "New Name",
+            "New Description",
+            29.99m,
+            24.99m,
+            "new.jpg",
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7()]
+        );
+
+        // Assert
+        result.ShouldBeSameAs(book);
+    }
+
+    [Test]
+    public void GivenRating_WhenAddingRating_ThenShouldReturnSameInstance()
+    {
+        // Arrange
+        var book = new Book(
+            "Test Book",
+            "Test Description",
+            "test.jpg",
+            19.99m,
+            15.99m,
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7()]
+        );
+
+        // Act
+        var result = book.AddRating(5);
+
+        // Assert
+        result.ShouldBeSameAs(book);
+    }
+
+    [Test]
+    public void GivenRating_WhenRemovingRating_ThenShouldReturnSameInstance()
+    {
+        // Arrange
+        var book = new Book(
+            "Test Book",
+            "Test Description",
+            "test.jpg",
+            19.99m,
+            15.99m,
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7()]
+        );
+
+        book.AddRating(5); // Add a rating first
+
+        // Act
+        var result = book.RemoveRating(5);
+
+        // Assert
+        result.ShouldBeSameAs(book);
+    }
 }

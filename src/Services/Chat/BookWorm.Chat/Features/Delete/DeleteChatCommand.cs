@@ -14,7 +14,7 @@ public sealed class DeleteChatHandler(IConversationRepository repository)
 
         Guard.Against.NotFound(conversation, request.Id);
 
-        repository.Delete(conversation, cancellationToken);
+        repository.Delete(conversation);
 
         await repository.UnitOfWork.SaveChangesAsync(cancellationToken);
 
