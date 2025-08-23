@@ -41,42 +41,45 @@ public static class ScalarExtensions
         IResourceBuilder<ProjectResource> api
     )
     {
-        var clientId = api.Resource.Name;
-
-        var parameter = builder
-            .ApplicationBuilder.Resources.OfType<ParameterResource>()
-            .FirstOrDefault(r =>
-                string.Equals(r.Name, $"{clientId}-secret", StringComparison.OrdinalIgnoreCase)
-            );
-
-        var clientSecret = parameter
-            ?.GetValueAsync(CancellationToken.None)
-            .Preserve()
-            .GetAwaiter()
-            .GetResult();
-
         return builder.WithApiReference(
             api,
-            options =>
+            async (options, ctx) =>
             {
-                options
-                    .AddPreferredSecuritySchemes(OAuthDefaults.DisplayName)
-                    .AddAuthorizationCodeFlow(
-                        OAuthDefaults.DisplayName,
-                        flow =>
-                        {
-                            flow.WithPkce(Pkce.Sha256)
-                                .WithClientId(clientId)
-                                .AddBodyParameter("audience", "account");
+                var clientId = api.Resource.Name;
 
-                            if (!string.IsNullOrWhiteSpace(clientSecret))
-                            {
-                                flow.WithClientSecret(clientSecret);
-                            }
-
-                            flow.WithSelectedScopes(clientId);
-                        }
+                var parameter = builder
+                    .ApplicationBuilder.Resources.OfType<ParameterResource>()
+                    .FirstOrDefault(r =>
+                        string.Equals(
+                            r.Name,
+                            $"{clientId}-secret",
+                            StringComparison.OrdinalIgnoreCase
+                        )
                     );
+
+                if (parameter is not null)
+                {
+                    var clientSecret = await parameter.GetValueAsync(ctx);
+
+                    options
+                        .AddPreferredSecuritySchemes(OAuthDefaults.DisplayName)
+                        .AddAuthorizationCodeFlow(
+                            OAuthDefaults.DisplayName,
+                            flow =>
+                            {
+                                flow.WithPkce(Pkce.Sha256)
+                                    .WithClientId(clientId)
+                                    .AddBodyParameter("audience", "account");
+
+                                if (!string.IsNullOrWhiteSpace(clientSecret))
+                                {
+                                    flow.WithClientSecret(clientSecret);
+                                }
+
+                                flow.WithSelectedScopes(clientId);
+                            }
+                        );
+                }
             }
         );
     }

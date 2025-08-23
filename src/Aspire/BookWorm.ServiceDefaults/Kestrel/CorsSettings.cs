@@ -8,10 +8,16 @@ public sealed partial class CorsSettings : IValidateOptions<CorsSettings>
     public const string ConfigurationSection = "Cors";
 
     [Required]
-    [Url]
-    public string BackOfficeUrl { get; set; } = string.Empty;
+    public IList<string> Origins { get; } = [];
 
     [Required]
-    [Url]
-    public string StoreFrontUrl { get; set; } = string.Empty;
+    public IList<string> Headers { get; } = [];
+
+    [Required]
+    public IList<string> Methods { get; } = [];
+
+    [Range(0, int.MaxValue)]
+    public int? MaxAge { get; set; }
+
+    public bool AllowCredentials { get; set; }
 }

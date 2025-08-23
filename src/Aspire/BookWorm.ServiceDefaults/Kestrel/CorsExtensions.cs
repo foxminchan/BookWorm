@@ -38,17 +38,21 @@ public static class CorsExtensions
                         var corsOptions = serviceProvider.GetRequiredService<CorsSettings>();
 
                         policyBuilder
-                            .WithOrigins(corsOptions.StoreFrontUrl, corsOptions.BackOfficeUrl)
-                            .WithMethods(
-                                Restful.Methods.Get,
-                                Restful.Methods.Post,
-                                Restful.Methods.Put,
-                                Restful.Methods.Patch,
-                                Restful.Methods.Delete,
-                                Restful.Methods.Options
-                            )
-                            .AllowAnyHeader()
-                            .AllowCredentials();
+                            .WithOrigins([.. corsOptions.Origins])
+                            .WithHeaders([.. corsOptions.Headers])
+                            .WithMethods([.. corsOptions.Methods]);
+
+                        if (corsOptions.MaxAge is not null)
+                        {
+                            policyBuilder.SetPreflightMaxAge(
+                                TimeSpan.FromSeconds(corsOptions.MaxAge.Value)
+                            );
+                        }
+
+                        if (corsOptions.AllowCredentials)
+                        {
+                            policyBuilder.AllowCredentials();
+                        }
                     }
                 );
             });
