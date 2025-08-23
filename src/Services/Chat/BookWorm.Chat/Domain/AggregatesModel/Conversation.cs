@@ -20,8 +20,14 @@ public sealed class Conversation() : AuditableEntity, IAggregateRoot
     public Guid? UserId { get; private set; }
     public IReadOnlyCollection<ConversationMessage> Messages => _messages.AsReadOnly();
 
-    public void AddMessage(ConversationMessage message)
+    /// <summary>
+    ///     Adds a new message to the conversation.
+    /// </summary>
+    /// <param name="message">The message to be added to the conversation.</param>
+    /// <returns>The current conversation instance to support method chaining.</returns>
+    public Conversation AddMessage(ConversationMessage message)
     {
         _messages.Add(message);
+        return this;
     }
 }

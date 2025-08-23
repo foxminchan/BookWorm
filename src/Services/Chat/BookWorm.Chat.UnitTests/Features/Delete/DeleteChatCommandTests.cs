@@ -77,9 +77,7 @@ public sealed class DeleteChatCommandTests
             .Setup(r => r.GetByIdAsync(_conversationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_conversation);
 
-        _repositoryMock
-            .Setup(r => r.Delete(_conversation, It.IsAny<CancellationToken>()))
-            .Returns(true);
+        _repositoryMock.Setup(r => r.Delete(_conversation)).Returns(true);
 
         _unitOfWorkMock
             .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
@@ -94,10 +92,7 @@ public sealed class DeleteChatCommandTests
             r => r.GetByIdAsync(_conversationId, It.IsAny<CancellationToken>()),
             Times.Once
         );
-        _repositoryMock.Verify(
-            r => r.Delete(_conversation, It.IsAny<CancellationToken>()),
-            Times.Once
-        );
+        _repositoryMock.Verify(r => r.Delete(_conversation), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -122,10 +117,7 @@ public sealed class DeleteChatCommandTests
             r => r.GetByIdAsync(_conversationId, It.IsAny<CancellationToken>()),
             Times.Once
         );
-        _repositoryMock.Verify(
-            r => r.Delete(It.IsAny<Conversation>(), It.IsAny<CancellationToken>()),
-            Times.Never
-        );
+        _repositoryMock.Verify(r => r.Delete(It.IsAny<Conversation>()), Times.Never);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -151,10 +143,7 @@ public sealed class DeleteChatCommandTests
             r => r.GetByIdAsync(emptyGuid, It.IsAny<CancellationToken>()),
             Times.Once
         );
-        _repositoryMock.Verify(
-            r => r.Delete(It.IsAny<Conversation>(), It.IsAny<CancellationToken>()),
-            Times.Never
-        );
+        _repositoryMock.Verify(r => r.Delete(It.IsAny<Conversation>()), Times.Never);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -169,7 +158,7 @@ public sealed class DeleteChatCommandTests
             .Setup(r => r.GetByIdAsync(_conversationId, cancellationToken))
             .ReturnsAsync(_conversation);
 
-        _repositoryMock.Setup(r => r.Delete(_conversation, cancellationToken)).Returns(true);
+        _repositoryMock.Setup(r => r.Delete(_conversation)).Returns(true);
 
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(cancellationToken)).ReturnsAsync(1);
 
@@ -179,7 +168,7 @@ public sealed class DeleteChatCommandTests
         // Assert
         result.ShouldBe(Unit.Value);
         _repositoryMock.Verify(r => r.GetByIdAsync(_conversationId, cancellationToken), Times.Once);
-        _repositoryMock.Verify(r => r.Delete(_conversation, cancellationToken), Times.Once);
+        _repositoryMock.Verify(r => r.Delete(_conversation), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(cancellationToken), Times.Once);
     }
 
@@ -205,10 +194,7 @@ public sealed class DeleteChatCommandTests
             r => r.GetByIdAsync(_conversationId, It.IsAny<CancellationToken>()),
             Times.Once
         );
-        _repositoryMock.Verify(
-            r => r.Delete(It.IsAny<Conversation>(), It.IsAny<CancellationToken>()),
-            Times.Never
-        );
+        _repositoryMock.Verify(r => r.Delete(It.IsAny<Conversation>()), Times.Never);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -223,9 +209,7 @@ public sealed class DeleteChatCommandTests
             .Setup(r => r.GetByIdAsync(_conversationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_conversation);
 
-        _repositoryMock
-            .Setup(r => r.Delete(_conversation, It.IsAny<CancellationToken>()))
-            .Returns(true);
+        _repositoryMock.Setup(r => r.Delete(_conversation)).Returns(true);
 
         _unitOfWorkMock
             .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
@@ -242,10 +226,7 @@ public sealed class DeleteChatCommandTests
             r => r.GetByIdAsync(_conversationId, It.IsAny<CancellationToken>()),
             Times.Once
         );
-        _repositoryMock.Verify(
-            r => r.Delete(_conversation, It.IsAny<CancellationToken>()),
-            Times.Once
-        );
+        _repositoryMock.Verify(r => r.Delete(_conversation), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -280,9 +261,7 @@ public sealed class DeleteChatCommandTests
             .Setup(r => r.GetByIdAsync(conversationId3, It.IsAny<CancellationToken>()))
             .ReturnsAsync(conversation3);
 
-        _repositoryMock
-            .Setup(r => r.Delete(It.IsAny<Conversation>(), It.IsAny<CancellationToken>()))
-            .Returns(true);
+        _repositoryMock.Setup(r => r.Delete(It.IsAny<Conversation>())).Returns(true);
 
         _unitOfWorkMock
             .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
@@ -311,18 +290,9 @@ public sealed class DeleteChatCommandTests
             Times.Once
         );
 
-        _repositoryMock.Verify(
-            r => r.Delete(conversation1, It.IsAny<CancellationToken>()),
-            Times.Once
-        );
-        _repositoryMock.Verify(
-            r => r.Delete(conversation2, It.IsAny<CancellationToken>()),
-            Times.Once
-        );
-        _repositoryMock.Verify(
-            r => r.Delete(conversation3, It.IsAny<CancellationToken>()),
-            Times.Once
-        );
+        _repositoryMock.Verify(r => r.Delete(conversation1), Times.Once);
+        _repositoryMock.Verify(r => r.Delete(conversation2), Times.Once);
+        _repositoryMock.Verify(r => r.Delete(conversation3), Times.Once);
 
         _unitOfWorkMock.Verify(
             u => u.SaveChangesAsync(It.IsAny<CancellationToken>()),

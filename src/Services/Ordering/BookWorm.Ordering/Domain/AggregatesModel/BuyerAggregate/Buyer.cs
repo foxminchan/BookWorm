@@ -27,8 +27,16 @@ public sealed class Buyer() : Entity, IAggregateRoot
 
     public IReadOnlyCollection<Order> Orders => _orders.AsReadOnly();
 
-    public void UpdateAddress(string street, string city, string province)
+    /// <summary>
+    ///     Updates the buyer's address with new street, city, and province information.
+    /// </summary>
+    /// <param name="street">The street address of the buyer.</param>
+    /// <param name="city">The city where the buyer is located.</param>
+    /// <param name="province">The province or state where the buyer is located.</param>
+    /// <returns>The current <see cref="Buyer" /> instance with the updated address.</returns>
+    public Buyer UpdateAddress(string street, string city, string province)
     {
         Address = new(street, city, province);
+        return this;
     }
 }

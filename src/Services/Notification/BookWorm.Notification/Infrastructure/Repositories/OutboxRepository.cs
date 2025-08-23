@@ -28,10 +28,7 @@ public sealed class OutboxRepository(NotificationDbContext context) : IOutboxRep
         return await Specification.GetQuery(_context.Outboxes, spec).ToListAsync(cancellationToken);
     }
 
-    public void BulkDelete(
-        IEnumerable<Outbox> outboxes,
-        CancellationToken cancellationToken = default
-    )
+    public void BulkDelete(IEnumerable<Outbox> outboxes)
     {
         _context.Outboxes.RemoveRange(outboxes);
     }

@@ -62,4 +62,18 @@ public class CategoryAggregatorTests
         // Assert
         act.ShouldThrow<CatalogDomainException>();
     }
+
+    [Test]
+    public void GivenValidName_WhenUpdatingCategoryName_ThenShouldReturnSameInstance()
+    {
+        // Arrange
+        var category = new Category("Original Name");
+        const string newName = "Updated Name";
+
+        // Act
+        var result = category.UpdateName(newName);
+
+        // Assert
+        result.ShouldBeSameAs(category);
+    }
 }

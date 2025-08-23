@@ -41,4 +41,17 @@ public sealed class OutboxTests
         outbox.SentAt.ShouldNotBeNull();
         outbox.SentAt?.ShouldBeLessThanOrEqualTo(DateTimeHelper.UtcNow());
     }
+
+    [Test]
+    public void GivenOutbox_WhenMarkingAsSent_ThenShouldReturnSameInstance()
+    {
+        // Arrange
+        var outbox = new Outbox("Test User", "test@example.com", "Test Subject", "Test Body");
+
+        // Act
+        var result = outbox.MarkAsSent();
+
+        // Assert
+        result.ShouldBeSameAs(outbox);
+    }
 }

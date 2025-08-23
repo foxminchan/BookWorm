@@ -173,4 +173,27 @@ public sealed class BuyerAggregateTests
         orders.ShouldBeEmpty();
         orders.ShouldBeAssignableTo<IReadOnlyCollection<Order>>();
     }
+
+    [Test]
+    public void GivenValidParameters_WhenUpdatingAddress_ThenShouldReturnSameInstance()
+    {
+        // Arrange
+        var buyer = new Buyer(
+            Guid.CreateVersion7(),
+            "John Doe",
+            "123 Main St",
+            "Bookville",
+            "Readland"
+        );
+
+        const string newStreet = "456 Book Avenue";
+        const string newCity = "Novel City";
+        const string newProvince = "Fiction State";
+
+        // Act
+        var result = buyer.UpdateAddress(newStreet, newCity, newProvince);
+
+        // Assert
+        result.ShouldBeSameAs(buyer);
+    }
 }

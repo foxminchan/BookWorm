@@ -42,7 +42,7 @@ public sealed class ConversationRepository(ChatDbContext context) : IConversatio
             .ToListAsync(cancellationToken);
     }
 
-    public bool Delete(Conversation conversation, CancellationToken cancellationToken = default)
+    public bool Delete(Conversation conversation)
     {
         _context.Conversations.Remove(conversation);
         return true;

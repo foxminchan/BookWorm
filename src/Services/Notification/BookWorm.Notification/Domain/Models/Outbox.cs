@@ -26,9 +26,14 @@ public sealed class Outbox() : IAggregateRoot
     public DateTime CreatedAt { get; private set; }
     public DateTime? SentAt { get; private set; }
 
-    public void MarkAsSent()
+    /// <summary>
+    ///     Marks the outbox item as sent by setting the IsSent flag to true and recording the current UTC timestamp.
+    /// </summary>
+    /// <returns>The current Outbox instance with updated sent status.</returns>
+    public Outbox MarkAsSent()
     {
         IsSent = true;
         SentAt = DateTimeHelper.UtcNow();
+        return this;
     }
 }

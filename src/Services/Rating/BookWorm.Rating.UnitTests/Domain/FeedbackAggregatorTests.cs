@@ -187,4 +187,19 @@ public sealed class FeedbackAggregatorTests
         // Assert
         feedback.DomainEvents.ShouldBeEmpty();
     }
+
+    [Test]
+    public void GivenExistingFeedback_WhenRemoving_ThenShouldReturnSameInstance()
+    {
+        // Arrange
+        var bookId = Guid.CreateVersion7();
+        const int rating = 3;
+        var feedback = new Feedback(bookId, "John", "Doe", "Test feedback", rating);
+
+        // Act
+        var result = feedback.Remove();
+
+        // Assert
+        result.ShouldBeSameAs(feedback);
+    }
 }

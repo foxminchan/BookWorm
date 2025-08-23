@@ -220,4 +220,58 @@ public sealed class OrderAggregatorTests
         // Assert
         order.TotalPrice.ShouldBe(expectedTotal);
     }
+
+    [Test]
+    public void GivenNewOrder_WhenMarkingAsCompleted_ThenShouldReturnSameInstance()
+    {
+        // Arrange
+        var order = new Order(Guid.CreateVersion7(), null, []);
+
+        // Act
+        var result = order.MarkAsCompleted();
+
+        // Assert
+        result.ShouldBeSameAs(order);
+    }
+
+    [Test]
+    public void GivenCompletedOrder_WhenMarkingAsCompleted_ThenShouldReturnSameInstance()
+    {
+        // Arrange
+        var order = new Order(Guid.CreateVersion7(), null, []);
+        order.MarkAsCompleted(); // Make it completed first
+
+        // Act
+        var result = order.MarkAsCompleted(); // Try to complete again
+
+        // Assert
+        result.ShouldBeSameAs(order);
+    }
+
+    [Test]
+    public void GivenNewOrder_WhenMarkingAsCanceled_ThenShouldReturnSameInstance()
+    {
+        // Arrange
+        var order = new Order(Guid.CreateVersion7(), null, []);
+
+        // Act
+        var result = order.MarkAsCanceled();
+
+        // Assert
+        result.ShouldBeSameAs(order);
+    }
+
+    [Test]
+    public void GivenCompletedOrder_WhenMarkingAsCanceled_ThenShouldReturnSameInstance()
+    {
+        // Arrange
+        var order = new Order(Guid.CreateVersion7(), null, []);
+        order.MarkAsCompleted(); // Make it completed first
+
+        // Act
+        var result = order.MarkAsCanceled(); // Try to cancel
+
+        // Assert
+        result.ShouldBeSameAs(order);
+    }
 }

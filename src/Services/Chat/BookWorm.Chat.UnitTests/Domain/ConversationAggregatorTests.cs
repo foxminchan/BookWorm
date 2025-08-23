@@ -148,4 +148,18 @@ public sealed class ConversationAggregatorTests
         conversation.Messages.ShouldBeEmpty();
         conversation.Id.ShouldNotBe(Guid.Empty);
     }
+
+    [Test]
+    public void GivenValidMessage_WhenAddingMessage_ThenShouldReturnSameInstance()
+    {
+        // Arrange
+        var conversation = new Conversation("Test Conversation", Guid.CreateVersion7());
+        var message = new ConversationMessage(Guid.CreateVersion7(), "Hello, World!", "user");
+
+        // Act
+        var result = conversation.AddMessage(message);
+
+        // Assert
+        result.ShouldBeSameAs(conversation);
+    }
 }
