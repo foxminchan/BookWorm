@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.RAG.Search;
+﻿using BookWorm.Chassis.AI.Search;
 using BookWorm.Constants.Aspire;
 
 namespace BookWorm.Catalog.Infrastructure;

@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using ModelContextProtocol;
 using ModelContextProtocol.Client;
 
-namespace BookWorm.Chassis.RAG.Extensions;
+namespace BookWorm.Chassis.AI.Extensions;
 
 public static class McpClientExtensions
 {

@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.AI;
 using Microsoft.Extensions.VectorData;
 
-namespace BookWorm.Chassis.RAG.Search;
+namespace BookWorm.Chassis.AI.Search;
 
 public sealed class HybridSearch(
     IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,

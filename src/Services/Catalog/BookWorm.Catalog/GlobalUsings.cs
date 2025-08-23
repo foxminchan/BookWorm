@@ -10,7 +10,6 @@ global using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
 global using BookWorm.Catalog.Domain.Exceptions;
 global using BookWorm.Catalog.Infrastructure;
 global using BookWorm.Catalog.Infrastructure.Blob;
-global using BookWorm.Catalog.Infrastructure.GenAi;
 global using BookWorm.Chassis.Converters;
 global using BookWorm.Chassis.EF;
 global using BookWorm.Chassis.Endpoints;

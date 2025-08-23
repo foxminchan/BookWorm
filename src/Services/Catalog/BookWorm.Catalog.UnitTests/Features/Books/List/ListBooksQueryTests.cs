@@ -3,8 +3,8 @@ using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
 using BookWorm.Catalog.Features.Books;
 using BookWorm.Catalog.Features.Books.List;
 using BookWorm.Catalog.UnitTests.Fakers;
+using BookWorm.Chassis.AI.Search;
 using BookWorm.Chassis.Mapper;
-using BookWorm.Chassis.RAG.Search;
 
 namespace BookWorm.Catalog.UnitTests.Features.Books.List;
 

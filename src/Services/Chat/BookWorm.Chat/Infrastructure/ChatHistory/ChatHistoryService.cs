@@ -1,4 +1,4 @@
-using BookWorm.Chassis.RAG.Extensions;
+using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chat.Domain.AggregatesModel;
 using BookWorm.Chat.Features;
 using BookWorm.Chat.Infrastructure.Backplane;

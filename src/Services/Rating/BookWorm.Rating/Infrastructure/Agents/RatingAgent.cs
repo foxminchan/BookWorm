@@ -1,5 +1,5 @@
 ﻿using A2A;
-using BookWorm.Chassis.RAG.Extensions;
+using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Rating.Plugins;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;

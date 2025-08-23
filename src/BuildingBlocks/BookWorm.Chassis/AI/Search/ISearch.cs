@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Chassis.RAG.Search;
+﻿namespace BookWorm.Chassis.AI.Search;
 
 public interface ISearch
 {
