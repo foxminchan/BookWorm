@@ -1,5 +1,4 @@
 [![CI](https://github.com/foxminchan/BookWorm/actions/workflows/ci.yaml/badge.svg)](https://github.com/foxminchan/BookWorm/actions/workflows/ci.yaml)
-[![Documentation](https://github.com/foxminchan/BookWorm/actions/workflows/docs.yaml/badge.svg)](https://github.com/foxminchan/BookWorm/actions/workflows/docs.yaml)
 [![Container Security](https://github.com/foxminchan/BookWorm/actions/workflows/container.yml/badge.svg)](https://github.com/foxminchan/BookWorm/actions/workflows/container.yml)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=coverage)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
@@ -20,75 +19,6 @@
     <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg">
   </a>
 </div>
-
-## 🚀 Technology Stack
-
-<table>
-  <tr>
-    <td><strong>🏗️ Framework</strong></td>
-    <td><strong>🌐 Communication</strong></td>
-    <td><strong>💾 Data</strong></td>
-    <td><strong>☁️ Cloud & DevOps</strong></td>
-  </tr>
-  <tr>
-    <td>
-      • .NET 9 & ASP.NET Core<br>
-      • .NET Aspire<br>
-      • Vertical Slice Architecture<br>
-      • Domain-Driven Design
-    </td>
-    <td>
-      • gRPC<br>
-      • REST APIs (OpenAPI)<br>
-      • AsyncAPI<br>
-      • Event-Driven Architecture
-    </td>
-    <td>
-      • Entity Framework Core<br>
-      • Redis (HybridCache)<br>
-      • Event Sourcing<br>
-      • Outbox/Inbox Patterns
-    </td>
-    <td>
-      • Azure Container Apps<br>
-      • Docker & Kubernetes<br>
-      • GitHub Actions<br>
-      • SonarQube
-    </td>
-  </tr>
-  <tr>
-    <td><strong>🤖 AI & ML</strong></td>
-    <td><strong>🔐 Security</strong></td>
-    <td><strong>📊 Monitoring</strong></td>
-    <td><strong>📚 Documentation</strong></td>
-  </tr>
-  <tr>
-    <td>
-      • Nomic Embed Text<br>
-      • Gemma 3 Chatbot<br>
-      • Semantic Kernel<br>
-      • Model Context Protocol
-    </td>
-    <td>
-      • Keycloak (OAuth 2.0/OIDC)<br>
-      • JWT Authentication<br>
-      • RBAC Authorization<br>
-      • Security Scanning
-    </td>
-    <td>
-      • Health Checks<br>
-      • Distributed Tracing<br>
-      • Metrics Collection<br>
-      • Load Testing (k6)
-    </td>
-    <td>
-      • Docusaurus (arc42)<br>
-      • EventCatalog<br>
-      • GitHub Wiki<br>
-      • OpenAPI/AsyncAPI
-    </td>
-  </tr>
-</table>
 
 ## Project Goals
 
