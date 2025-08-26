@@ -1,16 +1,34 @@
 {
+  "inputs": [
+    {
+      "id": "context7-api-key",
+      "type": "promptString",
+      "password": true,
+      "description": "Enter your Context7 API Key"
+    }
+  ],
   "servers": {
     "sequential-thinking": {
-      "command": "npx",
+      "command": "bunx",
       "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
     },
     "memory": {
-      "command": "npx",
+      "command": "bunx",
       "args": ["-y", "@modelcontextprotocol/server-memory"]
     },
     "microsoft-docs": {
       "type": "http",
       "url": "https://learn.microsoft.com/api/mcp"
+    },
+    "context7": {
+      "type": "stdio",
+      "command": "bunx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp",
+        "--api-key",
+        "${input:context7-api-key}"
+      ]
     }
   }
 }
