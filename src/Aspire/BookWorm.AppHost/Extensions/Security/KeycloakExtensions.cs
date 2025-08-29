@@ -79,7 +79,7 @@ public static class KeycloakExtensions
     /// <param name="dbUsername">The database username parameter resource builder.</param>
     /// <param name="dbPassword">The database password parameter resource builder.</param>
     /// <param name="dbSchema">The database resource builder.</param>
-    /// <param name="dbProvider">The database provider type (default is "postgresql").</param>
+    /// <param name="dbProvider">The database provider type (default is "postgres").</param>
     /// <returns>The Keycloak resource builder for method chaining.</returns>
     public static IResourceBuilder<KeycloakResource> WithExternalDatabase(
         this IResourceBuilder<KeycloakResource> builder,
@@ -87,9 +87,19 @@ public static class KeycloakExtensions
         IResourceBuilder<ParameterResource> dbUsername,
         IResourceBuilder<ParameterResource> dbPassword,
         IResourceBuilder<IResourceWithConnectionString> dbSchema,
-        string dbProvider = "postgresql"
+        string dbProvider = "postgres"
     )
     {
+        var dbType = dbProvider switch
+        {
+            "postgres" or "postgresql" => "postgresql",
+            "mysql" => "mysql",
+            "oracle" => "oracle",
+            "mariadb" => "mariadb",
+            "sqlserver" => "sqlserver",
+            _ => throw new ArgumentException($"Unsupported database provider: {dbProvider}"),
+        };
+
         return builder
             .WithEnvironment(context =>
             {
@@ -98,9 +108,7 @@ public static class KeycloakExtensions
                 context.EnvironmentVariables.Add(KeycloakDatabasePasswordEnvVarName, dbPassword);
                 context.EnvironmentVariables.Add(
                     KeycloakDatabaseUrlEnvVarName,
-                    ReferenceExpression.Create(
-                        $"jdbc:{dbProvider}://{dbHost}/{dbSchema.Resource.Name}"
-                    )
+                    ReferenceExpression.Create($"jdbc:{dbType}://{dbHost}/{dbSchema.Resource.Name}")
                 );
                 context.EnvironmentVariables.Add(KeycloakTransactionXaEnabledEnvVarName, "true");
             })
