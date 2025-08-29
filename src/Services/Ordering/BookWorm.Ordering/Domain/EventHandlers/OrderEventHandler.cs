@@ -12,7 +12,7 @@ public sealed class OrderEventHandler(
 {
     public async Task Handle(OrderCancelledEvent notification, CancellationToken cancellationToken)
     {
-        OrderingTrace.LogOrderCancelled(logger, notification.Order.Id, Status.New);
+        OrderingTrace.LogOrderCancelled(logger, notification.Order.Id, Status.Cancelled);
         await documentSession.GetAndUpdate<OrderSummary>(
             Guid.CreateVersion7(),
             notification,
@@ -22,7 +22,7 @@ public sealed class OrderEventHandler(
 
     public async Task Handle(OrderCompletedEvent notification, CancellationToken cancellationToken)
     {
-        OrderingTrace.LogOrderCompleted(logger, notification.Order.Id, Status.New);
+        OrderingTrace.LogOrderCompleted(logger, notification.Order.Id, Status.Completed);
         await documentSession.GetAndUpdate<OrderSummary>(
             Guid.CreateVersion7(),
             notification,
