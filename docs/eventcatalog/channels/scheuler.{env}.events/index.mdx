@@ -1,0 +1,36 @@
+---
+id: scheduler.{env}.events
+name: Scheduler Events Channel
+version: 1.0.0
+summary: |
+  A dedicated message channel that handles all scheduler-related events in the BookWorm e-commerce system.
+owners:
+  - nhanxnguyen
+address: scheduler.{env}.events
+protocols:
+  - amqp
+parameters:
+  env:
+    enum:
+      - dev
+      - stg
+      - prod
+    default: dev
+    examples:
+      - dev
+      - stg
+      - prod
+    description: "Environment to use for the channel"
+---
+
+## Overview
+
+The Scheduler Events Channel serves as a specialized conduit for managing all scheduled task-related activities within the BookWorm e-commerce platform. It enables seamless communication between the Scheduler Service and other components, handling events like email cleanup and error recovery operations. This channel ensures reliable message delivery and upholds the eventual consistency across the scheduler domain.
+
+<ChannelInformation />
+
+## Event Types
+
+**CleanUpSentEmailIntegrationEvent**: Triggers the cleanup process for sent emails to maintain system performance and storage efficiency. This event is published daily at midnight to remove processed email records from the notification system.
+
+**ResendErrorEmailIntegrationEvent**: Initiates the retry mechanism for failed email deliveries. This event is published hourly with high priority to ensure prompt recovery of email delivery failures and maintain customer communication reliability.
