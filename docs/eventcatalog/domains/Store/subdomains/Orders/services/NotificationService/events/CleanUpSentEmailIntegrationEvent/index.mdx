@@ -1,0 +1,50 @@
+---
+id: CleanUpSentEmailIntegrationEvent
+version: 1.0.0
+name: Clean Up Sent Email
+summary: Receive a message to trigger cleanup of sent emails for system maintenance
+channels:
+  - id: notification.{env}.events
+    version: 1.0.0
+    parameters:
+      env: stg
+badges:
+  - content: Orchestrated
+    textColor: orange
+    backgroundColor: orange
+    icon: CubeTransparentIcon
+  - content: Notification
+    textColor: blue
+    backgroundColor: blue
+    icon: BellIcon
+  - content: Broker:AMQP
+    backgroundColor: green
+    textColor: white
+    icon: ArrowPathIcon
+  - content: Scheduler
+    textColor: purple
+    backgroundColor: purple
+    icon: ClockIcon
+schemaPath: schema.json
+owners:
+  - nhanxnguyen
+---
+
+## Overview
+
+The `CleanUpSentEmailIntegrationEvent` is triggered by the Scheduler Service to initiate the cleanup process for sent emails in the notification system. This event is published daily at midnight to maintain system performance and storage efficiency by removing processed email records from the outbox.
+
+### Event Flow
+1. **Scheduler Service** publishes the event daily at midnight (cron: `0 0 * * *`)
+2. **Notification Service** receives the event and processes it
+3. System identifies and removes successfully sent email records from the outbox
+4. Storage space is freed up and system performance is maintained
+
+### Business Value
+- **System Performance**: Prevents database bloat by regularly cleaning up processed records
+- **Storage Optimization**: Reduces storage costs by removing unnecessary data
+- **Data Hygiene**: Maintains clean data architecture and improves query performance
+
+## Schema
+
+<SchemaViewer />
