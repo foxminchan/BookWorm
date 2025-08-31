@@ -1,0 +1,263 @@
+---
+dictionary:
+  - id: Integration Domain
+    name: Integration Domain
+    summary: "The subdomain responsible for cross-cutting concerns and external system integrations in BookWorm."
+    description: |
+      The Integration Domain manages all aspects of system-to-system communication, external integrations, and automated maintenance operations. Key responsibilities include:
+
+      - AI-powered integrations through standardized protocols
+      - Background job scheduling and execution
+      - Cross-service communication and event orchestration
+      - External system protocol implementations
+      - Automated system maintenance and cleanup operations
+
+      This domain ensures seamless interoperability and system reliability across the BookWorm platform.
+    icon: LinkIcon
+
+  - id: MCP Tools
+    name: MCP Tools
+    summary: "AI-powered Model Context Protocol server enabling intelligent integrations with BookWorm catalog data."
+    description: |
+      MCP Tools implements the Model Context Protocol specification to provide AI applications with structured access to BookWorm data. Key features include:
+
+      - Standardized tool registry for AI interactions
+      - HTTP-based stateless communication
+      - Auto-discovery of available tools through attributes
+      - Pre-defined prompts for AI customer service
+      - OpenAPI documentation with MCP extensions
+
+      MCP Tools bridges the gap between AI applications and BookWorm's catalog system.
+    icon: WrenchScrewdriverIcon
+
+  - id: MCP Protocol
+    name: Model Context Protocol
+    summary: "A standardized protocol for AI applications to interact with external tools and data sources."
+    description: |
+      The Model Context Protocol (MCP) provides a structured way for AI applications to access tools and data. In BookWorm, it includes:
+
+      - HTTP transport layer for stateless communication
+      - JSON-RPC message format for tool invocation
+      - Tool discovery and registration mechanisms
+      - Prompt management for AI conversations
+      - Error handling and response formatting
+
+      MCP enables seamless integration between AI assistants and BookWorm services.
+    icon: CodeBracketIcon
+
+  - id: MCP Tool
+    name: MCP Tool
+    summary: "A specific function or capability exposed to AI applications through the MCP protocol."
+    description: |
+      MCP Tools are individual functions that AI applications can invoke to perform specific tasks. Key aspects include:
+
+      - Attribute-based registration using .NET decorators
+      - Input validation and output formatting
+      - Integration with downstream BookWorm services
+      - Error handling and graceful degradation
+      - Documentation through OpenAPI schemas
+
+      Examples include catalog search, book recommendations, and inventory queries.
+    icon: CpuChipIcon
+
+  - id: Scheduler Service
+    name: Scheduler Service
+    summary: "Background job scheduler managing automated maintenance tasks and system health operations."
+    description: |
+      The Scheduler Service orchestrates time-based operations to maintain system performance and reliability. Core capabilities include:
+
+      - Cron-based job scheduling using TickerQ framework
+      - Event-driven communication with other services
+      - Transactional job execution with database persistence
+      - Built-in monitoring dashboard for operational visibility
+      - High availability with instance identification and recovery
+
+      The scheduler ensures critical maintenance tasks execute reliably without manual intervention.
+    icon: ClockIcon
+
+  - id: Background Job
+    name: Background Job
+    summary: "An automated task that runs on a schedule to perform system maintenance or data processing."
+    description: |
+      Background Jobs execute critical maintenance operations without blocking user interactions. Key characteristics include:
+
+      - Time-based triggers using cron expressions
+      - Transactional execution with rollback capabilities
+      - Event publishing for cross-service coordination
+      - Monitoring and alerting for failed executions
+      - Priority-based execution queuing
+
+      Jobs ensure system health through automated cleanup and error recovery operations.
+    icon: CommandLineIcon
+
+  - id: Clean Up Job
+    name: Email Cleanup Job
+    summary: "A daily maintenance job that removes processed email records to optimize system performance."
+    description: |
+      The Email Cleanup Job maintains email system performance by removing successfully processed records. Details include:
+
+      - Daily execution at midnight (0 0 * * *)
+      - Integration with Notification Service through events
+      - Transactional processing to ensure data consistency
+      - Monitoring of execution success and failure rates
+      - Storage optimization through systematic record removal
+
+      This job prevents database bloat and maintains query performance.
+    icon: TrashIcon
+
+  - id: Resend Job
+    name: Email Resend Job
+    summary: "An hourly high-priority job that retries failed email deliveries to ensure reliable communication."
+    description: |
+      The Email Resend Job provides automatic recovery for failed email operations. Key aspects include:
+
+      - Hourly execution with high priority (0 * * * *)
+      - Integration with Notification Service for error recovery
+      - Parallel processing with controlled concurrency
+      - Success and failure tracking with comprehensive logging
+      - Customer communication reliability assurance
+
+      This job ensures critical notifications reach customers despite initial delivery failures.
+    icon: ArrowPathIcon
+
+  - id: Integration Event
+    name: Integration Event
+    summary: "A domain event that facilitates communication between different services and bounded contexts."
+    description: |
+      Integration Events enable loose coupling between services while maintaining data consistency. Characteristics include:
+
+      - Event-driven architecture with publish-subscribe pattern
+      - Transactional outbox pattern for reliable delivery
+      - JSON serialization with standardized envelope format
+      - Cross-service communication without direct dependencies
+      - Eventual consistency across bounded contexts
+
+      Events published by Integration services trigger operations in downstream services.
+    icon: BoltIcon
+
+  - id: TickerQ Framework
+    name: TickerQ Framework
+    summary: "A .NET framework for robust background job scheduling and execution with operational monitoring."
+    description: |
+      TickerQ provides enterprise-grade job scheduling capabilities for the Scheduler Service. Features include:
+
+      - Cron expression-based scheduling with high precision
+      - PostgreSQL-based operational store for job state
+      - Built-in dashboard for monitoring and management
+      - Instance identification for distributed deployment
+      - Missed job detection and recovery mechanisms
+
+      TickerQ ensures reliable execution of critical maintenance operations.
+    icon: CogIcon
+
+  - id: Outbox Pattern
+    name: Outbox Pattern
+    summary: "A transactional messaging pattern that ensures reliable event publishing alongside database operations."
+    description: |
+      The Outbox Pattern provides transactional guarantees for event publishing in distributed systems. Implementation includes:
+
+      - Database table storing events within business transactions
+      - Background processor publishing events from the outbox
+      - Duplicate detection to prevent message replay
+      - Event ordering and consistency guarantees
+      - Integration with MassTransit for message transport
+
+      This pattern ensures events are published exactly once and in the correct order.
+    icon: InboxIcon
+
+  - id: Service Integration
+    name: Service Integration
+    summary: "The mechanisms and patterns used to connect and coordinate between different services in the system."
+    description: |
+      Service Integration encompasses all inter-service communication patterns used in BookWorm. Key aspects include:
+
+      - HTTP-based synchronous communication for real-time queries
+      - Event-driven asynchronous communication for state changes
+      - Protocol gateways for external system integration
+      - Circuit breaker patterns for resilience
+      - Distributed tracing for observability across service boundaries
+
+      Integration patterns ensure loose coupling while maintaining system coherence.
+    icon: ShareIcon
+
+  - id: AI Assistant Prompt
+    name: AI Assistant Prompt
+    summary: "Pre-defined conversation templates that guide AI applications in customer service interactions."
+    description: |
+      AI Assistant Prompts provide context and behavioral guidance for AI customer service applications. Components include:
+
+      - System prompts defining assistant personality and capabilities
+      - Context about BookWorm's products and services
+      - Guidelines for handling common customer scenarios
+      - Integration instructions for using available MCP tools
+      - Error handling and escalation procedures
+
+      Prompts ensure consistent and helpful AI-powered customer interactions.
+    icon: ChatBubbleLeftRightIcon
+
+  - id: Catalog Integration
+    name: Catalog Integration
+    summary: "The connection layer between Integration services and the BookWorm Catalog Service."
+    description: |
+      Catalog Integration provides seamless access to book and catalog data for AI and automation services. Features include:
+
+      - HTTP client integration using Refit for type safety
+      - Caching strategies for performance optimization
+      - Error handling and retry policies
+      - Data transformation for different consumer needs
+      - Rate limiting and throttling for system protection
+
+      This integration enables AI tools to access real-time catalog information.
+    icon: DatabaseIcon
+
+  - id: System Health
+    name: System Health
+    summary: "The overall operational state and performance metrics of the BookWorm platform."
+    description: |
+      System Health encompasses all aspects of platform reliability and performance. Monitoring includes:
+
+      - Background job execution success rates
+      - Email delivery performance and error rates
+      - AI integration response times and availability
+      - Database performance and storage utilization
+      - Cross-service communication reliability
+
+      Health monitoring enables proactive maintenance and rapid issue resolution.
+    icon: HeartIcon
+---
+
+# Integration Subdomain - Ubiquitous Language
+
+This document defines the common vocabulary used within the **Integration** subdomain of the BookWorm e-commerce system. The Integration subdomain is responsible for managing cross-cutting concerns, external system integrations, AI-powered tools, and automated maintenance operations.
+
+## Domain Overview
+
+The Integration subdomain serves as the central hub for:
+
+- **AI Integration**: Through the Model Context Protocol (MCP) server
+- **System Maintenance**: Via scheduled background jobs
+- **Cross-Service Communication**: Using event-driven patterns
+- **External Protocols**: Implementing industry standards for interoperability
+
+## Key Concepts
+
+### AI Integration Layer
+The MCP Tools service implements industry-standard protocols to enable AI applications to interact with BookWorm data. This includes tool discovery, prompt management, and structured data access.
+
+### Automation Layer
+The Scheduler Service manages critical background operations that maintain system health, including email cleanup and error recovery processes.
+
+### Communication Layer
+Integration events and messaging patterns ensure reliable communication between services while maintaining loose coupling and system resilience.
+
+## Usage Guidelines
+
+When working within the Integration subdomain:
+
+1. **Use precise terminology** from this dictionary in all documentation, code comments, and discussions
+2. **Maintain consistency** across service boundaries when referring to shared concepts
+3. **Update this dictionary** when introducing new concepts or refining existing ones
+4. **Reference this document** during code reviews and architectural discussions
+5. **Align with business stakeholders** using these common terms to ensure shared understanding
+
+This ubiquitous language ensures clear communication between technical teams, business stakeholders, and external integrators working with the BookWorm platform.

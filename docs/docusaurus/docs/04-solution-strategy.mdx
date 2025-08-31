@@ -9,16 +9,21 @@ last_update:
 
 This section summarizes the fundamental decisions and solution strategies that shape BookWorm's architecture. These cornerstone decisions provide the foundation for detailed implementation decisions and serve as guiding principles for the system's evolution.
 
+---
+
 ## Technology Decisions
 
 ### Core Technology Stack
 
 The foundation of BookWorm is built on carefully selected technologies that align with modern cloud-native development practices:
 
-| Technology       | Decision Rationale                                                                       | Impact                                                                           |
-| ---------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| **ASP.NET Core** | Cross-platform, high-performance web framework with excellent cloud integration          | Scalable APIs, dependency injection, middleware pipeline                         |
-| **.NET Aspire**  | Cloud-native development framework with built-in observability and service orchestration | Simplified local development, integrated telemetry, streamlined Azure deployment |
+| Technology       | Decision Rationale                                                                       | Impact                                                                           | Trade-offs                                                                 |
+| ---------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| **ASP.NET Core** | Cross-platform, high-performance web framework with excellent cloud integration          | Scalable APIs, dependency injection, middleware pipeline                         | Requires deeper knowledge of middleware and async programming              |
+| **.NET Aspire**  | Cloud-native development framework with built-in observability and service orchestration | Simplified local development, integrated telemetry, streamlined Azure deployment | Still evolving, ecosystem not as mature as other orchestrators              |
+| **Docker**       | Industry standard for containerization and orchestration                                 | Consistent deployments, scaling, and isolation                                   | Adds operational complexity and requires DevOps expertise                  |
+
+---
 
 ### Data Storage Strategy
 
@@ -29,6 +34,8 @@ The foundation of BookWorm is built on carefully selected technologies that alig
 | **Azure Blob Storage**     | File storage and static assets        | Scalable object storage, CDN integration, cost-effective for large files      |
 | **Qdrant Vector Database** | AI-powered search and recommendations | Specialized vector storage for embeddings, semantic search capabilities       |
 
+---
+
 ### Communication Patterns
 
 | Pattern          | Technology                | Rationale                                                                    |
@@ -36,6 +43,35 @@ The foundation of BookWorm is built on carefully selected technologies that alig
 | **Synchronous**  | HTTP/REST APIs            | Simple integration, excellent tooling, wide ecosystem support                |
 | **Asynchronous** | RabbitMQ with MassTransit | Reliable message delivery, event-driven architecture, decoupling             |
 | **Real-time**    | SignalR                   | Bi-directional communication, automatic transport fallback, .NET integration |
+
+---
+
+### CI/CD Strategy
+
+- **GitHub Actions** for CI with unit/integration tests
+- **Infrastructure as Code** using Bicep for reproducible environments
+- **Trade-offs**: Increased pipeline complexity but ensures reliability, repeatability, and security in deployments
+
+---
+
+### Observability & Monitoring
+
+- **.NET Aspire** telemetry (logs, metrics, traces) with OpenTelemetry integration
+- **Dashboards** in Azure Monitor/Grafana for real-time visibility
+- **Distributed tracing** with correlation IDs across services
+- **Trade-offs**: Higher storage costs for telemetry data, requires governance to avoid noise
+
+---
+
+### Security Strategy
+
+- **Authentication & Authorization**: Identity Provider (OIDC/OAuth2 with Keycloak)
+- **Secrets Management**: Azure Key Vault integration
+- **Data Protection**: Encryption at rest (PostgreSQL TDE, Blob Storage SSE) and in transit (TLS)
+- **Trade-offs**: Stronger security may add latency and operational complexity
+
+---
+
 
 ## Architectural Patterns
 
@@ -45,11 +81,11 @@ The foundation of BookWorm is built on carefully selected technologies that alig
 
 **Rationale**:
 
-- **Educational Value**: Demonstrates modern enterprise patterns and cloud-native development
 - **Scalability**: Independent scaling of services based on different load characteristics
 - **Technology Diversity**: Enables showcasing various .NET technologies and patterns
 - **Team Autonomy**: Supports autonomous development teams with clear ownership boundaries
 - **Fault Isolation**: Failures in one service don't cascade to the entire system
+- **Security & Compliance**: Enables domain-level isolation for sensitive data
 
 **Service Boundaries**:
 
@@ -71,39 +107,91 @@ graph TB
     subgraph "Cross-Cutting"
         Gateway[API Gateway<br/>Routing & Auth]
         Scheduler[Scheduler Service<br/>Background Jobs]
+        EventBus[Event Bus<br/>RabbitMQ/MassTransit]
     end
 ```
 
 ### Event-Driven Architecture with CQRS
 
-**Decision**: Implement event-driven communication with Command Query Responsibility Segregation (CQRS).
+**Decision**: Adopt event-driven architecture combined with Command Query Responsibility Segregation (CQRS) across microservices to decouple domains, improve scalability, and enable reliable integration.
 
-**Rationale**:
+---
 
-- **Loose Coupling**: Services communicate through events without direct dependencies
-- **Scalability**: Read and write operations can be optimized independently
-- **Eventual Consistency**: Acceptable for business scenarios, enables better performance
-- **Audit Trail**: Events provide natural audit logging and replay capabilities
-- **Integration**: Events enable easy integration with external systems and analytics
+#### Rationale
 
-**Implementation Patterns**:
+- **Loose Coupling**: Services communicate through events without direct dependencies, enabling independent evolution and deployment.
+- **Scalability**: Read and write operations can be scaled and optimized independently.
+- **Eventual Consistency**: Acceptable for business scenarios, though requires careful user experience design to handle temporary inconsistencies.
+- **Audit Trail**: Events provide natural audit logging, replay capabilities, and temporal queries.
+- **Integration**: Events enable easy integration with external systems, analytics, and third-party consumers.
+- **Evolvability**: Supports long-term system maintainability and adaptability.
 
-- **Command Processing**: MediatR for in-process command handling
-- **Event Publishing**: Outbox pattern ensures reliable event delivery
-- **Event Consumption**: Inbox pattern for idempotent event processing
-- **Saga Orchestration**: For complex business processes spanning multiple services
+---
 
-### Cloud-Native Development
+#### Implementation Patterns
 
-**Decision**: Use .NET Aspire as the primary cloud-native development framework.
+- **Command Processing**:
+  - *In-process*: MediatR for local command handling.
+  - *Cross-service*: Message bus (e.g., Kafka, RabbitMQ, Azure Service Bus) for distributed commands.
 
-**Rationale**:
+- **Event Publishing**:
+  - Use the **Transactional Outbox pattern** to ensure reliable event delivery as part of the database transaction.
 
-- **Developer Experience**: Significantly reduces complexity of multi-service development
-- **Service Discovery**: Eliminates manual configuration with built-in service registration
-- **Observability**: Integrated OpenTelemetry without additional infrastructure setup
-- **Configuration Management**: Centralized configuration with environment-specific overrides
-- **Azure Integration**: Native support for Azure services with proper resource provisioning
+- **Event Consumption**:
+  - Apply the **Idempotent Inbox pattern** to prevent duplicate event handling and support reliable retries.
+
+- **Saga Orchestration**:
+  - Manage long-running or multi-service workflows using orchestration engines (e.g., MassTransit, NServiceBus, Dapr Workflows).
+
+---
+
+#### Saga Patterns
+
+**Orchestration Saga**
+Centralized control for complex business processes:
+- Order processing workflow
+- Compensation handling for failed transactions
+
+**When to use**: Strong coordination is required, with well-defined compensating actions.
+
+---
+
+**Choreography Saga**
+Loosely coupled domain interactions where services react to published events:
+- Catalog updates triggering search index refresh
+- User actions generating analytics events
+- Cross-domain notifications
+
+**When to use**: Suitable for independent services, but may lead to “event spaghetti” if overused.
+
+---
+
+#### Event Patterns
+
+| Pattern              | Implementation                          | Use Case                                 | Trade-offs / Risks                                   |
+| -------------------- | --------------------------------------- | ---------------------------------------- | --------------------------------------------------- |
+| **Outbox Pattern**   | Database transaction + event publishing | Ensuring reliable event publishing       | Adds DB complexity, requires cleanup & monitoring   |
+| **Inbox Pattern**    | Idempotent event processing             | Preventing duplicate event handling      | Needs idempotency logic and deduplication storage   |
+| **Event Sourcing**   | Domain events as source of truth        | Audit trail and temporal queries         | Higher learning curve, large event stores to manage |
+| **CQRS**             | Separate read/write models              | Optimized queries and command processing | Increases complexity, requires sync strategies      |
+
+---
+
+#### Additional Considerations
+
+- **Error Handling & Monitoring**:
+  Poison message queues, retries with backoff, dead-letter queues.
+
+- **Schema Evolution**:
+  Version events carefully (e.g., schema registry, backward-compatible contracts).
+
+- **Performance & Scalability**:
+  Use partitioning, sharding, or stream-based architectures for high-throughput systems.
+
+- **Observability**:
+  Correlation IDs and tracing are essential for debugging distributed event flows.
+
+---
 
 ### AI Services Architecture
 
@@ -123,6 +211,8 @@ graph LR
     Results --> Ranking[AI Ranking]
     Ranking --> UserResponse[User Response]
 ```
+
+---
 
 ## Quality Goals Achievement
 
@@ -162,6 +252,8 @@ mindmap
             ⚠️ Resource Intensive
 ```
 
+---
+
 ### Performance Strategy
 
 | Goal                     | Strategy                                    | Implementation                                                 |
@@ -169,6 +261,8 @@ mindmap
 | **Sub-2s Response Time** | Multi-level caching, efficient queries, CDN | Redis caching, Entity Framework optimization, Azure Front Door |
 | **High Throughput**      | Horizontal scaling, async processing        | Container autoscaling, background job processing               |
 | **Low Latency**          | Regional deployment, connection pooling     | Azure regions, database connection management                  |
+
+---
 
 ### Scalability Strategy
 
@@ -178,31 +272,7 @@ mindmap
 | **Data Scaling**       | Database sharding, read replicas | PostgreSQL clustering, Redis clustering |
 | **Caching Strategy**   | Multi-tier caching               | In-memory, Redis, CDN                   |
 
-### Security Strategy
-
-```mermaid
-sequenceDiagram
-    participant Client
-    participant Gateway
-    participant Keycloak
-    participant Service
-
-    Client->>Gateway: Request with credentials
-    Gateway->>Keycloak: Validate token
-    Keycloak-->>Gateway: Token validation response
-    Gateway->>Service: Forward request with user context
-    Service-->>Gateway: Response
-    Gateway-->>Client: Response
-```
-
-### Security Measures
-
-| Layer                  | Implementation             | Technology                           |
-| ---------------------- | -------------------------- | ------------------------------------ |
-| **Authentication**     | External identity provider | Keycloak with OIDC/OAuth2            |
-| **Authorization**      | Role-based access control  | ASP.NET Core policies                |
-| **Transport Security** | End-to-end encryption      | TLS 1.3, certificate management      |
-| **Data Protection**    | Encryption at rest         | Azure Key Vault, database encryption |
+---
 
 ## Organizational Decisions
 
@@ -217,6 +287,8 @@ sequenceDiagram
 - **Continuous Integration**: GitHub Actions with automated builds and tests
 - **Continuous Deployment**: Automated deployment to staging and production environments
 
+---
+
 ### Team Structure
 
 **Decision**: Full-stack teams with service ownership.
@@ -228,6 +300,8 @@ sequenceDiagram
 - **Skill Development**: Cross-functional skills across the technology stack
 - **Business Alignment**: Teams aligned with business domains rather than technical layers
 
+---
+
 ### Third-Party Integration Strategy
 
 | Service Type           | Approach                     | Rationale                                           |
@@ -236,6 +310,8 @@ sequenceDiagram
 | **Email Services**     | Cloud provider (SendGrid)    | Deliverability expertise, compliance handling       |
 | **AI/ML Services**     | External APIs                | Rapid innovation, specialized infrastructure        |
 | **Payment Processing** | External provider            | PCI compliance, fraud protection                    |
+
+---
 
 ## Key Constraints Impact
 
@@ -247,6 +323,8 @@ sequenceDiagram
 | **Azure Platform**     | Cloud provider lock-in                   | Use standard protocols, containerization for portability            |
 | **Budget Limitations** | Infrastructure cost optimization         | Auto-scaling, reserved instances, cost monitoring                   |
 
+---
+
 ### Organizational Constraints
 
 | Constraint           | Impact                                   | Strategy                                                     |
@@ -254,6 +332,8 @@ sequenceDiagram
 | **Team Size**        | Limited parallel development             | Clear service boundaries, minimal inter-service dependencies |
 | **Skill Level**      | Learning curve for cloud-native patterns | Comprehensive documentation, training, pair programming      |
 | **Time Constraints** | MVP prioritization                       | Iterative development, technical debt management             |
+
+---
 
 ## Future Evolution Strategy
 
@@ -263,6 +343,8 @@ sequenceDiagram
 - **Integration Patterns**: Standardized event schemas and API contracts
 - **Technology Updates**: Containerized deployment enables technology evolution
 - **Scale Requirements**: Horizontal scaling patterns and monitoring
+
+---
 
 ### Monitoring and Adaptation
 

@@ -1,0 +1,141 @@
+---
+asyncapi: 3.0.0
+info:
+  title: Scheduler Service API
+  version: 1.0.0
+  description: Background job scheduler that manages automated tasks and maintenance operations for the BookWorm platform
+  contact:
+    name: Nhan Nguyen
+    url: "https://github.com/foxminchan"
+  license:
+    name: MIT
+    url: "https://opensource.org/licenses/MIT"
+defaultContentType: application/vnd.masstransit+json
+servers:
+  development:
+    host: dev.eventbus:5672
+    protocol: amqp
+    protocolVersion: 0.9.1
+    summary: RabbitMQ server for development environment
+    description: RabbitMQ server for development environment
+    security:
+      - type: userPassword
+        description: An authentication method for the server
+    tags:
+      - name: env:development
+        description: >-
+          Development environment configuration for local testing and debugging
+  staging:
+    host: stg.eventbus:5672
+    protocol: amqp
+    protocolVersion: 0.9.1
+    summary: RabbitMQ server for staging environment
+    description: RabbitMQ server for staging environment
+    security:
+      - type: userPassword
+        description: An authentication method for the server
+    tags:
+      - name: env:staging
+        description: >-
+          Staging environment configuration for testing and debugging
+  qa:
+    host: qa.eventbus:5672
+    protocol: amqp
+    protocolVersion: 0.9.1
+    summary: RabbitMQ server for QA environment
+    description: RabbitMQ server for QA environment
+    security:
+      - type: userPassword
+        description: An authentication method for the server
+    tags:
+      - name: env:qa
+        description: >-
+          QA environment configuration for testing and debugging
+  production:
+    host: prod.eventbus:5672
+    protocol: amqp
+    protocolVersion: 0.9.1
+    summary: RabbitMQ server for production environment
+    description: RabbitMQ server for production environment
+    security:
+      - type: userPassword
+        description: An authentication method for the server
+    tags:
+      - name: env:production
+        description: >-
+          Production environment configuration for production
+channels:
+  "BookWorm.Contracts:CleanUpSentEmailIntegrationEvent":
+    address: "BookWorm.Contracts:CleanUpSentEmailIntegrationEvent"
+    description: Event emitted to trigger cleanup of sent emails for system maintenance
+    messages:
+      CleanUpSentEmailIntegrationEvent.message:
+        $ref: "#/components/messages/cleanUpSentEmailIntegrationEvent"
+  "BookWorm.Contracts:ResendErrorEmailIntegrationEvent":
+    address: "BookWorm.Contracts:ResendErrorEmailIntegrationEvent"
+    description: Event emitted to trigger resending of failed emails
+    messages:
+      ResendErrorEmailIntegrationEvent.message:
+        $ref: "#/components/messages/resendErrorEmailIntegrationEvent"
+operations:
+  CleanUpSentEmailIntegrationEvent:
+    title: Clean up sent email
+    summary: Clean up sent email
+    description: Represents an integration event to trigger cleanup of sent emails for system maintenance
+    action: send
+    channel:
+      $ref: "#/channels/BookWorm.Contracts:CleanUpSentEmailIntegrationEvent"
+    messages:
+      - $ref: >-
+          #/channels/BookWorm.Contracts:CleanUpSentEmailIntegrationEvent/messages/CleanUpSentEmailIntegrationEvent.message
+  ResendErrorEmailIntegrationEvent:
+    title: Resend error email
+    summary: Resend error email
+    description: Represents an integration event to trigger resending of failed emails
+    action: send
+    channel:
+      $ref: "#/channels/BookWorm.Contracts:ResendErrorEmailIntegrationEvent"
+    messages:
+      - $ref: >-
+          #/channels/BookWorm.Contracts:ResendErrorEmailIntegrationEvent/messages/ResendErrorEmailIntegrationEvent.message
+components:
+  schemas:
+    cleanUpSentEmailIntegrationEvent:
+      id: cleanUpSentEmailIntegrationEvent
+      description: Represents an integration event to trigger cleanup of sent emails for system maintenance
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+    integrationEvent:
+      id: integrationEvent
+      type: object
+      description: Base event structure containing common metadata for all integration events in the system
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: guid
+          description: The unique identifier of the integration event
+          example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+        creationDate:
+          type: string
+          format: date-time
+          description: The creation date of the integration event
+          example: "2021-01-01T00:00:00Z"
+    resendErrorEmailIntegrationEvent:
+      id: resendErrorEmailIntegrationEvent
+      description: Represents an integration event to trigger resending of failed emails
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+  messages:
+    cleanUpSentEmailIntegrationEvent:
+      payload:
+        $ref: "#/components/schemas/cleanUpSentEmailIntegrationEvent"
+      name: cleanUpSentEmailIntegrationEvent
+    resendErrorEmailIntegrationEvent:
+      payload:
+        $ref: "#/components/schemas/resendErrorEmailIntegrationEvent"
+      name: resendErrorEmailIntegrationEvent

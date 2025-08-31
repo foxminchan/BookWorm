@@ -24,6 +24,10 @@ receives:
     version: 1.0.0
   - id: PlaceOrderCommand
     version: 1.0.0
+  - id: CleanUpSentEmailIntegrationEvent
+    version: 1.0.0
+  - id: ResendErrorEmailIntegrationEvent
+    version: 1.0.0
 schemaPath: asyncapi-v1.yml
 specifications:
   - type: asyncapi
@@ -113,11 +117,13 @@ C4Component
 
 The Notification Service processes the following commands:
 
-| Command                | Channel                     | Purpose                              | SLA      |
-| ---------------------- | --------------------------- | ------------------------------------ | -------- |
-| `PlaceOrderCommand`    | notification-place-order    | Sends order confirmation emails      | < 5 min  |
-| `CompleteOrderCommand` | notification-complete-order | Sends order completion notifications | < 10 min |
-| `CancelOrderCommand`   | notification-cancel-order   | Delivers order cancellation notices  | < 5 min  |
+| Command                              | Channel                          | Purpose                              | SLA      |
+| ------------------------------------ | -------------------------------- | ------------------------------------ | -------- |
+| `PlaceOrderCommand`                  | notification-place-order         | Sends order confirmation emails      | < 5 min  |
+| `CompleteOrderCommand`               | notification-complete-order      | Sends order completion notifications | < 10 min |
+| `CancelOrderCommand`                 | notification-cancel-order        | Delivers order cancellation notices  | < 5 min  |
+| `CleanUpSentEmailIntegrationEvent`   | notification-clean-up-sent-email | Cleans up sent email records         | < 15 min |
+| `ResendErrorEmailIntegrationEvent`   | notification-resend-error-email  | Resends failed email deliveries      | < 10 min |
 
 ### Event Processing Pipeline
 

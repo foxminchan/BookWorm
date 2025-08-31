@@ -1,0 +1,160 @@
+---
+id: MCPTools
+name: MCP Tools
+version: 1.0.0
+summary: Model Context Protocol (MCP) server providing AI-powered tools and components for managing BookWorm catalog data and operations
+badges:
+  - content: MCP Server
+    textColor: purple
+    backgroundColor: purple
+    icon: WrenchScrewdriverIcon
+  - content: JSON-RPC
+    textColor: blue
+    backgroundColor: blue
+    icon: CodeBracketIcon
+  - content: Server-Sent Events
+    textColor: orange
+    backgroundColor: orange
+    icon: RadioIcon
+  - content: AI-Powered
+    textColor: green
+    backgroundColor: green
+    icon: CpuChipIcon
+sends:
+  - id: ListBooksQuery
+    version: 1.0.0
+receives:
+  - id: GetMcpComponentsQuery
+    version: 1.0.0
+schemaPath: openapi-v1.yml
+specifications:
+  - type: openapi
+    path: openapi-v1.yml
+    name: OpenAPI V1
+owners:
+  - nhanxnguyen
+repository:
+  language: C#
+  url: https://github.com/foxminchan/BookWorm
+---
+
+<Tiles>
+  <Tile
+    icon="DocumentIcon"
+    href={`/docs/services/${frontmatter.id}/${frontmatter.version}/changelog`}
+    title="View the changelog"
+    description="Want to know the history of this service? View the change logs"
+  />
+  <Tile
+    icon="UserGroupIcon"
+    href="/docs/users/nhanxnguyen"
+    title="Contact the author"
+    description="Any questions? Feel free to contact the owners"
+  />
+  <Tile
+    icon="BoltIcon"
+    href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
+    title={`Sends ${frontmatter.sends.length} messages`}
+    description="This service sends messages to downstream consumers"
+  />
+  <Tile
+    icon="BoltIcon"
+    href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
+    title={`Receives ${frontmatter.receives.length} messages`}
+    description="This service receives messages from other services"
+  />
+</Tiles>
+
+## Overview
+
+The MCP Tools Service is a specialized integration service within the BookWorm ecosystem that implements the Model Context Protocol (MCP) server specification. This service serves as a bridge between AI-powered applications and the BookWorm catalog system, providing structured access to book data and catalog operations through a standardized protocol.
+
+Built following our [microservices architecture](https://foxminchan.github.io/BookWorm/docs/architecture-decisions/adr-001-microservices-architecture) principles, this service encapsulates the complexities of AI tool integration while maintaining clean boundaries between the Integration subdomain and other bounded contexts.
+
+### Key Responsibilities
+
+- **MCP Protocol Implementation**: HTTP-based MCP server using ModelContextProtocol.AspNetCore
+- **Tool Registry Management**: Auto-discovery of MCP tools from assembly attributes
+- **Catalog Integration**: HTTP API integration with BookWorm Catalog Service
+- **AI Assistant Support**: Pre-defined prompts for customer service interactions
+- **OpenAPI Documentation**: Self-documenting API with MCP-specific extensions
+
+### MCP Protocol Features
+
+The service implements the Model Context Protocol with the following capabilities:
+
+- **Tools**: Exposes BookWorm catalog search operations as MCP tools
+- **Prompts**: Pre-defined prompts for AI customer service interactions
+- **HTTP Transport**: Stateless HTTP transport for MCP communication
+- **OpenAPI Integration**: Self-documenting API with MCP extensions
+
+### Domain Model
+
+The MCP Tools service is structured around the following key domain models:
+
+- **Book**: Core entity with properties like Id, Name, Description, Price, Category, Publisher, Authors, and ratings
+- **Author**: Entity representing book authors
+- **Category**: Entity for book categorization
+- **Publisher**: Entity for book publishers
+- **MCP Tool**: Attribute-decorated methods exposed as MCP tools
+- **MCP Prompt**: Pre-defined AI conversation templates
+
+### Available Tools
+
+The service exposes the following tools for BookWorm integration:
+
+| Tool Name       | Description                              | Capabilities                      |
+| --------------- | ---------------------------------------- | --------------------------------- |
+| `SearchCatalog` | Search for books in the BookWorm catalog | Hybrid search by book description |
+
+### Available Prompts
+
+The service provides pre-defined prompts for AI interactions:
+
+| Prompt Name    | Description                                | Purpose                                    |
+| -------------- | ------------------------------------------ | ------------------------------------------ |
+| `SystemPrompt` | BookWorm customer service assistant prompt | Provides AI assistant context and behavior |
+
+## Core Features
+
+| Feature                  | Description                                                        |
+| ------------------------ | ------------------------------------------------------------------ |
+| **Tool Discovery**       | Auto-discovery of MCP tools via assembly attributes and reflection |
+| **Catalog Search**       | Full-text search of BookWorm catalog by book description           |
+| **AI Assistant Prompts** | Pre-defined system prompts for customer service AI interactions    |
+| **HTTP Transport**       | Stateless HTTP transport following MCP protocol specification      |
+| **OpenAPI Integration**  | Self-documenting API with MCP-specific extensions                  |
+| **Model Serialization**  | Efficient JSON serialization with source generators                |
+
+## Architecture Diagram
+
+<NodeGraph />
+
+### External Dependencies
+
+The MCP Tools Service integrates with:
+
+- **Catalog Service**: Primary data source for book information via HTTP/REST API
+- **AI Clients**: External applications that consume MCP tools (Claude, OpenAI assistants, etc.)
+- **BookWorm Service Defaults**: Shared infrastructure components and configurations
+- **OpenTelemetry**: For distributed tracing and metrics collection
+
+### Technology Stack
+
+- **.NET 9**: Core runtime and web framework
+- **ModelContextProtocol.AspNetCore**: MCP server implementation library
+- **Refit**: Type-safe HTTP client for Catalog service integration
+- **Source Generators**: Efficient JSON serialization
+- **OpenAPI**: API documentation and specification with MCP extensions
+- **Docker**: Containerization and deployment
+
+## Integration Patterns
+
+The service follows several key integration patterns:
+
+- **Attribute-Based Discovery**: Uses .NET attributes to automatically register MCP tools and prompts
+- **HTTP Client Pattern**: Leverages Refit for type-safe HTTP communication with Catalog service
+- **Stateless Design**: HTTP transport is configured as stateless for better scalability
+- **Source Generation**: Uses JSON source generators for efficient serialization
+- **Health Checks**: Integrates with ASP.NET Core health check system
+- **Observability**: Built-in OpenTelemetry integration for metrics and tracing

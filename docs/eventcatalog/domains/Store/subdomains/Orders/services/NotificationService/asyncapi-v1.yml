@@ -83,6 +83,18 @@ channels:
     messages:
       PlaceOrderCommand.message:
         $ref: "#/components/messages/placeOrderCommand"
+  notification-clean-up-sent-email:
+    address: notification-clean-up-sent-email
+    description: Event emitted to trigger cleanup of sent emails for system maintenance
+    messages:
+      CleanUpSentEmailIntegrationEvent.message:
+        $ref: "#/components/messages/cleanUpSentEmailIntegrationEvent"
+  notification-resend-error-email:
+    address: notification-resend-error-email
+    description: Event emitted to trigger resending of failed emails
+    messages:
+      ResendErrorEmailIntegrationEvent.message:
+        $ref: "#/components/messages/resendErrorEmailIntegrationEvent"
 operations:
   CancelOrderCommand:
     title: Cancel order notification
@@ -113,6 +125,24 @@ operations:
       $ref: "#/channels/notification-place-order"
     messages:
       - $ref: "#/channels/notification-place-order/messages/PlaceOrderCommand.message"
+  CleanUpSentEmailIntegrationEvent:
+    title: Clean up sent email notification
+    summary: Clean up sent email notification
+    description: Represents an integration event to trigger cleanup of sent emails for system maintenance
+    action: receive
+    channel:
+      $ref: "#/channels/notification-clean-up-sent-email"
+    messages:
+      - $ref: "#/channels/notification-clean-up-sent-email/messages/CleanUpSentEmailIntegrationEvent.message"
+  ResendErrorEmailIntegrationEvent:
+    title: Resend error email notification
+    summary: Resend error email notification
+    description: Represents an integration event to trigger resending of failed emails
+    action: receive
+    channel:
+      $ref: "#/channels/notification-resend-error-email"
+    messages:
+      - $ref: "#/channels/notification-resend-error-email/messages/ResendErrorEmailIntegrationEvent.message"
 components:
   schemas:
     cancelOrderCommand:
@@ -214,6 +244,20 @@ components:
               description: The total amount of money in the basket
               minimum: 0
               example: 100.00
+    cleanUpSentEmailIntegrationEvent:
+      id: cleanUpSentEmailIntegrationEvent
+      description: Represents an integration event to trigger cleanup of sent emails for system maintenance
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+    resendErrorEmailIntegrationEvent:
+      id: resendErrorEmailIntegrationEvent
+      description: Represents an integration event to trigger resending of failed emails
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
   messages:
     cancelOrderCommand:
       payload:
@@ -227,3 +271,11 @@ components:
       payload:
         $ref: "#/components/schemas/placeOrderCommand"
       name: placeOrderCommand
+    cleanUpSentEmailIntegrationEvent:
+      payload:
+        $ref: "#/components/schemas/cleanUpSentEmailIntegrationEvent"
+      name: cleanUpSentEmailIntegrationEvent
+    resendErrorEmailIntegrationEvent:
+      payload:
+        $ref: "#/components/schemas/resendErrorEmailIntegrationEvent"
+      name: resendErrorEmailIntegrationEvent

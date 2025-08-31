@@ -7,150 +7,59 @@ last_update:
 
 # Architecture Constraints
 
+Architecture constraints define the boundaries and non-negotiable conditions under which the BookWorm system must be designed and implemented. They ensure alignment across teams, reduce architectural drift, and make explicit the trade-offs that were accepted.
+
+---
+
 ## Technical Constraints
 
-### Platform and Technology Stack
 
-| Constraint               | Description                        | Rationale                                                                      | Negotiable |
-| ------------------------ | ---------------------------------- | ------------------------------------------------------------------------------ | ---------- |
-| **.NET Aspire**          | Cloud-native application framework | Simplified cloud-native development, built-in observability, service discovery | Low        |
-| **Azure Container Apps** | Primary deployment target          | Managed container service with auto-scaling, serverless capabilities           | Medium     |
-| **Docker**               | Containerization platform          | Consistent deployment across environments, isolation, portability              | Low        |
-| **PostgreSQL**           | Primary database system            | ACID compliance, JSON support, open source, strong ecosystem                   | Medium     |
-| **RabbitMQ**             | Message broker                     | Reliable message delivery, mature ecosystem, clustering support                | Medium     |
-| **Azure Services**       | Cloud platform dependency          | Managed services, integration capabilities, cost optimization                  | Low        |
+| Constraint               | Description                        | Rationale                                                                      | Impact                                                      | Negotiable | Trade-offs                                                                 |
+| ------------------------ | ---------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------- | ---------- | -------------------------------------------------------------------------- |
+| **.NET Aspire**          | Cloud-native application framework | Simplified development, built-in observability, service discovery              | Foundation for service orchestration, telemetry integration | Low        | Ecosystem still evolving, fewer samples/community resources                |
+| **Azure Container Apps** | Primary deployment target          | Managed container service with auto-scaling, serverless capabilities           | Streamlined Azure-native deployments                        | Medium     | Vendor lock-in to Azure, less portability to other clouds                  |
+| **Docker**               | Containerization platform          | Consistent deployments, environment parity, isolation                          | Developer experience, portability                           | Low        | Adds local complexity for onboarding and toolchain setup                   |
+| **PostgreSQL**           | Primary database system            | ACID compliance, JSON support, open source, strong ecosystem                   | Robust persistence layer                                    | Medium     | Horizontal scaling harder than NoSQL, requires tuning for very high loads  |
+| **RabbitMQ**             | Message broker                     | Reliable message delivery, mature ecosystem, clustering support                | Enables event-driven architecture                           | Medium     | Operational overhead, monitoring complexity                                |
+| **Azure Cloud Platform** | Core cloud provider                | Managed services, integration capabilities, cost optimization                  | Seamless integration with Aspire & Azure services           | Low        | Ties system to Azure cloud ecosystem                                       |
 
-### Development Constraints
+---
 
-| Constraint                      | Description                              | Impact                                                    | Negotiable |
-| ------------------------------- | ---------------------------------------- | --------------------------------------------------------- | ---------- |
-| **Domain-Driven Design**        | Mandatory architectural approach         | Influences service boundaries and model design            | No         |
-| **Vertical Slice Architecture** | Required code organization               | Affects project structure and feature implementation      | Low        |
-| **Event-Driven Architecture**   | Required communication pattern           | Impacts service interaction and data consistency          | Low        |
-| **CQRS Pattern**                | Command Query Responsibility Segregation | Separates read and write operations, increases complexity | Medium     |
-| **OpenAPI/AsyncAPI**            | API documentation standards              | All APIs must be properly documented                      | Low        |
+## Development Constraints
 
-### Performance Constraints
+| Constraint                      | Description                               | Rationale                                                      | Impact                                                     | Negotiable | Trade-offs                                                                 |
+| ------------------------------- | ----------------------------------------- | -------------------------------------------------------------- | ---------------------------------------------------------- | ---------- | -------------------------------------------------------------------------- |
+| **Domain-Driven Design**        | Mandatory architectural approach          | Ensures service boundaries and ubiquitous language             | Influences model design and service decomposition          | No         | Higher learning curve, requires discipline in modeling                     |
+| **Vertical Slice Architecture** | Required code organization pattern        | Promotes modularity and feature-centric development            | Simplifies testing, clearer ownership of features          | No         | May feel less familiar to developers used to layered architecture          |
+| **Automated Testing**           | Unit, integration, and contract testing   | Increases reliability, confidence in deployments               | Ensures regressions are caught early                       | Low        | Increases upfront development effort                                       |
+| **CI/CD Pipelines**             | All services must use automated pipelines | Guarantees repeatability, quality gates, and deployment safety | Faster feedback loops, predictable releases                | Medium     | Pipeline maintenance overhead, longer build times                          |
+| **Code Quality Standards**      | Static analysis, style guidelines, linting | Improves maintainability and consistency across teams          | Shared practices across contributors                       | Medium     | May slow down initial development if tooling is strict                     |
 
-| Constraint               | Description                                   | Impact                                                 | Rationale                    |
-| ------------------------ | --------------------------------------------- | ------------------------------------------------------ | ---------------------------- |
-| **Response Time**        | API responses under 500ms (95th percentile)   | Requires efficient algorithms and caching              | User experience requirements |
-| **Scalability**          | Support 10,000 concurrent users               | Influences architecture patterns and resource planning | Business growth expectations |
-| **Memory Usage**         | Efficient memory management                   | Affects data structures and caching strategies         | Cost optimization            |
-| **Database Performance** | Query execution under 100ms (90th percentile) | Requires proper indexing and query optimization        | System responsiveness        |
+---
 
-## Organizational Constraints
+## Security & Compliance Constraints
 
-### Solo Development Context
+| Constraint              | Description                          | Rationale                                         | Impact                                  | Negotiable | Trade-offs                                                  |
+| ----------------------- | ------------------------------------ | ------------------------------------------------- | --------------------------------------- | ---------- | ----------------------------------------------------------- |
+| **Authentication/IdP**  | Use OIDC/OAuth2 via Keycloak     | Centralized auth, secure token-based access       | Consistent identity management           | Low        | Adds external dependency, requires proper configuration     |
+| **Secrets Management**  | Use Azure Key Vault                  | Secure secret storage, rotation policies          | Reduces risk of leaks, supports auditing | No         | Extra cost, requires managed service access                 |
+| **Encryption**          | TLS in transit, TDE/SSE at rest      | Compliance, protects sensitive user data          | Strong data protection                   | No         | Slight performance overhead                                 |
+| **Compliance Standards**| Must align with GDPR and local laws  | Regulatory requirements for personal data         | Protects system from legal liabilities   | Low        | Extra complexity in data retention and deletion strategies  |
 
-| Constraint             | Description                       | Impact                                    | Mitigation                                     |
-| ---------------------- | --------------------------------- | ----------------------------------------- | ---------------------------------------------- |
-| **Single Developer**   | One person handles all roles      | Limited bandwidth, knowledge silos        | Comprehensive documentation, automated testing |
-| **Time Constraints**   | Part-time development schedule    | Slower feature delivery                   | Prioritized feature development, MVP approach  |
-| **Budget Limitations** | Cost-conscious technology choices | Preference for free/open source solutions | Azure free tier, open source tools             |
-| **Knowledge Transfer** | Ensure project continuity         | Extensive documentation required          | Living documentation, decision records         |
+---
 
-### Development Process
+## Observability Constraints
 
-| Constraint                  | Description                        | Rationale                                     | Negotiable |
-| --------------------------- | ---------------------------------- | --------------------------------------------- | ---------- |
-| **Open Source Development** | Public repository with MIT license | Community contributions, transparency         | No         |
-| **GitHub Actions**          | CI/CD pipeline platform            | Free for public repos, integrated with GitHub | Low        |
-| **Code Quality Gates**      | SonarCloud integration required    | Maintain code quality standards               | Low        |
-| **Testing Requirements**    | Minimum 80% code coverage          | Ensure reliability and maintainability        | Medium     |
+| Constraint               | Description                         | Rationale                                         | Impact                                         | Negotiable | Trade-offs                                                        |
+| ------------------------ | ----------------------------------- | ------------------------------------------------- | ---------------------------------------------- | ---------- | ----------------------------------------------------------------- |
+| **OpenTelemetry**        | Standardized tracing/metrics/logs   | Unified observability across services             | Easier debugging and performance monitoring    | Low        | Requires consistent implementation across all services            |
+| **Distributed Tracing**  | Correlation IDs across services     | Enables tracking of cross-service workflows       | Faster incident resolution                     | Medium     | Adds overhead to logging, requires training for interpretation    |
+| **Centralized Dashboards**| Azure Monitor / Grafana dashboards | Proactive monitoring and visibility               | Improves reliability and reduces MTTR          | Medium     | Higher storage costs, risk of noise if not curated carefully      |
 
-### Documentation Requirements
+---
 
-| Constraint                     | Description                           | Standard                               | Negotiable |
-| ------------------------------ | ------------------------------------- | -------------------------------------- | ---------- |
-| **Architecture Documentation** | arc42 template compliance             | Structured architectural documentation | Low        |
-| **API Documentation**          | OpenAPI for REST, AsyncAPI for events | Industry standard API documentation    | No         |
-| **Event Catalog**              | Centralized event documentation       | Event-driven architecture transparency | Low        |
-| **ADRs**                       | Architecture Decision Records         | Decision rationale preservation        | Low        |
+## Summary
 
-## Political and Legal Constraints
-
-### Compliance Requirements
-
-| Constraint                | Description                     | Impact                                         | Compliance Level |
-| ------------------------- | ------------------------------- | ---------------------------------------------- | ---------------- |
-| **GDPR**                  | EU data protection regulation   | Data handling, user consent, privacy by design | Mandatory        |
-| **PCI DSS**               | Payment card industry standards | Payment processing security requirements       | Mandatory        |
-| **Accessibility**         | WCAG 2.1 AA compliance          | UI/UX design constraints                       | High             |
-| **Open Source Licensing** | MIT license compatibility       | Third-party dependency restrictions            | Mandatory        |
-
-### External Dependencies
-
-| Constraint                 | Description                      | Risk Level | Mitigation Strategy                           |
-| -------------------------- | -------------------------------- | ---------- | --------------------------------------------- |
-| **Third-party APIs**       | External service dependencies    | Medium     | Fallback mechanisms, circuit breakers         |
-| **Cloud Provider Lock-in** | Azure-specific services          | Medium     | Abstraction layers, standard interfaces       |
-| **Open Source Libraries**  | Dependency on community projects | Low        | Active maintenance verification, alternatives |
-
-## Conventions and Standards
-
-### Coding Standards
-
-| Convention                   | Description                             | Enforcement | Tool                 |
-| ---------------------------- | --------------------------------------- | ----------- | -------------------- |
-| **EditorConfig**             | Consistent code formatting              | Automatic   | IDE integration      |
-| **C# Coding Conventions**    | Microsoft C# standards                  | Code review | StyleCop, SonarCloud |
-| **Nullable Reference Types** | Enabled for null safety                 | Compiler    | C# compiler          |
-| **Pattern Matching**         | Preferred over traditional conditionals | Code review | Developer discipline |
-| **File Scoped Namespaces**   | Modern namespace declaration            | Code review | EditorConfig         |
-
-### Architecture Patterns
-
-| Pattern            | Application                   | Justification                       | Mandatory |
-| ------------------ | ----------------------------- | ----------------------------------- | --------- |
-| **Microservices**  | Service decomposition         | Scalability, independent deployment | Yes       |
-| **Event Sourcing** | Domain events storage         | Audit trail, temporal queries       | Yes       |
-| **Outbox Pattern** | Reliable event publishing     | Message delivery consistency        | Yes       |
-| **Inbox Pattern**  | Idempotent message processing | Duplicate prevention                | Yes       |
-| **Saga Pattern**   | Distributed transactions      | Long-running process management     | Yes       |
-| **CQRS**           | Read/write separation         | Performance optimization            | No        |
-
-### Naming Conventions
-
-| Element      | Convention              | Example             | Rationale                    |
-| ------------ | ----------------------- | ------------------- | ---------------------------- |
-| **Services** | Domain.Service format   | Catalog.Service     | Clear service identification |
-| **Events**   | PastTense.DomainEvent   | OrderPlaced.Event   | Event naming clarity         |
-| **Commands** | Imperative.Command      | CreateOrder.Command | Action intention             |
-| **Queries**  | Question.Query          | GetBookById.Query   | Query purpose                |
-| **APIs**     | RESTful resource naming | /api/v1/books       | Industry standard            |
-
-## Infrastructure Constraints
-
-### Deployment Environment
-
-- **Azure Cloud**: Primary cloud provider
-- **Container-based**: All services deployed as containers
-- **Managed Services**: Preference for managed Azure services
-- **Infrastructure as Code**: Automated infrastructure provisioning
-
-### Security Requirements
-
-- **Authentication**: Keycloak for identity management
-- **Authorization**: Role-based access control (RBAC)
-- **HTTPS Only**: All communication encrypted in transit
-- **Secret Management**: Azure Key Vault for sensitive configuration
-- **Security Scanning**: Automated vulnerability scanning
-
-## External Dependencies
-
-### Third-Party Services
-
-| Service            | Purpose                        | Constraint Impact                      |
-| ------------------ | ------------------------------ | -------------------------------------- |
-| **Keycloak**       | Identity and access management | Authentication architecture dependency |
-| **SendGrid**       | Email delivery service         | Email functionality limitation         |
-| **Azure Services** | Cloud infrastructure           | Platform-specific implementation       |
-| **AI Models**      | Nomic Embed Text, Gemma 3      | GPU requirements for local development |
-
-### Hardware Requirements
-
-- **GPU Support**: Required for AI components in local development
-- **Container Runtime**: Docker or Podman for local development
-- **Memory**: Minimum 8GB RAM for full local development setup
-- **Storage**: SSD recommended for optimal performance
+<p style={{ textAlign: "justify" }}>
+  These architecture constraints establish the <b>non-negotiable foundation</b> of the system while making clear which areas are <b>flexible</b>. They balance innovation (e.g., Aspire, Qdrant) with proven practices (e.g., PostgreSQL, DDD), and provide guardrails for teams to build consistently and securely within agreed boundaries.
+</p>

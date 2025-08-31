@@ -18,7 +18,7 @@ externalDocs:
   url: https://github.com/foxminchan/BookWorm
 servers:
   - url: "{protocol}://{environment}.catalog.bookworm.com"
-    description: Before deploying to production, ensure the environment is set correctly
+    description: Non-production environment
     variables:
       protocol:
         enum:
