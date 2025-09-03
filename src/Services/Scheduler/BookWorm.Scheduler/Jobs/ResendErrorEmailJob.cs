@@ -6,7 +6,11 @@ namespace BookWorm.Scheduler.Jobs;
 
 public sealed class ResendErrorEmailJob(IBus bus, ISchedulerDbContext dbContext)
 {
-    [TickerFunction($"{nameof(ResendErrorEmailJob)}", "0 * * * *", TickerTaskPriority.High)]
+    [TickerFunction(
+        $"{nameof(ResendErrorEmailJob)}",
+        "%CronTicker:ResendErrorEmailJob%",
+        TickerTaskPriority.High
+    )]
     public async Task ExecuteAsync(CancellationToken cancellationToken)
     {
         await bus.Publish(new ResendErrorEmailIntegrationEvent(), cancellationToken);
