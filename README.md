@@ -45,7 +45,7 @@
   - [x] Utilized EventCatalog for centralized architecture documentation
 - [x] Established a testing strategy:
   - [x] Conducted service unit tests
-  - [x] Implemented contract tests
+  - [x] Implemented snapshot tests
   - [x] Established architecture testing strategy
   - [x] Performed load testing with k6
   - [ ] Planned integration tests
