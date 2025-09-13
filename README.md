@@ -1,8 +1,8 @@
 [![CI](https://github.com/foxminchan/BookWorm/actions/workflows/ci.yaml/badge.svg)](https://github.com/foxminchan/BookWorm/actions/workflows/ci.yaml)
 [![Container Security](https://github.com/foxminchan/BookWorm/actions/workflows/container.yml/badge.svg)](https://github.com/foxminchan/BookWorm/actions/workflows/container.yml)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=coverage)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
 [![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
 
@@ -34,7 +34,7 @@
 - [x] Set up AuthN/AuthZ with Keycloak
 - [x] Implemented caching with HybridCache
 - [x] Incorporated AI components:
-  - [x] Text embedding with Nomic Embed Text
+  - [x] Text embedding with Embedding Gemma
   - [x] Integrated chatbot functionality using Gemma 3
   - [x] Standardized AI tooling with Model Context Protocol (MCP)
   - [x] Orchestrated multi-agent workflows using Semantic Kernel

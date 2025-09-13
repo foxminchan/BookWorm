@@ -14,7 +14,7 @@ runs:
   using: "composite"
   steps:
     - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@0.33.0
+      uses: aquasecurity/trivy-action@0.33.1
       with:
         scan-type: "fs"
         scan-ref: "."
@@ -41,7 +41,7 @@ runs:
         languages: "csharp"
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: ${{ inputs.dotnet-version }}
 
