@@ -110,7 +110,7 @@ var notificationDb = postgres.AddDatabase(Components.Database.Notification);
 
 await builder.AddOllama(configure =>
 {
-    configure.AddModel(Components.Ollama.Embedding, "nomic-embed-text:latest");
+    configure.AddModel(Components.Ollama.Embedding, "embeddinggemma:300m");
     configure.AddModel(
         Components.Ollama.Chat,
         $"gemma3:{(builder.ExecutionContext.IsPublishMode ? 12 : 4)}b"
