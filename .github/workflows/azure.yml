@@ -30,8 +30,8 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: |
-            8.x.x
             9.x.x
+            10.x.x
 
       - name: Log in with Azure (Federated Credentials)
         run: |

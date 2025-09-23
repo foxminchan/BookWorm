@@ -17,7 +17,6 @@ public static class OpenApiExtensions
                 options =>
                 {
                     options.ApplyApiVersionInfo(document, version);
-                    options.ApplySchemaNullableFalse();
 
                     if (identity is not null)
                     {

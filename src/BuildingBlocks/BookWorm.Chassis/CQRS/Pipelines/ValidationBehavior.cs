@@ -21,7 +21,7 @@ public class ValidationBehavior<TRequest, TResponse>(
         CancellationToken cancellationToken
     )
     {
-        const string behavior = nameof(ValidationBehavior<TRequest, TResponse>);
+        const string behavior = nameof(ValidationBehavior<,>);
 
         if (logger.IsEnabled(LogLevel.Information))
         {

@@ -40,7 +40,7 @@ public static class KernelExtensions
 
     public static async Task<IReadOnlyList<KernelFunction>> MapToFunctionsAsync(this Kernel kernel)
     {
-        var mcpClient = kernel.Services.GetRequiredService<IMcpClient>();
+        var mcpClient = kernel.Services.GetRequiredService<McpClient>();
         var tools = await mcpClient.ListToolsAsync().ConfigureAwait(false);
         var functions = tools.Select(aiFunction => aiFunction.AsKernelFunction());
         return [.. functions];

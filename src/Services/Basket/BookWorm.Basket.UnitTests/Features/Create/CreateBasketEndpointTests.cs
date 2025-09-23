@@ -1,5 +1,4 @@
-﻿using BookWorm.Basket.Features;
-using BookWorm.Basket.Features.Create;
+﻿using BookWorm.Basket.Features.Create;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Routing;
@@ -8,9 +7,7 @@ namespace BookWorm.Basket.UnitTests.Features.Create;
 
 public sealed class CreateBasketEndpointTests
 {
-    private readonly CreateBasketCommand _command = new(
-        [new BasketItemRequest("book1", 1), new BasketItemRequest("book2", 2)]
-    );
+    private readonly CreateBasketCommand _command = new([new("book1", 1), new("book2", 2)]);
 
     private readonly CreateBasketEndpoint _endpoint = new();
 

@@ -20,6 +20,7 @@ public static class CorsExtensions
                     .WithCustomInput(_ =>
                         new()
                         {
+                            Name = "BackofficeUrlParameter",
                             Label = "BackOffice Domain",
                             InputType = InputType.Text,
                             Value = "https://admin.bookworm.com",
@@ -33,6 +34,7 @@ public static class CorsExtensions
                     .WithCustomInput(_ =>
                         new()
                         {
+                            Name = "StoreFrontUrlParameter",
                             Label = "StoreFront Domain",
                             InputType = InputType.Text,
                             Value = "https://bookworm.com",

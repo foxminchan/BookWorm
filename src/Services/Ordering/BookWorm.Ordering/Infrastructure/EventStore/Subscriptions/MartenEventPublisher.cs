@@ -31,38 +31,34 @@ public sealed class MartenEventPublisher(
                     ExtractTraceContextFromEventMetadata
                 );
 
-                await activityScope
-                    .Run(
-                        $"{nameof(MartenEventPublisher)}/{nameof(ProcessEventsAsync)}",
-                        async (_, ct) =>
+                await activityScope.Run(
+                    $"{nameof(MartenEventPublisher)}/{nameof(ProcessEventsAsync)}",
+                    async (_, ct) =>
+                    {
+                        using var scope = scopeFactory.CreateScope();
+                        var eventDispatcher =
+                            scope.ServiceProvider.GetRequiredService<IEventDispatcher>();
+
+                        var dbContext =
+                            scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
+
+                        if (@event.Data is DomainEvent domainEvent)
                         {
-                            using var scope = scopeFactory.CreateScope();
-                            var eventDispatcher =
-                                scope.ServiceProvider.GetRequiredService<IEventDispatcher>();
+                            await eventDispatcher.DispatchAsync(domainEvent, ct);
 
-                            var dbContext =
-                                scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
-
-                            if (@event.Data is DomainEvent domainEvent)
-                            {
-                                await eventDispatcher
-                                    .DispatchAsync(domainEvent, ct)
-                                    .ConfigureAwait(false);
-
-                                await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
-                            }
-                        },
-                        new()
+                            await dbContext.SaveChangesAsync(ct);
+                        }
+                    },
+                    new()
+                    {
+                        Tags =
                         {
-                            Tags =
-                            {
-                                { TelemetryTags.EventHandling.Event, @event.Data.GetType().Name },
-                            },
-                            Parent = parentContext.ActivityContext,
+                            { TelemetryTags.EventHandling.Event, @event.Data.GetType().Name },
                         },
-                        cancellationToken
-                    )
-                    .ConfigureAwait(false);
+                        Parent = parentContext.ActivityContext,
+                    },
+                    cancellationToken
+                );
 
                 lastProcessed = @event.Sequence;
             }
@@ -77,7 +73,7 @@ public sealed class MartenEventPublisher(
                 exc.Message
             );
 
-            await controller.ReportCriticalFailureAsync(exc, lastProcessed).ConfigureAwait(false);
+            await controller.ReportCriticalFailureAsync(exc, lastProcessed);
 
             logBuffer.Flush();
 

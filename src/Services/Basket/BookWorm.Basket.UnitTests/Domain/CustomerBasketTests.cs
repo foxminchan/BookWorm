@@ -57,7 +57,7 @@ public sealed class CustomerBasketTests
         // Arrange
         var basket = new CustomerBasket(
             Guid.CreateVersion7().ToString(),
-            [new("book-1", 2), new BasketItem("book-2", 1)]
+            [new("book-1", 2), new("book-2", 1)]
         );
 
         // Act

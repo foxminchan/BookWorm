@@ -14,9 +14,7 @@ public sealed class UpdateBasketEndpointTests
     public async Task GivenValidCommand_WhenHandlingRequest_ThenShouldCallSenderAndReturnNoContent()
     {
         // Arrange
-        var command = new UpdateBasketCommand(
-            [new BasketItemRequest("item1", 1), new BasketItemRequest("item2", 2)]
-        );
+        var command = new UpdateBasketCommand([new("item1", 1), new("item2", 2)]);
 
         _senderMock
             .Setup(s => s.Send(command, It.IsAny<CancellationToken>()))

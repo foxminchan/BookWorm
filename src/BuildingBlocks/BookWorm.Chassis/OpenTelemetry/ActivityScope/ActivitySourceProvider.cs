@@ -15,7 +15,7 @@ public static class ActivitySourceProvider
         var listener = new ActivityListener
         {
             ShouldListenTo = _ => true,
-            Sample = (ref ActivityCreationOptions<ActivityContext> _) => samplingResult,
+            Sample = (ref _) => samplingResult,
         };
 
         ActivitySource.AddActivityListener(listener);

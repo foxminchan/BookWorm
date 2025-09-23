@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using ArchUnitNET.TUnit;
 using BookWorm.ArchTests.Abstractions;
-using BookWorm.ArchTests.TUnit;
 using BookWorm.Basket.Domain;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
