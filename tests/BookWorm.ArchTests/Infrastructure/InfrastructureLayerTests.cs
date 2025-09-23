@@ -1,5 +1,5 @@
+using ArchUnitNET.TUnit;
 using BookWorm.ArchTests.Abstractions;
-using BookWorm.ArchTests.TUnit;
 using Microsoft.EntityFrameworkCore;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 

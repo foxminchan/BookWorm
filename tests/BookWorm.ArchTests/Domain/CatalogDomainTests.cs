@@ -1,5 +1,5 @@
+using ArchUnitNET.TUnit;
 using BookWorm.ArchTests.Abstractions;
-using BookWorm.ArchTests.TUnit;
 using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
 using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;

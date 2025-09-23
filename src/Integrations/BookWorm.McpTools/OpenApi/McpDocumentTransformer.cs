@@ -1,9 +1,8 @@
 ﻿using System.Net.Mime;
 using BookWorm.Constants.Core;
 using Microsoft.AspNetCore.OpenApi;
-using Microsoft.OpenApi.Any;
-using Microsoft.OpenApi.Interfaces;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
+using ModelContextProtocol.Protocol;
 
 namespace BookWorm.McpTools.OpenApi;
 
@@ -29,68 +28,51 @@ public sealed class McpDocumentTransformer(IHttpContextAccessor accessor)
         var pathItem = new OpenApiPathItem();
 
         pathItem.AddOperation(
-            OperationType.Post,
+            HttpMethod.Post,
             new()
             {
                 Summary = "Get MCP Components",
                 Extensions = new Dictionary<string, IOpenApiExtension>
                 {
-                    ["x-ms-agentic-protocol"] = new OpenApiString("mcp-streamable-1.0"),
+                    ["x-ms-agentic-protocol"] = new JsonNodeExtension("mcp-streamable-1.0"),
                 },
                 OperationId = "InvokeMCP",
                 Responses = new()
                 {
-                    [$"{StatusCodes.Status200OK}"] = new() { Description = "Success" },
-                    [$"{StatusCodes.Status400BadRequest}"] = new() { Description = "Bad Request" },
-                    [$"{StatusCodes.Status406NotAcceptable}"] = new()
+                    [$"{StatusCodes.Status200OK}"] = new OpenApiResponse
+                    {
+                        Description = "Success",
+                        Content = new Dictionary<string, OpenApiMediaType>
+                        {
+                            [MediaTypeNames.Application.Json] = new()
+                            {
+                                Schema = new OpenApiSchemaReference(nameof(JsonRpcResponse)),
+                            },
+                        },
+                    },
+                    [$"{StatusCodes.Status400BadRequest}"] = new OpenApiResponse
+                    {
+                        Description = "Bad Request",
+                    },
+                    [$"{StatusCodes.Status406NotAcceptable}"] = new OpenApiResponse
                     {
                         Description = "Not Acceptable",
                     },
                 },
-                RequestBody = new()
+                RequestBody = new OpenApiRequestBody
                 {
-                    Content =
+                    Required = true,
+                    Content = new Dictionary<string, OpenApiMediaType>
                     {
                         [MediaTypeNames.Application.Json] = new()
                         {
-                            Schema = new()
-                            {
-                                Type = "object",
-                                Properties =
-                                {
-                                    ["method"] = new() { Type = "string" },
-                                    ["params"] = new()
-                                    {
-                                        Type = "object",
-                                        Properties =
-                                        {
-                                            ["name"] = new() { Type = "string" },
-                                            ["arguments"] = new() { Type = "object" },
-                                        },
-                                    },
-                                    ["jsonrpc"] = new()
-                                    {
-                                        Type = "string",
-                                        Enum = [new OpenApiString("1.0"), new OpenApiString("2.0")],
-                                        Default = new OpenApiString("2.0"),
-                                    },
-                                    ["id"] = new() { Type = "integer" },
-                                },
-                                Required = new HashSet<string>
-                                {
-                                    "method",
-                                    "params",
-                                    "jsonrpc",
-                                    "id",
-                                },
-                            },
+                            Schema = new OpenApiSchemaReference(nameof(JsonRpcRequest)),
                         },
                     },
                 },
             }
         );
 
-        document.Paths ??= [];
         document.Paths.Add("/mcp", pathItem);
 
         return Task.CompletedTask;

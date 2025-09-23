@@ -10,7 +10,7 @@ public sealed class GetBasketEndpointTests
     private readonly CustomerBasketDto _customerBasketDto = new(
         Guid.CreateVersion7().ToString(),
         [
-            new BasketItemDto("book-1", 2)
+            new("book-1", 2)
             {
                 Name = "Test Book",
                 Price = 19.99m,

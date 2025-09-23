@@ -11,11 +11,8 @@ public static class GuardAgainstAuthenticationExtensions
     /// <exception cref="UnauthorizedAccessException">Thrown when the user ID is null, empty, or whitespace.</exception>
     public static string NotAuthenticated(this Guard guard, string? userId)
     {
-        if (string.IsNullOrWhiteSpace(userId))
-        {
-            throw new UnauthorizedAccessException("User is not authenticated.");
-        }
-
-        return userId;
+        return string.IsNullOrWhiteSpace(userId)
+            ? throw new UnauthorizedAccessException("User is not authenticated.")
+            : userId;
     }
 }

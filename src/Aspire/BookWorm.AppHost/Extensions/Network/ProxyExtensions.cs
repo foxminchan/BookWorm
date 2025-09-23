@@ -100,11 +100,8 @@ public sealed class ApiGatewayProxyBuilder
 
     private IResourceBuilder<YarpResource> Build()
     {
-        if (_container is null)
-        {
-            throw new InvalidOperationException("Container resource must be set before building.");
-        }
-
-        return Builder.BuildApiGatewayProxy(_services, _container);
+        return _container is null
+            ? throw new InvalidOperationException("Container resource must be set before building")
+            : Builder.BuildApiGatewayProxy(_services, _container);
     }
 }

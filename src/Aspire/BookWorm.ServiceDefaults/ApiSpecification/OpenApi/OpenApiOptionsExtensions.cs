@@ -1,7 +1,7 @@
 ﻿using Asp.Versioning.ApiExplorer;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.OpenApi;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 namespace BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
 
@@ -66,29 +66,6 @@ public static class OpenApiOptionsExtensions
         );
     }
 
-    public static void ApplySchemaNullableFalse(this OpenApiOptions options)
-    {
-        options.AddSchemaTransformer(
-            (schema, _, _) =>
-            {
-                if (schema.Properties is null)
-                {
-                    return Task.CompletedTask;
-                }
-
-                foreach (var property in schema.Properties)
-                {
-                    if (schema.Required?.Contains(property.Key) == false)
-                    {
-                        property.Value.Nullable = false;
-                    }
-                }
-
-                return Task.CompletedTask;
-            }
-        );
-    }
-
     public static void ApplyAuthorizationChecks(this OpenApiOptions options, string[] scopes)
     {
         options.AddOperationTransformer(
@@ -101,25 +78,19 @@ public static class OpenApiOptionsExtensions
                     return Task.CompletedTask;
                 }
 
+                operation.Responses ??= [];
                 operation.Responses.TryAdd(
                     $"{StatusCodes.Status401Unauthorized}",
-                    new() { Description = "Unauthorized" }
+                    new OpenApiResponse { Description = "Unauthorized" }
                 );
                 operation.Responses.TryAdd(
                     $"{StatusCodes.Status403Forbidden}",
-                    new() { Description = "Forbidden" }
+                    new OpenApiResponse { Description = "Forbidden" }
                 );
 
-                var oAuthScheme = new OpenApiSecurityScheme
-                {
-                    Reference = new()
-                    {
-                        Type = ReferenceType.SecurityScheme,
-                        Id = OAuthDefaults.DisplayName,
-                    },
-                };
+                var oAuthScheme = new OpenApiSecuritySchemeReference(OAuthDefaults.DisplayName);
 
-                operation.Security = [new() { [oAuthScheme] = scopes }];
+                operation.Security = [new() { [oAuthScheme] = [.. scopes] }];
 
                 return Task.CompletedTask;
             }
@@ -161,7 +132,7 @@ public static class OpenApiOptionsExtensions
                 {
                     AuthorizationCode = new()
                     {
-                        Scopes = identityOptions.Scopes,
+                        Scopes = identityOptions.Scopes!,
                         AuthorizationUrl = new(authorizationUrl),
                         TokenUrl = new(tokenUrl),
                     },
@@ -169,6 +140,8 @@ public static class OpenApiOptionsExtensions
             };
 
             document.Components ??= new();
+            document.Components.SecuritySchemes ??=
+                new Dictionary<string, IOpenApiSecurityScheme>();
             document.Components.SecuritySchemes.Add(OAuthDefaults.DisplayName, securityScheme);
 
             return Task.CompletedTask;

@@ -1,5 +1,5 @@
+using ArchUnitNET.TUnit;
 using BookWorm.ArchTests.Abstractions;
-using BookWorm.ArchTests.TUnit;
 using BookWorm.SharedKernel.SeedWork;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 

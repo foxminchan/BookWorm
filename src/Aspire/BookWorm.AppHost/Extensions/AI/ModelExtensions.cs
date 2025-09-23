@@ -7,15 +7,16 @@ public static class ModelExtensions
     /// </summary>
     /// <param name="builder">The distributed application builder to add the Ollama instance to.</param>
     /// <param name="configure">Optional action to further configure the Ollama resource.</param>
+    /// <param name="useOpenWebUI">Flag to indicate whether to enable the OpenWebUI for Ollama.</param>
     public static async Task AddOllama(
         this IDistributedApplicationBuilder builder,
-        Action<IResourceBuilder<OllamaResource>>? configure = null
+        Action<IResourceBuilder<OllamaResource>>? configure = null,
+        bool useOpenWebUI = false
     )
     {
         var ollama = builder
             .AddOllama(Components.Ollama.Resource)
             .WithDataVolume()
-            .WithOpenWebUI()
             .WithImagePullPolicy(ImagePullPolicy.Always)
             .WithLifetime(ContainerLifetime.Persistent)
             .PublishAsAzureContainerApp((_, app) => app.Template.Scale.MinReplicas = 0);
@@ -23,6 +24,11 @@ public static class ModelExtensions
         if (await ollama.IsUseGpu())
         {
             ollama.WithGPUSupport();
+        }
+
+        if (useOpenWebUI)
+        {
+            ollama.WithOpenWebUI();
         }
 
         configure?.Invoke(ollama);
