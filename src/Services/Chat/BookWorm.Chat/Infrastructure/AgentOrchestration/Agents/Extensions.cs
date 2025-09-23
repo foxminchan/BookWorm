@@ -23,11 +23,7 @@ internal static class Extensions
             (sp, _) =>
             {
                 var kernel = sp.GetRequiredService<Kernel>();
-                return BookAgent
-                    .CreateAgentAsync(kernel)
-                    .ConfigureAwait(false)
-                    .GetAwaiter()
-                    .GetResult();
+                return BookAgent.CreateAgentAsync(kernel).GetAwaiter().GetResult();
             }
         );
 

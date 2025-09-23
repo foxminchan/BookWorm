@@ -19,19 +19,19 @@ public sealed class GetBasketPostProcessorTests
 
         _basketDto = new(
             Guid.CreateVersion7().ToString(),
-            [new BasketItemDto(_bookIds[0], 2), new BasketItemDto(_bookIds[1], 1)]
+            [new(_bookIds[0], 2), new(_bookIds[1], 1)]
         );
 
         _bookResponses =
         [
-            new BookResponse
+            new()
             {
                 Id = _bookIds[0],
                 Name = "Book 1",
                 Price = 19.99m,
                 PriceSale = 15.99m,
             },
-            new BookResponse
+            new()
             {
                 Id = _bookIds[1],
                 Name = "Book 2",
@@ -79,7 +79,7 @@ public sealed class GetBasketPostProcessorTests
         var query = new GetBasketQuery();
         var originalBasketDto = new CustomerBasketDto(
             Guid.CreateVersion7().ToString(),
-            [new BasketItemDto(_bookIds[0], 3), new BasketItemDto(_bookIds[1], 5)]
+            [new(_bookIds[0], 3), new(_bookIds[1], 5)]
         );
         var booksResponse = new BooksResponse { Books = { _bookResponses } };
         _bookServiceMock

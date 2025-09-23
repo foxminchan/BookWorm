@@ -42,7 +42,7 @@ public static class McpClientExtensions
                 ClientInfo = new() { Name = clientName, Version = version },
             };
 
-            SseClientTransportOptions sseTransportOptions = new()
+            HttpClientTransportOptions transportOptions = new()
             {
                 Name = $"{clientName}SseClient",
                 TransportMode = HttpTransportMode.StreamableHttp,
@@ -53,17 +53,17 @@ public static class McpClientExtensions
                     ),
             };
 
-            SseClientTransport sseClientTransport = new(sseTransportOptions, loggerFactory);
+            HttpClientTransport transport = new(transportOptions, loggerFactory);
 
-            return McpClientFactory
-                .CreateAsync(sseClientTransport, mcpClientOptions, loggerFactory)
+            return McpClient
+                .CreateAsync(transport, mcpClientOptions, loggerFactory)
                 .ConfigureAwait(false)
                 .GetAwaiter()
                 .GetResult();
         });
     }
 
-    public static async Task<List<ChatMessage>> MapToChatMessagesAsync(this IMcpClient mcpClient)
+    public static async Task<List<ChatMessage>> MapToChatMessagesAsync(this McpClient mcpClient)
     {
         var prompts = await mcpClient.ListPromptsAsync().ConfigureAwait(false);
 

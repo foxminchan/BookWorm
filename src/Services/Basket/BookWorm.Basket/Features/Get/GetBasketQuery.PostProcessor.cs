@@ -29,12 +29,14 @@ public sealed class GetBasketPostProcessor(IBookService bookService)
 
         foreach (var item in response.Items)
         {
-            if (bookLookup.TryGetValue(item.Id!, out var bookResponse))
+            if (!bookLookup.TryGetValue(item.Id!, out var bookResponse))
             {
-                item.Name = bookResponse.Name;
-                item.PriceSale = bookResponse.PriceSale;
-                item.Price = (decimal)bookResponse.Price!;
+                continue;
             }
+
+            item.Name = bookResponse.Name;
+            item.PriceSale = bookResponse.PriceSale;
+            item.Price = (decimal)bookResponse.Price!;
         }
     }
 }

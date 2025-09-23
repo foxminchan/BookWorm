@@ -172,7 +172,7 @@ public static class KeycloakExtensions
         // https://github.com/dotnet/aspire/issues/6890
         return builder
             .WithReference(keycloak)
-            .WaitFor(keycloak)
+            .WaitForStart(keycloak)
             .WithEnvironment("Identity__Realm", realmName)
             .WithEnvironment("Identity__ClientId", clientId)
             .WithEnvironment("Identity__ClientSecret", clientSecret)

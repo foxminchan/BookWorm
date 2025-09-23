@@ -4,7 +4,7 @@
     <ExcludeFromCodeCoverage>true</ExcludeFromCodeCoverage>
   </PropertyGroup>
   <ItemGroup Label="Architecture Test">
-    <PackageReference Include="TngTech.ArchUnitNET" />
+    <PackageReference Include="TngTech.ArchUnitNET.TUnit" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Services\Chat\BookWorm.Chat\BookWorm.Chat.csproj" />

@@ -21,15 +21,11 @@ internal sealed class MailKitClientFactory(MailKitSettings settings) : IDisposab
             {
                 _client = new();
 
-                await _client
-                    .ConnectAsync(settings.Endpoint, cancellationToken)
-                    .ConfigureAwait(false);
+                await _client.ConnectAsync(settings.Endpoint, cancellationToken);
 
                 if (settings.Credentials is not null)
                 {
-                    await _client
-                        .AuthenticateAsync(settings.Credentials, cancellationToken)
-                        .ConfigureAwait(false);
+                    await _client.AuthenticateAsync(settings.Credentials, cancellationToken);
                 }
             }
         }

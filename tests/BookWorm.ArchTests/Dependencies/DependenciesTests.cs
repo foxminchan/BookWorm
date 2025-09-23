@@ -1,5 +1,5 @@
-﻿using BookWorm.ArchTests.Abstractions;
-using BookWorm.ArchTests.TUnit;
+﻿using ArchUnitNET.TUnit;
+using BookWorm.ArchTests.Abstractions;
 using BookWorm.Chassis.CQRS.Command;
 using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chassis.Endpoints;

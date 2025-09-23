@@ -28,10 +28,7 @@ public sealed class BasketServiceTests
         var request = new Empty();
         var basket = new CustomerBasket(
             Guid.CreateVersion7().ToString(),
-            [
-                new BasketItem(Guid.CreateVersion7().ToString(), 10),
-                new BasketItem(Guid.CreateVersion7().ToString(), 20),
-            ]
+            [new(Guid.CreateVersion7().ToString(), 10), new(Guid.CreateVersion7().ToString(), 20)]
         );
 
         var context = TestServerCallContext.Create();
@@ -109,10 +106,7 @@ public sealed class BasketServiceTests
         // Arrange
         var request = new Empty();
         var userId = Guid.CreateVersion7().ToString();
-        var basket = new CustomerBasket(
-            userId,
-            [new BasketItem(Guid.CreateVersion7().ToString(), 10)]
-        );
+        var basket = new CustomerBasket(userId, [new(Guid.CreateVersion7().ToString(), 10)]);
 
         var context = TestServerCallContext.Create();
         var httpContext = new DefaultHttpContext
@@ -156,10 +150,7 @@ public sealed class BasketServiceTests
         // Arrange
         var request = new Empty();
         var userId = Guid.CreateVersion7().ToString();
-        var basket = new CustomerBasket(
-            userId,
-            [new BasketItem(Guid.CreateVersion7().ToString(), 10)]
-        );
+        var basket = new CustomerBasket(userId, [new(Guid.CreateVersion7().ToString(), 10)]);
 
         var context = TestServerCallContext.Create();
         var httpContext = new DefaultHttpContext

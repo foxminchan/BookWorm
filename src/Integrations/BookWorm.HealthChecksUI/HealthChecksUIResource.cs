@@ -1,4 +1,6 @@
-﻿namespace BookWorm.HealthChecksUI;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace BookWorm.HealthChecksUI;
 
 /// <summary>
 ///     A container-based resource for the HealthChecksUI container.
@@ -49,8 +51,6 @@ public sealed class MonitoredProject(
     string probePath
 )
 {
-    private string? _name;
-
     /// <summary>
     ///     The project to be monitored.
     /// </summary>
@@ -67,11 +67,9 @@ public sealed class MonitoredProject(
     /// <summary>
     ///     The name of the project to be displayed in the HealthChecksUI dashboard. Defaults to the project resource's name.
     /// </summary>
-    public string Name
-    {
-        get => _name ?? Project.Resource.Name;
-        set => _name = value;
-    }
+    [field: AllowNull]
+    [field: MaybeNull]
+    public string Name => field ?? Project.Resource.Name;
 
     /// <summary>
     ///     The request path the project serves health check details for the HealthChecksUI dashboard from.

@@ -28,7 +28,7 @@ public sealed class ActivityBehavior<TRequest, TResponse>(
         {
             logger.LogInformation(
                 "[{Behavior}] handle request={RequestData} and response={ResponseData}",
-                nameof(ActivityBehavior<TRequest, TResponse>),
+                nameof(ActivityBehavior<,>),
                 typeof(TRequest).FullName,
                 typeof(TResponse).FullName
             );

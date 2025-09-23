@@ -87,6 +87,7 @@ public static partial class AzureExtensions
         {
             builder.RunAsContainer(config =>
                 config
+                    .WithIconName("memory")
                     .WithDataVolume()
                     .WithRedisInsight()
                     .WithImagePullPolicy(ImagePullPolicy.Always)

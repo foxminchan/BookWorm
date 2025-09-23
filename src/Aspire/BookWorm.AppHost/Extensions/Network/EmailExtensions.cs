@@ -27,6 +27,7 @@ public static class EmailExtensions
                 .WithCustomInput(_ =>
                     new()
                     {
+                        Name = "SendGridApiKeyParameter",
                         Label = "SendGrid API Key",
                         InputType = InputType.SecretText,
                         Description = "Enter your SendGrid API key here",
@@ -39,6 +40,7 @@ public static class EmailExtensions
                 .WithCustomInput(_ =>
                     new()
                     {
+                        Name = "SendGridSenderEmailParameter",
                         Label = "Sender Email",
                         InputType = InputType.Text,
                         Value = "noreply@yourdomain.com",
@@ -52,6 +54,7 @@ public static class EmailExtensions
                 .WithCustomInput(_ =>
                     new()
                     {
+                        Name = "SenderNameParameter",
                         Label = "Sender Name",
                         InputType = InputType.Text,
                         Value = "BookWorm Support",

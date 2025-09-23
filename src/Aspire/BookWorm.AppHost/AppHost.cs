@@ -70,12 +70,15 @@ pgUser.WithParentRelationship(postgres);
 
 pgEndpoint ??= ReferenceExpression.Create($"{postgres.GetOutput("hostname")}");
 
-var redis = builder.AddAzureRedis(Components.Redis).RunAsLocalContainer().ProvisionAsService();
+var redis = builder
+    .AddAzureRedis(Components.Redis)
+    .WithIconName("memory")
+    .RunAsLocalContainer()
+    .ProvisionAsService();
 
 var qdrant = builder
-    .AddQdrant(Components.VectorDb.Name)
+    .AddQdrant(Components.VectorDb)
     .WithDataVolume()
-    .WithImageTag(Components.VectorDb.Version)
     .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent);
 
@@ -110,15 +113,18 @@ var notificationDb = postgres.AddDatabase(Components.Database.Notification);
 
 await builder.AddOllama(configure =>
 {
-    configure.AddModel(Components.Ollama.Embedding, "embeddinggemma:300m");
+    configure.AddModel(Components.Ollama.Embedding, Components.Ollama.Google.EmbeddingGemma300M);
     configure.AddModel(
         Components.Ollama.Chat,
-        $"gemma3:{(builder.ExecutionContext.IsPublishMode ? 12 : 4)}b"
+        builder.ExecutionContext.IsPublishMode
+            ? Components.Ollama.Google.Gemma312B
+            : Components.Ollama.Google.Gemma34B
     );
 });
 
 var keycloak = builder
     .AddKeycloak(Components.KeyCloak)
+    .WithIconName("lockClosedRibbon")
     .WithDataVolume()
     .WithCustomTheme(kcThemeName)
     .WithImagePullPolicy(ImagePullPolicy.Always)

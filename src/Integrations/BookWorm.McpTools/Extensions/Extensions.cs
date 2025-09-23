@@ -55,7 +55,6 @@ internal static class Extensions
                 options =>
                 {
                     options.ApplyApiVersionInfo(document, version);
-                    options.ApplySchemaNullableFalse();
                     options.AddDocumentTransformer<McpDocumentTransformer>();
                 }
             );

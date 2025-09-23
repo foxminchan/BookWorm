@@ -15,7 +15,7 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
         CancellationToken cancellationToken
     )
     {
-        const string behavior = nameof(LoggingBehavior<TRequest, TResponse>);
+        const string behavior = nameof(LoggingBehavior<,>);
 
         if (logger.IsEnabled(LogLevel.Information))
         {

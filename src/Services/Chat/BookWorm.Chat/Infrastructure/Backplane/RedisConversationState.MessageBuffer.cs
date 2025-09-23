@@ -152,10 +152,9 @@ public sealed partial class RedisConversationState
 
                     // Use WhenAll to send to Redis in parallel.
                     await Task.WhenAll(
-                            _database.ListRightPushAsync(key, serialized),
-                            _subscriber.PublishAsync(channel, serialized)
-                        )
-                        .ConfigureAwait(false);
+                        _database.ListRightPushAsync(key, serialized),
+                        _subscriber.PublishAsync(channel, serialized)
+                    );
 
                     // Log after successful IO.
                     _logger.LogInformation(

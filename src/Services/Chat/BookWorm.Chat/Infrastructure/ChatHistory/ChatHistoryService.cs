@@ -7,7 +7,7 @@ using Microsoft.SemanticKernel.ChatCompletion;
 namespace BookWorm.Chat.Infrastructure.ChatHistory;
 
 public sealed class ChatHistoryService(
-    IMcpClient mcpClient,
+    McpClient mcpClient,
     IServiceScopeFactory scopeFactory,
     RedisBackplaneService backplaneService
 ) : IChatHistoryService

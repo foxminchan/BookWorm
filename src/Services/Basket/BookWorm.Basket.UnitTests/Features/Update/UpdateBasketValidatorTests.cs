@@ -1,5 +1,4 @@
-﻿using BookWorm.Basket.Features;
-using BookWorm.Basket.Features.Update;
+﻿using BookWorm.Basket.Features.Update;
 using FluentValidation.TestHelper;
 
 namespace BookWorm.Basket.UnitTests.Features.Update;
@@ -12,9 +11,7 @@ public sealed class UpdateBasketValidatorTests
     public void GivenValidItems_WhenValidating_ThenShouldNotHaveValidationErrors()
     {
         // Arrange
-        var command = new UpdateBasketCommand(
-            [new BasketItemRequest("item1", 1), new BasketItemRequest("item2", 2)]
-        );
+        var command = new UpdateBasketCommand([new("item1", 1), new("item2", 2)]);
 
         // Act
         var result = _validator.TestValidate(command);
@@ -40,7 +37,7 @@ public sealed class UpdateBasketValidatorTests
     public void GivenItemWithEmptyId_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = new UpdateBasketCommand([new BasketItemRequest("", 1)]);
+        var command = new UpdateBasketCommand([new("", 1)]);
 
         // Act
         var result = _validator.TestValidate(command);
@@ -57,7 +54,7 @@ public sealed class UpdateBasketValidatorTests
     )
     {
         // Arrange
-        var command = new UpdateBasketCommand([new BasketItemRequest("item1", invalidQuantity)]);
+        var command = new UpdateBasketCommand([new("item1", invalidQuantity)]);
 
         // Act
         var result = _validator.TestValidate(command);

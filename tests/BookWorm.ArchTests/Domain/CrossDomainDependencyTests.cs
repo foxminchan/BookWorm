@@ -1,5 +1,5 @@
+using ArchUnitNET.TUnit;
 using BookWorm.ArchTests.Abstractions;
-using BookWorm.ArchTests.TUnit;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
 namespace BookWorm.ArchTests.Domain;

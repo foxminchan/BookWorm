@@ -8,12 +8,7 @@ public static class Components
     public static readonly string MailPit = nameof(MailPit).ToLowerInvariant();
     public static readonly string Postgres = nameof(Postgres).ToLowerInvariant();
     public static readonly string KeyCloak = nameof(KeyCloak).ToLowerInvariant();
-
-    public static class VectorDb
-    {
-        public static readonly string Name = nameof(VectorDb).ToLowerInvariant();
-        public const string Version = "v1.15.3";
-    }
+    public static readonly string VectorDb = nameof(VectorDb).ToLowerInvariant();
 
     public static class Database
     {
@@ -37,6 +32,13 @@ public static class Components
         public static readonly string Resource = nameof(Ollama).ToLowerInvariant();
         public static readonly string Chat = $"{nameof(Chat).ToLowerInvariant()}";
         public static readonly string Embedding = $"{nameof(Embedding).ToLowerInvariant()}";
+
+        public static class Google
+        {
+            public const string EmbeddingGemma300M = "embeddinggemma:300m";
+            public const string Gemma34B = "gemma3:4b";
+            public const string Gemma312B = "gemma3:12b";
+        }
     }
 
     public static class Azure

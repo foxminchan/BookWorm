@@ -23,11 +23,7 @@ public sealed class CreateBasketHandler(
 
         var result = await basketRepository.CreateOrUpdateBasketAsync(basket);
 
-        if (result?.Id is null)
-        {
-            throw new BasketCreatedException("An error occurred while creating the basket.");
-        }
-
-        return result.Id;
+        return result?.Id
+            ?? throw new BasketCreatedException("An error occurred while creating the basket.");
     }
 }

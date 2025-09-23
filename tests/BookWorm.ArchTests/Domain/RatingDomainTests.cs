@@ -1,5 +1,5 @@
-﻿using BookWorm.ArchTests.Abstractions;
-using BookWorm.ArchTests.TUnit;
+﻿using ArchUnitNET.TUnit;
+using BookWorm.ArchTests.Abstractions;
 using BookWorm.Rating.Domain.FeedbackAggregator;
 using BookWorm.Rating.Domain.FeedbackAggregator.Specifications;
 using BookWorm.SharedKernel.SeedWork;
