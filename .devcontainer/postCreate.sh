@@ -44,26 +44,39 @@ else
     echo "❌ Node.js not found"
 fi
 
+# Install bun (JavaScript runtime)
+echo "🔧 Installing bun..."
+curl -fsSL https://bun.sh/install | bash
+
+# Source bun environment to update PATH
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+
 if command -v bun >/dev/null 2>&1; then
     echo "✅ bun version: $(bun --version)"
 else
-    echo "❌ bun not found"
+    echo "❌ bun not found after installation"
 fi
 
 # Install Just task runner
 echo "🔧 Installing Just task runner..."
-if command -v bun >/dev/null 2>&1; then
-    bun install -g rust-just
-    echo "✅ Just installed via bun"
-
-    # Verify Just installation
-    if command -v just >/dev/null 2>&1; then
-        echo "✅ Just version: $(just --version)"
-    else
-        echo "⚠️ Just installed but not found in PATH. You may need to restart your terminal."
-    fi
+if command -v cargo >/dev/null 2>&1; then
+    cargo install just
+    echo "✅ Just installed via cargo"
 else
-    echo "❌ bun not available, skipping Just installation"
+    # Try installing via apt as fallback
+    if sudo apt-get install -y just 2>/dev/null; then
+        echo "✅ Just installed via apt"
+    else
+        echo "❌ Could not install Just. Neither cargo nor apt package available."
+    fi
+fi
+
+# Verify Just installation
+if command -v just >/dev/null 2>&1; then
+    echo "✅ Just version: $(just --version)"
+else
+    echo "⚠️ Just not found in PATH. You may need to restart your terminal or add ~/.cargo/bin to PATH."
 fi
 
 # Restore .NET tools and packages
@@ -84,8 +97,8 @@ fi
 
 # Install Node.js dependencies for EventCatalog
 echo "📦 Installing EventCatalog dependencies..."
-if [ -d "eventcatalog" ]; then
-    cd eventcatalog
+if [ -d "docs/eventcatalog" ]; then
+    pushd docs/eventcatalog > /dev/null
     if [ -f "package.json" ]; then
         if command -v bun >/dev/null 2>&1; then
             bun install --frozen-lockfile
@@ -94,13 +107,13 @@ if [ -d "eventcatalog" ]; then
             echo "❌ bun not available, skipping EventCatalog dependencies"
         fi
     fi
-    cd ..
+    popd > /dev/null
 fi
 
 # Install Node.js dependencies for k6 tests
 echo "📦 Installing k6 test dependencies..."
 if [ -d "src/Aspire/BookWorm.AppHost/Container/k6" ]; then
-    cd src/Aspire/BookWorm.AppHost/Container/k6
+    pushd src/Aspire/BookWorm.AppHost/Container/k6 > /dev/null
     if [ -f "package.json" ]; then
         if command -v bun >/dev/null 2>&1; then
             bun install --frozen-lockfile
@@ -109,13 +122,13 @@ if [ -d "src/Aspire/BookWorm.AppHost/Container/k6" ]; then
             echo "❌ bun not available, skipping k6 test dependencies"
         fi
     fi
-    cd ../../../../..
+    popd > /dev/null
 fi
 
 # Install Node.js dependencies for docs
 echo "📦 Installing documentation dependencies..."
-if [ -d "docs/vuepress" ]; then
-    cd docs/vuepress
+if [ -d "docs/docusaurus" ]; then
+    pushd docs/docusaurus > /dev/null
     if [ -f "package.json" ]; then
         if command -v bun >/dev/null 2>&1; then
             bun install --frozen-lockfile
@@ -124,98 +137,29 @@ if [ -d "docs/vuepress" ]; then
             echo "❌ bun not available, skipping documentation dependencies"
         fi
     fi
-    cd ../..
+    popd > /dev/null
 fi
 
-# Create helpful aliases
-echo "🔗 Setting up helpful aliases..."
-cat >> ~/.bashrc << 'EOF'
-
-# BookWorm Development Aliases
-alias ll='ls -alF'
-alias la='ls -A'
-alias l='ls -CF'
-alias ..='cd ..'
-alias ...='cd ../..'
-
-# BookWorm specific aliases
-alias bw-run='just run'
-alias bw-build='just build'
-alias bw-test='just test'
-alias bw-format='just format'
-alias bw-clean='just clean'
-alias bw-restore='just restore'
-
-# Docker aliases
-alias d='docker'
-alias dc='docker compose'
-alias dps='docker ps'
-alias di='docker images'
-
-# Git aliases
-alias gs='git status'
-alias ga='git add'
-alias gc='git commit'
-alias gp='git push'
-alias gl='git log --oneline'
-
-# .NET aliases
-alias dr='dotnet run'
-alias db='dotnet build'
-alias dt='dotnet test'
-alias dw='dotnet watch'
-
-# Node.js/bun aliases
-alias bi='bun install'
-alias br='bun run'
-alias bs='bun start'
-alias bt='bun test'
-alias bb='bun run build'
-alias bci='bun install --frozen-lockfile'
-
-# Navigation aliases
-alias gotoapi='cd src/Services'
-alias gotodocs='cd docs'
-alias gotoevent='cd eventcatalog'
-alias gotok6='cd src/Aspire/BookWorm.AppHost/Container/k6'
-alias gotoaspire='cd src/Aspire'
-
-EOF
-
-# Trust HTTPS certificates
-echo "🔒 Trusting HTTPS development certificates..."
-if command -v dotnet >/dev/null 2>&1; then
-    dotnet dev-certs https --trust 2>/dev/null || echo "⚠️  Could not trust certificates automatically. You may need to run 'dotnet dev-certs https --trust' manually."
+# Install Spec-Kit (optional)
+echo "🔧 Installing Spec-Kit (Optional)..."
+if ! command -v uv >/dev/null 2>&1; then
+    echo "📦 Installing uv first..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    export PATH="$HOME/.cargo/bin:$PATH"
 fi
 
-# Display useful information
-echo ""
-echo "✅ BookWorm development environment setup complete!"
-echo ""
-echo "🚀 Quick Start Commands:"
-echo "  just run          - Start the full application"
-echo "  just build        - Build all projects"
-echo "  just test         - Run all tests"
-echo "  just format       - Format code"
-echo "  just help         - Show all available commands"
-echo ""
-echo "📦 Node.js/bun Commands:"
-echo "  cd eventcatalog && bun start  - Start EventCatalog dev server"
-echo "  cd docs && bun start          - Start documentation dev server"
-echo "  bun install                   - Install dependencies"
-echo ""
-echo "📚 Documentation:"
-echo "  docs/            - Architecture documentation"
-echo "  eventcatalog/    - Event-driven architecture docs"
-echo "  README.md        - Main project documentation"
-echo ""
-echo "🔗 Important Ports:"
-echo "  5000 - Aspire Dashboard"
-echo "  5001 - API Gateway"
-echo "  8080 - Keycloak"
-echo "  8025 - Mailpit (local email)"
-echo "  3000 - EventCatalog dev server"
-echo ""
-echo "💡 Tip: Use the aliases defined in ~/.bashrc for faster development!"
-echo "   Type 'source ~/.bashrc' or restart your terminal to enable them."
-echo ""
+if command -v uv >/dev/null 2>&1; then
+    uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
+    echo "✅ Spec-Kit installed"
+else
+    echo "❌ uv installation failed, skipping Spec-Kit installation"
+fi
+
+# Install GitHub Copilot CLI (optional)
+echo "🔧 Installing GitHub Copilot CLI (Optional)..."
+if command -v gh >/dev/null 2>&1; then
+    bun install -g @github/copilot
+    echo "✅ GitHub Copilot CLI installed"
+else
+    echo "❌ gh not available, skipping GitHub Copilot CLI installation"
+fi

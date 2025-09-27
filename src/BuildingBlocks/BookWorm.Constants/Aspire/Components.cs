@@ -53,4 +53,9 @@ public static class Components
             public static readonly string BlobContainer = $"{Services.Catalog}-{Blob}";
         }
     }
+
+    public static class Observability
+    {
+        public static readonly string Collector = nameof(Collector).ToLowerInvariant();
+    }
 }

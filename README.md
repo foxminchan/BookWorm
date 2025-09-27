@@ -2,9 +2,6 @@
 [![Container Security](https://github.com/foxminchan/BookWorm/actions/workflows/container.yml/badge.svg)](https://github.com/foxminchan/BookWorm/actions/workflows/container.yml)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=coverage)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
 [![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
-[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
 
 # 📖 BookWorm: A Practical .NET Aspire Application
 
@@ -58,13 +55,15 @@
 
 ### Prerequisites
 
-- [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Node.js](https://nodejs.org/en/download/)
 - [Docker](https://www.docker.com/get-started)
 - [Gitleaks](https://gitleaks.io/)
 - [Bun](https://bun.sh/)
 - [Just](https://github.com/casey/just)
 - [Aspire CLI](https://learn.microsoft.com/en-us/dotnet/aspire/cli/install)
+- Optional: [Spec-Kit](https://github.com/github/spec-kit)
+- Optional: [GitHub Copilot CLI](https://github.com/github/copilot-cli)
 
 > [!NOTE]
 >
