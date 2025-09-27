@@ -2,7 +2,6 @@ import { sleep } from "k6";
 import { textSummary } from "https://jslib.k6.io/k6-summary/0.0.1/index.js";
 import { htmlReport } from "https://raw.githubusercontent.com/benc-uk/k6-reporter/main/dist/bundle.js";
 
-import { options } from "./config";
 import { SeededRandom } from "./utils/seeded-random";
 import { TestDataGenerator } from "./utils/test-data";
 import { checkServiceAvailability } from "./utils/helpers";
@@ -13,11 +12,11 @@ import { stressTestScenario } from "./scenarios/stress-test";
 import { spikeTestScenario } from "./scenarios/spike-test";
 
 // Export the options for K6
-export { options };
+export { options } from "./config";
 
 // Initialize seeded random generator for test reproducibility
 const testRandom = new SeededRandom(
-  __ENV.RANDOM_SEED ? parseInt(__ENV.RANDOM_SEED) : 12345
+  __ENV.RANDOM_SEED ? Number.parseInt(__ENV.RANDOM_SEED) : 12345
 );
 const dataGenerator = new TestDataGenerator(testRandom);
 
@@ -27,7 +26,7 @@ export const setup = () => {
   };
 };
 
-export default function () {
+export default function main() {
   // Quick connectivity check
   if (!checkServiceAvailability()) {
     console.error(

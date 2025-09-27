@@ -36,7 +36,7 @@ export function apiComprehensiveScenario(
     ];
 
     // Test all basic endpoints
-    endpoints.forEach((endpoint) => {
+    for (const endpoint of endpoints) {
       const response = http.get(endpoint.url, {
         tags: { scenario: "api_comprehensive", endpoint: endpoint.name },
       });
@@ -57,7 +57,8 @@ export function apiComprehensiveScenario(
           { search: dataGen.getRandomSearchTerm(), pageSize: 15 },
         ];
 
-        paramCombinations.forEach((params, index) => {
+        let index = 0;
+        for (const params of paramCombinations) {
           // Build URL with query parameters
           const queryString = Object.entries(params)
             .map(
@@ -79,9 +80,10 @@ export function apiComprehensiveScenario(
             paramsResponse,
             `${endpoint.name}_with_params_${index}`
           );
-        });
+          index++;
+        }
       }
-    });
+    }
 
     // Test edge cases and boundary conditions
     const edgeCases = [
@@ -92,7 +94,7 @@ export function apiComprehensiveScenario(
       { params: { minPrice: 999, maxPrice: 1000 }, name: "high_price_range" },
     ];
 
-    edgeCases.forEach((testCase) => {
+    for (const testCase of edgeCases) {
       // Build URL with query parameters
       const queryString = Object.entries(testCase.params)
         .map(
@@ -109,7 +111,7 @@ export function apiComprehensiveScenario(
         },
       } as any);
       validateResponse(response, `edge_case_${testCase.name}`);
-    });
+    }
 
     // Test error scenarios (20% chance)
     if (random.bool(0.2)) {
@@ -126,7 +128,7 @@ export function apiComprehensiveScenario(
         },
       ];
 
-      errorTests.forEach((test) => {
+      for (const test of errorTests) {
         const response = http.get(test.url, {
           tags: {
             scenario: "api_comprehensive",
@@ -134,7 +136,7 @@ export function apiComprehensiveScenario(
           },
         });
         validateResponse(response, test.name, test.expectedStatus, 1000);
-      });
+      }
     }
 
     // Test malformed query parameters (10% chance)
