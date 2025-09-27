@@ -115,10 +115,8 @@ export const WithInvalidCredential: Story = {
           // NOTE: The other functions of messagesPerField are derived from get() and
           // existsError() so they are the only ones that need to mock.
           existsError: (fieldName: string, ...otherFieldNames: string[]) => {
-            const fieldNames = [fieldName, ...otherFieldNames];
-            return (
-              fieldNames.includes("username") || fieldNames.includes("password")
-            );
+            const fieldNames = new Set([fieldName, ...otherFieldNames]);
+            return fieldNames.has("username") || fieldNames.has("password");
           },
           get: (fieldName: string) => {
             if (fieldName === "username" || fieldName === "password") {

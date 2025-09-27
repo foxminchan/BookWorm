@@ -4,10 +4,10 @@ import { KcPage } from "./kc.gen";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    {!window.kcContext ? (
-      <h1>No Keycloak Context</h1>
+    {(globalThis as any).kcContext ? (
+      <KcPage kcContext={(globalThis as any).kcContext} />
     ) : (
-      <KcPage kcContext={window.kcContext} />
+      <h1>No Keycloak Context</h1>
     )}
   </StrictMode>
 );

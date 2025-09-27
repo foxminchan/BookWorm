@@ -28,9 +28,11 @@ export function stressTestScenario(
     const responses = requests.map((req) => http.get(req.url));
 
     // Validate all responses
-    responses.forEach((response, index) => {
+    let index = 0;
+    for (const response of responses) {
       validateResponse(response, requests[index].name, CONSTANTS.HTTP_OK, 1000); // More lenient timing for stress test
-    });
+      index++;
+    }
 
     // Additional complex search under stress
     const complexSearchParams = {
