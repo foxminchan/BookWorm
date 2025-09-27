@@ -136,6 +136,14 @@ kcRealmName.WithParentRelationship(keycloak);
 kcThemeName.WithParentRelationship(keycloak);
 kcThemeDisplayName.WithParentRelationship(keycloak);
 
+builder
+    .AddOpenTelemetryCollector(
+        Components.Observability.Collector,
+        settings => settings.ForceNonSecureReceiver = true
+    )
+    .WithConfig("Container/otelcollector/config.yaml")
+    .WithAppForwarding();
+
 var catalogApi = builder
     .AddProject<Catalog>(Services.Catalog)
     .WithReplicas(builder.ExecutionContext.IsRunMode ? 1 : 2)
