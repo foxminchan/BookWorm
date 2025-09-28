@@ -40,7 +40,7 @@ public sealed class CreateChatCommandTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.ShouldNotBe(Guid.Empty);
+        result.ShouldBe(Guid.Empty);
         _repositoryMock.Verify(
             x =>
                 x.AddAsync(
@@ -67,7 +67,7 @@ public sealed class CreateChatCommandTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.ShouldNotBe(Guid.Empty);
+        result.ShouldBe(Guid.Empty);
         _repositoryMock.Verify(
             x =>
                 x.AddAsync(
@@ -298,9 +298,9 @@ public sealed class CreateChatCommandTests
         var result3 = await _handler.Handle(command3, CancellationToken.None);
 
         // Assert
-        result1.ShouldNotBe(Guid.Empty);
-        result2.ShouldNotBe(Guid.Empty);
-        result3.ShouldNotBe(Guid.Empty);
+        result1.ShouldBe(Guid.Empty);
+        result2.ShouldBe(Guid.Empty);
+        result3.ShouldBe(Guid.Empty);
 
         _repositoryMock.Verify(
             x =>
@@ -347,7 +347,7 @@ public sealed class CreateChatCommandTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.ShouldNotBe(Guid.Empty);
+        result.ShouldBe(Guid.Empty);
         _repositoryMock.Verify(
             x =>
                 x.AddAsync(

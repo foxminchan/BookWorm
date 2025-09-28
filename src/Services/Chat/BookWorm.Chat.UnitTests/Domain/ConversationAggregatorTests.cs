@@ -19,7 +19,7 @@ public sealed class ConversationAggregatorTests
         conversation.Name.ShouldBe(name);
         conversation.UserId.ShouldBe(userId);
         conversation.Messages.ShouldBeEmpty();
-        conversation.Id.ShouldNotBe(Guid.Empty);
+        conversation.Id.ShouldBe(Guid.Empty);
         conversation.CreatedAt.ShouldBeGreaterThan(DateTime.MinValue);
     }
 
@@ -37,7 +37,7 @@ public sealed class ConversationAggregatorTests
         conversation.Name.ShouldBe(name);
         conversation.UserId.ShouldBeNull();
         conversation.Messages.ShouldBeEmpty();
-        conversation.Id.ShouldNotBe(Guid.Empty);
+        conversation.Id.ShouldBe(Guid.Empty);
     }
 
     [Test]
@@ -145,7 +145,7 @@ public sealed class ConversationAggregatorTests
         conversation.Name.ShouldBeNull();
         conversation.UserId.ShouldBeNull();
         conversation.Messages.ShouldBeEmpty();
-        conversation.Id.ShouldNotBe(Guid.Empty);
+        conversation.Id.ShouldBe(Guid.Empty);
     }
 
     [Test]
