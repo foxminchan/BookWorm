@@ -3,7 +3,12 @@
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum Status : byte
 {
+    [Description("New")]
     New = 0,
+
+    [Description("Cancelled")]
     Cancelled = 1,
+
+    [Description("Completed")]
     Completed = 2,
 }
