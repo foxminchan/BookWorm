@@ -20,11 +20,14 @@ public static class K6Extensions
         int vus = 10
     )
     {
+        var scriptPath = Path.GetFullPath($"{BaseContainerPath}", builder.AppHostDirectory);
+        var distPath = Path.GetFullPath($"{BaseContainerPath}/dist", builder.AppHostDirectory);
+
         builder
             .AddK6(Components.K6)
             .WithImagePullPolicy(ImagePullPolicy.Always)
-            .WithBindMount($"{BaseContainerPath}", "/scripts", true)
-            .WithBindMount($"{BaseContainerPath}/dist", "/home/k6")
+            .WithBindMount($"{scriptPath}", "/scripts", true)
+            .WithBindMount($"{distPath}", "/home/k6")
             .WithScript("/scripts/dist/main.js", vus)
             .WithReference(entryPoint.Resource.GetEndpoint(Protocols.Http))
             .WithEnvironment(K6WebDashboard, "true")
