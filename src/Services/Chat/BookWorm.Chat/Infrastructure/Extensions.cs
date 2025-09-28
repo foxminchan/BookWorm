@@ -17,7 +17,7 @@ internal static class Extensions
         services.AddMigration<ChatDbContext>();
         services.AddRepositories(typeof(IChatApiMarker));
 
-        builder.AddRedisClient(Components.Redis);
+        builder.AddRedisClient(Components.Redis, o => o.DisableAutoActivation = false);
     }
 
     public static void AddChatStreamingServices(this IHostApplicationBuilder builder)

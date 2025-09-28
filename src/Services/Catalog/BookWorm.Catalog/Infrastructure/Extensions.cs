@@ -32,7 +32,9 @@ internal static class Extensions
         services.AddQdrantCollection<Guid, TextSnippet>(nameof(Book).ToLowerInvariant());
 
         // Configure Redis Cache
-        builder.AddRedisClient(Components.Redis);
+        builder
+            .AddRedisClientBuilder(Components.Redis, o => o.DisableAutoActivation = false)
+            .WithDistributedCache(options => options.InstanceName = "MainCache");
 
         services.AddHybridCache(options =>
         {

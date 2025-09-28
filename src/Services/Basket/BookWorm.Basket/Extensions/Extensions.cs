@@ -29,7 +29,10 @@ internal static class Extensions
         services.AddProblemDetails();
 
         // Add database configuration
-        builder.AddRedisClient(Components.Redis);
+        builder
+            .AddRedisClientBuilder(Components.Redis, o => o.DisableAutoActivation = false)
+            .WithDistributedCache(options => options.InstanceName = "ShoppingCarts");
+
         services.AddSingleton<IBasketRepository, BasketRepository>();
 
         // Configure MediatR
