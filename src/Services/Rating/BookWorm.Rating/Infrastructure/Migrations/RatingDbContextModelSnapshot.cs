@@ -17,7 +17,7 @@ namespace BookWorm.Rating.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.7")
+                .HasAnnotation("ProductVersion", "10.0.0-rc.1.25451.107")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -27,7 +27,8 @@ namespace BookWorm.Rating.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("uuidv7()");
 
                     b.Property<string>("Comment")
                         .HasMaxLength(1000)
@@ -58,9 +59,11 @@ namespace BookWorm.Rating.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("rating");
 
-                    b.Property<Guid>("Version")
-                        .HasColumnType("uuid")
-                        .HasColumnName("version");
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id")
                         .HasName("pk_feedbacks");

@@ -2,7 +2,7 @@
 
 public abstract class Entity : HasDomainEventsBase
 {
-    public Guid Id { get; set; } = Guid.CreateVersion7();
+    public Guid Id { get; set; }
 }
 
 public abstract class Entity<TId> : Entity

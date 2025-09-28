@@ -10,6 +10,8 @@ internal sealed class BookConfiguration : IEntityTypeConfiguration<Book>
     {
         builder.HasKey(x => x.Id);
 
+        builder.Property(p => p.Id).HasDefaultValueSql(UniqueIdentifierHelper.NewUuidV7);
+
         builder.Property(p => p.Name).HasMaxLength(DataSchemaLength.Medium).IsRequired();
 
         builder.Property(p => p.Description).HasMaxLength(DataSchemaLength.Max).IsRequired();
@@ -31,7 +33,7 @@ internal sealed class BookConfiguration : IEntityTypeConfiguration<Book>
 
         builder.Property(p => p.LastModifiedAt).HasDefaultValueSql(DateTimeHelper.SqlUtcNow);
 
-        builder.Property(p => p.Version).IsConcurrencyToken();
+        builder.Property(p => p.RowVersion).IsRowVersion();
 
         builder
             .HasOne(x => x.Category)

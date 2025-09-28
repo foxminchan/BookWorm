@@ -23,7 +23,6 @@ public sealed class ConversationMessageTests
         message.Role.ShouldBe(role);
         message.ParentMessageId.ShouldBe(parentMessageId);
         message.CreatedAt.ShouldBeGreaterThan(DateTime.MinValue);
-        message.Version.ShouldNotBe(Guid.Empty);
     }
 
     [Test]
@@ -97,8 +96,8 @@ public sealed class ConversationMessageTests
     {
         // Arrange
         var id = Guid.CreateVersion7();
-        var text = "   ";
-        var role = "user";
+        const string text = "   ";
+        const string role = "user";
 
         // Act & Assert
         var exception = Should.Throw<ConversationDomainException>(() =>

@@ -1,3 +1,4 @@
+using BookWorm.SharedKernel.Helpers;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BookWorm.Catalog.Infrastructure.EntityConfigurations;
@@ -7,6 +8,8 @@ internal sealed class BookAuthorConfiguration : IEntityTypeConfiguration<BookAut
     public void Configure(EntityTypeBuilder<BookAuthor> builder)
     {
         builder.HasKey(x => x.Id);
+
+        builder.Property(p => p.Id).HasDefaultValueSql(UniqueIdentifierHelper.NewUuidV7);
 
         builder.Property(x => x.AuthorId).IsRequired();
 

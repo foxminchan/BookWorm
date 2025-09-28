@@ -17,7 +17,7 @@ namespace BookWorm.Ordering.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.6")
+                .HasAnnotation("ProductVersion", "10.0.0-rc.1.25451.107")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -27,7 +27,8 @@ namespace BookWorm.Ordering.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("uuidv7()");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -46,7 +47,8 @@ namespace BookWorm.Ordering.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("uuidv7()");
 
                     b.Property<Guid>("BuyerId")
                         .HasColumnType("uuid")
@@ -73,14 +75,15 @@ namespace BookWorm.Ordering.Infrastructure.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("note");
 
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<byte>("Status")
                         .HasColumnType("smallint")
                         .HasColumnName("status");
-
-                    b.Property<Guid>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("uuid")
-                        .HasColumnName("version");
 
                     b.HasKey("Id")
                         .HasName("pk_orders");
@@ -96,7 +99,8 @@ namespace BookWorm.Ordering.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("uuidv7()");
 
                     b.Property<Guid>("BookId")
                         .HasColumnType("uuid")
@@ -350,6 +354,7 @@ namespace BookWorm.Ordering.Infrastructure.Migrations
                     b.OwnsOne("BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate.Address", "Address", b1 =>
                         {
                             b1.Property<Guid>("BuyerId")
+                                .ValueGeneratedOnAdd()
                                 .HasColumnType("uuid")
                                 .HasColumnName("id");
 
