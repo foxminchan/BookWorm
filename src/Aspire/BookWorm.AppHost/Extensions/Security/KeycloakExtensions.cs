@@ -72,47 +72,42 @@ public static class KeycloakExtensions
     }
 
     /// <summary>
-    ///     Configures a Keycloak resource to use an external PostgreSQL database.
+    ///     Configures a <see cref="KeycloakResource"/> to use an external PostgreSQL database.
     /// </summary>
-    /// <param name="builder">The Keycloak resource builder.</param>
-    /// <param name="dbHost">The database host reference expression.</param>
-    /// <param name="dbUsername">The database username parameter resource builder.</param>
-    /// <param name="dbPassword">The database password parameter resource builder.</param>
-    /// <param name="dbSchema">The database resource builder.</param>
-    /// <param name="dbProvider">The database provider type (default is "postgres").</param>
-    /// <returns>The Keycloak resource builder for method chaining.</returns>
-    public static IResourceBuilder<KeycloakResource> WithExternalDatabase(
+    /// <param name="builder">The <see cref="IResourceBuilder{KeycloakResource}"/> instance.</param>
+    /// <param name="pgDatabase">The PostgreSQL database resource builder.</param>
+    /// <param name="xaEnabled">Whether to enable XA transactions. Default is false.</param>
+    /// <returns>The <see cref="IResourceBuilder{KeycloakResource}"/> for method chaining.</returns>
+    public static IResourceBuilder<KeycloakResource> WithPostgres(
         this IResourceBuilder<KeycloakResource> builder,
-        ReferenceExpression dbHost,
-        IResourceBuilder<ParameterResource> dbUsername,
-        IResourceBuilder<ParameterResource> dbPassword,
-        IResourceBuilder<IResourceWithConnectionString> dbSchema,
-        string dbProvider = "postgres"
+        IResourceBuilder<AzurePostgresFlexibleServerDatabaseResource> pgDatabase,
+        bool xaEnabled = false
     )
     {
-        var dbType = dbProvider switch
-        {
-            "postgres" or "postgresql" => "postgresql",
-            "mysql" => "mysql",
-            "oracle" => "oracle",
-            "mariadb" => "mariadb",
-            "sqlserver" => "sqlserver",
-            _ => throw new ArgumentException($"Unsupported database provider: {dbProvider}"),
-        };
-
         return builder
             .WithEnvironment(context =>
             {
-                context.EnvironmentVariables.Add(KeycloakDatabaseEnvVarName, dbProvider);
-                context.EnvironmentVariables.Add(KeycloakDatabaseUsernameEnvVarName, dbUsername);
-                context.EnvironmentVariables.Add(KeycloakDatabasePasswordEnvVarName, dbPassword);
+                context.EnvironmentVariables.Add(KeycloakDatabaseEnvVarName, "postgres");
+                context.EnvironmentVariables.Add(
+                    KeycloakDatabaseUsernameEnvVarName,
+                    pgDatabase.Resource.Parent.UserName ?? ReferenceExpression.Create($"postgres")
+                );
+                context.EnvironmentVariables.Add(
+                    KeycloakDatabasePasswordEnvVarName,
+                    pgDatabase.Resource.Parent.Password ?? ReferenceExpression.Create($"postgres")
+                );
                 context.EnvironmentVariables.Add(
                     KeycloakDatabaseUrlEnvVarName,
-                    ReferenceExpression.Create($"jdbc:{dbType}://{dbHost}/{dbSchema.Resource.Name}")
+                    ReferenceExpression.Create(
+                        $"jdbc:postgresql://{pgDatabase.Resource.Parent.HostName}/{pgDatabase.Resource.DatabaseName}"
+                    )
                 );
-                context.EnvironmentVariables.Add(KeycloakTransactionXaEnabledEnvVarName, "true");
+                context.EnvironmentVariables.Add(
+                    KeycloakTransactionXaEnabledEnvVarName,
+                    xaEnabled.ToString().ToLowerInvariant()
+                );
             })
-            .WaitFor(dbSchema);
+            .WaitFor(pgDatabase);
     }
 
     /// <summary>
@@ -130,52 +125,83 @@ public static class KeycloakExtensions
     {
         var clientId = builder.Resource.Name;
         var applicationBuilder = builder.ApplicationBuilder;
-        var clientSecret = applicationBuilder
-            .AddParameter($"{clientId}-secret", true)
-            .WithGeneratedDefault(new() { MinLength = 32, Special = false });
 
-        var clientEnv = clientId.ToUpperInvariant();
+        if (applicationBuilder.ExecutionContext.IsRunMode)
+        {
+            var clientSecret = applicationBuilder
+                .AddParameter($"{clientId}-secret", true)
+                .WithGeneratedDefault(new() { MinLength = 32, Special = false });
 
-        keycloak
-            .WithEnvironment(HttpEnabledEnvVarName, "true")
-            .WithEnvironment(ProxyHeadersEnvVarName, "xforwarded")
-            .WithEnvironment(HostNameStrictEnvVarName, "false")
-            .WithEnvironment($"CLIENT_{clientEnv}_ID", clientId)
-            .WithEnvironment($"CLIENT_{clientEnv}_NAME", clientId.ToClientName())
-            .WithEnvironment($"CLIENT_{clientEnv}_SECRET", clientSecret)
-            .OnResourceEndpointsAllocated(
-                (resource, _, _) =>
-                {
-                    var resourceBuilder = builder.ApplicationBuilder.CreateResourceBuilder(
-                        resource
-                    );
+            var clientEnv = clientId.ToUpperInvariant();
 
-                    resourceBuilder.WithEnvironment(context =>
+            keycloak
+                .WithEnvironment(HttpEnabledEnvVarName, "true")
+                .WithEnvironment(ProxyHeadersEnvVarName, "xforwarded")
+                .WithEnvironment(HostNameStrictEnvVarName, "false")
+                .WithEnvironment($"CLIENT_{clientEnv}_ID", clientId)
+                .WithEnvironment($"CLIENT_{clientEnv}_NAME", clientId.ToClientName())
+                .WithEnvironment($"CLIENT_{clientEnv}_SECRET", clientSecret)
+                .OnResourceEndpointsAllocated(
+                    (resource, _, _) =>
                     {
-                        var endpoint = builder.GetEndpoint(Protocols.Http);
+                        var resourceBuilder = builder.ApplicationBuilder.CreateResourceBuilder(
+                            resource
+                        );
 
-                        context.EnvironmentVariables[$"CLIENT_{clientEnv}_URL"] = context
-                            .ExecutionContext
-                            .IsPublishMode
-                            ? endpoint
-                            : endpoint.Url;
+                        resourceBuilder.WithEnvironment(context =>
+                        {
+                            var endpoint = builder.GetEndpoint(Protocols.Http);
 
-                        context.EnvironmentVariables[$"CLIENT_{clientEnv}_URL_CONTAINERHOST"] =
-                            endpoint;
-                    });
+                            context.EnvironmentVariables[$"CLIENT_{clientEnv}_URL"] = context
+                                .ExecutionContext
+                                .IsPublishMode
+                                ? endpoint
+                                : endpoint.Url;
 
-                    return Task.CompletedTask;
-                }
+                            context.EnvironmentVariables[$"CLIENT_{clientEnv}_URL_CONTAINERHOST"] =
+                                endpoint;
+                        });
+
+                        return Task.CompletedTask;
+                    }
+                );
+
+            builder
+                .WithReference(keycloak)
+                .WaitForStart(keycloak)
+                .WithEnvironment("Identity__Realm", realmName)
+                .WithEnvironment("Identity__ClientId", clientId)
+                .WithEnvironment("Identity__ClientSecret", clientSecret)
+                .WithEnvironment($"Identity__Scopes__{clientId}", clientId.ToClientName("API"));
+        }
+        else
+        {
+            var keycloakUrl = applicationBuilder.AddConnectionString(
+                Components.KeyCloak,
+                "https://www.idp.bookworm.com"
             );
 
-        // If the Keycloak resource is running in HTTPS container, please remove the WaitFor() call.
-        // https://github.com/dotnet/aspire/issues/6890
-        return builder
-            .WithReference(keycloak)
-            .WaitForStart(keycloak)
-            .WithEnvironment("Identity__Realm", realmName)
-            .WithEnvironment("Identity__ClientId", clientId)
-            .WithEnvironment("Identity__ClientSecret", clientSecret)
-            .WithEnvironment($"Identity__Scopes__{clientId}", clientId.ToClientName("API"));
+            var clientSecret = applicationBuilder
+                .AddParameter($"{clientId}-secret", true)
+                .WithDescription(ParameterDescriptions.Keycloak.ClientSecret, true)
+                .WithCustomInput(_ =>
+                    new()
+                    {
+                        Name = "KeycloakClientSecretParameter",
+                        Label = "Keycloak Client Secret",
+                        InputType = InputType.SecretText,
+                        Description = "Enter your Keycloak client secret here",
+                    }
+                );
+
+            builder
+                .WithReference(keycloakUrl)
+                .WithEnvironment("Identity__Realm", realmName)
+                .WithEnvironment("Identity__ClientId", clientId)
+                .WithEnvironment("Identity__ClientSecret", clientSecret)
+                .WithEnvironment($"Identity__Scopes__{clientId}", clientId.ToClientName("API"));
+        }
+
+        return builder;
     }
 }
