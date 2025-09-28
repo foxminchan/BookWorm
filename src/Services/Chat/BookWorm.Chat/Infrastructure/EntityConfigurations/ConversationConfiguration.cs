@@ -1,4 +1,5 @@
 ﻿using BookWorm.Chat.Domain.AggregatesModel;
+using BookWorm.SharedKernel.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -10,9 +11,13 @@ internal sealed class ConversationConfiguration : IEntityTypeConfiguration<Conve
     {
         builder.HasKey(e => e.Id);
 
+        builder.Property(p => p.Id).HasDefaultValueSql(UniqueIdentifierHelper.NewUuidV7);
+
         builder.Property(e => e.Name).IsRequired().HasMaxLength(DataSchemaLength.Large);
 
         builder.Property(e => e.UserId).IsRequired(false);
+
+        builder.Property(e => e.RowVersion).IsRowVersion();
 
         builder.OwnsMany(x => x.Messages, e => e.ToJson());
 

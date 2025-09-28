@@ -61,6 +61,7 @@ public static partial class AzureExtensions
             {
                 cfg.WithPgWeb()
                     .WithDataVolume()
+                    .WithImageTag("18.0")
                     .WithImagePullPolicy(ImagePullPolicy.Always)
                     .WithLifetime(ContainerLifetime.Persistent);
             });

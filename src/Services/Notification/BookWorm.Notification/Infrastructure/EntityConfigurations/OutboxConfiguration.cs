@@ -1,5 +1,6 @@
 ﻿using BookWorm.Constants.Core;
 using BookWorm.Notification.Domain.Models;
+using BookWorm.SharedKernel.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -10,6 +11,8 @@ internal sealed class OutboxConfiguration : IEntityTypeConfiguration<Outbox>
     public void Configure(EntityTypeBuilder<Outbox> builder)
     {
         builder.HasKey(e => e.Id);
+
+        builder.Property(p => p.Id).HasDefaultValueSql(UniqueIdentifierHelper.NewUuidV7);
 
         builder.Property(p => p.ToName).HasMaxLength(DataSchemaLength.Large).IsRequired();
 

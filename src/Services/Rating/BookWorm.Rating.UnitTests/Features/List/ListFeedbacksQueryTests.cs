@@ -70,7 +70,7 @@ public sealed class ListFeedbacksQueryTests
         [Matrix<string>(
             nameof(Feedback.Rating),
             nameof(Feedback.CreatedAt),
-            nameof(Feedback.Version),
+            nameof(Feedback.RowVersion),
             null!,
             " ",
             ""

@@ -16,7 +16,7 @@ public sealed class Outbox() : IAggregateRoot
         CreatedAt = DateTimeHelper.UtcNow();
     }
 
-    public Guid Id { get; private set; } = Guid.CreateVersion7();
+    public Guid Id { get; private set; }
     public string? ToName { get; private set; }
     public string? ToEmail { get; private set; }
     public string? Subject { get; private set; }

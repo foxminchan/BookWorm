@@ -6,7 +6,7 @@ public abstract class AuditableEntity : Entity
 {
     public DateTime CreatedAt { get; init; } = DateTimeHelper.UtcNow();
     public DateTime? LastModifiedAt { get; set; }
-    public Guid Version { get; set; } = Guid.CreateVersion7();
+    public uint RowVersion { get; set; }
 }
 
 public abstract class AuditableEntity<TId> : Entity<TId>
@@ -14,5 +14,5 @@ public abstract class AuditableEntity<TId> : Entity<TId>
 {
     public DateTime CreatedAt { get; init; } = DateTimeHelper.UtcNow();
     public DateTime? LastModifiedAt { get; set; }
-    public Guid Version { get; set; } = Guid.CreateVersion7();
+    public uint RowVersion { get; set; }
 }

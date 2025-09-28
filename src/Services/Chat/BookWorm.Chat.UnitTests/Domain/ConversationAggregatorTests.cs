@@ -21,7 +21,6 @@ public sealed class ConversationAggregatorTests
         conversation.Messages.ShouldBeEmpty();
         conversation.Id.ShouldNotBe(Guid.Empty);
         conversation.CreatedAt.ShouldBeGreaterThan(DateTime.MinValue);
-        conversation.Version.ShouldNotBe(Guid.Empty);
     }
 
     [Test]

@@ -8,6 +8,8 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
     {
         builder.HasKey(e => e.Id);
 
+        builder.Property(p => p.Id).HasDefaultValueSql(UniqueIdentifierHelper.NewUuidV7);
+
         builder.Property(e => e.BuyerId).IsRequired();
 
         builder.Property(e => e.Status).IsRequired();
@@ -18,7 +20,7 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
 
         builder.Property(e => e.LastModifiedAt).HasDefaultValueSql(DateTimeHelper.SqlUtcNow);
 
-        builder.Property(e => e.Version).IsConcurrencyToken();
+        builder.Property(e => e.RowVersion).IsRowVersion();
 
         builder
             .HasMany(e => e.OrderItems)

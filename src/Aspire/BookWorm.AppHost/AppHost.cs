@@ -134,6 +134,7 @@ builder
         settings => settings.ForceNonSecureReceiver = true
     )
     .WithConfig(Path.GetFullPath("Container/otelcollector/config.yaml", builder.AppHostDirectory))
+    .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithAppForwarding();
 
 var catalogApi = builder
