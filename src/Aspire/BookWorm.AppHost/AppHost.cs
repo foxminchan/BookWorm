@@ -141,7 +141,7 @@ builder
         Components.Observability.Collector,
         settings => settings.ForceNonSecureReceiver = true
     )
-    .WithConfig("Container/otelcollector/config.yaml")
+    .WithConfig(Path.GetFullPath("Container/otelcollector/config.yaml", builder.AppHostDirectory))
     .WithAppForwarding();
 
 var catalogApi = builder
