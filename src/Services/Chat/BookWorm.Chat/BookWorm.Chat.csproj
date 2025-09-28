@@ -3,9 +3,9 @@
     <NoWarn>SKEXP0001,SKEXP0070,SKEXP0110</NoWarn>
   </PropertyGroup>
   <ItemGroup Label="Core Dependencies">
-    <PackageReference Include="Aspire.StackExchange.Redis" />
     <PackageReference Include="Microsoft.Azure.SignalR.Management" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
+    <PackageReference Include="Aspire.StackExchange.Redis.DistributedCaching" />
   </ItemGroup>
   <ItemGroup Label="AI / Semantic Kernel">
     <PackageReference Include="Microsoft.SemanticKernel.Agents.Orchestration" />

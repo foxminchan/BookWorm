@@ -47,7 +47,9 @@ internal static class Extensions
         );
 
         // Configure Redis
-        builder.AddRedisClient(Components.Redis);
+        builder
+            .AddRedisClientBuilder(Components.Redis, o => o.DisableAutoActivation = false)
+            .WithDistributedCache(options => options.InstanceName = "MainCache");
 
         services.AddHybridCache(options =>
         {
