@@ -50,11 +50,9 @@ public static partial class AzureExtensions
     ///     on the execution context.
     /// </summary>
     /// <param name="builder">The resource builder for Azure PostgreSQL Flexible Server.</param>
-    /// <param name="configure">Optional action to configure additional PostgreSQL container settings.</param>
     /// <returns>The updated resource builder with appropriate configuration for the execution context.</returns>
     public static IResourceBuilder<AzurePostgresFlexibleServerResource> RunAsLocalContainer(
-        this IResourceBuilder<AzurePostgresFlexibleServerResource> builder,
-        Action<IResourceBuilder<PostgresServerResource>>? configure = null
+        this IResourceBuilder<AzurePostgresFlexibleServerResource> builder
     )
     {
         if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
@@ -65,8 +63,6 @@ public static partial class AzureExtensions
                     .WithDataVolume()
                     .WithImagePullPolicy(ImagePullPolicy.Always)
                     .WithLifetime(ContainerLifetime.Persistent);
-
-                configure?.Invoke(cfg);
             });
         }
 

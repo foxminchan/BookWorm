@@ -1,5 +1,4 @@
 ﻿using Aspire.Hosting.Azure.AppContainers;
-using Azure.Provisioning;
 using Azure.Provisioning.AppContainers;
 using Azure.Provisioning.PostgreSql;
 using Azure.Provisioning.Redis;
@@ -82,13 +81,6 @@ public static partial class AzureExtensions
                 Name = "Standard_B1ms",
                 Tier = PostgreSqlFlexibleServerSkuTier.Burstable,
             };
-
-            infra.Add(
-                new ProvisioningOutput("hostname", typeof(string))
-                {
-                    Value = resource.FullyQualifiedDomainName,
-                }
-            );
 
             resource.Tags.Add(
                 nameof(Environment),

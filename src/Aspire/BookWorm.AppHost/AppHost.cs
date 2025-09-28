@@ -54,21 +54,13 @@ var schedulerPassword = builder
         }
     );
 
-ReferenceExpression? pgEndpoint = null;
-
 var postgres = builder
     .AddAzurePostgresFlexibleServer(Components.Postgres)
     .WithPasswordAuthentication(pgUser, pgPassword)
-    .RunAsLocalContainer(cfg =>
-        pgEndpoint = ReferenceExpression.Create(
-            $"{cfg.Resource.PrimaryEndpoint.Property(EndpointProperty.Host)}:{cfg.Resource.PrimaryEndpoint.Property(EndpointProperty.Port)}"
-        )
-    )
+    .RunAsLocalContainer()
     .ProvisionAsService();
 
 pgUser.WithParentRelationship(postgres);
-
-pgEndpoint ??= ReferenceExpression.Create($"{postgres.GetOutput("hostname")}");
 
 var redis = builder
     .AddAzureRedis(Components.Redis)
@@ -130,7 +122,7 @@ var keycloak = builder
     .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent)
     .WithSampleRealmImport(kcRealmName, kcThemeDisplayName)
-    .WithExternalDatabase(pgEndpoint, pgUser, pgPassword, userDb);
+    .WithPostgres(userDb);
 
 kcRealmName.WithParentRelationship(keycloak);
 kcThemeName.WithParentRelationship(keycloak);
