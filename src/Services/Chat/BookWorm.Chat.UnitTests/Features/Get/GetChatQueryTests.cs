@@ -72,6 +72,7 @@ public sealed class GetChatQueryTests
     {
         // Arrange
         var conversation = _conversationFaker.Generate(1)[0];
+        conversation.Id = Guid.CreateVersion7(); // Set unique ID for testing
         var query = new GetChatQuery(conversation.Id);
 
         _repositoryMock
@@ -100,6 +101,7 @@ public sealed class GetChatQueryTests
     {
         // Arrange
         var conversation = _conversationFaker.Generate(1)[0];
+        conversation.Id = Guid.CreateVersion7(); // Set unique ID for testing
         var messagesFaker = new ConversationMessageFaker();
         var messages = messagesFaker.Generate();
 
@@ -191,6 +193,7 @@ public sealed class GetChatQueryTests
     {
         // Arrange
         var conversation = _conversationFaker.Generate(1)[0];
+        conversation.Id = Guid.CreateVersion7(); // Set unique ID for testing
         var query = new GetChatQuery(conversation.Id);
         using var cancellationTokenSource = new CancellationTokenSource();
         var cancellationToken = cancellationTokenSource.Token;
@@ -238,6 +241,12 @@ public sealed class GetChatQueryTests
     {
         // Arrange
         var conversations = _conversationFaker.Generate(3);
+
+        // Set unique IDs for testing purposes (normally set by database)
+        conversations[0].Id = Guid.CreateVersion7();
+        conversations[1].Id = Guid.CreateVersion7();
+        conversations[2].Id = Guid.CreateVersion7();
+
         var query1 = new GetChatQuery(conversations[0].Id);
         var query2 = new GetChatQuery(conversations[1].Id);
         var query3 = new GetChatQuery(conversations[2].Id);
@@ -317,6 +326,7 @@ public sealed class GetChatQueryTests
     {
         // Arrange
         var conversation = _conversationFaker.Generate(1)[0];
+        conversation.Id = Guid.CreateVersion7(); // Set unique ID for testing
         var query = new GetChatQuery(conversation.Id);
 
         _repositoryMock

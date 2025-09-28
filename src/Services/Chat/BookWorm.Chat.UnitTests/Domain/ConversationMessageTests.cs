@@ -161,7 +161,7 @@ public sealed class ConversationMessageTests
         message.Text.ShouldBeNull();
         message.Role.ShouldBeNull();
         message.ParentMessageId.ShouldBeNull();
-        message.Id.ShouldNotBe(Guid.Empty);
+        message.Id.ShouldBe(Guid.Empty);
     }
 
     [Test]
