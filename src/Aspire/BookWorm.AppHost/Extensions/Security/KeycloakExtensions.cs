@@ -119,14 +119,17 @@ public static class KeycloakExtensions
     /// <returns>The project resource builder for method chaining.</returns>
     public static IResourceBuilder<ProjectResource> WithIdP(
         this IResourceBuilder<ProjectResource> builder,
-        IResourceBuilder<KeycloakResource> keycloak,
+        IResourceBuilder<IResource> keycloak,
         IResourceBuilder<ParameterResource> realmName
     )
     {
         var clientId = builder.Resource.Name;
         var applicationBuilder = builder.ApplicationBuilder;
 
-        if (applicationBuilder.ExecutionContext.IsRunMode)
+        if (
+            applicationBuilder.ExecutionContext.IsRunMode
+            && keycloak is IResourceBuilder<KeycloakResource> keycloakContainer
+        )
         {
             var clientSecret = applicationBuilder
                 .AddParameter($"{clientId}-secret", true)
@@ -134,7 +137,7 @@ public static class KeycloakExtensions
 
             var clientEnv = clientId.ToUpperInvariant();
 
-            keycloak
+            keycloakContainer
                 .WithEnvironment(HttpEnabledEnvVarName, "true")
                 .WithEnvironment(ProxyHeadersEnvVarName, "xforwarded")
                 .WithEnvironment(HostNameStrictEnvVarName, "false")
@@ -167,20 +170,18 @@ public static class KeycloakExtensions
                 );
 
             builder
-                .WithReference(keycloak)
-                .WaitForStart(keycloak)
+                .WithReference(keycloakContainer)
+                .WaitForStart(keycloakContainer)
                 .WithEnvironment("Identity__Realm", realmName)
                 .WithEnvironment("Identity__ClientId", clientId)
                 .WithEnvironment("Identity__ClientSecret", clientSecret)
                 .WithEnvironment($"Identity__Scopes__{clientId}", clientId.ToClientName("API"));
         }
-        else
+        else if (
+            applicationBuilder.ExecutionContext.IsPublishMode
+            && keycloak is IResourceBuilder<ExternalServiceResource> keycloakHosted
+        )
         {
-            var keycloakUrl = applicationBuilder.AddConnectionString(
-                Components.KeyCloak,
-                "https://www.idp.bookworm.com"
-            );
-
             var clientSecret = applicationBuilder
                 .AddParameter($"{clientId}-secret", true)
                 .WithDescription(ParameterDescriptions.Keycloak.ClientSecret, true)
@@ -195,7 +196,8 @@ public static class KeycloakExtensions
                 );
 
             builder
-                .WithReference(keycloakUrl)
+                .WithReference(keycloakHosted)
+                .WaitFor(keycloakHosted)
                 .WithEnvironment("Identity__Realm", realmName)
                 .WithEnvironment("Identity__ClientId", clientId)
                 .WithEnvironment("Identity__ClientSecret", clientSecret)

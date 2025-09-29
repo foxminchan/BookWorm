@@ -15,7 +15,7 @@ public static class ProxyExtensions
     internal static IResourceBuilder<YarpResource> BuildApiGatewayProxy(
         this IDistributedApplicationBuilder builder,
         IReadOnlyList<Service> services,
-        IResourceBuilder<ContainerResource> container
+        IResourceBuilder<IResource> resource
     )
     {
         var yarp = builder
@@ -47,10 +47,25 @@ public static class ProxyExtensions
                         );
                 }
 
-                yarpBuilder.AddRoute(
-                    "/identity/{**remainder}",
-                    container.GetEndpoint(Protocols.Http)
-                );
+                switch (resource.Resource)
+                {
+                    case ContainerResource containerResource:
+                        yarpBuilder.AddRoute(
+                            "/identity/{**remainder}",
+                            containerResource.GetEndpoint(Protocols.Http)
+                        );
+                        break;
+                    case ExternalServiceResource externalServiceResource:
+                        yarpBuilder.AddRoute(
+                            "/identity/{**remainder}",
+                            builder.CreateResourceBuilder(externalServiceResource)
+                        );
+                        break;
+                    default:
+                        throw new InvalidOperationException(
+                            $"Unsupported resource type for identity endpoint: {resource.Resource.GetType().Name}"
+                        );
+                }
             });
 
         return yarp;
@@ -67,7 +82,7 @@ public sealed class Service
 public sealed class ApiGatewayProxyBuilder
 {
     private readonly List<Service> _services = [];
-    private IResourceBuilder<ContainerResource>? _container;
+    private IResourceBuilder<IResource>? _container;
 
     internal ApiGatewayProxyBuilder(IDistributedApplicationBuilder builder)
     {
@@ -89,10 +104,11 @@ public sealed class ApiGatewayProxyBuilder
                 UseProtobuf = useProtobuf,
             }
         );
+
         return this;
     }
 
-    public IResourceBuilder<YarpResource> WithService(IResourceBuilder<ContainerResource> container)
+    public IResourceBuilder<YarpResource> WithService(IResourceBuilder<IResource> container)
     {
         _container = container;
         return Build();

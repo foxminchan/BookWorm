@@ -13,17 +13,32 @@ public static class ScalarExtensions
     /// <returns>An <see cref="IResourceBuilder{ScalarResource}" /> configured with the specified theme and font settings.</returns>
     public static IResourceBuilder<ScalarResource> AddScalar(
         this IDistributedApplicationBuilder builder,
-        IResourceBuilder<KeycloakResource> keycloak
+        IResourceBuilder<IResource>? keycloak = null
     )
     {
         // If the Keycloak resource is running in HTTPS container, please remove the WaitFor() call.
         // https://github.com/dotnet/aspire/issues/6890
-        return builder
-            .AddScalarApiReference(options =>
-                options.WithTheme(ScalarTheme.BluePlanet).WithDefaultFonts(false)
-            )
-            .WithReference(keycloak)
-            .WaitFor(keycloak);
+        var scalar = builder.AddScalarApiReference(options =>
+            options.WithTheme(ScalarTheme.BluePlanet).WithDefaultFonts(false)
+        );
+
+        if (keycloak is null)
+        {
+            return scalar;
+        }
+
+        return keycloak switch
+        {
+            IResourceBuilder<ExternalServiceResource> externalService => scalar
+                .WithReference(externalService)
+                .WaitFor(externalService),
+
+            IResourceBuilder<KeycloakResource> container => scalar
+                .WithReference(container)
+                .WaitForStart(container),
+
+            _ => throw new InvalidOperationException("Unsupported Keycloak resource type"),
+        };
     }
 
     /// <summary>

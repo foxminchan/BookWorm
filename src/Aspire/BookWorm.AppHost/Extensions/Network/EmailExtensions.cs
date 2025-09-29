@@ -35,7 +35,7 @@ public static class EmailExtensions
                 );
 
             var email = applicationBuilder
-                .AddParameter("email")
+                .AddParameter("email", true)
                 .WithDescription(ParameterDescriptions.SendGrid.SenderEmail, true)
                 .WithCustomInput(_ =>
                     new()
@@ -49,7 +49,7 @@ public static class EmailExtensions
                 );
 
             var senderName = applicationBuilder
-                .AddParameter("sender-name")
+                .AddParameter("sender-name", true)
                 .WithDescription(ParameterDescriptions.SendGrid.SenderName, true)
                 .WithCustomInput(_ =>
                     new()
