@@ -10,7 +10,7 @@ jobs:
     name: Delete untagged package versions
     runs-on: ubuntu-latest
     steps:
-      - uses: snok/container-retention-policy@v3.0.0
+      - uses: snok/container-retention-policy@v3.0.1
         with:
           account: user
           token: ${{ secrets.GH_TOKEN }}
