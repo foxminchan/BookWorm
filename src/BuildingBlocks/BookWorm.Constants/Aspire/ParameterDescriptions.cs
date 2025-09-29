@@ -52,6 +52,15 @@ public static class ParameterDescriptions
                 - For more information, visit: https://www.keycloak.org/docs/latest/server_admin/#_clients
                 - Secret management best practices: https://learn.microsoft.com/en-us/azure/key-vault/general/overview
             """;
+
+        public const string Url = """
+            🌐 The URL of the Keycloak server for authentication.
+            This should be the base URL where your Keycloak instance is accessible.
+
+            💡 Example: 'https://identity.bookworm.com'
+            ⚠️  Important: Must be accessible from the BookWorm application in production
+            📋 Format: Must be a valid URL (including protocol)
+            """;
     }
 
     public static class Postgres
