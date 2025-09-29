@@ -10,14 +10,6 @@ var kcRealmName = builder
     .AddParameter("kc-realm", nameof(BookWorm).ToLowerInvariant(), true)
     .WithDescription(ParameterDescriptions.Keycloak.Realm, true);
 
-var kcThemeName = builder
-    .AddParameter("kc-theme", nameof(BookWorm).ToLowerInvariant(), true)
-    .WithDescription(ParameterDescriptions.Keycloak.Theme, true);
-
-var kcThemeDisplayName = builder
-    .AddParameter("kc-theme-display-name", nameof(BookWorm), true)
-    .WithDescription(ParameterDescriptions.Keycloak.ThemeDisplayName, true);
-
 var pgUser = builder
     .AddParameter("pg-user", "postgres", true)
     .WithDescription(ParameterDescriptions.Postgres.User, true);
@@ -94,7 +86,6 @@ var signalR = builder
 var blobStorage = storage.AddBlobContainer(Components.Azure.Storage.BlobContainer);
 
 var chatDb = postgres.AddDatabase(Components.Database.Chat);
-var userDb = postgres.AddDatabase(Components.Database.User);
 var ratingDb = postgres.AddDatabase(Components.Database.Rating);
 var healthDb = postgres.AddDatabase(Components.Database.Health);
 var catalogDb = postgres.AddDatabase(Components.Database.Catalog);
@@ -114,19 +105,54 @@ await builder.AddOllama(configure =>
     );
 });
 
-var keycloak = builder
-    .AddKeycloak(Components.KeyCloak)
-    .WithIconName("lockClosedRibbon")
-    .WithDataVolume()
-    .WithCustomTheme(kcThemeName)
-    .WithImagePullPolicy(ImagePullPolicy.Always)
-    .WithLifetime(ContainerLifetime.Persistent)
-    .WithSampleRealmImport(kcRealmName, kcThemeDisplayName)
-    .WithPostgres(userDb);
+IResourceBuilder<IResource> keycloak;
+
+if (builder.ExecutionContext.IsRunMode)
+{
+    var kcThemeName = builder
+        .AddParameter("kc-theme", nameof(BookWorm).ToLowerInvariant(), true)
+        .WithDescription(ParameterDescriptions.Keycloak.Theme, true);
+
+    var kcThemeDisplayName = builder
+        .AddParameter("kc-theme-display-name", nameof(BookWorm), true)
+        .WithDescription(ParameterDescriptions.Keycloak.ThemeDisplayName, true);
+
+    var userDb = postgres.AddDatabase(Components.Database.User);
+
+    keycloak = builder
+        .AddKeycloak(Components.KeyCloak)
+        .WithIconName("lockClosedRibbon")
+        .WithCustomTheme(kcThemeName)
+        .WithImagePullPolicy(ImagePullPolicy.Always)
+        .WithLifetime(ContainerLifetime.Persistent)
+        .WithSampleRealmImport(kcRealmName, kcThemeDisplayName)
+        .WithPostgres(userDb);
+
+    kcThemeName.WithParentRelationship(keycloak);
+    kcThemeDisplayName.WithParentRelationship(keycloak);
+}
+else
+{
+    var keycloakUrl = builder
+        .AddParameter("kc-url", true)
+        .WithDescription(ParameterDescriptions.Keycloak.Url, true)
+        .WithCustomInput(_ =>
+            new()
+            {
+                Name = "KeycloakUrlParameter",
+                Label = "Keycloak URL",
+                InputType = InputType.Text,
+                Value = "https://identity.bookworm.com",
+                Description = "Enter your Keycloak server URL here",
+            }
+        );
+
+    keycloak = builder
+        .AddExternalService(Components.KeyCloak, keycloakUrl)
+        .WithHttpHealthCheck("/health/ready");
+}
 
 kcRealmName.WithParentRelationship(keycloak);
-kcThemeName.WithParentRelationship(keycloak);
-kcThemeDisplayName.WithParentRelationship(keycloak);
 
 builder
     .AddOpenTelemetryCollector(
@@ -264,18 +290,16 @@ builder
     .WithReference(notificationApi)
     .WithExternalHttpEndpoints();
 
-if (builder.ExecutionContext.IsRunMode)
-{
-    builder
-        .AddScalar(keycloak)
-        .WithOpenAPI(mcp)
-        .WithOpenAPI(chatApi)
-        .WithOpenAPI(basketApi)
-        .WithOpenAPI(ratingApi)
-        .WithOpenAPI(catalogApi)
-        .WithOpenAPI(orderingApi);
+builder
+    .AddScalar(keycloak)
+    .WithOpenAPI(mcp)
+    .WithOpenAPI(chatApi)
+    .WithOpenAPI(basketApi)
+    .WithOpenAPI(ratingApi)
+    .WithOpenAPI(catalogApi)
+    .WithOpenAPI(orderingApi)
+    .ExcludeFromManifest();
 
-    builder.AddK6(gateway);
-}
+builder.AddK6(gateway);
 
 builder.Build().Run();
