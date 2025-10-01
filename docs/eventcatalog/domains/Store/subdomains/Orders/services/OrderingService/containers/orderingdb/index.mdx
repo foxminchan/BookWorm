@@ -1,0 +1,768 @@
+---
+id: OrderingDatabase
+name: Ordering Database
+version: 1.0.0
+container_type: database
+technology: postgres@18
+authoritative: true
+access_mode: readWrite
+classification: internal
+retention: 7y
+residency: eastasia
+summary: PostgreSQL database implementing event sourcing with Marten for order management, maintaining complete audit trails and supporting CQRS patterns.
+owners:
+  - nhanxnguyen
+attachments:
+  - url: https://drive.google.com/file/d/13k7UXdrFil-d_WXpg4JqG2FnefiXLmhr/view?usp=sharing
+    title: ERD of the Ordering Database
+    description: Learn more about the schema of the Ordering Database
+    type: 'diagrams'
+    icon: FileTextIcon
+---
+
+<NodeGraph />
+
+## Overview
+
+The Ordering Database is the central persistence layer for the Ordering Service, implementing a hybrid architecture that combines traditional relational data storage with event sourcing through Marten. Built on PostgreSQL 18, this database maintains both the current state of orders and buyers alongside a complete immutable event history, enabling powerful audit capabilities, temporal queries, and event replay functionality. The database serves as the authoritative source for all order-related operations in the BookWorm e-commerce platform.
+
+<AccordionGroup>
+  <Accordion title="Ordering Database Schema">
+    <Schema file="schema.sql" lang="sql" title="Ordering Database Schema" />
+  </Accordion>
+  <Accordion title="Common Business Queries">
+    <Schema file="queries.sql" lang="sql" title="Business Intelligence Queries" />
+  </Accordion>
+</AccordionGroup>
+
+## Database Purpose & Role
+
+### Hybrid Architecture Pattern
+
+The Ordering Database implements a sophisticated dual-storage approach:
+
+- **State Storage**: Traditional relational tables (orders, order_items, buyers) for efficient querying of current state
+- **Event Store**: Marten-managed event sourcing tables (mt_events, mt_streams) for complete audit history
+- **CQRS Support**: Separation enables independent optimization of read and write operations
+- **Projections**: Marten projections (mt_doc_ordersummaryview) provide optimized read models
+- **Temporal Queries**: Event store enables point-in-time reconstruction of any order state
+
+### Order Lifecycle Management
+
+The database tracks orders through their complete lifecycle:
+
+- **Creation**: Orders start in "New" status when placed by customers
+- **Completion**: Successful fulfillment transitions orders to "Completed" status
+- **Cancellation**: Customer or system-initiated cancellations move orders to "Cancelled" status
+- **Soft Delete**: Maintains historical data while marking orders as deleted
+- **Audit Trail**: Every state change recorded as immutable domain event
+
+### Event Sourcing with Marten
+
+Marten provides event sourcing capabilities on top of PostgreSQL:
+
+- **Event Append**: All domain events appended to immutable event log
+- **Stream Management**: Events grouped by aggregate root (order ID)
+- **Projections**: Automated read model updates from event streams
+- **Subscriptions**: Real-time event processing for integration events
+- **Snapshots**: Performance optimization for long event streams
+
+## Schema Design
+
+### Domain Tables
+
+#### `orders` - Order Aggregate State
+
+The primary table storing current order state with the following columns:
+
+- **id** (uuid, PRIMARY KEY, DEFAULT uuidv7()): Unique order identifier using UUID v7 for time-ordered IDs
+- **status** (smallint, NOT NULL): Current order status (0=New, 1=Cancelled, 2=Completed)
+- **note** (varchar(500)): Optional customer notes or special instructions
+- **buyer_id** (uuid, NOT NULL, FOREIGN KEY): Reference to buyer who placed the order
+- **is_deleted** (boolean, NOT NULL): Soft delete flag for data retention
+- **created_at** (timestamptz, NOT NULL, DEFAULT NOW() AT TIME ZONE 'UTC'): Order creation timestamp
+- **last_modified_at** (timestamptz, DEFAULT NOW() AT TIME ZONE 'UTC'): Last modification timestamp
+
+**Key Features**:
+- **UUID v7 IDs**: Time-ordered identifiers for efficient indexing and natural sorting
+- **Status Enum**: Simple integer enumeration for order states
+- **Soft Delete**: Preserves order history while marking as deleted
+- **Audit Timestamps**: Automatic tracking of creation and modification times
+- **Buyer Reference**: Foreign key relationship with CASCADE on delete
+
+**Status Lifecycle**:
+- New (0): Initial state when order is placed
+- Cancelled (1): Order cancelled before fulfillment
+- Completed (2): Order successfully fulfilled and delivered
+
+#### `order_items` - Order Line Items
+
+Stores individual items within each order with the following columns:
+
+- **id** (uuid, PRIMARY KEY, DEFAULT uuidv7()): Unique line item identifier
+- **quantity** (integer, NOT NULL): Number of units ordered (must be greater than 0)
+- **price** (numeric, NOT NULL): Unit price at time of order (must be greater than or equal to 0)
+- **book_id** (uuid, NOT NULL): Reference to product in catalog service
+- **order_id** (uuid, NOT NULL, FOREIGN KEY): Parent order reference with CASCADE on delete
+
+**Key Features**:
+- **Price Snapshot**: Captures price at order time (not current catalog price)
+- **Quantity Validation**: Business rules enforce positive quantities
+- **Cascade Delete**: Line items automatically deleted when parent order deleted
+- **Product Reference**: Links to catalog service via book_id (not enforced FK for microservice boundaries)
+
+**Business Rules**:
+- Each order must have at least one order item
+- Quantities must be positive integers
+- Prices must be non-negative decimals
+- Line items are immutable once order is placed
+
+#### `buyers` - Customer Information
+
+Manages buyer profiles and shipping addresses with the following columns:
+
+- **id** (uuid, PRIMARY KEY, DEFAULT uuidv7()): Unique buyer identifier
+- **name** (varchar(20), NOT NULL): Buyer's full name (limited to 20 characters)
+- **address_street** (varchar(50)): Street address for shipping
+- **address_city** (varchar(50)): City name
+- **address_province** (varchar(50)): Province or state name
+
+**Key Features**:
+- **Minimal Profile**: Stores only essential information for order fulfillment
+- **Optional Address**: Address fields nullable for flexible buyer creation
+- **Name Constraint**: 20-character limit ensures concise naming
+- **Geographic Data**: Enables location-based analytics and shipping logistics
+
+**Address Components**:
+- Street address for delivery location
+- City for regional analytics
+- Province for broader geographic insights
+- No postal code (simplified addressing)
+
+### Event Sourcing Tables (Marten)
+
+#### `mt_events` - Event Store
+
+The core event store table managed by Marten with the following columns:
+
+- **seq_id** (bigint, PRIMARY KEY): Global sequence number for all events (auto-incrementing)
+- **id** (uuid, NOT NULL): Unique event identifier
+- **stream_id** (uuid, FOREIGN KEY): Reference to aggregate stream
+- **version** (bigint, NOT NULL): Event version within its stream (for optimistic concurrency)
+- **data** (jsonb, NOT NULL): Event payload stored as JSON
+- **type** (varchar(500), NOT NULL): Fully qualified event type name
+- **timestamp** (timestamptz, NOT NULL, DEFAULT NOW()): When event was recorded
+- **tenant_id** (varchar, DEFAULT '*DEFAULT*'): Multi-tenancy support
+- **mt_dotnet_type** (varchar): .NET type information for deserialization
+- **correlation_id** (varchar): Distributed tracing correlation
+- **causation_id** (varchar): Causal relationship tracking
+- **headers** (jsonb): Additional metadata
+- **is_archived** (boolean, NOT NULL, DEFAULT false): Archive flag for old events
+
+**Key Features**:
+- **Immutable Log**: Events never modified after creation
+- **Sequential Ordering**: Global sequence ensures total ordering
+- **Version Control**: Per-stream versioning prevents concurrent update conflicts
+- **JSONB Storage**: Efficient storage and querying of event data
+- **Metadata Rich**: Correlation and causation for distributed systems
+- **Archival Support**: Old events can be archived without deletion
+
+**Event Types**:
+- OrderPlacedEvent: When new order is created
+- OrderCompletedEvent: When order fulfillment succeeds
+- OrderCancelledEvent: When order is cancelled
+
+#### `mt_streams` - Event Stream Metadata
+
+Manages aggregate root streams with the following columns:
+
+- **id** (uuid, PRIMARY KEY): Stream identifier (matches aggregate root ID)
+- **type** (varchar): Aggregate type (e.g., "Order")
+- **version** (bigint): Current stream version (number of events)
+- **timestamp** (timestamptz, NOT NULL, DEFAULT NOW()): Last event timestamp
+- **snapshot** (jsonb): Snapshot data for performance optimization
+- **snapshot_version** (integer): Version at which snapshot was taken
+- **created** (timestamptz, NOT NULL, DEFAULT NOW()): Stream creation time
+- **tenant_id** (varchar, DEFAULT '*DEFAULT*'): Multi-tenancy identifier
+- **is_archived** (boolean, NOT NULL, DEFAULT false): Archive flag
+
+**Key Features**:
+- **Stream Tracking**: One stream per aggregate root instance
+- **Version Control**: Optimistic concurrency for aggregate updates
+- **Snapshot Support**: Performance optimization for long event histories
+- **Tenant Isolation**: Multi-tenant support for SaaS scenarios
+- **Archival**: Historical streams can be archived
+
+**Snapshot Strategy**:
+- Snapshots created every N events (configurable, typically 20-50)
+- Reduces replay time for aggregates with long histories
+- Snapshots optional, not required for correctness
+
+#### `mt_doc_ordersummaryview` - Order Summary Projection
+
+Marten-managed read model projection with the following columns:
+
+- **id** (uuid, PRIMARY KEY): Order identifier
+- **data** (jsonb, NOT NULL): Projected order summary data
+- **mt_last_modified** (timestamptz, DEFAULT transaction_timestamp()): Last projection update
+- **mt_dotnet_type** (varchar): .NET type for deserialization
+- **mt_version** (integer, NOT NULL, DEFAULT 0): Projection version
+
+**Key Features**:
+- **Automated Updates**: Marten automatically updates from event stream
+- **Optimized Queries**: Pre-computed data for fast reads
+- **JSONB Storage**: Flexible schema for evolving read models
+- **Version Tracking**: Detects out-of-sync projections
+
+**Projected Data**:
+- Order ID and status
+- Total price calculation
+- Creation and modification timestamps
+- Derived business metrics
+
+#### `mt_event_progression` - Projection State Tracking
+
+Tracks last processed event for projections with the following columns:
+
+- **name** (varchar, PRIMARY KEY): Projection name
+- **last_seq_id** (bigint): Last processed event sequence ID
+- **last_updated** (timestamptz, DEFAULT transaction_timestamp()): Last processing time
+
+**Key Features**:
+- **Checkpoint Tracking**: Enables resumable projection processing
+- **Multiple Projections**: Each projection tracks independently
+- **Failure Recovery**: Restart from last successful event
+
+#### `mt_doc_deadletterevent` - Failed Event Processing
+
+Stores events that failed projection processing with the following columns:
+
+- **id** (uuid, PRIMARY KEY): Dead letter event identifier
+- **data** (jsonb, NOT NULL): Failed event data
+- **mt_last_modified** (timestamptz, DEFAULT transaction_timestamp()): When failure occurred
+- **mt_version** (uuid, NOT NULL, DEFAULT random_uuid()): Version for concurrency
+- **mt_dotnet_type** (varchar): Event type information
+
+**Key Features**:
+- **Error Isolation**: Failed events don't block other processing
+- **Retry Support**: Can be replayed after fixing projection logic
+- **Debugging Aid**: Captures problematic events for analysis
+
+### MassTransit Integration Tables
+
+#### `inbox_state` - Message Deduplication
+
+Tracks consumed integration events for idempotency with the following columns:
+
+- **id** (bigint, PRIMARY KEY IDENTITY): Internal identifier
+- **message_id** (uuid, NOT NULL): Incoming message identifier
+- **consumer_id** (uuid, NOT NULL): Consumer endpoint identifier
+- **lock_id** (uuid, NOT NULL): Processing lock
+- **row_version** (bytea): Optimistic concurrency token
+- **received** (timestamptz, NOT NULL): When message arrived
+- **receive_count** (int, NOT NULL): Delivery attempt count
+- **expiration_time** (timestamptz): Message expiration
+- **consumed** (timestamptz): When message was processed
+- **delivered** (timestamptz): When processing completed
+- **last_sequence_number** (bigint): Sequence tracking
+- **UNIQUE CONSTRAINT** on (message_id, consumer_id): Deduplication key
+
+**Key Features**:
+- **Exactly-Once Semantics**: Prevents duplicate command processing
+- **Composite Key**: Per-consumer deduplication
+- **Retry Tracking**: Monitors delivery attempts
+- **Processing State**: Complete lifecycle tracking
+
+#### `outbox_message` - Transactional Outbox
+
+Ensures reliable integration event publishing with the following columns:
+
+- **sequence_number** (bigint, PRIMARY KEY IDENTITY): Auto-incrementing sequence
+- **message_id** (uuid, NOT NULL): Unique message identifier
+- **message_type** (text, NOT NULL): Full message type name
+- **body** (text, NOT NULL): Serialized message content (JSON)
+- **content_type** (varchar(256), NOT NULL): Serialization format
+- **enqueue_time** (timestamptz): When message was stored
+- **sent_time** (timestamptz, NOT NULL): When message was published
+- **conversation_id** (uuid): Conversation tracking
+- **correlation_id** (uuid): Event correlation
+- **initiator_id** (uuid): Original message initiator
+- **request_id** (uuid): Request-response tracking
+- **source_address** (varchar(256)): Message source endpoint
+- **destination_address** (varchar(256)): Target endpoint
+- **response_address** (varchar(256)): Reply-to address
+- **fault_address** (varchar(256)): Error handling address
+- **expiration_time** (timestamptz): Message TTL
+- **headers** (text): Additional message headers (JSON)
+- **properties** (text): Custom message properties (JSON)
+- **inbox_message_id** (uuid): Related inbox message
+- **inbox_consumer_id** (uuid): Related inbox consumer
+- **outbox_id** (uuid): Related outbox state
+
+**Key Features**:
+- **Atomic Publishing**: Messages stored in same transaction as domain events
+- **Sequential Processing**: Ensures message ordering
+- **Complete Envelope**: Full routing and correlation metadata
+
+#### `outbox_state` - Outbox Processing State
+
+Manages outbox processing cursor with the following columns:
+
+- **outbox_id** (uuid, PRIMARY KEY): Unique outbox identifier
+- **lock_id** (uuid, NOT NULL): Distributed lock identifier
+- **row_version** (bytea): Optimistic concurrency token
+- **created** (timestamptz, NOT NULL): Outbox creation time
+- **delivered** (timestamptz): Last delivery time
+- **last_sequence_number** (bigint): Last processed message sequence
+
+**Key Features**:
+- **Processing Checkpoint**: Tracks last published message
+- **Distributed Locking**: Prevents concurrent processing
+- **Recovery Support**: Resume from last sequence after failures
+
+#### `__EFMigrationsHistory` - Schema Version Control
+
+Standard Entity Framework Core migrations table with the following columns:
+
+- **migration_id** (varchar(150), PRIMARY KEY): Migration identifier
+- **product_version** (varchar(32), NOT NULL): EF Core version
+
+Tracks applied database migrations for schema evolution management.
+
+## Data Flow & Integration
+
+### Order Creation Flow
+
+**1. Command Reception**
+- CreateOrderCommand received via HTTP API
+- Validated for business rules (buyer exists, items valid, prices correct)
+- Basket data retrieved from Basket Service via gRPC
+
+**2. Domain Event Generation**
+- Order aggregate created with New status
+- OrderPlacedEvent registered as domain event
+- Event includes order details, buyer info, and line items
+
+**3. Transactional Persistence**
+- INSERT into orders table (current state)
+- INSERT into order_items table (line items)
+- INSERT into mt_events table (OrderPlacedEvent)
+- INSERT into outbox_message table (UserCheckedOutEvent for Finance Service)
+- Transaction COMMIT (all atomic)
+
+**4. Event Processing**
+- Marten projections update mt_doc_ordersummaryview
+- Outbox worker publishes UserCheckedOutEvent to RabbitMQ
+- Finance Service begins saga orchestration
+
+### Order Completion Flow
+
+**1. Command Execution**
+- CompleteOrderCommand received (typically from Finance Service)
+- Order retrieved with status validation (must be New)
+- Business rules enforced (only new orders can be completed)
+
+**2. State Transition**
+- Order status updated to Completed
+- OrderCompletedEvent registered
+- last_modified_at timestamp updated
+
+**3. Event Persistence**
+- UPDATE orders SET status=2, last_modified_at=NOW()
+- INSERT into mt_events (OrderCompletedEvent)
+- INSERT into outbox_message (OrderStatusChangedToCompleteEvent)
+- Transaction COMMIT
+
+**4. Integration**
+- Event published to message broker
+- Finance Service saga transitions to Completed state
+- Notification Service sends completion email to customer
+
+### Order Cancellation Flow
+
+**1. Cancellation Request**
+- CancelOrderCommand received (from customer or system)
+- Order retrieved and validated (must be in New status)
+- Business logic prevents cancellation of completed orders
+
+**2. Domain Event**
+- Order status transitioned to Cancelled
+- OrderCancelledEvent registered with cancellation reason
+- Inventory reservations released (via integration events)
+
+**3. Database Updates**
+- UPDATE orders SET status=1, last_modified_at=NOW()
+- INSERT into mt_events (OrderCancelledEvent)
+- INSERT into outbox_message (OrderStatusChangedToCancelEvent)
+- Transaction COMMIT
+
+**4. Downstream Impact**
+- Finance Service saga transitions to Cancelled state
+- Notification Service sends cancellation confirmation
+- Basket Service may restore items (if configured)
+
+### Event Sourcing Replay
+
+**Event Stream Reconstruction**:
+- Read all events for order ID from mt_events ORDER BY version
+- Apply events sequentially to reconstruct aggregate state
+- Validate current state matches orders table (consistency check)
+- Used for debugging, audit, and temporal queries
+
+**Projection Rebuilding**:
+- Truncate projection tables (mt_doc_ordersummaryview)
+- Replay all events from mt_events in order
+- Marten automatically updates projections
+- Used after projection schema changes
+
+## Performance & Optimization
+
+### Indexing Strategy
+
+**Critical Indexes**:
+- Primary keys (automatically indexed): orders(id), order_items(id), buyers(id), mt_events(seq_id, is_archived), mt_streams(id, is_archived)
+- Foreign keys (automatically indexed): order_items(order_id), orders(buyer_id), mt_events(stream_id, is_archived)
+- Unique constraints (automatically indexed): inbox_state(message_id, consumer_id)
+- Recommended indexes: orders(buyer_id), orders(created_at), orders(status), mt_events(stream_id), mt_events(type), mt_events(timestamp)
+
+**Performance Characteristics**:
+- **Order Lookup**: O(1) via primary key
+- **Buyer Orders**: O(log n) via buyer_id index
+- **Event Stream**: O(log n) via stream_id index
+- **Status Queries**: O(log n) via status index
+- **Time-Range Queries**: O(log n) via created_at index
+
+### Query Patterns
+
+**High-Frequency Queries**:
+1. **Get Order by ID**: SELECT from orders WHERE id = ? (with JOIN to order_items)
+2. **List Buyer Orders**: SELECT from orders WHERE buyer_id = ? ORDER BY created_at DESC
+3. **Get Event Stream**: SELECT from mt_events WHERE stream_id = ? ORDER BY version
+4. **Poll Outbox**: SELECT from outbox_message WHERE sent_time IS NULL ORDER BY sequence_number
+5. **Check Inbox**: SELECT from inbox_state WHERE message_id = ? AND consumer_id = ?
+
+**Write Patterns**:
+- **Create Order**: INSERT into orders, order_items (batch), mt_events, outbox_message
+- **Update Status**: UPDATE orders, INSERT into mt_events, INSERT into outbox_message
+- **Delete Order**: UPDATE orders SET is_deleted = true (soft delete)
+
+### Database Sizing
+
+**Estimated Growth** (per 1,000 orders/day):
+- **orders**: ~150 KB/day (150 bytes/row × 1,000 rows)
+- **order_items**: ~600 KB/day (assuming avg 3 items/order, 200 bytes/row × 3,000 rows)
+- **buyers**: ~50 KB/day (assuming 30% new buyers, 150 bytes/row × 300 rows)
+- **mt_events**: ~1.5 MB/day (assuming avg 3 events/order, 500 bytes/row × 3,000 events)
+- **mt_streams**: ~100 KB/day (100 bytes/row × 1,000 streams)
+- **inbox_state**: ~500 KB/day (500 bytes/row × 1,000 messages)
+- **outbox_message**: ~1.5 MB/day (purged after 7 days)
+
+**Annual Storage** (with retention):
+- **Domain tables**: ~300 MB/year (orders + order_items + buyers)
+- **Event store**: ~550 MB/year (mt_events + mt_streams)
+- **MassTransit tables**: ~200 MB (rolling windows)
+- **Total**: ~1 GB/year + indexes (~2.5 GB total with 7-year retention)
+
+### Marten Performance Optimizations
+
+**Snapshot Strategy**:
+- Snapshots created every 20 events (configurable)
+- Reduces event replay time for order aggregates
+- Snapshot overhead: ~10% storage increase
+- Performance gain: 80% faster aggregate loading for long streams
+
+**Projection Performance**:
+- Inline projections: Updated in same transaction (slower writes, fast reads)
+- Async projections: Updated by background process (fast writes, eventual consistency)
+- Current configuration: Inline for OrderSummaryView (strong consistency)
+
+**Connection Pooling**:
+- PgBouncer recommended for connection management
+- Default pool size: 100 connections
+- Typical active: 20-30 connections during peak load
+
+## Data Lifecycle & Retention
+
+### Retention Policy
+
+- **orders**: 7 years (regulatory and business compliance)
+- **order_items**: 7 years (tied to parent order)
+- **buyers**: Indefinite (customer master data)
+- **mt_events**: 7 years (complete audit trail)
+- **mt_streams**: 7 years (tied to events)
+- **inbox_state**: 30 days (deduplication window)
+- **outbox_message**: 7 days (after successful delivery)
+- **outbox_state**: Indefinite (small metadata)
+
+### Archival Strategy
+
+**Hot Storage** (Active Database):
+- Active orders (New status)
+- Recent orders (last 90 days)
+- Active event streams
+- Current inbox/outbox records
+
+**Warm Storage** (Archive Database or Partition):
+- Completed/Cancelled orders (90 days - 2 years)
+- Associated event streams
+- Queryable for customer service and analytics
+
+**Cold Storage** (Data Lake):
+- Historical orders (2+ years)
+- Complete event history for compliance
+- Compressed and immutable archives
+- Rarely accessed, batch queries only
+
+### Cleanup Jobs
+
+**Automated Maintenance**:
+- **Daily**: Purge old outbox_message records (sent more than 7 days ago)
+- **Weekly**: Purge old inbox_state records (consumed more than 30 days ago)
+- **Monthly**: Archive old orders and events (older than 2 years) to warm storage
+- **Quarterly**: Vacuum and analyze tables for optimal query planning
+- **Annual**: Archive to cold storage (older than 7 years, per retention policy)
+
+### Soft Delete Management
+
+**Soft Delete Strategy**:
+- Orders marked is_deleted=true instead of physical deletion
+- Preserves referential integrity
+- Enables "undelete" functionality if needed
+- Audit trail remains intact
+
+**Cleanup Process**:
+- Soft-deleted orders retained for 90 days
+- After 90 days, eligible for archival
+- Physical deletion only after retention period expires
+
+## Monitoring & Observability
+
+### Key Performance Indicators
+
+**Order Metrics**:
+- **Order Volume**: Total orders created per day/hour
+- **Completion Rate**: Percentage of orders reaching Completed status
+- **Cancellation Rate**: Percentage of orders cancelled before completion
+- **Average Order Value**: Mean total price across all orders
+- **Order Processing Time**: Time from New to Completed status
+
+**Event Store Metrics**:
+- **Event Append Rate**: Events written per second
+- **Stream Size Distribution**: Number of events per aggregate
+- **Projection Lag**: Time delay between event append and projection update
+- **Event Replay Performance**: Time to reconstruct aggregate from events
+
+**Database Metrics**:
+- **Query Performance**: p95/p99 latency for common queries
+- **Connection Pool Utilization**: Active vs. available connections
+- **Table Sizes**: Growth rate monitoring for capacity planning
+- **Index Usage**: Identify unused or under-utilized indexes
+- **Disk Usage**: Current vs. allocated storage
+
+**Integration Metrics**:
+- **Outbox Backlog**: Count of unsent messages
+- **Inbox Duplicate Rate**: Percentage of rejected duplicate messages
+- **Event Publishing Latency**: Time from outbox insert to broker publish
+
+### Health Checks
+
+**Database Connectivity**:
+- Verify PostgreSQL is reachable and accepting connections
+- Check connection pool availability
+
+**Event Store Health**:
+- Validate mt_events table is writable
+- Check for event append failures or conflicts
+- Monitor projection processing lag
+
+**Data Consistency**:
+- Verify orders table and mt_events table are synchronized
+- Check for orphaned order_items (missing parent order)
+- Validate projection data matches event stream
+
+**Outbox Processing**:
+- Alert if outbox backlog exceeds 1,000 messages
+- Monitor for stalled outbox workers (no messages sent in 15 minutes)
+
+### Logging & Tracing
+
+**Structured Logging**:
+- Order creation/completion/cancellation logged with order ID
+- Event appends logged with stream ID and event type
+- Domain events include correlation IDs for distributed tracing
+- Database errors logged with query context
+
+**Distributed Tracing**:
+- OpenTelemetry spans for order operations
+- Correlation IDs link commands, events, and integration events
+- End-to-end tracing from HTTP request to message broker publish
+
+**Event Store Audit**:
+- Complete immutable history in mt_events
+- Every domain event captured with timestamp and metadata
+- Temporal queries enable point-in-time reconstruction
+
+## Security & Compliance
+
+### Data Classification
+
+- **Classification**: Internal - Contains customer PII and financial transaction data
+- **Access Mode**: Read/Write - Ordering Service only
+- **Residency**: East Asia region - Data sovereignty compliance
+- **Authoritative**: True - Single source of truth for order data
+
+### Security Measures
+
+**Access Control**:
+- Database user with least-privilege permissions
+- No direct external access (internal microservices only)
+- Service-level authentication via connection strings
+- Row-level security not required (single-tenant per service)
+
+**Data Protection**:
+- Encryption at rest (Azure PostgreSQL managed encryption)
+- Encryption in transit (TLS 1.2+)
+- Customer PII limited to buyer name and address
+- No sensitive payment data stored (handled by Finance Service)
+
+**Event Store Security**:
+- Immutable event log prevents tampering
+- Append-only access pattern (events never modified)
+- Cryptographic hashing for event integrity (optional)
+- Access logs for audit compliance
+
+**Audit Trail**:
+- Complete order history in event store
+- Every state change captured as domain event
+- Correlation IDs link related events across services
+- Immutable audit trail for compliance and disputes
+
+### Compliance Considerations
+
+**Financial Regulations**:
+- 7-year retention for order financial records
+- Complete audit trail via event sourcing
+- Transaction history reconstructable from events
+
+**GDPR / Privacy**:
+- Customer names and addresses stored (PII)
+- Right to access: Query orders and events by buyer ID
+- Right to erasure: Anonymize buyer data while retaining order metadata
+- Right to portability: Export order history in machine-readable format
+
+**Data Retention**:
+- 7-year retention for business and regulatory requirements
+- Automatic archival after 2 years to warm storage
+- Secure deletion after retention period expires
+
+## Disaster Recovery & High Availability
+
+### Backup Strategy
+
+**Automated Backups** (Azure PostgreSQL Flexible Server):
+- **Point-in-Time Recovery (PITR)**: 30-day retention
+- **Backup Frequency**: Continuous transaction log streaming
+- **Recovery Objectives**: RPO less than 5 minutes, RTO less than 1 hour
+- **Geo-Redundancy**: Backups replicated to secondary region
+
+**Event Store Backups**:
+- mt_events and mt_streams backed up together
+- Immutable event log ideal for incremental backups
+- Event replay capability provides additional resilience
+
+**Manual Snapshots**:
+- Pre-deployment snapshots before schema migrations
+- Retained for 90 days
+- Used for rollback scenarios
+
+### High Availability
+
+**Azure PostgreSQL HA Configuration**:
+- **Availability Zone Redundancy**: Synchronous replica in different AZ
+- **Automatic Failover**: Sub-60-second failover time
+- **Read Replicas**: Optional for reporting and analytics queries
+- **Connection Pooling**: PgBouncer for efficient connection management
+
+**Marten Resilience**:
+- Event append idempotency prevents duplicate events
+- Optimistic concurrency prevents conflicting updates
+- Event replay enables recovery from projection failures
+
+### Disaster Recovery Procedures
+
+**Failure Scenarios**:
+
+1. **Database Connection Failure**:
+   - Connection pool retry with exponential backoff
+   - Circuit breaker trips after 5 consecutive failures
+   - Graceful degradation: Return 503 Service Unavailable
+
+2. **Event Store Corruption**:
+   - Restore from PITR to point before corruption
+   - Rebuild projections from restored event store
+   - Validate consistency with downstream services
+
+3. **Projection Failure**:
+   - Failed events moved to mt_doc_deadletterevent
+   - Fix projection logic
+   - Replay dead letter events or rebuild projection from scratch
+
+4. **Complete Database Loss**:
+   - Failover to geo-redundant replica (RTO approximately 1 hour)
+   - Restore from latest backup snapshot
+   - Replay unacknowledged messages from message broker
+
+**Recovery Testing**:
+- Quarterly disaster recovery drills
+- Automated backup restoration tests
+- Event replay validation
+- Chaos engineering experiments (random failures)
+
+## Integration with Marten
+
+### Event Sourcing Configuration
+
+**Stream Management**:
+- One stream per order aggregate (stream_id matches order.id)
+- Events appended with optimistic concurrency (version checking)
+- Snapshots generated every 20 events for performance
+- Soft-deleted streams marked but events retained
+
+**Event Serialization**:
+- Events stored as JSONB for efficient querying
+- System.Text.Json for serialization
+- .NET type information stored for deserialization
+- Forward-compatible schema evolution
+
+**Projection Configuration**:
+- OrderSummaryView projection updated inline (same transaction)
+- Custom projections can be added for specific read models
+- Projection state tracked in mt_event_progression
+- Failed events captured in mt_doc_deadletterevent
+
+### Domain Event Publishing
+
+**Event Flow**:
+1. Domain event registered in aggregate root
+2. Aggregate persisted via Marten (events appended to mt_events)
+3. Marten's event subscription detects new events
+4. Events transformed to integration events
+5. Integration events published to outbox_message
+6. Background worker publishes to RabbitMQ
+
+**Integration Event Mapping**:
+- OrderPlacedEvent maps to UserCheckedOutEvent
+- OrderCompletedEvent maps to OrderStatusChangedToCompleteEvent
+- OrderCancelledEvent maps to OrderStatusChangedToCancelEvent
+
+### Temporal Queries
+
+**Point-in-Time Queries**:
+- Query order state at specific timestamp
+- Replay events up to target time
+- Useful for dispute resolution and debugging
+
+**Aggregate History**:
+- Retrieve complete event history for order
+- Visualize order lifecycle and state changes
+- Audit trail for compliance and investigations

@@ -1,0 +1,154 @@
+---
+id: CatalogCache
+name: Catalog Cache
+version: 1.0.0
+container_type: cache
+technology: redis@8.2
+authoritative: true
+access_mode: readWrite
+classification: internal
+retention: 2y
+residency: eastasia
+summary: Distributed cache for frequently accessed product catalog data.
+owners:
+  - nhanxnguyen
+---
+
+<NodeGraph />
+
+## Overview
+
+The Catalog Cache is a high-performance Redis-based distributed caching layer that sits between the Catalog Service and its primary data sources. Operating on Redis 8.2, this cache dramatically reduces database load and improves response times by storing frequently accessed product information in memory. In an e-commerce environment where the same products are viewed thousands of times per hour, the cache transforms expensive database queries into lightning-fast memory lookups, ensuring customers experience consistent sub-millisecond response times even during peak traffic.
+
+## The Caching Strategy
+
+### Why Cache?
+
+E-commerce catalog queries follow the classic 80/20 rule: 20% of products generate 80% of the traffic. The Catalog Cache exploits this pattern by:
+
+- **Reducing Database Load**: Offloading 85-90% of read operations from PostgreSQL
+- **Improving Latency**: Response times drop from 50-100ms (database) to 1-5ms (cache)
+- **Enabling Scale**: Supporting 10x more concurrent users without database upgrades
+- **Cost Efficiency**: Reducing database instance size requirements by 60%
+- **High Availability**: Acting as a buffer during database maintenance or brief outages
+
+### Caching Patterns
+
+We employ multiple caching strategies based on data characteristics:
+
+**Cache-Aside (Lazy Loading)**
+- Most common pattern for product data
+- Load data into cache only when requested
+- First request: cache miss → load from DB → store in cache
+- Subsequent requests: cache hit → return immediately
+
+**Write-Through**
+- For critical product updates
+- Write to database and cache simultaneously
+- Ensures cache is always consistent
+- Used for inventory status changes
+
+**Write-Behind (Write-Back)**
+- For high-frequency updates (view counts, clicks)
+- Write to cache immediately, queue database update
+- Reduces database write pressure
+- Periodic batch updates to database
+
+**Refresh-Ahead**
+- For predictable access patterns
+- Proactively refresh cache before expiration
+- Used for popular products and featured items
+- Prevents cache misses during high traffic
+
+## Performance Optimization
+
+### Memory Management
+
+**Eviction Policy: `allkeys-lru`**
+- Least Recently Used eviction when memory limit reached
+- Ensures most valuable data stays cached
+- Alternative: `volatile-lru` (only evict keys with TTL)
+
+**Memory Limits**
+```
+Max Memory: 8GB per node
+Used Memory: Typically 60-70% (4.8-5.6GB)
+Reserved: 30-40% for peaks and operations
+```
+
+**Memory Optimization Techniques**
+- Compression: gzip JSON before caching (30-40% size reduction)
+- Serialization: Use MessagePack instead of JSON (20-30% smaller)
+- Lazy Loading: Don't cache everything; let usage patterns decide
+- Expiration: Aggressive TTLs for large objects
+
+## Monitoring & Observability
+
+### Key Performance Indicators
+
+**Cache Effectiveness Metrics**
+- **Hit Rate**: Target greater than 85% for product queries
+- **Miss Rate**: Should be less than 15%
+- **Eviction Rate**: Should be less than 5% (indicates memory pressure)
+- **Latency**: p95 should be less than 10ms, p99 less than 20ms
+
+**Resource Metrics**
+- **Memory Usage**: Current vs. max memory
+- **CPU Usage**: Should remain below 70%
+- **Network Throughput**: Ops/second, bandwidth
+- **Connections**: Active connections, rejected connections
+
+**Business Metrics**
+- **Cache Value**: Revenue from cached vs. non-cached pages
+- **Cost Savings**: Database queries prevented
+- **User Experience**: Page load time improvement
+
+## Best Practices
+
+### Do's ✅
+
+- **Set TTLs**: Always set expiration to prevent unbounded growth
+- **Handle Misses**: Implement robust fallback to database
+- **Monitor Hit Rates**: Continuously track cache effectiveness
+- **Use Pipelining**: Batch multiple operations when possible
+- **Compress Large Values**: Reduce memory and network overhead
+- **Version Your Cache**: Include version in keys for safe invalidation
+- **Log Cache Operations**: Debug issues with proper logging
+- **Test Failover**: Regular DR drills ensure reliability
+
+### Don'ts ❌
+
+- **Don't Cache Everything**: Cache only frequently accessed data
+- **Don't Ignore Evictions**: High eviction rate indicates problems
+- **Don't Use KEYS**: Scanning keys blocks Redis; use SCAN instead
+- **Don't Store PII**: Keep sensitive data out of cache
+- **Don't Forget TTLs**: Stale data causes confusion and bugs
+- **Don't Block Operations**: Use async operations exclusively
+- **Don't Ignore Errors**: Cache failures should be logged and alerted
+- **Don't Over-Invalidate**: Excessive invalidation defeats the purpose
+
+## Future Enhancements
+
+### Advanced Features
+
+- **Redis Search**: Full-text search capabilities for cached products
+- **Redis JSON**: Native JSON support for better query performance
+- **Redis TimeSeries**: Tracking product views and trends
+- **Redis Graph**: Relationship-based recommendations
+- **Redis Bloom**: Probabilistic existence checks
+
+### Optimization Opportunities
+
+- **Predictive Prefetching**: ML-based cache warming
+- **Geographic Distribution**: Multi-region cache clusters
+- **Smart Compression**: AI-powered compression selection
+- **Dynamic TTL**: Machine learning for optimal expiration times
+- **Cache Coherence Protocol**: Multi-layer cache synchronization
+
+### Operational Improvements
+
+- **Automated Scaling**: Scale based on hit rate and memory usage
+- **Self-Healing**: Automatic recovery from transient failures
+- **Chaos Engineering**: Regular failure injection testing
+- **Performance Budgets**: SLO-based alerting and optimization
+- **Cost Analytics Dashboard**: Real-time ROI visualization

@@ -21,7 +21,7 @@ public static partial class AzureExtensions
             );
         }
 
-        return builder;
+        return builder.WithIconName("DatabasePlugConnected");
     }
 
     /// <summary>
@@ -42,7 +42,7 @@ public static partial class AzureExtensions
             );
         }
 
-        return builder;
+        return builder.WithIconName("SignalR");
     }
 
     /// <summary>
@@ -59,7 +59,7 @@ public static partial class AzureExtensions
         {
             builder.RunAsContainer(cfg =>
             {
-                cfg.WithPgWeb()
+                cfg.WithPgAdmin()
                     .WithDataVolume()
                     .WithImageTag("18.0")
                     .WithImagePullPolicy(ImagePullPolicy.Always)
@@ -67,7 +67,7 @@ public static partial class AzureExtensions
             });
         }
 
-        return builder;
+        return builder.WithIconName("HomeDatabase");
     }
 
     /// <summary>

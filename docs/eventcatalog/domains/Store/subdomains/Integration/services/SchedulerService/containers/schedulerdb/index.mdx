@@ -1,0 +1,476 @@
+---
+id: SchedulerDatabase
+name: Scheduler Database
+version: 1.0.0
+container_type: database
+technology: postgres@18
+authoritative: true
+access_mode: readWrite
+classification: internal
+retention: 2y
+residency: eastasia
+summary: Primary database for scheduling and job management.
+owners:
+  - nhanxnguyen
+attachments:
+  - url: https://drive.google.com/file/d/1NYJicm0yjl7o15nj2jLpggzr5prCXuAt/view?usp=sharing
+    title: ERD of the Scheduler Database
+    description: Learn more about the schema of the Scheduler Database
+    type: 'diagrams'
+    icon: FileTextIcon
+---
+
+<NodeGraph />
+
+## Overview
+
+The Scheduler Database is a PostgreSQL 18-based persistent storage system that powers the job scheduling and task automation infrastructure for the BookWorm platform. This database manages both time-based (one-time and recurring) and cron-based scheduled tasks, ensuring reliable execution of background jobs, maintenance routines, batch processes, and automated workflows. By maintaining a comprehensive record of scheduled tasks, their execution history, and retry logic, the system provides a robust foundation for automated operations that keep the platform running smoothly 24/7.
+
+## Purpose & Responsibility
+
+The Scheduler Database serves as the backbone for all automated and scheduled operations in the BookWorm ecosystem, enabling:
+
+- **Automated Task Execution**: Running background jobs at specified times or intervals
+- **Recurring Operations**: Managing periodic tasks like data cleanup, report generation, and cache warming
+- **Cron-Based Scheduling**: Supporting complex scheduling patterns using cron expressions
+- **Job Orchestration**: Coordinating batch jobs with dependencies and parent-child relationships
+- **Reliability & Resilience**: Handling failures with retry logic and exception tracking
+- **Execution Tracking**: Maintaining detailed history of job runs for audit and debugging
+- **Distributed Locking**: Preventing concurrent execution across multiple service instances
+- **Performance Monitoring**: Tracking execution times and job performance metrics
+
+This database transforms manual, time-sensitive operations into reliable, automated processes that improve operational efficiency and reduce human error.
+
+## Schema Design
+
+The database employs a sophisticated schema designed around two primary scheduling paradigms: time-based triggers and cron-based patterns, all housed within a dedicated `ticker` schema for organizational clarity.
+
+<Schema file="schema.sql" lang="sql" title="Scheduler Database Schema" />
+
+### Architecture Overview
+
+The scheduler system is built on two complementary scheduling models:
+
+**1. TimeTickers**: One-time or batch scheduled tasks
+- Execute at a specific point in time
+- Support batch operations with parent-child relationships
+- Ideal for one-off jobs or scheduled task chains
+- Examples: Order processing, report generation, data exports
+
+**2. CronTickers**: Recurring scheduled tasks based on cron expressions
+- Execute on repeating schedules (hourly, daily, weekly, etc.)
+- Generate CronTickerOccurrences for each scheduled run
+- Ideal for periodic maintenance and monitoring
+- Examples: Cache cleanup, analytics aggregation, health checks
+
+### CronTickers Table
+
+Defines recurring scheduled tasks using cron expressions.
+
+#### Key Columns
+
+**`id` (UUID, Primary Key)**
+- Unique identifier for the cron schedule definition
+- Permanent reference across all occurrences
+- Links to CronTickerOccurrences for execution tracking
+
+**`expression` (TEXT)**
+- Cron expression defining the schedule pattern
+- Standard format: `minute hour day month day-of-week`
+- Examples:
+  - `0 0 * * *` - Daily at midnight
+  - `0 */2 * * *` - Every 2 hours
+  - `0 9 * * MON-FRI` - Weekdays at 9 AM
+  - `*/15 * * * *` - Every 15 minutes
+
+**`request` (BYTEA)**
+- Serialized request payload for the job
+- Binary format for efficient storage
+- Contains job parameters and configuration
+- Deserialized when creating occurrences
+
+**`retries` (INTEGER, NOT NULL)**
+- Maximum number of retry attempts on failure
+- Configurable per job type
+- Typical values: 3-5 retries for critical jobs
+- 0 for non-critical or idempotent operations
+
+**`retry_intervals` (INTEGER[])**
+- Array of wait times (in seconds) between retries
+- Example: `{60, 300, 900}` - wait 1min, 5min, 15min
+- Exponential backoff patterns common
+- Allows flexible retry strategies per job
+
+**`function` (TEXT)**
+- Name or identifier of the function to execute
+- Maps to actual code handlers in the scheduler service
+- Examples: `CleanupExpiredSessions`, `GenerateDailyReport`, `SyncInventory`
+
+**`description` (TEXT)**
+- Human-readable description of the job's purpose
+- Helps operators understand what the job does
+- Documentation embedded in the data
+- Examples: "Clean up expired shopping carts", "Generate daily sales report"
+
+**`init_identifier` (TEXT)**
+- Unique identifier for job initialization
+- Prevents duplicate job registration
+- Used during system startup to ensure idempotency
+- Typically matches configuration keys
+
+**`created_at` / `updated_at` (TIMESTAMP WITH TIME ZONE, NOT NULL)**
+- Audit trail for schedule lifecycle
+- Track when schedules are created or modified
+- Useful for troubleshooting and compliance
+- Timezone-aware for global operations
+
+### CronTickerOccurrences Table
+
+Represents individual executions of cron-based schedules.
+
+#### Key Columns
+
+**`id` (UUID, Primary Key)**
+- Unique identifier for this specific occurrence
+- Links to execution logs and metrics
+- Used for distributed locking
+
+**`cron_ticker_id` (UUID, Foreign Key, NOT NULL)**
+- References the parent CronTicker definition
+- Establishes schedule-to-execution relationship
+- Cascade delete ensures cleanup
+- Indexed for efficient occurrence lookups
+
+**`status` (INTEGER, NOT NULL)**
+- Current state of the occurrence
+- Typical values:
+  - 0: Pending (scheduled but not started)
+  - 1: Locked (being executed)
+  - 2: Completed (successful execution)
+  - 3: Failed (execution failed)
+  - 4: Cancelled (manually cancelled)
+
+**`lock_holder` (TEXT)**
+- Identifier of the service instance holding the execution lock
+- Prevents concurrent execution in distributed systems
+- Typically hostname or pod ID
+- NULL when not locked
+
+**`execution_time` (TIMESTAMP WITH TIME ZONE, NOT NULL)**
+- Scheduled time for this occurrence
+- Generated from cron expression
+- Used for determining when to run
+- May differ from actual executed_at
+
+**`locked_at` (TIMESTAMP WITH TIME ZONE)**
+- When the occurrence was locked for execution
+- Helps detect stale locks
+- Used for lock timeout calculations
+- NULL if never locked
+
+**`executed_at` (TIMESTAMP WITH TIME ZONE)**
+- Actual time when execution completed
+- Used for performance tracking
+- Differs from execution_time in case of delays
+- NULL if not yet executed
+
+**`exception` (TEXT)**
+- Error message if execution failed
+- Full stack trace for debugging
+- NULL on successful execution
+- Critical for troubleshooting failures
+
+**`elapsed_time` (BIGINT, NOT NULL)**
+- Execution duration in milliseconds
+- Performance metric for monitoring
+- Used for identifying slow jobs
+- 0 if not yet executed
+
+**`retry_count` (INTEGER, NOT NULL)**
+- Number of retry attempts made
+- Increments with each failed retry
+- Compared against CronTicker.retries limit
+- Resets to 0 on successful execution
+
+### TimeTickers Table
+
+Manages one-time and batch scheduled tasks.
+
+#### Key Columns
+
+**`id` (UUID, Primary Key)**
+- Unique identifier for the scheduled task
+- Used for tracking and locking
+- Reference for batch parent-child relationships
+
+**`status` (INTEGER, NOT NULL)**
+- Current execution state (same values as CronTickerOccurrences)
+- Tracks lifecycle from pending to completed/failed
+
+**`lock_holder` (TEXT)**
+- Service instance executing this task
+- Distributed lock mechanism
+- Prevents concurrent execution
+
+**`request` (BYTEA)**
+- Serialized job payload
+- Contains all parameters needed for execution
+- Binary format for efficient storage
+
+**`execution_time` (TIMESTAMP WITH TIME ZONE, NOT NULL)**
+- When this task should execute
+- One-time execution timestamp
+- Jobs picked up when NOW() >= execution_time
+
+**`locked_at` / `executed_at` (TIMESTAMP WITH TIME ZONE)**
+- Lock acquisition and completion timestamps
+- Used for lock timeout detection
+- Performance monitoring
+
+**`exception` (TEXT)**
+- Error details if execution failed
+- Full stack trace for debugging
+- NULL on success
+
+**`elapsed_time` (BIGINT, NOT NULL)**
+- Execution duration in milliseconds
+- Performance tracking
+- SLA monitoring
+
+**`retries` (INTEGER, NOT NULL)**
+- Maximum retry attempts allowed
+- Configurable per task
+
+**`retry_count` (INTEGER, NOT NULL)**
+- Current retry attempt number
+- Increments on failure
+- Task abandoned when retry_count >= retries
+
+**`retry_intervals` (INTEGER[])**
+- Wait times between retries (seconds)
+- Exponential backoff support
+- Example: `{30, 60, 300}` - 30s, 1m, 5m
+
+**`batch_parent` (UUID, Foreign Key)**
+- References another TimeTicker as parent
+- Creates task hierarchies
+- Enables dependent job execution
+- NULL for standalone tasks
+
+**`batch_run_condition` (INTEGER)**
+- Defines execution condition in batch:
+  - 0: Run only if parent succeeds
+  - 1: Run regardless of parent status
+  - 2: Run only if parent fails
+- Enables sophisticated workflow orchestration
+
+**`function` (TEXT)**
+- Handler function name
+- Maps to actual code implementation
+- Example: `ProcessOrder`, `GenerateInvoice`
+
+**`description` (TEXT)**
+- Human-readable task description
+- Operational documentation
+- Helps understand job purpose
+
+**`init_identifier` (TEXT)**
+- Unique initialization key
+- Prevents duplicate task creation
+- Idempotency guarantee
+
+**`created_at` / `updated_at` (TIMESTAMP WITH TIME ZONE, NOT NULL)**
+- Task lifecycle tracking
+- Audit trail
+- Troubleshooting aid
+
+## Key Features
+
+### Distributed Locking
+
+The database implements pessimistic locking to prevent concurrent execution:
+
+**Lock Acquisition:**
+```sql
+UPDATE ticker."TimeTickers"
+SET status = 1,  -- Locked
+    lock_holder = 'service-instance-123',
+    locked_at = NOW()
+WHERE id = $1
+    AND status = 0  -- Pending
+    AND execution_time <= NOW()
+    AND (lock_holder IS NULL OR locked_at < NOW() - INTERVAL '5 minutes')
+RETURNING *;
+```
+
+**Benefits:**
+- Prevents duplicate execution in multi-instance deployments
+- Handles crashed instances via lock timeout
+- No external coordination service needed
+- Database-native locking mechanism
+
+### Retry Logic with Exponential Backoff
+
+Failed jobs automatically retry with configurable intervals:
+
+**Retry Strategy:**
+```
+Attempt 1: Immediate execution
+Attempt 2: Wait 60 seconds (1 minute)
+Attempt 3: Wait 300 seconds (5 minutes)
+Attempt 4: Wait 900 seconds (15 minutes)
+Final: Mark as failed, alert operations team
+```
+
+**Implementation:**
+- `retry_count` tracks current attempt
+- `retry_intervals` array defines wait times
+- Next execution_time = NOW() + retry_intervals[retry_count]
+- Automatic abandonment after max retries
+
+### Batch Job Orchestration
+
+TimeTickers support parent-child relationships for complex workflows:
+
+**Example Workflow:**
+```
+Parent: GenerateMonthlyReport
+├── Child 1: ExtractSalesData (run if parent succeeds)
+├── Child 2: ExtractInventoryData (run if parent succeeds)
+├── Child 3: CompileReport (run if all children succeed)
+└── Child 4: SendFailureAlert (run only if parent fails)
+```
+
+**Batch Conditions:**
+- Sequential execution based on parent status
+- Parallel execution for independent children
+- Conditional execution based on outcomes
+- Dependency resolution and workflow orchestration
+
+### Cron Expression Scheduling
+
+CronTickers support standard cron syntax:
+
+**Common Patterns:**
+```
+*/5 * * * *          - Every 5 minutes
+0 * * * *            - Every hour at minute 0
+0 0 * * *            - Daily at midnight
+0 2 * * *            - Daily at 2 AM
+0 9 * * MON-FRI      - Weekdays at 9 AM
+0 0 1 * *            - Monthly on the 1st at midnight
+0 0 * * SUN          - Every Sunday at midnight
+0 */6 * * *          - Every 6 hours
+*/15 9-17 * * MON-FRI - Every 15 minutes during business hours
+```
+
+### Execution History & Audit Trail
+
+Complete tracking of all job executions:
+
+**Tracked Metrics:**
+- Execution time vs scheduled time (latency)
+- Duration of execution (performance)
+- Success/failure outcomes
+- Error messages and stack traces
+- Retry attempts and outcomes
+- Lock holder information
+
+## Data Classification & Governance
+
+- **Classification**: Internal - Operational data for system automation
+- **Access Mode**: Read/Write - Scheduler service has full control; Monitoring has read-only
+- **Retention**: 2 years - Balances audit requirements with storage costs
+- **Residency**: East Asia region - Co-located with primary services
+- **Authoritative**: True - Single source of truth for scheduled tasks
+
+### Data Retention Policy
+
+**Active Jobs:**
+- CronTickers: Retained indefinitely while active
+- TimeTickers: Retained for 90 days after completion
+- Occurrences: Keep last 1000 per CronTicker
+
+**Historical Data:**
+- Archive completed occurrences older than 90 days
+- Compress and move to cold storage
+- Maintain summary statistics for long-term trends
+- Failed jobs retained longer for root cause analysis
+
+## Integration Points
+
+The Scheduler Database integrates with:
+
+- **Scheduler Service**: Primary consumer for job management
+- **Catalog Service**: Scheduled product synchronization and cache updates
+- **Finance Service**: Periodic invoice generation and payment processing
+- **Notification Service**: Scheduled notification campaigns
+- **Analytics Service**: Regular data aggregation and report generation
+- **Monitoring Service**: Performance metrics and health checks
+- **Message Bus**: Publishes job completion events
+
+## Use Cases
+
+### Operational Automation
+
+**Data Maintenance:**
+- Clean up expired sessions (every hour)
+- Archive old orders (daily at 2 AM)
+- Vacuum database tables (weekly)
+- Rotate log files (daily at midnight)
+
+**Cache Management:**
+- Warm popular product caches (every 30 minutes)
+- Invalidate stale data (hourly)
+- Pre-generate search indexes (every 6 hours)
+
+### Business Process Automation
+
+**Financial Operations:**
+- Generate daily sales reports (daily at 9 AM)
+- Process pending payments (every 15 minutes)
+- Calculate commission (monthly on 1st)
+- Send payment reminders (daily at 10 AM)
+
+**Customer Engagement:**
+- Send abandoned cart emails (hourly)
+- Weekly newsletter (Mondays at 8 AM)
+- Birthday wishes (daily at 9 AM)
+- Review request emails (3 days after delivery)
+
+### System Monitoring
+
+**Health Checks:**
+- Database connectivity tests (every 5 minutes)
+- API endpoint health checks (every minute)
+- Certificate expiration monitoring (daily)
+- Disk space monitoring (every 15 minutes)
+
+**Analytics Processing:**
+- Aggregate hourly metrics (hourly at minute 5)
+- Calculate daily statistics (daily at 1 AM)
+- Generate weekly reports (Mondays at 7 AM)
+- Update search indexes (every 30 minutes)
+
+## Monitoring & Observability
+
+### Key Metrics
+
+**Job Execution Metrics:**
+- Jobs executed per hour/day
+- Average execution time
+- Success vs failure rate
+- Retry rate
+- Jobs pending execution
+
+**Performance Metrics:**
+- Scheduled time vs actual execution time (latency)
+- Lock contention incidents
+- Stale lock detection count
+- Database query performance
+
+**Reliability Metrics:**
+- Failed jobs requiring attention
+- Jobs abandoned after max retries
+- Exception rate by job type
+- SLA compliance (on-time execution rate)
