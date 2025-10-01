@@ -56,19 +56,21 @@ pgUser.WithParentRelationship(postgres);
 
 var redis = builder
     .AddAzureRedis(Components.Redis)
-    .WithIconName("memory")
+    .WithIconName("Memory")
     .RunAsLocalContainer()
     .ProvisionAsService();
 
 var qdrant = builder
     .AddQdrant(Components.VectorDb)
     .WithDataVolume()
+    .WithIconName("DatabaseSearch")
     .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent);
 
 var queue = builder
     .AddRabbitMQ(Components.Queue)
     .WithManagementPlugin()
+    .WithIconName("Pipeline")
     .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent)
     .WithEndpoint(Protocols.Tcp, e => e.Port = 5672);
@@ -121,7 +123,7 @@ if (builder.ExecutionContext.IsRunMode)
 
     keycloak = builder
         .AddKeycloak(Components.KeyCloak)
-        .WithIconName("lockClosedRibbon")
+        .WithIconName("LockClosedRibbon")
         .WithCustomTheme(kcThemeName)
         .WithImagePullPolicy(ImagePullPolicy.Always)
         .WithLifetime(ContainerLifetime.Persistent)
@@ -149,6 +151,7 @@ else
 
     keycloak = builder
         .AddExternalService(Components.KeyCloak, keycloakUrl)
+        .WithIconName("LockClosedRibbon")
         .WithHttpHealthCheck("/health/ready");
 }
 

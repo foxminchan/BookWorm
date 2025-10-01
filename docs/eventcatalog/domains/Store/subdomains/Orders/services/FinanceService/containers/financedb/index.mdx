@@ -1,0 +1,468 @@
+---
+id: FinanceDatabase
+name: Finance Database
+version: 1.0.0
+container_type: database
+technology: postgres@18
+authoritative: true
+access_mode: readWrite
+classification: internal
+retention: 7y
+residency: eastasia
+summary: PostgreSQL database managing saga state and transactional outbox for distributed order processing workflows.
+owners:
+  - nhanxnguyen
+attachments:
+  - url: https://drive.google.com/file/d/1Bj5HxDzKb7CoxAmdN8mDQWCId2NP9phV/view?usp=sharing
+    title: ERD of the Finance Database
+    description: Learn more about the schema of the Finance Database
+    type: 'diagrams'
+    icon: FileTextIcon
+---
+
+<NodeGraph />
+
+## Overview
+
+The Finance Database is the authoritative persistence layer for the Finance Service's saga orchestration engine. Built on PostgreSQL 18, this database manages the complete lifecycle of order processing state machines, ensuring reliable distributed transaction coordination across multiple microservices. It implements the Transactional Outbox pattern through MassTransit's Entity Framework Core integration, guaranteeing exactly-once message delivery and maintaining data consistency in the face of network failures, service outages, and partial system failures.
+
+<AccordionGroup>
+  <Accordion title="Finance Database Schema">
+    <Schema file="schema.sql" lang="sql" title="Finance Database Schema" />
+  </Accordion>
+</AccordionGroup>
+
+## Database Purpose & Role
+
+### Saga State Management
+
+The Finance Database serves as the durable state store for the **Order State Machine**, which orchestrates complex, multi-step order processing workflows. Each order flows through multiple states (Placed, Completed, Cancelled, Failed) with the database tracking:
+
+- Current state of each order saga instance
+- Business data (order ID, basket ID, customer info, total amount)
+- Temporal data (placement date, retry counts, timeout tokens)
+- Correlation identifiers for distributed tracing
+
+### Transactional Outbox Pattern
+
+To ensure reliable message delivery without distributed transactions (2PC), the database implements the Transactional Outbox pattern:
+
+- **Atomic Writes**: Business state and outgoing messages are written in the same database transaction
+- **Guaranteed Delivery**: Messages are published only after successful transaction commit
+- **Exactly-Once Semantics**: Prevents duplicate message sends even during failures
+- **Fault Tolerance**: Messages survive service crashes and restarts
+
+### Inbox Deduplication
+
+The Inbox State table prevents duplicate message processing:
+
+- **Idempotency**: Tracks consumed messages by message ID and consumer ID
+- **Duplicate Detection**: Rejects already-processed messages automatically
+- **At-Least-Once to Exactly-Once**: Converts unreliable message delivery to reliable processing
+
+## Schema Design
+
+### Core Tables
+
+#### `order_state` - Saga State Machine Instances
+
+The heart of the Finance Database, storing the state of each order processing saga with the following columns:
+
+- **correlation_id** (uuid, PRIMARY KEY): Unique saga instance identifier
+- **order_id** (uuid, NOT NULL): Business order identifier
+- **basket_id** (uuid, NOT NULL): Source basket identifier
+- **email** (varchar(255)): Customer email
+- **current_state** (text, NOT NULL): Current state (Placed, Completed, etc.)
+- **total_money** (numeric(18,2)): Order total amount
+- **order_placed_date** (timestamptz): When order was initiated
+- **full_name** (text): Customer full name
+- **place_order_timeout_token_id** (uuid): Scheduled timeout message identifier
+- **timeout_retry_count** (int, DEFAULT 0): Number of retry attempts
+- **version** (int, NOT NULL): Optimistic concurrency version
+
+**Key Features**:
+- **Correlation ID**: Primary key, used to correlate all messages for a single saga instance
+- **Current State**: String-based state representation (mapped to state machine states)
+- **Optimistic Concurrency**: Version field prevents concurrent update conflicts
+- **Timeout Tracking**: Retry count and token ID manage timeout-based retries
+- **Business Data**: Captures essential order information for saga execution
+
+**State Lifecycle**: Initially → Placed → Completed / Cancelled / Failed
+
+#### `outbox_message` - Transactional Outbox
+
+Stores messages to be published, ensuring atomic state change + message send with the following columns:
+
+- **sequence_number** (bigint, PRIMARY KEY IDENTITY): Auto-incrementing sequence
+- **message_id** (uuid, NOT NULL): Unique message identifier
+- **message_type** (text, NOT NULL): Full message type name
+- **body** (text, NOT NULL): Serialized message content
+- **content_type** (varchar(256), NOT NULL): Serialization format (JSON)
+- **enqueue_time** (timestamptz): When message was stored
+- **sent_time** (timestamptz, NOT NULL): When message was published
+- **conversation_id** (uuid): Conversation tracking
+- **correlation_id** (uuid): Saga correlation ID
+- **initiator_id** (uuid): Original message initiator
+- **request_id** (uuid): Request-response tracking
+- **source_address** (varchar(256)): Message source endpoint
+- **destination_address** (varchar(256)): Target endpoint
+- **response_address** (varchar(256)): Reply-to address
+- **fault_address** (varchar(256)): Error handling address
+- **expiration_time** (timestamptz): Message TTL
+- **headers** (text): Additional message headers
+- **properties** (text): Custom message properties
+- **inbox_message_id** (uuid): Related inbox message
+- **inbox_consumer_id** (uuid): Related inbox consumer
+- **outbox_id** (uuid): Related outbox state
+
+**Key Features**:
+- **Sequential Processing**: Auto-incrementing sequence ensures ordered delivery
+- **Message Metadata**: Complete envelope information for routing and correlation
+- **Delivery Tracking**: Enqueue and sent times track processing latency
+- **Foreign Keys**: Links to inbox_state and outbox_state for transactional consistency
+
+**Workflow**:
+1. Business transaction writes to `order_state` and `outbox_message` atomically
+2. Background worker polls `outbox_message` for unsent messages
+3. Messages are published to message broker (RabbitMQ)
+4. `sent_time` is updated after successful publish
+
+#### `outbox_state` - Outbox Tracking
+
+Maintains the current position of outbox message processing per endpoint with the following columns:
+
+- **outbox_id** (uuid, PRIMARY KEY): Unique outbox identifier
+- **lock_id** (uuid, NOT NULL): Distributed lock identifier
+- **row_version** (bytea): Optimistic concurrency token
+- **created** (timestamptz, NOT NULL): Outbox creation time
+- **delivered** (timestamptz): Last delivery time
+- **last_sequence_number** (bigint): Last processed message sequence
+
+**Key Features**:
+- **Processing Cursor**: Tracks which messages have been delivered
+- **Distributed Locking**: Prevents multiple workers from processing the same outbox
+- **Checkpoint Recovery**: Enables resume from last processed sequence after failure
+
+#### `inbox_state` - Message Deduplication
+
+Tracks consumed messages to ensure idempotent processing with the following columns:
+
+- **id** (bigint, PRIMARY KEY IDENTITY): Internal identifier
+- **message_id** (uuid, NOT NULL): Incoming message identifier
+- **consumer_id** (uuid, NOT NULL): Consumer endpoint identifier
+- **lock_id** (uuid, NOT NULL): Processing lock
+- **row_version** (bytea): Concurrency token
+- **received** (timestamptz, NOT NULL): When message arrived
+- **receive_count** (int, NOT NULL): Delivery attempt count
+- **expiration_time** (timestamptz): Message expiration
+- **consumed** (timestamptz): When message was processed
+- **delivered** (timestamptz): When processing completed
+- **last_sequence_number** (bigint): Sequence tracking
+- **UNIQUE CONSTRAINT** on (message_id, consumer_id): Deduplication constraint
+
+**Key Features**:
+- **Composite Uniqueness**: `(message_id, consumer_id)` ensures once-per-consumer processing
+- **Retry Tracking**: `receive_count` monitors delivery attempts
+- **State Tracking**: Timestamps track message lifecycle (received → consumed → delivered)
+- **Lock Management**: `lock_id` prevents concurrent processing of the same message
+
+**Deduplication Flow**:
+1. Message arrives from message broker
+2. Check `inbox_state` for `(message_id, consumer_id)` tuple
+3. If exists: reject as duplicate
+4. If new: insert record and process message
+5. Update `consumed` and `delivered` timestamps on completion
+
+#### `__EFMigrationsHistory` - Schema Version Tracking
+
+Standard Entity Framework Core migrations table with the following columns:
+
+- **migration_id** (varchar(150), PRIMARY KEY): Migration identifier
+- **product_version** (varchar(32), NOT NULL): EF Core version
+
+Tracks applied database migrations for schema evolution management.
+
+## Data Flow & Integration
+
+### Saga Lifecycle
+
+**1. Saga Initialization** (`OrderPlaced` Event)
+- UserCheckedOutEvent received by Finance Service
+- INSERT into order_state table
+- INSERT into outbox_message table (PlaceOrderCommand)
+- Transaction COMMIT
+- Outbox Worker publishes message to message broker
+
+**2. Saga Progression** (`OrderCompleted`/`OrderCancelled` Events)
+- StatusChangedEvent received
+- CHECK inbox_state for deduplication
+- UPDATE order_state (transition to new state)
+- INSERT into outbox_message (completion commands)
+- Transaction COMMIT
+
+**3. Saga Completion**
+- Final state transition executed
+- order_state record remains as historical record
+- outbox_message archived or purged
+- inbox_state retained for deduplication window
+
+### Timeout & Retry Management
+
+**Scheduled Timeout Handling**:
+1. `PlaceOrderTimeoutSchedule` published with `place_order_timeout_token_id`
+2. Timeout message delivered after configured delay (e.g., 5 minutes)
+3. If order still in `Placed` state: increment `timeout_retry_count`
+4. If `timeout_retry_count < MaxAttempts`: retry `PlaceOrderCommand`
+5. If `timeout_retry_count >= MaxAttempts`: transition to `Failed` state
+
+**Retry Configuration** (from `OrderStateMachineSettings`):
+- `MaxAttempts`: Maximum retry count (typically 3-5)
+- `MaxRetryTimeout`: Delay between retries (typically 5-10 minutes)
+
+### Message Correlation
+
+All messages related to a single order saga share the same `correlation_id`. For example, a single order flow would have: UserCheckedOutEvent, OrderState, PlaceOrderCommand, and OrderCompletedEvent all sharing the same correlation_id value. This enables distributed tracing and debugging across service boundaries.
+
+## Performance & Optimization
+
+### Indexing Strategy
+
+**Critical Indexes**:
+- Primary keys (automatically indexed): order_state(correlation_id), outbox_message(sequence_number), outbox_state(outbox_id), inbox_state(id)
+- Unique constraints (automatically indexed): inbox_state(message_id, consumer_id)
+- Recommended additional indexes: idx_order_state_order_id, idx_order_state_current_state, idx_outbox_message_sent_time (on sent_time WHERE sent_time IS NULL), idx_inbox_state_consumed (on consumed WHERE consumed IS NULL)
+
+**Performance Characteristics**:
+- **Saga Lookup**: O(1) via primary key (correlation_id)
+- **Outbox Polling**: Sequential scan with WHERE clause (minimized by sent_time index)
+- **Inbox Deduplication**: O(1) via unique constraint
+- **State Queries**: O(log n) via current_state index
+
+### Query Patterns
+
+**High-Frequency Queries**:
+1. **Get Saga State**: Lookup by correlation_id
+2. **Poll Outbox**: Select unsent messages ordered by sequence_number
+3. **Check Inbox**: Existence check by message_id and consumer_id
+
+**Write Patterns**:
+- **Insert Saga**: Single INSERT on saga initialization
+- **Update Saga**: Single UPDATE per state transition (optimistic concurrency)
+- **Insert Outbox**: 1-3 INSERTs per state transition (one per published message)
+- **Insert Inbox**: Single INSERT per consumed message
+
+### Database Sizing
+
+**Estimated Growth** (per 1,000 orders/day):
+- **order_state**: ~200 KB/day (200 bytes/row × 1,000 rows)
+- **outbox_message**: ~1.5 MB/day (1.5 KB/row × 1,000 rows, purged after 7 days)
+- **inbox_state**: ~500 KB/day (500 bytes/row × 1,000 rows, purged after 30 days)
+
+**Annual Storage** (without archival):
+- **order_state**: ~73 MB/year (retained indefinitely)
+- **outbox_message**: ~10.5 MB (rolling 7-day window)
+- **inbox_state**: ~15 MB (rolling 30-day window)
+
+**Total Database Size** (3-year retention): ~250 MB + indexes (~500 MB total)
+
+## Data Lifecycle & Retention
+
+### Retention Policy
+
+- **order_state**: 7 years (financial and regulatory compliance)
+- **outbox_message**: 7 days (after successful delivery)
+- **inbox_state**: 30 days (deduplication window)
+- **outbox_state**: Indefinite (small metadata table)
+
+### Archival Strategy
+
+**Hot Storage** (Active Database):
+- Current order sagas (Placed, In-Progress)
+- Recent completed/cancelled orders (last 90 days)
+- Active outbox/inbox records
+
+**Warm Storage** (Separate Archive Database):
+- Completed orders (90 days - 2 years)
+- Queryable for customer service and reporting
+
+**Cold Storage** (Data Lake / Object Storage):
+- Historical orders (2+ years)
+- Compliance and audit records
+- Immutable, compressed archives
+
+### Cleanup Jobs
+
+**Automated Maintenance**:
+- **Daily**: Purge old outbox messages (older than 7 days after sent)
+- **Weekly**: Purge old inbox messages (consumed more than 30 days ago)
+- **Monthly**: Archive old order states (older than 2 years) to separate archive database, then delete from primary database
+
+## Monitoring & Observability
+
+### Key Performance Indicators
+
+**Saga Metrics**:
+- **Active Sagas**: Count of orders in non-terminal states
+- **Avg Saga Duration**: Time from Placed to Completed/Cancelled
+- **Saga Success Rate**: Percentage reaching Completed state
+- **Saga Failure Rate**: Percentage reaching Failed state
+- **Retry Rate**: Average retries per saga
+
+**Outbox Metrics**:
+- **Outbox Backlog**: Count of unsent messages
+- **Outbox Latency**: Time between enqueue and send
+- **Outbox Throughput**: Messages processed per second
+- **Outbox Errors**: Failed delivery attempts
+
+**Inbox Metrics**:
+- **Duplicate Rate**: Percentage of rejected duplicate messages
+- **Processing Latency**: Time from received to consumed
+- **Inbox Backlog**: Count of unprocessed messages
+
+**Database Metrics**:
+- **Connection Pool Usage**: Active vs. available connections
+- **Query Performance**: p95/p99 latency per query type
+- **Table Sizes**: Growth rate of each table
+- **Lock Contention**: Wait times for row locks
+
+### Health Checks
+
+**Database Connectivity**:
+- Verify database is reachable and accepting connections with simple query
+
+**Saga Processing**:
+- Check for stalled sagas (orders in Placed state for more than 1 hour)
+- Alert if count exceeds threshold
+
+**Outbox Health**:
+- Check for backlogged outbox messages (unsent messages count)
+- Alert if more than 1000 pending messages
+
+### Logging & Tracing
+
+**Structured Logging**:
+- Saga state transitions logged with correlation_id
+- Outbox message processing logged with sequence_number
+- Database errors logged with query context
+
+**Distributed Tracing**:
+- OpenTelemetry spans for saga operations
+- Database queries tracked with correlation_id
+- End-to-end tracing across service boundaries
+
+## Security & Compliance
+
+### Data Classification
+
+- **Classification**: Internal - Contains financial transaction data
+- **Access Mode**: Read/Write - Finance Service only
+- **Residency**: East Asia region - Data sovereignty compliance
+- **Authoritative**: True - Single source of truth for order saga state
+
+### Security Measures
+
+**Access Control**:
+- Database user with least-privilege permissions
+- No direct external access (internal microservices only)
+- Service-level authentication via connection strings
+- Row-level security not required (single-tenant per service)
+
+**Data Protection**:
+- Encryption at rest (Azure PostgreSQL managed encryption)
+- Encryption in transit (TLS 1.2+)
+- No sensitive payment data stored (PCI DSS scope reduction)
+- Customer PII limited to email and name
+
+**Audit Trail**:
+- All saga state changes tracked with timestamps
+- Outbox/inbox provide complete message audit trail
+- Database transaction logs retained for 30 days
+- Long-term audit via archived order_state records
+
+### Compliance Considerations
+
+**Financial Regulations**:
+- 7-year retention for order financial records
+- Immutable audit trail via event sourcing pattern
+- Complete transaction history reconstructable from saga state
+
+**GDPR / Privacy**:
+- Customer PII (email, name) stored in order_state
+- Right to erasure: anonymize PII while retaining financial data
+- Data export: query order_state by customer identifier
+
+## Disaster Recovery & High Availability
+
+### Backup Strategy
+
+**Automated Backups** (Azure PostgreSQL Flexible Server):
+- **Point-in-Time Recovery (PITR)**: 30-day retention
+- **Backup Frequency**: Continuous (transaction log streaming)
+- **Recovery Objective**: RPO < 5 minutes, RTO < 1 hour
+- **Geo-Redundancy**: Backups replicated to secondary region
+
+**Manual Snapshots**:
+- Pre-deployment snapshots before schema migrations
+- Retained for 90 days
+- Used for rollback scenarios
+
+### High Availability
+
+**Azure PostgreSQL HA Configuration**:
+- **Availability Zone Redundancy**: Synchronous replica in different AZ
+- **Automatic Failover**: Sub-60-second failover time
+- **Read Replicas**: Optional for read-heavy workloads
+- **Connection Pooling**: PgBouncer for connection management
+
+### Disaster Recovery Procedures
+
+**Failure Scenarios**:
+
+1. **Database Connection Failure**:
+   - Connection pool retry with exponential backoff
+   - Circuit breaker trips after 5 consecutive failures
+   - Graceful degradation: return 503 Service Unavailable
+
+2. **Data Corruption**:
+   - Restore from PITR to point before corruption
+   - Replay outbox messages from backup
+   - Reconcile saga state with downstream services
+
+3. **Complete Database Loss**:
+   - Failover to geo-redundant replica (RTO ~1 hour)
+   - Restore from latest backup snapshot
+   - Message broker retains unacknowledged messages
+
+**Recovery Testing**:
+- Quarterly disaster recovery drills
+- Automated backup restoration tests
+- Chaos engineering (random database shutdowns)
+
+## Integration with MassTransit
+
+### Entity Framework Core Integration
+
+The Finance Database is tightly integrated with MassTransit's saga persistence through the FinanceDbContext. The configuration includes:
+
+- DbContext registered with Npgsql provider for PostgreSQL
+- Saga state machine (OrderStateMachine) configured with OrderState entity
+- Entity Framework repository configured to use existing DbContext
+- Entity Framework Outbox pattern enabled for transactional messaging
+- PostgreSQL-specific optimizations applied
+
+**Key Integration Points**:
+- **Saga Repository**: MassTransit reads/writes `order_state` via EF Core
+- **Outbox Pattern**: Messages written to `outbox_message` in same transaction
+- **Inbox Pattern**: Deduplication via `inbox_state` checks
+- **Optimistic Concurrency**: EF Core version field prevents concurrent updates
+
+### Message Serialization
+
+**JSON Serialization**:
+- Message bodies stored as JSON text in `outbox_message.body`
+- Content-Type: `application/vnd.masstransit+json`
+- Backward-compatible schema evolution
+
+**Message Headers**:
+- Stored as JSON in `outbox_message.headers`
+- Includes routing metadata, correlation IDs, timestamps

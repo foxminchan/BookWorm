@@ -25,6 +25,7 @@ public static class K6Extensions
 
         builder
             .AddK6(Components.K6)
+            .WithIconName("BeakerAdd")
             .WithImagePullPolicy(ImagePullPolicy.Always)
             .WithBindMount($"{scriptPath}", "/scripts", true)
             .WithBindMount($"{distPath}", "/home/k6")

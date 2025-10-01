@@ -1,0 +1,293 @@
+---
+id: CatalogVectorDB
+name: Catalog Vector Database
+version: 1.0.0
+container_type: objectStore
+technology: qdrant@latest
+authoritative: true
+access_mode: readWrite
+classification: internal
+retention: 2y
+residency: eastasia
+summary: Vector database for enhanced product search and recommendations.
+owners:
+  - nhanxnguyen
+---
+
+<NodeGraph />
+
+## Overview
+
+The Catalog Vector Database is a specialized Qdrant-powered vector store that enables intelligent, semantic search and AI-driven product recommendations in the BookWorm platform. Unlike traditional keyword-based search, this database stores high-dimensional vector embeddings that capture the semantic meaning of books, allowing customers to discover products through natural language queries, conceptual similarity, and contextual understanding. This modern approach transforms the search experience from exact-match lookups to understanding intent and meaning.
+
+## Why Vector Search?
+
+Traditional database searches fall short when customers search with phrases like "books about overcoming adversity" or "something similar to The Alchemist." Vector search bridges this gap by:
+
+- **Understanding Intent**: Grasping what customers mean, not just what they type
+- **Semantic Similarity**: Finding books with similar themes, even without shared keywords
+- **Contextual Recommendations**: Suggesting products based on meaning and relationships
+- **Multilingual Support**: Searching across languages through shared semantic space
+- **Personalization**: Creating nuanced recommendations based on user behavior patterns
+
+## Architecture & Design
+
+### Vector Embeddings
+
+Each book in the catalog is transformed into a high-dimensional vector embedding (typically 768 or 1536 dimensions) that encodes its semantic essence. These embeddings are generated from:
+
+**Primary Embedding Sources:**
+- Book title and subtitle
+
+**Embedding Model:**
+- Using state-of-the-art transformer models (e.g., OpenAI text-embedding-3-large, EmbeddingGemma)
+- Dimension: 1536 for optimal balance between accuracy and performance
+- Updated periodically as book metadata changes
+
+## Core Capabilities
+
+### 1. Semantic Search
+
+Transform natural language queries into meaningful results:
+
+**Example Query**: "inspiring stories about personal growth"
+- Query converted to vector embedding
+- Similarity search across book embeddings
+- Returns books about self-improvement, memoirs, motivational content
+- No need for exact keyword matches
+
+**Search Features:**
+- Typo tolerance through semantic understanding
+- Synonym awareness (e.g., "scary" matches "horror")
+- Concept matching (e.g., "space exploration" finds sci-fi and non-fiction)
+- Multi-field fusion (title + description + category)
+
+### 2. Similarity-Based Recommendations
+
+"Customers who liked this might also enjoy":
+
+- **Content-Based**: Find books with similar vector embeddings
+- **Collaborative Filtering**: Enhanced with user preference vectors
+- **Hybrid Approach**: Combines semantic similarity with rating scores
+- **Cold Start Solution**: Works even for new books with limited interactions
+
+### 3. Personalized Discovery
+
+Tailored recommendations for each user:
+
+- User preference vector built from interaction history
+- Periodic updates as users browse and purchase
+- Balance between exploration (new discoveries) and exploitation (proven preferences)
+- Diversity optimization to avoid filter bubbles
+
+### 4. Contextual Search
+
+Search refined by context:
+
+- **Mood-based**: "Something uplifting for a rainy day"
+- **Occasion-based**: "Gift for a 12-year-old interested in science"
+- **Comparative**: "Like Harry Potter but for adults"
+- **Attribute-focused**: "Fast-paced thrillers with strong female leads"
+
+## Technical Implementation
+
+### Indexing Strategy
+
+**HNSW Algorithm** (Hierarchical Navigable Small World):
+- Fast approximate nearest neighbor search
+- Trade-off between recall and latency configurable
+- Typical recall: 95-99% at sub-50ms latency
+- Memory-efficient with scalar quantization
+
+### Performance Characteristics
+
+- **Search Latency**: 20-50ms for top-k retrieval (k=20)
+- **Indexing Speed**: 1000+ vectors per second
+- **Concurrent Queries**: 100+ simultaneous searches
+- **Collection Size**: Scales to millions of vectors
+- **Memory Usage**: ~4KB per vector with quantization
+
+### Batch Processing
+
+For large-scale updates or reindexing:
+
+- **Nightly Sync**: Verify all books have current vectors
+- **Weekly Re-embedding**: Update vectors for books with significant review changes
+- **Monthly Full Reindex**: Rebuild with latest embedding models
+- **Incremental Updates**: Only process changed records
+
+## Data Classification & Governance
+
+- **Classification**: Internal - Vector representations are derived data, not direct customer data
+- **Access Mode**: Read/Write - Catalog service has full control; Search service has read access
+- **Retention**: 2 years - Aligned with catalog database retention policy
+- **Residency**: East Asia region - Co-located with primary database for low latency
+- **Authoritative**: True - Single source for semantic search capabilities
+
+## Performance Optimization
+
+### Query Optimization
+
+- **Caching**: Popular queries cached in Redis for 1 hour
+- **Pre-computed Recommendations**: Top similar items cached per book
+- **Batch Queries**: Multiple lookups grouped for efficiency
+- **Approximate Search**: Trade 1-2% accuracy for 3-5x speed improvement
+
+### Index Optimization
+
+- **Quantization**: Reduces memory footprint by 4x
+- **Memory Mapping**: Large collections partially on disk
+- **Sharding**: Distribute load across multiple Qdrant nodes
+- **Hot/Cold Separation**: Frequently accessed vectors kept in memory
+
+### Embedding Generation
+
+- **Batch Processing**: Generate embeddings in batches of 100
+- **Caching**: Cache embeddings for unchanged content
+- **Model Selection**: Balance between quality and cost
+- **Fallback Strategy**: Pre-computed embeddings for common queries
+
+## Integration Points
+
+The Vector Database integrates with:
+
+- **Catalog Service**: Primary data source for book metadata
+- **Search Service**: Consumer for semantic search queries
+- **Recommendation Engine**: Powers "You might also like" features
+- **Chat Service**: Enables conversational product discovery
+- **Analytics Service**: Tracks search patterns and recommendation effectiveness
+
+## Monitoring & Observability
+
+### Key Metrics
+
+**Performance Metrics:**
+- Query latency (p50, p95, p99)
+- Indexing throughput (vectors/second)
+- Memory utilization
+- Disk I/O operations
+- Cache hit ratio
+
+**Business Metrics:**
+- Search result relevance (click-through rate)
+- Recommendation acceptance rate
+- Null result rate (queries with no good matches)
+- Query diversity (unique queries vs. total)
+
+**Data Quality Metrics:**
+- Embedding staleness (time since last update)
+- Vector coverage (percentage of books indexed)
+- Sync lag (delay from database to vector store)
+
+### Health Checks
+
+- Collection integrity verification
+- Index rebuild status
+- Replication lag monitoring
+- Query success rate tracking
+- Embedding model availability
+
+### Alerting Thresholds
+
+- Query latency exceeding 100ms (p95)
+- Indexing backlog greater than 1000 items
+- Memory utilization above 85%
+- Sync lag greater than 5 minutes
+- Search error rate above 0.5%
+
+## Security & Access Control
+
+### Authentication
+
+- **Service-to-Service**: API key authentication
+- **Network Security**: Private network access only
+- **TLS Encryption**: All connections encrypted
+- **Role-Based Access**: Read-only for search services, read-write for indexing services
+
+### Data Protection
+
+- **Embedding Privacy**: Vectors don't expose raw customer data
+- **Payload Filtering**: Sensitive fields excluded from payloads
+- **Audit Logging**: All write operations logged
+- **Backup Strategy**: Daily snapshots to object storage
+
+## Cost Optimization
+
+### Compute Costs
+
+- **Right-sizing**: Instance sized for actual query load
+- **Auto-scaling**: Scale up during peak hours, down during off-peak
+- **Spot Instances**: Use for batch reindexing jobs
+- **Query Batching**: Reduce API calls to embedding services
+
+### Storage Costs
+
+- **Quantization**: Reduce vector size by 75% with minimal quality loss
+- **Compression**: Payload data compressed
+- **Archival**: Old versions moved to cold storage
+- **Deduplication**: Identify and remove duplicate vectors
+
+### API Costs
+
+- **Embedding Cache**: Reduce calls to OpenAI by 60-70%
+- **Batch Processing**: Lower cost per embedding
+- **Model Selection**: Use smaller models for simple content
+- **Rate Limiting**: Prevent runaway embedding costs
+
+## Use Cases & Examples
+
+### Discovery Scenarios
+
+**1. Natural Language Search**
+- User: "Books about time travel paradoxes"
+- System: Returns sci-fi novels exploring temporal mechanics
+- No exact keyword match required
+
+**2. Exploratory Browsing**
+- User: "Something like The Martian but not sci-fi"
+- System: Suggests survival stories, problem-solving narratives
+- Cross-genre conceptual matching
+
+**3. Gift Recommendations**
+- User: "Educational book for curious 10-year-old"
+- System: Age-appropriate science, history, adventure books
+- Contextual understanding of requirements
+
+**4. Mood-Based Discovery**
+- User: "Need something to cheer me up"
+- System: Humorous books, uplifting stories, feel-good fiction
+- Emotional context understanding
+
+### Business Applications
+
+- **Intelligent Search**: Replace basic keyword search with semantic understanding
+- **Smart Recommendations**: "Customers who bought X also bought Y" with deeper accuracy
+- **Content Curation**: Automatically generate themed collections and reading lists
+- **Trend Detection**: Identify emerging themes and topics through vector clustering
+- **Inventory Optimization**: Stock books similar to bestsellers
+
+## Future Enhancements
+
+### Advanced Capabilities
+
+- **Multi-modal Embeddings**: Include book cover images in vector representation
+- **Temporal Vectors**: Capture changing preferences and trends over time
+- **Graph-Enhanced Vectors**: Combine vector similarity with knowledge graphs
+- **Few-Shot Learning**: Improve recommendations for users with minimal history
+- **Explainable Recommendations**: Surface why specific books were recommended
+
+### Integration Expansions
+
+- **Voice Search**: Natural language queries from smart speakers
+- **Visual Search**: "Find books with covers like this"
+- **Cross-Domain**: Recommend books based on movie/music preferences
+- **Real-time Personalization**: Dynamic vector updates based on browsing session
+- **A/B Testing Framework**: Experiment with different embedding models and search parameters
+
+### Performance Improvements
+
+- **GPU Acceleration**: Faster embedding generation and search
+- **Distributed Architecture**: Multi-region deployment for global performance
+- **Smart Pre-fetching**: Predictive caching based on user patterns
+- **Incremental Updates**: Real-time vector updates without full reindex
+- **Hybrid Search**: Combine vector and traditional search for optimal results

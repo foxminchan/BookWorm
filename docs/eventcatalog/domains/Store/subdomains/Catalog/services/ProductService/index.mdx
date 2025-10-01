@@ -75,6 +75,24 @@ owners:
 repository:
   language: C#
   url: https://github.com/foxminchan/BookWorm
+writesTo:
+    - id: CatalogDatabase
+      version: 1.0.0
+    - id: CatalogBlob
+      version: 1.0.0
+    - id: CatalogVectorDB
+      version: 1.0.0
+    - id: CatalogCache
+      version: 1.0.0
+readsFrom:
+    - id: CatalogDatabase
+      version: 1.0.0
+    - id: CatalogBlob
+      version: 1.0.0
+    - id: CatalogVectorDB
+      version: 1.0.0
+    - id: CatalogCache
+      version: 1.0.0
 ---
 
 <Tiles>

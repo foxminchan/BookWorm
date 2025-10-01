@@ -72,14 +72,14 @@ The Store domain is strategically divided into two subdomains based on our [micr
 
 ### Ubiquitous Language
 
-| Term | Definition |
-|------|------------|
-| **Book** | A physical or digital publication available for purchase |
-| **Basket** | A temporary collection of items selected by a customer |
-| **Order** | A confirmed purchase request with payment information |
-| **Catalog** | The complete inventory of available books |
-| **Rating** | Customer feedback including stars and written reviews |
-| **Saga** | A distributed transaction pattern for order processing |
+| Term        | Definition                                               |
+| ----------- | -------------------------------------------------------- |
+| **Book**    | A physical or digital publication available for purchase |
+| **Basket**  | A temporary collection of items selected by a customer   |
+| **Order**   | A confirmed purchase request with payment information    |
+| **Catalog** | The complete inventory of available books                |
+| **Rating**  | Customer feedback including stars and written reviews    |
+| **Saga**    | A distributed transaction pattern for order processing   |
 
 ## 💼 Event Storming
 
@@ -94,6 +94,7 @@ Our implementation follows an [event-driven architecture with CQRS pattern](http
 To effectively visualize and understand the architecture of the BookWorm system, we will employ the [C4 model](https://c4model.com/). This model allows us to represent the system at various levels of abstraction, providing a comprehensive view of its structure and interactions.
 
 Our architecture follows several key architectural decisions:
+
 - [Microservices Architecture](https://foxminchan.github.io/BookWorm/architecture-decisions/adr-018-k6-performance-testing) for service boundaries
 - [.NET Aspire for Cloud-Native Development](https://foxminchan.github.io/BookWorm/architecture-decisions/adr-003-aspire-cloud-native) for orchestration
 - [Container-First Deployment Strategy](https://foxminchan.github.io/BookWorm/architecture-decisions/adr-007-aca-deployment) for consistency
@@ -138,79 +139,38 @@ C4Context
 C4Container
     title Container Diagram for BookWorm Store System
 
-    Enterprise_Boundary(bookworm, "BookWorm Store") {
-      Person(customer, "Customer", "A user who wants to browse and purchase books")
+    Person(customer, "Customer", "A user browsing and purchasing books")
 
-      System_Ext(email, "Email Service", "Handles email notifications")
-      System_Ext(identity, "Identity Provider", "Handles user authentication")
+    System_Ext(email, "Email Service", "Email notifications")
+    System_Ext(identity, "Identity Provider", "User authentication")
 
-      System_Boundary(application, "Application") {
-        Container(gateway, "API Gateway", ".NET", "Routes requests to the appropriate service")
+    Container(gateway, "API Gateway", ".NET", "Unified entry point for all requests")
 
-        System_Boundary(catalog, "Catalog Domain") {
-          Container(catalog, "Catalog Service", ".NET", "Manages product catalog and inventory")
-          Container(rating, "Rating Service", ".NET", "Manages product ratings and reviews")
-          Container(chat, "Chat Service", ".NET", "Manages chat interactions and conversations")
-        }
+    Container(catalogServices, "Catalog Services", ".NET", "Product catalog, ratings, and chat")
+    Container(orderServices, "Order Services", ".NET", "Orders, basket, and payments")
+    Container(supportServices, "Support Services", ".NET", "Notifications, scheduling, and AI tools")
 
-        System_Boundary(order, "Order Domain") {
-          Container(notification, "Notification Service", ".NET", "Sends notifications to users")
-          Container(order, "Order Service", ".NET", "Handles order processing")
-          Container(basket, "Basket Service", ".NET", "Manages shopping cart")
-          Container(finance, "Finance Service", ".NET", "Handles payment processing")
-        }
-      }
+    ContainerDb(databases, "Databases", "SQL/NoSQL", "Persistent data storage")
+    SystemQueue(eventBus, "Event Bus", "AMQP", "Async messaging between services")
 
-      System_Boundary(infrastructure, "Infrastructure") {
-        SystemQueue(eventBus, "Event Bus", "Handles message passing between services")
+    Rel(customer, gateway, "Uses", "HTTPS")
+    Rel(gateway, identity, "Authenticates", "OAuth2")
 
-        System_Boundary(database, "Database") {
-          ContainerDb(notificationDb, "Notification DB", "NoSQL", "Stores notification records")
-          ContainerDb(catalogDb, "Catalog DB", "SQL", "Stores product information")
-          ContainerDb(vectorDb, "Vector DB", "NoSQL", "Stores vector embeddings for search")
-          ContainerDb(orderDb, "Order DB", "SQL", "Stores order information")
-          ContainerDb(basketDb, "Basket DB", "NoSQL", "Stores shopping cart data")
-          ContainerDb(financeDb, "Finance DB", "SQL", "Stores payment records")
-          ContainerDb(ratingDb, "Rating DB", "SQL", "Stores ratings and reviews")
-          ContainerDb(chatDb, "Chat DB", "SQL", "Stores chat sessions and messages")
-        }
-      }
-    }
+    Rel(gateway, catalogServices, "Routes to", "HTTPS")
+    Rel(gateway, orderServices, "Routes to", "HTTPS")
 
-    BiRel(customer, gateway, "Makes requests", "HTTPS")
+    Rel(catalogServices, databases, "Reads/Writes", "TCP")
+    Rel(orderServices, databases, "Reads/Writes", "TCP")
+    Rel(supportServices, databases, "Reads/Writes", "TCP")
 
-    Rel(gateway, catalog, "Routes requests", "HTTPS")
-    Rel(gateway, order, "Routes requests", "HTTPS")
-    Rel(gateway, basket, "Routes requests", "HTTPS")
-    Rel(gateway, finance, "Routes requests", "HTTPS")
-    Rel(gateway, rating, "Routes requests", "HTTPS")
-    Rel(gateway, identity, "Routes requests", "HTTPS")
-    Rel(gateway, chat, "Routes requests", "HTTPS")
+    BiRel(catalogServices, eventBus, "Pub/Sub", "AMQP")
+    BiRel(orderServices, eventBus, "Pub/Sub", "AMQP")
+    BiRel(supportServices, eventBus, "Pub/Sub", "AMQP")
 
-    Rel(catalog, catalogDb, "Reads/Writes", "TCP")
-    Rel(order, orderDb, "Reads/Writes", "TCP")
-    Rel(basket, basketDb, "Reads/Writes", "TCP")
-    Rel(finance, financeDb, "Reads/Writes", "TCP")
-    Rel(rating, ratingDb, "Reads/Writes", "TCP")
-    Rel(catalog, vectorDb, "Reads/Writes", "TCP")
-    Rel(chat, chatDb, "Reads/Writes", "TCP")
-    Rel(notification, notificationDb, "Reads/Writes", "TCP")
+    Rel(orderServices, catalogServices, "Gets product info", "gRPC")
+    Rel(supportServices, email, "Sends emails", "SMTP")
 
-    Rel(notification, email, "Sends emails", "SMTP")
-
-    BiRel(catalog, eventBus, "Publishes/Subscribes", "AMQP")
-    BiRel(order, eventBus, "Publishes/Subscribes", "AMQP")
-    BiRel(basket, eventBus, "Publishes/Subscribes", "AMQP")
-    BiRel(finance, eventBus, "Publishes/Subscribes", "AMQP")
-    BiRel(rating, eventBus, "Publishes/Subscribes", "AMQP")
-    Rel(eventBus, notification, "Subscribes", "AMQP")
-
-    Rel(basket, catalog, "Retrieves products", "gRPC")
-    Rel(order, catalog, "Retrieves products", "gRPC")
-
-    Rel(email, customer, "Delivers to", "SMTP")
-
-    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="2")
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
 ```
 
 The data storage strategy is detailed in our [PostgreSQL database decision](https://foxminchan.github.io/BookWorm/architecture-decisions/adr-004-postgresql-database), with event-driven communication patterns outlined in our [Event-Driven CQRS approach](https://foxminchan.github.io/BookWorm/architecture-decisions/adr-002-event-driven-cqrs).
@@ -233,12 +193,12 @@ Below is the interactive event-driven architecture diagram for the BookWorm Stor
 
 ### Service Level Objectives (SLOs)
 
-| Metric | Target | Description |
-|--------|--------|-------------|
-| **Availability** | 99.9% | Uptime for critical services |
-| **Response Time** | < 200ms | P95 latency for API calls |
-| **Order Success Rate** | > 98% | Successful order completions |
-| **Event Processing** | < 1s | Time to process domain events |
+| Metric                 | Target  | Description                   |
+| ---------------------- | ------- | ----------------------------- |
+| **Availability**       | 99.9%   | Uptime for critical services  |
+| **Response Time**      | < 200ms | P95 latency for API calls     |
+| **Order Success Rate** | > 98%   | Successful order completions  |
+| **Event Processing**   | < 1s    | Time to process domain events |
 
 ### Key Performance Indicators (KPIs)
 
@@ -251,12 +211,12 @@ Below is the interactive event-driven architecture diagram for the BookWorm Stor
 
 ### Service Level Objectives (SLOs)
 
-| Metric | Target | Description |
-|--------|--------|-------------|
-| **Availability** | 99.9% | Uptime for critical services |
-| **Response Time** | < 200ms | P95 latency for API calls |
-| **Order Success Rate** | > 98% | Successful order completions |
-| **Event Processing** | < 1s | Time to process domain events |
+| Metric                 | Target  | Description                   |
+| ---------------------- | ------- | ----------------------------- |
+| **Availability**       | 99.9%   | Uptime for critical services  |
+| **Response Time**      | < 200ms | P95 latency for API calls     |
+| **Order Success Rate** | > 98%   | Successful order completions  |
+| **Event Processing**   | < 1s    | Time to process domain events |
 
 ### Key Performance Indicators (KPIs)
 

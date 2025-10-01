@@ -17,6 +17,7 @@ public static class ModelExtensions
         var ollama = builder
             .AddOllama(Components.Ollama.Resource)
             .WithDataVolume()
+            .WithIconName("BrainSparkle")
             .WithImagePullPolicy(ImagePullPolicy.Always)
             .WithLifetime(ContainerLifetime.Persistent)
             .PublishAsAzureContainerApp((_, app) => app.Template.Scale.MinReplicas = 0);

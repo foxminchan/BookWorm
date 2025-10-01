@@ -1,0 +1,296 @@
+---
+id: RatingDatabase
+name: Rating Database
+version: 1.0.0
+container_type: database
+technology: postgres@18
+authoritative: true
+access_mode: readWrite
+classification: internal
+retention: 2y
+residency: eastasia
+summary: Primary database for rating information.
+owners:
+  - nhanxnguyen
+attachments:
+  - url: https://drive.google.com/file/d/1NYJicm0yjl7o15nj2jLpggzr5prCXuAt/view?usp=sharing
+    title: ERD of the Rating Database
+    description: Learn more about the schema of the Rating Database
+    type: 'diagrams'
+    icon: FileTextIcon
+---
+
+<NodeGraph />
+
+## Overview
+
+The Rating Database is a PostgreSQL 18-based storage system that captures and manages customer feedback for the BookWorm platform. This database serves as the foundation for the rating and review system, storing customer opinions, satisfaction scores, and detailed comments that help other shoppers make informed purchase decisions. By maintaining a comprehensive record of customer feedback, the system enables data-driven product improvements, quality monitoring, and customer satisfaction tracking across the entire book catalog.
+
+## Purpose & Responsibility
+
+The Rating Database serves multiple critical business functions:
+
+- **Customer Voice**: Capturing authentic customer experiences and opinions
+- **Social Proof**: Providing credible feedback to help future customers make decisions
+- **Quality Monitoring**: Tracking satisfaction trends for continuous improvement
+- **Product Insights**: Identifying strengths and weaknesses in offerings
+- **Marketing Content**: Sourcing testimonials and success stories
+- **Customer Engagement**: Encouraging community participation and loyalty
+
+This database transforms customer opinions into actionable business intelligence, creating a feedback loop that drives product selection, customer service improvements, and overall platform quality.
+
+<AccordionGroup>
+  <Accordion title="Rating Database Schema">
+    <Schema file="schema.sql" lang="sql" title="Rating Database Schema" />
+  </Accordion>
+  <Accordion title="Common Queries">
+    <Schema file="queries.sql" lang="sql" title="Common Queries" />
+  </Accordion>
+</AccordionGroup>
+
+### Feedbacks Table
+
+The core entity that represents individual customer feedback submissions.
+
+#### Column Breakdown
+
+**`id` (UUID, Primary Key)**
+
+- Unique identifier for each feedback entry
+- Generated using `uuidv7()` for time-ordered, globally unique IDs
+- Benefits: Chronologically sortable, distributed system friendly
+- Enables direct feedback linking and reference tracking
+- Example: `01914f5a-8c7e-7890-a123-456789abcdef`
+
+**`first_name` (VARCHAR(50), NOT NULL)**
+
+- Customer's first name for personalization
+- Required field to ensure accountability
+- Used for displaying reviewer identity (e.g., "John D.")
+- Helps build trust through authentic, attributable reviews
+- Indexed for customer lookup and analysis
+
+**`last_name` (VARCHAR(50), NOT NULL)**
+
+- Customer's last name for complete identification
+- Typically displayed with initial only for privacy (e.g., "Smith S.")
+- Combined with first_name for duplicate detection
+- Enables customer history tracking across multiple reviews
+- Part of reviewer identification in public displays
+
+**`comment` (VARCHAR(1000), NULLABLE)**
+
+- Detailed written feedback from the customer
+- Optional field allowing quick rating-only submissions
+- Maximum 1000 characters balances detail with readability
+- Contains valuable qualitative insights about products
+- Source for testimonials, issue identification, and sentiment analysis
+- NULL when customers provide rating without explanation
+
+**`rating` (INTEGER, NOT NULL)**
+
+- Numeric satisfaction score (typically 1-5 scale)
+- Required field representing quantitative satisfaction
+- Core metric for product quality assessment
+- Used for calculating averages and distributions
+- Enables filtering and sorting of products
+- Directly impacts product rankings and visibility
+
+**`created_at` (TIMESTAMP WITH TIME ZONE, NOT NULL)**
+
+- When the feedback was submitted
+- Stored with timezone for global customer base
+- Enables time-series analysis and trend tracking
+- Used for sorting (most recent first)
+- Helps identify seasonal satisfaction patterns
+- Critical for recency-weighted rating calculations
+
+**`last_modified_at` (TIMESTAMP WITH TIME ZONE, NULLABLE)**
+
+- Last time the feedback was updated or processed
+- Tracks moderation, response, or administrative actions
+- NULL for unprocessed feedback
+- Enables processing backlog monitoring
+- Used for calculating response time metrics
+- Supports audit trails and compliance requirements
+
+## Rating Scale System
+
+The database supports a 5-star rating system, the industry standard for customer feedback:
+
+### Star Rating Interpretation
+
+| Rating | Label     | Customer Sentiment                      | Typical Usage                        |
+| ------ | --------- | --------------------------------------- | ------------------------------------ |
+| 5      | Excellent | Highly satisfied, exceeded expectations | Enthusiastic recommendations         |
+| 4      | Good      | Satisfied, met expectations             | Positive but with minor reservations |
+| 3      | Average   | Neutral, acceptable but unremarkable    | Middle ground, lukewarm opinion      |
+| 2      | Poor      | Dissatisfied, below expectations        | Significant issues noted             |
+| 1      | Very Poor | Highly dissatisfied, unacceptable       | Serious problems or disappointment   |
+
+### Rating Distribution Insights
+
+Typical healthy product distributions:
+
+- **5 Stars**: 40-50% (promoters, brand advocates)
+- **4 Stars**: 30-35% (satisfied customers)
+- **3 Stars**: 10-15% (neutral, fence-sitters)
+- **2 Stars**: 5-10% (disappointed but engaged)
+- **1 Star**: 5-10% (detractors, vocal critics)
+
+**Red Flags:**
+
+- Bimodal distribution (many 5s and 1s, few middle) suggests polarizing product
+- Excessive 5s without comments may indicate fake reviews
+- High concentration of 1-2 stars requires immediate investigation
+
+## Key Features
+
+### UUID v7 Benefits
+
+Using `uuidv7()` provides several advantages:
+
+- **Time-Ordered**: Feedbacks naturally sort by creation time
+- **Index Friendly**: Sequential nature improves B-tree performance
+- **Distributed Safe**: No coordination needed across service instances
+- **Globally Unique**: Safe for data merges and migrations
+- **Embedded Timestamp**: Can extract approximate creation time
+
+### Comment Flexibility
+
+The optional comment field supports varied customer engagement levels:
+
+**Comment Present (65-75% typical):**
+
+- Detailed explanations of rating
+- Specific praise or criticism
+- Suggestions for improvement
+- Contextual information
+- Rich qualitative data
+
+**Rating Only (25-35% typical):**
+
+- Quick feedback from busy customers
+- Clear-cut experiences (obviously great or terrible)
+- Follow-up ratings from previous reviewers
+- Mobile users with limited time
+- Sufficient for quantitative analysis
+
+### Temporal Tracking
+
+Both `created_at` and `last_modified_at` enable:
+
+**Time-Series Analysis:**
+
+- Daily, weekly, monthly satisfaction trends
+- Seasonal patterns identification
+- Impact of changes or updates
+- Response time monitoring
+
+**Recency Weighting:**
+
+- Recent feedback weighted more heavily
+- Identifies improving or declining quality
+- Reflects current product state
+- Deprecates outdated opinions over time
+
+## Data Classification & Governance
+
+- **Classification**: Internal - Contains customer feedback and PII
+- **Access Mode**: Read/Write - Rating service has full control; Analytics has read-only
+- **Retention**: 2 years - Balances data utility with privacy regulations
+- **Residency**: East Asia region - Co-located with primary user base
+- **Authoritative**: True - Single source of truth for customer feedback
+
+## Monitoring & Observability
+
+### Key Performance Indicators
+
+**Database Health:**
+
+- Table size and growth rate
+- Query performance (p50, p95, p99 latency)
+- Index hit ratios
+- Connection pool utilization
+
+**Business Metrics:**
+
+- Daily feedback volume
+- Average rating trends
+- NPS score movement
+- Negative feedback rate
+- Comment engagement rate
+
+**Data Quality:**
+
+- Null comment ratio
+- Duplicate detection
+- Outlier identification
+- Processing backlog size
+
+### Alerting Thresholds
+
+- Average rating drops below 3.5 for 7+ days
+- NPS score declines by more than 10 points
+- Negative feedback rate exceeds 20%
+- Unprocessed critical feedback (rating ≤ 2) older than 4 hours
+- Daily feedback volume drops by more than 50% (potential system issue)
+- Database size growth exceeds 30% month-over-month
+
+## Security & Access Control
+
+### Data Protection
+
+**Encryption:**
+
+- At rest: Transparent Data Encryption (TDE)
+- In transit: TLS 1.3 for all connections
+- Backups: Encrypted with AES-256
+
+**Audit Logging:**
+
+- All data modifications logged
+- Access patterns monitored
+- Anomaly detection enabled
+- Compliance reporting automated
+
+**PII Handling:**
+
+- Minimize PII collection (name only, no email/phone)
+- Hash sensitive fields where possible
+- Support data export (GDPR Article 20)
+- Enable deletion (GDPR Article 17 - Right to be Forgotten)
+
+## Backup & Disaster Recovery
+
+### Backup Strategy
+
+**Automated Backups:**
+
+- Full backup: Daily at 02:00 UTC
+- Differential backup: Every 6 hours
+- Transaction log backup: Every 15 minutes
+- Retention: 30 days online, 2 years archived
+
+**Recovery Objectives:**
+
+- RPO (Recovery Point Objective): 15 minutes
+- RTO (Recovery Time Objective): 4 hours
+- Continuous transaction log archival
+- Cross-region backup replication
+
+### High Availability
+
+**Replication:**
+
+- Primary database in East Asia region
+- Synchronous standby for automatic failover
+- Read replicas for analytics workload
+- Automatic failover in under 60 seconds
+
+**Disaster Recovery Testing:**
+
+- Monthly DR drill execution
+- Backup restoration verification
+- Failover testing procedures
+- Recovery playbook maintenance

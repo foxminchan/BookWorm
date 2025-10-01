@@ -75,6 +75,16 @@ owners:
 repository:
   language: C#
   url: https://github.com/foxminchan/BookWorm
+writesTo:
+    - id: OrderingDatabase
+      version: 1.0.0
+    - id: OrderingCache
+      version: 1.0.0
+readsFrom:
+    - id: OrderingDatabase
+      version: 1.0.0
+    - id: OrderingCache
+      version: 1.0.0
 ---
 
 <Tiles>
