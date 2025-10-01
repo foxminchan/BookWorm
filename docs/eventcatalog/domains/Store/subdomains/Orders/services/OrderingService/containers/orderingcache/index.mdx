@@ -1,0 +1,60 @@
+---
+id: OrderingCache
+name: Ordering Cache
+version: 1.0.0
+container_type: cache
+technology: redis@8.2
+authoritative: true
+access_mode: readWrite
+classification: internal
+retention: 2y
+residency: eastasia
+summary: Distributed cache for frequently accessed order and buyer data.
+owners:
+  - nhanxnguyen
+---
+
+<NodeGraph />
+
+## Overview
+
+The Ordering Cache is a high-performance Redis-based distributed caching layer that sits between the Ordering Service and its primary data sources. Operating on Redis 8.2, this cache dramatically reduces database load and improves response times by storing frequently accessed order and buyer information in memory. In an e-commerce environment where the same orders and buyers are queried multiple times, the cache transforms expensive database queries into lightning-fast memory lookups, ensuring customers experience consistent sub-millisecond response times even during peak traffic.
+
+## The Caching Strategy
+
+### Why Cache?
+
+E-commerce order queries often exhibit temporal and spatial locality, where recently accessed orders and buyers are likely to be queried again soon. The Ordering Cache exploits this pattern by:
+
+- **Reducing Database Load**: Offloading 70-80% of read operations from PostgreSQL
+- **Improving Latency**: Response times drop from 50-100ms (database) to 1-5ms (cache)
+- **Enabling Scale**: Supporting 10x more concurrent users without database upgrades
+- **Cost Efficiency**: Reducing database instance size requirements by 50%
+- **High Availability**: Acting as a buffer during database maintenance or brief outages
+
+### Caching Patterns
+
+We employ multiple caching strategies based on data characteristics:
+
+**Cache-Aside (Lazy Loading)**
+- Most common pattern for order and buyer data
+- Load data into cache only when requested
+- First request: cache miss → load from DB → store in cache
+- Subsequent requests: cache hit → return immediately
+
+**Write-Through**
+- For critical order updates
+- Write to database and cache simultaneously
+- Ensures cache is always consistent
+- Used for order status changes
+
+**Write-Behind (Write-Back)**
+- For high-frequency updates (view counts, clicks)
+- Write to cache immediately, queue database update
+- Reduces database write pressure
+- Periodic batch updates to database
+
+**Refresh-Ahead**
+- For predictable access patterns
+- Proactively refresh cache before expiration
+- Used for recent orders and active buyers

@@ -21,6 +21,7 @@ public static class ProxyExtensions
         var yarp = builder
             .AddYarp(Services.Gateway)
             .WithExternalHttpEndpoints()
+            .WithIconName("ArrowRoutingRectangleMultiple")
             .WithConfiguration(yarpBuilder =>
             {
                 foreach (var service in services)

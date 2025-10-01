@@ -1,0 +1,235 @@
+---
+id: CatalogBlob
+name: Catalog Blob Storage
+version: 1.0.0
+container_type: objectStore
+technology: azure@latest
+authoritative: true
+access_mode: readWrite
+classification: internal
+retention: 2y
+residency: eastasia
+summary: Blob storage for product images and media assets.
+owners:
+  - nhanxnguyen
+---
+
+<NodeGraph />
+
+## Overview
+
+The Catalog Blob Storage is a dedicated Azure Blob Storage container that serves as the central repository for all product-related media assets in the BookWorm system. This storage solution handles book cover images, author photos, publisher logos, and other visual content that enriches the product catalog experience. By separating media storage from the database, we achieve better performance, scalability, and cost optimization while maintaining fast content delivery to customers.
+
+## Purpose & Responsibility
+
+The blob storage acts as a content delivery foundation for the catalog service, enabling:
+
+- **Product Visualization**: Storing high-quality book cover images that help customers make informed purchase decisions
+- **Brand Representation**: Managing publisher logos and author photographs for enhanced credibility
+- **Multi-Resolution Support**: Maintaining multiple image sizes for responsive design across devices
+- **Media Asset Lifecycle**: Handling the full lifecycle of media assets from upload to deletion
+
+## Storage Structure
+
+### Image Size Variants
+
+Each product image is stored in multiple resolutions to optimize performance and bandwidth:
+
+- **thumbnail**: 150x200px - Grid views and search results
+- **medium**: 400x600px - Product cards and mobile views
+- **large**: 800x1200px - Detail pages and zoom functionality
+- **original**: Native resolution - Master copy for future processing
+
+This multi-resolution approach ensures fast page loads while maintaining visual quality where it matters most.
+
+## Technical Implementation
+
+### Azure Blob Storage Configuration
+
+- **Storage Tier**: Hot tier for frequently accessed book cover images
+- **Redundancy**: Zone-redundant storage (ZRS) for high availability
+- **Access Tier Policies**: Automatic tier transition to cool storage for images not accessed in 90 days
+- **Versioning**: Enabled for change tracking and accidental deletion recovery
+- **Soft Delete**: 30-day retention for deleted blobs
+
+### Content Types
+
+Supported image formats optimized for web delivery:
+
+- **WebP**: Primary format for modern browsers (better compression)
+- **JPEG**: Fallback format for broad compatibility
+- **PNG**: For images requiring transparency (logos)
+
+### CDN Integration
+
+The blob storage is fronted by Azure CDN for:
+
+- **Global Distribution**: Edge caching in multiple regions
+- **Performance**: Sub-100ms image delivery worldwide
+- **Bandwidth Optimization**: Reduced origin server load
+- **HTTPS Delivery**: Secure content delivery by default
+
+## Access Patterns & Performance
+
+### Read Operations (90% of traffic)
+
+- Product catalog browsing and search
+- Product detail page views
+- Shopping cart and checkout displays
+- Cached at CDN edge for 24 hours
+- Average response time: < 50ms (CDN hit)
+
+### Write Operations (10% of traffic)
+
+- New product image uploads
+- Image updates/replacements
+- Bulk image imports during catalog expansion
+- Background thumbnail generation
+- CDN cache invalidation on update
+
+### Performance Optimization
+
+- **Lazy Loading**: Images load on-demand as users scroll
+- **Progressive JPEGs**: Display low-resolution preview while loading full image
+- **Image Compression**: Automatic optimization on upload (80-85% quality)
+- **Responsive Images**: Serve appropriate size based on device and viewport
+
+## Data Classification & Governance
+
+- **Classification**: Internal - Product images are public-facing but managed internally
+- **Access Mode**: Read/Write - Catalog service has full control; public has read-only access via CDN
+- **Retention**: 2 years - Images retained for this period after product deletion
+- **Residency**: East Asia region - Optimized for primary market with CDN for global reach
+- **Authoritative**: True - Single source of truth for all product media assets
+
+## Security & Access Control
+
+### Authentication & Authorization
+
+- **Service Identity**: Managed Identity for Catalog service access
+- **Public Access**: Read-only via CDN with signed URLs for time-limited access
+- **Upload Security**: Server-side validation of file types and sizes
+- **CORS Configuration**: Restricted to BookWorm domains only
+
+### Content Security
+
+- **Malware Scanning**: All uploads scanned before storage
+- **Content Moderation**: Automated checks for inappropriate content
+- **File Type Validation**: Server-side MIME type verification
+- **Size Limits**: Maximum 10MB per image to prevent abuse
+- **Rate Limiting**: Upload throttling to prevent DoS attacks
+
+### Data Protection
+
+- **Encryption at Rest**: Azure Storage Service Encryption (SSE) with Microsoft-managed keys
+- **Encryption in Transit**: TLS 1.2+ for all data transfers
+- **Access Logging**: All operations logged for audit trails
+- **Immutable Storage**: Legal hold capability for compliance scenarios
+
+## Integration Points
+
+The Catalog Blob Storage integrates seamlessly with:
+
+- **Catalog Service**: Primary consumer for image upload and management
+- **CDN**: Content delivery to end users
+- **Image Processing Pipeline**: Automated thumbnail generation and optimization
+- **Backup Service**: Regular snapshots for disaster recovery
+- **Monitoring Service**: Performance metrics and health checks
+
+## Lifecycle Management
+
+### Upload Workflow
+
+1. Catalog service requests upload URL with SAS token
+2. Client uploads image directly to blob storage
+3. Azure Function triggers for post-processing
+4. Thumbnails generated asynchronously
+5. CDN cache pre-warmed for popular items
+6. Database updated with blob URLs
+
+### Update Workflow
+
+1. New image uploaded with versioning
+2. Old version retained per policy
+3. CDN cache invalidated
+4. Thumbnails regenerated
+5. Database references updated
+
+### Deletion Workflow
+
+1. Soft delete marks blob as deleted
+2. 30-day recovery window maintained
+3. After retention: permanent deletion
+4. Orphan detection runs weekly
+5. Unused blobs archived or purged
+
+## Cost Optimization
+
+### Storage Costs
+
+- **Hot Tier**: Frequently accessed images (< 90 days old or > 100 views/month)
+- **Cool Tier**: Infrequently accessed images (older products, low traffic)
+- **Archive Tier**: Long-term retention (deleted products, historical records)
+
+### Bandwidth Costs
+
+- CDN caching reduces bandwidth by ~85%
+- Compression reduces transfer sizes by ~60%
+- Smart format selection (WebP vs JPEG) saves ~30% bandwidth
+
+### Operational Efficiency
+
+- Automated tier transitions based on access patterns
+- Regular cleanup of orphaned blobs
+- Duplicate detection and deduplication
+- Monitoring alerts for cost anomalies
+
+## Monitoring & Observability
+
+### Key Metrics
+
+- **Storage Capacity**: Total size, growth rate, tier distribution
+- **Request Metrics**: Read/write operations, success rate, latency
+- **CDN Performance**: Cache hit ratio, origin requests, bandwidth saved
+- **Cost Tracking**: Storage costs, egress costs, operation costs
+
+### Health Checks
+
+- Availability checks every 5 minutes
+- End-to-end upload/download tests
+- CDN purge functionality validation
+- Backup verification runs daily
+
+### Alerting
+
+- Storage capacity approaching limits (greater than 80%)
+- Elevated error rates (greater than 1% failed requests)
+- Unusual access patterns (potential security issues)
+- CDN cache hit ratio drops (below 70%)
+- Cost anomalies (greater than 20% increase week-over-week)
+
+## Disaster Recovery
+
+### Backup Strategy
+
+- **Continuous Replication**: ZRS provides zone-level redundancy
+- **Daily Snapshots**: Point-in-time recovery capability
+- **Geo-Replication**: Optional read-access geo-redundant storage (RA-GRS)
+- **Recovery Time Objective (RTO)**: < 4 hours
+- **Recovery Point Objective (RPO)**: < 1 hour
+
+### Business Continuity
+
+- Automatic failover to secondary region if primary fails
+- CDN serves cached content during blob storage outages
+- Graceful degradation: System functions without images (alt text displayed)
+- Regular DR drills every quarter
+
+## Future Enhancements
+
+- **AI-Powered Image Tagging**: Automatic metadata extraction from images
+- **Smart Cropping**: AI-based focal point detection for responsive images
+- **Video Support**: Expanding to product videos and 3D previews
+- **Progressive Web App Integration**: Offline image caching
+- **Real-time Image Editing**: On-the-fly transformations via CDN
+- **Blockchain Verification**: Content authenticity and provenance tracking

@@ -1,0 +1,499 @@
+---
+id: NotificationDatabase
+name: Notification Database
+version: 1.0.0
+container_type: database
+technology: postgres@18
+authoritative: true
+access_mode: readWrite
+classification: internal
+retention: 7y
+residency: eastasia
+summary: PostgreSQL database managing transactional email outbox and message delivery tracking for customer notifications.
+owners:
+  - nhanxnguyen
+attachments:
+  - url: https://drive.google.com/file/d/1qE9q0Op-J6skiEk6C3G8zxE18lyqfZVA/view?usp=sharing
+    title: ERD of the Notification Database
+    description: Learn more about the schema of the Notification Database
+    type: 'diagrams'
+    icon: FileTextIcon
+---
+
+<NodeGraph />
+
+## Overview
+
+The Notification Database is the persistence layer for the Notification Service, managing the complete lifecycle of transactional email communications in the BookWorm e-commerce system. Built on PostgreSQL 18, this database implements a custom email outbox pattern alongside MassTransit's standard outbox/inbox tables, ensuring reliable email delivery with comprehensive audit trails. It serves as the authoritative source for all customer notification attempts, tracking creation, delivery status, and retention for compliance and debugging purposes.
+
+<AccordionGroup>
+  <Accordion title="Notification Database Schema">
+    <Schema file="schema.sql" lang="sql" title="Notification Database Schema" />
+  </Accordion>
+</AccordionGroup>
+
+## Database Purpose & Role
+
+### Email Outbox Pattern
+
+The Notification Database implements a specialized email outbox pattern for reliable email delivery:
+
+- **Atomic Storage**: Email data stored transactionally with event processing
+- **Guaranteed Delivery**: Emails persist until successfully sent
+- **Retry Management**: Failed emails remain in outbox for retry attempts
+- **Audit Trail**: Complete history of all email communications
+- **Idempotency**: Prevents duplicate email sends through deduplication
+
+### Transactional Messaging Integration
+
+The database integrates with MassTransit for event-driven communication:
+
+- **Inbox Pattern**: Deduplicates incoming order events
+- **Outbox Pattern**: Ensures atomic event processing and email creation
+- **Message Correlation**: Links emails to originating order events
+- **Fault Tolerance**: Survives service restarts and network failures
+
+### Compliance & Auditing
+
+Long-term retention supports business and regulatory requirements:
+
+- **Communication History**: 7-year retention of all sent emails
+- **Customer Service**: Historical reference for support inquiries
+- **Dispute Resolution**: Evidence of notification delivery
+- **GDPR Compliance**: Right to access communication history
+- **Business Analytics**: Email delivery metrics and trends
+
+## Schema Design
+
+### Core Tables
+
+#### `outboxes` - Email Outbox Queue
+
+The primary table storing pending and sent transactional emails with the following columns:
+
+- **id** (uuid, PRIMARY KEY): Unique email identifier
+- **to_name** (varchar(100), NOT NULL, DEFAULT ''): Recipient's full name
+- **to_email** (varchar(255), NOT NULL, DEFAULT ''): Recipient's email address
+- **subject** (varchar(100), NOT NULL, DEFAULT ''): Email subject line
+- **body** (varchar(10000), NOT NULL, DEFAULT ''): Email body content (HTML or plain text)
+- **is_sent** (boolean, NOT NULL): Delivery status flag
+- **sequence_number** (bigint, IDENTITY, NOT NULL): Auto-incrementing sequence for processing order
+- **created_at** (timestamptz, NOT NULL): When email was created
+- **sent_at** (timestamptz): When email was successfully delivered
+
+**Key Features**:
+- **Sequence Number**: Ensures FIFO processing of emails
+- **Status Tracking**: Boolean flag for quick filtering of pending emails
+- **Timestamp Audit**: Creation and delivery times for SLA monitoring
+- **Recipient Info**: Both name and email for personalized delivery
+- **Content Storage**: Complete email content for retry and audit purposes
+
+**Email Lifecycle**:
+- Created: Email added to outbox with is_sent = false
+- Processing: Background worker picks up emails by sequence_number
+- Sent: Email delivered successfully, is_sent = true, sent_at = current timestamp
+- Failed: Email remains with is_sent = false for retry (with exponential backoff)
+
+#### `outbox_message` - MassTransit Transactional Outbox
+
+Stores integration events to be published, ensuring atomic email creation and event publishing with the following columns:
+
+- **sequence_number** (bigint, PRIMARY KEY IDENTITY): Auto-incrementing sequence
+- **message_id** (uuid, NOT NULL): Unique message identifier
+- **message_type** (text, NOT NULL): Full message type name
+- **body** (text, NOT NULL): Serialized message content (JSON)
+- **content_type** (varchar(256), NOT NULL): Serialization format
+- **enqueue_time** (timestamptz): When message was stored
+- **sent_time** (timestamptz, NOT NULL): When message was published
+- **conversation_id** (uuid): Conversation tracking
+- **correlation_id** (uuid): Event correlation ID
+- **initiator_id** (uuid): Original message initiator
+- **request_id** (uuid): Request-response tracking
+- **source_address** (varchar(256)): Message source endpoint
+- **destination_address** (varchar(256)): Target endpoint
+- **response_address** (varchar(256)): Reply-to address
+- **fault_address** (varchar(256)): Error handling address
+- **expiration_time** (timestamptz): Message TTL
+- **headers** (text): Additional message headers (JSON)
+- **properties** (text): Custom message properties (JSON)
+- **inbox_message_id** (uuid): Related inbox message (foreign key)
+- **inbox_consumer_id** (uuid): Related inbox consumer (foreign key)
+- **outbox_id** (uuid): Related outbox state (foreign key)
+
+**Key Features**:
+- **Sequential Processing**: Ensures message ordering
+- **Complete Envelope**: All routing and correlation metadata
+- **Foreign Key Relationships**: Links to inbox_state and outbox_state for consistency
+- **Audit Trail**: Tracks enqueue and delivery times
+
+#### `outbox_state` - Outbox Processing State
+
+Tracks the current position of outbox message processing with the following columns:
+
+- **outbox_id** (uuid, PRIMARY KEY): Unique outbox identifier
+- **lock_id** (uuid, NOT NULL): Distributed lock identifier
+- **row_version** (bytea): Optimistic concurrency token
+- **created** (timestamptz, NOT NULL): Outbox creation time
+- **delivered** (timestamptz): Last delivery time
+- **last_sequence_number** (bigint): Last processed message sequence
+
+**Key Features**:
+- **Processing Cursor**: Tracks last processed message
+- **Distributed Locking**: Prevents concurrent processing by multiple workers
+- **Recovery Support**: Enables resume from last sequence after failures
+
+#### `inbox_state` - Message Deduplication
+
+Tracks consumed order events to ensure idempotent email creation with the following columns:
+
+- **id** (bigint, PRIMARY KEY IDENTITY): Internal identifier
+- **message_id** (uuid, NOT NULL): Incoming message identifier
+- **consumer_id** (uuid, NOT NULL): Consumer endpoint identifier
+- **lock_id** (uuid, NOT NULL): Processing lock
+- **row_version** (bytea): Concurrency token
+- **received** (timestamptz, NOT NULL): When message arrived
+- **receive_count** (int, NOT NULL): Delivery attempt count
+- **expiration_time** (timestamptz): Message expiration
+- **consumed** (timestamptz): When message was processed
+- **delivered** (timestamptz): When processing completed
+- **last_sequence_number** (bigint): Sequence tracking
+- **UNIQUE CONSTRAINT** on (message_id, consumer_id): Deduplication key
+
+**Key Features**:
+- **Idempotency Guarantee**: Prevents duplicate email creation from retried events
+- **Composite Uniqueness**: Per-consumer deduplication
+- **Retry Tracking**: Monitors delivery attempts
+- **Lifecycle Timestamps**: Full message processing history
+
+#### `__EFMigrationsHistory` - Schema Version Control
+
+Standard Entity Framework Core migrations table with the following columns:
+
+- **migration_id** (varchar(150), PRIMARY KEY): Migration identifier
+- **product_version** (varchar(32), NOT NULL): EF Core version
+
+Tracks applied database migrations for schema evolution management.
+
+## Data Flow & Integration
+
+### Email Creation Flow
+
+**1. Order Event Received**
+- PlaceOrderCommand, CompleteOrderCommand, or CancelOrderCommand arrives via RabbitMQ
+- MassTransit checks inbox_state for duplicate detection
+- If new message, insert into inbox_state and proceed
+- If duplicate, skip processing
+
+**2. Email Composition**
+- Event data extracted (order ID, customer name, email, order details)
+- Email template rendered with dynamic data
+- MIME message constructed with HTML body
+- Outbox entity created with recipient info and content
+
+**3. Transactional Storage**
+- INSERT into outboxes table (email details)
+- INSERT into outbox_message table (event acknowledgment if needed)
+- Transaction COMMIT (atomic write)
+- Email now guaranteed to be sent eventually
+
+**4. Background Processing**
+- Background worker polls outboxes WHERE is_sent = false ORDER BY sequence_number
+- Email picked up for delivery
+- SMTP send attempted via MailKit to SendGrid or MailPit
+- On success: UPDATE outboxes SET is_sent = true, sent_at = NOW()
+- On failure: Email remains pending for retry
+
+### Retry Strategy
+
+**Exponential Backoff**:
+- First retry: 5 minutes after failure
+- Second retry: 15 minutes after first retry
+- Third retry: 1 hour after second retry
+- Max retries: 5 attempts over 24 hours
+- After max retries: Email flagged for manual intervention
+
+**Failure Handling**:
+- Transient failures (network, SMTP server down): Automatic retry
+- Permanent failures (invalid email, blocked recipient): Manual review
+- Rate limiting: Throttle processing to avoid SendGrid limits
+
+### Cleanup & Archival
+
+**Sent Email Cleanup**:
+- CleanUpSentEmailIntegrationEvent triggers periodic cleanup
+- Emails with is_sent = true and sent_at older than retention period are archived
+- Archived emails moved to cold storage (Azure Blob or data lake)
+- DELETE from outboxes table to manage database size
+
+**Retention Strategy**:
+- Active emails (unsent or recent): Kept in primary database
+- Sent emails (recent 90 days): Kept in primary database for quick access
+- Historical emails (90 days - 7 years): Archived to warm storage
+- Compliance records (7+ years): Compressed in cold storage
+
+## Performance & Optimization
+
+### Indexing Strategy
+
+**Critical Indexes**:
+- Primary keys (automatically indexed): outboxes(id), outbox_message(sequence_number), outbox_state(outbox_id), inbox_state(id)
+- Unique constraints (automatically indexed): inbox_state(message_id, consumer_id)
+- Recommended additional indexes: idx_outboxes_is_sent (on is_sent WHERE is_sent = false), idx_outboxes_sequence (on sequence_number), idx_outboxes_created_at (on created_at)
+
+**Performance Characteristics**:
+- **Email Lookup**: O(1) via primary key (id)
+- **Pending Email Query**: O(log n) via is_sent index
+- **Sequential Processing**: O(1) via sequence_number index
+- **Inbox Deduplication**: O(1) via unique constraint
+
+### Query Patterns
+
+**High-Frequency Queries**:
+1. **Get Pending Emails**: Select emails WHERE is_sent = false ORDER BY sequence_number LIMIT batch_size
+2. **Check Duplicate Event**: Existence check in inbox_state by (message_id, consumer_id)
+3. **Mark Email Sent**: UPDATE outboxes SET is_sent = true, sent_at = NOW() WHERE id = ?
+
+**Write Patterns**:
+- **Insert Email**: Single INSERT per order event
+- **Update Email Status**: Single UPDATE after successful send
+- **Bulk Cleanup**: Batch DELETE for old sent emails (daily maintenance)
+
+### Database Sizing
+
+**Estimated Growth** (per 1,000 orders/day, assuming 1 email per order):
+- **outboxes**: ~500 KB/day (500 bytes/row × 1,000 rows)
+- **outbox_message**: ~1.5 MB/day (purged after 7 days)
+- **inbox_state**: ~500 KB/day (purged after 30 days)
+
+**Annual Storage** (with retention):
+- **outboxes**: ~180 MB/year (retained for 7 years = 1.26 GB)
+- **outbox_message**: ~10.5 MB (rolling 7-day window)
+- **inbox_state**: ~15 MB (rolling 30-day window)
+
+**Total Database Size** (7-year retention): ~1.5 GB + indexes (~3 GB total)
+
+## Data Lifecycle & Retention
+
+### Retention Policy
+
+- **outboxes**: 7 years (business and compliance requirements)
+- **outbox_message**: 7 days (after successful delivery)
+- **inbox_state**: 30 days (deduplication window)
+- **outbox_state**: Indefinite (small metadata table)
+
+### Archival Strategy
+
+**Hot Storage** (Active Database):
+- Unsent emails (pending delivery)
+- Recently sent emails (last 90 days)
+- Active inbox/outbox message records
+
+**Warm Storage** (Archive Database or Blob):
+- Sent emails (90 days - 2 years)
+- Queryable for customer service
+- Indexed for fast retrieval
+
+**Cold Storage** (Data Lake):
+- Historical emails (2+ years)
+- Compressed archives for compliance
+- Rarely accessed, batch retrieval only
+
+### Cleanup Jobs
+
+**Automated Maintenance**:
+- **Daily**: Purge old outbox_message records (sent more than 7 days ago)
+- **Weekly**: Purge old inbox_state records (consumed more than 30 days ago)
+- **Monthly**: Archive sent emails (sent more than 2 years ago) to cold storage
+- **Quarterly**: Vacuum database to reclaim space from deleted records
+
+## Monitoring & Observability
+
+### Key Performance Indicators
+
+**Email Metrics**:
+- **Pending Email Count**: Number of unsent emails in outbox
+- **Avg Send Latency**: Time from created_at to sent_at
+- **Send Success Rate**: Percentage of emails successfully delivered
+- **Send Failure Rate**: Percentage requiring retries or manual intervention
+- **Daily Email Volume**: Total emails created per day
+
+**Delivery Metrics**:
+- **SMTP Response Times**: Average time for email provider to accept
+- **Bounce Rate**: Percentage of emails rejected by recipient server
+- **Retry Count Distribution**: How many emails require 1, 2, 3+ retries
+- **Queue Depth**: Number of pending emails waiting for processing
+
+**Database Metrics**:
+- **Table Sizes**: Growth rate of outboxes table
+- **Query Performance**: p95/p99 latency for pending email queries
+- **Connection Pool Usage**: Active vs. available connections
+- **Disk Usage**: Current database size vs. allocated space
+
+### Health Checks
+
+**Database Connectivity**:
+- Verify database is reachable with simple query
+- Check connection pool availability
+
+**Email Queue Health**:
+- Alert if pending email count exceeds 1,000 (indicates delivery issues)
+- Alert if oldest pending email is more than 1 hour old (processing stalled)
+
+**Processing Health**:
+- Monitor emails sent per minute (should match expected throughput)
+- Alert if no emails sent in last 15 minutes (worker may be down)
+
+### Logging & Tracing
+
+**Structured Logging**:
+- Email creation logged with order_id and recipient email (masked)
+- Delivery attempts logged with SMTP response codes
+- Failures logged with error details and retry count
+- Cleanup operations logged with record counts
+
+**Distributed Tracing**:
+- OpenTelemetry spans for email processing
+- Correlation IDs link email to originating order event
+- End-to-end tracing from order event to email delivery
+
+## Security & Compliance
+
+### Data Classification
+
+- **Classification**: Internal - Contains customer PII (names and email addresses)
+- **Access Mode**: Read/Write - Notification Service only
+- **Residency**: East Asia region - Data sovereignty compliance
+- **Authoritative**: True - Single source of truth for notification history
+
+### Security Measures
+
+**Access Control**:
+- Database user with least-privilege permissions
+- No direct external access (internal microservices only)
+- Service-level authentication via connection strings
+- Row-level security not required (single-tenant per service)
+
+**Data Protection**:
+- Encryption at rest (Azure PostgreSQL managed encryption)
+- Encryption in transit (TLS 1.2+)
+- Email addresses masked in logs (first 3 chars + domain)
+- No sensitive payment data stored
+
+**Email Security**:
+- SPF, DKIM, and DMARC configured for domain authentication
+- SMTP credentials stored in secure key vault (Azure Key Vault)
+- Email content sanitized to prevent injection attacks
+- Rate limiting to prevent abuse
+
+**Audit Trail**:
+- All email creation and delivery logged with timestamps
+- Complete history reconstructable from database records
+- Immutable audit trail via retention policy
+- Access logs retained for 90 days
+
+### Compliance Considerations
+
+**GDPR / Privacy**:
+- Customer names and email addresses stored (PII)
+- Right to access: Query outboxes by email address
+- Right to erasure: Anonymize email addresses while retaining audit metadata
+- Right to portability: Export customer's email history
+
+**CAN-SPAM Act**:
+- Transactional emails exempt from unsubscribe requirements
+- Accurate sender information in all emails
+- Non-deceptive subject lines
+- Physical address included in email footer
+
+**Data Retention**:
+- 7-year retention for business and tax purposes
+- Automatic archival after 2 years
+- Secure deletion after retention period expires
+
+## Disaster Recovery & High Availability
+
+### Backup Strategy
+
+**Automated Backups** (Azure PostgreSQL Flexible Server):
+- **Point-in-Time Recovery (PITR)**: 30-day retention
+- **Backup Frequency**: Continuous transaction log streaming
+- **Recovery Objective**: RPO less than 5 minutes, RTO less than 1 hour
+- **Geo-Redundancy**: Backups replicated to secondary region
+
+**Manual Snapshots**:
+- Pre-deployment snapshots before schema changes
+- Retained for 90 days
+- Used for rollback scenarios
+
+### High Availability
+
+**Azure PostgreSQL HA Configuration**:
+- **Availability Zone Redundancy**: Synchronous replica in different AZ
+- **Automatic Failover**: Sub-60-second failover time
+- **Read Replicas**: Optional for reporting queries
+- **Connection Pooling**: PgBouncer for efficient connection management
+
+### Disaster Recovery Procedures
+
+**Failure Scenarios**:
+
+1. **Database Connection Failure**:
+   - Connection pool retry with exponential backoff
+   - Circuit breaker trips after 5 consecutive failures
+   - Graceful degradation: Queue emails in memory temporarily
+
+2. **Email Provider Outage**:
+   - Emails remain in outbox with is_sent = false
+   - Automatic retry when provider recovers
+   - Failover to backup SMTP provider if configured
+
+3. **Complete Database Loss**:
+   - Failover to geo-redundant replica (RTO approximately 1 hour)
+   - Restore from latest backup snapshot
+   - Unsent emails are preserved and automatically retried
+
+**Recovery Testing**:
+- Quarterly disaster recovery drills
+- Automated backup restoration tests
+- Chaos engineering experiments (random failures)
+
+## Integration Points
+
+### Upstream Event Sources
+
+**Finance Service**:
+- Receives PlaceOrderCommand when order is placed
+- Creates order confirmation email for customer
+
+**Ordering Service**:
+- Receives CompleteOrderCommand when order is fulfilled
+- Creates order completion email with tracking info
+
+**Ordering Service**:
+- Receives CancelOrderCommand when order is cancelled
+- Creates order cancellation email with refund info
+
+### Downstream Email Providers
+
+**SendGrid** (Production):
+- Primary email delivery service
+- API integration via MailKit SMTP
+- Rate limits: 100 emails/second
+- Delivery tracking via webhooks
+
+**MailPit** (Development):
+- Local email testing server
+- SMTP server for development environments
+- Web UI for viewing sent emails
+
+### Management Events
+
+**CleanUpSentEmailIntegrationEvent**:
+- Scheduled event for periodic cleanup
+- Triggers archival of old sent emails
+- Maintains database size within limits
+
+**ResendErrorEmailIntegrationEvent**:
+- Manual retry trigger for failed emails
+- Allows operations team to resend specific emails
+- Bypasses automatic retry limits
