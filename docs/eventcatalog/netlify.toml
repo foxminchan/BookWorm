@@ -2,6 +2,7 @@
 base = "docs/eventcatalog"
 publish = "dist"
 command = "bun run build"
+environment = { NODE_OPTIONS = "--max-old-space-size=4096" }
 
 [functions]
 directory = "docs/eventcatalog/netlify/functions"
