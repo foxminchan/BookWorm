@@ -66,8 +66,6 @@ jobs:
 
       - name: Security Scan
         uses: ./.github/actions/security-scan
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Dependency Scan
         uses: actions/dependency-review-action@v4
