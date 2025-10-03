@@ -60,6 +60,10 @@
       Include="..\..\Services\Scheduler\BookWorm.Scheduler\BookWorm.Scheduler.csproj"
       AspireProjectMetadataTypeName="Scheduler"
     />
+    <ProjectReference
+      Include="..\..\Services\Scheduler\BookWorm.Scheduler.Migrator\BookWorm.Scheduler.Migrator.csproj"
+      AspireProjectMetadataTypeName="SchedulerMigrator"
+    />
   </ItemGroup>
   <ItemGroup Label="Integrations">
     <ProjectReference
