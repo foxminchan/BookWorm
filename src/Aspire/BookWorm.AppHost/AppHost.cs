@@ -259,16 +259,22 @@ var financeApi = builder
     .WithReference(queue)
     .WaitFor(queue);
 
+var schedulerMigrator = builder
+    .AddProject<SchedulerMigrator>(Services.SchedulerMigrator)
+    .WithReference(schedulerDb)
+    .WaitFor(schedulerDb);
+
 var schedulerApi = builder
     .AddProject<Scheduler>(Services.Scheduler)
-    .WithReference(schedulerDb)
-    .WaitFor(schedulerDb)
     .WithReference(queue)
     .WaitFor(queue)
+    .WithReference(schedulerDb)
+    .WaitForCompletion(schedulerMigrator)
     .WithEnvironment("TickerQBasicAuth__Username", schedulerUserName)
     .WithEnvironment("TickerQBasicAuth__Password", schedulerPassword);
 
 schedulerUserName.WithParentRelationship(schedulerApi);
+schedulerMigrator.WithParentRelationship(schedulerApi);
 
 var gateway = builder
     .AddApiGatewayProxy()
