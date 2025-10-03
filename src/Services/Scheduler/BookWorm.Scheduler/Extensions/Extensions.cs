@@ -12,8 +12,7 @@ internal static class Extensions
         // Add database configuration
         builder.AddAzurePostgresDbContext<SchedulerDbContext>(
             Components.Database.Scheduler,
-            _ => services.AddMigration<SchedulerDbContext>(),
-            true
+            excludeDefaultInterceptors: true
         );
 
         services.AddScoped<ISchedulerDbContext>(sp => sp.GetRequiredService<SchedulerDbContext>());
@@ -46,7 +45,6 @@ internal static class Extensions
             opt.SetMaxConcurrency(Environment.ProcessorCount);
             opt.SetInstanceIdentifier(Environment.MachineName);
             opt.UpdateMissedJobCheckDelay(TimeSpan.FromMinutes(5));
-            // Commenting out the first times to apply the migrations
             opt.AddOperationalStore<SchedulerDbContext>(efOpt =>
             {
                 efOpt.CancelMissedTickersOnAppStart();
