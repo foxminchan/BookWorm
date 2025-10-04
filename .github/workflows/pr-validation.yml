@@ -63,11 +63,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - name: Security Scan
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
 
       - name: Dependency Scan
         uses: actions/dependency-review-action@v4

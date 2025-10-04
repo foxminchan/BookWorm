@@ -87,7 +87,6 @@ var signalR = builder
 
 var blobStorage = storage.AddBlobContainer(Components.Azure.Storage.BlobContainer);
 
-var chatDb = postgres.AddDatabase(Components.Database.Chat);
 var ratingDb = postgres.AddDatabase(Components.Database.Rating);
 var healthDb = postgres.AddDatabase(Components.Database.Health);
 var catalogDb = postgres.AddDatabase(Components.Database.Catalog);
@@ -199,8 +198,8 @@ var chatApi = builder
     .WaitFor(redis)
     .WithReference(mcp)
     .WaitFor(mcp)
-    .WithReference(chatDb)
-    .WaitFor(chatDb)
+    .WithReference(qdrant)
+    .WaitFor(qdrant)
     .WithIdP(keycloak, kcRealmName)
     .WithReference(signalR)
     .WaitFor(signalR)
@@ -243,6 +242,7 @@ var orderingApi = builder
 
 var ratingApi = builder
     .AddProject<Rating>(Services.Rating)
+    .WithOllama()
     .WithReference(ratingDb)
     .WaitFor(ratingDb)
     .WithReference(queue)

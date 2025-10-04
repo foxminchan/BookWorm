@@ -1,4 +1,5 @@
-﻿using BookWorm.Chat.Features.Create;
+﻿using BookWorm.Chat.Features;
+using BookWorm.Chat.Features.Create;
 using BookWorm.Constants.Core;
 using FluentValidation.TestHelper;
 
@@ -12,7 +13,8 @@ public sealed class CreateChatValidatorTests
     public void GivenValidCommand_WhenValidating_ThenShouldNotHaveAnyValidationErrors()
     {
         // Arrange
-        var command = new CreateChatCommand("Valid Chat Name");
+        var prompt = new Prompt("What is the best selling book in BookWorm?");
+        var command = new CreateChatCommand(prompt);
 
         // Act
         var result = _validator.TestValidate(command);
@@ -26,87 +28,158 @@ public sealed class CreateChatValidatorTests
     [Arguments("")]
     [Arguments(" ")]
     [Arguments("   ")]
-    public void GivenEmptyOrNullName_WhenValidating_ThenShouldHaveValidationError(string? name)
+    public void GivenEmptyOrNullPromptText_WhenValidating_ThenShouldHaveValidationError(
+        string? promptText
+    )
     {
         // Arrange
-        var command = new CreateChatCommand(name!);
+        var prompt = new Prompt(promptText!);
+        var command = new CreateChatCommand(prompt);
 
         // Act
         var result = _validator.TestValidate(command);
 
         // Assert
-        result.ShouldHaveValidationErrorFor(x => x.Name);
+        result.ShouldHaveValidationErrorFor(x => x.Prompt.Text);
     }
 
     [Test]
-    public void GivenNameExceedingMaxLength_WhenValidating_ThenShouldHaveValidationError()
+    public void GivenPromptTextExceedingMaxLength_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var longName = new string('A', DataSchemaLength.Large + 1);
-        var command = new CreateChatCommand(longName);
+        var longPromptText = new string('A', DataSchemaLength.Max + 1);
+        var prompt = new Prompt(longPromptText);
+        var command = new CreateChatCommand(prompt);
 
         // Act
         var result = _validator.TestValidate(command);
 
         // Assert
-        result.ShouldHaveValidationErrorFor(x => x.Name);
+        result.ShouldHaveValidationErrorFor(x => x.Prompt.Text);
     }
 
     [Test]
-    public void GivenNameAtMaxLength_WhenValidating_ThenShouldNotHaveValidationError()
+    public void GivenPromptTextAtMaxLength_WhenValidating_ThenShouldNotHaveValidationError()
     {
         // Arrange
-        var maxLengthName = new string('A', DataSchemaLength.Large);
-        var command = new CreateChatCommand(maxLengthName);
+        var maxLengthPromptText = new string('A', DataSchemaLength.Max);
+        var prompt = new Prompt(maxLengthPromptText);
+        var command = new CreateChatCommand(prompt);
 
         // Act
         var result = _validator.TestValidate(command);
 
         // Assert
-        result.ShouldNotHaveValidationErrorFor(x => x.Name);
+        result.ShouldNotHaveValidationErrorFor(x => x.Prompt.Text);
     }
 
     [Test]
-    public void GivenNameJustOverMaxLength_WhenValidating_ThenShouldHaveValidationError()
+    public void GivenPromptTextJustOverMaxLength_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var overMaxLengthName = new string('B', DataSchemaLength.Large + 1);
-        var command = new CreateChatCommand(overMaxLengthName);
+        var overMaxLengthPromptText = new string('B', DataSchemaLength.Max + 1);
+        var prompt = new Prompt(overMaxLengthPromptText);
+        var command = new CreateChatCommand(prompt);
 
         // Act
         var result = _validator.TestValidate(command);
 
         // Assert
         result
-            .ShouldHaveValidationErrorFor(x => x.Name)
+            .ShouldHaveValidationErrorFor(x => x.Prompt.Text)
             .WithErrorMessage(
-                $"The length of 'Name' must be {DataSchemaLength.Large} characters or fewer. You entered {DataSchemaLength.Large + 1} characters."
+                $"The length of 'Prompt Text' must be {DataSchemaLength.Max} characters or fewer. You entered {DataSchemaLength.Max + 1} characters."
             );
     }
 
     [Test]
-    public void GivenValidChatNameWithSpecialCharacters_WhenValidating_ThenShouldNotHaveValidationError()
+    public void GivenValidPromptTextWithSpecialCharacters_WhenValidating_ThenShouldNotHaveValidationError()
     {
         // Arrange
-        var command = new CreateChatCommand("Chat-Name_123!@#");
+        var prompt = new Prompt("What about émojis 🚀 and spëcial chars!?");
+        var command = new CreateChatCommand(prompt);
 
         // Act
         var result = _validator.TestValidate(command);
 
         // Assert
-        result.ShouldNotHaveValidationErrorFor(x => x.Name);
+        result.ShouldNotHaveValidationErrorFor(x => x.Prompt.Text);
     }
 
     [Test]
-    public void GivenValidChatNameWithUnicodeCharacters_WhenValidating_ThenShouldNotHaveValidationError()
+    public void GivenValidPromptTextWithUnicodeCharacters_WhenValidating_ThenShouldNotHaveValidationError()
     {
         // Arrange
-        var command = new CreateChatCommand("Chat 聊天 💬");
+        var prompt = new Prompt("Chat 聊天 💬 question about books");
+        var command = new CreateChatCommand(prompt);
 
         // Act
         var result = _validator.TestValidate(command);
 
         // Assert
-        result.ShouldNotHaveValidationErrorFor(x => x.Name);
+        result.ShouldNotHaveValidationErrorFor(x => x.Prompt.Text);
+    }
+
+    [Test]
+    public void GivenMultipleCommandsWithDifferentPromptLengths_WhenValidating_ThenShouldValidateCorrectly()
+    {
+        // Arrange
+        var shortPromptCommand = new CreateChatCommand(new("Short"));
+        var maxPromptCommand = new CreateChatCommand(new(new('A', DataSchemaLength.Max)));
+        var longPromptCommand = new CreateChatCommand(new(new('A', DataSchemaLength.Max + 1)));
+
+        // Act
+        var shortResult = _validator.TestValidate(shortPromptCommand);
+        var maxResult = _validator.TestValidate(maxPromptCommand);
+        var longResult = _validator.TestValidate(longPromptCommand);
+
+        // Assert
+        shortResult.ShouldNotHaveValidationErrorFor(x => x.Prompt.Text);
+        maxResult.ShouldNotHaveValidationErrorFor(x => x.Prompt.Text);
+        longResult.ShouldHaveValidationErrorFor(x => x.Prompt.Text);
+    }
+
+    [Test]
+    public void GivenCommandWithMinimalValidInput_WhenValidating_ThenShouldNotHaveValidationErrors()
+    {
+        // Arrange
+        var prompt = new Prompt("A");
+        var command = new CreateChatCommand(prompt);
+
+        // Act
+        var result = _validator.TestValidate(command);
+
+        // Assert
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Test]
+    public void GivenCommandWithLongValidPrompt_WhenValidating_ThenShouldNotHaveValidationErrors()
+    {
+        // Arrange
+        var longValidPrompt = new string('A', 500);
+        var prompt = new Prompt(longValidPrompt);
+        var command = new CreateChatCommand(prompt);
+
+        // Act
+        var result = _validator.TestValidate(command);
+
+        // Assert
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Test]
+    public void GivenCommandWithNewLineAndTabCharacters_WhenValidating_ThenShouldNotHaveValidationError()
+    {
+        // Arrange
+        var promptWithSpecialChars = "What is the\nbest selling\tbook in BookWorm?";
+        var prompt = new Prompt(promptWithSpecialChars);
+        var command = new CreateChatCommand(prompt);
+
+        // Act
+        var result = _validator.TestValidate(command);
+
+        // Assert
+        result.ShouldNotHaveValidationErrorFor(x => x.Prompt.Text);
     }
 }

@@ -1,16 +1,16 @@
-using Microsoft.SemanticKernel.Agents;
+using Microsoft.Agents.AI;
 
 namespace BookWorm.Chat.Infrastructure.AgentOrchestration;
 
 public sealed class OrchestrateAgents(
-    [FromKeyedServices(Constants.Other.Agents.BookAgent)] ChatCompletionAgent bookAgent,
-    [FromKeyedServices(Constants.Other.Agents.LanguageAgent)] ChatCompletionAgent languageAgent,
-    [FromKeyedServices(Constants.Other.Agents.SentimentAgent)] ChatCompletionAgent sentimentAgent,
-    [FromKeyedServices(Constants.Other.Agents.SummarizeAgent)] ChatCompletionAgent summarizeAgent
+    [FromKeyedServices(Constants.Other.Agents.BookAgent)] AIAgent bookAgent,
+    [FromKeyedServices(Constants.Other.Agents.LanguageAgent)] AIAgent languageAgent,
+    [FromKeyedServices(Constants.Other.Agents.SentimentAgent)] AIAgent sentimentAgent,
+    [FromKeyedServices(Constants.Other.Agents.SummarizeAgent)] AIAgent summarizeAgent
 )
 {
-    public ChatCompletionAgent BookAgent { get; } = bookAgent;
-    public ChatCompletionAgent LanguageAgent { get; } = languageAgent;
-    public ChatCompletionAgent SentimentAgent { get; } = sentimentAgent;
-    public ChatCompletionAgent SummarizeAgent { get; } = summarizeAgent;
+    public AIAgent BookAgent { get; } = bookAgent;
+    public AIAgent LanguageAgent { get; } = languageAgent;
+    public AIAgent SentimentAgent { get; } = sentimentAgent;
+    public AIAgent SummarizeAgent { get; } = summarizeAgent;
 }

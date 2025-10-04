@@ -1,36 +1,26 @@
-﻿using BookWorm.Chat.Extensions;
-using BookWorm.Chat.Features;
+﻿using BookWorm.Chat.Features;
 using BookWorm.Chat.Infrastructure.AgentOrchestration;
 using BookWorm.Chat.Infrastructure.Backplane;
-using BookWorm.Chat.Infrastructure.ChatHistory;
-using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace BookWorm.Chat.Infrastructure.ChatStreaming;
 
 public sealed class ChatStreaming(
-    IChatHistoryService chatHistoryService,
     IAgentOrchestrationService orchestrationService,
-    AppSettings appSettings,
+    RedisBackplaneService backplaneService,
     ILogger<ChatStreaming> logger,
-    RedisBackplaneService backplaneService
+    AppSettings appSettings
 ) : IChatStreaming
 {
     private readonly TimeSpan _defaultStreamItemTimeout = appSettings.StreamTimeout;
 
-    public async Task AddStreamingMessage(Guid conversationId, string text)
+    public Task AddStreamingMessage(Guid conversationId, string text)
     {
         logger.LogInformation(
             "Adding streaming message for conversation {ConversationId}",
             conversationId
         );
 
-        chatHistoryService.AddUserMessage(text);
-
-        var messages = await chatHistoryService.FetchPromptMessagesAsync(conversationId, text);
-        var history = messages.ToChatHistory();
-        chatHistoryService.AddMessages(history);
-
-        _ = StreamReplyAsync(conversationId)
+        _ = StreamReplyAsync(conversationId, text)
             .ContinueWith(
                 t =>
                 {
@@ -45,6 +35,8 @@ public sealed class ChatStreaming(
                 },
                 TaskScheduler.Default
             );
+
+        return Task.CompletedTask;
     }
 
     public async IAsyncEnumerable<ClientMessageFragment> GetMessageStream(
@@ -83,84 +75,73 @@ public sealed class ChatStreaming(
         }
     }
 
-    private async Task StreamReplyAsync(Guid conversationId)
+    private async Task StreamReplyAsync(Guid conversationId, string text)
     {
         var assistantReplyId = Guid.CreateVersion7();
 
         logger.LogInformation(
-            "Adding streaming message for conversation {ConversationId} {MessageId}",
+            "Processing message for conversation {ConversationId} {MessageId}",
             conversationId,
             assistantReplyId
         );
 
         var token = backplaneService.CancellationManager.GetCancellationToken(assistantReplyId);
-        var fragment = new ClientMessageFragment(
+
+        // Publish user message fragment
+        var userFragment = new ClientMessageFragment(
+            Guid.CreateVersion7(),
+            ChatRole.User.Value,
+            text,
+            Guid.CreateVersion7(),
+            true
+        );
+        await backplaneService.ConversationState.PublishFragmentAsync(conversationId, userFragment);
+
+        // Publish initial assistant fragment
+        var initialFragment = new ClientMessageFragment(
             assistantReplyId,
-            AuthorRole.Assistant.Label,
+            ChatRole.Assistant.Value,
             "Generating reply...",
             Guid.CreateVersion7()
         );
 
         try
         {
-            await backplaneService.ConversationState.PublishFragmentAsync(conversationId, fragment);
+            await backplaneService.ConversationState.PublishFragmentAsync(
+                conversationId,
+                initialFragment
+            );
 
             using var tokenSource = CancellationTokenSource.CreateLinkedTokenSource(token);
             tokenSource.CancelAfter(_defaultStreamItemTimeout);
 
-            // Get the last user message
-            var lastUserMessage = chatHistoryService.GetLastUserMessage();
-
-            if (string.IsNullOrEmpty(lastUserMessage))
+            await foreach (
+                var chunk in (
+                    (
+                        await orchestrationService.ProcessAgentsSequentiallyAsync(
+                            text,
+                            tokenSource.Token
+                        )
+                    ).WithCancellation(tokenSource.Token)
+                )
+            )
             {
-                logger.LogWarning(
-                    "No user message found in chat history for conversation {ConversationId}",
-                    conversationId
-                );
-                var errorFragment = new ClientMessageFragment(
+                var finalFragment = new ClientMessageFragment(
                     assistantReplyId,
-                    AuthorRole.Assistant.Label,
-                    "Unable to process request: No user message found",
-                    Guid.CreateVersion7(),
-                    true
+                    ChatRole.Assistant.Value,
+                    chunk.Text,
+                    Guid.CreateVersion7()
                 );
+
                 await backplaneService.ConversationState.PublishFragmentAsync(
                     conversationId,
-                    errorFragment
+                    finalFragment
                 );
-                return;
             }
 
-            // Process agents using orchestration service
-            var combinedMessage = await orchestrationService.ProcessAgentsSequentiallyAsync(
-                lastUserMessage,
+            await backplaneService.ConversationState.CompleteAsync(
                 conversationId,
-                assistantReplyId,
-                tokenSource.Token
-            );
-
-            // Publish the final fragment
-            var finalFragment = new ClientMessageFragment(
-                assistantReplyId,
-                AuthorRole.Assistant.Label,
-                combinedMessage,
-                Guid.CreateVersion7(),
-                true
-            );
-
-            await backplaneService.ConversationState.PublishFragmentAsync(
-                conversationId,
-                finalFragment
-            );
-
-            // Add the completed message to the history
-            chatHistoryService.AddAssistantMessage(combinedMessage);
-
-            // Save assistant's message to database
-            await chatHistoryService.SaveAssistantMessageAsync(
-                conversationId,
-                assistantReplyId,
-                combinedMessage
+                assistantReplyId
             );
         }
         catch (OperationCanceledException ex)
@@ -172,10 +153,9 @@ public sealed class ChatStreaming(
                 assistantReplyId
             );
 
-            // Publish cancelled fragment
             var cancelledFragment = new ClientMessageFragment(
                 assistantReplyId,
-                AuthorRole.Assistant.Label,
+                ChatRole.Assistant.Value,
                 "Message generation cancelled",
                 Guid.CreateVersion7(),
                 true
@@ -197,7 +177,7 @@ public sealed class ChatStreaming(
 
             var errorFragment = new ClientMessageFragment(
                 assistantReplyId,
-                AuthorRole.Assistant.Label,
+                ChatRole.Assistant.Value,
                 "An error occurred while generating the response",
                 Guid.CreateVersion7(),
                 true

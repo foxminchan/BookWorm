@@ -72,12 +72,12 @@ public static class KeycloakExtensions
     }
 
     /// <summary>
-    ///     Configures a <see cref="KeycloakResource"/> to use an external PostgreSQL database.
+    ///     Configures a <see cref="KeycloakResource" /> to use an external PostgreSQL database.
     /// </summary>
-    /// <param name="builder">The <see cref="IResourceBuilder{KeycloakResource}"/> instance.</param>
+    /// <param name="builder">The <see cref="IResourceBuilder{KeycloakResource}" /> instance.</param>
     /// <param name="pgDatabase">The PostgreSQL database resource builder.</param>
     /// <param name="xaEnabled">Whether to enable XA transactions. Default is false.</param>
-    /// <returns>The <see cref="IResourceBuilder{KeycloakResource}"/> for method chaining.</returns>
+    /// <returns>The <see cref="IResourceBuilder{KeycloakResource}" /> for method chaining.</returns>
     public static IResourceBuilder<KeycloakResource> WithPostgres(
         this IResourceBuilder<KeycloakResource> builder,
         IResourceBuilder<AzurePostgresFlexibleServerDatabaseResource> pgDatabase,

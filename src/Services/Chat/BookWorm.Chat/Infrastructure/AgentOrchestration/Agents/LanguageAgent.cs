@@ -1,17 +1,15 @@
-﻿using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Agents;
-using Microsoft.SemanticKernel.Connectors.Ollama;
+﻿using A2A;
 
 namespace BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
 
-public static class LanguageAgent
+internal static class LanguageAgent
 {
-    private const string Name = Constants.Other.Agents.LanguageAgent;
+    public const string Name = Constants.Other.Agents.LanguageAgent;
 
-    private const string Description =
+    public const string Description =
         "An agent that detects user input language and translates it to English for better context understanding.";
 
-    private const string Instructions = """
+    public const string Instructions = """
         You are a language detection and translation assistant for BookWorm bookstore. Your primary responsibilities are:
 
         **Language Detection:**
@@ -34,15 +32,60 @@ public static class LanguageAgent
         Your goal is to ensure all user communications are accessible in English for proper processing by other agents in the system.
         """;
 
-    public static ChatCompletionAgent CreateAgent(Kernel kernel)
-    {
-        return new()
+    public static AgentCard AgentCard { get; } =
+        new()
         {
-            Instructions = Instructions,
             Name = Name,
             Description = Description,
-            Kernel = kernel,
-            Arguments = new(new OllamaPromptExecutionSettings { Temperature = 0.1f }),
+            Version = "1.0.0",
+            Provider = new() { Organization = nameof(BookWorm) },
+            DefaultInputModes = ["text"],
+            DefaultOutputModes = ["text"],
+            Capabilities = new() { Streaming = false, PushNotifications = false },
+            Skills =
+            [
+                new()
+                {
+                    Id = "language_agent_language_detection",
+                    Tags = ["detection", "language", "identification"],
+                    Name = "Language Detection",
+                    Description =
+                        "Automatically detect the language of user input and identify if translation is needed",
+                    Examples =
+                    [
+                        "Detect the language of this text",
+                        "Is this message in English?",
+                        "What language is the user speaking?",
+                    ],
+                },
+                new()
+                {
+                    Id = "language_agent_translation_to_english",
+                    Tags = ["translation", "english", "conversion"],
+                    Name = "Translation to English",
+                    Description =
+                        "Translate non-English text to clear, natural English while preserving meaning and context",
+                    Examples =
+                    [
+                        "Translate this Spanish text to English",
+                        "Convert this French message to English",
+                        "Provide an English translation of this user input",
+                    ],
+                },
+                new()
+                {
+                    Id = "language_agent_context_preservation",
+                    Tags = ["context", "intent", "tone"],
+                    Name = "Context Preservation",
+                    Description =
+                        "Maintain the original intent, tone, and context during translation for accurate processing",
+                    Examples =
+                    [
+                        "Translate while preserving the user's intent",
+                        "Keep the original meaning in the English translation",
+                        "Ensure the tone is maintained in translation",
+                    ],
+                },
+            ],
         };
-    }
 }

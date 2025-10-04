@@ -1,18 +1,13 @@
-﻿using BookWorm.Chassis.AI.Extensions;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Agents;
-using Microsoft.SemanticKernel.Connectors.Ollama;
+﻿namespace BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
 
-namespace BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
-
-public static class BookAgent
+internal static class BookAgent
 {
-    private const string Name = Constants.Other.Agents.BookAgent;
+    public const string Name = Constants.Other.Agents.BookAgent;
 
-    private const string Description =
+    public const string Description =
         "An agent that searches for books, provides relevant information, and offers personalized recommendations based on user preferences and behavior.";
 
-    private const string Instructions = """
+    public const string Instructions = """
         You are an AI assistant for BookWorm bookstore that provides comprehensive book assistance including:
 
         **Search Capabilities:**
@@ -36,32 +31,4 @@ public static class BookAgent
 
         Whether users are searching for specific books or looking for recommendations, help them discover their next great read!
         """;
-
-    public static async Task<ChatCompletionAgent> CreateAgentAsync(Kernel kernel)
-    {
-        var agentKernel = kernel.Clone();
-
-        var tools = await agentKernel.MapToFunctionsAsync();
-        var plugins = agentKernel.MapToAgentPlugin(Constants.Other.Agents.RatingAgent);
-
-        agentKernel.Plugins.AddFromFunctions(nameof(BookWorm), tools);
-        agentKernel.Plugins.Add(plugins);
-
-        return new()
-        {
-            Instructions = Instructions,
-            Name = Name,
-            Description = Description,
-            Kernel = agentKernel,
-            Arguments = new(
-                new OllamaPromptExecutionSettings
-                {
-                    Temperature = 0.3f,
-                    FunctionChoiceBehavior = FunctionChoiceBehavior.Auto(
-                        options: new() { RetainArgumentTypes = true }
-                    ),
-                }
-            ),
-        };
-    }
 }

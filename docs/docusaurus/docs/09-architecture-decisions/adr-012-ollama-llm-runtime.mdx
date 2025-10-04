@@ -31,7 +31,7 @@ The choice of LLM runtime significantly impacts system performance, operational 
 
 ## Decision
 
-Adopt **Ollama** as the primary Large Language Model runtime, integrated with **Microsoft Semantic Kernel** for AI orchestration, to provide powerful, cost-effective, and privacy-conscious AI capabilities across BookWorm's platform.
+Adopt **Ollama** as the primary Large Language Model runtime, integrated with **Microsoft Agent Framework** for AI orchestration, to provide powerful, cost-effective, and privacy-conscious AI capabilities across BookWorm's platform.
 
 ### AI Architecture Strategy
 
@@ -88,7 +88,7 @@ Adopt **Ollama** as the primary Large Language Model runtime, integrated with **
 4. **Easy Migration**: Switch between models without changing application code
 5. **Experimentation**: Rapid prototyping with new models and approaches
 
-### Why Semantic Kernel Integration?
+### Why Agent Framework Integration?
 
 #### .NET Ecosystem Alignment
 1. **Native .NET Integration**: First-class support for .NET applications and patterns
@@ -115,8 +115,8 @@ graph TB
         API[BookWorm API<br/>External Integrations]
     end
 
-    subgraph "Semantic Kernel Layer"
-        SKOrchestrator[Semantic Kernel<br/>Orchestrator]
+    subgraph "Agent Framework Layer"
+        SKOrchestrator[Agent Framework<br/>Orchestrator]
 
         subgraph "AI Services"
             ChatService[Chat Service<br/>Customer Support]

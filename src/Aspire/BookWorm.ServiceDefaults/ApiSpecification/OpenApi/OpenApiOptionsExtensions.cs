@@ -1,4 +1,5 @@
 ﻿using Asp.Versioning.ApiExplorer;
+using BookWorm.Chassis.Utilities;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
