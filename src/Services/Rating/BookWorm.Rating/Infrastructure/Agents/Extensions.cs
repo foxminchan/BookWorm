@@ -19,24 +19,22 @@ public static class Extensions
 
         builder.AddAgentsTelemetry();
 
-        services.AddA2AClient(
-            Constants.Other.Agents.SummarizeAgent,
-            $"{Protocols.HttpOrHttps}://{Constants.Aspire.Services.Chatting}",
-            "a2a"
+        services.AddHttpClient<AgentDiscoveryClient>(client =>
+            client.BaseAddress = new(
+                $"{Protocols.HttpOrHttps}://{Constants.Aspire.Services.Chatting}"
+            )
         );
 
         services.AddSingleton<ReviewTool>();
 
         builder.AddAIAgent(
             Constants.Other.Agents.SummarizeAgent,
-            (sp, key) =>
-            {
-                var a2aAgent = sp.GetRequiredService<A2AAgentClient>();
+            (_, key) => A2AClientExtensions.GetA2AAgent(Constants.Aspire.Services.Chatting, key)
+        );
 
-                var agent = a2aAgent.GetAIAgent(key);
-
-                return agent;
-            }
+        builder.AddAIAgent(
+            Constants.Other.Agents.LanguageAgent,
+            (_, key) => A2AClientExtensions.GetA2AAgent(Constants.Aspire.Services.Chatting, key)
         );
 
         builder.AddAIAgent(

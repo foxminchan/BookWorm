@@ -43,7 +43,7 @@ public static class ActorFrameworkWebApplicationExtensions
             .WithName("GetAgents");
     }
 
-    internal sealed record AgentDiscoveryCard
+    private sealed record AgentDiscoveryCard
     {
         public required string Name { get; init; }
 

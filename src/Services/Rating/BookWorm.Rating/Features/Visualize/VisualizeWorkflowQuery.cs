@@ -1,19 +1,19 @@
 ﻿using BookWorm.Chassis.CQRS.Query;
-using BookWorm.Chat.Infrastructure.AgentOrchestration;
+using BookWorm.Rating.Infrastructure.Summarizer;
 using BookWorm.SharedKernel;
 using Microsoft.Agents.AI.Workflows;
 
-namespace BookWorm.Chat.Features.Visualizer;
+namespace BookWorm.Rating.Features.Visualize;
 
 public sealed record VisualizeWorkflowQuery(VisualizationType Type = VisualizationType.Mermaid)
     : IQuery<string>;
 
-public sealed class VisualizerWorkflowHandler(IAgentOrchestrationService agentOrchestrationService)
+public sealed class VisualizerWorkflowHandler(ISummarizer summarizer)
     : IQueryHandler<VisualizeWorkflowQuery, string>
 {
     public Task<string> Handle(VisualizeWorkflowQuery request, CancellationToken cancellationToken)
     {
-        var workflow = agentOrchestrationService.BuildAgentsWorkflow();
+        var workflow = summarizer.BuildAgentsWorkflow();
 
         return Task.FromResult(
             request.Type switch

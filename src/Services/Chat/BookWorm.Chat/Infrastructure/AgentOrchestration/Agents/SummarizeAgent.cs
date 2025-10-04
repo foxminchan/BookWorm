@@ -47,15 +47,38 @@ internal static class SummarizeAgent
             [
                 new()
                 {
-                    Id = "id_summarize_agent",
-                    Name = Name,
-                    Description = Description,
-                    Tags = ["summarization", "text-processing", "chat", "semantic-kernel"],
+                    Name = "Text Summarization",
+                    Description =
+                        "Condense lengthy user messages while preserving essential information and intent",
                     Examples =
                     [
                         "Summarize this long customer message about book preferences.",
-                        "Extract the key points from this book review.",
                         "Condense this user inquiry while preserving the main request.",
+                        "Create a brief summary of this conversation",
+                    ],
+                },
+                new()
+                {
+                    Name = "Key Point Extraction",
+                    Description =
+                        "Extract key points, questions, and requests from user input including book titles, authors, and genres",
+                    Examples =
+                    [
+                        "Extract the key points from this book review.",
+                        "What are the main topics in this user message?",
+                        "Identify the book preferences from this text",
+                    ],
+                },
+                new()
+                {
+                    Name = "Context Preservation",
+                    Description =
+                        "Maintain context and intent while creating concise summaries for downstream agents",
+                    Examples =
+                    [
+                        "Summarize this while keeping the context for the Book Agent",
+                        "Preserve the user's intent in a shorter format",
+                        "Create a context-aware summary of this request",
                     ],
                 },
             ],

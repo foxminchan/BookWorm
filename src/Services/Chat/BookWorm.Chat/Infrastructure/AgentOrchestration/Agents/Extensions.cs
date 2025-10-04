@@ -14,10 +14,8 @@ internal static class Extensions
     {
         var services = builder.Services;
 
-        services.AddA2AClient(
-            Constants.Other.Agents.RatingAgent,
-            $"{Protocols.HttpOrHttps}://{Services.Rating}",
-            "a2a"
+        services.AddHttpClient<AgentDiscoveryClient>(client =>
+            client.BaseAddress = new($"{Protocols.HttpOrHttps}://{Services.Rating}")
         );
 
         builder.AddAIAgent(
@@ -26,7 +24,6 @@ internal static class Extensions
             {
                 var chatClient = sp.GetRequiredService<IChatClient>();
                 var mcpClient = sp.GetRequiredService<McpClient>();
-                var a2aAgent = sp.GetRequiredService<A2AAgentClient>();
 
                 var agent = new ChatClientAgent(
                     chatClient,
@@ -40,8 +37,8 @@ internal static class Extensions
                             Tools =
                             [
                                 .. mcpClient.ListToolsAsync().Preserve().GetAwaiter().GetResult(),
-                                a2aAgent
-                                    .GetAIAgent(Constants.Other.Agents.RatingAgent)
+                                A2AClientExtensions
+                                    .GetA2AAgent(Services.Rating, key)
                                     .AsAIFunction(),
                             ],
                         },

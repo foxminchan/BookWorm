@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Chat.Features.Visualizer;
+﻿namespace BookWorm.Rating.Features.Visualize;
 
 public sealed class VisualizeWorkflowValidator : AbstractValidator<VisualizeWorkflowQuery>
 {

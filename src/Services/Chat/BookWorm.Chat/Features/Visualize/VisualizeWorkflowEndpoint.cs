@@ -1,6 +1,6 @@
 ﻿using System.Net.Mime;
 
-namespace BookWorm.Chat.Features.Visualizer;
+namespace BookWorm.Chat.Features.Visualize;
 
 public sealed class VisualizeWorkflowEndpoint
     : IEndpoint<Ok<string>, VisualizeWorkflowQuery, ISender>

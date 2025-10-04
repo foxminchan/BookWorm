@@ -64,17 +64,50 @@ public static class RatingAgent
             [
                 new()
                 {
-                    Id = "id_rating_agent",
-                    Name = Name,
-                    Description = Description,
-                    Tags = ["rating", "book", "semantic-kernel", "contextual-selection", "a2a"],
+                    Name = "Rating Analysis",
+                    Description =
+                        "Analyze aggregated rating data for books including average rating, total reviews, and rating distribution",
                     Examples =
                     [
                         "What is the average rating for the book 'The Great Gatsby'?",
-                        "Classify the product quality of '1984' by George Orwell.",
                         "How many reviews does 'To Kill a Mockingbird' have?",
+                        "Show me the rating distribution for '1984'",
+                    ],
+                },
+                new()
+                {
+                    Name = "Quality Classification",
+                    Description =
+                        "Evaluate and classify product quality as Best Seller, Good, Bad, or No Data based on rating metrics",
+                    Examples =
+                    [
+                        "Classify the product quality of '1984' by George Orwell.",
+                        "Is 'Pride and Prejudice' a best seller based on ratings?",
+                        "What quality category does this book fall into?",
+                    ],
+                },
+                new()
+                {
+                    Name = "Sentiment Analysis",
+                    Description =
+                        "Analyze customer sentiment and provide content summarization from book reviews",
+                    Examples =
+                    [
                         "Analyze customer sentiment for reviews of a specific book.",
+                        "What are customers saying about 'The Catcher in the Rye'?",
+                        "Summarize the main themes in reviews for this book",
+                    ],
+                },
+                new()
+                {
+                    Name = "Comprehensive Rating Report",
+                    Description =
+                        "Provide comprehensive rating analysis with quality classification, metrics, and justification",
+                    Examples =
+                    [
                         "Provide comprehensive rating analysis with quality classification.",
+                        "Give me a full rating report for 'Harry Potter and the Sorcerer's Stone'",
+                        "Analyze all rating aspects for this book including classification and sentiment",
                     ],
                 },
             ],

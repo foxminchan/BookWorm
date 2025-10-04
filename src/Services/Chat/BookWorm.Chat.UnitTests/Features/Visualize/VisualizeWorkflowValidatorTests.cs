@@ -1,8 +1,8 @@
-﻿using BookWorm.Chat.Features.Visualizer;
+﻿using BookWorm.Chat.Features.Visualize;
 using BookWorm.SharedKernel;
 using FluentValidation.TestHelper;
 
-namespace BookWorm.Chat.UnitTests.Features.Visualizer;
+namespace BookWorm.Chat.UnitTests.Features.Visualize;
 
 public sealed class VisualizeWorkflowValidatorTests
 {

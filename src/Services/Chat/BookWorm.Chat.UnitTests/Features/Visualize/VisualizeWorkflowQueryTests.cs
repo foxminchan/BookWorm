@@ -1,9 +1,9 @@
 ﻿using BookWorm.Chassis.CQRS.Query;
-using BookWorm.Chat.Features.Visualizer;
+using BookWorm.Chat.Features.Visualize;
 using BookWorm.Chat.Infrastructure.AgentOrchestration;
 using BookWorm.SharedKernel;
 
-namespace BookWorm.Chat.UnitTests.Features.Visualizer;
+namespace BookWorm.Chat.UnitTests.Features.Visualize;
 
 public sealed class VisualizeWorkflowQueryTests
 {

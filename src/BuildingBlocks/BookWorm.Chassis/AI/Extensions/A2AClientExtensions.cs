@@ -1,37 +1,23 @@
 ﻿using BookWorm.Chassis.AI.Agents;
-using Microsoft.Extensions.DependencyInjection;
+using BookWorm.Chassis.Utilities;
+using BookWorm.Constants.Aspire;
+using Microsoft.Agents.AI;
 
 namespace BookWorm.Chassis.AI.Extensions;
 
 public static class A2AClientExtensions
 {
-    public static void AddA2AClient(
-        this IServiceCollection services,
-        string agentName,
-        string agentUri,
-        string? path = null
-    )
+    public static AIAgent GetA2AAgent(string serviceName, string agentName, string? path = "a2a")
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(agentName);
-        ArgumentException.ThrowIfNullOrWhiteSpace(agentUri);
+        var baseAddress =
+            ServiceDiscoveryUtilities.GetServiceEndpoint(serviceName, Protocols.Https)
+            ?? ServiceDiscoveryUtilities.GetServiceEndpoint(serviceName, Protocols.Http)
+            ?? throw new InvalidOperationException(
+                $"Service endpoint for agent '{serviceName}' not found."
+            );
 
-        services.AddHttpClient<AgentDiscoveryClient>(
-            agentName,
-            client => client.BaseAddress = new(agentUri)
-        );
+        var agent = new A2AAgentClient(new(baseAddress), path).GetAIAgent(agentName);
 
-        services.AddSingleton(sp =>
-        {
-            var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient(agentName);
-
-            var uriBuilder = new UriBuilder(httpClient.BaseAddress!);
-
-            if (!string.IsNullOrWhiteSpace(path))
-            {
-                uriBuilder.Path = path;
-            }
-
-            return new A2AAgentClient(uriBuilder.Uri);
-        });
+        return agent.GetAwaiter().GetResult();
     }
 }

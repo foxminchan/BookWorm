@@ -1,10 +1,10 @@
-﻿using BookWorm.Chat.Features.Visualizer;
+﻿using BookWorm.Chat.Features.Visualize;
 using BookWorm.SharedKernel;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 
-namespace BookWorm.Chat.UnitTests.Features.Visualizer;
+namespace BookWorm.Chat.UnitTests.Features.Visualize;
 
 public sealed class VisualizeWorkflowEndpointTests
 {

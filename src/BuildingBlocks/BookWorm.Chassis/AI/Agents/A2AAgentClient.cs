@@ -1,18 +1,13 @@
-﻿using System.Collections.Concurrent;
-using A2A;
+﻿using A2A;
 using Microsoft.Agents.AI;
 
 namespace BookWorm.Chassis.AI.Agents;
 
-public sealed class A2AAgentClient(Uri baseUri)
+public sealed class A2AAgentClient(Uri baseUri, string? path)
 {
-    private readonly ConcurrentDictionary<string, (A2AClient, A2ACardResolver)> _clients = [];
-
-    public AIAgent GetAIAgent(string agentName)
+    public async Task<AIAgent> GetAIAgent(string agentName)
     {
-        var (agentClient, _) = ResolveClient(agentName);
-
-        var agent = agentClient.GetAIAgent();
+        var agent = await ResolveClient(agentName).GetAIAgentAsync();
 
         return agent;
     }
@@ -22,11 +17,9 @@ public sealed class A2AAgentClient(Uri baseUri)
         CancellationToken cancellationToken = default
     )
     {
-        var (_, resolver) = ResolveClient(agentName);
-
         try
         {
-            return await resolver.GetAgentCardAsync(cancellationToken);
+            return await ResolveClient(agentName).GetAgentCardAsync(cancellationToken);
         }
         catch (Exception)
         {
@@ -34,20 +27,20 @@ public sealed class A2AAgentClient(Uri baseUri)
         }
     }
 
-    private (A2AClient, A2ACardResolver) ResolveClient(string agentName)
+    private A2ACardResolver ResolveClient(string agentName)
     {
-        return _clients.GetOrAdd(
-            agentName,
-            name =>
-            {
-                var uri = new Uri($"{baseUri}/{name}/");
+        var httpClient = new HttpClient
+        {
+            BaseAddress = new($"{baseUri}"),
+            Timeout = TimeSpan.FromMinutes(2),
+        };
 
-                var client = new A2AClient(uri);
-
-                var resolver = new A2ACardResolver(uri, agentCardPath: "/v1/card/");
-
-                return (client, resolver);
-            }
+        var resolver = new A2ACardResolver(
+            httpClient.BaseAddress,
+            httpClient,
+            $"/{path?.TrimStart('/')}/{agentName}/v1/card/"
         );
+
+        return resolver;
     }
 }

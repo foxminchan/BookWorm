@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
+﻿using A2A;
+
+namespace BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
 
 public static class LanguageAgent
 {
@@ -29,4 +31,55 @@ public static class LanguageAgent
 
         Your goal is to ensure all user communications are accessible in English for proper processing by other agents in the system.
         """;
+
+    public static AgentCard AgentCard { get; } =
+        new()
+        {
+            Name = Name,
+            Description = Description,
+            Version = "1.0.0",
+            Provider = new() { Organization = nameof(BookWorm) },
+            DefaultInputModes = ["text"],
+            DefaultOutputModes = ["text"],
+            Capabilities = new() { Streaming = false, PushNotifications = false },
+            Skills =
+            [
+                new()
+                {
+                    Name = "Language Detection",
+                    Description =
+                        "Automatically detect the language of user input and identify if translation is needed",
+                    Examples =
+                    [
+                        "Detect the language of this text",
+                        "Is this message in English?",
+                        "What language is the user speaking?",
+                    ],
+                },
+                new()
+                {
+                    Name = "Translation to English",
+                    Description =
+                        "Translate non-English text to clear, natural English while preserving meaning and context",
+                    Examples =
+                    [
+                        "Translate this Spanish text to English",
+                        "Convert this French message to English",
+                        "Provide an English translation of this user input",
+                    ],
+                },
+                new()
+                {
+                    Name = "Context Preservation",
+                    Description =
+                        "Maintain the original intent, tone, and context during translation for accurate processing",
+                    Examples =
+                    [
+                        "Translate while preserving the user's intent",
+                        "Keep the original meaning in the English translation",
+                        "Ensure the tone is maintained in translation",
+                    ],
+                },
+            ],
+        };
 }
