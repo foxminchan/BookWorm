@@ -4,15 +4,15 @@ using FluentValidation.TestHelper;
 
 namespace BookWorm.Chat.UnitTests.Features.Visualizer;
 
-public sealed class VisualizerWorkValidatorTests
+public sealed class VisualizeWorkflowValidatorTests
 {
-    private readonly VisualizerWorkValidator _validator = new();
+    private readonly VisualizeWorkflowValidator _validator = new();
 
     [Test]
     public void GivenValidQueryWithMermaidType_WhenValidating_ThenShouldNotHaveValidationErrors()
     {
         // Arrange
-        var query = new VisualizerWorkflowQuery(VisualizationType.Mermaid);
+        var query = new VisualizeWorkflowQuery(VisualizationType.Mermaid);
 
         // Act
         var result = _validator.TestValidate(query);
@@ -25,7 +25,7 @@ public sealed class VisualizerWorkValidatorTests
     public void GivenValidQueryWithDotType_WhenValidating_ThenShouldNotHaveValidationErrors()
     {
         // Arrange
-        var query = new VisualizerWorkflowQuery(VisualizationType.Dot);
+        var query = new VisualizeWorkflowQuery(VisualizationType.Dot);
 
         // Act
         var result = _validator.TestValidate(query);
@@ -38,7 +38,7 @@ public sealed class VisualizerWorkValidatorTests
     public void GivenDefaultQuery_WhenValidating_ThenShouldNotHaveValidationErrors()
     {
         // Arrange
-        var query = new VisualizerWorkflowQuery();
+        var query = new VisualizeWorkflowQuery();
 
         // Act
         var result = _validator.TestValidate(query);
@@ -55,7 +55,7 @@ public sealed class VisualizerWorkValidatorTests
     public void GivenInvalidEnumValue_WhenValidating_ThenShouldHaveValidationError(int invalidValue)
     {
         // Arrange
-        var query = new VisualizerWorkflowQuery((VisualizationType)invalidValue);
+        var query = new VisualizeWorkflowQuery((VisualizationType)invalidValue);
 
         // Act
         var result = _validator.TestValidate(query);
@@ -68,7 +68,7 @@ public sealed class VisualizerWorkValidatorTests
     public void GivenInvalidEnumValue_WhenValidating_ThenShouldHaveValidationErrorForType()
     {
         // Arrange
-        var query = new VisualizerWorkflowQuery((VisualizationType)100);
+        var query = new VisualizeWorkflowQuery((VisualizationType)100);
 
         // Act
         var result = _validator.TestValidate(query);
@@ -85,7 +85,7 @@ public sealed class VisualizerWorkValidatorTests
     )
     {
         // Arrange
-        var query = new VisualizerWorkflowQuery(type);
+        var query = new VisualizeWorkflowQuery(type);
 
         // Act
         var result = _validator.TestValidate(query);
@@ -98,7 +98,7 @@ public sealed class VisualizerWorkValidatorTests
     public void GivenMinimumEnumValue_WhenValidating_ThenShouldNotHaveValidationError()
     {
         // Arrange
-        var query = new VisualizerWorkflowQuery((VisualizationType)0);
+        var query = new VisualizeWorkflowQuery((VisualizationType)0);
 
         // Act
         var result = _validator.TestValidate(query);
@@ -111,7 +111,7 @@ public sealed class VisualizerWorkValidatorTests
     public void GivenMaximumValidEnumValue_WhenValidating_ThenShouldNotHaveValidationError()
     {
         // Arrange
-        var query = new VisualizerWorkflowQuery((VisualizationType)1);
+        var query = new VisualizeWorkflowQuery((VisualizationType)1);
 
         // Act
         var result = _validator.TestValidate(query);
@@ -125,13 +125,13 @@ public sealed class VisualizerWorkValidatorTests
     {
         // Arrange
         var invalidValue = (VisualizationType)50;
-        var query = new VisualizerWorkflowQuery(invalidValue);
+        var query = new VisualizeWorkflowQuery(invalidValue);
 
         // Act
         var result = _validator.TestValidate(query);
 
         // Assert
         result.ShouldHaveValidationErrorFor(x => x.Type);
-        result.Errors.ShouldContain(e => e.PropertyName == nameof(VisualizerWorkflowQuery.Type));
+        result.Errors.ShouldContain(e => e.PropertyName == nameof(VisualizeWorkflowQuery.Type));
     }
 }

@@ -95,7 +95,7 @@ graph TB
     subgraph "AI Infrastructure Layer"
         Ollama[Ollama Runtime<br/>LLM Hosting]
         Qdrant[Qdrant<br/>Vector Database]
-        SemanticKernel[Agent Framework<br/>AI Orchestration]
+        AgentFramework[Agent Framework<br/>AI Orchestration]
         MCPTools[MCP Tools<br/>Standardized AI Tooling]
     end
 
@@ -123,14 +123,14 @@ graph TB
     Ollama --> CustomModels
     Qdrant --> NomicEmbed
 
-    SemanticKernel --> Ollama
-    SemanticKernel --> Qdrant
-    SemanticKernel --> MCPTools
+    AgentFramework --> Ollama
+    AgentFramework --> Qdrant
+    AgentFramework --> MCPTools
 
-    ChatService --> SemanticKernel
+    ChatService --> AgentFramework
     SearchService --> Qdrant
-    RecommendService --> SemanticKernel
-    ContentService --> SemanticKernel
+    RecommendService --> AgentFramework
+    ContentService --> AgentFramework
 
     Chat --> ChatService
     Catalog --> SearchService

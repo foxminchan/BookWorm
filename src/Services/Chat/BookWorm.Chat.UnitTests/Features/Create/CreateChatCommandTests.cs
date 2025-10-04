@@ -1,17 +1,17 @@
 ﻿using BookWorm.Chassis.CQRS.Command;
 using BookWorm.Chat.Features;
-using BookWorm.Chat.Features.Update;
+using BookWorm.Chat.Features.Create;
 using BookWorm.Chat.Infrastructure.ChatStreaming;
 using MediatR;
 
-namespace BookWorm.Chat.UnitTests.Features.Update;
+namespace BookWorm.Chat.UnitTests.Features.Create;
 
-public sealed class UpdateChatCommandTests
+public sealed class CreateChatCommandTests
 {
     private readonly Mock<IChatStreaming> _chatStreamingMock = new();
     private readonly UpdateChatHandler _handler;
 
-    public UpdateChatCommandTests()
+    public CreateChatCommandTests()
     {
         _handler = new(_chatStreamingMock.Object);
     }
@@ -20,17 +20,15 @@ public sealed class UpdateChatCommandTests
     public void GivenUpdateChatCommand_WhenCreating_ThenShouldBeOfCorrectType()
     {
         // Arrange
-        var id = Guid.CreateVersion7();
         var prompt = new Prompt("Test prompt");
 
         // Act
-        var command = new UpdateChatCommand(id, prompt);
+        var command = new CreateChatCommand(prompt);
 
         // Assert
         command.ShouldNotBeNull();
-        command.ShouldBeOfType<UpdateChatCommand>();
+        command.ShouldBeOfType<CreateChatCommand>();
         command.ShouldBeAssignableTo<ICommand>();
-        command.Id.ShouldBe(id);
         command.Prompt.ShouldBe(prompt);
     }
 
@@ -38,10 +36,9 @@ public sealed class UpdateChatCommandTests
     public void GivenTwoUpdateChatCommandsWithSameValues_WhenComparing_ThenShouldBeEqual()
     {
         // Arrange
-        var id = Guid.CreateVersion7();
         var prompt = new Prompt("Test prompt");
-        var command1 = new UpdateChatCommand(id, prompt);
-        var command2 = new UpdateChatCommand(id, prompt);
+        var command1 = new CreateChatCommand(prompt);
+        var command2 = new CreateChatCommand(prompt);
 
         // Act & Assert
         command1.ShouldBe(command2);
@@ -51,31 +48,13 @@ public sealed class UpdateChatCommandTests
     }
 
     [Test]
-    public void GivenTwoUpdateChatCommandsWithDifferentIds_WhenComparing_ThenShouldNotBeEqual()
-    {
-        // Arrange
-        var id1 = Guid.CreateVersion7();
-        var id2 = Guid.CreateVersion7();
-        var prompt = new Prompt("Test prompt");
-        var command1 = new UpdateChatCommand(id1, prompt);
-        var command2 = new UpdateChatCommand(id2, prompt);
-
-        // Act & Assert
-        command1.ShouldNotBe(command2);
-        command1.GetHashCode().ShouldNotBe(command2.GetHashCode());
-        (command1 == command2).ShouldBeFalse();
-        (command1 != command2).ShouldBeTrue();
-    }
-
-    [Test]
     public void GivenTwoUpdateChatCommandsWithDifferentPrompts_WhenComparing_ThenShouldNotBeEqual()
     {
         // Arrange
-        var id = Guid.CreateVersion7();
         var prompt1 = new Prompt("First prompt");
         var prompt2 = new Prompt("Second prompt");
-        var command1 = new UpdateChatCommand(id, prompt1);
-        var command2 = new UpdateChatCommand(id, prompt2);
+        var command1 = new CreateChatCommand(prompt1);
+        var command2 = new CreateChatCommand(prompt2);
 
         // Act & Assert
         command1.ShouldNotBe(command2);
@@ -90,19 +69,18 @@ public sealed class UpdateChatCommandTests
         // Act & Assert
         _handler.ShouldNotBeNull();
         _handler.ShouldBeOfType<UpdateChatHandler>();
-        _handler.ShouldBeAssignableTo<ICommandHandler<UpdateChatCommand>>();
+        _handler.ShouldBeAssignableTo<ICommandHandler<CreateChatCommand>>();
     }
 
     [Test]
     public async Task GivenValidCommand_WhenHandlingUpdateChat_ThenShouldCallAddStreamingMessage()
     {
         // Arrange
-        var id = Guid.CreateVersion7();
         var prompt = new Prompt("What is the weather today?");
-        var command = new UpdateChatCommand(id, prompt);
+        var command = new CreateChatCommand(prompt);
 
         _chatStreamingMock
-            .Setup(x => x.AddStreamingMessage(id, prompt.Text))
+            .Setup(x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text))
             .Returns(Task.CompletedTask);
 
         // Act
@@ -110,19 +88,21 @@ public sealed class UpdateChatCommandTests
 
         // Assert
         result.ShouldBe(Unit.Value);
-        _chatStreamingMock.Verify(x => x.AddStreamingMessage(id, prompt.Text), Times.Once);
+        _chatStreamingMock.Verify(
+            x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text),
+            Times.Once
+        );
     }
 
     [Test]
     public async Task GivenCommandWithEmptyPromptText_WhenHandlingUpdateChat_ThenShouldCallAddStreamingMessageWithEmptyText()
     {
         // Arrange
-        var id = Guid.CreateVersion7();
         var prompt = new Prompt("");
-        var command = new UpdateChatCommand(id, prompt);
+        var command = new CreateChatCommand(prompt);
 
         _chatStreamingMock
-            .Setup(x => x.AddStreamingMessage(id, prompt.Text))
+            .Setup(x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text))
             .Returns(Task.CompletedTask);
 
         // Act
@@ -130,19 +110,18 @@ public sealed class UpdateChatCommandTests
 
         // Assert
         result.ShouldBe(Unit.Value);
-        _chatStreamingMock.Verify(x => x.AddStreamingMessage(id, ""), Times.Once);
+        _chatStreamingMock.Verify(x => x.AddStreamingMessage(It.IsAny<Guid>(), ""), Times.Once);
     }
 
     [Test]
     public async Task GivenCommandWithWhitespacePromptText_WhenHandlingUpdateChat_ThenShouldCallAddStreamingMessageWithWhitespace()
     {
         // Arrange
-        var id = Guid.CreateVersion7();
         var prompt = new Prompt("   ");
-        var command = new UpdateChatCommand(id, prompt);
+        var command = new CreateChatCommand(prompt);
 
         _chatStreamingMock
-            .Setup(x => x.AddStreamingMessage(id, prompt.Text))
+            .Setup(x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text))
             .Returns(Task.CompletedTask);
 
         // Act
@@ -150,21 +129,20 @@ public sealed class UpdateChatCommandTests
 
         // Assert
         result.ShouldBe(Unit.Value);
-        _chatStreamingMock.Verify(x => x.AddStreamingMessage(id, "   "), Times.Once);
+        _chatStreamingMock.Verify(x => x.AddStreamingMessage(It.IsAny<Guid>(), "   "), Times.Once);
     }
 
     [Test]
     public async Task GivenCommandWithComplexPrompt_WhenHandlingUpdateChat_ThenShouldCallAddStreamingMessageWithCompleteText()
     {
         // Arrange
-        var id = Guid.CreateVersion7();
         const string complexPrompt =
             "Can you explain the difference between machine learning and artificial intelligence? Please provide examples and use cases for each technology.";
         var prompt = new Prompt(complexPrompt);
-        var command = new UpdateChatCommand(id, prompt);
+        var command = new CreateChatCommand(prompt);
 
         _chatStreamingMock
-            .Setup(x => x.AddStreamingMessage(id, prompt.Text))
+            .Setup(x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text))
             .Returns(Task.CompletedTask);
 
         // Act
@@ -172,20 +150,22 @@ public sealed class UpdateChatCommandTests
 
         // Assert
         result.ShouldBe(Unit.Value);
-        _chatStreamingMock.Verify(x => x.AddStreamingMessage(id, complexPrompt), Times.Once);
+        _chatStreamingMock.Verify(
+            x => x.AddStreamingMessage(It.IsAny<Guid>(), complexPrompt),
+            Times.Once
+        );
     }
 
     [Test]
     public async Task GivenCancellationTokenRequested_WhenHandlingUpdateChat_ThenShouldPassTokenToChatStreaming()
     {
         // Arrange
-        var id = Guid.CreateVersion7();
         var prompt = new Prompt("Test prompt");
-        var command = new UpdateChatCommand(id, prompt);
+        var command = new CreateChatCommand(prompt);
         var cancellationToken = new CancellationToken(true);
 
         _chatStreamingMock
-            .Setup(x => x.AddStreamingMessage(id, prompt.Text))
+            .Setup(x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text))
             .Returns(Task.CompletedTask);
 
         // Act
@@ -193,20 +173,22 @@ public sealed class UpdateChatCommandTests
 
         // Assert
         result.ShouldBe(Unit.Value);
-        _chatStreamingMock.Verify(x => x.AddStreamingMessage(id, prompt.Text), Times.Once);
+        _chatStreamingMock.Verify(
+            x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text),
+            Times.Once
+        );
     }
 
     [Test]
     public async Task GivenChatStreamingThrowsException_WhenHandlingUpdateChat_ThenShouldPropagateException()
     {
         // Arrange
-        var id = Guid.CreateVersion7();
         var prompt = new Prompt("Test prompt");
-        var command = new UpdateChatCommand(id, prompt);
+        var command = new CreateChatCommand(prompt);
         var expectedException = new InvalidOperationException("Chat streaming service unavailable");
 
         _chatStreamingMock
-            .Setup(x => x.AddStreamingMessage(id, prompt.Text))
+            .Setup(x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text))
             .ThrowsAsync(expectedException);
 
         // Act
@@ -215,24 +197,23 @@ public sealed class UpdateChatCommandTests
         // Assert
         var exception = await act.ShouldThrowAsync<InvalidOperationException>();
         exception.Message.ShouldBe("Chat streaming service unavailable");
-        exception.ShouldBe(expectedException);
 
-        _chatStreamingMock.Verify(x => x.AddStreamingMessage(id, prompt.Text), Times.Once);
+        _chatStreamingMock.Verify(
+            x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text),
+            Times.Once
+        );
     }
 
     [Test]
     public async Task GivenMultipleSequentialCommands_WhenHandlingUpdateChat_ThenShouldHandleEachCommandIndependently()
     {
         // Arrange
-        var id1 = Guid.CreateVersion7();
-        var id2 = Guid.CreateVersion7();
-        var id3 = Guid.CreateVersion7();
         var prompt1 = new Prompt("First prompt");
         var prompt2 = new Prompt("Second prompt");
         var prompt3 = new Prompt("Third prompt");
-        var command1 = new UpdateChatCommand(id1, prompt1);
-        var command2 = new UpdateChatCommand(id2, prompt2);
-        var command3 = new UpdateChatCommand(id3, prompt3);
+        var command1 = new CreateChatCommand(prompt1);
+        var command2 = new CreateChatCommand(prompt2);
+        var command3 = new CreateChatCommand(prompt3);
 
         _chatStreamingMock
             .Setup(x => x.AddStreamingMessage(It.IsAny<Guid>(), It.IsAny<string>()))
@@ -248,21 +229,29 @@ public sealed class UpdateChatCommandTests
         result2.ShouldBe(Unit.Value);
         result3.ShouldBe(Unit.Value);
 
-        _chatStreamingMock.Verify(x => x.AddStreamingMessage(id1, prompt1.Text), Times.Once);
-        _chatStreamingMock.Verify(x => x.AddStreamingMessage(id2, prompt2.Text), Times.Once);
-        _chatStreamingMock.Verify(x => x.AddStreamingMessage(id3, prompt3.Text), Times.Once);
+        _chatStreamingMock.Verify(
+            x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt1.Text),
+            Times.Once
+        );
+        _chatStreamingMock.Verify(
+            x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt2.Text),
+            Times.Once
+        );
+        _chatStreamingMock.Verify(
+            x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt3.Text),
+            Times.Once
+        );
     }
 
     [Test]
     public async Task GivenSameCommandExecutedMultipleTimes_WhenHandlingUpdateChat_ThenShouldCallAddStreamingMessageEachTime()
     {
         // Arrange
-        var id = Guid.CreateVersion7();
         var prompt = new Prompt("Repeated prompt");
-        var command = new UpdateChatCommand(id, prompt);
+        var command = new CreateChatCommand(prompt);
 
         _chatStreamingMock
-            .Setup(x => x.AddStreamingMessage(id, prompt.Text))
+            .Setup(x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text))
             .Returns(Task.CompletedTask);
 
         // Act
@@ -275,20 +264,22 @@ public sealed class UpdateChatCommandTests
         result2.ShouldBe(Unit.Value);
         result3.ShouldBe(Unit.Value);
 
-        _chatStreamingMock.Verify(x => x.AddStreamingMessage(id, prompt.Text), Times.Exactly(3));
+        _chatStreamingMock.Verify(
+            x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text),
+            Times.Exactly(3)
+        );
     }
 
     [Test]
     public async Task GivenCommandWithSpecialCharactersInPrompt_WhenHandlingUpdateChat_ThenShouldHandleSpecialCharacters()
     {
         // Arrange
-        var id = Guid.CreateVersion7();
         const string specialPrompt = "Hello! @#$%^&*()_+-=[]{}|;':\",./<>? 🚀🔥💡";
         var prompt = new Prompt(specialPrompt);
-        var command = new UpdateChatCommand(id, prompt);
+        var command = new CreateChatCommand(prompt);
 
         _chatStreamingMock
-            .Setup(x => x.AddStreamingMessage(id, prompt.Text))
+            .Setup(x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text))
             .Returns(Task.CompletedTask);
 
         // Act
@@ -296,15 +287,17 @@ public sealed class UpdateChatCommandTests
 
         // Assert
         result.ShouldBe(Unit.Value);
-        _chatStreamingMock.Verify(x => x.AddStreamingMessage(id, specialPrompt), Times.Once);
+        _chatStreamingMock.Verify(
+            x => x.AddStreamingMessage(It.IsAny<Guid>(), specialPrompt),
+            Times.Once
+        );
     }
 
     [Test]
     public async Task GivenCommandWithMultilinePrompt_WhenHandlingUpdateChat_ThenShouldPreserveFormatting()
     {
         // Arrange
-        var id = Guid.CreateVersion7();
-        var multilinePrompt = """
+        const string multilinePrompt = """
             This is a multiline prompt.
 
             It contains:
@@ -315,10 +308,10 @@ public sealed class UpdateChatCommandTests
             Please process this correctly.
             """;
         var prompt = new Prompt(multilinePrompt);
-        var command = new UpdateChatCommand(id, prompt);
+        var command = new CreateChatCommand(prompt);
 
         _chatStreamingMock
-            .Setup(x => x.AddStreamingMessage(id, prompt.Text))
+            .Setup(x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text))
             .Returns(Task.CompletedTask);
 
         // Act
@@ -326,6 +319,9 @@ public sealed class UpdateChatCommandTests
 
         // Assert
         result.ShouldBe(Unit.Value);
-        _chatStreamingMock.Verify(x => x.AddStreamingMessage(id, multilinePrompt), Times.Once);
+        _chatStreamingMock.Verify(
+            x => x.AddStreamingMessage(It.IsAny<Guid>(), multilinePrompt),
+            Times.Once
+        );
     }
 }

@@ -5,13 +5,13 @@ using Microsoft.Agents.AI.Workflows;
 
 namespace BookWorm.Chat.Features.Visualizer;
 
-public sealed record VisualizerWorkflowQuery(VisualizationType Type = VisualizationType.Mermaid)
+public sealed record VisualizeWorkflowQuery(VisualizationType Type = VisualizationType.Mermaid)
     : IQuery<string>;
 
 public sealed class VisualizerWorkflowHandler(IAgentOrchestrationService agentOrchestrationService)
-    : IQueryHandler<VisualizerWorkflowQuery, string>
+    : IQueryHandler<VisualizeWorkflowQuery, string>
 {
-    public Task<string> Handle(VisualizerWorkflowQuery request, CancellationToken cancellationToken)
+    public Task<string> Handle(VisualizeWorkflowQuery request, CancellationToken cancellationToken)
     {
         var workflow = agentOrchestrationService.BuildAgentsWorkflow();
 

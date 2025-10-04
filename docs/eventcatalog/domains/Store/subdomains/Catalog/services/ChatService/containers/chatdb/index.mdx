@@ -3,311 +3,112 @@ id: ChatDatabase
 name: Chat Database
 version: 1.0.0
 container_type: database
-technology: postgres@18
+technology: qdrant@latest
 authoritative: true
 access_mode: readWrite
 classification: internal
 retention: 2y
 residency: eastasia
-summary: Primary database for chat information.
+summary: Vector database for storing and retrieving chat history with semantic search capabilities.
 owners:
   - nhanxnguyen
-attachments:
-  - url: https://drive.google.com/file/d/1yzna9_uqx0y_uxFJgo00HIgdHGAglCRs/view?usp=sharing
-    title: ERD of the Chat Database
-    description: Learn more about the schema of the Chat Database
-    type: 'diagrams'
-    icon: FileTextIcon
 ---
 
 <NodeGraph />
 
 ## Overview
 
-The Chat Database is a PostgreSQL 18-based storage solution that powers the conversational AI interface in the BookWorm platform. This database stores and manages chat conversations between customers and the AI assistant, enabling intelligent product discovery, personalized recommendations, and natural language interactions. By maintaining conversation history and context, the system provides a seamless, context-aware shopping experience where customers can ask questions about books in plain language and receive helpful, relevant responses.
+The Chat Database uses **Qdrant**, a vector database, to store chat history items with semantic search capabilities. This enables efficient retrieval of conversation history and supports AI agent orchestration by maintaining context across chat sessions.
 
-## Purpose & Responsibility
+## Architecture
 
-The Chat Database serves as the authoritative source for all conversational interactions, providing:
+### Vector Storage Implementation
 
-- **Conversation Persistence**: Storing complete chat history for continuity across sessions
-- **Context Management**: Maintaining conversation state for coherent multi-turn dialogues
-- **User History**: Tracking each user's interaction patterns for personalization
-- **Message Storage**: Preserving both user queries and AI responses in JSON format
-- **Analytics Foundation**: Enabling analysis of customer questions and search patterns
+The database is accessed through `VectorChatMessageStore`, which implements the `ChatMessageStore` interface from Microsoft.Agents.AI. This provides:
 
-This database transforms traditional keyword search into natural conversations, allowing customers to discover books through queries like "Can you recommend something uplifting for a rainy day?" or "I loved The Martian, what should I read next?"
+- **Vector Collections**: Chat messages are stored in vector collections using `VectorStoreCollection<Guid, ChatHistoryItem>`
+- **Thread-based Organization**: Messages are grouped by `ThreadId` for conversation continuity
+- **User Isolation**: Messages are filtered by `UserId` to ensure data privacy
+- **Temporal Ordering**: Messages are stored with timestamps for chronological retrieval
 
-## Schema Design
+### Data Model
 
-The database follows a minimalist yet powerful design, optimized for conversational AI workloads.
+Messages are stored as `ChatHistoryItem` records with the following structure:
 
-<Schema file="schema.sql" lang="sql" title="Chat Database Schema" />
-
-### Conversations Table
-
-The core entity that represents a complete dialogue between a user and the AI assistant.
-
-#### Column Breakdown
-
-**`Id` (UUID, Primary Key)**
-- Unique identifier for each conversation
-- Generated using `uuidv7()` for time-ordered, globally unique IDs
-- Benefits: Sortable by creation time, distributed system friendly
-- Example: `01914f5a-8c7e-7890-a123-456789abcdef`
-
-**`Name` (VARCHAR(100), NOT NULL)**
-- Human-readable conversation title
-- Auto-generated from the first user message or manually set
-- Examples: "Book recommendations for teenagers", "Finding mystery novels", "Help with gift ideas"
-- Helps users identify and return to previous conversations
-- Indexed for fast search and retrieval
-
-**`UserId` (UUID, NULLABLE)**
-- Links conversation to authenticated user
-- NULL for anonymous/guest users before sign-in
-- Enables conversation history across devices for logged-in users
-- Used for personalization and recommendation improvement
-- Foreign key to User identity system (external service)
-
-**`CreatedAt` (TIMESTAMP WITH TIME ZONE, NOT NULL)**
-- When the conversation was initiated
-- Stored with time zone for global user base
-- Used for sorting, filtering, and analytics
-- Enables time-based queries (e.g., "conversations this week")
-- Automatically set on row creation
-
-**`LastModifiedAt` (TIMESTAMP WITH TIME ZONE, NULLABLE)**
-- Last time a message was added to the conversation
-- Updated on every new message
-- Helps identify active vs. abandoned conversations
-- Used for ordering "recent conversations"
-- Drives cache invalidation strategies
-
-**`Messages` (JSONB, NULLABLE)**
-- Core conversation content stored as JSON
-- Each message includes: role, content, timestamp, metadata
-- JSONB provides efficient querying and indexing
-- Schema flexibility for evolving message structures
-- Supports rich content (text, product cards, images)
+```csharp
+{
+    Key: string,              // ThreadDbKey + MessageId (unique identifier)
+    ThreadId: string,         // Conversation thread identifier (UUIDv7)
+    Timestamp: DateTimeOffset, // Message creation time
+    SerializedMessage: string, // Full ChatMessage JSON
+    MessageText: string,      // Extracted message text for search
+    UserId: string           // User who sent the message
+}
+```
 
 ## Key Features
 
-### JSONB Advantages
+### 1. Thread Management
+- Each conversation thread is identified by a UUIDv7-based `ThreadDbKey`
+- Thread keys are generated on first message and maintained throughout the session
+- Enables concurrent conversations without interference
 
-PostgreSQL's JSONB (binary JSON) provides powerful capabilities:
+### 2. Message Retrieval
+- Retrieves up to `MaxMessages` per query (configurable via AppSettings)
+- Messages are ordered by timestamp in descending order
+- Results are reversed to maintain chronological order
+- Filters by both thread ID and user ID for security
 
-**Flexible Schema**
-- Add new message fields without schema migrations
-- Support rich content types (text, images, product cards)
-- Store complex metadata without additional tables
-- Version message format over time
+### 3. Message Persistence
+- Uses upsert operations for idempotent writes
+- Serializes full `ChatMessage` objects with JSON source generation
+- Maintains metadata (timestamp, user ID) for filtering and analytics
+- Extracts message text for semantic search capabilities
 
-**Efficient Querying**
-```sql
--- Find conversations mentioning specific products
-SELECT * FROM "Conversations"
-WHERE "Messages" @> '{"conversationMetadata": {"extractedProducts": ["550e8400-e29b-41d4-a716-446655440000"]}}';
+### 4. State Serialization
+- Thread state can be serialized to JSON for session management
+- Enables conversation resumption across sessions
+- Supports state hydration from serialized JSON elements
 
--- Search message content
-SELECT * FROM "Conversations"
-WHERE "Messages" @> '{"messages": [{"role": "user", "content": "artificial intelligence"}]}';
+## Technical Details
 
--- Count messages per conversation
-SELECT "Id", "Name",
-       jsonb_array_length("Messages"->'messages') as message_count
-FROM "Conversations";
+### Vector Store Configuration
+- **Collection Type**: `VectorStoreCollection<Guid, ChatHistoryItem>`
+- **Key Type**: Guid (for collection operations)
+- **Record Type**: ChatHistoryItem with vector data attributes
 
--- Extract all user messages
-SELECT "Id", "Name",
-       jsonb_path_query("Messages", '$.messages[*] ? (@.role == "user")')
-FROM "Conversations";
+### Query Operations
+```csharp
+// Retrieval query structure
+x => x.ThreadId == ThreadDbKey && x.UserId == userId
+// Ordering
+OrderBy: x => x.Descending(y => y.Timestamp)
+// Limit
+MaxMessages (from AppSettings)
 ```
 
-**Indexing Support**
-```sql
--- GIN index for fast JSONB queries
-CREATE INDEX idx_conversations_messages_gin ON "Conversations" USING GIN("Messages");
+### Serialization
+- Uses `JsonSerializerOptions` with camelCase naming policy
+- Source-generated serialization context for performance
+- Property name case-insensitive deserialization
 
--- Index on specific JSON paths
-CREATE INDEX idx_conversations_products ON "Conversations"
-USING GIN(("Messages" -> 'conversationMetadata' -> 'extractedProducts'));
-```
+## Security
 
-### UUID v7 Benefits
+- **User Isolation**: All queries filter by authenticated user ID from ClaimsPrincipal
+- **Thread Isolation**: Messages are scoped to specific conversation threads
+- **Access Control**: Read/write access controlled through authentication claims
 
-Using `uuidv7()` provides several advantages over traditional UUIDs:
+## Performance Considerations
 
-- **Time-Ordered**: IDs sort chronologically, improving index performance
-- **Database Friendly**: Sequential nature reduces index fragmentation
-- **Globally Unique**: Safe for distributed systems and merges
-- **No Coordination**: No need for centralized ID generation
-- **Information Leakage**: Timestamp embedded (can be both feature and concern)
+- **Batch Operations**: Uses `UpsertAsync` for efficient bulk writes
+- **Query Limits**: Configurable `MaxMessages` prevents over-fetching
+- **Async Operations**: All database operations are asynchronous
+- **Collection Caching**: Ensures collection exists before operations
 
-### Audit Trail
+## Integration
 
-Conversations include built-in temporal tracking:
-
-- **CreatedAt**: Initial conversation timestamp
-- **LastModifiedAt**: Last activity indicator
-- **Message Timestamps**: Individual message timing
-- Together these enable:
-  - Conversation duration analysis
-  - Response time tracking
-  - Activity pattern detection
-  - Abandoned conversation identification
-
-## Data Classification & Governance
-
-- **Classification**: Internal - User conversations contain behavioral insights
-- **Access Mode**: Read/Write - Chat service has full control; Analytics has read-only
-- **Retention**: 2 years - Balances personalization needs with privacy concerns
-- **Residency**: East Asia region - Co-located with user base for low latency
-- **Authoritative**: True - Single source of truth for conversational data
-
-### Privacy Considerations
-
-**Data Sensitivity**
-- Conversations may reveal personal preferences
-- Search queries indicate interests and needs
-- Message content should be treated as PII-adjacent
-- Regular audits for compliance (GDPR, CCPA)
-
-**Retention Policy**
-- Active conversations: Retained indefinitely while user is active
-- Inactive users: Conversations deleted after 2 years
-- Anonymous conversations: Purged after 90 days
-- User deletion: All conversations removed within 30 days
-
-## Integration Points
-
-The Chat Database integrates with:
-
-- **Chat Service**: Primary consumer for conversation management
-- **Catalog Service**: Product data enrichment in responses
-- **Vector Database**: Semantic search for product recommendations
-- **User Service**: User identity and profile information
-- **Analytics Service**: Conversation insights and trends
-- **Recommendation Engine**: Learning from user preferences
-- **Cache Layer**: Hot conversations cached for performance
-
-## Monitoring & Observability
-
-### Key Metrics
-
-**Database Health**
-- Table size and growth rate
-- Index effectiveness (index scans vs. sequential scans)
-- JSONB query performance
-- Connection pool utilization
-
-**Conversation Metrics**
-- New conversations per hour/day
-- Average messages per conversation
-- Average conversation duration
-- Abandonment rate (single-message conversations)
-- User retention (returning conversations)
-
-**Performance Metrics**
-- Query response times (p50, p95, p99)
-- JSONB query efficiency
-- Index hit ratios
-- Cache effectiveness
-
-### Health Checks
-
-```sql
--- Check database size
-SELECT pg_size_pretty(pg_total_relation_size('"Conversations"'));
-
--- Index usage statistics
-SELECT
-    schemaname,
-    tablename,
-    indexname,
-    idx_scan,
-    idx_tup_read,
-    idx_tup_fetch
-FROM pg_stat_user_indexes
-WHERE tablename = 'Conversations'
-ORDER BY idx_scan DESC;
-
--- Active conversations (modified in last 24 hours)
-SELECT COUNT(*)
-FROM "Conversations"
-WHERE "LastModifiedAt" > NOW() - INTERVAL '24 hours';
-
--- Average messages per conversation
-SELECT AVG(jsonb_array_length("Messages"->'messages'))
-FROM "Conversations";
-```
-
-### Alerting Thresholds
-
-- Database size growth exceeding 20% week-over-week
-- Query latency p95 above 200ms
-- Failed conversation saves (above 0.1%)
-- Unusual spike in conversation creation (above 3x average)
-- Low message per conversation ratio (below 2.5 average)
-
-## Security & Access Control
-
-### Authentication & Authorization
-
-- **Service Access**: Chat service uses managed identity
-- **Read-Only Analytics**: Separate connection string for reporting
-- **Admin Access**: Limited to DBA team via bastion host
-- **Audit Logging**: All schema changes logged
-- **Row-Level Security**: Future consideration for multi-tenancy
-
-### Data Protection
-
-- **Encryption at Rest**: Transparent data encryption (TDE)
-- **Encryption in Transit**: TLS 1.3 for all connections
-- **Connection Strings**: Stored in Azure Key Vault
-- **Backup Encryption**: Encrypted backup files
-- **Access Logs**: All queries logged for compliance
-
-### PII Handling
-
-While not storing explicit PII, conversations can reveal:
-- User preferences and interests
-- Shopping behaviors and patterns
-- Personal circumstances mentioned in queries
-
-**Mitigation Strategies:**
-- Regular PII scanning and removal
-- Anonymization for analytics
-- User consent for conversation storage
-- Clear privacy policy communication
-- Easy conversation deletion mechanism
-
-## Backup & Disaster Recovery
-
-### Backup Strategy
-
-**Automated Backups**
-- Full backup: Daily at 02:00 UTC
-- Differential backup: Every 6 hours
-- Transaction log backup: Every 15 minutes
-- Retention: 30 days
-
-**Point-in-Time Recovery**
-- RPO (Recovery Point Objective): 15 minutes
-- RTO (Recovery Time Objective): 4 hours
-- Continuous transaction log archival
-- Cross-region backup replication
-
-### Business Continuity
-
-**High Availability**
-- Primary database in East Asia region
-- Synchronous replica for automatic failover
-- Read replicas for analytics queries
-- Automatic failover in under 60 seconds
-
-**Disaster Recovery Testing**
-- Monthly DR drills
-- Backup restoration verification
-- Failover testing
-- Recovery procedure documentation
+The vector store integrates with:
+- **Microsoft.Agents.AI**: Implements `ChatMessageStore` interface
+- **Microsoft.Extensions.VectorData**: Uses vector data attributes and collections
+- **ASP.NET Core Authentication**: Leverages `ClaimsPrincipal` for user context
+- **Qdrant**: Underlying vector database engine

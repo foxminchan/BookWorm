@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using BookWorm.Chassis.Utilities;
+using BookWorm.Constants.Aspire;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Client;
@@ -9,8 +11,7 @@ public static class McpClientExtensions
 {
     public static void AddMcpClient(
         this IHostApplicationBuilder builder,
-        string clientName,
-        string endpoint,
+        string serviceName,
         string relativePath = "mcp",
         string version = "1.0"
     )
@@ -23,15 +24,15 @@ public static class McpClientExtensions
 
             McpClientOptions mcpClientOptions = new()
             {
-                ClientInfo = new() { Name = clientName, Version = version },
+                ClientInfo = new() { Name = serviceName, Version = version },
             };
 
-            var name = $"services__{clientName}__{endpoint}__0";
-            var url = $"{Environment.GetEnvironmentVariable(name)}/{relativePath}";
+            var url =
+                $"{ServiceDiscoveryUtilities.GetServiceEndpoint(serviceName, Protocols.Https)}/{relativePath.TrimStart('/')}";
 
             HttpClientTransportOptions transportOptions = new()
             {
-                Name = $"{clientName}-Transport",
+                Name = $"{serviceName}-Transport",
                 TransportMode = HttpTransportMode.StreamableHttp,
                 Endpoint = new(url),
             };
@@ -40,7 +41,6 @@ public static class McpClientExtensions
 
             return McpClient
                 .CreateAsync(transport, mcpClientOptions, loggerFactory)
-                .ConfigureAwait(false)
                 .GetAwaiter()
                 .GetResult();
         });

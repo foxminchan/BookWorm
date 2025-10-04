@@ -2,19 +2,19 @@
 
 namespace BookWorm.Chat.Features.Visualizer;
 
-public sealed class VisualizerWorkflowEndpoint
-    : IEndpoint<Ok<string>, VisualizerWorkflowQuery, ISender>
+public sealed class VisualizeWorkflowEndpoint
+    : IEndpoint<Ok<string>, VisualizeWorkflowQuery, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapGet(
                 "/visualizer/workflow",
-                async ([AsParameters] VisualizerWorkflowQuery query, ISender sender) =>
+                async ([AsParameters] VisualizeWorkflowQuery query, ISender sender) =>
                     await HandleAsync(query, sender)
             )
             .Produces<string>(contentType: MediaTypeNames.Text.Plain)
             .WithTags(nameof(Chat))
-            .WithName(nameof(VisualizerWorkflowEndpoint))
+            .WithName(nameof(VisualizeWorkflowEndpoint))
             .WithSummary("Visualizer Workflow")
             .WithDescription("Get the workflow for the visualizer")
             .MapToApiVersion(new(1, 0))
@@ -23,7 +23,7 @@ public sealed class VisualizerWorkflowEndpoint
     }
 
     public async Task<Ok<string>> HandleAsync(
-        VisualizerWorkflowQuery query,
+        VisualizeWorkflowQuery query,
         ISender request,
         CancellationToken cancellationToken = default
     )

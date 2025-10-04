@@ -6,9 +6,9 @@ using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Chat.UnitTests.Features.Visualizer;
 
-public sealed class VisualizerWorkflowEndpointTests
+public sealed class VisualizeWorkflowEndpointTests
 {
-    private readonly VisualizerWorkflowEndpoint _endpoint = new();
+    private readonly VisualizeWorkflowEndpoint _endpoint = new();
     private readonly Mock<ISender> _senderMock = new();
 
     [Test]
@@ -16,7 +16,7 @@ public sealed class VisualizerWorkflowEndpointTests
     {
         // Arrange
         const string expectedWorkflow = "graph TD\n    A --> B";
-        var query = new VisualizerWorkflowQuery();
+        var query = new VisualizeWorkflowQuery();
 
         _senderMock
             .Setup(s => s.Send(query, It.IsAny<CancellationToken>()))
@@ -37,7 +37,7 @@ public sealed class VisualizerWorkflowEndpointTests
     {
         // Arrange
         const string expectedWorkflow = "digraph G {\n    A -> B;\n}";
-        var query = new VisualizerWorkflowQuery(VisualizationType.Dot);
+        var query = new VisualizeWorkflowQuery(VisualizationType.Dot);
 
         _senderMock
             .Setup(s => s.Send(query, It.IsAny<CancellationToken>()))
@@ -58,7 +58,7 @@ public sealed class VisualizerWorkflowEndpointTests
     {
         // Arrange
         const string expectedWorkflow = "graph TD\n    Start --> End";
-        var query = new VisualizerWorkflowQuery();
+        var query = new VisualizeWorkflowQuery();
 
         _senderMock
             .Setup(s => s.Send(query, It.IsAny<CancellationToken>()))
@@ -79,7 +79,7 @@ public sealed class VisualizerWorkflowEndpointTests
     {
         // Arrange
         const string expectedWorkflow = "graph TD\n    A --> B";
-        var query = new VisualizerWorkflowQuery();
+        var query = new VisualizeWorkflowQuery();
         using var cancellationTokenSource = new CancellationTokenSource();
         var cancellationToken = cancellationTokenSource.Token;
 
@@ -98,7 +98,7 @@ public sealed class VisualizerWorkflowEndpointTests
     public async Task GivenSenderThrowsException_WhenHandlingEndpoint_ThenShouldPropagateException()
     {
         // Arrange
-        var query = new VisualizerWorkflowQuery();
+        var query = new VisualizeWorkflowQuery();
         var expectedException = new InvalidOperationException("Workflow generation failed");
 
         _senderMock
@@ -119,7 +119,7 @@ public sealed class VisualizerWorkflowEndpointTests
     public async Task GivenEmptyResultFromSender_WhenHandlingEndpoint_ThenShouldReturnOkWithEmptyString()
     {
         // Arrange
-        var query = new VisualizerWorkflowQuery();
+        var query = new VisualizeWorkflowQuery();
 
         _senderMock
             .Setup(s => s.Send(query, It.IsAny<CancellationToken>()))
@@ -138,7 +138,7 @@ public sealed class VisualizerWorkflowEndpointTests
     public async Task GivenInvalidEnumValue_WhenHandlingEndpoint_ThenShouldStillCallSender()
     {
         // Arrange
-        var query = new VisualizerWorkflowQuery((VisualizationType)99);
+        var query = new VisualizeWorkflowQuery((VisualizationType)99);
 
         _senderMock
             .Setup(s => s.Send(query, It.IsAny<CancellationToken>()))
@@ -165,7 +165,7 @@ public sealed class VisualizerWorkflowEndpointTests
                 C --> E[End]
                 D --> E
             """;
-        var query = new VisualizerWorkflowQuery();
+        var query = new VisualizeWorkflowQuery();
 
         _senderMock
             .Setup(s => s.Send(query, It.IsAny<CancellationToken>()))
@@ -188,8 +188,8 @@ public sealed class VisualizerWorkflowEndpointTests
         // Arrange
         const string mermaidWorkflow = "graph TD\n    A --> B";
         const string dotWorkflow = "digraph G {\n    A -> B;\n}";
-        var mermaidQuery = new VisualizerWorkflowQuery();
-        var dotQuery = new VisualizerWorkflowQuery(VisualizationType.Dot);
+        var mermaidQuery = new VisualizeWorkflowQuery();
+        var dotQuery = new VisualizeWorkflowQuery(VisualizationType.Dot);
 
         _senderMock
             .Setup(s => s.Send(mermaidQuery, It.IsAny<CancellationToken>()))
@@ -216,7 +216,7 @@ public sealed class VisualizerWorkflowEndpointTests
     public async Task GivenCancelledToken_WhenHandlingEndpoint_ThenShouldThrowOperationCanceledException()
     {
         // Arrange
-        var query = new VisualizerWorkflowQuery();
+        var query = new VisualizeWorkflowQuery();
         using var cancellationTokenSource = new CancellationTokenSource();
         await cancellationTokenSource.CancelAsync();
         var cancellationToken = cancellationTokenSource.Token;
@@ -238,7 +238,7 @@ public sealed class VisualizerWorkflowEndpointTests
     {
         // Assert
         _endpoint.ShouldNotBeNull();
-        _endpoint.ShouldBeOfType<VisualizerWorkflowEndpoint>();
+        _endpoint.ShouldBeOfType<VisualizeWorkflowEndpoint>();
     }
 
     [Test]
@@ -246,7 +246,7 @@ public sealed class VisualizerWorkflowEndpointTests
     {
         // Arrange
         var largeWorkflow = new string('A', 10000);
-        var query = new VisualizerWorkflowQuery();
+        var query = new VisualizeWorkflowQuery();
 
         _senderMock
             .Setup(s => s.Send(query, It.IsAny<CancellationToken>()))

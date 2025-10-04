@@ -13,7 +13,7 @@ public static class ModelExtensions
         services
             .AddOpenTelemetry()
             .WithTracing(x =>
-                x.AddSource("Microsoft.Agents.AI")
+                x.AddSource("*Microsoft.Agents.AI")
                     .AddSource("Microsoft.Agents.AI.Runtime.InProcess")
                     .AddSource("Microsoft.Agents.AI.Runtime.Abstractions.InMemoryActorStateStorage")
             );
@@ -21,7 +21,9 @@ public static class ModelExtensions
 
     public static void AddChatClient(this IHostApplicationBuilder builder)
     {
-        builder.AddOllamaApiClient(Components.Ollama.Chat).AddChatClient();
+        builder
+            .AddOllamaApiClient(Components.Ollama.Chat)
+            .AddChatClient(otel => otel.EnableSensitiveData = builder.Environment.IsDevelopment());
     }
 
     public static void AddEmbeddingGenerator(this IHostApplicationBuilder builder)

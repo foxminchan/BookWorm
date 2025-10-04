@@ -5,12 +5,12 @@ using BookWorm.SharedKernel;
 
 namespace BookWorm.Chat.UnitTests.Features.Visualizer;
 
-public sealed class VisualizerWorkflowQueryTests
+public sealed class VisualizeWorkflowQueryTests
 {
     private readonly Mock<IAgentOrchestrationService> _agentOrchestrationServiceMock = new();
     private readonly VisualizerWorkflowHandler _handler;
 
-    public VisualizerWorkflowQueryTests()
+    public VisualizeWorkflowQueryTests()
     {
         _handler = new(_agentOrchestrationServiceMock.Object);
     }
@@ -19,11 +19,11 @@ public sealed class VisualizerWorkflowQueryTests
     public void GivenVisualizerWorkflowQuery_WhenCreating_ThenShouldBeOfCorrectType()
     {
         // Arrange & Act
-        var query = new VisualizerWorkflowQuery();
+        var query = new VisualizeWorkflowQuery();
 
         // Assert
         query.ShouldNotBeNull();
-        query.ShouldBeOfType<VisualizerWorkflowQuery>();
+        query.ShouldBeOfType<VisualizeWorkflowQuery>();
         query.ShouldBeAssignableTo<IQuery<string>>();
         query.Type.ShouldBe(VisualizationType.Mermaid);
     }
@@ -32,7 +32,7 @@ public sealed class VisualizerWorkflowQueryTests
     public void GivenVisualizerWorkflowQueryWithType_WhenCreating_ThenShouldHaveCorrectType()
     {
         // Arrange & Act
-        var query = new VisualizerWorkflowQuery(VisualizationType.Dot);
+        var query = new VisualizeWorkflowQuery(VisualizationType.Dot);
 
         // Assert
         query.ShouldNotBeNull();
@@ -43,8 +43,8 @@ public sealed class VisualizerWorkflowQueryTests
     public void GivenTwoVisualizerWorkflowQueriesWithSameValues_WhenComparing_ThenShouldBeEqual()
     {
         // Arrange
-        var query1 = new VisualizerWorkflowQuery();
-        var query2 = new VisualizerWorkflowQuery();
+        var query1 = new VisualizeWorkflowQuery();
+        var query2 = new VisualizeWorkflowQuery();
 
         // Act & Assert
         query1.ShouldBe(query2);
@@ -57,8 +57,8 @@ public sealed class VisualizerWorkflowQueryTests
     public void GivenTwoVisualizerWorkflowQueriesWithDifferentTypes_WhenComparing_ThenShouldNotBeEqual()
     {
         // Arrange
-        var query1 = new VisualizerWorkflowQuery();
-        var query2 = new VisualizerWorkflowQuery(VisualizationType.Dot);
+        var query1 = new VisualizeWorkflowQuery();
+        var query2 = new VisualizeWorkflowQuery(VisualizationType.Dot);
 
         // Act & Assert
         query1.ShouldNotBe(query2);
@@ -70,7 +70,7 @@ public sealed class VisualizerWorkflowQueryTests
     public void GivenMermaidVisualizationType_WhenHandling_ThenShouldCallBuildAgentsWorkflow()
     {
         // Arrange
-        var query = new VisualizerWorkflowQuery();
+        var query = new VisualizeWorkflowQuery();
 
         // Act & Assert - Handler will call BuildAgentsWorkflow which will fail since mock returns null
         // This tests that the service dependency is correctly called
@@ -85,7 +85,7 @@ public sealed class VisualizerWorkflowQueryTests
     public void GivenDefaultQuery_WhenCreating_ThenShouldHaveMermaidTypeAsDefault()
     {
         // Arrange & Act
-        var query = new VisualizerWorkflowQuery();
+        var query = new VisualizeWorkflowQuery();
 
         // Assert
         query.Type.ShouldBe(VisualizationType.Mermaid);
@@ -95,7 +95,7 @@ public sealed class VisualizerWorkflowQueryTests
     public void GivenCancellationToken_WhenHandling_ThenShouldAcceptCancellationToken()
     {
         // Arrange
-        var query = new VisualizerWorkflowQuery();
+        var query = new VisualizeWorkflowQuery();
         var cts = new CancellationTokenSource();
 
         // Act & Assert
@@ -110,6 +110,6 @@ public sealed class VisualizerWorkflowQueryTests
         // Assert
         _handler.ShouldNotBeNull();
         _handler.ShouldBeOfType<VisualizerWorkflowHandler>();
-        _handler.ShouldBeAssignableTo<IQueryHandler<VisualizerWorkflowQuery, string>>();
+        _handler.ShouldBeAssignableTo<IQueryHandler<VisualizeWorkflowQuery, string>>();
     }
 }

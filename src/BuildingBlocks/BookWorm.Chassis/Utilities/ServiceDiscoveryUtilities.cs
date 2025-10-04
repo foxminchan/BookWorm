@@ -1,4 +1,4 @@
-﻿namespace BookWorm.ServiceDefaults.Configuration;
+﻿namespace BookWorm.Chassis.Utilities;
 
 public static class ServiceDiscoveryUtilities
 {

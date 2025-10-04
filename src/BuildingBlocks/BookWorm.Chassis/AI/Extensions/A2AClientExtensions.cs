@@ -24,7 +24,12 @@ public static class A2AClientExtensions
         {
             var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient(agentName);
 
-            var uriBuilder = new UriBuilder(httpClient.BaseAddress!) { Path = path };
+            var uriBuilder = new UriBuilder(httpClient.BaseAddress!);
+
+            if (!string.IsNullOrWhiteSpace(path))
+            {
+                uriBuilder.Path = path;
+            }
 
             return new A2AAgentClient(uriBuilder.Uri);
         });

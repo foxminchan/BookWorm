@@ -22,7 +22,7 @@ internal static class Extensions
 
         builder.AddChatClient();
         builder.AddAgentsTelemetry();
-        builder.AddMcpClient(Services.McpTools, Protocols.Https);
+        builder.AddMcpClient(Services.McpTools);
 
         builder.AddAgents();
         services.AddSingleton<OrchestrateAgents>();

@@ -1,16 +1,15 @@
 ﻿using BookWorm.Chassis.CQRS.Command;
 using BookWorm.Chassis.Endpoints;
 using BookWorm.Chat.Features;
-using BookWorm.Chat.Features.Update;
+using BookWorm.Chat.Features.Create;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 
-namespace BookWorm.Chat.UnitTests.Features.Update;
+namespace BookWorm.Chat.UnitTests.Features.Create;
 
-public sealed class UpdateChatEndpointTests
+public sealed class CreateChatEndpointTests
 {
-    private readonly Guid _chatId = Guid.CreateVersion7();
-    private readonly UpdateChatEndpoint _endpoint = new();
+    private readonly CreateChatEndpoint _endpoint = new();
     private readonly Prompt _prompt = new("What is the best selling book in BookWorm?");
     private readonly Mock<ISender> _senderMock = new();
 
@@ -18,7 +17,7 @@ public sealed class UpdateChatEndpointTests
     public async Task GivenValidCommand_WhenHandlingUpdateChat_ThenShouldCallSenderAndReturnNoContent()
     {
         // Arrange
-        var command = new UpdateChatCommand(_chatId, _prompt);
+        var command = new CreateChatCommand(_prompt);
 
         _senderMock
             .Setup(s => s.Send(command, It.IsAny<CancellationToken>()))
@@ -36,7 +35,7 @@ public sealed class UpdateChatEndpointTests
     public async Task GivenValidCommandWithCancellationToken_WhenHandlingUpdateChat_ThenShouldPassCancellationTokenToSender()
     {
         // Arrange
-        var command = new UpdateChatCommand(_chatId, _prompt);
+        var command = new CreateChatCommand(_prompt);
         using var cancellationTokenSource = new CancellationTokenSource();
         var cancellationToken = cancellationTokenSource.Token;
 
@@ -56,7 +55,7 @@ public sealed class UpdateChatEndpointTests
     public async Task GivenSenderThrowsException_WhenHandlingUpdateChat_ThenShouldPropagateException()
     {
         // Arrange
-        var command = new UpdateChatCommand(_chatId, _prompt);
+        var command = new CreateChatCommand(_prompt);
         var expectedException = new InvalidOperationException("Chat service error");
 
         _senderMock
@@ -76,8 +75,7 @@ public sealed class UpdateChatEndpointTests
     public async Task GivenEmptyGuidChatId_WhenHandlingUpdateChat_ThenShouldStillCallSender()
     {
         // Arrange
-        var emptyGuid = Guid.Empty;
-        var command = new UpdateChatCommand(emptyGuid, _prompt);
+        var command = new CreateChatCommand(_prompt);
 
         _senderMock
             .Setup(s => s.Send(command, It.IsAny<CancellationToken>()))
@@ -97,7 +95,7 @@ public sealed class UpdateChatEndpointTests
         // Arrange
         var longText = new string('A', 1000);
         var longPrompt = new Prompt(longText);
-        var command = new UpdateChatCommand(_chatId, longPrompt);
+        var command = new CreateChatCommand(longPrompt);
 
         _senderMock
             .Setup(s => s.Send(command, It.IsAny<CancellationToken>()))
@@ -117,7 +115,7 @@ public sealed class UpdateChatEndpointTests
         // Arrange
         var specialText = "What about émojis 🚀 and spëcial chars!?";
         var specialPrompt = new Prompt(specialText);
-        var command = new UpdateChatCommand(_chatId, specialPrompt);
+        var command = new CreateChatCommand(specialPrompt);
 
         _senderMock
             .Setup(s => s.Send(command, It.IsAny<CancellationToken>()))
@@ -135,20 +133,16 @@ public sealed class UpdateChatEndpointTests
     public async Task GivenMultipleSequentialCommands_WhenHandlingUpdateChat_ThenShouldProcessEachCommandSeparately()
     {
         // Arrange
-        var chatId1 = Guid.CreateVersion7();
-        var chatId2 = Guid.CreateVersion7();
-        var chatId3 = Guid.CreateVersion7();
-
         var prompt1 = new Prompt("First prompt");
         var prompt2 = new Prompt("Second prompt");
         var prompt3 = new Prompt("Third prompt");
 
-        var command1 = new UpdateChatCommand(chatId1, prompt1);
-        var command2 = new UpdateChatCommand(chatId2, prompt2);
-        var command3 = new UpdateChatCommand(chatId3, prompt3);
+        var command1 = new CreateChatCommand(prompt1);
+        var command2 = new CreateChatCommand(prompt2);
+        var command3 = new CreateChatCommand(prompt3);
 
         _senderMock
-            .Setup(s => s.Send(It.IsAny<UpdateChatCommand>(), It.IsAny<CancellationToken>()))
+            .Setup(s => s.Send(It.IsAny<CreateChatCommand>(), It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult(Unit.Value));
 
         // Act
@@ -170,17 +164,14 @@ public sealed class UpdateChatEndpointTests
     public async Task GivenConcurrentRequests_WhenHandlingUpdateChat_ThenShouldHandleEachRequestIndependently()
     {
         // Arrange
-        var chatId1 = Guid.CreateVersion7();
-        var chatId2 = Guid.CreateVersion7();
-
         var prompt1 = new Prompt("Concurrent prompt 1");
         var prompt2 = new Prompt("Concurrent prompt 2");
 
-        var command1 = new UpdateChatCommand(chatId1, prompt1);
-        var command2 = new UpdateChatCommand(chatId2, prompt2);
+        var command1 = new CreateChatCommand(prompt1);
+        var command2 = new CreateChatCommand(prompt2);
 
         _senderMock
-            .Setup(s => s.Send(It.IsAny<UpdateChatCommand>(), It.IsAny<CancellationToken>()))
+            .Setup(s => s.Send(It.IsAny<CreateChatCommand>(), It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult(Unit.Value));
 
         // Act
@@ -201,20 +192,19 @@ public sealed class UpdateChatEndpointTests
     public void GivenUpdateChatEndpoint_WhenCreating_ThenShouldImplementCorrectInterface()
     {
         // Arrange & Act
-        var endpoint = new UpdateChatEndpoint();
+        var endpoint = new CreateChatEndpoint();
 
         // Assert
-        endpoint.ShouldBeAssignableTo<IEndpoint<NoContent, UpdateChatCommand, ISender>>();
+        endpoint.ShouldBeAssignableTo<IEndpoint<NoContent, CreateChatCommand, ISender>>();
     }
 
     [Test]
     public void GivenChatIdAndPrompt_WhenCreatingUpdateChatCommand_ThenPropertiesShouldBeCorrectlyInitialized()
     {
         // Arrange & Act
-        var command = new UpdateChatCommand(_chatId, _prompt);
+        var command = new CreateChatCommand(_prompt);
 
         // Assert
-        command.Id.ShouldBe(_chatId);
         command.Prompt.ShouldBe(_prompt);
         command.Prompt.Text.ShouldBe("What is the best selling book in BookWorm?");
         command.ShouldBeAssignableTo<ICommand>();
@@ -224,8 +214,8 @@ public sealed class UpdateChatEndpointTests
     public void GivenTwoUpdateChatCommandsWithSameValues_WhenComparing_ThenShouldBeEqual()
     {
         // Arrange
-        var command1 = new UpdateChatCommand(_chatId, _prompt);
-        var command2 = new UpdateChatCommand(_chatId, _prompt);
+        var command1 = new CreateChatCommand(_prompt);
+        var command2 = new CreateChatCommand(_prompt);
 
         // Act & Assert
         command1.ShouldBe(command2);
@@ -233,24 +223,12 @@ public sealed class UpdateChatEndpointTests
     }
 
     [Test]
-    public void GivenTwoUpdateChatCommandsWithDifferentChatIds_WhenComparing_ThenShouldNotBeEqual()
-    {
-        // Arrange
-        var differentChatId = Guid.CreateVersion7();
-        var command1 = new UpdateChatCommand(_chatId, _prompt);
-        var command2 = new UpdateChatCommand(differentChatId, _prompt);
-
-        // Act & Assert
-        command1.ShouldNotBe(command2);
-    }
-
-    [Test]
     public void GivenTwoUpdateChatCommandsWithDifferentPrompts_WhenComparing_ThenShouldNotBeEqual()
     {
         // Arrange
         var differentPrompt = new Prompt("Different prompt text");
-        var command1 = new UpdateChatCommand(_chatId, _prompt);
-        var command2 = new UpdateChatCommand(_chatId, differentPrompt);
+        var command1 = new CreateChatCommand(_prompt);
+        var command2 = new CreateChatCommand(differentPrompt);
 
         // Act & Assert
         command1.ShouldNotBe(command2);

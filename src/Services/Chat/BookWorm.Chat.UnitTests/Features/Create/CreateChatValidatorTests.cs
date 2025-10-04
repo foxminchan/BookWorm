@@ -1,40 +1,26 @@
 ﻿using BookWorm.Chat.Features;
-using BookWorm.Chat.Features.Update;
+using BookWorm.Chat.Features.Create;
 using BookWorm.Constants.Core;
 using FluentValidation.TestHelper;
 
-namespace BookWorm.Chat.UnitTests.Features.Update;
+namespace BookWorm.Chat.UnitTests.Features.Create;
 
-public sealed class UpdateChatValidatorTests
+public sealed class CreateChatValidatorTests
 {
-    private readonly UpdateChatValidator _validator = new();
+    private readonly CreateChatValidator _validator = new();
 
     [Test]
     public void GivenValidCommand_WhenValidating_ThenShouldNotHaveAnyValidationErrors()
     {
         // Arrange
         var prompt = new Prompt("What is the best selling book in BookWorm?");
-        var command = new UpdateChatCommand(Guid.CreateVersion7(), prompt);
+        var command = new CreateChatCommand(prompt);
 
         // Act
         var result = _validator.TestValidate(command);
 
         // Assert
         result.ShouldNotHaveAnyValidationErrors();
-    }
-
-    [Test]
-    public void GivenEmptyId_WhenValidating_ThenShouldHaveValidationError()
-    {
-        // Arrange
-        var prompt = new Prompt("Valid prompt text");
-        var command = new UpdateChatCommand(Guid.Empty, prompt);
-
-        // Act
-        var result = _validator.TestValidate(command);
-
-        // Assert
-        result.ShouldHaveValidationErrorFor(x => x.Id);
     }
 
     [Test]
@@ -48,7 +34,7 @@ public sealed class UpdateChatValidatorTests
     {
         // Arrange
         var prompt = new Prompt(promptText!);
-        var command = new UpdateChatCommand(Guid.CreateVersion7(), prompt);
+        var command = new CreateChatCommand(prompt);
 
         // Act
         var result = _validator.TestValidate(command);
@@ -63,7 +49,7 @@ public sealed class UpdateChatValidatorTests
         // Arrange
         var longPromptText = new string('A', DataSchemaLength.Max + 1);
         var prompt = new Prompt(longPromptText);
-        var command = new UpdateChatCommand(Guid.CreateVersion7(), prompt);
+        var command = new CreateChatCommand(prompt);
 
         // Act
         var result = _validator.TestValidate(command);
@@ -78,7 +64,7 @@ public sealed class UpdateChatValidatorTests
         // Arrange
         var maxLengthPromptText = new string('A', DataSchemaLength.Max);
         var prompt = new Prompt(maxLengthPromptText);
-        var command = new UpdateChatCommand(Guid.CreateVersion7(), prompt);
+        var command = new CreateChatCommand(prompt);
 
         // Act
         var result = _validator.TestValidate(command);
@@ -93,7 +79,7 @@ public sealed class UpdateChatValidatorTests
         // Arrange
         var overMaxLengthPromptText = new string('B', DataSchemaLength.Max + 1);
         var prompt = new Prompt(overMaxLengthPromptText);
-        var command = new UpdateChatCommand(Guid.CreateVersion7(), prompt);
+        var command = new CreateChatCommand(prompt);
 
         // Act
         var result = _validator.TestValidate(command);
@@ -111,7 +97,7 @@ public sealed class UpdateChatValidatorTests
     {
         // Arrange
         var prompt = new Prompt("What about émojis 🚀 and spëcial chars!?");
-        var command = new UpdateChatCommand(Guid.CreateVersion7(), prompt);
+        var command = new CreateChatCommand(prompt);
 
         // Act
         var result = _validator.TestValidate(command);
@@ -125,58 +111,12 @@ public sealed class UpdateChatValidatorTests
     {
         // Arrange
         var prompt = new Prompt("Chat 聊天 💬 question about books");
-        var command = new UpdateChatCommand(Guid.CreateVersion7(), prompt);
+        var command = new CreateChatCommand(prompt);
 
         // Act
         var result = _validator.TestValidate(command);
 
         // Assert
-        result.ShouldNotHaveValidationErrorFor(x => x.Prompt.Text);
-    }
-
-    [Test]
-    public void GivenBothEmptyIdAndEmptyPromptText_WhenValidating_ThenShouldHaveValidationErrorsForBoth()
-    {
-        // Arrange
-        var prompt = new Prompt("");
-        var command = new UpdateChatCommand(Guid.Empty, prompt);
-
-        // Act
-        var result = _validator.TestValidate(command);
-
-        // Assert
-        result.ShouldHaveValidationErrorFor(x => x.Id);
-        result.ShouldHaveValidationErrorFor(x => x.Prompt.Text);
-    }
-
-    [Test]
-    public void GivenValidIdButPromptTextExceedingMaxLength_WhenValidating_ThenShouldOnlyHavePromptTextValidationError()
-    {
-        // Arrange
-        var longPromptText = new string('A', DataSchemaLength.Max + 1);
-        var prompt = new Prompt(longPromptText);
-        var command = new UpdateChatCommand(Guid.CreateVersion7(), prompt);
-
-        // Act
-        var result = _validator.TestValidate(command);
-
-        // Assert
-        result.ShouldNotHaveValidationErrorFor(x => x.Id);
-        result.ShouldHaveValidationErrorFor(x => x.Prompt.Text);
-    }
-
-    [Test]
-    public void GivenEmptyIdButValidPromptText_WhenValidating_ThenShouldOnlyHaveIdValidationError()
-    {
-        // Arrange
-        var prompt = new Prompt("Valid prompt text");
-        var command = new UpdateChatCommand(Guid.Empty, prompt);
-
-        // Act
-        var result = _validator.TestValidate(command);
-
-        // Assert
-        result.ShouldHaveValidationErrorFor(x => x.Id);
         result.ShouldNotHaveValidationErrorFor(x => x.Prompt.Text);
     }
 
@@ -184,15 +124,9 @@ public sealed class UpdateChatValidatorTests
     public void GivenMultipleCommandsWithDifferentPromptLengths_WhenValidating_ThenShouldValidateCorrectly()
     {
         // Arrange
-        var shortPromptCommand = new UpdateChatCommand(Guid.CreateVersion7(), new("Short"));
-        var maxPromptCommand = new UpdateChatCommand(
-            Guid.CreateVersion7(),
-            new(new('A', DataSchemaLength.Max))
-        );
-        var longPromptCommand = new UpdateChatCommand(
-            Guid.CreateVersion7(),
-            new(new('A', DataSchemaLength.Max + 1))
-        );
+        var shortPromptCommand = new CreateChatCommand(new("Short"));
+        var maxPromptCommand = new CreateChatCommand(new(new('A', DataSchemaLength.Max)));
+        var longPromptCommand = new CreateChatCommand(new(new('A', DataSchemaLength.Max + 1)));
 
         // Act
         var shortResult = _validator.TestValidate(shortPromptCommand);
@@ -210,7 +144,7 @@ public sealed class UpdateChatValidatorTests
     {
         // Arrange
         var prompt = new Prompt("A");
-        var command = new UpdateChatCommand(Guid.CreateVersion7(), prompt);
+        var command = new CreateChatCommand(prompt);
 
         // Act
         var result = _validator.TestValidate(command);
@@ -225,7 +159,7 @@ public sealed class UpdateChatValidatorTests
         // Arrange
         var longValidPrompt = new string('A', 500);
         var prompt = new Prompt(longValidPrompt);
-        var command = new UpdateChatCommand(Guid.CreateVersion7(), prompt);
+        var command = new CreateChatCommand(prompt);
 
         // Act
         var result = _validator.TestValidate(command);
@@ -240,7 +174,7 @@ public sealed class UpdateChatValidatorTests
         // Arrange
         var promptWithSpecialChars = "What is the\nbest selling\tbook in BookWorm?";
         var prompt = new Prompt(promptWithSpecialChars);
-        var command = new UpdateChatCommand(Guid.CreateVersion7(), prompt);
+        var command = new CreateChatCommand(prompt);
 
         // Act
         var result = _validator.TestValidate(command);
