@@ -12,7 +12,7 @@ badges:
     textColor: purple
     backgroundColor: purple
     icon: SparklesIcon
-  - content: "Semantic Kernel"
+  - content: "Agent Framework"
     textColor: green
     backgroundColor: green
     icon: CpuChipIcon
@@ -26,13 +26,13 @@ owners:
 
 ## Overview
 
-The **Summarize Feedback** endpoint leverages advanced AI capabilities through Microsoft Semantic Kernel to provide intelligent, contextual summaries of user feedback and ratings for books. This sophisticated query operation goes beyond simple aggregation by using a specialized RatingAgent that analyzes sentiment, calculates quality metrics, and classifies book performance into distinct categories.
+The **Summarize Feedback** endpoint leverages advanced AI capabilities through Microsoft Agent Framework to provide intelligent, contextual summaries of user feedback and ratings for books. This sophisticated query operation goes beyond simple aggregation by using a specialized RatingAgent that analyzes sentiment, calculates quality metrics, and classifies book performance into distinct categories.
 
 As a core read operation within the Rating bounded context, this endpoint implements CQRS principles with AI-enhanced processing, enabling clients to receive comprehensive feedback insights without impacting the command-side operations of the Rating domain.
 
 ### Key Features
 
-- **AI-Powered Analysis**: Uses Microsoft Semantic Kernel with Ollama integration for advanced text processing
+- **AI-Powered Analysis**: Uses Microsoft Agent Framework with Ollama integration for advanced text processing
 - **Quality Classification**: Automatically categorizes books as "Best Seller", "Good", "Bad", or "No Data" based on sophisticated algorithms
 - **Real-time Processing**: Provides instant feedback summaries with low-latency response times
 - **Contextual Intelligence**: Considers rating patterns, review quality, and temporal factors in analysis
@@ -58,19 +58,23 @@ curl -X GET "https://api.bookworm.com/api/v1/feedbacks/{bookId}/summarize" \
 
 ## Implementation Details
 
-The Summarize Feedback feature implements a sophisticated AI-powered architecture that combines CQRS patterns with Microsoft Semantic Kernel capabilities for intelligent feedback analysis.
+The Summarize Feedback feature implements a sophisticated AI-powered architecture that combines CQRS patterns with Microsoft Agent Framework capabilities for intelligent feedback analysis.
 
 ```mermaid
-flowchart LR
- subgraph V["<br>"]
-    direction LR
-        V1["RatingAgent"]
-        V2["SummarizeAgent"]
-  end
-    O(("Start")) --> A["User"]
-    V1 <-- A2A --> V2
-    V --> n3(("Done"))
-    A --> V
+flowchart TD
+  HandoffStart["HandoffStart (Start)"];
+  language["language"];
+  summarize["summarize"];
+  HandoffEnd["HandoffEnd"];
+  rating["rating"];
+
+  HandoffStart --> language;
+  language --> summarize;
+  language --> HandoffEnd;
+  summarize --> rating;
+  summarize --> HandoffEnd;
+  rating --> language;
+  rating --> HandoffEnd;
 ```
 
 ## API Specification

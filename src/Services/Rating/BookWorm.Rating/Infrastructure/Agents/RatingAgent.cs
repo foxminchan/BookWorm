@@ -1,20 +1,15 @@
 ﻿using A2A;
-using BookWorm.Chassis.AI.Extensions;
-using BookWorm.Rating.Plugins;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Agents;
-using Microsoft.SemanticKernel.Connectors.Ollama;
 
 namespace BookWorm.Rating.Infrastructure.Agents;
 
-public static class RatingAgent
+internal static class RatingAgent
 {
-    private const string Name = Constants.Other.Agents.RatingAgent;
+    public const string Name = Constants.Other.Agents.RatingAgent;
 
-    private const string Description =
+    public const string Description =
         "Summarizes book ratings and evaluates product quality as bad, good, or best seller.";
 
-    private const string Instructions = """
+    public const string Instructions = """
         You are a Rating Agent responsible for processing and evaluating book ratings data with contextual intelligence.
 
         **Primary Responsibilities**:
@@ -54,56 +49,8 @@ public static class RatingAgent
         - Use contextual intelligence to select the most relevant functions for each analysis task
         """;
 
-    public static ChatCompletionAgent CreateAgent(Kernel kernel)
-    {
-        var agentKernel = kernel.Clone();
-
-        var reviewPlugin = new ReviewPlugin(kernel.Services.GetRequiredService<ISender>());
-        agentKernel.Plugins.AddFromObject(reviewPlugin);
-
-        var summarizePlugin = agentKernel.MapToAgentPlugin(Constants.Other.Agents.SummarizeAgent);
-        agentKernel.Plugins.Add(summarizePlugin);
-
-        return new()
-        {
-            Instructions = Instructions,
-            Name = Name,
-            Description = Description,
-            Kernel = agentKernel,
-            UseImmutableKernel = true,
-            Arguments = new(
-                new OllamaPromptExecutionSettings
-                {
-                    Temperature = 0.1f,
-                    FunctionChoiceBehavior = FunctionChoiceBehavior.Auto(
-                        options: new() { RetainArgumentTypes = true }
-                    ),
-                }
-            ),
-        };
-    }
-
-    public static AgentCard GetAgentCard()
-    {
-        var capabilities = new AgentCapabilities { Streaming = false, PushNotifications = false };
-
-        var rating = new AgentSkill
-        {
-            Id = "id_rating_agent",
-            Name = Name,
-            Description = Description,
-            Tags = ["rating", "book", "semantic-kernel", "contextual-selection", "a2a"],
-            Examples =
-            [
-                "What is the average rating for the book 'The Great Gatsby'?",
-                "Classify the product quality of '1984' by George Orwell.",
-                "How many reviews does 'To Kill a Mockingbird' have?",
-                "Analyze customer sentiment for reviews of a specific book.",
-                "Provide comprehensive rating analysis with quality classification.",
-            ],
-        };
-
-        return new()
+    public static AgentCard AgentCard { get; } =
+        new()
         {
             Name = Name,
             Description =
@@ -112,8 +59,65 @@ public static class RatingAgent
             Provider = new() { Organization = nameof(BookWorm) },
             DefaultInputModes = ["text"],
             DefaultOutputModes = ["text"],
-            Capabilities = capabilities,
-            Skills = [rating],
+            Capabilities = new() { Streaming = false, PushNotifications = false },
+            Skills =
+            [
+                new()
+                {
+                    Id = "rating_agent_rating_analysis",
+                    Tags = ["analysis", "rating", "statistics"],
+                    Name = "Rating Analysis",
+                    Description =
+                        "Analyze aggregated rating data for books including average rating, total reviews, and rating distribution",
+                    Examples =
+                    [
+                        "What is the average rating for the book 'The Great Gatsby'?",
+                        "How many reviews does 'To Kill a Mockingbird' have?",
+                        "Show me the rating distribution for '1984'",
+                    ],
+                },
+                new()
+                {
+                    Id = "rating_agent_quality_classification",
+                    Tags = ["classification", "quality", "rating"],
+                    Name = "Quality Classification",
+                    Description =
+                        "Evaluate and classify product quality as Best Seller, Good, Bad, or No Data based on rating metrics",
+                    Examples =
+                    [
+                        "Classify the product quality of '1984' by George Orwell.",
+                        "Is 'Pride and Prejudice' a best seller based on ratings?",
+                        "What quality category does this book fall into?",
+                    ],
+                },
+                new()
+                {
+                    Id = "rating_agent_sentiment_analysis",
+                    Tags = ["sentiment", "analysis", "reviews"],
+                    Name = "Sentiment Analysis",
+                    Description =
+                        "Analyze customer sentiment and provide content summarization from book reviews",
+                    Examples =
+                    [
+                        "Analyze customer sentiment for reviews of a specific book.",
+                        "What are customers saying about 'The Catcher in the Rye'?",
+                        "Summarize the main themes in reviews for this book",
+                    ],
+                },
+                new()
+                {
+                    Id = "rating_agent_comprehensive_report",
+                    Tags = ["report", "comprehensive", "analysis"],
+                    Name = "Comprehensive Rating Report",
+                    Description =
+                        "Provide comprehensive rating analysis with quality classification, metrics, and justification",
+                    Examples =
+                    [
+                        "Provide comprehensive rating analysis with quality classification.",
+                        "Give me a full rating report for 'Harry Potter and the Sorcerer's Stone'",
+                        "Analyze all rating aspects for this book including classification and sentiment",
+                    ],
+                },
+            ],
         };
-    }
 }

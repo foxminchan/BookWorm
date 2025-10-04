@@ -6,4 +6,5 @@ namespace BookWorm.Chat;
 public sealed class AppSettings
 {
     public TimeSpan StreamTimeout { get; set; }
+    public int MaxMessages { get; set; }
 }

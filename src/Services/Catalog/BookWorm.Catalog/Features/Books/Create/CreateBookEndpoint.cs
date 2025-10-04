@@ -1,5 +1,6 @@
 ﻿using BookWorm.Catalog.Features.Books.Get;
 using BookWorm.Constants.Core;
+using Microsoft.AspNetCore.Mvc;
 
 namespace BookWorm.Catalog.Features.Books.Create;
 
@@ -11,7 +12,7 @@ public sealed class CreateBookEndpoint
         app.MapPost(
                 "/books",
                 async (
-                    [AsParameters] CreateBookCommand command,
+                    [FromForm] CreateBookCommand command,
                     ISender sender,
                     LinkGenerator linker
                 ) => await HandleAsync(command, sender, linker)

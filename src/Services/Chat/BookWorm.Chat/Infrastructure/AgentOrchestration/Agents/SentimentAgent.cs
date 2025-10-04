@@ -1,17 +1,13 @@
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Agents;
-using Microsoft.SemanticKernel.Connectors.Ollama;
-
 namespace BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
 
-public static class SentimentAgent
+internal static class SentimentAgent
 {
-    private const string Name = Constants.Other.Agents.SentimentAgent;
+    public const string Name = Constants.Other.Agents.SentimentAgent;
 
-    private const string Description =
+    public const string Description =
         "An agent that evaluates the sentiment of translated English text as negative, positive, or neutral.";
 
-    private const string Instructions = """
+    public const string Instructions = """
         You are a sentiment analysis assistant for BookWorm bookstore. Your role is to evaluate the emotional tone of user messages that have been processed by the Summarize Agent.
 
         **Sentiment Analysis:**
@@ -33,16 +29,4 @@ public static class SentimentAgent
 
         Your analysis helps the Book Agent understand the user's emotional state to provide appropriate responses.
         """;
-
-    public static ChatCompletionAgent CreateAgent(Kernel kernel)
-    {
-        return new()
-        {
-            Instructions = Instructions,
-            Name = Name,
-            Description = Description,
-            Kernel = kernel,
-            Arguments = new(new OllamaPromptExecutionSettings { Temperature = 0.2f }),
-        };
-    }
 }

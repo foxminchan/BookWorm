@@ -1,9 +1,11 @@
-﻿using A2A;
-using A2A.AspNetCore;
+﻿using BookWorm.Chassis.AI.Agents;
 using BookWorm.Chassis.AI.Extensions;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Agents;
-using Microsoft.SemanticKernel.Agents.A2A;
+using BookWorm.Chassis.AI.Middlewares;
+using BookWorm.Chat.Infrastructure.ChatHistory;
+using BookWorm.Chat.Models;
+using Microsoft.Agents.AI;
+using Microsoft.Agents.AI.Hosting;
+using Microsoft.Extensions.VectorData;
 
 namespace BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
 
@@ -13,66 +15,139 @@ internal static class Extensions
     {
         var services = builder.Services;
 
-        services.AddA2AClient(
-            Constants.Other.Agents.RatingAgent,
-            $"{Protocols.HttpOrHttps}://{Services.Rating}"
+        services.AddHttpClient<AgentDiscoveryClient>(client =>
+            client.BaseAddress = new($"{Protocols.HttpOrHttps}://{Services.Rating}")
         );
 
-        services.AddKeyedSingleton(
-            Constants.Other.Agents.BookAgent,
-            (sp, _) =>
+        builder.AddAIAgent(
+            BookAgent.Name,
+            (sp, key) =>
             {
-                var kernel = sp.GetRequiredService<Kernel>();
-                return BookAgent.CreateAgentAsync(kernel).GetAwaiter().GetResult();
+                var chatClient = sp.GetRequiredService<IChatClient>()
+                    .AsBuilder()
+                    .Use(PIIMiddleware.InvokeAsync, null)
+                    .Use(GuardrailMiddleware.InvokeAsync, null)
+                    .Build();
+
+                var mcpClient = sp.GetRequiredService<McpClient>();
+
+                var agent = new ChatClientAgent(
+                    chatClient,
+                    options: new()
+                    {
+                        Name = key,
+                        Instructions = BookAgent.Instructions,
+                        Description = BookAgent.Description,
+                        ChatOptions = new()
+                        {
+                            Tools =
+                            [
+                                .. mcpClient.ListToolsAsync().Preserve().GetAwaiter().GetResult(),
+                                A2AClientExtensions
+                                    .GetA2AAgent(Services.Rating, key)
+                                    .AsAIFunction(),
+                            ],
+                        },
+                        ChatMessageStoreFactory = ctx => new VectorChatMessageStore(
+                            sp.GetRequiredService<AppSettings>(),
+                            sp.GetRequiredService<VectorStoreCollection<Guid, ChatHistoryItem>>(),
+                            sp.GetRequiredService<ClaimsPrincipal>(),
+                            ctx.SerializedState,
+                            ctx.JsonSerializerOptions
+                        ),
+                    }
+                );
+
+                return agent;
             }
         );
 
-        services.AddKeyedSingleton(
-            Constants.Other.Agents.LanguageAgent,
-            (sp, _) =>
+        builder.AddAIAgent(
+            LanguageAgent.Name,
+            (sp, key) =>
             {
-                var kernel = sp.GetRequiredService<Kernel>();
-                return LanguageAgent.CreateAgent(kernel);
+                var chatClient = sp.GetRequiredService<IChatClient>()
+                    .AsBuilder()
+                    .Use(GuardrailMiddleware.InvokeAsync, null)
+                    .Build();
+
+                var agent = new ChatClientAgent(
+                    chatClient,
+                    options: new()
+                    {
+                        Name = key,
+                        Instructions = LanguageAgent.Instructions,
+                        Description = LanguageAgent.Description,
+                        ChatMessageStoreFactory = ctx => new VectorChatMessageStore(
+                            sp.GetRequiredService<AppSettings>(),
+                            sp.GetRequiredService<VectorStoreCollection<Guid, ChatHistoryItem>>(),
+                            sp.GetRequiredService<ClaimsPrincipal>(),
+                            ctx.SerializedState,
+                            ctx.JsonSerializerOptions
+                        ),
+                    }
+                );
+
+                return agent;
             }
         );
 
-        services.AddKeyedSingleton(
-            Constants.Other.Agents.SummarizeAgent,
-            (sp, _) =>
+        builder.AddAIAgent(
+            SentimentAgent.Name,
+            (sp, key) =>
             {
-                var kernel = sp.GetRequiredService<Kernel>();
-                return SummarizeAgent.CreateAgent(kernel);
+                var chatClient = sp.GetRequiredService<IChatClient>();
+
+                var agent = new ChatClientAgent(
+                    chatClient,
+                    options: new()
+                    {
+                        Name = key,
+                        Instructions = SentimentAgent.Instructions,
+                        Description = SentimentAgent.Description,
+                        ChatMessageStoreFactory = ctx => new VectorChatMessageStore(
+                            sp.GetRequiredService<AppSettings>(),
+                            sp.GetRequiredService<VectorStoreCollection<Guid, ChatHistoryItem>>(),
+                            sp.GetRequiredService<ClaimsPrincipal>(),
+                            ctx.SerializedState,
+                            ctx.JsonSerializerOptions
+                        ),
+                    }
+                );
+
+                return agent;
             }
         );
 
-        services.AddKeyedSingleton(
-            Constants.Other.Agents.SentimentAgent,
-            (sp, _) =>
+        builder.AddAIAgent(
+            SummarizeAgent.Name,
+            (sp, key) =>
             {
-                var kernel = sp.GetRequiredService<Kernel>();
-                return SentimentAgent.CreateAgent(kernel);
+                var chatClient = sp.GetRequiredService<IChatClient>()
+                    .AsBuilder()
+                    .Use(PIIMiddleware.InvokeAsync, null)
+                    .Use(GuardrailMiddleware.InvokeAsync, null)
+                    .Build();
+
+                var agent = new ChatClientAgent(
+                    chatClient,
+                    options: new()
+                    {
+                        Name = key,
+                        Instructions = SummarizeAgent.Instructions,
+                        Description = SummarizeAgent.Description,
+                        ChatMessageStoreFactory = ctx => new VectorChatMessageStore(
+                            sp.GetRequiredService<AppSettings>(),
+                            sp.GetRequiredService<VectorStoreCollection<Guid, ChatHistoryItem>>(),
+                            sp.GetRequiredService<ClaimsPrincipal>(),
+                            ctx.SerializedState,
+                            ctx.JsonSerializerOptions
+                        ),
+                    }
+                );
+
+                return agent;
             }
         );
-
-        services
-            .AddOpenTelemetry()
-            .WithTracing(tracing =>
-                tracing
-                    .AddSource(TaskManager.ActivitySource.Name)
-                    .AddSource(A2AJsonRpcProcessor.ActivitySource.Name)
-            );
-    }
-
-    public static void MapHostSummarizeAgent(this WebApplication app)
-    {
-        var agent = app.Services.GetRequiredKeyedService<ChatCompletionAgent>(
-            Constants.Other.Agents.SummarizeAgent
-        );
-
-        var hostAgent = new A2AHostAgent(agent, SummarizeAgent.GetAgentCard());
-
-        app.MapA2A(hostAgent.TaskManager!, "/").WithTags(Constants.Other.Agents.SummarizeAgent);
-
-        app.MapHttpA2A(hostAgent.TaskManager!, "/").WithTags(Constants.Other.Agents.SummarizeAgent);
     }
 }

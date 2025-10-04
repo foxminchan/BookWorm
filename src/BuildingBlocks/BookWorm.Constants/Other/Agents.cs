@@ -2,9 +2,9 @@
 
 public static class Agents
 {
-    public const string BookAgent = nameof(BookAgent);
-    public const string RatingAgent = nameof(RatingAgent);
-    public const string LanguageAgent = nameof(LanguageAgent);
-    public const string SummarizeAgent = nameof(SummarizeAgent);
-    public const string SentimentAgent = nameof(SentimentAgent);
+    public const string BookAgent = "book";
+    public const string RatingAgent = "rating";
+    public const string LanguageAgent = "language";
+    public const string SummarizeAgent = "summarize";
+    public const string SentimentAgent = "sentiment";
 }

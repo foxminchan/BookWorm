@@ -1,296 +1,223 @@
-﻿using System.Security.Claims;
-using BookWorm.Chassis.Repository;
-using BookWorm.Chat.Domain.AggregatesModel;
+﻿using BookWorm.Chassis.CQRS.Command;
+using BookWorm.Chat.Features;
 using BookWorm.Chat.Features.Create;
+using BookWorm.Chat.Infrastructure.ChatStreaming;
+using MediatR;
 
 namespace BookWorm.Chat.UnitTests.Features.Create;
 
 public sealed class CreateChatCommandTests
 {
-    private readonly Mock<ClaimsPrincipal> _claimsPrincipalMock;
-    private readonly CreateChatHandler _handler;
-    private readonly Mock<IConversationRepository> _repositoryMock;
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
-    private readonly Guid _userId;
+    private readonly Mock<IChatStreaming> _chatStreamingMock = new();
+    private readonly UpdateChatHandler _handler;
 
     public CreateChatCommandTests()
     {
-        _repositoryMock = new();
-        _claimsPrincipalMock = new();
-        _unitOfWorkMock = new();
-        _userId = Guid.CreateVersion7();
-
-        // Setup unit of work
-        _repositoryMock.Setup(x => x.UnitOfWork).Returns(_unitOfWorkMock.Object);
-
-        _handler = new(_repositoryMock.Object, _claimsPrincipalMock.Object);
+        _handler = new(_chatStreamingMock.Object);
     }
 
     [Test]
-    public async Task GivenValidCommand_WhenHandlingCreateChat_ThenShouldCreateConversationAndReturnId()
+    public void GivenUpdateChatCommand_WhenCreating_ThenShouldBeOfCorrectType()
     {
         // Arrange
-        var command = new CreateChatCommand("Test Chat");
-        var conversation = new Conversation("Test Chat", _userId);
-
-        SetupClaimsPrincipal(_userId);
-        SetupRepositoryAddAsync(conversation);
+        var prompt = new Prompt("Test prompt");
 
         // Act
-        var result = await _handler.Handle(command, CancellationToken.None);
+        var command = new CreateChatCommand(prompt);
 
         // Assert
-        result.ShouldBe(Guid.Empty);
-        _repositoryMock.Verify(
-            x =>
-                x.AddAsync(
-                    It.Is<Conversation>(c => c.Name == "Test Chat" && c.UserId == _userId),
-                    It.IsAny<CancellationToken>()
-                ),
-            Times.Once
-        );
-        _unitOfWorkMock.Verify(x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        command.ShouldNotBeNull();
+        command.ShouldBeOfType<CreateChatCommand>();
+        command.ShouldBeAssignableTo<ICommand>();
+        command.Prompt.ShouldBe(prompt);
     }
 
     [Test]
-    public async Task GivenValidCommandWithLongName_WhenHandlingCreateChat_ThenShouldCreateConversationSuccessfully()
+    public void GivenTwoUpdateChatCommandsWithSameValues_WhenComparing_ThenShouldBeEqual()
     {
         // Arrange
-        var longName = new string('A', 500);
-        var command = new CreateChatCommand(longName);
-        var conversation = new Conversation(longName, _userId);
-
-        SetupClaimsPrincipal(_userId);
-        SetupRepositoryAddAsync(conversation);
-
-        // Act
-        var result = await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        result.ShouldBe(Guid.Empty);
-        _repositoryMock.Verify(
-            x =>
-                x.AddAsync(
-                    It.Is<Conversation>(c => c.Name == longName && c.UserId == _userId),
-                    It.IsAny<CancellationToken>()
-                ),
-            Times.Once
-        );
-    }
-
-    [Test]
-    public async Task GivenValidCommand_WhenHandlingCreateChat_ThenShouldCallSaveEntitiesAsync()
-    {
-        // Arrange
-        var command = new CreateChatCommand("Test Chat");
-        var conversation = new Conversation("Test Chat", _userId);
-
-        SetupClaimsPrincipal(_userId);
-        SetupRepositoryAddAsync(conversation);
-
-        // Act
-        await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        _unitOfWorkMock.Verify(x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Test]
-    public async Task GivenCancellationTokenRequested_WhenHandlingCreateChat_ThenShouldPassTokenToRepository()
-    {
-        // Arrange
-        var command = new CreateChatCommand("Test Chat");
-        var conversation = new Conversation("Test Chat", _userId);
-        using var cancellationTokenSource = new CancellationTokenSource();
-        var cancellationToken = cancellationTokenSource.Token;
-
-        SetupClaimsPrincipal(_userId);
-        SetupRepositoryAddAsync(conversation);
-
-        // Act
-        await _handler.Handle(command, cancellationToken);
-
-        // Assert
-        _repositoryMock.Verify(
-            x => x.AddAsync(It.IsAny<Conversation>(), cancellationToken),
-            Times.Once
-        );
-        _unitOfWorkMock.Verify(x => x.SaveEntitiesAsync(cancellationToken), Times.Once);
-    }
-
-    [Test]
-    public async Task GivenMissingUserIdClaim_WhenHandlingCreateChat_ThenShouldThrowUnauthorizedAccessException()
-    {
-        // Arrange
-        var command = new CreateChatCommand("Test Chat");
-
-        _claimsPrincipalMock
-            .Setup(x => x.FindFirst(ClaimTypes.NameIdentifier))
-            .Returns((Claim?)null);
-
-        // Act & Assert
-        var exception = await Should.ThrowAsync<UnauthorizedAccessException>(() =>
-            _handler.Handle(command, CancellationToken.None)
-        );
-
-        exception.Message.ShouldBe("User is not authenticated.");
-        _repositoryMock.Verify(
-            x => x.AddAsync(It.IsAny<Conversation>(), It.IsAny<CancellationToken>()),
-            Times.Never
-        );
-    }
-
-    [Test]
-    public async Task GivenEmptyUserIdClaim_WhenHandlingCreateChat_ThenShouldThrowUnauthorizedAccessException()
-    {
-        // Arrange
-        var command = new CreateChatCommand("Test Chat");
-
-        _claimsPrincipalMock
-            .Setup(x => x.FindFirst(ClaimTypes.NameIdentifier))
-            .Returns(new Claim(ClaimTypes.NameIdentifier, string.Empty));
-
-        // Act & Assert
-        var exception = await Should.ThrowAsync<UnauthorizedAccessException>(() =>
-            _handler.Handle(command, CancellationToken.None)
-        );
-
-        exception.Message.ShouldBe("User is not authenticated.");
-    }
-
-    [Test]
-    public async Task GivenWhitespaceUserIdClaim_WhenHandlingCreateChat_ThenShouldThrowUnauthorizedAccessException()
-    {
-        // Arrange
-        var command = new CreateChatCommand("Test Chat");
-
-        _claimsPrincipalMock
-            .Setup(x => x.FindFirst(ClaimTypes.NameIdentifier))
-            .Returns(new Claim(ClaimTypes.NameIdentifier, "   "));
-
-        // Act & Assert
-        var exception = await Should.ThrowAsync<UnauthorizedAccessException>(() =>
-            _handler.Handle(command, CancellationToken.None)
-        );
-
-        exception.Message.ShouldBe("User is not authenticated.");
-    }
-
-    [Test]
-    public async Task GivenInvalidUserIdFormat_WhenHandlingCreateChat_ThenShouldThrowArgumentException()
-    {
-        // Arrange
-        var command = new CreateChatCommand("Test Chat");
-
-        _claimsPrincipalMock
-            .Setup(x => x.FindFirst(ClaimTypes.NameIdentifier))
-            .Returns(new Claim(ClaimTypes.NameIdentifier, "invalid-guid"));
-
-        // Act & Assert
-        var exception = await Should.ThrowAsync<ArgumentException>(() =>
-            _handler.Handle(command, CancellationToken.None)
-        );
-
-        exception.Message.ShouldBe("Invalid User ID format. (Parameter 'userId')");
-        exception.ParamName.ShouldBe("userId");
-    }
-
-    [Test]
-    public async Task GivenRepositoryThrowsException_WhenHandlingCreateChat_ThenShouldPropagateException()
-    {
-        // Arrange
-        var command = new CreateChatCommand("Test Chat");
-        var expectedException = new InvalidOperationException("Database error");
-
-        SetupClaimsPrincipal(_userId);
-        _repositoryMock
-            .Setup(x => x.AddAsync(It.IsAny<Conversation>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(expectedException);
-
-        // Act & Assert
-        var exception = await Should.ThrowAsync<InvalidOperationException>(() =>
-            _handler.Handle(command, CancellationToken.None)
-        );
-
-        exception.ShouldBe(expectedException);
-        _unitOfWorkMock.Verify(
-            x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
-            Times.Never
-        );
-    }
-
-    [Test]
-    public async Task GivenUnitOfWorkThrowsException_WhenHandlingCreateChat_ThenShouldPropagateException()
-    {
-        // Arrange
-        var command = new CreateChatCommand("Test Chat");
-        var conversation = new Conversation("Test Chat", _userId);
-        var expectedException = new InvalidOperationException("Save error");
-
-        SetupClaimsPrincipal(_userId);
-        SetupRepositoryAddAsync(conversation);
-        _unitOfWorkMock
-            .Setup(x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()))
-            .ThrowsAsync(expectedException);
-
-        // Act & Assert
-        var exception = await Should.ThrowAsync<InvalidOperationException>(() =>
-            _handler.Handle(command, CancellationToken.None)
-        );
-
-        exception.ShouldBe(expectedException);
-        _repositoryMock.Verify(
-            x => x.AddAsync(It.IsAny<Conversation>(), It.IsAny<CancellationToken>()),
-            Times.Once
-        );
-    }
-
-    [Test]
-    public void GivenChatName_WhenCreatingCreateChatCommand_ThenPropertiesShouldBeCorrectlyInitialized()
-    {
-        // Arrange & Act
-        var command = new CreateChatCommand("Test Chat");
-
-        // Assert
-        command.Name.ShouldBe("Test Chat");
-    }
-
-    [Test]
-    public void GivenTwoCreateChatCommandsWithSameName_WhenComparing_ThenShouldBeEqual()
-    {
-        // Arrange
-        var command1 = new CreateChatCommand("Test Chat");
-        var command2 = new CreateChatCommand("Test Chat");
+        var prompt = new Prompt("Test prompt");
+        var command1 = new CreateChatCommand(prompt);
+        var command2 = new CreateChatCommand(prompt);
 
         // Act & Assert
         command1.ShouldBe(command2);
         command1.GetHashCode().ShouldBe(command2.GetHashCode());
+        (command1 == command2).ShouldBeTrue();
+        (command1 != command2).ShouldBeFalse();
     }
 
     [Test]
-    public void GivenTwoCreateChatCommandsWithDifferentNames_WhenComparing_ThenShouldNotBeEqual()
+    public void GivenTwoUpdateChatCommandsWithDifferentPrompts_WhenComparing_ThenShouldNotBeEqual()
     {
         // Arrange
-        var command1 = new CreateChatCommand("Test Chat 1");
-        var command2 = new CreateChatCommand("Test Chat 2");
+        var prompt1 = new Prompt("First prompt");
+        var prompt2 = new Prompt("Second prompt");
+        var command1 = new CreateChatCommand(prompt1);
+        var command2 = new CreateChatCommand(prompt2);
 
         // Act & Assert
         command1.ShouldNotBe(command2);
         command1.GetHashCode().ShouldNotBe(command2.GetHashCode());
+        (command1 == command2).ShouldBeFalse();
+        (command1 != command2).ShouldBeTrue();
     }
 
     [Test]
-    public async Task GivenMultipleSequentialCommands_WhenHandlingCreateChat_ThenShouldCreateEachConversation()
+    public void GivenUpdateChatHandler_WhenCheckingImplementedInterfaces_ThenShouldImplementCorrectInterface()
+    {
+        // Act & Assert
+        _handler.ShouldNotBeNull();
+        _handler.ShouldBeOfType<UpdateChatHandler>();
+        _handler.ShouldBeAssignableTo<ICommandHandler<CreateChatCommand>>();
+    }
+
+    [Test]
+    public async Task GivenValidCommand_WhenHandlingUpdateChat_ThenShouldCallAddStreamingMessage()
     {
         // Arrange
-        var command1 = new CreateChatCommand("Chat 1");
-        var command2 = new CreateChatCommand("Chat 2");
-        var command3 = new CreateChatCommand("Chat 3");
+        var prompt = new Prompt("What is the weather today?");
+        var command = new CreateChatCommand(prompt);
 
-        SetupClaimsPrincipal(_userId);
-        _repositoryMock
-            .Setup(x => x.AddAsync(It.IsAny<Conversation>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Conversation c, CancellationToken _) => c);
+        _chatStreamingMock
+            .Setup(x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.ShouldBe(Unit.Value);
+        _chatStreamingMock.Verify(
+            x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task GivenCommandWithEmptyPromptText_WhenHandlingUpdateChat_ThenShouldCallAddStreamingMessageWithEmptyText()
+    {
+        // Arrange
+        var prompt = new Prompt("");
+        var command = new CreateChatCommand(prompt);
+
+        _chatStreamingMock
+            .Setup(x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.ShouldBe(Unit.Value);
+        _chatStreamingMock.Verify(x => x.AddStreamingMessage(It.IsAny<Guid>(), ""), Times.Once);
+    }
+
+    [Test]
+    public async Task GivenCommandWithWhitespacePromptText_WhenHandlingUpdateChat_ThenShouldCallAddStreamingMessageWithWhitespace()
+    {
+        // Arrange
+        var prompt = new Prompt("   ");
+        var command = new CreateChatCommand(prompt);
+
+        _chatStreamingMock
+            .Setup(x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.ShouldBe(Unit.Value);
+        _chatStreamingMock.Verify(x => x.AddStreamingMessage(It.IsAny<Guid>(), "   "), Times.Once);
+    }
+
+    [Test]
+    public async Task GivenCommandWithComplexPrompt_WhenHandlingUpdateChat_ThenShouldCallAddStreamingMessageWithCompleteText()
+    {
+        // Arrange
+        const string complexPrompt =
+            "Can you explain the difference between machine learning and artificial intelligence? Please provide examples and use cases for each technology.";
+        var prompt = new Prompt(complexPrompt);
+        var command = new CreateChatCommand(prompt);
+
+        _chatStreamingMock
+            .Setup(x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.ShouldBe(Unit.Value);
+        _chatStreamingMock.Verify(
+            x => x.AddStreamingMessage(It.IsAny<Guid>(), complexPrompt),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task GivenCancellationTokenRequested_WhenHandlingUpdateChat_ThenShouldPassTokenToChatStreaming()
+    {
+        // Arrange
+        var prompt = new Prompt("Test prompt");
+        var command = new CreateChatCommand(prompt);
+        var cancellationToken = new CancellationToken(true);
+
+        _chatStreamingMock
+            .Setup(x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _handler.Handle(command, cancellationToken);
+
+        // Assert
+        result.ShouldBe(Unit.Value);
+        _chatStreamingMock.Verify(
+            x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task GivenChatStreamingThrowsException_WhenHandlingUpdateChat_ThenShouldPropagateException()
+    {
+        // Arrange
+        var prompt = new Prompt("Test prompt");
+        var command = new CreateChatCommand(prompt);
+        var expectedException = new InvalidOperationException("Chat streaming service unavailable");
+
+        _chatStreamingMock
+            .Setup(x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text))
+            .ThrowsAsync(expectedException);
+
+        // Act
+        var act = async () => await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        var exception = await act.ShouldThrowAsync<InvalidOperationException>();
+        exception.Message.ShouldBe("Chat streaming service unavailable");
+
+        _chatStreamingMock.Verify(
+            x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task GivenMultipleSequentialCommands_WhenHandlingUpdateChat_ThenShouldHandleEachCommandIndependently()
+    {
+        // Arrange
+        var prompt1 = new Prompt("First prompt");
+        var prompt2 = new Prompt("Second prompt");
+        var prompt3 = new Prompt("Third prompt");
+        var command1 = new CreateChatCommand(prompt1);
+        var command2 = new CreateChatCommand(prompt2);
+        var command3 = new CreateChatCommand(prompt3);
+
+        _chatStreamingMock
+            .Setup(x => x.AddStreamingMessage(It.IsAny<Guid>(), It.IsAny<string>()))
+            .Returns(Task.CompletedTask);
 
         // Act
         var result1 = await _handler.Handle(command1, CancellationToken.None);
@@ -298,94 +225,103 @@ public sealed class CreateChatCommandTests
         var result3 = await _handler.Handle(command3, CancellationToken.None);
 
         // Assert
-        result1.ShouldBe(Guid.Empty);
-        result2.ShouldBe(Guid.Empty);
-        result3.ShouldBe(Guid.Empty);
+        result1.ShouldBe(Unit.Value);
+        result2.ShouldBe(Unit.Value);
+        result3.ShouldBe(Unit.Value);
 
-        _repositoryMock.Verify(
-            x =>
-                x.AddAsync(
-                    It.Is<Conversation>(c => c.Name == "Chat 1"),
-                    It.IsAny<CancellationToken>()
-                ),
+        _chatStreamingMock.Verify(
+            x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt1.Text),
             Times.Once
         );
-        _repositoryMock.Verify(
-            x =>
-                x.AddAsync(
-                    It.Is<Conversation>(c => c.Name == "Chat 2"),
-                    It.IsAny<CancellationToken>()
-                ),
+        _chatStreamingMock.Verify(
+            x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt2.Text),
             Times.Once
         );
-        _repositoryMock.Verify(
-            x =>
-                x.AddAsync(
-                    It.Is<Conversation>(c => c.Name == "Chat 3"),
-                    It.IsAny<CancellationToken>()
-                ),
+        _chatStreamingMock.Verify(
+            x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt3.Text),
             Times.Once
         );
-        _unitOfWorkMock.Verify(
-            x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
+    }
+
+    [Test]
+    public async Task GivenSameCommandExecutedMultipleTimes_WhenHandlingUpdateChat_ThenShouldCallAddStreamingMessageEachTime()
+    {
+        // Arrange
+        var prompt = new Prompt("Repeated prompt");
+        var command = new CreateChatCommand(prompt);
+
+        _chatStreamingMock
+            .Setup(x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result1 = await _handler.Handle(command, CancellationToken.None);
+        var result2 = await _handler.Handle(command, CancellationToken.None);
+        var result3 = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result1.ShouldBe(Unit.Value);
+        result2.ShouldBe(Unit.Value);
+        result3.ShouldBe(Unit.Value);
+
+        _chatStreamingMock.Verify(
+            x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text),
             Times.Exactly(3)
         );
     }
 
     [Test]
-    public async Task GivenValidCommandWithSpecialCharacters_WhenHandlingCreateChat_ThenShouldCreateConversationSuccessfully()
+    public async Task GivenCommandWithSpecialCharactersInPrompt_WhenHandlingUpdateChat_ThenShouldHandleSpecialCharacters()
     {
         // Arrange
-        var chatName = "Chat with émojis 🚀 and spëcial chars!";
-        var command = new CreateChatCommand(chatName);
-        var conversation = new Conversation(chatName, _userId);
+        const string specialPrompt = "Hello! @#$%^&*()_+-=[]{}|;':\",./<>? 🚀🔥💡";
+        var prompt = new Prompt(specialPrompt);
+        var command = new CreateChatCommand(prompt);
 
-        SetupClaimsPrincipal(_userId);
-        SetupRepositoryAddAsync(conversation);
+        _chatStreamingMock
+            .Setup(x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text))
+            .Returns(Task.CompletedTask);
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.ShouldBe(Guid.Empty);
-        _repositoryMock.Verify(
-            x =>
-                x.AddAsync(
-                    It.Is<Conversation>(c => c.Name == chatName && c.UserId == _userId),
-                    It.IsAny<CancellationToken>()
-                ),
+        result.ShouldBe(Unit.Value);
+        _chatStreamingMock.Verify(
+            x => x.AddStreamingMessage(It.IsAny<Guid>(), specialPrompt),
             Times.Once
         );
     }
 
     [Test]
-    public async Task GivenValidCommand_WhenHandlingCreateChat_ThenShouldReturnNewConversationId()
+    public async Task GivenCommandWithMultilinePrompt_WhenHandlingUpdateChat_ThenShouldPreserveFormatting()
     {
         // Arrange
-        var command = new CreateChatCommand("Test Chat");
-        var conversation = new Conversation("Test Chat", _userId);
+        const string multilinePrompt = """
+            This is a multiline prompt.
 
-        SetupClaimsPrincipal(_userId);
-        SetupRepositoryAddAsync(conversation);
+            It contains:
+            - Line breaks
+            - Indentation
+            - Multiple paragraphs
+
+            Please process this correctly.
+            """;
+        var prompt = new Prompt(multilinePrompt);
+        var command = new CreateChatCommand(prompt);
+
+        _chatStreamingMock
+            .Setup(x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text))
+            .Returns(Task.CompletedTask);
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.ShouldBe(conversation.Id);
-    }
-
-    private void SetupClaimsPrincipal(Guid userId)
-    {
-        _claimsPrincipalMock
-            .Setup(x => x.FindFirst(ClaimTypes.NameIdentifier))
-            .Returns(new Claim(ClaimTypes.NameIdentifier, userId.ToString()));
-    }
-
-    private void SetupRepositoryAddAsync(Conversation conversation)
-    {
-        _repositoryMock
-            .Setup(x => x.AddAsync(It.IsAny<Conversation>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(conversation);
+        result.ShouldBe(Unit.Value);
+        _chatStreamingMock.Verify(
+            x => x.AddStreamingMessage(It.IsAny<Guid>(), multilinePrompt),
+            Times.Once
+        );
     }
 }
