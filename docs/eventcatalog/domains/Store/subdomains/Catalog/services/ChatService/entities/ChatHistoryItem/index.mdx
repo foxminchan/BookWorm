@@ -1,0 +1,55 @@
+---
+id: ChatHistoryItem
+name: ChatHistoryItem
+version: 1.0.0
+identifier: Key
+aggregateRoot: false
+summary: ChatHistoryItem model, encapsulates chat history information for vector storage
+
+properties:
+  - name: Key
+    type: string
+    required: false
+    description: Unique key identifier for the chat history item in the vector store
+  - name: ThreadId
+    type: string
+    required: false
+    description: Identifier for the conversation thread this message belongs to
+  - name: Timestamp
+    type: DateTimeOffset
+    required: false
+    description: The date and time when the message was created
+  - name: SerializedMessage
+    type: string
+    required: false
+    description: Serialized representation of the complete message object
+  - name: MessageText
+    type: string
+    required: false
+    description: The text content of the message
+  - name: UserId
+    type: string
+    required: false
+    description: Identifier for the user who sent the message
+owners:
+  - nhanxnguyen
+---
+
+## Overview
+
+The `ChatHistoryItem` model represents a chat message stored in the vector database. This lightweight model is used for storing and retrieving chat history using Microsoft.Extensions.VectorData attributes. Unlike traditional domain entities, this model is optimized for vector storage operations.
+
+### Model Properties
+
+<EntityPropertiesTable />
+
+### Storage Details
+
+- **Vector Store**: Uses `[VectorStoreKey]` and `[VectorStoreData]` attributes for persistence
+- **Purpose**: Enables semantic search and retrieval of chat history
+- **Framework**: Microsoft.Extensions.VectorData
+
+### Relationships
+
+- A chat history item is associated with a **thread** via ThreadId
+- A chat history item is owned by a **user** via UserId

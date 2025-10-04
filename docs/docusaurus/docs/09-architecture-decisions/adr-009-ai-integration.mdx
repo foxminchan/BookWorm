@@ -30,14 +30,14 @@ The choice of AI technologies and integration patterns significantly impacts use
 
 ## Decision
 
-Implement a **comprehensive AI integration strategy** using **Ollama** for local LLM hosting, **Semantic Kernel** for orchestration, **Model Context Protocol (MCP)** for standardized tooling, and **multi-agent workflows** for complex AI operations.
+Implement a **comprehensive AI integration strategy** using **Ollama** for local LLM hosting, **Agent Framework** for orchestration, **Model Context Protocol (MCP)** for standardized tooling, and **multi-agent workflows** for complex AI operations.
 
 ### AI Architecture Components
 
 #### Core AI Infrastructure
 
 - **Ollama Runtime**: Local LLM hosting and model management
-- **Semantic Kernel**: AI orchestration and workflow management
+- **Agent Framework**: AI orchestration and workflow management
 - **MCP Tools**: Standardized AI tool integration
 - **Vector Database**: Qdrant for embedding storage and semantic search
 - **Agent Framework**: Multi-agent coordination for complex workflows
@@ -80,7 +80,7 @@ Implement a **comprehensive AI integration strategy** using **Ollama** for local
 4. **API Compatibility**: OpenAI-compatible API for easy integration
 5. **Local Operation**: Complete on-premises operation
 
-#### Semantic Kernel Orchestration
+#### Agent Framework Orchestration
 
 1. **.NET Integration**: Native .NET AI orchestration framework
 2. **Plugin System**: Extensible plugin architecture for AI functions
@@ -95,7 +95,7 @@ graph TB
     subgraph "AI Infrastructure Layer"
         Ollama[Ollama Runtime<br/>LLM Hosting]
         Qdrant[Qdrant<br/>Vector Database]
-        SemanticKernel[Semantic Kernel<br/>AI Orchestration]
+        AgentFramework[Agent Framework<br/>AI Orchestration]
         MCPTools[MCP Tools<br/>Standardized AI Tooling]
     end
 
@@ -123,14 +123,14 @@ graph TB
     Ollama --> CustomModels
     Qdrant --> NomicEmbed
 
-    SemanticKernel --> Ollama
-    SemanticKernel --> Qdrant
-    SemanticKernel --> MCPTools
+    AgentFramework --> Ollama
+    AgentFramework --> Qdrant
+    AgentFramework --> MCPTools
 
-    ChatService --> SemanticKernel
+    ChatService --> AgentFramework
     SearchService --> Qdrant
-    RecommendService --> SemanticKernel
-    ContentService --> SemanticKernel
+    RecommendService --> AgentFramework
+    ContentService --> AgentFramework
 
     Chat --> ChatService
     Catalog --> SearchService
@@ -248,7 +248,7 @@ COPY ./models/bookworm-fine-tuned.gguf /root/.ollama/models/
 ### Phase 1: Foundation (Months 1-2)
 
 - Ollama deployment and model setup
-- Basic Semantic Kernel integration
+- Basic Agent Framework integration
 - Simple chat functionality
 
 ### Phase 2: Core Features (Months 3-4)

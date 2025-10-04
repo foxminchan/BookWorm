@@ -1,26 +1,16 @@
 ﻿using BookWorm.Chassis.CQRS.Command;
-using BookWorm.Chat.Domain.AggregatesModel;
-using BookWorm.Chat.Infrastructure.Helpers;
 
 namespace BookWorm.Chat.Features.Create;
 
-public sealed record CreateChatCommand(string Name) : ICommand<Guid>;
+public sealed record CreateChatCommand(Prompt Prompt) : ICommand;
 
-public sealed class CreateChatHandler(
-    IConversationRepository repository,
-    ClaimsPrincipal claimsPrincipal
-) : ICommandHandler<CreateChatCommand, Guid>
+public sealed class UpdateChatHandler(IChatStreaming chatStreaming)
+    : ICommandHandler<CreateChatCommand>
 {
-    public async Task<Guid> Handle(CreateChatCommand request, CancellationToken cancellationToken)
+    public async Task<Unit> Handle(CreateChatCommand request, CancellationToken cancellationToken)
     {
-        var userId = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToUserId();
+        await chatStreaming.AddStreamingMessage(Guid.CreateVersion7(), request.Prompt.Text);
 
-        var conversation = new Conversation(request.Name, userId);
-
-        var result = await repository.AddAsync(conversation, cancellationToken);
-
-        await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
-
-        return result.Id;
+        return Unit.Value;
     }
 }

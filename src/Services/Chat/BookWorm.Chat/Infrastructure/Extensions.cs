@@ -1,8 +1,7 @@
 ﻿using BookWorm.Chassis.AI.Extensions;
-using BookWorm.Chassis.EF;
 using BookWorm.Chat.Infrastructure.AgentOrchestration;
 using BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
-using BookWorm.Chat.Infrastructure.ChatHistory;
+using BookWorm.Chat.Models;
 
 namespace BookWorm.Chat.Infrastructure;
 
@@ -10,13 +9,10 @@ internal static class Extensions
 {
     public static void AddPersistenceServices(this IHostApplicationBuilder builder)
     {
-        var services = builder.Services;
-
-        // Add database configuration
-        builder.AddAzureNpgsqlDbContext<ChatDbContext>(Components.Database.Chat);
-        services.AddMigration<ChatDbContext>();
-        services.AddRepositories(typeof(IChatApiMarker));
-
+        builder.AddQdrantClient(Components.VectorDb);
+        builder.Services.AddQdrantCollection<Guid, ChatHistoryItem>(
+            nameof(Chat).ToLowerInvariant()
+        );
         builder.AddRedisClient(Components.Redis, o => o.DisableAutoActivation = false);
     }
 
@@ -24,15 +20,12 @@ internal static class Extensions
     {
         var services = builder.Services;
 
-        services.AddKernel();
+        builder.AddChatClient();
+        builder.AddAgentsTelemetry();
+        builder.AddMcpClient(Services.McpTools);
 
-        builder.AddSkTelemetry();
-        builder.AddChatCompletion();
-        builder.AddMcpClient(Services.McpTools, $"{Protocols.HttpOrHttps}://{Services.McpTools}");
         builder.AddAgents();
-
         services.AddSingleton<OrchestrateAgents>();
-        services.AddScoped<IChatHistoryService, ChatHistoryService>();
         services.AddScoped<IAgentOrchestrationService, AgentOrchestrationService>();
         services.AddScoped<IChatStreaming, ChatStreaming.ChatStreaming>();
     }

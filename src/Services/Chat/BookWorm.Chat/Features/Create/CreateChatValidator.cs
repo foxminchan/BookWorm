@@ -4,6 +4,6 @@ public sealed class CreateChatValidator : AbstractValidator<CreateChatCommand>
 {
     public CreateChatValidator()
     {
-        RuleFor(x => x.Name).NotEmpty().MaximumLength(DataSchemaLength.Large);
+        RuleFor(x => x.Prompt.Text).NotEmpty().MaximumLength(DataSchemaLength.Max);
     }
 }

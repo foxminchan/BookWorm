@@ -1,11 +1,13 @@
-﻿namespace BookWorm.Chat.Infrastructure.AgentOrchestration;
+﻿using Microsoft.Agents.AI.Workflows;
+
+namespace BookWorm.Chat.Infrastructure.AgentOrchestration;
 
 public interface IAgentOrchestrationService
 {
+    Workflow BuildAgentsWorkflow();
+
     Task<string> ProcessAgentsSequentiallyAsync(
-        string userMessage,
-        Guid conversationId,
-        Guid assistantReplyId,
+        string message,
         CancellationToken cancellationToken = default
     );
 }

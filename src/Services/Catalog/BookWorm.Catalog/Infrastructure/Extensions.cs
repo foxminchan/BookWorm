@@ -1,4 +1,7 @@
-﻿using BookWorm.Chassis.AI.Search;
+﻿using BookWorm.Catalog.Infrastructure.Ingestion;
+using BookWorm.Chassis.AI.Extensions;
+using BookWorm.Chassis.AI.Ingestion;
+using BookWorm.Chassis.AI.Search;
 using BookWorm.Constants.Aspire;
 
 namespace BookWorm.Catalog.Infrastructure;
@@ -52,5 +55,20 @@ internal static class Extensions
 
         // Add Blob services
         builder.AddAzureBlobStorage();
+    }
+
+    public static void AddAI(this IHostApplicationBuilder builder)
+    {
+        var services = builder.Services;
+
+        builder.AddChatClient();
+
+        builder.AddEmbeddingGenerator();
+
+        builder.AddAgentsTelemetry();
+
+        services.AddScoped<IIngestionSource<Book>, BookDataIngestor>();
+
+        services.AddScoped<ISearch, HybridSearch>();
     }
 }

@@ -40,7 +40,7 @@ Implement outbox/inbox patterns for reliable event processing. Use saga patterns
 
 ### AI & Modern Tooling Integration
 
-Integrate AI components using Semantic Kernel for multi-agent workflows. Support Model Context Protocol (MCP) for standardized AI tooling. Enable agent-to-agent communication via A2A Protocol. Use text embedding and chatbot functionality where applicable. Frontend applications must integrate AI features seamlessly through dedicated AI service endpoints.
+Integrate AI components using Agent Framework for multi-agent workflows. Support Model Context Protocol (MCP) for standardized AI tooling. Enable agent-to-agent communication via A2A Protocol. Use text embedding and chatbot functionality where applicable. Frontend applications must integrate AI features seamlessly through dedicated AI service endpoints.
 
 ### API Gateway & Frontend Integration
 

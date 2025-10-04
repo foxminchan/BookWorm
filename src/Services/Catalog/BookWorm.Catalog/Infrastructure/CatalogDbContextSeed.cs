@@ -1,12 +1,11 @@
 ﻿using BookWorm.Constants.Other;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.Ollama;
+using Microsoft.Agents.AI;
 using Npgsql;
 
 namespace BookWorm.Catalog.Infrastructure;
 
 public sealed class CatalogDbContextSeed(
-    Kernel kernel,
+    IChatClient chatClient,
     ILogger<CatalogDbContextSeed> logger,
     IFeatureManager featureManager
 ) : IDbSeeder<CatalogDbContext>
@@ -53,7 +52,7 @@ public sealed class CatalogDbContextSeed(
 
             foreach (var book in booksList)
             {
-                var prompts = $"""
+                var instructions = $"""
                     You are a professional book metadata writer.
                     Task: Generate a compelling description for a book titled "{book.Name}".
 
@@ -68,12 +67,30 @@ public sealed class CatalogDbContextSeed(
                     Return only the description text with no additional formatting or commentary.
                     """;
 
-                var settings = new OllamaPromptExecutionSettings
+                var agent = new ChatClientAgent(chatClient, instructions);
+                var options = new ChatClientAgentRunOptions(new() { Temperature = 0.6f });
+                var thread = agent.GetNewThread();
+
+                var response = await agent.RunAsync(
+                    $"Generate a book description for the title: '{book.Name}'",
+                    thread,
+                    options
+                );
+
+                var assistantMessage = response.Messages.LastOrDefault(static message =>
+                    message.Role == ChatRole.Assistant
+                );
+
+                if (assistantMessage is null || string.IsNullOrWhiteSpace(assistantMessage.Text))
                 {
-                    FunctionChoiceBehavior = FunctionChoiceBehavior.Auto(),
-                    Temperature = 0.6f,
-                };
-                var description = await kernel.InvokePromptAsync<string>(prompts, new(settings));
+                    logger.LogWarning(
+                        "No assistant description generated for book {Name}",
+                        book.Name
+                    );
+                    continue;
+                }
+
+                var description = assistantMessage.Text;
 
                 logger.LogDebug(
                     "Generated description for book {Name}: {Description}",
