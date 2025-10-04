@@ -1,32 +1,40 @@
-﻿using Microsoft.SemanticKernel.Agents;
+﻿using Microsoft.Agents.AI;
+using Microsoft.Agents.AI.Workflows;
 
 namespace BookWorm.Rating.Infrastructure.Summarizer;
 
 public sealed class RatingSummarizer(
-    [FromKeyedServices(Constants.Other.Agents.RatingAgent)] ChatCompletionAgent agent
+    [FromKeyedServices(Constants.Other.Agents.RatingAgent)] AIAgent ratingAgent,
+    [FromKeyedServices(Constants.Other.Agents.SummarizeAgent)] AIAgent summarizeAgent,
+    [FromKeyedServices(Constants.Other.Agents.LanguageAgent)] AIAgent languageAgent
 ) : ISummarizer
 {
+    public Workflow BuildAgentsWorkflow()
+    {
+        var workflow = AgentWorkflowBuilder
+            .CreateHandoffBuilderWith(languageAgent)
+            .WithHandoff(languageAgent, summarizeAgent)
+            .WithHandoff(summarizeAgent, ratingAgent)
+            .WithHandoff(ratingAgent, languageAgent)
+            .Build();
+
+        return workflow;
+    }
+
     public async Task<string?> SummarizeAsync(
         string content,
         CancellationToken cancellationToken = default
     )
     {
-        ChatHistoryAgentThread agentThread = new();
+        var workflowAgent = await BuildAgentsWorkflow().AsAgentAsync();
+        var workflowAgentThread = workflowAgent.GetNewThread();
 
-        var agentResponse = agent.InvokeAsync(
+        var response = await workflowAgent.RunAsync(
             $"Summarize the following content: {content}",
-            agentThread,
+            thread: workflowAgentThread,
             cancellationToken: cancellationToken
         );
 
-        await foreach (var item in agentResponse.ConfigureAwait(false))
-        {
-            if (!string.IsNullOrWhiteSpace(item.Message.Content))
-            {
-                return item.Message.Content;
-            }
-        }
-
-        return null;
+        return response.Text;
     }
 }

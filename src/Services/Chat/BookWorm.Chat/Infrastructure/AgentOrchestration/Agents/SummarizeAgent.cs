@@ -1,18 +1,15 @@
 using A2A;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Agents;
-using Microsoft.SemanticKernel.Connectors.Ollama;
 
 namespace BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
 
-public static class SummarizeAgent
+internal static class SummarizeAgent
 {
-    private const string Name = Constants.Other.Agents.SummarizeAgent;
+    public const string Name = Constants.Other.Agents.SummarizeAgent;
 
-    private const string Description =
+    public const string Description =
         "An agent that summarizes and condenses translated English text while preserving key information and context.";
 
-    private const string Instructions = """
+    public const string Instructions = """
         You are a text summarization assistant for BookWorm bookstore. Your role is to process English text from the Language Agent and create concise, meaningful summaries.
 
         **Summarization Capabilities:**
@@ -36,37 +33,8 @@ public static class SummarizeAgent
         Your summaries help the Book Agent understand user needs efficiently and provide better responses.
         """;
 
-    public static ChatCompletionAgent CreateAgent(Kernel kernel)
-    {
-        return new()
-        {
-            Instructions = Instructions,
-            Name = Name,
-            Description = Description,
-            Kernel = kernel,
-            Arguments = new(new OllamaPromptExecutionSettings { Temperature = 0.2f }),
-        };
-    }
-
-    public static AgentCard GetAgentCard()
-    {
-        var capabilities = new AgentCapabilities { Streaming = false, PushNotifications = false };
-
-        var summarize = new AgentSkill
-        {
-            Id = "id_summarize_agent",
-            Name = Name,
-            Description = Description,
-            Tags = ["summarization", "text-processing", "chat", "semantic-kernel"],
-            Examples =
-            [
-                "Summarize this long customer message about book preferences.",
-                "Extract the key points from this book review.",
-                "Condense this user inquiry while preserving the main request.",
-            ],
-        };
-
-        return new()
+    public static AgentCard AgentCard { get; } =
+        new()
         {
             Name = Name,
             Description = Description,
@@ -74,8 +42,51 @@ public static class SummarizeAgent
             Provider = new() { Organization = nameof(BookWorm) },
             DefaultInputModes = ["text"],
             DefaultOutputModes = ["text"],
-            Capabilities = capabilities,
-            Skills = [summarize],
+            Capabilities = new() { Streaming = false, PushNotifications = false },
+            Skills =
+            [
+                new()
+                {
+                    Id = "summarize_agent_text_summarization",
+                    Tags = ["summarization", "condensing", "text-processing"],
+                    Name = "Text Summarization",
+                    Description =
+                        "Condense lengthy user messages while preserving essential information and intent",
+                    Examples =
+                    [
+                        "Summarize this long customer message about book preferences.",
+                        "Condense this user inquiry while preserving the main request.",
+                        "Create a brief summary of this conversation",
+                    ],
+                },
+                new()
+                {
+                    Id = "summarize_agent_key_point_extraction",
+                    Tags = ["extraction", "key-points", "analysis"],
+                    Name = "Key Point Extraction",
+                    Description =
+                        "Extract key points, questions, and requests from user input including book titles, authors, and genres",
+                    Examples =
+                    [
+                        "Extract the key points from this book review.",
+                        "What are the main topics in this user message?",
+                        "Identify the book preferences from this text",
+                    ],
+                },
+                new()
+                {
+                    Id = "summarize_agent_context_preservation",
+                    Tags = ["context", "intent", "preservation"],
+                    Name = "Context Preservation",
+                    Description =
+                        "Maintain context and intent while creating concise summaries for downstream agents",
+                    Examples =
+                    [
+                        "Summarize this while keeping the context for the Book Agent",
+                        "Preserve the user's intent in a shorter format",
+                        "Create a context-aware summary of this request",
+                    ],
+                },
+            ],
         };
-    }
 }

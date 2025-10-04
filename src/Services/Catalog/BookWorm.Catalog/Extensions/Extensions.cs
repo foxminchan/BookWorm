@@ -1,6 +1,5 @@
 ﻿using BookWorm.Catalog.Features.Books.Create;
 using BookWorm.Catalog.Features.Books.Update;
-using BookWorm.Catalog.Infrastructure.AI;
 using BookWorm.Chassis.CQRS.Command;
 using BookWorm.Chassis.CQRS.Mediator;
 using BookWorm.Chassis.CQRS.Pipelines;
@@ -68,7 +67,7 @@ internal static class Extensions
         services.AddSingleton<QueryHandlerMetrics>();
 
         // Configure AI
-        builder.AddGenAi();
+        builder.AddAI();
 
         // Configure endpoints
         services.AddVersioning();
