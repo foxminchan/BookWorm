@@ -1,17 +1,13 @@
-﻿using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Agents;
-using Microsoft.SemanticKernel.Connectors.Ollama;
-
-namespace BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
+﻿namespace BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
 
 public static class LanguageAgent
 {
-    private const string Name = Constants.Other.Agents.LanguageAgent;
+    public const string Name = Constants.Other.Agents.LanguageAgent;
 
-    private const string Description =
+    public const string Description =
         "An agent that detects user input language and translates it to English for better context understanding.";
 
-    private const string Instructions = """
+    public const string Instructions = """
         You are a language detection and translation assistant for BookWorm bookstore. Your primary responsibilities are:
 
         **Language Detection:**
@@ -33,16 +29,4 @@ public static class LanguageAgent
 
         Your goal is to ensure all user communications are accessible in English for proper processing by other agents in the system.
         """;
-
-    public static ChatCompletionAgent CreateAgent(Kernel kernel)
-    {
-        return new()
-        {
-            Instructions = Instructions,
-            Name = Name,
-            Description = Description,
-            Kernel = kernel,
-            Arguments = new(new OllamaPromptExecutionSettings { Temperature = 0.1f }),
-        };
-    }
 }

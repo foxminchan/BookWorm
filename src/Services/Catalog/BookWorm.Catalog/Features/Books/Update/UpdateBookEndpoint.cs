@@ -1,4 +1,5 @@
 ﻿using BookWorm.Constants.Core;
+using Microsoft.AspNetCore.Mvc;
 
 namespace BookWorm.Catalog.Features.Books.Update;
 
@@ -8,7 +9,7 @@ public sealed class UpdateBookEndpoint : IEndpoint<NoContent, UpdateBookCommand,
     {
         app.MapPut(
                 "/books",
-                async ([AsParameters] UpdateBookCommand command, ISender sender) =>
+                async ([FromForm] UpdateBookCommand command, ISender sender) =>
                     await HandleAsync(command, sender)
             )
             .Accepts<UpdateBookCommand>(MediaTypeNames.Multipart.FormData)

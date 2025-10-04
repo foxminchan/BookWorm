@@ -1,17 +1,16 @@
 ﻿using BookWorm.Chassis.CQRS.Command;
-using Microsoft.AspNetCore.Mvc;
 
 namespace BookWorm.Catalog.Features.Books.Create;
 
 public sealed record CreateBookCommand(
-    [FromForm] string Name,
-    [FromForm] string Description,
+    string Name,
+    string Description,
     IFormFile? Image,
-    [FromForm] decimal Price,
-    [FromForm] decimal? PriceSale,
-    [FromForm] Guid CategoryId,
-    [FromForm] Guid PublisherId,
-    [FromForm] Guid[] AuthorIds
+    decimal Price,
+    decimal? PriceSale,
+    Guid CategoryId,
+    Guid PublisherId,
+    Guid[] AuthorIds
 ) : ICommand<Guid>
 {
     [JsonIgnore]

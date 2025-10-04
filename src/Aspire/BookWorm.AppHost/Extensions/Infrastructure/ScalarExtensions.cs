@@ -16,10 +16,9 @@ public static class ScalarExtensions
         IResourceBuilder<IResource>? keycloak = null
     )
     {
-        // If the Keycloak resource is running in HTTPS container, please remove the WaitFor() call.
         // https://github.com/dotnet/aspire/issues/6890
         var scalar = builder.AddScalarApiReference(options =>
-            options.WithTheme(ScalarTheme.BluePlanet).WithDefaultFonts(false)
+            options.WithDefaultFonts(false).PreferHttpsEndpoint().AllowSelfSignedCertificates()
         );
 
         if (keycloak is null)

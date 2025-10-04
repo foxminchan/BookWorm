@@ -1,19 +1,18 @@
 ﻿using BookWorm.Chassis.CQRS.Command;
-using Microsoft.AspNetCore.Mvc;
 
 namespace BookWorm.Catalog.Features.Books.Update;
 
 public sealed record UpdateBookCommand(
-    [FromForm] Guid Id,
-    [FromForm] string Name,
-    [FromForm] string Description,
+    Guid Id,
+    string Name,
+    string Description,
     IFormFile? Image,
-    [FromForm] decimal Price,
-    [FromForm] decimal? PriceSale,
-    [FromForm] Guid CategoryId,
-    [FromForm] Guid PublisherId,
-    [FromForm] Guid[] AuthorIds,
-    [FromForm] bool IsRemoveImage = false
+    decimal Price,
+    decimal? PriceSale,
+    Guid CategoryId,
+    Guid PublisherId,
+    Guid[] AuthorIds,
+    bool IsRemoveImage = false
 ) : ICommand
 {
     [JsonIgnore]

@@ -1,6 +1,8 @@
+using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chat.Extensions;
 using BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
 using BookWorm.ServiceDefaults;
+using Microsoft.Agents.AI.Hosting.A2A.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,7 +35,9 @@ var apiVersionSet = app.NewApiVersionSet().HasApiVersion(new(1, 0)).ReportApiVer
 
 app.MapEndpoints(apiVersionSet, "chats");
 
-app.MapHostSummarizeAgent();
+app.MapA2A(SummarizeAgent.Name, "/a2a/summarize", SummarizeAgent.AgentCard);
+
+app.MapAgentDiscovery("/agents");
 
 app.MapDefaultEndpoints();
 

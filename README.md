@@ -33,7 +33,7 @@
   - [x] Text embedding with Embedding Gemma
   - [x] Integrated chatbot functionality using Gemma 3
   - [x] Standardized AI tooling with Model Context Protocol (MCP)
-  - [x] Orchestrated multi-agent workflows using Semantic Kernel
+  - [x] Orchestrated multi-agent workflows using Agent Framework
   - [x] Enabled agent-to-agent communication via A2A Protocol
 - [x] Configured CI/CD with GitHub Actions
 - [x] Created comprehensive documentation:

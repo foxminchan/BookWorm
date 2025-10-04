@@ -1,9 +1,9 @@
-﻿using A2A;
-using A2A.AspNetCore;
+﻿using BookWorm.Chassis.AI.Agents;
 using BookWorm.Chassis.AI.Extensions;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Agents;
-using Microsoft.SemanticKernel.Agents.A2A;
+using BookWorm.Rating.Tools;
+using Microsoft.Agents.AI;
+using Microsoft.Agents.AI.Hosting;
+using Microsoft.Extensions.AI;
 
 namespace BookWorm.Rating.Infrastructure.Agents;
 
@@ -13,47 +13,49 @@ public static class Extensions
     {
         var services = builder.Services;
 
-        services.AddKernel();
-
-        builder.AddSkTelemetry();
-
-        builder.AddChatCompletion();
+        builder.AddChatClient();
 
         builder.AddEmbeddingGenerator();
 
+        builder.AddAgentsTelemetry();
+
         services.AddA2AClient(
             Constants.Other.Agents.SummarizeAgent,
-            $"{Protocols.HttpOrHttps}://{Constants.Aspire.Services.Chatting}"
+            $"{Protocols.HttpOrHttps}://{Constants.Aspire.Services.Chatting}",
+            "a2a"
         );
 
-        services.AddKeyedSingleton(
-            Constants.Other.Agents.RatingAgent,
-            (sp, _) =>
+        services.AddSingleton<ReviewTool>();
+
+        builder.AddAIAgent(
+            Constants.Other.Agents.SummarizeAgent,
+            (sp, key) =>
             {
-                var kernel = sp.GetRequiredService<Kernel>();
-                return RatingAgent.CreateAgent(kernel);
+                var a2aAgent = sp.GetRequiredService<A2AAgentClient>();
+
+                var agent = a2aAgent.GetAIAgent(key);
+
+                return agent;
             }
         );
 
-        services
-            .AddOpenTelemetry()
-            .WithTracing(tracing =>
-                tracing
-                    .AddSource(TaskManager.ActivitySource.Name)
-                    .AddSource(A2AJsonRpcProcessor.ActivitySource.Name)
-            );
-    }
+        builder.AddAIAgent(
+            RatingAgent.Name,
+            (sp, key) =>
+            {
+                var chatClient = sp.GetRequiredService<IChatClient>();
+                var reviewPlugin = sp.GetRequiredService<ReviewTool>();
 
-    public static void MapHostRatingAgent(this WebApplication app)
-    {
-        var agent = app.Services.GetRequiredKeyedService<ChatCompletionAgent>(
-            Constants.Other.Agents.RatingAgent
+                var agent = new ChatClientAgent(
+                    chatClient,
+                    name: key,
+                    instructions: RatingAgent.Instructions,
+                    description: RatingAgent.Description,
+                    tools: [.. reviewPlugin.AsAITools()]
+                );
+
+                return agent;
+            }
         );
-
-        var hostAgent = new A2AHostAgent(agent, RatingAgent.GetAgentCard());
-
-        app.MapA2A(hostAgent.TaskManager!, "/").WithTags(Constants.Other.Agents.RatingAgent);
-
-        app.MapHttpA2A(hostAgent.TaskManager!, "/").WithTags(Constants.Other.Agents.RatingAgent);
     }
 }
