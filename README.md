@@ -10,6 +10,10 @@
 ⭐ BookWorm demonstrates the practical implementation of .NET Aspire in a cloud-native application. The project employs Domain-Driven Design (DDD) and Vertical Slice Architecture to organize the codebase effectively.
 </p>
 
+> [!WARNING]
+>
+> **Disclaimer**: This example is for demo use only. It’s not production-ready and may omit important features or safeguards.
+
 <div>
   <a href="https://codespaces.new/foxminchan/BookWorm?quickstart=1" target="_blank">
     <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg">
