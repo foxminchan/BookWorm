@@ -3,6 +3,7 @@ using BookWorm.Chassis.CQRS.Mediator;
 using BookWorm.Chassis.CQRS.Pipelines;
 using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
+using BookWorm.Constants.Core;
 using BookWorm.Rating.Infrastructure.Agents;
 using BookWorm.Rating.Infrastructure.Summarizer;
 
@@ -16,7 +17,23 @@ internal static class Extensions
 
         builder.AddDefaultCors();
 
-        builder.AddDefaultAuthentication().AddKeycloakClaimsTransformation();
+        builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
+
+        services
+            .AddAuthorizationBuilder()
+            .AddPolicy(
+                Authorization.Policies.Admin,
+                policy =>
+                {
+                    policy
+                        .RequireAuthenticatedUser()
+                        .RequireRole(Authorization.Roles.Admin)
+                        .RequireScope(
+                            $"{Services.Rating}_{Authorization.Actions.Read}",
+                            $"{Services.Rating}_{Authorization.Actions.Write}"
+                        );
+                }
+            );
 
         builder.AddDefaultOpenApi();
 
