@@ -40,7 +40,7 @@ internal static class Extensions
                 }
             )
             .AddPolicy(
-                Authorization.Policies.Vendor,
+                Authorization.Policies.Reporter,
                 policy =>
                 {
                     policy

@@ -44,19 +44,6 @@ internal static class Extensions
                         );
                 }
             )
-            .AddPolicy(
-                Authorization.Policies.Vendor,
-                policy =>
-                {
-                    policy
-                        .RequireAuthenticatedUser()
-                        .RequireRole(Authorization.Roles.Vendor)
-                        .RequireScope(
-                            $"{Services.Catalog}_{Authorization.Actions.Read}",
-                            $"{Services.Catalog}_{Authorization.Actions.Write}"
-                        );
-                }
-            )
             .SetDefaultPolicy(
                 new AuthorizationPolicyBuilder()
                     .RequireAuthenticatedUser()

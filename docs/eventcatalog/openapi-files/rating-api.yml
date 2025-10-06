@@ -40,7 +40,8 @@ servers:
         default: https
 security:
   - OAuth:
-      - rating
+      - rating_read
+      - rating_write
 paths:
   "/api/v1/feedbacks":
     get:
@@ -167,9 +168,13 @@ paths:
                     status: 400
                     detail: "One or more validation errors has occurred"
                     errors:
-                      - propertyName: "PageIndex"
+                      - propertyName: "'PageIndex'"
                         errorMessage: "'PageIndex' must be greater than 0."
+                        attemptedValue: null
+                        customState: null
                         severity: 0
+                        errorCode: null
+                        formattedMessagePlaceholderValues: null
                 invalid-page-size:
                   summary: Invalid page size
                   value:
@@ -178,15 +183,23 @@ paths:
                     status: 400
                     detail: "One or more validation errors has occurred"
                     errors:
-                      - propertyName: "PageSize"
+                      - propertyName: "'PageSize'"
                         errorMessage: "'PageSize' must be greater than 0."
+                        attemptedValue: null
+                        customState: null
                         severity: 0
+                        errorCode: null
+                        formattedMessagePlaceholderValues: null
     post:
       tags:
         - Feedback
       summary: Create Feedback
       description: Create a new feedback
       x-eventcatalog-message-type: command
+      security:
+        - OAuth:
+            - rating_read
+            - rating_write
       operationId: CreateFeedbackEndpoint
       requestBody:
         description: The command to create a new feedback
@@ -226,9 +239,13 @@ paths:
                     status: 400
                     detail: "One or more validation errors has occurred"
                     errors:
-                      - propertyName: "BookId"
+                      - propertyName: "'BookId'"
                         errorMessage: "'BookId' must not be empty."
+                        attemptedValue: null
+                        customState: null
                         severity: 0
+                        errorCode: null
+                        formattedMessagePlaceholderValues: null
                 empty-first-name:
                   summary: Empty first name
                   value:
@@ -237,9 +254,13 @@ paths:
                     status: 400
                     detail: "One or more validation errors has occurred"
                     errors:
-                      - propertyName: "FirstName"
+                      - propertyName: "'FirstName'"
                         errorMessage: "'FirstName' must not be empty."
+                        attemptedValue: null
+                        customState: null
                         severity: 0
+                        errorCode: null
+                        formattedMessagePlaceholderValues: null
                 empty-last-name:
                   summary: Empty last name
                   value:
@@ -248,9 +269,13 @@ paths:
                     status: 400
                     detail: "One or more validation errors has occurred"
                     errors:
-                      - propertyName: "LastName"
+                      - propertyName: "'LastName'"
                         errorMessage: "'LastName' must not be empty."
+                        attemptedValue: null
+                        customState: null
                         severity: 0
+                        errorCode: null
+                        formattedMessagePlaceholderValues: null
   "/api/v1/feedbacks/{id}/summarize":
     get:
       tags:
@@ -261,7 +286,8 @@ paths:
       operationId: SummarizeFeedbackEndpoint
       security:
         - OAuth:
-            - rating
+            - rating_read
+            - rating_write
       parameters:
         - name: id
           in: path
@@ -299,7 +325,8 @@ paths:
       operationId: DeleteFeedbackEndpoint
       security:
         - OAuth:
-            - rating
+            - rating_read
+            - rating_write
       parameters:
         - name: id
           in: path
@@ -421,63 +448,54 @@ components:
       description: RFC 9110 (https://tools.ietf.org/html/rfc9110#section-15.5.1)
       properties:
         type:
-          type: string
+          type:
+            - "null"
+            - string
           description: The type of the problem
           example: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
         title:
-          type: string
+          type:
+            - "null"
+            - string
           description: The title of the problem
           example: "Validation failed"
         status:
-          type: integer
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - "null"
+            - integer
+            - string
           format: int32
           description: The status code of the problem
           example: 400
         detail:
-          type: string
+          type:
+            - "null"
+            - string
           description: The detail of the problem
           example: "One or more validation errors has occurred"
+        instance:
+          type:
+            - "null"
+            - string
+          format: uri
+          description: The instance of the problem
+          example: "/api/v1/feedbacks"
         errors:
-          type: array
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
           description: The validation errors
           example:
-            - propertyName: "FirstName"
-              errorMessage: "'FirstName' must not be empty."
-              severity: 0
-          items:
-            type: object
-            properties:
-              propertyName:
-                type: string
-                description: The name of the property that failed validation
-                example: "FirstName"
-              errorMessage:
-                type: string
-                description: The error message describing the validation failure
-                example: "'FirstName' must not be empty."
-              attemptedValue:
-                type: object
-                description: The value that was attempted
-                example: null
-              customState:
-                type: object
-                description: Custom state information
-                example: null
-              severity:
-                type: integer
-                format: int32
-                description: The severity level of the error
-                example: 0
-              errorCode:
-                type:
-                  - "string"
-                  - "null"
-                description: The error code
-                example: null
-              formattedMessagePlaceholderValues:
-                type: object
-                description: Placeholder values for the formatted message
-                example: null
+            propertyName: "'Name'"
+            errorMessage: "'Name' must not be empty."
+            attemptedValue: null
+            customState: null
+            severity: 0
+            errorCode: null
+            formattedMessagePlaceholderValues: null
     PagedResultOfFeedbackDto:
       type: object
       readOnly: true
@@ -522,22 +540,39 @@ components:
       description: RFC 9110 (https://tools.ietf.org/html/rfc9110)
       properties:
         type:
-          type: string
+          type:
+            - "null"
+            - string
           description: The type of the problem
           example: "https://tools.ietf.org/html/rfc9110#section-15.5.5"
         title:
-          type: string
+          type:
+            - "null"
+            - string
           description: The title of the problem
           example: "Not found"
         status:
-          type: integer
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - "null"
+            - integer
+            - string
           format: int32
           description: The status code of the problem
           example: 404
         detail:
-          type: string
+          type:
+            - "null"
+            - string
           description: The detail of the problem
           example: "Feedback with id 01961eb4-668d-7e7e-ae25-0fab379614f7 was not found."
+        instance:
+          type:
+            - "null"
+            - string
+          format: uri
+          description: The instance of the problem
+          example: "/api/v1/feedbacks/01961eb4-668d-7e7e-ae25-0fab379614f7"
   securitySchemes:
     OAuth:
       type: oauth2
@@ -547,7 +582,8 @@ components:
           authorizationUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/auth"
           tokenUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/token"
           scopes:
-            rating: "Rating API"
+            rating_read: Read for Rating API
+            rating_write: Write for Rating API
           x-usePkce: "SHA-256"
           x-scalar-client-id: "rating"
           x-scalar-security-body:

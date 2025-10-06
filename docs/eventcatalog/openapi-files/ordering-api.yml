@@ -40,7 +40,8 @@ servers:
         default: https
 security:
   - OAuth:
-      - ordering
+      - ordering_read
+      - ordering_write
 paths:
   "/api/v1/orders/{id}/summary":
     get:
@@ -52,7 +53,8 @@ paths:
       operationId: SummaryOrderEndpoint
       security:
         - OAuth:
-            - ordering
+            - ordering_read
+            - ordering_write
       parameters:
         - name: id
           in: path
@@ -86,7 +88,8 @@ paths:
       operationId: ListOrdersEndpoint
       security:
         - OAuth:
-            - ordering
+            - ordering_read
+            - ordering_write
       parameters:
         - name: PageIndex
           in: query
@@ -189,9 +192,13 @@ paths:
                     status: 400
                     detail: "One or more validation errors has occurred"
                     errors:
-                      - propertyName: "PageIndex"
+                      - propertyName: "'PageIndex'"
                         errorMessage: "'PageIndex' must be greater than 0."
+                        attemptedValue: null
+                        customState: null
                         severity: 0
+                        errorCode: null
+                        formattedMessagePlaceholderValues: null
                 invalid-page-size:
                   summary: Invalid page size
                   value:
@@ -200,9 +207,13 @@ paths:
                     status: 400
                     detail: "One or more validation errors has occurred"
                     errors:
-                      - propertyName: "PageSize"
+                      - propertyName: "'PageSize'"
                         errorMessage: "'PageSize' must be greater than 0."
+                        attemptedValue: null
+                        customState: null
                         severity: 0
+                        errorCode: null
+                        formattedMessagePlaceholderValues: null
         "401":
           description: Unauthorized - Access token is missing or invalid.
     post:
@@ -214,7 +225,8 @@ paths:
       operationId: CreateOrderEndpoint
       security:
         - OAuth:
-            - ordering
+            - ordering_read
+            - ordering_write
       parameters:
         - name: X-Request-Id
           in: header
@@ -246,7 +258,8 @@ paths:
       operationId: GetOrderEndpoint
       security:
         - OAuth:
-            - ordering
+            - ordering_read
+            - ordering_write
       parameters:
         - name: id
           in: path
@@ -304,6 +317,10 @@ paths:
       summary: Delete Order
       description: Delete an order if it exists
       operationId: DeleteOrderEndpoint
+      security:
+        - OAuth:
+            - ordering_read
+            - ordering_write
       parameters:
         - name: id
           in: path
@@ -343,7 +360,8 @@ paths:
       operationId: CompleteOrderEndpoint
       security:
         - OAuth:
-            - ordering
+            - ordering_read
+            - ordering_write
       parameters:
         - name: X-Request-Id
           in: header
@@ -415,7 +433,8 @@ paths:
       operationId: CancelOrderEndpoint
       security:
         - OAuth:
-            - ordering
+            - ordering_read
+            - ordering_write
       parameters:
         - name: X-Request-Id
           in: header
@@ -488,7 +507,8 @@ paths:
       operationId: UpdateAddressEndpoint
       security:
         - OAuth:
-            - ordering
+            - ordering_read
+            - ordering_write
       requestBody:
         description: The command to update the current buyer's address
         content:
@@ -529,9 +549,13 @@ paths:
                     status: 400
                     detail: "One or more validation errors has occurred"
                     errors:
-                      - propertyName: "Street"
+                      - propertyName: "'Street'"
                         errorMessage: "'Street' must not be empty."
+                        attemptedValue: null
+                        customState: null
                         severity: 0
+                        errorCode: null
+                        formattedMessagePlaceholderValues: null
                 empty-city:
                   summary: Empty city
                   value:
@@ -540,9 +564,13 @@ paths:
                     status: 400
                     detail: "One or more validation errors has occurred"
                     errors:
-                      - propertyName: "City"
+                      - propertyName: "'City'"
                         errorMessage: "'City' must not be empty."
+                        attemptedValue: null
+                        customState: null
                         severity: 0
+                        errorCode: null
+                        formattedMessagePlaceholderValues: null
                 empty-province:
                   summary: Empty province
                   value:
@@ -551,9 +579,13 @@ paths:
                     status: 400
                     detail: "One or more validation errors has occurred"
                     errors:
-                      - propertyName: "Province"
+                      - propertyName: "'Province'"
                         errorMessage: "'Province' must not be empty."
+                        attemptedValue: null
+                        customState: null
                         severity: 0
+                        errorCode: null
+                        formattedMessagePlaceholderValues: null
         "401":
           description: Unauthorized - Access token is missing or invalid.
         "404":
@@ -577,7 +609,8 @@ paths:
       operationId: ListBuyersEndpoint
       security:
         - OAuth:
-            - ordering
+            - ordering_read
+            - ordering_write
       parameters:
         - name: PageIndex
           in: query
@@ -659,7 +692,8 @@ paths:
       operationId: CreateBuyerEndpoint
       security:
         - OAuth:
-            - ordering
+            - ordering_read
+            - ordering_write
       requestBody:
         description: The command to create a new buyer
         content:
@@ -696,9 +730,13 @@ paths:
                     status: 400
                     detail: "One or more validation errors has occurred"
                     errors:
-                      - propertyName: "Street"
+                      - propertyName: "'Street'"
                         errorMessage: "'Street' must not be empty."
+                        attemptedValue: null
+                        customState: null
                         severity: 0
+                        errorCode: null
+                        formattedMessagePlaceholderValues: null
                 empty-city:
                   summary: Empty city
                   value:
@@ -707,9 +745,13 @@ paths:
                     status: 400
                     detail: "One or more validation errors has occurred"
                     errors:
-                      - propertyName: "City"
+                      - propertyName: "'City'"
                         errorMessage: "'City' must not be empty."
+                        attemptedValue: null
+                        customState: null
                         severity: 0
+                        errorCode: null
+                        formattedMessagePlaceholderValues: null
                 empty-province:
                   summary: Empty province
                   value:
@@ -718,9 +760,13 @@ paths:
                     status: 400
                     detail: "One or more validation errors has occurred"
                     errors:
-                      - propertyName: "Province"
+                      - propertyName: "'Province'"
                         errorMessage: "'Province' must not be empty."
+                        attemptedValue: null
+                        customState: null
                         severity: 0
+                        errorCode: null
+                        formattedMessagePlaceholderValues: null
   "/api/v1/buyers/me":
     get:
       tags:
@@ -728,6 +774,10 @@ paths:
       summary: Get Buyer
       description: Get the current buyer's information
       operationId: GetBuyerEndpoint
+      security:
+        - OAuth:
+            - ordering_read
+            - ordering_write
       parameters:
         - name: Id
           in: query
@@ -772,6 +822,10 @@ paths:
       summary: Delete Buyer
       description: Delete a buyer by ID if it exists
       operationId: DeleteBuyerEndpoint
+      security:
+        - OAuth:
+            - ordering_read
+            - ordering_write
       parameters:
         - name: id
           in: path
@@ -855,63 +909,54 @@ components:
       description: RFC 9110 (https://tools.ietf.org/html/rfc9110#section-15.5.1)
       properties:
         type:
-          type: string
+          type:
+            - "null"
+            - string
           description: The type of the problem
           example: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
         title:
-          type: string
+          type:
+            - "null"
+            - string
           description: The title of the problem
           example: "Validation failed"
         status:
-          type: integer
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - "null"
+            - integer
+            - string
           format: int32
           description: The status code of the problem
           example: 400
         detail:
-          type: string
+          type:
+            - "null"
+            - string
           description: The detail of the problem
           example: "One or more validation errors has occurred"
+        instance:
+          type:
+            - "null"
+            - string
+          format: uri
+          description: The instance of the problem
+          example: "/api/v1/orders"
         errors:
-          type: array
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
           description: The validation errors
           example:
-            - propertyName: "Street"
-              errorMessage: "'Street' must not be empty."
-              severity: 0
-          items:
-            type: object
-            properties:
-              propertyName:
-                type: string
-                description: The name of the property that failed validation
-                example: "Street"
-              errorMessage:
-                type: string
-                description: The error message describing the validation failure
-                example: "'Street' must not be empty."
-              attemptedValue:
-                type: object
-                description: The value that was attempted
-                example: null
-              customState:
-                type: object
-                description: Custom state information
-                example: null
-              severity:
-                type: integer
-                format: int32
-                description: The severity level of the error
-                example: 0
-              errorCode:
-                type:
-                  - "string"
-                  - "null"
-                description: The error code
-                example: null
-              formattedMessagePlaceholderValues:
-                type: object
-                description: Placeholder values for the formatted message
-                example: null
+            propertyName: "'PageIndex'"
+            errorMessage: "'PageIndex' must be greater than 0."
+            attemptedValue: null
+            customState: null
+            severity: 0
+            errorCode: null
+            formattedMessagePlaceholderValues: null
     NullableOfStatus:
       description: The status of the order
       readOnly: true
@@ -1092,22 +1137,39 @@ components:
       description: RFC 9110 (https://tools.ietf.org/html/rfc9110)
       properties:
         type:
-          type: string
+          type:
+            - "null"
+            - string
           description: The type of the problem
           example: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
         title:
-          type: string
+          type:
+            - "null"
+            - string
           description: The title of the problem
           example: "Not Found"
         status:
-          type: integer
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - "null"
+            - integer
+            - string
           format: int32
           description: The status code of the problem
           example: 404
         detail:
-          type: string
+          type:
+            - "null"
+            - string
           description: The detail of the problem
           example: "Buyer with id 019622d7-e45c-7ccb-868f-509b69559883 not found."
+        instance:
+          type:
+            - "null"
+            - string
+          format: uri
+          description: The instance of the problem
+          example: "/api/v1/buyers/019622d7-e45c-7ccb-868f-509b69559883"
     Status:
       description: The status of the order
       enum:
@@ -1147,7 +1209,8 @@ components:
           authorizationUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/auth"
           tokenUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/token"
           scopes:
-            ordering: "Ordering API"
+            ordering_read: Read for Ordering API
+            ordering_write: Write for Ordering API
           x-usePkce: "SHA-256"
           x-scalar-client-id: "ordering"
           x-scalar-security-body:
