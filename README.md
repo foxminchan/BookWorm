@@ -6,13 +6,13 @@
 
 ## Introduction
 
-<p style="text-align:justify;">
-⭐ BookWorm showcases .NET Aspire in a cloud-native application with AI integration. Built with Domain-Driven Design and Vertical Slice Architecture, it features multi-agent orchestration via Agent Framework and standardized AI tooling through Model Context Protocol (MCP) with A2A Protocol support.
+<p align="justify">
+  ⭐ BookWorm showcases .NET Aspire in a cloud-native application with AI integration. Built with DDD and VSA, it features multi-agent orchestration and standardized AI tooling through MCP with A2A Protocol support.
 </p>
 
 > [!WARNING]
 >
-> **Disclaimer**: This example is for demo use only. It’s not production-ready and may omit important features or safeguards.
+> **Disclaimer**: This example is for demo use only. It’s not production-ready and may omit important features.
 
 <div>
   <a href="https://codespaces.new/foxminchan/BookWorm?quickstart=1" target="_blank">

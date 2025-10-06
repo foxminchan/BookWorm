@@ -1,0 +1,73 @@
+---
+id: VisualizeChatWorkflowQuery
+version: 1.0.0
+name: Visualize Workflow
+summary: Retrieve the workflow visualization for a specific chat session
+badges:
+  - content: GET
+    textColor: blue
+    backgroundColor: blue
+    icon: MagnifyingGlassIcon
+  - content: "Chat"
+    textColor: yellow
+    backgroundColor: yellow
+    icon: BookOpenIcon
+owners:
+  - nhanxnguyen
+---
+
+## Overview
+
+The **Visualize Chat Workflow Query** provides administrators with the ability to retrieve a visual representation of the agent orchestration workflow used within the chat service. This query enables technical stakeholders to understand how different AI agents collaborate and communicate during chat sessions, facilitating better system comprehension, debugging, and documentation.
+
+## Business Purpose
+
+This query serves as a diagnostic and documentation tool that allows system administrators and technical staff to:
+
+- **Understand Agent Interactions**: Visualize how multiple AI agents work together to process chat requests
+- **Support System Documentation**: Generate up-to-date workflow diagrams for technical documentation and training materials
+- **Enable Troubleshooting**: Provide visual insights into the agent orchestration flow to identify potential bottlenecks or issues
+- **Facilitate Onboarding**: Help new team members quickly understand the chat service architecture
+
+## Query Parameters
+
+### Type (Optional)
+- **Description**: Specifies the output format for the workflow visualization
+- **Default Value**: Mermaid
+- **Available Options**:
+  - **Mermaid**: Generates a Mermaid diagram format, ideal for embedding in documentation and rendering in modern documentation platforms
+  - **Dot**: Produces a GraphViz DOT format, suitable for advanced graph visualization tools and custom rendering requirements
+
+## Response
+
+The query returns a text-based representation of the workflow in the requested format. This textual representation can be:
+
+- Embedded directly into documentation systems that support the chosen format
+- Rendered into visual diagrams using appropriate visualization tools
+- Stored for version control and change tracking
+- Shared with stakeholders for review and analysis
+
+## Authorization & Access Control
+
+This query is restricted to administrators only, as it exposes internal system architecture details that should not be accessible to regular users. The rate limiting policy ensures system resources are protected from excessive visualization requests.
+
+## Use Cases
+
+### Documentation Generation
+Technical writers can use this query to automatically generate current workflow diagrams for inclusion in system documentation, ensuring diagrams remain synchronized with the actual implementation.
+
+### System Monitoring
+Operations teams can periodically retrieve workflow visualizations to verify that the agent orchestration configuration matches expected patterns and identify any unexpected changes.
+
+### Development & Testing
+Development teams can use this visualization during development cycles to validate that workflow changes are correctly reflected in the agent orchestration layer.
+
+### Training & Knowledge Transfer
+New team members and stakeholders can request workflow visualizations to accelerate their understanding of the chat service's internal architecture.
+
+## Integration Points
+
+This query integrates with:
+- **Agent Orchestration Service**: Retrieves the current workflow configuration from the orchestration layer
+- **Authentication System**: Validates administrator credentials before processing requests
+- **Rate Limiting Service**: Ensures fair resource usage across administrator requests

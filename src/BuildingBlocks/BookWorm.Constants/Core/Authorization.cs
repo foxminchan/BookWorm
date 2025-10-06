@@ -6,7 +6,6 @@ public static class Authorization
     {
         public static readonly string Admin = nameof(Admin).ToLowerInvariant();
         public static readonly string User = nameof(User).ToLowerInvariant();
-        public static readonly string Vendor = nameof(Vendor).ToLowerInvariant();
         public static readonly string Reporter = nameof(Reporter).ToLowerInvariant();
     }
 
@@ -14,7 +13,6 @@ public static class Authorization
     {
         public const string Admin = nameof(Admin);
         public const string User = nameof(User);
-        public const string Vendor = nameof(Vendor);
         public const string Reporter = nameof(Reporter);
     }
 

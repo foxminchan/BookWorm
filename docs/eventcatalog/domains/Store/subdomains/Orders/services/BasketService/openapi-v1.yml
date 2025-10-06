@@ -42,7 +42,8 @@ servers:
         default: https
 security:
   - OAuth:
-      - basket
+      - basket_read
+      - basket_write
 paths:
   /api/v1/baskets:
     put:
@@ -54,7 +55,8 @@ paths:
       operationId: UpdateBasketEndpoint
       security:
         - OAuth:
-            - basket
+            - basket_read
+            - basket_write
       requestBody:
         description: The command to update the basket with new items
         content:
@@ -95,9 +97,13 @@ paths:
                     status: 400
                     detail: "One or more validation errors has occurred"
                     errors:
-                      - propertyName: "Quantity"
+                      - propertyName: "'Quantity'"
                         errorMessage: "'Quantity' must be greater than 0."
+                        attemptedValue: null
+                        customState: null
                         severity: 0
+                        errorCode: null
+                        formattedMessagePlaceholderValues: null
                 empty-item-id:
                   summary: Invalid item ID format
                   value:
@@ -106,9 +112,13 @@ paths:
                     status: 400
                     detail: "One or more validation errors has occurred"
                     errors:
-                      - propertyName: "Id"
+                      - propertyName: "'Id'"
                         errorMessage: "'Id' must not be empty."
+                        attemptedValue: null
+                        customState: null
                         severity: 0
+                        errorCode: null
+                        formattedMessagePlaceholderValues: null
         "401":
           description: Unauthorized - Access token is missing or invalid.
     get:
@@ -118,6 +128,10 @@ paths:
       description: Get a basket by user
       x-eventcatalog-message-type: query
       operationId: GetBasketEndpoint
+      security:
+        - OAuth:
+            - basket_read
+            - basket_write
       responses:
         "200":
           description: OK
@@ -171,7 +185,8 @@ paths:
       operationId: DeleteBasketEndpoint
       security:
         - OAuth:
-            - basket
+            - basket_read
+            - basket_write
       responses:
         "204":
           description: No Content
@@ -200,7 +215,8 @@ paths:
       operationId: CreateBasketEndpoint
       security:
         - OAuth:
-            - basket
+            - basket_read
+            - basket_write
       requestBody:
         description: A command to create a basket with the specified items
         content:
@@ -247,9 +263,13 @@ paths:
                     status: 400
                     detail: "One or more validation errors has occurred"
                     errors:
-                      - propertyName: "Quantity"
+                      - propertyName: "'Quantity'"
                         errorMessage: "'Quantity' must be greater than 0."
+                        attemptedValue: null
+                        customState: null
                         severity: 0
+                        errorCode: null
+                        formattedMessagePlaceholderValues: null
                 empty-item-id:
                   summary: Invalid item ID format
                   value:
@@ -258,9 +278,13 @@ paths:
                     status: 400
                     detail: "One or more validation errors has occurred"
                     errors:
-                      - propertyName: "Id"
+                      - propertyName: "'Id'"
                         errorMessage: "'Id' must not be empty."
+                        attemptedValue: null
+                        customState: null
                         severity: 0
+                        errorCode: null
+                        formattedMessagePlaceholderValues: null
         "401":
           description: Unauthorized - Access token is missing or invalid.
   /grpc/v1/baskets:
@@ -274,7 +298,8 @@ paths:
       x-grpc-method: GetBasket
       security:
         - OAuth:
-            - basket
+            - basket_read
+            - basket_write
       operationId: GetBasketGrpcEndpoint
       responses:
         "200":
@@ -431,63 +456,54 @@ components:
       description: RFC 9110 (https://tools.ietf.org/html/rfc9110#section-15.5.1)
       properties:
         type:
-          type: string
+          type:
+            - "null"
+            - string
           description: The type of the problem
           example: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
         title:
-          type: string
+          type:
+            - "null"
+            - string
           description: The title of the problem
           example: "Validation failed"
         status:
-          type: integer
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - "null"
+            - integer
+            - string
           format: int32
           description: The status code of the problem
           example: 400
         detail:
-          type: string
+          type:
+            - "null"
+            - string
           description: The detail of the problem
           example: "One or more validation errors has occurred"
+        instance:
+          type:
+            - "null"
+            - string
+          format: uri
+          description: The instance of the problem
+          example: "/api/v1/baskets"
         errors:
-          type: array
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
           description: The validation errors
           example:
-            - propertyName: "Quantity"
-              errorMessage: "'Quantity' must be greater than 0."
-              severity: 0
-          items:
-            type: object
-            properties:
-              propertyName:
-                type: string
-                description: The name of the property that failed validation
-                example: "Quantity"
-              errorMessage:
-                type: string
-                description: The error message describing the validation failure
-                example: "'Quantity' must be greater than 0."
-              attemptedValue:
-                type: object
-                description: The value that was attempted
-                example: {} # Corrected: example is an empty object
-              customState:
-                type: object
-                description: Custom state information
-                example: {} # Corrected: example is an empty object
-              severity:
-                type: integer
-                format: int32
-                description: The severity level of the error
-                example: 0
-              errorCode:
-                type:
-                  - "string"
-                  - "null"
-                description: The error code
-                example: null
-              formattedMessagePlaceholderValues:
-                type: object
-                description: Placeholder values for the formatted message
-                example: {}
+            propertyName: "'Quantity'"
+            errorMessage: "'Quantity' must be greater than 0."
+            attemptedValue: null
+            customState: null
+            severity: 0
+            errorCode: null
+            formattedMessagePlaceholderValues: null
     ProblemDetails:
       type: object
       readOnly: true
@@ -495,22 +511,39 @@ components:
       description: RFC 9110 (https://tools.ietf.org/html/rfc9110)
       properties:
         type:
-          type: string
+          type:
+            - "null"
+            - string
           description: The type of the problem
           example: "https://tools.ietf.org/html/rfc9110#section-15.5.5"
         title:
-          type: string
+          type:
+            - "null"
+            - string
           description: The title of the problem
           example: "Not Found"
         status:
-          type: integer
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - "null"
+            - integer
+            - string
           format: int32
           description: The status code of the problem
           example: 404
         detail:
-          type: string
+          type:
+            - "null"
+            - string
           description: The detail of the problem
           example: "Basket with id 01962e92-02ed-7b23-8af6-95b267a97e44 not found."
+        instance:
+          type:
+            - "null"
+            - string
+          format: uri
+          description: The instance of the problem
+          example: "/api/v1/baskets/01962e92-02ed-7b23-8af6-95b267a97e44"
     BasketResponse:
       type: object
       readOnly: true
@@ -552,7 +585,8 @@ components:
           authorizationUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/auth"
           tokenUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/token"
           scopes:
-            basket: "Basket API"
+            basket_read: Read for Basket API
+            basket_write: Write for Basket API
           x-usePkce: "SHA-256"
           x-scalar-client-id: "basket"
           x-scalar-security-body:

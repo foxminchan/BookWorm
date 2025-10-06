@@ -42,8 +42,76 @@ servers:
         default: https
 security:
   - OAuth:
-      - chatting
+      - chatting_read
+      - chatting_write
 paths:
+  "/api/v1/chats/visualize":
+    get:
+      tags:
+        - Chat
+      summary: Visualizer Workflow
+      description: Get the workflow for the visualizer
+      x-eventcatalog-message-type: query
+      operationId: VisualizeWorkflowEndpoint
+      security:
+        - OAuth:
+            - chatting_read
+            - chatting_write
+      parameters:
+        - name: Type
+          in: query
+          description: The type of visualization to generate
+          schema:
+            $ref: "#/components/schemas/VisualizationType"
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: The workflow in the specified visualization format
+              example: |
+                flowchart TD
+                  HandoffStart["HandoffStart (Start)"];
+                  language["language"];
+                  summarize["summarize"];
+                  HandoffEnd["HandoffEnd"];
+                  rating["rating"];
+
+                  HandoffStart --> language;
+                  language --> summarize;
+                  language --> HandoffEnd;
+                  summarize --> rating;
+                  summarize --> HandoffEnd;
+                  rating --> language;
+                  rating --> HandoffEnd;
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+              examples:
+                invalid-type:
+                  summary: "Invalid visualization type"
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "'Type'"
+                        errorMessage: "'Type' has a range of values which does not include '4'."
+                        attemptedValue: null
+                        customState: null
+                        severity: 0
+                        errorCode: null
+                        formattedMessagePlaceholderValues: null
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
+        "403":
+          description: Forbidden - Access token does not have the required permissions.
   "/api/v1/chats":
     post:
       tags:
@@ -54,7 +122,8 @@ paths:
       operationId: CreateChatEndpoint
       security:
         - OAuth:
-            - chatting
+            - chatting_read
+            - chatting_write
       requestBody:
         description: The command to create a chat
         content:
@@ -84,9 +153,9 @@ paths:
         "400":
           description: Bad Request
           content:
-            application/json:
+            application/problem+json:
               schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
               examples:
                 empty-name:
                   summary: "Chat name is empty"
@@ -96,21 +165,27 @@ paths:
                     status: 400
                     detail: "One or more validation errors has occurred"
                     errors:
-                      - propertyName: "name"
+                      - propertyName: "'Name'"
                         errorMessage: "'Name' must not be empty."
+                        attemptedValue: null
+                        customState: null
                         severity: 0
+                        errorCode: null
+                        formattedMessagePlaceholderValues: null
         "401":
           description: Unauthorized - Access token is missing or invalid.
     get:
       tags:
         - Chat
+      deprecated: true
       summary: List Chats
       description: List all chats with optional filtering
       x-eventcatalog-message-type: query
       operationId: ListChatEndpoint
       security:
         - OAuth:
-            - chatting
+            - chatting_read
+            - chatting_write
       parameters:
         - name: name
           in: query
@@ -177,13 +252,15 @@ paths:
     put:
       tags:
         - Chat
+      deprecated: true
       summary: Update Chat
       description: Update an existing chat in the catalog system
       x-eventcatalog-message-type: command
       operationId: UpdateChatEndpoint
       security:
         - OAuth:
-            - chatting
+            - chatting_read
+            - chatting_write
       requestBody:
         description: The command to update a chat
         content:
@@ -201,9 +278,9 @@ paths:
         "400":
           description: Bad Request
           content:
-            application/json:
+            application/problem+json:
               schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
               examples:
                 empty-id:
                   summary: "Chat ID is empty"
@@ -213,9 +290,13 @@ paths:
                     status: 400
                     detail: "One or more validation errors has occurred"
                     errors:
-                      - propertyName: "id"
+                      - propertyName: "'Id'"
                         errorMessage: "'Id' must not be empty."
+                        attemptedValue: null
+                        customState: null
                         severity: 0
+                        errorCode: null
+                        formattedMessagePlaceholderValues: null
                 empty-prompt:
                   summary: "Chat prompt is empty"
                   value:
@@ -224,9 +305,13 @@ paths:
                     status: 400
                     detail: "One or more validation errors has occurred"
                     errors:
-                      - propertyName: "prompt"
+                      - propertyName: "'Prompt'"
                         errorMessage: "'Prompt' must not be empty."
+                        attemptedValue: null
+                        customState: null
                         severity: 0
+                        errorCode: null
+                        formattedMessagePlaceholderValues: null
         "401":
           description: Unauthorized - Access token is missing or invalid.
         "404":
@@ -239,13 +324,15 @@ paths:
     get:
       tags:
         - Chat
+      deprecated: true
       summary: Get Chat
       description: Get a chat by its ID
       x-eventcatalog-message-type: query
       operationId: GetChatEndpoint
       security:
         - OAuth:
-            - chatting
+            - chatting_read
+            - chatting_write
       parameters:
         - name: id
           in: path
@@ -275,7 +362,7 @@ paths:
         "404":
           description: Not Found
           content:
-            application/json:
+            application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
               example:
@@ -294,7 +381,8 @@ paths:
       operationId: DeleteChatEndpoint
       security:
         - OAuth:
-            - chatting
+            - chatting_read
+            - chatting_write
       parameters:
         - name: id
           in: path
@@ -310,7 +398,7 @@ paths:
         "404":
           description: Not Found
           content:
-            application/json:
+            application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
               example:
@@ -324,13 +412,15 @@ paths:
     delete:
       tags:
         - Chat
+      deprecated: true
       summary: Cancel Chat
       description: Cancel a chat if it exists
       x-eventcatalog-message-type: command
       operationId: CancelChatEndpoint
       security:
         - OAuth:
-            - chatting
+            - chatting_read
+            - chatting_write
       parameters:
         - name: id
           in: path
@@ -355,7 +445,8 @@ paths:
       operationId: ChatStreamEndpoint
       security:
         - OAuth:
-            - chatting
+            - chatting_read
+            - chatting_write
       responses:
         "101":
           description: Switching Protocols - WebSocket connection established
@@ -388,33 +479,94 @@ components:
       description: RFC 9110 (https://tools.ietf.org/html/rfc9110)
       properties:
         type:
-          type: string
+          type:
+            - "null"
+            - string
           description: The type of the problem
           example: "https://tools.ietf.org/html/rfc9110#section-15.5.5"
         title:
-          type: string
+          type:
+            - "null"
+            - string
           description: The title of the problem
           example: "Not Found"
         status:
-          type: integer
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - "null"
+            - integer
+            - string
           format: int32
           description: The status code of the problem
           example: 404
         detail:
-          type: string
+          type:
+            - "null"
+            - string
           description: The detail of the problem
           example: "Chat with id 01961f13-64ef-7dbb-84a1-25114e2e0ca4 not found."
-    PushNotificationConfig:
-      required:
-        - url
+        instance:
+          type:
+            - "null"
+            - string
+          format: uri
+          description: The instance of the problem
+          example: "/api/v1/chats/01961f13-64ef-7dbb-84a1-25114e2e0ca4"
+    HttpValidationProblemDetails:
       type: object
+      readOnly: true
+      x-scalar-ignore: true
+      description: RFC 9110 (https://tools.ietf.org/html/rfc9110)
       properties:
-        url:
-          type: string
-        token:
-          type: string
-        authentication:
-          $ref: "#/components/schemas/AuthenticationInfo"
+        type:
+          type:
+            - "null"
+            - string
+          description: The type of the problem
+          example: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+        title:
+          type:
+            - "null"
+            - string
+          description: The title of the problem
+          example: "Validation failed"
+        status:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - "null"
+            - integer
+            - string
+          format: int32
+          description: The status code of the problem
+          example: 400
+        detail:
+          type:
+            - "null"
+            - string
+          description: The detail of the problem
+          example: "One or more validation errors has occurred"
+        instance:
+          type:
+            - "null"
+            - string
+          format: uri
+          description: The instance of the problem
+          example: "/api/v1/chats"
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          description: The validation errors
+          example:
+            propertyName: "Type"
+            errorMessage: "'Type' has a range of values which does not include '4'."
+            attemptedValue: null
+            customState: null
+            severity: 0
+            errorCode: null
+            formattedMessagePlaceholderValues: null
     ConversationDto:
       type: object
       readOnly: true
@@ -492,6 +644,11 @@ components:
           format: date-time
           description: The timestamp when the message was created
           example: "2023-10-01T12:00:00Z"
+    VisualizationType:
+      enum:
+        - Mermaid
+        - Dot
+      default: Mermaid
   securitySchemes:
     OAuth:
       type: oauth2
@@ -501,7 +658,8 @@ components:
           authorizationUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/auth"
           tokenUrl: "https://auth.bookworm.com/realms/bookworm/protocol/openid-connect/token"
           scopes:
-            chatting: "Chatting API"
+            chatting_read: Read for Chatting API
+            chatting_write: Write for Chatting API
           x-usePkce: "SHA-256"
           x-scalar-client-id: "chatting"
           x-scalar-security-body:
