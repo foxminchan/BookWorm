@@ -1,4 +1,8 @@
 ﻿using A2A;
+using BookWorm.Chassis.Utilities;
+using BookWorm.Constants.Core;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.OAuth;
 
 namespace BookWorm.Rating.Infrastructure.Agents;
 
@@ -55,8 +59,12 @@ internal static class RatingAgent
             Name = Name,
             Description =
                 "Rating analysis agent with contextual function selection using existing plugins and A2A integration",
-            Version = "1.0.0",
-            Provider = new() { Organization = nameof(BookWorm) },
+            Version = "1.0",
+            Provider = new()
+            {
+                Organization = nameof(BookWorm),
+                Url = "https://github.com/foxminchan/BookWorm",
+            },
             DefaultInputModes = ["text"],
             DefaultOutputModes = ["text"],
             Capabilities = new() { Streaming = false, PushNotifications = false },
@@ -119,5 +127,46 @@ internal static class RatingAgent
                     ],
                 },
             ],
+            SecuritySchemes = new()
+            {
+                [OAuthDefaults.DisplayName] = new OAuth2SecurityScheme(
+                    new()
+                    {
+                        ClientCredentials = new(
+                            new(
+                                $"{ServiceDiscoveryUtilities.GetServiceEndpoint(Components.KeyCloak)}/realms/{Environment.GetEnvironmentVariable("Identity__Realm")}/protocol/openid-connect/token"
+                            ),
+                            new Dictionary<string, string>
+                            {
+                                {
+                                    $"{Constants.Aspire.Services.Rating}_{Authorization.Actions.Read}",
+                                    "Read access to rating service"
+                                },
+                                {
+                                    $"{Constants.Aspire.Services.Rating}_{Authorization.Actions.Write}",
+                                    "Write access to rating service"
+                                },
+                            }
+                        ),
+                    },
+                    "OAuth2 security scheme for the BookWorm API"
+                ),
+                [JwtBearerDefaults.AuthenticationScheme] = new HttpAuthSecurityScheme(
+                    JwtBearerDefaults.AuthenticationScheme,
+                    "JWT",
+                    "JWT Bearer token authentication"
+                ),
+            },
+            Security = new()
+            {
+                {
+                    $"{JwtBearerDefaults.AuthenticationScheme}",
+                    [
+                        $"{Constants.Aspire.Services.Rating}_{Authorization.Actions.Read}",
+                        $"{Constants.Aspire.Services.Rating}_{Authorization.Actions.Write}",
+                    ]
+                },
+            },
+            PreferredTransport = AgentTransport.JsonRpc,
         };
 }

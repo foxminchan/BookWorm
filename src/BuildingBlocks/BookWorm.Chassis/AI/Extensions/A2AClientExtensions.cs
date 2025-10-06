@@ -10,8 +10,7 @@ public static class A2AClientExtensions
     public static AIAgent GetA2AAgent(string serviceName, string agentName, string? path = "a2a")
     {
         var baseAddress =
-            ServiceDiscoveryUtilities.GetServiceEndpoint(serviceName, Protocols.Https)
-            ?? ServiceDiscoveryUtilities.GetServiceEndpoint(serviceName, Protocols.Http)
+            ServiceDiscoveryUtilities.GetServiceEndpoint(serviceName)
             ?? throw new InvalidOperationException(
                 $"Service endpoint for agent '{serviceName}' not found."
             );

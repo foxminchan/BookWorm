@@ -107,10 +107,7 @@ public static class OpenApiOptionsExtensions
             CancellationToken cancellationToken
         )
         {
-            var keycloakUrl = ServiceDiscoveryUtilities.GetServiceEndpoint(
-                Components.KeyCloak,
-                Protocols.Http
-            );
+            var keycloakUrl = ServiceDiscoveryUtilities.GetServiceEndpoint(Components.KeyCloak);
 
             if (string.IsNullOrWhiteSpace(keycloakUrl))
             {

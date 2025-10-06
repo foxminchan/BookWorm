@@ -44,7 +44,10 @@ internal static class Extensions
                             [
                                 .. mcpClient.ListToolsAsync().Preserve().GetAwaiter().GetResult(),
                                 A2AClientExtensions
-                                    .GetA2AAgent(Services.Rating, key)
+                                    .GetA2AAgent(
+                                        Services.Rating,
+                                        Constants.Other.Agents.RatingAgent
+                                    )
                                     .AsAIFunction(),
                             ],
                         },
