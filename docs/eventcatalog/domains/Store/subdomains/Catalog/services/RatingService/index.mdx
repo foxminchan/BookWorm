@@ -28,6 +28,8 @@ receives:
     version: 1.0.0
   - id: DeleteFeedbackCommand
     version: 1.0.0
+  - id: VisualizeRatingWorkflowQuery
+    version: 1.0.0
 schemaPath: openapi-v1.yml
 specifications:
   - type: openapi
@@ -42,11 +44,17 @@ repository:
   language: C#
   url: https://github.com/foxminchan/BookWorm
 writesTo:
-    - id: RatingDatabase
-      version: 1.0.0
+  - id: RatingDatabase
+    version: 1.0.0
 readsFrom:
-    - id: RatingDatabase
-      version: 1.0.0
+  - id: RatingDatabase
+    version: 1.0.0
+attachments:
+  - url: https://foxminchan.github.io/BookWorm/docs/architecture-decisions/adr-004-postgresql-database
+    title: ADR-004 - PostgreSQL Database
+    description: Learn more about the PostgreSQL database choice for the BookWorm platform.
+    type: 'architecture-decisions'
+    icon: FileTextIcon
 ---
 
 <Tiles>

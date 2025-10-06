@@ -25,7 +25,7 @@ public sealed class CreateBookEndpoint
             .WithDescription("Create a book")
             .WithFormOptions(true)
             .MapToApiVersion(new(1, 0))
-            .RequireAuthorization(Authorization.Policies.Admin, Authorization.Policies.Vendor)
+            .RequireAuthorization(Authorization.Policies.Admin)
             .RequirePerUserRateLimit();
     }
 
