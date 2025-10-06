@@ -1,4 +1,6 @@
-﻿namespace BookWorm.AppHost.Extensions.Security;
+﻿using BookWorm.Constants.Core;
+
+namespace BookWorm.AppHost.Extensions.Security;
 
 public static class KeycloakExtensions
 {
@@ -175,7 +177,14 @@ public static class KeycloakExtensions
                 .WithEnvironment("Identity__Realm", realmName)
                 .WithEnvironment("Identity__ClientId", clientId)
                 .WithEnvironment("Identity__ClientSecret", clientSecret)
-                .WithEnvironment($"Identity__Scopes__{clientId}", clientId.ToClientName("API"));
+                .WithEnvironment(
+                    $"Identity__Scopes__{clientId}_{Authorization.Actions.Read}",
+                    $"{nameof(Authorization.Actions.Read)} for {clientId.ToClientName("API")}"
+                )
+                .WithEnvironment(
+                    $"Identity__Scopes__{clientId}_{Authorization.Actions.Write}",
+                    $"{nameof(Authorization.Actions.Write)} for {clientId.ToClientName("API")}"
+                );
         }
         else if (
             applicationBuilder.ExecutionContext.IsPublishMode

@@ -6,6 +6,7 @@ using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using BookWorm.Ordering.Features.Orders.Create;
 using BookWorm.Ordering.Features.Orders.Get;
 using BookWorm.Ordering.Infrastructure.DistributedLock;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BookWorm.Ordering.Extensions;
 
@@ -21,7 +22,43 @@ internal static class Extensions
 
         services.AddRateLimiting();
 
-        builder.AddDefaultAuthentication().AddKeycloakClaimsTransformation();
+        builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
+
+        services
+            .AddAuthorizationBuilder()
+            .AddPolicy(
+                Authorization.Policies.Admin,
+                policy =>
+                {
+                    policy
+                        .RequireAuthenticatedUser()
+                        .RequireRole(Authorization.Roles.Admin)
+                        .RequireScope(
+                            $"{Services.Ordering}_{Authorization.Actions.Read}",
+                            $"{Services.Ordering}_{Authorization.Actions.Write}"
+                        );
+                }
+            )
+            .AddPolicy(
+                Authorization.Policies.Vendor,
+                policy =>
+                {
+                    policy
+                        .RequireAuthenticatedUser()
+                        .RequireRole(Authorization.Roles.Reporter)
+                        .RequireScope($"{Services.Ordering}_{Authorization.Actions.Read}");
+                }
+            )
+            .SetDefaultPolicy(
+                new AuthorizationPolicyBuilder()
+                    .RequireAuthenticatedUser()
+                    .RequireRole(Authorization.Roles.User)
+                    .RequireScope(
+                        $"{Services.Ordering}_{Authorization.Actions.Read}",
+                        $"{Services.Ordering}_{Authorization.Actions.Write}"
+                    )
+                    .Build()
+            );
 
         builder.AddDefaultOpenApi();
 

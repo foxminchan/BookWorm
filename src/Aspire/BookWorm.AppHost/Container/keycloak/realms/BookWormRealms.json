@@ -51,7 +51,25 @@
     "realm": [
       {
         "id": "305e3904-4822-4e10-aad2-bd4486fe2ca1",
-        "name": "ADMIN",
+        "name": "admin",
+        "description": "",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "7159a0fb-1009-40ae-9dd3-5d310a64970c",
+        "attributes": {}
+      },
+      {
+        "id": "aaa29483-1f00-4aa4-be05-0eb62923ef90",
+        "name": "vendor",
+        "description": "",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "7159a0fb-1009-40ae-9dd3-5d310a64970c",
+        "attributes": {}
+      },
+      {
+        "id": "52939ef6-7039-45f0-b419-013f6b168552",
+        "name": "reporter",
         "description": "",
         "composite": false,
         "clientRole": false,
@@ -78,7 +96,7 @@
       },
       {
         "id": "10adfcc1-2841-4d76-a520-40ae35b89079",
-        "name": "USER",
+        "name": "user",
         "description": "",
         "composite": false,
         "clientRole": false,
@@ -91,7 +109,7 @@
         "description": "${role_default-roles}",
         "composite": true,
         "composites": {
-          "realm": ["offline_access", "uma_authorization", "USER"],
+          "realm": ["offline_access", "uma_authorization", "user"],
           "client": {
             "account": ["manage-account", "view-consent", "view-profile"]
           }
@@ -825,7 +843,8 @@
         "email"
       ],
       "optionalClientScopes": [
-        "${CLIENT_BASKET_ID}",
+        "${CLIENT_BASKET_ID}_read",
+        "${CLIENT_BASKET_ID}_write",
         "address",
         "phone",
         "organization",
@@ -941,9 +960,10 @@
         "email"
       ],
       "optionalClientScopes": [
+        "${CLIENT_CATALOG_ID}_read",
+        "${CLIENT_CATALOG_ID}_write",
         "address",
         "phone",
-        "${CLIENT_CATALOG_ID}",
         "organization",
         "offline_access",
         "microprofile-jwt"
@@ -1014,9 +1034,10 @@
         "email"
       ],
       "optionalClientScopes": [
+        "${CLIENT_CHATTING_ID}_read",
+        "${CLIENT_CHATTING_ID}_write",
         "address",
         "phone",
-        "${CLIENT_CHATTING_ID}",
         "organization",
         "offline_access",
         "microprofile-jwt"
@@ -1087,9 +1108,10 @@
         "email"
       ],
       "optionalClientScopes": [
+        "${CLIENT_ORDERING_ID}_read",
+        "${CLIENT_ORDERING_ID}_write",
         "address",
         "phone",
-        "${CLIENT_ORDERING_ID}",
         "organization",
         "offline_access",
         "microprofile-jwt"
@@ -1160,11 +1182,12 @@
         "email"
       ],
       "optionalClientScopes": [
+        "${CLIENT_RATING_ID}_read",
+        "${CLIENT_RATING_ID}_write",
         "address",
         "phone",
         "organization",
         "offline_access",
-        "${CLIENT_RATING_ID}",
         "microprofile-jwt"
       ]
     },
@@ -1433,8 +1456,20 @@
     },
     {
       "id": "15520ea5-5c09-4ab4-abec-2ee89fb32267",
-      "name": "${CLIENT_CHATTING_ID}",
-      "description": "${CLIENT_CHATTING_NAME}",
+      "name": "${CLIENT_CHATTING_ID}_read",
+      "description": "Read for ${CLIENT_CHATTING_NAME}",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true",
+        "gui.order": "",
+        "consent.screen.text": ""
+      }
+    },
+    {
+      "id": "ff508de9-2952-4025-921a-fffabe5f936b",
+      "name": "${CLIENT_CHATTING_ID}_write",
+      "description": "Write for ${CLIENT_CHATTING_NAME}",
       "protocol": "openid-connect",
       "attributes": {
         "include.in.token.scope": "true",
@@ -1500,8 +1535,20 @@
     },
     {
       "id": "fbd2ef92-6dc3-46af-b0cd-d8b81f18cb06",
-      "name": "${CLIENT_RATING_ID}",
-      "description": "${CLIENT_RATING_NAME}",
+      "name": "${CLIENT_RATING_ID}_read",
+      "description": "Read for ${CLIENT_RATING_NAME}",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true",
+        "gui.order": "",
+        "consent.screen.text": ""
+      }
+    },
+    {
+      "id": "21db6734-7284-4684-9581-3affab293866",
+      "name": "${CLIENT_RATING_ID}_write",
+      "description": "Write for ${CLIENT_RATING_NAME}",
       "protocol": "openid-connect",
       "attributes": {
         "include.in.token.scope": "true",
@@ -1588,8 +1635,20 @@
     },
     {
       "id": "fa0295b4-d575-49ea-bad8-34fd0e492100",
-      "name": "${CLIENT_BASKET_ID}",
-      "description": "${CLIENT_BASKET_NAME}",
+      "name": "${CLIENT_BASKET_ID}_read",
+      "description": "Read for ${CLIENT_BASKET_NAME}",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true",
+        "gui.order": "",
+        "consent.screen.text": ""
+      }
+    },
+    {
+      "id": "a1a7d53b-900e-462c-a584-14f5af678933",
+      "name": "${CLIENT_BASKET_ID}_write",
+      "description": "Write for ${CLIENT_BASKET_NAME}",
       "protocol": "openid-connect",
       "attributes": {
         "include.in.token.scope": "true",
@@ -1713,8 +1772,20 @@
     },
     {
       "id": "dc9d8059-8e37-4ffd-904b-1a4d080afb17",
-      "name": "${CLIENT_CATALOG_ID}",
-      "description": "${CLIENT_CATALOG_NAME}",
+      "name": "${CLIENT_CATALOG_ID}_read",
+      "description": "Read for ${CLIENT_CATALOG_NAME}",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true",
+        "gui.order": "",
+        "consent.screen.text": ""
+      }
+    },
+    {
+      "id": "39e7d424-6a58-4507-90a2-3887bd2952b5",
+      "name": "${CLIENT_CATALOG_ID}_write",
+      "description": "Write for ${CLIENT_CATALOG_NAME}",
       "protocol": "openid-connect",
       "attributes": {
         "include.in.token.scope": "true",
@@ -1779,8 +1850,20 @@
     },
     {
       "id": "847b3b8e-aa0d-43c7-af3a-e57b5b938bec",
-      "name": "${CLIENT_ORDERING_ID}",
-      "description": "${CLIENT_ORDERING_NAME}",
+      "name": "${CLIENT_ORDERING_ID}_read",
+      "description": "Read for ${CLIENT_ORDERING_NAME}",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true",
+        "gui.order": "",
+        "consent.screen.text": ""
+      }
+    },
+    {
+      "id": "8ff1bc70-953c-403d-9cd6-b6007e3c8f7b",
+      "name": "${CLIENT_ORDERING_ID}_write",
+      "description": "Write for ${CLIENT_ORDERING_NAME}",
       "protocol": "openid-connect",
       "attributes": {
         "include.in.token.scope": "true",

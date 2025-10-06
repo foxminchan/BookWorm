@@ -4,7 +4,9 @@ using BookWorm.Chassis.CQRS.Mediator;
 using BookWorm.Chassis.CQRS.Pipelines;
 using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
+using BookWorm.Constants.Core;
 using MassTransit;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BookWorm.Basket.Extensions;
 
@@ -16,7 +18,20 @@ internal static class Extensions
 
         builder.AddDefaultCors();
 
-        builder.AddDefaultAuthentication().AddKeycloakClaimsTransformation();
+        builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
+
+        services
+            .AddAuthorizationBuilder()
+            .SetDefaultPolicy(
+                new AuthorizationPolicyBuilder()
+                    .RequireAuthenticatedUser()
+                    .RequireRole(Authorization.Roles.User)
+                    .RequireScope(
+                        $"{Services.Basket}_{Authorization.Actions.Read}",
+                        $"{Services.Basket}_{Authorization.Actions.Write}"
+                    )
+                    .Build()
+            );
 
         builder.AddDefaultOpenApi();
 

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication.OAuth;
+﻿using BookWorm.Constants.Core;
+using Microsoft.AspNetCore.Authentication.OAuth;
 using Scalar.Aspire;
 
 namespace BookWorm.AppHost.Extensions.Infrastructure;
@@ -90,7 +91,10 @@ public static class ScalarExtensions
                                     flow.WithClientSecret(clientSecret);
                                 }
 
-                                flow.WithSelectedScopes(clientId);
+                                flow.WithSelectedScopes(
+                                    $"{clientId}_{Authorization.Actions.Read}",
+                                    $"{clientId}_{Authorization.Actions.Write}"
+                                );
                             }
                         );
                 }

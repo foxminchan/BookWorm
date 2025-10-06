@@ -4,6 +4,7 @@ using BookWorm.Chassis.CQRS.Pipelines;
 using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using BookWorm.Chat.Infrastructure.Backplane;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BookWorm.Chat.Extensions;
 
@@ -23,7 +24,33 @@ internal static class Extensions
 
         builder.AddDefaultCors();
 
-        builder.AddDefaultAuthentication().AddKeycloakClaimsTransformation();
+        builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
+
+        services
+            .AddAuthorizationBuilder()
+            .AddPolicy(
+                Authorization.Policies.Admin,
+                policy =>
+                {
+                    policy
+                        .RequireAuthenticatedUser()
+                        .RequireRole(Authorization.Roles.Admin)
+                        .RequireScope(
+                            $"{Services.Chatting}_{Authorization.Actions.Read}",
+                            $"{Services.Chatting}_{Authorization.Actions.Write}"
+                        );
+                }
+            )
+            .SetDefaultPolicy(
+                new AuthorizationPolicyBuilder()
+                    .RequireAuthenticatedUser()
+                    .RequireRole(Authorization.Roles.User)
+                    .RequireScope(
+                        $"{Services.Chatting}_{Authorization.Actions.Read}",
+                        $"{Services.Chatting}_{Authorization.Actions.Write}"
+                    )
+                    .Build()
+            );
 
         builder.AddDefaultOpenApi();
 
