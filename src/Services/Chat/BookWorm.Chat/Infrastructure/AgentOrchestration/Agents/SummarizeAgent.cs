@@ -1,4 +1,7 @@
 using A2A;
+using BookWorm.Chassis.Utilities;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.OAuth;
 
 namespace BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
 
@@ -38,8 +41,12 @@ internal static class SummarizeAgent
         {
             Name = Name,
             Description = Description,
-            Version = "1.0.0",
-            Provider = new() { Organization = nameof(BookWorm) },
+            Version = "1.0",
+            Provider = new()
+            {
+                Organization = nameof(BookWorm),
+                Url = "https://github.com/foxminchan/BookWorm",
+            },
             DefaultInputModes = ["text"],
             DefaultOutputModes = ["text"],
             Capabilities = new() { Streaming = false, PushNotifications = false },
@@ -88,5 +95,46 @@ internal static class SummarizeAgent
                     ],
                 },
             ],
+            SecuritySchemes = new()
+            {
+                [OAuthDefaults.DisplayName] = new OAuth2SecurityScheme(
+                    new()
+                    {
+                        ClientCredentials = new(
+                            new(
+                                $"{ServiceDiscoveryUtilities.GetServiceEndpoint(Components.KeyCloak)}/realms/{Environment.GetEnvironmentVariable("Identity__Realm")}/protocol/openid-connect/token"
+                            ),
+                            new Dictionary<string, string>
+                            {
+                                {
+                                    $"{Services.Chatting}_{Authorization.Actions.Read}",
+                                    "Read access to chat service"
+                                },
+                                {
+                                    $"{Services.Chatting}_{Authorization.Actions.Write}",
+                                    "Write access to chat service"
+                                },
+                            }
+                        ),
+                    },
+                    "OAuth2 security scheme for the BookWorm API"
+                ),
+                [JwtBearerDefaults.AuthenticationScheme] = new HttpAuthSecurityScheme(
+                    JwtBearerDefaults.AuthenticationScheme,
+                    "JWT",
+                    "JWT Bearer token authentication"
+                ),
+            },
+            Security = new()
+            {
+                {
+                    $"{JwtBearerDefaults.AuthenticationScheme}",
+                    [
+                        $"{Services.Chatting}_{Authorization.Actions.Read}",
+                        $"{Services.Chatting}_{Authorization.Actions.Write}",
+                    ]
+                },
+            },
+            PreferredTransport = AgentTransport.JsonRpc,
         };
 }
