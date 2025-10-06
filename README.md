@@ -7,7 +7,7 @@
 ## Introduction
 
 <p style="text-align:justify;">
-⭐ BookWorm demonstrates the practical implementation of .NET Aspire in a cloud-native application. The project employs Domain-Driven Design (DDD) and Vertical Slice Architecture to organize the codebase effectively.
+⭐ BookWorm showcases .NET Aspire in a cloud-native application with AI integration. Built with Domain-Driven Design and Vertical Slice Architecture, it features multi-agent orchestration via Agent Framework and standardized AI tooling through Model Context Protocol (MCP) with A2A Protocol support.
 </p>
 
 > [!WARNING]

@@ -17,7 +17,7 @@ public sealed class UpdateAuthorEndpoint : IEndpoint<NoContent, UpdateAuthorComm
             .WithSummary("Update Author")
             .WithDescription("Update an author if it exists")
             .MapToApiVersion(new(1, 0))
-            .RequireAuthorization(Authorization.Policies.Admin)
+            .RequireAuthorization(Authorization.Policies.Admin, Authorization.Policies.Vendor)
             .RequirePerUserRateLimit();
     }
 

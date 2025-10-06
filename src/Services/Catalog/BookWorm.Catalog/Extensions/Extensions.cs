@@ -5,6 +5,9 @@ using BookWorm.Chassis.CQRS.Mediator;
 using BookWorm.Chassis.CQRS.Pipelines;
 using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
+using BookWorm.Constants.Aspire;
+using BookWorm.Constants.Core;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BookWorm.Catalog.Extensions;
 
@@ -24,13 +27,49 @@ internal static class Extensions
 
         services.AddRateLimiting();
 
-        builder.AddDefaultAuthentication().AddKeycloakClaimsTransformation();
+        builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
+
+        services
+            .AddAuthorizationBuilder()
+            .AddPolicy(
+                Authorization.Policies.Admin,
+                policy =>
+                {
+                    policy
+                        .RequireAuthenticatedUser()
+                        .RequireRole(Authorization.Roles.Admin)
+                        .RequireScope(
+                            $"{Services.Catalog}_{Authorization.Actions.Read}",
+                            $"{Services.Catalog}_{Authorization.Actions.Write}"
+                        );
+                }
+            )
+            .AddPolicy(
+                Authorization.Policies.Vendor,
+                policy =>
+                {
+                    policy
+                        .RequireAuthenticatedUser()
+                        .RequireRole(Authorization.Roles.Vendor)
+                        .RequireScope(
+                            $"{Services.Catalog}_{Authorization.Actions.Read}",
+                            $"{Services.Catalog}_{Authorization.Actions.Write}"
+                        );
+                }
+            )
+            .SetDefaultPolicy(
+                new AuthorizationPolicyBuilder()
+                    .RequireAuthenticatedUser()
+                    .RequireScope($"{Services.Catalog}_{Authorization.Actions.Read}")
+                    .Build()
+            );
 
         services.AddGrpc(options =>
         {
             options.EnableDetailedErrors = builder.Environment.IsDevelopment();
             options.Interceptors.Add<GrpcExceptionInterceptor>();
         });
+
         services.AddGrpcHealthChecks();
 
         builder.AddDefaultOpenApi();

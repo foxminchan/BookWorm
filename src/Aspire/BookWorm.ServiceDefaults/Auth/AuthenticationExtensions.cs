@@ -33,15 +33,6 @@ public static class AuthenticationExtensions
                 }
             );
 
-        services
-            .AddAuthorizationBuilder()
-            .AddPolicy(
-                Authorization.Policies.Admin,
-                policy => policy.RequireRole(Authorization.Roles.Admin)
-            )
-            .AddPolicy(Authorization.Policies.User, policy => policy.RequireAuthenticatedUser())
-            .SetDefaultPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
-
         return builder;
     }
 }

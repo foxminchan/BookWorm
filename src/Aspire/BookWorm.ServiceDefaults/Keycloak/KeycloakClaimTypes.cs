@@ -13,4 +13,5 @@ public static class KeycloakClaimTypes
     public static string Region => "region";
     public static string PostalCode => "postal_code";
     public static string Country => "country";
+    public static string Scope => "scope";
 }
