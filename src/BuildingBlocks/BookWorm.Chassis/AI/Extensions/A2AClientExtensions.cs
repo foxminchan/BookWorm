@@ -1,6 +1,5 @@
 ﻿using BookWorm.Chassis.AI.Agents;
 using BookWorm.Chassis.Utilities;
-using BookWorm.Constants.Aspire;
 using Microsoft.Agents.AI;
 
 namespace BookWorm.Chassis.AI.Extensions;

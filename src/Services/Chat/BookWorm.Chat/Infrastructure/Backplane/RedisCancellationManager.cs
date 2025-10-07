@@ -8,6 +8,12 @@ public sealed class RedisCancellationManager : ICancellationManager, IDisposable
         $"{nameof(Chat).ToLowerInvariant()}-{nameof(CancellationToken).ToLowerInvariant()}"
     );
 
+    private readonly ConcurrentDictionary<
+        Guid,
+        ConcurrentDictionary<Guid, byte>
+    > _conversationToMessages = [];
+    private readonly ConcurrentDictionary<Guid, Guid> _messageToConversation = [];
+
     private readonly ILogger<RedisCancellationManager> _logger;
     private readonly ISubscriber _subscriber;
     private readonly ConcurrentDictionary<Guid, CancellationTokenSource> _tokens = [];
@@ -23,21 +29,57 @@ public sealed class RedisCancellationManager : ICancellationManager, IDisposable
         _logger.LogInformation("Subscribed to cancellation channel {Channel}", _channelName);
     }
 
-    public CancellationToken GetCancellationToken(Guid id)
+    public CancellationToken GetCancellationToken(Guid conversationId, Guid messageId)
     {
         var cts = new CancellationTokenSource();
-        _tokens[id] = cts;
+        _tokens[messageId] = cts;
 
-        _logger.LogDebug("Created cancellation token for reply {ReplyId}", id);
+        var messageSet = _conversationToMessages.GetOrAdd(
+            conversationId,
+            _ => new ConcurrentDictionary<Guid, byte>()
+        );
+        messageSet.TryAdd(messageId, 0);
+
+        _messageToConversation[messageId] = conversationId;
+
+        _logger.LogDebug(
+            "Created cancellation token for conversation {ConversationId}, message {MessageId}",
+            conversationId,
+            messageId
+        );
 
         return cts.Token;
     }
 
-    public async Task CancelAsync(Guid id)
+    public async Task CancelAsync(Guid conversationId)
     {
-        _logger.LogDebug("Publishing cancellation message for reply {ReplyId}", id);
+        _logger.LogInformation(
+            "Publishing cancellation message for conversation {ConversationId}",
+            conversationId
+        );
 
-        await _subscriber.PublishAsync(_channelName, id.ToString());
+        if (!_conversationToMessages.TryGetValue(conversationId, out var messageIds))
+        {
+            _logger.LogWarning(
+                "No active messages found for conversation {ConversationId}",
+                conversationId
+            );
+
+            return;
+        }
+
+        var messagesToCancel = messageIds.Keys.ToList();
+
+        foreach (var messageId in messagesToCancel)
+        {
+            await _subscriber.PublishAsync(_channelName, messageId.ToString());
+
+            _logger.LogDebug(
+                "Published cancellation for message {MessageId} in conversation {ConversationId}",
+                messageId,
+                conversationId
+            );
+        }
     }
 
     public void Dispose()
@@ -64,21 +106,55 @@ public sealed class RedisCancellationManager : ICancellationManager, IDisposable
 
     private void OnCancellationMessage(RedisChannel channel, RedisValue message)
     {
-        if (Guid.TryParse(message.ToString(), out var replyId))
-        {
-            _logger.LogInformation("Received cancellation message for reply {ReplyId}", replyId);
-
-            if (!_tokens.TryRemove(replyId, out var cts))
-            {
-                return;
-            }
-
-            cts.Cancel();
-            _logger.LogInformation("Cancelled token for reply {ReplyId}", replyId);
-        }
-        else
+        if (!Guid.TryParse(message.ToString(), out var messageId))
         {
             _logger.LogWarning("Received invalid cancellation message: {Message}", message);
+            return;
+        }
+
+        _logger.LogInformation("Received cancellation message for message {MessageId}", messageId);
+
+        if (!_tokens.TryRemove(messageId, out var cts))
+        {
+            _logger.LogDebug(
+                "Cancellation token not found for message {MessageId} (may have already completed)",
+                messageId
+            );
+
+            return;
+        }
+
+        cts.Cancel();
+        cts.Dispose();
+
+        _logger.LogInformation("Cancelled token for message {MessageId}", messageId);
+
+        CleanupConversationMapping(messageId);
+    }
+
+    private void CleanupConversationMapping(Guid messageId)
+    {
+        if (!_messageToConversation.TryRemove(messageId, out var conversationId))
+        {
+            _logger.LogDebug(
+                "Message {MessageId} not found in reverse mapping (may have already been cleaned up)",
+                messageId
+            );
+            return;
+        }
+
+        if (!_conversationToMessages.TryGetValue(conversationId, out var messageIds))
+        {
+            return;
+        }
+
+        messageIds.TryRemove(messageId, out _);
+
+        if (messageIds.IsEmpty)
+        {
+            _conversationToMessages.TryRemove(conversationId, out _);
+
+            _logger.LogDebug("Removed empty conversation {ConversationId} mapping", conversationId);
         }
     }
 }

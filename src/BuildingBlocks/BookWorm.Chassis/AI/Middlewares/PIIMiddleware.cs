@@ -22,10 +22,8 @@ public static partial class PIIMiddleware
 
         return response;
 
-        static IList<ChatMessage> FilterMessages(IEnumerable<ChatMessage> messages)
-        {
-            return [.. messages.Select(m => new ChatMessage(m.Role, FilterPii(m.Text)))];
-        }
+        static IList<ChatMessage> FilterMessages(IEnumerable<ChatMessage> messages) =>
+            [.. messages.Select(m => new ChatMessage(m.Role, FilterPii(m.Text)))];
 
         static string FilterPii(string content)
         {

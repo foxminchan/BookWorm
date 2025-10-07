@@ -35,18 +35,14 @@ public static class GuardrailMiddleware
 
         return response;
 
-        static List<ChatMessage> FilterMessages(IEnumerable<ChatMessage> contents)
-        {
-            return [.. contents.Select(m => new ChatMessage(m.Role, FilterContent(m.Text)))];
-        }
+        static List<ChatMessage> FilterMessages(IEnumerable<ChatMessage> contents) =>
+            [.. contents.Select(m => new ChatMessage(m.Role, FilterContent(m.Text)))];
 
-        static string FilterContent(string content)
-        {
-            return _sourceArray.Any(keyword =>
+        static string FilterContent(string content) =>
+            _sourceArray.Any(keyword =>
                 content.Contains(keyword, StringComparison.OrdinalIgnoreCase)
             )
                 ? "[REDACTED: Forbidden content]"
                 : content;
-        }
     }
 }

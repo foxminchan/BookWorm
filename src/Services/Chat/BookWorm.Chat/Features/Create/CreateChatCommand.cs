@@ -2,15 +2,17 @@
 
 namespace BookWorm.Chat.Features.Create;
 
-public sealed record CreateChatCommand(Prompt Prompt) : ICommand;
+public sealed record CreateChatCommand(Prompt Prompt) : ICommand<Guid>;
 
 public sealed class UpdateChatHandler(IChatStreaming chatStreaming)
-    : ICommandHandler<CreateChatCommand>
+    : ICommandHandler<CreateChatCommand, Guid>
 {
-    public async Task<Unit> Handle(CreateChatCommand request, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(CreateChatCommand request, CancellationToken cancellationToken)
     {
-        await chatStreaming.AddStreamingMessage(Guid.CreateVersion7(), request.Prompt.Text);
+        var conversationId = Guid.CreateVersion7();
 
-        return Unit.Value;
+        await chatStreaming.AddStreamingMessage(conversationId, request.Prompt.Text);
+
+        return conversationId;
     }
 }

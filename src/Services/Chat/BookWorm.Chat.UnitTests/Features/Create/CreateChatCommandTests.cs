@@ -2,7 +2,6 @@
 using BookWorm.Chat.Features;
 using BookWorm.Chat.Features.Create;
 using BookWorm.Chat.Infrastructure.ChatStreaming;
-using MediatR;
 
 namespace BookWorm.Chat.UnitTests.Features.Create;
 
@@ -28,7 +27,7 @@ public sealed class CreateChatCommandTests
         // Assert
         command.ShouldNotBeNull();
         command.ShouldBeOfType<CreateChatCommand>();
-        command.ShouldBeAssignableTo<ICommand>();
+        command.ShouldBeAssignableTo<ICommand<Guid>>();
         command.Prompt.ShouldBe(prompt);
     }
 
@@ -69,7 +68,7 @@ public sealed class CreateChatCommandTests
         // Act & Assert
         _handler.ShouldNotBeNull();
         _handler.ShouldBeOfType<UpdateChatHandler>();
-        _handler.ShouldBeAssignableTo<ICommandHandler<CreateChatCommand>>();
+        _handler.ShouldBeAssignableTo<ICommandHandler<CreateChatCommand, Guid>>();
     }
 
     [Test]
@@ -87,7 +86,8 @@ public sealed class CreateChatCommandTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.ShouldBe(Unit.Value);
+        result.ShouldBeOfType<Guid>();
+        result.ShouldNotBe(Guid.Empty);
         _chatStreamingMock.Verify(
             x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text),
             Times.Once
@@ -109,7 +109,8 @@ public sealed class CreateChatCommandTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.ShouldBe(Unit.Value);
+        result.ShouldBeOfType<Guid>();
+        result.ShouldNotBe(Guid.Empty);
         _chatStreamingMock.Verify(x => x.AddStreamingMessage(It.IsAny<Guid>(), ""), Times.Once);
     }
 
@@ -128,7 +129,8 @@ public sealed class CreateChatCommandTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.ShouldBe(Unit.Value);
+        result.ShouldBeOfType<Guid>();
+        result.ShouldNotBe(Guid.Empty);
         _chatStreamingMock.Verify(x => x.AddStreamingMessage(It.IsAny<Guid>(), "   "), Times.Once);
     }
 
@@ -149,7 +151,8 @@ public sealed class CreateChatCommandTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.ShouldBe(Unit.Value);
+        result.ShouldBeOfType<Guid>();
+        result.ShouldNotBe(Guid.Empty);
         _chatStreamingMock.Verify(
             x => x.AddStreamingMessage(It.IsAny<Guid>(), complexPrompt),
             Times.Once
@@ -172,7 +175,8 @@ public sealed class CreateChatCommandTests
         var result = await _handler.Handle(command, cancellationToken);
 
         // Assert
-        result.ShouldBe(Unit.Value);
+        result.ShouldBeOfType<Guid>();
+        result.ShouldNotBe(Guid.Empty);
         _chatStreamingMock.Verify(
             x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text),
             Times.Once
@@ -225,9 +229,12 @@ public sealed class CreateChatCommandTests
         var result3 = await _handler.Handle(command3, CancellationToken.None);
 
         // Assert
-        result1.ShouldBe(Unit.Value);
-        result2.ShouldBe(Unit.Value);
-        result3.ShouldBe(Unit.Value);
+        result1.ShouldBeOfType<Guid>();
+        result1.ShouldNotBe(Guid.Empty);
+        result2.ShouldBeOfType<Guid>();
+        result2.ShouldNotBe(Guid.Empty);
+        result3.ShouldBeOfType<Guid>();
+        result3.ShouldNotBe(Guid.Empty);
 
         _chatStreamingMock.Verify(
             x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt1.Text),
@@ -260,9 +267,12 @@ public sealed class CreateChatCommandTests
         var result3 = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result1.ShouldBe(Unit.Value);
-        result2.ShouldBe(Unit.Value);
-        result3.ShouldBe(Unit.Value);
+        result1.ShouldBeOfType<Guid>();
+        result1.ShouldNotBe(Guid.Empty);
+        result2.ShouldBeOfType<Guid>();
+        result2.ShouldNotBe(Guid.Empty);
+        result3.ShouldBeOfType<Guid>();
+        result3.ShouldNotBe(Guid.Empty);
 
         _chatStreamingMock.Verify(
             x => x.AddStreamingMessage(It.IsAny<Guid>(), prompt.Text),
@@ -286,7 +296,8 @@ public sealed class CreateChatCommandTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.ShouldBe(Unit.Value);
+        result.ShouldBeOfType<Guid>();
+        result.ShouldNotBe(Guid.Empty);
         _chatStreamingMock.Verify(
             x => x.AddStreamingMessage(It.IsAny<Guid>(), specialPrompt),
             Times.Once
@@ -318,7 +329,8 @@ public sealed class CreateChatCommandTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.ShouldBe(Unit.Value);
+        result.ShouldBeOfType<Guid>();
+        result.ShouldNotBe(Guid.Empty);
         _chatStreamingMock.Verify(
             x => x.AddStreamingMessage(It.IsAny<Guid>(), multilinePrompt),
             Times.Once

@@ -12,7 +12,7 @@ public sealed class VisualizeWorkflowValidatorTests
     public void GivenValidQueryWithMermaidType_WhenValidating_ThenShouldNotHaveValidationErrors()
     {
         // Arrange
-        var query = new VisualizeWorkflowQuery(VisualizationType.Mermaid);
+        var query = new VisualizeWorkflowQuery();
 
         // Act
         var result = _validator.TestValidate(query);
@@ -98,7 +98,7 @@ public sealed class VisualizeWorkflowValidatorTests
     public void GivenMinimumEnumValue_WhenValidating_ThenShouldNotHaveValidationError()
     {
         // Arrange
-        var query = new VisualizeWorkflowQuery((VisualizationType)0);
+        var query = new VisualizeWorkflowQuery();
 
         // Act
         var result = _validator.TestValidate(query);

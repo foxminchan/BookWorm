@@ -2,6 +2,6 @@
 
 public interface ICancellationManager
 {
-    CancellationToken GetCancellationToken(Guid id);
-    Task CancelAsync(Guid id);
+    CancellationToken GetCancellationToken(Guid conversationId, Guid messageId);
+    Task CancelAsync(Guid conversationId);
 }
