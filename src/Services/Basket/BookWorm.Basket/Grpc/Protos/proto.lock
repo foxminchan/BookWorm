@@ -43,7 +43,18 @@
               {
                 "name": "GetBasket",
                 "in_type": "google.protobuf.Empty",
-                "out_type": "BasketResponse"
+                "out_type": "BasketResponse",
+                "options": [
+                  {
+                    "name": "(google.api.http)",
+                    "aggregated": [
+                      {
+                        "name": "get",
+                        "value": "/api/v1/basket"
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           }
@@ -51,6 +62,9 @@
         "imports": [
           {
             "path": "google/protobuf/empty.proto"
+          },
+          {
+            "path": "google/api/annotations.proto"
           }
         ],
         "package": {

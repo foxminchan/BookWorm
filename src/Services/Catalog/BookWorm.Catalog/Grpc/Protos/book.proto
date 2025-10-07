@@ -1,12 +1,22 @@
 ﻿syntax = "proto3";
 
+import "google/api/annotations.proto";
+
 option csharp_namespace = "BookWorm.Catalog.Grpc.Services";
 
 package CatalogApi;
 
 service BookGrpcService {
-  rpc GetBook(BookRequest) returns (BookResponse);
-  rpc GetBooks(BooksRequest) returns (BooksResponse);
+  rpc GetBook(BookRequest) returns (BookResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/book/{bookId}"
+    };
+  };
+  rpc GetBooks(BooksRequest) returns (BooksResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/books"
+    };
+  };
 }
 
 message BookRequest {

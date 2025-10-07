@@ -9,11 +9,13 @@ internal static class Extensions
     {
         var services = builder.Services;
 
-        services.AddGrpc(options =>
-        {
-            options.EnableDetailedErrors = builder.Environment.IsDevelopment();
-            options.Interceptors.Add<GrpcExceptionInterceptor>();
-        });
+        services
+            .AddGrpc(options =>
+            {
+                options.EnableDetailedErrors = builder.Environment.IsDevelopment();
+                options.Interceptors.Add<GrpcExceptionInterceptor>();
+            })
+            .AddJsonTranscoding(o => o.JsonSettings.WriteIndented = true);
 
         services.AddGrpcServiceReference<BookGrpcService.BookGrpcServiceClient>(
             $"{builder.GetScheme()}://{Constants.Aspire.Services.Catalog}",
