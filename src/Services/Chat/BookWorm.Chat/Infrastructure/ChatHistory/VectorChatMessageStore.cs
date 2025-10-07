@@ -8,8 +8,8 @@ namespace BookWorm.Chat.Infrastructure.ChatHistory;
 public sealed class VectorChatMessageStore : ChatMessageStore
 {
     private readonly AppSettings _appSettings;
-    private readonly VectorStoreCollection<Guid, ChatHistoryItem> _collection;
     private readonly ClaimsPrincipal _claimsPrincipal;
+    private readonly VectorStoreCollection<Guid, ChatHistoryItem> _collection;
 
     public VectorChatMessageStore(
         AppSettings appSettings,

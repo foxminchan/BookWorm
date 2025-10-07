@@ -1,10 +1,6 @@
-using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chat.Extensions;
 using BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
 using BookWorm.ServiceDefaults;
-using Microsoft.Agents.AI;
-using Microsoft.Agents.AI.A2A;
-using Microsoft.Agents.AI.Hosting.A2A.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
