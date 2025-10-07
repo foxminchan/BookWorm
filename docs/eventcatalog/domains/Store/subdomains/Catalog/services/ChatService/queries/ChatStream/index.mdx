@@ -30,26 +30,38 @@ The Chat Stream service provides a real-time WebSocket connection for users to i
 The Chat Stream service is built on a microservices architecture, utilizing various agents to process user messages and generate responses.
 
 ```mermaid
-flowchart LR
- subgraph G["Sequential"]
-    direction LR
-        E["SummarizeAgent"]
-        D["LanguageAgent"]
-        n1["SentimentAgent"]
-       V1["RatingAgent"]
-       V2["BookAgent"]
-       n2["MCP Server"]
-  end
-    O(("Start")) --> A["User"]
-    A -- input --> G
-    D --> E
-    E --> n1
-    V1 <-- A2A --> V2
-    n1 --> V2
-    n2 -- MCP --> V2
-    G --> n3(("Done"))
+flowchart TD
+  HandoffStart["HandoffStart (Start)"]
+  Router["Router"]
+  Language["Language"]
+  Summarize["Summarize"]
+  Sentiment["Sentiment"]
+  Book["Book"]
+  Rating["Rating"]
+  MCP["MCP Server"]
+  HandoffEnd["HandoffEnd"]
 
-    n2@{ shape: rounded}
+  HandoffStart --> Router
+  Router --> Language
+  Router --> Summarize
+  Router --> Sentiment
+  Router --> Book
+  Router --> HandoffEnd
+
+  Language --> Book
+  Language --> HandoffEnd
+
+  Summarize --> Book
+  Summarize --> HandoffEnd
+
+  Sentiment --> Book
+  Sentiment --> Router
+  Sentiment --> HandoffEnd
+
+  Book --MCP--> MCP
+  Book --A2A--> Rating
+  Book --> Router
+  Book --> HandoffEnd
 ```
 
 ## Architecture

@@ -118,7 +118,7 @@ public sealed class ChatStreaming(
             await foreach (
                 var chunk in (
                     (
-                        await orchestrationService.ProcessAgentsSequentiallyAsync(
+                        await orchestrationService.RunWorkflowStreamingAsync(
                             text,
                             tokenSource.Token
                         )

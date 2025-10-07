@@ -29,6 +29,10 @@ internal static class BookAgent
         - Always provide accurate information based on search results
         - Be friendly and knowledgeable about books and reading
 
+        **Handoff Capability:**
+        - If user has a follow-up question or changes topic, you can hand off back to RouterAgent for re-routing
+        - Complete your book-related tasks first before considering handoff
+
         Whether users are searching for specific books or looking for recommendations, help them discover their next great read!
         """;
 }

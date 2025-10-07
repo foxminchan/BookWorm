@@ -18,11 +18,13 @@ public sealed class OutboxTests
         var outbox = new Outbox(toName, toEmail, subject, body);
 
         // Assert
+        outbox.Id.ShouldBe(Guid.Empty);
         outbox.ToName.ShouldBe(toName);
         outbox.ToEmail.ShouldBe(toEmail);
         outbox.Subject.ShouldBe(subject);
         outbox.Body.ShouldBe(body);
         outbox.IsSent.ShouldBeFalse();
+        outbox.SequenceNumber.ShouldBe(0);
         outbox.SentAt.ShouldBeNull();
         outbox.CreatedAt.ShouldBeLessThanOrEqualTo(DateTimeHelper.UtcNow());
     }
@@ -53,5 +55,31 @@ public sealed class OutboxTests
 
         // Assert
         result.ShouldBeSameAs(outbox);
+    }
+
+    [Test]
+    public void GivenOutbox_WhenCreated_ThenIdShouldBeEmpty()
+    {
+        // Act
+        var outbox = new Outbox("Test User", "test@example.com", "Test Subject", "Test Body");
+
+        // Assert
+        outbox.Id.ShouldBe(Guid.Empty); // Id is database-generated via HasDefaultValueSql
+    }
+
+    [Test]
+    public void GivenOutbox_WhenCreated_ThenSequenceNumberShouldBeInitializable()
+    {
+        // Arrange
+        const long expectedSequenceNumber = 12345;
+
+        // Act
+        var outbox = new Outbox("Test User", "test@example.com", "Test Subject", "Test Body")
+        {
+            SequenceNumber = expectedSequenceNumber,
+        };
+
+        // Assert
+        outbox.SequenceNumber.ShouldBe(expectedSequenceNumber);
     }
 }

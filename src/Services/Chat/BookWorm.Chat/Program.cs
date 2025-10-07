@@ -37,21 +37,7 @@ var apiVersionSet = app.NewApiVersionSet().HasApiVersion(new(1, 0)).ReportApiVer
 
 app.MapEndpoints(apiVersionSet, "chats");
 
-var summarizeAgent = app.Services.GetRequiredKeyedService<AIAgent>(SummarizeAgent.Name);
-
-app.MapA2A(
-    new A2AHostAgent(summarizeAgent, SummarizeAgent.AgentCard).TaskManager!,
-    $"/a2a/{SummarizeAgent.Name}"
-);
-
-var languageAgent = app.Services.GetRequiredKeyedService<AIAgent>(LanguageAgent.Name);
-
-app.MapA2A(
-    new A2AHostAgent(languageAgent, LanguageAgent.AgentCard).TaskManager!,
-    $"/a2a/{LanguageAgent.Name}"
-);
-
-app.MapAgentDiscovery("/agents");
+app.MapAgentsDiscovery();
 
 app.MapDefaultEndpoints();
 
