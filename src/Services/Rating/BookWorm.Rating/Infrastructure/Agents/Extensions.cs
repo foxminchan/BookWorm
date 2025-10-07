@@ -39,6 +39,16 @@ public static class Extensions
         );
 
         builder.AddAIAgent(
+            Constants.Other.Agents.SentimentAgent,
+            (_, key) => A2AClientExtensions.GetA2AAgent(Constants.Aspire.Services.Chatting, key)
+        );
+
+        builder.AddAIAgent(
+            Constants.Other.Agents.RouterAgent,
+            (_, key) => A2AClientExtensions.GetA2AAgent(Constants.Aspire.Services.Chatting, key)
+        );
+
+        builder.AddAIAgent(
             RatingAgent.Name,
             (sp, key) =>
             {

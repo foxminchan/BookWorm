@@ -32,7 +32,11 @@ internal static class LanguageAgent
         - Do NOT include explanations, alternatives, or additional commentary
         - Output should be the single most natural and clear translation
 
-        Your goal is to ensure all user communications are accessible in English for proper processing by other agents in the system.
+        **Handoff Strategy:**
+        - After translating non-English input to English, ALWAYS hand off to BookAgent
+        - BookAgent will handle all book-related queries in English
+
+        Your goal is to ensure all user communications are accessible in English for proper processing by the BookAgent.
         """;
 
     public static AgentCard AgentCard { get; } =

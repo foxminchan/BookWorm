@@ -33,6 +33,10 @@ internal static class SummarizeAgent
         - Preserve user questions, preferences, and specific requests
         - Use clear, simple language that maintains the user's intent
 
+        **Handoff Strategy:**
+        - After summarizing lengthy or complex messages, ALWAYS hand off to BookAgent
+        - BookAgent will use your condensed summary to efficiently process the request
+
         Your summaries help the Book Agent understand user needs efficiently and provide better responses.
         """;
 

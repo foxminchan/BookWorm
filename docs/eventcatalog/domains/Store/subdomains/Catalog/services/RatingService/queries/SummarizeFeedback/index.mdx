@@ -62,19 +62,32 @@ The Summarize Feedback feature implements a sophisticated AI-powered architectur
 
 ```mermaid
 flowchart TD
-  HandoffStart["HandoffStart (Start)"];
-  language["language"];
-  summarize["summarize"];
-  HandoffEnd["HandoffEnd"];
-  rating["rating"];
+  HandoffStart["HandoffStart (Start)"]
+  Router["Router"]
+  Language["Language"]
+  Summarize["Summarize"]
+  Sentiment["Sentiment"]
+  Rating["Rating"]
+  HandoffEnd["HandoffEnd"]
 
-  HandoffStart --> language;
-  language --> summarize;
-  language --> HandoffEnd;
-  summarize --> rating;
-  summarize --> HandoffEnd;
-  rating --> language;
-  rating --> HandoffEnd;
+  HandoffStart --> Router
+  Router --> Language
+  Router --> Summarize
+  Router --> Sentiment
+  Router --A2A--> Rating
+  Router --> HandoffEnd
+
+  Language --A2A--> Rating
+  Language --> HandoffEnd
+
+  Summarize --A2A--> Rating
+  Summarize --> HandoffEnd
+
+  Sentiment --A2A--> Rating
+  Sentiment --> HandoffEnd
+
+  Rating --A2A--> Router
+  Rating --> HandoffEnd
 ```
 
 ## API Specification
