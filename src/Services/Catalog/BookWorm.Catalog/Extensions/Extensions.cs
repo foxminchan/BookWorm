@@ -51,11 +51,13 @@ internal static class Extensions
                     .Build()
             );
 
-        services.AddGrpc(options =>
-        {
-            options.EnableDetailedErrors = builder.Environment.IsDevelopment();
-            options.Interceptors.Add<GrpcExceptionInterceptor>();
-        });
+        services
+            .AddGrpc(options =>
+            {
+                options.EnableDetailedErrors = builder.Environment.IsDevelopment();
+                options.Interceptors.Add<GrpcExceptionInterceptor>();
+            })
+            .AddJsonTranscoding(o => o.JsonSettings.WriteIndented = true);
 
         services.AddGrpcHealthChecks();
 
