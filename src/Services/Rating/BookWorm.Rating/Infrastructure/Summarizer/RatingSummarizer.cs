@@ -45,7 +45,7 @@ public sealed class RatingSummarizer(
 
         var response = await workflowAgent.RunAsync(
             $"Summarize the following content: {content}",
-            thread: workflowAgentThread,
+            workflowAgentThread,
             cancellationToken: cancellationToken
         );
 

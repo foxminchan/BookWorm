@@ -85,7 +85,10 @@ public sealed class ChatStreaming(
             assistantReplyId
         );
 
-        var token = backplaneService.CancellationManager.GetCancellationToken(assistantReplyId);
+        var token = backplaneService.CancellationManager.GetCancellationToken(
+            conversationId,
+            assistantReplyId
+        );
 
         // Publish user message fragment
         var userFragment = new ClientMessageFragment(
@@ -117,13 +120,8 @@ public sealed class ChatStreaming(
 
             await foreach (
                 var chunk in (
-                    (
-                        await orchestrationService.RunWorkflowStreamingAsync(
-                            text,
-                            tokenSource.Token
-                        )
-                    ).WithCancellation(tokenSource.Token)
-                )
+                    await orchestrationService.RunWorkflowStreamingAsync(text, tokenSource.Token)
+                ).WithCancellation(tokenSource.Token)
             )
             {
                 var finalFragment = new ClientMessageFragment(

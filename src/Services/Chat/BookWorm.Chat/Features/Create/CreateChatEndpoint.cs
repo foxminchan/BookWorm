@@ -1,15 +1,18 @@
-﻿namespace BookWorm.Chat.Features.Create;
+﻿using BookWorm.Chat.Features.Stream;
 
-public sealed class CreateChatEndpoint : IEndpoint<NoContent, CreateChatCommand, ISender>
+namespace BookWorm.Chat.Features.Create;
+
+public sealed class CreateChatEndpoint
+    : IEndpoint<Created<Guid>, CreateChatCommand, ISender, LinkGenerator>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPut(
+        app.MapPost(
                 string.Empty,
-                async (CreateChatCommand command, ISender sender) =>
-                    await HandleAsync(command, sender)
+                async (CreateChatCommand request, ISender sender, LinkGenerator linker) =>
+                    await HandleAsync(request, sender, linker)
             )
-            .ProducesPut()
+            .ProducesPost<Guid>()
             .WithTags(nameof(Chat))
             .WithName(nameof(CreateChatEndpoint))
             .WithSummary("Create Chat")
@@ -19,14 +22,17 @@ public sealed class CreateChatEndpoint : IEndpoint<NoContent, CreateChatCommand,
             .RequirePerUserRateLimit();
     }
 
-    public async Task<NoContent> HandleAsync(
+    public async Task<Created<Guid>> HandleAsync(
         CreateChatCommand command,
         ISender sender,
+        LinkGenerator linker,
         CancellationToken cancellationToken = default
     )
     {
-        await sender.Send(command, cancellationToken);
+        var result = await sender.Send(command, cancellationToken);
 
-        return TypedResults.NoContent();
+        var path = linker.GetPathByName(nameof(ChatStreamEndpoint), new { id = result });
+
+        return TypedResults.Created(path, result);
     }
 }

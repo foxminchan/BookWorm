@@ -7,8 +7,8 @@ namespace BookWorm.Rating.UnitTests.Features.Visualize;
 
 public sealed class VisualizeWorkflowQueryTests
 {
-    private readonly Mock<ISummarizer> _summarizerMock = new();
     private readonly VisualizerWorkflowHandler _handler;
+    private readonly Mock<ISummarizer> _summarizerMock = new();
 
     public VisualizeWorkflowQueryTests()
     {
