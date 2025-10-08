@@ -8,5 +8,5 @@ public interface ICatalogApi
 {
     [Get("/api/v1/books")]
     [QueryUriFormat(UriFormat.Unescaped)]
-    Task<PagedResult<Book>> ListBooksAsync(string? search);
+    Task<ApiResponse<PagedResult<Book>>> ListBooksAsync(string? search);
 }

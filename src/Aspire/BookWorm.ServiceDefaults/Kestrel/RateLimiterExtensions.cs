@@ -1,4 +1,5 @@
-﻿using System.Threading.RateLimiting;
+﻿using System.Globalization;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -110,7 +111,9 @@ public static class RateLimiterExtensions
 
             if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
             {
-                httpContext.Response.Headers.RetryAfter = retryAfter.ToString();
+                httpContext.Response.Headers.RetryAfter = retryAfter.TotalMilliseconds.ToString(
+                    CultureInfo.InvariantCulture
+                );
 
                 var problemDetailsFactory =
                     serviceProvider.GetRequiredService<ProblemDetailsFactory>();
@@ -119,7 +122,7 @@ public static class RateLimiterExtensions
                     httpContext,
                     StatusCodes.Status429TooManyRequests,
                     "Rate limit exceeded",
-                    $"You have exceeded the rate limit. Try again in {retryAfter} minutes."
+                    $"You have exceeded the rate limit. Try again in {retryAfter.TotalMilliseconds.ToString(CultureInfo.InvariantCulture)} minutes."
                 );
 
                 await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
