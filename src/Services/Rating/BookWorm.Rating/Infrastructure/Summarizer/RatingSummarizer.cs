@@ -15,21 +15,27 @@ public sealed class RatingSummarizer(
     {
         var workflow = AgentWorkflowBuilder
             .CreateHandoffBuilderWith(routerAgent)
-            .WithHandoffs(
-                routerAgent,
-                [
-                    languageAgent, // For non-English reviews
-                    summarizeAgent, // For long verbose reviews
-                    sentimentAgent, // For emotion-heavy reviews
-                    ratingAgent, // Direct path for simple rating data
-                ]
+            .WithHandoffs(routerAgent, [languageAgent, summarizeAgent, sentimentAgent, ratingAgent])
+            .WithHandoff(
+                languageAgent,
+                ratingAgent,
+                "Transfer to this agent if the user input is not in English."
             )
-            // Preprocessing agents all route to RatingAgent for final analysis
-            .WithHandoff(languageAgent, ratingAgent) // After translation
-            .WithHandoff(summarizeAgent, ratingAgent) // After condensing
-            .WithHandoff(sentimentAgent, ratingAgent) // After sentiment analysis
-            // RatingAgent can route back to RouterAgent if needed for multistep analysis
-            .WithHandoff(ratingAgent, routerAgent)
+            .WithHandoff(
+                summarizeAgent,
+                ratingAgent,
+                "Transfer to this agent if the user message is very long or complex."
+            )
+            .WithHandoff(
+                sentimentAgent,
+                ratingAgent,
+                "Transfer to this agent if the user message contains emotional content."
+            )
+            .WithHandoff(
+                ratingAgent,
+                routerAgent,
+                "Transfer back to RouterAgent for any follow-up handling."
+            )
             .Build();
 
         return workflow;

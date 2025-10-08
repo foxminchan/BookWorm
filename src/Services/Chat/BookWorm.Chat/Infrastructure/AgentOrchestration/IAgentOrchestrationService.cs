@@ -7,7 +7,7 @@ public interface IAgentOrchestrationService
 {
     Workflow BuildAgentsWorkflow();
 
-    Task<IAsyncEnumerable<AgentRunResponseUpdate>> RunWorkflowStreamingAsync(
+    Task<IAsyncEnumerable<ChatMessage>> RunWorkflowStreamingAsync(
         string message,
         CancellationToken cancellationToken = default
     );

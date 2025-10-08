@@ -128,16 +128,17 @@ internal static class LanguageAgent
                     "JWT Bearer token authentication"
                 ),
             },
-            Security = new()
-            {
+            Security =
+            [
+                new()
                 {
-                    $"{JwtBearerDefaults.AuthenticationScheme}",
+                    [$"{JwtBearerDefaults.AuthenticationScheme}"] =
                     [
                         $"{Services.Chatting}_{Authorization.Actions.Read}",
                         $"{Services.Chatting}_{Authorization.Actions.Write}",
-                    ]
+                    ],
                 },
-            },
+            ],
             PreferredTransport = AgentTransport.JsonRpc,
         };
 }
