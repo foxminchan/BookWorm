@@ -157,16 +157,17 @@ internal static class RatingAgent
                     "JWT Bearer token authentication"
                 ),
             },
-            Security = new()
-            {
+            Security =
+            [
+                new()
                 {
-                    $"{JwtBearerDefaults.AuthenticationScheme}",
+                    [$"{JwtBearerDefaults.AuthenticationScheme}"] =
                     [
                         $"{Constants.Aspire.Services.Rating}_{Authorization.Actions.Read}",
                         $"{Constants.Aspire.Services.Rating}_{Authorization.Actions.Write}",
-                    ]
+                    ],
                 },
-            },
+            ],
             PreferredTransport = AgentTransport.JsonRpc,
         };
 }
