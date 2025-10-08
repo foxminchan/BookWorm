@@ -19,10 +19,15 @@ public sealed class Product(ICatalogApi catalogApi)
 
         var response = await catalogApi.ListBooksAsync(description);
 
-        return response.Items.Count == 0
+        if (!response.IsSuccessStatusCode)
+        {
+            return "There was an error while searching the catalog. Please try again later.";
+        }
+
+        return response.Content?.Items.Count == 0
             ? notFoundMessage
             : JsonSerializer.Serialize(
-                response.Items,
+                response.Content?.Items,
                 BookSerializationContext.Default.IReadOnlyListBook
             );
     }
