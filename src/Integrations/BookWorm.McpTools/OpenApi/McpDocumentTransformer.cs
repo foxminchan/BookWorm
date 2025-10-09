@@ -9,7 +9,7 @@ namespace BookWorm.McpTools.OpenApi;
 public sealed class McpDocumentTransformer(IHttpContextAccessor accessor)
     : IOpenApiDocumentTransformer
 {
-    public Task TransformAsync(
+    public async Task TransformAsync(
         OpenApiDocument document,
         OpenApiDocumentTransformerContext context,
         CancellationToken cancellationToken
@@ -24,6 +24,29 @@ public sealed class McpDocumentTransformer(IHttpContextAccessor accessor)
                     : $"{Protocols.Https}://{Restful.Host.Localhost}:8080/",
             },
         ];
+
+        var jsonRpcResponse = context.GetOrCreateSchemaAsync(
+            typeof(JsonRpcResponse),
+            cancellationToken: cancellationToken
+        );
+
+        var jsonRpcRequest = context.GetOrCreateSchemaAsync(
+            typeof(JsonRpcRequest),
+            cancellationToken: cancellationToken
+        );
+
+        var jsonRpcError = context.GetOrCreateSchemaAsync(
+            typeof(JsonRpcError),
+            cancellationToken: cancellationToken
+        );
+
+        await Task.WhenAll(jsonRpcResponse, jsonRpcRequest, jsonRpcError);
+
+        document.AddComponent(nameof(JsonRpcResponse), await jsonRpcResponse);
+
+        document.AddComponent(nameof(JsonRpcRequest), await jsonRpcRequest);
+
+        document.AddComponent(nameof(JsonRpcError), await jsonRpcError);
 
         var pathItem = new OpenApiPathItem();
 
@@ -46,17 +69,34 @@ public sealed class McpDocumentTransformer(IHttpContextAccessor accessor)
                         {
                             [MediaTypeNames.Application.Json] = new()
                             {
-                                Schema = new OpenApiSchemaReference(nameof(JsonRpcResponse)),
+                                Schema = new OpenApiSchemaReference(
+                                    nameof(JsonRpcResponse),
+                                    document
+                                ),
                             },
                         },
                     },
                     [$"{StatusCodes.Status400BadRequest}"] = new OpenApiResponse
                     {
                         Description = "Bad Request",
+                        Content = new Dictionary<string, OpenApiMediaType>
+                        {
+                            [MediaTypeNames.Application.Json] = new()
+                            {
+                                Schema = new OpenApiSchemaReference(nameof(JsonRpcError), document),
+                            },
+                        },
                     },
                     [$"{StatusCodes.Status406NotAcceptable}"] = new OpenApiResponse
                     {
                         Description = "Not Acceptable",
+                        Content = new Dictionary<string, OpenApiMediaType>
+                        {
+                            [MediaTypeNames.Application.Json] = new()
+                            {
+                                Schema = new OpenApiSchemaReference(nameof(JsonRpcError), document),
+                            },
+                        },
                     },
                 },
                 RequestBody = new OpenApiRequestBody
@@ -66,7 +106,7 @@ public sealed class McpDocumentTransformer(IHttpContextAccessor accessor)
                     {
                         [MediaTypeNames.Application.Json] = new()
                         {
-                            Schema = new OpenApiSchemaReference(nameof(JsonRpcRequest)),
+                            Schema = new OpenApiSchemaReference(nameof(JsonRpcRequest), document),
                         },
                     },
                 },
@@ -74,7 +114,5 @@ public sealed class McpDocumentTransformer(IHttpContextAccessor accessor)
         );
 
         document.Paths.Add("/mcp", pathItem);
-
-        return Task.CompletedTask;
     }
 }

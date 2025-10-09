@@ -27,9 +27,10 @@ internal static class Extensions
             {
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
+                    .UseFunctionInvocation()
                     .Use(PIIMiddleware.InvokeAsync, null)
                     .Use(GuardrailMiddleware.InvokeAsync, null)
-                    .Build();
+                    .Build(sp);
 
                 var mcpClient = sp.GetRequiredService<McpClient>();
 
@@ -42,6 +43,10 @@ internal static class Extensions
                         Description = BookAgent.Description,
                         ChatOptions = new()
                         {
+                            Temperature = 0.7f,
+                            MaxOutputTokens = 2000,
+                            TopP = 0.95f,
+                            AllowMultipleToolCalls = true,
                             Tools =
                             [
                                 .. mcpClient.ListToolsAsync().Preserve().GetAwaiter().GetResult(),
@@ -73,8 +78,9 @@ internal static class Extensions
             {
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
+                    .UseFunctionInvocation()
                     .Use(GuardrailMiddleware.InvokeAsync, null)
-                    .Build();
+                    .Build(sp);
 
                 var agent = new ChatClientAgent(
                     chatClient,
@@ -83,6 +89,7 @@ internal static class Extensions
                         Name = key,
                         Instructions = LanguageAgent.Instructions,
                         Description = LanguageAgent.Description,
+                        ChatOptions = new() { Temperature = 0.3f, MaxOutputTokens = 500 },
                         ChatMessageStoreFactory = ctx => new VectorChatMessageStore(
                             sp.GetRequiredService<AppSettings>(),
                             sp.GetRequiredService<VectorStoreCollection<Guid, ChatHistoryItem>>(),
@@ -101,7 +108,11 @@ internal static class Extensions
             SentimentAgent.Name,
             (sp, key) =>
             {
-                var chatClient = sp.GetRequiredService<IChatClient>();
+                var chatClient = sp.GetRequiredService<IChatClient>()
+                    .AsBuilder()
+                    .UseFunctionInvocation()
+                    .Use(GuardrailMiddleware.InvokeAsync, null)
+                    .Build(sp);
 
                 var agent = new ChatClientAgent(
                     chatClient,
@@ -110,6 +121,7 @@ internal static class Extensions
                         Name = key,
                         Instructions = SentimentAgent.Instructions,
                         Description = SentimentAgent.Description,
+                        ChatOptions = new() { Temperature = 0.2f, MaxOutputTokens = 300 },
                         ChatMessageStoreFactory = ctx => new VectorChatMessageStore(
                             sp.GetRequiredService<AppSettings>(),
                             sp.GetRequiredService<VectorStoreCollection<Guid, ChatHistoryItem>>(),
@@ -130,9 +142,10 @@ internal static class Extensions
             {
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
+                    .UseFunctionInvocation()
                     .Use(PIIMiddleware.InvokeAsync, null)
                     .Use(GuardrailMiddleware.InvokeAsync, null)
-                    .Build();
+                    .Build(sp);
 
                 var agent = new ChatClientAgent(
                     chatClient,
@@ -141,6 +154,7 @@ internal static class Extensions
                         Name = key,
                         Instructions = SummarizeAgent.Instructions,
                         Description = SummarizeAgent.Description,
+                        ChatOptions = new() { Temperature = 0.4f, MaxOutputTokens = 800 },
                         ChatMessageStoreFactory = ctx => new VectorChatMessageStore(
                             sp.GetRequiredService<AppSettings>(),
                             sp.GetRequiredService<VectorStoreCollection<Guid, ChatHistoryItem>>(),
@@ -161,8 +175,9 @@ internal static class Extensions
             {
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
+                    .UseFunctionInvocation()
                     .Use(GuardrailMiddleware.InvokeAsync, null)
-                    .Build();
+                    .Build(sp);
 
                 var agent = new ChatClientAgent(
                     chatClient,
@@ -171,6 +186,7 @@ internal static class Extensions
                         Name = key,
                         Instructions = RouterAgent.Instructions,
                         Description = RouterAgent.Description,
+                        ChatOptions = new() { Temperature = 0.1f, MaxOutputTokens = 200 },
                         ChatMessageStoreFactory = ctx => new VectorChatMessageStore(
                             sp.GetRequiredService<AppSettings>(),
                             sp.GetRequiredService<VectorStoreCollection<Guid, ChatHistoryItem>>(),

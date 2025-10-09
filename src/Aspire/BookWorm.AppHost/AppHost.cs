@@ -309,6 +309,11 @@ builder
     .WithOpenAPI(orderingApi)
     .ExcludeFromManifest();
 
+builder
+    .AddMcpInspector(Components.Inspector, options => options.InspectorVersion = "0.17.0")
+    .WithMcpServer(mcp)
+    .ExcludeFromManifest();
+
 builder.AddK6(gateway);
 
 builder.Build().Run();

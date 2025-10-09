@@ -54,18 +54,27 @@ public static class Extensions
             {
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
+                    .UseFunctionInvocation()
                     .Use(PIIMiddleware.InvokeAsync, null)
                     .Use(GuardrailMiddleware.InvokeAsync, null)
-                    .Build();
+                    .Build(sp);
 
                 var reviewPlugin = sp.GetRequiredService<ReviewTool>();
 
                 var agent = new ChatClientAgent(
                     chatClient,
-                    name: key,
-                    instructions: RatingAgent.Instructions,
-                    description: RatingAgent.Description,
-                    tools: [.. reviewPlugin.AsAITools()]
+                    options: new()
+                    {
+                        Name = key,
+                        Instructions = RatingAgent.Instructions,
+                        Description = RatingAgent.Description,
+                        ChatOptions = new()
+                        {
+                            Temperature = 0.4f,
+                            MaxOutputTokens = 1500,
+                            Tools = [.. reviewPlugin.AsAITools()],
+                        },
+                    }
                 );
 
                 return agent;

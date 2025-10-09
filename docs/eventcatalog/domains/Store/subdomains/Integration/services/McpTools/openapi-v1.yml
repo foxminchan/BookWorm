@@ -53,76 +53,196 @@ paths:
         content:
           application/json:
             schema:
-              required:
-                - method
-                - params
-                - jsonrpc
-                - id
-              type: object
-              properties:
-                method:
-                  type: string
-                  description: Name of the MCP method to invoke
-                params:
-                  type: object
-                  description: Method parameters
-                  properties:
-                    name:
-                      type: string
-                      description: Target component or tool name
-                    arguments:
-                      type: object
-                      description: Key-value arguments for the tool
-                jsonrpc:
-                  enum: ["1.0", "2.0"]
-                  type: string
-                  default: "2.0"
-                id:
-                  type: integer
-                  description: Unique request identifier
+              $ref: "#/components/schemas/JsonRpcRequest"
+            example:
+              jsonrpc: "2.0"
+              method: "tools/list"
+              params:
+                name: "SearchCatalog"
+                arguments:
+                  description: "science fiction"
+                _meta:
+                  progressToken: 0
+              id: 1
+          "text/event-stream":
+            schema:
+              $ref: "#/components/schemas/JsonRpcRequest"
+            example:
+              jsonrpc: "2.0"
+              method: "tools/list"
+              params:
+                name: "SearchCatalog"
+                arguments:
+                  description: "science fiction"
+                _meta:
+                  progressToken: 0
+              id: 1
       responses:
         "200":
           description: Successful stream response
           content:
             text/event-stream:
               schema:
-                type: object
-                properties:
-                  event:
-                    type: string
-                    description: Event type (e.g. "message", "error", "complete")
-                  data:
-                    type: string
-                    description: Event payload (JSON-encoded MCP message)
-              examples:
-                success:
-                  summary: Example MCP stream
-                  value: |
-                    event: message
-                    data: {"jsonrpc":"2.0","id":1,"result":{"status":"ok"}}
-
-                    event: complete
-                    data: {}
+                $ref: "#/components/schemas/JsonRpcResponse"
+              example:
+                jsonrpc: "2.0"
+                result:
+                  content:
+                    content:
+                      type: "text"
+                      value: '{"books":[{"title":"Dune","author":"Frank Herbert"},{"title":"Neuromancer","author":"William Gibson"}]}'
+                id: 1
         "400":
           description: Bad Request
           content:
-            application/problem+json:
+            application/json:
               schema:
-                type: object
-                properties:
-                  error:
-                    type: string
+                $ref: "#/components/schemas/JsonRpcError"
+              examples:
+                invalid-json:
+                  summary: Invalid JSON
+                  value:
+                    error:
+                      code: 400
+                      message: "Bad Request: The POST body did not contain a valid JSON-RPC message."
+                    id: 1
+                    jsonrpc: "2.0"
+                missing-method:
+                  summary: Session-Id not supported
+                  value:
+                    error:
+                      code: 400
+                      message: "Bad Request: The Mcp-Session-Id header is not supported in stateless mode"
+                    id: 1
+                    jsonrpc: "2.0"
+
         "406":
           description: Not Acceptable
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  error:
-                    type: string
+                $ref: "#/components/schemas/JsonRpcError"
+              examples:
+                not-acceptable:
+                  summary: Not Acceptable
+                  value:
+                    error:
+                      code: 406
+                      message: "Not Acceptable: Client must accept both application/json and text/event-stream"
+                    id: 1
+                    jsonrpc: "2.0"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsonRpcError"
+              examples:
+                forbidden:
+                  summary: Forbidden
+                  value:
+                    error:
+                      code: 403
+                      message: "Forbidden: The currently authenticated user does not match the user who initiated the session."
+                    id: 1
+                    jsonrpc: "2.0"
       x-ms-agentic-protocol: mcp-streamable-1.0
-components: {}
+components:
+  schemas:
+    JsonRpcError:
+      readOnly: true
+      x-scalar-ignore: true
+      description: Error object (https://www.jsonrpc.org/specification#error_object)
+      required:
+        - error
+      type: object
+      properties:
+        error:
+          required:
+            - code
+            - message
+          type: object
+          properties:
+            code:
+              pattern: ^-?(?:0|[1-9]\d*)$
+              type:
+                - integer
+                - string
+              format: int32
+              description: Error code indicating the type of error
+              example: 400
+            message:
+              type: string
+              description: Human-readable error message
+              example: "Bad Request: The POST body did not contain a valid JSON-RPC message."
+            data:
+              type:
+                - object
+                - "null"
+              description: Optional additional error data
+        id:
+          type:
+            - integer
+            - string
+            - "null"
+          description: Each ID is expected to be unique within the context of a given session.
+          example: fc54a698-b469-4b42-bc3e-f45bcb13d707
+        jsonrpc:
+          type: string
+          description: JSON-RPC version (e.g. "2.0")
+          example: "2.0"
+    JsonRpcRequest:
+      required:
+        - method
+      properties:
+        method:
+          type: string
+          description: Name of the MCP method to invoke
+          example: "tools/list"
+        params:
+          type: object
+          description: Method parameters
+          example:
+            name: "SearchCatalog"
+            arguments:
+              description: "science fiction"
+            _meta:
+              progressToken: 0
+        id:
+          type:
+            - integer
+            - string
+            - "null"
+          description: Each ID is expected to be unique within the context of a given session.
+          example: fc54a698-b469-4b42-bc3e-f45bcb13d707
+        jsonrpc:
+          type: string
+          description: JSON-RPC version (e.g. "2.0")
+          example: "2.0"
+    JsonRpcResponse:
+      required:
+        - result
+      type: object
+      properties:
+        result:
+          type: object
+          description: Method result
+          example:
+            content:
+              content:
+                type: "text"
+                value: '{"books":[{"title":"Dune","author":"Frank Herbert"},{"title":"Neuromancer","author":"William Gibson"}]}'
+        id:
+          type:
+            - integer
+            - string
+            - "null"
+          description: Each ID is expected to be unique within the context of a given session.
+          example: fc54a698-b469-4b42-bc3e-f45bcb13d707
+        jsonrpc:
+          type: string
+          description: JSON-RPC version (e.g. "2.0")
+          example: "2.0"
 tags:
   - name: MCP
     description: MCP Tools Server API
