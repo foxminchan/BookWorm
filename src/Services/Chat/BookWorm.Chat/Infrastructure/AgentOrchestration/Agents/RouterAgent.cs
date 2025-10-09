@@ -148,7 +148,12 @@ internal static class RouterAgent
                     {
                         ClientCredentials = new(
                             new(
-                                $"{ServiceDiscoveryUtilities.GetServiceEndpoint(Components.KeyCloak)}/realms/{Environment.GetEnvironmentVariable("Identity__Realm")}/protocol/openid-connect/token"
+                                ServiceDiscoveryUtilities.GetServiceEndpoint(Components.KeyCloak)
+                                    + "/realms"
+                                    + Environment.GetEnvironmentVariable(
+                                        $"{IdentityOptions.ConfigurationSection}__{nameof(IdentityOptions.Realm)}"
+                                    )
+                                    + "/protocol/openid-connect/token"
                             ),
                             new Dictionary<string, string>
                             {
@@ -164,11 +169,6 @@ internal static class RouterAgent
                         ),
                     },
                     "OAuth2 security scheme for the BookWorm API"
-                ),
-                [JwtBearerDefaults.AuthenticationScheme] = new HttpAuthSecurityScheme(
-                    JwtBearerDefaults.AuthenticationScheme,
-                    "JWT",
-                    "JWT Bearer token authentication"
                 ),
             },
             Security =
