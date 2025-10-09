@@ -22,11 +22,6 @@ public static class McpClientExtensions
         {
             var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
 
-            McpClientOptions mcpClientOptions = new()
-            {
-                ClientInfo = new() { Name = serviceName, Version = version },
-            };
-
             var url =
                 $"{ServiceDiscoveryUtilities.GetServiceEndpoint(serviceName, Protocols.Https)}/{relativePath.TrimStart('/')}";
 
@@ -40,7 +35,7 @@ public static class McpClientExtensions
             HttpClientTransport transport = new(transportOptions, loggerFactory);
 
             return McpClient
-                .CreateAsync(transport, mcpClientOptions, loggerFactory)
+                .CreateAsync(transport, loggerFactory: loggerFactory)
                 .GetAwaiter()
                 .GetResult();
         });
