@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.CQRS.Command;
+﻿using Mediator;
 
 namespace BookWorm.Catalog.Features.Books.Update;
 
@@ -22,7 +22,10 @@ public sealed record UpdateBookCommand(
 public sealed class UpdateBookHandler(IBookRepository repository)
     : ICommandHandler<UpdateBookCommand>
 {
-    public async Task<Unit> Handle(UpdateBookCommand request, CancellationToken cancellationToken)
+    public async ValueTask<Unit> Handle(
+        UpdateBookCommand request,
+        CancellationToken cancellationToken
+    )
     {
         var book = await repository.GetByIdAsync(request.Id, cancellationToken);
 

@@ -2,7 +2,7 @@
 using BookWorm.Ordering.Features.Orders;
 using BookWorm.Ordering.Features.Orders.Complete;
 using BookWorm.SharedKernel.Helpers;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Ordering.UnitTests.Features.Orders.Complete;
@@ -64,7 +64,7 @@ public sealed class CompleteOrderEndpointTests
     public async Task GivenCancellationToken_WhenHandlingCompleteOrder_ThenShouldPassTokenToSender()
     {
         // Arrange
-        var cancellationToken = new CancellationToken();
+        var cancellationToken = CancellationToken.None;
 
         _senderMock
             .Setup(x => x.Send(It.IsAny<CompleteOrderCommand>(), cancellationToken))

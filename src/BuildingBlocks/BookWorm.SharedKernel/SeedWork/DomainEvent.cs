@@ -1,5 +1,5 @@
 ﻿using BookWorm.SharedKernel.Helpers;
-using MediatR;
+using Mediator;
 
 namespace BookWorm.SharedKernel.SeedWork;
 

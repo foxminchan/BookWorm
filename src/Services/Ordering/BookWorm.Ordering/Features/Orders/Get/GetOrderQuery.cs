@@ -1,6 +1,6 @@
-using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
 using BookWorm.Ordering.Infrastructure.Helpers;
+using Mediator;
 
 namespace BookWorm.Ordering.Features.Orders.Get;
 
@@ -11,7 +11,7 @@ public sealed record GetOrderQuery(
 public sealed class GetOrderHandler(IOrderRepository repository, ClaimsPrincipal claimsPrincipal)
     : IQueryHandler<GetOrderQuery, OrderDetailDto>
 {
-    public async Task<OrderDetailDto> Handle(
+    public async ValueTask<OrderDetailDto> Handle(
         GetOrderQuery request,
         CancellationToken cancellationToken
     )

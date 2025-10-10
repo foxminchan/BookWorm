@@ -2,7 +2,7 @@
 using BookWorm.Catalog.Features.Authors;
 using BookWorm.Catalog.Features.Authors.List;
 using BookWorm.Catalog.UnitTests.Fakers;
-using BookWorm.Chassis.CQRS.Query;
+using Mediator;
 
 namespace BookWorm.Catalog.UnitTests.Features.Authors.List;
 
@@ -81,10 +81,11 @@ public sealed class ListAuthorsQueryTests
         var query = new ListAuthorsQuery();
 
         // Act
-        var act = () => _handler.Handle(query, CancellationToken.None);
+        await Should.ThrowAsync<Exception>(async () =>
+            await _handler.Handle(query, CancellationToken.None)
+        );
 
         // Assert
-        await act.ShouldThrowAsync<Exception>();
         _repositoryMock.Verify(repo => repo.ListAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 

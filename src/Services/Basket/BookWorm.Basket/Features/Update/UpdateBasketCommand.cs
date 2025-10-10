@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.CQRS.Command;
+﻿using Mediator;
 
 namespace BookWorm.Basket.Features.Update;
 
@@ -9,7 +9,10 @@ public sealed class UpdateBasketHandler(
     ClaimsPrincipal claimsPrincipal
 ) : ICommandHandler<UpdateBasketCommand>
 {
-    public async Task<Unit> Handle(UpdateBasketCommand request, CancellationToken cancellationToken)
+    public async ValueTask<Unit> Handle(
+        UpdateBasketCommand request,
+        CancellationToken cancellationToken
+    )
     {
         var sub = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier);
 

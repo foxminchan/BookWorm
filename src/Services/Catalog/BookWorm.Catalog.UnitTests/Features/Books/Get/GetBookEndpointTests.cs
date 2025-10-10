@@ -2,7 +2,7 @@
 using BookWorm.Catalog.Features.Books;
 using BookWorm.Catalog.Features.Books.Get;
 using BookWorm.Chassis.Exceptions;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Catalog.UnitTests.Features.Books.Get;

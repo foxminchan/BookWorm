@@ -1,6 +1,6 @@
 ﻿using BookWorm.Chassis.Exceptions;
 using BookWorm.Ordering.Features.Buyers.Delete;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Ordering.UnitTests.Features.Buyers.Delete;

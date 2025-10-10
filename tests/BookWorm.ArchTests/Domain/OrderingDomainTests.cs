@@ -166,7 +166,7 @@ public sealed class OrderingDomainTests : ArchUnitBaseTest
     [Arguments($"{nameof(BookWorm)}.*.Api")]
     [Arguments($"{nameof(Microsoft)}.AspNetCore.*")]
     [Arguments($"{nameof(System)}.Web.*")]
-    [Arguments($"{nameof(MediatR)}.*")]
+    [Arguments($"{nameof(Mediator)}.*")]
     public void GivenOrderingDomain_WhenCheckingDependencies_ThenShouldBeIsolated(
         string namespacePattern
     )

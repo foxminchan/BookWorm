@@ -1,5 +1,5 @@
 ﻿using BookWorm.Basket.Infrastructure.Exceptions;
-using BookWorm.Chassis.CQRS.Command;
+using Mediator;
 
 namespace BookWorm.Basket.Features.Create;
 
@@ -10,7 +10,7 @@ public sealed class CreateBasketHandler(
     ClaimsPrincipal claimsPrincipal
 ) : ICommandHandler<CreateBasketCommand, string>
 {
-    public async Task<string> Handle(
+    public async ValueTask<string> Handle(
         CreateBasketCommand request,
         CancellationToken cancellationToken
     )

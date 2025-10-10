@@ -1,8 +1,7 @@
-﻿using BookWorm.Chassis.CQRS.Command;
-using BookWorm.Chassis.Endpoints;
+﻿using BookWorm.Chassis.Endpoints;
 using BookWorm.Chat.Features;
 using BookWorm.Chat.Features.Create;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Routing;
 

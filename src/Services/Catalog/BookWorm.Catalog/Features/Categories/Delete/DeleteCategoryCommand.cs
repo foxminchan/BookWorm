@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.CQRS.Command;
+﻿using Mediator;
 
 namespace BookWorm.Catalog.Features.Categories.Delete;
 
@@ -7,7 +7,7 @@ public sealed record DeleteCategoryCommand(Guid Id) : ICommand;
 public sealed class DeleteCategoryHandler(ICategoryRepository repository)
     : ICommandHandler<DeleteCategoryCommand>
 {
-    public async Task<Unit> Handle(
+    public async ValueTask<Unit> Handle(
         DeleteCategoryCommand request,
         CancellationToken cancellationToken
     )

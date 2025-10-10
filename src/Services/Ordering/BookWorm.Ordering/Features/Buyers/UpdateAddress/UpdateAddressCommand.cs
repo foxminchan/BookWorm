@@ -1,5 +1,5 @@
-﻿using BookWorm.Chassis.CQRS.Command;
-using BookWorm.Ordering.Infrastructure.Helpers;
+﻿using BookWorm.Ordering.Infrastructure.Helpers;
+using Mediator;
 
 namespace BookWorm.Ordering.Features.Buyers.UpdateAddress;
 
@@ -11,7 +11,7 @@ public sealed class UpdateAddressHandler(
     ClaimsPrincipal claimsPrincipal
 ) : ICommandHandler<UpdateAddressCommand, BuyerDto>
 {
-    public async Task<BuyerDto> Handle(
+    public async ValueTask<BuyerDto> Handle(
         UpdateAddressCommand request,
         CancellationToken cancellationToken
     )

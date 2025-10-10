@@ -1,6 +1,6 @@
-﻿using BookWorm.Chassis.CQRS.Command;
-using BookWorm.Ordering.Infrastructure.DistributedLock;
+﻿using BookWorm.Ordering.Infrastructure.DistributedLock;
 using BookWorm.Ordering.Infrastructure.Helpers;
+using Mediator;
 
 namespace BookWorm.Ordering.Features.Orders.Create;
 
@@ -16,7 +16,10 @@ public sealed class CreateOrderHandler(
     IDistributedAccessLockProvider lockProvider
 ) : ICommandHandler<CreateOrderCommand, Guid>
 {
-    public async Task<Guid> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
+    public async ValueTask<Guid> Handle(
+        CreateOrderCommand request,
+        CancellationToken cancellationToken
+    )
     {
         var userId = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId();
 

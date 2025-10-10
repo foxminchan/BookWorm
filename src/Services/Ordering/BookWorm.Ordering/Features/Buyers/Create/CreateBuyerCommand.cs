@@ -1,5 +1,5 @@
-﻿using BookWorm.Chassis.CQRS.Command;
-using BookWorm.Ordering.Infrastructure.Helpers;
+﻿using BookWorm.Ordering.Infrastructure.Helpers;
+using Mediator;
 
 namespace BookWorm.Ordering.Features.Buyers.Create;
 
@@ -11,7 +11,10 @@ public sealed class CreateBuyerHandler(
     ClaimsPrincipal claimsPrincipal
 ) : ICommandHandler<CreateBuyerCommand, Guid>
 {
-    public async Task<Guid> Handle(CreateBuyerCommand request, CancellationToken cancellationToken)
+    public async ValueTask<Guid> Handle(
+        CreateBuyerCommand request,
+        CancellationToken cancellationToken
+    )
     {
         var userId = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId();
 

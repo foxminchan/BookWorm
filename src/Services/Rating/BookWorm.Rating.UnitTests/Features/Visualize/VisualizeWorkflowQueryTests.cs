@@ -1,7 +1,7 @@
-﻿using BookWorm.Chassis.CQRS.Query;
-using BookWorm.Rating.Features.Visualize;
+﻿using BookWorm.Rating.Features.Visualize;
 using BookWorm.Rating.Infrastructure.Summarizer;
 using BookWorm.SharedKernel;
+using Mediator;
 
 namespace BookWorm.Rating.UnitTests.Features.Visualize;
 

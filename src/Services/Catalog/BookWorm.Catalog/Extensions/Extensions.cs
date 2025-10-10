@@ -1,12 +1,14 @@
 ﻿using BookWorm.Catalog.Features.Books.Create;
 using BookWorm.Catalog.Features.Books.Update;
+using BookWorm.Chassis;
 using BookWorm.Chassis.CQRS.Command;
-using BookWorm.Chassis.CQRS.Mediator;
 using BookWorm.Chassis.CQRS.Pipelines;
 using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using BookWorm.Constants.Aspire;
 using BookWorm.Constants.Core;
+using BookWorm.SharedKernel;
+using Mediator;
 using Microsoft.AspNetCore.Authorization;
 
 namespace BookWorm.Catalog.Extensions;
@@ -17,15 +19,7 @@ internal static class Extensions
     {
         var services = builder.Services;
 
-        var appSettings = new AppSettings();
-
-        builder.Configuration.Bind(appSettings);
-
-        services.AddSingleton(appSettings);
-
         builder.AddDefaultCors();
-
-        services.AddRateLimiting();
 
         builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
 
@@ -51,6 +45,47 @@ internal static class Extensions
                     .Build()
             );
 
+        builder.AddDefaultOpenApi();
+
+        // Add exception handlers
+        services.AddExceptionHandler<ValidationExceptionHandler>();
+        services.AddExceptionHandler<NotFoundExceptionHandler>();
+        services.AddExceptionHandler<GlobalExceptionHandler>();
+        services.AddProblemDetails();
+
+        // Configure Mediator
+        services.AddMediator(
+            (MediatorOptions options) =>
+            {
+                options.ServiceLifetime = ServiceLifetime.Scoped;
+
+                options.Assemblies =
+                [
+                    typeof(ISharedKernelMarker),
+                    typeof(IChassisMarker),
+                    typeof(ICatalogApiMarker),
+                ];
+
+                options.PipelineBehaviors =
+                [
+                    typeof(ActivityBehavior<,>),
+                    typeof(LoggingBehavior<,>),
+                    typeof(ValidationBehavior<,>),
+                    typeof(CreateBookPreProcessor),
+                    typeof(UpdateBookPreProcessor),
+                    typeof(UpdateBookPostProcessor),
+                ];
+            }
+        );
+
+        var appSettings = new AppSettings();
+
+        builder.Configuration.Bind(appSettings);
+
+        services.AddSingleton(appSettings);
+
+        services.AddRateLimiting();
+
         services
             .AddGrpc(options =>
             {
@@ -61,31 +96,14 @@ internal static class Extensions
 
         services.AddGrpcHealthChecks();
 
-        builder.AddDefaultOpenApi();
-
         services.AddFeatureManagement();
 
         services.AddSingleton(
             new JsonSerializerOptions { Converters = { new StringTrimmerJsonConverter() } }
         );
 
-        // Add exception handlers
-        services.AddExceptionHandler<ValidationExceptionHandler>();
-        services.AddExceptionHandler<NotFoundExceptionHandler>();
-        services.AddExceptionHandler<GlobalExceptionHandler>();
-        services.AddProblemDetails();
-
         // Add database configuration
         builder.AddPersistenceServices();
-
-        // Configure MediatR
-        services.AddMediatR<ICatalogApiMarker>(configuration =>
-        {
-            configuration.AddOpenBehavior(typeof(ValidationBehavior<,>));
-            configuration.AddRequestPreProcessor<CreateBookPreProcessor>();
-            configuration.AddRequestPreProcessor<UpdateBookPreProcessor>();
-            configuration.AddRequestPostProcessor<UpdateBookPostProcessor>();
-        });
 
         // Configure FluentValidation
         services.AddValidatorsFromAssemblyContaining<ICatalogApiMarker>(includeInternalTypes: true);

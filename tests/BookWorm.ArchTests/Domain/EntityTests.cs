@@ -39,7 +39,7 @@ public sealed class EntityTests : ArchUnitBaseTest
             .And()
             .AreNotAbstract()
             .Should()
-            .BeAssignableTo(typeof(HasDomainEventsBase))
+            .BeAssignableTo(typeof(HasDomainEvents))
             .Because("Entities should be able to raise domain events through HasDomainEventsBase.")
             .Check(Architecture);
     }

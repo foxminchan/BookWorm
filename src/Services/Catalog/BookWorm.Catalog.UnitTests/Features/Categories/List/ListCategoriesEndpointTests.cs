@@ -1,6 +1,6 @@
 ﻿using BookWorm.Catalog.Features.Categories;
 using BookWorm.Catalog.Features.Categories.List;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Catalog.UnitTests.Features.Categories.List;

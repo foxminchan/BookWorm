@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.CQRS.Command;
+﻿using Mediator;
 
 namespace BookWorm.Ordering.Features.Buyers.Delete;
 
@@ -7,7 +7,10 @@ public sealed record DeleteBuyerCommand(Guid Id) : ICommand;
 public sealed class DeleteBuyerHandler(IBuyerRepository repository)
     : ICommandHandler<DeleteBuyerCommand>
 {
-    public async Task<Unit> Handle(DeleteBuyerCommand request, CancellationToken cancellationToken)
+    public async ValueTask<Unit> Handle(
+        DeleteBuyerCommand request,
+        CancellationToken cancellationToken
+    )
     {
         var buyer = await repository.GetByIdAsync(request.Id, cancellationToken);
 

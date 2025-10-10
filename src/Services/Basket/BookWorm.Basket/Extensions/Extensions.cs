@@ -1,11 +1,13 @@
 ﻿using BookWorm.Basket.Features.Get;
+using BookWorm.Chassis;
 using BookWorm.Chassis.CQRS.Command;
-using BookWorm.Chassis.CQRS.Mediator;
 using BookWorm.Chassis.CQRS.Pipelines;
 using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using BookWorm.Constants.Core;
+using BookWorm.SharedKernel;
 using MassTransit;
+using Mediator;
 using Microsoft.AspNetCore.Authorization;
 
 namespace BookWorm.Basket.Extensions;
@@ -35,13 +37,36 @@ internal static class Extensions
 
         builder.AddDefaultOpenApi();
 
-        services.AddRateLimiting();
-
         // Add exception handlers
         services.AddExceptionHandler<ValidationExceptionHandler>();
         services.AddExceptionHandler<NotFoundExceptionHandler>();
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails();
+
+        // Configure Mediator
+        services.AddMediator(
+            (MediatorOptions options) =>
+            {
+                options.ServiceLifetime = ServiceLifetime.Scoped;
+
+                options.Assemblies =
+                [
+                    typeof(ISharedKernelMarker),
+                    typeof(IChassisMarker),
+                    typeof(IBasketApiMarker),
+                ];
+
+                options.PipelineBehaviors =
+                [
+                    typeof(ActivityBehavior<,>),
+                    typeof(LoggingBehavior<,>),
+                    typeof(ValidationBehavior<,>),
+                    typeof(GetBasketPostProcessor),
+                ];
+            }
+        );
+
+        services.AddRateLimiting();
 
         // Add database configuration
         builder
@@ -49,13 +74,6 @@ internal static class Extensions
             .WithDistributedCache(options => options.InstanceName = "ShoppingCarts");
 
         services.AddSingleton<IBasketRepository, BasketRepository>();
-
-        // Configure MediatR
-        services.AddMediatR<IBasketApiMarker>(configuration =>
-        {
-            configuration.AddOpenBehavior(typeof(ValidationBehavior<,>));
-            configuration.AddRequestPostProcessor<GetBasketPostProcessor>();
-        });
 
         // Configure FluentValidation
         services.AddValidatorsFromAssemblyContaining<IBasketApiMarker>(includeInternalTypes: true);

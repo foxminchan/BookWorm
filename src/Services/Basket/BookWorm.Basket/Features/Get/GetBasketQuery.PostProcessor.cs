@@ -1,11 +1,11 @@
-﻿using MediatR.Pipeline;
+﻿using Mediator;
 
 namespace BookWorm.Basket.Features.Get;
 
 public sealed class GetBasketPostProcessor(IBookService bookService)
-    : IRequestPostProcessor<GetBasketQuery, CustomerBasketDto>
+    : MessagePostProcessor<GetBasketQuery, CustomerBasketDto>
 {
-    public async Task Process(
+    protected override async ValueTask Handle(
         GetBasketQuery request,
         CustomerBasketDto response,
         CancellationToken cancellationToken

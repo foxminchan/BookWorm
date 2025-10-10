@@ -1,7 +1,7 @@
-﻿using BookWorm.Chassis.CQRS.Command;
-using BookWorm.Chat.Features;
+﻿using BookWorm.Chat.Features;
 using BookWorm.Chat.Features.Create;
 using BookWorm.Chat.Infrastructure.ChatStreaming;
+using Mediator;
 
 namespace BookWorm.Chat.UnitTests.Features.Create;
 

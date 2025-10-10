@@ -1,6 +1,6 @@
 ﻿using BookWorm.Ordering.Features.Buyers;
 using BookWorm.Ordering.Features.Buyers.UpdateAddress;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Ordering.UnitTests.Features.Buyers.UpdateAddress;

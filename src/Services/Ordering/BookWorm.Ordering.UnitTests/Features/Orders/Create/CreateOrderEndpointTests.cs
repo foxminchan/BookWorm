@@ -1,5 +1,5 @@
 ﻿using BookWorm.Ordering.Features.Orders.Create;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Routing;
 

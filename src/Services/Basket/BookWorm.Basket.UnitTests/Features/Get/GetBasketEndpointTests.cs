@@ -1,6 +1,6 @@
 ﻿using BookWorm.Basket.Features;
 using BookWorm.Basket.Features.Get;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Basket.UnitTests.Features.Get;

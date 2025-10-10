@@ -1,11 +1,10 @@
 ﻿using ArchUnitNET.TUnit;
 using BookWorm.ArchTests.Abstractions;
-using BookWorm.Chassis.CQRS.Command;
-using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chassis.Endpoints;
 using BookWorm.Chassis.EventBus;
 using BookWorm.Chassis.Repository;
 using FluentValidation;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 

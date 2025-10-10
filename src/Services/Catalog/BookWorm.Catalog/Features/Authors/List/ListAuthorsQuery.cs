@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.CQRS.Query;
+﻿using Mediator;
 
 namespace BookWorm.Catalog.Features.Authors.List;
 
@@ -7,7 +7,7 @@ public sealed record ListAuthorsQuery : IQuery<IReadOnlyList<AuthorDto>>;
 public sealed class ListAuthorsHandler(IAuthorRepository repository)
     : IQueryHandler<ListAuthorsQuery, IReadOnlyList<AuthorDto>>
 {
-    public async Task<IReadOnlyList<AuthorDto>> Handle(
+    public async ValueTask<IReadOnlyList<AuthorDto>> Handle(
         ListAuthorsQuery request,
         CancellationToken cancellationToken
     )

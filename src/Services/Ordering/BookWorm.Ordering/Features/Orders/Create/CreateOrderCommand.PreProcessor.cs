@@ -1,11 +1,14 @@
-﻿using MediatR.Pipeline;
+﻿using Mediator;
 
 namespace BookWorm.Ordering.Features.Orders.Create;
 
 public sealed class CreateOrderPreProcessor([AsParameters] BasketMetadata basket)
-    : IRequestPreProcessor<CreateOrderCommand>
+    : MessagePreProcessor<CreateOrderCommand, Guid>
 {
-    public async Task Process(CreateOrderCommand request, CancellationToken cancellationToken)
+    protected override async ValueTask Handle(
+        CreateOrderCommand request,
+        CancellationToken cancellationToken
+    )
     {
         var basketItems = await basket.BasketService.GetBasket(cancellationToken);
 
