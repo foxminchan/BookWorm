@@ -1,14 +1,13 @@
 ---
 description: "Debug your application to find and fix a bug"
 tools: [
-    "codebase",
-    "editFiles",
+    "search/codebase",
+    "edit/editFiles",
     "githubRepo",
     "runCommands",
     "fetch",
     "search",
-    "usages",
-    "findTestFiles"
+    "usages"
   ]
 model: Claude Sonnet 4
 ---

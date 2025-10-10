@@ -110,48 +110,12 @@ IResourceBuilder<IResource> keycloak;
 
 if (builder.ExecutionContext.IsRunMode)
 {
-    var kcThemeName = builder
-        .AddParameter("kc-theme", nameof(BookWorm).ToLowerInvariant(), true)
-        .WithDescription(ParameterDescriptions.Keycloak.Theme, true);
-
-    var kcThemeDisplayName = builder
-        .AddParameter("kc-theme-display-name", nameof(BookWorm), true)
-        .WithDescription(ParameterDescriptions.Keycloak.ThemeDisplayName, true);
-
     var userDb = postgres.AddDatabase(Components.Database.User);
-
-    keycloak = builder
-        .AddKeycloak(Components.KeyCloak)
-        .WithIconName("LockClosedRibbon")
-        .WithCustomTheme(kcThemeName)
-        .WithImagePullPolicy(ImagePullPolicy.Always)
-        .WithLifetime(ContainerLifetime.Persistent)
-        .WithSampleRealmImport(kcRealmName, kcThemeDisplayName)
-        .WithPostgres(userDb);
-
-    kcThemeName.WithParentRelationship(keycloak);
-    kcThemeDisplayName.WithParentRelationship(keycloak);
+    keycloak = builder.AddLocalKeycloak(Components.KeyCloak, kcRealmName).WithPostgres(userDb);
 }
 else
 {
-    var keycloakUrl = builder
-        .AddParameter("kc-url", true)
-        .WithDescription(ParameterDescriptions.Keycloak.Url, true)
-        .WithCustomInput(_ =>
-            new()
-            {
-                Name = "KeycloakUrlParameter",
-                Label = "Keycloak URL",
-                InputType = InputType.Text,
-                Value = "https://identity.bookworm.com",
-                Description = "Enter your Keycloak server URL here",
-            }
-        );
-
-    keycloak = builder
-        .AddExternalService(Components.KeyCloak, keycloakUrl)
-        .WithIconName("LockClosedRibbon")
-        .WithHttpHealthCheck("/health/ready");
+    keycloak = builder.AddHostedKeycloak(Components.KeyCloak);
 }
 
 kcRealmName.WithParentRelationship(keycloak);

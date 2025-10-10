@@ -65,6 +65,7 @@
 - [Bun](https://bun.sh/)
 - [Just](https://github.com/casey/just)
 - [Aspire CLI](https://learn.microsoft.com/en-us/dotnet/aspire/cli/install)
+- [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
 - Optional: [Spec-Kit](https://github.com/github/spec-kit)
 - Optional: [GitHub Copilot CLI](https://github.com/github/copilot-cli)
 
@@ -93,54 +94,38 @@ just run
 >
 > - Run `just help` to see all available commands.
 
-### Deploy the application
+### Deploy the Application
 
-You can use the [Azure Developer CLI](https://aka.ms/azd) to run this project on Azure with only a few commands. Follow the next instructions:
+To deploy BookWorm to Azure Container Apps, follow these steps:
 
-- Install the latest or update to the latest [Azure Developer CLI (azd)](https://aka.ms/azure-dev/install).
-- Log in `azd` (if you haven't done it before) to your Azure account:
+1. **Authenticate with Azure**:
 
 ```sh
-azd auth login
+az login
 ```
 
-- Enable the `azd` alpha features to support bind mounts:
+2. **Deploy the application**:
 
 ```sh
-azd config set alpha.azd.operations on
+aspire deploy
 ```
 
-- Initialize `azd` from the root of the repository.
+3. **Verify the deployment**:
+
+After deployment completes, get the application URL:
 
 ```sh
-azd init
+az containerapp show --name <app-name> --resource-group <resource-group> --query properties.configuration.ingress.fqdn --output tsv
 ```
 
-- During initialization, you will be prompted to select the project type and services to expose. Follow these steps:
+Replace `<app-name>` and `<resource-group>` with the values you specified during deployment.
 
-  - Select `Use code in the current directory`. Azd will automatically detect the .NET Aspire project.
-  - Confirm `.NET (Aspire)` and continue.
-  - Select which services to expose to the Internet (exposing `gateway` is enough to test the sample).
-  - Finalize the initialization by giving a name to your environment.
+4. **Clean up resources**:
 
-- Create Azure resources and deploy the sample by running:
+To remove all deployed resources and avoid charges:
 
 ```sh
-azd up
-```
-
-> [!NOTE]
->
-> - The operation takes a few minutes the first time it is ever run for an environment.
-> - At the end of the process, `azd` will display the `url` for the webapp. Follow that link to test the sample.
-> - You can run `azd up` after saving changes to the sample to re-deploy and update the sample.
-> - Report any issues to [azure-dev](https://github.com/Azure/azure-dev/issues) repo.
-> - [FAQ and troubleshoot](https://learn.microsoft.com/azure/developer/azure-developer-cli/troubleshoot?tabs=Browser) for azd.
-
-- For cleaning up the resources created by `azd`, run:
-
-```sh
-az group delete --name rg-<your-environment-name> --yes --no-wait
+az group delete --name <resource-group> --yes --no-wait
 ```
 
 ### Documentation
