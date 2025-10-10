@@ -2,13 +2,13 @@
 mode: "agent"
 tools: [
     "changes",
-    "codebase",
-    "editFiles",
+    "search/codebase",
+    "edit/editFiles",
     "problems",
     "runCommands",
     "search",
-    "sequential-thinking",
-    "microsoft-docs",
+    "sequential-thinking/*",
+    "microsoft-docs/*",
   ]
 description: "Get best practices for TUnit unit testing, including data-driven tests"
 ---

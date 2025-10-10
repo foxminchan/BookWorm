@@ -1,6 +1,6 @@
 ---
 mode: "agent"
-tools: ["changes", "codebase", "editFiles", "problems"]
+tools: ["changes", "search/codebase", "edit/editFiles", "problems"]
 description: "Get best practices for C# async programming"
 ---
 

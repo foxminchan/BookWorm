@@ -1,8 +1,0 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
-
-name: book-worm
-services:
-  app:
-    language: dotnet
-    project: ./src/Aspire/BookWorm.AppHost/BookWorm.AppHost.csproj
-    host: containerapp

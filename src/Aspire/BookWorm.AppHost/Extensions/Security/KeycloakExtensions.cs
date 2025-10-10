@@ -19,58 +19,78 @@ public static class KeycloakExtensions
     private const string KeycloakDatabaseUrlEnvVarName = "KC_DB_URL";
 
     /// <summary>
-    ///     Configures a Keycloak resource with a sample realm import.
+    ///     Adds a Keycloak container resource to the distributed application builder with custom theme and realm import
+    ///     settings.
     /// </summary>
-    /// <param name="builder">The Keycloak resource builder.</param>
-    /// <param name="realmName">The name of the realm to import.</param>
-    /// <param name="displayName">The display name of the realm.</param>
-    /// <returns>The Keycloak resource builder for method chaining.</returns>
-    public static IResourceBuilder<KeycloakResource> WithSampleRealmImport(
-        this IResourceBuilder<KeycloakResource> builder,
-        IResourceBuilder<ParameterResource> realmName,
-        IResourceBuilder<ParameterResource> displayName
+    /// <param name="builder">The distributed application builder to which the Keycloak resource will be added.</param>
+    /// <param name="name">The name of the Keycloak resource.</param>
+    /// <param name="realmName">A resource builder for the Keycloak realm name parameter.</param>
+    /// <returns>
+    ///     An <see cref="IResourceBuilder{KeycloakResource}" /> representing the configured Keycloak resource.
+    /// </returns>
+    public static IResourceBuilder<KeycloakResource> AddLocalKeycloak(
+        this IDistributedApplicationBuilder builder,
+        string name,
+        IResourceBuilder<ParameterResource> realmName
     )
     {
-        builder
-            .WithRealmImport($"{BaseContainerPath}/realms")
-            .WithEnvironment(RealmName, realmName)
-            .WithEnvironment(RealmDisplayName, displayName)
-            // Ensure HSTS is not enabled in run mode to avoid browser caching issues when developing.
-            // Workaround for https://github.com/keycloak/keycloak/issues/32366
-            .WithEnvironment(
-                RealmHsts,
-                builder.ApplicationBuilder.ExecutionContext.IsRunMode
-                    ? string.Empty
-                    : "max-age=31536000; includeSubDomains"
-            );
+        var kcThemeName = builder
+            .AddParameter("kc-theme", nameof(BookWorm).ToLowerInvariant(), true)
+            .WithDescription(ParameterDescriptions.Keycloak.Theme, true);
 
-        return builder;
+        var kcThemeDisplayName = builder
+            .AddParameter("kc-theme-display-name", nameof(BookWorm), true)
+            .WithDescription(ParameterDescriptions.Keycloak.ThemeDisplayName, true);
+
+        var keycloak = builder
+            .AddKeycloak(name)
+            .WithIconName("LockClosedRibbon")
+            .WithCustomTheme(kcThemeName)
+            .WithImagePullPolicy(ImagePullPolicy.Always)
+            .WithLifetime(ContainerLifetime.Persistent)
+            .WithSampleRealmImport(realmName, kcThemeDisplayName);
+
+        kcThemeName.WithParentRelationship(keycloak);
+        kcThemeDisplayName.WithParentRelationship(keycloak);
+
+        return keycloak;
     }
 
     /// <summary>
-    ///     Configures a Keycloak resource with a custom theme.
+    ///     Adds a hosted Keycloak external service to the distributed application builder.
     /// </summary>
-    /// <param name="builder">The Keycloak resource builder.</param>
-    /// <param name="themeName">The name of the custom theme to use.</param>
-    /// <returns>The Keycloak resource builder for method chaining.</returns>
-    public static IResourceBuilder<KeycloakResource> WithCustomTheme(
-        this IResourceBuilder<KeycloakResource> builder,
-        IResourceBuilder<ParameterResource> themeName
+    /// <param name="builder">The distributed application builder to which the Keycloak service will be added.</param>
+    /// <param name="name">The name of the Keycloak external service resource.</param>
+    /// <returns>
+    ///     An <see cref="IResourceBuilder{ExternalServiceResource}" /> representing the configured Keycloak external service.
+    /// </returns>
+    public static IResourceBuilder<ExternalServiceResource> AddHostedKeycloak(
+        this IDistributedApplicationBuilder builder,
+        string name
     )
     {
-        var importFullPath = Path.GetFullPath(
-            $"{BaseContainerPath}/themes",
-            builder.ApplicationBuilder.AppHostDirectory
-        );
+        var keycloakUrl = builder
+            .AddParameter("kc-url", true)
+            .WithDescription(ParameterDescriptions.Keycloak.Url, true)
+            .WithCustomInput(_ =>
+                new()
+                {
+                    Name = "KeycloakUrlParameter",
+                    Label = "Keycloak URL",
+                    InputType = InputType.Text,
+                    Value = "https://identity.bookworm.com",
+                    Description = "Enter your Keycloak server URL here",
+                }
+            );
 
-        if (Directory.Exists(importFullPath))
-        {
-            builder
-                .WithBindMount(importFullPath, "/opt/keycloak/providers/", true)
-                .WithEnvironment(ThemeName, themeName);
-        }
+        var keycloak = builder
+            .AddExternalService(name, keycloakUrl)
+            .WithIconName("LockClosedRibbon")
+            .WithHttpHealthCheck("/health/ready");
 
-        return builder;
+        keycloakUrl.WithParentRelationship(keycloak);
+
+        return keycloak;
     }
 
     /// <summary>
@@ -211,6 +231,48 @@ public static class KeycloakExtensions
                 .WithEnvironment("Identity__ClientId", clientId)
                 .WithEnvironment("Identity__ClientSecret", clientSecret)
                 .WithEnvironment($"Identity__Scopes__{clientId}", clientId.ToClientName("API"));
+        }
+
+        return builder;
+    }
+
+    private static IResourceBuilder<KeycloakResource> WithSampleRealmImport(
+        this IResourceBuilder<KeycloakResource> builder,
+        IResourceBuilder<ParameterResource> realmName,
+        IResourceBuilder<ParameterResource> displayName
+    )
+    {
+        builder
+            .WithRealmImport($"{BaseContainerPath}/realms")
+            .WithEnvironment(RealmName, realmName)
+            .WithEnvironment(RealmDisplayName, displayName)
+            // Ensure HSTS is not enabled in run mode to avoid browser caching issues when developing.
+            // Workaround for https://github.com/keycloak/keycloak/issues/32366
+            .WithEnvironment(
+                RealmHsts,
+                builder.ApplicationBuilder.ExecutionContext.IsRunMode
+                    ? string.Empty
+                    : "max-age=31536000; includeSubDomains"
+            );
+
+        return builder;
+    }
+
+    private static IResourceBuilder<KeycloakResource> WithCustomTheme(
+        this IResourceBuilder<KeycloakResource> builder,
+        IResourceBuilder<ParameterResource> themeName
+    )
+    {
+        var importFullPath = Path.GetFullPath(
+            $"{BaseContainerPath}/themes",
+            builder.ApplicationBuilder.AppHostDirectory
+        );
+
+        if (Directory.Exists(importFullPath))
+        {
+            builder
+                .WithBindMount(importFullPath, "/opt/keycloak/providers/", true)
+                .WithEnvironment(ThemeName, themeName);
         }
 
         return builder;
