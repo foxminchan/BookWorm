@@ -3,7 +3,7 @@ using BookWorm.Ordering.Features.Orders;
 using BookWorm.Ordering.Features.Orders.List;
 using BookWorm.SharedKernel.Helpers;
 using BookWorm.SharedKernel.Results;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Ordering.UnitTests.Features.Orders.List;

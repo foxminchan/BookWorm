@@ -2,7 +2,7 @@
 using BookWorm.Catalog.Features.Categories.Update;
 using BookWorm.Chassis.Exceptions;
 using BookWorm.Chassis.Repository;
-using MediatR;
+using Mediator;
 
 namespace BookWorm.Catalog.UnitTests.Features.Categories.Update;
 

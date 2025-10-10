@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.CQRS.Query;
+﻿using Mediator;
 using Microsoft.Extensions.Caching.Hybrid;
 
 namespace BookWorm.Catalog.Features.Books.Get;
@@ -11,7 +11,10 @@ public sealed class GetBookHandler(
     IMapper<Book, BookDto> mapper
 ) : IQueryHandler<GetBookQuery, BookDto>
 {
-    public async Task<BookDto> Handle(GetBookQuery request, CancellationToken cancellationToken)
+    public async ValueTask<BookDto> Handle(
+        GetBookQuery request,
+        CancellationToken cancellationToken
+    )
     {
         var tag = nameof(Book).ToLowerInvariant();
 

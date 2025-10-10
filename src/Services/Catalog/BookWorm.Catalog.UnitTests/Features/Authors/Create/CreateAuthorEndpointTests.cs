@@ -1,5 +1,5 @@
 ﻿using BookWorm.Catalog.Features.Authors.Create;
-using MediatR;
+using Mediator;
 
 namespace BookWorm.Catalog.UnitTests.Features.Authors.Create;
 

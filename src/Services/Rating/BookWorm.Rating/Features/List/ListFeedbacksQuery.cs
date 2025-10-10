@@ -1,7 +1,7 @@
-﻿using BookWorm.Chassis.CQRS.Query;
-using BookWorm.Constants.Core;
+﻿using BookWorm.Constants.Core;
 using BookWorm.Rating.Domain.FeedbackAggregator.Specifications;
 using BookWorm.SharedKernel.Results;
+using Mediator;
 
 namespace BookWorm.Rating.Features.List;
 
@@ -24,7 +24,7 @@ public sealed record ListFeedbacksQuery(
 public sealed class ListFeedbacksHandler(IFeedbackRepository repository)
     : IQueryHandler<ListFeedbacksQuery, PagedResult<FeedbackDto>>
 {
-    public async Task<PagedResult<FeedbackDto>> Handle(
+    public async ValueTask<PagedResult<FeedbackDto>> Handle(
         ListFeedbacksQuery request,
         CancellationToken cancellationToken
     )

@@ -2,7 +2,7 @@
 using BookWorm.Catalog.Features.Books;
 using BookWorm.Catalog.Features.Books.List;
 using BookWorm.SharedKernel.Results;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Catalog.UnitTests.Features.Books.List;

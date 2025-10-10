@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
-using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chat.Infrastructure.AgentOrchestration;
 using BookWorm.SharedKernel;
+using Mediator;
 using Microsoft.Agents.AI.Workflows;
 
 namespace BookWorm.Chat.Features.Visualize;
@@ -15,11 +15,14 @@ public sealed record VisualizeWorkflowQuery(
 public sealed class VisualizerWorkflowHandler(IAgentOrchestrationService agentOrchestrationService)
     : IQueryHandler<VisualizeWorkflowQuery, string>
 {
-    public Task<string> Handle(VisualizeWorkflowQuery request, CancellationToken cancellationToken)
+    public ValueTask<string> Handle(
+        VisualizeWorkflowQuery request,
+        CancellationToken cancellationToken
+    )
     {
         var workflow = agentOrchestrationService.BuildAgentsWorkflow();
 
-        return Task.FromResult(
+        return ValueTask.FromResult(
             request.Type switch
             {
                 VisualizationType.Mermaid => workflow.ToMermaidString(),

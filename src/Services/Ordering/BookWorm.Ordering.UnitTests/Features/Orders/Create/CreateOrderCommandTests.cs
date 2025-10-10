@@ -1,9 +1,9 @@
 ﻿using System.Security.Claims;
-using BookWorm.Chassis.CQRS.Command;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Features.Orders.Create;
 using BookWorm.Ordering.Infrastructure.DistributedLock;
 using BookWorm.Ordering.Infrastructure.Helpers;
+using Mediator;
 
 namespace BookWorm.Ordering.UnitTests.Features.Orders.Create;
 
@@ -56,7 +56,7 @@ public sealed class CreateOrderCommandTests
         // Arrange
         _claimsPrincipalMock
             .Setup(x => x.FindFirst(ClaimTypes.NameIdentifier))
-            .Returns((Claim?)default!);
+            .Returns((Claim?)null!);
 
         // Act
         var act = async () => await _handler.Handle(_command, CancellationToken.None);

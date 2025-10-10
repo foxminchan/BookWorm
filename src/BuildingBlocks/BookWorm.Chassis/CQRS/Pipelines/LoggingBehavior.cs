@@ -1,5 +1,5 @@
 ﻿using System.Diagnostics;
-using MediatR;
+using Mediator;
 using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Chassis.CQRS.Pipelines;
@@ -9,9 +9,9 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
 ) : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
-    public async Task<TResponse> Handle(
-        TRequest request,
-        RequestHandlerDelegate<TResponse> next,
+    public async ValueTask<TResponse> Handle(
+        TRequest message,
+        MessageHandlerDelegate<TRequest, TResponse> next,
         CancellationToken cancellationToken
     )
     {
@@ -29,7 +29,7 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
 
         var start = Stopwatch.GetTimestamp();
 
-        var response = await next(cancellationToken);
+        var response = await next(message, cancellationToken);
 
         logger.LogInformation(
             "[{Behavior}] The request handled {RequestName} with {Response} in {ElapsedMilliseconds} ms",

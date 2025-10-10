@@ -1,5 +1,5 @@
 ﻿using BookWorm.Chat.Features.Cancel;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Chat.UnitTests.Features.Cancel;

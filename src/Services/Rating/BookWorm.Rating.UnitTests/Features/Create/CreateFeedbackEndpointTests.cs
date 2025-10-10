@@ -1,5 +1,5 @@
 ﻿using BookWorm.Rating.Features.Create;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Rating.UnitTests.Features.Create;

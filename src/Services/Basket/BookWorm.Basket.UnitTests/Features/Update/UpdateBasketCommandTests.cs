@@ -3,7 +3,7 @@ using BookWorm.Basket.Domain;
 using BookWorm.Basket.Features.Update;
 using BookWorm.Basket.UnitTests.Fakers;
 using BookWorm.Chassis.Exceptions;
-using MediatR;
+using Mediator;
 
 namespace BookWorm.Basket.UnitTests.Features.Update;
 

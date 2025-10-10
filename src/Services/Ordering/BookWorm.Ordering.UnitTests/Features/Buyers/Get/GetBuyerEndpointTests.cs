@@ -2,7 +2,7 @@
 using BookWorm.Constants.Other;
 using BookWorm.Ordering.Features.Buyers;
 using BookWorm.Ordering.Features.Buyers.Get;
-using MediatR;
+using Mediator;
 using Microsoft.FeatureManagement;
 
 namespace BookWorm.Ordering.UnitTests.Features.Buyers.Get;

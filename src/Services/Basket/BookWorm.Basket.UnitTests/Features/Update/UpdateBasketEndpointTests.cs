@@ -1,6 +1,6 @@
 ﻿using BookWorm.Basket.Features;
 using BookWorm.Basket.Features.Update;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Basket.UnitTests.Features.Update;
@@ -18,7 +18,7 @@ public sealed class UpdateBasketEndpointTests
 
         _senderMock
             .Setup(s => s.Send(command, It.IsAny<CancellationToken>()))
-            .Returns(Task.FromResult(Unit.Value));
+            .ReturnsAsync(Unit.Value);
 
         // Act
         var result = await _endpoint.HandleAsync(command, _senderMock.Object);
@@ -56,7 +56,7 @@ public sealed class UpdateBasketEndpointTests
 
         _senderMock
             .Setup(s => s.Send(It.IsAny<UpdateBasketCommand>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.FromResult(Unit.Value));
+            .ReturnsAsync(Unit.Value);
 
         // Act
         await _endpoint.HandleAsync(command, _senderMock.Object);

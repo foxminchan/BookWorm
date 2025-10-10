@@ -1,5 +1,5 @@
-﻿using BookWorm.Chassis.CQRS.Command;
-using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
+﻿using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
+using Mediator;
 
 namespace BookWorm.Ordering.Features.Orders.Complete;
 
@@ -8,7 +8,7 @@ public sealed record CompleteOrderCommand(Guid OrderId) : ICommand<OrderDetailDt
 public sealed class CompleteOrderHandler(IOrderRepository repository)
     : ICommandHandler<CompleteOrderCommand, OrderDetailDto>
 {
-    public async Task<OrderDetailDto> Handle(
+    public async ValueTask<OrderDetailDto> Handle(
         CompleteOrderCommand request,
         CancellationToken cancellationToken
     )

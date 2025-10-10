@@ -23,7 +23,7 @@ public class CreateBookPreProcessorTests
         var handler = new CreateBookPreProcessor(mockBlobService.Object);
 
         // Act
-        await handler.Process(command, CancellationToken.None);
+        await handler.Handle(command, (_, _) => new(Guid.Empty), CancellationToken.None);
 
         // Assert
         command.ImageName.ShouldBe(imageName);
@@ -44,7 +44,7 @@ public class CreateBookPreProcessorTests
         var handler = new CreateBookPreProcessor(mockBlobService.Object);
 
         // Act
-        await handler.Process(command, CancellationToken.None);
+        await handler.Handle(command, (_, _) => new(Guid.Empty), CancellationToken.None);
 
         // Assert
         command.ImageName.ShouldBeNull();

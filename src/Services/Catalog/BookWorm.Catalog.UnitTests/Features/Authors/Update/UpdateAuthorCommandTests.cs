@@ -54,10 +54,9 @@ public sealed class UpdateAuthorCommandTests
             .Setup(r => r.GetByIdAsync(command.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Author)null!);
 
-        // Act
-        var act = () => _handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        await act.ShouldThrowAsync<NotFoundException>();
+        // Act & Assert
+        await Should.ThrowAsync<NotFoundException>(async () =>
+            await _handler.Handle(command, CancellationToken.None)
+        );
     }
 }

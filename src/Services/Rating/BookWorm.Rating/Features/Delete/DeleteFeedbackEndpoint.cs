@@ -1,4 +1,5 @@
 ﻿using BookWorm.Constants.Core;
+using Mediator;
 
 namespace BookWorm.Rating.Features.Delete;
 

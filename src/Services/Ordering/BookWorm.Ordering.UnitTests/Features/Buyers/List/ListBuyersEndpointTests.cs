@@ -1,7 +1,7 @@
 ﻿using BookWorm.Ordering.Features.Buyers;
 using BookWorm.Ordering.Features.Buyers.List;
 using BookWorm.SharedKernel.Results;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Ordering.UnitTests.Features.Buyers.List;

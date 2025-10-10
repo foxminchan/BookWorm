@@ -1,6 +1,6 @@
 ﻿using BookWorm.Rating.Features;
 using BookWorm.Rating.Features.Summarize;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -62,7 +62,7 @@ public sealed class SummarizeFeedbackEndpointTests
     {
         // Arrange
         var expectedSummary = new SummarizeResult("Summary with cancellation token handling.");
-        var cancellationToken = new CancellationToken();
+        var cancellationToken = CancellationToken.None;
         _senderMock
             .Setup(s => s.Send(It.IsAny<SummarizeFeedbackQuery>(), cancellationToken))
             .ReturnsAsync(expectedSummary);

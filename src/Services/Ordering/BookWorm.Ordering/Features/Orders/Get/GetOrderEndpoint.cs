@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Ordering.Features.Orders.Get;
+﻿using Mediator;
+
+namespace BookWorm.Ordering.Features.Orders.Get;
 
 public sealed class GetOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, ISender>
 {

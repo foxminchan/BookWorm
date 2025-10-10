@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.CQRS.Command;
+﻿using Mediator;
 
 namespace BookWorm.Catalog.Features.Books.Delete;
 
@@ -7,7 +7,10 @@ public sealed record DeleteBookCommand(Guid Id) : ICommand;
 public sealed class DeleteBookHandler(IBookRepository repository)
     : ICommandHandler<DeleteBookCommand>
 {
-    public async Task<Unit> Handle(DeleteBookCommand request, CancellationToken cancellationToken)
+    public async ValueTask<Unit> Handle(
+        DeleteBookCommand request,
+        CancellationToken cancellationToken
+    )
     {
         var book = await repository.GetByIdAsync(request.Id, cancellationToken);
 

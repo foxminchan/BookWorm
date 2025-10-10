@@ -43,7 +43,6 @@ global using Marten.Events.Projections;
 global using MassTransit;
 global using Medallion.Threading;
 global using Medallion.Threading.Redis;
-global using MediatR;
 global using Microsoft.AspNetCore.Http.HttpResults;
 global using Microsoft.EntityFrameworkCore;
 global using Microsoft.EntityFrameworkCore.Metadata.Builders;

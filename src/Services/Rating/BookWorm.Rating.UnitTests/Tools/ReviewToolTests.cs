@@ -4,7 +4,8 @@ using BookWorm.Rating.Features;
 using BookWorm.Rating.Features.List;
 using BookWorm.Rating.Tools;
 using BookWorm.SharedKernel.Results;
-using MediatR;
+using Mediator;
+using Microsoft.Extensions.AI;
 
 namespace BookWorm.Rating.UnitTests.Tools;
 
@@ -440,13 +441,11 @@ public sealed class ReviewToolTests
     public void GivenReviewTool_WhenAsAIToolsEnumeratedMultipleTimes_ThenShouldReturnSameToolsEachTime()
     {
         // Act
-        var result = _reviewTool.AsAITools();
-        var firstEnumeration = result.ToList();
-        var secondEnumeration = result.ToList();
+        var result = _reviewTool.AsAITools().ToList();
 
         // Assert
-        firstEnumeration.Count.ShouldBe(secondEnumeration.Count);
-        firstEnumeration.Count.ShouldBe(1);
+        result.Count.ShouldBe(result.Count);
+        result.Count.ShouldBe(1);
     }
 
     private static List<FeedbackDto> DeserializeFeedbackList(string json)

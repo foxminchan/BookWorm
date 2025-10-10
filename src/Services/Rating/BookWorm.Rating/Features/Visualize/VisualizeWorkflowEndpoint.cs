@@ -1,5 +1,6 @@
 ﻿using System.Net.Mime;
 using BookWorm.Constants.Core;
+using Mediator;
 
 namespace BookWorm.Rating.Features.Visualize;
 

@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.CQRS.Command;
+﻿using Mediator;
 
 namespace BookWorm.Basket.Features.Delete;
 
@@ -9,7 +9,10 @@ public sealed class DeleteBasketHandler(
     ClaimsPrincipal claimsPrincipal
 ) : ICommandHandler<DeleteBasketCommand>
 {
-    public async Task<Unit> Handle(DeleteBasketCommand request, CancellationToken cancellationToken)
+    public async ValueTask<Unit> Handle(
+        DeleteBasketCommand request,
+        CancellationToken cancellationToken
+    )
     {
         var sub = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier);
 

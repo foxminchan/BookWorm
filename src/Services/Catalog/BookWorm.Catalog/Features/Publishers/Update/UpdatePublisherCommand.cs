@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.CQRS.Command;
+﻿using Mediator;
 
 namespace BookWorm.Catalog.Features.Publishers.Update;
 
@@ -7,7 +7,7 @@ public sealed record UpdatePublisherCommand(Guid Id, string Name) : ICommand;
 public sealed class UpdatePublisherHandler(IPublisherRepository repository)
     : ICommandHandler<UpdatePublisherCommand>
 {
-    public async Task<Unit> Handle(
+    public async ValueTask<Unit> Handle(
         UpdatePublisherCommand request,
         CancellationToken cancellationToken
     )

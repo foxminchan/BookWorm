@@ -1,4 +1,5 @@
 ﻿using BookWorm.Chat.Features.Stream;
+using Mediator;
 
 namespace BookWorm.Chat.Features.Create;
 

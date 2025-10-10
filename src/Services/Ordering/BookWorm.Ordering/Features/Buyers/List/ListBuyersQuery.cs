@@ -1,6 +1,6 @@
-﻿using BookWorm.Chassis.CQRS.Query;
-using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate.Specifications;
+﻿using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate.Specifications;
 using BookWorm.SharedKernel.Results;
+using Mediator;
 
 namespace BookWorm.Ordering.Features.Buyers.List;
 
@@ -16,7 +16,7 @@ public sealed record ListBuyersQuery(
 public sealed class ListBuyersQueryHandler(IBuyerRepository repository)
     : IQueryHandler<ListBuyersQuery, PagedResult<BuyerDto>>
 {
-    public async Task<PagedResult<BuyerDto>> Handle(
+    public async ValueTask<PagedResult<BuyerDto>> Handle(
         ListBuyersQuery request,
         CancellationToken cancellationToken
     )

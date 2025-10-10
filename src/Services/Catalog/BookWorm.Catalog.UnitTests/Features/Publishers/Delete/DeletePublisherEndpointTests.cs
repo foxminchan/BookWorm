@@ -1,7 +1,7 @@
 ﻿using BookWorm.Catalog.Features.Publishers.Delete;
 using BookWorm.Chassis.Endpoints;
 using BookWorm.Chassis.Exceptions;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Catalog.UnitTests.Features.Publishers.Delete;

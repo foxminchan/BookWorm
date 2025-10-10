@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Ordering.Features.Buyers.Delete;
+﻿using Mediator;
+
+namespace BookWorm.Ordering.Features.Buyers.Delete;
 
 public sealed class DeleteBuyerEndpoint : IEndpoint<NoContent, Guid, ISender>
 {

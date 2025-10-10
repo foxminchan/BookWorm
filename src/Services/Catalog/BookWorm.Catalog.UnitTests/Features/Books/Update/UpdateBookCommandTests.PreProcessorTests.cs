@@ -1,5 +1,6 @@
 ﻿using BookWorm.Catalog.Features.Books.Update;
 using BookWorm.Catalog.Infrastructure.Blob;
+using Mediator;
 using Microsoft.AspNetCore.Http;
 
 namespace BookWorm.Catalog.UnitTests.Features.Books.Update;
@@ -33,7 +34,7 @@ public sealed class UpdateBookPreProcessorTests
         var handler = new UpdateBookPreProcessor(blobService.Object);
 
         // Act
-        await handler.Process(command, CancellationToken.None);
+        await handler.Handle(command, (_, _) => new(Unit.Value), CancellationToken.None);
 
         // Assert
         command.ImageUrn.ShouldBe(expectedImageUrl);
@@ -64,7 +65,7 @@ public sealed class UpdateBookPreProcessorTests
         var handler = new UpdateBookPreProcessor(blobService.Object);
 
         // Act
-        await handler.Process(command, CancellationToken.None);
+        await handler.Handle(command, (_, _) => new(Unit.Value), CancellationToken.None);
 
         // Assert
         command.ImageUrn.ShouldBeNull();

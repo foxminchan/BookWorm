@@ -1,6 +1,6 @@
 ﻿using BookWorm.Catalog.Features.Publishers;
 using BookWorm.Catalog.Features.Publishers.List;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Catalog.UnitTests.Features.Publishers.List;

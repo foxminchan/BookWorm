@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup Label="Core Dependencies">
     <PackageReference Include="Aspire.StackExchange.Redis.DistributedCaching" />
+    <PackageReference Include="Mediator.SourceGenerator" PrivateAssets="all" />
     <PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" />
     <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
   </ItemGroup>

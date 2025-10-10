@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.CQRS.Command;
+﻿using Mediator;
 
 namespace BookWorm.Catalog.Features.Categories.Update;
 
@@ -7,7 +7,7 @@ public sealed record UpdateCategoryCommand(Guid Id, string Name) : ICommand;
 public sealed class UpdateCategoryHandler(ICategoryRepository repository)
     : ICommandHandler<UpdateCategoryCommand>
 {
-    public async Task<Unit> Handle(
+    public async ValueTask<Unit> Handle(
         UpdateCategoryCommand request,
         CancellationToken cancellationToken
     )

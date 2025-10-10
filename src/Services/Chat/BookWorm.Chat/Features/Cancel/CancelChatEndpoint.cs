@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using Mediator;
 
 namespace BookWorm.Chat.Features.Cancel;
 

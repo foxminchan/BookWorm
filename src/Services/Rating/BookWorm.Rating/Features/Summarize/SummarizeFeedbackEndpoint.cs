@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Rating.Features.Summarize;
+﻿using Mediator;
+
+namespace BookWorm.Rating.Features.Summarize;
 
 public sealed class SummarizeFeedbackEndpoint : IEndpoint<Ok<SummarizeResult>, Guid, ISender>
 {

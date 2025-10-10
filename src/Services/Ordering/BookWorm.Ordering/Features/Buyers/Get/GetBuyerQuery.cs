@@ -1,5 +1,5 @@
-﻿using BookWorm.Chassis.CQRS.Query;
-using BookWorm.Ordering.Infrastructure.Helpers;
+﻿using BookWorm.Ordering.Infrastructure.Helpers;
+using Mediator;
 
 namespace BookWorm.Ordering.Features.Buyers.Get;
 
@@ -12,7 +12,10 @@ public sealed class GetBuyerHandler(
     ClaimsPrincipal claimsPrincipal
 ) : IQueryHandler<GetBuyerQuery, BuyerDto>
 {
-    public async Task<BuyerDto> Handle(GetBuyerQuery request, CancellationToken cancellationToken)
+    public async ValueTask<BuyerDto> Handle(
+        GetBuyerQuery request,
+        CancellationToken cancellationToken
+    )
     {
         var buyerId = claimsPrincipal.GetRoles().Contains(Authorization.Roles.Admin)
             ? request.Id

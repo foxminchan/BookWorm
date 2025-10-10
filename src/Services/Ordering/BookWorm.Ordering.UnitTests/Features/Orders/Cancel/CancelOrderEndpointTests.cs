@@ -3,7 +3,7 @@ using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Features.Orders;
 using BookWorm.Ordering.Features.Orders.Cancel;
 using BookWorm.SharedKernel.Helpers;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Ordering.UnitTests.Features.Orders.Cancel;

@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Basket.Features.Get;
+﻿using Mediator;
+
+namespace BookWorm.Basket.Features.Get;
 
 public sealed class GetBasketEndpoint : IEndpoint<Ok<CustomerBasketDto>, ISender>
 {

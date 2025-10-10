@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Catalog.Features.Books.Get;
+﻿using Mediator;
+
+namespace BookWorm.Catalog.Features.Books.Get;
 
 public sealed class GetBookEndpoint : IEndpoint<Ok<BookDto>, Guid, ISender>
 {

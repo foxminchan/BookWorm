@@ -1,11 +1,11 @@
-﻿using MediatR.Pipeline;
+﻿using Mediator;
 
 namespace BookWorm.Catalog.Features.Books.Update;
 
 public sealed class UpdateBookPostProcessor(IBlobService blobService)
-    : IRequestPostProcessor<UpdateBookCommand, Unit>
+    : MessagePostProcessor<UpdateBookCommand, Unit>
 {
-    public async Task Process(
+    protected override async ValueTask Handle(
         UpdateBookCommand request,
         Unit response,
         CancellationToken cancellationToken

@@ -78,7 +78,7 @@ public sealed class CreateOrderPreProcessorTests
             .ReturnsAsync(booksResponse);
 
         // Act
-        await _handler.Process(_command, CancellationToken.None);
+        await _handler.Handle(_command, (_, _) => new(Guid.Empty), CancellationToken.None);
 
         // Assert
         _command.Items.Count.ShouldBe(2);
@@ -125,7 +125,8 @@ public sealed class CreateOrderPreProcessorTests
             .ReturnsAsync(booksResponse);
 
         // Act
-        var act = async () => await _handler.Process(_command, CancellationToken.None);
+        var act = async () =>
+            await _handler.Handle(_command, (_, _) => new(Guid.Empty), CancellationToken.None);
 
         // Assert
         var exception = await act.ShouldThrowAsync<NotFoundException>();

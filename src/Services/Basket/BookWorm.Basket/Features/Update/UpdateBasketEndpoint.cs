@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Basket.Features.Update;
+﻿using Mediator;
+
+namespace BookWorm.Basket.Features.Update;
 
 public sealed class UpdateBasketEndpoint : IEndpoint<NoContent, UpdateBasketCommand, ISender>
 {

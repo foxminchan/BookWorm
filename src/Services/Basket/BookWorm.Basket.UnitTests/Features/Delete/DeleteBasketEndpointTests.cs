@@ -1,5 +1,5 @@
 ﻿using BookWorm.Basket.Features.Delete;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Basket.UnitTests.Features.Delete;

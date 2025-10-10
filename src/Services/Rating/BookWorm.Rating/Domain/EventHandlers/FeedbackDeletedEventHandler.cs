@@ -1,4 +1,5 @@
 ﻿using BookWorm.Rating.Domain.Events;
+using Mediator;
 
 namespace BookWorm.Rating.Domain.EventHandlers;
 
@@ -7,7 +8,10 @@ public sealed class FeedbackDeletedEventHandler(
     RatingDbContext dbContext
 ) : INotificationHandler<FeedbackDeletedEvent>
 {
-    public async Task Handle(FeedbackDeletedEvent notification, CancellationToken cancellationToken)
+    public async ValueTask Handle(
+        FeedbackDeletedEvent notification,
+        CancellationToken cancellationToken
+    )
     {
         await eventDispatcher.DispatchAsync(notification, cancellationToken);
         await dbContext.SaveEntitiesAsync(cancellationToken);

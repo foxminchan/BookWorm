@@ -71,10 +71,11 @@ public sealed class GetBookQueryTests
             .ReturnsAsync((Book)null!);
 
         // Act
-        var act = () => _handler.Handle(new(nonExistentId), CancellationToken.None);
+        var exception = await Should.ThrowAsync<NotFoundException>(async () =>
+            await _handler.Handle(new(nonExistentId), CancellationToken.None)
+        );
 
         // Assert
-        var exception = await act.ShouldThrowAsync<NotFoundException>();
         exception.Message.ShouldBe($"Book with id {nonExistentId} not found.");
         _repositoryMock.Verify(
             r => r.GetByIdAsync(nonExistentId, It.IsAny<CancellationToken>()),

@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.CQRS.Command;
+﻿using Mediator;
 
 namespace BookWorm.Chat.Features.Create;
 
@@ -7,7 +7,10 @@ public sealed record CreateChatCommand(Prompt Prompt) : ICommand<Guid>;
 public sealed class UpdateChatHandler(IChatStreaming chatStreaming)
     : ICommandHandler<CreateChatCommand, Guid>
 {
-    public async Task<Guid> Handle(CreateChatCommand request, CancellationToken cancellationToken)
+    public async ValueTask<Guid> Handle(
+        CreateChatCommand request,
+        CancellationToken cancellationToken
+    )
     {
         var conversationId = Guid.CreateVersion7();
 

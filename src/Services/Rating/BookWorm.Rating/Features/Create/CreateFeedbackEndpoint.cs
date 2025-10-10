@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Rating.Features.Create;
+﻿using Mediator;
+
+namespace BookWorm.Rating.Features.Create;
 
 public sealed class CreateFeedbackEndpoint : IEndpoint<Ok<Guid>, CreateFeedbackCommand, ISender>
 {

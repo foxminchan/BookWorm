@@ -100,8 +100,8 @@ public sealed class SummarizeFeedbackQueryTests
             .ReturnsAsync((string?)null);
 
         // Act & Assert
-        var exception = await Should.ThrowAsync<NotFoundException>(() =>
-            _handler.Handle(query, CancellationToken.None)
+        var exception = await Should.ThrowAsync<NotFoundException>(async () =>
+            await _handler.Handle(query, CancellationToken.None)
         );
 
         exception.Message.ShouldBe($"No ratings found for book with ID {_validBookId}");
@@ -180,8 +180,8 @@ public sealed class SummarizeFeedbackQueryTests
             .ThrowsAsync(expectedException);
 
         // Act & Assert
-        var actualException = await Should.ThrowAsync<InvalidOperationException>(() =>
-            _handler.Handle(query, CancellationToken.None)
+        var actualException = await Should.ThrowAsync<InvalidOperationException>(async () =>
+            await _handler.Handle(query, CancellationToken.None)
         );
 
         actualException.Message.ShouldBe("Summarizer service unavailable");
@@ -300,8 +300,8 @@ public sealed class SummarizeFeedbackQueryTests
             .ThrowsAsync(new OperationCanceledException());
 
         // Act & Assert
-        await Should.ThrowAsync<OperationCanceledException>(() =>
-            _handler.Handle(query, cts.Token)
+        await Should.ThrowAsync<OperationCanceledException>(async () =>
+            await _handler.Handle(query, cts.Token)
         );
     }
 

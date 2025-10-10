@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Catalog.Features.Publishers.List;
+﻿using Mediator;
+
+namespace BookWorm.Catalog.Features.Publishers.List;
 
 public sealed class ListPublishersEndpoint : IEndpoint<Ok<IReadOnlyList<PublisherDto>>, ISender>
 {

@@ -3,7 +3,7 @@ using BookWorm.Chassis.CQRS.Command;
 using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
-using MediatR;
+using Mediator;
 using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Chassis.CQRS.Pipelines;
@@ -18,9 +18,9 @@ public sealed class ActivityBehavior<TRequest, TResponse>(
     where TRequest : IRequest<TResponse>
     where TResponse : notnull
 {
-    public async Task<TResponse> Handle(
-        TRequest request,
-        RequestHandlerDelegate<TResponse> next,
+    public async ValueTask<TResponse> Handle(
+        TRequest message,
+        MessageHandlerDelegate<TRequest, TResponse> next,
         CancellationToken cancellationToken
     )
     {
@@ -38,7 +38,7 @@ public sealed class ActivityBehavior<TRequest, TResponse>(
 
         if (attr is not null)
         {
-            return await next(cancellationToken);
+            return await next(message, cancellationToken);
         }
 
         var handlerName = outerHandler.GetType().Name;
@@ -56,7 +56,7 @@ public sealed class ActivityBehavior<TRequest, TResponse>(
         {
             return await activityScope.Run(
                 activityName,
-                async (_, ct) => await next(ct),
+                async (_, ct) => await next(message, ct),
                 new() { Tags = { { tagName, queryName } } },
                 cancellationToken
             );

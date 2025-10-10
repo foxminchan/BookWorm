@@ -1,4 +1,5 @@
 ﻿using BookWorm.Ordering.Extensions;
+using Mediator;
 
 namespace BookWorm.Ordering.Domain.EventHandlers;
 
@@ -10,7 +11,10 @@ public sealed class OrderEventHandler(
         INotificationHandler<OrderCompletedEvent>,
         INotificationHandler<OrderCancelledEvent>
 {
-    public async Task Handle(OrderCancelledEvent notification, CancellationToken cancellationToken)
+    public async ValueTask Handle(
+        OrderCancelledEvent notification,
+        CancellationToken cancellationToken
+    )
     {
         OrderingTrace.LogOrderCancelled(logger, notification.Order.Id, Status.Cancelled);
         await documentSession.GetAndUpdate<OrderSummary>(
@@ -20,7 +24,10 @@ public sealed class OrderEventHandler(
         );
     }
 
-    public async Task Handle(OrderCompletedEvent notification, CancellationToken cancellationToken)
+    public async ValueTask Handle(
+        OrderCompletedEvent notification,
+        CancellationToken cancellationToken
+    )
     {
         OrderingTrace.LogOrderCompleted(logger, notification.Order.Id, Status.Completed);
         await documentSession.GetAndUpdate<OrderSummary>(
@@ -30,7 +37,10 @@ public sealed class OrderEventHandler(
         );
     }
 
-    public async Task Handle(OrderPlacedEvent notification, CancellationToken cancellationToken)
+    public async ValueTask Handle(
+        OrderPlacedEvent notification,
+        CancellationToken cancellationToken
+    )
     {
         OrderingTrace.LogOrderPlaced(logger, notification.Order.Id, Status.New);
         await documentSession.Add<OrderSummary>(

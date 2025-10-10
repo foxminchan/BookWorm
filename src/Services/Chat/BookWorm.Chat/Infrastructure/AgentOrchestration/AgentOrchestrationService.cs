@@ -56,13 +56,11 @@ public sealed class AgentOrchestrationService(
             chatMessage,
             cancellationToken: cancellationToken
         );
-        await run.TrySendMessageAsync(new TurnToken(emitEvents: true));
+        await run.TrySendMessageAsync(new TurnToken(true));
 
         List<ChatMessage> response = [];
         string? lastExecutorId = null;
-        await foreach (
-            WorkflowEvent evt in run.WatchStreamAsync(cancellationToken).ConfigureAwait(false)
-        )
+        await foreach (var evt in run.WatchStreamAsync(cancellationToken).ConfigureAwait(false))
         {
             switch (evt)
             {

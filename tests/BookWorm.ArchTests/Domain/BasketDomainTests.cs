@@ -108,7 +108,7 @@ public sealed class BasketDomainTests : ArchUnitBaseTest
     [Test]
     [Arguments($"{nameof(Microsoft)}.*")]
     [Arguments($"{nameof(System)}.*")]
-    [Arguments($"{nameof(MediatR)}")]
+    [Arguments($"{nameof(Mediator)}")]
     public void GivenBasketDomain_WhenCheckingDependencies_ThenShouldBeIsolated(
         string namespacePattern
     )

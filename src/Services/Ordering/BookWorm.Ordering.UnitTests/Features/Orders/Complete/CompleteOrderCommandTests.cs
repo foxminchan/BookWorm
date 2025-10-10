@@ -63,10 +63,11 @@ public sealed class CompleteOrderCommandTests
             .ReturnsAsync((Order)null!);
 
         // Act
-        var act = () => _handler.Handle(command, CancellationToken.None);
+        var exception = await Should.ThrowAsync<NotFoundException>(async () =>
+            await _handler.Handle(command, CancellationToken.None)
+        );
 
         // Assert
-        var exception = await act.ShouldThrowAsync<NotFoundException>();
         exception.Message.ShouldBe($"Order with id {command.OrderId} not found.");
         _orderRepositoryMock.Verify(
             r => r.UnitOfWork.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
@@ -86,13 +87,14 @@ public sealed class CompleteOrderCommandTests
             .Setup(r =>
                 r.FirstOrDefaultAsync(It.IsAny<OrderFilterSpec>(), It.IsAny<CancellationToken>())
             )
-            .ReturnsAsync((Order?)default!);
+            .ReturnsAsync((Order?)null!);
 
         // Act
-        var act = () => _handler.Handle(command, CancellationToken.None);
+        var exception = await Should.ThrowAsync<NotFoundException>(async () =>
+            await _handler.Handle(command, CancellationToken.None)
+        );
 
         // Assert
-        var exception = await act.ShouldThrowAsync<NotFoundException>();
         exception.Message.ShouldBe($"Order with id {_orderId} not found.");
         _orderRepositoryMock.Verify(
             r => r.UnitOfWork.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
@@ -112,13 +114,14 @@ public sealed class CompleteOrderCommandTests
             .Setup(r =>
                 r.FirstOrDefaultAsync(It.IsAny<OrderFilterSpec>(), It.IsAny<CancellationToken>())
             )
-            .ReturnsAsync((Order?)default!);
+            .ReturnsAsync((Order?)null!);
 
         // Act
-        var act = () => _handler.Handle(command, CancellationToken.None);
+        var exception = await Should.ThrowAsync<NotFoundException>(async () =>
+            await _handler.Handle(command, CancellationToken.None)
+        );
 
         // Assert
-        var exception = await act.ShouldThrowAsync<NotFoundException>();
         exception.Message.ShouldBe($"Order with id {_orderId} not found.");
         _orderRepositoryMock.Verify(
             r => r.UnitOfWork.SaveEntitiesAsync(It.IsAny<CancellationToken>()),

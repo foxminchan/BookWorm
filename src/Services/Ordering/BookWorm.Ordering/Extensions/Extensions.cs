@@ -1,11 +1,13 @@
-﻿using BookWorm.Chassis.CQRS.Command;
-using BookWorm.Chassis.CQRS.Mediator;
+﻿using BookWorm.Chassis;
+using BookWorm.Chassis.CQRS.Command;
 using BookWorm.Chassis.CQRS.Pipelines;
 using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using BookWorm.Ordering.Features.Orders.Create;
 using BookWorm.Ordering.Features.Orders.Get;
 using BookWorm.Ordering.Infrastructure.DistributedLock;
+using BookWorm.SharedKernel;
+using Mediator;
 using Microsoft.AspNetCore.Authorization;
 
 namespace BookWorm.Ordering.Extensions;
@@ -17,10 +19,6 @@ internal static class Extensions
         var services = builder.Services;
 
         builder.AddDefaultCors();
-
-        services.AddFeatureManagement();
-
-        services.AddRateLimiting();
 
         builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
 
@@ -62,25 +60,45 @@ internal static class Extensions
 
         builder.AddDefaultOpenApi();
 
-        builder.AddRedaction();
-
-        services.AddSignalR().AddNamedAzureSignalR(Components.Azure.SignalR);
-
         // Add exception handlers
         services.AddExceptionHandler<ValidationExceptionHandler>();
         services.AddExceptionHandler<NotFoundExceptionHandler>();
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails();
 
-        builder.AddPersistenceServices();
+        // Configure Mediator
+        services.AddMediator(
+            (MediatorOptions options) =>
+            {
+                options.ServiceLifetime = ServiceLifetime.Scoped;
 
-        // Configure MediatR
-        services.AddMediatR<IOrderingApiMarker>(configuration =>
-        {
-            configuration.AddOpenBehavior(typeof(ValidationBehavior<,>));
-            configuration.AddRequestPreProcessor<CreateOrderPreProcessor>();
-            configuration.AddRequestPostProcessor<GetOrderPostProcessor>();
-        });
+                options.Assemblies =
+                [
+                    typeof(ISharedKernelMarker),
+                    typeof(IChassisMarker),
+                    typeof(IOrderingApiMarker),
+                ];
+
+                options.PipelineBehaviors =
+                [
+                    typeof(ActivityBehavior<,>),
+                    typeof(LoggingBehavior<,>),
+                    typeof(ValidationBehavior<,>),
+                    typeof(CreateOrderPreProcessor),
+                    typeof(GetOrderPostProcessor),
+                ];
+            }
+        );
+
+        services.AddFeatureManagement();
+
+        services.AddRateLimiting();
+
+        builder.AddRedaction();
+
+        services.AddSignalR().AddNamedAzureSignalR(Components.Azure.SignalR);
+
+        builder.AddPersistenceServices();
 
         // Configure FluentValidation
         services.AddValidatorsFromAssemblyContaining<IOrderingApiMarker>(

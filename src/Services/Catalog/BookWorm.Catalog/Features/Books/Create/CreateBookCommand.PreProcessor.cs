@@ -1,11 +1,14 @@
-﻿using MediatR.Pipeline;
+﻿using Mediator;
 
 namespace BookWorm.Catalog.Features.Books.Create;
 
 public sealed class CreateBookPreProcessor(IBlobService blobService)
-    : IRequestPreProcessor<CreateBookCommand>
+    : MessagePreProcessor<CreateBookCommand, Guid>
 {
-    public async Task Process(CreateBookCommand request, CancellationToken cancellationToken)
+    protected override async ValueTask Handle(
+        CreateBookCommand request,
+        CancellationToken cancellationToken
+    )
     {
         if (request.Image is not null)
         {

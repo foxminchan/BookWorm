@@ -1,11 +1,13 @@
-﻿using BookWorm.Chassis.CQRS.Command;
-using BookWorm.Chassis.CQRS.Mediator;
+﻿using BookWorm.Chassis;
+using BookWorm.Chassis.CQRS.Command;
 using BookWorm.Chassis.CQRS.Pipelines;
 using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using BookWorm.Constants.Core;
 using BookWorm.Rating.Infrastructure.Agents;
 using BookWorm.Rating.Infrastructure.Summarizer;
+using BookWorm.SharedKernel;
+using Mediator;
 
 namespace BookWorm.Rating.Extensions;
 
@@ -37,13 +39,35 @@ internal static class Extensions
 
         builder.AddDefaultOpenApi();
 
-        services.AddRateLimiting();
-
         // Add exception handlers
         services.AddExceptionHandler<ValidationExceptionHandler>();
         services.AddExceptionHandler<NotFoundExceptionHandler>();
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails();
+
+        // Configure Mediator
+        services.AddMediator(
+            (MediatorOptions options) =>
+            {
+                options.ServiceLifetime = ServiceLifetime.Scoped;
+
+                options.Assemblies =
+                [
+                    typeof(ISharedKernelMarker),
+                    typeof(IChassisMarker),
+                    typeof(IRatingApiMarker),
+                ];
+
+                options.PipelineBehaviors =
+                [
+                    typeof(ActivityBehavior<,>),
+                    typeof(LoggingBehavior<,>),
+                    typeof(ValidationBehavior<,>),
+                ];
+            }
+        );
+
+        services.AddRateLimiting();
 
         // Add database configuration
         builder.AddAzurePostgresDbContext<RatingDbContext>(
@@ -54,11 +78,6 @@ internal static class Extensions
 
                 services.AddRepositories(typeof(IRatingApiMarker));
             }
-        );
-
-        // Configure MediatR
-        services.AddMediatR<IRatingApiMarker>(configuration =>
-            configuration.AddOpenBehavior(typeof(ValidationBehavior<,>))
         );
 
         // Configure FluentValidation

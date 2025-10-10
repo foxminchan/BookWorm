@@ -1,6 +1,6 @@
 ﻿using BookWorm.Catalog.Features.Books.Update;
 using BookWorm.Catalog.Infrastructure.Blob;
-using MediatR;
+using Mediator;
 
 namespace BookWorm.Catalog.UnitTests.Features.Books.Update;
 
@@ -32,7 +32,7 @@ public sealed class UpdateBookPostProcessorTests
         var handler = new UpdateBookPostProcessor(blobService.Object);
 
         // Act
-        await handler.Process(command, Unit.Value, CancellationToken.None);
+        await handler.Handle(command, (_, _) => new(Unit.Value), CancellationToken.None);
 
         // Assert
         blobService.Verify(
@@ -66,7 +66,7 @@ public sealed class UpdateBookPostProcessorTests
         var handler = new UpdateBookPostProcessor(blobService.Object);
 
         // Act
-        await handler.Process(command, Unit.Value, CancellationToken.None);
+        await handler.Handle(command, (_, _) => new(Unit.Value), CancellationToken.None);
 
         // Assert
         blobService.Verify(
@@ -97,7 +97,7 @@ public sealed class UpdateBookPostProcessorTests
         var handler = new UpdateBookPostProcessor(blobService.Object);
 
         // Act
-        await handler.Process(command, Unit.Value, CancellationToken.None);
+        await handler.Handle(command, (_, _) => new(Unit.Value), CancellationToken.None);
 
         // Assert
         blobService.Verify(

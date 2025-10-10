@@ -1,11 +1,11 @@
-﻿using MediatR.Pipeline;
+﻿using Mediator;
 
 namespace BookWorm.Ordering.Features.Orders.Get;
 
 public sealed class GetOrderPostProcessor(IBookService bookService)
-    : IRequestPostProcessor<GetOrderQuery, OrderDetailDto>
+    : MessagePostProcessor<GetOrderQuery, OrderDetailDto>
 {
-    public async Task Process(
+    protected override async ValueTask Handle(
         GetOrderQuery request,
         OrderDetailDto response,
         CancellationToken cancellationToken

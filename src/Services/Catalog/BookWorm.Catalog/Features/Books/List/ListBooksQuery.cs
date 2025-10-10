@@ -1,8 +1,8 @@
 ﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
 using BookWorm.Chassis.AI.Search;
-using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Constants.Core;
 using BookWorm.SharedKernel.Results;
+using Mediator;
 
 namespace BookWorm.Catalog.Features.Books.List;
 
@@ -45,7 +45,7 @@ public sealed class ListBooksHandler(
     IMapper<Book, BookDto> mapper
 ) : IQueryHandler<ListBooksQuery, PagedResult<BookDto>>
 {
-    public async Task<PagedResult<BookDto>> Handle(
+    public async ValueTask<PagedResult<BookDto>> Handle(
         ListBooksQuery request,
         CancellationToken cancellationToken
     )
