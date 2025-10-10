@@ -3,8 +3,8 @@ using BookWorm.Basket.Domain;
 using BookWorm.Basket.Features;
 using BookWorm.Basket.Features.Get;
 using BookWorm.Basket.UnitTests.Fakers;
-using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chassis.Exceptions;
+using Mediator;
 
 namespace BookWorm.Basket.UnitTests.Features.Get;
 
@@ -80,10 +80,11 @@ public sealed class GetBasketQueryTests
             .Returns((Claim?)null);
 
         // Act
-        var act = () => _handler.Handle(query, CancellationToken.None);
+        var exception = await Should.ThrowAsync<UnauthorizedAccessException>(async () =>
+            await _handler.Handle(query, CancellationToken.None)
+        );
 
         // Assert
-        var exception = await act.ShouldThrowAsync<UnauthorizedAccessException>();
         exception.Message.ShouldBe("User is not authenticated.");
         _repositoryMock.Verify(r => r.GetBasketAsync(It.IsAny<string>()), Times.Never);
     }
@@ -97,10 +98,11 @@ public sealed class GetBasketQueryTests
         _repositoryMock.Setup(r => r.GetBasketAsync(_userId)).ReturnsAsync((CustomerBasket?)null);
 
         // Act
-        var act = () => _handler.Handle(query, CancellationToken.None);
+        var exception = await Should.ThrowAsync<NotFoundException>(async () =>
+            await _handler.Handle(query, CancellationToken.None)
+        );
 
         // Assert
-        var exception = await act.ShouldThrowAsync<NotFoundException>();
         exception.Message.ShouldBe($"CustomerBasket with id {_userId} not found.");
         _repositoryMock.Verify(r => r.GetBasketAsync(_userId), Times.Once);
     }

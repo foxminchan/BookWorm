@@ -16,6 +16,5 @@ global using BookWorm.ServiceDefaults.Auth;
 global using BookWorm.ServiceDefaults.Kestrel;
 global using BookWorm.ServiceDefaults.Keycloak;
 global using FluentValidation;
-global using MediatR;
 global using Microsoft.AspNetCore.Http.HttpResults;
 global using Microsoft.Extensions.Diagnostics.HealthChecks;

@@ -1,7 +1,7 @@
 ﻿using BookWorm.Rating.Features;
 using BookWorm.Rating.Features.List;
 using BookWorm.SharedKernel.Results;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -56,7 +56,7 @@ public sealed class ListFeedbacksEndpointTests
     public async Task GivenValidQuery_WhenHandleAsyncWithCancellationToken_ThenShouldPassTokenToSender()
     {
         // Arrange
-        var cancellationToken = new CancellationToken();
+        var cancellationToken = CancellationToken.None;
         _senderMock.Setup(x => x.Send(_validQuery, cancellationToken)).ReturnsAsync(_pagedResult);
 
         // Act

@@ -110,11 +110,10 @@ public sealed class GetOrderQueryTests
             )
             .ReturnsAsync((Order)null!);
 
-        // Act
-        var act = () => _handler.Handle(new(_id), CancellationToken.None);
-
-        // Assert
-        await act.ShouldThrowAsync<NotFoundException>();
+        // Act & Assert
+        await Should.ThrowAsync<NotFoundException>(async () =>
+            await _handler.Handle(new(_id), CancellationToken.None)
+        );
     }
 
     [Test]
@@ -126,11 +125,10 @@ public sealed class GetOrderQueryTests
             .Setup(r => r.GetByIdAsync(_id, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Order)null!);
 
-        // Act
-        var act = () => _handler.Handle(new(_id), CancellationToken.None);
-
-        // Assert
-        await act.ShouldThrowAsync<NotFoundException>();
+        // Act & Assert
+        await Should.ThrowAsync<NotFoundException>(async () =>
+            await _handler.Handle(new(_id), CancellationToken.None)
+        );
     }
 
     [Test]
@@ -163,7 +161,11 @@ public sealed class GetOrderQueryTests
             .ReturnsAsync(booksResponse);
 
         // Act
-        await _getOrderPostHandler.Process(new(_id), orderDetailDto, CancellationToken.None);
+        await _getOrderPostHandler.Handle(
+            new(_id),
+            (_, _) => new(orderDetailDto),
+            CancellationToken.None
+        );
 
         // Assert
         orderDetailDto.Items.ShouldNotBeEmpty();
@@ -201,7 +203,11 @@ public sealed class GetOrderQueryTests
             .ReturnsAsync(booksResponse);
 
         // Act
-        await _getOrderPostHandler.Process(new(_id), orderDetailDto, CancellationToken.None);
+        await _getOrderPostHandler.Handle(
+            new(_id),
+            (_, _) => new(orderDetailDto),
+            CancellationToken.None
+        );
 
         // Assert
         orderDetailDto.Items.ShouldNotBeEmpty();
@@ -223,7 +229,11 @@ public sealed class GetOrderQueryTests
         );
 
         // Act
-        await _getOrderPostHandler.Process(new(_id), orderDetailDto, CancellationToken.None);
+        await _getOrderPostHandler.Handle(
+            new(_id),
+            (_, _) => new(orderDetailDto),
+            CancellationToken.None
+        );
 
         // Assert
         _bookServiceMock.Verify(
@@ -259,7 +269,11 @@ public sealed class GetOrderQueryTests
             .ReturnsAsync((BooksResponse?)null);
 
         // Act
-        await _getOrderPostHandler.Process(new(_id), orderDetailDto, CancellationToken.None);
+        await _getOrderPostHandler.Handle(
+            new(_id),
+            (_, _) => new(orderDetailDto),
+            CancellationToken.None
+        );
 
         // Assert
         orderDetailDto.Items.ShouldNotBeEmpty();
@@ -290,7 +304,11 @@ public sealed class GetOrderQueryTests
             .ReturnsAsync(emptyBooksResponse);
 
         // Act
-        await _getOrderPostHandler.Process(new(_id), orderDetailDto, CancellationToken.None);
+        await _getOrderPostHandler.Handle(
+            new(_id),
+            (_, _) => new(orderDetailDto),
+            CancellationToken.None
+        );
 
         // Assert
         orderDetailDto.Items.ShouldNotBeEmpty();

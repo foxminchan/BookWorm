@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.CQRS.Query;
+﻿using Mediator;
 
 namespace BookWorm.Basket.Features.Get;
 
@@ -7,7 +7,7 @@ public sealed record GetBasketQuery : IQuery<CustomerBasketDto>;
 public sealed class GetBasketHandler(IBasketRepository repository, ClaimsPrincipal claimsPrincipal)
     : IQueryHandler<GetBasketQuery, CustomerBasketDto>
 {
-    public async Task<CustomerBasketDto> Handle(
+    public async ValueTask<CustomerBasketDto> Handle(
         GetBasketQuery request,
         CancellationToken cancellationToken
     )

@@ -1,7 +1,7 @@
-﻿using BookWorm.Chassis.CQRS.Query;
-using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
+﻿using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
 using BookWorm.Ordering.Infrastructure.Helpers;
 using BookWorm.SharedKernel.Results;
+using Mediator;
 
 namespace BookWorm.Ordering.Features.Orders.List;
 
@@ -23,7 +23,7 @@ public sealed record ListOrdersQuery(
 public sealed class ListOrdersHandler(IOrderRepository repository, ClaimsPrincipal claimsPrincipal)
     : IQueryHandler<ListOrdersQuery, PagedResult<OrderDto>>
 {
-    public async Task<PagedResult<OrderDto>> Handle(
+    public async ValueTask<PagedResult<OrderDto>> Handle(
         ListOrdersQuery request,
         CancellationToken cancellationToken
     )

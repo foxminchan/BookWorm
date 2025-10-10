@@ -134,7 +134,7 @@ public sealed class RatingDomainTests : ArchUnitBaseTest
     [Test]
     [Arguments($"{nameof(Microsoft)}.*")]
     [Arguments($"{nameof(System)}.*")]
-    [Arguments($"{nameof(MediatR)}.*")]
+    [Arguments($"{nameof(Mediator)}.*")]
     public void GivenRatingDomain_WhenCheckingDependencies_ThenShouldBeIsolated(
         string namespacePattern
     )

@@ -1,4 +1,5 @@
 ﻿using BookWorm.SharedKernel.Results;
+using Mediator;
 
 namespace BookWorm.Rating.Features.List;
 

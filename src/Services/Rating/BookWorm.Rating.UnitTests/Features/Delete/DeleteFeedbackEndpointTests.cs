@@ -1,5 +1,5 @@
 ﻿using BookWorm.Rating.Features.Delete;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Rating.UnitTests.Features.Delete;
@@ -16,7 +16,7 @@ public sealed class DeleteFeedbackEndpointTests
         // Arrange
         _senderMock
             .Setup(s => s.Send(It.IsAny<DeleteFeedbackCommand>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.FromResult(Unit.Value));
+            .ReturnsAsync(Unit.Value);
 
         // Act
         await _endpoint.HandleAsync(_feedbackId, _senderMock.Object);
@@ -38,7 +38,7 @@ public sealed class DeleteFeedbackEndpointTests
         // Arrange
         _senderMock
             .Setup(s => s.Send(It.IsAny<DeleteFeedbackCommand>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.FromResult(Unit.Value));
+            .ReturnsAsync(Unit.Value);
 
         // Act
         var result = await _endpoint.HandleAsync(_feedbackId, _senderMock.Object);

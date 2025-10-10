@@ -1,4 +1,5 @@
 ﻿using BookWorm.Basket.Features.Get;
+using Mediator;
 
 namespace BookWorm.Basket.Features.Create;
 

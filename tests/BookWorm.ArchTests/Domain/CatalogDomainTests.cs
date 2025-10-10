@@ -84,7 +84,7 @@ public sealed class CatalogDomainTests : ArchUnitBaseTest
     [Arguments($"{nameof(BookWorm)}.*.Infrastructure")]
     [Arguments($"{nameof(Microsoft)}.*")]
     [Arguments($"{nameof(System)}.*")]
-    [Arguments($"{nameof(MediatR)}")]
+    [Arguments($"{nameof(Mediator)}")]
     public void GivenCatalogDomain_WhenCheckingDependencies_ThenShouldBeIsolated(
         string namespacePattern
     )

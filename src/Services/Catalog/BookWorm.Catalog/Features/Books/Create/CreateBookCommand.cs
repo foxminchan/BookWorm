@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.CQRS.Command;
+﻿using Mediator;
 
 namespace BookWorm.Catalog.Features.Books.Create;
 
@@ -20,7 +20,10 @@ public sealed record CreateBookCommand(
 public sealed class CreateBookHandler(IBookRepository repository)
     : ICommandHandler<CreateBookCommand, Guid>
 {
-    public async Task<Guid> Handle(CreateBookCommand request, CancellationToken cancellationToken)
+    public async ValueTask<Guid> Handle(
+        CreateBookCommand request,
+        CancellationToken cancellationToken
+    )
     {
         var book = new Book(
             request.Name,

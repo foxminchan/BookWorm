@@ -1,6 +1,6 @@
-﻿using BookWorm.Chassis.CQRS.Query;
-using BookWorm.Rating.Infrastructure.Summarizer;
+﻿using BookWorm.Rating.Infrastructure.Summarizer;
 using BookWorm.SharedKernel;
+using Mediator;
 using Microsoft.Agents.AI.Workflows;
 
 namespace BookWorm.Rating.Features.Visualize;
@@ -14,11 +14,14 @@ public sealed record VisualizeWorkflowQuery(
 public sealed class VisualizerWorkflowHandler(ISummarizer summarizer)
     : IQueryHandler<VisualizeWorkflowQuery, string>
 {
-    public Task<string> Handle(VisualizeWorkflowQuery request, CancellationToken cancellationToken)
+    public ValueTask<string> Handle(
+        VisualizeWorkflowQuery request,
+        CancellationToken cancellationToken
+    )
     {
         var workflow = summarizer.BuildAgentsWorkflow();
 
-        return Task.FromResult(
+        return ValueTask.FromResult(
             request.Type switch
             {
                 VisualizationType.Mermaid => workflow.ToMermaidString(),

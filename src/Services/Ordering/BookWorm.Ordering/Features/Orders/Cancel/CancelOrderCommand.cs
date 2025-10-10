@@ -1,5 +1,5 @@
-﻿using BookWorm.Chassis.CQRS.Command;
-using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
+﻿using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
+using Mediator;
 
 namespace BookWorm.Ordering.Features.Orders.Cancel;
 
@@ -8,7 +8,7 @@ public sealed record CancelOrderCommand(Guid OrderId) : ICommand<OrderDetailDto>
 public sealed class CancelOrderHandler(IOrderRepository repository)
     : ICommandHandler<CancelOrderCommand, OrderDetailDto>
 {
-    public async Task<OrderDetailDto> Handle(
+    public async ValueTask<OrderDetailDto> Handle(
         CancelOrderCommand request,
         CancellationToken cancellationToken
     )

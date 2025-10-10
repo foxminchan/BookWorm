@@ -2,7 +2,7 @@
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Features.Orders.Delete;
 using BookWorm.Ordering.UnitTests.Fakers;
-using MediatR;
+using Mediator;
 
 namespace BookWorm.Ordering.UnitTests.Features.Orders.Delete;
 
@@ -57,10 +57,11 @@ public sealed class DeleteOrderCommandTests
             .ReturnsAsync((Order)null!);
 
         // Act
-        var act = () => _handler.Handle(new(_orderId), CancellationToken.None);
+        var exception = await Should.ThrowAsync<NotFoundException>(async () =>
+            await _handler.Handle(new(_orderId), CancellationToken.None)
+        );
 
         // Assert
-        var exception = await act.ShouldThrowAsync<NotFoundException>();
         exception.Message.ShouldBe($"Order with id {_orderId} not found.");
         _repositoryMock.Verify(
             r => r.UnitOfWork.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
@@ -78,10 +79,11 @@ public sealed class DeleteOrderCommandTests
             .ReturnsAsync((Order)null!);
 
         // Act
-        var act = () => _handler.Handle(new(invalidOrderId), CancellationToken.None);
+        var exception = await Should.ThrowAsync<NotFoundException>(async () =>
+            await _handler.Handle(new(invalidOrderId), CancellationToken.None)
+        );
 
         // Assert
-        var exception = await act.ShouldThrowAsync<NotFoundException>();
         exception.Message.ShouldBe($"Order with id {invalidOrderId} not found.");
     }
 
@@ -93,10 +95,9 @@ public sealed class DeleteOrderCommandTests
             .Setup(r => r.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
-        // Act
-        var act = () => _handler.Handle(new(_orderId), CancellationToken.None);
-
-        // Assert
-        await act.ShouldThrowAsync<InvalidOperationException>();
+        // Act & Assert
+        await Should.ThrowAsync<InvalidOperationException>(async () =>
+            await _handler.Handle(new(_orderId), CancellationToken.None)
+        );
     }
 }

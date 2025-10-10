@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.SharedKernel.SeedWork;
 
-public abstract class Entity : HasDomainEventsBase
+public abstract class Entity : HasDomainEvents
 {
     public Guid Id { get; set; }
 }

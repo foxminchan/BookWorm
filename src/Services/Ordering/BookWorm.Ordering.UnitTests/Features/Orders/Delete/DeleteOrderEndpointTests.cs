@@ -1,5 +1,5 @@
 ﻿using BookWorm.Ordering.Features.Orders.Delete;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http;
 
 namespace BookWorm.Ordering.UnitTests.Features.Orders.Delete;

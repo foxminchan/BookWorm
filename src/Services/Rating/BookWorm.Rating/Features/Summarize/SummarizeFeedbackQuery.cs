@@ -1,5 +1,5 @@
-﻿using BookWorm.Chassis.CQRS.Query;
-using BookWorm.Rating.Infrastructure.Summarizer;
+﻿using BookWorm.Rating.Infrastructure.Summarizer;
+using Mediator;
 
 namespace BookWorm.Rating.Features.Summarize;
 
@@ -8,7 +8,7 @@ public sealed record SummarizeFeedbackQuery(Guid BookId) : IQuery<SummarizeResul
 public sealed class SummarizeFeedbackHandler(ISummarizer summarizer)
     : IQueryHandler<SummarizeFeedbackQuery, SummarizeResult>
 {
-    public async Task<SummarizeResult> Handle(
+    public async ValueTask<SummarizeResult> Handle(
         SummarizeFeedbackQuery request,
         CancellationToken cancellationToken
     )

@@ -55,7 +55,7 @@ public sealed class GetBasketPostProcessorTests
             .ReturnsAsync(booksResponse);
 
         // Act
-        await _handler.Process(query, _basketDto, CancellationToken.None);
+        await _handler.Handle(query, (_, _) => new(_basketDto), CancellationToken.None);
 
         // Assert
         _bookServiceMock.Verify(
@@ -87,7 +87,7 @@ public sealed class GetBasketPostProcessorTests
             .ReturnsAsync(booksResponse);
 
         // Act
-        await _handler.Process(query, originalBasketDto, CancellationToken.None);
+        await _handler.Handle(query, (_, _) => new(originalBasketDto), CancellationToken.None);
 
         // Assert
         var updatedItems = originalBasketDto.Items;
@@ -110,7 +110,7 @@ public sealed class GetBasketPostProcessorTests
             .ReturnsAsync(booksResponse);
 
         // Act
-        await _handler.Process(query, _basketDto, CancellationToken.None);
+        await _handler.Handle(query, (_, _) => new(_basketDto), CancellationToken.None);
 
         // Assert
         _basketDto.Items[0].Name.ShouldBeNull();
@@ -125,7 +125,7 @@ public sealed class GetBasketPostProcessorTests
         var emptyBasket = new CustomerBasketDto(Guid.CreateVersion7().ToString(), []);
 
         // Act
-        await _handler.Process(query, emptyBasket, CancellationToken.None);
+        await _handler.Handle(query, (_, _) => new(emptyBasket), CancellationToken.None);
 
         // Assert
         _bookServiceMock.Verify(

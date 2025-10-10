@@ -1,6 +1,6 @@
 ﻿using BookWorm.Chat.Features.Cancel;
 using BookWorm.Chat.Infrastructure.Backplane.Contracts;
-using MediatR;
+using Mediator;
 
 namespace BookWorm.Chat.UnitTests.Features.Cancel;
 
@@ -242,8 +242,8 @@ public sealed class CancelChatCommandTests
             .Returns(Task.CompletedTask);
 
         // Act
-        var task1 = _handler.Handle(command1, CancellationToken.None);
-        var task2 = _handler.Handle(command2, CancellationToken.None);
+        var task1 = _handler.Handle(command1, CancellationToken.None).AsTask();
+        var task2 = _handler.Handle(command2, CancellationToken.None).AsTask();
         await Task.WhenAll(task1, task2);
 
         // Assert

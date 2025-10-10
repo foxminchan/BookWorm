@@ -26,7 +26,7 @@ public static class Extensions
             )
         );
 
-        services.AddSingleton<ReviewTool>();
+        services.AddScoped<ReviewTool>();
 
         builder.AddAIAgent(
             Constants.Other.Agents.SummarizeAgent,
@@ -59,7 +59,8 @@ public static class Extensions
                     .Use(GuardrailMiddleware.InvokeAsync, null)
                     .Build(sp);
 
-                var reviewPlugin = sp.GetRequiredService<ReviewTool>();
+                var reviewPlugin = sp.CreateScope()
+                    .ServiceProvider.GetRequiredService<ReviewTool>();
 
                 var agent = new ChatClientAgent(
                     chatClient,

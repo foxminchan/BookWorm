@@ -1,4 +1,5 @@
 ﻿using System.Net.Mime;
+using Mediator;
 
 namespace BookWorm.Chat.Features.Visualize;
 

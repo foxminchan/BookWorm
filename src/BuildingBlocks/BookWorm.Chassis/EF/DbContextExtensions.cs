@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using BookWorm.SharedKernel;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,7 +22,8 @@ public static class DbContextExtensions
         if (!excludeDefaultInterceptors)
         {
             services.AddScoped<DbCommandInterceptor, QueryPerformanceInterceptor>();
-            services.AddSingleton<ISaveChangesInterceptor, PublishDomainEventsInterceptor>();
+            services.AddScoped<ISaveChangesInterceptor, EventDispatchInterceptor>();
+            services.AddScoped<IDomainEventDispatcher, MediatorDomainEventDispatcher>();
         }
 
         services.AddDbContext<TDbContext>(

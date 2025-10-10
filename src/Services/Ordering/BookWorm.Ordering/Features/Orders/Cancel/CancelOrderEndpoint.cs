@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Mediator;
+using Microsoft.AspNetCore.Mvc;
 
 namespace BookWorm.Ordering.Features.Orders.Cancel;
 

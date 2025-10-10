@@ -2,7 +2,7 @@
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using FluentValidation;
 using FluentValidation.Results;
-using MediatR;
+using Mediator;
 using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Chassis.CQRS.Pipelines;
@@ -15,9 +15,9 @@ public class ValidationBehavior<TRequest, TResponse>(
     where TRequest : IRequest<TResponse>
     where TResponse : notnull
 {
-    public async Task<TResponse> Handle(
-        TRequest request,
-        RequestHandlerDelegate<TResponse> next,
+    public async ValueTask<TResponse> Handle(
+        TRequest message,
+        MessageHandlerDelegate<TRequest, TResponse> next,
         CancellationToken cancellationToken
     )
     {
@@ -35,10 +35,10 @@ public class ValidationBehavior<TRequest, TResponse>(
 
         if (!validators.Any())
         {
-            return await next(cancellationToken);
+            return await next(message, cancellationToken);
         }
 
-        var context = new ValidationContext<TRequest>(request);
+        var context = new ValidationContext<TRequest>(message);
 
         var validationResult = await Task.WhenAll(
             validators.Select(v => v.ValidateAsync(context, cancellationToken))
@@ -61,7 +61,7 @@ public class ValidationBehavior<TRequest, TResponse>(
 
         return await activityScope.Run(
             activityName,
-            async (_, ct) => await next(ct),
+            async (_, ct) => await next(message, ct),
             new() { Tags = { { TelemetryTags.Validator.Validation, queryName } } },
             cancellationToken
         );

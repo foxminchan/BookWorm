@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.CQRS.Command;
+﻿using Mediator;
 
 namespace BookWorm.Catalog.Features.Publishers.Delete;
 
@@ -7,7 +7,7 @@ public sealed record DeletePublisherCommand(Guid Id) : ICommand;
 public sealed class DeletePublisherHandler(IPublisherRepository repository)
     : ICommandHandler<DeletePublisherCommand>
 {
-    public async Task<Unit> Handle(
+    public async ValueTask<Unit> Handle(
         DeletePublisherCommand request,
         CancellationToken cancellationToken
     )

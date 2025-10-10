@@ -2,6 +2,7 @@
 using System.Text.Json.Serialization;
 using BookWorm.Rating.Features;
 using BookWorm.Rating.Features.List;
+using Mediator;
 using Microsoft.Extensions.AI;
 
 namespace BookWorm.Rating.Tools;

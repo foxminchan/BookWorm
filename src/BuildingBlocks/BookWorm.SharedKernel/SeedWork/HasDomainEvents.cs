@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace BookWorm.SharedKernel.SeedWork;
 
-public abstract class HasDomainEventsBase
+public abstract class HasDomainEvents : IHasDomainEvents
 {
     private readonly List<DomainEvent> _domainEvents = [];
 

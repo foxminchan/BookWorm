@@ -1,7 +1,7 @@
-﻿using BookWorm.Chassis.CQRS.Query;
-using BookWorm.Chat.Features.Visualize;
+﻿using BookWorm.Chat.Features.Visualize;
 using BookWorm.Chat.Infrastructure.AgentOrchestration;
 using BookWorm.SharedKernel;
+using Mediator;
 
 namespace BookWorm.Chat.UnitTests.Features.Visualize;
 

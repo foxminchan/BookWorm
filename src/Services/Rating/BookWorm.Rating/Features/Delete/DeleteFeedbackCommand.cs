@@ -1,5 +1,5 @@
-﻿using BookWorm.Chassis.CQRS.Command;
-using BookWorm.Chassis.Guards;
+﻿using BookWorm.Chassis.Guards;
+using Mediator;
 
 namespace BookWorm.Rating.Features.Delete;
 
@@ -8,7 +8,7 @@ public sealed record DeleteFeedbackCommand(Guid Id) : ICommand;
 public sealed class DeleteFeedbackHandler(IFeedbackRepository repository)
     : ICommandHandler<DeleteFeedbackCommand>
 {
-    public async Task<Unit> Handle(
+    public async ValueTask<Unit> Handle(
         DeleteFeedbackCommand request,
         CancellationToken cancellationToken
     )

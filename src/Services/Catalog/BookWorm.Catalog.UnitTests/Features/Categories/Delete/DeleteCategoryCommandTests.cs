@@ -3,7 +3,7 @@ using BookWorm.Catalog.Features.Categories.Delete;
 using BookWorm.Catalog.UnitTests.Fakers;
 using BookWorm.Chassis.Exceptions;
 using BookWorm.Chassis.Repository;
-using MediatR;
+using Mediator;
 
 namespace BookWorm.Catalog.UnitTests.Features.Categories.Delete;
 
@@ -263,7 +263,9 @@ public sealed class DeleteCategoryCommandTests
             .ReturnsAsync(true);
 
         // Act
-        var tasks = commands.Select(command => _handler.Handle(command, CancellationToken.None));
+        var tasks = commands.Select(command =>
+            _handler.Handle(command, CancellationToken.None).AsTask()
+        );
         var results = await Task.WhenAll(tasks);
 
         // Assert

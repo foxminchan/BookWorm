@@ -12,9 +12,9 @@ public sealed class RedisCancellationManager : ICancellationManager, IDisposable
         Guid,
         ConcurrentDictionary<Guid, byte>
     > _conversationToMessages = [];
-    private readonly ConcurrentDictionary<Guid, Guid> _messageToConversation = [];
 
     private readonly ILogger<RedisCancellationManager> _logger;
+    private readonly ConcurrentDictionary<Guid, Guid> _messageToConversation = [];
     private readonly ISubscriber _subscriber;
     private readonly ConcurrentDictionary<Guid, CancellationTokenSource> _tokens = [];
 
@@ -34,10 +34,7 @@ public sealed class RedisCancellationManager : ICancellationManager, IDisposable
         var cts = new CancellationTokenSource();
         _tokens[messageId] = cts;
 
-        var messageSet = _conversationToMessages.GetOrAdd(
-            conversationId,
-            _ => new ConcurrentDictionary<Guid, byte>()
-        );
+        var messageSet = _conversationToMessages.GetOrAdd(conversationId, _ => new());
         messageSet.TryAdd(messageId, 0);
 
         _messageToConversation[messageId] = conversationId;

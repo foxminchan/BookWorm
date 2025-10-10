@@ -2,6 +2,7 @@
   <ItemGroup Label="Core Dependencies">
     <PackageReference Include="Microsoft.Azure.SignalR.Management" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
+    <PackageReference Include="Mediator.SourceGenerator" PrivateAssets="all" />
     <PackageReference Include="Aspire.StackExchange.Redis.DistributedCaching" />
     <PackageReference Include="Aspire.Qdrant.Client" />
   </ItemGroup>

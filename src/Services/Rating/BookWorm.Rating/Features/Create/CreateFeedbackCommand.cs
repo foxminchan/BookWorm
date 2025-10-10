@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.CQRS.Command;
+﻿using Mediator;
 
 namespace BookWorm.Rating.Features.Create;
 
@@ -13,7 +13,7 @@ public sealed record CreateFeedbackCommand(
 public sealed class CreateFeedbackHandler(IFeedbackRepository repository)
     : ICommandHandler<CreateFeedbackCommand, Guid>
 {
-    public async Task<Guid> Handle(
+    public async ValueTask<Guid> Handle(
         CreateFeedbackCommand request,
         CancellationToken cancellationToken
     )

@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Basket.Features.Delete;
+﻿using Mediator;
+
+namespace BookWorm.Basket.Features.Delete;
 
 public sealed class DeleteBasketEndpoint : IEndpoint<NoContent, ISender>
 {

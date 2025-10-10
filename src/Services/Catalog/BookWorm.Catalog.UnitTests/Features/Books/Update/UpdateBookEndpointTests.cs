@@ -1,5 +1,5 @@
 ﻿using BookWorm.Catalog.Features.Books.Update;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BookWorm.Catalog.UnitTests.Features.Books.Update;

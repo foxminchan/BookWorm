@@ -2,7 +2,7 @@
 using BookWorm.Catalog.Features.Authors.Delete;
 using BookWorm.Catalog.UnitTests.Fakers;
 using BookWorm.Chassis.Exceptions;
-using MediatR;
+using Mediator;
 
 namespace BookWorm.Catalog.UnitTests.Features.Authors.Delete;
 

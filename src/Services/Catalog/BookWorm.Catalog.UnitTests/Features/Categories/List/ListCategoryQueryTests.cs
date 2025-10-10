@@ -2,7 +2,7 @@
 using BookWorm.Catalog.Features.Categories;
 using BookWorm.Catalog.Features.Categories.List;
 using BookWorm.Catalog.UnitTests.Fakers;
-using BookWorm.Chassis.CQRS.Query;
+using Mediator;
 
 namespace BookWorm.Catalog.UnitTests.Features.Categories.List;
 

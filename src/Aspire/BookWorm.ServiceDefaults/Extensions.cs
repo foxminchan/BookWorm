@@ -82,13 +82,6 @@ public static class Extensions
         {
             logger.AddTraceBasedSampler();
         }
-
-        // Suppress the MediatR license warning in non-production environments
-        // This project is hobbyist and not used in production
-        if (!builder.Environment.IsProduction())
-        {
-            logger.AddFilter("LuckyPennySoftware.MediatR.License", LogLevel.None);
-        }
     }
 
     private static void AddOpenTelemetry(

@@ -1,5 +1,6 @@
 ﻿using BookWorm.Catalog.Features.Books.Get;
 using BookWorm.Constants.Core;
+using Mediator;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BookWorm.Catalog.Features.Books.Create;
