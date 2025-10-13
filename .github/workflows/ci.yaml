@@ -73,7 +73,7 @@ jobs:
 
       - name: Upload Gitleaks SARIF file
         if: success() || failure()
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: gitleaks-results.sarif
 
