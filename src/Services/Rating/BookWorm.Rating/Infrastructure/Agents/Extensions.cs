@@ -59,8 +59,8 @@ public static class Extensions
                     .Use(GuardrailMiddleware.InvokeAsync, null)
                     .Build(sp);
 
-                var reviewPlugin = sp.CreateScope()
-                    .ServiceProvider.GetRequiredService<ReviewTool>();
+                using var spScope = sp.CreateScope();
+                var reviewPlugin = spScope.ServiceProvider.GetRequiredService<ReviewTool>();
 
                 var agent = new ChatClientAgent(
                     chatClient,
