@@ -17,6 +17,10 @@
     <PackageReference Include="Aspire.StackExchange.Redis.DistributedCaching" />
   </ItemGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="$(AssemblyName).UnitTests" />
+    <InternalsVisibleTo Include="$(AssemblyName).IntegrationTests" />
+  </ItemGroup>
+  <ItemGroup>
     <Protobuf Include="Grpc\Protos\book.proto" GrpcServices="Server" />
   </ItemGroup>
   <ItemGroup>

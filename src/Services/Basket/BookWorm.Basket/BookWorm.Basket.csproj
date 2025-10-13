@@ -10,6 +10,10 @@
     <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="$(AssemblyName).UnitTests" />
+    <InternalsVisibleTo Include="$(AssemblyName).IntegrationTests" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\..\Aspire\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj" />
   </ItemGroup>
   <ItemGroup>
