@@ -10,24 +10,6 @@ var kcRealmName = builder
     .AddParameter("kc-realm", nameof(BookWorm).ToLowerInvariant(), true)
     .WithDescription(ParameterDescriptions.Keycloak.Realm, true);
 
-var pgUser = builder
-    .AddParameter("pg-user", "postgres", true)
-    .WithDescription(ParameterDescriptions.Postgres.User, true);
-
-var pgPassword = builder
-    .AddParameter("pg-password", true)
-    .WithDescription(ParameterDescriptions.Postgres.Password, true)
-    .WithGeneratedDefault(
-        new()
-        {
-            MinLength = 16,
-            MinUpper = 2,
-            MinLower = 2,
-            MinNumeric = 2,
-            MinSpecial = 2,
-        }
-    );
-
 var schedulerUserName = builder
     .AddParameter("scheduler-user", "admin", true)
     .WithDescription(ParameterDescriptions.Scheduler.UserName, true);
@@ -48,14 +30,13 @@ var schedulerPassword = builder
 
 var postgres = builder
     .AddAzurePostgresFlexibleServer(Components.Postgres)
-    .WithPasswordAuthentication(pgUser, pgPassword)
+    .WithPasswordAuthentication()
     .RunAsLocalContainer()
     .ProvisionAsService();
 
-pgUser.WithParentRelationship(postgres);
-
 var redis = builder
     .AddAzureRedis(Components.Redis)
+    .WithAccessKeyAuthentication()
     .WithIconName("Memory")
     .RunAsLocalContainer()
     .ProvisionAsService();

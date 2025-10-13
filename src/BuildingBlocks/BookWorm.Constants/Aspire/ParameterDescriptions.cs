@@ -63,42 +63,6 @@ public static class ParameterDescriptions
             """;
     }
 
-    public static class Postgres
-    {
-        public const string User = """
-            👤 The PostgreSQL user to use for the BookWorm application.
-            This user should have the necessary permissions to access the BookWorm database.
-
-            🔒 Required permissions: CREATE, SELECT, INSERT, UPDATE, DELETE on BookWorm schemas
-            ⚠️  Security note: Use a dedicated application user, not the postgres superuser
-            💡 Default: 'postgres' (not recommended for production)
-            📋 Example: 'bookworm_user' or 'app_user'
-
-            📚 Resources:
-            - For more information, visit: https://www.postgresql.org/docs/current/user-manag.html
-            - To create a new user, go to: https://www.postgresql.org/docs/current/sql-createuser.html
-            - Best practices: https://www.postgresql.org/docs/current/sql-grant.html
-            """;
-
-        public const string Password = """
-            🔑 The password for the PostgreSQL user.
-            Ensure this password meets your security requirements.
-
-            🔒 Security requirements:
-            - Minimum 12 characters recommended
-            - Mix of uppercase, lowercase, numbers, and special characters
-            - Avoid common passwords and dictionary words
-
-            ⚠️  Important: Store securely and rotate regularly in production
-            🛡️  Consider using Azure Key Vault or similar secret management
-
-            📚 Resources:
-            - For more information, visit: https://www.postgresql.org/docs/current/auth-passwords.html
-            - To change a user's password, go to: https://www.postgresql.org/docs/current/sql-alteruser.html
-            - Password security: https://www.postgresql.org/docs/current/auth-password.html
-            """;
-    }
-
     public static class SendGrid
     {
         public const string ApiKey = """
