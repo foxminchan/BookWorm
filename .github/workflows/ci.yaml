@@ -72,10 +72,11 @@ jobs:
           GITLEAKS_CONFIG: .gitleaks.toml
 
       - name: Upload Gitleaks SARIF file
-        if: success() || failure()
+        if: always()
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: gitleaks-results.sarif
+          sarif_file: results.sarif
+          category: gitleaks
 
   format:
     name: Format
