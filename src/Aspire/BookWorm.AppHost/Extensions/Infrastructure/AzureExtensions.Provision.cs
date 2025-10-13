@@ -23,10 +23,13 @@ public static partial class AzureExtensions
 
             resource.Sku = new() { Name = StorageSkuName.StandardLrs };
 
+            resource.AccessTier = StorageAccountAccessTier.Cool;
+
             resource.Tags.Add(
                 nameof(Environment),
                 builder.ApplicationBuilder.Environment.EnvironmentName
             );
+
             resource.Tags.Add(nameof(Projects), nameof(BookWorm));
         });
 
@@ -46,13 +49,13 @@ public static partial class AzureExtensions
         {
             var resource = infra.GetProvisionableResources().OfType<SignalRService>().Single();
 
-            resource.Sku.Name = "Free_F1";
-            resource.PublicNetworkAccess = "Enabled";
+            resource.Sku = new() { Tier = SignalRSkuTier.Free };
 
             resource.Tags.Add(
                 nameof(Environment),
                 builder.ApplicationBuilder.Environment.EnvironmentName
             );
+
             resource.Tags.Add(nameof(Projects), nameof(BookWorm));
         });
 
@@ -76,16 +79,27 @@ public static partial class AzureExtensions
                 .OfType<PostgreSqlFlexibleServer>()
                 .Single();
 
-            resource.Sku = new()
+            resource.Sku = new() { Tier = PostgreSqlFlexibleServerSkuTier.Burstable };
+
+            resource.HighAvailability = new()
             {
-                Name = "Standard_B1ms",
-                Tier = PostgreSqlFlexibleServerSkuTier.Burstable,
+                Mode = PostgreSqlFlexibleServerHighAvailabilityMode.ZoneRedundant,
+                StandbyAvailabilityZone = "2",
             };
+
+            resource.Backup = new()
+            {
+                BackupRetentionDays = 7,
+                GeoRedundantBackup = PostgreSqlFlexibleServerGeoRedundantBackupEnum.Disabled,
+            };
+
+            resource.Storage = new() { StorageSizeInGB = 32, AutoGrow = StorageAutoGrow.Disabled };
 
             resource.Tags.Add(
                 nameof(Environment),
                 builder.ApplicationBuilder.Environment.EnvironmentName
             );
+
             resource.Tags.Add(nameof(Projects), nameof(BookWorm));
         });
 
@@ -116,6 +130,7 @@ public static partial class AzureExtensions
                 nameof(Environment),
                 builder.ApplicationBuilder.Environment.EnvironmentName
             );
+
             resource.Tags.Add(nameof(Projects), nameof(BookWorm));
         });
 
@@ -141,10 +156,19 @@ public static partial class AzureExtensions
                     .OfType<ContainerAppManagedEnvironment>()
                     .Single();
 
+                resource.WorkloadProfiles.Add(
+                    new ContainerAppWorkloadProfile
+                    {
+                        Name = "Consumption",
+                        WorkloadProfileType = "Consumption",
+                    }
+                );
+
                 resource.Tags.Add(
                     nameof(Environment),
                     builder.ApplicationBuilder.Environment.EnvironmentName
                 );
+
                 resource.Tags.Add(nameof(Projects), nameof(BookWorm));
             });
     }

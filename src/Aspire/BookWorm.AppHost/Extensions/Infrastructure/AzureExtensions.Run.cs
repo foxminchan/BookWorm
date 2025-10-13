@@ -91,10 +91,6 @@ public static partial class AzureExtensions
                     .WithLifetime(ContainerLifetime.Persistent)
             );
         }
-        else
-        {
-            builder.WithAccessKeyAuthentication();
-        }
 
         return builder;
     }
