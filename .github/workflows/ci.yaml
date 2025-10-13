@@ -71,6 +71,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GITLEAKS_CONFIG: .gitleaks.toml
 
+      - name: Upload Gitleaks SARIF file
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+          category: gitleaks
+
   format:
     name: Format
     runs-on: ubuntu-latest
