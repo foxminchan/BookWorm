@@ -79,12 +79,12 @@ const config: Config = {
       {
         name: "description",
         content:
-          "Comprehensive architecture documentation for BookWorm - a modern e-commerce platform built with .NET and microservices architecture",
+          "Comprehensive architecture documentation for BookWorm - a modern e-commerce platform built with .NET and microservices architecture with Agentic AI integration",
       },
       {
         name: "keywords",
         content:
-          "BookWorm, e-commerce, .NET, microservices, architecture, documentation, C#, distributed systems",
+          "BookWorm, e-commerce, .NET, microservices, architecture, documentation, C#, distributed systems, cloud-native, RESTful APIs, event-driven architecture, CI/CD, DevOps, software design, system architecture, Agentic AI, AI integration",
       },
       {
         name: "author",
@@ -97,7 +97,7 @@ const config: Config = {
       {
         property: "og:description",
         content:
-          "Explore the comprehensive architecture documentation for BookWorm, a modern e-commerce platform built with .NET and microservices",
+          "Explore the comprehensive architecture documentation for BookWorm, a modern e-commerce platform built with .NET, microservices, and Agentic AI integration",
       },
       {
         property: "og:type",
@@ -106,6 +106,21 @@ const config: Config = {
       {
         property: "og:url",
         content: "https://foxminchan.github.io/BookWorm",
+      },
+    ],
+    headTags: [
+      {
+        tagName: "script",
+        attributes: {
+          type: "application/ld+json",
+        },
+        innerHTML: JSON.stringify({
+          "@context": "https://schema.org/",
+          "@type": "Organization",
+          name: "BookWorm",
+          url: "https://github.com/foxminchan/BookWorm",
+          logo: "https://raw.githubusercontent.com/foxminchan/BookWorm/refs/heads/main/docs/docusaurus/static/img/logo.svg",
+        }),
       },
     ],
     docs: {

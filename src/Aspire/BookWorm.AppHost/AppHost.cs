@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Hosting;
+
 var builder = DistributedApplication.CreateBuilder(args);
 
 if (builder.ExecutionContext.IsPublishMode)
@@ -104,7 +106,7 @@ kcRealmName.WithParentRelationship(keycloak);
 builder
     .AddOpenTelemetryCollector(
         Components.Observability.Collector,
-        settings => settings.ForceNonSecureReceiver = true
+        settings => settings.ForceNonSecureReceiver = builder.Environment.IsDevelopment()
     )
     .WithConfig(Path.GetFullPath("Container/otelcollector/config.yaml", builder.AppHostDirectory))
     .WithImagePullPolicy(ImagePullPolicy.Always)
