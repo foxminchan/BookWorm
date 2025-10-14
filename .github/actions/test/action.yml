@@ -41,14 +41,7 @@ runs:
         --
         --report-trx
         --results-directory ./test-results
+        --github-reporter-style full
         --hangdump --hangdump-timeout ${{ inputs.testHangTimeout }}
         --crashdump
         --timeout ${{ inputs.testSessionTimeout }}
-
-    - name: Publish Test Results
-      uses: EnricoMi/publish-unit-test-result-action@v2
-      if: always()
-      with:
-        files: |
-          **/src/Services/**/**/test-results/*.trx
-          **/src/BookWorm.ArchTests/test-results/*.trx
