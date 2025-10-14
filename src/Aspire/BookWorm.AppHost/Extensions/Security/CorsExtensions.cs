@@ -11,6 +11,11 @@ public static class CorsExtensions
     /// <param name="builder">The distributed application builder instance to configure with CORS settings.</param>
     public static void ConfigureCors(this IDistributedApplicationBuilder builder)
     {
+        if (builder.ExecutionContext.IsRunMode)
+        {
+            return;
+        }
+
         builder.Eventing.Subscribe<BeforeStartEvent>(
             (e, _) =>
             {

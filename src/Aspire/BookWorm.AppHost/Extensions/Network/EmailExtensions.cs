@@ -15,7 +15,10 @@ public static class EmailExtensions
 
         if (applicationBuilder.ExecutionContext.IsRunMode)
         {
-            var mailpit = applicationBuilder.AddMailPit(Components.MailPit, smtpPort: 587);
+            var mailpit = applicationBuilder
+                .AddMailPit(Components.MailPit, smtpPort: 587)
+                .WithIconName("Mail");
+
             builder.WithReference(mailpit).WaitFor(mailpit);
             mailpit.WithParentRelationship(builder);
         }

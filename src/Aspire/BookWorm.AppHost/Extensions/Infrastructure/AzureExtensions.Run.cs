@@ -11,17 +11,14 @@ public static partial class AzureExtensions
         this IResourceBuilder<AzureStorageResource> builder
     )
     {
-        if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
-        {
-            builder.RunAsEmulator(config =>
-                config
-                    .WithDataVolume()
-                    .WithImagePullPolicy(ImagePullPolicy.Always)
-                    .WithLifetime(ContainerLifetime.Persistent)
-            );
-        }
+        builder.RunAsEmulator(config =>
+            config
+                .WithDataVolume()
+                .WithImagePullPolicy(ImagePullPolicy.Always)
+                .WithLifetime(ContainerLifetime.Persistent)
+        );
 
-        return builder.WithIconName("DatabasePlugConnected");
+        return builder;
     }
 
     /// <summary>
@@ -33,16 +30,13 @@ public static partial class AzureExtensions
         this IResourceBuilder<AzureSignalRResource> builder
     )
     {
-        if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
-        {
-            builder.RunAsEmulator(config =>
-                config
-                    .WithImagePullPolicy(ImagePullPolicy.Always)
-                    .WithLifetime(ContainerLifetime.Persistent)
-            );
-        }
+        builder.RunAsEmulator(config =>
+            config
+                .WithImagePullPolicy(ImagePullPolicy.Always)
+                .WithLifetime(ContainerLifetime.Persistent)
+        );
 
-        return builder.WithIconName("SignalR");
+        return builder;
     }
 
     /// <summary>
@@ -55,19 +49,16 @@ public static partial class AzureExtensions
         this IResourceBuilder<AzurePostgresFlexibleServerResource> builder
     )
     {
-        if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
+        builder.RunAsContainer(cfg =>
         {
-            builder.RunAsContainer(cfg =>
-            {
-                cfg.WithPgAdmin()
-                    .WithDataVolume()
-                    .WithImageTag("18.0")
-                    .WithImagePullPolicy(ImagePullPolicy.Always)
-                    .WithLifetime(ContainerLifetime.Persistent);
-            });
-        }
+            cfg.WithPgAdmin()
+                .WithDataVolume()
+                .WithImageTag("18.0")
+                .WithImagePullPolicy(ImagePullPolicy.Always)
+                .WithLifetime(ContainerLifetime.Persistent);
+        });
 
-        return builder.WithIconName("HomeDatabase");
+        return builder;
     }
 
     /// <summary>
@@ -80,17 +71,14 @@ public static partial class AzureExtensions
         this IResourceBuilder<AzureRedisCacheResource> builder
     )
     {
-        if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
-        {
-            builder.RunAsContainer(config =>
-                config
-                    .WithIconName("memory")
-                    .WithDataVolume()
-                    .WithRedisInsight()
-                    .WithImagePullPolicy(ImagePullPolicy.Always)
-                    .WithLifetime(ContainerLifetime.Persistent)
-            );
-        }
+        builder.RunAsContainer(config =>
+            config
+                .WithIconName("memory")
+                .WithDataVolume()
+                .WithRedisInsight()
+                .WithImagePullPolicy(ImagePullPolicy.Always)
+                .WithLifetime(ContainerLifetime.Persistent)
+        );
 
         return builder;
     }
