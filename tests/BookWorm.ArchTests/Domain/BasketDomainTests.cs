@@ -122,7 +122,7 @@ public sealed class BasketDomainTests : ArchUnitBaseTest
                     .That()
                     .ResideInNamespaceMatching(namespacePattern)
                     .And()
-                    .DoNotHaveFullNameMatching("Microsoft.CodeCoverage.*")
+                    .DoNotResideInNamespaceMatching("Microsoft.CodeCoverage.*")
             )
             .Because(
                 $"The domain layer ({DomainNamespace}) should be isolated from application, infrastructure, UI concerns, and specific implementation frameworks not part of core domain logic. It should primarily depend on itself, .NET base libraries, and approved shared kernels."
