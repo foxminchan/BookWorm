@@ -148,7 +148,7 @@ public sealed class RatingDomainTests : ArchUnitBaseTest
                     .That()
                     .ResideInNamespaceMatching(namespacePattern)
                     .And()
-                    .DoNotHaveFullNameMatching("Microsoft.CodeCoverage.*")
+                    .DoNotResideInNamespaceMatching("Microsoft.CodeCoverage.*")
             )
             .Because(
                 $"The domain layer ({DomainNamespace}) should be isolated from application, infrastructure, UI concerns, and specific implementation frameworks not part of core domain logic."

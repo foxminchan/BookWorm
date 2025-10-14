@@ -207,7 +207,7 @@ public sealed class DomainEventTests : ArchUnitBaseTest
                     .That()
                     .ResideInNamespaceMatching(namespacePattern)
                     .And()
-                    .DoNotHaveFullNameMatching("Microsoft.CodeCoverage.*")
+                    .DoNotResideInNamespaceMatching("Microsoft.CodeCoverage.*")
             )
             .Because(
                 $"Domain events should not depend on higher architectural layers like {namespacePattern}."
