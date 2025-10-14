@@ -73,6 +73,7 @@ jobs:
           --
           --report-trx
           --results-directory ./test-results
+          --github-reporter-style full
           --coverage
           --coverage-output-format xml
           --hangdump --hangdump-timeout 7m

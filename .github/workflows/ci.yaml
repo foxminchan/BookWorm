@@ -216,19 +216,3 @@ jobs:
           project-path: ${{ matrix.service.project-path }}
           container-repository: ${{ matrix.service.container-repository }}
           container-tag: ${{ steps.set_tag.outputs.version }}
-
-  summary:
-    name: Summary
-    if: always()
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: [publish]
-    steps:
-      - name: Check CI Status
-        run: |
-          if [[ "${{ contains(toJson(needs), '\"failure\"') }}" == "true" ]]; then
-            echo "❌ CI Pipeline failed"
-            exit 1
-          else
-            echo "✅ CI Pipeline completed successfully"
-          fi
