@@ -1,16 +1,7 @@
-using Microsoft.Extensions.Hosting;
-
 var builder = DistributedApplication.CreateBuilder(args);
 
-if (builder.ExecutionContext.IsPublishMode)
-{
-    builder.ConfigureCors();
-    builder.AddAzureContainerAppEnvironment(Components.Azure.ContainerApp).ProvisionAsService();
-}
-
-var kcRealmName = builder
-    .AddParameter("kc-realm", nameof(BookWorm).ToLowerInvariant(), true)
-    .WithDescription(ParameterDescriptions.Keycloak.Realm, true);
+builder.ConfigureCors();
+builder.AddAzureContainerAppEnvironment(Components.Azure.ContainerApp).ProvisionAsService();
 
 var schedulerUserName = builder
     .AddParameter("scheduler-user", "admin", true)
@@ -33,50 +24,54 @@ var schedulerPassword = builder
 var postgres = builder
     .AddAzurePostgresFlexibleServer(Components.Postgres)
     .WithPasswordAuthentication()
+    .WithIconName("HomeDatabase")
     .RunAsLocalContainer()
     .ProvisionAsService();
 
 var redis = builder
     .AddAzureRedis(Components.Redis)
-    .WithAccessKeyAuthentication()
     .WithIconName("Memory")
+    .WithAccessKeyAuthentication()
     .RunAsLocalContainer()
     .ProvisionAsService();
 
 var qdrant = builder
     .AddQdrant(Components.VectorDb)
-    .WithDataVolume()
     .WithIconName("DatabaseSearch")
+    .WithDataVolume()
     .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent);
 
 var queue = builder
     .AddRabbitMQ(Components.Queue)
-    .WithManagementPlugin()
     .WithIconName("Pipeline")
+    .WithManagementPlugin()
     .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent)
     .WithEndpoint(Protocols.Tcp, e => e.Port = 5672);
 
 var storage = builder
     .AddAzureStorage(Components.Azure.Storage.Resource)
+    .WithIconName("DatabasePlugConnected")
     .RunAsLocalContainer()
     .ProvisionAsService();
 
 var signalR = builder
     .AddAzureSignalR(Components.Azure.SignalR)
+    .WithIconName("DesktopSignal")
     .RunAsLocalContainer()
     .ProvisionAsService();
 
 var blobStorage = storage.AddBlobContainer(Components.Azure.Storage.BlobContainer);
 
 var ratingDb = postgres.AddDatabase(Components.Database.Rating);
-var healthDb = postgres.AddDatabase(Components.Database.Health);
 var catalogDb = postgres.AddDatabase(Components.Database.Catalog);
 var financeDb = postgres.AddDatabase(Components.Database.Finance);
 var orderingDb = postgres.AddDatabase(Components.Database.Ordering);
 var schedulerDb = postgres.AddDatabase(Components.Database.Scheduler);
 var notificationDb = postgres.AddDatabase(Components.Database.Notification);
+var userDb = postgres.AddDatabase(Components.Database.User).ExcludeFromManifest();
+var healthDb = postgres.AddDatabase(Components.Database.Health).ExcludeFromManifest();
 
 await builder.AddOllama(configure =>
 {
@@ -89,28 +84,9 @@ await builder.AddOllama(configure =>
     );
 });
 
-IResourceBuilder<IResource> keycloak;
-
-if (builder.ExecutionContext.IsRunMode)
-{
-    var userDb = postgres.AddDatabase(Components.Database.User);
-    keycloak = builder.AddLocalKeycloak(Components.KeyCloak, kcRealmName).WithPostgres(userDb);
-}
-else
-{
-    keycloak = builder.AddHostedKeycloak(Components.KeyCloak);
-}
-
-kcRealmName.WithParentRelationship(keycloak);
-
-builder
-    .AddOpenTelemetryCollector(
-        Components.Observability.Collector,
-        settings => settings.ForceNonSecureReceiver = builder.Environment.IsDevelopment()
-    )
-    .WithConfig(Path.GetFullPath("Container/otelcollector/config.yaml", builder.AppHostDirectory))
-    .WithImagePullPolicy(ImagePullPolicy.Always)
-    .WithAppForwarding();
+IResourceBuilder<IResource> keycloak = builder.ExecutionContext.IsRunMode
+    ? builder.AddLocalKeycloak(Components.KeyCloak).WithPostgres(userDb)
+    : builder.AddHostedKeycloak(Components.KeyCloak);
 
 var catalogApi = builder
     .AddProject<Catalog>(Services.Catalog)
@@ -124,7 +100,7 @@ var catalogApi = builder
     .WaitFor(qdrant)
     .WithReference(redis)
     .WaitFor(redis)
-    .WithIdP(keycloak, kcRealmName)
+    .WithKeycloak(keycloak)
     .WithReference(blobStorage)
     .WaitFor(blobStorage)
     .WithRoleAssignments(
@@ -147,7 +123,7 @@ var chatApi = builder
     .WaitFor(mcp)
     .WithReference(qdrant)
     .WaitFor(qdrant)
-    .WithIdP(keycloak, kcRealmName)
+    .WithKeycloak(keycloak)
     .WithReference(signalR)
     .WaitFor(signalR)
     .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor);
@@ -161,7 +137,7 @@ var basketApi = builder
     .WithReference(queue)
     .WaitFor(queue)
     .WithReference(catalogApi)
-    .WithIdP(keycloak, kcRealmName);
+    .WithKeycloak(keycloak);
 
 var notificationApi = builder
     .AddProject<Notification>(Services.Notification)
@@ -179,7 +155,7 @@ var orderingApi = builder
     .WaitFor(queue)
     .WithReference(redis)
     .WaitFor(redis)
-    .WithIdP(keycloak, kcRealmName)
+    .WithKeycloak(keycloak)
     .WithReference(catalogApi)
     .WithReference(basketApi)
     .WithReference(signalR)
@@ -194,7 +170,7 @@ var ratingApi = builder
     .WaitFor(ratingDb)
     .WithReference(queue)
     .WaitFor(queue)
-    .WithIdP(keycloak, kcRealmName)
+    .WithKeycloak(keycloak)
     .WithReference(chatApi);
 
 chatApi.WithReference(ratingApi).WaitFor(ratingApi);
@@ -244,7 +220,7 @@ builder
     .WithReference(orderingApi)
     .WithReference(schedulerApi)
     .WithReference(notificationApi)
-    .WithExternalHttpEndpoints();
+    .ExcludeFromManifest();
 
 builder
     .AddScalar(keycloak)

@@ -1,4 +1,5 @@
 ﻿using Aspire.Hosting.Azure.AppContainers;
+using Azure.Core;
 using Azure.Provisioning.AppContainers;
 using Azure.Provisioning.PostgreSql;
 using Azure.Provisioning.Redis;
@@ -22,6 +23,8 @@ public static partial class AzureExtensions
             var resource = infra.GetProvisionableResources().OfType<StorageAccount>().Single();
 
             resource.Sku = new() { Name = StorageSkuName.StandardLrs };
+
+            resource.Location = AzureLocation.SoutheastAsia;
 
             resource.AccessTier = StorageAccountAccessTier.Cool;
 
@@ -50,6 +53,8 @@ public static partial class AzureExtensions
             var resource = infra.GetProvisionableResources().OfType<SignalRService>().Single();
 
             resource.Sku = new() { Tier = SignalRSkuTier.Free };
+
+            resource.Location = AzureLocation.SoutheastAsia;
 
             resource.Tags.Add(
                 nameof(Environment),
@@ -80,6 +85,8 @@ public static partial class AzureExtensions
                 .Single();
 
             resource.Sku = new() { Tier = PostgreSqlFlexibleServerSkuTier.Burstable };
+
+            resource.Location = AzureLocation.SoutheastAsia;
 
             resource.HighAvailability = new()
             {
@@ -126,6 +133,8 @@ public static partial class AzureExtensions
                 Capacity = 1,
             };
 
+            resource.Location = AzureLocation.SoutheastAsia;
+
             resource.Tags.Add(
                 nameof(Environment),
                 builder.ApplicationBuilder.Environment.EnvironmentName
@@ -163,6 +172,8 @@ public static partial class AzureExtensions
                         WorkloadProfileType = "Consumption",
                     }
                 );
+
+                resource.Location = AzureLocation.SoutheastAsia;
 
                 resource.Tags.Add(
                     nameof(Environment),

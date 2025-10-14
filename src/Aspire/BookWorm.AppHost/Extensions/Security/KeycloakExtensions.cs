@@ -17,6 +17,7 @@ public static class KeycloakExtensions
     private const string KeycloakDatabasePasswordEnvVarName = "KC_DB_PASSWORD";
     private const string KeycloakTransactionXaEnabledEnvVarName = "KC_TRANSACTION_XA_ENABLED";
     private const string KeycloakDatabaseUrlEnvVarName = "KC_DB_URL";
+    private static readonly string _defaultLocalKeycloakName = nameof(BookWorm).ToLowerInvariant();
 
     /// <summary>
     ///     Adds a Keycloak container resource to the distributed application builder with custom theme and realm import
@@ -24,34 +25,21 @@ public static class KeycloakExtensions
     /// </summary>
     /// <param name="builder">The distributed application builder to which the Keycloak resource will be added.</param>
     /// <param name="name">The name of the Keycloak resource.</param>
-    /// <param name="realmName">A resource builder for the Keycloak realm name parameter.</param>
     /// <returns>
     ///     An <see cref="IResourceBuilder{KeycloakResource}" /> representing the configured Keycloak resource.
     /// </returns>
     public static IResourceBuilder<KeycloakResource> AddLocalKeycloak(
         this IDistributedApplicationBuilder builder,
-        string name,
-        IResourceBuilder<ParameterResource> realmName
+        string name
     )
     {
-        var kcThemeName = builder
-            .AddParameter("kc-theme", nameof(BookWorm).ToLowerInvariant(), true)
-            .WithDescription(ParameterDescriptions.Keycloak.Theme, true);
-
-        var kcThemeDisplayName = builder
-            .AddParameter("kc-theme-display-name", nameof(BookWorm), true)
-            .WithDescription(ParameterDescriptions.Keycloak.ThemeDisplayName, true);
-
         var keycloak = builder
             .AddKeycloak(name)
             .WithIconName("LockClosedRibbon")
-            .WithCustomTheme(kcThemeName)
+            .WithCustomTheme(_defaultLocalKeycloakName)
             .WithImagePullPolicy(ImagePullPolicy.Always)
             .WithLifetime(ContainerLifetime.Persistent)
-            .WithSampleRealmImport(realmName, kcThemeDisplayName);
-
-        kcThemeName.WithParentRelationship(keycloak);
-        kcThemeDisplayName.WithParentRelationship(keycloak);
+            .WithSampleRealmImport(_defaultLocalKeycloakName, nameof(BookWorm));
 
         return keycloak;
     }
@@ -137,12 +125,10 @@ public static class KeycloakExtensions
     /// </summary>
     /// <param name="builder">The project resource builder.</param>
     /// <param name="keycloak">The Keycloak resource builder to configure as an IdP.</param>
-    /// <param name="realmName">The realm name parameter resource builder.</param>
     /// <returns>The project resource builder for method chaining.</returns>
-    public static IResourceBuilder<ProjectResource> WithIdP(
+    public static IResourceBuilder<ProjectResource> WithKeycloak(
         this IResourceBuilder<ProjectResource> builder,
-        IResourceBuilder<IResource> keycloak,
-        IResourceBuilder<ParameterResource> realmName
+        IResourceBuilder<IResource> keycloak
     )
     {
         var clientId = builder.Resource.Name;
@@ -194,7 +180,7 @@ public static class KeycloakExtensions
             builder
                 .WithReference(keycloakContainer)
                 .WaitForStart(keycloakContainer)
-                .WithEnvironment("Identity__Realm", realmName)
+                .WithEnvironment("Identity__Realm", _defaultLocalKeycloakName)
                 .WithEnvironment("Identity__ClientId", clientId)
                 .WithEnvironment("Identity__ClientSecret", clientSecret)
                 .WithEnvironment(
@@ -211,6 +197,20 @@ public static class KeycloakExtensions
             && keycloak is IResourceBuilder<ExternalServiceResource> keycloakHosted
         )
         {
+            var kcRealmName = applicationBuilder
+                .AddParameter("kc-realm", true)
+                .WithDescription(ParameterDescriptions.Keycloak.Realm, true)
+                .WithCustomInput(_ =>
+                    new()
+                    {
+                        Name = "KeycloakRealmParameter",
+                        Label = "Keycloak Realm",
+                        InputType = InputType.Text,
+                        Value = nameof(BookWorm).ToLowerInvariant(),
+                        Description = "Enter your Keycloak realm name here",
+                    }
+                );
+
             var clientSecret = applicationBuilder
                 .AddParameter($"{clientId}-secret", true)
                 .WithDescription(ParameterDescriptions.Keycloak.ClientSecret, true)
@@ -227,7 +227,7 @@ public static class KeycloakExtensions
             builder
                 .WithReference(keycloakHosted)
                 .WaitFor(keycloakHosted)
-                .WithEnvironment("Identity__Realm", realmName)
+                .WithEnvironment("Identity__Realm", kcRealmName)
                 .WithEnvironment("Identity__ClientId", clientId)
                 .WithEnvironment("Identity__ClientSecret", clientSecret)
                 .WithEnvironment($"Identity__Scopes__{clientId}", clientId.ToClientName("API"));
@@ -238,8 +238,8 @@ public static class KeycloakExtensions
 
     private static IResourceBuilder<KeycloakResource> WithSampleRealmImport(
         this IResourceBuilder<KeycloakResource> builder,
-        IResourceBuilder<ParameterResource> realmName,
-        IResourceBuilder<ParameterResource> displayName
+        string realmName,
+        string displayName
     )
     {
         builder
@@ -260,7 +260,7 @@ public static class KeycloakExtensions
 
     private static IResourceBuilder<KeycloakResource> WithCustomTheme(
         this IResourceBuilder<KeycloakResource> builder,
-        IResourceBuilder<ParameterResource> themeName
+        string themeName
     )
     {
         var importFullPath = Path.GetFullPath(

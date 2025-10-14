@@ -8,6 +8,7 @@ public static class ScalarExtensions
 {
     /// <summary>
     ///     Adds a Scalar API reference to the distributed application builder with predefined theme and font settings.
+    ///     Only local Keycloak authentication is supported.
     /// </summary>
     /// <param name="builder">The distributed application builder to extend.</param>
     /// <param name="keycloak">The Keycloak resource builder to use for authentication.</param>
@@ -17,7 +18,6 @@ public static class ScalarExtensions
         IResourceBuilder<IResource>? keycloak = null
     )
     {
-        // https://github.com/dotnet/aspire/issues/6890
         var scalar = builder.AddScalarApiReference(options =>
             options.WithDefaultFonts(false).PreferHttpsEndpoint().AllowSelfSignedCertificates()
         );
@@ -29,15 +29,11 @@ public static class ScalarExtensions
 
         return keycloak switch
         {
-            IResourceBuilder<ExternalServiceResource> externalService => scalar
-                .WithReference(externalService)
-                .WaitFor(externalService),
-
             IResourceBuilder<KeycloakResource> container => scalar
                 .WithReference(container)
                 .WaitForStart(container),
 
-            _ => throw new InvalidOperationException("Unsupported Keycloak resource type"),
+            _ => throw new InvalidOperationException("Unsupported Keycloak resource builder type."),
         };
     }
 
