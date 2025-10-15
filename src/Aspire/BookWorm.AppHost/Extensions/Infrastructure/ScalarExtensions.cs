@@ -19,7 +19,7 @@ public static class ScalarExtensions
     )
     {
         var scalar = builder.AddScalarApiReference(options =>
-            options.WithDefaultFonts(false).PreferHttpsEndpoint().AllowSelfSignedCertificates()
+            options.DisableDefaultFonts().PreferHttpsEndpoint().AllowSelfSignedCertificates()
         );
 
         if (keycloak is null)
