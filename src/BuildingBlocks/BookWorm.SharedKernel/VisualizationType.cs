@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace BookWorm.SharedKernel;
 
-[JsonConverter(typeof(JsonStringEnumConverter))]
+[Flags, JsonConverter(typeof(JsonStringEnumConverter<VisualizationType>))]
 public enum VisualizationType : byte
 {
     [Description("Mermaid")]
