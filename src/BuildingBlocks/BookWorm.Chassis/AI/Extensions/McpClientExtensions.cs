@@ -12,8 +12,7 @@ public static class McpClientExtensions
     public static void AddMcpClient(
         this IHostApplicationBuilder builder,
         string serviceName,
-        string relativePath = "/mcp",
-        string version = "1.0"
+        string relativePath = "/mcp"
     )
     {
         var services = builder.Services;

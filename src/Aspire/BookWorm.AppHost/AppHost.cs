@@ -128,8 +128,6 @@ var chatApi = builder
     .WaitFor(signalR)
     .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor);
 
-mcp.WithParentRelationship(chatApi);
-
 var basketApi = builder
     .AddProject<Basket>(Services.Basket)
     .WithReference(redis)
@@ -168,6 +166,8 @@ var ratingApi = builder
     .WithOllama()
     .WithReference(ratingDb)
     .WaitFor(ratingDb)
+    .WithReference(mcp)
+    .WaitFor(mcp)
     .WithReference(queue)
     .WaitFor(queue)
     .WithKeycloak(keycloak)
