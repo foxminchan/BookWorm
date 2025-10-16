@@ -160,9 +160,7 @@ jobs:
 
   publish:
     name: Publish Artifacts
-    environment:
-      name: ${{ github.event.inputs.environment || 'development' }}
-      url: https://github.com/foxminchan?tab=packages&repo_name=BookWorm
+    environment: ${{ github.event.inputs.environment || 'development' }}
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.publish || true
     runs-on: ubuntu-latest
     timeout-minutes: 15
