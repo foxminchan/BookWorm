@@ -63,7 +63,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Build
-        run: dotnet dotnet build --configuration Release
+        run: dotnet build --configuration Release --no-incremental
 
       - name: Test
         run: >

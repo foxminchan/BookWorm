@@ -37,7 +37,7 @@ public sealed class VisualizeWorkflowEndpointTests
     {
         // Arrange
         const string expectedWorkflow = "digraph G {\n    A -> B;\n}";
-        var query = new VisualizeWorkflowQuery(VisualizationType.Dot);
+        var query = new VisualizeWorkflowQuery(Visualizations.Dot);
 
         _senderMock
             .Setup(s => s.Send(query, It.IsAny<CancellationToken>()))
@@ -71,7 +71,7 @@ public sealed class VisualizeWorkflowEndpointTests
         result.ShouldBeOfType<Ok<string>>();
         result.Value.ShouldBe(expectedWorkflow);
         result.StatusCode.ShouldBe(StatusCodes.Status200OK);
-        query.Type.ShouldBe(VisualizationType.Mermaid);
+        query.Type.ShouldBe(Visualizations.Mermaid);
     }
 
     [Test]
@@ -138,7 +138,7 @@ public sealed class VisualizeWorkflowEndpointTests
     public async Task GivenInvalidEnumValue_WhenHandlingEndpoint_ThenShouldStillCallSender()
     {
         // Arrange
-        var query = new VisualizeWorkflowQuery((VisualizationType)99);
+        var query = new VisualizeWorkflowQuery((Visualizations)99);
 
         _senderMock
             .Setup(s => s.Send(query, It.IsAny<CancellationToken>()))
@@ -189,7 +189,7 @@ public sealed class VisualizeWorkflowEndpointTests
         const string mermaidWorkflow = "graph TD\n    A --> B";
         const string dotWorkflow = "digraph G {\n    A -> B;\n}";
         var mermaidQuery = new VisualizeWorkflowQuery();
-        var dotQuery = new VisualizeWorkflowQuery(VisualizationType.Dot);
+        var dotQuery = new VisualizeWorkflowQuery(Visualizations.Dot);
 
         _senderMock
             .Setup(s => s.Send(mermaidQuery, It.IsAny<CancellationToken>()))

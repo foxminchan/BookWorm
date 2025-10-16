@@ -25,18 +25,18 @@ public sealed class VisualizeWorkflowQueryTests
         query.ShouldNotBeNull();
         query.ShouldBeOfType<VisualizeWorkflowQuery>();
         query.ShouldBeAssignableTo<IQuery<string>>();
-        query.Type.ShouldBe(VisualizationType.Mermaid);
+        query.Type.ShouldBe(Visualizations.Mermaid);
     }
 
     [Test]
     public void GivenVisualizerWorkflowQueryWithType_WhenCreating_ThenShouldHaveCorrectType()
     {
         // Arrange & Act
-        var query = new VisualizeWorkflowQuery(VisualizationType.Dot);
+        var query = new VisualizeWorkflowQuery(Visualizations.Dot);
 
         // Assert
         query.ShouldNotBeNull();
-        query.Type.ShouldBe(VisualizationType.Dot);
+        query.Type.ShouldBe(Visualizations.Dot);
     }
 
     [Test]
@@ -58,7 +58,7 @@ public sealed class VisualizeWorkflowQueryTests
     {
         // Arrange
         var query1 = new VisualizeWorkflowQuery();
-        var query2 = new VisualizeWorkflowQuery(VisualizationType.Dot);
+        var query2 = new VisualizeWorkflowQuery(Visualizations.Dot);
 
         // Act & Assert
         query1.ShouldNotBe(query2);
@@ -88,7 +88,7 @@ public sealed class VisualizeWorkflowQueryTests
         var query = new VisualizeWorkflowQuery();
 
         // Assert
-        query.Type.ShouldBe(VisualizationType.Mermaid);
+        query.Type.ShouldBe(Visualizations.Mermaid);
     }
 
     [Test]
