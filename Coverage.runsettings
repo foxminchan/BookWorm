@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="Code Coverage" uri="datacollector://Microsoft/CodeCoverage/2.0" assemblyQualifiedName="Microsoft.VisualStudio.Coverage.DynamicCoverageDataCollector, Microsoft.VisualStudio.TraceCollector, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+        <Configuration>
+          <Format>xml</Format>
+          <CodeCoverage>
+            <ModulePaths>
+              <Exclude>
+                <ModulePath>.*Tests.dll$</ModulePath>
+              </Exclude>
+            </ModulePaths>
+
+            <!-- Exclude by fully qualified class names (for generated types in namespaces) -->
+            <Functions>
+              <Exclude>
+                <!-- gRPC/Protobuf generated types -->
+                <Function>.*\.Grpc\.Services\..*GrpcService\..*</Function>
+                <Function>.*\.Grpc\.Services\..*Reflection\..*</Function>
+                <Function>.*\.Grpc\.Services\..*Request\..*</Function>
+                <Function>.*\.Grpc\.Services\..*Response\..*</Function>
+                <Function>.*\.Grpc\.Services\.DecimalValue\..*</Function>
+                <Function>.*\.Grpc\.Services\.Item\..*</Function>
+
+                <!-- Serialization contexts -->
+                <Function>.*SerializationContext\..*</Function>
+
+                <!-- Mediator generated -->
+                <Function>Mediator\..*</Function>
+
+                <!-- Option validation generated -->
+                <Function>__OptionValidation.*</Function>
+                <Function>__OptionValidationGeneratedAttributes\..*</Function>
+                <Function>__OptionValidationStaticInstances\..*</Function>
+
+                <!-- OpenAPI generated -->
+                <Function>.*OpenApiXmlCommentSupport.*</Function>
+                <Function>.*InterceptsLocationAttribute.*</Function>
+
+                <!-- Regex generated (System.Text.RegularExpressions.Generated) -->
+                <Function>.*__RegexGenerator_g.*</Function>
+                <Function>System\.Text\.RegularExpressions\.Generated\..*</Function>
+                <Function>.*__InvalidFileNameChars_.*</Function>
+                <Function>.*__Utilities.*</Function>
+
+                <!-- LoggerMessage generated (source generators) -->
+                <Function>.*ApiTrace\.Log.*</Function>
+                <Function>.*Trace\.Log.*</Function>
+
+                <!-- Infrastructure: Exclude all infrastructure classes and methods -->
+                <Function>.*\.Infrastructure\..*\..*</Function>
+                <Function>BookWorm\..*\.Infrastructure\..*</Function>
+
+                <!-- Extensions: Exclude all extension classes and methods -->
+                <Function>.*\.Extensions\..*\..*</Function>
+                <Function>BookWorm\..*\.Extensions\..*</Function>
+              </Exclude>
+            </Functions>
+
+            <Sources>
+              <Exclude>
+                <!-- Startup code and building blocks -->
+                <Source>.*\\Services\\.*\\Program\.cs$</Source>
+                <Source>.*\\BuildingBlocks\\.*</Source>
+                <Source>.*\\Integrations\\.*</Source>
+                <Source>.*\\Aspire\\.*</Source>
+
+                <!-- Infrastructure and Extensions: Exclude all (focus on business logic) -->
+                <Source>.*\\Infrastructure\\.*</Source>
+                <Source>.*\\Extensions\\.*</Source>
+
+                <!-- Auto-generated code -->
+                <Source>.*\\Generated\\.*</Source>
+                <Source>.*\\.g\\.cs$</Source>
+
+                <!-- gRPC/Protobuf generated files (exclude generated, keep hand-written implementations) -->
+                <Source>.*Reflection\.cs$</Source>
+                <Source>.*GrpcService\.cs$</Source>
+                <Source>.*Request\.cs$</Source>
+                <Source>.*Response\.cs$</Source>
+                <Source>.*\\DecimalValue\.cs$</Source>
+                <Source>.*\\Item\.cs$</Source>
+
+                <!-- Serialization contexts (auto-generated) -->
+                <Source>.*SerializationContext\.cs$</Source>
+
+                <!-- OpenAPI generated files -->
+                <Source>.*OpenApiXmlCommentSupport.*</Source>
+                <Source>.*InterceptsLocationAttribute.*</Source>
+
+                <!-- Mediator generated files (all Mediator namespace code) -->
+                <Source>.*\\Mediator\\.*</Source>
+                <Source>Mediator.AssemblyReference</Source>
+                <Source>Mediator.MediatorOptions</Source>
+                <Source>.*MediatorOptionsAttribute.*</Source>
+
+                <!-- Validators generated attributes -->
+                <Source>.*__OptionValidation.*</Source>
+                <Source>__OptionValidationGeneratedAttributes.*</Source>
+                <Source>__OptionValidationStaticInstances.*</Source>
+                <Source>.*____SourceGen__.*</Source>
+                <Source>.*____Attributes.*</Source>
+
+                <!-- Regex generated files -->
+                <Source>.*__RegexGenerator_g.*</Source>
+                <Source>.*\\Generated\\.*RegularExpressions.*</Source>
+
+                <!-- Exception classes (simple property bags) -->
+                <Source>.*Exception\.cs$</Source>
+
+                <!-- DTO/Contract classes (simple property bags) -->
+                <Source>.*\\Contracts\\.*\.cs$</Source>
+                <Source>.*Dto\.cs$</Source>
+              </Exclude>
+            </Sources>
+            <UseVerifiableInstrumentation>False</UseVerifiableInstrumentation>
+            <EnableStaticNativeInstrumentation>False</EnableStaticNativeInstrumentation>
+            <EnableDynamicNativeInstrumentation>False</EnableDynamicNativeInstrumentation>
+          </CodeCoverage>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

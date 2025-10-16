@@ -37,9 +37,9 @@ runs:
       run: >
         dotnet test
         --configuration Release
-        --logger console --logger trx --logger html --logger GitHubActions
-        --
         --report-trx
+        --coverage
+        --coverage-settings Coverage.runsettings
         --results-directory ./test-results
         --github-reporter-style full
         --hangdump --hangdump-timeout ${{ inputs.testHangTimeout }}
