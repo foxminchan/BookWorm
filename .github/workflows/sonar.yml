@@ -70,8 +70,9 @@ jobs:
           dotnet test
           --configuration Release
           --report-trx
-          --results-directory ./test-results
+          --coverage
           --coverage-settings Coverage.runsettings
+          --results-directory ./test-results
           --github-reporter-style full
           --hangdump --hangdump-timeout 7m
           --crashdump
