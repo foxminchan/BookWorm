@@ -49,7 +49,7 @@ public sealed class VisualizeWorkflowValidatorTests
 
     [Test]
     [Arguments(-1)]
-    [Arguments(2)]
+    [Arguments(4)]
     [Arguments(99)]
     [Arguments(255)]
     public void GivenInvalidEnumValue_WhenValidating_ThenShouldHaveValidationError(int invalidValue)
@@ -111,7 +111,7 @@ public sealed class VisualizeWorkflowValidatorTests
     public void GivenMaximumValidEnumValue_WhenValidating_ThenShouldNotHaveValidationError()
     {
         // Arrange
-        var query = new VisualizeWorkflowQuery((Visualizations)1);
+        var query = new VisualizeWorkflowQuery(Visualizations.Dot);
 
         // Act
         var result = _validator.TestValidate(query);
