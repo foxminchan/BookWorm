@@ -8,13 +8,10 @@
   <Property Name="sonar.exclusions">
     docs/**,src/Services/**/**/Infrastructure/Migrations/**
   </Property>
-  <Property Name="sonar.coverage.exclusions">
-    src/Services/**/**/Infrastructure/**,src/Services/**/**/Extensions/**,src/Services/**/**/Program.cs,src/BuildingBlocks/**,src/Integrations/**,src/Aspire/**
-  </Property>
   <Property Name="sonar.cs.vstest.reportsPaths">
-    src/Services/**/**/test-results/*.trx,tests/**/test-results/*.trx
+   test-results/*.trx
   </Property>
   <Property Name="sonar.cs.vscoveragexml.reportsPaths">
-    src/Services/**/**/test-results/*.xml,tests/**/test-results/*.xml
+    test-results/*.xml
   </Property>
 </SonarQubeAnalysisProperties>
