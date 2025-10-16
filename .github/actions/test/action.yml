@@ -38,7 +38,6 @@ runs:
         dotnet test
         --configuration Release
         --logger console --logger trx --logger html --logger GitHubActions
-        --
         --report-trx
         --results-directory ./test-results
         --github-reporter-style full
