@@ -69,13 +69,11 @@ jobs:
         run: >
           dotnet test
           --configuration Release
-          --logger console --logger trx --logger html --logger GitHubActions
-          --
           --report-trx
+          --coverage
+          --coverage-settings Coverage.runsettings
           --results-directory ./test-results
           --github-reporter-style full
-          --coverage
-          --coverage-output-format xml
           --hangdump --hangdump-timeout 7m
           --crashdump
           --timeout 15m

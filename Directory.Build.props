@@ -16,7 +16,6 @@
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
   <ItemGroup Condition="$(MSBuildProjectFullPath.Contains('Tests'))" Label="Testing">
-    <PackageReference Include="GitHubActionsTestLogger" />
     <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
     <PackageReference Include="Microsoft.Testing.Extensions.CrashDump" />
     <PackageReference Include="Microsoft.Testing.Extensions.HangDump" />
