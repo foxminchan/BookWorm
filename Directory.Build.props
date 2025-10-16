@@ -9,8 +9,9 @@
   <PropertyGroup Label="Build">
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <WarnOnPackingNonPackableProject>false</WarnOnPackingNonPackableProject>
+    <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
     <!-- Temporarily disable security warnings for transitive packages. -->
-    <NoWarn>NU1608</NoWarn>
+    <NoWarn>NU1608;NU1901;NU1902;NU1903;NU1904</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
