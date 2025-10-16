@@ -25,7 +25,7 @@ public sealed class VisualizeWorkflowValidatorTests
     public void GivenValidQueryWithDotType_WhenValidating_ThenShouldNotHaveValidationErrors()
     {
         // Arrange
-        var query = new VisualizeWorkflowQuery(VisualizationType.Dot);
+        var query = new VisualizeWorkflowQuery(Visualizations.Dot);
 
         // Act
         var result = _validator.TestValidate(query);
@@ -55,7 +55,7 @@ public sealed class VisualizeWorkflowValidatorTests
     public void GivenInvalidEnumValue_WhenValidating_ThenShouldHaveValidationError(int invalidValue)
     {
         // Arrange
-        var query = new VisualizeWorkflowQuery((VisualizationType)invalidValue);
+        var query = new VisualizeWorkflowQuery((Visualizations)invalidValue);
 
         // Act
         var result = _validator.TestValidate(query);
@@ -68,7 +68,7 @@ public sealed class VisualizeWorkflowValidatorTests
     public void GivenInvalidEnumValue_WhenValidating_ThenShouldHaveValidationErrorForType()
     {
         // Arrange
-        var query = new VisualizeWorkflowQuery((VisualizationType)100);
+        var query = new VisualizeWorkflowQuery((Visualizations)100);
 
         // Act
         var result = _validator.TestValidate(query);
@@ -78,10 +78,10 @@ public sealed class VisualizeWorkflowValidatorTests
     }
 
     [Test]
-    [Arguments(VisualizationType.Mermaid)]
-    [Arguments(VisualizationType.Dot)]
+    [Arguments(Visualizations.Mermaid)]
+    [Arguments(Visualizations.Dot)]
     public void GivenAllValidEnumValues_WhenValidating_ThenShouldNotHaveValidationErrors(
-        VisualizationType type
+        Visualizations type
     )
     {
         // Arrange
@@ -111,7 +111,7 @@ public sealed class VisualizeWorkflowValidatorTests
     public void GivenMaximumValidEnumValue_WhenValidating_ThenShouldNotHaveValidationError()
     {
         // Arrange
-        var query = new VisualizeWorkflowQuery((VisualizationType)1);
+        var query = new VisualizeWorkflowQuery((Visualizations)1);
 
         // Act
         var result = _validator.TestValidate(query);
@@ -124,7 +124,7 @@ public sealed class VisualizeWorkflowValidatorTests
     public void GivenEnumValueOutOfRange_WhenValidating_ThenShouldHaveValidationErrorWithCorrectMessage()
     {
         // Arrange
-        const VisualizationType invalidValue = (VisualizationType)50;
+        const Visualizations invalidValue = (Visualizations)50;
         var query = new VisualizeWorkflowQuery(invalidValue);
 
         // Act

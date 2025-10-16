@@ -4,8 +4,8 @@
 public enum Status : byte
 {
     [Description("In Stock")]
-    InStock = 0,
+    InStock = 1,
 
     [Description("Out of Stock")]
-    OutOfStock = 1,
+    OutOfStock = 2,
 }

@@ -9,7 +9,7 @@
     docs/**,src/Services/**/**/Infrastructure/Migrations/**
   </Property>
   <Property Name="sonar.coverage.exclusions">
-    src/Services/**/**/Infrastructure/**,src/Services/**/**/Extensions/**
+    src/Services/**/**/Infrastructure/**,src/Services/**/**/Extensions/**,src/Services/**/**/Program.cs,src/BuildingBlocks/**,src/Integrations/**,src/Aspire/**
   </Property>
   <Property Name="sonar.cs.vstest.reportsPaths">
    test-results/*.trx

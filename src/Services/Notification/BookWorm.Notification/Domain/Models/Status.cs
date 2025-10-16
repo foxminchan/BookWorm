@@ -7,11 +7,11 @@ namespace BookWorm.Notification.Domain.Models;
 public enum Status : byte
 {
     [Description("New")]
-    New = 0,
+    New = 1,
 
     [Description("Completed")]
-    Completed = 1,
+    Completed = 2,
 
     [Description("Canceled")]
-    Canceled = 2,
+    Canceled = 3,
 }

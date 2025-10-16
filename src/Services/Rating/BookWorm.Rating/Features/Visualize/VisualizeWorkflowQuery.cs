@@ -7,8 +7,8 @@ namespace BookWorm.Rating.Features.Visualize;
 
 public sealed record VisualizeWorkflowQuery(
     [property: Description("The type of visualization to generate")]
-    [property: DefaultValue(VisualizationType.Mermaid)]
-        VisualizationType Type = VisualizationType.Mermaid
+    [property: DefaultValue(Visualizations.Mermaid)]
+        Visualizations Type = Visualizations.Mermaid
 ) : IQuery<string>;
 
 public sealed class VisualizerWorkflowHandler(ISummarizer summarizer)
@@ -24,8 +24,8 @@ public sealed class VisualizerWorkflowHandler(ISummarizer summarizer)
         return ValueTask.FromResult(
             request.Type switch
             {
-                VisualizationType.Mermaid => workflow.ToMermaidString(),
-                VisualizationType.Dot => workflow.ToDotString(),
+                Visualizations.Mermaid => workflow.ToMermaidString(),
+                Visualizations.Dot => workflow.ToDotString(),
                 _ => string.Empty,
             }
         );
