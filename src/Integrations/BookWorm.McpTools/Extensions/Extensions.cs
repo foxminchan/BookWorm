@@ -31,7 +31,8 @@ internal static class Extensions
                 }
             )
             .WithHttpTransport(o => o.Stateless = true)
-            .WithToolsFromAssembly();
+            .WithToolsFromAssembly()
+            .WithPromptsFromAssembly();
 
         services
             .AddOpenTelemetry()

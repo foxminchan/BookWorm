@@ -1,5 +1,7 @@
 ﻿using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
+using ModelContextProtocol;
+using ModelContextProtocol.Client;
 
 namespace BookWorm.Rating.Infrastructure.Summarizer;
 
@@ -8,7 +10,8 @@ public sealed class RatingSummarizer(
     [FromKeyedServices(Constants.Other.Agents.SummarizeAgent)] AIAgent summarizeAgent,
     [FromKeyedServices(Constants.Other.Agents.LanguageAgent)] AIAgent languageAgent,
     [FromKeyedServices(Constants.Other.Agents.RouterAgent)] AIAgent routerAgent,
-    [FromKeyedServices(Constants.Other.Agents.SentimentAgent)] AIAgent sentimentAgent
+    [FromKeyedServices(Constants.Other.Agents.SentimentAgent)] AIAgent sentimentAgent,
+    McpClient mcpClient
 ) : ISummarizer
 {
     public Workflow BuildAgentsWorkflow()
@@ -49,8 +52,14 @@ public sealed class RatingSummarizer(
         var workflowAgent = await BuildAgentsWorkflow().AsAgentAsync();
         var workflowAgentThread = workflowAgent.GetNewThread();
 
+        var prompt = await mcpClient.GetPromptAsync(
+            "summarize_rating",
+            new Dictionary<string, object?> { ["content"] = content },
+            cancellationToken: cancellationToken
+        );
+
         var response = await workflowAgent.RunAsync(
-            $"Summarize the following content: {content}",
+            prompt.ToChatMessages(),
             workflowAgentThread,
             cancellationToken: cancellationToken
         );

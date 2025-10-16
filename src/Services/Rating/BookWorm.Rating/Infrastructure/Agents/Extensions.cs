@@ -20,6 +20,8 @@ public static class Extensions
 
         builder.AddAgentsTelemetry();
 
+        builder.AddMcpClient(Constants.Aspire.Services.McpTools);
+
         services.AddHttpClient<AgentDiscoveryClient>(client =>
             client.BaseAddress = new(
                 $"{Protocols.HttpOrHttps}://{Constants.Aspire.Services.Chatting}"
