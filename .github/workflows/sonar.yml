@@ -8,6 +8,7 @@ on:
       - "src/**"
       - "tests/**"
       - ".github/workflows/sonar.yml"
+      - "!src/Aspire/BookWorm.AppHost/Container/**"
   pull_request:
     types:
       - opened

@@ -15,6 +15,16 @@ on:
       - "!**.md"
       - "!src/Aspire/BookWorm.AppHost/Container/**"
   workflow_dispatch:
+    inputs:
+      environment:
+        description: "The environment to deploy to"
+        required: true
+        type: environment
+      publish:
+        description: "Whether to publish the artifacts"
+        type: boolean
+        required: true
+        default: true
 
 env:
   DOTNET_VERSION: "10.0.x"
@@ -150,7 +160,10 @@ jobs:
 
   publish:
     name: Publish Artifacts
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))
+    environment:
+      name: ${{ github.event.inputs.environment || 'development' }}
+      url: https://github.com/foxminchan?tab=packages&repo_name=BookWorm
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.publish || true
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: [build, test]
