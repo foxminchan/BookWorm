@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 
-[Flags, JsonConverter(typeof(JsonStringEnumConverter<Status>))]
+[JsonConverter(typeof(JsonStringEnumConverter<Status>))]
 public enum Status : byte
 {
     [Description("New")]

@@ -17,10 +17,12 @@
   </Folder>
   <Folder Name="/Services/" />
   <Folder Name="/Services/Basket/">
+    <Project Path="src/Services/Basket/BookWorm.Basket.ContractTests/BookWorm.Basket.ContractTests.csproj" />
     <Project Path="src/Services/Basket/BookWorm.Basket.UnitTests/BookWorm.Basket.UnitTests.csproj" />
     <Project Path="src/Services/Basket/BookWorm.Basket/BookWorm.Basket.csproj" />
   </Folder>
   <Folder Name="/Services/Catalog/">
+    <Project Path="src/Services/Catalog/BookWorm.Catalog.ContractTests/BookWorm.Catalog.ContractTests.csproj" />
     <Project Path="src/Services/Catalog/BookWorm.Catalog.UnitTests/BookWorm.Catalog.UnitTests.csproj" />
     <Project Path="src/Services/Catalog/BookWorm.Catalog/BookWorm.Catalog.csproj" />
   </Folder>
@@ -33,21 +35,25 @@
     <Project Path="src/Services/Finance/BookWorm.Finance/BookWorm.Finance.csproj" />
   </Folder>
   <Folder Name="/Services/Notification/">
+    <Project Path="src/Services/Notification/BookWorm.Notification.ContractTests/BookWorm.Notification.ContractTests.csproj" />
     <Project Path="src/Services/Notification/BookWorm.Notification.UnitTests/BookWorm.Notification.UnitTests.csproj" />
     <Project Path="src/Services/Notification/BookWorm.Notification/BookWorm.Notification.csproj" />
   </Folder>
   <Folder Name="/Services/Ordering/">
+    <Project Path="src/Services/Ordering/BookWorm.Ordering.ContractTests/BookWorm.Ordering.ContractTests.csproj" />
     <Project Path="src/Services/Ordering/BookWorm.Ordering.UnitTests/BookWorm.Ordering.UnitTests.csproj" />
     <Project Path="src/Services/Ordering/BookWorm.Ordering/BookWorm.Ordering.csproj" />
   </Folder>
   <Folder Name="/Services/Rating/">
+    <Project Path="src/Services/Rating/BookWorm.Rating.ContractTests/BookWorm.Rating.ContractTests.csproj" />
     <Project Path="src/Services/Rating/BookWorm.Rating.UnitTests/BookWorm.Rating.UnitTests.csproj" />
     <Project Path="src/Services/Rating/BookWorm.Rating/BookWorm.Rating.csproj" />
   </Folder>
   <Folder Name="/Services/Scheduler/">
-    <Project Path="src/Services/Scheduler/BookWorm.Scheduler/BookWorm.Scheduler.csproj" />
+    <Project Path="src/Services/Scheduler/BookWorm.Scheduler.ContractTests/BookWorm.Scheduler.ContractTests.csproj" />
     <Project Path="src/Services/Scheduler/BookWorm.Scheduler.Migrator/BookWorm.Scheduler.Migrator.csproj" />
     <Project Path="src/Services/Scheduler/BookWorm.Scheduler.UnitTests/BookWorm.Scheduler.UnitTests.csproj" />
+    <Project Path="src/Services/Scheduler/BookWorm.Scheduler/BookWorm.Scheduler.csproj" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path="Directory.Build.props" />

@@ -12,12 +12,6 @@ Thank you for your interest in contributing to BookWorm! This document provides 
    git config --global core.autocrlf input
    ```
 
-# Project Dependencies Diagram
-
-This diagram illustrates the dependencies between various components of the BookWorm project. It helps in understanding how different modules interact with each other.
-
-![BookWorm Dependencies Diagram](../assets/dependency.png)
-
 # Development Workflow
 
 1. **Create a Branch**: `git checkout -b feature/your-feature-name`

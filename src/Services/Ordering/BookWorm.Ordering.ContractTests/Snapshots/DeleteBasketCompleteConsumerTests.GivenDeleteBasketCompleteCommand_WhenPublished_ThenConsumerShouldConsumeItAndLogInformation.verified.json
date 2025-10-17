@@ -1,0 +1,14 @@
+﻿{
+  "CommandType": "DeleteBasketCompleteCommand",
+  "Properties": {
+    "OrderId": "Guid_1",
+    "TotalMoney": 125.99
+  },
+  "Schema": {
+    "OrderIdType": "Guid",
+    "TotalMoneyType": "Decimal",
+    "HasId": true,
+    "HasCreationDate": true,
+    "IsIntegrationEvent": true
+  }
+}
