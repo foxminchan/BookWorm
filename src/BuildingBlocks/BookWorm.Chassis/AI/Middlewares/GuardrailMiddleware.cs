@@ -4,7 +4,7 @@ namespace BookWorm.Chassis.AI.Middlewares;
 
 public static class GuardrailMiddleware
 {
-    private static readonly string[] _sourceArray =
+    private static readonly string[] SourceArray =
     [
         "harmful",
         "illegal",
@@ -39,7 +39,7 @@ public static class GuardrailMiddleware
             [.. contents.Select(m => new ChatMessage(m.Role, FilterContent(m.Text)))];
 
         static string FilterContent(string content) =>
-            _sourceArray.Any(keyword =>
+            SourceArray.Any(keyword =>
                 content.Contains(keyword, StringComparison.OrdinalIgnoreCase)
             )
                 ? "[REDACTED: Forbidden content]"

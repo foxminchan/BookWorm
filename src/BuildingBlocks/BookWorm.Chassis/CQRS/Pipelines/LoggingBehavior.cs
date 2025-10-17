@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Reflection;
 using Mediator;
 using Microsoft.Extensions.Logging;
 
@@ -25,19 +26,23 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
                 typeof(TRequest).FullName,
                 typeof(TResponse).FullName
             );
+
+            var props = new List<PropertyInfo>(message.GetType().GetProperties());
+            foreach (PropertyInfo prop in props)
+            {
+                var propValue = prop.GetValue(message, null);
+                logger.LogInformation(
+                    "[{Behavior}] Property {Property} : {@Value}",
+                    behavior,
+                    prop.Name,
+                    propValue
+                );
+            }
         }
 
         var start = Stopwatch.GetTimestamp();
 
         var response = await next(message, cancellationToken);
-
-        logger.LogInformation(
-            "[{Behavior}] The request handled {RequestName} with {Response} in {ElapsedMilliseconds} ms",
-            behavior,
-            typeof(TRequest).Name,
-            response,
-            Stopwatch.GetElapsedTime(start).TotalMilliseconds
-        );
 
         var timeTaken = Stopwatch.GetElapsedTime(start);
 
@@ -48,6 +53,16 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
                 behavior,
                 typeof(TRequest).FullName,
                 timeTaken.Seconds
+            );
+        }
+        else
+        {
+            logger.LogInformation(
+                "[{Behavior}] The request handled {RequestName} with {Response} in {ElapsedMilliseconds} ms",
+                behavior,
+                typeof(TRequest).Name,
+                response,
+                Stopwatch.GetElapsedTime(start).TotalMilliseconds
             );
         }
 
