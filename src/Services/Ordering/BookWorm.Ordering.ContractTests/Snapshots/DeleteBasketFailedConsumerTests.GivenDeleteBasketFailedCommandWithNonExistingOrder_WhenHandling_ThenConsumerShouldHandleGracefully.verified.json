@@ -1,0 +1,18 @@
+﻿{
+  "CommandType": "DeleteBasketFailedCommand",
+  "Properties": {
+    "BasketId": "Guid_1",
+    "Email": "test@example.com",
+    "OrderId": "Guid_2",
+    "TotalMoney": 100.00
+  },
+  "Schema": {
+    "BasketIdType": "Guid",
+    "EmailType": "String",
+    "OrderIdType": "Guid",
+    "TotalMoneyType": "Decimal",
+    "HasId": true,
+    "HasCreationDate": true,
+    "IsIntegrationEvent": true
+  }
+}

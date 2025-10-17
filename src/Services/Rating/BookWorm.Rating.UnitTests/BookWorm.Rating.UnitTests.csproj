@@ -6,13 +6,8 @@
   <ItemGroup>
     <PackageReference Include="Moq" />
     <PackageReference Include="Bogus" />
-    <PackageReference Include="Verify.TUnit" />
   </ItemGroup>
   <ItemGroup>
-    <Compile
-      Include="$(SolutionDir)\tests\BookWorm.Common\SnapshotTestBase.cs"
-      Link="SnapshotTestBase.cs"
-    />
     <ProjectReference Include="..\BookWorm.Rating\BookWorm.Rating.csproj" />
   </ItemGroup>
   <ItemGroup>

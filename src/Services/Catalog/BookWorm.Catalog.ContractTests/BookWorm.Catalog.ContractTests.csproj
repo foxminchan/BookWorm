@@ -4,11 +4,16 @@
     <ExcludeFromCodeCoverage>true</ExcludeFromCodeCoverage>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Moq" />
-    <PackageReference Include="Bogus" />
+    <PackageReference Include="Verify.TUnit" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\BookWorm.Ordering\BookWorm.Ordering.csproj" />
+    <Compile
+      Include="$(SolutionDir)\tests\BookWorm.Common\SnapshotTestBase.cs"
+      Link="SnapshotTestBase.cs"
+    />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BookWorm.Catalog.UnitTests\BookWorm.Catalog.UnitTests.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Moq" />

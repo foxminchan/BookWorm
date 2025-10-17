@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 
-[Flags, JsonConverter(typeof(JsonStringEnumConverter<Status>))]
+[JsonConverter(typeof(JsonStringEnumConverter<Status>))]
 public enum Status : byte
 {
     [Description("In Stock")]

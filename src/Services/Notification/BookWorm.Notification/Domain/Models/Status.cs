@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace BookWorm.Notification.Domain.Models;
 
-[Flags, JsonConverter(typeof(JsonStringEnumConverter<Status>))]
+[JsonConverter(typeof(JsonStringEnumConverter<Status>))]
 public enum Status : byte
 {
     [Description("New")]

@@ -1,11 +1,12 @@
 ﻿using BookWorm.Common;
 using BookWorm.Contracts;
 using BookWorm.Finance.Saga;
+using BookWorm.Finance.UnitTests.Extensions;
 using BookWorm.SharedKernel.Helpers;
 using MassTransit;
 using MassTransit.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using static BookWorm.Finance.UnitTests.OrderStateMachineTestHelper;
+using static BookWorm.Finance.UnitTests.Helpers.OrderStateMachineTestHelper;
 
 namespace BookWorm.Finance.UnitTests;
 
