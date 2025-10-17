@@ -1,12 +1,15 @@
-﻿using BookWorm.Chassis.AI.Agents;
-using BookWorm.Chassis.Utilities;
+﻿using BookWorm.Chassis.Utilities;
 using Microsoft.Agents.AI;
 
-namespace BookWorm.Chassis.AI.Extensions;
+namespace BookWorm.Chassis.AI.Agents;
 
-public static class A2AClientExtensions
+public static class A2AClientFactory
 {
-    public static AIAgent GetA2AAgent(string serviceName, string agentName, string? path = "a2a")
+    public static AIAgent CreateA2AAgentClient(
+        string serviceName,
+        string agentName,
+        string? path = "a2a"
+    )
     {
         var baseAddress =
             ServiceDiscoveryUtilities.GetServiceEndpoint(serviceName)

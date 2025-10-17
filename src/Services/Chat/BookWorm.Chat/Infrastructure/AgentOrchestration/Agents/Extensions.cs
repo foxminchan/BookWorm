@@ -50,8 +50,8 @@ internal static class Extensions
                             Tools =
                             [
                                 .. mcpClient.ListToolsAsync().Preserve().GetAwaiter().GetResult(),
-                                A2AClientExtensions
-                                    .GetA2AAgent(
+                                A2AClientFactory
+                                    .CreateA2AAgentClient(
                                         Services.Rating,
                                         Constants.Other.Agents.RatingAgent
                                     )

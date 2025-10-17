@@ -32,22 +32,26 @@ public static class Extensions
 
         builder.AddAIAgent(
             Constants.Other.Agents.SummarizeAgent,
-            (_, key) => A2AClientExtensions.GetA2AAgent(Constants.Aspire.Services.Chatting, key)
+            (_, key) =>
+                A2AClientFactory.CreateA2AAgentClient(Constants.Aspire.Services.Chatting, key)
         );
 
         builder.AddAIAgent(
             Constants.Other.Agents.LanguageAgent,
-            (_, key) => A2AClientExtensions.GetA2AAgent(Constants.Aspire.Services.Chatting, key)
+            (_, key) =>
+                A2AClientFactory.CreateA2AAgentClient(Constants.Aspire.Services.Chatting, key)
         );
 
         builder.AddAIAgent(
             Constants.Other.Agents.SentimentAgent,
-            (_, key) => A2AClientExtensions.GetA2AAgent(Constants.Aspire.Services.Chatting, key)
+            (_, key) =>
+                A2AClientFactory.CreateA2AAgentClient(Constants.Aspire.Services.Chatting, key)
         );
 
         builder.AddAIAgent(
             Constants.Other.Agents.RouterAgent,
-            (_, key) => A2AClientExtensions.GetA2AAgent(Constants.Aspire.Services.Chatting, key)
+            (_, key) =>
+                A2AClientFactory.CreateA2AAgentClient(Constants.Aspire.Services.Chatting, key)
         );
 
         builder.AddAIAgent(
