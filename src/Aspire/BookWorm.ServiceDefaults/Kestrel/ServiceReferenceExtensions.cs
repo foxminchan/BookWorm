@@ -5,7 +5,7 @@ namespace BookWorm.ServiceDefaults.Kestrel;
 
 public static class ServiceReferenceExtensions
 {
-    private static readonly string _healthCheckName = nameof(Health).ToLowerInvariant();
+    private static readonly string HealthCheckName = nameof(Health).ToLowerInvariant();
 
     public static IHttpClientBuilder AddGrpcServiceReference<TClient>(
         this IServiceCollection services,
@@ -27,7 +27,7 @@ public static class ServiceReferenceExtensions
         AddGrpcHealthChecks(
             services,
             uri,
-            $"{typeof(TClient).Name}-{_healthCheckName}",
+            $"{typeof(TClient).Name}-{HealthCheckName}",
             failureStatus
         );
 
@@ -65,8 +65,8 @@ public static class ServiceReferenceExtensions
         services
             .AddHealthChecks()
             .AddUrlGroup(
-                new Uri(uri, healthRelativePath ?? _healthCheckName),
-                $"{typeof(TClient).Name}-{_healthCheckName}",
+                new Uri(uri, healthRelativePath ?? HealthCheckName),
+                $"{typeof(TClient).Name}-{HealthCheckName}",
                 failureStatus,
                 configurePrimaryHttpMessageHandler: s =>
                     s.GetRequiredService<IHttpMessageHandlerFactory>().CreateHandler()
