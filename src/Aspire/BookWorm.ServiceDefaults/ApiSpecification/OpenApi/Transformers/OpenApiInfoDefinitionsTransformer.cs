@@ -43,6 +43,6 @@ internal sealed class OpenApiInfoDefinitionsTransformer(
             );
         }
 
-        return Task.FromResult(Task.CompletedTask);
+        return Task.CompletedTask;
     }
 }
