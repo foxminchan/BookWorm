@@ -24,7 +24,7 @@ public static class OpenApiOptionsExtensions
 
     public static void ApplyOperationDeprecatedStatus(this OpenApiOptions options)
     {
-        options.AddOperationTransformer(new OperationDeprecatedStatusTransformer());
+        options.AddOperationTransformer<OperationDeprecatedStatusTransformer>();
     }
 
     public static void ApplyAuthorizationChecks(this OpenApiOptions options, string[] scopes)
