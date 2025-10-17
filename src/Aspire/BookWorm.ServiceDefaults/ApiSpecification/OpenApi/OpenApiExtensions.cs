@@ -25,7 +25,6 @@ public static class OpenApiExtensions
                     }
 
                     options.ApplyOperationDeprecatedStatus();
-                    options.ApplyFluentValidationSchemas(sp);
                 }
             );
         }
