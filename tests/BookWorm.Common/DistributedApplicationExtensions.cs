@@ -1,8 +1,5 @@
 ﻿using System.Security.Cryptography;
 using Aspire.Hosting;
-using Aspire.Hosting.ApplicationModel;
-using Aspire.Hosting.Testing;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Common;
@@ -212,5 +209,52 @@ public static class DistributedApplicationExtensions
             );
             return (resourceName, state);
         }
+    }
+
+    public static TBuilder WithIncludeResources<TBuilder>(
+        this TBuilder builder,
+        params List<string> resourceNames
+    )
+        where TBuilder : IDistributedApplicationTestingBuilder
+    {
+        if (resourceNames.Count == 0)
+        {
+            return builder;
+        }
+
+        int added;
+        do
+        {
+            var annotations = builder
+                .Resources.Where(r =>
+                    r.Annotations.OfType<ResourceRelationshipAnnotation>()
+                        .Any(p =>
+                            resourceNames.Contains(p.Resource.Name)
+                            && p.Type == "Parent"
+                            && !resourceNames.Contains(p.Resource.Name)
+                        )
+                )
+                .Select(r => r.Name);
+
+            var parents = builder
+                .Resources.Where(r => r is IResourceWithParent && !resourceNames.Contains(r.Name))
+                .Select(r => r.Name);
+
+            List<string> adds = [.. annotations, .. parents];
+            resourceNames.AddRange(adds);
+
+            added = adds.Count;
+        } while (added > 0);
+
+        foreach (
+            var resource in builder
+                .Resources.Where(r => !resourceNames.Distinct().Contains(r.Name))
+                .ToArray()
+        )
+        {
+            builder.Resources.Remove(resource);
+        }
+
+        return builder;
     }
 }
