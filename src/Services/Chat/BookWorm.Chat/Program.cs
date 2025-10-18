@@ -4,6 +4,8 @@ using BookWorm.ServiceDefaults;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.WebHost.ConfigureKestrel(o => o.AddServerHeader = false);
+
 builder.AddServiceDefaults();
 
 builder.AddApplicationServices();

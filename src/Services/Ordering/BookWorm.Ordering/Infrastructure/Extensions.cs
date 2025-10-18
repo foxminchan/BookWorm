@@ -1,4 +1,5 @@
-﻿using BookWorm.Ordering.Features.Orders.Stream;
+﻿using BookWorm.Chassis.Caching;
+using BookWorm.Ordering.Features.Orders.Stream;
 using BookWorm.Ordering.Infrastructure.EventStore.Subscriptions;
 
 namespace BookWorm.Ordering.Infrastructure;
@@ -51,17 +52,18 @@ internal static class Extensions
             .AddRedisClientBuilder(Components.Redis, o => o.DisableAutoActivation = false)
             .WithDistributedCache(options => options.InstanceName = "MainCache");
 
+        services.Configure<CachingOptions>(CachingOptions.ConfigurationSection);
+
+        var cachingOptions = services.BuildServiceProvider().GetRequiredService<CachingOptions>();
+
         services.AddHybridCache(options =>
         {
-            // Maximum size of cached items
-            options.MaximumPayloadBytes = 1024 * 1024 * 8; // 8MB
-            options.MaximumKeyLength = 512;
+            options.MaximumPayloadBytes = cachingOptions.MaximumPayloadBytes;
 
-            // Default timeouts
             options.DefaultEntryOptions = new()
             {
-                Expiration = TimeSpan.FromMinutes(15),
-                LocalCacheExpiration = TimeSpan.FromMinutes(15),
+                Expiration = cachingOptions.Expiration,
+                LocalCacheExpiration = cachingOptions.Expiration,
             };
         });
     }
