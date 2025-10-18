@@ -4,15 +4,6 @@
     <ExcludeFromCodeCoverage>true</ExcludeFromCodeCoverage>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Verify.TUnit" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile
-      Include="$(SolutionDir)\tests\BookWorm.Common\SnapshotTestBase.cs"
-      Link="SnapshotTestBase.cs"
-    />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\BookWorm.Scheduler.UnitTests\BookWorm.Scheduler.UnitTests.csproj" />
   </ItemGroup>
   <ItemGroup>

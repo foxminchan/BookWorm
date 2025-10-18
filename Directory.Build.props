@@ -16,7 +16,25 @@
   <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
-  <ItemGroup Condition="$(MSBuildProjectFullPath.Contains('Tests'))" Label="Testing">
+  <ItemGroup Condition="$(MSBuildProjectFullPath.Contains('IntegrationTests'))">
+    <PackageReference Include="Aspire.Hosting.Testing" />
+    <Compile
+      Include="$(SolutionDir)\tests\BookWorm.Common\DistributedApplicationExtensions.cs"
+      Link="Extensions\DistributedApplicationExtensions.cs"
+    />
+    <Compile
+      Include="$(SolutionDir)\tests\BookWorm.Common\PasswordGenerator.cs"
+      Link="Extensions\PasswordGenerator.cs"
+    />
+  </ItemGroup>
+  <ItemGroup Condition="$(MSBuildProjectFullPath.Contains('ContractTests'))">
+    <PackageReference Include="Verify.TUnit" />
+    <Compile
+      Include="$(SolutionDir)\tests\BookWorm.Common\SnapshotTestBase.cs"
+      Link="SnapshotTestBase.cs"
+    />
+  </ItemGroup>
+  <ItemGroup Condition="$(MSBuildProjectFullPath.Contains('Tests'))">
     <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
     <PackageReference Include="Microsoft.Testing.Extensions.CrashDump" />
     <PackageReference Include="Microsoft.Testing.Extensions.HangDump" />
