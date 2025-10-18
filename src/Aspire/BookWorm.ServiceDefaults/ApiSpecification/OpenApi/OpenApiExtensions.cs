@@ -38,6 +38,6 @@ public static class OpenApiExtensions
         }
 
         app.MapOpenApi();
-        app.MapGet("/", () => Results.Redirect("openapi/v1.json")).ExcludeFromDescription();
+        app.MapGet("/", () => TypedResults.Redirect("openapi/v1.json")).ExcludeFromDescription();
     }
 }

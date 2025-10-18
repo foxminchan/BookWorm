@@ -2,7 +2,9 @@
 using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.AI.Ingestion;
 using BookWorm.Chassis.AI.Search;
+using BookWorm.Chassis.Caching;
 using BookWorm.Constants.Aspire;
+using BookWorm.ServiceDefaults.Configuration;
 
 namespace BookWorm.Catalog.Infrastructure;
 
@@ -39,17 +41,18 @@ internal static class Extensions
             .AddRedisClientBuilder(Components.Redis, o => o.DisableAutoActivation = false)
             .WithDistributedCache(options => options.InstanceName = "MainCache");
 
+        services.Configure<CachingOptions>(CachingOptions.ConfigurationSection);
+
+        var cachingOptions = services.BuildServiceProvider().GetRequiredService<CachingOptions>();
+
         services.AddHybridCache(options =>
         {
-            // Maximum size of cached items
-            options.MaximumPayloadBytes = 1024 * 1024 * 10; // 10MB
-            options.MaximumKeyLength = 512;
+            options.MaximumPayloadBytes = cachingOptions.MaximumPayloadBytes;
 
-            // Default timeouts
             options.DefaultEntryOptions = new()
             {
-                Expiration = TimeSpan.FromMinutes(30),
-                LocalCacheExpiration = TimeSpan.FromMinutes(30),
+                Expiration = cachingOptions.Expiration,
+                LocalCacheExpiration = cachingOptions.Expiration,
             };
         });
 
