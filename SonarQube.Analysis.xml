@@ -5,16 +5,23 @@
   xmlns="http://www.sonarsource.com/msbuild/integration/2015/1">
   <Property Name="sonar.host.url">https://sonarcloud.io</Property>
   <Property Name="sonar.scanner.scanAll">false</Property>
+  <Property Name="sonar.sourceEncoding">UTF-8</Property>
   <Property Name="sonar.exclusions">
     docs/**,src/Services/**/**/Infrastructure/Migrations/**
   </Property>
+  <Property Name="sonar.cpd.exclusions">
+    **/Program.cs,src/Aspire/BookWorm.AppHost/Container/**,**/*Agent.cs
+  </Property>
   <Property Name="sonar.coverage.exclusions">
-    src/Services/**/**/Infrastructure/**,src/Services/**/**/Extensions/**,src/Services/**/**/Program.cs,src/BuildingBlocks/**,src/Integrations/**,src/Aspire/**
+    src/Services/**/**/Infrastructure/**,src/Services/**/**/Extensions/**,**/Program.cs,src/BuildingBlocks/**,src/Integrations/**,src/Aspire/**
   </Property>
   <Property Name="sonar.cs.vstest.reportsPaths">
    test-results/*.trx
   </Property>
   <Property Name="sonar.cs.vscoveragexml.reportsPaths">
     test-results/*.xml
+  </Property>
+  <Property Name="sonar.sarifReportPaths">
+    results.sarif
   </Property>
 </SonarQubeAnalysisProperties>
