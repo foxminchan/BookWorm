@@ -43,6 +43,73 @@ security:
       - rating_read
       - rating_write
 paths:
+  "/api/v1/feedbacks/visualize":
+    get:
+      tags:
+        - Rating
+      summary: Visualizer Workflow
+      description: Get the workflow for the visualizer
+      x-eventcatalog-message-type: query
+      operationId: VisualizeWorkflowEndpoint
+      security:
+        - OAuth:
+            - rating_read
+            - rating_write
+      parameters:
+        - name: Type
+          in: query
+          description: The type of visualization to generate
+          schema:
+            $ref: "#/components/schemas/Visualizations"
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: The workflow in the specified visualization format
+              example: |
+                flowchart TD
+                  HandoffStart["HandoffStart (Start)"];
+                  language["language"];
+                  summarize["summarize"];
+                  HandoffEnd["HandoffEnd"];
+                  rating["rating"];
+
+                  HandoffStart --> language;
+                  language --> summarize;
+                  language --> HandoffEnd;
+                  summarize --> rating;
+                  summarize --> HandoffEnd;
+                  rating --> language;
+                  rating --> HandoffEnd;
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+              examples:
+                invalid-type:
+                  summary: "Invalid visualization type"
+                  value:
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    title: "Validation failed"
+                    status: 400
+                    detail: "One or more validation errors has occurred"
+                    errors:
+                      - propertyName: "'Type'"
+                        errorMessage: "'Type' has a range of values which does not include '4'."
+                        attemptedValue: null
+                        customState: null
+                        severity: 0
+                        errorCode: null
+                        formattedMessagePlaceholderValues: null
+        "401":
+          description: Unauthorized - Access token is missing or invalid.
+        "403":
+          description: Forbidden - Access token does not have the required permissions.
   "/api/v1/feedbacks":
     get:
       tags:
@@ -573,6 +640,11 @@ components:
           format: uri
           description: The instance of the problem
           example: "/api/v1/feedbacks/01961eb4-668d-7e7e-ae25-0fab379614f7"
+    Visualizations:
+      enum:
+        - Mermaid
+        - Dot
+      default: Mermaid
   securitySchemes:
     OAuth:
       type: oauth2

@@ -60,7 +60,7 @@ paths:
           in: query
           description: The type of visualization to generate
           schema:
-            $ref: "#/components/schemas/VisualizationType"
+            $ref: "#/components/schemas/Visualizations"
       responses:
         "200":
           description: OK
@@ -640,7 +640,7 @@ components:
           format: uri
           description: The instance of the problem
           example: "/api/v1/feedbacks/01961eb4-668d-7e7e-ae25-0fab379614f7"
-    VisualizationType:
+    Visualizations:
       enum:
         - Mermaid
         - Dot

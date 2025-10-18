@@ -4,11 +4,11 @@
 public enum Status : byte
 {
     [Description("New")]
-    New = 1,
+    New = 0,
 
     [Description("Cancelled")]
-    Cancelled = 2,
+    Cancelled = 1,
 
     [Description("Completed")]
-    Completed = 3,
+    Completed = 2,
 }

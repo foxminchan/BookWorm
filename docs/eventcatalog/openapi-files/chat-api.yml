@@ -62,7 +62,7 @@ paths:
           in: query
           description: The type of visualization to generate
           schema:
-            $ref: "#/components/schemas/VisualizationType"
+            $ref: "#/components/schemas/Visualizations"
       responses:
         "200":
           description: OK
@@ -644,7 +644,7 @@ components:
           format: date-time
           description: The timestamp when the message was created
           example: "2023-10-01T12:00:00Z"
-    VisualizationType:
+    Visualizations:
       enum:
         - Mermaid
         - Dot
