@@ -7,8 +7,8 @@ namespace BookWorm.SharedKernel;
 public enum Visualizations : byte
 {
     [Description("Mermaid")]
-    Mermaid = 1,
+    Mermaid = 0,
 
     [Description("DiGraph")]
-    Dot = 2,
+    Dot = 1,
 }

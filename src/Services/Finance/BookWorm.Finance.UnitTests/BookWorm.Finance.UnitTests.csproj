@@ -12,6 +12,8 @@
       Include="$(SolutionDir)\tests\BookWorm.Common\SnapshotTestBase.cs"
       Link="SnapshotTestBase.cs"
     />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\BookWorm.Finance\BookWorm.Finance.csproj" />
   </ItemGroup>
   <ItemGroup>
