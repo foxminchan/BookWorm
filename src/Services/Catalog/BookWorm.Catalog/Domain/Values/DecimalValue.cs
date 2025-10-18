@@ -1,5 +1,6 @@
 ﻿namespace BookWorm.Catalog.Grpc.Services;
 
+[ExcludeFromCodeCoverage]
 public sealed partial class DecimalValue
 {
     private const decimal NanoFactor = 1_000_000_000;

@@ -2,6 +2,8 @@
 using BookWorm.Chat.Infrastructure.AgentOrchestration;
 using BookWorm.SharedKernel;
 using Mediator;
+using Microsoft.Agents.AI;
+using Microsoft.Agents.AI.Workflows;
 
 namespace BookWorm.Chat.UnitTests.Features.Visualize;
 
@@ -111,5 +113,35 @@ public sealed class VisualizeWorkflowQueryTests
         _handler.ShouldNotBeNull();
         _handler.ShouldBeOfType<VisualizerWorkflowHandler>();
         _handler.ShouldBeAssignableTo<IQueryHandler<VisualizeWorkflowQuery, string>>();
+    }
+
+    [Test]
+    public void GivenDotVisualizationType_WhenHandling_ThenShouldCallBuildAgentsWorkflow()
+    {
+        // Arrange
+        var query = new VisualizeWorkflowQuery(Visualizations.Dot);
+
+        // Act & Assert - Handler will call BuildAgentsWorkflow which will fail since mock returns null
+        // This tests that the service dependency is correctly called and the Dot branch is hit
+        Should.Throw<ArgumentNullException>(async () =>
+            await _handler.Handle(query, CancellationToken.None)
+        );
+
+        _agentOrchestrationServiceMock.Verify(x => x.BuildAgentsWorkflow(), Times.Once);
+    }
+
+    [Test]
+    public async Task GivenInvalidVisualizationType_WhenHandling_ThenShouldReturnEmptyString()
+    {
+        // Arrange
+        var invalidType = (Visualizations)99; // Cast to an invalid enum value
+        var query = new VisualizeWorkflowQuery(invalidType);
+
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.ShouldBe(string.Empty);
+        _agentOrchestrationServiceMock.Verify(x => x.BuildAgentsWorkflow(), Times.Once);
     }
 }
