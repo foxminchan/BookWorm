@@ -8,19 +8,18 @@ using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Chassis.CQRS.Pipelines;
 
-public sealed class ActivityBehavior<TRequest, TResponse>(
-    IRequestHandler<TRequest, TResponse> outerHandler,
+public sealed class ActivityBehavior<TMessage, TResponse>(
     IActivityScope activityScope,
     CommandHandlerMetrics commandMetrics,
     QueryHandlerMetrics queryMetrics,
-    ILogger<ActivityBehavior<TRequest, TResponse>> logger
-) : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
+    ILogger<ActivityBehavior<TMessage, TResponse>> logger
+) : IPipelineBehavior<TMessage, TResponse>
+    where TMessage : IMessage
     where TResponse : notnull
 {
     public async ValueTask<TResponse> Handle(
-        TRequest message,
-        MessageHandlerDelegate<TRequest, TResponse> next,
+        TMessage message,
+        MessageHandlerDelegate<TMessage, TResponse> next,
         CancellationToken cancellationToken
     )
     {
@@ -29,23 +28,23 @@ public sealed class ActivityBehavior<TRequest, TResponse>(
             logger.LogInformation(
                 "[{Behavior}] handle request={RequestData} and response={ResponseData}",
                 nameof(ActivityBehavior<,>),
-                typeof(TRequest).FullName,
-                typeof(TResponse).FullName
+                message.GetType().Name,
+                typeof(TResponse).Name
             );
         }
 
-        var attr = outerHandler.GetType().GetCustomAttribute<IgnoreOTelOnHandlerAttribute>();
+        var attr = message.GetType().GetCustomAttribute<IgnoreOTelOnHandlerAttribute>();
 
         if (attr is not null)
         {
             return await next(message, cancellationToken);
         }
 
-        var handlerName = outerHandler.GetType().Name;
-        var queryName = typeof(TRequest).Name;
-        var activityName = $"{handlerName}/{queryName}";
+        var messageType = message.GetType().Name;
+        var handlerName = $"{messageType}Handler";
+        var activityName = $"{handlerName}/{messageType}";
 
-        var isCommand = queryName.ToLowerInvariant().EndsWith(nameof(Command).ToLowerInvariant());
+        var isCommand = messageType.ToLowerInvariant().EndsWith(nameof(Command).ToLowerInvariant());
         var tagName = isCommand ? TelemetryTags.Commands.Command : TelemetryTags.Queries.Query;
 
         var startingTimestamp = isCommand
@@ -57,7 +56,7 @@ public sealed class ActivityBehavior<TRequest, TResponse>(
             return await activityScope.Run(
                 activityName,
                 async (_, ct) => await next(message, ct),
-                new() { Tags = { { tagName, queryName } } },
+                new() { Tags = { { tagName, messageType } } },
                 cancellationToken
             );
         }
