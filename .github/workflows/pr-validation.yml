@@ -66,11 +66,31 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore Dependencies
+        shell: bash
+        run: dotnet restore
+
       - name: Security Scan
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GITLEAKS_CONFIG: .gitleaks.toml
+
+      - name: Set up Snyk CLI to check for security issues
+        uses: snyk/actions/setup@806182742461562b67788a64410098c9d9b96adb
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Snyk test
+        run: snyk test --all-projects --sarif > snyk-code.sarif
+
+      - name: Snyk Open Source monitor
+        run: snyk monitor --all-projects
 
       - name: Dependency Scan
         uses: actions/dependency-review-action@v4
