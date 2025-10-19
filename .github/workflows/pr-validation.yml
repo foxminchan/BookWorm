@@ -91,7 +91,7 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
       - name: Snyk test
-        run: snyk test --all-projects --exclude=./docs --sarif > snyk-code.sarif
+        run: snyk test -d --all-projects --exclude=./docs --sarif > snyk-code.sarif
         continue-on-error: true
 
       # Push results to GitHub Security tab
