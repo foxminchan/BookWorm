@@ -8,7 +8,7 @@
     />
     <Message Text="Formatting Keycloakify code" Importance="high" />
     <Exec
-      Command="bun run format:check"
+      Command="bun run format"
       WorkingDirectory="Container/keycloak/Keycloakify"
       Condition="Exists('Container/keycloak/Keycloakify/package.json')"
       ContinueOnError="true"
