@@ -1,11 +1,9 @@
 ﻿using BookWorm.Basket.Features.Get;
-using BookWorm.Chassis;
 using BookWorm.Chassis.CQRS.Command;
 using BookWorm.Chassis.CQRS.Pipelines;
 using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using BookWorm.Constants.Core;
-using BookWorm.SharedKernel;
 using MassTransit;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
@@ -44,27 +42,14 @@ internal static class Extensions
         services.AddProblemDetails();
 
         // Configure Mediator
-        services.AddMediator(
-            (MediatorOptions options) =>
-            {
-                options.ServiceLifetime = ServiceLifetime.Scoped;
-
-                options.Assemblies =
-                [
-                    typeof(ISharedKernelMarker),
-                    typeof(IChassisMarker),
-                    typeof(IBasketApiMarker),
-                ];
-
-                options.PipelineBehaviors =
-                [
-                    typeof(ActivityBehavior<,>),
-                    typeof(LoggingBehavior<,>),
-                    typeof(ValidationBehavior<,>),
-                    typeof(GetBasketPostProcessor),
-                ];
-            }
-        );
+        services
+            .AddMediator(
+                (MediatorOptions options) => options.ServiceLifetime = ServiceLifetime.Scoped
+            )
+            .AddScoped(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>))
+            .AddScoped(typeof(IPipelineBehavior<,>), typeof(ActivityBehavior<,>))
+            .AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>))
+            .AddScoped<GetBasketPostProcessor>();
 
         services.AddRateLimiting();
 

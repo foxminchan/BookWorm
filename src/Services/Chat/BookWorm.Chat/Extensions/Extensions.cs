@@ -1,10 +1,8 @@
-﻿using BookWorm.Chassis;
-using BookWorm.Chassis.CQRS.Command;
+﻿using BookWorm.Chassis.CQRS.Command;
 using BookWorm.Chassis.CQRS.Pipelines;
 using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using BookWorm.Chat.Infrastructure.Backplane;
-using BookWorm.SharedKernel;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
 
@@ -55,26 +53,13 @@ internal static class Extensions
         services.AddProblemDetails();
 
         // Configure Mediator
-        services.AddMediator(
-            (MediatorOptions options) =>
-            {
-                options.ServiceLifetime = ServiceLifetime.Scoped;
-
-                options.Assemblies =
-                [
-                    typeof(ISharedKernelMarker),
-                    typeof(IChassisMarker),
-                    typeof(IChatApiMarker),
-                ];
-
-                options.PipelineBehaviors =
-                [
-                    typeof(ActivityBehavior<,>),
-                    typeof(LoggingBehavior<,>),
-                    typeof(ValidationBehavior<,>),
-                ];
-            }
-        );
+        services
+            .AddMediator(
+                (MediatorOptions options) => options.ServiceLifetime = ServiceLifetime.Scoped
+            )
+            .AddScoped(typeof(IPipelineBehavior<,>), typeof(ActivityBehavior<,>))
+            .AddScoped(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>))
+            .AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
         var appSettings = new AppSettings();
 

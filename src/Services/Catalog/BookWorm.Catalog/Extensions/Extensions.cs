@@ -1,13 +1,11 @@
 ﻿using BookWorm.Catalog.Features.Books.Create;
 using BookWorm.Catalog.Features.Books.Update;
-using BookWorm.Chassis;
 using BookWorm.Chassis.CQRS.Command;
 using BookWorm.Chassis.CQRS.Pipelines;
 using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using BookWorm.Constants.Aspire;
 using BookWorm.Constants.Core;
-using BookWorm.SharedKernel;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
 
@@ -54,29 +52,16 @@ internal static class Extensions
         services.AddProblemDetails();
 
         // Configure Mediator
-        services.AddMediator(
-            (MediatorOptions options) =>
-            {
-                options.ServiceLifetime = ServiceLifetime.Scoped;
-
-                options.Assemblies =
-                [
-                    typeof(ISharedKernelMarker),
-                    typeof(IChassisMarker),
-                    typeof(ICatalogApiMarker),
-                ];
-
-                options.PipelineBehaviors =
-                [
-                    typeof(ActivityBehavior<,>),
-                    typeof(LoggingBehavior<,>),
-                    typeof(ValidationBehavior<,>),
-                    typeof(CreateBookPreProcessor),
-                    typeof(UpdateBookPreProcessor),
-                    typeof(UpdateBookPostProcessor),
-                ];
-            }
-        );
+        services
+            .AddMediator(
+                (MediatorOptions options) => options.ServiceLifetime = ServiceLifetime.Scoped
+            )
+            .AddScoped(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>))
+            .AddScoped(typeof(IPipelineBehavior<,>), typeof(ActivityBehavior<,>))
+            .AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>))
+            .AddScoped<CreateBookPreProcessor>()
+            .AddScoped<UpdateBookPreProcessor>()
+            .AddScoped<UpdateBookPostProcessor>();
 
         var appSettings = new AppSettings();
 

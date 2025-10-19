@@ -5,14 +5,14 @@ using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Chassis.CQRS.Pipelines;
 
-public sealed class LoggingBehavior<TRequest, TResponse>(
-    ILogger<LoggingBehavior<TRequest, TResponse>> logger
-) : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
+public sealed class LoggingBehavior<TMessage, TResponse>(
+    ILogger<LoggingBehavior<TMessage, TResponse>> logger
+) : IPipelineBehavior<TMessage, TResponse>
+    where TMessage : IMessage
 {
     public async ValueTask<TResponse> Handle(
-        TRequest message,
-        MessageHandlerDelegate<TRequest, TResponse> next,
+        TMessage message,
+        MessageHandlerDelegate<TMessage, TResponse> next,
         CancellationToken cancellationToken
     )
     {
@@ -23,12 +23,12 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
             logger.LogInformation(
                 "[{Behavior}] Handle request={Request} and response={Response}",
                 behavior,
-                typeof(TRequest).FullName,
-                typeof(TResponse).FullName
+                message.GetType().Name,
+                typeof(TResponse).Name
             );
 
             var props = new List<PropertyInfo>(message.GetType().GetProperties());
-            foreach (PropertyInfo prop in props)
+            foreach (var prop in props)
             {
                 var propValue = prop.GetValue(message, null);
                 logger.LogInformation(
@@ -46,12 +46,14 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
 
         var timeTaken = Stopwatch.GetElapsedTime(start);
 
-        if (timeTaken.Seconds > 3)
+        const int threshold = 3;
+
+        if (timeTaken.Seconds >= threshold)
         {
             logger.LogWarning(
                 "[{Behavior}] The request {Request} took {TimeTaken} seconds.",
                 behavior,
-                typeof(TRequest).FullName,
+                message.GetType().Name,
                 timeTaken.Seconds
             );
         }
@@ -60,7 +62,7 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
             logger.LogInformation(
                 "[{Behavior}] The request handled {RequestName} with {Response} in {ElapsedMilliseconds} ms",
                 behavior,
-                typeof(TRequest).Name,
+                message.GetType().Name,
                 response,
                 Stopwatch.GetElapsedTime(start).TotalMilliseconds
             );

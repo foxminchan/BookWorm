@@ -67,28 +67,15 @@ internal static class Extensions
         services.AddProblemDetails();
 
         // Configure Mediator
-        services.AddMediator(
-            (MediatorOptions options) =>
-            {
-                options.ServiceLifetime = ServiceLifetime.Scoped;
-
-                options.Assemblies =
-                [
-                    typeof(ISharedKernelMarker),
-                    typeof(IChassisMarker),
-                    typeof(IOrderingApiMarker),
-                ];
-
-                options.PipelineBehaviors =
-                [
-                    typeof(ActivityBehavior<,>),
-                    typeof(LoggingBehavior<,>),
-                    typeof(ValidationBehavior<,>),
-                    typeof(CreateOrderPreProcessor),
-                    typeof(GetOrderPostProcessor),
-                ];
-            }
-        );
+        services
+            .AddMediator(
+                (MediatorOptions options) => options.ServiceLifetime = ServiceLifetime.Scoped
+            )
+            .AddScoped(typeof(IPipelineBehavior<,>), typeof(ActivityBehavior<,>))
+            .AddScoped(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>))
+            .AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>))
+            .AddScoped<CreateOrderPreProcessor>()
+            .AddScoped<GetOrderPostProcessor>();
 
         services.AddFeatureManagement();
 

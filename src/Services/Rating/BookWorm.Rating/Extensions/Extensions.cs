@@ -1,12 +1,10 @@
-﻿using BookWorm.Chassis;
-using BookWorm.Chassis.CQRS.Command;
+﻿using BookWorm.Chassis.CQRS.Command;
 using BookWorm.Chassis.CQRS.Pipelines;
 using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using BookWorm.Constants.Core;
 using BookWorm.Rating.Infrastructure.Agents;
 using BookWorm.Rating.Infrastructure.Summarizer;
-using BookWorm.SharedKernel;
 using Mediator;
 
 namespace BookWorm.Rating.Extensions;
@@ -46,26 +44,13 @@ internal static class Extensions
         services.AddProblemDetails();
 
         // Configure Mediator
-        services.AddMediator(
-            (MediatorOptions options) =>
-            {
-                options.ServiceLifetime = ServiceLifetime.Scoped;
-
-                options.Assemblies =
-                [
-                    typeof(ISharedKernelMarker),
-                    typeof(IChassisMarker),
-                    typeof(IRatingApiMarker),
-                ];
-
-                options.PipelineBehaviors =
-                [
-                    typeof(ActivityBehavior<,>),
-                    typeof(LoggingBehavior<,>),
-                    typeof(ValidationBehavior<,>),
-                ];
-            }
-        );
+        services
+            .AddMediator(
+                (MediatorOptions options) => options.ServiceLifetime = ServiceLifetime.Scoped
+            )
+            .AddScoped(typeof(IPipelineBehavior<,>), typeof(ActivityBehavior<,>))
+            .AddScoped(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>))
+            .AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
         services.AddRateLimiting();
 

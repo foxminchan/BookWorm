@@ -1,7 +1,6 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Diagnostics.Buffering;
 using Microsoft.Extensions.Logging;
 
@@ -32,19 +31,13 @@ public sealed class ValidationExceptionHandler(
 
         logBuffer.Flush();
 
-        ProblemDetails problemDetails = new()
-        {
-            Title = "Validation failed",
-            Status = StatusCodes.Status400BadRequest,
-            Detail = "One or more validation errors has occurred",
-        };
+        var errors = validationException
+            .Errors.GroupBy(e => e.PropertyName)
+            .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
 
-        if (validationException.Errors is not null)
-        {
-            problemDetails.Extensions["errors"] = validationException.Errors;
-        }
-
-        await TypedResults.BadRequest(problemDetails).ExecuteAsync(httpContext);
+        await TypedResults
+            .ValidationProblem(errors, title: "One or more validation errors occurred.")
+            .ExecuteAsync(httpContext);
 
         return true;
     }
