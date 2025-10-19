@@ -91,10 +91,7 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
       - name: Snyk test
-        run: snyk test --all-projects --exclude=./docs --sarif > snyk-code.sarif
-
-      - name: Snyk Open Source monitor
-        run: snyk monitor --all-projects --exclude=./docs
+        run: snyk code test --sarif > snyk-code.sarif
 
       - name: Dependency Scan
         uses: actions/dependency-review-action@v4
