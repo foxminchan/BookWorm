@@ -85,14 +85,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GITLEAKS_CONFIG: .gitleaks.toml
 
-      - name: Set up Snyk CLI to check for security issues
-        uses: snyk/actions/setup@806182742461562b67788a64410098c9d9b96adb
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/dotnet@master
+        continue-on-error: true # To make sure that SARIF upload gets called
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-
-      - name: Snyk test
-        run: snyk test -d --all-projects --exclude=./docs --sarif > snyk-code.sarif
-        continue-on-error: true
+        with:
+          args: --sarif-file-output=snyk.sarif
 
       # Push results to GitHub Security tab
       - name: Push Snyk Results to GitHub Security Tab
