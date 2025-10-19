@@ -1,0 +1,7 @@
+# Snyk (https://snyk.io) policy file
+
+# Exclude documentation folders from scanning
+exclude:
+  global:
+    - docs/docusaurus/**
+    - docs/eventcatalog/**
