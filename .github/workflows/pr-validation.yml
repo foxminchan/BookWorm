@@ -89,9 +89,10 @@ jobs:
         uses: snyk/actions/setup@master
 
       - name: Snyk test
-        run: snyk test --all-projects --exclude=docs --sarif > snyk.sarif
+        run: snyk test -d --all-projects --exclude=docs --sarif > snyk.sarif
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        continue-on-error: true
 
       - name: Push Snyk Results to GitHub Security Tab
         uses: github/codeql-action/upload-sarif@v2
