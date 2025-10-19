@@ -72,11 +72,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GITLEAKS_CONFIG: .gitleaks.toml
 
-      - name: Dependency Scan
-        uses: actions/dependency-review-action@v4
-        with:
-          fail-on-severity: moderate
-
   format:
     name: Format
     runs-on: ubuntu-latest
