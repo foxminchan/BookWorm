@@ -3,21 +3,21 @@
     <Message Text="Installing node packages for Keycloakify" Importance="high" />
     <Exec
       Command="bun install --frozen-lockfile"
-      WorkingDirectory="Container/keycloak/Keycloakify"
-      Condition="Exists('Container/keycloak/Keycloakify/package.json')"
+      WorkingDirectory="Container/keycloak/keycloakify"
+      Condition="Exists('Container/keycloak/keycloakify/package.json')"
     />
     <Message Text="Formatting Keycloakify code" Importance="high" />
     <Exec
       Command="bun run format"
-      WorkingDirectory="Container/keycloak/Keycloakify"
-      Condition="Exists('Container/keycloak/Keycloakify/package.json')"
+      WorkingDirectory="Container/keycloak/keycloakify"
+      Condition="Exists('Container/keycloak/keycloakify/package.json')"
       ContinueOnError="true"
     />
     <Message Text="Building Keycloakify themes" Importance="high" />
     <Exec
       Command="bun run build"
-      WorkingDirectory="Container/keycloak/Keycloakify"
-      Condition="Exists('Container/keycloak/Keycloakify/package.json')"
+      WorkingDirectory="Container/keycloak/keycloakify"
+      Condition="Exists('Container/keycloak/keycloakify/package.json')"
     />
   </Target>
 </Project>

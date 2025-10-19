@@ -93,7 +93,6 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      # Push results to GitHub Security tab
       - name: Push Snyk Results to GitHub Security Tab
         uses: github/codeql-action/upload-sarif@v2
         with:
