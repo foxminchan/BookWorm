@@ -1,0 +1,23 @@
+<Project>
+  <Target Name="BuildKeycloakifyContainer" BeforeTargets="Build">
+    <Message Text="Installing node packages for Keycloakify" Importance="high" />
+    <Exec
+      Command="bun install --frozen-lockfile"
+      WorkingDirectory="Container/keycloak/Keycloakify"
+      Condition="Exists('Container/keycloak/Keycloakify/package.json')"
+    />
+    <Message Text="Formatting Keycloakify code" Importance="high" />
+    <Exec
+      Command="bun run format:check"
+      WorkingDirectory="Container/keycloak/Keycloakify"
+      Condition="Exists('Container/keycloak/Keycloakify/package.json')"
+      ContinueOnError="true"
+    />
+    <Message Text="Building Keycloakify themes" Importance="high" />
+    <Exec
+      Command="bun run build"
+      WorkingDirectory="Container/keycloak/Keycloakify"
+      Condition="Exists('Container/keycloak/Keycloakify/package.json')"
+    />
+  </Target>
+</Project>
