@@ -15,6 +15,12 @@ on:
       - synchronize
       - reopened
 
+env:
+  JAVA_VERSION: "17"
+  DOTNET_VERSION: "10.0.x"
+  HANG_TIMEOUT: "7m"
+  SESSION_TIMEOUT: "15m"
+
 jobs:
   build:
     name: Build and analyze
@@ -23,13 +29,13 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v5
         with:
-          java-version: 17
+          java-version: ${{ env.JAVA_VERSION }}
           distribution: "zulu"
 
       - name: Setup .NET Core
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -59,9 +65,13 @@ jobs:
         run: dotnet tool restore
 
       - name: Sonarqube Begin
-        run: dotnet dotnet-sonarscanner begin /k:"foxminchan_BookWorm" /o:"foxminchan" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /s:$GITHUB_WORKSPACE/SonarQube.Analysis.xml
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: >
+          dotnet
+          dotnet-sonarscanner begin
+          /k:"foxminchan_BookWorm"
+          /o:"foxminchan"
+          /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+          /s:$GITHUB_WORKSPACE/SonarQube.Analysis.xml
 
       - name: Security Scan
         uses: gitleaks/gitleaks-action@v2
@@ -81,11 +91,12 @@ jobs:
           --coverage-settings Coverage.runsettings
           --results-directory ./test-results
           --github-reporter-style full
-          --hangdump --hangdump-timeout 7m
+          --hangdump --hangdump-timeout ${{ env.HANG_TIMEOUT }}
           --crashdump
-          --timeout 15m
+          --timeout ${{ env.SESSION_TIMEOUT }}
 
       - name: Sonarqube End
-        run: dotnet dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: >
+          dotnet
+          dotnet-sonarscanner end
+          /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
