@@ -8,7 +8,7 @@ public static class ConfigurationExtensions
         string? name = null,
         Action<TSetting>? configure = null
     )
-        where TSetting : class, new()
+        where TSetting : class
     {
         services
             .AddOptionsWithValidateOnStart<TSetting>(name)
