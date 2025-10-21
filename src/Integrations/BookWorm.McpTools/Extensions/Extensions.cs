@@ -1,4 +1,9 @@
-﻿namespace BookWorm.McpTools.Extensions;
+﻿using BookWorm.ServiceDefaults.Configuration;
+using Microsoft.Extensions.Options;
+using ModelContextProtocol.Protocol;
+using ModelContextProtocol.Server;
+
+namespace BookWorm.McpTools.Extensions;
 
 internal static class Extensions
 {
@@ -23,16 +28,26 @@ internal static class Extensions
         );
 
         services
-            .AddMcpServer(o =>
-                o.ServerInfo = new()
-                {
-                    Name = Constants.Aspire.Services.McpTools,
-                    Version = apiVersionDescriptions[0].ApiVersion.ToString(),
-                }
-            )
+            .AddMcpServer()
             .WithHttpTransport(o => o.Stateless = true)
             .WithToolsFromAssembly()
             .WithPromptsFromAssembly();
+
+        services.Configure<Implementation>(
+            nameof(Implementation),
+            configure: options =>
+            {
+                options.Name = Constants.Aspire.Services.McpTools;
+                options.Version = apiVersionDescriptions[0].ApiVersion.ToString();
+            }
+        );
+
+        services
+            .AddOptions<McpServerOptions>()
+            .Configure(
+                (McpServerOptions options, IOptionsMonitor<Implementation> implementationOptions) =>
+                    options.ServerInfo = implementationOptions.CurrentValue
+            );
 
         services
             .AddOpenTelemetry()
