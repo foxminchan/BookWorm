@@ -51,7 +51,7 @@ internal static class Extensions
                             {
                                 Source = i.Src,
                                 MimeType = i.MimeType,
-                                Sizes = i.Sizes,
+                                Sizes = i.Sizes as IList<string>,
                             })
                             .ToList(),
                     };

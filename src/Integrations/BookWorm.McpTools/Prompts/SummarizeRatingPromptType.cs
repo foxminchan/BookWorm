@@ -9,7 +9,9 @@ public sealed class SummarizeRatingPromptType
     [McpMeta("category", "review_analysis")]
     [McpServerPrompt(Name = "summarize_rating", Title = "Summarize Rating")]
     [Description("Summarizes book review content for rating classification")]
-    [return: Description("A structured summary of the book review content for rating classification")]
+    [return: Description(
+        "A structured summary of the book review content for rating classification"
+    )]
     public static ChatMessage SummarizeRatingPrompt(
         [Description("The book review content to be summarized")] string content
     )
