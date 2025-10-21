@@ -14,9 +14,9 @@ public sealed partial class ServerInfoOptions : IValidateOptions<ServerInfoOptio
     [Required]
     [RegularExpression(
         @"^(\d+\.)?(\d+\.)?(\*|\d+)$",
-        ErrorMessage = "Version must be in the format Semantic Versioning (e.g., 1.0.0, 1.2, 2.0.1)."
+        ErrorMessage = "Version must be in format 'major[.minor[.patch]]' (e.g., 1, 1.0, or 1.0.0)."
     )]
-    public required string Version { get; set; }
+    public required string Version { get; init; }
 
     public string? Title { get; set; }
 
