@@ -58,19 +58,13 @@ public sealed partial class ServerInfoOptions : IValidateOptions<ServerInfoOptio
                 return ValidateOptionsResult.Fail(iconErrors);
             }
 
-            if (icon.Sizes is null)
-            {
-                continue;
-            }
+            var invalidSize = icon.Sizes?.FirstOrDefault(size => !IconSizeRegex().IsMatch(size));
 
-            foreach (var size in icon.Sizes)
+            if (invalidSize is not null)
             {
-                if (!IconSizeRegex().IsMatch(size))
-                {
-                    return ValidateOptionsResult.Fail(
-                        $"Size '{size}' must be in the format 'WxH' (e.g., '64x64') or 'any'."
-                    );
-                }
+                return ValidateOptionsResult.Fail(
+                    $"Size '{invalidSize}' must be in the format 'WxH' (e.g., '64x64') or 'any'."
+                );
             }
         }
 
