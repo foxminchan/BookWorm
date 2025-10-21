@@ -1,4 +1,5 @@
-﻿using BookWorm.ServiceDefaults.Configuration;
+﻿using BookWorm.McpTools.Options;
+using BookWorm.ServiceDefaults.Configuration;
 using Microsoft.Extensions.Options;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
@@ -12,8 +13,6 @@ internal static class Extensions
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;
-        var serviceProvider = services.BuildServiceProvider();
-        var apiVersionDescriptions = serviceProvider.GetApiVersionDescription();
 
         builder.AddDefaultCors();
 
@@ -33,20 +32,30 @@ internal static class Extensions
             .WithToolsFromAssembly()
             .WithPromptsFromAssembly();
 
-        services.Configure<Implementation>(
-            nameof(Implementation),
-            configure: options =>
-            {
-                options.Name = Constants.Aspire.Services.McpTools;
-                options.Version = apiVersionDescriptions[0].ApiVersion.ToString();
-            }
-        );
+        services.Configure<ServerInfoOptions>(ServerInfoOptions.ConfigurationSection);
 
         services
             .AddOptions<McpServerOptions>()
             .Configure(
-                (McpServerOptions options, IOptionsMonitor<Implementation> implementationOptions) =>
-                    options.ServerInfo = implementationOptions.CurrentValue
+                (McpServerOptions options, IOptionsMonitor<ServerInfoOptions> serverInfoOptions) =>
+                {
+                    var value = serverInfoOptions.CurrentValue;
+                    options.ServerInfo = new()
+                    {
+                        Name = value.Name,
+                        Version = value.Version,
+                        Title = value.Title,
+                        WebsiteUrl = value.WebsiteUrl,
+                        Icons = value
+                            .Icons?.Select(i => new Icon
+                            {
+                                Source = i.Src,
+                                MimeType = i.MimeType,
+                                Sizes = i.Sizes,
+                            })
+                            .ToList(),
+                    };
+                }
             );
 
         services
