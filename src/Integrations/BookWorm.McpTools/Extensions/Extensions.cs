@@ -42,7 +42,7 @@ internal static class Extensions
                     var value = serverInfoOptions.CurrentValue;
                     options.ServerInfo = new()
                     {
-                        Name = value.Name,
+                        Name = ServerInfoOptions.Name,
                         Version = value.Version,
                         Title = value.Title,
                         WebsiteUrl = value.WebsiteUrl,
@@ -51,7 +51,7 @@ internal static class Extensions
                             {
                                 Source = i.Src,
                                 MimeType = i.MimeType,
-                                Sizes = i.Sizes as IList<string>,
+                                Sizes = i.Sizes?.ToList(),
                             })
                             .ToList(),
                     };

@@ -8,13 +8,12 @@ public sealed partial class ServerInfoOptions : IValidateOptions<ServerInfoOptio
 {
     public const string ConfigurationSection = "ServerInfo";
 
-    [Required]
-    public required string Name { get; init; } = Constants.Aspire.Services.McpTools;
+    public static string Name => Constants.Aspire.Services.McpTools;
 
     [Required]
     [RegularExpression(
         @"^(\d+\.)?(\d+\.)?(\*|\d+)$",
-        ErrorMessage = "Version must be in format 'major[.minor[.patch]]' (e.g., 1, 1.0, or 1.0.0)."
+        ErrorMessage = "Version must be in format 'major[.minor[.patch]]' (e.g., 1, 1.0, 1.0.0, or 1.2.*)."
     )]
     public required string Version { get; init; }
 
@@ -26,6 +25,61 @@ public sealed partial class ServerInfoOptions : IValidateOptions<ServerInfoOptio
     [ValidateEnumeratedItems]
     public IReadOnlyList<Icon>? Icons { get; set; }
 
+    public ValidateOptionsResult Validate(string? name, ServerInfoOptions options)
+    {
+        var results = new List<ValidationResult>();
+        var context = new ValidationContext(options);
+
+        if (!Validator.TryValidateObject(options, context, results, true))
+        {
+            var errors = results
+                .Select(r => r.ErrorMessage)
+                .Where(e => !string.IsNullOrEmpty(e))
+                .Cast<string>();
+            return ValidateOptionsResult.Fail(errors);
+        }
+
+        if (options.Icons is null)
+        {
+            return ValidateOptionsResult.Success;
+        }
+
+        foreach (var icon in options.Icons)
+        {
+            var iconResults = new List<ValidationResult>();
+            var iconContext = new ValidationContext(icon);
+
+            if (!Validator.TryValidateObject(icon, iconContext, iconResults, true))
+            {
+                var iconErrors = iconResults
+                    .Select(r => r.ErrorMessage)
+                    .Where(e => !string.IsNullOrEmpty(e))
+                    .Cast<string>();
+                return ValidateOptionsResult.Fail(iconErrors);
+            }
+
+            if (icon.Sizes is null)
+            {
+                continue;
+            }
+
+            foreach (var size in icon.Sizes)
+            {
+                if (!IconSizeRegex().IsMatch(size))
+                {
+                    return ValidateOptionsResult.Fail(
+                        $"Size '{size}' must be in the format 'WxH' (e.g., '64x64') or 'any'."
+                    );
+                }
+            }
+        }
+
+        return ValidateOptionsResult.Success;
+    }
+
+    [GeneratedRegex(@"^(\d+x\d+|any)$")]
+    private static partial Regex IconSizeRegex();
+
     public sealed class Icon
     {
         [Url]
@@ -36,41 +90,4 @@ public sealed partial class ServerInfoOptions : IValidateOptions<ServerInfoOptio
 
         public string? MimeType { get; set; }
     }
-
-    public ValidateOptionsResult Validate(string? name, ServerInfoOptions options)
-    {
-        var results = new List<ValidationResult>();
-        var context = new ValidationContext(options);
-
-        if (!Validator.TryValidateObject(options, context, results, validateAllProperties: true))
-        {
-            var errors = results.Select(r => r.ErrorMessage).Where(e => e is not null);
-            return ValidateOptionsResult.Fail(errors!);
-        }
-
-        if (options.Icons is null)
-        {
-            return ValidateOptionsResult.Success;
-        }
-
-        foreach (var icon in options.Icons)
-        {
-            if (icon.Sizes is null)
-            {
-                continue;
-            }
-
-            foreach (var size in icon.Sizes.Where(size => !IconSizeRegex().IsMatch(size)))
-            {
-                return ValidateOptionsResult.Fail(
-                    $"Size '{size}' must be in the format 'WxH' (e.g., '64x64') or 'any'."
-                );
-            }
-        }
-
-        return ValidateOptionsResult.Success;
-    }
-
-    [GeneratedRegex(@"^(\d+x\d+|any)$")]
-    private static partial Regex IconSizeRegex();
 }
