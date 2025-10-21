@@ -1,4 +1,10 @@
-﻿namespace BookWorm.McpTools.Extensions;
+﻿using BookWorm.McpTools.Options;
+using BookWorm.ServiceDefaults.Configuration;
+using Microsoft.Extensions.Options;
+using ModelContextProtocol.Protocol;
+using ModelContextProtocol.Server;
+
+namespace BookWorm.McpTools.Extensions;
 
 internal static class Extensions
 {
@@ -7,8 +13,6 @@ internal static class Extensions
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;
-        var serviceProvider = services.BuildServiceProvider();
-        var apiVersionDescriptions = serviceProvider.GetApiVersionDescription();
 
         builder.AddDefaultCors();
 
@@ -23,16 +27,36 @@ internal static class Extensions
         );
 
         services
-            .AddMcpServer(o =>
-                o.ServerInfo = new()
-                {
-                    Name = Constants.Aspire.Services.McpTools,
-                    Version = apiVersionDescriptions[0].ApiVersion.ToString(),
-                }
-            )
+            .AddMcpServer()
             .WithHttpTransport(o => o.Stateless = true)
             .WithToolsFromAssembly()
             .WithPromptsFromAssembly();
+
+        services.Configure<ServerInfoOptions>(ServerInfoOptions.ConfigurationSection);
+
+        services
+            .AddOptions<McpServerOptions>()
+            .Configure(
+                (McpServerOptions options, IOptionsMonitor<ServerInfoOptions> serverInfoOptions) =>
+                {
+                    var value = serverInfoOptions.CurrentValue;
+                    options.ServerInfo = new()
+                    {
+                        Name = ServerInfoOptions.Name,
+                        Version = value.Version,
+                        Title = value.Title,
+                        WebsiteUrl = value.WebsiteUrl,
+                        Icons = value
+                            .Icons?.Select(i => new Icon
+                            {
+                                Source = i.Src,
+                                MimeType = i.MimeType,
+                                Sizes = i.Sizes?.ToList(),
+                            })
+                            .ToList(),
+                    };
+                }
+            );
 
         services
             .AddOpenTelemetry()
