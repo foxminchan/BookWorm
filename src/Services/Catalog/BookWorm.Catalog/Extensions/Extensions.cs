@@ -83,9 +83,13 @@ internal static class Extensions
 
         services.AddFeatureManagement();
 
-        services.AddSingleton(
-            new JsonSerializerOptions { Converters = { new StringTrimmerJsonConverter() } }
-        );
+        services.AddSingleton(_ =>
+        {
+            var options = new JsonSerializerOptions();
+            options.Converters.Add(StringTrimmerJsonConverter.Instance);
+            options.Converters.Add(DecimalJsonConverter.Instance);
+            return options;
+        });
 
         // Add database configuration
         builder.AddPersistenceServices();
