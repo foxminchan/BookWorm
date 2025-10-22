@@ -21,7 +21,7 @@ internal static class Extensions
         services.AddProblemDetails();
 
         services.AddSingleton(
-            new JsonSerializerOptions { Converters = { new DateOnlyJsonConverter() } }
+            new JsonSerializerOptions { Converters = { DateOnlyJsonConverter.Instance } }
         );
 
         services.AddSingleton<IActivityScope, ActivityScope>();

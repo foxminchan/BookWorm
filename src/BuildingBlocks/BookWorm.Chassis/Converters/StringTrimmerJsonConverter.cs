@@ -5,6 +5,8 @@ namespace BookWorm.Chassis.Converters;
 
 public sealed class StringTrimmerJsonConverter : JsonConverter<string>
 {
+    public static StringTrimmerJsonConverter Instance { get; } = new();
+
     public override string? Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,

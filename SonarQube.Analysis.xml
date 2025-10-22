@@ -10,7 +10,7 @@
     docs/**,src/Services/**/**/Infrastructure/Migrations/**
   </Property>
   <Property Name="sonar.cpd.exclusions">
-    **/Program.cs,src/Aspire/BookWorm.AppHost/Container/**,**/*Agent.cs
+    **/Program.cs,src/Aspire/BookWorm.AppHost/Container/**,**/*Agent.cs,**/*Extensions.cs
   </Property>
   <Property Name="sonar.coverage.exclusions">
     src/Services/**/**/Infrastructure/**,src/Services/**/**/Extensions/**,**/Program.cs,src/BuildingBlocks/**,src/Integrations/**,src/Aspire/**

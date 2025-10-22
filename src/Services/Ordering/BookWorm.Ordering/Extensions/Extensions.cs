@@ -1,4 +1,5 @@
-﻿using BookWorm.Chassis;
+﻿using System.Text.Json;
+using BookWorm.Chassis.Converters;
 using BookWorm.Chassis.CQRS.Command;
 using BookWorm.Chassis.CQRS.Pipelines;
 using BookWorm.Chassis.CQRS.Query;
@@ -6,7 +7,6 @@ using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using BookWorm.Ordering.Features.Orders.Create;
 using BookWorm.Ordering.Features.Orders.Get;
 using BookWorm.Ordering.Infrastructure.DistributedLock;
-using BookWorm.SharedKernel;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
 
@@ -76,6 +76,10 @@ internal static class Extensions
             .AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>))
             .AddScoped<CreateOrderPreProcessor>()
             .AddScoped<GetOrderPostProcessor>();
+
+        services.AddSingleton(
+            new JsonSerializerOptions { Converters = { DecimalJsonConverter.Instance } }
+        );
 
         services.AddFeatureManagement();
 
