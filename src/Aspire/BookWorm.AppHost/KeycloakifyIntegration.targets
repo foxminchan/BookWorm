@@ -15,7 +15,7 @@
     />
     <Message Text="Building Keycloakify themes" Importance="high" />
     <Exec
-      Command="bun run build"
+      Command="bun run build-keycloak-theme"
       WorkingDirectory="Container/keycloak/keycloakify"
       Condition="Exists('Container/keycloak/keycloakify/package.json')"
     />
