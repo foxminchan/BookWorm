@@ -7,7 +7,7 @@
 
 // noinspection JSUnusedGlobalSymbols
 
-import { lazy, Suspense, type ReactNode } from "react";
+import { lazy, type ReactNode, Suspense } from "react";
 
 export type ThemeName = "bookworm";
 

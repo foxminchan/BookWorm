@@ -17,7 +17,7 @@ on:
       - reopened
 
 env:
-  JAVA_VERSION: "17"
+  JAVA_VERSION: "25"
   DOTNET_VERSION: "10.0.x"
   HANG_TIMEOUT: "7m"
   SESSION_TIMEOUT: "15m"
@@ -27,7 +27,7 @@ jobs:
     name: Build and analyze
     runs-on: ubuntu-latest
     steps:
-      - name: Set up JDK 17
+      - name: Set up JDK
         uses: actions/setup-java@v5
         with:
           java-version: ${{ env.JAVA_VERSION }}

@@ -1,5 +1,5 @@
-name: BookWorm CI
-run-name: CI - ${{ github.event_name }} by ${{ github.actor }}
+name: BookWorm CI (.NET)
+run-name: .NET CI - ${{ github.event_name }} by ${{ github.actor }}
 
 on:
   push:

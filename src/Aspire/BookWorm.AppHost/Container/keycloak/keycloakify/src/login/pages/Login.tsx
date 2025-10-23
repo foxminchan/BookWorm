@@ -1,11 +1,11 @@
-import { useState, useEffect, useReducer, type JSX } from "react";
 import { kcSanitize } from "keycloakify/lib/kcSanitize";
+import { getKcClsx, type KcClsx } from "keycloakify/login/lib/kcClsx";
+import type { PageProps } from "keycloakify/login/pages/PageProps";
 import { assert } from "keycloakify/tools/assert";
 import { clsx } from "keycloakify/tools/clsx";
-import type { PageProps } from "keycloakify/login/pages/PageProps";
-import { getKcClsx, type KcClsx } from "keycloakify/login/lib/kcClsx";
-import type { KcContext } from "../KcContext";
+import { type JSX, useEffect, useReducer, useState } from "react";
 import type { I18n } from "../i18n";
+import type { KcContext } from "../KcContext";
 
 export default function Login(
   props: Readonly<PageProps<Extract<KcContext, { pageId: "login.ftl" }>, I18n>>
