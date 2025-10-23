@@ -1,69 +1,69 @@
 {
-  "required": ["items", "pageIndex", "pageSize", "totalItems", "totalPages"],
-  "type": "object",
-  "properties": {
-    "items": {
-      "type": "array",
-      "items": {
-        "required": [
-          "id",
-          "firstName",
-          "lastName",
-          "comment",
-          "rating",
-          "bookId"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "firstName": {
-            "type": "string",
-            "nullable": true
-          },
-          "lastName": {
-            "type": "string",
-            "nullable": true
-          },
-          "comment": {
-            "type": "string",
-            "nullable": true
-          },
-          "rating": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "bookId": {
-            "type": "string",
-            "format": "uuid"
-          }
-        }
-      }
-    },
-    "pageIndex": {
-      "type": "integer",
-      "format": "int32"
-    },
-    "pageSize": {
-      "type": "integer",
-      "format": "int32"
-    },
-    "totalItems": {
-      "type": "integer",
-      "format": "int64"
-    },
-    "totalPages": {
-      "type": "number",
-      "format": "double"
-    },
-    "hasPreviousPage": {
-      "type": "boolean"
-    },
-    "hasNextPage": {
-      "type": "boolean"
-    }
-  },
-  "isSchema": true
+	"required": ["items", "pageIndex", "pageSize", "totalItems", "totalPages"],
+	"type": "object",
+	"properties": {
+		"items": {
+			"type": "array",
+			"items": {
+				"required": [
+					"id",
+					"firstName",
+					"lastName",
+					"comment",
+					"rating",
+					"bookId"
+				],
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"format": "uuid"
+					},
+					"firstName": {
+						"type": "string",
+						"nullable": true
+					},
+					"lastName": {
+						"type": "string",
+						"nullable": true
+					},
+					"comment": {
+						"type": "string",
+						"nullable": true
+					},
+					"rating": {
+						"type": "integer",
+						"format": "int32"
+					},
+					"bookId": {
+						"type": "string",
+						"format": "uuid"
+					}
+				}
+			}
+		},
+		"pageIndex": {
+			"type": "integer",
+			"format": "int32"
+		},
+		"pageSize": {
+			"type": "integer",
+			"format": "int32"
+		},
+		"totalItems": {
+			"type": "integer",
+			"format": "int64"
+		},
+		"totalPages": {
+			"type": "number",
+			"format": "double"
+		},
+		"hasPreviousPage": {
+			"type": "boolean"
+		},
+		"hasNextPage": {
+			"type": "boolean"
+		}
+	},
+	"isSchema": true
 }

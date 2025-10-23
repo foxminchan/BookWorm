@@ -1,53 +1,53 @@
 {
-  "type": "object",
-  "properties": {
-    "id": {
-      "type": "string",
-      "format": "uuid",
-      "description": "The unique identifier of the order"
-    },
-    "date": {
-      "type": "string",
-      "format": "date-time",
-      "description": "The date and time when the order was created"
-    },
-    "total": {
-      "type": "number",
-      "format": "double",
-      "description": "The total amount of the order"
-    },
-    "status": {
-      "enum": ["New", "Cancelled", "Completed"],
-      "description": "The status of the order"
-    },
-    "items": {
-      "type": "array",
-      "description": "The list of books in the order",
-      "items": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "The unique identifier of the order item"
-          },
-          "name": {
-            "type": "string",
-            "description": "The name of the book"
-          },
-          "quantity": {
-            "type": "integer",
-            "format": "int32",
-            "description": "The quantity of the book"
-          },
-          "price": {
-            "type": "number",
-            "format": "double",
-            "description": "The price of the book"
-          }
-        }
-      }
-    }
-  },
-  "isSchema": true
+	"type": "object",
+	"properties": {
+		"id": {
+			"type": "string",
+			"format": "uuid",
+			"description": "The unique identifier of the order"
+		},
+		"date": {
+			"type": "string",
+			"format": "date-time",
+			"description": "The date and time when the order was created"
+		},
+		"total": {
+			"type": "number",
+			"format": "double",
+			"description": "The total amount of the order"
+		},
+		"status": {
+			"enum": ["New", "Cancelled", "Completed"],
+			"description": "The status of the order"
+		},
+		"items": {
+			"type": "array",
+			"description": "The list of books in the order",
+			"items": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"format": "uuid",
+						"description": "The unique identifier of the order item"
+					},
+					"name": {
+						"type": "string",
+						"description": "The name of the book"
+					},
+					"quantity": {
+						"type": "integer",
+						"format": "int32",
+						"description": "The quantity of the book"
+					},
+					"price": {
+						"type": "number",
+						"format": "double",
+						"description": "The price of the book"
+					}
+				}
+			}
+		}
+	},
+	"isSchema": true
 }

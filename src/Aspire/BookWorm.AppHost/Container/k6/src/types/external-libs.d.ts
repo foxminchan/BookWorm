@@ -8,7 +8,7 @@ declare module "https://jslib.k6.io/k6-summary/0.0.1/index.js" {
 	 * @returns Formatted text summary string
 	 */
 	export function textSummary(
-		data: any,
+		data: Record<string, unknown>,
 		options?: {
 			indent?: string;
 			enableColors?: boolean;
@@ -24,7 +24,7 @@ declare module "https://raw.githubusercontent.com/benc-uk/k6-reporter/main/dist/
 	 * @returns HTML report string
 	 */
 	export function htmlReport(
-		data: any,
+		data: Record<string, unknown>,
 		options?: {
 			title?: string;
 			logoUrl?: string;

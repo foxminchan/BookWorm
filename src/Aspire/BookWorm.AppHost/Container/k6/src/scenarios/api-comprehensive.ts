@@ -1,10 +1,10 @@
-import http from "k6/http";
 import { check } from "k6";
-import type { TestDataGenerator } from "../utils/test-data";
-import { validateResponse } from "../utils/validation";
+import http from "k6/http";
+import { CONSTANTS } from "../config";
 import { getBaseUrl } from "../utils/helpers";
 import type { SeededRandom } from "../utils/seeded-random";
-import { CONSTANTS } from "../config";
+import type { TestDataGenerator } from "../utils/test-data";
+import { validateResponse } from "../utils/validation";
 
 export function apiComprehensiveScenario(
 	dataGen: TestDataGenerator,
@@ -75,7 +75,7 @@ export function apiComprehensiveScenario(
 							scenario: "api_comprehensive",
 							endpoint: `${endpoint.name}_params_${index}`,
 						},
-					} as any);
+					});
 					validateResponse(
 						paramsResponse,
 						`${endpoint.name}_with_params_${index}`,
@@ -109,7 +109,7 @@ export function apiComprehensiveScenario(
 					scenario: "api_comprehensive",
 					endpoint: `edge_case_${testCase.name}`,
 				},
-			} as any);
+			});
 			validateResponse(response, `edge_case_${testCase.name}`);
 		}
 
@@ -153,7 +153,7 @@ export function apiComprehensiveScenario(
 
 			const malformedResponse = http.get(requestUrl, {
 				tags: { scenario: "api_comprehensive", endpoint: "malformed_params" },
-			} as any);
+			});
 
 			// Expecting either 400 Bad Request or the API to handle gracefully
 			const acceptableStatuses = [

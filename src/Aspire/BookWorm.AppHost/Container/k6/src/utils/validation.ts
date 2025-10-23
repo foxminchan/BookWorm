@@ -1,16 +1,16 @@
-import http from "k6/http";
 import { sleep } from "k6";
+import http from "k6/http";
 import { CONSTANTS } from "../config";
 
 /**
  * Enhanced helper functions for better test organization and debugging
  */
 export function validateResponse(
-	response: any,
+	response: http.Response,
 	name: string,
 	expectedStatus: number = CONSTANTS.HTTP_OK,
 	_maxDuration: number = CONSTANTS.RESPONSE_TIME_THRESHOLD_95,
-): any {
+): unknown {
 	// Only perform detailed validation for successful responses
 	if (
 		response.status === expectedStatus &&
@@ -20,7 +20,8 @@ export function validateResponse(
 			// Validate JSON structure for successful responses
 			if (
 				response.headers["Content-Type"]?.includes("application/json") &&
-				response.body
+				response.body &&
+				typeof response.body === "string"
 			) {
 				const data = JSON.parse(response.body);
 				if (data && typeof data === "object") {
@@ -30,10 +31,12 @@ export function validateResponse(
 		} catch (error) {
 			const errorMsg = error instanceof Error ? error.message : "Unknown error";
 			console.warn(`JSON parsing failed for ${name}:`, errorMsg);
+			const bodyPreview =
+				typeof response.body === "string"
+					? response.body.substring(0, 200)
+					: "binary data";
 			console.warn(
-				`Response status: ${response.status}, Body: ${
-					response.body?.substring(0, 200) ?? "empty"
-				}...`,
+				`Response status: ${response.status}, Body: ${bodyPreview}...`,
 			);
 		}
 	}
@@ -48,39 +51,43 @@ export function validateResponse(
 	return null;
 }
 
-export function validatePagedResponse(data: any, name: string): boolean {
+export function validatePagedResponse(data: unknown, name: string): boolean {
 	if (!data || typeof data !== "object") {
 		console.warn(`${name} - No valid data to validate pagination`);
 		return false;
 	}
 
 	try {
+		const record = data as Record<string, unknown>;
 		// Check for basic paged response structure - using correct property names
-		const hasItems = Object.hasOwn(data, "items") && Array.isArray(data.items);
+		const hasItems =
+			Object.hasOwn(record, "items") && Array.isArray(record.items);
 		const hasPageIndex =
-			Object.hasOwn(data, "pageIndex") && typeof data.pageIndex === "number";
+			Object.hasOwn(record, "pageIndex") &&
+			typeof record.pageIndex === "number";
 		const hasPageSize =
-			Object.hasOwn(data, "pageSize") && typeof data.pageSize === "number";
+			Object.hasOwn(record, "pageSize") && typeof record.pageSize === "number";
 		const hasTotalItems =
-			Object.hasOwn(data, "totalItems") && typeof data.totalItems === "number";
+			Object.hasOwn(record, "totalItems") &&
+			typeof record.totalItems === "number";
 
 		if (!hasItems) {
 			console.warn(`${name} - Missing or invalid 'items' array`);
 			return false;
 		}
 
-		if (!hasPageIndex || data.pageIndex < 0) {
-			console.warn(`${name} - Invalid pageIndex: ${data.pageIndex}`);
+		if (!hasPageIndex || (record.pageIndex as number) < 0) {
+			console.warn(`${name} - Invalid pageIndex: ${record.pageIndex}`);
 			return false;
 		}
 
-		if (!hasPageSize || data.pageSize <= 0) {
-			console.warn(`${name} - Invalid pageSize: ${data.pageSize}`);
+		if (!hasPageSize || (record.pageSize as number) <= 0) {
+			console.warn(`${name} - Invalid pageSize: ${record.pageSize}`);
 			return false;
 		}
 
-		if (!hasTotalItems || data.totalItems < 0) {
-			console.warn(`${name} - Invalid totalItems: ${data.totalItems}`);
+		if (!hasTotalItems || (record.totalItems as number) < 0) {
+			console.warn(`${name} - Invalid totalItems: ${record.totalItems}`);
 			return false;
 		}
 
@@ -95,7 +102,10 @@ export function validatePagedResponse(data: any, name: string): boolean {
 /**
  * Build URL with query parameters
  */
-function buildUrlWithParams(url: string, params: any): string {
+function buildUrlWithParams(
+	url: string,
+	params: Record<string, unknown>,
+): string {
 	if (!params || Object.keys(params).length === 0) {
 		return url;
 	}
@@ -111,11 +121,13 @@ function buildUrlWithParams(url: string, params: any): string {
 
 export function testEndpointWithRetry(
 	url: string,
-	params: any,
+	params: Record<string, unknown>,
 	name: string,
 	maxRetries: number = 2,
-): any {
-	let response: any;
+): http.Response | { status: number; timings: { duration: number } } {
+	let response:
+		| http.Response
+		| { status: number; timings: { duration: number } };
 	let retries = 0;
 	const requestUrl = buildUrlWithParams(url, params);
 
@@ -124,7 +136,7 @@ export function testEndpointWithRetry(
 			response = http.get(requestUrl, {
 				tags: { name, retry: retries.toString() },
 				timeout: "10s",
-			} as any);
+			});
 			if (response.status === CONSTANTS.HTTP_OK || retries >= maxRetries) break;
 		} catch (error) {
 			const errorMsg = error instanceof Error ? error.message : "Unknown error";

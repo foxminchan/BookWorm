@@ -1,12 +1,12 @@
 import http from "k6/http";
+import { getBaseUrl, testBookDetails } from "../utils/helpers";
+import type { SeededRandom } from "../utils/seeded-random";
 import type { TestDataGenerator } from "../utils/test-data";
 import {
-	validateResponse,
-	validatePagedResponse,
 	testEndpointWithRetry,
+	validatePagedResponse,
+	validateResponse,
 } from "../utils/validation";
-import { testBookDetails, getBaseUrl } from "../utils/helpers";
-import type { SeededRandom } from "../utils/seeded-random";
 
 export function browseCatalogScenario(
 	dataGen: TestDataGenerator,
@@ -18,7 +18,9 @@ export function browseCatalogScenario(
 			tags: { scenario: "browse_catalog", endpoint: "books" },
 			timeout: "10s",
 		});
-		const booksData = validateResponse(booksResponse, "books", 200, 1200);
+		const booksData = validateResponse(booksResponse, "books", 200, 1200) as {
+			items?: Array<{ id?: string }>;
+		} | null;
 		validatePagedResponse(booksData, "books");
 
 		// Test categories endpoint
@@ -43,7 +45,9 @@ export function browseCatalogScenario(
 				categoryParams,
 				"category_books",
 			);
-			validateResponse(categoryBooksResponse, "category_books");
+			if ("body" in categoryBooksResponse) {
+				validateResponse(categoryBooksResponse, "category_books");
+			}
 		}
 
 		// Simulate browsing authors (50% chance)
@@ -59,7 +63,12 @@ export function browseCatalogScenario(
 		}
 
 		// Simulate viewing a specific book (30% chance)
-		if (random.bool(0.3) && booksData?.items?.length > 0) {
+		if (
+			random.bool(0.3) &&
+			booksData?.items &&
+			Array.isArray(booksData.items) &&
+			booksData.items.length > 0
+		) {
 			const randomBook =
 				booksData.items[random.int(0, booksData.items.length - 1)];
 			if (randomBook?.id) {
@@ -83,7 +92,7 @@ export function browseCatalogScenario(
 			const paginationResponse = http.get(requestUrl, {
 				tags: { scenario: "browse_catalog", endpoint: "books_pagination" },
 				timeout: "10s",
-			} as any);
+			});
 			validateResponse(paginationResponse, "pagination_browse");
 		}
 	} catch (error) {

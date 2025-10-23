@@ -1,36 +1,36 @@
 {
-  "id": "BookUpdatedRatingFailedEvent",
-  "allOf": [
-    {
-      "id": "integrationEvent",
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "id": {
-          "type": "string",
-          "format": "guid",
-          "x-parser-schema-id": "<anonymous-schema-1>"
-        },
-        "creationDate": {
-          "type": "string",
-          "format": "date-time",
-          "x-parser-schema-id": "<anonymous-schema-2>"
-        }
-      },
-      "x-parser-schema-id": "integrationEvent"
-    },
-    {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "feedbackId": {
-          "type": "string",
-          "format": "guid",
-          "x-parser-schema-id": "<anonymous-schema-8>"
-        }
-      },
-      "x-parser-schema-id": "<anonymous-schema-7>"
-    }
-  ],
-  "x-parser-schema-id": "bookUpdatedRatingFailedIntegrationEvent"
+	"id": "BookUpdatedRatingFailedEvent",
+	"allOf": [
+		{
+			"id": "integrationEvent",
+			"type": "object",
+			"additionalProperties": false,
+			"properties": {
+				"id": {
+					"type": "string",
+					"format": "guid",
+					"x-parser-schema-id": "<anonymous-schema-1>"
+				},
+				"creationDate": {
+					"type": "string",
+					"format": "date-time",
+					"x-parser-schema-id": "<anonymous-schema-2>"
+				}
+			},
+			"x-parser-schema-id": "integrationEvent"
+		},
+		{
+			"type": "object",
+			"additionalProperties": false,
+			"properties": {
+				"feedbackId": {
+					"type": "string",
+					"format": "guid",
+					"x-parser-schema-id": "<anonymous-schema-8>"
+				}
+			},
+			"x-parser-schema-id": "<anonymous-schema-7>"
+		}
+	],
+	"x-parser-schema-id": "bookUpdatedRatingFailedIntegrationEvent"
 }

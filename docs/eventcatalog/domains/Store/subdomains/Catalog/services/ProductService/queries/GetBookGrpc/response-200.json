@@ -1,29 +1,29 @@
 {
-  "type": "object",
-  "properties": {
-    "id": {
-      "type": "string",
-      "format": "uuid",
-      "description": "The unique identifier for the book"
-    },
-    "name": {
-      "type": "string",
-      "description": "The name of the book"
-    },
-    "price": {
-      "type": "number",
-      "format": "double",
-      "description": "The price of the book"
-    },
-    "priceSale": {
-      "type": "number",
-      "format": "double",
-      "description": "The sale price of the book"
-    },
-    "status": {
-      "type": "string",
-      "description": "The status of the book"
-    }
-  },
-  "isSchema": true
+	"type": "object",
+	"properties": {
+		"id": {
+			"type": "string",
+			"format": "uuid",
+			"description": "The unique identifier for the book"
+		},
+		"name": {
+			"type": "string",
+			"description": "The name of the book"
+		},
+		"price": {
+			"type": "number",
+			"format": "double",
+			"description": "The price of the book"
+		},
+		"priceSale": {
+			"type": "number",
+			"format": "double",
+			"description": "The sale price of the book"
+		},
+		"status": {
+			"type": "string",
+			"description": "The status of the book"
+		}
+	},
+	"isSchema": true
 }

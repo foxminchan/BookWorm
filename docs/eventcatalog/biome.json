@@ -11,11 +11,19 @@
 	"formatter": {
 		"enabled": true,
 		"indentStyle": "tab",
-		"includes": ["src/**", "*.js"]
+		"includes": [
+			"domains/**",
+			"pages/**",
+			"teams/**",
+			"users/**",
+			"channels/**",
+			"*.json",
+			"*.css"
+		]
 	},
 	"linter": {
 		"enabled": true,
-		"includes": ["src/**"],
+		"includes": ["domains", "pages", "teams", "users"],
 		"rules": {
 			"recommended": true
 		}

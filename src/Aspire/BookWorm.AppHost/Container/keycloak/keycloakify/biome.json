@@ -1,0 +1,60 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.2.7/schema.json",
+  "vcs": { "enabled": false, "clientKind": "git", "useIgnoreFile": false },
+  "files": { "ignoreUnknown": false },
+  "formatter": {
+    "enabled": true,
+    "formatWithErrors": false,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "lf",
+    "lineWidth": 80,
+    "attributePosition": "auto",
+    "bracketSameLine": false,
+    "bracketSpacing": true,
+    "expand": "auto",
+    "useEditorconfig": true,
+    "includes": [
+      "**",
+      "!**/node_modules/",
+      "!./dist/",
+      "!./dist_keycloak/",
+      "!./public/keycloakify-dev-resources/",
+      "!./.vscode/",
+      "!./.yarn_home/"
+    ]
+  },
+  "linter": { "enabled": true, "rules": { "recommended": true } },
+  "javascript": {
+    "formatter": {
+      "jsxQuoteStyle": "double",
+      "quoteProperties": "asNeeded",
+      "trailingCommas": "es5",
+      "semicolons": "always",
+      "arrowParentheses": "asNeeded",
+      "bracketSameLine": false,
+      "quoteStyle": "double",
+      "attributePosition": "auto",
+      "bracketSpacing": true
+    }
+  },
+  "html": { "formatter": { "selfCloseVoidElements": "always" } },
+  "overrides": [
+    { "includes": ["*.json"], "formatter": { "indentWidth": 2 } },
+    {
+      "includes": [
+        "**/login/pages/*.tsx",
+        "**/account/pages/*.tsx",
+        "**/login/Template.tsx",
+        "**/account/Template.tsx",
+        "**/login/UserProfileFormFields.tsx",
+        "KcApp.tsx"
+      ],
+      "formatter": { "lineWidth": 80 }
+    }
+  ],
+  "assist": {
+    "enabled": true,
+    "actions": { "source": { "organizeImports": "on" } }
+  }
+}

@@ -1,4 +1,4 @@
-import type { TestData, SortOption } from "../types";
+import type { SortOption, TestData } from "../types";
 import type { SeededRandom } from "./seeded-random";
 
 /**

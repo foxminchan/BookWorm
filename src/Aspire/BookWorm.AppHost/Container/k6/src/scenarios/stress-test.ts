@@ -1,9 +1,9 @@
 import http from "k6/http";
-import type { TestDataGenerator } from "../utils/test-data";
-import { validateResponse } from "../utils/validation";
+import { CONSTANTS } from "../config";
 import { getBaseUrl } from "../utils/helpers";
 import type { SeededRandom } from "../utils/seeded-random";
-import { CONSTANTS } from "../config";
+import type { TestDataGenerator } from "../utils/test-data";
+import { validateResponse } from "../utils/validation";
 
 export function stressTestScenario(
 	dataGen: TestDataGenerator,
@@ -54,7 +54,7 @@ export function stressTestScenario(
 		const requestUrl = `${getBaseUrl()}/catalog/api/v1/books?${queryString}`;
 		const stressSearchResponse = http.get(requestUrl, {
 			tags: { scenario: "stress_test", endpoint: "stress_search" },
-		} as any);
+		});
 		validateResponse(
 			stressSearchResponse,
 			"stress_search",

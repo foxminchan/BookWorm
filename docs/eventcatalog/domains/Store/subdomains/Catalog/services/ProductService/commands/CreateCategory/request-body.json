@@ -1,12 +1,12 @@
 {
-  "required": ["name"],
-  "type": "object",
-  "properties": {
-    "name": {
-      "type": "string",
-      "description": "Category name",
-      "minLength": 1,
-      "maxLength": 100
-    }
-  }
+	"required": ["name"],
+	"type": "object",
+	"properties": {
+		"name": {
+			"type": "string",
+			"description": "Category name",
+			"minLength": 1,
+			"maxLength": 100
+		}
+	}
 }

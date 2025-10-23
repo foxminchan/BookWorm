@@ -20,7 +20,7 @@ export interface BookItem {
 	id: string;
 	title: string;
 	price: number;
-	[key: string]: any;
+	[key: string]: unknown;
 }
 
 export interface PagedResponse<T> {
@@ -61,4 +61,41 @@ export interface TestEndpoint {
 export interface TestConfiguration {
 	baseUrl: string;
 	randomSeed: number;
+}
+
+// K6 Summary Types
+export interface K6MetricValues {
+	avg?: number;
+	min?: number;
+	med?: number;
+	max?: number;
+	"p(90)"?: number;
+	"p(95)"?: number;
+	"p(99)"?: number;
+	count?: number;
+	rate?: number;
+	passes?: number;
+	fails?: number;
+}
+
+export interface K6Metric {
+	type: string;
+	contains: string;
+	values: K6MetricValues;
+	thresholds?: Record<string, boolean>;
+}
+
+export interface K6SummaryData {
+	metrics: {
+		http_reqs?: K6Metric;
+		http_req_failed?: K6Metric;
+		http_req_duration?: K6Metric;
+		checks?: K6Metric;
+		[key: string]: K6Metric | undefined;
+	};
+	state: {
+		testRunDurationMs: number;
+		[key: string]: unknown;
+	};
+	[key: string]: unknown;
 }

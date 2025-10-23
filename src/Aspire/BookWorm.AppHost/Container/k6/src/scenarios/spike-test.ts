@@ -1,12 +1,12 @@
 import http from "k6/http";
-import type { TestDataGenerator } from "../utils/test-data";
-import { validateResponse } from "../utils/validation";
+import { CONSTANTS } from "../config";
 import { getBaseUrl } from "../utils/helpers";
 import type { SeededRandom } from "../utils/seeded-random";
-import { CONSTANTS } from "../config";
+import type { TestDataGenerator } from "../utils/test-data";
+import { validateResponse } from "../utils/validation";
 
 export function spikeTestScenario(
-	dataGen: TestDataGenerator,
+	_dataGen: TestDataGenerator,
 	random: SeededRandom,
 ): void {
 	try {

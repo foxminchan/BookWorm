@@ -1,12 +1,12 @@
 import http from "k6/http";
-import type { TestDataGenerator } from "../utils/test-data";
-import {
-	validateResponse,
-	validatePagedResponse,
-	testEndpointWithRetry,
-} from "../utils/validation";
 import { getBaseUrl } from "../utils/helpers";
 import type { SeededRandom } from "../utils/seeded-random";
+import type { TestDataGenerator } from "../utils/test-data";
+import {
+	testEndpointWithRetry,
+	validatePagedResponse,
+	validateResponse,
+} from "../utils/validation";
 
 export function searchFilterScenario(
 	dataGen: TestDataGenerator,
@@ -34,8 +34,10 @@ export function searchFilterScenario(
 			searchParams,
 			"search",
 		);
-		const searchData = validateResponse(searchResponse, "search", 200, 800);
-		validatePagedResponse(searchData, "search");
+		if ("body" in searchResponse) {
+			const searchData = validateResponse(searchResponse, "search", 200, 800);
+			validatePagedResponse(searchData, "search");
+		}
 
 		// Test price-only filtering
 		const priceFilterParams = {
@@ -54,7 +56,7 @@ export function searchFilterScenario(
 		const requestUrl = `${getBaseUrl()}/catalog/api/v1/books?${queryString}`;
 		const priceFilterResponse = http.get(requestUrl, {
 			tags: { scenario: "search_filter", endpoint: "price_filter" },
-		} as any);
+		});
 		validateResponse(priceFilterResponse, "price_filter");
 
 		// Test pagination with different page sizes
@@ -73,7 +75,7 @@ export function searchFilterScenario(
 			const requestUrl = `${getBaseUrl()}/catalog/api/v1/books?${queryString}`;
 			const paginationResponse = http.get(requestUrl, {
 				tags: { scenario: "search_filter", endpoint: "pagination" },
-			} as any);
+			});
 			validateResponse(paginationResponse, "pagination");
 		}
 	} catch (error) {

@@ -1,5 +1,5 @@
-import http from "k6/http";
 import { check } from "k6";
+import http from "k6/http";
 import { CONSTANTS } from "../config";
 
 /**
@@ -8,16 +8,20 @@ import { CONSTANTS } from "../config";
 export function testBookDetails(
 	bookId: string,
 	name: string = "book_details",
-): any {
+): unknown {
 	const response = http.get(`${getBaseUrl()}/catalog/api/v1/books/${bookId}`);
-	const data = validateResponse(response, name);
+	const data = validateResponse(response, name) as Record<
+		string,
+		unknown
+	> | null;
 
 	if (data && response.status === CONSTANTS.HTTP_OK) {
 		check(response, {
 			[`${name} should have id`]: () => Object.hasOwn(data, "id"),
 			[`${name} should have title`]: () => Object.hasOwn(data, "title"),
 			[`${name} should have price`]: () => Object.hasOwn(data, "price"),
-			[`${name} price should be positive`]: () => data.price > 0,
+			[`${name} price should be positive`]: () =>
+				typeof data.price === "number" && data.price > 0,
 		});
 	}
 
@@ -66,12 +70,13 @@ export function getBaseUrl(): string {
 /**
  * Simple response validation
  */
-function validateResponse(response: any, name: string): any {
+function validateResponse(response: http.Response, name: string): unknown {
 	if (response.status === CONSTANTS.HTTP_OK) {
 		try {
 			if (
 				response.headers["Content-Type"]?.includes("application/json") &&
-				response.body
+				response.body &&
+				typeof response.body === "string"
 			) {
 				return JSON.parse(response.body);
 			}
