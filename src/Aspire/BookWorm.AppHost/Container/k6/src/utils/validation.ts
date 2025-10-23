@@ -3,6 +3,50 @@ import http from "k6/http";
 import { CONSTANTS } from "../config";
 
 /**
+ * Parse JSON response body safely
+ */
+function parseJsonBody(body: string | ArrayBuffer | null): unknown | null {
+	if (typeof body !== "string") {
+		return null;
+	}
+
+	try {
+		const data = JSON.parse(body);
+		return data && typeof data === "object" ? data : null;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Log JSON parsing error with context
+ */
+function logParsingError(
+	name: string,
+	error: unknown,
+	response: http.Response,
+): void {
+	const errorMsg = error instanceof Error ? error.message : "Unknown error";
+	console.warn(`JSON parsing failed for ${name}:`, errorMsg);
+
+	const bodyPreview =
+		typeof response.body === "string"
+			? response.body.substring(0, 200)
+			: "binary data";
+	console.warn(`Response status: ${response.status}, Body: ${bodyPreview}...`);
+}
+
+/**
+ * Check if response has JSON content type
+ */
+function isJsonResponse(response: http.Response): boolean {
+	return (
+		!!response.headers["Content-Type"]?.includes("application/json") &&
+		!!response.body
+	);
+}
+
+/**
  * Enhanced helper functions for better test organization and debugging
  */
 export function validateResponse(
@@ -11,43 +55,26 @@ export function validateResponse(
 	expectedStatus: number = CONSTANTS.HTTP_OK,
 	_maxDuration: number = CONSTANTS.RESPONSE_TIME_THRESHOLD_95,
 ): unknown {
-	// Only perform detailed validation for successful responses
-	if (
-		response.status === expectedStatus &&
-		expectedStatus === CONSTANTS.HTTP_OK
-	) {
-		try {
-			// Validate JSON structure for successful responses
-			if (
-				response.headers["Content-Type"]?.includes("application/json") &&
-				response.body &&
-				typeof response.body === "string"
-			) {
-				const data = JSON.parse(response.body);
-				if (data && typeof data === "object") {
-					return data;
-				}
-			}
-		} catch (error) {
-			const errorMsg = error instanceof Error ? error.message : "Unknown error";
-			console.warn(`JSON parsing failed for ${name}:`, errorMsg);
-			const bodyPreview =
-				typeof response.body === "string"
-					? response.body.substring(0, 200)
-					: "binary data";
-			console.warn(
-				`Response status: ${response.status}, Body: ${bodyPreview}...`,
-			);
-		}
-	}
-
-	// For non-OK responses, just log the status
+	// Log unexpected status
 	if (response.status !== expectedStatus) {
 		console.warn(
 			`${name} returned unexpected status: ${response.status} (expected: ${expectedStatus})`,
 		);
+		return null;
 	}
 
+	// Only parse JSON for successful responses
+	if (expectedStatus !== CONSTANTS.HTTP_OK || !isJsonResponse(response)) {
+		return null;
+	}
+
+	const data = parseJsonBody(response.body);
+	if (data) {
+		return data;
+	}
+
+	// Log parsing error
+	logParsingError(name, new Error("JSON parsing failed"), response);
 	return null;
 }
 
