@@ -2,6 +2,7 @@
 mode: "agent"
 tools: ["changes", "search/codebase", "edit/editFiles", "problems"]
 description: "Ensure that C# types are documented with XML comments and follow best practices for documentation."
+model: Claude Sonnet 4.5 (copilot)
 ---
 
 # C# Documentation Best Practices

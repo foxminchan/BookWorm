@@ -1,4 +1,5 @@
-name: SonarQube
+name: SonarQube Analysis
+run-name: SonarQube Analysis - ${{ github.actor }} (${{ github.ref_name }})
 
 on:
   push:
