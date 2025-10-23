@@ -1,8 +1,17 @@
-[![CI](https://github.com/foxminchan/BookWorm/actions/workflows/ci.yaml/badge.svg)](https://github.com/foxminchan/BookWorm/actions/workflows/ci.yaml)
+[<img src="./assets/Logo.svg" alt="BookWorm" width=80>](https://foxminchan.github.io/BookWorm/)
+
+# BookWorm
+
+[![BookWorm CI (.NET)](https://github.com/foxminchan/BookWorm/actions/workflows/dotnet-ci.yaml/badge.svg?branch=main)](https://github.com/foxminchan/BookWorm/actions/workflows/dotnet-ci.yaml)
+[![BookWorm CI (Keycloakify)](https://github.com/foxminchan/BookWorm/actions/workflows/keycloak-ci.yaml/badge.svg?branch=main)](https://github.com/foxminchan/BookWorm/actions/workflows/keycloak-ci.yaml)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=coverage)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
 [![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
 
-# 📖 BookWorm: A Practical .NET Aspire Application
+<div>
+  <a href="https://codespaces.new/foxminchan/BookWorm?quickstart=1" target="_blank">
+    <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg">
+  </a>
+</div>
 
 ## Introduction
 
@@ -13,12 +22,6 @@
 > [!WARNING]
 >
 > **Disclaimer**: This example is for demo use only. It’s not production-ready and may omit important features.
-
-<div>
-  <a href="https://codespaces.new/foxminchan/BookWorm?quickstart=1" target="_blank">
-    <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg">
-  </a>
-</div>
 
 ## Project Goals
 
@@ -79,7 +82,7 @@
 
 Follow these steps to get BookWorm running locally:
 
-```bash
+```sh
 # 1. Clone the repository
 git clone git@github.com:foxminchan/BookWorm.git
 
