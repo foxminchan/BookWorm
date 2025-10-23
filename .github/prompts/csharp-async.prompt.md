@@ -2,6 +2,7 @@
 mode: "agent"
 tools: ["changes", "search/codebase", "edit/editFiles", "problems"]
 description: "Get best practices for C# async programming"
+model: Claude Sonnet 4.5 (copilot)
 ---
 
 # C# Async Programming Best Practices

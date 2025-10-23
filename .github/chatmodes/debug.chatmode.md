@@ -7,9 +7,9 @@ tools: [
     "runCommands",
     "fetch",
     "search",
-    "usages"
+    "usages",
   ]
-model: Claude Sonnet 4
+model: Claude Sonnet 4.5 (copilot)
 ---
 
 # Debug Mode Instructions

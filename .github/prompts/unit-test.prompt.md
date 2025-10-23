@@ -11,6 +11,7 @@ tools: [
     "changes",
   ]
 description: "Get best practices for TUnit unit testing, including data-driven tests"
+model: Claude Sonnet 4.5 (copilot)
 ---
 
 # TUnit Best Practices
