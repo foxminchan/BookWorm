@@ -1,50 +1,50 @@
 {
-  "id": "OrderStatusChangedToCancelEvent",
-  "allOf": [
-    {
-      "id": "integrationEvent",
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "id": {
-          "type": "string",
-          "format": "guid",
-          "x-parser-schema-id": "<anonymous-schema-1>"
-        },
-        "creationDate": {
-          "type": "string",
-          "format": "date-time",
-          "x-parser-schema-id": "<anonymous-schema-2>"
-        }
-      },
-      "x-parser-schema-id": "integrationEvent"
-    },
-    {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "orderId": {
-          "type": "string",
-          "format": "guid",
-          "x-parser-schema-id": "<anonymous-schema-21>"
-        },
-        "basketId": {
-          "type": "string",
-          "format": "guid",
-          "x-parser-schema-id": "<anonymous-schema-22>"
-        },
-        "email": {
-          "type": ["null", "string"],
-          "x-parser-schema-id": "<anonymous-schema-23>"
-        },
-        "totalMoney": {
-          "type": "number",
-          "format": "decimal",
-          "x-parser-schema-id": "<anonymous-schema-24>"
-        }
-      },
-      "x-parser-schema-id": "<anonymous-schema-20>"
-    }
-  ],
-  "x-parser-schema-id": "orderStatusChangedToCancelIntegrationEvent"
+	"id": "OrderStatusChangedToCancelEvent",
+	"allOf": [
+		{
+			"id": "integrationEvent",
+			"type": "object",
+			"additionalProperties": false,
+			"properties": {
+				"id": {
+					"type": "string",
+					"format": "guid",
+					"x-parser-schema-id": "<anonymous-schema-1>"
+				},
+				"creationDate": {
+					"type": "string",
+					"format": "date-time",
+					"x-parser-schema-id": "<anonymous-schema-2>"
+				}
+			},
+			"x-parser-schema-id": "integrationEvent"
+		},
+		{
+			"type": "object",
+			"additionalProperties": false,
+			"properties": {
+				"orderId": {
+					"type": "string",
+					"format": "guid",
+					"x-parser-schema-id": "<anonymous-schema-21>"
+				},
+				"basketId": {
+					"type": "string",
+					"format": "guid",
+					"x-parser-schema-id": "<anonymous-schema-22>"
+				},
+				"email": {
+					"type": ["null", "string"],
+					"x-parser-schema-id": "<anonymous-schema-23>"
+				},
+				"totalMoney": {
+					"type": "number",
+					"format": "decimal",
+					"x-parser-schema-id": "<anonymous-schema-24>"
+				}
+			},
+			"x-parser-schema-id": "<anonymous-schema-20>"
+		}
+	],
+	"x-parser-schema-id": "orderStatusChangedToCancelIntegrationEvent"
 }

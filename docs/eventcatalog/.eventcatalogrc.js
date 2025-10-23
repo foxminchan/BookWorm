@@ -1,29 +1,29 @@
 module.exports = {
-  rules: {
-    // Schema validation rules
-    "schema/required-fields": "error",
-    "schema/valid-semver": "error",
-    "schema/valid-email": "warn",
+	rules: {
+		// Schema validation rules
+		"schema/required-fields": "error",
+		"schema/valid-semver": "error",
+		"schema/valid-email": "warn",
 
-    // Reference validation rules
-    "refs/owner-exists": "error",
-    "refs/valid-version-range": "error",
+		// Reference validation rules
+		"refs/owner-exists": "error",
+		"refs/valid-version-range": "error",
 
-    // Best practice rules
-    "best-practices/summary-required": "warn",
-    "best-practices/owner-required": "error",
-  },
+		// Best practice rules
+		"best-practices/summary-required": "warn",
+		"best-practices/owner-required": "error",
+	},
 
-  // Ignore certain paths
-  ignorePatterns: ["**/archived/**", "**/drafts/**"],
+	// Ignore certain paths
+	ignorePatterns: ["**/archived/**", "**/drafts/**"],
 
-  // Override rules for specific file patterns
-  overrides: [
-    {
-      files: ["**/experimental/**"],
-      rules: {
-        "best-practices/owner-required": "off",
-      },
-    },
-  ],
+	// Override rules for specific file patterns
+	overrides: [
+		{
+			files: ["**/experimental/**"],
+			rules: {
+				"best-practices/owner-required": "off",
+			},
+		},
+	],
 };

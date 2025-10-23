@@ -1,25 +1,25 @@
 {
-    "type": "object",
-    "properties": {
-        "street": {
-            "type": "string",
-            "description": "The street address of the buyer",
-            "minLength": 1,
-            "maxLength": 50
-        },
-        "city": {
-            "type": "string",
-            "description": "The city of the buyer",
-            "minLength": 1,
-            "maxLength": 50
-        },
-        "province": {
-            "type": "string",
-            "description": "The province of the buyer",
-            "minLength": 1,
-            "maxLength": 50
-        }
-    },
-    "required": ["street", "city", "province"],
-    "isSchema": true
+	"type": "object",
+	"properties": {
+		"street": {
+			"type": "string",
+			"description": "The street address of the buyer",
+			"minLength": 1,
+			"maxLength": 50
+		},
+		"city": {
+			"type": "string",
+			"description": "The city of the buyer",
+			"minLength": 1,
+			"maxLength": 50
+		},
+		"province": {
+			"type": "string",
+			"description": "The province of the buyer",
+			"minLength": 1,
+			"maxLength": 50
+		}
+	},
+	"required": ["street", "city", "province"],
+	"isSchema": true
 }
