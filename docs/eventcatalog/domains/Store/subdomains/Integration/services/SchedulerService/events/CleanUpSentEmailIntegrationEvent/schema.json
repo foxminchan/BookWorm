@@ -1,35 +1,35 @@
 {
-  "id": "CleanUpSentEmailIntegrationEvent",
-  "description": "Represents an integration event to trigger cleanup of sent emails for system maintenance",
-  "allOf": [
-    {
-      "id": "integrationEvent",
-      "type": "object",
-      "description": "Base event structure containing common metadata for all integration events in the system",
-      "additionalProperties": false,
-      "properties": {
-        "id": {
-          "type": "string",
-          "format": "guid",
-          "description": "The unique identifier of the integration event",
-          "example": "01961eb4-668d-7e7e-ae25-0fab379614f7",
-          "x-parser-schema-id": "<anonymous-schema-1>"
-        },
-        "creationDate": {
-          "type": "string",
-          "format": "date-time",
-          "description": "The creation date of the integration event",
-          "example": "2021-01-01T00:00:00Z",
-          "x-parser-schema-id": "<anonymous-schema-2>"
-        }
-      },
-      "x-parser-schema-id": "integrationEvent"
-    },
-    {
-      "type": "object",
-      "additionalProperties": false,
-      "x-parser-schema-id": "<anonymous-schema-3>"
-    }
-  ],
-  "x-parser-schema-id": "CleanUpSentEmailIntegrationEvent"
+	"id": "CleanUpSentEmailIntegrationEvent",
+	"description": "Represents an integration event to trigger cleanup of sent emails for system maintenance",
+	"allOf": [
+		{
+			"id": "integrationEvent",
+			"type": "object",
+			"description": "Base event structure containing common metadata for all integration events in the system",
+			"additionalProperties": false,
+			"properties": {
+				"id": {
+					"type": "string",
+					"format": "guid",
+					"description": "The unique identifier of the integration event",
+					"example": "01961eb4-668d-7e7e-ae25-0fab379614f7",
+					"x-parser-schema-id": "<anonymous-schema-1>"
+				},
+				"creationDate": {
+					"type": "string",
+					"format": "date-time",
+					"description": "The creation date of the integration event",
+					"example": "2021-01-01T00:00:00Z",
+					"x-parser-schema-id": "<anonymous-schema-2>"
+				}
+			},
+			"x-parser-schema-id": "integrationEvent"
+		},
+		{
+			"type": "object",
+			"additionalProperties": false,
+			"x-parser-schema-id": "<anonymous-schema-3>"
+		}
+	],
+	"x-parser-schema-id": "CleanUpSentEmailIntegrationEvent"
 }

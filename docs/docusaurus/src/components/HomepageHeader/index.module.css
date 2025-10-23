@@ -1,77 +1,77 @@
 .header {
-  position: relative;
-  padding: 4rem 1rem;
-  overflow: hidden;
-  text-align: center;
+	position: relative;
+	padding: 4rem 1rem;
+	overflow: hidden;
+	text-align: center;
 }
 
 .container {
-  max-width: 1200px;
-  margin: 0 auto;
+	max-width: 1200px;
+	margin: 0 auto;
 }
 
 .logoContainer {
-  margin-bottom: 2rem;
+	margin-bottom: 2rem;
 }
 
 .logo {
-  display: block;
-  margin: 0 auto 1.5rem auto;
+	display: block;
+	margin: 0 auto 1.5rem auto;
 }
 
 .title {
-  font-size: clamp(2.5rem, 5vw, 4rem);
-  font-weight: bold;
-  margin-bottom: 1rem;
-  background: linear-gradient(
-    135deg,
-    var(--ifm-color-primary) 0%,
-    var(--ifm-color-primary-dark) 50%,
-    var(--ifm-color-primary-darkest) 100%
-  );
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-size: 200% 200%;
-  animation: gradientShift 4s ease-in-out infinite;
+	font-size: clamp(2.5rem, 5vw, 4rem);
+	font-weight: bold;
+	margin-bottom: 1rem;
+	background: linear-gradient(
+		135deg,
+		var(--ifm-color-primary) 0%,
+		var(--ifm-color-primary-dark) 50%,
+		var(--ifm-color-primary-darkest) 100%
+	);
+	background-clip: text;
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-size: 200% 200%;
+	animation: gradientShift 4s ease-in-out infinite;
 }
 
 .tagline {
-  font-size: clamp(1.125rem, 2.5vw, 1.5rem);
-  max-width: 100%;
-  margin: 0 auto 2rem auto;
-  color: var(--ifm-color-primary-dark);
+	font-size: clamp(1.125rem, 2.5vw, 1.5rem);
+	max-width: 100%;
+	margin: 0 auto 2rem auto;
+	color: var(--ifm-color-primary-dark);
 }
 
 .getStartedButton {
-  display: inline-block;
-  padding: 0.75rem 2rem;
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: white;
-  background-color: var(--ifm-color-primary);
-  border-radius: 0.5rem;
-  text-decoration: none;
-  box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.1);
-  transform: translateY(0);
-  transition: all 0.2s ease-in-out;
+	display: inline-block;
+	padding: 0.75rem 2rem;
+	font-size: 1.125rem;
+	font-weight: 600;
+	color: white;
+	background-color: var(--ifm-color-primary);
+	border-radius: 0.5rem;
+	text-decoration: none;
+	box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.1);
+	transform: translateY(0);
+	transition: all 0.2s ease-in-out;
 }
 
 .getStartedButton:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px 0 rgba(0, 0, 0, 0.15);
-  color: white;
-  text-decoration: none;
+	transform: translateY(-2px);
+	box-shadow: 0 6px 20px 0 rgba(0, 0, 0, 0.15);
+	color: white;
+	text-decoration: none;
 }
 
 @keyframes gradientShift {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+	0% {
+		background-position: 0% 50%;
+	}
+	50% {
+		background-position: 100% 50%;
+	}
+	100% {
+		background-position: 0% 50%;
+	}
 }

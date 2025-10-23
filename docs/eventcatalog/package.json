@@ -1,19 +1,25 @@
 {
-  "name": "bookworm-eventcatalog",
-  "version": "1.0.0",
-  "description": "EventCatalog for BookWorm",
-  "license": "MIT",
-  "private": true,
-  "scripts": {
-    "dev": "eventcatalog dev",
-    "build": "eventcatalog build",
-    "start": "eventcatalog start",
-    "preview": "eventcatalog preview",
-    "generate": "eventcatalog generate"
-  },
-  "dependencies": {
-    "@eventcatalog/core": "latest",
-    "@eventcatalog/generator-asyncapi": "latest",
-    "@eventcatalog/generator-openapi": "latest"
-  }
+	"name": "bookworm-eventcatalog",
+	"version": "1.0.0",
+	"description": "EventCatalog for BookWorm",
+	"license": "MIT",
+	"private": true,
+	"scripts": {
+		"dev": "eventcatalog dev",
+		"build": "eventcatalog build",
+		"start": "eventcatalog start",
+		"preview": "eventcatalog preview",
+		"generate": "eventcatalog generate",
+		"lint": "biome lint --write",
+		"format": "biome format --write",
+		"check": "biome check"
+	},
+	"dependencies": {
+		"@eventcatalog/core": "latest",
+		"@eventcatalog/generator-asyncapi": "latest",
+		"@eventcatalog/generator-openapi": "latest"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.2.7"
+	}
 }

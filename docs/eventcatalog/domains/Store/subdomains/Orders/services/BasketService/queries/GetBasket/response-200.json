@@ -1,37 +1,37 @@
 {
-  "type": "object",
-  "properties": {
-    "id": {
-      "type": "string",
-      "description": "Basket ID"
-    },
-    "items": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Product ID"
-          },
-          "quantity": {
-            "type": "integer",
-            "description": "Quantity of the product"
-          },
-          "name": {
-            "type": "string",
-            "description": "Product name"
-          },
-          "price": {
-            "type": "number",
-            "description": "Product price"
-          },
-          "priceSale": {
-            "type": "number",
-            "description": "Product sale price"
-          }
-        }
-      }
-    }
-  }
+	"type": "object",
+	"properties": {
+		"id": {
+			"type": "string",
+			"description": "Basket ID"
+		},
+		"items": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"description": "Product ID"
+					},
+					"quantity": {
+						"type": "integer",
+						"description": "Quantity of the product"
+					},
+					"name": {
+						"type": "string",
+						"description": "Product name"
+					},
+					"price": {
+						"type": "number",
+						"description": "Product price"
+					},
+					"priceSale": {
+						"type": "number",
+						"description": "Product sale price"
+					}
+				}
+			}
+		}
+	}
 }

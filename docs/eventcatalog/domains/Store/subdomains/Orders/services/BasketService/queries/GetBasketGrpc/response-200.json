@@ -1,25 +1,25 @@
 {
-  "type": "object",
-  "properties": {
-    "id": {
-      "type": "string",
-      "description": "Basket ID"
-    },
-    "items": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Product ID"
-          },
-          "quantity": {
-            "type": "integer",
-            "description": "Quantity of the product"
-          }
-        }
-      }
-    }
-  }
+	"type": "object",
+	"properties": {
+		"id": {
+			"type": "string",
+			"description": "Basket ID"
+		},
+		"items": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"description": "Product ID"
+					},
+					"quantity": {
+						"type": "integer",
+						"description": "Quantity of the product"
+					}
+				}
+			}
+		}
+	}
 }

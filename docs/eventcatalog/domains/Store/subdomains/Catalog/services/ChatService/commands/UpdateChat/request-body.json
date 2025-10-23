@@ -1,22 +1,22 @@
 {
-  "required": ["id"],
-  "type": "object",
-  "properties": {
-    "id": {
-      "type": "string",
-      "format": "uuid",
-      "description": "The unique identifier of the chat to be updated"
-    },
-    "prompt": {
-      "type": "object",
-      "required": ["text"],
-      "properties": {
-        "text": {
-          "type": "string",
-          "description": "The text of the prompt to be updated"
-        }
-      }
-    }
-  },
-  "isSchema": true
+	"required": ["id"],
+	"type": "object",
+	"properties": {
+		"id": {
+			"type": "string",
+			"format": "uuid",
+			"description": "The unique identifier of the chat to be updated"
+		},
+		"prompt": {
+			"type": "object",
+			"required": ["text"],
+			"properties": {
+				"text": {
+					"type": "string",
+					"description": "The text of the prompt to be updated"
+				}
+			}
+		}
+	},
+	"isSchema": true
 }

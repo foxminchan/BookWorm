@@ -6,9 +6,9 @@
       WorkingDirectory="Container/k6"
       Condition="Exists('Container/k6/package.json')"
     />
-    <Message Text="Formatting K6 code" Importance="high" />
+    <Message Text="Lint And Format K6 code" Importance="high" />
     <Exec
-      Command="bun run format:check"
+      Command="bun run precommit"
       WorkingDirectory="Container/k6"
       Condition="Exists('Container/k6/package.json')"
       ContinueOnError="true"

@@ -1,19 +1,19 @@
 {
-  "type": "object",
-  "properties": {
-    "id": {
-      "type": "string",
-      "format": "uuid",
-      "description": "The unique identifier of the buyer"
-    },
-    "name": {
-      "type": "string",
-      "description": "The name of the buyer"
-    },
-    "address": {
-      "type": "string",
-      "description": "The address of the buyer"
-    }
-  },
-  "isSchema": true
+	"type": "object",
+	"properties": {
+		"id": {
+			"type": "string",
+			"format": "uuid",
+			"description": "The unique identifier of the buyer"
+		},
+		"name": {
+			"type": "string",
+			"description": "The name of the buyer"
+		},
+		"address": {
+			"type": "string",
+			"description": "The address of the buyer"
+		}
+	},
+	"isSchema": true
 }

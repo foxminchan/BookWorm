@@ -1,12 +1,12 @@
 {
-  "required": ["text"],
-  "type": "object",
-  "properties": {
-    "text": {
-      "type": "string",
-      "description": "The prompt text for the chat",
-      "minLength": 1
-    }
-  },
-  "isSchema": true
+	"required": ["text"],
+	"type": "object",
+	"properties": {
+		"text": {
+			"type": "string",
+			"description": "The prompt text for the chat",
+			"minLength": 1
+		}
+	},
+	"isSchema": true
 }

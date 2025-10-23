@@ -1,12 +1,12 @@
 {
-  "required": ["id", "name"],
-  "type": "object",
-  "properties": {
-    "name": {
-      "type": "string",
-      "description": "Author name",
-      "minLength": 1,
-      "maxLength": 100
-    }
-  }
+	"required": ["id", "name"],
+	"type": "object",
+	"properties": {
+		"name": {
+			"type": "string",
+			"description": "Author name",
+			"minLength": 1,
+			"maxLength": 100
+		}
+	}
 }
