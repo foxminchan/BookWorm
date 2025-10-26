@@ -3,7 +3,7 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-    <AspireVersion>9.5.1</AspireVersion>
+    <AspireVersion>9.5.2</AspireVersion>
   </PropertyGroup>
   <ItemGroup Label="Aspire Packages">
     <!-- Hosting -->
@@ -97,7 +97,7 @@
     <!-- gRPC -->
     <PackageVersion Include="Grpc.AspNetCore.HealthChecks" Version="$(GrpcVersion)" />
     <PackageVersion Include="Grpc.AspNetCore.Server.ClientFactory" Version="$(GrpcVersion)" />
-    <PackageVersion Include="Grpc.Tools" Version="2.72.0" PrivateAssets="All" />
+    <PackageVersion Include="Grpc.Tools" Version="2.76.0" PrivateAssets="All" />
     <!-- MassTransit -->
     <PackageVersion Include="MassTransit.EntityFrameworkCore" Version="$(MassTransitVersion)" />
     <PackageVersion Include="MassTransit.RabbitMQ" Version="$(MassTransitVersion)" />
@@ -114,11 +114,11 @@
     <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.4.0-preview.3" />
   </ItemGroup>
   <ItemGroup Label="Testing">
-    <PackageVersion Include="Bogus" Version="35.6.4" />
+    <PackageVersion Include="Bogus" Version="35.6.5" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="TngTech.ArchUnitNET.TUnit" Version="0.12.3" />
-    <PackageVersion Include="TUnit" Version="0.75.30" />
+    <PackageVersion Include="TUnit" Version="0.76.18" />
     <PackageVersion Include="Verify.TUnit" Version="31.0.4" />
     <!-- Microsoft Testing Platform -->
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.1.0" />
