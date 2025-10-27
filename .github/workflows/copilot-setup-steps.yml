@@ -12,7 +12,8 @@ on:
       - .github/workflows/copilot-setup-steps.yml
 
 env:
-  DOTNET_VERSION: "10.0.x"
+  GLOBAL_JSON_PATH: ${{ github.workspace }}/global.json
+  BUN_VERSION_FILE: ${{ github.workspace }}/.bun-version
 
 jobs:
   # The job MUST be called `copilot-setup-steps` or it will not be picked up by Copilot.
@@ -30,16 +31,18 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - name: Setup .NET Core
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          global-json-file: ${{ env.GLOBAL_JSON_PATH }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version-file: ".bun-version"
+          bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
       - name: Install Tools
         run: dotnet tool restore

@@ -26,7 +26,8 @@ permissions:
   actions: write
 
 env:
-  JAVA_VERSION: "17"
+  JAVA_VERSION: "25"
+  BUN_VERSION_FILE: ${{ github.workspace }}/.bun-version
 
 jobs:
   build:
@@ -37,6 +38,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK
         uses: actions/setup-java@v5
@@ -52,7 +55,7 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
       - name: Install dependencies
         working-directory: src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify
@@ -94,7 +97,7 @@ jobs:
 
       - name: Upload JAR artifacts
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: bookworm-keycloak-theme-v${{ steps.theme-version.outputs.version || 'latest' }}
           path: src/Aspire/BookWorm.AppHost/Container/keycloak/jar-artifacts/*.jar

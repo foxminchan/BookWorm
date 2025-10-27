@@ -19,6 +19,9 @@ concurrency:
   group: "pages"
   cancel-in-progress: false
 
+env:
+  BUN_VERSION_FILE: ${{ github.workspace }}/.bun-version
+
 jobs:
   build:
     name: Build Documentation
@@ -33,7 +36,7 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version-file: ".bun-version"
+          bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

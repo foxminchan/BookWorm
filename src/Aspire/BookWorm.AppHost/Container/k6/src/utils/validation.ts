@@ -5,7 +5,7 @@ import { CONSTANTS } from "../config";
 /**
  * Parse JSON response body safely
  */
-function parseJsonBody(body: string | ArrayBuffer | null): unknown | null {
+function parseJsonBody(body: string | ArrayBuffer | null): unknown {
 	if (typeof body !== "string") {
 		return null;
 	}

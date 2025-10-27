@@ -233,7 +233,7 @@ builder
     .ExcludeFromManifest();
 
 builder
-    .AddMcpInspector(Components.Inspector, options => options.InspectorVersion = "0.17.0")
+    .AddMcpInspector(Components.Inspector, options => options.InspectorVersion = "0.17.2")
     .WithMcpServer(mcp)
     .ExcludeFromManifest();
 
