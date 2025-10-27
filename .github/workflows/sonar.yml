@@ -36,8 +36,8 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v5
         with:
-          java-version: ${{ env.JAVA_VERSION }}
           distribution: "temurin"
+          java-version: ${{ env.JAVA_VERSION }}
 
       - name: Setup .NET Core
         uses: actions/setup-dotnet@v5
@@ -66,10 +66,10 @@ jobs:
 
       - name: Install SonarCloud scanner
         if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
-        shell: powershell
+        shell: bash
         run: |
-          New-Item -Path .\.sonar\scanner -ItemType Directory
-          dotnet tool update dotnet-sonarscanner --tool-path .\.sonar\scanner
+          mkdir -p .sonar/scanner
+          dotnet tool update dotnet-sonarscanner --tool-path .sonar/scanner
 
       - name: Sonarqube Begin
         run: >

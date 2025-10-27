@@ -44,8 +44,8 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v5
         with:
-          java-version: "${{ env.JAVA_VERSION }}"
           distribution: "temurin"
+          java-version: "${{ env.JAVA_VERSION }}"
 
       - name: Verify Maven installation
         run: |
