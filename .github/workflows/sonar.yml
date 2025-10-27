@@ -52,7 +52,7 @@ jobs:
       - name: Cache SonarQube Cloud packages
         uses: actions/cache@v4
         with:
-          path: ~\sonar\cache
+          path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
@@ -60,7 +60,7 @@ jobs:
         id: cache-sonar-scanner
         uses: actions/cache@v4
         with:
-          path: .\.sonar\scanner
+          path: ./.sonar/scanner
           key: ${{ runner.os }}-sonar-scanner
           restore-keys: ${{ runner.os }}-sonar-scanner
 
@@ -73,7 +73,7 @@ jobs:
 
       - name: Sonarqube Begin
         run: >
-          .\.sonar\scanner\dotnet-sonarscanner begin
+          .sonar/scanner/dotnet-sonarscanner begin
           /k:"foxminchan_BookWorm"
           /o:"foxminchan"
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
@@ -103,5 +103,5 @@ jobs:
 
       - name: Sonarqube End
         run: >
-          .\.sonar\scanner\dotnet-sonarscanner end
+          .sonar/scanner/dotnet-sonarscanner end
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
