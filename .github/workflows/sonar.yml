@@ -18,7 +18,8 @@ on:
 
 env:
   JAVA_VERSION: "25"
-  DOTNET_VERSION: "10.0.x"
+  GLOBAL_JSON_PATH: ${{ github.workspace }}/global.json
+  BUN_VERSION_FILE: ${{ github.workspace }}/.bun-version
   HANG_TIMEOUT: "7m"
   SESSION_TIMEOUT: "15m"
 
@@ -27,30 +28,31 @@ jobs:
     name: Build and analyze
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
       - name: Set up JDK
         uses: actions/setup-java@v5
         with:
+          distribution: "temurin"
           java-version: ${{ env.JAVA_VERSION }}
-          distribution: "zulu"
 
       - name: Setup .NET Core
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          global-json-file: ${{ env.GLOBAL_JSON_PATH }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version-file: ".bun-version"
-
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
+          bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
       - name: Cache SonarQube Cloud packages
         uses: actions/cache@v4
         with:
-          path: ~\sonar\cache
+          path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
@@ -58,17 +60,20 @@ jobs:
         id: cache-sonar-scanner
         uses: actions/cache@v4
         with:
-          path: .\.sonar\scanner
+          path: ./.sonar/scanner
           key: ${{ runner.os }}-sonar-scanner
           restore-keys: ${{ runner.os }}-sonar-scanner
 
-      - name: Install Tools
-        run: dotnet tool restore
+      - name: Install SonarCloud scanner
+        if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          mkdir -p .sonar/scanner
+          dotnet tool update dotnet-sonarscanner --tool-path .sonar/scanner
 
       - name: Sonarqube Begin
         run: >
-          dotnet
-          dotnet-sonarscanner begin
+          .sonar/scanner/dotnet-sonarscanner begin
           /k:"foxminchan_BookWorm"
           /o:"foxminchan"
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
@@ -98,6 +103,5 @@ jobs:
 
       - name: Sonarqube End
         run: >
-          dotnet
-          dotnet-sonarscanner end
+          .sonar/scanner/dotnet-sonarscanner end
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}"

@@ -22,7 +22,8 @@ on:
       - reopened
 
 env:
-  DOTNET_VERSION: "10.0.x"
+  GLOBAL_JSON_PATH: ${{ github.workspace }}/global.json
+  BUN_VERSION_FILE: ${{ github.workspace }}/.bun-version
 
 permissions:
   checks: write
@@ -42,11 +43,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - name: Setup Environment
         uses: ./.github/actions/setup
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          global-json-file: ${{ env.GLOBAL_JSON_PATH }}
+          bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
       - name: Cache .NET SDK
         uses: actions/cache@v4
@@ -83,11 +87,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - name: Format
         uses: ./.github/actions/format
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          global-json-file: ${{ env.GLOBAL_JSON_PATH }}
+          bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
   style:
     name: Style
@@ -97,11 +104,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - name: Style
         uses: ./.github/actions/style
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          global-json-file: ${{ env.GLOBAL_JSON_PATH }}
+          bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
   analyzers:
     name: Analyzers
@@ -111,11 +121,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - name: Analyzers
         uses: ./.github/actions/analyzers
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          global-json-file: ${{ env.GLOBAL_JSON_PATH }}
+          bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
   build:
     name: Build
@@ -125,11 +138,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - name: Build
         uses: ./.github/actions/build
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          global-json-file: ${{ env.GLOBAL_JSON_PATH }}
+          bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
   test:
     name: Test
@@ -139,8 +155,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - name: Test
         uses: ./.github/actions/test
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          global-json-file: ${{ env.GLOBAL_JSON_PATH }}
+          bun-version-file: ${{ env.BUN_VERSION_FILE }}
