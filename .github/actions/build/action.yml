@@ -2,9 +2,14 @@ name: "Build"
 description: "Build the project"
 
 inputs:
-  dotnet-version:
-    description: "The version of .NET Core to use"
-    required: true
+  global-json-file:
+    description: "The path to the global.json file"
+    required: false
+    default: "./global.json"
+  bun-version-file:
+    description: "The path to the .bun-version file"
+    required: false
+    default: ".bun-version"
 
 runs:
   using: "composite"
@@ -19,12 +24,12 @@ runs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v5
       with:
-        dotnet-version: ${{ inputs.dotnet-version }}
+        global-json-file: ${{ inputs.global-json-file }}
 
     - name: Setup Bun
       uses: oven-sh/setup-bun@v2
       with:
-        bun-version-file: ".bun-version"
+        bun-version-file: ${{ inputs.bun-version-file }}
 
     - name: Install Tools
       shell: bash

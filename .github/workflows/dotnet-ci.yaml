@@ -30,7 +30,8 @@ on:
         default: true
 
 env:
-  DOTNET_VERSION: "10.0.x"
+  GLOBAL_JSON_PATH: ${{ github.workspace }}/global.json
+  BUN_VERSION_FILE: ${{ github.workspace }}/.bun-version
 
 permissions:
   checks: write
@@ -55,7 +56,8 @@ jobs:
       - name: Setup Environment
         uses: ./.github/actions/setup
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          global-json-file: ${{ env.GLOBAL_JSON_PATH }}
+          bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
       - name: Cache .NET SDK
         uses: actions/cache@v4
@@ -96,7 +98,8 @@ jobs:
       - name: Format
         uses: ./.github/actions/format
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          global-json-file: ${{ env.GLOBAL_JSON_PATH }}
+          bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
   style:
     name: Style
@@ -110,7 +113,8 @@ jobs:
       - name: Style
         uses: ./.github/actions/style
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          global-json-file: ${{ env.GLOBAL_JSON_PATH }}
+          bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
   analyzers:
     name: Analyzers
@@ -124,7 +128,8 @@ jobs:
       - name: Analyzers
         uses: ./.github/actions/analyzers
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          global-json-file: ${{ env.GLOBAL_JSON_PATH }}
+          bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
   build:
     name: Build
@@ -138,7 +143,8 @@ jobs:
       - name: Build
         uses: ./.github/actions/build
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          global-json-file: ${{ env.GLOBAL_JSON_PATH }}
+          bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
   test:
     name: Test
@@ -152,15 +158,12 @@ jobs:
       - name: Test
         uses: ./.github/actions/test
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          global-json-file: ${{ env.GLOBAL_JSON_PATH }}
+          bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
   publish:
     name: Publish Artifacts
-    environment: ${{ github.event.inputs.environment || 'development' }}
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.publish || false
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: [build, test]
     strategy:
       fail-fast: false
       max-parallel: 5
@@ -196,6 +199,11 @@ jobs:
           - name: "Scheduler Migrator"
             project-path: "src/Services/Scheduler/BookWorm.Scheduler.Migrator/BookWorm.Scheduler.Migrator.csproj"
             container-repository: "foxminchan/bookworm/scheduler-migrator"
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'development' }}
+    timeout-minutes: 15
+    needs: [build, test]
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -219,7 +227,8 @@ jobs:
       - name: Publish ${{ matrix.service.name }} Service
         uses: ./.github/actions/publish
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          global-json-file: ${{ env.GLOBAL_JSON_PATH }}
+          bun-version-file: ${{ env.BUN_VERSION_FILE }}
           project-path: ${{ matrix.service.project-path }}
           container-repository: ${{ matrix.service.container-repository }}
           container-tag: ${{ steps.set_tag.outputs.version }}
