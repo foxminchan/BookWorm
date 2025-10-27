@@ -73,8 +73,7 @@ jobs:
 
       - name: Sonarqube Begin
         run: >
-          dotnet
-          dotnet-sonarscanner begin
+          .\.sonar\scanner\dotnet-sonarscanner begin
           /k:"foxminchan_BookWorm"
           /o:"foxminchan"
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
@@ -104,6 +103,5 @@ jobs:
 
       - name: Sonarqube End
         run: >
-          dotnet
-          dotnet-sonarscanner end
+          .\.sonar\scanner\dotnet-sonarscanner end
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
