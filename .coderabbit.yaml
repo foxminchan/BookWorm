@@ -2,7 +2,7 @@
 language: "en-US"
 early_access: false
 tone_instructions: |
-  Expert .NET/C# 13 reviewer. Focus on Clean Architecture, DDD, SOLID principles, security, performance, and enterprise patterns.
+  Expert .NET/C# 14 reviewer. Focus on Clean Architecture, DDD, SOLID principles, security, performance, and enterprise patterns.
 reviews:
   profile: "chill"
   request_changes_workflow: true
@@ -54,7 +54,7 @@ reviews:
         - Integration test setup and teardown
     - path: "src/Aspire/**"
       instructions: |
-        .NET Aspire orchestration review:
+        Aspire orchestration review:
         - Service discovery and configuration
         - Health checks and observability
         - Resource allocation and scaling

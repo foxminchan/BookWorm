@@ -22,7 +22,7 @@ The foundation of BookWorm is built on carefully selected technologies that alig
 | Technology       | Decision Rationale                                                                       | Impact                                                                           | Trade-offs                                                                 |
 | ---------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
 | **ASP.NET Core** | Cross-platform, high-performance web framework with excellent cloud integration          | Scalable APIs, dependency injection, middleware pipeline                         | Requires deeper knowledge of middleware and async programming              |
-| **.NET Aspire**  | Cloud-native development framework with built-in observability and service orchestration | Simplified local development, integrated telemetry, streamlined Azure deployment | Still evolving, ecosystem not as mature as other orchestrators              |
+| **Aspire**  | Cloud-native development framework with built-in observability and service orchestration | Simplified local development, integrated telemetry, streamlined Azure deployment | Still evolving, ecosystem not as mature as other orchestrators              |
 | **Docker**       | Industry standard for containerization and orchestration                                 | Consistent deployments, scaling, and isolation                                   | Adds operational complexity and requires DevOps expertise                  |
 
 ---
@@ -58,7 +58,7 @@ The foundation of BookWorm is built on carefully selected technologies that alig
 
 ### Observability & Monitoring
 
-- **.NET Aspire** telemetry (logs, metrics, traces) with OpenTelemetry integration
+- **Aspire** telemetry (logs, metrics, traces) with OpenTelemetry integration
 - **Dashboards** in Azure Monitor/Grafana for real-time visibility
 - **Distributed tracing** with correlation IDs across services
 - **Trade-offs**: Higher storage costs for telemetry data, requires governance to avoid noise

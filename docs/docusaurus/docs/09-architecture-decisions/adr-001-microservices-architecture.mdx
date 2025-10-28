@@ -73,7 +73,7 @@ The system is decomposed into the following services based on business capabilit
    - Finance Service: Complex transaction orchestration
 3. **Technology Diversity**: Enables demonstration of various .NET technologies and architectural patterns
 4. **Team Simulation**: Models real-world development scenarios with service ownership
-5. **Cloud-Native Alignment**: Integrates seamlessly with .NET Aspire and Azure deployment strategies
+5. **Cloud-Native Alignment**: Integrates seamlessly with Aspire and Azure deployment strategies
 6. **Fault Isolation**: Service failures don't cascade across the entire system
 
 ### Service Decomposition Strategy
@@ -143,7 +143,7 @@ graph TB
 
 ### Risk Mitigation Strategies
 
-- **Service Mesh**: Leverage .NET Aspire for service discovery and communication management
+- **Service Mesh**: Leverage Aspire for service discovery and communication management
 - **Circuit Breakers**: Implement resilience patterns using Polly for fault tolerance
 - **Distributed Tracing**: Use OpenTelemetry for end-to-end observability and debugging
 - **API Versioning**: Implement versioning strategy for backward compatibility
@@ -170,7 +170,7 @@ graph TB
 
 - **Authentication/Authorization**: Centralized with Keycloak identity provider
 - **Logging and Monitoring**: Structured logging with OpenTelemetry integration
-- **Configuration Management**: Centralized configuration through .NET Aspire
+- **Configuration Management**: Centralized configuration through Aspire
 - **Health Checks**: Comprehensive health monitoring across all services
 
 ## Alternatives Considered
@@ -204,7 +204,7 @@ graph TB
 ## Related Architecture Decisions
 
 - [ADR-002: Event-Driven Architecture with CQRS](./adr-002-event-driven-cqrs)
-- [ADR-003: .NET Aspire for Cloud-Native Development](./adr-003-aspire-cloud-native)
+- [ADR-003: Aspire for Cloud-Native Development](./adr-003-aspire-cloud-native)
 - [ADR-004: PostgreSQL as Primary Database](./adr-004-postgresql-database)
 - [ADR-005: Keycloak for Identity Management](./adr-005-keycloak-identity)
 - [ADR-011: RabbitMQ for Message Broker](./adr-011-rabbitmq-message)

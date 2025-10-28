@@ -14,7 +14,7 @@ BookWorm is a distributed microservices application built with .NET 8+, using As
 
 ## Development Environment
 
-- Use C# 13 features and latest .NET version
+- Use C# 14 features and latest .NET version
 - The solution uses Aspire for service orchestration and development
 - Services are organized in the `src/Services/` directory
 - Building blocks are in `src/BuildingBlocks/`
@@ -22,7 +22,7 @@ BookWorm is a distributed microservices application built with .NET 8+, using As
 
 ## Code Style Guidelines
 
-- **Language**: Use C# 13 features exclusively
+- **Language**: Use C# 14 features exclusively
 - **Formatting**: Follow `.editorconfig` rules
 - **Namespaces**: Use file-scoped namespace declarations
 - **Null Safety**: Declare variables non-nullable, use `is null`/`is not null`

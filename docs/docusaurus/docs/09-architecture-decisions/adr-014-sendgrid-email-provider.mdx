@@ -82,7 +82,7 @@ Adopt **SendGrid** as the production email service provider with **MailKit/MailP
 #### Integration with BookWorm Architecture
 
 1. **Event-Driven Communication**: Integrates with RabbitMQ and MassTransit for event-driven email notifications
-2. **Aspire Orchestration**: Native support for .NET Aspire with automatic provider configuration
+2. **Aspire Orchestration**: Native support for Aspire with automatic provider configuration
 3. **Microservice Integration**: Centralized email service accessible to all BookWorm microservices
 4. **Configuration Management**: Azure Key Vault integration for secure API key management
 5. **Database Integration**: PostgreSQL-based outbox pattern for transactional email guarantees
@@ -305,4 +305,4 @@ public static IResourceBuilder<ProjectResource> WithEmailProvider(this IResource
 - [MailKit Documentation](https://github.com/jstedfast/MailKit)
 - [MailPit Container](https://github.com/axllent/mailpit)
 - [Polly Resilience Patterns](https://www.pollydocs.org/)
-- [.NET Aspire Email Configuration](https://learn.microsoft.com/en-us/dotnet/aspire/)
+- [Aspire Email Configuration](https://learn.microsoft.com/en-us/dotnet/aspire/)

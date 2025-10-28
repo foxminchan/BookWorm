@@ -3,6 +3,12 @@
     <IncludeHttpRuleProtos>true</IncludeHttpRuleProtos>
     <SuppressCheckGrpcNetClientFactoryVersion>true</SuppressCheckGrpcNetClientFactoryVersion>
   </PropertyGroup>
+  <ItemGroup>
+    <ContainerLabel
+      Include="org.opencontainers.image.description"
+      Value="BookWorm Basket Service Image"
+    />
+  </ItemGroup>
   <ItemGroup Label="Core Dependencies">
     <PackageReference Include="Aspire.StackExchange.Redis.DistributedCaching" />
     <PackageReference Include="Mediator.SourceGenerator" PrivateAssets="all" />

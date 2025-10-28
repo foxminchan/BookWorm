@@ -24,9 +24,9 @@ Use latest C# 14 features exclusively. Follow `.editorconfig` formatting rules. 
 
 ## Technology & Architecture Standards
 
-### Cloud-Native with .NET Aspire
+### Cloud-Native with Aspire
 
-All services run in .NET Aspire orchestration environment. Support containerization with Docker. Implement proper health checks and observability. Use HybridCache for performance optimization. Support horizontal scaling and cloud deployment patterns.
+All services run in Aspire orchestration environment. Support containerization with Docker. Implement proper health checks and observability. Use HybridCache for performance optimization. Support horizontal scaling and cloud deployment patterns.
 
 ### Frontend Architecture & Technology Stack
 

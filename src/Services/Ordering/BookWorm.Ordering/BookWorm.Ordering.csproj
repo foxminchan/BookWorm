@@ -3,6 +3,12 @@
     <IncludeHttpRuleProtos>true</IncludeHttpRuleProtos>
     <SuppressCheckGrpcNetClientFactoryVersion>true</SuppressCheckGrpcNetClientFactoryVersion>
   </PropertyGroup>
+  <ItemGroup>
+    <ContainerLabel
+      Include="org.opencontainers.image.description"
+      Value="BookWorm Ordering Service Image"
+    />
+  </ItemGroup>
   <ItemGroup Label="Core Dependencies">
     <PackageReference Include="Marten.AspNetCore" />
     <PackageReference Include="DistributedLock.Redis" />

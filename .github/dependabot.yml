@@ -15,16 +15,25 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
+      day: friday
+      time: "10:00"
+      timezone: "Asia/Ho_Chi_Minh"
     commit-message:
       prefix: "Devcontainer"
+      include: scope
+
   - package-ecosystem: nuget
     directory: "/"
     registries:
       - public-nuget
     schedule:
       interval: weekly
+      day: friday
+      time: "10:00"
+      timezone: "Asia/Ho_Chi_Minh"
     commit-message:
       prefix: "NuGet"
+      include: scope
     open-pull-requests-limit: 15
     groups:
       Aspire:
@@ -47,33 +56,114 @@ updates:
       EntityFrameworkCore:
         patterns:
           - "Microsoft.EntityFrameworkCore.*"
+
   - package-ecosystem: "npm"
     directory: "/docs/eventcatalog"
     schedule:
       interval: weekly
+      day: friday
+      time: "10:00"
+      timezone: "Asia/Ho_Chi_Minh"
     commit-message:
       prefix: "Node (Event Catalog)"
+      include: scope
+    open-pull-requests-limit: 10
+    versioning-strategy: increase
+    groups:
+      eventcatalog:
+        patterns:
+          - "@eventcatalog/*"
+
   - package-ecosystem: "npm"
     directory: "/docs/docusaurus"
     schedule:
       interval: weekly
+      day: friday
+      time: "10:00"
+      timezone: "Asia/Ho_Chi_Minh"
     commit-message:
       prefix: "Node (Docusaurus)"
+      include: scope
+    open-pull-requests-limit: 10
+    versioning-strategy: increase
+    groups:
+      docusaurus:
+        patterns:
+          - "@docusaurus/*"
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react*"
+
   - package-ecosystem: "npm"
     directory: "/src/Aspire/BookWorm.AppHost/Container/k6"
     schedule:
       interval: weekly
+      day: friday
+      time: "10:00"
+      timezone: "Asia/Ho_Chi_Minh"
     commit-message:
       prefix: "Node (k6)"
+      include: scope
+    open-pull-requests-limit: 10
+    versioning-strategy: increase
+    groups:
+      babel:
+        patterns:
+          - "@babel/*"
+      build-tools:
+        patterns:
+          - "webpack*"
+          - "*-loader"
+
   - package-ecosystem: "npm"
     directory: "/src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify"
     schedule:
       interval: weekly
+      day: friday
+      time: "10:00"
+      timezone: "Asia/Ho_Chi_Minh"
     commit-message:
       prefix: "Node (Keycloakify)"
+      include: scope
+    open-pull-requests-limit: 10
+    versioning-strategy: increase
+    ignore:
+      - dependency-name: "tailwindcss"
+    groups:
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react*"
+      keycloakify:
+        patterns:
+          - "keycloakify"
+          - "@keycloakify/*"
+      storybook:
+        patterns:
+          - "@storybook/*"
+          - "storybook"
+
+  - package-ecosystem: docker
+    directory: "/docs/eventcatalog"
+    schedule:
+      interval: weekly
+      day: friday
+      time: "10:00"
+      timezone: "Asia/Ho_Chi_Minh"
+    commit-message:
+      prefix: "Docker (Event Catalog)"
+      include: scope
+
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
       interval: weekly
+      day: friday
+      time: "10:00"
+      timezone: "Asia/Ho_Chi_Minh"
     commit-message:
       prefix: "GitHub Actions"
+      include: scope
