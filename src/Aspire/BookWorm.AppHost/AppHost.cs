@@ -1,6 +1,5 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-builder.ConfigureCors();
 builder.AddAzureContainerAppEnvironment(Components.Azure.ContainerApp).ProvisionAsService();
 
 var schedulerUserName = builder
@@ -70,8 +69,6 @@ var financeDb = postgres.AddDatabase(Components.Database.Finance);
 var orderingDb = postgres.AddDatabase(Components.Database.Ordering);
 var schedulerDb = postgres.AddDatabase(Components.Database.Scheduler);
 var notificationDb = postgres.AddDatabase(Components.Database.Notification);
-var userDb = postgres.AddDatabase(Components.Database.User).ExcludeFromManifest();
-var healthDb = postgres.AddDatabase(Components.Database.Health).ExcludeFromManifest();
 
 await builder.AddOllama(configure =>
 {
@@ -85,7 +82,7 @@ await builder.AddOllama(configure =>
 });
 
 IResourceBuilder<IResource> keycloak = builder.ExecutionContext.IsRunMode
-    ? builder.AddLocalKeycloak(Components.KeyCloak).WithPostgres(userDb)
+    ? builder.AddLocalKeycloak(Components.KeyCloak).WithPostgres(postgres)
     : builder.AddHostedKeycloak(Components.KeyCloak);
 
 var catalogApi = builder
@@ -208,35 +205,34 @@ var gateway = builder
     .WithService(catalogApi, true)
     .WithService(keycloak);
 
-builder
-    .AddHealthChecksUI()
-    .WithStorageProvider(healthDb)
-    .WithReference(mcp)
-    .WithReference(chatApi)
-    .WithReference(ratingApi)
-    .WithReference(basketApi)
-    .WithReference(catalogApi)
-    .WithReference(financeApi)
-    .WithReference(orderingApi)
-    .WithReference(schedulerApi)
-    .WithReference(notificationApi)
-    .ExcludeFromManifest();
+if (builder.ExecutionContext.IsRunMode)
+{
+    builder
+        .AddHealthChecksUI()
+        .WithReference(mcp)
+        .WithReference(chatApi)
+        .WithReference(ratingApi)
+        .WithReference(basketApi)
+        .WithReference(catalogApi)
+        .WithReference(financeApi)
+        .WithReference(orderingApi)
+        .WithReference(schedulerApi)
+        .WithReference(notificationApi);
 
-builder
-    .AddScalar(keycloak)
-    .WithOpenAPI(mcp)
-    .WithOpenAPI(chatApi)
-    .WithOpenAPI(basketApi)
-    .WithOpenAPI(ratingApi)
-    .WithOpenAPI(catalogApi)
-    .WithOpenAPI(orderingApi)
-    .ExcludeFromManifest();
+    builder
+        .AddScalar(keycloak)
+        .WithOpenAPI(mcp)
+        .WithOpenAPI(chatApi)
+        .WithOpenAPI(basketApi)
+        .WithOpenAPI(ratingApi)
+        .WithOpenAPI(catalogApi)
+        .WithOpenAPI(orderingApi);
 
-builder
-    .AddMcpInspector(Components.Inspector, options => options.InspectorVersion = "0.17.2")
-    .WithMcpServer(mcp)
-    .ExcludeFromManifest();
+    builder
+        .AddMcpInspector(Components.Inspector, options => options.InspectorVersion = "0.17.2")
+        .WithMcpServer(mcp);
 
-builder.AddK6(gateway);
+    builder.AddK6(gateway);
+}
 
 builder.Build().Run();
