@@ -2,8 +2,8 @@
 
 # BookWorm
 
-[![BookWorm CI (.NET)](https://github.com/foxminchan/BookWorm/actions/workflows/dotnet-ci.yaml/badge.svg?branch=main)](https://github.com/foxminchan/BookWorm/actions/workflows/dotnet-ci.yaml)
-[![BookWorm CI (Keycloakify)](https://github.com/foxminchan/BookWorm/actions/workflows/keycloak-ci.yaml/badge.svg?branch=main)](https://github.com/foxminchan/BookWorm/actions/workflows/keycloak-ci.yaml)
+[![BookWorm CI (.NET)](https://github.com/foxminchan/BookWorm/actions/workflows/dotnet-ci.yml/badge.svg)](https://github.com/foxminchan/BookWorm/actions/workflows/dotnet-ci.yml)
+[![BookWorm CI (Keycloakify)](https://github.com/foxminchan/BookWorm/actions/workflows/keycloak-ci.yml/badge.svg)](https://github.com/foxminchan/BookWorm/actions/workflows/keycloak-ci.yml)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=coverage)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
 [![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
 
