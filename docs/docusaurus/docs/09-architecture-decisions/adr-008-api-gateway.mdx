@@ -32,7 +32,7 @@ Without a unified entry point, clients would need to maintain knowledge of all s
 
 ## Decision
 
-Implement an **API Gateway pattern** using **YARP (Yet Another Reverse Proxy)** integrated with **.NET Aspire** for service discovery and routing, providing a unified entry point for all BookWorm microservices.
+Implement an **API Gateway pattern** using **YARP (Yet Another Reverse Proxy)** integrated with **Aspire** for service discovery and routing, providing a unified entry point for all BookWorm microservices.
 
 ### Gateway Architecture Strategy
 
@@ -60,14 +60,14 @@ var gateway = builder
 
 ## Rationale
 
-### Why YARP with .NET Aspire?
+### Why YARP with Aspire?
 
 #### YARP Advantages
 
 1. **.NET Native**: Perfect integration with .NET microservices ecosystem
 2. **High Performance**: Optimized reverse proxy built for .NET applications
 3. **Flexible Configuration**: Programmable routing and transformation pipeline
-4. **Service Discovery**: Seamless integration with .NET Aspire service discovery
+4. **Service Discovery**: Seamless integration with Aspire service discovery
 5. **Protocol Support**: Built-in support for HTTP/HTTPS and gRPC protocols
 
 #### Aspire Integration Benefits
@@ -173,7 +173,7 @@ var gateway = builder
 
 - **Simplified Routing**: Single entry point with automatic service discovery
 - **Protocol Flexibility**: Built-in support for HTTP and gRPC protocols
-- **Development Experience**: Seamless integration with .NET Aspire development workflow
+- **Development Experience**: Seamless integration with Aspire development workflow
 - **Observability**: Integrated tracing and monitoring through Aspire
 - **Maintainability**: Simple, declarative configuration through fluent API
 
@@ -182,11 +182,11 @@ var gateway = builder
 - **Single Point of Failure**: Gateway becomes critical infrastructure component
 - **Performance**: Additional network hop for all service communication
 - **Complexity**: Gateway configuration must be maintained as services evolve
-- **Dependencies**: Tight coupling with .NET Aspire orchestration platform
+- **Dependencies**: Tight coupling with Aspire orchestration platform
 
 ### Risk Mitigation
 
-- **Aspire Integration**: Leverages .NET Aspire's built-in reliability features
+- **Aspire Integration**: Leverages Aspire's built-in reliability features
 - **Health Checks**: Automatic health monitoring of downstream services
 - **Service Discovery**: Dynamic service registration and discovery
 - **Observability**: Built-in telemetry and logging through Aspire
@@ -195,7 +195,7 @@ var gateway = builder
 
 ### Current Implementation
 
-- ✅ YARP-based reverse proxy with .NET Aspire integration
+- ✅ YARP-based reverse proxy with Aspire integration
 - ✅ Fluent API for service registration and configuration
 - ✅ Path-based routing with automatic prefix removal
 - ✅ gRPC and HTTP protocol support

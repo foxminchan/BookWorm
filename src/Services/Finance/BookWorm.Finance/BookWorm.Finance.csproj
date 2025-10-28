@@ -1,4 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <ContainerLabel
+      Include="org.opencontainers.image.description"
+      Value="BookWorm Finance Service Image"
+    />
+  </ItemGroup>
   <ItemGroup Label="Core Dependencies">
     <PackageReference Include="MassTransit.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />

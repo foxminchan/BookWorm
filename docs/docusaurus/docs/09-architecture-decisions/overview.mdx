@@ -23,7 +23,7 @@ gantt
     section Foundation
     Microservices           :done, foundation1, 2024-07-01, 30d
     Event-Driven CQRS      :done, foundation2, 2024-07-15, 45d
-    .NET Aspire            :done, foundation3, 2024-08-01, 30d
+    Aspire            :done, foundation3, 2024-08-01, 30d
     section Data & Storage
     PostgreSQL             :done, data1, 2024-07-20, 30d
     Redis SignalR          :done, data2, 2024-08-15, 30d
@@ -58,7 +58,7 @@ gantt
 | ----------------------------------------------- | ---------------------------------------- | -------- | ------ |
 | [ADR-001](./adr-001-microservices-architecture) | Microservices Architecture               | Accepted | High   |
 | [ADR-002](./adr-002-event-driven-cqrs)          | Event-Driven Architecture with CQRS      | Accepted | High   |
-| [ADR-003](./adr-003-aspire-cloud-native)        | .NET Aspire for Cloud-Native Development | Accepted | High   |
+| [ADR-003](./adr-003-aspire-cloud-native)        | Aspire for Cloud-Native Development | Accepted | High   |
 | [ADR-016](./adr-016-ddd)                        | Domain-Driven Design Implementation      | Accepted | High   |
 
 ### 💾 Data & Storage
@@ -121,7 +121,7 @@ These decisions fundamentally shape the system architecture and have wide-reachi
 
 - **Microservices Architecture** - Defines overall system structure
 - **Event-Driven CQRS** - Determines data flow and consistency patterns
-- **.NET Aspire** - Cloud-native development approach
+- **Aspire** - Cloud-native development approach
 - **Domain-Driven Design** - Business domain alignment
 - **PostgreSQL Database** - Data persistence strategy
 - **RabbitMQ Message Broker** - Async communication backbone
@@ -160,7 +160,7 @@ graph TD
     B --> E[ADR-013: Event Sourcing]
     C --> F[ADR-004: PostgreSQL]
 
-    G[ADR-003: .NET Aspire] --> H[ADR-007: Azure Container Apps]
+    G[ADR-003: Aspire] --> H[ADR-007: Azure Container Apps]
     G --> I[ADR-008: API Gateway]
 
     J[ADR-006: SignalR] --> K[ADR-010: Redis Scaling]

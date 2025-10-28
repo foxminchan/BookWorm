@@ -7,7 +7,7 @@ applyTo: "**/*.cs"
 ## General
 
 - Make only high confidence suggestions when reviewing code changes.
-- Always use the latest version C#, currently C# 13 features.
+- Always use the latest version C#, currently C# 14 features.
 - Never change global.json unless explicitly asked to.
 - Never change nuget.config files unless explicitly asked to.
 
@@ -29,3 +29,9 @@ applyTo: "**/*.cs"
 - Declare variables non-nullable, and check for `null` at entry points.
 - Always use `is null` or `is not null` instead of `== null` or `!= null`.
 - Trust the C# null annotations and don't add null checks when the type system says a value cannot be null.
+
+### Testing
+
+* We use TUnit for tests.
+* Use Moq for mocking in tests.
+* Copy existing style in nearby files for test method names and capitalization.

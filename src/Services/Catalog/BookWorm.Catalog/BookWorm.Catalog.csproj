@@ -2,6 +2,12 @@
   <PropertyGroup>
     <IncludeHttpRuleProtos>true</IncludeHttpRuleProtos>
   </PropertyGroup>
+  <ItemGroup>
+    <ContainerLabel
+      Include="org.opencontainers.image.description"
+      Value="BookWorm Catalog Service Image"
+    />
+  </ItemGroup>
   <ItemGroup Label="Core Dependencies">
     <PackageReference Include="MassTransit.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />

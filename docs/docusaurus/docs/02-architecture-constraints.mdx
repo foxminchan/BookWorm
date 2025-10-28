@@ -2,7 +2,7 @@
 sidebar_position: 3
 title: Architecture Constraints
 description: Technical, organizational, and convention constraints defining boundaries and conditions for BookWorm system design
-keywords: [architecture constraints, technical constraints, .NET Aspire, Azure, Docker, PostgreSQL, RabbitMQ, development constraints]
+keywords: [architecture constraints, technical constraints, Aspire, Azure, Docker, PostgreSQL, RabbitMQ, development constraints]
 last_update:
   author: Nhan Nguyen
 ---
@@ -18,7 +18,7 @@ Architecture constraints define the boundaries and non-negotiable conditions und
 
 | Constraint               | Description                        | Rationale                                                                      | Impact                                                      | Negotiable | Trade-offs                                                                 |
 | ------------------------ | ---------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------- | ---------- | -------------------------------------------------------------------------- |
-| **.NET Aspire**          | Cloud-native application framework | Simplified development, built-in observability, service discovery              | Foundation for service orchestration, telemetry integration | Low        | Ecosystem still evolving, fewer samples/community resources                |
+| **Aspire**          | Cloud-native application framework | Simplified development, built-in observability, service discovery              | Foundation for service orchestration, telemetry integration | Low        | Ecosystem still evolving, fewer samples/community resources                |
 | **Azure Container Apps** | Primary deployment target          | Managed container service with auto-scaling, serverless capabilities           | Streamlined Azure-native deployments                        | Medium     | Vendor lock-in to Azure, less portability to other clouds                  |
 | **Docker**               | Containerization platform          | Consistent deployments, environment parity, isolation                          | Developer experience, portability                           | Low        | Adds local complexity for onboarding and toolchain setup                   |
 | **PostgreSQL**           | Primary database system            | ACID compliance, JSON support, open source, strong ecosystem                   | Robust persistence layer                                    | Medium     | Horizontal scaling harder than NoSQL, requires tuning for very high loads  |

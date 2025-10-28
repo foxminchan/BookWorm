@@ -1,13 +1,13 @@
 ---
 sidebar_position: 4
-title: ADR-003 - .NET Aspire for Cloud-Native Development
-description: Selection of .NET Aspire for cloud-native orchestration and built-in observability
-keywords: [ADR-003, .NET Aspire, cloud-native, service orchestration, observability, telemetry]
+title: ADR-003 - Aspire for Cloud-Native Development
+description: Selection of Aspire for cloud-native orchestration and built-in observability
+keywords: [ADR-003, Aspire, cloud-native, service orchestration, observability, telemetry]
 last_update:
   author: Nhan Nguyen
 ---
 
-# ADR-003: .NET Aspire for Cloud-Native Development
+# ADR-003: Aspire for Cloud-Native Development
 
 ## Status
 
@@ -29,7 +29,7 @@ Traditional approaches would require significant custom infrastructure code, mul
 
 ## Decision
 
-Adopt **.NET Aspire** as the cloud-native development framework to provide integrated service orchestration, observability, and deployment capabilities for the BookWorm microservices ecosystem.
+Adopt **Aspire** as the cloud-native development framework to provide integrated service orchestration, observability, and deployment capabilities for the BookWorm microservices ecosystem.
 
 ### Core Aspire Components
 
@@ -65,7 +65,7 @@ Shared configuration package providing:
 
 ## Rationale
 
-### Why .NET Aspire?
+### Why Aspire?
 
 1. **Integrated Development Experience**: Unified dashboard for monitoring all services during development
 2. **Built-in Observability**: OpenTelemetry integration with minimal configuration
@@ -263,7 +263,7 @@ sequenceDiagram
 
 ### Considerations and Trade-offs
 
-- **Framework Dependency**: Tight coupling to .NET Aspire ecosystem
+- **Framework Dependency**: Tight coupling to Aspire ecosystem
 - **Learning Curve**: Team needs to understand Aspire-specific patterns
 - **Azure Bias**: Optimized for Azure, may require additional work for other clouds
 - **Version Dependencies**: Requires keeping up with Aspire framework updates

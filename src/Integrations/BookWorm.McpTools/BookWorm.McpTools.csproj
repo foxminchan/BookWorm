@@ -4,6 +4,12 @@
     <SuppressCheckGrpcNetClientFactoryVersion>true</SuppressCheckGrpcNetClientFactoryVersion>
   </PropertyGroup>
   <ItemGroup>
+    <ContainerLabel
+      Include="org.opencontainers.image.description"
+      Value="BookWorm MCP Tools Image"
+    />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
     <ProjectReference Include="..\..\Aspire\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj" />
   </ItemGroup>

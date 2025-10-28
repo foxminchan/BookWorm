@@ -16,7 +16,7 @@
 ## Introduction
 
 <p align="justify">
-  ⭐ BookWorm showcases .NET Aspire in a cloud-native application with AI integration. Built with DDD and VSA, it features multi-agent orchestration and standardized AI tooling through MCP with A2A Protocol support.
+  ⭐ BookWorm showcases Aspire in a cloud-native application with AI integration. Built with DDD and VSA, it features multi-agent orchestration and standardized AI tooling through MCP with A2A Protocol support.
 </p>
 
 > [!WARNING]
@@ -25,7 +25,7 @@
 
 ## Project Goals
 
-- [x] Developed a cloud-native application using .NET Aspire
+- [x] Developed a cloud-native application using Aspire
 - [x] Implemented Vertical Slice Architecture with Domain-Driven Design & CQRS
 - [x] Enabled service-to-service communication with gRPC
 - [x] Incorporated various microservices patterns
