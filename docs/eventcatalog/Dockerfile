@@ -14,7 +14,7 @@ COPY . .
 RUN bun run build
 
 ## Stage 2: Serve app with httpd server
-FROM httpd:2.4.63-alpine3.22
+FROM httpd:2.4.65-alpine3.22
 
 # Copy built app to serve
 COPY --from=build /app/dist /usr/local/apache2/htdocs
