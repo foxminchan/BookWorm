@@ -71,6 +71,20 @@ public static class KeycloakExtensions
                 }
             );
 
+        builder
+            .AddParameter("kc-realm", true)
+            .WithDescription(ParameterDescriptions.Keycloak.Realm, true)
+            .WithCustomInput(_ =>
+                new()
+                {
+                    Name = "KeycloakRealmParameter",
+                    Label = "Keycloak Realm",
+                    InputType = InputType.Text,
+                    Value = nameof(BookWorm).ToLowerInvariant(),
+                    Description = "Enter your Keycloak realm name here",
+                }
+            );
+
         var keycloak = builder
             .AddExternalService(name, keycloakUrl)
             .WithIconName("LockClosedRibbon")
@@ -85,31 +99,33 @@ public static class KeycloakExtensions
     ///     Configures a <see cref="KeycloakResource" /> to use an external PostgreSQL database.
     /// </summary>
     /// <param name="builder">The <see cref="IResourceBuilder{KeycloakResource}" /> instance.</param>
-    /// <param name="pgDatabase">The PostgreSQL database resource builder.</param>
+    /// <param name="postgres">The PostgreSQL database resource builder.</param>
     /// <param name="xaEnabled">Whether to enable XA transactions. Default is false.</param>
     /// <returns>The <see cref="IResourceBuilder{KeycloakResource}" /> for method chaining.</returns>
     public static IResourceBuilder<KeycloakResource> WithPostgres(
         this IResourceBuilder<KeycloakResource> builder,
-        IResourceBuilder<AzurePostgresFlexibleServerDatabaseResource> pgDatabase,
+        IResourceBuilder<AzurePostgresFlexibleServerResource> postgres,
         bool xaEnabled = false
     )
     {
+        var userDb = postgres.AddDatabase(Components.Database.User);
+
         return builder
             .WithEnvironment(context =>
             {
                 context.EnvironmentVariables.Add(KeycloakDatabaseEnvVarName, "postgres");
                 context.EnvironmentVariables.Add(
                     KeycloakDatabaseUsernameEnvVarName,
-                    pgDatabase.Resource.Parent.UserName ?? ReferenceExpression.Create($"postgres")
+                    userDb.Resource.Parent.UserName ?? ReferenceExpression.Create($"postgres")
                 );
                 context.EnvironmentVariables.Add(
                     KeycloakDatabasePasswordEnvVarName,
-                    pgDatabase.Resource.Parent.Password ?? ReferenceExpression.Create($"postgres")
+                    userDb.Resource.Parent.Password ?? ReferenceExpression.Create($"postgres")
                 );
                 context.EnvironmentVariables.Add(
                     KeycloakDatabaseUrlEnvVarName,
                     ReferenceExpression.Create(
-                        $"jdbc:postgresql://{pgDatabase.Resource.Parent.HostName}/{pgDatabase.Resource.DatabaseName}"
+                        $"jdbc:postgresql://{userDb.Resource.Parent.HostName}/{userDb.Resource.DatabaseName}"
                     )
                 );
                 context.EnvironmentVariables.Add(
@@ -117,7 +133,7 @@ public static class KeycloakExtensions
                     xaEnabled.ToString().ToLowerInvariant()
                 );
             })
-            .WaitFor(pgDatabase);
+            .WaitFor(userDb);
     }
 
     /// <summary>
@@ -163,14 +179,15 @@ public static class KeycloakExtensions
                         {
                             var endpoint = builder.GetEndpoint(Protocols.Http);
 
-                            context.EnvironmentVariables[$"CLIENT_{clientEnv}_URL"] = context
-                                .ExecutionContext
-                                .IsPublishMode
-                                ? endpoint
-                                : endpoint.Url;
+                            context.EnvironmentVariables.Add(
+                                $"CLIENT_{clientEnv}_URL",
+                                endpoint.Url
+                            );
 
-                            context.EnvironmentVariables[$"CLIENT_{clientEnv}_URL_CONTAINERHOST"] =
-                                endpoint;
+                            context.EnvironmentVariables.Add(
+                                $"CLIENT_{clientEnv}_URL_CONTAINERHOST",
+                                endpoint
+                            );
                         });
 
                         return Task.CompletedTask;
@@ -197,20 +214,6 @@ public static class KeycloakExtensions
             && keycloak is IResourceBuilder<ExternalServiceResource> keycloakHosted
         )
         {
-            var kcRealmName = applicationBuilder
-                .AddParameter("kc-realm", true)
-                .WithDescription(ParameterDescriptions.Keycloak.Realm, true)
-                .WithCustomInput(_ =>
-                    new()
-                    {
-                        Name = "KeycloakRealmParameter",
-                        Label = "Keycloak Realm",
-                        InputType = InputType.Text,
-                        Value = nameof(BookWorm).ToLowerInvariant(),
-                        Description = "Enter your Keycloak realm name here",
-                    }
-                );
-
             var clientSecret = applicationBuilder
                 .AddParameter($"{clientId}-secret", true)
                 .WithDescription(ParameterDescriptions.Keycloak.ClientSecret, true)
@@ -224,10 +227,14 @@ public static class KeycloakExtensions
                     }
                 );
 
+            var realmParameter = applicationBuilder
+                .Resources.OfType<ParameterResource>()
+                .First(r => string.Equals(r.Name, "kc-realm", StringComparison.OrdinalIgnoreCase));
+
             builder
                 .WithReference(keycloakHosted)
                 .WaitFor(keycloakHosted)
-                .WithEnvironment("Identity__Realm", kcRealmName)
+                .WithEnvironment("Identity__Realm", realmParameter)
                 .WithEnvironment("Identity__ClientId", clientId)
                 .WithEnvironment("Identity__ClientSecret", clientSecret)
                 .WithEnvironment($"Identity__Scopes__{clientId}", clientId.ToClientName("API"));

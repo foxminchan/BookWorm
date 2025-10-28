@@ -57,29 +57,6 @@ public static class HealthChecksUIExtensions
 
         return builder;
     }
-
-    /// <summary>
-    ///     Configures a storage provider for the HealthChecksUI container.
-    /// </summary>
-    /// <param name="builder">The HealthChecksUI resource builder.</param>
-    /// <param name="source">The resource that provides a connection string.</param>
-    /// <param name="storageProvider">
-    ///     The storage provider types to use.
-    ///     Available options are: SqlServer, Sqlite, PostgreSql, MySql and InMemory.
-    ///     Default to "PostgreSql".
-    /// </param>
-    /// <returns>The resource builder.</returns>
-    public static IResourceBuilder<HealthChecksUIResource> WithStorageProvider(
-        this IResourceBuilder<HealthChecksUIResource> builder,
-        IResourceBuilder<IResourceWithConnectionString> source,
-        string storageProvider = "PostgreSql"
-    )
-    {
-        builder.WaitFor(source);
-        builder.WithEnvironment("storage_provider", storageProvider);
-        builder.WithEnvironment("storage_connection", source);
-        return builder;
-    }
 }
 
 /// <summary>

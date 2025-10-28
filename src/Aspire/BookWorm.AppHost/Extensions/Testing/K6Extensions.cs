@@ -40,8 +40,7 @@ public static class K6Extensions
             .WithUrlForEndpoint(K6DashboardDefaults.Name, url => url.DisplayText = "K6 Dashboard")
             .WithK6OtlpEnvironment()
             .WaitFor(entryPoint)
-            .WithExplicitStart()
-            .ExcludeFromManifest();
+            .WithExplicitStart();
     }
 
     private static class K6DashboardDefaults
