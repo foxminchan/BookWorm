@@ -49,7 +49,7 @@ public sealed class RatingSummarizer(
         CancellationToken cancellationToken = default
     )
     {
-        var workflowAgent = await BuildAgentsWorkflow().AsAgentAsync();
+        var workflowAgent = BuildAgentsWorkflow().AsAgent();
         var workflowAgentThread = workflowAgent.GetNewThread();
 
         var prompt = await mcpClient.GetPromptAsync(

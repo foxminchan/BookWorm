@@ -72,6 +72,7 @@ public static class Extensions
                     chatClient,
                     options: new()
                     {
+                        Id = Guid.CreateVersion7().ToString(),
                         Name = key,
                         Instructions = RatingAgent.Instructions,
                         Description = RatingAgent.Description,
