@@ -1,9 +1,6 @@
 using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Rating.Extensions;
 using BookWorm.Rating.Infrastructure.Agents;
-using Microsoft.Agents.AI;
-using Microsoft.Agents.AI.A2A;
-using Microsoft.Agents.AI.Hosting.A2A.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,12 +35,7 @@ var apiVersionSet = app.NewApiVersionSet().HasApiVersion(new(1, 0)).ReportApiVer
 
 app.MapEndpoints(apiVersionSet, "feedbacks");
 
-var ratingAgent = app.Services.GetRequiredKeyedService<AIAgent>(RatingAgent.Name);
-
-app.MapA2A(
-    new A2AHostAgent(ratingAgent, RatingAgent.AgentCard).TaskManager!,
-    $"/a2a/{RatingAgent.Name}"
-);
+app.MapA2A(RatingAgent.Name, $"/a2a/{RatingAgent.Name}", RatingAgent.AgentCard);
 
 app.MapAgentDiscovery("/agents");
 
