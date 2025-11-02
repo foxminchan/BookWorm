@@ -1,4 +1,5 @@
 ﻿using BookWorm.Catalog.Domain.Events;
+using BookWorm.Chassis.Logging;
 
 namespace BookWorm.Catalog.Extensions;
 
@@ -10,7 +11,7 @@ internal static partial class BookApiTrace
         Level = LogLevel.Debug,
         Message = "Book with Id {BookId} created"
     )]
-    public static partial void LogBookCreated(ILogger logger, Guid bookId);
+    public static partial void LogBookCreated(ILogger logger, [SensitiveData] Guid bookId);
 
     [LoggerMessage(
         EventId = 1,
@@ -18,5 +19,5 @@ internal static partial class BookApiTrace
         Level = LogLevel.Debug,
         Message = "Book with Id {BookId} updated"
     )]
-    public static partial void LogBookUpdated(ILogger logger, Guid bookId);
+    public static partial void LogBookUpdated(ILogger logger, [SensitiveData] Guid bookId);
 }

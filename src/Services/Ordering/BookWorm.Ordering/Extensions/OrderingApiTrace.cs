@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Ordering.Extensions;
+﻿using BookWorm.Chassis.Logging;
+
+namespace BookWorm.Ordering.Extensions;
 
 internal static partial class OrderingTrace
 {
@@ -8,7 +10,11 @@ internal static partial class OrderingTrace
         Level = LogLevel.Information,
         Message = "Order with Id {OrderId} placed with status {Status}"
     )]
-    public static partial void LogOrderPlaced(ILogger logger, Guid orderId, Status status);
+    public static partial void LogOrderPlaced(
+        ILogger logger,
+        [SensitiveData] Guid orderId,
+        Status status
+    );
 
     [LoggerMessage(
         EventId = 1,
@@ -16,7 +22,11 @@ internal static partial class OrderingTrace
         Level = LogLevel.Information,
         Message = "Order with Id {OrderId} cancelled with status {Status}"
     )]
-    public static partial void LogOrderCancelled(ILogger logger, Guid orderId, Status status);
+    public static partial void LogOrderCancelled(
+        ILogger logger,
+        [SensitiveData] Guid orderId,
+        Status status
+    );
 
     [LoggerMessage(
         EventId = 2,
@@ -24,5 +34,9 @@ internal static partial class OrderingTrace
         Level = LogLevel.Information,
         Message = "Order with Id {OrderId} cancelled with status {Status}"
     )]
-    public static partial void LogOrderCompleted(ILogger logger, Guid orderId, Status status);
+    public static partial void LogOrderCompleted(
+        ILogger logger,
+        [SensitiveData] Guid orderId,
+        Status status
+    );
 }
