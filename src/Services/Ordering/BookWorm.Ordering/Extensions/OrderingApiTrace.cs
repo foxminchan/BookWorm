@@ -1,6 +1,4 @@
-﻿using BookWorm.Chassis.Logging;
-
-namespace BookWorm.Ordering.Extensions;
+﻿namespace BookWorm.Ordering.Extensions;
 
 internal static partial class OrderingTrace
 {
@@ -32,7 +30,7 @@ internal static partial class OrderingTrace
         EventId = 2,
         EventName = nameof(OrderCompletedEvent),
         Level = LogLevel.Information,
-        Message = "Order with Id {OrderId} cancelled with status {Status}"
+        Message = "Order with Id {OrderId} completed with status {Status}"
     )]
     public static partial void LogOrderCompleted(
         ILogger logger,

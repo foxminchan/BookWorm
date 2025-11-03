@@ -20,6 +20,9 @@
   <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
   <ItemGroup Condition="$(MSBuildProjectFullPath.Contains('IntegrationTests'))">
     <PackageReference Include="Aspire.Hosting.Testing" />
     <Compile
