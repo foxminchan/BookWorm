@@ -68,3 +68,11 @@
 # Certificates are binary
 ###############################################################################
 *.pfx binary
+
+###############################################################################
+# Verified files should use LF line endings and UTF-8 encoding
+###############################################################################
+*.verified.txt text eol=lf working-tree-encoding=UTF-8
+*.verified.xml text eol=lf working-tree-encoding=UTF-8
+*.verified.json text eol=lf working-tree-encoding=UTF-8
+*.verified.bin binary

@@ -20,6 +20,7 @@ public static class ProxyExtensions
     {
         var yarp = builder
             .AddYarp(Services.Gateway)
+            .WithStaticFiles()
             .WithExternalHttpEndpoints()
             .WithIconName("ArrowRoutingRectangleMultiple")
             .WithConfiguration(yarpBuilder =>
@@ -67,7 +68,8 @@ public static class ProxyExtensions
                             $"Unsupported resource type for identity endpoint: {resource.Resource.GetType().Name}"
                         );
                 }
-            });
+            })
+            .WithExplicitStart();
 
         return yarp;
     }

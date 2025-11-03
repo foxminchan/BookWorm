@@ -38,3 +38,11 @@ runs:
     - name: Build
       shell: bash
       run: dotnet build --configuration Release
+
+    - name: Upload Compliance Reports
+      uses: actions/upload-artifact@v5
+      if: success() && hashFiles('compliance-reports/**/*') != ''
+      with:
+        name: compliance-reports
+        path: compliance-reports/
+        retention-days: 30

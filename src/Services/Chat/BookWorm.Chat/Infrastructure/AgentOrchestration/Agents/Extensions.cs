@@ -4,9 +4,7 @@ using BookWorm.Chassis.AI.Middlewares;
 using BookWorm.Chat.Infrastructure.ChatHistory;
 using BookWorm.Chat.Models;
 using Microsoft.Agents.AI;
-using Microsoft.Agents.AI.A2A;
 using Microsoft.Agents.AI.Hosting;
-using Microsoft.Agents.AI.Hosting.A2A.AspNetCore;
 using Microsoft.Extensions.VectorData;
 
 namespace BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
@@ -38,6 +36,7 @@ internal static class Extensions
                     chatClient,
                     options: new()
                     {
+                        Id = Guid.CreateVersion7().ToString(),
                         Name = key,
                         Instructions = BookAgent.Instructions,
                         Description = BookAgent.Description,
@@ -86,6 +85,7 @@ internal static class Extensions
                     chatClient,
                     options: new()
                     {
+                        Id = Guid.CreateVersion7().ToString(),
                         Name = key,
                         Instructions = LanguageAgent.Instructions,
                         Description = LanguageAgent.Description,
@@ -118,6 +118,7 @@ internal static class Extensions
                     chatClient,
                     options: new()
                     {
+                        Id = Guid.CreateVersion7().ToString(),
                         Name = key,
                         Instructions = SentimentAgent.Instructions,
                         Description = SentimentAgent.Description,
@@ -151,6 +152,7 @@ internal static class Extensions
                     chatClient,
                     options: new()
                     {
+                        Id = Guid.CreateVersion7().ToString(),
                         Name = key,
                         Instructions = SummarizeAgent.Instructions,
                         Description = SummarizeAgent.Description,
@@ -183,6 +185,7 @@ internal static class Extensions
                     chatClient,
                     options: new()
                     {
+                        Id = Guid.CreateVersion7().ToString(),
                         Name = key,
                         Instructions = RouterAgent.Instructions,
                         Description = RouterAgent.Description,
@@ -204,34 +207,10 @@ internal static class Extensions
 
     public static void MapAgentsDiscovery(this WebApplication app)
     {
-        var summarizeAgent = app.Services.GetRequiredKeyedService<AIAgent>(SummarizeAgent.Name);
-
-        app.MapA2A(
-            new A2AHostAgent(summarizeAgent, SummarizeAgent.AgentCard).TaskManager!,
-            $"/a2a/{SummarizeAgent.Name}"
-        );
-
-        var languageAgent = app.Services.GetRequiredKeyedService<AIAgent>(LanguageAgent.Name);
-
-        app.MapA2A(
-            new A2AHostAgent(languageAgent, LanguageAgent.AgentCard).TaskManager!,
-            $"/a2a/{LanguageAgent.Name}"
-        );
-
-        var routerAgent = app.Services.GetRequiredKeyedService<AIAgent>(RouterAgent.Name);
-
-        app.MapA2A(
-            new A2AHostAgent(routerAgent, RouterAgent.AgentCard).TaskManager!,
-            $"/a2a/{RouterAgent.Name}"
-        );
-
-        var sentimentAgent = app.Services.GetRequiredKeyedService<AIAgent>(SentimentAgent.Name);
-
-        app.MapA2A(
-            new A2AHostAgent(sentimentAgent, SentimentAgent.AgentCard).TaskManager!,
-            $"/a2a/{SentimentAgent.Name}"
-        );
-
+        app.MapA2A(RouterAgent.Name, $"/a2a/{RouterAgent.Name}", RouterAgent.AgentCard);
+        app.MapA2A(LanguageAgent.Name, $"/a2a/{LanguageAgent.Name}", LanguageAgent.AgentCard);
+        app.MapA2A(SummarizeAgent.Name, $"/a2a/{SummarizeAgent.Name}", SummarizeAgent.AgentCard);
+        app.MapA2A(SentimentAgent.Name, $"/a2a/{SentimentAgent.Name}", SentimentAgent.AgentCard);
         app.MapAgentDiscovery("/agents");
     }
 }

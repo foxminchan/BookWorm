@@ -13,8 +13,15 @@
     <!-- Temporarily disable security warnings for transitive packages. -->
     <NoWarn>NU1608;NU1901;NU1902;NU1903;NU1904</NoWarn>
   </PropertyGroup>
+  <PropertyGroup Label="Compliance" Condition="!$(MSBuildProjectFullPath.Contains('Tests'))">
+    <GenerateComplianceReport>true</GenerateComplianceReport>
+    <ComplianceReportOutputPath>$(SolutionDir)\compliance-reports\$(MSBuildProjectName)\</ComplianceReportOutputPath>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
+    <IsTestProject>true</IsTestProject>
   </PropertyGroup>
   <ItemGroup Condition="$(MSBuildProjectFullPath.Contains('IntegrationTests'))">
     <PackageReference Include="Aspire.Hosting.Testing" />
