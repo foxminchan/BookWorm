@@ -1,6 +1,6 @@
 ---
-description: 'Instructions for building Model Context Protocol (MCP) servers using the C# SDK'
-applyTo: 'src/Integrations/BookWorm.McpTools/**'
+description: "Instructions for building Model Context Protocol (MCP) servers using the C# SDK"
+applyTo: "src/Integrations/BookWorm.McpTools/**"
 ---
 
 # C# MCP Server Development
@@ -44,6 +44,7 @@ applyTo: 'src/Integrations/BookWorm.McpTools/**'
 ## Common Patterns
 
 ### Basic Server Setup
+
 ```csharp
 var builder = Host.CreateApplicationBuilder(args);
 builder.Logging.AddConsole(options =>
@@ -56,11 +57,14 @@ await builder.Build().RunAsync();
 ```
 
 ### Simple Tool
+
 ```csharp
 [McpServerToolType]
 public static class MyTools
 {
-    [McpServerTool, Description("Description of what the tool does")]
+    [McpServerTool]
+    [Description("Description of what the tool does")]
+    [return: Description("Description of the return value")]
     public static string ToolName(
         [Description("Parameter description")] string param) =>
         $"Result: {param}";
@@ -68,8 +72,11 @@ public static class MyTools
 ```
 
 ### Tool with Dependency Injection
+
 ```csharp
-[McpServerTool, Description("Fetches data from a URL")]
+[McpServerTool]
+[Description("Fetches data from a URL")]
+[return: Description("The fetched data as a string")]
 public static async Task<string> FetchData(
     HttpClient httpClient,
     [Description("The URL to fetch")] string url,
@@ -78,8 +85,11 @@ public static async Task<string> FetchData(
 ```
 
 ### Tool with Sampling
+
 ```csharp
-[McpServerTool, Description("Analyzes content using the client's LLM")]
+[McpServerTool]
+[Description("Analyzes content using the client's LLM")]
+[return: Description("The analysis result from the LLM")]
 public static async Task<string> Analyze(
     McpServer server,
     [Description("Content to analyze")] string content,
