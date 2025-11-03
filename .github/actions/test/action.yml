@@ -52,7 +52,7 @@ runs:
         --timeout ${{ inputs.testSessionTimeout }}
 
     - name: Upload Test Results
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: test-results
         path: ./test-results
