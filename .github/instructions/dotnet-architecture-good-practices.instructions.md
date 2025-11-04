@@ -97,7 +97,7 @@ You are an AI assistant specialized in Domain-Driven Design (DDD), SOLID princip
 
 ### Testing Standards
 
-- **Test Naming Convention**: Use `MethodName_Condition_ExpectedResult()` pattern.
+- **Test Naming Convention**: Use `GivenCondition_WhenAction_ThenExpectedResult()` format.
 - **Unit Tests**: Focus on domain logic and business rules in isolation.
 - **Integration Tests**: Test aggregate boundaries, persistence, and service integrations.
 - **Acceptance Tests**: Validate complete user scenarios.
