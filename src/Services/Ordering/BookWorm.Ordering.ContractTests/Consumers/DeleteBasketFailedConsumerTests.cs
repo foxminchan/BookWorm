@@ -54,51 +54,32 @@ public sealed class DeleteBasketFailedConsumerTests : SnapshotTestBase
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Act
-        await harness.Bus.Publish(command);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(command);
 
-        // Assert
-        var consumerHarness = harness.GetConsumerHarness<DeleteBasketFailedCommandHandler>();
+            // Assert
+            var consumer = harness.GetConsumerHarness<DeleteBasketFailedCommandHandler>();
 
-        (await consumerHarness.Consumed.Any<DeleteBasketFailedCommand>()).ShouldBeTrue();
+            await VerifySnapshot(new { harness, consumer });
 
-        var consumedMessage = consumerHarness.Consumed.Select<DeleteBasketFailedCommand>().First();
+            _repositoryMock.Verify(
+                x => x.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()),
+                Times.Once
+            );
 
-        // Verify the consumed command contract structure
-        await VerifySnapshot(
-            new
-            {
-                CommandType = nameof(DeleteBasketFailedCommand),
-                Properties = new
-                {
-                    consumedMessage.Context.Message.BasketId,
-                    consumedMessage.Context.Message.Email,
-                    consumedMessage.Context.Message.OrderId,
-                    consumedMessage.Context.Message.TotalMoney,
-                },
-                Schema = new
-                {
-                    BasketIdType = consumedMessage.Context.Message.BasketId.GetType().Name,
-                    EmailType = consumedMessage.Context.Message.Email?.GetType().Name,
-                    OrderIdType = consumedMessage.Context.Message.OrderId.GetType().Name,
-                    TotalMoneyType = consumedMessage.Context.Message.TotalMoney.GetType().Name,
-                    HasId = consumedMessage.Context.Message.Id != Guid.Empty,
-                    HasCreationDate = consumedMessage.Context.Message.CreationDate != default,
-                    IsIntegrationEvent = true,
-                },
-            }
-        );
+            _repositoryMock.Verify(x => x.Delete(order), Times.Once);
 
-        _repositoryMock.Verify(
-            x => x.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()),
-            Times.Once
-        );
-
-        _repositoryMock.Verify(x => x.Delete(order), Times.Once);
-
-        _unitOfWorkMock.Verify(x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()), Times.Once);
-
-        await harness.Stop();
+            _unitOfWorkMock.Verify(
+                x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
+                Times.Once
+            );
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 
     [Test]
@@ -119,53 +100,31 @@ public sealed class DeleteBasketFailedConsumerTests : SnapshotTestBase
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Act
-        await harness.Bus.Publish(command);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(command);
 
-        // Assert
-        var consumerHarness = harness.GetConsumerHarness<DeleteBasketFailedCommandHandler>();
+            // Assert
+            var consumer = harness.GetConsumerHarness<DeleteBasketFailedCommandHandler>();
 
-        (await consumerHarness.Consumed.Any<DeleteBasketFailedCommand>()).ShouldBeTrue();
+            await VerifySnapshot(new { harness, consumer });
 
-        var consumedMessage = consumerHarness.Consumed.Select<DeleteBasketFailedCommand>().First();
+            _repositoryMock.Verify(
+                x => x.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()),
+                Times.Once
+            );
 
-        // Verify the consumed command contract structure
-        await VerifySnapshot(
-            new
-            {
-                CommandType = nameof(DeleteBasketFailedCommand),
-                Properties = new
-                {
-                    consumedMessage.Context.Message.BasketId,
-                    consumedMessage.Context.Message.Email,
-                    consumedMessage.Context.Message.OrderId,
-                    consumedMessage.Context.Message.TotalMoney,
-                },
-                Schema = new
-                {
-                    BasketIdType = consumedMessage.Context.Message.BasketId.GetType().Name,
-                    EmailType = consumedMessage.Context.Message.Email?.GetType().Name,
-                    OrderIdType = consumedMessage.Context.Message.OrderId.GetType().Name,
-                    TotalMoneyType = consumedMessage.Context.Message.TotalMoney.GetType().Name,
-                    HasId = consumedMessage.Context.Message.Id != Guid.Empty,
-                    HasCreationDate = consumedMessage.Context.Message.CreationDate != default,
-                    IsIntegrationEvent = true,
-                },
-            }
-        );
+            _repositoryMock.Verify(x => x.Delete(It.IsAny<Order>()), Times.Never);
 
-        _repositoryMock.Verify(
-            x => x.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()),
-            Times.Once
-        );
-
-        _repositoryMock.Verify(x => x.Delete(It.IsAny<Order>()), Times.Never);
-
-        _unitOfWorkMock.Verify(
-            x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
-            Times.Never
-        );
-
-        await harness.Stop();
+            _unitOfWorkMock.Verify(
+                x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
+                Times.Never
+            );
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 }

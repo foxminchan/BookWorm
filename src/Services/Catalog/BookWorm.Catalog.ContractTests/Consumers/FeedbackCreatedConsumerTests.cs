@@ -52,48 +52,28 @@ public sealed class FeedbackCreatedConsumerTests : SnapshotTestBase
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Act
-        await harness.Bus.Publish(integrationEvent);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(integrationEvent);
 
-        // Assert
-        var consumerHarness = harness.GetConsumerHarness<FeedbackCreatedIntegrationEventHandler>();
+            // Assert
+            var consumer = harness.GetConsumerHarness<FeedbackCreatedIntegrationEventHandler>();
 
-        (await consumerHarness.Consumed.Any<FeedbackCreatedIntegrationEvent>()).ShouldBeTrue();
-        (await harness.Published.Any<BookUpdatedRatingFailedIntegrationEvent>()).ShouldBeFalse();
+            await VerifySnapshot(new { harness, consumer });
 
-        var consumedMessage = consumerHarness
-            .Consumed.Select<FeedbackCreatedIntegrationEvent>()
-            .First();
-
-        // Verify the consumed event contract structure to ensure consumer compatibility
-        await VerifySnapshot(
-            new
-            {
-                EventType = nameof(FeedbackCreatedIntegrationEvent),
-                Properties = new
-                {
-                    consumedMessage.Context.Message.BookId,
-                    consumedMessage.Context.Message.Rating,
-                    consumedMessage.Context.Message.FeedbackId,
-                },
-                Schema = new
-                {
-                    BookIdType = consumedMessage.Context.Message.BookId.GetType().Name,
-                    RatingType = consumedMessage.Context.Message.Rating.GetType().Name,
-                    FeedbackIdType = consumedMessage.Context.Message.FeedbackId.GetType().Name,
-                    HasId = consumedMessage.Context.Message.Id != Guid.Empty,
-                    HasCreationDate = consumedMessage.Context.Message.CreationDate != default,
-                    IsIntegrationEvent = true,
-                },
-            }
-        );
-
-        _repositoryMock.Verify(
-            x => x.GetByIdAsync(book.Id, It.IsAny<CancellationToken>()),
-            Times.Once
-        );
-        _unitOfWorkMock.Verify(x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()), Times.Once);
-
-        await harness.Stop();
+            _repositoryMock.Verify(
+                x => x.GetByIdAsync(book.Id, It.IsAny<CancellationToken>()),
+                Times.Once
+            );
+            _unitOfWorkMock.Verify(
+                x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
+                Times.Once
+            );
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 }

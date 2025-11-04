@@ -53,49 +53,30 @@ public sealed class FeedbackDeletedConsumerTests : SnapshotTestBase
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Act
-        await harness.Bus.Publish(integrationEvent);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(integrationEvent);
 
-        // Assert
-        var consumerHarness = harness.GetConsumerHarness<FeedbackDeletedIntegrationEventHandler>();
+            // Assert
+            var consumer = harness.GetConsumerHarness<FeedbackDeletedIntegrationEventHandler>();
 
-        (await consumerHarness.Consumed.Any<FeedbackDeletedIntegrationEvent>()).ShouldBeTrue();
+            await VerifySnapshot(new { harness, consumer });
 
-        var consumedMessage = consumerHarness
-            .Consumed.Select<FeedbackDeletedIntegrationEvent>()
-            .First();
+            _repositoryMock.Verify(
+                x => x.GetByIdAsync(book.Id, It.IsAny<CancellationToken>()),
+                Times.Once
+            );
 
-        // Verify the consumed event contract structure to ensure consumer compatibility
-        await VerifySnapshot(
-            new
-            {
-                EventType = nameof(FeedbackDeletedIntegrationEvent),
-                Properties = new
-                {
-                    consumedMessage.Context.Message.BookId,
-                    consumedMessage.Context.Message.Rating,
-                    consumedMessage.Context.Message.FeedbackId,
-                },
-                Schema = new
-                {
-                    BookIdType = consumedMessage.Context.Message.BookId.GetType().Name,
-                    RatingType = consumedMessage.Context.Message.Rating.GetType().Name,
-                    FeedbackIdType = consumedMessage.Context.Message.FeedbackId.GetType().Name,
-                    HasId = consumedMessage.Context.Message.Id != Guid.Empty,
-                    HasCreationDate = consumedMessage.Context.Message.CreationDate != default,
-                    IsIntegrationEvent = true,
-                },
-            }
-        );
-
-        _repositoryMock.Verify(
-            x => x.GetByIdAsync(book.Id, It.IsAny<CancellationToken>()),
-            Times.Once
-        );
-
-        _unitOfWorkMock.Verify(x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()), Times.Once);
-
-        await harness.Stop();
+            _unitOfWorkMock.Verify(
+                x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
+                Times.Once
+            );
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 
     [Test]
@@ -116,51 +97,29 @@ public sealed class FeedbackDeletedConsumerTests : SnapshotTestBase
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Act
-        await harness.Bus.Publish(integrationEvent);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(integrationEvent);
 
-        // Assert
-        var consumerHarness = harness.GetConsumerHarness<FeedbackDeletedIntegrationEventHandler>();
+            // Assert
+            var consumer = harness.GetConsumerHarness<FeedbackDeletedIntegrationEventHandler>();
 
-        (await consumerHarness.Consumed.Any<FeedbackDeletedIntegrationEvent>()).ShouldBeTrue();
+            await VerifySnapshot(new { harness, consumer });
 
-        var consumedMessage = consumerHarness
-            .Consumed.Select<FeedbackDeletedIntegrationEvent>()
-            .First();
+            _repositoryMock.Verify(
+                x => x.GetByIdAsync(_bookId, It.IsAny<CancellationToken>()),
+                Times.Once
+            );
 
-        // Verify the consumed event contract structure
-        await VerifySnapshot(
-            new
-            {
-                EventType = nameof(FeedbackDeletedIntegrationEvent),
-                Properties = new
-                {
-                    consumedMessage.Context.Message.BookId,
-                    consumedMessage.Context.Message.Rating,
-                    consumedMessage.Context.Message.FeedbackId,
-                },
-                Schema = new
-                {
-                    BookIdType = consumedMessage.Context.Message.BookId.GetType().Name,
-                    RatingType = consumedMessage.Context.Message.Rating.GetType().Name,
-                    FeedbackIdType = consumedMessage.Context.Message.FeedbackId.GetType().Name,
-                    HasId = consumedMessage.Context.Message.Id != Guid.Empty,
-                    HasCreationDate = consumedMessage.Context.Message.CreationDate != default,
-                    IsIntegrationEvent = true,
-                },
-            }
-        );
-
-        _repositoryMock.Verify(
-            x => x.GetByIdAsync(_bookId, It.IsAny<CancellationToken>()),
-            Times.Once
-        );
-
-        _unitOfWorkMock.Verify(
-            x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
-            Times.Never
-        );
-
-        await harness.Stop();
+            _unitOfWorkMock.Verify(
+                x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
+                Times.Never
+            );
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 }

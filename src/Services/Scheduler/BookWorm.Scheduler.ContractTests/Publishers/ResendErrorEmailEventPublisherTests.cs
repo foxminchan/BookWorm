@@ -21,17 +21,17 @@ public sealed class ResendErrorEmailEventPublisherTests : SnapshotTestBase
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Act
-        await harness.Bus.Publish(@event);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(@event);
 
-        // Assert
-        (await harness.Published.Any<ResendErrorEmailIntegrationEvent>()).ShouldBeTrue();
-
-        var publishedMessage = harness.Published.Select<ResendErrorEmailIntegrationEvent>().First();
-
-        // Verify contract structure - event has no custom properties, only base IntegrationEvent properties
-        await VerifySnapshot(publishedMessage.Context.Message);
-
-        await harness.Stop();
+            // Assert
+            await VerifySnapshot(harness);
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 }

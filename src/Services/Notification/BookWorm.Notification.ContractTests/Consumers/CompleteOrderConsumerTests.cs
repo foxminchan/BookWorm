@@ -51,28 +51,25 @@ public sealed class CompleteOrderConsumerTests : SnapshotTestBase
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Act
-        await harness.Bus.Publish(command);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(command);
 
-        // Assert
-        var consumerHarness = harness.GetConsumerHarness<CompleteOrderCommandHandler>();
-        (await consumerHarness.Consumed.Any<CompleteOrderCommand>()).ShouldBeTrue();
+            // Assert
+            var consumer = harness.GetConsumerHarness<CompleteOrderCommandHandler>();
 
-        _senderMock.Verify(
-            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
-            Times.Once
-        );
+            await VerifySnapshot(new { harness, consumer });
 
-        // Contract verification - using deterministic data for snapshot consistency
-        var contractCommand = new CompleteOrderCommand(
-            Guid.CreateVersion7(), // OrderId
-            "John Doe", // FullName
-            "john.doe@example.com", // Email
-            99.99m // TotalMoney
-        );
-        await VerifySnapshot(contractCommand);
-
-        await harness.Stop();
+            _senderMock.Verify(
+                x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
+                Times.Once
+            );
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 
     [Test]
@@ -91,28 +88,25 @@ public sealed class CompleteOrderConsumerTests : SnapshotTestBase
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Act
-        await harness.Bus.Publish(command);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(command);
 
-        // Assert
-        var consumerHarness = harness.GetConsumerHarness<CompleteOrderCommandHandler>();
-        (await consumerHarness.Consumed.Any<CompleteOrderCommand>()).ShouldBeTrue();
+            // Assert
+            var consumer = harness.GetConsumerHarness<CompleteOrderCommandHandler>();
 
-        _senderMock.Verify(
-            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
-            Times.Never
-        );
+            await VerifySnapshot(new { harness, consumer });
 
-        // Contract verification - using deterministic data for snapshot consistency
-        var contractCommand = new CompleteOrderCommand(
-            Guid.CreateVersion7(), // OrderId
-            "John Doe", // FullName
-            "", // Email (empty for this test)
-            99.99m // TotalMoney
-        );
-        await VerifySnapshot(contractCommand);
-
-        await harness.Stop();
+            _senderMock.Verify(
+                x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
+                Times.Never
+            );
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 
     [Test]
@@ -131,28 +125,25 @@ public sealed class CompleteOrderConsumerTests : SnapshotTestBase
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Act
-        await harness.Bus.Publish(command);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(command);
 
-        // Assert
-        var consumerHarness = harness.GetConsumerHarness<CompleteOrderCommandHandler>();
-        (await consumerHarness.Consumed.Any<CompleteOrderCommand>()).ShouldBeTrue();
+            // Assert
+            var consumer = harness.GetConsumerHarness<CompleteOrderCommandHandler>();
 
-        _senderMock.Verify(
-            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
-            Times.Never
-        );
+            await VerifySnapshot(new { harness, consumer });
 
-        // Contract verification - using deterministic data for snapshot consistency
-        var contractCommand = new CompleteOrderCommand(
-            Guid.CreateVersion7(), // OrderId
-            "John Doe", // FullName
-            null, // Email (null for this test)
-            99.99m // TotalMoney
-        );
-        await VerifySnapshot(contractCommand);
-
-        await harness.Stop();
+            _senderMock.Verify(
+                x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
+                Times.Never
+            );
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 
     [Test]

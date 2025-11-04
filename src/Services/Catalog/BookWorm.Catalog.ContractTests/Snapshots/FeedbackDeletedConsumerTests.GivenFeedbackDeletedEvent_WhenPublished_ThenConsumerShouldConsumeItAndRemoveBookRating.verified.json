@@ -1,15 +1,46 @@
 ﻿{
-  "EventType": "FeedbackDeletedIntegrationEvent",
-  "Properties": {
-    "Rating": 4,
-    "FeedbackId": "Guid_1"
+  "harness": {
+    "Messages": [
+      {
+        "Published": "FeedbackDeletedIntegrationEvent",
+        "MessageId": "Guid_1",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:FeedbackDeletedIntegrationEvent",
+        "Message": {
+          "Rating": 4,
+          "FeedbackId": "Guid_3",
+          "Id": "Guid_4",
+          "CreationDate": "DateTime_1"
+        }
+      },
+      {
+        "Received": "FeedbackDeletedIntegrationEvent",
+        "MessageId": "Guid_1",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:FeedbackDeletedIntegrationEvent",
+        "Message": {
+          "Rating": 4,
+          "FeedbackId": "Guid_3",
+          "Id": "Guid_5",
+          "CreationDate": "DateTime_2"
+        }
+      }
+    ]
   },
-  "Schema": {
-    "BookIdType": "Guid",
-    "RatingType": "Int32",
-    "FeedbackIdType": "Guid",
-    "HasId": true,
-    "HasCreationDate": true,
-    "IsIntegrationEvent": true
+  "consumer": {
+    "Consumed": [
+      {
+        "Received": "FeedbackDeletedIntegrationEvent",
+        "MessageId": "Guid_1",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:FeedbackDeletedIntegrationEvent",
+        "Message": {
+          "Rating": 4,
+          "FeedbackId": "Guid_3",
+          "Id": "Guid_5",
+          "CreationDate": "DateTime_2"
+        }
+      }
+    ]
   }
 }

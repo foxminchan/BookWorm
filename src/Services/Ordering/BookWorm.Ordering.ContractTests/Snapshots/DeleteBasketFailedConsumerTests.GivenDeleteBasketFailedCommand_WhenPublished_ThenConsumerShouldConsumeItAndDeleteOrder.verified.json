@@ -1,18 +1,52 @@
 ﻿{
-  "CommandType": "DeleteBasketFailedCommand",
-  "Properties": {
-    "BasketId": "Guid_1",
-    "Email": "test@example.com",
-    "OrderId": "Guid_2",
-    "TotalMoney": 100.00
+  "harness": {
+    "Messages": [
+      {
+        "Published": "DeleteBasketFailedCommand",
+        "MessageId": "Guid_1",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:DeleteBasketFailedCommand",
+        "Message": {
+          "BasketId": "Guid_3",
+          "Email": "test@example.com",
+          "OrderId": "Guid_4",
+          "TotalMoney": 100.00,
+          "Id": "Guid_5",
+          "CreationDate": "DateTime_1"
+        }
+      },
+      {
+        "Received": "DeleteBasketFailedCommand",
+        "MessageId": "Guid_1",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:DeleteBasketFailedCommand",
+        "Message": {
+          "BasketId": "Guid_3",
+          "Email": "test@example.com",
+          "OrderId": "Guid_4",
+          "TotalMoney": 100.00,
+          "Id": "Guid_6",
+          "CreationDate": "DateTime_2"
+        }
+      }
+    ]
   },
-  "Schema": {
-    "BasketIdType": "Guid",
-    "EmailType": "String",
-    "OrderIdType": "Guid",
-    "TotalMoneyType": "Decimal",
-    "HasId": true,
-    "HasCreationDate": true,
-    "IsIntegrationEvent": true
+  "consumer": {
+    "Consumed": [
+      {
+        "Received": "DeleteBasketFailedCommand",
+        "MessageId": "Guid_1",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:DeleteBasketFailedCommand",
+        "Message": {
+          "BasketId": "Guid_3",
+          "Email": "test@example.com",
+          "OrderId": "Guid_4",
+          "TotalMoney": 100.00,
+          "Id": "Guid_6",
+          "CreationDate": "DateTime_2"
+        }
+      }
+    ]
   }
 }

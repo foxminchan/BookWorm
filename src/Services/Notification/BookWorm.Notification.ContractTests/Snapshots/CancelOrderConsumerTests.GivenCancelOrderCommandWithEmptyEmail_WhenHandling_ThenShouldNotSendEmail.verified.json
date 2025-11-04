@@ -1,8 +1,52 @@
 ﻿{
-  "OrderId": "Guid_1",
-  "FullName": "John Doe",
-  "Email": "",
-  "TotalMoney": 99.99,
-  "Id": "Guid_2",
-  "CreationDate": "DateTime_1"
+  "harness": {
+    "Messages": [
+      {
+        "Published": "CancelOrderCommand",
+        "MessageId": "Guid_1",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:CancelOrderCommand",
+        "Message": {
+          "OrderId": "Guid_3",
+          "FullName": "Test User",
+          "Email": "",
+          "TotalMoney": 99.99,
+          "Id": "Guid_4",
+          "CreationDate": "DateTime_1"
+        }
+      },
+      {
+        "Received": "CancelOrderCommand",
+        "MessageId": "Guid_1",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:CancelOrderCommand",
+        "Message": {
+          "OrderId": "Guid_3",
+          "FullName": "Test User",
+          "Email": "",
+          "TotalMoney": 99.99,
+          "Id": "Guid_5",
+          "CreationDate": "DateTime_2"
+        }
+      }
+    ]
+  },
+  "consumer": {
+    "Consumed": [
+      {
+        "Received": "CancelOrderCommand",
+        "MessageId": "Guid_1",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:CancelOrderCommand",
+        "Message": {
+          "OrderId": "Guid_3",
+          "FullName": "Test User",
+          "Email": "",
+          "TotalMoney": 99.99,
+          "Id": "Guid_5",
+          "CreationDate": "DateTime_2"
+        }
+      }
+    ]
+  }
 }

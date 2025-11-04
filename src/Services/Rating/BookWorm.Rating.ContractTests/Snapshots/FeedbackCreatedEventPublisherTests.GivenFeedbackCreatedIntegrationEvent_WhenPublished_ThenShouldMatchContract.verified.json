@@ -1,7 +1,17 @@
 ﻿{
-  "BookId": "Guid_1",
-  "Rating": 4,
-  "FeedbackId": "Guid_2",
-  "Id": "Guid_3",
-  "CreationDate": "DateTime_1"
+  "Messages": [
+    {
+      "Published": "FeedbackCreatedIntegrationEvent",
+      "MessageId": "Guid_1",
+      "ConversationId": "Guid_2",
+      "DestinationAddress": "BookWorm.Contracts:FeedbackCreatedIntegrationEvent",
+      "Message": {
+        "BookId": "Guid_3",
+        "Rating": 4,
+        "FeedbackId": "Guid_4",
+        "Id": "Guid_5",
+        "CreationDate": "DateTime_1"
+      }
+    }
+  ]
 }

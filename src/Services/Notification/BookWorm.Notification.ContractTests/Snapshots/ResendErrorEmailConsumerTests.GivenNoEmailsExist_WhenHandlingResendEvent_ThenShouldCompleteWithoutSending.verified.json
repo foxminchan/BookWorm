@@ -1,4 +1,40 @@
 ﻿{
-  "Id": "Guid_1",
-  "CreationDate": "DateTime_1"
+  "harness": {
+    "Messages": [
+      {
+        "Published": "ResendErrorEmailIntegrationEvent",
+        "MessageId": "Guid_1",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:ResendErrorEmailIntegrationEvent",
+        "Message": {
+          "Id": "Guid_3",
+          "CreationDate": "DateTime_1"
+        }
+      },
+      {
+        "Received": "ResendErrorEmailIntegrationEvent",
+        "MessageId": "Guid_1",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:ResendErrorEmailIntegrationEvent",
+        "Message": {
+          "Id": "Guid_4",
+          "CreationDate": "DateTime_2"
+        }
+      }
+    ]
+  },
+  "consumer": {
+    "Consumed": [
+      {
+        "Received": "ResendErrorEmailIntegrationEvent",
+        "MessageId": "Guid_1",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:ResendErrorEmailIntegrationEvent",
+        "Message": {
+          "Id": "Guid_4",
+          "CreationDate": "DateTime_2"
+        }
+      }
+    ]
+  }
 }

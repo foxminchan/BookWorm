@@ -25,17 +25,17 @@ public sealed class FeedbackDeletedEventPublisherTests : SnapshotTestBase
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Act
-        await harness.Bus.Publish(@event);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(@event);
 
-        // Assert
-        (await harness.Published.Any<FeedbackDeletedIntegrationEvent>()).ShouldBeTrue();
-
-        var publishedMessage = harness.Published.Select<FeedbackDeletedIntegrationEvent>().First();
-
-        // Verify contract structure
-        await VerifySnapshot(publishedMessage.Context.Message);
-
-        await harness.Stop();
+            // Assert
+            await VerifySnapshot(harness);
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 }

@@ -1,0 +1,593 @@
+﻿{
+  "harness": {
+    "Messages": [
+      {
+        "Published": "UserCheckedOutIntegrationEvent",
+        "MessageId": "Guid_1",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:UserCheckedOutIntegrationEvent",
+        "Message": {
+          "OrderId": "Guid_3",
+          "BasketId": "Guid_4",
+          "FullName": "John Doe",
+          "Email": "john.doe@example.com",
+          "TotalMoney": 99.99,
+          "Id": "Guid_5",
+          "CreationDate": "DateTime_1"
+        }
+      },
+      {
+        "Received": "UserCheckedOutIntegrationEvent",
+        "MessageId": "Guid_1",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:UserCheckedOutIntegrationEvent",
+        "Message": {
+          "OrderId": "Guid_3",
+          "BasketId": "Guid_4",
+          "FullName": "John Doe",
+          "Email": "john.doe@example.com",
+          "TotalMoney": 99.99,
+          "Id": "Guid_6",
+          "CreationDate": "DateTime_2"
+        }
+      },
+      {
+        "Sent": "PlaceOrderTimeoutIntegrationEvent",
+        "MessageId": "Guid_7",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "OrderState",
+        "Message": {
+          "OrderId": "Guid_3",
+          "Id": "Guid_8",
+          "CreationDate": "DateTime_3"
+        },
+        "Headers": [
+          {
+            "Key": "MT-Scheduling-TokenId",
+            "Value": "Guid_9"
+          }
+        ]
+      },
+      {
+        "Published": "PlaceOrderCommand",
+        "MessageId": "Guid_10",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:PlaceOrderCommand",
+        "Message": {
+          "BasketId": "Guid_4",
+          "FullName": "John Doe",
+          "Email": "john.doe@example.com",
+          "OrderId": "Guid_3",
+          "TotalMoney": 99.99,
+          "Id": "Guid_11",
+          "CreationDate": "DateTime_4"
+        }
+      },
+      {
+        "Published": "OrderStatusChangedToCompleteIntegrationEvent",
+        "MessageId": "Guid_12",
+        "ConversationId": "Guid_13",
+        "DestinationAddress": "BookWorm.Contracts:OrderStatusChangedToCompleteIntegrationEvent",
+        "Message": {
+          "OrderId": "Guid_3",
+          "BasketId": "Guid_4",
+          "FullName": "John Doe",
+          "Email": "john.doe@example.com",
+          "TotalMoney": 99.99,
+          "Id": "Guid_14",
+          "CreationDate": "DateTime_5"
+        }
+      },
+      {
+        "Received": "OrderStatusChangedToCompleteIntegrationEvent",
+        "MessageId": "Guid_12",
+        "ConversationId": "Guid_13",
+        "DestinationAddress": "BookWorm.Contracts:OrderStatusChangedToCompleteIntegrationEvent",
+        "Message": {
+          "OrderId": "Guid_3",
+          "BasketId": "Guid_4",
+          "FullName": "John Doe",
+          "Email": "john.doe@example.com",
+          "TotalMoney": 99.99,
+          "Id": "Guid_15",
+          "CreationDate": "DateTime_6"
+        }
+      },
+      {
+        "Published": "CompleteOrderCommand",
+        "MessageId": "Guid_16",
+        "ConversationId": "Guid_13",
+        "DestinationAddress": "BookWorm.Contracts:CompleteOrderCommand",
+        "Message": {
+          "OrderId": "Guid_3",
+          "FullName": "John Doe",
+          "Email": "john.doe@example.com",
+          "TotalMoney": 99.99,
+          "Id": "Guid_17",
+          "CreationDate": "DateTime_7"
+        }
+      }
+    ]
+  },
+  "sagaHarness": {
+    "Consumed": [
+      {
+        "Received": "UserCheckedOutIntegrationEvent",
+        "MessageId": "Guid_1",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:UserCheckedOutIntegrationEvent",
+        "Message": {
+          "OrderId": "Guid_3",
+          "BasketId": "Guid_4",
+          "FullName": "John Doe",
+          "Email": "john.doe@example.com",
+          "TotalMoney": 99.99,
+          "Id": "Guid_6",
+          "CreationDate": "DateTime_2"
+        }
+      },
+      {
+        "Received": "OrderStatusChangedToCompleteIntegrationEvent",
+        "MessageId": "Guid_12",
+        "ConversationId": "Guid_13",
+        "DestinationAddress": "BookWorm.Contracts:OrderStatusChangedToCompleteIntegrationEvent",
+        "Message": {
+          "OrderId": "Guid_3",
+          "BasketId": "Guid_4",
+          "FullName": "John Doe",
+          "Email": "john.doe@example.com",
+          "TotalMoney": 99.99,
+          "Id": "Guid_15",
+          "CreationDate": "DateTime_6"
+        }
+      }
+    ],
+    "Sagas": [
+      {
+        "Saga": {
+          "OrderId": "Guid_3",
+          "BasketId": "Guid_4",
+          "FullName": "John Doe",
+          "Email": "john.doe@example.com",
+          "CurrentState": "Final",
+          "TotalMoney": 99.99,
+          "OrderPlacedDate": "DateTime_8",
+          "CorrelationId": "Guid_3"
+        },
+        "ElementId": "Guid_3"
+      }
+    ],
+    "Created": [
+      {
+        "Saga": {
+          "OrderId": "Guid_3",
+          "BasketId": "Guid_4",
+          "FullName": "John Doe",
+          "Email": "john.doe@example.com",
+          "CurrentState": "Final",
+          "TotalMoney": 99.99,
+          "OrderPlacedDate": "DateTime_8",
+          "CorrelationId": "Guid_3"
+        },
+        "ElementId": "Guid_3"
+      }
+    ],
+    "StateMachine": {
+      "Placed": {
+        "Name": "Placed",
+        "Enter": {
+          "Name": "Placed.Enter"
+        },
+        "Leave": {
+          "Name": "Placed.Leave"
+        },
+        "BeforeEnter": {
+          "Name": "Placed.BeforeEnter"
+        },
+        "AfterLeave": {
+          "Name": "Placed.AfterLeave"
+        },
+        "Events": [
+          {
+            "Name": "PlaceOrderTimeoutSchedule.AnyReceived"
+          },
+          {
+            "Name": "PlaceOrderTimeoutSchedule.Received"
+          },
+          {
+            "Name": "BasketDeletedFailed"
+          },
+          {
+            "Name": "BasketDeleted"
+          },
+          {
+            "Name": "OrderCompleted"
+          },
+          {
+            "Name": "OrderCancelled"
+          },
+          {
+            "Name": "OrderPlaced"
+          }
+        ]
+      },
+      "Completed": {
+        "Name": "Completed",
+        "Enter": {
+          "Name": "Completed.Enter"
+        },
+        "Leave": {
+          "Name": "Completed.Leave"
+        },
+        "BeforeEnter": {
+          "Name": "Completed.BeforeEnter"
+        },
+        "AfterLeave": {
+          "Name": "Completed.AfterLeave"
+        },
+        "Events": [
+          {
+            "Name": "PlaceOrderTimeoutSchedule.AnyReceived"
+          }
+        ]
+      },
+      "Cancelled": {
+        "Name": "Cancelled",
+        "Enter": {
+          "Name": "Cancelled.Enter"
+        },
+        "Leave": {
+          "Name": "Cancelled.Leave"
+        },
+        "BeforeEnter": {
+          "Name": "Cancelled.BeforeEnter"
+        },
+        "AfterLeave": {
+          "Name": "Cancelled.AfterLeave"
+        },
+        "Events": [
+          {
+            "Name": "PlaceOrderTimeoutSchedule.AnyReceived"
+          }
+        ]
+      },
+      "Failed": {
+        "Name": "Failed",
+        "Enter": {
+          "Name": "Failed.Enter"
+        },
+        "Leave": {
+          "Name": "Failed.Leave"
+        },
+        "BeforeEnter": {
+          "Name": "Failed.BeforeEnter"
+        },
+        "AfterLeave": {
+          "Name": "Failed.AfterLeave"
+        },
+        "Events": [
+          {
+            "Name": "PlaceOrderTimeoutSchedule.AnyReceived"
+          }
+        ]
+      },
+      "OrderPlaced": {
+        "Name": "OrderPlaced"
+      },
+      "OrderCompleted": {
+        "Name": "OrderCompleted"
+      },
+      "OrderCancelled": {
+        "Name": "OrderCancelled"
+      },
+      "BasketDeletedFailed": {
+        "Name": "BasketDeletedFailed"
+      },
+      "BasketDeleted": {
+        "Name": "BasketDeleted"
+      },
+      "PlaceOrderTimeoutSchedule": {
+        "Received": {
+          "Name": "PlaceOrderTimeoutSchedule.Received"
+        },
+        "AnyReceived": {
+          "Name": "PlaceOrderTimeoutSchedule.AnyReceived"
+        }
+      },
+      "Correlations": [
+        {
+          "ConfigureConsumeTopology": true,
+          "FilterFactory": {
+            "Type": "SagaFilterFactory<OrderState, UserCheckedOutIntegrationEvent>",
+            "Target": "StateMachineInterfaceType<OrderState, UserCheckedOutIntegrationEvent>.MassTransitEventCorrelationConfigurator.<>c",
+            "Method": "MassTransit.IFilter`1[MassTransit.ConsumeContext`1[BookWorm.Contracts.UserCheckedOutIntegrationEvent]] CorrelateById(MassTransit.ISagaRepository`1[BookWorm.Finance.Saga.OrderState], MassTransit.ISagaPolicy`2[BookWorm.Finance.Saga.OrderState,BookWorm.Contracts.UserCheckedOutIntegrationEvent], MassTransit.IPipe`1[MassTransit.SagaConsumeContext`2[BookWorm.Finance.Saga.OrderState,BookWorm.Contracts.UserCheckedOutIntegrationEvent]])"
+          },
+          "Event": {
+            "Name": "OrderPlaced"
+          },
+          "DataType": "UserCheckedOutIntegrationEvent",
+          "MessageFilter": {},
+          "Policy": {
+            "IsReadOnly": false
+          }
+        },
+        {
+          "ConfigureConsumeTopology": true,
+          "FilterFactory": {
+            "Type": "SagaFilterFactory<OrderState, OrderStatusChangedToCompleteIntegrationEvent>",
+            "Target": "StateMachineInterfaceType<OrderState, OrderStatusChangedToCompleteIntegrationEvent>.MassTransitEventCorrelationConfigurator.<>c",
+            "Method": "MassTransit.IFilter`1[MassTransit.ConsumeContext`1[BookWorm.Contracts.OrderStatusChangedToCompleteIntegrationEvent]] CorrelateById(MassTransit.ISagaRepository`1[BookWorm.Finance.Saga.OrderState], MassTransit.ISagaPolicy`2[BookWorm.Finance.Saga.OrderState,BookWorm.Contracts.OrderStatusChangedToCompleteIntegrationEvent], MassTransit.IPipe`1[MassTransit.SagaConsumeContext`2[BookWorm.Finance.Saga.OrderState,BookWorm.Contracts.OrderStatusChangedToCompleteIntegrationEvent]])"
+          },
+          "Event": {
+            "Name": "OrderCompleted"
+          },
+          "DataType": "OrderStatusChangedToCompleteIntegrationEvent",
+          "MessageFilter": {},
+          "Policy": {
+            "IsReadOnly": false
+          }
+        },
+        {
+          "ConfigureConsumeTopology": true,
+          "FilterFactory": {
+            "Type": "SagaFilterFactory<OrderState, OrderStatusChangedToCancelIntegrationEvent>",
+            "Target": "StateMachineInterfaceType<OrderState, OrderStatusChangedToCancelIntegrationEvent>.MassTransitEventCorrelationConfigurator.<>c",
+            "Method": "MassTransit.IFilter`1[MassTransit.ConsumeContext`1[BookWorm.Contracts.OrderStatusChangedToCancelIntegrationEvent]] CorrelateById(MassTransit.ISagaRepository`1[BookWorm.Finance.Saga.OrderState], MassTransit.ISagaPolicy`2[BookWorm.Finance.Saga.OrderState,BookWorm.Contracts.OrderStatusChangedToCancelIntegrationEvent], MassTransit.IPipe`1[MassTransit.SagaConsumeContext`2[BookWorm.Finance.Saga.OrderState,BookWorm.Contracts.OrderStatusChangedToCancelIntegrationEvent]])"
+          },
+          "Event": {
+            "Name": "OrderCancelled"
+          },
+          "DataType": "OrderStatusChangedToCancelIntegrationEvent",
+          "MessageFilter": {},
+          "Policy": {
+            "IsReadOnly": false
+          }
+        },
+        {
+          "ConfigureConsumeTopology": true,
+          "FilterFactory": {
+            "Type": "SagaFilterFactory<OrderState, BasketDeletedFailedIntegrationEvent>",
+            "Target": "StateMachineInterfaceType<OrderState, BasketDeletedFailedIntegrationEvent>.MassTransitEventCorrelationConfigurator.<>c",
+            "Method": "MassTransit.IFilter`1[MassTransit.ConsumeContext`1[BookWorm.Contracts.BasketDeletedFailedIntegrationEvent]] CorrelateById(MassTransit.ISagaRepository`1[BookWorm.Finance.Saga.OrderState], MassTransit.ISagaPolicy`2[BookWorm.Finance.Saga.OrderState,BookWorm.Contracts.BasketDeletedFailedIntegrationEvent], MassTransit.IPipe`1[MassTransit.SagaConsumeContext`2[BookWorm.Finance.Saga.OrderState,BookWorm.Contracts.BasketDeletedFailedIntegrationEvent]])"
+          },
+          "Event": {
+            "Name": "BasketDeletedFailed"
+          },
+          "DataType": "BasketDeletedFailedIntegrationEvent",
+          "MessageFilter": {},
+          "Policy": {
+            "IsReadOnly": false
+          }
+        },
+        {
+          "ConfigureConsumeTopology": true,
+          "FilterFactory": {
+            "Type": "SagaFilterFactory<OrderState, BasketDeletedCompleteIntegrationEvent>",
+            "Target": "StateMachineInterfaceType<OrderState, BasketDeletedCompleteIntegrationEvent>.MassTransitEventCorrelationConfigurator.<>c",
+            "Method": "MassTransit.IFilter`1[MassTransit.ConsumeContext`1[BookWorm.Contracts.BasketDeletedCompleteIntegrationEvent]] CorrelateById(MassTransit.ISagaRepository`1[BookWorm.Finance.Saga.OrderState], MassTransit.ISagaPolicy`2[BookWorm.Finance.Saga.OrderState,BookWorm.Contracts.BasketDeletedCompleteIntegrationEvent], MassTransit.IPipe`1[MassTransit.SagaConsumeContext`2[BookWorm.Finance.Saga.OrderState,BookWorm.Contracts.BasketDeletedCompleteIntegrationEvent]])"
+          },
+          "Event": {
+            "Name": "BasketDeleted"
+          },
+          "DataType": "BasketDeletedCompleteIntegrationEvent",
+          "MessageFilter": {},
+          "Policy": {
+            "IsReadOnly": false
+          }
+        },
+        {
+          "ConfigureConsumeTopology": true,
+          "FilterFactory": {
+            "Type": "SagaFilterFactory<OrderState, PlaceOrderTimeoutIntegrationEvent>",
+            "Target": "StateMachineInterfaceType<OrderState, PlaceOrderTimeoutIntegrationEvent>.MassTransitEventCorrelationConfigurator.<>c",
+            "Method": "MassTransit.IFilter`1[MassTransit.ConsumeContext`1[BookWorm.Contracts.PlaceOrderTimeoutIntegrationEvent]] CorrelateById(MassTransit.ISagaRepository`1[BookWorm.Finance.Saga.OrderState], MassTransit.ISagaPolicy`2[BookWorm.Finance.Saga.OrderState,BookWorm.Contracts.PlaceOrderTimeoutIntegrationEvent], MassTransit.IPipe`1[MassTransit.SagaConsumeContext`2[BookWorm.Finance.Saga.OrderState,BookWorm.Contracts.PlaceOrderTimeoutIntegrationEvent]])"
+          },
+          "Event": {
+            "Name": "PlaceOrderTimeoutSchedule.AnyReceived"
+          },
+          "DataType": "PlaceOrderTimeoutIntegrationEvent",
+          "MessageFilter": {},
+          "Policy": {
+            "IsReadOnly": false
+          }
+        }
+      ],
+      "Accessor": {},
+      "Initial": {
+        "Name": "Initial",
+        "Enter": {
+          "Name": "Initial.Enter"
+        },
+        "Leave": {
+          "Name": "Initial.Leave"
+        },
+        "BeforeEnter": {
+          "Name": "Initial.BeforeEnter"
+        },
+        "AfterLeave": {
+          "Name": "Initial.AfterLeave"
+        },
+        "Events": [
+          {
+            "Name": "OrderPlaced"
+          }
+        ]
+      },
+      "Final": {
+        "Name": "Final",
+        "Enter": {
+          "Name": "Final.Enter"
+        },
+        "Leave": {
+          "Name": "Final.Leave"
+        },
+        "BeforeEnter": {
+          "Name": "Final.BeforeEnter"
+        },
+        "AfterLeave": {
+          "Name": "Final.AfterLeave"
+        },
+        "Events": []
+      },
+      "States": [
+        {
+          "Name": "Initial",
+          "Enter": {
+            "Name": "Initial.Enter"
+          },
+          "Leave": {
+            "Name": "Initial.Leave"
+          },
+          "BeforeEnter": {
+            "Name": "Initial.BeforeEnter"
+          },
+          "AfterLeave": {
+            "Name": "Initial.AfterLeave"
+          },
+          "Events": [
+            {
+              "Name": "OrderPlaced"
+            }
+          ]
+        },
+        {
+          "Name": "Final",
+          "Enter": {
+            "Name": "Final.Enter"
+          },
+          "Leave": {
+            "Name": "Final.Leave"
+          },
+          "BeforeEnter": {
+            "Name": "Final.BeforeEnter"
+          },
+          "AfterLeave": {
+            "Name": "Final.AfterLeave"
+          },
+          "Events": []
+        },
+        {
+          "Name": "Placed",
+          "Enter": {
+            "Name": "Placed.Enter"
+          },
+          "Leave": {
+            "Name": "Placed.Leave"
+          },
+          "BeforeEnter": {
+            "Name": "Placed.BeforeEnter"
+          },
+          "AfterLeave": {
+            "Name": "Placed.AfterLeave"
+          },
+          "Events": [
+            {
+              "Name": "PlaceOrderTimeoutSchedule.AnyReceived"
+            },
+            {
+              "Name": "PlaceOrderTimeoutSchedule.Received"
+            },
+            {
+              "Name": "BasketDeletedFailed"
+            },
+            {
+              "Name": "BasketDeleted"
+            },
+            {
+              "Name": "OrderCompleted"
+            },
+            {
+              "Name": "OrderCancelled"
+            },
+            {
+              "Name": "OrderPlaced"
+            }
+          ]
+        },
+        {
+          "Name": "Completed",
+          "Enter": {
+            "Name": "Completed.Enter"
+          },
+          "Leave": {
+            "Name": "Completed.Leave"
+          },
+          "BeforeEnter": {
+            "Name": "Completed.BeforeEnter"
+          },
+          "AfterLeave": {
+            "Name": "Completed.AfterLeave"
+          },
+          "Events": [
+            {
+              "Name": "PlaceOrderTimeoutSchedule.AnyReceived"
+            }
+          ]
+        },
+        {
+          "Name": "Cancelled",
+          "Enter": {
+            "Name": "Cancelled.Enter"
+          },
+          "Leave": {
+            "Name": "Cancelled.Leave"
+          },
+          "BeforeEnter": {
+            "Name": "Cancelled.BeforeEnter"
+          },
+          "AfterLeave": {
+            "Name": "Cancelled.AfterLeave"
+          },
+          "Events": [
+            {
+              "Name": "PlaceOrderTimeoutSchedule.AnyReceived"
+            }
+          ]
+        },
+        {
+          "Name": "Failed",
+          "Enter": {
+            "Name": "Failed.Enter"
+          },
+          "Leave": {
+            "Name": "Failed.Leave"
+          },
+          "BeforeEnter": {
+            "Name": "Failed.BeforeEnter"
+          },
+          "AfterLeave": {
+            "Name": "Failed.AfterLeave"
+          },
+          "Events": [
+            {
+              "Name": "PlaceOrderTimeoutSchedule.AnyReceived"
+            }
+          ]
+        }
+      ],
+      "Events": [
+        {
+          "Name": "OrderPlaced"
+        },
+        {
+          "Name": "OrderCompleted"
+        },
+        {
+          "Name": "OrderCancelled"
+        },
+        {
+          "Name": "BasketDeletedFailed"
+        },
+        {
+          "Name": "BasketDeleted"
+        },
+        {
+          "Name": "PlaceOrderTimeoutSchedule.Received"
+        },
+        {
+          "Name": "PlaceOrderTimeoutSchedule.AnyReceived"
+        }
+      ]
+    }
+  }
+}

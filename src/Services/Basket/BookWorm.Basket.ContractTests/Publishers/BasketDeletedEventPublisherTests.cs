@@ -39,45 +39,20 @@ public sealed class BasketDeletedEventPublisherTests : SnapshotTestBase
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Act
-        await harness.Bus.Publish(_command);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(_command);
 
-        // Assert
-        var consumerHarness = harness.GetConsumerHarness<PlaceOrderCommandHandler>();
+            // Assert
+            await VerifySnapshot(harness);
 
-        (await consumerHarness.Consumed.Any<PlaceOrderCommand>()).ShouldBeTrue();
-        (await harness.Published.Any<BasketDeletedCompleteIntegrationEvent>()).ShouldBeTrue();
-        (await harness.Published.Any<BasketDeletedFailedIntegrationEvent>()).ShouldBeFalse();
-
-        var publishedMessage = harness
-            .Published.Select<BasketDeletedCompleteIntegrationEvent>()
-            .First();
-
-        // Verify published event contract structure and properties
-        await VerifySnapshot(
-            new
-            {
-                EventType = nameof(BasketDeletedCompleteIntegrationEvent),
-                Properties = new
-                {
-                    publishedMessage.Context.Message.OrderId,
-                    publishedMessage.Context.Message.BasketId,
-                    publishedMessage.Context.Message.TotalMoney,
-                },
-                Schema = new
-                {
-                    OrderIdType = publishedMessage.Context.Message.OrderId.GetType().Name,
-                    BasketIdType = publishedMessage.Context.Message.BasketId.GetType().Name,
-                    TotalMoneyType = publishedMessage.Context.Message.TotalMoney.GetType().Name,
-                    HasId = publishedMessage.Context.Message.Id != Guid.Empty,
-                    HasCreationDate = publishedMessage.Context.Message.CreationDate != default,
-                },
-            }
-        );
-
-        _repositoryMock.Verify(x => x.DeleteBasketAsync(_basketId.ToString()), Times.Once);
-
-        await harness.Stop();
+            _repositoryMock.Verify(x => x.DeleteBasketAsync(_basketId.ToString()), Times.Once);
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 
     [Test]
@@ -94,46 +69,19 @@ public sealed class BasketDeletedEventPublisherTests : SnapshotTestBase
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Act
-        await harness.Bus.Publish(_command);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(_command);
 
-        // Assert
-        var consumerHarness = harness.GetConsumerHarness<PlaceOrderCommandHandler>();
+            // Assert
+            await VerifySnapshot(harness);
 
-        (await consumerHarness.Consumed.Any<PlaceOrderCommand>()).ShouldBeTrue();
-        (await harness.Published.Any<BasketDeletedFailedIntegrationEvent>()).ShouldBeTrue();
-        (await harness.Published.Any<BasketDeletedCompleteIntegrationEvent>()).ShouldBeFalse();
-
-        var publishedMessage = harness
-            .Published.Select<BasketDeletedFailedIntegrationEvent>()
-            .First();
-
-        // Verify published event contract structure and properties
-        await VerifySnapshot(
-            new
-            {
-                EventType = nameof(BasketDeletedFailedIntegrationEvent),
-                Properties = new
-                {
-                    publishedMessage.Context.Message.OrderId,
-                    publishedMessage.Context.Message.BasketId,
-                    publishedMessage.Context.Message.Email,
-                    publishedMessage.Context.Message.TotalMoney,
-                },
-                Schema = new
-                {
-                    OrderIdType = publishedMessage.Context.Message.OrderId.GetType().Name,
-                    BasketIdType = publishedMessage.Context.Message.BasketId.GetType().Name,
-                    EmailType = publishedMessage.Context.Message.Email?.GetType().Name,
-                    TotalMoneyType = publishedMessage.Context.Message.TotalMoney.GetType().Name,
-                    HasId = publishedMessage.Context.Message.Id != Guid.Empty,
-                    HasCreationDate = publishedMessage.Context.Message.CreationDate != default,
-                },
-            }
-        );
-
-        _repositoryMock.Verify(x => x.DeleteBasketAsync(_basketId.ToString()), Times.Once);
-
-        await harness.Stop();
+            _repositoryMock.Verify(x => x.DeleteBasketAsync(_basketId.ToString()), Times.Once);
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 }

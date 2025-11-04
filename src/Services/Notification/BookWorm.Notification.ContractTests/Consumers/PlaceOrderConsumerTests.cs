@@ -5,7 +5,6 @@ using BookWorm.Notification.Infrastructure.Render;
 using BookWorm.Notification.Infrastructure.Senders;
 using BookWorm.Notification.Infrastructure.Senders.MailKit;
 using BookWorm.Notification.IntegrationEvents.EventHandlers;
-using BookWorm.Notification.UnitTests.Fakers;
 using MassTransit;
 using MassTransit.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,7 +30,7 @@ public sealed class PlaceOrderConsumerTests : SnapshotTestBase
             .Setup(x => x.Render(It.IsAny<Order>(), It.IsAny<string>()))
             .Returns("Rendered order content");
 
-        _mailKitSettings = TestDataFakers.EmailOptions.Generate();
+        _mailKitSettings = new() { From = "bookworm@example.com" };
     }
 
     private async Task<ITestHarness> CreateTestHarnessAsync()
@@ -55,7 +54,13 @@ public sealed class PlaceOrderConsumerTests : SnapshotTestBase
     public async Task GivenValidPlaceOrderCommand_WhenHandling_ThenShouldSendEmail()
     {
         // Arrange
-        var command = TestDataFakers.PlaceOrderCommand.Generate();
+        var command = new PlaceOrderCommand(
+            Guid.CreateVersion7(),
+            "John Doe",
+            "john.doe@example.com",
+            Guid.CreateVersion7(),
+            99.99m
+        );
         var harness = await CreateTestHarnessAsync();
 
         try
@@ -64,23 +69,14 @@ public sealed class PlaceOrderConsumerTests : SnapshotTestBase
             await harness.Bus.Publish(command);
 
             // Assert
-            var consumerHarness = harness.GetConsumerHarness<PlaceOrderCommandHandler>();
-            (await consumerHarness.Consumed.Any<PlaceOrderCommand>()).ShouldBeTrue();
+            var consumer = harness.GetConsumerHarness<PlaceOrderCommandHandler>();
+
+            await VerifySnapshot(new { harness, consumer });
 
             _senderMock.Verify(
                 x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
                 Times.Once
             );
-
-            // Contract verification - using deterministic data for snapshot consistency
-            var contractCommand = new PlaceOrderCommand(
-                Guid.CreateVersion7(), // BasketId
-                "John Doe", // FullName
-                "john.doe@example.com", // Email
-                Guid.CreateVersion7(), // OrderId
-                99.99m // TotalMoney
-            );
-            await VerifySnapshot(contractCommand);
         }
         finally
         {
@@ -92,7 +88,13 @@ public sealed class PlaceOrderConsumerTests : SnapshotTestBase
     public async Task GivenPlaceOrderCommandWithNullEmail_WhenHandling_ThenShouldNotSendEmail()
     {
         // Arrange
-        var command = FakerExtensions.WithNullEmail();
+        var command = new PlaceOrderCommand(
+            Guid.CreateVersion7(),
+            "John Doe",
+            null,
+            Guid.CreateVersion7(),
+            99.99m
+        );
         var harness = await CreateTestHarnessAsync();
 
         try
@@ -101,23 +103,14 @@ public sealed class PlaceOrderConsumerTests : SnapshotTestBase
             await harness.Bus.Publish(command);
 
             // Assert
-            var consumerHarness = harness.GetConsumerHarness<PlaceOrderCommandHandler>();
-            (await consumerHarness.Consumed.Any<PlaceOrderCommand>()).ShouldBeTrue();
+            var consumer = harness.GetConsumerHarness<PlaceOrderCommandHandler>();
+
+            await VerifySnapshot(new { harness, consumer });
 
             _senderMock.Verify(
                 x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
                 Times.Never
             );
-
-            // Contract verification - using deterministic data for snapshot consistency
-            var contractCommand = new PlaceOrderCommand(
-                Guid.CreateVersion7(), // BasketId
-                "John Doe", // FullName
-                null, // Email (null for this test)
-                Guid.CreateVersion7(), // OrderId
-                99.99m // TotalMoney
-            );
-            await VerifySnapshot(contractCommand);
         }
         finally
         {
@@ -129,7 +122,13 @@ public sealed class PlaceOrderConsumerTests : SnapshotTestBase
     public async Task GivenPlaceOrderCommandWithEmptyEmail_WhenHandling_ThenShouldNotSendEmail()
     {
         // Arrange
-        var command = FakerExtensions.WithEmptyEmailAddress();
+        var command = new PlaceOrderCommand(
+            Guid.CreateVersion7(),
+            "John Doe",
+            string.Empty,
+            Guid.CreateVersion7(),
+            99.99m
+        );
         var harness = await CreateTestHarnessAsync();
 
         try
@@ -138,23 +137,14 @@ public sealed class PlaceOrderConsumerTests : SnapshotTestBase
             await harness.Bus.Publish(command);
 
             // Assert
-            var consumerHarness = harness.GetConsumerHarness<PlaceOrderCommandHandler>();
-            (await consumerHarness.Consumed.Any<PlaceOrderCommand>()).ShouldBeTrue();
+            var consumer = harness.GetConsumerHarness<PlaceOrderCommandHandler>();
+
+            await VerifySnapshot(new { harness, consumer });
 
             _senderMock.Verify(
                 x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
                 Times.Never
             );
-
-            // Contract verification - using deterministic data for snapshot consistency
-            var contractCommand = new PlaceOrderCommand(
-                Guid.CreateVersion7(), // BasketId
-                "John Doe", // FullName
-                "", // Email (empty for this test)
-                Guid.CreateVersion7(), // OrderId
-                99.99m // TotalMoney
-            );
-            await VerifySnapshot(contractCommand);
         }
         finally
         {

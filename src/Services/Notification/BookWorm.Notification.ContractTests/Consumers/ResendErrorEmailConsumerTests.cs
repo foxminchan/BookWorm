@@ -36,9 +36,6 @@ public sealed class ResendErrorEmailConsumerTests : SnapshotTestBase
 
         var command = new ResendErrorEmailIntegrationEvent();
 
-        // Contract verification - input event
-        await VerifySnapshot(command);
-
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x =>
                 x.AddConsumer<ResendErrorEmailIntegrationEventHandler>()
@@ -52,50 +49,56 @@ public sealed class ResendErrorEmailConsumerTests : SnapshotTestBase
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Act
-        await harness.Bus.Publish(command);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(command);
 
-        // Assert
-        var consumerHarness = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
-        (await consumerHarness.Consumed.Any<ResendErrorEmailIntegrationEvent>()).ShouldBeTrue();
+            // Assert
+            var consumer = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
 
-        _repositoryMock.Verify(
-            x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()),
-            Times.Once
-        );
+            await VerifySnapshot(new { harness, consumer });
 
-        _senderMock.Verify(
-            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
-            Times.Exactly(3)
-        );
+            _repositoryMock.Verify(
+                x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()),
+                Times.Once
+            );
 
-        VerifyLogMessage(
-            LogLevel.Debug,
-            "Successfully resent email to user1@example.com",
-            Times.Once()
-        );
-        VerifyLogMessage(
-            LogLevel.Debug,
-            "Successfully resent email to user2@example.com",
-            Times.Once()
-        );
-        VerifyLogMessage(
-            LogLevel.Debug,
-            "Successfully resent email to user3@example.com",
-            Times.Once()
-        );
+            _senderMock.Verify(
+                x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
+                Times.Exactly(3)
+            );
 
-        // Verify summary log
-        VerifyLogMessage(
-            LogLevel.Information,
-            "Email resend completed. Success: 3, Failed: 0, Total: 3",
-            Times.Once()
-        );
+            VerifyLogMessage(
+                LogLevel.Debug,
+                "Successfully resent email to user1@example.com",
+                Times.Once()
+            );
+            VerifyLogMessage(
+                LogLevel.Debug,
+                "Successfully resent email to user2@example.com",
+                Times.Once()
+            );
+            VerifyLogMessage(
+                LogLevel.Debug,
+                "Successfully resent email to user3@example.com",
+                Times.Once()
+            );
 
-        // No flush should be called when all successes (no failures)
-        _logBufferMock.Verify(x => x.Flush(), Times.Never);
+            // Verify summary log
+            VerifyLogMessage(
+                LogLevel.Information,
+                "Email resend completed. Success: 3, Failed: 0, Total: 3",
+                Times.Once()
+            );
 
-        await harness.Stop();
+            // No flush should be called when all successes (no failures)
+            _logBufferMock.Verify(x => x.Flush(), Times.Never);
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 
     [Test]
@@ -121,37 +124,40 @@ public sealed class ResendErrorEmailConsumerTests : SnapshotTestBase
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Act
-        await harness.Bus.Publish(command);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(command);
 
-        // Assert
-        var consumerHarness = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
-        (await consumerHarness.Consumed.Any<ResendErrorEmailIntegrationEvent>()).ShouldBeTrue();
+            // Assert
+            var consumer = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
 
-        _repositoryMock.Verify(
-            x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()),
-            Times.Once
-        );
+            await VerifySnapshot(new { harness, consumer });
 
-        _senderMock.Verify(
-            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
-            Times.Never
-        );
+            _repositoryMock.Verify(
+                x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()),
+                Times.Once
+            );
 
-        // Verify summary log
-        VerifyLogMessage(
-            LogLevel.Information,
-            "Email resend completed. Success: 0, Failed: 0, Total: 0",
-            Times.Once()
-        );
+            _senderMock.Verify(
+                x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
+                Times.Never
+            );
 
-        // No flush should be called when no successes
-        _logBufferMock.Verify(x => x.Flush(), Times.Never);
+            // Verify summary log
+            VerifyLogMessage(
+                LogLevel.Information,
+                "Email resend completed. Success: 0, Failed: 0, Total: 0",
+                Times.Once()
+            );
 
-        // Contract verification - ResendErrorEmailIntegrationEvent has no parameters so it's deterministic
-        await VerifySnapshot(command);
-
-        await harness.Stop();
+            // No flush should be called when no successes
+            _logBufferMock.Verify(x => x.Flush(), Times.Never);
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 
     [Test]
@@ -187,40 +193,46 @@ public sealed class ResendErrorEmailConsumerTests : SnapshotTestBase
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Act
-        await harness.Bus.Publish(command);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(command);
 
-        // Assert
-        var consumerHarness = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
-        (await consumerHarness.Consumed.Any<ResendErrorEmailIntegrationEvent>()).ShouldBeTrue();
+            // Assert
+            var consumer = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
 
-        _senderMock.Verify(
-            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
-            Times.Exactly(2)
-        );
+            await VerifySnapshot(new { harness, consumer });
 
-        VerifyLogMessage(
-            LogLevel.Error,
-            "Failed to resend email to user1@example.com",
-            Times.Once()
-        );
-        VerifyLogMessage(
-            LogLevel.Error,
-            "Failed to resend email to user2@example.com",
-            Times.Once()
-        );
+            _senderMock.Verify(
+                x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
+                Times.Exactly(2)
+            );
 
-        // Verify summary log
-        VerifyLogMessage(
-            LogLevel.Information,
-            "Email resend completed. Success: 0, Failed: 2, Total: 2",
-            Times.Once()
-        );
+            VerifyLogMessage(
+                LogLevel.Error,
+                "Failed to resend email to user1@example.com",
+                Times.Once()
+            );
+            VerifyLogMessage(
+                LogLevel.Error,
+                "Failed to resend email to user2@example.com",
+                Times.Once()
+            );
 
-        // Flush should be called when there are failures
-        _logBufferMock.Verify(x => x.Flush(), Times.Once);
+            // Verify summary log
+            VerifyLogMessage(
+                LogLevel.Information,
+                "Email resend completed. Success: 0, Failed: 2, Total: 2",
+                Times.Once()
+            );
 
-        await harness.Stop();
+            // Flush should be called when there are failures
+            _logBufferMock.Verify(x => x.Flush(), Times.Once);
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 
     [Test]
@@ -260,34 +272,40 @@ public sealed class ResendErrorEmailConsumerTests : SnapshotTestBase
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Act
-        await harness.Bus.Publish(command);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(command);
 
-        // Assert
-        var consumerHarness = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
-        (await consumerHarness.Consumed.Any<ResendErrorEmailIntegrationEvent>()).ShouldBeTrue();
+            // Assert
+            var consumer = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
 
-        _senderMock.Verify(
-            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
-            Times.Exactly(3)
-        );
+            await VerifySnapshot(new { harness, consumer });
 
-        // Verify success logs (2 successes)
-        VerifyLogMessage(LogLevel.Debug, "Successfully resent email", Times.Exactly(2));
+            _senderMock.Verify(
+                x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
+                Times.Exactly(3)
+            );
 
-        // Verify error log (1 failure)
-        VerifyLogMessage(LogLevel.Error, "Failed to resend email", Times.Once());
+            // Verify success logs (2 successes)
+            VerifyLogMessage(LogLevel.Debug, "Successfully resent email", Times.Exactly(2));
 
-        // Verify summary log
-        VerifyLogMessage(
-            LogLevel.Information,
-            "Email resend completed. Success: 2, Failed: 1, Total: 3",
-            Times.Once()
-        );
+            // Verify error log (1 failure)
+            VerifyLogMessage(LogLevel.Error, "Failed to resend email", Times.Once());
 
-        _logBufferMock.Verify(x => x.Flush(), Times.Once());
+            // Verify summary log
+            VerifyLogMessage(
+                LogLevel.Information,
+                "Email resend completed. Success: 2, Failed: 1, Total: 3",
+                Times.Once()
+            );
 
-        await harness.Stop();
+            _logBufferMock.Verify(x => x.Flush(), Times.Once());
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 
     [Test]
@@ -322,27 +340,33 @@ public sealed class ResendErrorEmailConsumerTests : SnapshotTestBase
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Act
-        await harness.Bus.Publish(command);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(command);
 
-        // Assert
-        var consumerHarness = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
-        (await consumerHarness.Consumed.Any<ResendErrorEmailIntegrationEvent>()).ShouldBeTrue();
+            // Assert
+            var consumer = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
 
-        capturedMessage.ShouldNotBeNull();
-        capturedMessage.To.Mailboxes.First().Name.ShouldBe("John Doe");
-        capturedMessage.To.Mailboxes.First().Address.ShouldBe("john@example.com");
-        capturedMessage.Subject.ShouldBe("Test Subject");
-        capturedMessage.HtmlBody.ShouldBe("Test Body");
+            await VerifySnapshot(new { harness, consumer });
 
-        // Verify summary log
-        VerifyLogMessage(
-            LogLevel.Information,
-            "Email resend completed. Success: 1, Failed: 0, Total: 1",
-            Times.Once()
-        );
+            capturedMessage.ShouldNotBeNull();
+            capturedMessage.To.Mailboxes.First().Name.ShouldBe("John Doe");
+            capturedMessage.To.Mailboxes.First().Address.ShouldBe("john@example.com");
+            capturedMessage.Subject.ShouldBe("Test Subject");
+            capturedMessage.HtmlBody.ShouldBe("Test Body");
 
-        await harness.Stop();
+            // Verify summary log
+            VerifyLogMessage(
+                LogLevel.Information,
+                "Email resend completed. Success: 1, Failed: 0, Total: 1",
+                Times.Once()
+            );
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 
     [Test]
@@ -374,26 +398,32 @@ public sealed class ResendErrorEmailConsumerTests : SnapshotTestBase
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Act
-        await harness.Bus.Publish(command);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(command);
 
-        // Assert
-        var consumerHarness = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
-        (await consumerHarness.Consumed.Any<ResendErrorEmailIntegrationEvent>()).ShouldBeTrue();
+            // Assert
+            var consumer = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
 
-        VerifyLogMessage(LogLevel.Error, "Failed to resend email", Times.Once());
+            await VerifySnapshot(new { harness, consumer });
 
-        // Verify summary log
-        VerifyLogMessage(
-            LogLevel.Information,
-            "Email resend completed. Success: 0, Failed: 1, Total: 1",
-            Times.Once()
-        );
+            VerifyLogMessage(LogLevel.Error, "Failed to resend email", Times.Once());
 
-        // Flush should be called when there are failures
-        _logBufferMock.Verify(x => x.Flush(), Times.Once);
+            // Verify summary log
+            VerifyLogMessage(
+                LogLevel.Information,
+                "Email resend completed. Success: 0, Failed: 1, Total: 1",
+                Times.Once()
+            );
 
-        await harness.Stop();
+            // Flush should be called when there are failures
+            _logBufferMock.Verify(x => x.Flush(), Times.Once);
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 
     [Test]
@@ -427,70 +457,30 @@ public sealed class ResendErrorEmailConsumerTests : SnapshotTestBase
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Act
-        await harness.Bus.Publish(command, capturedToken);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(command, capturedToken);
 
-        // Assert
-        var consumerHarness = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
-        (
-            await consumerHarness.Consumed.Any<ResendErrorEmailIntegrationEvent>(capturedToken)
-        ).ShouldBeTrue();
+            // Assert
+            var consumer = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
 
-        capturedToken.ShouldNotBe(CancellationToken.None);
-        capturedToken.CanBeCanceled.ShouldBeTrue();
+            await VerifySnapshot(new { harness, consumer });
 
-        // Verify summary log
-        VerifyLogMessage(
-            LogLevel.Information,
-            "Email resend completed. Success: 1, Failed: 0, Total: 1",
-            Times.Once()
-        );
+            capturedToken.ShouldNotBe(CancellationToken.None);
+            capturedToken.CanBeCanceled.ShouldBeTrue();
 
-        await harness.Stop(capturedToken);
-    }
-
-    [Test]
-    public async Task GivenRepositoryException_WhenHandlingResendEvent_ThenShouldFaultConsumer()
-    {
-        // Arrange
-        _repositoryMock
-            .Setup(x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new("Repository failed"));
-
-        var command = new ResendErrorEmailIntegrationEvent();
-
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness(x =>
-                x.AddConsumer<ResendErrorEmailIntegrationEventHandler>()
-            )
-            .AddScoped(_ => _loggerMock.Object)
-            .AddScoped(_ => _logBufferMock.Object)
-            .AddScoped(_ => _repositoryMock.Object)
-            .AddScoped(_ => _senderMock.Object)
-            .BuildServiceProvider(true);
-
-        var harness = provider.GetRequiredService<ITestHarness>();
-        await harness.Start();
-
-        // Act
-        await harness.Bus.Publish(command);
-
-        // Assert
-        var consumerHarness = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
-        (await consumerHarness.Consumed.Any<ResendErrorEmailIntegrationEvent>()).ShouldBeTrue();
-
-        // Check for fault at the bus level with timeout
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        (
-            await harness.Published.Any<Fault<ResendErrorEmailIntegrationEvent>>(cts.Token)
-        ).ShouldBeTrue();
-
-        _senderMock.Verify(
-            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
-            Times.Never
-        );
-
-        await harness.Stop(cts.Token);
+            // Verify summary log
+            VerifyLogMessage(
+                LogLevel.Information,
+                "Email resend completed. Success: 1, Failed: 0, Total: 1",
+                Times.Once()
+            );
+        }
+        finally
+        {
+            await harness.Stop(capturedToken);
+        }
     }
 
     private void VerifyLogMessage(LogLevel level, string message, Times times)

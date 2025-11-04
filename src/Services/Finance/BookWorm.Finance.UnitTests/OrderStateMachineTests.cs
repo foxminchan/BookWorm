@@ -1,5 +1,4 @@
-﻿using BookWorm.Common;
-using BookWorm.Contracts;
+﻿using BookWorm.Contracts;
 using BookWorm.Finance.Saga;
 using BookWorm.Finance.UnitTests.Extensions;
 using BookWorm.SharedKernel.Helpers;
@@ -10,7 +9,7 @@ using static BookWorm.Finance.UnitTests.Helpers.OrderStateMachineTestHelper;
 
 namespace BookWorm.Finance.UnitTests;
 
-public sealed class OrderStateMachineTests : SnapshotTestBase
+public sealed class OrderStateMachineTests
 {
     private ITestHarness _harness = null!;
     private ServiceProvider _provider = null!;
@@ -82,53 +81,6 @@ public sealed class OrderStateMachineTests : SnapshotTestBase
         command.FullName.ShouldBe(testData.FullName);
         command.Email.ShouldBe(testData.Email);
         command.TotalMoney.ShouldBe(testData.TotalMoney);
-
-        // Verify input event contract structure
-        await VerifySnapshot(
-            new
-            {
-                InputEventType = nameof(UserCheckedOutIntegrationEvent),
-                InputProperties = new
-                {
-                    @event.OrderId,
-                    @event.BasketId,
-                    @event.FullName,
-                    @event.Email,
-                    @event.TotalMoney,
-                },
-                InputSchema = new
-                {
-                    OrderIdType = @event.OrderId.GetType().Name,
-                    BasketIdType = @event.BasketId.GetType().Name,
-                    FullNameType = @event.FullName?.GetType().Name,
-                    EmailType = @event.Email?.GetType().Name,
-                    TotalMoneyType = @event.TotalMoney.GetType().Name,
-                    HasId = @event.Id != Guid.Empty,
-                    HasCreationDate = @event.CreationDate != default,
-                    IsIntegrationEvent = true,
-                },
-                OutputCommandType = nameof(PlaceOrderCommand),
-                OutputProperties = new
-                {
-                    command.OrderId,
-                    command.BasketId,
-                    command.FullName,
-                    command.Email,
-                    command.TotalMoney,
-                },
-                OutputSchema = new
-                {
-                    OrderIdType = command.OrderId.GetType().Name,
-                    BasketIdType = command.BasketId.GetType().Name,
-                    FullNameType = command.FullName?.GetType().Name,
-                    EmailType = command.Email?.GetType().Name,
-                    TotalMoneyType = command.TotalMoney.GetType().Name,
-                    HasId = command.Id != Guid.Empty,
-                    HasCreationDate = command.CreationDate != default,
-                    IsIntegrationEvent = true,
-                },
-            }
-        );
     }
 
     [Test]
@@ -160,39 +112,6 @@ public sealed class OrderStateMachineTests : SnapshotTestBase
         var command = await _harness.AssertCommandPublished<DeleteBasketCompleteCommand>();
         command.OrderId.ShouldBe(testData.OrderId);
         command.TotalMoney.ShouldBe(testData.TotalMoney);
-
-        // Verify event and command contract structures
-        await VerifySnapshot(
-            new
-            {
-                InputEventType = nameof(BasketDeletedCompleteIntegrationEvent),
-                InputProperties = new
-                {
-                    @event.OrderId,
-                    @event.BasketId,
-                    @event.TotalMoney,
-                },
-                InputSchema = new
-                {
-                    OrderIdType = @event.OrderId.GetType().Name,
-                    BasketIdType = @event.BasketId.GetType().Name,
-                    TotalMoneyType = @event.TotalMoney.GetType().Name,
-                    HasId = @event.Id != Guid.Empty,
-                    HasCreationDate = @event.CreationDate != default,
-                    IsIntegrationEvent = true,
-                },
-                OutputCommandType = nameof(DeleteBasketCompleteCommand),
-                OutputProperties = new { command.OrderId, command.TotalMoney },
-                OutputSchema = new
-                {
-                    OrderIdType = command.OrderId.GetType().Name,
-                    TotalMoneyType = command.TotalMoney.GetType().Name,
-                    HasId = command.Id != Guid.Empty,
-                    HasCreationDate = command.CreationDate != default,
-                    IsIntegrationEvent = true,
-                },
-            }
-        );
     }
 
     [Test]
@@ -227,49 +146,6 @@ public sealed class OrderStateMachineTests : SnapshotTestBase
         command.BasketId.ShouldBe(testData.BasketId);
         command.Email.ShouldBe(testData.Email);
         command.TotalMoney.ShouldBe(testData.TotalMoney);
-
-        // Verify event and command contract structures
-        await VerifySnapshot(
-            new
-            {
-                InputEventType = nameof(BasketDeletedFailedIntegrationEvent),
-                InputProperties = new
-                {
-                    @event.OrderId,
-                    @event.BasketId,
-                    @event.Email,
-                    @event.TotalMoney,
-                },
-                InputSchema = new
-                {
-                    OrderIdType = @event.OrderId.GetType().Name,
-                    BasketIdType = @event.BasketId.GetType().Name,
-                    EmailType = @event.Email?.GetType().Name,
-                    TotalMoneyType = @event.TotalMoney.GetType().Name,
-                    HasId = @event.Id != Guid.Empty,
-                    HasCreationDate = @event.CreationDate != default,
-                    IsIntegrationEvent = true,
-                },
-                OutputCommandType = nameof(DeleteBasketFailedCommand),
-                OutputProperties = new
-                {
-                    command.OrderId,
-                    command.BasketId,
-                    command.Email,
-                    command.TotalMoney,
-                },
-                OutputSchema = new
-                {
-                    OrderIdType = command.OrderId.GetType().Name,
-                    BasketIdType = command.BasketId.GetType().Name,
-                    EmailType = command.Email?.GetType().Name,
-                    TotalMoneyType = command.TotalMoney.GetType().Name,
-                    HasId = command.Id != Guid.Empty,
-                    HasCreationDate = command.CreationDate != default,
-                    IsIntegrationEvent = true,
-                },
-            }
-        );
     }
 
     [Test]
@@ -619,9 +495,6 @@ public sealed class OrderStateMachineTests : SnapshotTestBase
 
         var timeoutEvent = new PlaceOrderTimeoutIntegrationEvent(testData.OrderId);
 
-        // Contract verification - input event
-        await VerifySnapshot(timeoutEvent);
-
         // Act - Send first timeout (should trigger retry)
         await _harness.Bus.Publish(timeoutEvent);
 
@@ -643,12 +516,6 @@ public sealed class OrderStateMachineTests : SnapshotTestBase
         retryCommand.OrderId.ShouldBe(testData.OrderId);
         retryCommand.BasketId.ShouldBe(testData.BasketId);
         retryCommand.TotalMoney.ShouldBe(testData.TotalMoney);
-
-        // Contract verification - output command (retry)
-        await VerifySnapshot(retryCommand)
-            .UseMethodName(
-                $"{nameof(GivenOrderTimeout_WhenRetryCountLessThanMax_ThenShouldRetryOrderProcessing)}_OutputCommand"
-            );
     }
 
     [Test]
@@ -660,9 +527,6 @@ public sealed class OrderStateMachineTests : SnapshotTestBase
         await (_harness, _sagaHarness).InitializeSagaToPlacedState(testData);
 
         var timeoutEvent = new PlaceOrderTimeoutIntegrationEvent(testData.OrderId);
-
-        // Contract verification - input event
-        await VerifySnapshot(timeoutEvent);
 
         // Act - Send 3 timeouts to exhaust retries
         for (var i = 0; i < 3; i++)
@@ -679,12 +543,6 @@ public sealed class OrderStateMachineTests : SnapshotTestBase
         command.FullName.ShouldBe(testData.FullName);
         command.Email.ShouldBe(testData.Email);
         command.TotalMoney.ShouldBe(testData.TotalMoney);
-
-        // Contract verification - output command
-        await VerifySnapshot(command)
-            .UseMethodName(
-                $"{nameof(GivenOrderTimeout_WhenRetryCountReachesMax_ThenShouldTransitionToFailedAndCancel)}_OutputCommand"
-            );
 
         // Verify the saga transitioned to Failed state or was finalized
         var instance = _sagaHarness.Created.ContainsInState(
@@ -797,9 +655,6 @@ public sealed class OrderStateMachineTests : SnapshotTestBase
             fullName,
             testData.TotalMoney
         );
-
-        // Contract verification - input event
-        await VerifySnapshot(@event).UseParameters(email ?? "null", fullName ?? "null");
 
         // Act
         await _harness.Bus.Publish(@event);

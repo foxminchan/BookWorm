@@ -4,11 +4,7 @@
     <ExcludeFromCodeCoverage>true</ExcludeFromCodeCoverage>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Moq" />
-    <PackageReference Include="Verify.TUnit" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\BookWorm.Finance\BookWorm.Finance.csproj" />
+    <ProjectReference Include="..\BookWorm.Finance.UnitTests\BookWorm.Finance.UnitTests.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Moq" />

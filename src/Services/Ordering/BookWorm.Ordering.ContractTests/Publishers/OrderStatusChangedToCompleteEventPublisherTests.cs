@@ -33,21 +33,17 @@ public sealed class OrderStatusChangedToCompleteEventPublisherTests : SnapshotTe
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Act
-        await harness.Bus.Publish(@event);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(@event);
 
-        // Assert
-        (
-            await harness.Published.Any<OrderStatusChangedToCompleteIntegrationEvent>()
-        ).ShouldBeTrue();
-
-        var publishedMessage = harness
-            .Published.Select<OrderStatusChangedToCompleteIntegrationEvent>()
-            .First();
-
-        // Verify contract structure
-        await VerifySnapshot(publishedMessage.Context.Message);
-
-        await harness.Stop();
+            // Assert
+            await VerifySnapshot(harness);
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 }

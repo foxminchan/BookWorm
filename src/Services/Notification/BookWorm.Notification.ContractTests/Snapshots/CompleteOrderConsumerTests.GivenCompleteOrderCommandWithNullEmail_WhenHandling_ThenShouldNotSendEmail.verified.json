@@ -1,7 +1,49 @@
 ﻿{
-  "OrderId": "Guid_1",
-  "FullName": "John Doe",
-  "TotalMoney": 99.99,
-  "Id": "Guid_2",
-  "CreationDate": "DateTime_1"
+  "harness": {
+    "Messages": [
+      {
+        "Published": "CompleteOrderCommand",
+        "MessageId": "Guid_1",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:CompleteOrderCommand",
+        "Message": {
+          "OrderId": "Guid_3",
+          "FullName": "John Doe",
+          "TotalMoney": 150.99,
+          "Id": "Guid_4",
+          "CreationDate": "DateTime_1"
+        }
+      },
+      {
+        "Received": "CompleteOrderCommand",
+        "MessageId": "Guid_1",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:CompleteOrderCommand",
+        "Message": {
+          "OrderId": "Guid_3",
+          "FullName": "John Doe",
+          "TotalMoney": 150.99,
+          "Id": "Guid_5",
+          "CreationDate": "DateTime_2"
+        }
+      }
+    ]
+  },
+  "consumer": {
+    "Consumed": [
+      {
+        "Received": "CompleteOrderCommand",
+        "MessageId": "Guid_1",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:CompleteOrderCommand",
+        "Message": {
+          "OrderId": "Guid_3",
+          "FullName": "John Doe",
+          "TotalMoney": 150.99,
+          "Id": "Guid_5",
+          "CreationDate": "DateTime_2"
+        }
+      }
+    ]
+  }
 }
