@@ -38,8 +38,8 @@
     <PackageReference Include="Verify.TUnit" />
     <PackageReference Include="Verify.MassTransit" />
     <Compile
-      Include="$(SolutionDir)\tests\BookWorm.Common\SnapshotTestBase.cs"
-      Link="SnapshotTestBase.cs"
+      Include="$(SolutionDir)\tests\BookWorm.Common\SnapshotTestHelper.cs"
+      Link="SnapshotTestHelper.cs"
     />
   </ItemGroup>
   <ItemGroup Condition="$(MSBuildProjectFullPath.Contains('Tests'))">

@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Notification.ContractTests.Consumers;
 
-public sealed class CleanUpSentEmailConsumerTests : SnapshotTestBase
+public sealed class CleanUpSentEmailConsumerTests
 {
     private readonly Mock<GlobalLogBuffer> _logBufferMock;
     private readonly Mock<ILogger<CleanUpSentEmailIntegrationEventHandler>> _loggerMock;
@@ -66,7 +66,7 @@ public sealed class CleanUpSentEmailConsumerTests : SnapshotTestBase
             // Assert
             var consumer = harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
 
-            await VerifySnapshot(new { harness, consumer });
+            await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _repositoryMock.Verify(
                 x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()),
@@ -127,7 +127,7 @@ public sealed class CleanUpSentEmailConsumerTests : SnapshotTestBase
             // Assert
             var consumer = harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
 
-            await VerifySnapshot(new { harness, consumer });
+            await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _repositoryMock.Verify(
                 x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()),

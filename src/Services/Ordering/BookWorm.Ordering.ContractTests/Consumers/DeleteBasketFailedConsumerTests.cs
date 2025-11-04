@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Ordering.ContractTests.Consumers;
 
-public sealed class DeleteBasketFailedConsumerTests : SnapshotTestBase
+public sealed class DeleteBasketFailedConsumerTests
 {
     private readonly Guid _basketId;
     private readonly string _email;
@@ -62,7 +62,7 @@ public sealed class DeleteBasketFailedConsumerTests : SnapshotTestBase
             // Assert
             var consumer = harness.GetConsumerHarness<DeleteBasketFailedCommandHandler>();
 
-            await VerifySnapshot(new { harness, consumer });
+            await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _repositoryMock.Verify(
                 x => x.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()),
@@ -108,7 +108,7 @@ public sealed class DeleteBasketFailedConsumerTests : SnapshotTestBase
             // Assert
             var consumer = harness.GetConsumerHarness<DeleteBasketFailedCommandHandler>();
 
-            await VerifySnapshot(new { harness, consumer });
+            await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _repositoryMock.Verify(
                 x => x.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()),

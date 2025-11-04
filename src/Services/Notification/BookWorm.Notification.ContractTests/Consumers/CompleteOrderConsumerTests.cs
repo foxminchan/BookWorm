@@ -14,7 +14,7 @@ using MimeKit;
 
 namespace BookWorm.Notification.ContractTests.Consumers;
 
-public sealed class CompleteOrderConsumerTests : SnapshotTestBase
+public sealed class CompleteOrderConsumerTests
 {
     private const decimal TotalMoney = 150.99m;
     private const string FullName = "John Doe";
@@ -59,7 +59,7 @@ public sealed class CompleteOrderConsumerTests : SnapshotTestBase
             // Assert
             var consumer = harness.GetConsumerHarness<CompleteOrderCommandHandler>();
 
-            await VerifySnapshot(new { harness, consumer });
+            await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _senderMock.Verify(
                 x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
@@ -96,7 +96,7 @@ public sealed class CompleteOrderConsumerTests : SnapshotTestBase
             // Assert
             var consumer = harness.GetConsumerHarness<CompleteOrderCommandHandler>();
 
-            await VerifySnapshot(new { harness, consumer });
+            await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _senderMock.Verify(
                 x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
@@ -133,7 +133,7 @@ public sealed class CompleteOrderConsumerTests : SnapshotTestBase
             // Assert
             var consumer = harness.GetConsumerHarness<CompleteOrderCommandHandler>();
 
-            await VerifySnapshot(new { harness, consumer });
+            await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _senderMock.Verify(
                 x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),

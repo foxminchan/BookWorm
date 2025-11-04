@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Rating.ContractTests.Publishers;
 
-public sealed class FeedbackDeletedEventPublisherTests : SnapshotTestBase
+public sealed class FeedbackDeletedEventPublisherTests
 {
     [Test]
     public async Task GivenFeedbackDeletedIntegrationEvent_WhenPublished_ThenShouldMatchContract()
@@ -31,7 +31,7 @@ public sealed class FeedbackDeletedEventPublisherTests : SnapshotTestBase
             await harness.Bus.Publish(@event);
 
             // Assert
-            await VerifySnapshot(harness);
+            await SnapshotTestHelper.Verify(harness);
         }
         finally
         {
