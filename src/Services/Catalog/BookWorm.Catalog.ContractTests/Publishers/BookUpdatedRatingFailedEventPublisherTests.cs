@@ -50,42 +50,26 @@ public sealed class BookUpdatedRatingFailedEventPublisherTests : SnapshotTestBas
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Act
-        await harness.Bus.Publish(integrationEvent);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(integrationEvent);
 
-        // Assert
-        var consumerHarness = harness.GetConsumerHarness<FeedbackCreatedIntegrationEventHandler>();
+            // Assert
+            await VerifySnapshot(harness);
 
-        (await consumerHarness.Consumed.Any<FeedbackCreatedIntegrationEvent>()).ShouldBeTrue();
-        (await harness.Published.Any<BookUpdatedRatingFailedIntegrationEvent>()).ShouldBeTrue();
-
-        var publishedMessage = harness
-            .Published.Select<BookUpdatedRatingFailedIntegrationEvent>()
-            .First();
-
-        publishedMessage.Context.Message.FeedbackId.ShouldBe(_feedbackId);
-
-        // Verify the published event contract structure and properties
-        await VerifySnapshot(
-            new
-            {
-                EventType = nameof(BookUpdatedRatingFailedIntegrationEvent),
-                Properties = new { publishedMessage.Context.Message.FeedbackId },
-                Schema = new
-                {
-                    FeedbackIdType = publishedMessage.Context.Message.FeedbackId.GetType().Name,
-                    HasId = publishedMessage.Context.Message.Id != Guid.Empty,
-                    HasCreationDate = publishedMessage.Context.Message.CreationDate != default,
-                },
-            }
-        );
-
-        _repositoryMock.Verify(
-            x => x.GetByIdAsync(_bookId, It.IsAny<CancellationToken>()),
-            Times.Once
-        );
-        _unitOfWorkMock.Verify(x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()), Times.Once);
-
-        await harness.Stop();
+            _repositoryMock.Verify(
+                x => x.GetByIdAsync(_bookId, It.IsAny<CancellationToken>()),
+                Times.Once
+            );
+            _unitOfWorkMock.Verify(
+                x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
+                Times.Once
+            );
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 }

@@ -1,20 +1,68 @@
 ﻿{
-  "CommandType": "PlaceOrderCommand",
-  "Properties": {
-    "BasketId": "Guid_1",
-    "FullName": "Test User",
-    "Email": "test@example.com",
-    "OrderId": "Guid_2",
-    "TotalMoney": 99.99
+  "harness": {
+    "Messages": [
+      {
+        "Published": "PlaceOrderCommand",
+        "MessageId": "Guid_1",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:PlaceOrderCommand",
+        "Message": {
+          "BasketId": "Guid_3",
+          "FullName": "Test User",
+          "Email": "test@example.com",
+          "OrderId": "Guid_4",
+          "TotalMoney": 99.99,
+          "Id": "Guid_5",
+          "CreationDate": "DateTime_1"
+        }
+      },
+      {
+        "Received": "PlaceOrderCommand",
+        "MessageId": "Guid_1",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:PlaceOrderCommand",
+        "Message": {
+          "BasketId": "Guid_3",
+          "FullName": "Test User",
+          "Email": "test@example.com",
+          "OrderId": "Guid_4",
+          "TotalMoney": 99.99,
+          "Id": "Guid_6",
+          "CreationDate": "DateTime_2"
+        }
+      },
+      {
+        "Published": "BasketDeletedCompleteIntegrationEvent",
+        "MessageId": "Guid_7",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:BasketDeletedCompleteIntegrationEvent",
+        "Message": {
+          "OrderId": "Guid_4",
+          "BasketId": "Guid_3",
+          "TotalMoney": 99.99,
+          "Id": "Guid_8",
+          "CreationDate": "DateTime_3"
+        }
+      }
+    ]
   },
-  "Schema": {
-    "BasketIdType": "Guid",
-    "FullNameType": "String",
-    "EmailType": "String",
-    "OrderIdType": "Guid",
-    "TotalMoneyType": "Decimal",
-    "HasId": true,
-    "HasCreationDate": true,
-    "IsIntegrationEvent": true
+  "consumer": {
+    "Consumed": [
+      {
+        "Received": "PlaceOrderCommand",
+        "MessageId": "Guid_1",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:PlaceOrderCommand",
+        "Message": {
+          "BasketId": "Guid_3",
+          "FullName": "Test User",
+          "Email": "test@example.com",
+          "OrderId": "Guid_4",
+          "TotalMoney": 99.99,
+          "Id": "Guid_6",
+          "CreationDate": "DateTime_2"
+        }
+      }
+    ]
   }
 }

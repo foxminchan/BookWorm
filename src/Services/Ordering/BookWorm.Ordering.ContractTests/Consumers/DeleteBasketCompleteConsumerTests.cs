@@ -28,55 +28,34 @@ public sealed class DeleteBasketCompleteConsumerTests : SnapshotTestBase
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Act
-        await harness.Bus.Publish(command);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(command);
 
-        // Assert
-        var consumerHarness = harness.GetConsumerHarness<DeleteBasketCompleteCommandHandler>();
+            // Assert
+            var consumer = harness.GetConsumerHarness<DeleteBasketCompleteCommandHandler>();
 
-        (await consumerHarness.Consumed.Any<DeleteBasketCompleteCommand>()).ShouldBeTrue();
-        (await harness.Published.Any<Fault<DeleteBasketCompleteCommand>>()).ShouldBeFalse();
+            await VerifySnapshot(new { harness, consumer });
 
-        var consumedMessage = consumerHarness
-            .Consumed.Select<DeleteBasketCompleteCommand>()
-            .First();
-
-        // Verify the consumed command contract structure
-        await VerifySnapshot(
-            new
-            {
-                CommandType = nameof(DeleteBasketCompleteCommand),
-                Properties = new
-                {
-                    consumedMessage.Context.Message.OrderId,
-                    consumedMessage.Context.Message.TotalMoney,
-                },
-                Schema = new
-                {
-                    OrderIdType = consumedMessage.Context.Message.OrderId.GetType().Name,
-                    TotalMoneyType = consumedMessage.Context.Message.TotalMoney.GetType().Name,
-                    HasId = consumedMessage.Context.Message.Id != Guid.Empty,
-                    HasCreationDate = consumedMessage.Context.Message.CreationDate != default,
-                    IsIntegrationEvent = true,
-                },
-            }
-        );
-
-        // Verify that information was logged
-        _loggerMock.Verify(
-            x =>
-                x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>(
-                        (v, t) => v.ToString()!.Contains("Basket deletion completed")
+            // Verify that information was logged
+            _loggerMock.Verify(
+                x =>
+                    x.Log(
+                        LogLevel.Information,
+                        It.IsAny<EventId>(),
+                        It.Is<It.IsAnyType>(
+                            (v, t) => v.ToString()!.Contains("Basket deletion completed")
+                        ),
+                        It.IsAny<Exception>(),
+                        It.IsAny<Func<It.IsAnyType, Exception?, string>>()
                     ),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
-                ),
-            Times.Once
-        );
-
-        await harness.Stop();
+                Times.Once
+            );
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 }

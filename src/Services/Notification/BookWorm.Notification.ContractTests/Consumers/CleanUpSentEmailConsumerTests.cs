@@ -58,33 +58,43 @@ public sealed class CleanUpSentEmailConsumerTests : SnapshotTestBase
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Act
-        await harness.Bus.Publish(command);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(command);
 
-        // Assert
-        var consumerHarness = harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
-        (await consumerHarness.Consumed.Any<CleanUpSentEmailIntegrationEvent>()).ShouldBeTrue();
+            // Assert
+            var consumer = harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
 
-        _repositoryMock.Verify(
-            x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()),
-            Times.Once
-        );
+            await VerifySnapshot(new { harness, consumer });
 
-        _repositoryMock.Verify(
-            x => x.BulkDelete(It.Is<IEnumerable<Outbox>>(emails => emails.Count() == 3)),
-            Times.Once
-        );
+            _repositoryMock.Verify(
+                x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()),
+                Times.Once
+            );
 
-        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+            _repositoryMock.Verify(
+                x => x.BulkDelete(It.Is<IEnumerable<Outbox>>(emails => emails.Count() == 3)),
+                Times.Once
+            );
 
-        VerifyLogMessage(LogLevel.Debug, "Starting cleanup of sent emails", Times.Once());
-        VerifyLogMessage(LogLevel.Debug, "Found 3 sent emails to delete", Times.Once());
-        VerifyLogMessage(LogLevel.Information, "Successfully cleaned up sent emails", Times.Once());
+            _unitOfWorkMock.Verify(
+                x => x.SaveChangesAsync(It.IsAny<CancellationToken>()),
+                Times.Once
+            );
 
-        // Contract verification - CleanUpSentEmailIntegrationEvent has no parameters so it's deterministic
-        await VerifySnapshot(command);
-
-        await harness.Stop();
+            VerifyLogMessage(LogLevel.Debug, "Starting cleanup of sent emails", Times.Once());
+            VerifyLogMessage(LogLevel.Debug, "Found 3 sent emails to delete", Times.Once());
+            VerifyLogMessage(
+                LogLevel.Information,
+                "Successfully cleaned up sent emails",
+                Times.Once()
+            );
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 
     [Test]
@@ -109,29 +119,35 @@ public sealed class CleanUpSentEmailConsumerTests : SnapshotTestBase
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Act
-        await harness.Bus.Publish(command);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(command);
 
-        // Assert
-        var consumerHarness = harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
-        (await consumerHarness.Consumed.Any<CleanUpSentEmailIntegrationEvent>()).ShouldBeTrue();
+            // Assert
+            var consumer = harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
 
-        _repositoryMock.Verify(
-            x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()),
-            Times.Once
-        );
+            await VerifySnapshot(new { harness, consumer });
 
-        _repositoryMock.Verify(x => x.BulkDelete(It.IsAny<IEnumerable<Outbox>>()), Times.Never);
+            _repositoryMock.Verify(
+                x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()),
+                Times.Once
+            );
 
-        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+            _repositoryMock.Verify(x => x.BulkDelete(It.IsAny<IEnumerable<Outbox>>()), Times.Never);
 
-        VerifyLogMessage(LogLevel.Debug, "Starting cleanup of sent emails", Times.Once());
-        VerifyLogMessage(LogLevel.Debug, "No sent emails found for cleanup", Times.Once());
+            _unitOfWorkMock.Verify(
+                x => x.SaveChangesAsync(It.IsAny<CancellationToken>()),
+                Times.Never
+            );
 
-        // Contract verification - CleanUpSentEmailIntegrationEvent has no parameters so it's deterministic
-        await VerifySnapshot(command);
-
-        await harness.Stop();
+            VerifyLogMessage(LogLevel.Debug, "Starting cleanup of sent emails", Times.Once());
+            VerifyLogMessage(LogLevel.Debug, "No sent emails found for cleanup", Times.Once());
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 
     [Test]

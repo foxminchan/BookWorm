@@ -50,31 +50,33 @@ public sealed class BookUpdatedRatingFailedConsumerTests : SnapshotTestBase
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Act
-        await harness.Bus.Publish(integrationEvent);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(integrationEvent);
 
-        // Assert
-        var consumerHarness =
-            harness.GetConsumerHarness<BookUpdatedRatingFailedIntegrationEventHandler>();
+            // Assert
+            var consumer =
+                harness.GetConsumerHarness<BookUpdatedRatingFailedIntegrationEventHandler>();
 
-        (
-            await consumerHarness.Consumed.Any<BookUpdatedRatingFailedIntegrationEvent>()
-        ).ShouldBeTrue();
+            await VerifySnapshot(new { harness, consumer });
 
-        _repositoryMock.Verify(
-            x => x.GetByIdAsync(_feedbackId, It.IsAny<CancellationToken>()),
-            Times.Once
-        );
+            _repositoryMock.Verify(
+                x => x.GetByIdAsync(_feedbackId, It.IsAny<CancellationToken>()),
+                Times.Once
+            );
 
-        _repositoryMock.Verify(x => x.Delete(feedback), Times.Once);
+            _repositoryMock.Verify(x => x.Delete(feedback), Times.Once);
 
-        _unitOfWorkMock.Verify(x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()), Times.Once);
-
-        // Contract verification with deterministic data
-        var contractEvent = new BookUpdatedRatingFailedIntegrationEvent(Guid.CreateVersion7());
-        await VerifySnapshot(contractEvent);
-
-        await harness.Stop();
+            _unitOfWorkMock.Verify(
+                x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
+                Times.Once
+            );
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 
     [Test]
@@ -97,33 +99,32 @@ public sealed class BookUpdatedRatingFailedConsumerTests : SnapshotTestBase
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Act
-        await harness.Bus.Publish(integrationEvent);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(integrationEvent);
 
-        // Assert
-        var consumerHarness =
-            harness.GetConsumerHarness<BookUpdatedRatingFailedIntegrationEventHandler>();
+            // Assert
+            var consumer =
+                harness.GetConsumerHarness<BookUpdatedRatingFailedIntegrationEventHandler>();
 
-        (
-            await consumerHarness.Consumed.Any<BookUpdatedRatingFailedIntegrationEvent>()
-        ).ShouldBeTrue();
+            await VerifySnapshot(new { harness, consumer });
 
-        _repositoryMock.Verify(
-            x => x.GetByIdAsync(_feedbackId, It.IsAny<CancellationToken>()),
-            Times.Once
-        );
+            _repositoryMock.Verify(
+                x => x.GetByIdAsync(_feedbackId, It.IsAny<CancellationToken>()),
+                Times.Once
+            );
 
-        _repositoryMock.Verify(x => x.Delete(It.IsAny<Feedback>()), Times.Never);
+            _repositoryMock.Verify(x => x.Delete(It.IsAny<Feedback>()), Times.Never);
 
-        _unitOfWorkMock.Verify(
-            x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
-            Times.Never
-        );
-
-        // Contract verification with deterministic data
-        var contractEvent = new BookUpdatedRatingFailedIntegrationEvent(Guid.CreateVersion7());
-        await VerifySnapshot(contractEvent);
-
-        await harness.Stop();
+            _unitOfWorkMock.Verify(
+                x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
+                Times.Never
+            );
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 }

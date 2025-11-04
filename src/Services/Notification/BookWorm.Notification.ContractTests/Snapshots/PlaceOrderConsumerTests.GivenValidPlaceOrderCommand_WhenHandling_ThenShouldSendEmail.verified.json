@@ -1,9 +1,55 @@
 ﻿{
-  "BasketId": "Guid_1",
-  "FullName": "John Doe",
-  "Email": "john.doe@example.com",
-  "OrderId": "Guid_2",
-  "TotalMoney": 99.99,
-  "Id": "Guid_3",
-  "CreationDate": "DateTime_1"
+  "harness": {
+    "Messages": [
+      {
+        "Published": "PlaceOrderCommand",
+        "MessageId": "Guid_1",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:PlaceOrderCommand",
+        "Message": {
+          "BasketId": "Guid_3",
+          "FullName": "John Doe",
+          "Email": "john.doe@example.com",
+          "OrderId": "Guid_4",
+          "TotalMoney": 99.99,
+          "Id": "Guid_5",
+          "CreationDate": "DateTime_1"
+        }
+      },
+      {
+        "Received": "PlaceOrderCommand",
+        "MessageId": "Guid_1",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:PlaceOrderCommand",
+        "Message": {
+          "BasketId": "Guid_3",
+          "FullName": "John Doe",
+          "Email": "john.doe@example.com",
+          "OrderId": "Guid_4",
+          "TotalMoney": 99.99,
+          "Id": "Guid_6",
+          "CreationDate": "DateTime_2"
+        }
+      }
+    ]
+  },
+  "consumer": {
+    "Consumed": [
+      {
+        "Received": "PlaceOrderCommand",
+        "MessageId": "Guid_1",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:PlaceOrderCommand",
+        "Message": {
+          "BasketId": "Guid_3",
+          "FullName": "John Doe",
+          "Email": "john.doe@example.com",
+          "OrderId": "Guid_4",
+          "TotalMoney": 99.99,
+          "Id": "Guid_6",
+          "CreationDate": "DateTime_2"
+        }
+      }
+    ]
+  }
 }

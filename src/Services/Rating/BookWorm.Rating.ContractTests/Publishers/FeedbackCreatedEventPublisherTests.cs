@@ -25,17 +25,17 @@ public sealed class FeedbackCreatedEventPublisherTests : SnapshotTestBase
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Act
-        await harness.Bus.Publish(@event);
+        try
+        {
+            // Act
+            await harness.Bus.Publish(@event);
 
-        // Assert
-        (await harness.Published.Any<FeedbackCreatedIntegrationEvent>()).ShouldBeTrue();
-
-        var publishedMessage = harness.Published.Select<FeedbackCreatedIntegrationEvent>().First();
-
-        // Verify contract structure
-        await VerifySnapshot(publishedMessage.Context.Message);
-
-        await harness.Stop();
+            // Assert
+            await VerifySnapshot(harness);
+        }
+        finally
+        {
+            await harness.Stop();
+        }
     }
 }
