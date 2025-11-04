@@ -12,7 +12,7 @@ using MimeKit;
 
 namespace BookWorm.Notification.ContractTests.Consumers;
 
-public sealed class ResendErrorEmailConsumerTests : SnapshotTestBase
+public sealed class ResendErrorEmailConsumerTests
 {
     private readonly Mock<GlobalLogBuffer> _logBufferMock = new();
     private readonly Mock<ILogger<ResendErrorEmailIntegrationEventHandler>> _loggerMock = new();
@@ -57,7 +57,7 @@ public sealed class ResendErrorEmailConsumerTests : SnapshotTestBase
             // Assert
             var consumer = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
 
-            await VerifySnapshot(new { harness, consumer });
+            await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _repositoryMock.Verify(
                 x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()),
@@ -132,7 +132,7 @@ public sealed class ResendErrorEmailConsumerTests : SnapshotTestBase
             // Assert
             var consumer = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
 
-            await VerifySnapshot(new { harness, consumer });
+            await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _repositoryMock.Verify(
                 x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()),
@@ -201,7 +201,7 @@ public sealed class ResendErrorEmailConsumerTests : SnapshotTestBase
             // Assert
             var consumer = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
 
-            await VerifySnapshot(new { harness, consumer });
+            await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _senderMock.Verify(
                 x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
@@ -280,7 +280,7 @@ public sealed class ResendErrorEmailConsumerTests : SnapshotTestBase
             // Assert
             var consumer = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
 
-            await VerifySnapshot(new { harness, consumer });
+            await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _senderMock.Verify(
                 x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
@@ -348,7 +348,7 @@ public sealed class ResendErrorEmailConsumerTests : SnapshotTestBase
             // Assert
             var consumer = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
 
-            await VerifySnapshot(new { harness, consumer });
+            await SnapshotTestHelper.Verify(new { harness, consumer });
 
             capturedMessage.ShouldNotBeNull();
             capturedMessage.To.Mailboxes.First().Name.ShouldBe("John Doe");
@@ -406,7 +406,7 @@ public sealed class ResendErrorEmailConsumerTests : SnapshotTestBase
             // Assert
             var consumer = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
 
-            await VerifySnapshot(new { harness, consumer });
+            await SnapshotTestHelper.Verify(new { harness, consumer });
 
             VerifyLogMessage(LogLevel.Error, "Failed to resend email", Times.Once());
 
@@ -465,7 +465,7 @@ public sealed class ResendErrorEmailConsumerTests : SnapshotTestBase
             // Assert
             var consumer = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
 
-            await VerifySnapshot(new { harness, consumer });
+            await SnapshotTestHelper.Verify(new { harness, consumer });
 
             capturedToken.ShouldNotBe(CancellationToken.None);
             capturedToken.CanBeCanceled.ShouldBeTrue();

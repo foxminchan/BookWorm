@@ -2,30 +2,27 @@ using System.Text.RegularExpressions;
 
 namespace BookWorm.Common;
 
-public abstract partial class SnapshotTestBase
+public static partial class SnapshotTestHelper
 {
-    static SnapshotTestBase()
+    public static Task Verify(object target)
     {
-        VerifierSettings.UseStrictJson();
+        return Verifier
+            .Verify(target)
+            .UseStrictJson()
+            .AddScrubber(builder =>
+            {
+                var content = builder.ToString();
 
-        VerifierSettings.AddScrubber(builder =>
-        {
-            var content = builder.ToString();
+                // Scrub GUIDs to make snapshots deterministic
+                var scrubbedContent = GuidRegex().Replace(content, "Guid_Scrubbed");
 
-            // Scrub GUIDs to make snapshots deterministic
-            var scrubbedContent = GuidRegex().Replace(content, "Guid_Scrubbed");
+                // Scrub DateTime values to make snapshots deterministic
+                scrubbedContent = DateTimeRegex().Replace(scrubbedContent, "DateTime_Scrubbed");
 
-            // Scrub DateTime values to make snapshots deterministic
-            scrubbedContent = DateTimeRegex().Replace(scrubbedContent, "DateTime_Scrubbed");
-
-            builder.Clear();
-            builder.Append(scrubbedContent);
-        });
-    }
-
-    protected static SettingsTask VerifySnapshot(object target)
-    {
-        return Verify(target).UseDirectory(GetSnapshotsDirectory());
+                builder.Clear();
+                builder.Append(scrubbedContent);
+            })
+            .UseDirectory(GetSnapshotsDirectory());
     }
 
     private static string GetSnapshotsDirectory()
@@ -52,7 +49,9 @@ public abstract partial class SnapshotTestBase
             var csprojFiles = directory.GetFiles("*.csproj");
             if (
                 csprojFiles.Length > 0
-                && csprojFiles.Any(f => f.Name.Contains("Test", StringComparison.OrdinalIgnoreCase))
+                && csprojFiles.Any(f =>
+                    f.Name.Contains("ContractTests", StringComparison.OrdinalIgnoreCase)
+                )
             )
             {
                 return directory.FullName;

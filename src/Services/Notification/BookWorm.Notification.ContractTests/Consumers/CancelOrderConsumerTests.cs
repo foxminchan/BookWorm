@@ -12,7 +12,7 @@ using MimeKit;
 
 namespace BookWorm.Notification.ContractTests.Consumers;
 
-public sealed class CancelOrderConsumerTests : SnapshotTestBase
+public sealed class CancelOrderConsumerTests
 {
     private readonly string _email;
     private readonly string _fullName;
@@ -66,7 +66,7 @@ public sealed class CancelOrderConsumerTests : SnapshotTestBase
             // Assert
             var consumer = harness.GetConsumerHarness<CancelOrderCommandHandler>();
 
-            await VerifySnapshot(new { harness, consumer });
+            await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _senderMock.Verify(
                 x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
@@ -103,7 +103,7 @@ public sealed class CancelOrderConsumerTests : SnapshotTestBase
             // Assert
             var consumer = harness.GetConsumerHarness<CancelOrderCommandHandler>();
 
-            await VerifySnapshot(new { harness, consumer });
+            await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _senderMock.Verify(
                 x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
@@ -140,7 +140,7 @@ public sealed class CancelOrderConsumerTests : SnapshotTestBase
             // Assert
             var consumer = harness.GetConsumerHarness<CancelOrderCommandHandler>();
 
-            await VerifySnapshot(new { harness, consumer });
+            await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _senderMock.Verify(
                 x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),

@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Finance.ContractTests.Saga;
 
-public sealed class OrderStateMachineContractTests : SnapshotTestBase
+public sealed class OrderStateMachineContractTests
 {
     private ITestHarness _harness = null!;
     private ServiceProvider _provider = null!;
@@ -70,7 +70,7 @@ public sealed class OrderStateMachineContractTests : SnapshotTestBase
         await Task.Delay(500);
 
         // Assert
-        await VerifySnapshot(new { harness = _harness, sagaHarness = _sagaHarness });
+        await SnapshotTestHelper.Verify(new { harness = _harness, sagaHarness = _sagaHarness });
     }
 
     [Test]
@@ -107,7 +107,7 @@ public sealed class OrderStateMachineContractTests : SnapshotTestBase
         await Task.Delay(500);
 
         // Assert
-        await VerifySnapshot(new { harness = _harness, sagaHarness = _sagaHarness });
+        await SnapshotTestHelper.Verify(new { harness = _harness, sagaHarness = _sagaHarness });
     }
 
     [Test]
@@ -145,7 +145,7 @@ public sealed class OrderStateMachineContractTests : SnapshotTestBase
         await Task.Delay(500);
 
         // Assert
-        await VerifySnapshot(new { harness = _harness, sagaHarness = _sagaHarness });
+        await SnapshotTestHelper.Verify(new { harness = _harness, sagaHarness = _sagaHarness });
     }
 
     [Test]
@@ -184,7 +184,7 @@ public sealed class OrderStateMachineContractTests : SnapshotTestBase
         await Task.Delay(500);
 
         // Assert
-        await VerifySnapshot(new { harness = _harness, sagaHarness = _sagaHarness });
+        await SnapshotTestHelper.Verify(new { harness = _harness, sagaHarness = _sagaHarness });
     }
 
     [Test]
@@ -223,6 +223,6 @@ public sealed class OrderStateMachineContractTests : SnapshotTestBase
         await Task.Delay(500);
 
         // Assert
-        await VerifySnapshot(new { harness = _harness, sagaHarness = _sagaHarness });
+        await SnapshotTestHelper.Verify(new { harness = _harness, sagaHarness = _sagaHarness });
     }
 }

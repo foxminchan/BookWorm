@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Catalog.ContractTests.Publishers;
 
-public sealed class BookUpdatedRatingFailedEventPublisherTests : SnapshotTestBase
+public sealed class BookUpdatedRatingFailedEventPublisherTests
 {
     private readonly Guid _bookId;
     private readonly Guid _feedbackId;
@@ -56,7 +56,7 @@ public sealed class BookUpdatedRatingFailedEventPublisherTests : SnapshotTestBas
             await harness.Bus.Publish(integrationEvent);
 
             // Assert
-            await VerifySnapshot(harness);
+            await SnapshotTestHelper.Verify(harness);
 
             _repositoryMock.Verify(
                 x => x.GetByIdAsync(_bookId, It.IsAny<CancellationToken>()),

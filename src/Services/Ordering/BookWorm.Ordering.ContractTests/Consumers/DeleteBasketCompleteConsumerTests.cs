@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Ordering.ContractTests.Consumers;
 
-public sealed class DeleteBasketCompleteConsumerTests : SnapshotTestBase
+public sealed class DeleteBasketCompleteConsumerTests
 {
     private const decimal TotalMoney = 125.99m;
     private readonly Mock<ILogger<DeleteBasketCompleteCommandHandler>> _loggerMock = new();
@@ -36,7 +36,7 @@ public sealed class DeleteBasketCompleteConsumerTests : SnapshotTestBase
             // Assert
             var consumer = harness.GetConsumerHarness<DeleteBasketCompleteCommandHandler>();
 
-            await VerifySnapshot(new { harness, consumer });
+            await SnapshotTestHelper.Verify(new { harness, consumer });
 
             // Verify that information was logged
             _loggerMock.Verify(

@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Basket.ContractTests.Publishers;
 
-public sealed class BasketDeletedEventPublisherTests : SnapshotTestBase
+public sealed class BasketDeletedEventPublisherTests
 {
     private readonly Guid _basketId;
     private readonly PlaceOrderCommand _command;
@@ -45,7 +45,7 @@ public sealed class BasketDeletedEventPublisherTests : SnapshotTestBase
             await harness.Bus.Publish(_command);
 
             // Assert
-            await VerifySnapshot(harness);
+            await SnapshotTestHelper.Verify(harness);
 
             _repositoryMock.Verify(x => x.DeleteBasketAsync(_basketId.ToString()), Times.Once);
         }
@@ -75,7 +75,7 @@ public sealed class BasketDeletedEventPublisherTests : SnapshotTestBase
             await harness.Bus.Publish(_command);
 
             // Assert
-            await VerifySnapshot(harness);
+            await SnapshotTestHelper.Verify(harness);
 
             _repositoryMock.Verify(x => x.DeleteBasketAsync(_basketId.ToString()), Times.Once);
         }

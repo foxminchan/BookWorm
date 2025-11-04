@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Scheduler.ContractTests.Publishers;
 
-public sealed class CleanUpSentEmailEventPublisherTests : SnapshotTestBase
+public sealed class CleanUpSentEmailEventPublisherTests
 {
     [Test]
     public async Task GivenCleanUpSentEmailIntegrationEvent_WhenPublished_ThenShouldMatchContract()
@@ -27,7 +27,7 @@ public sealed class CleanUpSentEmailEventPublisherTests : SnapshotTestBase
             await harness.Bus.Publish(@event);
 
             // Assert
-            await VerifySnapshot(harness);
+            await SnapshotTestHelper.Verify(harness);
         }
         finally
         {

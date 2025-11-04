@@ -12,7 +12,7 @@ using MimeKit;
 
 namespace BookWorm.Notification.ContractTests.Consumers;
 
-public sealed class PlaceOrderConsumerTests : SnapshotTestBase
+public sealed class PlaceOrderConsumerTests
 {
     private readonly MailKitSettings _mailKitSettings;
     private readonly Mock<IRenderer> _rendererMock;
@@ -71,7 +71,7 @@ public sealed class PlaceOrderConsumerTests : SnapshotTestBase
             // Assert
             var consumer = harness.GetConsumerHarness<PlaceOrderCommandHandler>();
 
-            await VerifySnapshot(new { harness, consumer });
+            await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _senderMock.Verify(
                 x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
@@ -105,7 +105,7 @@ public sealed class PlaceOrderConsumerTests : SnapshotTestBase
             // Assert
             var consumer = harness.GetConsumerHarness<PlaceOrderCommandHandler>();
 
-            await VerifySnapshot(new { harness, consumer });
+            await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _senderMock.Verify(
                 x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
@@ -139,7 +139,7 @@ public sealed class PlaceOrderConsumerTests : SnapshotTestBase
             // Assert
             var consumer = harness.GetConsumerHarness<PlaceOrderCommandHandler>();
 
-            await VerifySnapshot(new { harness, consumer });
+            await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _senderMock.Verify(
                 x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),

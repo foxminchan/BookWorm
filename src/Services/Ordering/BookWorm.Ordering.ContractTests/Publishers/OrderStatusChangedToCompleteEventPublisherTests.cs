@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Ordering.ContractTests.Publishers;
 
-public sealed class OrderStatusChangedToCompleteEventPublisherTests : SnapshotTestBase
+public sealed class OrderStatusChangedToCompleteEventPublisherTests
 {
     [Test]
     public async Task GivenOrderStatusChangedToCompleteIntegrationEvent_WhenPublished_ThenShouldMatchContract()
@@ -39,7 +39,7 @@ public sealed class OrderStatusChangedToCompleteEventPublisherTests : SnapshotTe
             await harness.Bus.Publish(@event);
 
             // Assert
-            await VerifySnapshot(harness);
+            await SnapshotTestHelper.Verify(harness);
         }
         finally
         {

@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Catalog.ContractTests.Consumers;
 
-public sealed class FeedbackCreatedConsumerTests : SnapshotTestBase
+public sealed class FeedbackCreatedConsumerTests
 {
     private readonly Guid _feedbackId;
     private readonly int _rating;
@@ -60,7 +60,7 @@ public sealed class FeedbackCreatedConsumerTests : SnapshotTestBase
             // Assert
             var consumer = harness.GetConsumerHarness<FeedbackCreatedIntegrationEventHandler>();
 
-            await VerifySnapshot(new { harness, consumer });
+            await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _repositoryMock.Verify(
                 x => x.GetByIdAsync(book.Id, It.IsAny<CancellationToken>()),
