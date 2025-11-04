@@ -80,7 +80,7 @@
       Include="Microsoft.Agents.AI.Hosting.A2A.AspNetCore"
       Version="$(AgentFrameworkVersion)"
     />
-    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.66.0-preview" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.67.0-preview" />
     <!-- Miscellaneous -->
     <PackageVersion Include="AspNetCore.HealthChecks.UI.Client" Version="$(HealthChecksVersion)" />
     <PackageVersion Include="AspNetCore.HealthChecks.Uris" Version="$(HealthChecksVersion)" />
@@ -121,8 +121,8 @@
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="TngTech.ArchUnitNET.TUnit" Version="0.12.3" />
-    <PackageVersion Include="TUnit" Version="0.90.6" />
-    <PackageVersion Include="Verify.TUnit" Version="31.4.1" />
+    <PackageVersion Include="TUnit" Version="0.90.19" />
+    <PackageVersion Include="Verify.TUnit" Version="31.4.2" />
     <!-- Microsoft Testing Platform -->
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.1.0" />
     <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="$(MsTestVersion)" />
