@@ -1,4 +1,4 @@
-﻿namespace BookWorm.ServiceDefaults.Keycloak;
+﻿namespace BookWorm.Chassis.Security.Keycloak;
 
 public static class KeycloakClaimTypes
 {

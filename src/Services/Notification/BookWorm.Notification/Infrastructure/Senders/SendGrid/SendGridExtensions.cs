@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection.Extensions;
+﻿using BookWorm.Chassis.Utilities.Configuration;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using SendGrid;
 
 namespace BookWorm.Notification.Infrastructure.Senders.SendGrid;

@@ -1,6 +1,7 @@
-﻿using BookWorm.ServiceDefaults.Keycloak;
+﻿using BookWorm.Chassis.Security.Keycloak;
+using Microsoft.AspNetCore.Authorization;
 
-namespace BookWorm.ServiceDefaults.Auth;
+namespace BookWorm.Chassis.Security.Extensions;
 
 public static class PolicyBuilderExtensions
 {

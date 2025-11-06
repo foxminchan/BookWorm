@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using BookWorm.Chassis.Exceptions;
 
-namespace BookWorm.Chassis.Guards;
+namespace BookWorm.Chassis.Utilities.Guards;
 
 public static class GuardAgainstNotFoundExtensions
 {

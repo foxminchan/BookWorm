@@ -1,4 +1,5 @@
-﻿using Mediator;
+﻿using BookWorm.Chassis.Utilities.Guards;
+using Mediator;
 using Microsoft.Extensions.Caching.Hybrid;
 
 namespace BookWorm.Catalog.Features.Books.Get;

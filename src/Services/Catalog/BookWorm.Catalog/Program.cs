@@ -1,5 +1,6 @@
 using BookWorm.Catalog.Extensions;
 using BookWorm.Catalog.Grpc.Services;
+using BookWorm.Chassis.Security.Keycloak;
 
 var builder = WebApplication.CreateBuilder(args);
 

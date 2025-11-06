@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Chassis.Guards;
+﻿namespace BookWorm.Chassis.Utilities.Guards;
 
 public static class GuardAgainstAuthenticationExtensions
 {

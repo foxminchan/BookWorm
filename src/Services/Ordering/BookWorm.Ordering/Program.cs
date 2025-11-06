@@ -1,3 +1,4 @@
+using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Ordering.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);

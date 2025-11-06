@@ -35,6 +35,8 @@
   - [x] Implemented a microservices chassis for cross-cutting concerns and service infrastructure
 - [x] Implemented API versioning and feature flags for flexible application management
 - [x] Set up AuthN/AuthZ with Keycloak
+  - [x] Used Authorization Code Flow with PKCE for user authentication
+  - [x] Enabled Token Exchange for service-to-service authentication
 - [x] Implemented caching with HybridCache
 - [x] Incorporated AI components:
   - [x] Text embedding with Embedding Gemma
@@ -42,6 +44,7 @@
   - [x] Standardized AI tooling with Model Context Protocol (MCP)
   - [x] Orchestrated multi-agent workflows using Agent Framework
   - [x] Enabled agent-to-agent communication via A2A Protocol
+  - [ ] Supported Agent interactions via AG-UI Protocol
 - [x] Configured CI/CD with GitHub Actions
 - [x] Created comprehensive documentation:
   - [x] Used OpenAPI for REST API & AsyncAPI for event-driven endpoints

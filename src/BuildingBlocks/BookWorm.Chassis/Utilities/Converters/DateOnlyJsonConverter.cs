@@ -2,7 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace BookWorm.Chassis.Converters;
+namespace BookWorm.Chassis.Utilities.Converters;
 
 public sealed class DateOnlyJsonConverter : JsonConverter<DateOnly>
 {

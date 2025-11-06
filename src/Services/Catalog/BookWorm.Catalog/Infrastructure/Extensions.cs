@@ -3,8 +3,8 @@ using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.AI.Ingestion;
 using BookWorm.Chassis.AI.Search;
 using BookWorm.Chassis.Caching;
+using BookWorm.Chassis.Utilities.Configuration;
 using BookWorm.Constants.Aspire;
-using BookWorm.ServiceDefaults.Configuration;
 
 namespace BookWorm.Catalog.Infrastructure;
 

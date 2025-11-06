@@ -1,4 +1,5 @@
-﻿using MailKit;
+﻿using BookWorm.Chassis.Utilities.Configuration;
+using MailKit;
 
 namespace BookWorm.Notification.Infrastructure.Senders.MailKit;
 

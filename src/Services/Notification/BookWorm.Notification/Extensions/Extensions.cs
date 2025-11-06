@@ -1,6 +1,7 @@
 ﻿using BookWorm.Chassis.EF;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using BookWorm.Chassis.Repository;
+using BookWorm.Chassis.Utilities.Converters;
 using BookWorm.Notification.Infrastructure;
 using BookWorm.Notification.Infrastructure.Senders.MailKit;
 using BookWorm.Notification.Infrastructure.Senders.Outbox;

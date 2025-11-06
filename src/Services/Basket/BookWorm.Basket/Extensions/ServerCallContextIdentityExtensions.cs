@@ -1,4 +1,5 @@
-﻿using Grpc.Core;
+﻿using BookWorm.Chassis.Security.Extensions;
+using Grpc.Core;
 
 namespace BookWorm.Basket.Extensions;
 

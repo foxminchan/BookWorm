@@ -1,4 +1,5 @@
-﻿using BookWorm.Ordering.Infrastructure.DistributedLock;
+﻿using BookWorm.Chassis.Security.Extensions;
+using BookWorm.Ordering.Infrastructure.DistributedLock;
 using BookWorm.Ordering.Infrastructure.Helpers;
 using Mediator;
 

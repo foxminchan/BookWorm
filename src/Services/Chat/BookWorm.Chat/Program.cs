@@ -1,3 +1,4 @@
+using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chat.Extensions;
 using BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
 using BookWorm.ServiceDefaults;

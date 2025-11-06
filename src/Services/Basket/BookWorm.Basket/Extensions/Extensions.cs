@@ -3,6 +3,8 @@ using BookWorm.Chassis.CQRS.Command;
 using BookWorm.Chassis.CQRS.Pipelines;
 using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
+using BookWorm.Chassis.Security.Extensions;
+using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Constants.Core;
 using MassTransit;
 using Mediator;

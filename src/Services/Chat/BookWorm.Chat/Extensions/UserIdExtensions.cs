@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Chat.Infrastructure.Helpers;
+﻿using BookWorm.Chassis.Utilities.Guards;
+
+namespace BookWorm.Chat.Infrastructure.Helpers;
 
 internal static class UserIdExtensions
 {

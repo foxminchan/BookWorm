@@ -1,4 +1,6 @@
 ﻿using BookWorm.Basket.Infrastructure.Exceptions;
+using BookWorm.Chassis.Security.Extensions;
+using BookWorm.Chassis.Utilities.Guards;
 using Mediator;
 
 namespace BookWorm.Basket.Features.Create;

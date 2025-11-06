@@ -1,4 +1,9 @@
-﻿namespace BookWorm.ServiceDefaults.Configuration;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
+
+namespace BookWorm.Chassis.Utilities.Configuration;
 
 public static class ConfigurationExtensions
 {

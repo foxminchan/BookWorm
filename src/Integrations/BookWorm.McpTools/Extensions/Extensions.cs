@@ -1,5 +1,5 @@
-﻿using BookWorm.McpTools.Options;
-using BookWorm.ServiceDefaults.Configuration;
+﻿using BookWorm.Chassis.Utilities.Configuration;
+using BookWorm.McpTools.Options;
 using Microsoft.Extensions.Options;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
