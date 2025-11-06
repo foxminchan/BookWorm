@@ -1,4 +1,6 @@
-﻿namespace BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
+﻿using BookWorm.Chassis.Security.Settings;
+
+namespace BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
 
 public static class OpenApiExtensions
 {

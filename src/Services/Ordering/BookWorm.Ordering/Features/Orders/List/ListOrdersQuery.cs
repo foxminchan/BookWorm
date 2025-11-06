@@ -1,4 +1,5 @@
-﻿using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
+﻿using BookWorm.Chassis.Security.Extensions;
+using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
 using BookWorm.Ordering.Infrastructure.Helpers;
 using BookWorm.SharedKernel.Results;
 using Mediator;

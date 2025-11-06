@@ -1,4 +1,5 @@
 using A2A;
+using BookWorm.Chassis.Security.Settings;
 using BookWorm.Chassis.Utilities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.OAuth;

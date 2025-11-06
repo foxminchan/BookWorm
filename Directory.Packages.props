@@ -41,7 +41,7 @@
     />
     <PackageVersion Include="CommunityToolkit.Aspire.OllamaSharp" Version="$(ToolKitVersion)" />
     <!-- Extra -->
-    <PackageVersion Include="Scalar.Aspire" Version="0.6.0" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.7.1" />
   </ItemGroup>
   <ItemGroup Label="Core Packages">
     <!-- Microsoft Extensions -->
@@ -85,7 +85,7 @@
     <PackageVersion Include="AspNetCore.HealthChecks.UI.Client" Version="$(HealthChecksVersion)" />
     <PackageVersion Include="AspNetCore.HealthChecks.Uris" Version="$(HealthChecksVersion)" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.0" />
-    <PackageVersion Include="Marten.AspNetCore" Version="8.13.3" />
+    <PackageVersion Include="Marten.AspNetCore" Version="8.14.0" />
     <PackageVersion Include="Mediator.Abstractions" Version="3.0.1" />
     <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.1" />
     <PackageVersion Include="Microsoft.FeatureManagement.AspNetCore" Version="4.3.0" />
@@ -121,7 +121,7 @@
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="TngTech.ArchUnitNET.TUnit" Version="0.12.3" />
-    <PackageVersion Include="TUnit" Version="0.90.32" />
+    <PackageVersion Include="TUnit" Version="1.0.0" />
     <!-- Contract Testing -->
     <PackageVersion Include="Verify.TUnit" Version="31.4.3" />
     <PackageVersion Include="Verify.MassTransit" Version="2.1.0" />

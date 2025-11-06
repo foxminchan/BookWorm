@@ -1,5 +1,5 @@
 ﻿using BookWorm.Catalog.Grpc.Services;
-using BookWorm.ServiceDefaults.Configuration;
+using BookWorm.Chassis.Utilities.Configuration;
 
 namespace BookWorm.Basket.Grpc;
 

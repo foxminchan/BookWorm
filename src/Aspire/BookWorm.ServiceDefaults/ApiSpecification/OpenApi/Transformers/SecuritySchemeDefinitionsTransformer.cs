@@ -1,4 +1,6 @@
-﻿using BookWorm.Chassis.Utilities;
+﻿using BookWorm.Chassis.Security.Keycloak;
+using BookWorm.Chassis.Security.Settings;
+using BookWorm.Chassis.Utilities;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 
@@ -20,13 +22,22 @@ internal sealed class SecuritySchemeDefinitionsTransformer(IdentityOptions ident
             return Task.CompletedTask;
         }
 
-        var realmPath = $"realms/{identityOptions.Realm}";
-
-        var authorizationUrl = $"{keycloakUrl}/{realmPath}/protocol/openid-connect/auth";
+        var authUrlBuilder = new StringBuilder();
+        authUrlBuilder.Append(keycloakUrl);
+        authUrlBuilder.Append('/');
+        authUrlBuilder.Append(
+            KeycloakEndpoints.Authorize.Replace("{realm}", identityOptions.Realm).TrimStart('/')
+        );
 
         // Please refer: https://github.com/scalar/scalar/issues/6225
-        var tokenUrl =
-            $"{Protocols.Http}://{Components.KeyCloak}/{realmPath}/protocol/openid-connect/token";
+        var tokenUrlBuilder = new StringBuilder();
+        tokenUrlBuilder.Append(Protocols.Http);
+        tokenUrlBuilder.Append("://");
+        tokenUrlBuilder.Append(Components.KeyCloak);
+        tokenUrlBuilder.Append('/');
+        tokenUrlBuilder.Append(
+            KeycloakEndpoints.Token.Replace("{realm}", identityOptions.Realm).TrimStart('/')
+        );
 
         var securityScheme = new OpenApiSecurityScheme
         {
@@ -37,8 +48,8 @@ internal sealed class SecuritySchemeDefinitionsTransformer(IdentityOptions ident
                 AuthorizationCode = new()
                 {
                     Scopes = identityOptions.Scopes!,
-                    AuthorizationUrl = new(authorizationUrl),
-                    TokenUrl = new(tokenUrl),
+                    AuthorizationUrl = new(authUrlBuilder.ToString()),
+                    TokenUrl = new(tokenUrlBuilder.ToString()),
                 },
             },
         };

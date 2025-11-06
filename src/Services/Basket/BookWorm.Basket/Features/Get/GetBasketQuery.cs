@@ -1,4 +1,6 @@
-﻿using Mediator;
+﻿using BookWorm.Chassis.Security.Extensions;
+using BookWorm.Chassis.Utilities.Guards;
+using Mediator;
 
 namespace BookWorm.Basket.Features.Get;
 

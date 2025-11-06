@@ -2,7 +2,6 @@
 global using System.Diagnostics.CodeAnalysis;
 global using System.Net;
 global using System.Text.Json;
-global using BookWorm.Chassis.Converters;
 global using BookWorm.Chassis.EventBus;
 global using BookWorm.Chassis.Exceptions;
 global using BookWorm.Constants.Aspire;
@@ -12,7 +11,6 @@ global using BookWorm.Notification.Domain.Exceptions;
 global using BookWorm.Notification.Infrastructure.Render;
 global using BookWorm.Notification.Infrastructure.Senders;
 global using BookWorm.ServiceDefaults;
-global using BookWorm.ServiceDefaults.Configuration;
 global using BookWorm.ServiceDefaults.Kestrel;
 global using MailKit.Net.Smtp;
 global using MassTransit;

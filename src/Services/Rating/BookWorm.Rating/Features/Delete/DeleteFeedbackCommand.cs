@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.Guards;
+﻿using BookWorm.Chassis.Utilities.Guards;
 using Mediator;
 
 namespace BookWorm.Rating.Features.Delete;

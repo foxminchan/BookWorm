@@ -1,7 +1,11 @@
 ﻿using System.Diagnostics;
 using System.Text.Json;
+using BookWorm.Chassis.Security.Settings;
+using BookWorm.Constants.Aspire;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
 
-namespace BookWorm.ServiceDefaults.Keycloak;
+namespace BookWorm.Chassis.Security.Keycloak;
 
 public sealed class KeycloakTokenIntrospectionMiddleware(
     IHttpClientFactory httpClientFactory,
@@ -24,8 +28,9 @@ public sealed class KeycloakTokenIntrospectionMiddleware(
 
         if (!string.IsNullOrWhiteSpace(token))
         {
-            var realmPath = $"realms/{identityOptions.Realm}";
-            var introspectionEndpoint = $"{realmPath}/protocol/openid-connect/token/introspect";
+            var introspectionEndpoint = KeycloakEndpoints
+                .Introspect.Replace("{realm}", identityOptions.Realm)
+                .TrimStart('/');
 
             using var httpClient = httpClientFactory.CreateClient(Components.KeyCloak);
 

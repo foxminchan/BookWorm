@@ -1,4 +1,5 @@
 using BookWorm.Chassis.AI.Extensions;
+using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Rating.Extensions;
 using BookWorm.Rating.Infrastructure.Agents;
 

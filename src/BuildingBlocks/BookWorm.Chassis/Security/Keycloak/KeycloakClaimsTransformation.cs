@@ -1,4 +1,11 @@
-namespace BookWorm.ServiceDefaults.Keycloak;
+using System.Security.Claims;
+using System.Text.Json.Nodes;
+using BookWorm.Chassis.Security.Extensions;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
+
+namespace BookWorm.Chassis.Security.Keycloak;
 
 /// <summary>
 ///     Transforms Keycloak resource roles claims into regular role claims.

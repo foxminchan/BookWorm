@@ -1,4 +1,6 @@
-﻿namespace BookWorm.ServiceDefaults.Kestrel;
+﻿using BookWorm.Chassis.Utilities.Configuration;
+
+namespace BookWorm.ServiceDefaults.Kestrel;
 
 public static class CorsExtensions
 {

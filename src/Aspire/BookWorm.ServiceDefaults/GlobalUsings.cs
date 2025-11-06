@@ -3,8 +3,6 @@ global using System.Text;
 global using System.Text.Json.Nodes;
 global using BookWorm.Constants.Aspire;
 global using BookWorm.Constants.Core;
-global using BookWorm.ServiceDefaults.Auth;
-global using BookWorm.ServiceDefaults.Configuration;
 global using Microsoft.AspNetCore.Authentication;
 global using Microsoft.AspNetCore.Authentication.JwtBearer;
 global using Microsoft.AspNetCore.Authentication.OAuth;

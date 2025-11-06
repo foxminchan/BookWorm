@@ -1,8 +1,8 @@
 ﻿using System.Security.Claims;
 using BookWorm.Chassis.Repository;
+using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
 using BookWorm.Ordering.Features.Buyers.Create;
-using BookWorm.ServiceDefaults.Keycloak;
 
 namespace BookWorm.Ordering.UnitTests.Features.Buyers.Create;
 

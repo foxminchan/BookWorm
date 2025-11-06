@@ -1,4 +1,5 @@
 ﻿using BookWorm.Chassis.Caching;
+using BookWorm.Chassis.Utilities.Configuration;
 using BookWorm.Ordering.Features.Orders.Stream;
 using BookWorm.Ordering.Infrastructure.EventStore.Subscriptions;
 

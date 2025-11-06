@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Ordering.Infrastructure.Helpers;
+﻿using BookWorm.Chassis.Utilities.Guards;
+
+namespace BookWorm.Ordering.Infrastructure.Helpers;
 
 public static class BuyerIdExtensions
 {

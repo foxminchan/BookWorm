@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chat.Models;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.VectorData;

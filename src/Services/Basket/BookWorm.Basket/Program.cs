@@ -1,5 +1,6 @@
 using BookWorm.Basket.Extensions;
 using BookWorm.Basket.Grpc.Services.Basket;
+using BookWorm.Chassis.Security.Keycloak;
 
 var builder = WebApplication.CreateBuilder(args);
 
