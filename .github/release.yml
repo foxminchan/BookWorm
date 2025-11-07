@@ -1,0 +1,90 @@
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+      - dependencies
+      - duplicate
+      - invalid
+      - wontfix
+    authors:
+      - dependabot
+      - github-actions[bot]
+
+  categories:
+    - title: 🚀 Features
+      labels:
+        - feature
+        - enhancement
+        - feature-request
+
+    - title: 🐛 Bug Fixes
+      labels:
+        - bug
+        - bugfix
+        - fix
+
+    - title: 📚 Documentation
+      labels:
+        - documentation
+        - docs
+
+    - title: 🏗️ Architecture & Refactoring
+      labels:
+        - refactor
+        - architecture
+        - performance
+
+    - title: 🧪 Testing
+      labels:
+        - test
+        - testing
+
+    - title: 🔒 Security
+      labels:
+        - security
+        - vulnerability
+
+    - title: 🛠️ Infrastructure & DevOps
+      labels:
+        - ci
+        - cd
+        - infrastructure
+        - devops
+
+    - title: 📦 Dependencies
+      labels:
+        - dependencies
+        - dependency-update
+
+    - title: 🔧 Maintenance
+      labels:
+        - chore
+        - maintenance
+        - cleanup
+
+    - title: 🎨 UI/UX
+      labels:
+        - ui
+        - ux
+        - design
+
+    - title: 📊 Services
+      labels:
+        - service:basket
+        - service:catalog
+        - service:chat
+        - service:finance
+        - service:notification
+        - service:ordering
+        - service:rating
+        - service:scheduler
+
+    - title: 🔌 Integrations
+      labels:
+        - integration
+        - mcp
+        - aspire
+
+    - title: Other Changes
+      labels:
+        - "*"
