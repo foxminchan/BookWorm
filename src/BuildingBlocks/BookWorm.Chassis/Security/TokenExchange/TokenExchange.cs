@@ -54,11 +54,15 @@ public sealed class TokenExchange(
         var content = await response.Content.ReadAsStringAsync(cancellationToken);
         using var tokenResponse = JsonDocument.Parse(content);
 
-        var accessToken =
-            tokenResponse.RootElement.GetProperty("access_token").GetString()
-            ?? throw new UnauthorizedAccessException(
-                "Token exchange did not return an access_token"
-            );
+        if (
+            !tokenResponse.RootElement.TryGetProperty("access_token", out var accessTokenElement)
+            || string.IsNullOrWhiteSpace(accessTokenElement.GetString())
+        )
+        {
+            throw new UnauthorizedAccessException("Token exchange did not return an access_token");
+        }
+
+        var accessToken = accessTokenElement.GetString()!;
 
         return accessToken;
     }
