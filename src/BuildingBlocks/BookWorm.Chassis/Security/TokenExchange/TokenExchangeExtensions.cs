@@ -11,12 +11,19 @@ public static class TokenExchangeExtensions
 {
     public static IHttpClientBuilder AddAuthTokenExchange(
         this IHttpClientBuilder builder,
-        string? serviceKey = null
+        string? serviceKey = null,
+        bool useSessionManagement = true
     )
     {
         var service = builder.Services;
 
         service.TryAddTransient<ITokenExchange, TokenExchange>();
+
+        if (useSessionManagement)
+        {
+            service.AddHybridCache();
+            service.Decorate<ITokenExchange, CachedTokenExchange>();
+        }
 
         service.AddTransient(sp => new HttpClientAuthorizationDelegatingHandler(
             sp.GetRequiredService<IHttpContextAccessor>(),
