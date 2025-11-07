@@ -1,8 +1,29 @@
 # Contributing to BookWorm
 
-Thank you for your interest in contributing to BookWorm! This document provides guidelines for contributing to the project.
+Thank you for your interest in contributing to BookWorm!
 
-# Getting Started
+We appreciate your help in making BookWorm better. Please follow the guidelines in this document to ensure a smooth contribution process.
+
+## Table of Contents
+
+- [Contributing to BookWorm](#contributing-to-bookworm)
+  - [Table of Contents](#table-of-contents)
+  - [Getting Started](#getting-started)
+  - [Development Workflow](#development-workflow)
+  - [Coding Standards](#coding-standards)
+  - [Integration Events Standards](#integration-events-standards)
+  - [Design Patterns](#design-patterns)
+  - [Testing Guidelines](#testing-guidelines)
+    - [Core Testing Principles](#core-testing-principles)
+    - [Test Organization](#test-organization)
+    - [Test Quality](#test-quality)
+    - [Tools and Resources](#tools-and-resources)
+  - [Pull Request Process](#pull-request-process)
+    - [Pull Request Process](#pull-request-process-1)
+  - [Need Help?](#need-help)
+
+
+## Getting Started
 
 1. **Fork the Repository**: Start by forking the main BookWorm repository.
 2. **Clone Your Fork**: git clone `https://github.com/YOUR-USERNAME/BookWorm.git`
@@ -12,7 +33,7 @@ Thank you for your interest in contributing to BookWorm! This document provides 
    git config --global core.autocrlf input
    ```
 
-# Development Workflow
+## Development Workflow
 
 1. **Create a Branch**: `git checkout -b feature/your-feature-name`
 2. **Make Changes**: Follow the coding conventions described below
@@ -22,13 +43,13 @@ Thank you for your interest in contributing to BookWorm! This document provides 
 
 For the branching strategy, please refer to the [Git Flow](https://nvie.com/posts/a-successful-git-branching-model/) model.
 
-# Coding Standards
+## Coding Standards
 
 - Follow DDD (Domain-Driven Design) principles
 - Use the latest C# features and idioms
 - Implement unit tests for all business logic
 - Maintain service boundaries - avoid direct cross-service dependencies
-- Use spaces for indentation (4 spaces per level, 2 spaces for csproj files)
+- Follow `.editorconfig` settings for code formatting
 - Prefer explicit type declarations when type isn't obvious
 - Use primary constructors for classes with immutable properties
 - Use expression-bodied members when appropriate
@@ -58,7 +79,7 @@ public sealed class BookService
 }
 ```
 
-# Integration Events Standards
+## Integration Events Standards
 
 When working with integration events for cross-service communication:
 
@@ -81,7 +102,7 @@ public sealed record UserCheckedOutIntegrationEvent(
 ) : IntegrationEvent;
 ```
 
-# Design Patterns
+## Design Patterns
 
 - Use CQRS with MediatR when applicable
 - Repository pattern for data access
@@ -94,37 +115,37 @@ public sealed record UserCheckedOutIntegrationEvent(
 - Use Factories or Builders for object creation
 - Use Specification pattern for complex queries
 
-# Testing Guidelines
+## Testing Guidelines
 
-## Core Testing Principles
+### Core Testing Principles
 
 - **100% Business Logic Coverage**: Write unit tests for all domain and business logic components
 - **Descriptive Test Names**: Use the `Given_When_Then` pattern for test naming (e.g., `Given_ValidBook_When_AddingToLibrary_Then_SuccessReturned`)
 - **Isolation**: Mock all external dependencies including repositories, services, and infrastructure components
 - **Comprehensive Scenarios**: Test both happy paths and edge cases, including validation failures and exception handling
 
-## Test Organization
+### Test Organization
 
 - Group tests by feature or domain entity
 - Create separate test fixtures for different testing scenarios
 - Use appropriate test attributes for categorization
 
-## Test Quality
+### Test Quality
 
 - Aim for high code coverage in domain logic (minimum 80%)
 - Avoid testing implementation details; focus on behaviors
 - Write deterministic tests that don't depend on environment or timing
 - Keep tests fast, independent, and repeatable
 
-## Tools and Resources
+### Tools and Resources
 
 - Use xUnit for testing framework
 - Utilize Moq or NSubstitute for mocking dependencies
 - For automated test generation, refer to our [GitHub Copilot test prompts](./prompts/unit-test.prompt.md)
 
-# Pull Request Process
-
 ## Pull Request Process
+
+### Pull Request Process
 
 1. **Code Quality**:
 
@@ -172,12 +193,10 @@ graph TD
 		H --> B
 ```
 
-# Need Help?
+## Need Help?
 
 If you have questions or need assistance, please:
 
 - Check existing issues
 - Create a new issue with a detailed description of your problem
 - Reach out to the maintainers
-
-Thank you for contributing to BookWorm!
