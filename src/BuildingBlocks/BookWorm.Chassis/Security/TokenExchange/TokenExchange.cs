@@ -1,5 +1,4 @@
 ﻿using System.Text.Json;
-using System.Text.Json.Serialization;
 using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Security.Settings;
 using BookWorm.Constants.Aspire;
@@ -11,7 +10,7 @@ public sealed class TokenExchange(
     IdentityOptions identityOptions
 ) : ITokenExchange
 {
-    public async Task<TokenExchangeResult> ExchangeAsync(
+    public async Task<string> ExchangeAsync(
         string subjectToken,
         string? audience = null,
         string? scope = null,
@@ -41,34 +40,26 @@ public sealed class TokenExchange(
             parameters.Add(new("scope", scope));
         }
 
-        using var content = new FormUrlEncodedContent(parameters);
+        using var requestContent = new FormUrlEncodedContent(parameters);
 
-        var response = await httpClient.PostAsync(tokenEndpoint, content, cancellationToken);
-        var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+        var response = await httpClient.PostAsync(tokenEndpoint, requestContent, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {
             throw new HttpRequestException(
-                $"Token exchange failed: {response.StatusCode} {response.ReasonPhrase}. Response: {responseBody}"
+                $"Token exchange failed: {response.StatusCode} {response.ReasonPhrase}"
             );
         }
 
-        var tokenResult = JsonSerializer.Deserialize(
-            responseBody,
-            TokenExchangeJsonContext.Default.TokenExchangeResult
-        );
+        var content = await response.Content.ReadAsStringAsync(cancellationToken);
+        using var tokenResponse = JsonDocument.Parse(content);
 
-        if (string.IsNullOrWhiteSpace(tokenResult?.AccessToken))
-        {
-            throw new InvalidOperationException(
-                $"Token exchange did not return an access_token. Response: {responseBody}"
+        var accessToken =
+            tokenResponse.RootElement.GetProperty("access_token").GetString()
+            ?? throw new UnauthorizedAccessException(
+                "Token exchange did not return an access_token"
             );
-        }
 
-        return tokenResult;
+        return accessToken;
     }
 }
-
-[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
-[JsonSerializable(typeof(TokenExchangeResult))]
-internal partial class TokenExchangeJsonContext : JsonSerializerContext;

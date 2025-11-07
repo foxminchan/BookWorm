@@ -9,8 +9,8 @@ public interface ITokenExchange
     /// <param name="audience">Optional requested audience for the exchanged token.</param>
     /// <param name="scope">Optional scope to request on the exchanged token.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A <see cref="TokenExchangeResult" /> describing the exchanged token or an error.</returns>
-    Task<TokenExchangeResult> ExchangeAsync(
+    /// <returns>The exchanged access token.</returns>
+    Task<string> ExchangeAsync(
         string subjectToken,
         string? audience = null,
         string? scope = null,
