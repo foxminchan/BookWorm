@@ -1,4 +1,6 @@
 ﻿using BookWorm.Constants.Aspire;
+using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -6,7 +8,35 @@ namespace BookWorm.Chassis.AI.Extensions;
 
 public static class ModelExtensions
 {
-    public static void AddAgentsTelemetry(this IHostApplicationBuilder builder)
+    public static IHostApplicationBuilder AddAIServices(this IHostApplicationBuilder builder)
+    {
+        if (
+            !string.IsNullOrWhiteSpace(
+                builder.Configuration.GetConnectionString(Components.Ollama.Chat)
+            )
+        )
+        {
+            builder
+                .AddOllamaApiClient(Components.Ollama.Chat)
+                .AddChatClient(otel =>
+                    otel.EnableSensitiveData = builder.Environment.IsDevelopment()
+                )
+                .UseFunctionInvocation();
+        }
+
+        if (
+            !string.IsNullOrWhiteSpace(
+                builder.Configuration.GetConnectionString(Components.Ollama.Embedding)
+            )
+        )
+        {
+            builder.AddOllamaApiClient(Components.Ollama.Embedding).AddEmbeddingGenerator();
+        }
+
+        return builder;
+    }
+
+    public static void WithAITelemetry(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;
 
@@ -20,17 +50,5 @@ public static class ModelExtensions
                     .AddSource("Microsoft.Agents.AI.Runtime.Abstractions.InMemoryActorStateStorage")
             )
             .WithMetrics(x => x.AddMeter("*Microsoft.Agents.AI"));
-    }
-
-    public static void AddChatClient(this IHostApplicationBuilder builder)
-    {
-        builder
-            .AddOllamaApiClient(Components.Ollama.Chat)
-            .AddChatClient(otel => otel.EnableSensitiveData = builder.Environment.IsDevelopment());
-    }
-
-    public static void AddEmbeddingGenerator(this IHostApplicationBuilder builder)
-    {
-        builder.AddOllamaApiClient(Components.Ollama.Embedding).AddEmbeddingGenerator();
     }
 }

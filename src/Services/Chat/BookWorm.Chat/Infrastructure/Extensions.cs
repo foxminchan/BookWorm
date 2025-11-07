@@ -20,8 +20,7 @@ internal static class Extensions
     {
         var services = builder.Services;
 
-        builder.AddChatClient();
-        builder.AddAgentsTelemetry();
+        builder.AddAIServices().WithAITelemetry();
         builder.AddMcpClient(Services.McpTools);
 
         builder.AddAgents();

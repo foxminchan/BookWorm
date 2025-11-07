@@ -64,11 +64,7 @@ internal static class Extensions
     {
         var services = builder.Services;
 
-        builder.AddChatClient();
-
-        builder.AddEmbeddingGenerator();
-
-        builder.AddAgentsTelemetry();
+        builder.AddAIServices().WithAITelemetry();
 
         services.AddScoped<IIngestionSource<Book>, BookDataIngestor>();
 
