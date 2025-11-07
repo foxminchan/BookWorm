@@ -59,6 +59,9 @@ public sealed class CompleteOrderConsumerTests
             // Assert
             var consumer = harness.GetConsumerHarness<CompleteOrderCommandHandler>();
 
+            // Wait for the consumer to consume the message
+            await consumer.Consumed.Any<CompleteOrderCommand>();
+
             await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _senderMock.Verify(
@@ -96,6 +99,9 @@ public sealed class CompleteOrderConsumerTests
             // Assert
             var consumer = harness.GetConsumerHarness<CompleteOrderCommandHandler>();
 
+            // Wait for the consumer to consume the message
+            await consumer.Consumed.Any<CompleteOrderCommand>();
+
             await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _senderMock.Verify(
@@ -132,6 +138,9 @@ public sealed class CompleteOrderConsumerTests
 
             // Assert
             var consumer = harness.GetConsumerHarness<CompleteOrderCommandHandler>();
+
+            // Wait for the consumer to consume the message
+            await consumer.Consumed.Any<CompleteOrderCommand>();
 
             await SnapshotTestHelper.Verify(new { harness, consumer });
 

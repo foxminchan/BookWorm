@@ -57,6 +57,9 @@ public sealed class ResendErrorEmailConsumerTests
             // Assert
             var consumer = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
 
+            // Wait for the consumer to consume the message
+            await consumer.Consumed.Any<ResendErrorEmailIntegrationEvent>();
+
             await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _repositoryMock.Verify(
@@ -132,6 +135,9 @@ public sealed class ResendErrorEmailConsumerTests
             // Assert
             var consumer = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
 
+            // Wait for the consumer to consume the message
+            await consumer.Consumed.Any<ResendErrorEmailIntegrationEvent>();
+
             await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _repositoryMock.Verify(
@@ -200,6 +206,9 @@ public sealed class ResendErrorEmailConsumerTests
 
             // Assert
             var consumer = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
+
+            // Wait for the consumer to consume the message
+            await consumer.Consumed.Any<ResendErrorEmailIntegrationEvent>();
 
             await SnapshotTestHelper.Verify(new { harness, consumer });
 
@@ -280,6 +289,9 @@ public sealed class ResendErrorEmailConsumerTests
             // Assert
             var consumer = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
 
+            // Wait for the consumer to consume the message
+            await consumer.Consumed.Any<ResendErrorEmailIntegrationEvent>();
+
             await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _senderMock.Verify(
@@ -348,6 +360,9 @@ public sealed class ResendErrorEmailConsumerTests
             // Assert
             var consumer = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
 
+            // Wait for the consumer to consume the message
+            await consumer.Consumed.Any<ResendErrorEmailIntegrationEvent>();
+
             await SnapshotTestHelper.Verify(new { harness, consumer });
 
             capturedMessage.ShouldNotBeNull();
@@ -405,6 +420,9 @@ public sealed class ResendErrorEmailConsumerTests
 
             // Assert
             var consumer = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
+
+            // Wait for the consumer to consume the message
+            await consumer.Consumed.Any<ResendErrorEmailIntegrationEvent>();
 
             await SnapshotTestHelper.Verify(new { harness, consumer });
 
@@ -464,6 +482,9 @@ public sealed class ResendErrorEmailConsumerTests
 
             // Assert
             var consumer = harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
+
+            // Wait for the consumer to consume the message
+            await consumer.Consumed.Any<ResendErrorEmailIntegrationEvent>();
 
             await SnapshotTestHelper.Verify(new { harness, consumer });
 

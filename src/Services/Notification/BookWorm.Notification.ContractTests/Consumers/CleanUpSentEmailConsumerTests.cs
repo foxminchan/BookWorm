@@ -66,6 +66,9 @@ public sealed class CleanUpSentEmailConsumerTests
             // Assert
             var consumer = harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
 
+            // Wait for the consumer to consume the message
+            await consumer.Consumed.Any<CleanUpSentEmailIntegrationEvent>();
+
             await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _repositoryMock.Verify(
@@ -126,6 +129,9 @@ public sealed class CleanUpSentEmailConsumerTests
 
             // Assert
             var consumer = harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
+
+            // Wait for the consumer to consume the message
+            await consumer.Consumed.Any<CleanUpSentEmailIntegrationEvent>();
 
             await SnapshotTestHelper.Verify(new { harness, consumer });
 
