@@ -25,7 +25,6 @@ internal static class Extensions
             {
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
-                    .UseFunctionInvocation()
                     .Use(PIIMiddleware.InvokeAsync, null)
                     .Use(GuardrailMiddleware.InvokeAsync, null)
                     .Build(sp);
@@ -77,7 +76,6 @@ internal static class Extensions
             {
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
-                    .UseFunctionInvocation()
                     .Use(GuardrailMiddleware.InvokeAsync, null)
                     .Build(sp);
 
@@ -110,7 +108,6 @@ internal static class Extensions
             {
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
-                    .UseFunctionInvocation()
                     .Use(GuardrailMiddleware.InvokeAsync, null)
                     .Build(sp);
 
@@ -143,7 +140,6 @@ internal static class Extensions
             {
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
-                    .UseFunctionInvocation()
                     .Use(PIIMiddleware.InvokeAsync, null)
                     .Use(GuardrailMiddleware.InvokeAsync, null)
                     .Build(sp);
@@ -177,7 +173,6 @@ internal static class Extensions
             {
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
-                    .UseFunctionInvocation()
                     .Use(GuardrailMiddleware.InvokeAsync, null)
                     .Build(sp);
 

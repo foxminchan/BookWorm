@@ -14,11 +14,7 @@ public static class Extensions
     {
         var services = builder.Services;
 
-        builder.AddChatClient();
-
-        builder.AddEmbeddingGenerator();
-
-        builder.AddAgentsTelemetry();
+        builder.AddAIServices().WithAITelemetry();
 
         builder.AddMcpClient(Constants.Aspire.Services.McpTools);
 
@@ -60,7 +56,6 @@ public static class Extensions
             {
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
-                    .UseFunctionInvocation()
                     .Use(PIIMiddleware.InvokeAsync, null)
                     .Use(GuardrailMiddleware.InvokeAsync, null)
                     .Build(sp);
