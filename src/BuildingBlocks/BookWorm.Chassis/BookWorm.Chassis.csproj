@@ -10,6 +10,7 @@
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
     <PackageReference Include="MassTransit.RabbitMQ" />
     <PackageReference Include="Scrutor" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
   </ItemGroup>
   <ItemGroup Label="AI">
     <PackageReference Include="Microsoft.Agents.AI.A2A" />

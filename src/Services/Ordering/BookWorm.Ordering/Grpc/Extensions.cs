@@ -1,6 +1,5 @@
 ﻿using BookWorm.Catalog.Grpc.Services;
-using BookWorm.Chassis.Security.Settings;
-using BookWorm.Chassis.Security.TokenAcquisition;
+using BookWorm.Chassis.Security.TokenExchange;
 using BookWorm.Chassis.Utilities.Configuration;
 
 namespace BookWorm.Ordering.Grpc;
@@ -27,18 +26,12 @@ internal static class Extensions
 
         services.AddSingleton<IBookService, BookService>();
 
-        var identity = services.BuildServiceProvider().GetService<IdentityOptions>();
-
-        var (basketAudience, basketScope) = identity.ResolveTokenExchangeTarget(
-            Constants.Aspire.Services.Basket
-        );
-
         services
             .AddGrpcServiceReference<BasketGrpcService.BasketGrpcServiceClient>(
                 $"{builder.GetScheme()}://{Constants.Aspire.Services.Basket}",
                 HealthStatus.Degraded
             )
-            .AddAuthTokenAcquisition(basketAudience, basketScope);
+            .AddAuthTokenExchange(Constants.Aspire.Services.Basket);
 
         services.AddSingleton<IBasketService, BasketService>();
 
