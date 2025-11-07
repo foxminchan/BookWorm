@@ -5,22 +5,22 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace BookWorm.Chassis.Security.TokenAcquisition;
+namespace BookWorm.Chassis.Security.TokenExchange;
 
 public static class TokenExchangeExtensions
 {
-    public static IHttpClientBuilder AddAuthTokenAcquisition(
+    public static IHttpClientBuilder AddAuthTokenExchange(
         this IHttpClientBuilder builder,
-        string? audience = null,
-        string? scope = null
+        string? serviceKey = null
     )
     {
-        builder.Services.TryAddTransient<ITokenExchange, TokenExchange>();
+        var service = builder.Services;
 
-        builder.Services.AddTransient(sp => new HttpClientAuthorizationDelegatingHandler(
+        service.TryAddTransient<ITokenExchange, TokenExchange>();
+
+        service.AddTransient(sp => new HttpClientAuthorizationDelegatingHandler(
             sp.GetRequiredService<IHttpContextAccessor>(),
-            audience,
-            scope
+            serviceKey
         ));
 
         builder.AddHttpMessageHandler<HttpClientAuthorizationDelegatingHandler>();
@@ -28,38 +28,9 @@ public static class TokenExchangeExtensions
         return builder;
     }
 
-    public static (string? Audience, string? Scope) ResolveTokenExchangeTarget(
-        this IdentityOptions? identity,
-        string serviceKey
-    )
-    {
-        if (identity?.TokenExchangeTargets is null || identity.TokenExchangeTargets.Count == 0)
-        {
-            return (null, null);
-        }
-
-        // exact key match
-        if (identity.TokenExchangeTargets.TryGetValue(serviceKey, out var s))
-        {
-            return (serviceKey, s);
-        }
-
-        // fallback: find a configured key that is contained in the service key or vice versa
-        var found = identity.TokenExchangeTargets.FirstOrDefault(kvp =>
-            !string.IsNullOrWhiteSpace(kvp.Key)
-            && (
-                serviceKey.Contains(kvp.Key, StringComparison.OrdinalIgnoreCase)
-                || kvp.Key.Contains(serviceKey, StringComparison.OrdinalIgnoreCase)
-            )
-        );
-
-        return !string.IsNullOrWhiteSpace(found.Key) ? (found.Key, found.Value) : (null, null);
-    }
-
     private sealed class HttpClientAuthorizationDelegatingHandler(
         IHttpContextAccessor httpContextAccessor,
-        string? audience,
-        string? scope
+        string? serviceKey
     ) : DelegatingHandler
     {
         protected override async Task<HttpResponseMessage> SendAsync(
@@ -79,6 +50,10 @@ public static class TokenExchangeExtensions
                 return await base.SendAsync(request, cancellationToken);
             }
 
+            var identityOptions = context.RequestServices.GetService<IdentityOptions>();
+
+            var (audience, scope) = ResolveTokenExchangeTarget(identityOptions, serviceKey);
+
             var tokenExchange = context.RequestServices.GetRequiredService<ITokenExchange>();
 
             var exchangedToken = await tokenExchange.ExchangeAsync(
@@ -94,6 +69,37 @@ public static class TokenExchangeExtensions
             );
 
             return await base.SendAsync(request, cancellationToken);
+        }
+
+        private static (string? Audience, string? Scope) ResolveTokenExchangeTarget(
+            IdentityOptions? identity,
+            string? serviceKey
+        )
+        {
+            if (
+                string.IsNullOrWhiteSpace(serviceKey)
+                || identity?.TokenExchangeTargets is null
+                || identity.TokenExchangeTargets.Count == 0
+            )
+            {
+                return (null, null);
+            }
+
+            if (identity.TokenExchangeTargets.TryGetValue(serviceKey, out var scope))
+            {
+                return (serviceKey, scope);
+            }
+
+            // fallback: find a configured key that is contained in the service key
+            var found = identity.TokenExchangeTargets.FirstOrDefault(kvp =>
+                !string.IsNullOrWhiteSpace(kvp.Key)
+                && (
+                    serviceKey.Contains(kvp.Key, StringComparison.OrdinalIgnoreCase)
+                    || kvp.Key.Contains(serviceKey, StringComparison.OrdinalIgnoreCase)
+                )
+            );
+
+            return !string.IsNullOrWhiteSpace(found.Key) ? (found.Key, found.Value) : (null, null);
         }
     }
 }

@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace BookWorm.Chassis.Security.TokenAcquisition;
+namespace BookWorm.Chassis.Security.TokenExchange;
 
 public sealed class TokenExchangeResult
 {

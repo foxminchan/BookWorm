@@ -4,7 +4,7 @@ using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Security.Settings;
 using BookWorm.Constants.Aspire;
 
-namespace BookWorm.Chassis.Security.TokenAcquisition;
+namespace BookWorm.Chassis.Security.TokenExchange;
 
 public sealed class TokenExchange(
     IHttpClientFactory httpClientFactory,
@@ -18,11 +18,6 @@ public sealed class TokenExchange(
         CancellationToken cancellationToken = default
     )
     {
-        if (string.IsNullOrWhiteSpace(subjectToken))
-        {
-            throw new ArgumentException("subjectToken is required", nameof(subjectToken));
-        }
-
         var tokenEndpoint = KeycloakEndpoints
             .Token.Replace("{realm}", identityOptions.Realm)
             .TrimStart('/');
@@ -58,19 +53,10 @@ public sealed class TokenExchange(
             );
         }
 
-        TokenExchangeResult? tokenResult;
-
-        try
-        {
-            tokenResult = JsonSerializer.Deserialize(
-                responseBody,
-                TokenExchangeJsonContext.Default.TokenExchangeResult
-            );
-        }
-        catch (JsonException ex)
-        {
-            throw new InvalidOperationException("Failed to parse token exchange response.", ex);
-        }
+        var tokenResult = JsonSerializer.Deserialize(
+            responseBody,
+            TokenExchangeJsonContext.Default.TokenExchangeResult
+        );
 
         if (string.IsNullOrWhiteSpace(tokenResult?.AccessToken))
         {
