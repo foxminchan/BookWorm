@@ -10,7 +10,6 @@ public sealed class CreateChatEndpoint
     {
         app.MapPost(
                 string.Empty,
-                [Obsolete("Please Consider using AG-UI for chat functionalities")]
                 async (CreateChatCommand request, ISender sender, LinkGenerator linker) =>
                     await HandleAsync(request, sender, linker)
             )
