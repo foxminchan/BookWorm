@@ -128,7 +128,7 @@ var chatApi = builder
         Protocols.Http,
         url =>
         {
-            url.DisplayText = "Chat DevUI";
+            url.DisplayText = "DevUI";
             url.Url = "/devui";
         }
     );
@@ -181,7 +181,7 @@ var ratingApi = builder
         Protocols.Http,
         url =>
         {
-            url.DisplayText = "Chat DevUI";
+            url.DisplayText = "DevUI";
             url.Url = "/devui";
         }
     );
