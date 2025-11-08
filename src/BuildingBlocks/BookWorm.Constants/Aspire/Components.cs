@@ -28,18 +28,13 @@ public static class Components
             $"{nameof(Notification).ToLowerInvariant()}{Suffix}";
     }
 
-    public static class Ollama
+    public static class OpenAI
     {
-        public static readonly string Resource = nameof(Ollama).ToLowerInvariant();
+        public static readonly string Resource = nameof(OpenAI).ToLowerInvariant();
         public static readonly string Chat = $"{nameof(Chat).ToLowerInvariant()}";
         public static readonly string Embedding = $"{nameof(Embedding).ToLowerInvariant()}";
-
-        public static class Google
-        {
-            public const string EmbeddingGemma300M = "embeddinggemma:300m";
-            public const string Gemma34B = "gemma3:4b";
-            public const string Gemma312B = "gemma3:12b";
-        }
+        public const string OpenAIGpt4oMini = "gpt-4o-mini";
+        public const string TextEmbedding3Large = "text-embedding-3-large";
     }
 
     public static class Azure
@@ -53,10 +48,5 @@ public static class Components
             public static readonly string Blob = nameof(Blob).ToLowerInvariant();
             public static readonly string BlobContainer = $"{Services.Catalog}-{Blob}";
         }
-    }
-
-    public static class Observability
-    {
-        public static readonly string Collector = nameof(Collector).ToLowerInvariant();
     }
 }

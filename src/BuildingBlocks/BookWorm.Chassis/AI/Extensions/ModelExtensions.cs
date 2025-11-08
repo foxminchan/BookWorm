@@ -1,5 +1,4 @@
 ﻿using BookWorm.Constants.Aspire;
-using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -12,25 +11,27 @@ public static class ModelExtensions
     {
         if (
             !string.IsNullOrWhiteSpace(
-                builder.Configuration.GetConnectionString(Components.Ollama.Chat)
+                builder.Configuration.GetConnectionString(Components.OpenAI.Chat)
             )
         )
         {
             builder
-                .AddOllamaApiClient(Components.Ollama.Chat)
-                .AddChatClient(otel =>
-                    otel.EnableSensitiveData = builder.Environment.IsDevelopment()
+                .AddOpenAIClient(
+                    Components.OpenAI.Chat,
+                    configureOptions =>
+                        configureOptions.EnableSensitiveTelemetryData =
+                            builder.Environment.IsDevelopment()
                 )
-                .UseFunctionInvocation();
+                .AddChatClient();
         }
 
         if (
             !string.IsNullOrWhiteSpace(
-                builder.Configuration.GetConnectionString(Components.Ollama.Embedding)
+                builder.Configuration.GetConnectionString(Components.OpenAI.Embedding)
             )
         )
         {
-            builder.AddOllamaApiClient(Components.Ollama.Embedding).AddEmbeddingGenerator();
+            builder.AddOpenAIClient(Components.OpenAI.Embedding).AddEmbeddingGenerator();
         }
 
         return builder;
@@ -39,6 +40,11 @@ public static class ModelExtensions
     public static void WithAITelemetry(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;
+
+        AppContext.SetSwitch(
+            "OpenAI.Experimental.EnableOpenTelemetry",
+            builder.Environment.IsDevelopment()
+        );
 
         services
             .AddOpenTelemetry()

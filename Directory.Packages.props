@@ -14,6 +14,7 @@
     <PackageVersion Include="Aspire.Hosting.Azure.SignalR" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Keycloak" Version="$(AspireUnstableVersion)" />
+    <PackageVersion Include="Aspire.Hosting.OpenAI" Version="$(AspireUnstableVersion)" />
     <PackageVersion Include="Aspire.Hosting.Qdrant" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Yarp" Version="$(AspireUnstableVersion)" />
@@ -31,15 +32,14 @@
       Include="Aspire.StackExchange.Redis.DistributedCaching"
       Version="$(AspireVersion)"
     />
+    <PackageVersion Include="Aspire.Azure.AI.OpenAI" Version="$(AspireUnstableVersion)" />
     <!-- Community Toolkit -->
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.k6" Version="$(ToolKitVersion)" />
-    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.Ollama" Version="$(ToolKitVersion)" />
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.MailPit" Version="$(ToolKitVersion)" />
     <PackageVersion
       Include="CommunityToolkit.Aspire.Hosting.McpInspector"
       Version="$(ToolKitVersion)"
     />
-    <PackageVersion Include="CommunityToolkit.Aspire.OllamaSharp" Version="$(ToolKitVersion)" />
     <!-- Extra -->
     <PackageVersion Include="Scalar.Aspire" Version="0.7.1" />
   </ItemGroup>
@@ -126,7 +126,7 @@
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="TngTech.ArchUnitNET.TUnit" Version="0.12.3" />
-    <PackageVersion Include="TUnit" Version="1.0.27" />
+    <PackageVersion Include="TUnit" Version="1.0.30" />
     <!-- Contract Testing -->
     <PackageVersion Include="Verify.TUnit" Version="31.4.3" />
     <PackageVersion Include="Verify.MassTransit" Version="2.1.0" />

@@ -25,6 +25,7 @@ help:
     echo " trust - Trust the development certificate"
     echo " hook - Setup pre-commit hooks"
     echo " clean - Clean build artifacts"
+    echo " check-openai - Check if OpenAI API key is configured"
     echo " run - Run the application (default)"
     echo " update-eventcatalog - Update EventCatalog bun packages"
     echo " update-docusaurus - Update Docusaurus bun packages"
@@ -86,9 +87,25 @@ _hook-windows:
 _hook-linux _hook-macos:
     git add .husky/pre-commit || echo "Warning: .husky/pre-commit not found"
 
+# Check if OpenAI API key is configured
+
+check-openai:
+    echo "Checking OpenAI API key configuration..."
+    just _check-openai-{{ os() }}
+
+# Check OpenAI API key (Windows)
+
+_check-openai-windows:
+    pwsh.exe -NoLogo -ExecutionPolicy Bypass -File scripts/check-openai-secret.ps1
+
+# Check OpenAI API key (Linux/macOS)
+
+_check-openai-linux _check-openai-macos:
+    bash scripts/check-openai-secret.sh
+
 # Run the application
 
-run: restore trust hook
+run: restore trust hook check-openai
     aspire run
 
 # Update EventCatalog bun packages
