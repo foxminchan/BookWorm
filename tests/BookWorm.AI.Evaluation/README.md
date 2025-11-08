@@ -100,3 +100,11 @@ dotnet test --filter "FullyQualifiedName~BookWorm.AI.Evaluation"
 
 - [Microsoft.Extensions.AI.Evaluation Documentation](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.ai.evaluation)
 - [Microsoft.Extensions.AI.Evaluation.Quality](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.ai.evaluation.quality)
+
+## Examples
+
+The `Examples/` directory contains code examples demonstrating how to use the built-in evaluators:
+
+- **BuiltInEvaluatorsExample.cs**: Shows how to use CoherenceEvaluator, RelevanceEvaluator, CompletenessEvaluator, and FluencyEvaluator with an LLM judge.
+
+These examples require an actual IChatClient implementation (e.g., Azure OpenAI, OpenAI) to work in production.
