@@ -98,9 +98,6 @@
     <PackageVersion Include="Scrutor" Version="6.1.0" />
     <PackageVersion Include="DistributedLock.Redis" Version="1.1.1" />
   </ItemGroup>
-  <ItemGroup Label="Audit Packages" Condition="'$(IsTestProject)' != 'true'">
-    <GlobalPackageReference Include="Microsoft.Extensions.AuditReports" Version="$(MsExtVersion)" />
-  </ItemGroup>
   <ItemGroup Label="Integration Packages">
     <!-- gRPC -->
     <PackageVersion Include="Grpc.AspNetCore.HealthChecks" Version="$(GrpcVersion)" />
