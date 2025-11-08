@@ -47,6 +47,8 @@
     <!-- Microsoft Extensions -->
     <PackageVersion Include="Microsoft.Extensions.Caching.Hybrid" Version="$(MsExtVersion)" />
     <PackageVersion Include="Microsoft.Extensions.Compliance.Redaction" Version="$(MsExtVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="$(MsExtVersion)" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="$(AspireVersion)" />
     <!-- ASP.NET Core -->
@@ -86,6 +88,10 @@
       Version="$(AgentFrameworkVersion)"
     />
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.67.1-preview" />
+    <!-- AI Evaluation -->
+    <PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="9.10.2" />
+    <PackageVersion Include="Microsoft.Extensions.AI.Evaluation" Version="$(MsExtVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.AI.Evaluation.Quality" Version="$(MsExtVersion)" />
     <!-- Miscellaneous -->
     <PackageVersion Include="AspNetCore.HealthChecks.UI.Client" Version="$(HealthChecksVersion)" />
     <PackageVersion Include="AspNetCore.HealthChecks.Uris" Version="$(HealthChecksVersion)" />
