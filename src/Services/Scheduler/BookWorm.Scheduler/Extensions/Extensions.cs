@@ -1,5 +1,5 @@
 ﻿using TickerQ.Dashboard.DependencyInjection;
-using TickerQ.EntityFrameworkCore.DependencyInjection;
+using TickerQ.Instrumentation.OpenTelemetry;
 
 namespace BookWorm.Scheduler.Extensions;
 
@@ -40,21 +40,31 @@ internal static class Extensions
             }
         );
 
-        services.AddTickerQ(opt =>
+        services.AddOpenTelemetry().WithTracing(tracing => tracing.AddSource(nameof(TickerQ)));
+
+        services.AddTickerQ(options =>
         {
-            opt.SetMaxConcurrency(Environment.ProcessorCount);
-            opt.SetInstanceIdentifier(Environment.MachineName);
-            opt.UpdateMissedJobCheckDelay(TimeSpan.FromMinutes(5));
-            opt.AddOperationalStore<SchedulerDbContext>(efOpt =>
+            options.ConfigureScheduler(schedulerOptions =>
             {
-                efOpt.CancelMissedTickersOnAppStart();
-                efOpt.UseModelCustomizerForMigrations();
+                schedulerOptions.MaxConcurrency = Environment.ProcessorCount;
+                schedulerOptions.NodeIdentifier = Environment.MachineName;
             });
-            opt.AddDashboard(config =>
+
+            options.AddDashboard(dashboardOptions =>
             {
-                config.BasePath = "/tickerq";
-                config.EnableBasicAuth = true;
+                dashboardOptions.SetBasePath("/admin/tickerq");
+
+                if (builder.Environment.IsDevelopment())
+                {
+                    dashboardOptions.WithNoAuth();
+                }
+                else
+                {
+                    dashboardOptions.WithApiKey(builder.Configuration["TickerQ__ApiKey"]);
+                }
             });
+
+            options.AddOpenTelemetryInstrumentation();
         });
     }
 }

@@ -22,7 +22,7 @@ public static class ProxyExtensions
             .AddYarp(Services.Gateway)
             .WithStaticFiles()
             .WithExternalHttpEndpoints()
-            .WithIconName("ArrowRoutingRectangleMultiple")
+            .WithIconName("SerialPort")
             .WithConfiguration(yarpBuilder =>
             {
                 foreach (var service in services)
