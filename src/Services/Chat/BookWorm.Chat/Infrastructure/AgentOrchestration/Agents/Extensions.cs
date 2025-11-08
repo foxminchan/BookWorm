@@ -205,7 +205,10 @@ internal static class Extensions
             Constants.Other.Agents.ChatAgent,
             (sp, key) =>
             {
-                var workflow = sp.GetRequiredService<IAgentOrchestrationService>()
+                using var scope = sp.CreateScope();
+
+                var workflow = scope
+                    .ServiceProvider.GetRequiredService<IAgentOrchestrationService>()
                     .BuildAgentsWorkflow();
 
                 var agent = workflow.AsAgent(Guid.CreateVersion7().ToString(), key);
