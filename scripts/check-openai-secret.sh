@@ -4,13 +4,13 @@
 
 set -e
 
-PROJECT_PATH = "src/Aspire/BookWorm.AppHost/BookWorm.AppHost.csproj"
-SECRET_KEY = "Parameters:openai-openai-apikey"
+PROJECT_PATH="src/Aspire/BookWorm.AppHost/BookWorm.AppHost.csproj"
+SECRET_KEY="Parameters:openai-openai-apikey"
 
 echo -e "\033[36mChecking for OpenAI API key in user secrets...\033[0m"
 
 # Get current secrets
-SECRETS = $(dotnet user-secrets list --project "$PROJECT_PATH" 2 > & 1 | | true)
+SECRETS=$(dotnet user-secrets list --project "$PROJECT_PATH" 2 > &1 || true)
 
 # Check if the OpenAI API key is set
 if echo "$SECRETS" | grep -q "$SECRET_KEY" ; then
@@ -43,7 +43,7 @@ dotnet user-secrets set "$SECRET_KEY" "$API_KEY" --project "$PROJECT_PATH"
 if [ $? -eq 0 ] ; then
     echo -e "\033[32m✓ OpenAI API key has been configured successfully.\033[0m"
     exit 0
-    else
+else
     echo -e "\033[31m✗ Failed to set OpenAI API key.\033[0m"
     exit 1
 fi

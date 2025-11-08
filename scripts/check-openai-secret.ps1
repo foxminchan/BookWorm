@@ -45,7 +45,8 @@ if ($LASTEXITCODE -eq 0) {
     # Clear the plain text key from memory
     $plainKey = $null
     exit 0
-} else {
+}
+else {
     Write-Host "✗ Failed to set OpenAI API key." -ForegroundColor Red
     exit 1
 }
