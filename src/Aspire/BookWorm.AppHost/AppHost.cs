@@ -2,24 +2,6 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 builder.AddAzureContainerAppEnvironment(Components.Azure.ContainerApp).ProvisionAsService();
 
-var schedulerUserName = builder
-    .AddParameter("scheduler-user", "admin", true)
-    .WithDescription(ParameterDescriptions.Scheduler.UserName, true);
-
-var schedulerPassword = builder
-    .AddParameter("scheduler-password", true)
-    .WithDescription(ParameterDescriptions.Scheduler.Password, true)
-    .WithGeneratedDefault(
-        new()
-        {
-            MinLength = 16,
-            MinUpper = 2,
-            MinLower = 2,
-            MinNumeric = 2,
-            MinSpecial = 2,
-        }
-    );
-
 var postgres = builder
     .AddAzurePostgresFlexibleServer(Components.Postgres)
     .WithPasswordAuthentication()
@@ -158,7 +140,7 @@ var orderingApi = builder
     .WithReference(signalR)
     .WaitFor(signalR)
     .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor)
-    .WithHmacSecret();
+    .WithSecret("hmac-key", "HMAC__Key");
 
 var ratingApi = builder
     .AddProject<Rating>(Services.Rating)
@@ -201,10 +183,11 @@ var schedulerApi = builder
     .WaitFor(queue)
     .WithReference(schedulerDb)
     .WaitForCompletion(schedulerMigrator)
-    .WithEnvironment("TickerQBasicAuth__Username", schedulerUserName)
-    .WithEnvironment("TickerQBasicAuth__Password", schedulerPassword);
+    .WithSecret("scheduler-api-key", "TickerQ__ApiKey")
+    .WithUrls(c =>
+        c.Urls.ForEach(u => u.DisplayText = $"TickerQ Dashboard ({u.Endpoint?.EndpointName})")
+    );
 
-schedulerUserName.WithParentRelationship(schedulerApi);
 schedulerMigrator.WithParentRelationship(schedulerApi);
 
 var gateway = builder

@@ -3,19 +3,27 @@
 public static class SecretExtensions
 {
     /// <summary>
-    ///     Adds an HMAC secret key to the resource builder's environment configuration.
+    ///     Configures the resource builder to create a generated secret parameter and expose it as an environment variable.
     /// </summary>
-    /// <param name="builder">The resource builder to configure with HMAC secret key.</param>
-    /// <returns>The configured <see cref="IResourceBuilder{ProjectResource}" /> instance with HMAC key environment variable.</returns>
-    public static IResourceBuilder<ProjectResource> WithHmacSecret(
-        this IResourceBuilder<ProjectResource> builder
+    /// <param name="builder">The resource builder to extend.</param>
+    /// <param name="secretName">Suffix used to form the parameter name; the final parameter will be <c>{builder.Resource.Name}-{secretName}</c>.</param>
+    /// <param name="environmentVariableName">Name of the environment variable that will be bound to the created secret parameter.</param>
+    /// <returns>The original <see cref="IResourceBuilder{ProjectResource}" /> after registering the parameter and mapping it to the environment variable.</returns>
+    /// <remarks>
+    ///     The generated parameter uses default constraints of minimum length 32 and no special characters.
+    ///     The created parameter is returned as a parameter resource which is then mapped to the specified environment variable.
+    /// </remarks>
+    public static IResourceBuilder<ProjectResource> WithSecret(
+        this IResourceBuilder<ProjectResource> builder,
+        string secretName,
+        string environmentVariableName
     )
     {
-        var hmacKey = builder
-            .ApplicationBuilder.AddParameter($"{builder.Resource.Name}-hmac-key", true)
+        var secret = builder
+            .ApplicationBuilder.AddParameter($"{builder.Resource.Name}-{secretName}", true)
             .WithGeneratedDefault(new() { MinLength = 32, Special = false });
 
-        return builder.WithEnvironment("HMAC__Key", hmacKey);
+        return builder.WithEnvironment(environmentVariableName, secret);
     }
 
     /// <summary>

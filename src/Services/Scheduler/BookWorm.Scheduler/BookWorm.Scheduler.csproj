@@ -8,7 +8,7 @@
   <ItemGroup Label="TickerQ">
     <PackageReference Include="TickerQ" />
     <PackageReference Include="TickerQ.Dashboard" />
-    <PackageReference Include="TickerQ.EntityFrameworkCore" />
+    <PackageReference Include="TickerQ.Instrumentation.OpenTelemetry" />
   </ItemGroup>
   <ItemGroup Label="EF Core">
     <PackageReference Include="MassTransit.EntityFrameworkCore" />

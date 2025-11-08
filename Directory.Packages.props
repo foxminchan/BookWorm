@@ -109,7 +109,7 @@
     <!-- TickerQ -->
     <PackageVersion Include="TickerQ" Version="$(TickerQVersion)" />
     <PackageVersion Include="TickerQ.Dashboard" Version="$(TickerQVersion)" />
-    <PackageVersion Include="TickerQ.EntityFrameworkCore" Version="$(TickerQVersion)" />
+    <PackageVersion Include="TickerQ.Instrumentation.OpenTelemetry" Version="$(TickerQVersion)" />
     <!-- Email & Messaging -->
     <PackageVersion Include="AspNetCore.HealthChecks.SendGrid" Version="$(HealthChecksVersion)" />
     <PackageVersion Include="MailKit" Version="4.14.1" />
