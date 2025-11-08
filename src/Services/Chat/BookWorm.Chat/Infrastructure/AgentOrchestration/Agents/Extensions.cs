@@ -37,7 +37,6 @@ internal static class Extensions
                     chatClient,
                     options: new()
                     {
-                        Id = Guid.CreateVersion7().ToString(),
                         Name = key,
                         Instructions = BookAgent.Instructions,
                         Description = BookAgent.Description,
@@ -85,7 +84,6 @@ internal static class Extensions
                     chatClient,
                     options: new()
                     {
-                        Id = Guid.CreateVersion7().ToString(),
                         Name = key,
                         Instructions = LanguageAgent.Instructions,
                         Description = LanguageAgent.Description,
@@ -117,7 +115,6 @@ internal static class Extensions
                     chatClient,
                     options: new()
                     {
-                        Id = Guid.CreateVersion7().ToString(),
                         Name = key,
                         Instructions = SentimentAgent.Instructions,
                         Description = SentimentAgent.Description,
@@ -150,7 +147,6 @@ internal static class Extensions
                     chatClient,
                     options: new()
                     {
-                        Id = Guid.CreateVersion7().ToString(),
                         Name = key,
                         Instructions = SummarizeAgent.Instructions,
                         Description = SummarizeAgent.Description,
@@ -182,7 +178,6 @@ internal static class Extensions
                     chatClient,
                     options: new()
                     {
-                        Id = Guid.CreateVersion7().ToString(),
                         Name = key,
                         Instructions = RouterAgent.Instructions,
                         Description = RouterAgent.Description,
@@ -201,21 +196,23 @@ internal static class Extensions
             }
         );
 
-        builder.AddAIAgent(
-            Constants.Other.Agents.ChatAgent,
-            (sp, key) =>
-            {
-                using var scope = sp.CreateScope();
+        builder
+            .AddAIAgent(
+                Constants.Other.Agents.ChatAgent,
+                (sp, key) =>
+                {
+                    using var scope = sp.CreateScope();
 
-                var workflow = scope
-                    .ServiceProvider.GetRequiredService<IAgentOrchestrationService>()
-                    .BuildAgentsWorkflow();
+                    var workflow = scope
+                        .ServiceProvider.GetRequiredService<IAgentOrchestrationService>()
+                        .BuildAgentsWorkflow();
 
-                var agent = workflow.AsAgent(Guid.CreateVersion7().ToString(), key);
+                    var agent = workflow.AsAgent(name: key);
 
-                return agent;
-            }
-        );
+                    return agent;
+                }
+            )
+            .WithInMemoryThreadStore();
     }
 
     public static void MapAgentsDiscovery(this WebApplication app)
