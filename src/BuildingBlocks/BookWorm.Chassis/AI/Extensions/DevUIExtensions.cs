@@ -12,5 +12,10 @@ public static class DevUIExtensions
         {
             app.MapDevUI();
         }
+        else
+        {
+            app.MapOpenAIResponses();
+            app.MapOpenAIConversations();
+        }
     }
 }
