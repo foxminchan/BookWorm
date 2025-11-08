@@ -22,3 +22,9 @@ id = "azure-storage-connection-string"
 description = "Azure Storage Connection String"
 regex = '''DefaultEndpointsProtocol=https;AccountName=[a-zA-Z0-9]+;AccountKey=[a-zA-Z0-9+/=]+;EndpointSuffix=core\.windows\.net'''
 tags = ["key", "Azure", "Storage"]
+
+[[rules]]
+id = "openai-api-key"
+description = "OpenAI API Key"
+regex = '''sk-[a-zA-Z0-9]{48,}'''
+tags = ["key", "OpenAI"]

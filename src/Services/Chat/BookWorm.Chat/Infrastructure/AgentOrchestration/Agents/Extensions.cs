@@ -1,13 +1,10 @@
 ﻿using BookWorm.Chassis.AI.Agents;
 using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.AI.Middlewares;
-using BookWorm.Chat.Infrastructure.ChatHistory;
-using BookWorm.Chat.Models;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
 using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;
 using Microsoft.Agents.AI.Workflows;
-using Microsoft.Extensions.VectorData;
 
 namespace BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
 
@@ -57,13 +54,6 @@ internal static class Extensions
                                     .AsAIFunction(),
                             ],
                         },
-                        ChatMessageStoreFactory = ctx => new VectorChatMessageStore(
-                            sp.GetRequiredService<AppSettings>(),
-                            sp.GetRequiredService<VectorStoreCollection<Guid, ChatHistoryItem>>(),
-                            sp.GetRequiredService<ClaimsPrincipal>(),
-                            ctx.SerializedState,
-                            ctx.JsonSerializerOptions
-                        ),
                     }
                 );
 
@@ -88,13 +78,6 @@ internal static class Extensions
                         Instructions = LanguageAgent.Instructions,
                         Description = LanguageAgent.Description,
                         ChatOptions = new() { Temperature = 0.3f, MaxOutputTokens = 500 },
-                        ChatMessageStoreFactory = ctx => new VectorChatMessageStore(
-                            sp.GetRequiredService<AppSettings>(),
-                            sp.GetRequiredService<VectorStoreCollection<Guid, ChatHistoryItem>>(),
-                            sp.GetRequiredService<ClaimsPrincipal>(),
-                            ctx.SerializedState,
-                            ctx.JsonSerializerOptions
-                        ),
                     }
                 );
 
@@ -119,13 +102,6 @@ internal static class Extensions
                         Instructions = SentimentAgent.Instructions,
                         Description = SentimentAgent.Description,
                         ChatOptions = new() { Temperature = 0.2f, MaxOutputTokens = 300 },
-                        ChatMessageStoreFactory = ctx => new VectorChatMessageStore(
-                            sp.GetRequiredService<AppSettings>(),
-                            sp.GetRequiredService<VectorStoreCollection<Guid, ChatHistoryItem>>(),
-                            sp.GetRequiredService<ClaimsPrincipal>(),
-                            ctx.SerializedState,
-                            ctx.JsonSerializerOptions
-                        ),
                     }
                 );
 
@@ -151,13 +127,6 @@ internal static class Extensions
                         Instructions = SummarizeAgent.Instructions,
                         Description = SummarizeAgent.Description,
                         ChatOptions = new() { Temperature = 0.4f, MaxOutputTokens = 800 },
-                        ChatMessageStoreFactory = ctx => new VectorChatMessageStore(
-                            sp.GetRequiredService<AppSettings>(),
-                            sp.GetRequiredService<VectorStoreCollection<Guid, ChatHistoryItem>>(),
-                            sp.GetRequiredService<ClaimsPrincipal>(),
-                            ctx.SerializedState,
-                            ctx.JsonSerializerOptions
-                        ),
                     }
                 );
 
@@ -182,13 +151,6 @@ internal static class Extensions
                         Instructions = RouterAgent.Instructions,
                         Description = RouterAgent.Description,
                         ChatOptions = new() { Temperature = 0.1f, MaxOutputTokens = 200 },
-                        ChatMessageStoreFactory = ctx => new VectorChatMessageStore(
-                            sp.GetRequiredService<AppSettings>(),
-                            sp.GetRequiredService<VectorStoreCollection<Guid, ChatHistoryItem>>(),
-                            sp.GetRequiredService<ClaimsPrincipal>(),
-                            ctx.SerializedState,
-                            ctx.JsonSerializerOptions
-                        ),
                     }
                 );
 

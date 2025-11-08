@@ -70,16 +70,10 @@ var orderingDb = postgres.AddDatabase(Components.Database.Ordering);
 var schedulerDb = postgres.AddDatabase(Components.Database.Scheduler);
 var notificationDb = postgres.AddDatabase(Components.Database.Notification);
 
-await builder.AddOllama(configure =>
-{
-    configure.AddModel(Components.Ollama.Embedding, Components.Ollama.Google.EmbeddingGemma300M);
-    configure.AddModel(
-        Components.Ollama.Chat,
-        builder.ExecutionContext.IsPublishMode
-            ? Components.Ollama.Google.Gemma312B
-            : Components.Ollama.Google.Gemma34B
-    );
-});
+var openai = builder.AddOpenAI(Components.OpenAI.Resource);
+
+var chat = openai.AddModel(Components.OpenAI.Chat, Components.OpenAI.OpenAIGpt4oMini);
+var embedding = openai.AddModel(Components.OpenAI.Embedding, Components.OpenAI.TextEmbedding3Large);
 
 IResourceBuilder<IResource> keycloak = builder.ExecutionContext.IsRunMode
     ? builder.AddLocalKeycloak(Components.KeyCloak).WithPostgres(postgres)
@@ -88,18 +82,17 @@ IResourceBuilder<IResource> keycloak = builder.ExecutionContext.IsRunMode
 var catalogApi = builder
     .AddProject<Catalog>(Services.Catalog)
     .WithReplicas(builder.ExecutionContext.IsRunMode ? 1 : 2)
-    .WithOllama()
     .WithReference(queue)
     .WaitFor(queue)
     .WithReference(catalogDb)
     .WaitFor(catalogDb)
-    .WithReference(qdrant)
-    .WaitFor(qdrant)
     .WithReference(redis)
     .WaitFor(redis)
     .WithKeycloak(keycloak)
     .WithReference(blobStorage)
     .WaitFor(blobStorage)
+    .WithReference(chat)
+    .WithReference(embedding)
     .WithRoleAssignments(
         storage,
         StorageBuiltInRole.StorageBlobDataContributor,
@@ -113,7 +106,8 @@ var mcp = builder
 
 var chatApi = builder
     .AddProject<Chat>(Services.Chatting)
-    .WithOllama()
+    .WithReference(chat)
+    .WithReference(embedding)
     .WithReference(redis)
     .WaitFor(redis)
     .WithReference(mcp)
@@ -168,7 +162,8 @@ var orderingApi = builder
 
 var ratingApi = builder
     .AddProject<Rating>(Services.Rating)
-    .WithOllama()
+    .WithReference(chat)
+    .WithReference(embedding)
     .WithReference(ratingDb)
     .WaitFor(ratingDb)
     .WithReference(mcp)

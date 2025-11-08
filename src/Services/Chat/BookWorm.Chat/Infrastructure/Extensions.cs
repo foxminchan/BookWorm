@@ -1,29 +1,22 @@
 ﻿using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chat.Infrastructure.AgentOrchestration;
 using BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
-using BookWorm.Chat.Models;
 
 namespace BookWorm.Chat.Infrastructure;
 
 internal static class Extensions
 {
-    public static void AddPersistenceServices(this IHostApplicationBuilder builder)
-    {
-        builder.AddQdrantClient(Components.VectorDb);
-        builder.Services.AddQdrantCollection<Guid, ChatHistoryItem>(
-            nameof(Chat).ToLowerInvariant()
-        );
-        builder.AddRedisClient(Components.Redis, o => o.DisableAutoActivation = false);
-    }
-
-    public static void AddChatStreamingServices(this IHostApplicationBuilder builder)
+    public static void AddAIAgentsServices(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;
 
         builder.AddAIServices().WithAITelemetry();
         builder.AddMcpClient(Services.McpTools);
-
         builder.AddAgents();
+
+        services.AddAGUI();
+        services.AddOpenAIResponses();
+        services.AddOpenAIConversations();
         services.AddSingleton<OrchestrateAgents>();
         services.AddScoped<IAgentOrchestrationService, AgentOrchestrationService>();
         services.AddScoped<IChatStreaming, ChatStreaming.ChatStreaming>();
