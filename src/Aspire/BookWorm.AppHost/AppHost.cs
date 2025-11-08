@@ -123,7 +123,15 @@ var chatApi = builder
     .WithKeycloak(keycloak)
     .WithReference(signalR)
     .WaitFor(signalR)
-    .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor);
+    .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor)
+    .WithUrlForEndpoint(
+        Protocols.Http,
+        url =>
+        {
+            url.DisplayText = "DevUI";
+            url.Url = "/devui";
+        }
+    );
 
 var basketApi = builder
     .AddProject<Basket>(Services.Basket)
@@ -168,7 +176,15 @@ var ratingApi = builder
     .WithReference(queue)
     .WaitFor(queue)
     .WithKeycloak(keycloak)
-    .WithReference(chatApi);
+    .WithReference(chatApi)
+    .WithUrlForEndpoint(
+        Protocols.Http,
+        url =>
+        {
+            url.DisplayText = "DevUI";
+            url.Url = "/devui";
+        }
+    );
 
 chatApi.WithReference(ratingApi).WaitFor(ratingApi);
 
@@ -228,9 +244,7 @@ if (builder.ExecutionContext.IsRunMode)
         .WithOpenAPI(catalogApi)
         .WithOpenAPI(orderingApi);
 
-    builder
-        .AddMcpInspector(Components.Inspector, options => options.InspectorVersion = "0.17.2")
-        .WithMcpServer(mcp);
+    builder.AddMcpInspector(Components.Inspector).WithMcpServer(mcp);
 
     builder.AddK6(gateway);
 }

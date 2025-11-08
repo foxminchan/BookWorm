@@ -44,4 +44,6 @@ app.MapDefaultEndpoints();
 
 app.UseDefaultOpenApi();
 
+app.UseDevUI();
+
 app.Run();

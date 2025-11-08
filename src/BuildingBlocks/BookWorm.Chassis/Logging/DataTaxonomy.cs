@@ -17,4 +17,4 @@ public sealed class SensitiveDataAttribute()
     : DataClassificationAttribute(DataTaxonomy.SensitiveData);
 
 [AttributeUsage(AttributeTargets.All)]
-public sealed class PiiDataAttribute() : DataClassificationAttribute(DataTaxonomy.PiiData);
+public sealed class PIIDataAttribute() : DataClassificationAttribute(DataTaxonomy.PiiData);

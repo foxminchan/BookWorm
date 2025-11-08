@@ -20,7 +20,8 @@ public sealed class CreateChatEndpoint
             .WithDescription("Create a new chat session in the chat system")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization()
-            .RequirePerUserRateLimit();
+            .RequirePerUserRateLimit()
+            .HasDeprecatedApiVersion(1, 0);
     }
 
     public async Task<Created<Guid>> HandleAsync(
