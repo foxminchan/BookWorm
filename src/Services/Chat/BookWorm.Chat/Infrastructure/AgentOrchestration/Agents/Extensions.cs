@@ -5,6 +5,8 @@ using BookWorm.Chat.Infrastructure.ChatHistory;
 using BookWorm.Chat.Models;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
+using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;
+using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.VectorData;
 
 namespace BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
@@ -198,14 +200,33 @@ internal static class Extensions
                 return agent;
             }
         );
+
+        builder.AddAIAgent(
+            Constants.Other.Agents.ChatAgent,
+            (sp, key) =>
+            {
+                var workflow = sp.GetRequiredService<IAgentOrchestrationService>()
+                    .BuildAgentsWorkflow();
+
+                var agent = workflow.AsAgent(Guid.CreateVersion7().ToString(), key);
+
+                return agent;
+            }
+        );
     }
 
     public static void MapAgentsDiscovery(this WebApplication app)
     {
+        app.MapAgentDiscovery("/agents");
+
         app.MapA2A(RouterAgent.Name, $"/a2a/{RouterAgent.Name}", RouterAgent.AgentCard);
         app.MapA2A(LanguageAgent.Name, $"/a2a/{LanguageAgent.Name}", LanguageAgent.AgentCard);
         app.MapA2A(SummarizeAgent.Name, $"/a2a/{SummarizeAgent.Name}", SummarizeAgent.AgentCard);
         app.MapA2A(SentimentAgent.Name, $"/a2a/{SentimentAgent.Name}", SentimentAgent.AgentCard);
-        app.MapAgentDiscovery("/agents");
+
+        app.MapAGUI(
+            "/ag-ui",
+            app.Services.GetRequiredKeyedService<AIAgent>(Constants.Other.Agents.ChatAgent)
+        );
     }
 }

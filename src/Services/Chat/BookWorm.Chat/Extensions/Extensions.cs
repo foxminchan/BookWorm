@@ -76,6 +76,7 @@ internal static class Extensions
         services.AddEndpoints(typeof(IChatApiMarker));
 
         builder.AddDevUI();
+        services.AddAGUI();
 
         // Configure FluentValidation
         services.AddValidatorsFromAssemblyContaining<IChatApiMarker>(includeInternalTypes: true);

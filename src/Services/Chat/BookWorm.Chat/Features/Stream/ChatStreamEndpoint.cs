@@ -7,6 +7,7 @@ public sealed class ChatStreamEndpoint : IEndpoint
         app.MapHub<ChatStreamHub>("/stream", options => options.AllowStatefulReconnects = true)
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization()
-            .RequirePerUserRateLimit();
+            .RequirePerUserRateLimit()
+            .HasDeprecatedApiVersion(1, 0);
     }
 }

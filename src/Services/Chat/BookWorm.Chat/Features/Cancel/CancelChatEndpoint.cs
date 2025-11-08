@@ -9,6 +9,7 @@ public sealed class CancelChatEndpoint : IEndpoint<NoContent, Guid, ISender>
     {
         app.MapDelete(
                 "/{id:guid}/cancel",
+                [Obsolete("Please Consider using AG-UI for chat functionalities")]
                 async (
                     [Description("The unique identifier of the chat to be cancelled")] Guid id,
                     ISender sender
@@ -21,7 +22,8 @@ public sealed class CancelChatEndpoint : IEndpoint<NoContent, Guid, ISender>
             .WithDescription("Cancel a chat if it exists")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization()
-            .RequirePerUserRateLimit();
+            .RequirePerUserRateLimit()
+            .HasDeprecatedApiVersion(1, 0);
     }
 
     public async Task<NoContent> HandleAsync(

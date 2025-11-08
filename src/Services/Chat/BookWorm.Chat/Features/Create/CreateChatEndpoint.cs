@@ -10,6 +10,7 @@ public sealed class CreateChatEndpoint
     {
         app.MapPost(
                 string.Empty,
+                [Obsolete("Please Consider using AG-UI for chat functionalities")]
                 async (CreateChatCommand request, ISender sender, LinkGenerator linker) =>
                     await HandleAsync(request, sender, linker)
             )
@@ -20,7 +21,8 @@ public sealed class CreateChatEndpoint
             .WithDescription("Create a new chat session in the chat system")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization()
-            .RequirePerUserRateLimit();
+            .RequirePerUserRateLimit()
+            .HasDeprecatedApiVersion(1, 0);
     }
 
     public async Task<Created<Guid>> HandleAsync(
