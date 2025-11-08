@@ -58,6 +58,7 @@ internal static class RatingAgent
         new()
         {
             Name = Name,
+            Url = "http://localhost:5278",
             Description =
                 "Rating analysis agent with contextual function selection using existing plugins and A2A integration",
             Version = "1.0",

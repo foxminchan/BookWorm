@@ -44,6 +44,7 @@ internal static class LanguageAgent
         new()
         {
             Name = Name,
+            Url = "http://localhost:5026",
             Description = Description,
             Version = "1.0",
             Provider = new()

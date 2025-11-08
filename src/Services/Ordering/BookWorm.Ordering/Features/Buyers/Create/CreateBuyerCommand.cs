@@ -5,7 +5,7 @@ using Mediator;
 
 namespace BookWorm.Ordering.Features.Buyers.Create;
 
-public sealed record CreateBuyerCommand([PiiData] string Street, string City, string Province)
+public sealed record CreateBuyerCommand([PIIData] string Street, string City, string Province)
     : ICommand<Guid>;
 
 public sealed class CreateBuyerHandler(

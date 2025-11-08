@@ -6,6 +6,7 @@ using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chat.Infrastructure.Backplane;
 using Mediator;
+using Microsoft.Agents.AI.DevUI;
 using Microsoft.AspNetCore.Authorization;
 
 namespace BookWorm.Chat.Extensions;
@@ -73,6 +74,8 @@ internal static class Extensions
 
         services.AddVersioning();
         services.AddEndpoints(typeof(IChatApiMarker));
+
+        builder.AddDevUI();
 
         // Configure FluentValidation
         services.AddValidatorsFromAssemblyContaining<IChatApiMarker>(includeInternalTypes: true);

@@ -21,7 +21,7 @@ public sealed class FixHttpRouteProcessor : BaseProcessor<Activity>
         var method = activity.GetTagItem(HttpRequestMethodTag)?.ToString();
         var path = activity.GetTagItem(UrlPathTag)?.ToString();
 
-        if (method is null || path is null)
+        if (string.IsNullOrWhiteSpace(method) || string.IsNullOrWhiteSpace(path))
         {
             return;
         }
