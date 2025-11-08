@@ -16,7 +16,7 @@
 ## Introduction
 
 <p align="justify">
-  ⭐ BookWorm showcases Aspire in a cloud-native application with AI integration. Built with DDD and VSA, it features multi-agent orchestration and standardized AI tooling through MCP with A2A Protocol support.
+  ⭐ BookWorm showcases Aspire in a cloud-native application with AI integration. Built with DDD and VSA, it features multi-agent orchestration and standardized AI tooling through MCP with A2A & AG-UI Protocol support.
 </p>
 
 > [!WARNING]
@@ -41,10 +41,10 @@
 - [x] Incorporated AI components:
   - [x] Text embedding with Embedding Gemma
   - [x] Integrated chatbot functionality using Gemma 3
-  - [x] Standardized AI tooling with Model Context Protocol (MCP)
   - [x] Orchestrated multi-agent workflows using Agent Framework
+  - [x] Standardized AI tooling with Model Context Protocol (MCP)
   - [x] Enabled agent-to-agent communication via A2A Protocol
-  - [ ] Supported Agent interactions via AG-UI Protocol
+  - [x] Supported Agent interactions via AG-UI Protocol
 - [x] Configured CI/CD with GitHub Actions
 - [x] Created comprehensive documentation:
   - [x] Used OpenAPI for REST API & AsyncAPI for event-driven endpoints
