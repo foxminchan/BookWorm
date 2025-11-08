@@ -39,8 +39,8 @@
   - [x] Enabled Token Exchange for service-to-service authentication
 - [x] Implemented caching with HybridCache
 - [x] Incorporated AI components:
-  - [x] Text embedding with Embedding Gemma
-  - [x] Integrated chatbot functionality using Gemma 3
+  - [x] Text embedding with `text-embedding-3-large`
+  - [x] Integrated chatbot functionality using `gpt-4o-mini`
   - [x] Orchestrated multi-agent workflows using Agent Framework
   - [x] Standardized AI tooling with Model Context Protocol (MCP)
   - [x] Enabled agent-to-agent communication via A2A Protocol
@@ -77,6 +77,7 @@
 
 > [!NOTE]
 >
+> - 🤖 Ensure you have an [OpenAI API key](https://platform.openai.com/api-keys) to use the AI features
 > - 📧 Email services use [SendGrid](https://sendgrid.com/) in production and [Mailpit](https://mailpit.axllent.org/) locally
 > - 🍎 Mac with Apple Silicon users need [Rosetta 2](https://support.apple.com/en-us/102527) for grpc-tools compatibility
 > - 🐳 Docker Desktop must be running before starting the application

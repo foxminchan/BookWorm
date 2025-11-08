@@ -6,7 +6,6 @@ using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chat.Infrastructure.Backplane;
 using Mediator;
-using Microsoft.Agents.AI.DevUI;
 using Microsoft.AspNetCore.Authorization;
 
 namespace BookWorm.Chat.Extensions;
@@ -75,9 +74,6 @@ internal static class Extensions
         services.AddVersioning();
         services.AddEndpoints(typeof(IChatApiMarker));
 
-        builder.AddDevUI();
-        services.AddAGUI();
-
         // Configure FluentValidation
         services.AddValidatorsFromAssemblyContaining<IChatApiMarker>(includeInternalTypes: true);
 
@@ -85,7 +81,7 @@ internal static class Extensions
         services.AddSingleton<CommandHandlerMetrics>();
         services.AddSingleton<QueryHandlerMetrics>();
 
-        builder.AddPersistenceServices();
+        builder.AddRedisClient(Components.Redis, o => o.DisableAutoActivation = false);
 
         services.AddBackplaneServices();
 
@@ -94,7 +90,7 @@ internal static class Extensions
 
         services.AddSignalR().AddNamedAzureSignalR(Components.Azure.SignalR);
 
-        builder.AddChatStreamingServices();
+        builder.AddAIAgentsServices();
 
         services.AddScoped<KeycloakTokenIntrospectionMiddleware>();
     }

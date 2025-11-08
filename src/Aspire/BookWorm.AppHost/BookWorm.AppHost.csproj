@@ -10,6 +10,7 @@
   <ItemGroup Label="Aspire">
     <PackageReference Include="Scalar.Aspire" />
     <PackageReference Include="Aspire.Hosting.Yarp" />
+    <PackageReference Include="Aspire.Hosting.OpenAI" />
     <PackageReference Include="Aspire.Hosting.Qdrant" />
     <PackageReference Include="Aspire.Hosting.AppHost" />
     <PackageReference Include="Aspire.Hosting.Keycloak" />
@@ -24,7 +25,6 @@
   </ItemGroup>
   <ItemGroup Label="CommunityToolkit">
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.k6" />
-    <PackageReference Include="CommunityToolkit.Aspire.Hosting.Ollama" />
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.MailPit" />
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.McpInspector" />
   </ItemGroup>
