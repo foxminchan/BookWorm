@@ -183,7 +183,7 @@ var schedulerApi = builder
     .WaitFor(queue)
     .WithReference(schedulerDb)
     .WaitForCompletion(schedulerMigrator)
-    .WithSecret("scheduler-api-key", "TickerQ__ApiKey")
+    .WithSecret("api-key", "TickerQ__ApiKey")
     .WithUrls(c =>
         c.Urls.ForEach(u => u.DisplayText = $"TickerQ Dashboard ({u.Endpoint?.EndpointName})")
     );
