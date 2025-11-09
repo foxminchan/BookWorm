@@ -9,7 +9,7 @@ public sealed class AgentOrchestrationService(
 {
     public Workflow BuildAgentsWorkflow()
     {
-        var workflow = AgentWorkflowBuilder
+        var handoffWorkflow = AgentWorkflowBuilder
             .CreateHandoffBuilderWith(orchestrateAgents.RouterAgent)
             .WithHandoffs(
                 orchestrateAgents.RouterAgent,
@@ -39,6 +39,16 @@ public sealed class AgentOrchestrationService(
                 orchestrateAgents.RouterAgent,
                 "Transfer back to RouterAgent for any follow-up handling."
             )
+            .Build();
+
+        var handoffWorkflowExecutor = handoffWorkflow.BindAsExecutor(
+            "AgentHandoffWorkflowExecutor"
+        );
+
+        var workflow = new WorkflowBuilder(handoffWorkflowExecutor)
+            .AddEdge(handoffWorkflowExecutor, orchestrateAgents.QAAgent)
+            .WithName(Constants.Other.Workflows.Chat)
+            .WithDescription("Orchestrates multiple AI agents to handle user chat messages")
             .Build();
 
         return workflow;

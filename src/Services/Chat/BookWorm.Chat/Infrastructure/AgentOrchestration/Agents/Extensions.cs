@@ -1,10 +1,10 @@
 ﻿using BookWorm.Chassis.AI.Agents;
 using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.AI.Middlewares;
+using BookWorm.Constants.Other;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
 using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;
-using Microsoft.Agents.AI.Workflows;
 
 namespace BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
 
@@ -135,6 +135,30 @@ internal static class Extensions
         );
 
         builder.AddAIAgent(
+            QAAgent.Name,
+            (sp, key) =>
+            {
+                var chatClient = sp.GetRequiredService<IChatClient>()
+                    .AsBuilder()
+                    .Use(GuardrailMiddleware.InvokeAsync, null)
+                    .Build(sp);
+
+                var agent = new ChatClientAgent(
+                    chatClient,
+                    options: new()
+                    {
+                        Name = key,
+                        Instructions = QAAgent.Instructions,
+                        Description = QAAgent.Description,
+                        ChatOptions = new() { Temperature = 0.5f, MaxOutputTokens = 1000 },
+                    }
+                );
+
+                return agent;
+            }
+        );
+
+        builder.AddAIAgent(
             RouterAgent.Name,
             (sp, key) =>
             {
@@ -159,9 +183,9 @@ internal static class Extensions
         );
 
         builder
-            .AddAIAgent(
-                Constants.Other.Agents.ChatAgent,
-                (sp, key) =>
+            .AddWorkflow(
+                Workflows.Chat,
+                (sp, _) =>
                 {
                     using var scope = sp.CreateScope();
 
@@ -169,11 +193,10 @@ internal static class Extensions
                         .ServiceProvider.GetRequiredService<IAgentOrchestrationService>()
                         .BuildAgentsWorkflow();
 
-                    var agent = workflow.AsAgent(name: key);
-
-                    return agent;
+                    return workflow;
                 }
             )
+            .AddAsAIAgent()
             .WithInMemoryThreadStore();
     }
 
@@ -181,14 +204,12 @@ internal static class Extensions
     {
         app.MapAgentDiscovery("/agents");
 
+        app.MapA2A(QAAgent.Name, $"/a2a/{QAAgent.Name}", QAAgent.AgentCard);
         app.MapA2A(RouterAgent.Name, $"/a2a/{RouterAgent.Name}", RouterAgent.AgentCard);
         app.MapA2A(LanguageAgent.Name, $"/a2a/{LanguageAgent.Name}", LanguageAgent.AgentCard);
         app.MapA2A(SummarizeAgent.Name, $"/a2a/{SummarizeAgent.Name}", SummarizeAgent.AgentCard);
         app.MapA2A(SentimentAgent.Name, $"/a2a/{SentimentAgent.Name}", SentimentAgent.AgentCard);
 
-        app.MapAGUI(
-            "/ag-ui",
-            app.Services.GetRequiredKeyedService<AIAgent>(Constants.Other.Agents.ChatAgent)
-        );
+        app.MapAGUI("/ag-ui", app.Services.GetRequiredKeyedService<AIAgent>(Workflows.Chat));
     }
 }

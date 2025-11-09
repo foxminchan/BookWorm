@@ -20,7 +20,8 @@ public sealed class VisualizeWorkflowEndpoint
             .WithDescription("Get the workflow for the visualizer")
             .MapToApiVersion(new(1, 0))
             .RequireAuthorization(Authorization.Policies.Admin)
-            .RequirePerUserRateLimit();
+            .RequirePerUserRateLimit()
+            .HasDeprecatedApiVersion(1, 0);
     }
 
     public async Task<Ok<string>> HandleAsync(

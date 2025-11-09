@@ -1,9 +1,11 @@
 ﻿using BookWorm.Chassis.AI.Agents;
 using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.AI.Middlewares;
+using BookWorm.Constants.Other;
 using BookWorm.Rating.Tools;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
+using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
 
 namespace BookWorm.Rating.Infrastructure.Agents;
@@ -25,30 +27,6 @@ public static class Extensions
         );
 
         services.AddScoped<ReviewTool>();
-
-        builder.AddAIAgent(
-            Constants.Other.Agents.SummarizeAgent,
-            (_, key) =>
-                A2AClientFactory.CreateA2AAgentClient(Constants.Aspire.Services.Chatting, key)
-        );
-
-        builder.AddAIAgent(
-            Constants.Other.Agents.LanguageAgent,
-            (_, key) =>
-                A2AClientFactory.CreateA2AAgentClient(Constants.Aspire.Services.Chatting, key)
-        );
-
-        builder.AddAIAgent(
-            Constants.Other.Agents.SentimentAgent,
-            (_, key) =>
-                A2AClientFactory.CreateA2AAgentClient(Constants.Aspire.Services.Chatting, key)
-        );
-
-        builder.AddAIAgent(
-            Constants.Other.Agents.RouterAgent,
-            (_, key) =>
-                A2AClientFactory.CreateA2AAgentClient(Constants.Aspire.Services.Chatting, key)
-        );
 
         builder.AddAIAgent(
             RatingAgent.Name,
@@ -82,5 +60,82 @@ public static class Extensions
                 return agent;
             }
         );
+
+        builder
+            .AddWorkflow(
+                Workflows.RatingSummarizer,
+                (sp, key) =>
+                {
+                    var summarizeAgent = A2AClientFactory.CreateA2AAgentClient(
+                        Constants.Aspire.Services.Chatting,
+                        Constants.Other.Agents.SummarizeAgent
+                    );
+
+                    var languageAgent = A2AClientFactory.CreateA2AAgentClient(
+                        Constants.Aspire.Services.Chatting,
+                        Constants.Other.Agents.LanguageAgent
+                    );
+
+                    var sentimentAgent = A2AClientFactory.CreateA2AAgentClient(
+                        Constants.Aspire.Services.Chatting,
+                        Constants.Other.Agents.SentimentAgent
+                    );
+
+                    var routerAgent = A2AClientFactory.CreateA2AAgentClient(
+                        Constants.Aspire.Services.Chatting,
+                        Constants.Other.Agents.RouterAgent
+                    );
+
+                    var qaAgent = A2AClientFactory.CreateA2AAgentClient(
+                        Constants.Aspire.Services.Chatting,
+                        Constants.Other.Agents.QAAgent
+                    );
+
+                    var ratingAgent = sp.GetRequiredKeyedService<AIAgent>(RatingAgent.Name);
+
+                    var handoffWorkflow = AgentWorkflowBuilder
+                        .CreateHandoffBuilderWith(routerAgent)
+                        .WithHandoffs(
+                            routerAgent,
+                            [languageAgent, summarizeAgent, sentimentAgent, ratingAgent]
+                        )
+                        .WithHandoff(
+                            languageAgent,
+                            ratingAgent,
+                            "Transfer to this agent if the user input is not in English."
+                        )
+                        .WithHandoff(
+                            summarizeAgent,
+                            ratingAgent,
+                            "Transfer to this agent if the user message is very long or complex."
+                        )
+                        .WithHandoff(
+                            sentimentAgent,
+                            ratingAgent,
+                            "Transfer to this agent if the user message contains emotional content."
+                        )
+                        .WithHandoff(
+                            ratingAgent,
+                            routerAgent,
+                            "Transfer back to RouterAgent for any follow-up handling."
+                        )
+                        .Build();
+
+                    var handoffWorkflowExecutor = handoffWorkflow.BindAsExecutor(
+                        "RatingSummarizerWorkflowExecutor"
+                    );
+
+                    var workflow = new WorkflowBuilder(handoffWorkflowExecutor)
+                        .AddEdge(handoffWorkflowExecutor, qaAgent)
+                        .WithName(key)
+                        .WithDescription(
+                            "Orchestrates multiple AI agents to summarize and evaluate book ratings"
+                        )
+                        .Build();
+
+                    return workflow;
+                }
+            )
+            .AddAsAIAgent();
     }
 }
