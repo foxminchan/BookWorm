@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Security.Claims;
+using System.Text.Json;
 using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Security.Settings;
 using BookWorm.Constants.Aspire;
@@ -11,7 +12,7 @@ public sealed class TokenExchange(
 ) : ITokenExchange
 {
     public async Task<string> ExchangeAsync(
-        string subjectToken,
+        ClaimsPrincipal claimsPrincipal,
         string? audience = null,
         string? scope = null,
         CancellationToken cancellationToken = default
@@ -20,6 +21,8 @@ public sealed class TokenExchange(
         var tokenEndpoint = KeycloakEndpoints
             .Token.Replace("{realm}", identityOptions.Realm)
             .TrimStart('/');
+
+        var subjectToken = GetSubjectToken(claimsPrincipal);
 
         using var httpClient = httpClientFactory.CreateClient(Components.KeyCloak);
 
@@ -65,5 +68,14 @@ public sealed class TokenExchange(
         var accessToken = accessTokenElement.GetString()!;
 
         return accessToken;
+    }
+
+    private static string GetSubjectToken(ClaimsPrincipal claimsPrincipal)
+    {
+        var tokenClaim = claimsPrincipal.FindFirst("access_token");
+
+        return !string.IsNullOrWhiteSpace(tokenClaim?.Value)
+            ? tokenClaim.Value
+            : throw new UnauthorizedAccessException("No access_token found in claims principal");
     }
 }
