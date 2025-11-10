@@ -1,5 +1,4 @@
 ﻿using BookWorm.Chassis.Security.Settings;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -43,13 +42,6 @@ public static class TokenExchangeExtensions
                 return await base.SendAsync(request, cancellationToken);
             }
 
-            var accessToken = await context.GetTokenAsync("access_token");
-
-            if (accessToken is null)
-            {
-                return await base.SendAsync(request, cancellationToken);
-            }
-
             var identityOptions = context.RequestServices.GetService<IdentityOptions>();
 
             var (audience, scope) = ResolveTokenExchangeTarget(identityOptions, serviceKey);
@@ -57,7 +49,7 @@ public static class TokenExchangeExtensions
             var tokenExchange = context.RequestServices.GetRequiredService<ITokenExchange>();
 
             var exchangedToken = await tokenExchange.ExchangeAsync(
-                accessToken,
+                context.User,
                 audience,
                 scope,
                 cancellationToken
