@@ -43,12 +43,14 @@ servers:
 security:
   - OAuth:
       - chatting_read
+      - chatting_write
 paths:
   "/api/v1/chats/visualize":
     get:
       tags:
         - Chat
       summary: Visualizer Workflow
+      deprecated: true
       description: Get the workflow for the visualizer
       x-eventcatalog-message-type: query
       operationId: VisualizeWorkflowEndpoint
@@ -116,6 +118,7 @@ paths:
       tags:
         - Chat
       summary: Create Chat
+      deprecated: true
       description: Create a new chat in the catalog system
       x-eventcatalog-message-type: command
       operationId: CreateChatEndpoint
@@ -375,6 +378,7 @@ paths:
       tags:
         - Chat
       summary: Delete Chat
+      deprecated: true
       description: Delete a chat by its ID
       x-eventcatalog-message-type: command
       operationId: DeleteChatEndpoint
@@ -439,6 +443,7 @@ paths:
       tags:
         - Chat
       summary: Chat Stream
+      deprecated: true
       x-eventcatalog-message-type: command
       description: SignalR hub endpoint for real-time chat streaming
       operationId: ChatStreamEndpoint
@@ -559,7 +564,7 @@ components:
               type: string
           description: The validation errors
           example:
-            propertyName: "'Type'"
+            propertyName: "Type"
             errorMessage: "'Type' has a range of values which does not include '4'."
             attemptedValue: null
             customState: null
