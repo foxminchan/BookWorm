@@ -204,12 +204,35 @@ internal static class Extensions
     {
         app.MapAgentDiscovery("/agents");
 
-        app.MapA2A(QAAgent.Name, $"/a2a/{QAAgent.Name}", QAAgent.AgentCard);
-        app.MapA2A(RouterAgent.Name, $"/a2a/{RouterAgent.Name}", RouterAgent.AgentCard);
-        app.MapA2A(LanguageAgent.Name, $"/a2a/{LanguageAgent.Name}", LanguageAgent.AgentCard);
-        app.MapA2A(SummarizeAgent.Name, $"/a2a/{SummarizeAgent.Name}", SummarizeAgent.AgentCard);
-        app.MapA2A(SentimentAgent.Name, $"/a2a/{SentimentAgent.Name}", SentimentAgent.AgentCard);
+        // Map A2A
+        app.MapA2A(QAAgent.Name, $"/a2a/{QAAgent.Name}", QAAgent.AgentCard)
+            .WithTags(nameof(QAAgent));
+        app.MapA2A(RouterAgent.Name, $"/a2a/{RouterAgent.Name}", RouterAgent.AgentCard)
+            .WithTags(nameof(RouterAgent));
+        app.MapA2A(LanguageAgent.Name, $"/a2a/{LanguageAgent.Name}", LanguageAgent.AgentCard)
+            .WithTags(nameof(LanguageAgent));
+        app.MapA2A(SummarizeAgent.Name, $"/a2a/{SummarizeAgent.Name}", SummarizeAgent.AgentCard)
+            .WithTags(nameof(SummarizeAgent));
+        app.MapA2A(SentimentAgent.Name, $"/a2a/{SentimentAgent.Name}", SentimentAgent.AgentCard)
+            .WithTags(nameof(SentimentAgent));
 
-        app.MapAGUI("/ag-ui", app.Services.GetRequiredKeyedService<AIAgent>(Workflows.Chat));
+        // Map AG-UI
+        app.MapAGUI("/ag-ui", app.Services.GetRequiredKeyedService<AIAgent>(Workflows.Chat))
+            .WithSummary("Interactive AI Agent")
+            .WithTags(nameof(Chat));
+
+        // Map OpenAI Chat Completions
+        app.MapOpenAIChatCompletions(
+                app.Services.GetRequiredKeyedService<AIAgent>(SummarizeAgent.Name)
+            )
+            .WithTags(nameof(SummarizeAgent));
+        app.MapOpenAIChatCompletions(
+                app.Services.GetRequiredKeyedService<AIAgent>(LanguageAgent.Name)
+            )
+            .WithTags(nameof(LanguageAgent));
+        app.MapOpenAIChatCompletions(
+                app.Services.GetRequiredKeyedService<AIAgent>(SentimentAgent.Name)
+            )
+            .WithTags(nameof(SentimentAgent));
     }
 }

@@ -44,7 +44,6 @@ internal static class LanguageAgent
         new()
         {
             Name = Name,
-            Url = $"http://localhost:5026/a2a/{Name}",
             Description = Description,
             Version = "1.0",
             Provider = new()

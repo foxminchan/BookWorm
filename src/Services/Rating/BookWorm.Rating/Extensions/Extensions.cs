@@ -8,7 +8,6 @@ using BookWorm.Constants.Core;
 using BookWorm.Rating.Infrastructure.Agents;
 using BookWorm.Rating.Infrastructure.Summarizer;
 using Mediator;
-using Microsoft.Agents.AI.DevUI;
 
 namespace BookWorm.Rating.Extensions;
 
@@ -107,7 +106,6 @@ internal static class Extensions
         services.AddEndpoints(typeof(IRatingApiMarker));
 
         builder.AddAgents();
-        builder.AddDevUI();
         services.AddSingleton<ISummarizer, RatingSummarizer>();
 
         services.AddScoped<KeycloakTokenIntrospectionMiddleware>();
