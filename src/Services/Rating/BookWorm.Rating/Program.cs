@@ -36,9 +36,7 @@ var apiVersionSet = app.NewApiVersionSet().HasApiVersion(new(1, 0)).ReportApiVer
 
 app.MapEndpoints(apiVersionSet, "feedbacks");
 
-app.MapA2A(RatingAgent.Name, $"/a2a/{RatingAgent.Name}", RatingAgent.AgentCard);
-
-app.MapAgentDiscovery("/agents");
+app.MapAgentsDiscovery();
 
 app.MapDefaultEndpoints();
 

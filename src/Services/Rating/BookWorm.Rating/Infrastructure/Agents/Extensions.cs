@@ -5,6 +5,7 @@ using BookWorm.Constants.Other;
 using BookWorm.Rating.Tools;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
+using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
 
@@ -20,13 +21,14 @@ public static class Extensions
 
         builder.AddMcpClient(Constants.Aspire.Services.McpTools);
 
+        services.AddOpenAIResponses();
+        services.AddOpenAIConversations();
+        services.AddScoped<ReviewTool>();
         services.AddHttpClient<AgentDiscoveryClient>(client =>
             client.BaseAddress = new(
                 $"{Protocols.HttpOrHttps}://{Constants.Aspire.Services.Chatting}"
             )
         );
-
-        services.AddScoped<ReviewTool>();
 
         builder.AddAIAgent(
             RatingAgent.Name,
@@ -137,5 +139,20 @@ public static class Extensions
                 }
             )
             .AddAsAIAgent();
+    }
+
+    public static void MapAgentsDiscovery(this WebApplication app)
+    {
+        app.MapAgentDiscovery("/agents");
+
+        app.MapA2A(RatingAgent.Name, $"/a2a/{RatingAgent.Name}", RatingAgent.AgentCard)
+            .WithTags(nameof(RatingAgent));
+
+        app.MapAGUI(
+                "/ag-ui",
+                app.Services.GetRequiredKeyedService<AIAgent>(Workflows.RatingSummarizer)
+            )
+            .WithSummary("Interactive AI Agent")
+            .WithTags(nameof(RatingAgent));
     }
 }
