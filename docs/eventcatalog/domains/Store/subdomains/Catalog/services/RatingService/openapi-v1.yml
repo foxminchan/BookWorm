@@ -48,6 +48,7 @@ paths:
       tags:
         - Rating
       summary: Visualizer Workflow
+      deprecated: true
       description: Get the workflow for the visualizer
       x-eventcatalog-message-type: query
       operationId: VisualizeWorkflowEndpoint

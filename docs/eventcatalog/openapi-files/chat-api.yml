@@ -50,6 +50,7 @@ paths:
       tags:
         - Chat
       summary: Visualizer Workflow
+      deprecated: true
       description: Get the workflow for the visualizer
       x-eventcatalog-message-type: query
       operationId: VisualizeWorkflowEndpoint
@@ -117,6 +118,7 @@ paths:
       tags:
         - Chat
       summary: Create Chat
+      deprecated: true
       description: Create a new chat in the catalog system
       x-eventcatalog-message-type: command
       operationId: CreateChatEndpoint
@@ -376,6 +378,7 @@ paths:
       tags:
         - Chat
       summary: Delete Chat
+      deprecated: true
       description: Delete a chat by its ID
       x-eventcatalog-message-type: command
       operationId: DeleteChatEndpoint
@@ -440,6 +443,7 @@ paths:
       tags:
         - Chat
       summary: Chat Stream
+      deprecated: true
       x-eventcatalog-message-type: command
       description: SignalR hub endpoint for real-time chat streaming
       operationId: ChatStreamEndpoint
