@@ -4,19 +4,17 @@ public sealed class SpecificationEvaluator
 {
     private SpecificationEvaluator()
     {
-        Evaluators.AddRange(
-            [
-                WhereEvaluator.Instance,
-                SearchEvaluator.Instance,
-                IncludeStringEvaluator.Instance,
-                IncludeEvaluator.Instance,
-                OrderEvaluator.Instance,
-                PaginationEvaluator.Instance,
-                AsNoTrackingEvaluator.Instance,
-                IgnoreQueryFiltersEvaluator.Instance,
-                AsSplitQueryEvaluator.Instance,
-            ]
-        );
+        Evaluators.AddRange([
+            WhereEvaluator.Instance,
+            SearchEvaluator.Instance,
+            IncludeStringEvaluator.Instance,
+            IncludeEvaluator.Instance,
+            OrderEvaluator.Instance,
+            PaginationEvaluator.Instance,
+            AsNoTrackingEvaluator.Instance,
+            IgnoreQueryFiltersEvaluator.Instance,
+            AsSplitQueryEvaluator.Instance,
+        ]);
     }
 
     public static SpecificationEvaluator Instance { get; } = new();

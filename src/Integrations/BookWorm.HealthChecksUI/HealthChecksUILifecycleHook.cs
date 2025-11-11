@@ -1,11 +1,12 @@
-﻿using Aspire.Hosting.Lifecycle;
+﻿using Aspire.Hosting.Eventing;
+using Aspire.Hosting.Lifecycle;
 using BookWorm.Constants.Aspire;
 
 namespace BookWorm.HealthChecksUI;
 
 internal sealed class HealthChecksUILifecycleHook(
     DistributedApplicationExecutionContext executionContext
-) : IDistributedApplicationLifecycleHook
+) : IDistributedApplicationEventingSubscriber
 {
     private const string HealthChecksUIUrls = "HEALTHCHECKSUI_URLS";
 

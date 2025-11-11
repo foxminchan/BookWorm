@@ -20,7 +20,7 @@ public static class HealthChecksUIExtensions
         string tag = HealthChecksUIDefaults.ContainerImageTag
     )
     {
-        builder.Services.TryAddLifecycleHook<HealthChecksUILifecycleHook>();
+        builder.Services.TryAddEventingSubscriber<HealthChecksUILifecycleHook>();
 
         var resource = new HealthChecksUIResource(name);
 

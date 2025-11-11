@@ -1,7 +1,6 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Aspire.AppHost.Sdk/13.0.0">
   <Import Project="K6Integration.targets" />
   <Import Project="KeycloakifyIntegration.targets" />
-  <Sdk Name="Aspire.AppHost.Sdk" Version="$(AspireVersion)" />
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <UserSecretsId>78a33324-5add-4731-b2fc-e0fc06ef0564</UserSecretsId>

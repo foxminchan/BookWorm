@@ -222,7 +222,7 @@ if (builder.ExecutionContext.IsRunMode)
         .WithOpenAPI(catalogApi)
         .WithOpenAPI(orderingApi);
 
-    builder.AddMcpInspector(Components.Inspector).WithMcpServer(mcp);
+    builder.AddMcpInspector(Components.Inspector).WithMcpServer<ProjectResource>(mcp);
 
     builder.AddK6(gateway);
 }
