@@ -4,80 +4,91 @@ using BookWorm.Constants.Aspire;
 
 namespace BookWorm.HealthChecksUI;
 
-internal sealed class HealthChecksUILifecycleHook(
-    DistributedApplicationExecutionContext executionContext
-) : IDistributedApplicationEventingSubscriber
+internal sealed class HealthChecksUILifecycleHook : IDistributedApplicationEventingSubscriber
 {
     private const string HealthChecksUIUrls = "HEALTHCHECKSUI_URLS";
 
-    public Task BeforeStartAsync(
-        DistributedApplicationModel appModel,
-        CancellationToken cancellationToken = default
+    public Task SubscribeAsync(
+        IDistributedApplicationEventing eventing,
+        DistributedApplicationExecutionContext executionContext,
+        CancellationToken cancellationToken
     )
     {
-        // Configure each project referenced by a Health Checks UI resource
-        var healthChecksUIResources = appModel.Resources.OfType<HealthChecksUIResource>();
-
-        foreach (var healthChecksUIResource in healthChecksUIResources)
-        {
-            foreach (var monitoredProject in healthChecksUIResource.MonitoredProjects)
+        eventing.Subscribe<BeforeStartEvent>(
+            (@event, _) =>
             {
-                var project = monitoredProject.Project;
+                var healthChecksUIResources =
+                    @event.Model.Resources.OfType<HealthChecksUIResource>();
 
-                // Add the health check endpoint if it doesn't exist
-                var healthChecksEndpoint = project.GetEndpoint(monitoredProject.EndpointName);
-                if (!healthChecksEndpoint.Exists)
+                foreach (var healthChecksUIResource in healthChecksUIResources)
                 {
-                    project.WithHttpEndpoint(name: monitoredProject.EndpointName);
+                    foreach (var monitoredProject in healthChecksUIResource.MonitoredProjects)
+                    {
+                        var project = monitoredProject.Project;
+
+                        // Add the health check endpoint if it doesn't exist
+                        var healthChecksEndpoint = project.GetEndpoint(
+                            monitoredProject.EndpointName
+                        );
+                        if (!healthChecksEndpoint.Exists)
+                        {
+                            project.WithHttpEndpoint(name: monitoredProject.EndpointName);
+                        }
+
+                        // Set environment variable to configure the URLs the health check endpoint is accessible from
+                        project.WithEnvironment(context =>
+                        {
+                            var probePath = monitoredProject.ProbePath.TrimStart('/');
+                            var healthChecksEndpointsExpression = ReferenceExpression.Create(
+                                $"{healthChecksEndpoint}/{probePath}"
+                            );
+
+                            if (context.ExecutionContext.IsRunMode)
+                            {
+                                // Running during dev inner-loop
+                                var containerHost = healthChecksUIResource
+                                    .GetEndpoint(Protocols.Http)
+                                    .Host;
+                                var fromContainerUriBuilder = new UriBuilder(
+                                    healthChecksEndpoint.Url
+                                )
+                                {
+                                    Host = containerHost,
+                                    Path = monitoredProject.ProbePath,
+                                };
+
+                                healthChecksEndpointsExpression = ReferenceExpression.Create(
+                                    $"{healthChecksEndpointsExpression};{fromContainerUriBuilder.ToString()}"
+                                );
+                            }
+
+                            context.EnvironmentVariables.Add(
+                                HealthChecksUIUrls,
+                                healthChecksEndpointsExpression
+                            );
+                        });
+                    }
                 }
 
-                // Set environment variable to configure the URLs the health check endpoint is accessible from
-                project.WithEnvironment(context =>
+                if (executionContext.IsPublishMode)
                 {
-                    var probePath = monitoredProject.ProbePath.TrimStart('/');
-                    var healthChecksEndpointsExpression = ReferenceExpression.Create(
-                        $"{healthChecksEndpoint}/{probePath}"
-                    );
+                    ConfigureHealthChecksUIContainers(@event.Model.Resources, true);
+                }
 
-                    if (context.ExecutionContext.IsRunMode)
-                    {
-                        // Running during dev inner-loop
-                        var containerHost = healthChecksUIResource
-                            .GetEndpoint(Protocols.Http)
-                            .ContainerHost;
-                        var fromContainerUriBuilder = new UriBuilder(healthChecksEndpoint.Url)
-                        {
-                            Host = containerHost,
-                            Path = monitoredProject.ProbePath,
-                        };
-
-                        healthChecksEndpointsExpression = ReferenceExpression.Create(
-                            $"{healthChecksEndpointsExpression};{fromContainerUriBuilder.ToString()}"
-                        );
-                    }
-
-                    context.EnvironmentVariables.Add(
-                        HealthChecksUIUrls,
-                        healthChecksEndpointsExpression
-                    );
-                });
+                return Task.CompletedTask;
             }
-        }
+        );
 
-        if (executionContext.IsPublishMode)
-        {
-            ConfigureHealthChecksUIContainers(appModel.Resources, true);
-        }
+#pragma warning disable CS0618 // Type or member is obsolete
+        eventing.Subscribe<AfterEndpointsAllocatedEvent>(
+            (@event, _) =>
+#pragma warning restore CS0618 // Type or member is obsolete
+            {
+                ConfigureHealthChecksUIContainers(@event.Model.Resources, false);
 
-        return Task.CompletedTask;
-    }
-
-    public Task AfterEndpointsAllocatedAsync(
-        DistributedApplicationModel appModel,
-        CancellationToken cancellationToken = default
-    )
-    {
-        ConfigureHealthChecksUIContainers(appModel.Resources, false);
+                return Task.CompletedTask;
+            }
+        );
 
         return Task.CompletedTask;
     }

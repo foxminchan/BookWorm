@@ -31,9 +31,9 @@
     <Project Path="src/Services/Chat/BookWorm.Chat/BookWorm.Chat.csproj" />
   </Folder>
   <Folder Name="/Services/Finance/">
+    <Project Path="src/Services/Finance/BookWorm.Finance.ContractTests/BookWorm.Finance.ContractTests.csproj" />
     <Project Path="src/Services/Finance/BookWorm.Finance.UnitTests/BookWorm.Finance.UnitTests.csproj" />
     <Project Path="src/Services/Finance/BookWorm.Finance/BookWorm.Finance.csproj" />
-    <Project Path="src/Services/Finance/BookWorm.Finance.ContractTests/BookWorm.Finance.ContractTests.csproj" />
   </Folder>
   <Folder Name="/Services/Notification/">
     <Project Path="src/Services/Notification/BookWorm.Notification.ContractTests/BookWorm.Notification.ContractTests.csproj" />
@@ -52,7 +52,6 @@
   </Folder>
   <Folder Name="/Services/Scheduler/">
     <Project Path="src/Services/Scheduler/BookWorm.Scheduler.ContractTests/BookWorm.Scheduler.ContractTests.csproj" />
-    <Project Path="src/Services/Scheduler/BookWorm.Scheduler.Migrator/BookWorm.Scheduler.Migrator.csproj" />
     <Project Path="src/Services/Scheduler/BookWorm.Scheduler.UnitTests/BookWorm.Scheduler.UnitTests.csproj" />
     <Project Path="src/Services/Scheduler/BookWorm.Scheduler/BookWorm.Scheduler.csproj" />
   </Folder>

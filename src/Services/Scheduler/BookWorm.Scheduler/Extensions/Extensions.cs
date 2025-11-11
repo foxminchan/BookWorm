@@ -12,7 +12,8 @@ internal static class Extensions
         // Add database configuration
         builder.AddAzurePostgresDbContext<SchedulerDbContext>(
             Components.Database.Scheduler,
-            excludeDefaultInterceptors: true
+            _ => services.AddMigration<SchedulerDbContext>(),
+            true
         );
 
         services.AddScoped<ISchedulerDbContext>(sp => sp.GetRequiredService<SchedulerDbContext>());

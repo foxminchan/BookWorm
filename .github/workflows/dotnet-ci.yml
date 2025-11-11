@@ -208,9 +208,6 @@ jobs:
           - name: "Scheduler"
             project-path: "src/Services/Scheduler/BookWorm.Scheduler/BookWorm.Scheduler.csproj"
             container-repository: "foxminchan/bookworm/scheduler"
-          - name: "Scheduler Migrator"
-            project-path: "src/Services/Scheduler/BookWorm.Scheduler.Migrator/BookWorm.Scheduler.Migrator.csproj"
-            container-repository: "foxminchan/bookworm/scheduler-migrator"
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'development' }}
     timeout-minutes: 15

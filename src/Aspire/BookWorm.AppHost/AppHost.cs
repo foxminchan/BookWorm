@@ -172,23 +172,15 @@ var financeApi = builder
     .WithReference(queue)
     .WaitFor(queue);
 
-var schedulerMigrator = builder
-    .AddProject<SchedulerMigrator>(Services.SchedulerMigrator)
-    .WithReference(schedulerDb)
-    .WaitFor(schedulerDb);
-
 var schedulerApi = builder
     .AddProject<Scheduler>(Services.Scheduler)
     .WithReference(queue)
     .WaitFor(queue)
     .WithReference(schedulerDb)
-    .WaitForCompletion(schedulerMigrator)
     .WithSecret("api-key", "TickerQ__ApiKey")
     .WithUrls(c =>
         c.Urls.ForEach(u => u.DisplayText = $"TickerQ Dashboard ({u.Endpoint?.EndpointName})")
     );
-
-schedulerMigrator.WithParentRelationship(schedulerApi);
 
 var gateway = builder
     .AddApiGatewayProxy()
@@ -227,4 +219,4 @@ if (builder.ExecutionContext.IsRunMode)
     builder.AddK6(gateway);
 }
 
-builder.Build().Run();
+await builder.Build().RunAsync();
