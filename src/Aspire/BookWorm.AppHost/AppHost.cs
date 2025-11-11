@@ -62,7 +62,7 @@ IResourceBuilder<IResource> keycloak = builder.ExecutionContext.IsRunMode
     : builder.AddHostedKeycloak(Components.KeyCloak);
 
 var catalogApi = builder
-    .AddProject<Catalog>(Services.Catalog)
+    .AddProject<BookWorm_Catalog>(Services.Catalog)
     .WithReplicas(builder.ExecutionContext.IsRunMode ? 1 : 2)
     .WithReference(queue)
     .WaitFor(queue)
@@ -84,12 +84,12 @@ var catalogApi = builder
     );
 
 var mcp = builder
-    .AddProject<McpTools>(Services.McpTools)
+    .AddProject<BookWorm_McpTools>(Services.McpTools)
     .WithReference(catalogApi)
     .WaitFor(catalogApi);
 
 var chatApi = builder
-    .AddProject<Chat>(Services.Chatting)
+    .AddProject<BookWorm_Chat>(Services.Chatting)
     .WithReference(chat)
     .WithReference(embedding)
     .WithReference(redis)
@@ -110,7 +110,7 @@ var chatApi = builder
     );
 
 var basketApi = builder
-    .AddProject<Basket>(Services.Basket)
+    .AddProject<BookWorm_Basket>(Services.Basket)
     .WithReference(redis)
     .WaitFor(redis)
     .WithReference(queue)
@@ -119,7 +119,7 @@ var basketApi = builder
     .WithKeycloak(keycloak);
 
 var notificationApi = builder
-    .AddProject<Notification>(Services.Notification)
+    .AddProject<BookWorm_Notification>(Services.Notification)
     .WithEmailProvider()
     .WithReference(queue)
     .WaitFor(queue)
@@ -127,7 +127,7 @@ var notificationApi = builder
     .WaitFor(notificationDb);
 
 var orderingApi = builder
-    .AddProject<Ordering>(Services.Ordering)
+    .AddProject<BookWorm_Ordering>(Services.Ordering)
     .WithReference(orderingDb)
     .WaitFor(orderingDb)
     .WithReference(queue)
@@ -143,7 +143,7 @@ var orderingApi = builder
     .WithSecret("hmac-key", "HMAC__Key");
 
 var ratingApi = builder
-    .AddProject<Rating>(Services.Rating)
+    .AddProject<BookWorm_Rating>(Services.Rating)
     .WithReference(chat)
     .WithReference(embedding)
     .WithReference(ratingDb)
@@ -166,14 +166,14 @@ var ratingApi = builder
 chatApi.WithReference(ratingApi).WaitFor(ratingApi);
 
 var financeApi = builder
-    .AddProject<Finance>(Services.Finance)
+    .AddProject<BookWorm_Finance>(Services.Finance)
     .WithReference(financeDb)
     .WaitFor(financeDb)
     .WithReference(queue)
     .WaitFor(queue);
 
 var schedulerApi = builder
-    .AddProject<Scheduler>(Services.Scheduler)
+    .AddProject<BookWorm_Scheduler>(Services.Scheduler)
     .WithReference(queue)
     .WaitFor(queue)
     .WithReference(schedulerDb)
