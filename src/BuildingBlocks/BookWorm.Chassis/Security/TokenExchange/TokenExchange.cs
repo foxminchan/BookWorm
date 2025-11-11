@@ -22,14 +22,39 @@ public sealed class TokenExchange(
             .Token.Replace("{realm}", identityOptions.Realm)
             .TrimStart('/');
 
-        var subjectToken = GetSubjectToken(claimsPrincipal);
+        var requestContent = GetRequestContent(claimsPrincipal, audience, scope);
 
         using var httpClient = httpClientFactory.CreateClient(Components.KeyCloak);
+
+        var response = await httpClient.PostAsync(tokenEndpoint, requestContent, cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"Token exchange failed: {response.StatusCode} {response.ReasonPhrase}"
+            );
+        }
+
+        return await GetResponseContent(response, cancellationToken);
+    }
+
+    private static FormUrlEncodedContent GetRequestContent(
+        ClaimsPrincipal claimsPrincipal,
+        string? audience = null,
+        string? scope = null
+    )
+    {
+        var tokenClaim = claimsPrincipal.FindFirst("access_token");
+
+        if (string.IsNullOrWhiteSpace(tokenClaim?.Value))
+        {
+            throw new UnauthorizedAccessException("No access_token found in claims principal");
+        }
 
         var parameters = new List<KeyValuePair<string, string>>
         {
             new("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange"),
-            new("subject_token", subjectToken),
+            new("subject_token", tokenClaim.Value),
             new("subject_token_type", "urn:ietf:params:oauth:token-type:access_token"),
         };
 
@@ -43,17 +68,14 @@ public sealed class TokenExchange(
             parameters.Add(new("scope", scope));
         }
 
-        using var requestContent = new FormUrlEncodedContent(parameters);
+        return new(parameters);
+    }
 
-        var response = await httpClient.PostAsync(tokenEndpoint, requestContent, cancellationToken);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new HttpRequestException(
-                $"Token exchange failed: {response.StatusCode} {response.ReasonPhrase}"
-            );
-        }
-
+    private static async Task<string> GetResponseContent(
+        HttpResponseMessage response,
+        CancellationToken cancellationToken
+    )
+    {
         var content = await response.Content.ReadAsStringAsync(cancellationToken);
         using var tokenResponse = JsonDocument.Parse(content);
 
@@ -68,14 +90,5 @@ public sealed class TokenExchange(
         var accessToken = accessTokenElement.GetString()!;
 
         return accessToken;
-    }
-
-    private static string GetSubjectToken(ClaimsPrincipal claimsPrincipal)
-    {
-        var tokenClaim = claimsPrincipal.FindFirst("access_token");
-
-        return !string.IsNullOrWhiteSpace(tokenClaim?.Value)
-            ? tokenClaim.Value
-            : throw new UnauthorizedAccessException("No access_token found in claims principal");
     }
 }

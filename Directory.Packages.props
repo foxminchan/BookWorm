@@ -21,25 +21,16 @@
     <PackageVersion Include="Aspire.Hosting.Testing" Version="$(AspireVersion)" />
     <!-- Client -->
     <PackageVersion Include="Aspire.Azure.Npgsql" Version="$(AspireVersion)" />
-    <PackageVersion
-      Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL"
-      Version="$(AspireVersion)"
-    />
+    <PackageVersion Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Keycloak.Authentication" Version="$(AspireUnstableVersion)" />
     <PackageVersion Include="Aspire.Qdrant.Client" Version="$(AspireVersion)" />
-    <PackageVersion
-      Include="Aspire.StackExchange.Redis.DistributedCaching"
-      Version="$(AspireVersion)"
-    />
+    <PackageVersion Include="Aspire.StackExchange.Redis.DistributedCaching" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Azure.AI.OpenAI" Version="$(AspireUnstableVersion)" />
     <!-- Community Toolkit -->
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.k6" Version="$(ToolKitVersion)" />
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.MailPit" Version="$(ToolKitVersion)" />
-    <PackageVersion
-      Include="CommunityToolkit.Aspire.Hosting.McpInspector"
-      Version="$(ToolKitVersion)"
-    />
+    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.McpInspector" Version="$(ToolKitVersion)" />
     <!-- Extra -->
     <PackageVersion Include="Scalar.Aspire" Version="0.7.3" />
   </ItemGroup>
@@ -52,14 +43,8 @@
     <!-- ASP.NET Core -->
     <PackageVersion Include="Asp.Versioning.Http.Client" Version="$(ApiVersioningVersion)" />
     <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer" Version="$(ApiVersioningVersion)" />
-    <PackageVersion
-      Include="Microsoft.AspNetCore.Diagnostics.Middleware"
-      Version="$(MsExtVersion)"
-    />
-    <PackageVersion
-      Include="Microsoft.AspNetCore.Grpc.JsonTranscoding"
-      Version="$(AspNetVersion)"
-    />
+    <PackageVersion Include="Microsoft.AspNetCore.Diagnostics.Middleware" Version="$(MsExtVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="$(AspNetVersion)" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="$(AspNetVersion)" />
     <PackageVersion Include="Microsoft.Azure.SignalR.Management" Version="1.32.0" />
     <!-- Data -->
@@ -67,24 +52,18 @@
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0-rc.2" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="$(AspNetVersion)" />
     <!-- Observability -->
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.13.1" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.13.1" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.13.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.14.0-rc.1" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.14.0-rc.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.14.0-rc.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.GrpcNetClient" Version="1.13.0-beta.1" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.13.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.14.0-rc.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.13.0" />
     <!-- AI -->
     <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="$(AgentFrameworkVersion)" />
     <PackageVersion Include="Microsoft.Agents.AI.A2A" Version="$(AgentFrameworkVersion)" />
-    <PackageVersion
-      Include="Microsoft.Agents.AI.Hosting.A2A.AspNetCore"
-      Version="$(AgentFrameworkVersion)"
-    />
+    <PackageVersion Include="Microsoft.Agents.AI.Hosting.A2A.AspNetCore" Version="$(AgentFrameworkVersion)" />
+    <PackageVersion Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore" Version="$(AgentFrameworkVersion)" />
     <PackageVersion Include="Microsoft.Agents.AI.DevUI" Version="$(AgentFrameworkVersion)" />
-    <PackageVersion
-      Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore"
-      Version="$(AgentFrameworkVersion)"
-    />
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.67.1-preview" />
     <!-- Miscellaneous -->
     <PackageVersion Include="AspNetCore.HealthChecks.UI.Client" Version="$(HealthChecksVersion)" />
@@ -125,7 +104,7 @@
     <PackageVersion Include="TngTech.ArchUnitNET.TUnit" Version="0.12.3" />
     <PackageVersion Include="TUnit" Version="1.0.48" />
     <!-- Contract Testing -->
-    <PackageVersion Include="Verify.TUnit" Version="31.5.1" />
+    <PackageVersion Include="Verify.TUnit" Version="31.5.3" />
     <PackageVersion Include="Verify.MassTransit" Version="2.1.0" />
     <!-- Microsoft Testing Platform -->
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.1.0" />
