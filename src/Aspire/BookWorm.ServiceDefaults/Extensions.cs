@@ -4,7 +4,6 @@ using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using BookWorm.Chassis.Utilities.Configuration;
 using BookWorm.ServiceDefaults.ApiSpecification;
-using HealthChecks.UI.Client;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -17,7 +16,6 @@ namespace BookWorm.ServiceDefaults;
 // To learn more about using this project, see https://aka.ms/dotnet/aspire/service-defaults
 public static class Extensions
 {
-    private const string HealthChecks = nameof(HealthChecks);
     private const string HealthEndpointPath = "/health";
     private const string AlivenessEndpointPath = "/alive";
 
@@ -143,92 +141,26 @@ public static class Extensions
 
     private static void AddDefaultHealthChecks(this IHostApplicationBuilder builder)
     {
-        var services = builder.Services;
-        var healthChecksConfiguration = builder.Configuration.GetSection(HealthChecks);
-
-        // All health checks endpoints must return within the configured timeout value (defaults to 5 seconds)
-        var healthChecksRequestTimeout =
-            healthChecksConfiguration.GetValue<TimeSpan?>("RequestTimeout")
-            ?? TimeSpan.FromSeconds(5);
-
-        services.AddRequestTimeouts(timeouts =>
-            timeouts.AddPolicy(HealthChecks, healthChecksRequestTimeout)
-        );
-
-        // Cache health checks responses for the configured duration (defaults to 10 seconds)
-        var healthChecksExpireAfter =
-            healthChecksConfiguration.GetValue<TimeSpan?>("ExpireAfter")
-            ?? TimeSpan.FromSeconds(10);
-
-        services.AddOutputCache(caching =>
-            caching.AddPolicy(HealthChecks, policy => policy.Expire(healthChecksExpireAfter))
-        );
-
-        services
-            .AddHealthChecks()
-            // Add a default liveness check to ensure the app is responsive
+        builder
+            .Services.AddHealthChecks()
+            // Add a default liveness check to ensure app is responsive
             .AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
     }
 
     public static void MapDefaultEndpoints(this WebApplication app)
     {
-        // Configure the health checks
-        var healthChecks = app.MapGroup("");
-
-        // Configure health checks endpoints to use the configured request timeouts and cache policies
-        healthChecks.CacheOutput(HealthChecks).WithRequestTimeout(HealthChecks);
-
-        // All health checks must pass for the app to be considered ready to accept traffic after starting
-        healthChecks.MapHealthChecks(HealthEndpointPath);
-
-        // Only health checks tagged with the "live" tag must pass for the app to be considered alive
-        healthChecks.MapHealthChecks(
-            AlivenessEndpointPath,
-            new() { Predicate = r => r.Tags.Contains("live") }
-        );
-
-        // Add the health checks endpoint for the HealthChecksUI
-        var healthChecksUrls = app.Configuration["HEALTHCHECKSUI_URLS"];
-        if (string.IsNullOrWhiteSpace(healthChecksUrls))
+        if (app.Environment.IsDevelopment())
         {
             return;
         }
 
-        var pathToHostsMap = GetPathToHostsMap(healthChecksUrls);
+        // All health checks must pass for app to be considered ready to accept traffic after starting
+        app.MapHealthChecks(HealthEndpointPath);
 
-        foreach (var path in pathToHostsMap.Keys)
-        {
-            // Ensure that the HealthChecksUI endpoint is only accessible from configured hosts,
-            // e.g., localhost:12345, hub.docker.internal, etc.
-            // as it contains more detailed information about the health of the app,
-            // including the types of dependencies it has.
-            healthChecks
-                .MapHealthChecks(
-                    path,
-                    new() { ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse }
-                )
-                // This ensures that the HealthChecksUI endpoint is only accessible from the configured health checks URLs.
-                // See this documentation to learn more about restricting access to health checks endpoints via routing:
-                // https://learn.microsoft.com/aspnet/core/host-and-deploy/health-checks?view=aspnetcore-8.0#use-health-checks-routing
-                .RequireHost(pathToHostsMap[path]);
-        }
-
-        if (!app.Environment.IsDevelopment())
-        {
-            app.MapGet("/", () => Results.Redirect(HealthEndpointPath)).ExcludeFromDescription();
-        }
-    }
-
-    private static Dictionary<string, string[]> GetPathToHostsMap(string healthChecksUrls)
-    {
-        // Given a value like "localhost:12345/healthz;hub.docker.internal:12345/healthz" return a dictionary like:
-        // { { "healthz", [ "localhost:12345", "hub.docker.internal:12345" ] } }
-        var uris = healthChecksUrls
-            .Split(';', StringSplitOptions.RemoveEmptyEntries)
-            .Select(url => new Uri(url, UriKind.Absolute))
-            .GroupBy(uri => uri.AbsolutePath, uri => uri.Authority)
-            .ToDictionary(g => g.Key, g => g.ToArray());
-
-        return uris;
+        // Only health checks tagged with the "live" tag must pass for app to be considered alive
+        app.MapHealthChecks(
+            AlivenessEndpointPath,
+            new() { Predicate = r => r.Tags.Contains("live") }
+        );
     }
 }

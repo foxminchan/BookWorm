@@ -13,8 +13,6 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseOutputCache();
-
 app.MapDefaultEndpoints();
 
 app.UseTickerQ();

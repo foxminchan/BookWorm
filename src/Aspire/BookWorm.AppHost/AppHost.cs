@@ -113,7 +113,7 @@ var basketApi = builder
     .WithReference(catalogApi)
     .WithKeycloak(keycloak);
 
-var notificationApi = builder
+builder
     .AddProject<BookWorm_Notification>(Services.Notification)
     .WithEmailProvider()
     .WithReference(queue)
@@ -160,14 +160,14 @@ var ratingApi = builder
 
 chatApi.WithReference(ratingApi).WaitFor(ratingApi);
 
-var financeApi = builder
+builder
     .AddProject<BookWorm_Finance>(Services.Finance)
     .WithReference(financeDb)
     .WaitFor(financeDb)
     .WithReference(queue)
     .WaitFor(queue);
 
-var schedulerApi = builder
+builder
     .AddProject<BookWorm_Scheduler>(Services.Scheduler)
     .WithReference(queue)
     .WaitFor(queue)
@@ -188,18 +188,6 @@ var gateway = builder
 
 if (builder.ExecutionContext.IsRunMode)
 {
-    builder
-        .AddHealthChecksUI()
-        .WithReference(mcp)
-        .WithReference(chatApi)
-        .WithReference(ratingApi)
-        .WithReference(basketApi)
-        .WithReference(catalogApi)
-        .WithReference(financeApi)
-        .WithReference(orderingApi)
-        .WithReference(schedulerApi)
-        .WithReference(notificationApi);
-
     builder
         .AddScalar(keycloak)
         .WithOpenAPI(mcp)

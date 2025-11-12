@@ -49,6 +49,7 @@
     <PackageVersion Include="Microsoft.Azure.SignalR.Management" Version="1.32.0" />
     <!-- Data -->
     <PackageVersion Include="EFCore.NamingConventions" Version="10.0.0-rc.2" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0-rc.2" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="$(AspNetVersion)" />
     <!-- Observability -->
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.14.0-rc.1" />
@@ -65,7 +66,6 @@
     <PackageVersion Include="Microsoft.Agents.AI.DevUI" Version="$(AgentFrameworkVersion)" />
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.67.1-preview" />
     <!-- Miscellaneous -->
-    <PackageVersion Include="AspNetCore.HealthChecks.UI.Client" Version="$(HealthChecksVersion)" />
     <PackageVersion Include="AspNetCore.HealthChecks.Uris" Version="$(HealthChecksVersion)" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.0" />
     <PackageVersion Include="Marten.AspNetCore" Version="8.15.0" />

@@ -24,11 +24,7 @@ app.UseExceptionHandler();
 
 app.UseStatusCodePages();
 
-app.UseOutputCache();
-
 app.UseDefaultCors();
-
-app.UseRequestTimeouts();
 
 app.UseMiddleware<KeycloakTokenIntrospectionMiddleware>();
 
