@@ -37,12 +37,6 @@ var storage = builder
     .RunAsLocalContainer()
     .ProvisionAsService();
 
-var signalR = builder
-    .AddAzureSignalR(Components.Azure.SignalR)
-    .WithIconName("DesktopSignal")
-    .RunAsLocalContainer()
-    .ProvisionAsService();
-
 var blobStorage = storage.AddBlobContainer(Components.Azure.Storage.BlobContainer);
 
 var ratingDb = postgres.AddDatabase(Components.Database.Rating);
@@ -137,9 +131,6 @@ var orderingApi = builder
     .WithKeycloak(keycloak)
     .WithReference(catalogApi)
     .WithReference(basketApi)
-    .WithReference(signalR)
-    .WaitFor(signalR)
-    .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor)
     .WithSecret("hmac-key", "HMAC__Key")
     .WithHttpHealthCheck(Restful.Host.HealthEndpointPath);
 
@@ -155,6 +146,7 @@ var ratingApi = builder
     .WaitFor(queue)
     .WithKeycloak(keycloak)
     .WithReference(chatApi)
+    .WaitFor(chatApi)
     .WithHttpHealthCheck(Restful.Host.HealthEndpointPath)
     .WithUrlForEndpoint(
         Protocols.Http,
@@ -164,8 +156,6 @@ var ratingApi = builder
             url.Url = "/devui";
         }
     );
-
-chatApi.WithReference(ratingApi).WaitFor(ratingApi);
 
 builder
     .AddProject<BookWorm_Finance>(Services.Finance)

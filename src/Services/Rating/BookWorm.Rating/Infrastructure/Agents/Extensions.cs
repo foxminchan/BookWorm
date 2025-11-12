@@ -145,9 +145,6 @@ public static class Extensions
     {
         app.MapAgentDiscovery("/agents");
 
-        app.MapA2A(RatingAgent.Name, $"/a2a/{RatingAgent.Name}", RatingAgent.AgentCard)
-            .WithTags(nameof(RatingAgent));
-
         app.MapAGUI(
                 "/ag-ui",
                 app.Services.GetRequiredKeyedService<AIAgent>(Workflows.RatingSummarizer)

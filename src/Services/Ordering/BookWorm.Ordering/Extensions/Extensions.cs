@@ -89,8 +89,6 @@ internal static class Extensions
 
         builder.AddRedaction();
 
-        services.AddSignalR().AddNamedAzureSignalR(Components.Azure.SignalR);
-
         builder.AddPersistenceServices();
 
         // Configure FluentValidation

@@ -40,34 +40,6 @@ public static partial class AzureExtensions
     }
 
     /// <summary>
-    ///     Configures the Azure SignalR resource to be provisioned as a service with specific infrastructure settings.
-    /// </summary>
-    /// <param name="builder">The resource builder for Azure SignalR.</param>
-    /// <returns>The updated resource builder with configured infrastructure settings.</returns>
-    public static IResourceBuilder<AzureSignalRResource> ProvisionAsService(
-        this IResourceBuilder<AzureSignalRResource> builder
-    )
-    {
-        builder.ConfigureInfrastructure(infra =>
-        {
-            var resource = infra.GetProvisionableResources().OfType<SignalRService>().Single();
-
-            resource.Sku = new() { Tier = SignalRSkuTier.Free };
-
-            resource.Location = AzureLocation.SoutheastAsia;
-
-            resource.Tags.Add(
-                nameof(Environment),
-                builder.ApplicationBuilder.Environment.EnvironmentName
-            );
-
-            resource.Tags.Add(nameof(Projects), nameof(BookWorm));
-        });
-
-        return builder;
-    }
-
-    /// <summary>
     ///     Configures the Azure PostgreSQL Flexible Server resource to be provisioned as a service with specific
     ///     infrastructure settings.
     /// </summary>

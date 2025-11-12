@@ -1,7 +1,5 @@
 ﻿using BookWorm.Chassis.Caching;
 using BookWorm.Chassis.Utilities.Configuration;
-using BookWorm.Ordering.Features.Orders.Stream;
-using BookWorm.Ordering.Infrastructure.EventStore.Subscriptions;
 
 namespace BookWorm.Ordering.Infrastructure;
 
@@ -23,30 +21,19 @@ internal static class Extensions
         );
 
         // Configure EventStore
-        builder.AddEventStore(
-            storeOptions =>
-            {
-                storeOptions.ConfigureOrders();
-                storeOptions.Projections.DaemonLockId = 44444;
-                storeOptions.DisableNpgsqlLogging = true;
+        builder.AddEventStore(storeOptions =>
+        {
+            storeOptions.ConfigureOrders();
+            storeOptions.Projections.DaemonLockId = 44444;
+            storeOptions.DisableNpgsqlLogging = true;
 
-                // If we're running in development mode, let Marten just take care
-                // of all necessary schema building and patching behind the scenes
-                if (builder.Environment.IsDevelopment())
-                {
-                    storeOptions.AutoCreateSchemaObjects = AutoCreate.All;
-                }
-            },
-            martenOptions =>
-                martenOptions.AddSubscriptionWithServices<SignalRProducer<OrderStreamHub>>(
-                    ServiceLifetime.Singleton,
-                    opt =>
-                    {
-                        opt.FilterIncomingEventsOnStreamType(typeof(OrderSummary));
-                        opt.Options.BatchSize = 10;
-                    }
-                )
-        );
+            // If we're running in development mode, let Marten just take care
+            // of all necessary schema building and patching behind the scenes
+            if (builder.Environment.IsDevelopment())
+            {
+                storeOptions.AutoCreateSchemaObjects = AutoCreate.All;
+            }
+        });
 
         // Configure Redis
         builder
