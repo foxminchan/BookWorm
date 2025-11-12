@@ -123,13 +123,15 @@ var chatApi = builder
     .WithReference(mcp)
     .WithKeycloak(keycloak)
     .WithHttpHealthCheck(Restful.Host.HealthEndpointPath)
-    .WithUrlForEndpoint(
-        Protocols.Http,
-        url =>
-        {
-            url.DisplayText = "DevUI";
-            url.Url = "/devui";
-        }
+    .WithUrls(e =>
+        e.Urls.Add(
+            new()
+            {
+                Url = "/devui",
+                DisplayText = "DevUI",
+                Endpoint = e.GetEndpoint(Protocols.Http),
+            }
+        )
     );
 
 var ratingApi = builder
@@ -145,13 +147,15 @@ var ratingApi = builder
     .WithReference(chatApi)
     .WaitFor(chatApi)
     .WithHttpHealthCheck(Restful.Host.HealthEndpointPath)
-    .WithUrlForEndpoint(
-        Protocols.Http,
-        url =>
-        {
-            url.DisplayText = "DevUI";
-            url.Url = "/devui";
-        }
+    .WithUrls(e =>
+        e.Urls.Add(
+            new()
+            {
+                Url = "/devui",
+                DisplayText = "DevUI",
+                Endpoint = e.GetEndpoint(Protocols.Http),
+            }
+        )
     );
 
 mcp.WithReference(ratingApi);
@@ -171,9 +175,7 @@ builder
     .WithReference(schedulerDb)
     .WithSecret("api-key", "TickerQ__ApiKey")
     .WithHttpHealthCheck(Restful.Host.HealthEndpointPath)
-    .WithUrls(c =>
-        c.Urls.ForEach(u => u.DisplayText = $"TickerQ Dashboard ({u.Endpoint?.EndpointName})")
-    );
+    .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Dashboard ({u.Endpoint?.EndpointName})"));
 
 var gateway = builder
     .AddApiGatewayProxy()
