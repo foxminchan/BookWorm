@@ -10,64 +10,69 @@ namespace BookWorm.Catalog.Infrastructure;
 
 internal static class Extensions
 {
-    public static void AddPersistenceServices(this IHostApplicationBuilder builder)
+    extension(IHostApplicationBuilder builder)
     {
-        var services = builder.Services;
-
-        // Configure Azure Postgres Database
-        builder.AddAzurePostgresDbContext<CatalogDbContext>(
-            Components.Database.Catalog,
-            app =>
-            {
-                if (app.Environment.IsDevelopment())
-                {
-                    services.AddMigration<CatalogDbContext, CatalogDbContextSeed>();
-                }
-                else
-                {
-                    services.AddMigration<CatalogDbContext>();
-                }
-
-                services.AddRepositories(typeof(ICatalogApiMarker));
-            }
-        );
-
-        // Configure Qdrant
-        builder.AddQdrantClient(Components.VectorDb);
-        services.AddQdrantCollection<Guid, TextSnippet>(nameof(Book).ToLowerInvariant());
-
-        // Configure Redis Cache
-        builder
-            .AddRedisClientBuilder(Components.Redis, o => o.DisableAutoActivation = false)
-            .WithDistributedCache(options => options.InstanceName = "MainCache");
-
-        services.Configure<CachingOptions>(CachingOptions.ConfigurationSection);
-
-        var cachingOptions = services.BuildServiceProvider().GetRequiredService<CachingOptions>();
-
-        services.AddHybridCache(options =>
+        public void AddPersistenceServices()
         {
-            options.MaximumPayloadBytes = cachingOptions.MaximumPayloadBytes;
+            var services = builder.Services;
 
-            options.DefaultEntryOptions = new()
+            // Configure Azure Postgres Database
+            builder.AddAzurePostgresDbContext<CatalogDbContext>(
+                Components.Database.Catalog,
+                app =>
+                {
+                    if (app.Environment.IsDevelopment())
+                    {
+                        services.AddMigration<CatalogDbContext, CatalogDbContextSeed>();
+                    }
+                    else
+                    {
+                        services.AddMigration<CatalogDbContext>();
+                    }
+
+                    services.AddRepositories(typeof(ICatalogApiMarker));
+                }
+            );
+
+            // Configure Qdrant
+            builder.AddQdrantClient(Components.VectorDb);
+            services.AddQdrantCollection<Guid, TextSnippet>(nameof(Book).ToLowerInvariant());
+
+            // Configure Redis Cache
+            builder
+                .AddRedisClientBuilder(Components.Redis, o => o.DisableAutoActivation = false)
+                .WithDistributedCache(options => options.InstanceName = "MainCache");
+
+            services.Configure<CachingOptions>(CachingOptions.ConfigurationSection);
+
+            var cachingOptions = services
+                .BuildServiceProvider()
+                .GetRequiredService<CachingOptions>();
+
+            services.AddHybridCache(options =>
             {
-                Expiration = cachingOptions.Expiration,
-                LocalCacheExpiration = cachingOptions.Expiration,
-            };
-        });
+                options.MaximumPayloadBytes = cachingOptions.MaximumPayloadBytes;
 
-        // Add Blob services
-        builder.AddAzureBlobStorage();
-    }
+                options.DefaultEntryOptions = new()
+                {
+                    Expiration = cachingOptions.Expiration,
+                    LocalCacheExpiration = cachingOptions.Expiration,
+                };
+            });
 
-    public static void AddAI(this IHostApplicationBuilder builder)
-    {
-        var services = builder.Services;
+            // Add Blob services
+            builder.AddAzureBlobStorage();
+        }
 
-        builder.AddAIServices().WithAITelemetry();
+        public void AddAI()
+        {
+            var services = builder.Services;
 
-        services.AddScoped<IIngestionSource<Book>, BookDataIngestor>();
+            builder.AddAIServices().WithAITelemetry();
 
-        services.AddScoped<ISearch, HybridSearch>();
+            services.AddScoped<IIngestionSource<Book>, BookDataIngestor>();
+
+            services.AddScoped<ISearch, HybridSearch>();
+        }
     }
 }

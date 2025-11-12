@@ -6,37 +6,36 @@ namespace BookWorm.Notification.Infrastructure.Senders.SendGrid;
 
 internal static class SendGridExtensions
 {
-    /// <summary>
-    ///     Registers the SendGrid client and related services using the default configuration section.
-    /// </summary>
-    /// <param name="builder">The application builder to configure services for.</param>
-    public static void AddSendGridClient(this IHostApplicationBuilder builder)
+    extension(IHostApplicationBuilder builder)
     {
-        AddSendGridSender(builder, SendGridSettings.ConfigurationSection);
-    }
+        /// <summary>
+        ///     Registers the SendGrid client and related services using the default configuration section.
+        /// </summary>
+        public void AddSendGridClient()
+        {
+            AddSendGridSender(builder, SendGridSettings.ConfigurationSection);
+        }
 
-    private static void AddSendGridSender(
-        this IHostApplicationBuilder builder,
-        string configurationSection
-    )
-    {
-        var services = builder.Services;
+        private void AddSendGridSender(string configurationSection)
+        {
+            var services = builder.Services;
 
-        services.Configure<SendGridSettings>(configurationSection);
+            services.Configure<SendGridSettings>(configurationSection);
 
-        services.AddSendGrid(
-            (sp, options) => options.ApiKey = sp.GetRequiredService<SendGridSettings>().ApiKey
-        );
-
-        services.AddTransient<ISender, SendGridSender>();
-
-        services
-            .AddHealthChecks()
-            .AddSendGrid(
-                sp => sp.GetRequiredService<SendGridSettings>().ApiKey,
-                nameof(SendGrid),
-                HealthStatus.Degraded
+            services.AddSendGrid(
+                (sp, options) => options.ApiKey = sp.GetRequiredService<SendGridSettings>().ApiKey
             );
+
+            services.AddTransient<ISender, SendGridSender>();
+
+            services
+                .AddHealthChecks()
+                .AddSendGrid(
+                    sp => sp.GetRequiredService<SendGridSettings>().ApiKey,
+                    nameof(SendGrid),
+                    HealthStatus.Degraded
+                );
+        }
     }
 
     private static void AddSendGrid(

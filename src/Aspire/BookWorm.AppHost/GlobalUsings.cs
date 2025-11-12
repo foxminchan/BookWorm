@@ -6,4 +6,5 @@ global using BookWorm.AppHost.Extensions.Network;
 global using BookWorm.AppHost.Extensions.Security;
 global using BookWorm.AppHost.Extensions.Testing;
 global using BookWorm.Constants.Aspire;
+global using BookWorm.Constants.Core;
 global using Projects;

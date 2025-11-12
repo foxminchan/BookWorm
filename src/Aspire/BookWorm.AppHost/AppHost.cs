@@ -77,7 +77,7 @@ var catalogApi = builder
     .WaitFor(blobStorage)
     .WithReference(chat)
     .WithReference(embedding)
-    .WithHttpHealthCheck("/health")
+    .WithHttpHealthCheck(Restful.Host.HealthEndpointPath)
     .WithRoleAssignments(
         storage,
         StorageBuiltInRole.StorageBlobDataContributor,
@@ -88,7 +88,7 @@ var mcp = builder
     .AddProject<BookWorm_McpTools>(Services.McpTools)
     .WithReference(catalogApi)
     .WaitFor(catalogApi)
-    .WithHttpHealthCheck("/health");
+    .WithHttpHealthCheck(Restful.Host.HealthEndpointPath);
 
 var chatApi = builder
     .AddProject<BookWorm_Chat>(Services.Chatting)
@@ -97,7 +97,7 @@ var chatApi = builder
     .WithReference(mcp)
     .WaitFor(mcp)
     .WithKeycloak(keycloak)
-    .WithHttpHealthCheck("/health")
+    .WithHttpHealthCheck(Restful.Host.HealthEndpointPath)
     .WithUrlForEndpoint(
         Protocols.Http,
         url =>
@@ -115,7 +115,7 @@ var basketApi = builder
     .WaitFor(queue)
     .WithReference(catalogApi)
     .WithKeycloak(keycloak)
-    .WithHttpHealthCheck("/health");
+    .WithHttpHealthCheck(Restful.Host.HealthEndpointPath);
 
 builder
     .AddProject<BookWorm_Notification>(Services.Notification)
@@ -124,7 +124,7 @@ builder
     .WaitFor(queue)
     .WithReference(notificationDb)
     .WaitFor(notificationDb)
-    .WithHttpHealthCheck("/health");
+    .WithHttpHealthCheck(Restful.Host.HealthEndpointPath);
 
 var orderingApi = builder
     .AddProject<BookWorm_Ordering>(Services.Ordering)
@@ -141,7 +141,7 @@ var orderingApi = builder
     .WaitFor(signalR)
     .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor)
     .WithSecret("hmac-key", "HMAC__Key")
-    .WithHttpHealthCheck("/health");
+    .WithHttpHealthCheck(Restful.Host.HealthEndpointPath);
 
 var ratingApi = builder
     .AddProject<BookWorm_Rating>(Services.Rating)
@@ -155,7 +155,7 @@ var ratingApi = builder
     .WaitFor(queue)
     .WithKeycloak(keycloak)
     .WithReference(chatApi)
-    .WithHttpHealthCheck("/health")
+    .WithHttpHealthCheck(Restful.Host.HealthEndpointPath)
     .WithUrlForEndpoint(
         Protocols.Http,
         url =>
@@ -173,7 +173,7 @@ builder
     .WaitFor(financeDb)
     .WithReference(queue)
     .WaitFor(queue)
-    .WithHttpHealthCheck("/health");
+    .WithHttpHealthCheck(Restful.Host.HealthEndpointPath);
 
 builder
     .AddProject<BookWorm_Scheduler>(Services.Scheduler)
@@ -181,7 +181,7 @@ builder
     .WaitFor(queue)
     .WithReference(schedulerDb)
     .WithSecret("api-key", "TickerQ__ApiKey")
-    .WithHttpHealthCheck("/health")
+    .WithHttpHealthCheck(Restful.Host.HealthEndpointPath)
     .WithUrls(c =>
         c.Urls.ForEach(u => u.DisplayText = $"TickerQ Dashboard ({u.Endpoint?.EndpointName})")
     );

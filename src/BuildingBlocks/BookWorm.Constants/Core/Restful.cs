@@ -17,5 +17,6 @@ public static class Restful
     public static class Host
     {
         public static readonly string Localhost = nameof(Localhost).ToLowerInvariant();
+        public const string HealthEndpointPath = "/health";
     }
 }

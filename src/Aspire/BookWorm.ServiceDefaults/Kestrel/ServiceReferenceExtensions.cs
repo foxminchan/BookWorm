@@ -7,70 +7,77 @@ public static class ServiceReferenceExtensions
 {
     private static readonly string _healthCheckName = nameof(Health).ToLowerInvariant();
 
-    public static IHttpClientBuilder AddGrpcServiceReference<TClient>(
-        this IServiceCollection services,
-        string address,
-        HealthStatus failureStatus
-    )
-        where TClient : class
+    extension(IServiceCollection services)
     {
-        if (!Uri.IsWellFormedUriString(address, UriKind.Absolute))
-        {
-            throw new ArgumentException("Address must be a valid absolute URI.", nameof(address));
-        }
-
-        var uri = new Uri(address);
-        var builder = services.AddGrpcClient<TClient>(o => o.Address = uri);
-
-        builder.AddStandardResilienceHandler();
-
-        AddGrpcHealthChecks(
-            services,
-            uri,
-            $"{typeof(TClient).Name}-{_healthCheckName}",
-            failureStatus
-        );
-
-        return builder;
-    }
-
-    public static void AddHttpServiceReference<TClient>(
-        this IServiceCollection services,
-        string address,
-        HealthStatus failureStatus,
-        string? healthRelativePath = null
-    )
-        where TClient : class
-    {
-        if (!Uri.IsWellFormedUriString(address, UriKind.Absolute))
-        {
-            throw new ArgumentException("Address must be a valid absolute URI.", nameof(address));
-        }
-
-        if (
-            !string.IsNullOrEmpty(healthRelativePath)
-            && !Uri.IsWellFormedUriString(healthRelativePath, UriKind.Relative)
+        public IHttpClientBuilder AddGrpcServiceReference<TClient>(
+            string address,
+            HealthStatus failureStatus
         )
+            where TClient : class
         {
-            throw new ArgumentException(
-                "Health check path must be a valid relative URI.",
-                nameof(healthRelativePath)
+            if (!Uri.IsWellFormedUriString(address, UriKind.Absolute))
+            {
+                throw new ArgumentException(
+                    "Address must be a valid absolute URI.",
+                    nameof(address)
+                );
+            }
+
+            var uri = new Uri(address);
+            var builder = services.AddGrpcClient<TClient>(o => o.Address = uri);
+
+            builder.AddStandardResilienceHandler();
+
+            AddGrpcHealthChecks(
+                services,
+                uri,
+                $"{typeof(TClient).Name}-{_healthCheckName}",
+                failureStatus
             );
+
+            return builder;
         }
 
-        var uri = new Uri(address);
+        public void AddHttpServiceReference<TClient>(
+            string address,
+            HealthStatus failureStatus,
+            string? healthRelativePath = null
+        )
+            where TClient : class
+        {
+            if (!Uri.IsWellFormedUriString(address, UriKind.Absolute))
+            {
+                throw new ArgumentException(
+                    "Address must be a valid absolute URI.",
+                    nameof(address)
+                );
+            }
 
-        services.AddRefitClient<TClient>().ConfigureHttpClient(c => c.BaseAddress = uri);
+            if (
+                !string.IsNullOrEmpty(healthRelativePath)
+                && !Uri.IsWellFormedUriString(healthRelativePath, UriKind.Relative)
+            )
+            {
+                throw new ArgumentException(
+                    "Health check path must be a valid relative URI.",
+                    nameof(healthRelativePath)
+                );
+            }
 
-        services
-            .AddHealthChecks()
-            .AddUrlGroup(
-                new Uri(uri, healthRelativePath ?? _healthCheckName),
-                $"{typeof(TClient).Name}-{_healthCheckName}",
-                failureStatus,
-                configurePrimaryHttpMessageHandler: s =>
-                    s.GetRequiredService<IHttpMessageHandlerFactory>().CreateHandler()
-            );
+            var uri = new Uri(address);
+
+            services.AddRefitClient<TClient>().ConfigureHttpClient(c => c.BaseAddress = uri);
+
+            services
+                .AddHealthChecks()
+                .AddUrlGroup(
+                    new Uri(uri, healthRelativePath ?? _healthCheckName),
+                    $"{typeof(TClient).Name}-{_healthCheckName}",
+                    failureStatus,
+                    configurePrimaryHttpMessageHandler: s =>
+                        s.GetRequiredService<IHttpMessageHandlerFactory>().CreateHandler()
+                );
+        }
     }
 
     private static void AddGrpcHealthChecks(

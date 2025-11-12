@@ -11,33 +11,38 @@ public static class MigrateDbContextExtensions
     private const string ActivitySourceName = "DbMigrations";
     private static readonly ActivitySource _activitySource = new(ActivitySourceName);
 
-    public static IServiceCollection AddMigration<TContext>(this IServiceCollection services)
-        where TContext : DbContext
+    extension(IServiceCollection services)
     {
-        return services.AddMigration<TContext>((_, _) => Task.CompletedTask);
-    }
+        public IServiceCollection AddMigration<TContext>()
+            where TContext : DbContext
+        {
+            return services.AddMigration<TContext>((_, _) => Task.CompletedTask);
+        }
 
-    public static IServiceCollection AddMigration<TContext>(
-        this IServiceCollection services,
-        Func<TContext, IServiceProvider, Task> seeder
-    )
-        where TContext : DbContext
-    {
-        services.AddOpenTelemetry().WithTracing(tracing => tracing.AddSource(ActivitySourceName));
+        public IServiceCollection AddMigration<TContext>(
+            Func<TContext, IServiceProvider, Task> seeder
+        )
+            where TContext : DbContext
+        {
+            services
+                .AddOpenTelemetry()
+                .WithTracing(tracing => tracing.AddSource(ActivitySourceName));
 
-        return services.AddHostedService(sp => new MigrationHostedService<TContext>(sp, seeder));
-    }
+            return services.AddHostedService(sp => new MigrationHostedService<TContext>(
+                sp,
+                seeder
+            ));
+        }
 
-    public static IServiceCollection AddMigration<TContext, TDbSeeder>(
-        this IServiceCollection services
-    )
-        where TContext : DbContext
-        where TDbSeeder : class, IDbSeeder<TContext>
-    {
-        services.AddScoped<IDbSeeder<TContext>, TDbSeeder>();
-        return services.AddMigration<TContext>(
-            (context, sp) => sp.GetRequiredService<IDbSeeder<TContext>>().SeedAsync(context)
-        );
+        public IServiceCollection AddMigration<TContext, TDbSeeder>()
+            where TContext : DbContext
+            where TDbSeeder : class, IDbSeeder<TContext>
+        {
+            services.AddScoped<IDbSeeder<TContext>, TDbSeeder>();
+            return services.AddMigration<TContext>(
+                (context, sp) => sp.GetRequiredService<IDbSeeder<TContext>>().SeedAsync(context)
+            );
+        }
     }
 
     private static async Task MigrateDbContextAsync<TContext>(

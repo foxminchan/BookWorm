@@ -64,73 +64,74 @@ public static class RateLimiterExtensions
         return builder.RequireRateLimiting(PerUserPolicy);
     }
 
-    private static void AddDefaultLimiter(
-        this RateLimiterOptions option,
-        IOptionsMonitor<FixedWindowRateLimiterOptions> fixedWindowRateLimiterOptions
-    )
+    extension(RateLimiterOptions option)
     {
-        option.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
-            RateLimitPartition.GetFixedWindowLimiter(
-                context.GetClientIdentifier(),
-                _ => fixedWindowRateLimiterOptions.CurrentValue
-            )
-        );
-    }
+        private void AddDefaultLimiter(
+            IOptionsMonitor<FixedWindowRateLimiterOptions> fixedWindowRateLimiterOptions
+        )
+        {
+            option.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    context.GetClientIdentifier(),
+                    _ => fixedWindowRateLimiterOptions.CurrentValue
+                )
+            );
+        }
 
-    private static void AddUserRateLimiter(
-        this RateLimiterOptions option,
-        IOptionsMonitor<TokenBucketRateLimiterOptions> userRateLimitingOptions
-    )
-    {
-        option.AddPolicy(
-            PerUserPolicy,
-            context =>
-            {
-                var username = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-                if (string.IsNullOrEmpty(username))
+        private void AddUserRateLimiter(
+            IOptionsMonitor<TokenBucketRateLimiterOptions> userRateLimitingOptions
+        )
+        {
+            option.AddPolicy(
+                PerUserPolicy,
+                context =>
                 {
-                    throw new UnauthorizedAccessException(
-                        "User is not authenticated. Rate limiting requires an authenticated user."
+                    var username = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                    if (string.IsNullOrEmpty(username))
+                    {
+                        throw new UnauthorizedAccessException(
+                            "User is not authenticated. Rate limiting requires an authenticated user."
+                        );
+                    }
+
+                    return RateLimitPartition.GetTokenBucketLimiter(
+                        username,
+                        _ => userRateLimitingOptions.CurrentValue
                     );
                 }
+            );
+        }
 
-                return RateLimitPartition.GetTokenBucketLimiter(
-                    username,
-                    _ => userRateLimitingOptions.CurrentValue
-                );
-            }
-        );
-    }
-
-    private static void AddRejectBehavior(this RateLimiterOptions option)
-    {
-        option.OnRejected = async (context, cancellationToken) =>
+        private void AddRejectBehavior()
         {
-            var httpContext = context.HttpContext;
-            var serviceProvider = httpContext.RequestServices;
-
-            if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+            option.OnRejected = async (context, cancellationToken) =>
             {
-                var milliseconds = retryAfter.TotalMilliseconds.ToString(
-                    CultureInfo.InvariantCulture
-                );
+                var httpContext = context.HttpContext;
+                var serviceProvider = httpContext.RequestServices;
 
-                httpContext.Response.Headers.RetryAfter = milliseconds;
+                if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+                {
+                    var milliseconds = retryAfter.TotalMilliseconds.ToString(
+                        CultureInfo.InvariantCulture
+                    );
 
-                var problemDetailsFactory =
-                    serviceProvider.GetRequiredService<ProblemDetailsFactory>();
+                    httpContext.Response.Headers.RetryAfter = milliseconds;
 
-                var problemDetails = problemDetailsFactory.CreateProblemDetails(
-                    httpContext,
-                    StatusCodes.Status429TooManyRequests,
-                    "Rate limit exceeded",
-                    $"You have exceeded the rate limit. Try again in {milliseconds} ms."
-                );
+                    var problemDetailsFactory =
+                        serviceProvider.GetRequiredService<ProblemDetailsFactory>();
 
-                await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
-            }
-        };
+                    var problemDetails = problemDetailsFactory.CreateProblemDetails(
+                        httpContext,
+                        StatusCodes.Status429TooManyRequests,
+                        "Rate limit exceeded",
+                        $"You have exceeded the rate limit. Try again in {milliseconds} ms."
+                    );
+
+                    await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
+                }
+            };
+        }
     }
 
     private static string GetClientIdentifier(this HttpContext context)

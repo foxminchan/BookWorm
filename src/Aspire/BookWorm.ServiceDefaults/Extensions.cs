@@ -16,49 +16,62 @@ namespace BookWorm.ServiceDefaults;
 // To learn more about using this project, see https://aka.ms/dotnet/aspire/service-defaults
 public static class Extensions
 {
-    private const string HealthEndpointPath = "/health";
     private const string AlivenessEndpointPath = "/alive";
 
-    public static void AddServiceDefaults<TBuilder>(this TBuilder builder)
+    extension<TBuilder>(TBuilder builder)
         where TBuilder : IHostApplicationBuilder
     {
-        builder.ConfigureOpenTelemetry();
-
-        builder.AddDefaultHealthChecks();
-
-        builder.Services.Configure<DocumentOptions>(DocumentOptions.ConfigurationSection);
-
-        builder.Services.AddServiceDiscovery();
-
-        builder.Services.ConfigureHttpClientDefaults(http =>
+        public void AddServiceDefaults()
         {
-            // Turn on resilience by default
-            http.AddStandardResilienceHandler(options =>
+            builder.ConfigureOpenTelemetry();
+
+            builder.AddDefaultHealthChecks();
+
+            builder.Services.Configure<DocumentOptions>(DocumentOptions.ConfigurationSection);
+
+            builder.Services.AddServiceDiscovery();
+
+            builder.Services.ConfigureHttpClientDefaults(http =>
             {
-                var timeSpan = TimeSpan.FromMinutes(2);
-                options.AttemptTimeout.Timeout = timeSpan;
-                options.CircuitBreaker.SamplingDuration = timeSpan * 2;
-                options.TotalRequestTimeout.Timeout = timeSpan * 3;
-                options.Retry.MaxRetryAttempts = 1;
+                // Turn on resilience by default
+                http.AddStandardResilienceHandler(options =>
+                {
+                    var timeSpan = TimeSpan.FromMinutes(2);
+                    options.AttemptTimeout.Timeout = timeSpan;
+                    options.CircuitBreaker.SamplingDuration = timeSpan * 2;
+                    options.TotalRequestTimeout.Timeout = timeSpan * 3;
+                    options.Retry.MaxRetryAttempts = 1;
+                });
+
+                // Turn on service discovery by default
+                http.AddServiceDiscovery();
             });
+        }
 
-            // Turn on service discovery by default
-            http.AddServiceDiscovery();
-        });
-    }
+        private void ConfigureOpenTelemetry()
+        {
+            var services = builder.Services;
 
-    private static void ConfigureOpenTelemetry<TBuilder>(this TBuilder builder)
-        where TBuilder : IHostApplicationBuilder
-    {
-        var services = builder.Services;
+            services.AddHttpContextAccessor();
 
-        services.AddHttpContextAccessor();
+            builder.AddLogging();
 
-        builder.AddLogging();
+            services.AddOpenTelemetry(builder);
 
-        services.AddOpenTelemetry(builder);
+            builder.AddOpenTelemetryExporters();
+        }
 
-        builder.AddOpenTelemetryExporters();
+        private void AddOpenTelemetryExporters()
+        {
+            var useOtlpExporter = !string.IsNullOrWhiteSpace(
+                builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]
+            );
+
+            if (useOtlpExporter)
+            {
+                builder.Services.AddOpenTelemetry().UseOtlpExporter();
+            }
+        }
     }
 
     private static void AddLogging(this IHostApplicationBuilder builder)
@@ -113,7 +126,9 @@ public static class Extensions
                         // Don't trace requests to the health endpoint to avoid filling the dashboard with noise
                         options.Filter = httpContext =>
                             !(
-                                httpContext.Request.Path.StartsWithSegments(HealthEndpointPath)
+                                httpContext.Request.Path.StartsWithSegments(
+                                    Restful.Host.HealthEndpointPath
+                                )
                                 || httpContext.Request.Path.StartsWithSegments(
                                     AlivenessEndpointPath
                                 )
@@ -124,19 +139,6 @@ public static class Extensions
                     .AddProcessor(new FixHttpRouteProcessor())
                     .AddSource(ActivitySourceProvider.DefaultSourceName);
             });
-    }
-
-    private static void AddOpenTelemetryExporters<TBuilder>(this TBuilder builder)
-        where TBuilder : IHostApplicationBuilder
-    {
-        var useOtlpExporter = !string.IsNullOrWhiteSpace(
-            builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]
-        );
-
-        if (useOtlpExporter)
-        {
-            builder.Services.AddOpenTelemetry().UseOtlpExporter();
-        }
     }
 
     private static void AddDefaultHealthChecks(this IHostApplicationBuilder builder)
@@ -155,7 +157,7 @@ public static class Extensions
         }
 
         // All health checks must pass for app to be considered ready to accept traffic after starting
-        app.MapHealthChecks(HealthEndpointPath);
+        app.MapHealthChecks(Restful.Host.HealthEndpointPath);
 
         // Only health checks tagged with the "live" tag must pass for app to be considered alive
         app.MapHealthChecks(
