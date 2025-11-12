@@ -16,5 +16,4 @@
 - [ ] All tests passing
 - [ ] Follows DDD principles
 - [ ] Service boundaries maintained
-- [ ] Tests passing
 - [ ] C# 14 & `.editorconfig` followed

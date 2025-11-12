@@ -149,7 +149,7 @@ public static class Extensions
 
     public static void MapDefaultEndpoints(this WebApplication app)
     {
-        if (app.Environment.IsDevelopment())
+        if (!app.Environment.IsDevelopment())
         {
             return;
         }
