@@ -16,9 +16,6 @@ public sealed class Product(ICatalogApi catalogApi)
         [Description("The product description for which to search")] string description
     )
     {
-        const string notFoundMessage =
-            "We couldn't find any books matching your description. Please try again with a different description.";
-
         var response = await catalogApi.ListBooksAsync(description);
 
         if (!response.IsSuccessStatusCode)
@@ -27,7 +24,7 @@ public sealed class Product(ICatalogApi catalogApi)
         }
 
         return response.Content?.Items.Count == 0
-            ? notFoundMessage
+            ? "We couldn't find any books matching your description. Please try again with a different description."
             : JsonSerializer.Serialize(
                 response.Content?.Items,
                 BookSerializationContext.Default.IReadOnlyListBook

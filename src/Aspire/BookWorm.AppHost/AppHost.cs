@@ -81,25 +81,7 @@ var catalogApi = builder
 var mcp = builder
     .AddProject<BookWorm_McpTools>(Services.McpTools)
     .WithReference(catalogApi)
-    .WaitFor(catalogApi)
     .WithHttpHealthCheck(Restful.Host.HealthEndpointPath);
-
-var chatApi = builder
-    .AddProject<BookWorm_Chat>(Services.Chatting)
-    .WithReference(chat)
-    .WithReference(embedding)
-    .WithReference(mcp)
-    .WaitFor(mcp)
-    .WithKeycloak(keycloak)
-    .WithHttpHealthCheck(Restful.Host.HealthEndpointPath)
-    .WithUrlForEndpoint(
-        Protocols.Http,
-        url =>
-        {
-            url.DisplayText = "DevUI";
-            url.Url = "/devui";
-        }
-    );
 
 var basketApi = builder
     .AddProject<BookWorm_Basket>(Services.Basket)
@@ -134,6 +116,22 @@ var orderingApi = builder
     .WithSecret("hmac-key", "HMAC__Key")
     .WithHttpHealthCheck(Restful.Host.HealthEndpointPath);
 
+var chatApi = builder
+    .AddProject<BookWorm_Chat>(Services.Chatting)
+    .WithReference(chat)
+    .WithReference(embedding)
+    .WithReference(mcp)
+    .WithKeycloak(keycloak)
+    .WithHttpHealthCheck(Restful.Host.HealthEndpointPath)
+    .WithUrlForEndpoint(
+        Protocols.Http,
+        url =>
+        {
+            url.DisplayText = "DevUI";
+            url.Url = "/devui";
+        }
+    );
+
 var ratingApi = builder
     .AddProject<BookWorm_Rating>(Services.Rating)
     .WithReference(chat)
@@ -141,7 +139,6 @@ var ratingApi = builder
     .WithReference(ratingDb)
     .WaitFor(ratingDb)
     .WithReference(mcp)
-    .WaitFor(mcp)
     .WithReference(queue)
     .WaitFor(queue)
     .WithKeycloak(keycloak)
@@ -156,6 +153,8 @@ var ratingApi = builder
             url.Url = "/devui";
         }
     );
+
+mcp.WithReference(ratingApi);
 
 builder
     .AddProject<BookWorm_Finance>(Services.Finance)
