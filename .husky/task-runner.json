@@ -14,7 +14,7 @@
     {
       "name": "style",
       "command": "dotnet",
-      "args": ["format", "style", ".", "--verify-no-changes"]
+      "args": ["csharpier", "check", "."]
     },
     {
       "name": "analyzers",

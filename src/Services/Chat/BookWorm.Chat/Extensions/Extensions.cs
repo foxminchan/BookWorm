@@ -1,11 +1,5 @@
-﻿using BookWorm.Chassis.CQRS.Command;
-using BookWorm.Chassis.CQRS.Pipelines;
-using BookWorm.Chassis.CQRS.Query;
-using BookWorm.Chassis.OpenTelemetry.ActivityScope;
-using BookWorm.Chassis.Security.Extensions;
+﻿using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
-using BookWorm.Chat.Infrastructure.Backplane;
-using Mediator;
 using Microsoft.AspNetCore.Authorization;
 
 namespace BookWorm.Chat.Extensions;
@@ -49,46 +43,17 @@ internal static class Extensions
         builder.AddDefaultOpenApi();
 
         // Add exception handlers
-        services.AddExceptionHandler<ValidationExceptionHandler>();
         services.AddExceptionHandler<NotFoundExceptionHandler>();
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails();
-
-        // Configure Mediator
-        services
-            .AddMediator(
-                (MediatorOptions options) => options.ServiceLifetime = ServiceLifetime.Scoped
-            )
-            .AddScoped(typeof(IPipelineBehavior<,>), typeof(ActivityBehavior<,>))
-            .AddScoped(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>))
-            .AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
-
-        var appSettings = new AppSettings();
-
-        builder.Configuration.Bind(appSettings);
-
-        services.AddSingleton(appSettings);
 
         services.AddRateLimiting();
 
         services.AddVersioning();
         services.AddEndpoints(typeof(IChatApiMarker));
 
-        // Configure FluentValidation
-        services.AddValidatorsFromAssemblyContaining<IChatApiMarker>(includeInternalTypes: true);
-
-        services.AddSingleton<IActivityScope, ActivityScope>();
-        services.AddSingleton<CommandHandlerMetrics>();
-        services.AddSingleton<QueryHandlerMetrics>();
-
-        builder.AddRedisClient(Components.Redis, o => o.DisableAutoActivation = false);
-
-        services.AddBackplaneServices();
-
         // Configure ClaimsPrincipal
         services.AddTransient(s => s.GetRequiredService<IHttpContextAccessor>().HttpContext!.User);
-
-        services.AddSignalR().AddNamedAzureSignalR(Components.Azure.SignalR);
 
         builder.AddAIAgentsServices();
 

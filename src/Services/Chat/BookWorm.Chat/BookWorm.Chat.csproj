@@ -6,11 +6,8 @@
     />
   </ItemGroup>
   <ItemGroup Label="Core Dependencies">
-    <PackageReference Include="Microsoft.Azure.SignalR.Management" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
     <PackageReference Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore" />
-    <PackageReference Include="Mediator.SourceGenerator" PrivateAssets="all" />
-    <PackageReference Include="Aspire.StackExchange.Redis.DistributedCaching" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="$(AssemblyName).UnitTests" />

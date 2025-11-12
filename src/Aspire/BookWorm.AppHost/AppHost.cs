@@ -92,14 +92,9 @@ var chatApi = builder
     .AddProject<BookWorm_Chat>(Services.Chatting)
     .WithReference(chat)
     .WithReference(embedding)
-    .WithReference(redis)
-    .WaitFor(redis)
     .WithReference(mcp)
     .WaitFor(mcp)
     .WithKeycloak(keycloak)
-    .WithReference(signalR)
-    .WaitFor(signalR)
-    .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor)
     .WithUrlForEndpoint(
         Protocols.Http,
         url =>
@@ -214,7 +209,7 @@ if (builder.ExecutionContext.IsRunMode)
         .WithOpenAPI(catalogApi)
         .WithOpenAPI(orderingApi);
 
-    builder.AddMcpInspector(Components.Inspector).WithMcpServer<ProjectResource>(mcp);
+    builder.AddMcpInspector(Components.Inspector).WithMcpServer(mcp);
 
     builder.AddK6(gateway);
 }

@@ -1,12 +1,14 @@
 ﻿using BookWorm.Chassis.AI.Agents;
 using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.AI.Middlewares;
+using BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
 using BookWorm.Constants.Other;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
 using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;
+using Microsoft.Agents.AI.Workflows;
 
-namespace BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
+namespace BookWorm.Chat.Infrastructure.AgentOrchestration;
 
 internal static class Extensions
 {
@@ -185,13 +187,53 @@ internal static class Extensions
         builder
             .AddWorkflow(
                 Workflows.Chat,
-                (sp, _) =>
+                (sp, key) =>
                 {
-                    using var scope = sp.CreateScope();
+                    var orchestrateAgents = sp.GetRequiredService<OrchestrateAgents>();
 
-                    var workflow = scope
-                        .ServiceProvider.GetRequiredService<IAgentOrchestrationService>()
-                        .BuildAgentsWorkflow();
+                    var handoffWorkflow = AgentWorkflowBuilder
+                        .CreateHandoffBuilderWith(orchestrateAgents.RouterAgent)
+                        .WithHandoffs(
+                            orchestrateAgents.RouterAgent,
+                            [
+                                orchestrateAgents.LanguageAgent,
+                                orchestrateAgents.SummarizeAgent,
+                                orchestrateAgents.SentimentAgent,
+                                orchestrateAgents.BookAgent,
+                            ]
+                        )
+                        .WithHandoff(
+                            orchestrateAgents.LanguageAgent,
+                            orchestrateAgents.BookAgent,
+                            "Transfer to this agent if the user input is not in English."
+                        )
+                        .WithHandoff(
+                            orchestrateAgents.SummarizeAgent,
+                            orchestrateAgents.BookAgent,
+                            "Transfer to this agent if the user message is very long or complex."
+                        )
+                        .WithHandoffs(
+                            orchestrateAgents.SentimentAgent,
+                            [orchestrateAgents.BookAgent, orchestrateAgents.RouterAgent]
+                        )
+                        .WithHandoff(
+                            orchestrateAgents.BookAgent,
+                            orchestrateAgents.RouterAgent,
+                            "Transfer back to RouterAgent for any follow-up handling."
+                        )
+                        .Build();
+
+                    var handoffWorkflowExecutor = handoffWorkflow.BindAsExecutor(
+                        "AgentHandoffWorkflowExecutor"
+                    );
+
+                    var workflow = new WorkflowBuilder(handoffWorkflowExecutor)
+                        .AddEdge(handoffWorkflowExecutor, orchestrateAgents.QAAgent)
+                        .WithName(key)
+                        .WithDescription(
+                            "Orchestrates multiple AI agents to handle user chat messages"
+                        )
+                        .Build();
 
                     return workflow;
                 }
