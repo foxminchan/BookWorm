@@ -1,7 +1,6 @@
 ---
 name: Debug
 description: "Debug your application to find and fix a bug"
-model: Claude Sonnet 4.5 (copilot)
 tools:
   [
     "search/codebase",
@@ -12,6 +11,7 @@ tools:
     "search",
     "usages",
   ]
+model: Claude Sonnet 4.5 (copilot)
 ---
 
 # Debug Mode Instructions
