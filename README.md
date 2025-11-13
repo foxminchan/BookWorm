@@ -79,7 +79,6 @@
 >
 > - 🤖 Ensure you have an [OpenAI API key](https://platform.openai.com/api-keys) to use the AI features
 > - 📧 Email services use [SendGrid](https://sendgrid.com/) in production and [Mailpit](https://mailpit.axllent.org/) locally
-> - 🍎 Mac with Apple Silicon users need [Rosetta 2](https://support.apple.com/en-us/102527) for grpc-tools compatibility
 > - 🐳 Docker Desktop must be running before starting the application
 
 ### Run the Application
