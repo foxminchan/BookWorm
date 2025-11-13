@@ -158,8 +158,6 @@ var ratingApi = builder
         )
     );
 
-mcp.WithReference(ratingApi);
-
 builder
     .AddProject<BookWorm_Finance>(Services.Finance)
     .WithReference(financeDb)
