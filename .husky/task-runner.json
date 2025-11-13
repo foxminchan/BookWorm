@@ -8,12 +8,12 @@
     },
     {
       "name": "format",
-      "command": "dotnet",
+      "command": "dnx",
       "args": ["csharpier", "format", "."]
     },
     {
       "name": "style",
-      "command": "dotnet",
+      "command": "dnx",
       "args": ["csharpier", "check", "."]
     },
     {
