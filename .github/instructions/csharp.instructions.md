@@ -1,17 +1,20 @@
 ---
-description: 'Guidelines for building C# applications'
-applyTo: '**/*.cs'
+description: "Guidelines for building C# applications"
+applyTo: "**/*.cs"
+name: CSharp
 ---
 
 # C# Development
 
 ## C# Instructions
+
 - Always use the latest version C#, currently C# 13 features.
 - Write clear and concise comments for each function.
 - Never change global.json unless explicitly asked to.
 - Never change nuget.config files unless explicitly asked to.
 
 ## General Instructions
+
 - Make only high confidence suggestions when reviewing code changes.
 - Write code with good maintainability practices, including comments on why certain design decisions were made.
 - Handle edge cases and write clear exception handling.
@@ -38,9 +41,9 @@ applyTo: '**/*.cs'
 
 ### Testing
 
-* We use TUnit for tests.
-* Use Moq for mocking in tests.
-* Copy existing style in nearby files for test method names and capitalization.
+- We use TUnit for tests.
+- Use Moq for mocking in tests.
+- Copy existing style in nearby files for test method names and capitalization.
 
 ## Project Setup and Structure
 

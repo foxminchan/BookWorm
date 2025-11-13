@@ -1,6 +1,8 @@
 ---
-mode: "agent"
-tools: [
+agent: CSharp-Expert
+description: "Get best practices for TUnit unit testing, including data-driven tests"
+tools:
+  [
     "edit/editFiles",
     "search",
     "runCommands",
@@ -10,7 +12,6 @@ tools: [
     "problems",
     "changes",
   ]
-description: "Get best practices for TUnit unit testing, including data-driven tests"
 model: Claude Sonnet 4.5 (copilot)
 ---
 
