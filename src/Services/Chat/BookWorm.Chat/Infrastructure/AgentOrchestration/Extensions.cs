@@ -1,4 +1,7 @@
-﻿using BookWorm.Chassis.AI.Agents;
+﻿#pragma warning disable MEAI001
+
+using System.Text;
+using BookWorm.Chassis.AI.Agents;
 using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.AI.Middlewares;
 using BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
@@ -30,7 +33,18 @@ internal static class Extensions
                     .Use(GuardrailMiddleware.InvokeAsync, null)
                     .Build(sp);
 
-                var mcpClient = sp.GetRequiredService<McpClient>();
+                var addressBuilder = new StringBuilder();
+                addressBuilder.Append(
+                    ServiceDiscoveryUtilities.GetServiceEndpoint(Services.McpTools, Protocols.Https)
+                );
+                addressBuilder.Append('/');
+                addressBuilder.Append("mcp");
+
+                var mcpTool = new HostedMcpServerTool(Services.McpTools, addressBuilder.ToString())
+                {
+                    AllowedTools = ["search_catalog"],
+                    ApprovalMode = HostedMcpServerToolApprovalMode.NeverRequire,
+                };
 
                 var agent = new ChatClientAgent(
                     chatClient,
@@ -45,10 +59,7 @@ internal static class Extensions
                             MaxOutputTokens = 2000,
                             TopP = 0.95f,
                             AllowMultipleToolCalls = true,
-                            Tools =
-                            [
-                                .. mcpClient.ListToolsAsync().Preserve().GetAwaiter().GetResult(),
-                            ],
+                            Tools = [mcpTool],
                         },
                     }
                 );

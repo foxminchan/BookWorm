@@ -12,7 +12,6 @@ internal static class Extensions
         services.AddSingleton<OrchestrateAgents>();
 
         builder.AddAIServices().WithAITelemetry();
-        builder.AddMcpClient(Services.McpTools);
         builder.AddAgents();
 
         services.AddAGUI();

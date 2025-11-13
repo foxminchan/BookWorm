@@ -1,9 +1,14 @@
-﻿global using BookWorm.Chassis.Endpoints;
+﻿global using A2A;
+global using BookWorm.Chassis.Endpoints;
 global using BookWorm.Chassis.Exceptions;
+global using BookWorm.Chassis.Security.Settings;
+global using BookWorm.Chassis.Utilities;
 global using BookWorm.Chat.Infrastructure;
 global using BookWorm.Constants.Aspire;
 global using BookWorm.Constants.Core;
 global using BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
 global using BookWorm.ServiceDefaults.Kestrel;
+global using Microsoft.AspNetCore.Authentication.JwtBearer;
+global using Microsoft.AspNetCore.Authentication.OAuth;
 global using Microsoft.Extensions.AI;
 global using ModelContextProtocol.Client;
