@@ -1,8 +1,7 @@
-#:property ManagePackageVersionsCentrally=false
-#:package Spectre.Console@0.50.0
-#:package CliWrap@3.6.6
+﻿#:property ManagePackageVersionsCentrally=false
+#:package Spectre.Console@0.54.0
+#:package CliWrap@3.9.0
 
-using System.Text;
 using CliWrap;
 using CliWrap.Buffered;
 using Spectre.Console;
@@ -93,7 +92,9 @@ static string GetSecretValue(string output, string key)
     var line = lines.FirstOrDefault(l => l.Contains(key));
 
     if (line is null)
+    {
         return string.Empty;
+    }
 
     var parts = line.Split('=', 2);
     return parts.Length == 2 ? parts[1].Trim() : string.Empty;
