@@ -11,8 +11,8 @@ var postgres = builder
 
 var redis = builder
     .AddAzureRedis(Components.Redis)
-    .WithIconName("Memory")
     .WithAccessKeyAuthentication()
+    .WithIconName("Memory")
     .RunAsLocalContainer()
     .ProvisionAsService();
 

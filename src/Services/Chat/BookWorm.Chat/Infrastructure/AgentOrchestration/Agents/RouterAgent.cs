@@ -149,47 +149,6 @@ internal static class RouterAgent
                     ],
                 },
             ],
-            SecuritySchemes = new()
-            {
-                [OAuthDefaults.DisplayName] = new OAuth2SecurityScheme(
-                    new()
-                    {
-                        ClientCredentials = new(
-                            new(
-                                ServiceDiscoveryUtilities.GetServiceEndpoint(Components.KeyCloak)
-                                    + "/realms"
-                                    + Environment.GetEnvironmentVariable(
-                                        $"{IdentityOptions.ConfigurationSection}__{nameof(IdentityOptions.Realm)}"
-                                    )
-                                    + "/protocol/openid-connect/token"
-                            ),
-                            new Dictionary<string, string>
-                            {
-                                {
-                                    $"{Services.Chatting}_{Authorization.Actions.Read}",
-                                    "Read access to chat service"
-                                },
-                                {
-                                    $"{Services.Chatting}_{Authorization.Actions.Write}",
-                                    "Write access to chat service"
-                                },
-                            }
-                        ),
-                    },
-                    "OAuth2 security scheme for the BookWorm API"
-                ),
-            },
-            Security =
-            [
-                new()
-                {
-                    [$"{JwtBearerDefaults.AuthenticationScheme}"] =
-                    [
-                        $"{Services.Chatting}_{Authorization.Actions.Read}",
-                        $"{Services.Chatting}_{Authorization.Actions.Write}",
-                    ],
-                },
-            ],
             PreferredTransport = AgentTransport.JsonRpc,
         };
 }
