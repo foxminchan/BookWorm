@@ -8,14 +8,12 @@ public static class DevUIExtensions
 {
     public static void UseDevUI(this WebApplication app)
     {
+        app.MapOpenAIResponses();
+        app.MapOpenAIConversations();
+
         if (app.Environment.IsDevelopment())
         {
             app.MapDevUI();
-        }
-        else
-        {
-            app.MapOpenAIResponses();
-            app.MapOpenAIConversations();
         }
     }
 }

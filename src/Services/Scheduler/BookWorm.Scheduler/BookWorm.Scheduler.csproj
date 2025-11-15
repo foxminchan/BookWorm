@@ -5,14 +5,9 @@
       Value="BookWorm Scheduler Service Image"
     />
   </ItemGroup>
-  <ItemGroup Label="TickerQ">
-    <PackageReference Include="TickerQ" />
-    <PackageReference Include="TickerQ.Dashboard" />
-    <PackageReference Include="TickerQ.Instrumentation.OpenTelemetry" />
-  </ItemGroup>
-  <ItemGroup Label="EF Core">
-    <PackageReference Include="MassTransit.EntityFrameworkCore" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
+  <ItemGroup Label="Quartz">
+    <PackageReference Include="Quartz.AspNetCore" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Quartz" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="$(AssemblyName).UnitTests" />

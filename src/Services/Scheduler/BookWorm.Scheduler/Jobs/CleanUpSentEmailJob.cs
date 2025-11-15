@@ -1,14 +1,11 @@
 ﻿using BookWorm.Contracts;
-using TickerQ.Utilities.Base;
 
 namespace BookWorm.Scheduler.Jobs;
 
-public sealed class CleanUpSentEmailJob(IBus bus, ISchedulerDbContext dbContext)
+public sealed class CleanUpSentEmailJob(IBus bus) : IJob
 {
-    [TickerFunction($"{nameof(CleanUpSentEmailJob)}", "%CronTicker:CleanUpSentEmailJob%")]
-    public async Task ExecuteAsync(CancellationToken cancellationToken)
+    public async Task Execute(IJobExecutionContext context)
     {
-        await bus.Publish(new CleanUpSentEmailIntegrationEvent(), cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await bus.Publish(new CleanUpSentEmailIntegrationEvent(), context.CancellationToken);
     }
 }

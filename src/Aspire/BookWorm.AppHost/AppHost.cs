@@ -43,7 +43,6 @@ var ratingDb = postgres.AddDatabase(Components.Database.Rating);
 var catalogDb = postgres.AddDatabase(Components.Database.Catalog);
 var financeDb = postgres.AddDatabase(Components.Database.Finance);
 var orderingDb = postgres.AddDatabase(Components.Database.Ordering);
-var schedulerDb = postgres.AddDatabase(Components.Database.Scheduler);
 var notificationDb = postgres.AddDatabase(Components.Database.Notification);
 
 var openai = builder.AddOpenAI(Components.OpenAI.Resource);
@@ -169,10 +168,8 @@ builder
     .AddProject<BookWorm_Scheduler>(Services.Scheduler)
     .WithReference(queue)
     .WaitFor(queue)
-    .WithReference(schedulerDb)
-    .WithSecret("api-key", "TickerQ__ApiKey")
     .WithHttpHealthCheck(Restful.Host.HealthEndpointPath)
-    .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Dashboard ({u.Endpoint?.EndpointName})"));
+    .WithExplicitStart();
 
 var gateway = builder
     .AddApiGatewayProxy()

@@ -15,8 +15,4 @@ if (!app.Environment.IsDevelopment())
 
 app.MapDefaultEndpoints();
 
-app.UseTickerQ();
-
-app.MapGet("/", () => TypedResults.Redirect("/admin/tickerq")).ExcludeFromDescription();
-
 app.Run();
