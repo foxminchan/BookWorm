@@ -18,15 +18,9 @@ restore:
     dotnet restore
     dotnet tool restore
 
-# Enable features for Aspire
-
-features: restore
-    aspire config set features.execCommandEnabled true
-    aspire config set features.deployCommandEnabled true
-
 # Build the solution
 
-build: features
+build: restore
     dotnet build {{ solution }}
 
 # Run tests

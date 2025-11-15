@@ -93,8 +93,10 @@ if (File.Exists(secretsPath))
             JsonSerializer.Deserialize(existingJson, SecretsJsonContext.Default.StringDictionary)
             ?? [];
     }
-    catch
+    catch (JsonException ex)
     {
+        AnsiConsole.MarkupLine($"[yellow]⚠ Existing secrets file is invalid: {ex.Message}[/]");
+        AnsiConsole.MarkupLine("[yellow]  Starting with empty secrets.[/]");
         secrets = [];
     }
 }
@@ -103,17 +105,31 @@ if (File.Exists(secretsPath))
 secrets[SecretKey] = apiKey;
 
 // Write back to secrets file
-var json = JsonSerializer.Serialize(secrets, SecretsJsonContext.Default.StringDictionary);
-await File.WriteAllTextAsync(secretsPath, json);
-
-AnsiConsole.MarkupLine("[green]✓ OpenAI API key has been configured successfully.[/]");
-return 0;
+try
+{
+    var json = JsonSerializer.Serialize(secrets, SecretsJsonContext.Default.StringDictionary);
+    await File.WriteAllTextAsync(secretsPath, json);
+    AnsiConsole.MarkupLine("[green]✓ OpenAI API key has been configured successfully.[/]");
+    return 0;
+}
+catch (Exception ex)
+{
+    AnsiConsole.MarkupLine($"[red]✗ Failed to save secrets: {ex.Message}[/]");
+    return 1;
+}
 
 static string GetUserSecretsId(string projectPath)
 {
-    var doc = XDocument.Load(projectPath);
-    var userSecretsId = doc.Descendants("UserSecretsId").FirstOrDefault()?.Value;
-    return userSecretsId ?? string.Empty;
+    try
+    {
+        var doc = XDocument.Load(projectPath);
+        return doc.Descendants("UserSecretsId").FirstOrDefault()?.Value ?? string.Empty;
+    }
+    catch (Exception ex)
+    {
+        AnsiConsole.MarkupLine($"[red]✗ Failed to read project file: {ex.Message}[/]");
+        return string.Empty;
+    }
 }
 
 static string GetSecretsFilePath(string userSecretsId)

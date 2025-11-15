@@ -96,10 +96,6 @@ cd BookWorm
 just run
 ```
 
-> [!TIP]
->
-> - Run `just help` to see all available commands.
-
 ### Deploy the Application
 
 To deploy BookWorm to Azure Container Apps, follow these steps:
