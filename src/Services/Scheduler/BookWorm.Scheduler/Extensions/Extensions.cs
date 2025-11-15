@@ -16,10 +16,10 @@ internal static class Extensions
             q.SchedulerId = $"{nameof(BookWorm)}-{nameof(Scheduler)}-{Environment.MachineName}";
             q.UseDefaultThreadPool(tp => tp.MaxConcurrency = Environment.ProcessorCount);
             q.AddJobConfigurator<CleanUpSentEmailJob>(
-                builder.Configuration[$"{nameof(Quartz)}:{nameof(CleanUpSentEmailJob)}"]!
+                builder.Configuration[$"{nameof(Quartz)}:{nameof(CleanUpSentEmailJob)}"]
             );
             q.AddJobConfigurator<ResendErrorEmailJob>(
-                builder.Configuration[$"{nameof(Quartz)}:{nameof(ResendErrorEmailJob)}"]!
+                builder.Configuration[$"{nameof(Quartz)}:{nameof(ResendErrorEmailJob)}"]
             );
         });
 
@@ -30,11 +30,13 @@ internal static class Extensions
 
     private static void AddJobConfigurator<TJob>(
         this IServiceCollectionQuartzConfigurator quartz,
-        string cronExpression,
+        string? cronExpression,
         Action<ITriggerConfigurator>? trigger = null
     )
         where TJob : IJob
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(cronExpression);
+
         var key = new JobKey(typeof(TJob).Name, nameof(Scheduler));
 
         quartz.AddJob<TJob>(opts => opts.WithIdentity(key));
