@@ -4,31 +4,19 @@ using BookWorm.Chassis.Security.TokenExchange;
 using Microsoft.Agents.AI;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.OAuth;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Chassis.AI.Agents;
 
 public sealed class A2AAgentClient(Uri baseUri, string? path)
 {
-    public async Task<AIAgent> GetAIAgent(
-        string agentName,
-        ITokenExchange? tokenExchange = null,
-        ClaimsPrincipal? claimsPrincipal = null
-    )
+    public async Task<AIAgent> GetAIAgent(IServiceProvider serviceProvider, string agentName)
     {
         var (resolver, httpClient) = ResolveClient(agentName);
 
         var agentCard = await resolver.GetAgentCardAsync();
 
-        if (tokenExchange is not null)
-        {
-            await HandleAuthenticationAsync(
-                agentName,
-                agentCard,
-                httpClient,
-                tokenExchange,
-                claimsPrincipal
-            );
-        }
+        await HandleAuthenticationAsync(agentName, agentCard, httpClient, serviceProvider);
 
         var agent = await resolver.GetAIAgentAsync(httpClient);
 
@@ -39,41 +27,40 @@ public sealed class A2AAgentClient(Uri baseUri, string? path)
         string agentName,
         AgentCard agentCard,
         HttpClient httpClient,
-        ITokenExchange tokenExchange,
-        ClaimsPrincipal? claimsPrincipal
+        IServiceProvider serviceProvider
     )
     {
-        ArgumentNullException.ThrowIfNull(claimsPrincipal);
-
         if (
-            agentCard.SecuritySchemes is null
-            || !agentCard.SecuritySchemes.TryGetValue(
+            agentCard.SecuritySchemes is not null
+            && agentCard.SecuritySchemes.TryGetValue(
                 OAuthDefaults.DisplayName,
                 out var securityScheme
             )
-            || securityScheme is not OAuth2SecurityScheme oauth2Scheme
+            && securityScheme is OAuth2SecurityScheme oAuth2SecurityScheme
         )
         {
-            throw new InvalidOperationException(
-                $"Agent '{agentName}' does not support OAuth2 authentication."
+            var scope = string.Join(
+                ' ',
+                oAuth2SecurityScheme.Flows.AuthorizationCode?.Scopes.Keys ?? []
+            );
+
+            if (string.IsNullOrWhiteSpace(scope))
+            {
+                throw new InvalidOperationException(
+                    $"Agent '{agentName}' JWT Bearer configuration is invalid: no scopes defined."
+                );
+            }
+
+            var tokenExchange = serviceProvider.GetRequiredService<ITokenExchange>();
+            var claimsPrincipal = serviceProvider.GetRequiredService<ClaimsPrincipal>();
+
+            var accessToken = await tokenExchange.ExchangeAsync(claimsPrincipal, scope: scope);
+
+            httpClient.DefaultRequestHeaders.Authorization = new(
+                JwtBearerDefaults.AuthenticationScheme,
+                accessToken
             );
         }
-
-        var scope = string.Join(' ', oauth2Scheme.Flows.AuthorizationCode?.Scopes.Keys ?? []);
-
-        if (string.IsNullOrWhiteSpace(scope))
-        {
-            throw new InvalidOperationException(
-                $"Agent '{agentName}' OAuth2 configuration is invalid: no scopes defined."
-            );
-        }
-
-        var accessToken = await tokenExchange.ExchangeAsync(claimsPrincipal, scope: scope);
-
-        httpClient.DefaultRequestHeaders.Authorization = new(
-            JwtBearerDefaults.AuthenticationScheme,
-            accessToken
-        );
     }
 
     private (A2ACardResolver, HttpClient) ResolveClient(string agentName)

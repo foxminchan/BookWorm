@@ -69,26 +69,31 @@ public static class Extensions
                 (sp, key) =>
                 {
                     var summarizeAgent = A2AClientFactory.CreateA2AAgentClient(
+                        sp,
                         Constants.Aspire.Services.Chatting,
                         Constants.Other.Agents.SummarizeAgent
                     );
 
                     var languageAgent = A2AClientFactory.CreateA2AAgentClient(
+                        sp,
                         Constants.Aspire.Services.Chatting,
                         Constants.Other.Agents.LanguageAgent
                     );
 
                     var sentimentAgent = A2AClientFactory.CreateA2AAgentClient(
+                        sp,
                         Constants.Aspire.Services.Chatting,
                         Constants.Other.Agents.SentimentAgent
                     );
 
                     var routerAgent = A2AClientFactory.CreateA2AAgentClient(
+                        sp,
                         Constants.Aspire.Services.Chatting,
                         Constants.Other.Agents.RouterAgent
                     );
 
                     var qaAgent = A2AClientFactory.CreateA2AAgentClient(
+                        sp,
                         Constants.Aspire.Services.Chatting,
                         Constants.Other.Agents.QAAgent
                     );

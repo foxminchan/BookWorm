@@ -52,12 +52,11 @@ var chat = openai.AddModel(Components.OpenAI.Chat, Components.OpenAI.OpenAIGpt4o
 var embedding = openai.AddModel(Components.OpenAI.Embedding, Components.OpenAI.TextEmbedding3Large);
 
 IResourceBuilder<IResource> keycloak = builder.ExecutionContext.IsRunMode
-    ? builder.AddLocalKeycloak(Components.KeyCloak).WithPostgres(postgres)
+    ? builder.AddLocalKeycloak(Components.KeyCloak)
     : builder.AddHostedKeycloak(Components.KeyCloak);
 
 var catalogApi = builder
     .AddProject<BookWorm_Catalog>(Services.Catalog)
-    .WithReplicas(builder.ExecutionContext.IsRunMode ? 1 : 2)
     .WithReference(queue)
     .WaitFor(queue)
     .WithReference(catalogDb)

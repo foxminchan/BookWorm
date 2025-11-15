@@ -2,22 +2,15 @@
 
 public static class KeycloakExtensions
 {
-    private const string BaseContainerPath = "Container/keycloak";
-    private const string RealmName = "REALM_NAME";
-    private const string RealmHsts = "REALM_HSTS";
     private const string ThemeName = "THEME_NAME";
+    private const string RealmName = "REALM_NAME";
     private const string RealmDisplayName = "REALM_DISPLAY_NAME";
     private const string HttpEnabledEnvVarName = "KC_HTTP_ENABLED";
     private const string ProxyHeadersEnvVarName = "KC_PROXY_HEADERS";
     private const string HostNameStrictEnvVarName = "KC_HOSTNAME_STRICT";
-    private const string KeycloakDatabaseEnvVarName = "KC_DB";
-    private const string KeycloakDatabaseUsernameEnvVarName = "KC_DB_USERNAME";
-    private const string KeycloakDatabasePasswordEnvVarName = "KC_DB_PASSWORD";
-    private const string KeycloakTransactionXaEnabledEnvVarName = "KC_TRANSACTION_XA_ENABLED";
-    private const string KeycloakDatabaseUrlEnvVarName = "KC_DB_URL";
+    private const string BaseContainerPath = "Container/keycloak";
     private static readonly string _defaultLocalKeycloakName = nameof(BookWorm).ToLowerInvariant();
 
-    /// <param name="builder">The distributed application builder to which the Keycloak resource will be added.</param>
     extension(IDistributedApplicationBuilder builder)
     {
         /// <summary>
@@ -32,6 +25,7 @@ public static class KeycloakExtensions
         {
             var keycloak = builder
                 .AddKeycloak(name)
+                .WithDataVolume()
                 .WithIconName("LockClosedRibbon")
                 .WithCustomTheme(_defaultLocalKeycloakName)
                 .WithImagePullPolicy(ImagePullPolicy.Always)
@@ -87,47 +81,6 @@ public static class KeycloakExtensions
 
             return keycloak;
         }
-    }
-
-    /// <summary>
-    ///     Configures a <see cref="KeycloakResource" /> to use an external PostgreSQL database.
-    /// </summary>
-    /// <param name="builder">The <see cref="IResourceBuilder{KeycloakResource}" /> instance.</param>
-    /// <param name="postgres">The PostgreSQL database resource builder.</param>
-    /// <param name="xaEnabled">Whether to enable XA transactions. Default is false.</param>
-    /// <returns>The <see cref="IResourceBuilder{KeycloakResource}" /> for method chaining.</returns>
-    public static IResourceBuilder<KeycloakResource> WithPostgres(
-        this IResourceBuilder<KeycloakResource> builder,
-        IResourceBuilder<AzurePostgresFlexibleServerResource> postgres,
-        bool xaEnabled = false
-    )
-    {
-        var userDb = postgres.AddDatabase(Components.Database.User);
-
-        return builder
-            .WithEnvironment(context =>
-            {
-                context.EnvironmentVariables.Add(KeycloakDatabaseEnvVarName, "postgres");
-                context.EnvironmentVariables.Add(
-                    KeycloakDatabaseUsernameEnvVarName,
-                    userDb.Resource.Parent.UserName ?? ReferenceExpression.Create($"postgres")
-                );
-                context.EnvironmentVariables.Add(
-                    KeycloakDatabasePasswordEnvVarName,
-                    userDb.Resource.Parent.Password ?? ReferenceExpression.Create($"postgres")
-                );
-                context.EnvironmentVariables.Add(
-                    KeycloakDatabaseUrlEnvVarName,
-                    ReferenceExpression.Create(
-                        $"jdbc:postgresql://{userDb.Resource.Parent.HostName}/{userDb.Resource.DatabaseName}"
-                    )
-                );
-                context.EnvironmentVariables.Add(
-                    KeycloakTransactionXaEnabledEnvVarName,
-                    xaEnabled.ToString().ToLowerInvariant()
-                );
-            })
-            .WaitFor(userDb);
     }
 
     /// <summary>
@@ -247,15 +200,7 @@ public static class KeycloakExtensions
             builder
                 .WithRealmImport($"{BaseContainerPath}/realms")
                 .WithEnvironment(RealmName, realmName)
-                .WithEnvironment(RealmDisplayName, displayName)
-                // Ensure HSTS is not enabled in run mode to avoid browser caching issues when developing.
-                // Workaround for https://github.com/keycloak/keycloak/issues/32366
-                .WithEnvironment(
-                    RealmHsts,
-                    builder.ApplicationBuilder.ExecutionContext.IsRunMode
-                        ? string.Empty
-                        : "max-age=31536000; includeSubDomains"
-                );
+                .WithEnvironment(RealmDisplayName, displayName);
 
             return builder;
         }

@@ -1,6 +1,4 @@
-﻿using System.Security.Claims;
-using BookWorm.Chassis.Security.TokenExchange;
-using BookWorm.Chassis.Utilities;
+﻿using BookWorm.Chassis.Utilities;
 using Microsoft.Agents.AI;
 
 namespace BookWorm.Chassis.AI.Agents;
@@ -8,11 +6,10 @@ namespace BookWorm.Chassis.AI.Agents;
 public static class A2AClientFactory
 {
     public static AIAgent CreateA2AAgentClient(
+        IServiceProvider serviceProvider,
         string serviceName,
         string agentName,
-        string? path = "a2a",
-        ITokenExchange? tokenExchange = null,
-        ClaimsPrincipal? claimsPrincipal = null
+        string? path = "a2a"
     )
     {
         var baseAddress =
@@ -22,9 +19,8 @@ public static class A2AClientFactory
             );
 
         var agent = new A2AAgentClient(new(baseAddress), path).GetAIAgent(
-            agentName,
-            tokenExchange,
-            claimsPrincipal
+            serviceProvider,
+            agentName
         );
 
         return agent.GetAwaiter().GetResult();
