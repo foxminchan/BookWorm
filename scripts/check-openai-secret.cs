@@ -1,9 +1,14 @@
-﻿#:property ManagePackageVersionsCentrally=false
-#:package Spectre.Console@0.54.0
-#:package CliWrap@3.9.0
+﻿#!/usr/bin/env dotnet
 
-using CliWrap;
-using CliWrap.Buffered;
+#:property ManagePackageVersionsCentrally=false
+#:package Spectre.Console@0.54.0
+#:package Microsoft.Extensions.Configuration.UserSecrets@10.0.0
+
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Xml.Linq;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.UserSecrets;
 using Spectre.Console;
 
 const string ProjectPath = "src/Aspire/BookWorm.AppHost/BookWorm.AppHost.csproj";
@@ -12,18 +17,20 @@ const string ApiKeyUrl = "https://platform.openai.com/api-keys";
 
 AnsiConsole.MarkupLine("[cyan]Checking for OpenAI API key in user secrets...[/]");
 
-// Get current secrets
-var listResult = await Cli.Wrap("dotnet")
-    .WithArguments(["user-secrets", "list", "--project", ProjectPath])
-    .WithValidation(CommandResultValidation.None)
-    .ExecuteBufferedAsync();
+// Get the UserSecretsId from the project file
+var userSecretsId = GetUserSecretsId(ProjectPath);
+if (string.IsNullOrWhiteSpace(userSecretsId))
+{
+    AnsiConsole.MarkupLine("[red]✗ UserSecretsId not found in project file.[/]");
+    return 1;
+}
+
+// Build configuration to read user secrets
+var configuration = new ConfigurationBuilder().AddUserSecrets(userSecretsId).Build();
 
 // Check if the OpenAI API key is set
-if (
-    listResult.StandardOutput.Contains(SecretKey)
-    && listResult.StandardOutput.Contains("=")
-    && !string.IsNullOrWhiteSpace(GetSecretValue(listResult.StandardOutput, SecretKey))
-)
+var existingApiKey = configuration[SecretKey];
+if (!string.IsNullOrWhiteSpace(existingApiKey))
 {
     AnsiConsole.MarkupLine("[green]✓ OpenAI API key is already configured.[/]");
     return 0;
@@ -66,36 +73,62 @@ var apiKey = AnsiConsole.Prompt(
 AnsiConsole.WriteLine();
 AnsiConsole.MarkupLine("[cyan]Setting OpenAI API key...[/]");
 
-var setResult = await Cli.Wrap("dotnet")
-    .WithArguments(["user-secrets", "set", SecretKey, apiKey, "--project", ProjectPath])
-    .WithValidation(CommandResultValidation.None)
-    .ExecuteBufferedAsync();
+// Get the secrets file path
+var secretsPath = GetSecretsFilePath(userSecretsId);
+var secretsDir = Path.GetDirectoryName(secretsPath);
 
-if (setResult.ExitCode == 0)
+if (!Directory.Exists(secretsDir))
 {
-    AnsiConsole.MarkupLine("[green]✓ OpenAI API key has been configured successfully.[/]");
-    return 0;
+    Directory.CreateDirectory(secretsDir!);
 }
-else
+
+// Read existing secrets or create new dictionary
+var secrets = new Dictionary<string, string?>();
+if (File.Exists(secretsPath))
 {
-    AnsiConsole.MarkupLine("[red]✗ Failed to set OpenAI API key.[/]");
-    if (!string.IsNullOrWhiteSpace(setResult.StandardError))
+    var existingJson = await File.ReadAllTextAsync(secretsPath);
+    try
     {
-        AnsiConsole.MarkupLine($"[red]{setResult.StandardError}[/]");
+        secrets =
+            JsonSerializer.Deserialize(existingJson, SecretsJsonContext.Default.StringDictionary)
+            ?? [];
     }
-    return 1;
-}
-
-static string GetSecretValue(string output, string key)
-{
-    var lines = output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
-    var line = lines.FirstOrDefault(l => l.Contains(key));
-
-    if (line is null)
+    catch
     {
-        return string.Empty;
+        secrets = [];
     }
-
-    var parts = line.Split('=', 2);
-    return parts.Length == 2 ? parts[1].Trim() : string.Empty;
 }
+
+// Update the API key
+secrets[SecretKey] = apiKey;
+
+// Write back to secrets file
+var json = JsonSerializer.Serialize(secrets, SecretsJsonContext.Default.StringDictionary);
+await File.WriteAllTextAsync(secretsPath, json);
+
+AnsiConsole.MarkupLine("[green]✓ OpenAI API key has been configured successfully.[/]");
+return 0;
+
+static string GetUserSecretsId(string projectPath)
+{
+    var doc = XDocument.Load(projectPath);
+    var userSecretsId = doc.Descendants("UserSecretsId").FirstOrDefault()?.Value;
+    return userSecretsId ?? string.Empty;
+}
+
+static string GetSecretsFilePath(string userSecretsId)
+{
+    var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+    var secretsPath = Path.Combine(
+        appData,
+        "Microsoft",
+        "UserSecrets",
+        userSecretsId,
+        "secrets.json"
+    );
+    return secretsPath;
+}
+
+[JsonSourceGenerationOptions(WriteIndented = true)]
+[JsonSerializable(typeof(Dictionary<string, string?>), TypeInfoPropertyName = "StringDictionary")]
+internal partial class SecretsJsonContext : JsonSerializerContext;
