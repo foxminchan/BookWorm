@@ -2,7 +2,7 @@
 name: Planner
 description: "Generate an implementation plan for new features or refactoring existing code."
 tools: ["search/codebase", "fetch", "githubRepo", "search", "usages"]
-model: Claude Sonnet 4.5 (copilot)
+model: GPT-5.1-Codex (Preview) (copilot)
 handoffs:
   - label: Start Implementation
     agent: CSharp-Expert

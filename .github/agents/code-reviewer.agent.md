@@ -2,7 +2,7 @@
 name: Code-Reviewer
 description: "Review code changes for quality, security, and best practices compliance."
 tools: ["search/codebase", "githubRepo", "search", "usages"]
-model: Claude Sonnet 4.5 (copilot)
+model: Gemini 2.5 Pro (copilot)
 handoffs:
   - label: Fix Issues Found
     agent: CSharp-Expert
