@@ -1,18 +1,13 @@
 ﻿syntax = "proto3";
 
 import "google/protobuf/empty.proto";
-import "google/api/annotations.proto";
 
 option csharp_namespace = "BookWorm.Basket.Grpc.Services";
 
 package BasketApi;
 
 service BasketGrpcService {
-  rpc GetBasket (google.protobuf.Empty) returns (BasketResponse) {
-    option (google.api.http) = {
-      get: "/api/v1/basket"
-    };
-  };
+  rpc GetBasket (google.protobuf.Empty) returns (BasketResponse);
 }
 
 message BasketResponse {

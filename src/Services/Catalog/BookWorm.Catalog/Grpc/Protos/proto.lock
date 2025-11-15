@@ -103,41 +103,14 @@
               {
                 "name": "GetBook",
                 "in_type": "BookRequest",
-                "out_type": "BookResponse",
-                "options": [
-                  {
-                    "name": "(google.api.http)",
-                    "aggregated": [
-                      {
-                        "name": "get",
-                        "value": "/api/v1/book/{bookId}"
-                      }
-                    ]
-                  }
-                ]
+                "out_type": "BookResponse"
               },
               {
                 "name": "GetBooks",
                 "in_type": "BooksRequest",
-                "out_type": "BooksResponse",
-                "options": [
-                  {
-                    "name": "(google.api.http)",
-                    "aggregated": [
-                      {
-                        "name": "get",
-                        "value": "/api/v1/books"
-                      }
-                    ]
-                  }
-                ]
+                "out_type": "BooksResponse"
               }
             ]
-          }
-        ],
-        "imports": [
-          {
-            "path": "google/api/annotations.proto"
           }
         ],
         "package": {

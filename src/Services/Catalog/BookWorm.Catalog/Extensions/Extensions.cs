@@ -74,13 +74,11 @@ internal static class Extensions
 
         services.AddRateLimiting();
 
-        services
-            .AddGrpc(options =>
-            {
-                options.EnableDetailedErrors = builder.Environment.IsDevelopment();
-                options.Interceptors.Add<GrpcExceptionInterceptor>();
-            })
-            .AddJsonTranscoding(o => o.JsonSettings.WriteIndented = true);
+        services.AddGrpc(options =>
+        {
+            options.EnableDetailedErrors = builder.Environment.IsDevelopment();
+            options.Interceptors.Add<GrpcExceptionInterceptor>();
+        });
 
         services.AddGrpcHealthChecks();
 
