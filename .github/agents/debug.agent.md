@@ -12,6 +12,19 @@ tools:
     "usages",
   ]
 model: Claude Sonnet 4.5 (copilot)
+handoffs:
+  - label: Get C# Expert Help
+    agent: CSharp-Expert
+    prompt: The fix requires expert C# knowledge. Please help implement the solution.
+    send: false
+  - label: Review Fix
+    agent: Code-Reviewer
+    prompt: Please review the bug fix I just implemented.
+    send: false
+  - label: Plan Refactoring
+    agent: Planner
+    prompt: This bug reveals a deeper architectural issue that needs refactoring. Please create a plan.
+    send: false
 ---
 
 # Debug Mode Instructions

@@ -18,8 +18,9 @@ Your goal is to help me follow best practices for asynchronous programming in C#
 
 - Return `Task<T>` when the method returns a value
 - Return `Task` when the method doesn't return a value
-- Consider `ValueTask<T>` for high-performance scenarios to reduce allocations
+- Use `ValueTask<T>` **only when measured to improve performance** (not as default)
 - Avoid returning `void` for async methods except for event handlers
+- For Mediator handlers, prefer `ValueTask<Unit>` for commands with no return value
 
 ## Exception Handling
 
@@ -28,12 +29,24 @@ Your goal is to help me follow best practices for asynchronous programming in C#
 - Use `ConfigureAwait(false)` when appropriate to prevent deadlocks in library code
 - Propagate exceptions with `Task.FromException()` instead of throwing in async Task returning methods
 
+## Cancellation Token Usage
+
+- **Always accept `CancellationToken`** as a parameter in async methods (prefer as last parameter)
+- **Pass cancellation tokens through** the entire async call chain
+- Call `ThrowIfCancellationRequested()` in loops and before long-running operations
+- Make delays cancelable: `Task.Delay(milliseconds, cancellationToken)`
+- **Propagate tokens to all async operations**: database calls, HTTP requests, message publishing
+- Use linked `CancellationTokenSource` for composite cancellations: `CancellationTokenSource.CreateLinkedTokenSource(token1, token2)`
+- Implement timeout with cancellation: `using var cts = new CancellationTokenSource(timeout); cts.Token`
+- Handle `OperationCanceledException` gracefully in application code
+
 ## Performance
 
 - Use `Task.WhenAll()` for parallel execution of multiple tasks
 - Use `Task.WhenAny()` for implementing timeouts or taking the first completed task
+- **Always cancel pending tasks** when using `Task.WhenAny()` to prevent resource leaks
 - Avoid unnecessary async/await when simply passing through task results
-- Consider cancellation tokens for long-running operations
+- Stream large JSON responses: use `HttpCompletionOption.ResponseHeadersRead` with `ReadAsStreamAsync()`
 
 ## Common Pitfalls
 
@@ -45,7 +58,11 @@ Your goal is to help me follow best practices for asynchronous programming in C#
 ## Implementation Patterns
 
 - Implement the async command pattern for long-running operations
-- Use async streams (IAsyncEnumerable<T>) for processing sequences asynchronously
-- Consider the task-based asynchronous pattern (TAP) for public APIs
+- Use async streams (`IAsyncEnumerable<T>`) for processing sequences asynchronously
+- Follow the task-based asynchronous pattern (TAP) for public APIs
+- Implement `IAsyncDisposable` for resources requiring async cleanup; use `await using`
+- For MassTransit consumers, always pass `context.CancellationToken` to async operations
+- For gRPC services, use `ServerCallContext.CancellationToken`
+- For ASP.NET endpoints, accept `CancellationToken` as parameter from the framework
 
 When reviewing my C# code, identify these issues and suggest improvements that follow these best practices.

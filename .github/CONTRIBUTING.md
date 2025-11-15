@@ -10,6 +10,11 @@ We appreciate your help in making BookWorm better. Please follow the guidelines 
   - [Table of Contents](#table-of-contents)
   - [Getting Started](#getting-started)
   - [Development Workflow](#development-workflow)
+  - [Agent Workflow](#agent-workflow)
+    - [Available Agents](#available-agents)
+    - [Agent Collaboration Workflow](#agent-collaboration-workflow)
+    - [Typical Workflows](#typical-workflows)
+    - [Using Agents in Your Workflow](#using-agents-in-your-workflow)
   - [Coding Standards](#coding-standards)
   - [Integration Events Standards](#integration-events-standards)
   - [Design Patterns](#design-patterns)
@@ -32,6 +37,7 @@ We appreciate your help in making BookWorm better. Please follow the guidelines 
    ```bash
    git config --global core.autocrlf input
    ```
+5. **Review Project Guide**: See [AGENTS.md](../AGENTS.md) for detailed setup instructions, prerequisites, and project architecture overview.
 
 ## Development Workflow
 
@@ -42,6 +48,84 @@ We appreciate your help in making BookWorm better. Please follow the guidelines 
 5. **Create a Pull Request**: Submit your changes for review
 
 For the branching strategy, please refer to the [Git Flow](https://nvie.com/posts/a-successful-git-branching-model/) model.
+
+## Agent Workflow
+
+BookWorm includes AI agents to assist with development tasks. These agents work collaboratively through a structured handoff system:
+
+### Available Agents
+
+1. **CSharp-Expert** - Assists with C#/.NET development tasks
+   - Provides clean, well-designed code following .NET conventions
+   - Covers security, design patterns, SOLID principles
+   - Helps with async programming, performance optimization
+
+2. **Debug** - Systematic debugging and bug resolution
+   - Identifies and analyzes bugs methodically
+   - Implements targeted fixes with verification
+   - Ensures no regressions through comprehensive testing
+
+3. **Planner** - Creates implementation plans for features/refactoring
+   - Generates detailed implementation plans
+   - Breaks down complex tasks into actionable steps
+   - Documents requirements and testing strategies
+
+4. **Code-Reviewer** - Reviews code for quality and security
+   - Performs systematic code quality reviews
+   - Checks security vulnerabilities and best practices
+   - Validates architecture and Aspire-specific patterns
+
+### Agent Collaboration Workflow
+
+The agents collaborate through handoffs to provide comprehensive development support:
+
+```mermaid
+graph TD
+    P[Planner] -->|Implementation Plan| CE[CSharp-Expert]
+    P -->|Review Plan| CR[Code-Reviewer]
+    CE -->|Request Review| CR
+    CE -->|Debug Issues| D[Debug]
+    CE -->|Plan Complex Changes| P
+    D -->|Get Expert Help| CE
+    D -->|Review Fix| CR
+    D -->|Plan Refactoring| P
+    CR -->|Fix Issues| CE
+    CR -->|Create Refactoring Plan| P
+
+    style P fill:#e1f5ff
+    style CE fill:#fff4e1
+    style D fill:#ffe1e1
+    style CR fill:#e1ffe1
+```
+
+### Typical Workflows
+
+**Feature Development:**
+1. Start with **Planner** to create implementation plan
+2. Hand off to **CSharp-Expert** for implementation
+3. Use **Code-Reviewer** to validate changes
+4. Use **Debug** if issues arise
+
+**Bug Fixing:**
+1. Start with **Debug** to identify and fix bugs
+2. Hand off to **CSharp-Expert** for complex solutions
+3. Use **Code-Reviewer** to review the fix
+4. Use **Planner** if architectural changes needed
+
+**Code Review:**
+1. Start with **Code-Reviewer** for systematic review
+2. Hand off to **CSharp-Expert** to address issues
+3. Use **Planner** for major refactoring recommendations
+
+### Using Agents in Your Workflow
+
+- Agents are available in the `.github/agents/` directory
+- Each agent has specific expertise and tools
+- Agents can hand off work to other agents based on task requirements
+- Follow agent recommendations for maintaining code quality and consistency
+
+> [!TIP]
+> When working on complex features, start with the **Planner** agent to create a comprehensive implementation plan before coding.
 
 ## Coding Standards
 
@@ -133,14 +217,22 @@ public sealed record UserCheckedOutIntegrationEvent(
 ### Test Quality
 
 - Aim for high code coverage in domain logic (minimum 80%)
+- Follow TUnit conventions for test methods and classes
 - Avoid testing implementation details; focus on behaviors
 - Write deterministic tests that don't depend on environment or timing
 - Keep tests fast, independent, and repeatable
+- Use descriptive test names that clearly indicate what is being tested
+- Ensure tests are isolated and don't share state
 
 ### Tools and Resources
 
-- Use xUnit for testing framework
-- Utilize Moq or NSubstitute for mocking dependencies
+- **Testing Framework**: Use **TUnit** (not xUnit/NUnit/MSTest)
+- **Mocking**: Utilize Moq for mocking dependencies
+- **Assertions**: Use Shouldly for fluent assertions
+- **Snapshot Testing**: Use Verify.TUnit for snapshot tests
+- **Architecture Tests**: Use ArchUnitNET.TUnit in `tests/BookWorm.ArchTests/`
+- **Coverage**: Microsoft.Testing.Extensions.CodeCoverage for test coverage reports
+- **Integration Tests**: Use Aspire.Hosting.Testing for service integration tests
 - For automated test generation, refer to our [GitHub Copilot test prompts](./prompts/unit-test.prompt.md)
 
 ## Pull Request Process

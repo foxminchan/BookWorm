@@ -5,8 +5,12 @@ tools: ["search/codebase", "fetch", "githubRepo", "search", "usages"]
 model: Claude Sonnet 4.5 (copilot)
 handoffs:
   - label: Start Implementation
-    agent: agent
-    prompt: Now implement the plan outlined above.
+    agent: CSharp-Expert
+    prompt: Now implement the plan outlined above following C# best practices.
+    send: false
+  - label: Review Plan
+    agent: Code-Reviewer
+    prompt: Please review this implementation plan for potential issues or improvements.
     send: false
 ---
 
