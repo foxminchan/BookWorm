@@ -1,7 +1,11 @@
 ---
 agent: CSharp-Expert
 description: "Ensure that C# types are documented with XML comments and follow best practices for documentation."
-tools: ["changes", "search/codebase", "edit/editFiles", "problems"]
+tools:
+  - "changes"
+  - "search/codebase"
+  - "edit/editFiles"
+  - "problems"
 model: Claude Sonnet 4.5 (copilot)
 ---
 

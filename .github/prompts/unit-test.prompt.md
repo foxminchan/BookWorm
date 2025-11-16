@@ -2,16 +2,14 @@
 agent: CSharp-Expert
 description: "Get best practices for TUnit unit testing, including data-driven tests"
 tools:
-  [
-    "edit/editFiles",
-    "search",
-    "runCommands",
-    "sequential-thinking/*",
-    "microsoft-docs/*",
-    "context7/*",
-    "problems",
-    "changes",
-  ]
+  - "edit/editFiles"
+  - "search"
+  - "runCommands"
+  - "sequential-thinking/*"
+  - "microsoft-docs/*"
+  - "context7/*"
+  - "problems"
+  - "changes"
 model: Claude Sonnet 4.5 (copilot)
 ---
 

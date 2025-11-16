@@ -2,15 +2,13 @@
 name: Debug
 description: "Debug your application to find and fix a bug"
 tools:
-  [
-    "search/codebase",
-    "edit/editFiles",
-    "githubRepo",
-    "runCommands",
-    "fetch",
-    "search",
-    "usages",
-  ]
+   - "search/codebase"
+   - "edit/editFiles"
+   - "githubRepo"
+   - "runCommands"
+   - "fetch"
+   - "search"
+   - "usages"
 model: Claude Sonnet 4.5 (copilot)
 handoffs:
   - label: Get C# Expert Help
