@@ -198,12 +198,12 @@ static string GetAppHostPath(string aspireSettingsPath)
 
 [JsonSourceGenerationOptions(WriteIndented = true)]
 [JsonSerializable(typeof(Dictionary<string, string?>), TypeInfoPropertyName = "StringDictionary")]
-internal partial class SecretsJsonContext : JsonSerializerContext;
+internal sealed partial class SecretsJsonContext : JsonSerializerContext;
 
 [JsonSerializable(typeof(AspireSettings))]
-internal partial class AspireSettingsJsonContext : JsonSerializerContext;
+internal sealed partial class AspireSettingsJsonContext : JsonSerializerContext;
 
-internal class AspireSettings
+internal sealed class AspireSettings
 {
     [JsonPropertyName("appHostPath")]
     public string? AppHostPath { get; set; }
