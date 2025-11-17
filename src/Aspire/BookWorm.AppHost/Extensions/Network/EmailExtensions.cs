@@ -25,7 +25,7 @@ public static class EmailExtensions
         else
         {
             var apiKey = applicationBuilder
-                .AddParameter("api-key", true)
+                .AddParameter("sendgrid-api-key", true)
                 .WithDescription(ParameterDescriptions.SendGrid.ApiKey, true)
                 .WithCustomInput(_ =>
                     new()
@@ -38,7 +38,7 @@ public static class EmailExtensions
                 );
 
             var email = applicationBuilder
-                .AddParameter("email", true)
+                .AddParameter("sendgrid-email", true)
                 .WithDescription(ParameterDescriptions.SendGrid.SenderEmail, true)
                 .WithCustomInput(_ =>
                     new()
@@ -52,7 +52,7 @@ public static class EmailExtensions
                 );
 
             var senderName = applicationBuilder
-                .AddParameter("sender-name", true)
+                .AddParameter("sendgrid-sender-name", true)
                 .WithDescription(ParameterDescriptions.SendGrid.SenderName, true)
                 .WithCustomInput(_ =>
                     new()
