@@ -70,7 +70,7 @@
 - [Gitleaks](https://gitleaks.io/)
 - [Bun](https://bun.sh/)
 - [Just](https://github.com/casey/just)
-- [Aspire CLI](https://learn.microsoft.com/en-us/dotnet/aspire/cli/install)
+- [Aspire CLI](https://aspire.dev/get-started/install-cli/)
 - [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
 - Optional: [Spec-Kit](https://github.com/github/spec-kit)
 - Optional: [GitHub Copilot CLI](https://github.com/github/copilot-cli)
