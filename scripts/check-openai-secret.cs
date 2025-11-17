@@ -11,14 +11,22 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.UserSecrets;
 using Spectre.Console;
 
-const string ProjectPath = "src/Aspire/BookWorm.AppHost/BookWorm.AppHost.csproj";
+const string AspireSettingsPath = ".aspire/settings.json";
 const string SecretKey = "Parameters:openai-openai-apikey";
 const string ApiKeyUrl = "https://platform.openai.com/api-keys";
 
 AnsiConsole.MarkupLine("[cyan]Checking for OpenAI API key in user secrets...[/]");
 
+// Get the AppHost project path from Aspire settings
+var projectPath = GetAppHostPath(AspireSettingsPath);
+if (string.IsNullOrWhiteSpace(projectPath))
+{
+    AnsiConsole.MarkupLine("[red]✗ Failed to read AppHost path from Aspire settings.[/]");
+    return 1;
+}
+
 // Get the UserSecretsId from the project file
-var userSecretsId = GetUserSecretsId(ProjectPath);
+var userSecretsId = GetUserSecretsId(projectPath);
 if (string.IsNullOrWhiteSpace(userSecretsId))
 {
     AnsiConsole.MarkupLine("[red]✗ UserSecretsId not found in project file.[/]");
@@ -145,6 +153,58 @@ static string GetSecretsFilePath(string userSecretsId)
     return secretsPath;
 }
 
+static string GetAppHostPath(string aspireSettingsPath)
+{
+    try
+    {
+        if (!File.Exists(aspireSettingsPath))
+        {
+            AnsiConsole.MarkupLine(
+                $"[yellow]⚠ Aspire settings file not found at: {aspireSettingsPath}[/]"
+            );
+            return string.Empty;
+        }
+
+        var json = File.ReadAllText(aspireSettingsPath);
+        var settings = JsonSerializer.Deserialize(
+            json,
+            AspireSettingsJsonContext.Default.AspireSettings
+        );
+
+        if (settings?.AppHostPath is null)
+        {
+            AnsiConsole.MarkupLine("[yellow]⚠ appHostPath not found in Aspire settings.[/]");
+            return string.Empty;
+        }
+
+        // Resolve relative path from the Aspire settings directory
+        var aspireDir = Path.GetDirectoryName(Path.GetFullPath(aspireSettingsPath)) ?? string.Empty;
+        var absolutePath = Path.GetFullPath(Path.Combine(aspireDir, settings.AppHostPath));
+
+        if (!File.Exists(absolutePath))
+        {
+            AnsiConsole.MarkupLine($"[yellow]⚠ AppHost project not found at: {absolutePath}[/]");
+            return string.Empty;
+        }
+
+        return absolutePath;
+    }
+    catch (Exception ex)
+    {
+        AnsiConsole.MarkupLine($"[red]✗ Failed to read Aspire settings: {ex.Message}[/]");
+        return string.Empty;
+    }
+}
+
 [JsonSourceGenerationOptions(WriteIndented = true)]
 [JsonSerializable(typeof(Dictionary<string, string?>), TypeInfoPropertyName = "StringDictionary")]
 internal partial class SecretsJsonContext : JsonSerializerContext;
+
+[JsonSerializable(typeof(AspireSettings))]
+internal partial class AspireSettingsJsonContext : JsonSerializerContext;
+
+internal class AspireSettings
+{
+    [JsonPropertyName("appHostPath")]
+    public string? AppHostPath { get; set; }
+}
