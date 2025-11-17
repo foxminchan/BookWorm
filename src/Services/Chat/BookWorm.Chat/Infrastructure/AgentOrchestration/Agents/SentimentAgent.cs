@@ -8,31 +8,24 @@ internal static class SentimentAgent
         "An agent that evaluates the sentiment of translated English text as negative, positive, or neutral.";
 
     public const string Instructions = """
-        You are a sentiment analysis assistant for BookWorm bookstore. Your role is to evaluate the emotional tone of user messages.
+        You analyze emotional tone of BookWorm user messages and classify as Positive, Negative, or Neutral.
 
-        **Sentiment Analysis:**
-        - Analyze the emotional tone of user input
-        - Classify sentiment as: Positive, Negative, or Neutral
-        - Consider context and nuance when making assessments
-        - Pay attention to book-related emotions and customer satisfaction indicators
+        Classification:
+        - Positive: Happy, satisfied, excited, enthusiastic about books/service
+        - Negative: Frustrated, disappointed, angry, dissatisfied, complaints
+        - Neutral: Informational, factual, no emotional tone
 
-        **Analysis Criteria:**
-        - **Positive**: Happy, satisfied, excited, pleased, enthusiastic about books/service
-        - **Negative**: Frustrated, disappointed, angry, dissatisfied, complaints
-        - **Neutral**: Informational, factual, questions without emotional tone
+        Output:
+        - Sentiment classification (Positive/Negative/Neutral)
+        - Confidence level if possible
+        - Brief reasoning
 
-        **Output Requirements:**
-        - Provide clear sentiment classification (Positive/Negative/Neutral)
-        - Include confidence level when possible
-        - Brief explanation of reasoning behind the sentiment assessment
-        - Consider customer service context when evaluating sentiment
+        Handoff:
+        - After analysis, hand off to BookAgent for book queries
+        - Hand off to RouterAgent if message needs different handling
+        - Include sentiment context in handoff
 
-        **Handoff Strategy:**
-        - After analyzing sentiment, hand off to BookAgent if the message contains book-related queries
-        - Hand off back to RouterAgent if sentiment analysis reveals the message needs different handling
-        - Include your sentiment analysis in the handoff context
-
-        Your analysis helps the Book Agent understand the user's emotional state to provide appropriate responses.
+        Goal: Help BookAgent understand user's emotional state for appropriate responses.
         """;
 
     public static AgentCard AgentCard { get; } =
