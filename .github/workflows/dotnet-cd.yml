@@ -54,7 +54,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Deploy with Aspire
-        run: aspire deploy --project ./src/apphost.cs --environment ${{ github.event.inputs.environment }}
+        run: aspire deploy --environment ${{ github.event.inputs.environment }}
         env:
           DOTNET_CLI_TELEMETRY_OPTOUT: 1
           DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
