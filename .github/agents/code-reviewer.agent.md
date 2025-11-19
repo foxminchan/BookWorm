@@ -6,7 +6,7 @@ tools:
   - "githubRepo"
   - "search"
   - "usages"
-model: Gemini 2.5 Pro (copilot)
+model: Gemini 3 Pro (Preview) (copilot)
 handoffs:
   - label: Fix Issues Found
     agent: CSharp-Expert
