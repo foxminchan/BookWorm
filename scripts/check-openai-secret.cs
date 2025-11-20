@@ -9,7 +9,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Xml.Linq;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration.UserSecrets;
 using Spectre.Console;
 
 const string AspireSettingsPath = ".aspire/settings.json";
@@ -52,7 +51,7 @@ AnsiConsole.MarkupLine($"[grey]You can get your API key from: {ApiKeyUrl}[/]");
 AnsiConsole.WriteLine();
 
 // Prompt for API key securely
-var apiKey = AnsiConsole.Prompt(
+var apiKey = await AnsiConsole.PromptAsync(
     new TextPrompt<string>("[cyan]OpenAI API Key:[/]")
         .Secret()
         .Validate(key =>
