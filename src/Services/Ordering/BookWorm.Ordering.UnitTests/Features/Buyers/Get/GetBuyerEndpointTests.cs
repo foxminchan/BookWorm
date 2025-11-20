@@ -55,7 +55,7 @@ public sealed class GetBuyerEndpointTests
         result.Value.ShouldNotBeNull();
         result.Value.Id.ShouldBe(_buyerDto.Id);
         result.Value.Name.ShouldBe(_buyerDto.Name);
-        result.Value.Address.ShouldBeNull(); // Address should be null
+        result.Value.Address.ShouldBe(_buyerDto.Address);
     }
 
     [Test]
