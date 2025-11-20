@@ -31,10 +31,7 @@ public sealed class GetBuyerEndpointTests
             .ReturnsAsync(_buyerDto);
 
         // Act
-        var result = await _endpoint.HandleAsync(
-            _query,
-            _senderMock.Object
-        );
+        var result = await _endpoint.HandleAsync(_query, _senderMock.Object);
 
         // Assert
         result.Value.ShouldNotBeNull();
@@ -52,10 +49,7 @@ public sealed class GetBuyerEndpointTests
             .ReturnsAsync(_buyerDto);
 
         // Act
-        var result = await _endpoint.HandleAsync(
-            _query,
-            _senderMock.Object
-        );
+        var result = await _endpoint.HandleAsync(_query, _senderMock.Object);
 
         // Assert
         result.Value.ShouldNotBeNull();
@@ -74,8 +68,7 @@ public sealed class GetBuyerEndpointTests
             .ThrowsAsync(expectedException);
 
         // Act
-        var act = async () =>
-            await _endpoint.HandleAsync(_query, _senderMock.Object);
+        var act = async () => await _endpoint.HandleAsync(_query, _senderMock.Object);
 
         // Assert
         var exception = await act.ShouldThrowAsync<NotFoundException>();
