@@ -1,10 +1,9 @@
-﻿using BookWorm.Constants.Other;
-using Mediator;
+﻿using Mediator;
 
 namespace BookWorm.Ordering.Features.Buyers.Get;
 
 public sealed class GetBuyerEndpoint
-    : IEndpoint<Ok<BuyerDto>, GetBuyerQuery, ISender, IFeatureManager>
+    : IEndpoint<Ok<BuyerDto>, GetBuyerQuery, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
@@ -12,9 +11,8 @@ public sealed class GetBuyerEndpoint
                 "/buyers/me",
                 async (
                     [AsParameters] GetBuyerQuery query,
-                    ISender sender,
-                    IFeatureManager featureManager
-                ) => await HandleAsync(query, sender, featureManager)
+                    ISender sender
+                ) => await HandleAsync(query, sender)
             )
             .ProducesGet<BuyerDto>(hasNotFound: true)
             .WithTags(nameof(Buyer))
@@ -29,16 +27,11 @@ public sealed class GetBuyerEndpoint
     public async Task<Ok<BuyerDto>> HandleAsync(
         GetBuyerQuery query,
         ISender sender,
-        IFeatureManager featureManager,
         CancellationToken cancellationToken = default
     )
     {
-        var enabledAddress = await featureManager.IsEnabledAsync(
-            nameof(FeatureFlags.EnableAddress)
-        );
-
         var result = await sender.Send(query, cancellationToken);
 
-        return TypedResults.Ok(enabledAddress ? result : result with { Address = null });
+        return TypedResults.Ok(result);
     }
 }

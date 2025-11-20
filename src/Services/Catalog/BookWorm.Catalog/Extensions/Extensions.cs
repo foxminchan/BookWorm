@@ -82,8 +82,6 @@ internal static class Extensions
 
         services.AddGrpcHealthChecks();
 
-        services.AddFeatureManagement();
-
         services.AddSingleton(_ =>
         {
             var options = new JsonSerializerOptions();

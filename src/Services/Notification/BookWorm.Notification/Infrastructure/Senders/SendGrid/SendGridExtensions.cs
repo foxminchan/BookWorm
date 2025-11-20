@@ -8,19 +8,11 @@ internal static class SendGridExtensions
 {
     extension(IHostApplicationBuilder builder)
     {
-        /// <summary>
-        ///     Registers the SendGrid client and related services using the default configuration section.
-        /// </summary>
         public void AddSendGridClient()
-        {
-            AddSendGridSender(builder, SendGridSettings.ConfigurationSection);
-        }
-
-        private void AddSendGridSender(string configurationSection)
         {
             var services = builder.Services;
 
-            services.Configure<SendGridSettings>(configurationSection);
+            services.Configure<SendGridSettings>(SendGridSettings.ConfigurationSection);
 
             services.AddSendGrid(
                 (sp, options) => options.ApiKey = sp.GetRequiredService<SendGridSettings>().ApiKey

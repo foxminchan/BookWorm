@@ -1,13 +1,11 @@
-﻿using BookWorm.Constants.Other;
-using Microsoft.Agents.AI;
+﻿using Microsoft.Agents.AI;
 using Npgsql;
 
 namespace BookWorm.Catalog.Infrastructure;
 
 public sealed class CatalogDbContextSeed(
     IChatClient chatClient,
-    ILogger<CatalogDbContextSeed> logger,
-    IFeatureManager featureManager
+    ILogger<CatalogDbContextSeed> logger
 ) : IDbSeeder<CatalogDbContext>
 {
     public async Task SeedAsync(CatalogDbContext context)
@@ -36,11 +34,7 @@ public sealed class CatalogDbContextSeed(
             await context.SaveChangesAsync();
         }
 
-        var isEnableSeeding = await featureManager.IsEnabledAsync(
-            nameof(FeatureFlags.EnableAiSeeding)
-        );
-
-        if (!await context.Books.AnyAsync() && isEnableSeeding)
+        if (!await context.Books.AnyAsync())
         {
             logger.LogInformation("Seeding books");
             var authorIds = await context.Authors.Select(a => a.Id).ToListAsync();

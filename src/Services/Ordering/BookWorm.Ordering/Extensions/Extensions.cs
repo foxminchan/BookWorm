@@ -83,8 +83,6 @@ internal static class Extensions
             new JsonSerializerOptions { Converters = { DecimalJsonConverter.Instance } }
         );
 
-        services.AddFeatureManagement();
-
         services.AddRateLimiting();
 
         builder.AddRedaction();

@@ -1,9 +1,7 @@
 ﻿using BookWorm.Chassis.Exceptions;
-using BookWorm.Constants.Other;
 using BookWorm.Ordering.Features.Buyers;
 using BookWorm.Ordering.Features.Buyers.Get;
 using Mediator;
-using Microsoft.FeatureManagement;
 
 namespace BookWorm.Ordering.UnitTests.Features.Buyers.Get;
 
@@ -11,14 +9,12 @@ public sealed class GetBuyerEndpointTests
 {
     private readonly BuyerDto _buyerDto;
     private readonly GetBuyerEndpoint _endpoint;
-    private readonly Mock<IFeatureManager> _featureManagerMock;
     private readonly GetBuyerQuery _query;
     private readonly Mock<ISender> _senderMock;
 
     public GetBuyerEndpointTests()
     {
         _senderMock = new();
-        _featureManagerMock = new();
         _endpoint = new();
 
         var buyerId = Guid.CreateVersion7();
@@ -30,10 +26,6 @@ public sealed class GetBuyerEndpointTests
     public async Task GivenEnabledAddressFeature_WhenHandlingGetBuyerQuery_ThenShouldReturnBuyerWithAddress()
     {
         // Arrange
-        _featureManagerMock
-            .Setup(fm => fm.IsEnabledAsync(nameof(FeatureFlags.EnableAddress)))
-            .ReturnsAsync(true);
-
         _senderMock
             .Setup(s => s.Send(_query, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_buyerDto);
@@ -41,8 +33,7 @@ public sealed class GetBuyerEndpointTests
         // Act
         var result = await _endpoint.HandleAsync(
             _query,
-            _senderMock.Object,
-            _featureManagerMock.Object
+            _senderMock.Object
         );
 
         // Assert
@@ -56,10 +47,6 @@ public sealed class GetBuyerEndpointTests
     public async Task GivenDisabledAddressFeature_WhenHandlingGetBuyerQuery_ThenShouldReturnBuyerWithNullAddress()
     {
         // Arrange
-        _featureManagerMock
-            .Setup(fm => fm.IsEnabledAsync(nameof(FeatureFlags.EnableAddress)))
-            .ReturnsAsync(false);
-
         _senderMock
             .Setup(s => s.Send(_query, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_buyerDto);
@@ -67,8 +54,7 @@ public sealed class GetBuyerEndpointTests
         // Act
         var result = await _endpoint.HandleAsync(
             _query,
-            _senderMock.Object,
-            _featureManagerMock.Object
+            _senderMock.Object
         );
 
         // Assert
@@ -82,10 +68,6 @@ public sealed class GetBuyerEndpointTests
     public async Task GivenSenderThrowsException_WhenHandlingGetBuyerQuery_ThenShouldPropagateException()
     {
         // Arrange
-        _featureManagerMock
-            .Setup(fm => fm.IsEnabledAsync(nameof(FeatureFlags.EnableAddress)))
-            .ReturnsAsync(true);
-
         var expectedException = new NotFoundException("Buyer not found");
         _senderMock
             .Setup(s => s.Send(_query, It.IsAny<CancellationToken>()))
@@ -93,7 +75,7 @@ public sealed class GetBuyerEndpointTests
 
         // Act
         var act = async () =>
-            await _endpoint.HandleAsync(_query, _senderMock.Object, _featureManagerMock.Object);
+            await _endpoint.HandleAsync(_query, _senderMock.Object);
 
         // Assert
         var exception = await act.ShouldThrowAsync<NotFoundException>();
