@@ -1,4 +1,5 @@
-﻿using BookWorm.Chassis.Utilities;
+﻿using System.Text;
+using BookWorm.Chassis.Utilities;
 using BookWorm.Constants.Aspire;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -21,14 +22,16 @@ public static class McpClientExtensions
         {
             var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
 
-            var url =
-                $"{ServiceDiscoveryUtilities.GetServiceEndpoint(serviceName, Protocols.Https)}/{relativePath.TrimStart('/')}";
+            var url = new StringBuilder();
+            url.Append(ServiceDiscoveryUtilities.GetRequiredServiceEndpoint(serviceName));
+            url.Append('/');
+            url.Append(relativePath.TrimStart('/'));
 
             HttpClientTransportOptions transportOptions = new()
             {
                 Name = $"{serviceName}-Transport",
                 TransportMode = HttpTransportMode.StreamableHttp,
-                Endpoint = new(url),
+                Endpoint = new(url.ToString()),
             };
 
             HttpClientTransport transport = new(transportOptions, loggerFactory);

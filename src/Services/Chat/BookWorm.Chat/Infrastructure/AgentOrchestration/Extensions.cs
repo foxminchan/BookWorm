@@ -35,7 +35,7 @@ internal static class Extensions
 
                 var addressBuilder = new StringBuilder();
                 addressBuilder.Append(
-                    ServiceDiscoveryUtilities.GetServiceEndpoint(Services.McpTools, Protocols.Https)
+                    ServiceDiscoveryUtilities.GetRequiredServiceEndpoint(Services.McpTools)
                 );
                 addressBuilder.Append('/');
                 addressBuilder.Append("mcp");

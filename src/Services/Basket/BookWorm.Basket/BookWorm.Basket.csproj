@@ -2,11 +2,12 @@
   <PropertyGroup>
     <SuppressCheckGrpcNetClientFactoryVersion>true</SuppressCheckGrpcNetClientFactoryVersion>
   </PropertyGroup>
-  <ItemGroup>
+  <ItemGroup Label="OCI Labels">
     <ContainerLabel
       Include="org.opencontainers.image.description"
       Value="BookWorm Basket Service Image"
     />
+    <ContainerLabel Include="org.opencontainers.image.authors" Value="Nhan Nguyen" />
   </ItemGroup>
   <ItemGroup Label="Core Dependencies">
     <PackageReference Include="Aspire.StackExchange.Redis.DistributedCaching" />

@@ -10,13 +10,23 @@ namespace BookWorm.Chassis.AI.Agents;
 
 public sealed class A2AAgentClient(Uri baseUri, string? path)
 {
-    public async Task<AIAgent> GetAIAgent(IServiceProvider serviceProvider, string agentName)
+    public async Task<AIAgent> GetAIAgent(
+        IServiceProvider serviceProvider,
+        string agentName,
+        string? agentClientId
+    )
     {
         var (resolver, httpClient) = ResolveClient(agentName);
 
         var agentCard = await resolver.GetAgentCardAsync();
 
-        await HandleAuthenticationAsync(agentName, agentCard, httpClient, serviceProvider);
+        await HandleAuthenticationAsync(
+            agentName,
+            agentClientId,
+            agentCard,
+            httpClient,
+            serviceProvider
+        );
 
         var agent = await resolver.GetAIAgentAsync(httpClient);
 
@@ -25,6 +35,7 @@ public sealed class A2AAgentClient(Uri baseUri, string? path)
 
     private static async Task HandleAuthenticationAsync(
         string agentName,
+        string? agentClientId,
         AgentCard agentCard,
         HttpClient httpClient,
         IServiceProvider serviceProvider
@@ -54,7 +65,11 @@ public sealed class A2AAgentClient(Uri baseUri, string? path)
             var tokenExchange = serviceProvider.GetRequiredService<ITokenExchange>();
             var claimsPrincipal = serviceProvider.GetRequiredService<ClaimsPrincipal>();
 
-            var accessToken = await tokenExchange.ExchangeAsync(claimsPrincipal, scope: scope);
+            var accessToken = await tokenExchange.ExchangeAsync(
+                claimsPrincipal,
+                agentClientId,
+                scope
+            );
 
             httpClient.DefaultRequestHeaders.Authorization = new(
                 JwtBearerDefaults.AuthenticationScheme,

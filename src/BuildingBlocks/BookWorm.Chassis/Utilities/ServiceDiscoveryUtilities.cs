@@ -13,11 +13,17 @@ public static class ServiceDiscoveryUtilities
 
     public static string? GetServiceEndpoint(string serviceName, int index = 0)
     {
-        return Environment.GetEnvironmentVariable(
-                $"services__{serviceName}__{Protocols.Https}__{index}"
+        return GetServiceEndpoint(serviceName, Protocols.Https, index)
+            ?? GetServiceEndpoint(serviceName, Protocols.Http, index);
+    }
+
+    public static string GetRequiredServiceEndpoint(string serviceName, int index = 0)
+    {
+        var endpoint = GetServiceEndpoint(serviceName, index);
+        return string.IsNullOrEmpty(endpoint)
+            ? throw new InvalidOperationException(
+                $"Service endpoint for '{serviceName}' not found in environment variables."
             )
-            ?? Environment.GetEnvironmentVariable(
-                $"services__{serviceName}__{Protocols.Http}__{index}"
-            );
+            : endpoint;
     }
 }
