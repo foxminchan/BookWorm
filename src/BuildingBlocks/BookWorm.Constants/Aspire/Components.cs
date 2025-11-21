@@ -29,11 +29,11 @@ public static class Components
 
     public static class OpenAI
     {
+        public const string OpenAIGpt4oMini = "gpt-4o-mini";
+        public const string TextEmbedding3Large = "text-embedding-3-large";
         public static readonly string Resource = nameof(OpenAI).ToLowerInvariant();
         public static readonly string Chat = $"{nameof(Chat).ToLowerInvariant()}";
         public static readonly string Embedding = $"{nameof(Embedding).ToLowerInvariant()}";
-        public const string OpenAIGpt4oMini = "gpt-4o-mini";
-        public const string TextEmbedding3Large = "text-embedding-3-large";
     }
 
     public static class Azure

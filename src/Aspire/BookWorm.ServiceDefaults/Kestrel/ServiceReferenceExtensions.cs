@@ -7,6 +7,19 @@ public static class ServiceReferenceExtensions
 {
     private static readonly string _healthCheckName = nameof(Health).ToLowerInvariant();
 
+    private static void AddGrpcHealthChecks(
+        IServiceCollection services,
+        Uri uri,
+        string healthCheckName,
+        HealthStatus failureStatus = default
+    )
+    {
+        services
+            .AddGrpcClient<Health.HealthClient>(o => o.Address = uri)
+            .AddStandardResilienceHandler();
+        services.AddHealthChecks().AddCheck<GrpcServiceHealthCheck>(healthCheckName, failureStatus);
+    }
+
     extension(IServiceCollection services)
     {
         public IHttpClientBuilder AddGrpcServiceReference<TClient>(
@@ -78,19 +91,6 @@ public static class ServiceReferenceExtensions
                         s.GetRequiredService<IHttpMessageHandlerFactory>().CreateHandler()
                 );
         }
-    }
-
-    private static void AddGrpcHealthChecks(
-        IServiceCollection services,
-        Uri uri,
-        string healthCheckName,
-        HealthStatus failureStatus = default
-    )
-    {
-        services
-            .AddGrpcClient<Health.HealthClient>(o => o.Address = uri)
-            .AddStandardResilienceHandler();
-        services.AddHealthChecks().AddCheck<GrpcServiceHealthCheck>(healthCheckName, failureStatus);
     }
 
     private sealed class GrpcServiceHealthCheck(Health.HealthClient healthClient) : IHealthCheck

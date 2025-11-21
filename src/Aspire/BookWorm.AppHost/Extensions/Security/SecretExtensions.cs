@@ -6,12 +6,22 @@ public static class SecretExtensions
     ///     Configures the resource builder to create a generated secret parameter and expose it as an environment variable.
     /// </summary>
     /// <param name="builder">The resource builder to extend.</param>
-    /// <param name="secretName">Suffix used to form the parameter name; the final parameter will be <c>{builder.Resource.Name}-{secretName}</c>.</param>
-    /// <param name="environmentVariableName">Name of the environment variable that will be bound to the created secret parameter.</param>
-    /// <returns>The original <see cref="IResourceBuilder{ProjectResource}" /> after registering the parameter and mapping it to the environment variable.</returns>
+    /// <param name="secretName">
+    ///     Suffix used to form the parameter name; the final parameter will be
+    ///     <c>{builder.Resource.Name}-{secretName}</c>.
+    /// </param>
+    /// <param name="environmentVariableName">
+    ///     Name of the environment variable that will be bound to the created secret
+    ///     parameter.
+    /// </param>
+    /// <returns>
+    ///     The original <see cref="IResourceBuilder{ProjectResource}" /> after registering the parameter and mapping it
+    ///     to the environment variable.
+    /// </returns>
     /// <remarks>
     ///     The generated parameter uses default constraints of minimum length 32 and no special characters.
-    ///     The created parameter is returned as a parameter resource which is then mapped to the specified environment variable.
+    ///     The created parameter is returned as a parameter resource which is then mapped to the specified environment
+    ///     variable.
     /// </remarks>
     public static IResourceBuilder<ProjectResource> WithSecret(
         this IResourceBuilder<ProjectResource> builder,

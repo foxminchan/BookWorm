@@ -64,6 +64,24 @@ public static class RateLimiterExtensions
         return builder.RequireRateLimiting(PerUserPolicy);
     }
 
+    private static string GetClientIdentifier(this HttpContext context)
+    {
+        var forwardedFor = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+        if (!string.IsNullOrEmpty(forwardedFor))
+        {
+            return forwardedFor.Split(',')[0].Trim();
+        }
+
+        var realIp = context.Request.Headers["X-Real-IP"].FirstOrDefault();
+        if (!string.IsNullOrEmpty(realIp))
+        {
+            return realIp;
+        }
+
+        return context.Connection.RemoteIpAddress?.ToString()
+            ?? context.Request.Headers.Host.ToString();
+    }
+
     extension(RateLimiterOptions option)
     {
         private void AddDefaultLimiter(
@@ -132,23 +150,5 @@ public static class RateLimiterExtensions
                 }
             };
         }
-    }
-
-    private static string GetClientIdentifier(this HttpContext context)
-    {
-        var forwardedFor = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-        if (!string.IsNullOrEmpty(forwardedFor))
-        {
-            return forwardedFor.Split(',')[0].Trim();
-        }
-
-        var realIp = context.Request.Headers["X-Real-IP"].FirstOrDefault();
-        if (!string.IsNullOrEmpty(realIp))
-        {
-            return realIp;
-        }
-
-        return context.Connection.RemoteIpAddress?.ToString()
-            ?? context.Request.Headers.Host.ToString();
     }
 }

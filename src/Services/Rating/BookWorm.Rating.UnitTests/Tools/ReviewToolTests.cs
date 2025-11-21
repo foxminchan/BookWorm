@@ -5,7 +5,6 @@ using BookWorm.Rating.Features.List;
 using BookWorm.Rating.Tools;
 using BookWorm.SharedKernel.Results;
 using Mediator;
-using Microsoft.Extensions.AI;
 
 namespace BookWorm.Rating.UnitTests.Tools;
 

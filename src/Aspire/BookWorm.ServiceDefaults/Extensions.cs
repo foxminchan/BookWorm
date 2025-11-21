@@ -18,62 +18,6 @@ public static class Extensions
 {
     private const string AlivenessEndpointPath = "/alive";
 
-    extension<TBuilder>(TBuilder builder)
-        where TBuilder : IHostApplicationBuilder
-    {
-        public void AddServiceDefaults()
-        {
-            builder.ConfigureOpenTelemetry();
-
-            builder.AddDefaultHealthChecks();
-
-            builder.Services.Configure<DocumentOptions>(DocumentOptions.ConfigurationSection);
-
-            builder.Services.AddServiceDiscovery();
-
-            builder.Services.ConfigureHttpClientDefaults(http =>
-            {
-                // Turn on resilience by default
-                http.AddStandardResilienceHandler(options =>
-                {
-                    var timeSpan = TimeSpan.FromMinutes(2);
-                    options.AttemptTimeout.Timeout = timeSpan;
-                    options.CircuitBreaker.SamplingDuration = timeSpan * 2;
-                    options.TotalRequestTimeout.Timeout = timeSpan * 3;
-                    options.Retry.MaxRetryAttempts = 1;
-                });
-
-                // Turn on service discovery by default
-                http.AddServiceDiscovery();
-            });
-        }
-
-        private void ConfigureOpenTelemetry()
-        {
-            var services = builder.Services;
-
-            services.AddHttpContextAccessor();
-
-            builder.AddLogging();
-
-            services.AddOpenTelemetry(builder);
-
-            builder.AddOpenTelemetryExporters();
-        }
-
-        private void AddOpenTelemetryExporters()
-        {
-            var useOtlpExporter = !string.IsNullOrWhiteSpace(
-                builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]
-            );
-
-            if (useOtlpExporter)
-            {
-                builder.Services.AddOpenTelemetry().UseOtlpExporter();
-            }
-        }
-    }
-
     private static void AddLogging(this IHostApplicationBuilder builder)
     {
         var logger = builder.Logging;
@@ -164,5 +108,61 @@ public static class Extensions
             AlivenessEndpointPath,
             new() { Predicate = r => r.Tags.Contains("live") }
         );
+    }
+
+    extension<TBuilder>(TBuilder builder)
+        where TBuilder : IHostApplicationBuilder
+    {
+        public void AddServiceDefaults()
+        {
+            builder.ConfigureOpenTelemetry();
+
+            builder.AddDefaultHealthChecks();
+
+            builder.Services.Configure<DocumentOptions>(DocumentOptions.ConfigurationSection);
+
+            builder.Services.AddServiceDiscovery();
+
+            builder.Services.ConfigureHttpClientDefaults(http =>
+            {
+                // Turn on resilience by default
+                http.AddStandardResilienceHandler(options =>
+                {
+                    var timeSpan = TimeSpan.FromMinutes(2);
+                    options.AttemptTimeout.Timeout = timeSpan;
+                    options.CircuitBreaker.SamplingDuration = timeSpan * 2;
+                    options.TotalRequestTimeout.Timeout = timeSpan * 3;
+                    options.Retry.MaxRetryAttempts = 1;
+                });
+
+                // Turn on service discovery by default
+                http.AddServiceDiscovery();
+            });
+        }
+
+        private void ConfigureOpenTelemetry()
+        {
+            var services = builder.Services;
+
+            services.AddHttpContextAccessor();
+
+            builder.AddLogging();
+
+            services.AddOpenTelemetry(builder);
+
+            builder.AddOpenTelemetryExporters();
+        }
+
+        private void AddOpenTelemetryExporters()
+        {
+            var useOtlpExporter = !string.IsNullOrWhiteSpace(
+                builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]
+            );
+
+            if (useOtlpExporter)
+            {
+                builder.Services.AddOpenTelemetry().UseOtlpExporter();
+            }
+        }
     }
 }

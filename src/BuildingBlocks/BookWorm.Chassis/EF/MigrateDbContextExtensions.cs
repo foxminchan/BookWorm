@@ -11,40 +11,6 @@ public static class MigrateDbContextExtensions
     private const string ActivitySourceName = "DbMigrations";
     private static readonly ActivitySource _activitySource = new(ActivitySourceName);
 
-    extension(IServiceCollection services)
-    {
-        public IServiceCollection AddMigration<TContext>()
-            where TContext : DbContext
-        {
-            return services.AddMigration<TContext>((_, _) => Task.CompletedTask);
-        }
-
-        public IServiceCollection AddMigration<TContext>(
-            Func<TContext, IServiceProvider, Task> seeder
-        )
-            where TContext : DbContext
-        {
-            services
-                .AddOpenTelemetry()
-                .WithTracing(tracing => tracing.AddSource(ActivitySourceName));
-
-            return services.AddHostedService(sp => new MigrationHostedService<TContext>(
-                sp,
-                seeder
-            ));
-        }
-
-        public IServiceCollection AddMigration<TContext, TDbSeeder>()
-            where TContext : DbContext
-            where TDbSeeder : class, IDbSeeder<TContext>
-        {
-            services.AddScoped<IDbSeeder<TContext>, TDbSeeder>();
-            return services.AddMigration<TContext>(
-                (context, sp) => sp.GetRequiredService<IDbSeeder<TContext>>().SeedAsync(context)
-            );
-        }
-    }
-
     private static async Task MigrateDbContextAsync<TContext>(
         this IServiceProvider services,
         Func<TContext, IServiceProvider, Task> seeder
@@ -110,6 +76,40 @@ public static class MigrateDbContextExtensions
             activity?.AddException(ex);
 
             throw;
+        }
+    }
+
+    extension(IServiceCollection services)
+    {
+        public IServiceCollection AddMigration<TContext>()
+            where TContext : DbContext
+        {
+            return services.AddMigration<TContext>((_, _) => Task.CompletedTask);
+        }
+
+        public IServiceCollection AddMigration<TContext>(
+            Func<TContext, IServiceProvider, Task> seeder
+        )
+            where TContext : DbContext
+        {
+            services
+                .AddOpenTelemetry()
+                .WithTracing(tracing => tracing.AddSource(ActivitySourceName));
+
+            return services.AddHostedService(sp => new MigrationHostedService<TContext>(
+                sp,
+                seeder
+            ));
+        }
+
+        public IServiceCollection AddMigration<TContext, TDbSeeder>()
+            where TContext : DbContext
+            where TDbSeeder : class, IDbSeeder<TContext>
+        {
+            services.AddScoped<IDbSeeder<TContext>, TDbSeeder>();
+            return services.AddMigration<TContext>(
+                (context, sp) => sp.GetRequiredService<IDbSeeder<TContext>>().SeedAsync(context)
+            );
         }
     }
 
