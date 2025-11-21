@@ -32,11 +32,9 @@ public static class A2AClientFactory
     {
         var baseAddress = ServiceDiscoveryUtilities.GetRequiredServiceEndpoint(serviceName);
 
-        var agent = new A2AAgentClient(new(baseAddress), path).GetAIAgent(
-            serviceProvider,
-            agentName,
-            agentClientId
-        );
+        var agentClient = new A2AAgentClient(new(baseAddress), path);
+
+        var agent = agentClient.GetAIAgent(serviceProvider, agentName, agentClientId);
 
         return agent.GetAwaiter().GetResult();
     }

@@ -1,4 +1,5 @@
 ﻿using BookWorm.Catalog.Grpc.Services;
+using BookWorm.Chassis.Utilities;
 using BookWorm.Chassis.Utilities.Configuration;
 
 namespace BookWorm.Basket.Grpc;
@@ -19,7 +20,11 @@ internal static class Extensions
         services.AddGrpcHealthChecks();
 
         services.AddGrpcServiceReference<BookGrpcService.BookGrpcServiceClient>(
-            $"{builder.GetScheme()}://{Constants.Aspire.Services.Catalog}",
+            HttpUtilities
+                .BuildUrl()
+                .WithScheme(builder.GetScheme())
+                .WithHost(Constants.Aspire.Services.Catalog)
+                .Build(),
             HealthStatus.Degraded
         );
 

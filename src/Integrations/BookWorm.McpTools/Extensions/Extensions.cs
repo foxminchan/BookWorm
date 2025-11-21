@@ -24,7 +24,11 @@ internal static class Extensions
 
         // Configure HTTP client
         services.AddHttpServiceReference<ICatalogApi>(
-            HttpUtilities.BuildUrl(Http.Schemes.HttpOrHttps, Constants.Aspire.Services.Catalog),
+            HttpUtilities
+                .BuildUrl()
+                .WithScheme(Http.Schemes.HttpOrHttps)
+                .WithHost(Constants.Aspire.Services.Catalog)
+                .Build(),
             HealthStatus.Degraded
         );
 

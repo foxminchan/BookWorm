@@ -1,5 +1,4 @@
-﻿using System.Text;
-using BookWorm.Chassis.AI.Agents;
+﻿using BookWorm.Chassis.AI.Agents;
 using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.AI.Middlewares;
 using BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
@@ -19,7 +18,11 @@ internal static class Extensions
 
         services.AddHttpClient<AgentDiscoveryClient>(client =>
             client.BaseAddress = new(
-                HttpUtilities.BuildUrl(Http.Schemes.HttpOrHttps, Services.Rating)
+                HttpUtilities
+                    .BuildUrl()
+                    .WithScheme(Http.Schemes.HttpOrHttps)
+                    .WithHost(Services.Rating)
+                    .Build()
             )
         );
 
@@ -33,14 +36,15 @@ internal static class Extensions
                     .Use(GuardrailMiddleware.InvokeAsync, null)
                     .Build(sp);
 
-                var addressBuilder = new StringBuilder();
-                addressBuilder.Append(
-                    ServiceDiscoveryUtilities.GetRequiredServiceEndpoint(Services.McpTools)
-                );
-                addressBuilder.Append('/');
-                addressBuilder.Append("mcp");
+                var mcpUrl = HttpUtilities
+                    .BuildUrl()
+                    .WithBase(
+                        ServiceDiscoveryUtilities.GetRequiredServiceEndpoint(Services.McpTools)
+                    )
+                    .WithPath("mcp")
+                    .Build();
 
-                var mcpTool = new HostedMcpServerTool(Services.McpTools, addressBuilder.ToString())
+                var mcpTool = new HostedMcpServerTool(Services.McpTools, mcpUrl)
                 {
                     AllowedTools = ["search_catalog"],
                     ApprovalMode = HostedMcpServerToolApprovalMode.NeverRequire,

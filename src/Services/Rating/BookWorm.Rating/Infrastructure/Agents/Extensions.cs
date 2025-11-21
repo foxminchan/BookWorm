@@ -28,7 +28,11 @@ public static class Extensions
         services.AddScoped<ReviewTool>();
         services.AddHttpClient<AgentDiscoveryClient>(client =>
             client.BaseAddress = new(
-                HttpUtilities.BuildUrl(Http.Schemes.HttpOrHttps, Constants.Aspire.Services.Chatting)
+                HttpUtilities
+                    .BuildUrl()
+                    .WithScheme(Http.Schemes.HttpOrHttps)
+                    .WithHost(Constants.Aspire.Services.Chatting)
+                    .Build()
             )
         );
 

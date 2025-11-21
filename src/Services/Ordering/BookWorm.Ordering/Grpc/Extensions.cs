@@ -1,5 +1,6 @@
 ﻿using BookWorm.Catalog.Grpc.Services;
 using BookWorm.Chassis.Security.TokenExchange;
+using BookWorm.Chassis.Utilities;
 using BookWorm.Chassis.Utilities.Configuration;
 
 namespace BookWorm.Ordering.Grpc;
@@ -18,7 +19,11 @@ internal static class Extensions
         });
 
         services.AddGrpcServiceReference<BookGrpcService.BookGrpcServiceClient>(
-            $"{builder.GetScheme()}://{Constants.Aspire.Services.Catalog}",
+            HttpUtilities
+                .BuildUrl()
+                .WithScheme(builder.GetScheme())
+                .WithHost(Constants.Aspire.Services.Catalog)
+                .Build(),
             HealthStatus.Degraded
         );
 
@@ -26,7 +31,11 @@ internal static class Extensions
 
         services
             .AddGrpcServiceReference<BasketGrpcService.BasketGrpcServiceClient>(
-                $"{builder.GetScheme()}://{Constants.Aspire.Services.Basket}",
+                HttpUtilities
+                    .BuildUrl()
+                    .WithScheme(builder.GetScheme())
+                    .WithHost(Constants.Aspire.Services.Basket)
+                    .Build(),
                 HealthStatus.Degraded
             )
             .AddAuthTokenExchange(Constants.Aspire.Services.Basket);
