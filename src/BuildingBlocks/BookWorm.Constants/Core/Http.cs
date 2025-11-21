@@ -26,9 +26,4 @@ public static class Http
         public const string Https = "https";
         public const string HttpOrHttps = "https+http";
     }
-
-    public static string BuildUrl(string scheme, string host, int? port = null)
-    {
-        return port.HasValue ? $"{scheme}://{host}:{port.Value}" : $"{scheme}://{host}";
-    }
 }

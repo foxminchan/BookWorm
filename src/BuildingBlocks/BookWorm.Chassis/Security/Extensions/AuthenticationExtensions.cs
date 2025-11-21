@@ -1,4 +1,5 @@
 ﻿using BookWorm.Chassis.Security.Settings;
+using BookWorm.Chassis.Utilities;
 using BookWorm.Chassis.Utilities.Configuration;
 using BookWorm.Constants.Aspire;
 using BookWorm.Constants.Core;
@@ -19,7 +20,7 @@ public static class AuthenticationExtensions
         services.Configure<IdentityOptions>(IdentityOptions.ConfigurationSection);
 
         var realm = services.BuildServiceProvider().GetRequiredService<IdentityOptions>().Realm;
-        var keycloakUrl = Http.BuildUrl(Http.Schemes.HttpOrHttps, Components.KeyCloak);
+        var keycloakUrl = HttpUtilities.BuildUrl(Http.Schemes.HttpOrHttps, Components.KeyCloak);
 
         services.AddHttpClient(
             Components.KeyCloak,

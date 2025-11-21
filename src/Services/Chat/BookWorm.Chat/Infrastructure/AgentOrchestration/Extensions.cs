@@ -18,7 +18,9 @@ internal static class Extensions
         var services = builder.Services;
 
         services.AddHttpClient<AgentDiscoveryClient>(client =>
-            client.BaseAddress = new(Http.BuildUrl(Http.Schemes.HttpOrHttps, Services.Rating))
+            client.BaseAddress = new(
+                HttpUtilities.BuildUrl(Http.Schemes.HttpOrHttps, Services.Rating)
+            )
         );
 
         builder.AddAIAgent(

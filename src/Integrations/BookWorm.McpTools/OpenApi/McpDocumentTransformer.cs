@@ -1,4 +1,5 @@
 ﻿using System.Net.Mime;
+using BookWorm.Chassis.Utilities;
 using BookWorm.Constants.Core;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
@@ -20,8 +21,8 @@ public sealed class McpDocumentTransformer(IHttpContextAccessor accessor)
             new()
             {
                 Url = accessor.HttpContext?.Request is { } request
-                    ? Http.BuildUrl(request.Scheme, $"{request.Host}")
-                    : Http.BuildUrl(Http.Schemes.Https, Network.Localhost, 8080),
+                    ? HttpUtilities.BuildUrl(request.Scheme, $"{request.Host}")
+                    : HttpUtilities.BuildUrl(Http.Schemes.Https, Network.Localhost, 8080),
             },
         ];
 
