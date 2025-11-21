@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <IsAspireSharedProject>true</IsAspireSharedProject>
+    <NoWarn>EXTEXP0001</NoWarn>
   </PropertyGroup>
   <ItemGroup Label="Framework">
     <FrameworkReference Include="Microsoft.AspNetCore.App" />

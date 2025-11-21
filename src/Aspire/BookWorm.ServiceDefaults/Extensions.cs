@@ -125,15 +125,10 @@ public static class Extensions
 
             builder.Services.ConfigureHttpClientDefaults(http =>
             {
+                http.RemoveAllResilienceHandlers();
+
                 // Turn on resilience by default
-                http.AddStandardResilienceHandler(options =>
-                {
-                    var timeSpan = TimeSpan.FromMinutes(2);
-                    options.AttemptTimeout.Timeout = timeSpan;
-                    options.CircuitBreaker.SamplingDuration = timeSpan * 2;
-                    options.TotalRequestTimeout.Timeout = timeSpan * 3;
-                    options.Retry.MaxRetryAttempts = 1;
-                });
+                http.AddStandardResilienceHandler();
 
                 // Turn on service discovery by default
                 http.AddServiceDiscovery();
