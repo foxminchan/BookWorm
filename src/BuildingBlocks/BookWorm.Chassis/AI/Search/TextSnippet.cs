@@ -10,19 +10,23 @@ public sealed class TextSnippet
     private const string VectorDistanceFunction = DistanceFunction.CosineSimilarity;
     public const string CollectionName = "data-bookworm-snippets";
 
-    [VectorStoreKey]
+    [VectorStoreKey(StorageName = "key")]
     [JsonPropertyName("key")]
     public required Guid Id { get; init; }
 
     [VectorStoreData(IsFullTextIndexed = true, StorageName = "content")]
     [JsonPropertyName("content")]
     public required string Content { get; init; }
-    
+
     [VectorStoreData(StorageName = "context")]
     [JsonPropertyName("context")]
     public string? Context { get; set; }
 
-    [VectorStoreVector(VectorDimensions, DistanceFunction = VectorDistanceFunction, StorageName = "embedding")]
+    [VectorStoreVector(
+        VectorDimensions,
+        DistanceFunction = VectorDistanceFunction,
+        StorageName = "embedding"
+    )]
     [JsonPropertyName("embedding")]
     public ReadOnlyMemory<float> Vector { get; init; }
 }

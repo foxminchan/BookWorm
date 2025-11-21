@@ -16,7 +16,7 @@ public sealed class HybridSearch(
     )
     {
         await collection.EnsureCollectionExistsAsync(cancellationToken);
-        
+
         var vectorCollection = (IKeywordHybridSearchable<TextSnippet>)collection;
 
         var vector = await embeddingGenerator.GenerateVectorAsync(
