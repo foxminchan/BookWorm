@@ -47,8 +47,12 @@ var notificationDb = postgres.AddDatabase(Components.Database.Notification);
 
 var openai = builder.AddOpenAI(Components.OpenAI.Resource);
 
-var chat = openai.AddModel(Components.OpenAI.Chat, Components.OpenAI.OpenAIGpt4oMini);
-var embedding = openai.AddModel(Components.OpenAI.Embedding, Components.OpenAI.TextEmbedding3Large);
+var chat = openai
+    .AddModel(Components.OpenAI.Chat, Components.OpenAI.OpenAIGpt4oMini)
+    .WithHealthCheck();
+var embedding = openai
+    .AddModel(Components.OpenAI.Embedding, Components.OpenAI.TextEmbedding3Large)
+    .WithHealthCheck();
 
 IResourceBuilder<IResource> keycloak = builder.ExecutionContext.IsRunMode
     ? builder.AddLocalKeycloak(Components.KeyCloak)

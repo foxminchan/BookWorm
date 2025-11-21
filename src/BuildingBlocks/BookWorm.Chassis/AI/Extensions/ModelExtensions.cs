@@ -17,14 +17,7 @@ public static class ModelExtensions
                 )
             )
             {
-                builder
-                    .AddOpenAIClient(
-                        Components.OpenAI.Chat,
-                        configureOptions =>
-                            configureOptions.EnableSensitiveTelemetryData =
-                                builder.Environment.IsDevelopment()
-                    )
-                    .AddChatClient();
+                builder.AddOpenAIClientFromConfiguration(Components.OpenAI.Chat).AddChatClient();
             }
 
             if (
@@ -33,7 +26,9 @@ public static class ModelExtensions
                 )
             )
             {
-                builder.AddOpenAIClient(Components.OpenAI.Embedding).AddEmbeddingGenerator();
+                builder
+                    .AddOpenAIClientFromConfiguration(Components.OpenAI.Embedding)
+                    .AddEmbeddingGenerator();
             }
 
             return builder;
