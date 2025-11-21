@@ -125,16 +125,7 @@ var chatApi = builder
     .WithReference(mcp)
     .WithKeycloak(keycloak)
     .WithHttpHealthCheck(Http.Endpoints.HealthEndpointPath)
-    .WithUrls(e =>
-        e.Urls.Add(
-            new()
-            {
-                Url = "/devui",
-                DisplayText = "DevUI",
-                Endpoint = e.GetEndpoint(Http.Schemes.Http),
-            }
-        )
-    );
+    .WithUrlForEndpoint("devui", _ => new() { Url = "/devui", DisplayText = "Dev UI" });
 
 var ratingApi = builder
     .AddProject<BookWorm_Rating>(Services.Rating)
@@ -149,16 +140,7 @@ var ratingApi = builder
     .WithReference(chatApi)
     .WaitFor(chatApi)
     .WithHttpHealthCheck(Http.Endpoints.HealthEndpointPath)
-    .WithUrls(e =>
-        e.Urls.Add(
-            new()
-            {
-                Url = "/devui",
-                DisplayText = "DevUI",
-                Endpoint = e.GetEndpoint(Http.Schemes.Http),
-            }
-        )
-    );
+    .WithUrlForEndpoint("devui", _ => new() { Url = "/devui", DisplayText = "Dev UI" });
 
 builder
     .AddProject<BookWorm_Finance>(Services.Finance)

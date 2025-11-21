@@ -1,9 +1,11 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
-using Microsoft.Agents.AI.Hosting;
+using Microsoft.Agents.AI;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Chassis.AI.Extensions;
 
@@ -14,28 +16,24 @@ public static class ActorFrameworkWebApplicationExtensions
         [StringSyntax("Route")] string path
     )
     {
+        var registeredAIAgents = endpoints.ServiceProvider.GetKeyedServices<AIAgent>(
+            KeyedService.AnyKey
+        );
+
         var routeGroup = endpoints.MapGroup(path);
 
         routeGroup
             .MapGet(
                 "/",
-                async (AgentCatalog agentCatalog, CancellationToken cancellationToken) =>
+                Ok<List<AgentDiscoveryCard>> () =>
                 {
-                    var results = new List<AgentDiscoveryCard>();
-                    await foreach (
-                        var result in agentCatalog
-                            .GetAgentsAsync(cancellationToken)
-                            .ConfigureAwait(false)
-                    )
-                    {
-                        results.Add(
-                            new()
-                            {
-                                Name = result.Name ?? string.Empty,
-                                Description = result.Description,
-                            }
-                        );
-                    }
+                    var results = registeredAIAgents
+                        .Select(result => new AgentDiscoveryCard
+                        {
+                            Name = result.Name ?? "Unnamed Agent",
+                            Description = result.Description,
+                        })
+                        .ToList();
 
                     return TypedResults.Ok(results);
                 }
