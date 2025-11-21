@@ -20,7 +20,7 @@ internal static class Extensions
 
         services.AddGrpcServiceReference<BookGrpcService.BookGrpcServiceClient>(
             HttpUtilities
-                .BuildUrl()
+                .AsUrlBuilder()
                 .WithScheme(builder.GetScheme())
                 .WithHost(Constants.Aspire.Services.Catalog)
                 .Build(),
@@ -32,7 +32,7 @@ internal static class Extensions
         services
             .AddGrpcServiceReference<BasketGrpcService.BasketGrpcServiceClient>(
                 HttpUtilities
-                    .BuildUrl()
+                    .AsUrlBuilder()
                     .WithScheme(builder.GetScheme())
                     .WithHost(Constants.Aspire.Services.Basket)
                     .Build(),

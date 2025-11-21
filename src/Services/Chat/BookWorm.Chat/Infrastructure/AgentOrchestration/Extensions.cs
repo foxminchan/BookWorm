@@ -19,7 +19,7 @@ internal static class Extensions
         services.AddHttpClient<AgentDiscoveryClient>(client =>
             client.BaseAddress = new(
                 HttpUtilities
-                    .BuildUrl()
+                    .AsUrlBuilder()
                     .WithScheme(Http.Schemes.HttpOrHttps)
                     .WithHost(Services.Rating)
                     .Build()
@@ -37,7 +37,7 @@ internal static class Extensions
                     .Build(sp);
 
                 var mcpUrl = HttpUtilities
-                    .BuildUrl()
+                    .AsUrlBuilder()
                     .WithBase(
                         ServiceDiscoveryUtilities.GetRequiredServiceEndpoint(Services.McpTools)
                     )

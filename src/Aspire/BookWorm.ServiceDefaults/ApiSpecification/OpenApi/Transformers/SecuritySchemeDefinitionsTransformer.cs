@@ -23,13 +23,13 @@ internal sealed class SecuritySchemeDefinitionsTransformer(IdentityOptions ident
         }
 
         var authUrl = HttpUtilities
-            .BuildUrl()
+            .AsUrlBuilder()
             .WithBase(keycloakUrl)
             .WithPath(KeycloakEndpoints.Authorize.Replace("{realm}", identityOptions.Realm))
             .Build();
 
         var tokenUrl = HttpUtilities
-            .BuildUrl()
+            .AsUrlBuilder()
             .WithScheme(Http.Schemes.Http)
             .WithHost(Components.KeyCloak)
             .WithPath(KeycloakEndpoints.Token.Replace("{realm}", identityOptions.Realm))

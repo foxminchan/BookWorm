@@ -29,7 +29,7 @@ public static class Extensions
         services.AddHttpClient<AgentDiscoveryClient>(client =>
             client.BaseAddress = new(
                 HttpUtilities
-                    .BuildUrl()
+                    .AsUrlBuilder()
                     .WithScheme(Http.Schemes.HttpOrHttps)
                     .WithHost(Constants.Aspire.Services.Chatting)
                     .Build()

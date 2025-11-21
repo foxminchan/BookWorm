@@ -22,12 +22,12 @@ public sealed class McpDocumentTransformer(IHttpContextAccessor accessor)
             {
                 Url = accessor.HttpContext?.Request is { } request
                     ? HttpUtilities
-                        .BuildUrl()
+                        .AsUrlBuilder()
                         .WithScheme(request.Scheme)
                         .WithHost(request.Host)
                         .Build()
                     : HttpUtilities
-                        .BuildUrl()
+                        .AsUrlBuilder()
                         .WithScheme(Http.Schemes.Https)
                         .WithHost(Network.Localhost)
                         .WithPort(8080)

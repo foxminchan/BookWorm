@@ -21,7 +21,7 @@ public static class McpClientExtensions
             var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
 
             var url = HttpUtilities
-                .BuildUrl()
+                .AsUrlBuilder()
                 .WithBase(ServiceDiscoveryUtilities.GetRequiredServiceEndpoint(serviceName))
                 .WithPath(relativePath)
                 .Build();
