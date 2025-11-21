@@ -29,7 +29,7 @@ var queue = builder
     .WithManagementPlugin()
     .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent)
-    .WithEndpoint(Protocols.Tcp, e => e.Port = 5672);
+    .WithEndpoint(Network.Tcp, e => e.Port = 5672);
 
 var storage = builder
     .AddAzureStorage(Components.Azure.Storage.Resource)
@@ -73,7 +73,7 @@ var catalogApi = builder
     .WaitFor(blobStorage)
     .WithReference(chat)
     .WithReference(embedding)
-    .WithHttpHealthCheck(Restful.Host.HealthEndpointPath)
+    .WithHttpHealthCheck(Http.Endpoints.HealthEndpointPath)
     .WithRoleAssignments(
         storage,
         StorageBuiltInRole.StorageBlobDataContributor,
@@ -83,7 +83,7 @@ var catalogApi = builder
 var mcp = builder
     .AddProject<BookWorm_McpTools>(Services.McpTools)
     .WithReference(catalogApi)
-    .WithHttpHealthCheck(Restful.Host.HealthEndpointPath);
+    .WithHttpHealthCheck(Http.Endpoints.HealthEndpointPath);
 
 var basketApi = builder
     .AddProject<BookWorm_Basket>(Services.Basket)
@@ -93,7 +93,7 @@ var basketApi = builder
     .WaitFor(queue)
     .WithReference(catalogApi)
     .WithKeycloak(keycloak)
-    .WithHttpHealthCheck(Restful.Host.HealthEndpointPath);
+    .WithHttpHealthCheck(Http.Endpoints.HealthEndpointPath);
 
 builder
     .AddProject<BookWorm_Notification>(Services.Notification)
@@ -102,7 +102,7 @@ builder
     .WaitFor(queue)
     .WithReference(notificationDb)
     .WaitFor(notificationDb)
-    .WithHttpHealthCheck(Restful.Host.HealthEndpointPath);
+    .WithHttpHealthCheck(Http.Endpoints.HealthEndpointPath);
 
 var orderingApi = builder
     .AddProject<BookWorm_Ordering>(Services.Ordering)
@@ -116,7 +116,7 @@ var orderingApi = builder
     .WithReference(catalogApi)
     .WithReference(basketApi)
     .WithSecret("hmac-key", "HMAC__Key")
-    .WithHttpHealthCheck(Restful.Host.HealthEndpointPath);
+    .WithHttpHealthCheck(Http.Endpoints.HealthEndpointPath);
 
 var chatApi = builder
     .AddProject<BookWorm_Chat>(Services.Chatting)
@@ -124,14 +124,14 @@ var chatApi = builder
     .WithReference(embedding)
     .WithReference(mcp)
     .WithKeycloak(keycloak)
-    .WithHttpHealthCheck(Restful.Host.HealthEndpointPath)
+    .WithHttpHealthCheck(Http.Endpoints.HealthEndpointPath)
     .WithUrls(e =>
         e.Urls.Add(
             new()
             {
                 Url = "/devui",
                 DisplayText = "DevUI",
-                Endpoint = e.GetEndpoint(Protocols.Http),
+                Endpoint = e.GetEndpoint(Http.Schemes.Http),
             }
         )
     );
@@ -148,14 +148,14 @@ var ratingApi = builder
     .WithKeycloak(keycloak)
     .WithReference(chatApi)
     .WaitFor(chatApi)
-    .WithHttpHealthCheck(Restful.Host.HealthEndpointPath)
+    .WithHttpHealthCheck(Http.Endpoints.HealthEndpointPath)
     .WithUrls(e =>
         e.Urls.Add(
             new()
             {
                 Url = "/devui",
                 DisplayText = "DevUI",
-                Endpoint = e.GetEndpoint(Protocols.Http),
+                Endpoint = e.GetEndpoint(Http.Schemes.Http),
             }
         )
     );
@@ -166,13 +166,13 @@ builder
     .WaitFor(financeDb)
     .WithReference(queue)
     .WaitFor(queue)
-    .WithHttpHealthCheck(Restful.Host.HealthEndpointPath);
+    .WithHttpHealthCheck(Http.Endpoints.HealthEndpointPath);
 
 builder
     .AddProject<BookWorm_Scheduler>(Services.Scheduler)
     .WithReference(queue)
     .WaitFor(queue)
-    .WithHttpHealthCheck(Restful.Host.HealthEndpointPath)
+    .WithHttpHealthCheck(Http.Endpoints.HealthEndpointPath)
     .WithExplicitStart();
 
 var gateway = builder

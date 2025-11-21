@@ -1,6 +1,7 @@
 ﻿using BookWorm.Chassis.AI.Agents;
 using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.AI.Middlewares;
+using BookWorm.Constants.Core;
 using BookWorm.Constants.Other;
 using BookWorm.Rating.Tools;
 using Microsoft.Agents.AI;
@@ -26,7 +27,7 @@ public static class Extensions
         services.AddScoped<ReviewTool>();
         services.AddHttpClient<AgentDiscoveryClient>(client =>
             client.BaseAddress = new(
-                $"{Protocols.HttpOrHttps}://{Constants.Aspire.Services.Chatting}"
+                Http.BuildUrl(Http.Schemes.HttpOrHttps, Constants.Aspire.Services.Chatting)
             )
         );
 

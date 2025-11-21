@@ -53,7 +53,7 @@ public static class ProxyExtensions
                         case ContainerResource containerResource:
                             yarpBuilder.AddRoute(
                                 "/identity/{**remainder}",
-                                containerResource.GetEndpoint(Protocols.Http)
+                                containerResource.GetEndpoint(Http.Schemes.Http)
                             );
                             break;
                         case ExternalServiceResource externalServiceResource:

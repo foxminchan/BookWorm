@@ -11,7 +11,7 @@ public sealed class CreateOrderEndpoint : IEndpoint<Created<Guid>, ISender, Link
         app.MapPost(
                 "/orders",
                 async (
-                    [FromHeader(Name = Restful.RequestIdHeader)]
+                    [FromHeader(Name = Http.RequestIdHeader)]
                     [Description("The idempotency key of the order to be created")]
                         string key,
                     ISender sender,

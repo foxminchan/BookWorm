@@ -71,4 +71,9 @@ jobs:
           Parameters__sendgrid-sender-name: ${{ secrets.SENDGRID_SENDER_NAME }}
           Parameters__kc-url: ${{ secrets.KC_URL }}
           Parameters__kc-realm: ${{ secrets.KC_REALM }}
+          Parameters__catalog-secret: ${{ secrets.CATALOG_SECRET }}
+          Parameters__basket-secret: ${{ secrets.BASKET_SECRET }}
+          Parameters__ordering-secret: ${{ secrets.ORDERING_SECRET }}
+          Parameters__chatting-secret: ${{ secrets.CHATTING_SECRET }}
+          Parameters__rating-secret: ${{ secrets.RATING_SECRET }}
           Parameters__openai-openai-apikey: ${{ secrets.OPENAI_APIKEY }}

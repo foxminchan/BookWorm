@@ -1,6 +1,7 @@
 ﻿using BookWorm.Chassis.Security.Settings;
 using BookWorm.Chassis.Utilities.Configuration;
 using BookWorm.Constants.Aspire;
+using BookWorm.Constants.Core;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -18,10 +19,11 @@ public static class AuthenticationExtensions
         services.Configure<IdentityOptions>(IdentityOptions.ConfigurationSection);
 
         var realm = services.BuildServiceProvider().GetRequiredService<IdentityOptions>().Realm;
+        var keycloakUrl = Http.BuildUrl(Http.Schemes.HttpOrHttps, Components.KeyCloak);
 
         services.AddHttpClient(
             Components.KeyCloak,
-            client => client.BaseAddress = new($"{Protocols.HttpOrHttps}://{Components.KeyCloak}")
+            client => client.BaseAddress = new(keycloakUrl)
         );
 
         services

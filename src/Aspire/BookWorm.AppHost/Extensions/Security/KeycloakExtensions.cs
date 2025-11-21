@@ -9,7 +9,7 @@ public static class KeycloakExtensions
     private const string ProxyHeadersEnvVarName = "KC_PROXY_HEADERS";
     private const string HostNameStrictEnvVarName = "KC_HOSTNAME_STRICT";
     private const string BaseContainerPath = "Container/keycloak";
-    private static readonly string _defaultLocalKeycloakName = nameof(BookWorm).ToLowerInvariant();
+    private static readonly string DefaultLocalKeycloakName = nameof(BookWorm).ToLowerInvariant();
 
     /// <summary>
     ///     Configures the project resource to integrate with Keycloak as an Identity Provider (IdP).
@@ -41,7 +41,7 @@ public static class KeycloakExtensions
                 .WithEnvironment(ProxyHeadersEnvVarName, "xforwarded")
                 .WithEnvironment(HostNameStrictEnvVarName, "false")
                 .WithEnvironment($"CLIENT_{clientEnv}_ID", clientId)
-                .WithEnvironment($"CLIENT_{clientEnv}_NAME", clientId.ToClientName())
+                .WithEnvironment($"CLIENT_{clientEnv}_NAME", Services.ToClientName(clientId, "API"))
                 .WithEnvironment($"CLIENT_{clientEnv}_SECRET", clientSecret)
                 .OnResourceEndpointsAllocated(
                     (resource, _, _) =>
@@ -52,7 +52,7 @@ public static class KeycloakExtensions
 
                         resourceBuilder.WithEnvironment(context =>
                         {
-                            var endpoint = builder.GetEndpoint(Protocols.Http);
+                            var endpoint = builder.GetEndpoint(Http.Schemes.Http);
 
                             context.EnvironmentVariables.Add(
                                 $"CLIENT_{clientEnv}_URL",
@@ -72,16 +72,16 @@ public static class KeycloakExtensions
             builder
                 .WithReference(keycloakContainer)
                 .WaitForStart(keycloakContainer)
-                .WithEnvironment("Identity__Realm", _defaultLocalKeycloakName)
+                .WithEnvironment("Identity__Realm", DefaultLocalKeycloakName)
                 .WithEnvironment("Identity__ClientId", clientId)
                 .WithEnvironment("Identity__ClientSecret", clientSecret)
                 .WithEnvironment(
                     $"Identity__Scopes__{clientId}_{Authorization.Actions.Read}",
-                    $"{nameof(Authorization.Actions.Read)} for {clientId.ToClientName("API")}"
+                    $"{nameof(Authorization.Actions.Read)} for {Services.ToClientName(clientId, "API")}"
                 )
                 .WithEnvironment(
                     $"Identity__Scopes__{clientId}_{Authorization.Actions.Write}",
-                    $"{nameof(Authorization.Actions.Write)} for {clientId.ToClientName("API")}"
+                    $"{nameof(Authorization.Actions.Write)} for {Services.ToClientName(clientId, "API")}"
                 );
         }
         else if (
@@ -112,7 +112,10 @@ public static class KeycloakExtensions
                 .WithEnvironment("Identity__Realm", realmParameter)
                 .WithEnvironment("Identity__ClientId", clientId)
                 .WithEnvironment("Identity__ClientSecret", clientSecret)
-                .WithEnvironment($"Identity__Scopes__{clientId}", clientId.ToClientName("API"));
+                .WithEnvironment(
+                    $"Identity__Scopes__{clientId}",
+                    Services.ToClientName(clientId, "API")
+                );
         }
 
         return builder;
@@ -134,10 +137,10 @@ public static class KeycloakExtensions
                 .AddKeycloak(name)
                 .WithDataVolume()
                 .WithIconName("LockClosedRibbon")
-                .WithCustomTheme(_defaultLocalKeycloakName)
+                .WithCustomTheme(DefaultLocalKeycloakName)
                 .WithImagePullPolicy(ImagePullPolicy.Always)
                 .WithLifetime(ContainerLifetime.Persistent)
-                .WithSampleRealmImport(_defaultLocalKeycloakName, nameof(BookWorm));
+                .WithSampleRealmImport(DefaultLocalKeycloakName, nameof(BookWorm));
 
             return keycloak;
         }

@@ -71,7 +71,7 @@ public static class Extensions
                         options.Filter = httpContext =>
                             !(
                                 httpContext.Request.Path.StartsWithSegments(
-                                    Restful.Host.HealthEndpointPath
+                                    Http.Endpoints.HealthEndpointPath
                                 )
                                 || httpContext.Request.Path.StartsWithSegments(
                                     AlivenessEndpointPath
@@ -101,7 +101,7 @@ public static class Extensions
         }
 
         // All health checks must pass for app to be considered ready to accept traffic after starting
-        app.MapHealthChecks(Restful.Host.HealthEndpointPath);
+        app.MapHealthChecks(Http.Endpoints.HealthEndpointPath);
 
         // Only health checks tagged with the "live" tag must pass for app to be considered alive
         app.MapHealthChecks(

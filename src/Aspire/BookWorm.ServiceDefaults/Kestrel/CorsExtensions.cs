@@ -20,7 +20,7 @@ public static class CorsExtensions
                     policyBuilder =>
                     {
                         policyBuilder.SetIsOriginAllowed(origin =>
-                            new Uri(origin).Host == Restful.Host.Localhost
+                            new Uri(origin).Host == Network.Localhost
                         );
                     }
                 );

@@ -31,7 +31,7 @@ internal sealed class SecuritySchemeDefinitionsTransformer(IdentityOptions ident
 
         // Please refer: https://github.com/scalar/scalar/issues/6225
         var tokenUrlBuilder = new StringBuilder();
-        tokenUrlBuilder.Append(Protocols.Http);
+        tokenUrlBuilder.Append(Http.Schemes.Http);
         tokenUrlBuilder.Append("://");
         tokenUrlBuilder.Append(Components.KeyCloak);
         tokenUrlBuilder.Append('/');
