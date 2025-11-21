@@ -100,8 +100,8 @@ public sealed class ListBooksQueryTests
         var query = new ListBooksQuery(Search: searchTerm);
         List<TextSnippet> hybridSearchRecords =
         [
-            new() { Id = Guid.CreateVersion7(), Description = "Book 1" },
-            new() { Id = Guid.CreateVersion7(), Description = "Book 2" },
+            new() { Id = Guid.CreateVersion7(), Content = "Book 1" },
+            new() { Id = Guid.CreateVersion7(), Content = "Book 2" },
         ];
 
         _mockHybridSearch
