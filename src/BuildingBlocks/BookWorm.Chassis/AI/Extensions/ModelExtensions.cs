@@ -1,4 +1,5 @@
 ﻿using BookWorm.Constants.Aspire;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -17,7 +18,10 @@ public static class ModelExtensions
                 )
             )
             {
-                builder.AddOpenAIClientFromConfiguration(Components.OpenAI.Chat).AddChatClient();
+                builder
+                    .AddOpenAIClientFromConfiguration(Components.OpenAI.Chat)
+                    .AddChatClient()
+                    .UseFunctionInvocation();
             }
 
             if (
