@@ -104,11 +104,8 @@ public sealed class UrlBuilder
         }
         else
         {
-            ArgumentNullException.ThrowIfNull(
-                _scheme,
-                "Scheme is required when not using base URL"
-            );
-            ArgumentNullException.ThrowIfNull(_host, "Host is required when not using base URL");
+            ArgumentException.ThrowIfNullOrWhiteSpace(_scheme);
+            ArgumentException.ThrowIfNullOrWhiteSpace(_host);
 
             builder.Append(_scheme);
             builder.Append("://");
