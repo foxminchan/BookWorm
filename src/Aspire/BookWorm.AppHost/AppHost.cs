@@ -73,17 +73,17 @@ var catalogApi = builder
     .WaitFor(blobStorage)
     .WithReference(chat)
     .WithReference(embedding)
-    .WithHttpHealthCheck(Http.Endpoints.HealthEndpointPath)
     .WithRoleAssignments(
         storage,
         StorageBuiltInRole.StorageBlobDataContributor,
         StorageBuiltInRole.StorageBlobDataOwner
-    );
+    )
+    .WithFriendlyUrls("Catalog (OpenAPI)");
 
 var mcp = builder
     .AddProject<BookWorm_McpTools>(Services.McpTools)
     .WithReference(catalogApi)
-    .WithHttpHealthCheck(Http.Endpoints.HealthEndpointPath);
+    .WithFriendlyUrls("MCP (OpenAPI)");
 
 var basketApi = builder
     .AddProject<BookWorm_Basket>(Services.Basket)
@@ -93,16 +93,7 @@ var basketApi = builder
     .WaitFor(queue)
     .WithReference(catalogApi)
     .WithKeycloak(keycloak)
-    .WithHttpHealthCheck(Http.Endpoints.HealthEndpointPath);
-
-builder
-    .AddProject<BookWorm_Notification>(Services.Notification)
-    .WithEmailProvider()
-    .WithReference(queue)
-    .WaitFor(queue)
-    .WithReference(notificationDb)
-    .WaitFor(notificationDb)
-    .WithHttpHealthCheck(Http.Endpoints.HealthEndpointPath);
+    .WithFriendlyUrls("Basket (OpenAPI)");
 
 var orderingApi = builder
     .AddProject<BookWorm_Ordering>(Services.Ordering)
@@ -116,7 +107,7 @@ var orderingApi = builder
     .WithReference(catalogApi)
     .WithReference(basketApi)
     .WithSecret("hmac-key", "HMAC__Key")
-    .WithHttpHealthCheck(Http.Endpoints.HealthEndpointPath);
+    .WithFriendlyUrls("Ordering (OpenAPI)");
 
 var chatApi = builder
     .AddProject<BookWorm_Chat>(Services.Chatting)
@@ -124,8 +115,7 @@ var chatApi = builder
     .WithReference(embedding)
     .WithReference(mcp)
     .WithKeycloak(keycloak)
-    .WithHttpHealthCheck(Http.Endpoints.HealthEndpointPath)
-    .WithUrlForEndpoint("devui", _ => new() { Url = "/devui", DisplayText = "Dev UI" });
+    .WithFriendlyUrls("Dev UI", path: "/devui");
 
 var ratingApi = builder
     .AddProject<BookWorm_Rating>(Services.Rating)
@@ -139,8 +129,16 @@ var ratingApi = builder
     .WithKeycloak(keycloak)
     .WithReference(chatApi)
     .WaitFor(chatApi)
-    .WithHttpHealthCheck(Http.Endpoints.HealthEndpointPath)
-    .WithUrlForEndpoint("devui", _ => new() { Url = "/devui", DisplayText = "Dev UI" });
+    .WithFriendlyUrls("Dev UI", path: "/devui");
+
+builder
+    .AddProject<BookWorm_Notification>(Services.Notification)
+    .WithEmailProvider()
+    .WithReference(queue)
+    .WaitFor(queue)
+    .WithReference(notificationDb)
+    .WaitFor(notificationDb)
+    .WithFriendlyUrls("Notification (Status)", path: "/alive");
 
 builder
     .AddProject<BookWorm_Finance>(Services.Finance)
@@ -148,13 +146,13 @@ builder
     .WaitFor(financeDb)
     .WithReference(queue)
     .WaitFor(queue)
-    .WithHttpHealthCheck(Http.Endpoints.HealthEndpointPath);
+    .WithFriendlyUrls("Finance (Status)", path: "/alive");
 
 builder
     .AddProject<BookWorm_Scheduler>(Services.Scheduler)
     .WithReference(queue)
     .WaitFor(queue)
-    .WithHttpHealthCheck(Http.Endpoints.HealthEndpointPath)
+    .WithFriendlyUrls("Scheduler (Status)", path: "/alive")
     .WithExplicitStart();
 
 var gateway = builder
