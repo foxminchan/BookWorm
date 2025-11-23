@@ -28,7 +28,6 @@ We appreciate your help in making BookWorm better. Please follow the guidelines 
     - [Pull Request Process](#pull-request-process-1)
   - [Need Help?](#need-help)
 
-
 ## Getting Started
 
 1. **Fork the Repository**: Start by forking the main BookWorm repository.
@@ -102,18 +101,21 @@ graph TD
 ### Typical Workflows
 
 **Feature Development:**
+
 1. Start with **Planner** to create implementation plan
 2. Hand off to **CSharp-Expert** for implementation
 3. Use **Code-Reviewer** to validate changes
 4. Use **Debug** if issues arise
 
 **Bug Fixing:**
+
 1. Start with **Debug** to identify and fix bugs
 2. Hand off to **CSharp-Expert** for complex solutions
 3. Use **Code-Reviewer** to review the fix
 4. Use **Planner** if architectural changes needed
 
 **Code Review:**
+
 1. Start with **Code-Reviewer** for systematic review
 2. Hand off to **CSharp-Expert** to address issues
 3. Use **Planner** for major refactoring recommendations
@@ -192,11 +194,13 @@ public sealed record UserCheckedOutIntegrationEvent(
 When modifying Protocol Buffers schema files (`.proto` files), you must run the following Buf commands to ensure schema validity and compatibility:
 
 1. **Lint the schema**: Validates that your proto files follow best practices and conventions
+
    ```bash
    buf lint
    ```
 
 2. **Check for breaking changes**: Ensures backward compatibility with the locked schema
+
    ```bash
    buf breaking --against lock.binpb
    ```
@@ -210,6 +214,7 @@ When modifying Protocol Buffers schema files (`.proto` files), you must run the 
 > All three commands must pass successfully before submitting a PR with proto schema changes. Breaking changes require careful coordination and migration planning.
 
 **Workflow for Proto Changes:**
+
 1. Modify your `.proto` files
 2. Run `buf lint` to check for style and best practice violations
 3. Run `buf breaking --against lock.binpb` to verify backward compatibility
@@ -270,25 +275,21 @@ When modifying Protocol Buffers schema files (`.proto` files), you must run the 
 ### Pull Request Process
 
 1. **Code Quality**:
-
    - Follow BookWorm's coding standards and conventions
    - Include comprehensive unit tests for new features and changes
    - Ensure all existing and new tests pass locally before submitting
 
 2. **Documentation**:
-
    - Update relevant documentation when changing functionality
    - Add code comments for complex logic where necessary
    - Include clear examples for API changes
 
 3. **Submission Requirements**:
-
    - Link related issues in your PR description using keywords (Fixes #123)
    - Provide a concise description of changes and their purpose
    - Ensure your PR passes all CI/CD pipeline checks, SonarQube analysis, and Snyk security scans
 
 4. **Review Process**:
-
    - Request reviews from project maintainers
    - Address reviewer feedback promptly
    - Be prepared to make additional changes if requested
