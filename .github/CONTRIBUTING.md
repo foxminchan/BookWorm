@@ -302,18 +302,19 @@ When modifying Protocol Buffers schema files (`.proto` files), you must run the 
 Here is flowchart of the PR process:
 
 ```mermaid
-graph TD
-		A[Create a PR] --> B{Code Quality}
-		B -->|Pass| C[Documentation]
-		C -->|Pass| D[Submission Requirements]
-		D -->|Pass| E[Review Process]
-		E -->|Pass| F[Merge Criteria]
-		F -->|Pass| G[PR Merged]
-		B -->|Fail| H[Address Feedback]
-		C -->|Fail| H
-		D -->|Fail| H
-		E -->|Fail| H
-		H --> B
+flowchart TD
+    A[Create Pull Request] --> B{Code Quality Checks}
+    B -->|Pass| C{Documentation Updated?}
+    C -->|Pass| D{Submission Requirements}
+    D -->|Pass| E{Code Review}
+    E -->|Approved| F{Merge Criteria}
+    F -->|Pass| G[Merge PR]
+
+    B -->|Fail| H[Fix Issues]
+    C -->|Fail| H
+    D -->|Fail| H
+    E -->|Changes Requested| H
+    H --> B
 ```
 
 ## Need Help?
