@@ -1,8 +1,10 @@
 # Contributing to BookWorm
 
-Thank you for your interest in contributing to BookWorm!
+🎉 Thank you for your interest in contributing to BookWorm!
 
-We appreciate your help in making BookWorm better. Please follow the guidelines in this document to ensure a smooth contribution process.
+BookWorm is a cloud-native microservices application showcasing .NET Aspire, Domain-Driven Design, and AI integration. We welcome contributions of all kinds: bug fixes, features, documentation improvements, and more.
+
+Whether you're a first-time contributor or an experienced developer, this guide will help you get started. Please follow these guidelines to ensure a smooth contribution process and maintain code quality across the project.
 
 ## Table of Contents
 
@@ -25,15 +27,26 @@ We appreciate your help in making BookWorm better. Please follow the guidelines 
     - [Test Quality](#test-quality)
     - [Tools and Resources](#tools-and-resources)
   - [Pull Request Process](#pull-request-process)
-    - [Pull Request Process](#pull-request-process-1)
   - [Need Help?](#need-help)
+    - [Getting Support](#getting-support)
+    - [Response Times](#response-times)
+    - [Community Guidelines](#community-guidelines)
 
 ## Getting Started
 
 1. **Fork the Repository**: Start by forking the main BookWorm repository.
-2. **Clone Your Fork**: git clone `https://github.com/YOUR-USERNAME/BookWorm.git`
-3. **Add Upstream Remote**: git remote add upstream `https://github.com/ORIGINAL-OWNER/BookWorm.git`
-4. **Auto LFE**: Ensure your Git configuration is set to handle line endings correctly:
+2. **Clone Your Fork**:
+   ```bash
+   git clone https://github.com/YOUR-USERNAME/BookWorm.git
+   cd BookWorm
+   ```
+
+3. **Add Upstream Remote**:
+   ```bash
+   git remote add upstream https://github.com/foxminchan/BookWorm.git
+   ```
+
+4. **Configure Line Endings**: Ensure consistent line endings across different operating systems:
    ```bash
    git config --global core.autocrlf input
    ```
@@ -43,7 +56,13 @@ We appreciate your help in making BookWorm better. Please follow the guidelines 
 
 1. **Create a Branch**: `git checkout -b feature/your-feature-name`
 2. **Make Changes**: Follow the coding conventions described below
-3. **Commit Changes**: Use descriptive commit messages
+3. **Commit Changes**: Use descriptive commit messages following [Conventional Commits](https://www.conventionalcommits.org/):
+   - `feat:` for new features
+   - `fix:` for bug fixes
+   - `docs:` for documentation changes
+   - `refactor:` for code refactoring
+   - `test:` for test additions or modifications
+   - `chore:` for maintenance tasks
 4. **Push to Your Fork**: `git push origin feature/your-feature-name`
 5. **Create a Pull Request**: Submit your changes for review
 
@@ -272,8 +291,6 @@ When modifying Protocol Buffers schema files (`.proto` files), you must run the 
 
 ## Pull Request Process
 
-### Pull Request Process
-
 1. **Code Quality**:
    - Follow BookWorm's coding standards and conventions
    - Include comprehensive unit tests for new features and changes
@@ -319,8 +336,30 @@ flowchart TD
 
 ## Need Help?
 
-If you have questions or need assistance, please:
+### Getting Support
 
-- Check existing issues
-- Create a new issue with a detailed description of your problem
-- Reach out to the maintainers
+We're here to help! If you have questions or need assistance:
+
+- 📖 **Documentation**: Start with [AGENTS.md](../AGENTS.md) and the [project README](../README.md)
+- 🐛 **Bug Reports**: [Create a bug report](https://github.com/foxminchan/BookWorm/issues/new?template=bug-report.yml)
+- 💡 **Feature Requests**: [Submit a feature request](https://github.com/foxminchan/BookWorm/issues/new?template=feature-request.yml)
+- 👥 **Maintainers**: Reach out via GitHub issues
+
+### Response Times
+
+This is an open-source project maintained by volunteers. Please be patient:
+- Bug reports: We aim to respond within 48-72 hours
+- Feature requests: May take longer to evaluate and implement
+- Pull requests: We'll review as soon as possible, usually within a week
+
+### Community Guidelines
+
+When seeking help or contributing:
+- ✅ Be respectful and constructive
+- ✅ Provide detailed information about your issue
+- ✅ Search for existing solutions before asking
+- ✅ Follow up if you find a solution
+- ❌ Don't demand immediate responses
+- ❌ Don't post duplicate issues
+
+Thank you for contributing to BookWorm! 🚀
