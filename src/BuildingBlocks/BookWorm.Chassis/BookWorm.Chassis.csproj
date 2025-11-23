@@ -5,9 +5,10 @@
   <ItemGroup Label="Integration">
     <PackageReference Include="Aspire.Keycloak.Authentication" />
     <PackageReference Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" />
-    <PackageReference Include="EFCore.NamingConventions" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="EFCore.NamingConventions" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" />
     <PackageReference Include="MassTransit.RabbitMQ" />
     <PackageReference Include="Scrutor" />
   </ItemGroup>
@@ -25,10 +26,6 @@
     <PackageReference Include="Microsoft.Extensions.Compliance.Redaction" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
-  </ItemGroup>
-  <ItemGroup Label="Versioning">
-    <PackageReference Include="Asp.Versioning.Http.Client" />
-    <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BookWorm.Constants\BookWorm.Constants.csproj" />
