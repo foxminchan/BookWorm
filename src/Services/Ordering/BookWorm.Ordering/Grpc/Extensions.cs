@@ -5,7 +5,6 @@ using BookWorm.Chassis.Utilities.Configuration;
 
 namespace BookWorm.Ordering.Grpc;
 
-[ExcludeFromCodeCoverage]
 internal static class Extensions
 {
     public static void AddGrpcServices(this IHostApplicationBuilder builder)
