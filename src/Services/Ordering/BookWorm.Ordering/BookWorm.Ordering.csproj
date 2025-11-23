@@ -39,13 +39,13 @@
   </ItemGroup>
   <ItemGroup>
     <Protobuf
-      Include="..\..\Catalog\BookWorm.Catalog\Grpc\Protos\book.proto"
-      Link="Grpc\Protos\book.proto"
+      Include="..\..\Catalog\BookWorm.Catalog\Grpc\Protos\book\v1\book.proto"
+      Link="Grpc\Protos\book\v1\book.proto"
       GrpcServices="Client"
     />
     <Protobuf
-      Include="..\..\Basket\BookWorm.Basket\Grpc\Protos\basket.proto"
-      Link="Grpc\Protos\basket.proto"
+      Include="..\..\Basket\BookWorm.Basket\Grpc\Protos\basket\v1\basket.proto"
+      Link="Grpc\Protos\basket\v1\basket.proto"
       GrpcServices="Client"
     />
   </ItemGroup>

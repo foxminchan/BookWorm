@@ -15,4 +15,7 @@ curl -fsSL https://bun.sh/install | bash
 echo "Installing just-cli globally using bun"
 bun install -g rust-just
 
+echo "Installing Buf CLI"
+bun install -g @bufbuild/buf
+
 echo "✅ BookWorm development environment setup complete!"

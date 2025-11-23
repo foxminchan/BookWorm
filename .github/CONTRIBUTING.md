@@ -17,6 +17,7 @@ We appreciate your help in making BookWorm better. Please follow the guidelines 
     - [Using Agents in Your Workflow](#using-agents-in-your-workflow)
   - [Coding Standards](#coding-standards)
   - [Integration Events Standards](#integration-events-standards)
+  - [Protocol Buffers (Proto) Schema Standards](#protocol-buffers-proto-schema-standards)
   - [Design Patterns](#design-patterns)
   - [Testing Guidelines](#testing-guidelines)
     - [Core Testing Principles](#core-testing-principles)
@@ -185,6 +186,35 @@ public sealed record UserCheckedOutIntegrationEvent(
    decimal TotalMoney
 ) : IntegrationEvent;
 ```
+
+## Protocol Buffers (Proto) Schema Standards
+
+When modifying Protocol Buffers schema files (`.proto` files), you must run the following Buf commands to ensure schema validity and compatibility:
+
+1. **Lint the schema**: Validates that your proto files follow best practices and conventions
+   ```bash
+   buf lint
+   ```
+
+2. **Check for breaking changes**: Ensures backward compatibility with the locked schema
+   ```bash
+   buf breaking --against lock.binpb
+   ```
+
+3. **Update the lock file**: After validation, rebuild and update the schema lock file
+   ```bash
+   buf build -o lock.binpb
+   ```
+
+> [!IMPORTANT]
+> All three commands must pass successfully before submitting a PR with proto schema changes. Breaking changes require careful coordination and migration planning.
+
+**Workflow for Proto Changes:**
+1. Modify your `.proto` files
+2. Run `buf lint` to check for style and best practice violations
+3. Run `buf breaking --against lock.binpb` to verify backward compatibility
+4. If checks pass, run `buf build -o lock.binpb` to update the lock file
+5. Commit both the `.proto` changes and the updated `lock.binpb` file
 
 ## Design Patterns
 

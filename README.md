@@ -70,6 +70,7 @@
 - [Gitleaks](https://gitleaks.io/)
 - [Bun](https://bun.sh/)
 - [Just](https://github.com/casey/just)
+- [Buf CLI](https://docs.buf.build/installation)
 - [Aspire CLI](https://aspire.dev/get-started/install-cli/)
 - [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
 - Optional: [Spec-Kit](https://github.com/github/spec-kit)

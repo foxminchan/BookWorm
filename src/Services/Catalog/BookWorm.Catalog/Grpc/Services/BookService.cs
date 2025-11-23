@@ -9,7 +9,10 @@ public sealed class BookService(IBookRepository repository, ILogger<BookService>
     : BookGrpcService.BookGrpcServiceBase
 {
     [AllowAnonymous]
-    public override async Task<BookResponse> GetBook(BookRequest request, ServerCallContext context)
+    public override async Task<GetBookResponse> GetBook(
+        GetBookRequest request,
+        ServerCallContext context
+    )
     {
         if (logger.IsEnabled(LogLevel.Debug))
         {
@@ -30,8 +33,8 @@ public sealed class BookService(IBookRepository repository, ILogger<BookService>
     }
 
     [AllowAnonymous]
-    public override async Task<BooksResponse> GetBooks(
-        BooksRequest request,
+    public override async Task<GetBooksResponse> GetBooks(
+        GetBooksRequest request,
         ServerCallContext context
     )
     {
@@ -52,7 +55,7 @@ public sealed class BookService(IBookRepository repository, ILogger<BookService>
         return MapToBookResponse(books);
     }
 
-    private static BookResponse MapToBookResponse(Book book)
+    private static GetBookResponse MapToBookResponse(Book book)
     {
         return new()
         {
@@ -64,9 +67,9 @@ public sealed class BookService(IBookRepository repository, ILogger<BookService>
         };
     }
 
-    private static BooksResponse MapToBookResponse(IReadOnlyList<Book> books)
+    private static GetBooksResponse MapToBookResponse(IReadOnlyList<Book> books)
     {
-        var response = new BooksResponse();
+        var response = new GetBooksResponse();
 
         response.Books.AddRange(books.Select(MapToBookResponse));
 

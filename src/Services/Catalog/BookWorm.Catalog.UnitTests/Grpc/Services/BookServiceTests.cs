@@ -25,7 +25,7 @@ public sealed class BookServiceTests
     {
         // Arrange
         var bookId = Guid.CreateVersion7();
-        var bookRequest = new BookRequest { BookId = bookId.ToString() };
+        var bookRequest = new GetBookRequest { BookId = bookId.ToString() };
         var context = new TestServerCallContext();
 
         var book = new Book(
@@ -67,7 +67,7 @@ public sealed class BookServiceTests
     {
         // Arrange
         var nonExistentBookId = Guid.CreateVersion7();
-        var bookRequest = new BookRequest { BookId = nonExistentBookId.ToString() };
+        var bookRequest = new GetBookRequest { BookId = nonExistentBookId.ToString() };
         var context = new TestServerCallContext();
 
         _bookRepositoryMock
@@ -93,7 +93,7 @@ public sealed class BookServiceTests
     {
         // Arrange
         var bookId = Guid.CreateVersion7();
-        var bookRequest = new BookRequest { BookId = bookId.ToString() };
+        var bookRequest = new GetBookRequest { BookId = bookId.ToString() };
         var context = new TestServerCallContext();
 
         var book = new Book(
@@ -128,7 +128,10 @@ public sealed class BookServiceTests
     {
         // Arrange
         var bookIds = new[] { Guid.CreateVersion7(), Guid.CreateVersion7() };
-        var booksRequest = new BooksRequest { BookIds = { bookIds.Select(id => id.ToString()) } };
+        var booksRequest = new GetBooksRequest
+        {
+            BookIds = { bookIds.Select(id => id.ToString()) },
+        };
         var context = new TestServerCallContext();
 
         List<Book> books =
@@ -191,7 +194,7 @@ public sealed class BookServiceTests
     {
         // Arrange
         var bookId = Guid.CreateVersion7();
-        var bookRequest = new BookRequest { BookId = bookId.ToString() };
+        var bookRequest = new GetBookRequest { BookId = bookId.ToString() };
         var context = new TestServerCallContext();
 
         var loggerMock = new Mock<ILogger<BookService>>();
@@ -243,7 +246,10 @@ public sealed class BookServiceTests
     {
         // Arrange
         var bookIds = new[] { Guid.CreateVersion7(), Guid.CreateVersion7() };
-        var booksRequest = new BooksRequest { BookIds = { bookIds.Select(id => id.ToString()) } };
+        var booksRequest = new GetBooksRequest
+        {
+            BookIds = { bookIds.Select(id => id.ToString()) },
+        };
         var context = new TestServerCallContext();
 
         var loggerMock = new Mock<ILogger<BookService>>();

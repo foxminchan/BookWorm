@@ -28,10 +28,10 @@
     />
   </ItemGroup>
   <ItemGroup>
-    <Protobuf Include="Grpc\Protos\basket.proto" GrpcServices="Server" />
+    <Protobuf Include="Grpc\Protos\basket\v1\basket.proto" GrpcServices="Server" />
     <Protobuf
-      Include="..\..\Catalog\BookWorm.Catalog\Grpc\Protos\book.proto"
-      Link="Grpc\Protos\book.proto"
+      Include="..\..\Catalog\BookWorm.Catalog\Grpc\Protos\book\v1\book.proto"
+      Link="Grpc\Protos\book\v1\book.proto"
       GrpcServices="Client"
     />
   </ItemGroup>
