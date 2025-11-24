@@ -16,8 +16,6 @@ namespace BookWorm.ServiceDefaults;
 // To learn more about using this project, see https://aka.ms/dotnet/aspire/service-defaults
 public static class Extensions
 {
-    private const string AlivenessEndpointPath = "/alive";
-
     private static void AddLogging(this IHostApplicationBuilder builder)
     {
         var logger = builder.Logging;
@@ -74,7 +72,7 @@ public static class Extensions
                                     Http.Endpoints.HealthEndpointPath
                                 )
                                 || httpContext.Request.Path.StartsWithSegments(
-                                    AlivenessEndpointPath
+                                    Http.Endpoints.AlivenessEndpointPath
                                 )
                             )
                     )
@@ -105,7 +103,7 @@ public static class Extensions
 
         // Only health checks tagged with the "live" tag must pass for app to be considered alive
         app.MapHealthChecks(
-            AlivenessEndpointPath,
+            Http.Endpoints.AlivenessEndpointPath,
             new() { Predicate = r => r.Tags.Contains("live") }
         );
     }

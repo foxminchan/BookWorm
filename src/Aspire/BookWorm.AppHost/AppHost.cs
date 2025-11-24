@@ -27,6 +27,7 @@ var queue = builder
     .AddRabbitMQ(Components.Queue)
     .WithIconName("Pipeline")
     .WithManagementPlugin()
+    .WithDataVolume()
     .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent)
     .WithEndpoint(Network.Tcp, e => e.Port = 5672);
@@ -78,12 +79,12 @@ var catalogApi = builder
         StorageBuiltInRole.StorageBlobDataContributor,
         StorageBuiltInRole.StorageBlobDataOwner
     )
-    .WithFriendlyUrls("Catalog (OpenAPI)");
+    .WithFriendlyUrls();
 
 var mcp = builder
     .AddProject<BookWorm_McpTools>(Services.McpTools)
     .WithReference(catalogApi)
-    .WithFriendlyUrls("MCP (OpenAPI)");
+    .WithFriendlyUrls();
 
 var basketApi = builder
     .AddProject<BookWorm_Basket>(Services.Basket)
@@ -93,7 +94,7 @@ var basketApi = builder
     .WaitFor(queue)
     .WithReference(catalogApi)
     .WithKeycloak(keycloak)
-    .WithFriendlyUrls("Basket (OpenAPI)");
+    .WithFriendlyUrls();
 
 var orderingApi = builder
     .AddProject<BookWorm_Ordering>(Services.Ordering)
@@ -107,7 +108,7 @@ var orderingApi = builder
     .WithReference(catalogApi)
     .WithReference(basketApi)
     .WithSecret("hmac-key", "HMAC__Key")
-    .WithFriendlyUrls("Ordering (OpenAPI)");
+    .WithFriendlyUrls();
 
 var chatApi = builder
     .AddProject<BookWorm_Chat>(Services.Chatting)
@@ -115,7 +116,7 @@ var chatApi = builder
     .WithReference(embedding)
     .WithReference(mcp)
     .WithKeycloak(keycloak)
-    .WithFriendlyUrls("Dev UI", path: "/devui");
+    .WithFriendlyUrls("Dev UI", path: Http.Endpoints.DevUIEndpointPath);
 
 var ratingApi = builder
     .AddProject<BookWorm_Rating>(Services.Rating)
@@ -129,7 +130,7 @@ var ratingApi = builder
     .WithKeycloak(keycloak)
     .WithReference(chatApi)
     .WaitFor(chatApi)
-    .WithFriendlyUrls("Dev UI", path: "/devui");
+    .WithFriendlyUrls("Dev UI", path: Http.Endpoints.DevUIEndpointPath);
 
 builder
     .AddProject<BookWorm_Notification>(Services.Notification)
@@ -138,7 +139,7 @@ builder
     .WaitFor(queue)
     .WithReference(notificationDb)
     .WaitFor(notificationDb)
-    .WithFriendlyUrls("Notification (Status)", path: "/alive");
+    .WithFriendlyUrls(path: Http.Endpoints.AlivenessEndpointPath);
 
 builder
     .AddProject<BookWorm_Finance>(Services.Finance)
@@ -146,13 +147,13 @@ builder
     .WaitFor(financeDb)
     .WithReference(queue)
     .WaitFor(queue)
-    .WithFriendlyUrls("Finance (Status)", path: "/alive");
+    .WithFriendlyUrls(path: Http.Endpoints.AlivenessEndpointPath);
 
 builder
     .AddProject<BookWorm_Scheduler>(Services.Scheduler)
     .WithReference(queue)
     .WaitFor(queue)
-    .WithFriendlyUrls("Scheduler (Status)", path: "/alive")
+    .WithFriendlyUrls(path: Http.Endpoints.AlivenessEndpointPath)
     .WithExplicitStart();
 
 var gateway = builder

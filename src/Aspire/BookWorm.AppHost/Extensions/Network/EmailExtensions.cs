@@ -69,6 +69,10 @@ public static class EmailExtensions
                 .WithEnvironment("SendGrid__ApiKey", apiKey)
                 .WithEnvironment("SendGrid__SenderEmail", email)
                 .WithEnvironment("SendGrid__SenderName", senderName);
+
+            apiKey.WithParentRelationship(builder);
+            email.WithParentRelationship(builder);
+            senderName.WithParentRelationship(builder);
         }
 
         return builder;

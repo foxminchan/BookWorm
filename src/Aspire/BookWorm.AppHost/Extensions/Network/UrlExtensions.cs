@@ -27,7 +27,7 @@ public static class UrlExtensions
 
                 var endpoint = endpointNames
                     .Where(name => name is not null)
-                    .Select(name => c.GetEndpoint(name!))
+                    .Select(c.GetEndpoint!)
                     .FirstOrDefault(e => e?.Exists ?? false);
 
                 if (endpoint is null)
@@ -35,7 +35,7 @@ public static class UrlExtensions
                     return;
                 }
 
-                displayText ??= builder.Resource.Name;
+                displayText ??= Services.ToClientName(builder.Resource.Name);
 
                 foreach (var url in c.Urls)
                 {

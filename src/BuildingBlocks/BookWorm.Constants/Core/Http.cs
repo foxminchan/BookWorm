@@ -17,7 +17,9 @@ public static class Http
 
     public static class Endpoints
     {
+        public const string DevUIEndpointPath = "/devui";
         public const string HealthEndpointPath = "/health";
+        public const string AlivenessEndpointPath = "/alive";
     }
 
     public static class Schemes
