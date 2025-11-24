@@ -30,6 +30,7 @@ public static class ActorFrameworkWebApplicationExtensions
                     var results = registeredAIAgents
                         .Select(result => new AgentDiscoveryCard
                         {
+                            Id = result.Id,
                             Name = result.Name ?? "Unnamed Agent",
                             Description = result.Description,
                         })
@@ -43,6 +44,8 @@ public static class ActorFrameworkWebApplicationExtensions
 
     private sealed record AgentDiscoveryCard
     {
+        public required string Id { get; init; }
+
         public required string Name { get; init; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
