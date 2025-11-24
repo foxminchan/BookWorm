@@ -16,7 +16,7 @@
   <ItemGroup Label="Aspire">
     <PackageReference Include="Aspire.Qdrant.Client" />
     <PackageReference Include="Aspire.Azure.Storage.Blobs" />
-    <PackageReference Include="Aspire.StackExchange.Redis.DistributedCaching" />
+    <PackageReference Include="Aspire.Microsoft.Azure.StackExchangeRedis" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="$(AssemblyName).UnitTests" />

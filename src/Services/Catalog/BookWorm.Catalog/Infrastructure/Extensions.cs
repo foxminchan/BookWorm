@@ -41,7 +41,7 @@ internal static class Extensions
             // Configure Redis Cache
             builder
                 .AddRedisClientBuilder(Components.Redis, o => o.DisableAutoActivation = false)
-                .WithDistributedCache(options => options.InstanceName = "MainCache");
+                .WithAzureAuthentication();
 
             services.Configure<CachingOptions>(CachingOptions.ConfigurationSection);
 
