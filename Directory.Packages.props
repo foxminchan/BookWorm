@@ -62,10 +62,10 @@
     <!-- Miscellaneous -->
     <PackageVersion Include="AspNetCore.HealthChecks.Uris" Version="$(HealthChecksVersion)" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.0" />
-    <PackageVersion Include="Marten.AspNetCore" Version="8.16.1" />
-    <PackageVersion Include="Mediator.Abstractions" Version="3.0.1" />
-    <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.1" />
+    <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.1" PrivateAssets="All" />
     <PackageVersion Include="Refit.HttpClientFactory" Version="8.0.0" />
+    <PackageVersion Include="Mediator.Abstractions" Version="3.0.1" />
+    <PackageVersion Include="Marten.AspNetCore" Version="8.16.1" />
     <PackageVersion Include="Scrutor" Version="7.0.0" />
     <PackageVersion Include="DistributedLock.Redis" Version="1.1.1" />
   </ItemGroup>

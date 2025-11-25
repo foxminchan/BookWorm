@@ -1,9 +1,24 @@
 {
 	"name": "@bookworm/eventcatalog",
 	"version": "1.0.0",
-	"description": "EventCatalog for BookWorm",
-	"license": "MIT",
+	"description": "Living event-driven architecture catalog with service contracts and documentation",
+	"author": "Nhan Nguyen <nguyenxuannhan407@gmail.com> (https://github.com/foxminchan)",
+	"licenses": [
+		{
+			"type": "MIT",
+			"url": "https://opensource.org/licenses/MIT"
+		}
+	],
 	"private": true,
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/foxminchan/BookWorm.git",
+		"directory": "docs/eventcatalog"
+	},
+	"bugs": {
+		"url": "https://github.com/foxminchan/BookWorm/issues"
+	},
+	"homepage": "https://bookwormdev.netlify.app/",
 	"scripts": {
 		"dev": "eventcatalog dev",
 		"build": "eventcatalog build",

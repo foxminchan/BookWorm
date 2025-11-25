@@ -1,9 +1,23 @@
 {
   "name": "@bookworm/keycloakify",
   "version": "1.0.0",
-  "description": "A Keycloak theme for BookWorm",
-  "author": "Nhan Nguyen",
-  "license": "MIT",
+  "description": "Keycloakify-based authentication UI theme for BookWorm's identity and access management",
+  "author": "Nhan Nguyen <nguyenxuannhan407@gmail.com> (https://github.com/foxminchan)",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foxminchan/BookWorm.git",
+    "directory": "src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify"
+  },
+  "bugs": {
+    "url": "https://github.com/foxminchan/BookWorm/issues"
+  },
+  "homepage": "https://github.com/foxminchan/BookWorm#readme",
   "type": "module",
   "scripts": {
     "postinstall": "keycloakify sync-extensions",
