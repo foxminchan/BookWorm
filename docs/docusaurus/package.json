@@ -1,9 +1,24 @@
 {
 	"name": "@bookworm/docusaurus",
 	"version": "1.0.0",
-	"description": "Docusaurus website for Bookworm",
-	"license": "MIT",
+	"description": "Comprehensive arc42 architecture documentation, ADRs, and technical blog",
+	"author": "Nhan Nguyen <nguyenxuannhan407@gmail.com> (https://github.com/foxminchan)",
+	"licenses": [
+		{
+			"type": "MIT",
+			"url": "https://opensource.org/licenses/MIT"
+		}
+	],
 	"private": true,
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/foxminchan/BookWorm.git",
+		"directory": "docs/docusaurus"
+	},
+	"bugs": {
+		"url": "https://github.com/foxminchan/BookWorm/issues"
+	},
+	"homepage": "https://foxminchan.github.io/BookWorm/",
 	"scripts": {
 		"docusaurus": "docusaurus",
 		"start": "docusaurus start",
