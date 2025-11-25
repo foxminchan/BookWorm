@@ -31,9 +31,9 @@ runs:
     - name: Configure Husky
       shell: bash
       if: success()
-      run: dotnet husky install
+      run: dnx husky install
 
     - name: Run Format Task
       shell: bash
       if: success()
-      run: dotnet husky run --name format
+      run: dnx husky run --name format

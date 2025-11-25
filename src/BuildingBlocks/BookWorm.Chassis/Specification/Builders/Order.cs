@@ -5,47 +5,35 @@ namespace BookWorm.Chassis.Specification.Builders;
 
 public static partial class SpecificationBuilderExtensions
 {
-    public static ISpecificationBuilder<T> OrderBy<T>(
-        this ISpecificationBuilder<T> builder,
-        Expression<Func<T, object?>> keySelector
-    )
+    extension<T>(ISpecificationBuilder<T> builder)
         where T : class
     {
-        var expr = new OrderExpression<T>(keySelector, OrderType.OrderBy);
-        builder.Specification.Add(expr);
-        return builder;
-    }
+        public ISpecificationBuilder<T> OrderBy(Expression<Func<T, object?>> keySelector)
+        {
+            var expr = new OrderExpression<T>(keySelector, OrderType.OrderBy);
+            builder.Specification.Add(expr);
+            return builder;
+        }
 
-    public static ISpecificationBuilder<T> OrderByDescending<T>(
-        this ISpecificationBuilder<T> builder,
-        Expression<Func<T, object?>> keySelector
-    )
-        where T : class
-    {
-        var expr = new OrderExpression<T>(keySelector, OrderType.OrderByDescending);
-        builder.Specification.Add(expr);
-        return builder;
-    }
+        public ISpecificationBuilder<T> OrderByDescending(Expression<Func<T, object?>> keySelector)
+        {
+            var expr = new OrderExpression<T>(keySelector, OrderType.OrderByDescending);
+            builder.Specification.Add(expr);
+            return builder;
+        }
 
-    public static ISpecificationBuilder<T> ThenBy<T>(
-        this ISpecificationBuilder<T> builder,
-        Expression<Func<T, object?>> keySelector
-    )
-        where T : class
-    {
-        var expr = new OrderExpression<T>(keySelector, OrderType.ThenBy);
-        builder.Specification.Add(expr);
-        return builder;
-    }
+        public ISpecificationBuilder<T> ThenBy(Expression<Func<T, object?>> keySelector)
+        {
+            var expr = new OrderExpression<T>(keySelector, OrderType.ThenBy);
+            builder.Specification.Add(expr);
+            return builder;
+        }
 
-    public static ISpecificationBuilder<T> ThenByDescending<T>(
-        this ISpecificationBuilder<T> builder,
-        Expression<Func<T, object?>> keySelector
-    )
-        where T : class
-    {
-        var expr = new OrderExpression<T>(keySelector, OrderType.ThenByDescending);
-        builder.Specification.Add(expr);
-        return builder;
+        public ISpecificationBuilder<T> ThenByDescending(Expression<Func<T, object?>> keySelector)
+        {
+            var expr = new OrderExpression<T>(keySelector, OrderType.ThenByDescending);
+            builder.Specification.Add(expr);
+            return builder;
+        }
     }
 }

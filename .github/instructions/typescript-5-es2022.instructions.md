@@ -1,6 +1,7 @@
 ---
-description: 'Guidelines for TypeScript Development targeting TypeScript 5.x and ES2022 output'
-applyTo: '**/*.ts'
+description: "Guidelines for TypeScript Development targeting TypeScript 5.x and ES2022 output"
+applyTo: "**/*.ts"
+name: TypeScript-5-ES2022
 ---
 
 # TypeScript Development

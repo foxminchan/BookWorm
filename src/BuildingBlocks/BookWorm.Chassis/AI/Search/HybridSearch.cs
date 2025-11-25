@@ -15,18 +15,19 @@ public sealed class HybridSearch(
         CancellationToken cancellationToken = default
     )
     {
+        await collection.EnsureCollectionExistsAsync(cancellationToken);
+
+        var vectorCollection = (IKeywordHybridSearchable<TextSnippet>)collection;
+
         var vector = await embeddingGenerator.GenerateVectorAsync(
             text,
             cancellationToken: cancellationToken
         );
 
-        await collection.EnsureCollectionExistsAsync(cancellationToken);
-        var vectorCollection = (IKeywordHybridSearchable<TextSnippet>)collection;
-
         var options = new HybridSearchOptions<TextSnippet>
         {
             VectorProperty = r => r.Vector,
-            AdditionalProperty = r => r.Description,
+            AdditionalProperty = r => r.Content,
         };
 
         var nearest = vectorCollection.HybridSearchAsync(
@@ -37,13 +38,6 @@ public sealed class HybridSearch(
             cancellationToken
         );
 
-        List<TextSnippet> results = [];
-
-        await foreach (var item in nearest)
-        {
-            results.Add(item.Record);
-        }
-
-        return results;
+        return await nearest.Select(result => result.Record).ToListAsync(cancellationToken);
     }
 }

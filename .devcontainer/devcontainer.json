@@ -1,136 +1,30 @@
 {
   "name": "BookWorm",
-  "image": "mcr.microsoft.com/devcontainers/dotnet:dev-9.0-bookworm",
+  "image": "mcr.microsoft.com/devcontainers/dotnet:dev-10.0-noble",
   "features": {
-    "ghcr.io/azure/azure-dev/azd:latest": {},
-    "ghcr.io/devcontainers/features/azure-cli:1": {},
     "ghcr.io/devcontainers/features/docker-in-docker:2": {},
-    "ghcr.io/devcontainers/features/common-utils:2": {},
-    "ghcr.io/jsburckhardt/devcontainer-features/gitleaks:1": {},
-    "ghcr.io/devcontainers/features/node:1": {
-      "nodeGypDependencies": true,
-      "version": "lts",
-      "nvmVersion": "latest"
-    },
-    "ghcr.io/devcontainers/features/git:1": {
-      "ppa": true,
-      "version": "latest"
+    "ghcr.io/devcontainers/features/azure-cli:latest": {},
+    "ghcr.io/devcontainers/features/github-cli:latest": {},
+    "ghcr.io/devcontainers/features/node:latest": {},
+    "ghcr.io/devcontainers/features/java:1": {
+      "installMaven": true,
+      "version": "25"
     }
   },
-  "customizations": {
-    "vscode": {
-      "extensions": [
-        // .NET Development
-        "ms-dotnettools.csdevkit",
-        "ms-dotnettools.csharp",
-        "editorconfig.editorconfig",
-
-        // Infrastructure & Cloud
-        "ms-azuretools.vscode-bicep",
-        "ms-vscode.azure-account",
-
-        // GitHub Integration
-        "GitHub.copilot-chat",
-        "GitHub.copilot",
-        "GitHub.vscode-github-actions",
-
-        // Code Quality & Security
-        "sonarsource.sonarlint-vscode",
-        "ms-vscode.vscode-json",
-
-        // Documentation & Markdown
-        "yzhang.markdown-all-in-one",
-        "davidanson.vscode-markdownlint",
-
-        // Container & Docker
-        "ms-vscode-remote.remote-containers",
-        "ms-azuretools.vscode-docker",
-
-        // Documentation and Code Navigation
-        "esbenp.prettier-vscode",
-
-        // Testing
-        "ms-dotnettools.vstest-adapter"
-      ],
-      "settings": {
-        // Port forwarding
-        "remote.autoForwardPorts": true,
-        "remote.autoForwardPortsSource": "hybrid",
-        "remote.otherPortsAttributes": {
-          "onAutoForward": "ignore"
-        },
-
-        // .NET Settings
-        "dotnet.completion.showCompletionItemsFromUnimportedNamespaces": true,
-        "dotnet.inlayHints.enableInlayHintsForParameters": true,
-        "dotnet.inlayHints.enableInlayHintsForLiteralParameters": true,
-        "dotnet.inlayHints.enableInlayHintsForIndexerParameters": true,
-        "dotnet.inlayHints.enableInlayHintsForObjectCreationParameters": true,
-        "dotnet.inlayHints.enableInlayHintsForOtherParameters": true,
-        "dotnet.inlayHints.enableInlayHintsForTypeParameters": true,
-        "dotnet.inlayHints.suppressInlayHintsForParametersThatDifferOnlyBySuffix": true,
-        "dotnet.inlayHints.suppressInlayHintsForParametersThatMatchMethodIntent": true,
-        "dotnet.inlayHints.suppressInlayHintsForParametersThatMatchArgumentName": true,
-
-        // File Associations
-        "files.associations": {
-          "*.yml": "yaml",
-          "*.yaml": "yaml",
-          "*.bicep": "bicep",
-          "*.http": "http",
-          "*.rest": "http"
-        },
-
-        // Terminal
-        "terminal.integrated.defaultProfile.linux": "bash",
-        "terminal.integrated.profiles.linux": {
-          "bash": {
-            "path": "/bin/bash"
-          }
-        }
-      }
-    }
-  },
-  "remoteUser": "vscode",
-  "postCreateCommand": "bash .devcontainer/postCreate.sh",
   "hostRequirements": {
     "cpus": 8,
     "memory": "32gb",
     "storage": "64gb"
   },
-  "forwardPorts": [
-    5000, // Aspire Dashboard
-    5001, // API Gateway
-    8080, // Keycloak
-    8025, // Mailpit
-    5432, // PostgreSQL
-    6379, // Redis
-    15672, // RabbitMQ Management
-    3000 // EventCatalog dev server
-  ],
-  "portsAttributes": {
-    "5000": {
-      "label": "Aspire Dashboard",
-      "onAutoForward": "openBrowser"
-    },
-    "5001": {
-      "label": "API Gateway",
-      "onAutoForward": "openBrowser"
-    },
-    "8080": {
-      "label": "Keycloak",
-      "onAutoForward": "notify"
-    },
-    "8025": {
-      "label": "Mailpit",
-      "onAutoForward": "notify"
-    },
-    "3000": {
-      "label": "EventCatalog",
-      "onAutoForward": "openBrowser"
+  "postCreateCommand": "./.devcontainer/postCreate.sh  > ~/postCreate.log",
+  "postStartCommand": "dotnet dev-certs https --trust",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csdevkit",
+        "GitHub.copilot-chat",
+        "GitHub.copilot"
+      ]
     }
-  },
-  "mounts": [
-    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
-  ]
+  }
 }

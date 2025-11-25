@@ -1,6 +1,7 @@
 ---
 description: "Instructions for building Model Context Protocol (MCP) servers using the C# SDK"
 applyTo: "src/Integrations/BookWorm.McpTools/**"
+name: CSharp-Model-Context-Protocol-Server
 ---
 
 # C# MCP Server Development

@@ -1,5 +1,5 @@
 {
-  "name": "bookworm-keycloakify",
+  "name": "@bookworm/keycloakify",
   "version": "1.0.0",
   "description": "A Keycloak theme for BookWorm",
   "author": "Nhan Nguyen",
@@ -17,8 +17,8 @@
     "ci": "biome ci"
   },
   "dependencies": {
-    "keycloakify": "^11.11.2",
-    "autoprefixer": "^10.4.21",
+    "keycloakify": "^11.11.3",
+    "autoprefixer": "^10.4.22",
     "postcss": "^8.5.6",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -26,15 +26,15 @@
     "@keycloakify/email-native": "~260007.0.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.4",
-    "@storybook/react-vite": "^10.0.6",
-    "@types/react": "^19.2.2",
-    "@types/react-dom": "^19.2.2",
-    "@vitejs/plugin-react": "^5.1.0",
+    "@biomejs/biome": "2.3.7",
+    "@storybook/react-vite": "^10.0.8",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
     "globals": "^16.5.0",
-    "storybook": "^10.0.6",
+    "storybook": "^10.0.8",
     "typescript": "^5.9.3",
-    "vite": "^7.2.2"
+    "vite": "^7.2.4"
   },
   "engines": {
     "node": "^18.0.0 || >=20.0.0"

@@ -17,24 +17,6 @@ public static class ParameterDescriptions
             - To create a new realm, go to: https://www.keycloak.org/docs/latest/server_admin/#_creating_a_realm
             """;
 
-        public const string Theme = """
-            🎨 Keycloak theme name to use for the BookWorm application.
-            This customizes the appearance of login and registration pages.
-
-            💡 Default: 'keycloak' (built-in theme)
-            📋 Example: 'bookworm-theme' or 'custom-theme'
-
-            📚 To create custom themes, visit: https://www.keycloak.org/docs/latest/server_development/#_themes
-            """;
-
-        public const string ThemeDisplayName = """
-            🏷️  Keycloak theme display name to use for the BookWorm application.
-            This is the human-readable name shown in the Keycloak admin console.
-
-            💡 Default: Same as theme name
-            📋 Example: 'BookWorm Custom Theme' or 'Production Theme'
-            """;
-
         public const string ClientSecret = """
                 🔑 The client secret for the Keycloak client used by the BookWorm application.
                 This secret is required for confidential clients to authenticate with Keycloak.
@@ -119,61 +101,6 @@ public static class ParameterDescriptions
             📚 Resources:
             - For more information, visit: https://app.sendgrid.com/settings/sender_auth
             - Email deliverability best practices: https://docs.sendgrid.com/ui/sending-email/deliverability
-            """;
-    }
-
-    public static class Scheduler
-    {
-        public const string UserName = """
-            👤 The username for the BookWorm scheduler application.
-            This user will be used to authenticate with the scheduler service.
-
-            💡 Default: 'admin' (not recommended for production)
-            📋 Example: 'scheduler_user' or 'bookworm_scheduler'
-
-            ⚠️  Important: Use a unique username for the scheduler service
-            """;
-
-        public const string Password = """
-            🔑 The password for the BookWorm scheduler application.
-            Ensure this password meets your security requirements.
-
-            🔒 Security requirements:
-            - Minimum 16 characters recommended
-            - Mix of uppercase, lowercase, numbers, and special characters
-            - Avoid common passwords and dictionary words
-
-            ⚠️  Important: Store securely and rotate regularly in production
-            🛡️  Consider using Azure Key Vault or similar secret management
-            """;
-    }
-
-    public static class Cors
-    {
-        public const string BackOfficeUrl = """
-            🌐 The URL of the BackOffice application for CORS configuration.
-            This allows the BookWorm API to accept requests from the BackOffice domain.
-
-            💡 Example: 'https://admin.bookworm.com'
-            ⚠️  Important: Must match the actual BackOffice URL in production
-            📋 Format: Must be a valid URL (including protocol)
-
-            📚 Resources:
-            - For more information, visit: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
-            - CORS configuration guide: https://docs.microsoft.com/en-us/aspnet/core/security/cors
-            """;
-
-        public const string StoreFrontUrl = """
-            🌐 The URL of the StoreFront application for CORS configuration.
-            This allows the BookWorm API to accept requests from the StoreFront domain.
-
-            💡 Example: 'https://bookworm.com'
-            ⚠️  Important: Must match the actual StoreFront URL in production
-            📋 Format: Must be a valid URL (including protocol)
-
-            📚 Resources:
-            - For more information, visit: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
-            - CORS configuration guide: https://docs.microsoft.com/en-us/aspnet/core/security/cors
             """;
     }
 }

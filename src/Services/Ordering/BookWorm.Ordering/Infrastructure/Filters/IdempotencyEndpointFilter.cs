@@ -1,8 +1,8 @@
 ﻿using BookWorm.SharedKernel.Helpers;
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Mvc;
-using static BookWorm.Constants.Core.Restful;
-using static BookWorm.Constants.Core.Restful.Methods;
+using static BookWorm.Constants.Core.Http;
+using static BookWorm.Constants.Core.Http.Methods;
 
 namespace BookWorm.Ordering.Infrastructure.Filters;
 
@@ -58,7 +58,7 @@ public sealed class IdempotencyEndpointFilter : IEndpointFilter
 
     private static bool IsIdempotentMethod(string method)
     {
-        return method.ToUpperInvariant() is "GET" or "DELETE" or "PUT" or "HEAD" or "OPTIONS";
+        return method.ToUpperInvariant() is Get or Delete or Put or Head or Options;
     }
 }
 

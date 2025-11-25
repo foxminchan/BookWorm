@@ -1,10 +1,4 @@
-﻿using A2A;
-using BookWorm.Chassis.Security.Settings;
-using BookWorm.Chassis.Utilities;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authentication.OAuth;
-
-namespace BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
+﻿namespace BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
 
 internal static class LanguageAgent
 {
@@ -14,30 +8,16 @@ internal static class LanguageAgent
         "An agent that detects user input language and translates it to English for better context understanding.";
 
     public const string Instructions = """
-        You are a language detection and translation assistant for BookWorm bookstore. Your primary responsibilities are:
+        You detect language and translate non-English text to clear English for BookWorm bookstore.
 
-        **Language Detection:**
-        - Automatically detect the language of user input
-        - Identify whether the text is in English or another language
-
-        **Translation to English:**
-        - If user input is not in English, translate it to clear, understandable English
-        - Preserve the original meaning and context during translation
-        - Maintain the intent and tone of the original message
-        - Ensure translations are natural and grammatically correct
-
-        **Output Format:**
-        - Provide ONLY the translated English text for non-English inputs
+        Rules:
+        - Detect if input is English or another language
+        - Translate non-English to natural English, preserving meaning, intent, and tone
+        - Return ONLY the translated text—no explanations or alternatives
         - Keep English inputs unchanged
-        - Do NOT provide multiple translation options
-        - Do NOT include explanations, alternatives, or additional commentary
-        - Output should be the single most natural and clear translation
+        - Always hand off to BookAgent after translation
 
-        **Handoff Strategy:**
-        - After translating non-English input to English, ALWAYS hand off to BookAgent
-        - BookAgent will handle all book-related queries in English
-
-        Your goal is to ensure all user communications are accessible in English for proper processing by the BookAgent.
+        Goal: Make all communications accessible in English for BookAgent processing.
         """;
 
     public static AgentCard AgentCard { get; } =
@@ -96,47 +76,6 @@ internal static class LanguageAgent
                         "Translate while preserving the user's intent",
                         "Keep the original meaning in the English translation",
                         "Ensure the tone is maintained in translation",
-                    ],
-                },
-            ],
-            SecuritySchemes = new()
-            {
-                [OAuthDefaults.DisplayName] = new OAuth2SecurityScheme(
-                    new()
-                    {
-                        ClientCredentials = new(
-                            new(
-                                ServiceDiscoveryUtilities.GetServiceEndpoint(Components.KeyCloak)
-                                    + "/realms"
-                                    + Environment.GetEnvironmentVariable(
-                                        $"{IdentityOptions.ConfigurationSection}__{nameof(IdentityOptions.Realm)}"
-                                    )
-                                    + "/protocol/openid-connect/token"
-                            ),
-                            new Dictionary<string, string>
-                            {
-                                {
-                                    $"{Services.Chatting}_{Authorization.Actions.Read}",
-                                    "Read access to chat service"
-                                },
-                                {
-                                    $"{Services.Chatting}_{Authorization.Actions.Write}",
-                                    "Write access to chat service"
-                                },
-                            }
-                        ),
-                    },
-                    "OAuth2 security scheme for the BookWorm API"
-                ),
-            },
-            Security =
-            [
-                new()
-                {
-                    [$"{JwtBearerDefaults.AuthenticationScheme}"] =
-                    [
-                        $"{Services.Chatting}_{Authorization.Actions.Read}",
-                        $"{Services.Chatting}_{Authorization.Actions.Write}",
                     ],
                 },
             ],

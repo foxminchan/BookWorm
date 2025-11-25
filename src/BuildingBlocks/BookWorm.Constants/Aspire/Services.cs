@@ -11,10 +11,9 @@ public static class Services
     public static readonly string Chatting = nameof(Chatting).ToLowerInvariant();
     public static readonly string McpTools = nameof(McpTools).ToLowerInvariant();
     public static readonly string Scheduler = nameof(Scheduler).ToLowerInvariant();
-    public static readonly string SchedulerMigrator = nameof(SchedulerMigrator).ToLowerInvariant();
     public static readonly string Notification = nameof(Notification).ToLowerInvariant();
 
-    public static string ToClientName(this string application, string? suffix = null)
+    public static string ToClientName(string application, string? suffix = null)
     {
         var clientName = char.ToUpperInvariant(application[0]) + application[1..];
         return string.IsNullOrWhiteSpace(suffix) ? clientName : $"{clientName} {suffix}";

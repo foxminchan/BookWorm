@@ -1,0 +1,41 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "BookWorm.Catalog.Grpc.Services";
+
+package book.v1;
+
+service BookGrpcService {
+  rpc GetBook (GetBookRequest) returns (GetBookResponse);
+  rpc GetBooks (GetBooksRequest) returns (GetBooksResponse);
+}
+
+message GetBookRequest {
+  string book_id = 1;
+}
+
+message GetBookResponse {
+  string id = 1;
+  string name = 2;
+  DecimalValue price = 3;
+  DecimalValue price_sale = 4;
+  BookStatus status = 5;
+}
+
+message GetBooksRequest {
+  repeated string book_ids = 1;
+}
+
+message GetBooksResponse {
+  repeated GetBookResponse books = 1;
+}
+
+enum BookStatus {
+  BOOK_STATUS_UNSPECIFIED = 0;
+  BOOK_STATUS_IN_STOCK = 1;
+  BOOK_STATUS_OUT_OF_STOCK = 2;
+}
+
+message DecimalValue {
+  int64 units = 1;
+  sfixed32 nanos = 2;
+}

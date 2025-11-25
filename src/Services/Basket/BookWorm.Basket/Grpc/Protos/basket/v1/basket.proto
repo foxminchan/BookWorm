@@ -1,0 +1,21 @@
+﻿syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+option csharp_namespace = "BookWorm.Basket.Grpc.Services";
+
+package basket.v1;
+
+service BasketGrpcService {
+  rpc GetBasket (google.protobuf.Empty) returns (GetBasketResponse);
+}
+
+message GetBasketResponse {
+  string id = 1;
+  repeated Item items = 2;
+}
+
+message Item {
+  string id = 1;
+  int32  quantity = 2;
+}

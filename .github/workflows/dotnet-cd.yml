@@ -1,0 +1,79 @@
+name: BookWorm CD (.NET)
+run-name: .NET CD - ${{ github.event_name }} by ${{ github.actor }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "The environment to deploy to"
+        required: true
+        type: environment
+
+env:
+  GLOBAL_JSON_PATH: ${{ github.workspace }}/global.json
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  aspire_deploy:
+    if: github.ref == 'refs/heads/main' || github.event.inputs.environment != ''
+    runs-on: ubuntu-latest
+    name: Deploy BookWorm with Aspire
+    permissions:
+      id-token: write
+      contents: read
+    environment: ${{ github.event.inputs.environment || 'development' }}
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: ${{ env.GLOBAL_JSON_PATH }}
+
+      - name: Install Aspire CLI
+        run: curl -sSL https://aspire.dev/install.sh | bash -s -- -q dev
+
+      - name: Add Aspire CLI to PATH
+        run: echo "$HOME/.aspire/bin" >> $GITHUB_PATH
+
+      - name: List files
+        run: ls -a
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy with Aspire
+        run: aspire deploy --environment ${{ github.event.inputs.environment }}
+        env:
+          DOTNET_CLI_TELEMETRY_OPTOUT: 1
+          DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+          DOTNET_NOLOGO: true
+          DOTNET_GENERATE_ASPNET_CERTIFICATE: false
+          DOTNET_ADD_GLOBAL_TOOLS_TO_PATH: false
+          DOTNET_MULTILEVEL_LOOKUP: 0
+          DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION: true
+          Azure__SubscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          Azure__Location: ${{ secrets.AZURE_LOCATION || 'eastus' }}
+          Azure__ResourceGroup: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          Parameters__sendgrid-api-key: ${{ secrets.SENDGRID_API_KEY }}
+          Parameters__sendgrid-email: ${{ secrets.SENDGRID_EMAIL }}
+          Parameters__sendgrid-sender-name: ${{ secrets.SENDGRID_SENDER_NAME }}
+          Parameters__kc-url: ${{ secrets.KC_URL }}
+          Parameters__kc-realm: ${{ secrets.KC_REALM }}
+          Parameters__catalog-secret: ${{ secrets.CATALOG_SECRET }}
+          Parameters__basket-secret: ${{ secrets.BASKET_SECRET }}
+          Parameters__ordering-secret: ${{ secrets.ORDERING_SECRET }}
+          Parameters__chatting-secret: ${{ secrets.CHATTING_SECRET }}
+          Parameters__rating-secret: ${{ secrets.RATING_SECRET }}
+          Parameters__openai-openai-apikey: ${{ secrets.OPENAI_APIKEY }}

@@ -146,9 +146,9 @@ public sealed class GetOrderQueryTests
             [new(bookId1, 2, 50.00m), new(bookId2, 1, 50.00m)]
         );
 
-        var booksResponse = new BooksResponse();
-        booksResponse.Books.Add(new BookResponse { Id = bookId1.ToString(), Name = "Book 1" });
-        booksResponse.Books.Add(new BookResponse { Id = bookId2.ToString(), Name = "Book 2" });
+        var booksResponse = new GetBooksResponse();
+        booksResponse.Books.Add(new GetBookResponse { Id = bookId1.ToString(), Name = "Book 1" });
+        booksResponse.Books.Add(new GetBookResponse { Id = bookId2.ToString(), Name = "Book 2" });
         _bookServiceMock
             .Setup(b =>
                 b.GetBooksByIdsAsync(
@@ -189,8 +189,8 @@ public sealed class GetOrderQueryTests
             [new(bookId1, 2, 50.00m), new(bookId2, 1, 50.00m)]
         );
 
-        var booksResponse = new BooksResponse();
-        booksResponse.Books.Add(new BookResponse { Id = bookId1.ToString(), Name = "Book 1" }); // bookId2 missing
+        var booksResponse = new GetBooksResponse();
+        booksResponse.Books.Add(new GetBookResponse { Id = bookId1.ToString(), Name = "Book 1" }); // bookId2 missing
         _bookServiceMock
             .Setup(b =>
                 b.GetBooksByIdsAsync(
@@ -266,7 +266,7 @@ public sealed class GetOrderQueryTests
                     It.IsAny<CancellationToken>()
                 )
             )
-            .ReturnsAsync((BooksResponse?)null);
+            .ReturnsAsync((GetBooksResponse?)null);
 
         // Act
         await _getOrderPostHandler.Handle(
@@ -293,7 +293,7 @@ public sealed class GetOrderQueryTests
             [new(bookId, 1, 50.00m)]
         );
 
-        var emptyBooksResponse = new BooksResponse(); // Empty books collection
+        var emptyBooksResponse = new GetBooksResponse(); // Empty books collection
         _bookServiceMock
             .Setup(b =>
                 b.GetBooksByIdsAsync(

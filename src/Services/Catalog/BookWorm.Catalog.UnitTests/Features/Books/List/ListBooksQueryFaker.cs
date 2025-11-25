@@ -11,9 +11,11 @@ public sealed class ListBooksQueryFaker : Faker<ListBooksQuery>
             new(
                 f.Random.Int(1, 10),
                 f.Random.Int(5, 50),
-                f.Random.ArrayElement(
-                    [nameof(Book.Name), nameof(Book.Price), nameof(Book.CreatedAt)]
-                ),
+                f.Random.ArrayElement([
+                    nameof(Book.Name),
+                    nameof(Book.Price),
+                    nameof(Book.CreatedAt),
+                ]),
                 f.Random.Bool(),
                 f.Random.Bool() ? f.Lorem.Word() : null,
                 f.Random.Bool() ? f.Random.Decimal(1, 50) : null,

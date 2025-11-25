@@ -9,7 +9,7 @@ public sealed class GetBasketPostProcessorTests
 {
     private readonly CustomerBasketDto _basketDto;
     private readonly List<string> _bookIds;
-    private readonly List<BookResponse> _bookResponses;
+    private readonly List<GetBookResponse> _bookResponses;
     private readonly Mock<IBookService> _bookServiceMock;
     private readonly GetBasketPostProcessor _handler;
 
@@ -49,7 +49,7 @@ public sealed class GetBasketPostProcessorTests
     {
         // Arrange
         var query = new GetBasketQuery();
-        var booksResponse = new BooksResponse { Books = { _bookResponses } };
+        var booksResponse = new GetBooksResponse { Books = { _bookResponses } };
         _bookServiceMock
             .Setup(x => x.GetBooksByIdsAsync(_bookIds, It.IsAny<CancellationToken>()))
             .ReturnsAsync(booksResponse);
@@ -81,7 +81,7 @@ public sealed class GetBasketPostProcessorTests
             Guid.CreateVersion7().ToString(),
             [new(_bookIds[0], 3), new(_bookIds[1], 5)]
         );
-        var booksResponse = new BooksResponse { Books = { _bookResponses } };
+        var booksResponse = new GetBooksResponse { Books = { _bookResponses } };
         _bookServiceMock
             .Setup(x => x.GetBooksByIdsAsync(_bookIds, It.IsAny<CancellationToken>()))
             .ReturnsAsync(booksResponse);
@@ -104,7 +104,7 @@ public sealed class GetBasketPostProcessorTests
     {
         // Arrange
         var query = new GetBasketQuery();
-        var booksResponse = new BooksResponse();
+        var booksResponse = new GetBooksResponse();
         _bookServiceMock
             .Setup(x => x.GetBooksByIdsAsync(_bookIds, It.IsAny<CancellationToken>()))
             .ReturnsAsync(booksResponse);

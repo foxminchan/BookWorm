@@ -30,7 +30,7 @@ public sealed class CreateOrderPreProcessorTests
     public async Task GivenValidBasketItems_WhenProcessing_ThenShouldPopulateOrderItems()
     {
         // Arrange
-        var basketResponse = new BasketResponse
+        var basketResponse = new GetBasketResponse
         {
             Id = Guid.CreateVersion7().ToString(),
             Items =
@@ -40,17 +40,17 @@ public sealed class CreateOrderPreProcessorTests
             },
         };
 
-        var booksResponse = new BooksResponse
+        var booksResponse = new GetBooksResponse
         {
             Books =
             {
-                new BookResponse
+                new GetBookResponse
                 {
                     Id = basketResponse.Items[0].Id,
                     Name = "Book 1",
                     Price = 10.99m,
                 },
-                new BookResponse
+                new GetBookResponse
                 {
                     Id = basketResponse.Items[1].Id,
                     Name = "Book 2",
@@ -100,7 +100,7 @@ public sealed class CreateOrderPreProcessorTests
     public async Task GivenMissingBook_WhenProcessing_ThenShouldThrowNotFoundException()
     {
         // Arrange
-        var basketResponse = new BasketResponse
+        var basketResponse = new GetBasketResponse
         {
             Id = "user123",
             Items =
@@ -109,7 +109,7 @@ public sealed class CreateOrderPreProcessorTests
             },
         };
 
-        var booksResponse = new BooksResponse(); // Empty response, no books found
+        var booksResponse = new GetBooksResponse(); // Empty response, no books found
 
         _basketServiceMock
             .Setup(x => x.GetBasket(It.IsAny<CancellationToken>()))
@@ -130,6 +130,6 @@ public sealed class CreateOrderPreProcessorTests
 
         // Assert
         var exception = await act.ShouldThrowAsync<NotFoundException>();
-        exception.Message.ShouldBe("BookResponse with id book1 not found.");
+        exception.Message.ShouldBe("GetBookResponse with id book1 not found.");
     }
 }

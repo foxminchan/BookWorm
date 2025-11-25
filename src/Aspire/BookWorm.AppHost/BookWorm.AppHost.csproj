@@ -1,7 +1,6 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Aspire.AppHost.Sdk/13.0.0">
   <Import Project="K6Integration.targets" />
   <Import Project="KeycloakifyIntegration.targets" />
-  <Sdk Name="Aspire.AppHost.Sdk" Version="$(AspireVersion)" />
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <UserSecretsId>78a33324-5add-4731-b2fc-e0fc06ef0564</UserSecretsId>
@@ -12,14 +11,12 @@
     <PackageReference Include="Aspire.Hosting.Yarp" />
     <PackageReference Include="Aspire.Hosting.OpenAI" />
     <PackageReference Include="Aspire.Hosting.Qdrant" />
-    <PackageReference Include="Aspire.Hosting.AppHost" />
     <PackageReference Include="Aspire.Hosting.Keycloak" />
     <PackageReference Include="Aspire.Hosting.RabbitMQ" />
   </ItemGroup>
   <ItemGroup Label="Azure">
     <PackageReference Include="Aspire.Hosting.Azure.Redis" />
     <PackageReference Include="Aspire.Hosting.Azure.Storage" />
-    <PackageReference Include="Aspire.Hosting.Azure.SignalR" />
     <PackageReference Include="Aspire.Hosting.Azure.PostgreSQL" />
     <PackageReference Include="Aspire.Hosting.Azure.AppContainers" />
   </ItemGroup>
@@ -29,54 +26,19 @@
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.McpInspector" />
   </ItemGroup>
   <ItemGroup Label="Services">
-    <ProjectReference
-      Include="..\..\Services\Basket\BookWorm.Basket\BookWorm.Basket.csproj"
-      AspireProjectMetadataTypeName="Basket"
-    />
-    <ProjectReference
-      Include="..\..\Services\Catalog\BookWorm.Catalog\BookWorm.Catalog.csproj"
-      AspireProjectMetadataTypeName="Catalog"
-    />
-    <ProjectReference
-      Include="..\..\Services\Chat\BookWorm.Chat\BookWorm.Chat.csproj"
-      AspireProjectMetadataTypeName="Chat"
-    />
-    <ProjectReference
-      Include="..\..\Services\Finance\BookWorm.Finance\BookWorm.Finance.csproj"
-      AspireProjectMetadataTypeName="Finance"
-    />
-    <ProjectReference
-      Include="..\..\Services\Notification\BookWorm.Notification\BookWorm.Notification.csproj"
-      AspireProjectMetadataTypeName="Notification"
-    />
-    <ProjectReference
-      Include="..\..\Services\Ordering\BookWorm.Ordering\BookWorm.Ordering.csproj"
-      AspireProjectMetadataTypeName="Ordering"
-    />
-    <ProjectReference
-      Include="..\..\Services\Rating\BookWorm.Rating\BookWorm.Rating.csproj"
-      AspireProjectMetadataTypeName="Rating"
-    />
-    <ProjectReference
-      Include="..\..\Services\Scheduler\BookWorm.Scheduler\BookWorm.Scheduler.csproj"
-      AspireProjectMetadataTypeName="Scheduler"
-    />
-    <ProjectReference
-      Include="..\..\Services\Scheduler\BookWorm.Scheduler.Migrator\BookWorm.Scheduler.Migrator.csproj"
-      AspireProjectMetadataTypeName="SchedulerMigrator"
-    />
+    <ProjectReference Include="..\..\Services\Basket\BookWorm.Basket\BookWorm.Basket.csproj" />
+    <ProjectReference Include="..\..\Services\Catalog\BookWorm.Catalog\BookWorm.Catalog.csproj" />
+    <ProjectReference Include="..\..\Services\Chat\BookWorm.Chat\BookWorm.Chat.csproj" />
+    <ProjectReference Include="..\..\Services\Finance\BookWorm.Finance\BookWorm.Finance.csproj" />
+    <ProjectReference Include="..\..\Services\Notification\BookWorm.Notification\BookWorm.Notification.csproj" />
+    <ProjectReference Include="..\..\Services\Ordering\BookWorm.Ordering\BookWorm.Ordering.csproj" />
+    <ProjectReference Include="..\..\Services\Rating\BookWorm.Rating\BookWorm.Rating.csproj" />
+    <ProjectReference Include="..\..\Services\Scheduler\BookWorm.Scheduler\BookWorm.Scheduler.csproj" />
+    <ProjectReference Include="..\..\Integrations\BookWorm.McpTools\BookWorm.McpTools.csproj" />
   </ItemGroup>
   <ItemGroup Label="Integrations">
     <ProjectReference
-      Include="..\..\Integrations\BookWorm.McpTools\BookWorm.McpTools.csproj"
-      AspireProjectMetadataTypeName="McpTools"
-    />
-    <ProjectReference
       Include="..\..\BuildingBlocks\BookWorm.Constants\BookWorm.Constants.csproj"
-      IsAspireProjectResource="false"
-    />
-    <ProjectReference
-      Include="..\..\Integrations\BookWorm.HealthChecksUI\BookWorm.HealthChecksUI.csproj"
       IsAspireProjectResource="false"
     />
   </ItemGroup>

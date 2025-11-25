@@ -34,13 +34,11 @@ public sealed class KeycloakTokenIntrospectionMiddleware(
 
             using var httpClient = httpClientFactory.CreateClient(Components.KeyCloak);
 
-            var requestContent = new FormUrlEncodedContent(
-                [
-                    new("token", token),
-                    new("client_id", identityOptions.ClientId),
-                    new("client_secret", identityOptions.ClientSecret),
-                ]
-            );
+            var requestContent = new FormUrlEncodedContent([
+                new("token", token),
+                new("client_id", identityOptions.ClientId),
+                new("client_secret", identityOptions.ClientSecret),
+            ]);
 
             var response = await httpClient.PostAsync(
                 introspectionEndpoint,

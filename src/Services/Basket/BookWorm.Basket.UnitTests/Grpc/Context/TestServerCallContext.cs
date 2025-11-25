@@ -13,12 +13,12 @@ public sealed class TestServerCallContext(
     AuthContext? authContext = null
 ) : ServerCallContext
 {
-    private readonly Dictionary<object, object> _userState = new();
+    private readonly Dictionary<object, object> _userState = [];
     protected override string MethodCore => "test";
 
-    protected override string HostCore => Restful.Host.Localhost;
+    protected override string HostCore => Network.Localhost;
 
-    protected override string PeerCore => "127.0.0.1";
+    protected override string PeerCore => Network.LoopbackIpV4;
 
     protected override DateTime DeadlineCore { get; } =
         deadline ?? DateTimeHelper.UtcNow().AddMinutes(5);
@@ -38,7 +38,7 @@ public sealed class TestServerCallContext(
     }
 
     protected override AuthContext AuthContextCore { get; } =
-        authContext ?? new AuthContext("anonymous", new());
+        authContext ?? new AuthContext("anonymous", []);
 
     protected override IDictionary<object, object> UserStateCore => _userState;
 

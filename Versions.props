@@ -1,17 +1,16 @@
 <Project>
   <PropertyGroup Label="Package Versions">
     <!-- Core Libraries -->
-    <ApiVersioningVersion>8.1.0</ApiVersioningVersion>
-    <AspireUnstableVersion>9.5.2-preview.1.25522.3</AspireUnstableVersion>
-    <AspNetVersion>10.0.0-rc.2.25502.107</AspNetVersion>
+    <AspireVersion>13.0.0</AspireVersion>
+    <AspireUnstableVersion>13.0.0-preview.1.25560.3</AspireUnstableVersion>
+    <AspNetVersion>10.0.0</AspNetVersion>
     <GrpcVersion>2.71.0</GrpcVersion>
     <MassTransitVersion>8.5.5</MassTransitVersion>
-    <TickerQVersion>9.0.0-beta.13</TickerQVersion>
     <!-- Microsoft Packages -->
-    <MsExtVersion>9.10.0</MsExtVersion>
-    <MsTestVersion>2.0.1</MsTestVersion>
-    <ToolKitVersion>9.9.0</ToolKitVersion>
-    <AgentFrameworkVersion>1.0.0-preview.251110.2</AgentFrameworkVersion>
+    <MsExtVersion>10.0.0</MsExtVersion>
+    <MsTestVersion>2.0.2</MsTestVersion>
+    <ToolKitVersion>13.0.0</ToolKitVersion>
+    <AgentFrameworkVersion>1.0.0-preview.251114.1</AgentFrameworkVersion>
     <!-- Observability & Health -->
     <HealthChecksVersion>9.0.0</HealthChecksVersion>
   </PropertyGroup>

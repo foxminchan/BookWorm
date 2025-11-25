@@ -5,7 +5,7 @@ namespace BookWorm.Basket.Grpc.Services.Book;
 [ExcludeFromCodeCoverage]
 internal sealed class BookService(BookGrpcService.BookGrpcServiceClient service) : IBookService
 {
-    public async Task<BookResponse?> GetBookByIdAsync(
+    public async Task<GetBookResponse?> GetBookByIdAsync(
         [StringSyntax(StringSyntaxAttribute.GuidFormat)] string id,
         CancellationToken cancellationToken = default
     )
@@ -18,7 +18,7 @@ internal sealed class BookService(BookGrpcService.BookGrpcServiceClient service)
         return result;
     }
 
-    public async Task<BooksResponse?> GetBooksByIdsAsync(
+    public async Task<GetBooksResponse?> GetBooksByIdsAsync(
         IEnumerable<string> ids,
         CancellationToken cancellationToken = default
     )

@@ -22,24 +22,6 @@ public static partial class AzureExtensions
     }
 
     /// <summary>
-    ///     Configures the Azure SignalR resource to run as a container in the execution context.
-    /// </summary>
-    /// <param name="builder">The resource builder for Azure SignalR.</param>
-    /// <returns>The updated resource builder with container configuration applied.</returns>
-    public static IResourceBuilder<AzureSignalRResource> RunAsLocalContainer(
-        this IResourceBuilder<AzureSignalRResource> builder
-    )
-    {
-        builder.RunAsEmulator(config =>
-            config
-                .WithImagePullPolicy(ImagePullPolicy.Always)
-                .WithLifetime(ContainerLifetime.Persistent)
-        );
-
-        return builder;
-    }
-
-    /// <summary>
     ///     Configures the Azure PostgreSQL Flexible Server resource to run as a container or use password authentication based
     ///     on the execution context.
     /// </summary>

@@ -14,7 +14,6 @@ public sealed class ListBuyersEndpoint
                     await HandleAsync(query, sender)
             )
             .ProducesGet<PagedResult<BuyerDto>>()
-            .WithFeatureFlag(nameof(ListBuyersEndpoint))
             .WithTags(nameof(Buyer))
             .WithName(nameof(ListBuyersEndpoint))
             .WithSummary("List Buyers")

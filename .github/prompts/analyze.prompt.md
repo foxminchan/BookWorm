@@ -17,18 +17,21 @@ Constitution Authority: The project constitution (`.specify/memory/constitution.
 Execution steps:
 
 1. Run `.specify/scripts/powershell/check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks` once from repo root and parse JSON for FEATURE_DIR and AVAILABLE_DOCS. Derive absolute paths:
+
    - SPEC = FEATURE_DIR/spec.md
    - PLAN = FEATURE_DIR/plan.md
    - TASKS = FEATURE_DIR/tasks.md
-   Abort with an error message if any required file is missing (instruct the user to run missing prerequisite command).
+     Abort with an error message if any required file is missing (instruct the user to run missing prerequisite command).
 
 2. Load artifacts:
+
    - Parse spec.md sections: Overview/Context, Functional Requirements, Non-Functional Requirements, User Stories, Edge Cases (if present).
    - Parse plan.md: Architecture/stack choices, Data Model references, Phases, Technical constraints.
    - Parse tasks.md: Task IDs, descriptions, phase grouping, parallel markers [P], referenced file paths.
    - Load constitution `.specify/memory/constitution.md` for principle validation.
 
 3. Build internal semantic models:
+
    - Requirements inventory: Each functional + non-functional requirement with a stable key (derive slug based on imperative phrase; e.g., "User can upload file" -> `user-can-upload-file`).
    - User story/action inventory.
    - Task coverage mapping: Map each task to one or more requirements or stories (inference by keyword / explicit reference patterns like IDs or key phrases).
@@ -36,28 +39,30 @@ Execution steps:
 
 4. Detection passes:
    A. Duplication detection:
-      - Identify near-duplicate requirements. Mark lower-quality phrasing for consolidation.
-   B. Ambiguity detection:
-      - Flag vague adjectives (fast, scalable, secure, intuitive, robust) lacking measurable criteria.
-      - Flag unresolved placeholders (TODO, TKTK, ???, <placeholder>, etc.).
-   C. Underspecification:
-      - Requirements with verbs but missing object or measurable outcome.
-      - User stories missing acceptance criteria alignment.
-      - Tasks referencing files or components not defined in spec/plan.
-   D. Constitution alignment:
-      - Any requirement or plan element conflicting with a MUST principle.
-      - Missing mandated sections or quality gates from constitution.
-   E. Coverage gaps:
-      - Requirements with zero associated tasks.
-      - Tasks with no mapped requirement/story.
-      - Non-functional requirements not reflected in tasks (e.g., performance, security).
-   F. Inconsistency:
-      - Terminology drift (same concept named differently across files).
-      - Data entities referenced in plan but absent in spec (or vice versa).
-      - Task ordering contradictions (e.g., integration tasks before foundational setup tasks without dependency note).
-      - Conflicting requirements (e.g., one requires to use Next.js while other says to use Vue as the framework).
+
+   - Identify near-duplicate requirements. Mark lower-quality phrasing for consolidation.
+     B. Ambiguity detection:
+   - Flag vague adjectives (fast, scalable, secure, intuitive, robust) lacking measurable criteria.
+   - Flag unresolved placeholders (TODO, TKTK, ???, <placeholder>, etc.).
+     C. Underspecification:
+   - Requirements with verbs but missing object or measurable outcome.
+   - User stories missing acceptance criteria alignment.
+   - Tasks referencing files or components not defined in spec/plan.
+     D. Constitution alignment:
+   - Any requirement or plan element conflicting with a MUST principle.
+   - Missing mandated sections or quality gates from constitution.
+     E. Coverage gaps:
+   - Requirements with zero associated tasks.
+   - Tasks with no mapped requirement/story.
+   - Non-functional requirements not reflected in tasks (e.g., performance, security).
+     F. Inconsistency:
+   - Terminology drift (same concept named differently across files).
+   - Data entities referenced in plan but absent in spec (or vice versa).
+   - Task ordering contradictions (e.g., integration tasks before foundational setup tasks without dependency note).
+   - Conflicting requirements (e.g., one requires to use Next.js while other says to use Vue as the framework).
 
 5. Severity assignment heuristic:
+
    - CRITICAL: Violates constitution MUST, missing core spec artifact, or requirement with zero coverage that blocks baseline functionality.
    - HIGH: Duplicate or conflicting requirement, ambiguous security/performance attribute, untestable acceptance criterion.
    - MEDIUM: Terminology drift, missing non-functional task coverage, underspecified edge case.
@@ -66,25 +71,29 @@ Execution steps:
 6. Produce a Markdown report (no file writes) with sections:
 
    ### Specification Analysis Report
-   | ID | Category | Severity | Location(s) | Summary | Recommendation |
-   |----|----------|----------|-------------|---------|----------------|
-   | A1 | Duplication | HIGH | spec.md:L120-134 | Two similar requirements ... | Merge phrasing; keep clearer version |
+
+   | ID  | Category    | Severity | Location(s)      | Summary                      | Recommendation                       |
+   | --- | ----------- | -------- | ---------------- | ---------------------------- | ------------------------------------ |
+   | A1  | Duplication | HIGH     | spec.md:L120-134 | Two similar requirements ... | Merge phrasing; keep clearer version |
+
    (Add one row per finding; generate stable IDs prefixed by category initial.)
 
    Additional subsections:
+
    - Coverage Summary Table:
      | Requirement Key | Has Task? | Task IDs | Notes |
    - Constitution Alignment Issues (if any)
    - Unmapped Tasks (if any)
    - Metrics:
-     * Total Requirements
-     * Total Tasks
-     * Coverage % (requirements with >=1 task)
-     * Ambiguity Count
-     * Duplication Count
-     * Critical Issues Count
+     - Total Requirements
+     - Total Tasks
+     - Coverage % (requirements with >=1 task)
+     - Ambiguity Count
+     - Duplication Count
+     - Critical Issues Count
 
 7. At end of report, output a concise Next Actions block:
+
    - If CRITICAL issues exist: Recommend resolving before `/implement`.
    - If only LOW/MEDIUM: User may proceed, but provide improvement suggestions.
    - Provide explicit command suggestions: e.g., "Run /specify with refinement", "Run /plan to adjust architecture", "Manually edit tasks.md to add coverage for 'performance-metrics'".
@@ -92,6 +101,7 @@ Execution steps:
 8. Ask the user: "Would you like me to suggest concrete remediation edits for the top N issues?" (Do NOT apply them automatically.)
 
 Behavior rules:
+
 - NEVER modify files.
 - NEVER hallucinate missing sections—if absent, report them.
 - KEEP findings deterministic: if rerun without changes, produce consistent IDs and counts.

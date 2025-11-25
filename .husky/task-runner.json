@@ -8,13 +8,13 @@
     },
     {
       "name": "format",
-      "command": "dotnet",
+      "command": "dnx",
       "args": ["csharpier", "format", "."]
     },
     {
       "name": "style",
-      "command": "dotnet",
-      "args": ["format", "style", ".", "--verify-no-changes"]
+      "command": "dnx",
+      "args": ["csharpier", "check", "."]
     },
     {
       "name": "analyzers",

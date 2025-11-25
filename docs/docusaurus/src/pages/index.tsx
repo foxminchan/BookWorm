@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import Layout from "@theme/Layout";
+import type { ReactNode } from "react";
 import HomepageHeader from "../components/HomepageHeader";
 
 export default function Home(): ReactNode {

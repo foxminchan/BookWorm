@@ -16,17 +16,17 @@ public sealed class BookDataIngestor(
 
         await vectorCollection.EnsureCollectionExistsAsync(cancellationToken);
 
-        var text = $"{data.Name} {data.Description}";
+        var content = $"{data.Name} {data.Description}";
 
         var embeddings = await embeddingGenerator.GenerateVectorAsync(
-            text,
+            content,
             cancellationToken: cancellationToken
         );
 
         var record = new TextSnippet
         {
             Id = data.Id,
-            Description = text,
+            Content = content,
             Vector = embeddings,
         };
 

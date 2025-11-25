@@ -1,9 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-  <ItemGroup>
+  <ItemGroup Label="OCI Labels">
     <ContainerLabel
       Include="org.opencontainers.image.description"
       Value="BookWorm Notification Service Image"
     />
+    <ContainerLabel Include="org.opencontainers.image.authors" Value="Nhan Nguyen" />
   </ItemGroup>
   <ItemGroup Label="Email / Messaging">
     <PackageReference Include="MailKit" />

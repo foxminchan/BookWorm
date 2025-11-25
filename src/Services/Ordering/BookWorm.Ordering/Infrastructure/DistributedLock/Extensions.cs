@@ -2,7 +2,7 @@
 
 namespace BookWorm.Ordering.Infrastructure.DistributedLock;
 
-public static class Extensions
+internal static class Extensions
 {
     public static void AddDistributedLock(this IHostApplicationBuilder builder)
     {

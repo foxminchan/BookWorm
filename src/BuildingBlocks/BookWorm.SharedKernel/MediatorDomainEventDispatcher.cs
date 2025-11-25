@@ -8,7 +8,7 @@ public sealed class MediatorDomainEventDispatcher(IPublisher publisher) : IDomai
 {
     public async Task DispatchAndClearEvents(ImmutableList<IHasDomainEvents> entitiesWithEvents)
     {
-        foreach (IHasDomainEvents entity in entitiesWithEvents)
+        foreach (var entity in entitiesWithEvents)
         {
             if (entity is not HasDomainEvents hasDomainEvents)
             {

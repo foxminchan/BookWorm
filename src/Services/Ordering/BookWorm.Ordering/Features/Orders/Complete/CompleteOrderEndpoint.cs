@@ -10,7 +10,7 @@ public sealed class CompleteOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, 
         app.MapPatch(
                 "/orders/{orderId:guid}/complete",
                 async (
-                    [FromHeader(Name = Restful.RequestIdHeader)]
+                    [FromHeader(Name = Http.RequestIdHeader)]
                     [Description("The idempotency key of the order to be completed")]
                         string key,
                     [Description("The unique identifier of the order to be completed")]

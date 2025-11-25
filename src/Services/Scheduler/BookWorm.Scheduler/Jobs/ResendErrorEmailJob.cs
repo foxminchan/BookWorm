@@ -1,19 +1,11 @@
 ﻿using BookWorm.Contracts;
-using TickerQ.Utilities.Base;
-using TickerQ.Utilities.Enums;
 
 namespace BookWorm.Scheduler.Jobs;
 
-public sealed class ResendErrorEmailJob(IBus bus, ISchedulerDbContext dbContext)
+public sealed class ResendErrorEmailJob(IBus bus) : IJob
 {
-    [TickerFunction(
-        $"{nameof(ResendErrorEmailJob)}",
-        "%CronTicker:ResendErrorEmailJob%",
-        TickerTaskPriority.High
-    )]
-    public async Task ExecuteAsync(CancellationToken cancellationToken)
+    public async Task Execute(IJobExecutionContext context)
     {
-        await bus.Publish(new ResendErrorEmailIntegrationEvent(), cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await bus.Publish(new ResendErrorEmailIntegrationEvent(), context.CancellationToken);
     }
 }

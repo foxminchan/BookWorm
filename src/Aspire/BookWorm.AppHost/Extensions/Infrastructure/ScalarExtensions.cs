@@ -1,5 +1,4 @@
-﻿using BookWorm.Constants.Core;
-using Microsoft.AspNetCore.Authentication.OAuth;
+﻿using Microsoft.AspNetCore.Authentication.OAuth;
 using Scalar.Aspire;
 
 namespace BookWorm.AppHost.Extensions.Infrastructure;

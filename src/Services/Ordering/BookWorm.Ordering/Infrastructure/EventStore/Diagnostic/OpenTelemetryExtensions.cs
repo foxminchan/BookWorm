@@ -4,41 +4,41 @@ namespace BookWorm.Ordering.Infrastructure.EventStore.Diagnostic;
 
 public static class DocumentSessionOpenTelemetryExtensions
 {
-    public static void PropagateTelemetry(
-        this IDocumentSession documentSession,
-        Activity? activity,
-        ILogger? logger = null
-    )
+    extension(IDocumentSession documentSession)
     {
-        var propagationContext = activity.Propagate(
-            documentSession,
-            (session, key, value) => session.InjectTelemetryIntoDocumentSession(key, value, logger)
-        );
-
-        if (!propagationContext.HasValue)
+        public void PropagateTelemetry(Activity? activity, ILogger? logger = null)
         {
-            return;
+            var propagationContext = activity.Propagate(
+                documentSession,
+                (session, key, value) =>
+                    session.InjectTelemetryIntoDocumentSession(key, value, logger)
+            );
+
+            if (!propagationContext.HasValue)
+            {
+                return;
+            }
+
+            documentSession.CorrelationId =
+                propagationContext.Value.ActivityContext.TraceId.ToHexString();
+            documentSession.CausationId =
+                propagationContext.Value.ActivityContext.SpanId.ToHexString();
         }
 
-        documentSession.CorrelationId =
-            propagationContext.Value.ActivityContext.TraceId.ToHexString();
-        documentSession.CausationId = propagationContext.Value.ActivityContext.SpanId.ToHexString();
-    }
-
-    private static void InjectTelemetryIntoDocumentSession(
-        this IDocumentSession session,
-        string key,
-        string value,
-        ILogger? logger = null
-    )
-    {
-        try
+        private void InjectTelemetryIntoDocumentSession(
+            string key,
+            string value,
+            ILogger? logger = null
+        )
         {
-            session.SetHeader(key, value);
-        }
-        catch (Exception ex)
-        {
-            logger?.LogError(ex, "Failed to inject trace context");
+            try
+            {
+                documentSession.SetHeader(key, value);
+            }
+            catch (Exception ex)
+            {
+                logger?.LogError(ex, "Failed to inject trace context");
+            }
         }
     }
 }
