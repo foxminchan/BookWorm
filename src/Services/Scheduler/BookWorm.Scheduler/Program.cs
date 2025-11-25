@@ -13,12 +13,6 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseOutputCache();
-
 app.MapDefaultEndpoints();
-
-app.UseTickerQ();
-
-app.MapGet("/", () => TypedResults.Redirect("/admin/tickerq")).ExcludeFromDescription();
 
 app.Run();

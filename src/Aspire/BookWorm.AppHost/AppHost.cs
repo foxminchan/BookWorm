@@ -11,8 +11,8 @@ var postgres = builder
 
 var redis = builder
     .AddAzureRedis(Components.Redis)
-    .WithIconName("Memory")
     .WithAccessKeyAuthentication()
+    .WithIconName("Memory")
     .RunAsLocalContainer()
     .ProvisionAsService();
 
@@ -27,19 +27,14 @@ var queue = builder
     .AddRabbitMQ(Components.Queue)
     .WithIconName("Pipeline")
     .WithManagementPlugin()
+    .WithDataVolume()
     .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent)
-    .WithEndpoint(Protocols.Tcp, e => e.Port = 5672);
+    .WithEndpoint(Network.Tcp, e => e.Port = 5672);
 
 var storage = builder
     .AddAzureStorage(Components.Azure.Storage.Resource)
     .WithIconName("DatabasePlugConnected")
-    .RunAsLocalContainer()
-    .ProvisionAsService();
-
-var signalR = builder
-    .AddAzureSignalR(Components.Azure.SignalR)
-    .WithIconName("DesktopSignal")
     .RunAsLocalContainer()
     .ProvisionAsService();
 
@@ -49,21 +44,23 @@ var ratingDb = postgres.AddDatabase(Components.Database.Rating);
 var catalogDb = postgres.AddDatabase(Components.Database.Catalog);
 var financeDb = postgres.AddDatabase(Components.Database.Finance);
 var orderingDb = postgres.AddDatabase(Components.Database.Ordering);
-var schedulerDb = postgres.AddDatabase(Components.Database.Scheduler);
 var notificationDb = postgres.AddDatabase(Components.Database.Notification);
 
 var openai = builder.AddOpenAI(Components.OpenAI.Resource);
 
-var chat = openai.AddModel(Components.OpenAI.Chat, Components.OpenAI.OpenAIGpt4oMini);
-var embedding = openai.AddModel(Components.OpenAI.Embedding, Components.OpenAI.TextEmbedding3Large);
+var chat = openai
+    .AddModel(Components.OpenAI.Chat, Components.OpenAI.OpenAIGpt4oMini)
+    .WithHealthCheck();
+var embedding = openai
+    .AddModel(Components.OpenAI.Embedding, Components.OpenAI.TextEmbedding3Large)
+    .WithHealthCheck();
 
 IResourceBuilder<IResource> keycloak = builder.ExecutionContext.IsRunMode
-    ? builder.AddLocalKeycloak(Components.KeyCloak).WithPostgres(postgres)
+    ? builder.AddLocalKeycloak(Components.KeyCloak)
     : builder.AddHostedKeycloak(Components.KeyCloak);
 
 var catalogApi = builder
-    .AddProject<Catalog>(Services.Catalog)
-    .WithReplicas(builder.ExecutionContext.IsRunMode ? 1 : 2)
+    .AddProject<BookWorm_Catalog>(Services.Catalog)
     .WithReference(queue)
     .WaitFor(queue)
     .WithReference(catalogDb)
@@ -81,53 +78,26 @@ var catalogApi = builder
         storage,
         StorageBuiltInRole.StorageBlobDataContributor,
         StorageBuiltInRole.StorageBlobDataOwner
-    );
+    )
+    .WithFriendlyUrls();
 
 var mcp = builder
-    .AddProject<McpTools>(Services.McpTools)
+    .AddProject<BookWorm_McpTools>(Services.McpTools)
     .WithReference(catalogApi)
-    .WaitFor(catalogApi);
-
-var chatApi = builder
-    .AddProject<Chat>(Services.Chatting)
-    .WithReference(chat)
-    .WithReference(embedding)
-    .WithReference(redis)
-    .WaitFor(redis)
-    .WithReference(mcp)
-    .WaitFor(mcp)
-    .WithKeycloak(keycloak)
-    .WithReference(signalR)
-    .WaitFor(signalR)
-    .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor)
-    .WithUrlForEndpoint(
-        Protocols.Http,
-        url =>
-        {
-            url.DisplayText = "DevUI";
-            url.Url = "/devui";
-        }
-    );
+    .WithFriendlyUrls();
 
 var basketApi = builder
-    .AddProject<Basket>(Services.Basket)
+    .AddProject<BookWorm_Basket>(Services.Basket)
     .WithReference(redis)
     .WaitFor(redis)
     .WithReference(queue)
     .WaitFor(queue)
     .WithReference(catalogApi)
-    .WithKeycloak(keycloak);
-
-var notificationApi = builder
-    .AddProject<Notification>(Services.Notification)
-    .WithEmailProvider()
-    .WithReference(queue)
-    .WaitFor(queue)
-    .WithReference(notificationDb)
-    .WaitFor(notificationDb);
+    .WithKeycloak(keycloak)
+    .WithFriendlyUrls();
 
 var orderingApi = builder
-    .AddProject<Ordering>(Services.Ordering)
+    .AddProject<BookWorm_Ordering>(Services.Ordering)
     .WithReference(orderingDb)
     .WaitFor(orderingDb)
     .WithReference(queue)
@@ -137,58 +107,54 @@ var orderingApi = builder
     .WithKeycloak(keycloak)
     .WithReference(catalogApi)
     .WithReference(basketApi)
-    .WithReference(signalR)
-    .WaitFor(signalR)
-    .WithRoleAssignments(signalR, SignalRBuiltInRole.SignalRContributor)
-    .WithSecret("hmac-key", "HMAC__Key");
+    .WithSecret("hmac-key", "HMAC__Key")
+    .WithFriendlyUrls();
+
+var chatApi = builder
+    .AddProject<BookWorm_Chat>(Services.Chatting)
+    .WithReference(chat)
+    .WithReference(embedding)
+    .WithReference(mcp)
+    .WithKeycloak(keycloak)
+    .WithFriendlyUrls("Dev UI", path: Http.Endpoints.DevUIEndpointPath);
 
 var ratingApi = builder
-    .AddProject<Rating>(Services.Rating)
+    .AddProject<BookWorm_Rating>(Services.Rating)
     .WithReference(chat)
     .WithReference(embedding)
     .WithReference(ratingDb)
     .WaitFor(ratingDb)
     .WithReference(mcp)
-    .WaitFor(mcp)
     .WithReference(queue)
     .WaitFor(queue)
     .WithKeycloak(keycloak)
     .WithReference(chatApi)
-    .WithUrlForEndpoint(
-        Protocols.Http,
-        url =>
-        {
-            url.DisplayText = "DevUI";
-            url.Url = "/devui";
-        }
-    );
+    .WaitFor(chatApi)
+    .WithFriendlyUrls("Dev UI", path: Http.Endpoints.DevUIEndpointPath);
 
-chatApi.WithReference(ratingApi).WaitFor(ratingApi);
+builder
+    .AddProject<BookWorm_Notification>(Services.Notification)
+    .WithEmailProvider()
+    .WithReference(queue)
+    .WaitFor(queue)
+    .WithReference(notificationDb)
+    .WaitFor(notificationDb)
+    .WithFriendlyUrls(path: Http.Endpoints.AlivenessEndpointPath);
 
-var financeApi = builder
-    .AddProject<Finance>(Services.Finance)
+builder
+    .AddProject<BookWorm_Finance>(Services.Finance)
     .WithReference(financeDb)
     .WaitFor(financeDb)
     .WithReference(queue)
-    .WaitFor(queue);
+    .WaitFor(queue)
+    .WithFriendlyUrls(path: Http.Endpoints.AlivenessEndpointPath);
 
-var schedulerMigrator = builder
-    .AddProject<SchedulerMigrator>(Services.SchedulerMigrator)
-    .WithReference(schedulerDb)
-    .WaitFor(schedulerDb);
-
-var schedulerApi = builder
-    .AddProject<Scheduler>(Services.Scheduler)
+builder
+    .AddProject<BookWorm_Scheduler>(Services.Scheduler)
     .WithReference(queue)
     .WaitFor(queue)
-    .WithReference(schedulerDb)
-    .WaitForCompletion(schedulerMigrator)
-    .WithSecret("api-key", "TickerQ__ApiKey")
-    .WithUrls(c =>
-        c.Urls.ForEach(u => u.DisplayText = $"TickerQ Dashboard ({u.Endpoint?.EndpointName})")
-    );
-
-schedulerMigrator.WithParentRelationship(schedulerApi);
+    .WithFriendlyUrls(path: Http.Endpoints.AlivenessEndpointPath)
+    .WithExplicitStart();
 
 var gateway = builder
     .AddApiGatewayProxy()
@@ -201,18 +167,6 @@ var gateway = builder
 
 if (builder.ExecutionContext.IsRunMode)
 {
-    builder
-        .AddHealthChecksUI()
-        .WithReference(mcp)
-        .WithReference(chatApi)
-        .WithReference(ratingApi)
-        .WithReference(basketApi)
-        .WithReference(catalogApi)
-        .WithReference(financeApi)
-        .WithReference(orderingApi)
-        .WithReference(schedulerApi)
-        .WithReference(notificationApi);
-
     builder
         .AddScalar(keycloak)
         .WithOpenAPI(mcp)
@@ -227,4 +181,4 @@ if (builder.ExecutionContext.IsRunMode)
     builder.AddK6(gateway);
 }
 
-builder.Build().Run();
+await builder.Build().RunAsync();

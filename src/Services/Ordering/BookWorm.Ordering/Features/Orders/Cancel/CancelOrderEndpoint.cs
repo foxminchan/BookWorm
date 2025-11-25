@@ -10,7 +10,7 @@ public sealed class CancelOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, IS
         app.MapPatch(
                 "/orders/{orderId:guid}/cancel",
                 async (
-                    [FromHeader(Name = Restful.RequestIdHeader)]
+                    [FromHeader(Name = Http.RequestIdHeader)]
                     [Description("The idempotency key of the order to be cancelled")]
                         string key,
                     [Description("The unique identifier of the order to be cancelled")]

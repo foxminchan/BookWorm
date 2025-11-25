@@ -15,9 +15,9 @@ public sealed class TestServerCallContext(
 {
     protected override string MethodCore => "test";
 
-    protected override string HostCore => Restful.Host.Localhost;
+    protected override string HostCore => Network.Localhost;
 
-    protected override string PeerCore => "127.0.0.1";
+    protected override string PeerCore => Network.LoopbackIpV4;
 
     protected override DateTime DeadlineCore { get; } =
         deadline ?? DateTimeHelper.UtcNow().AddMinutes(5);

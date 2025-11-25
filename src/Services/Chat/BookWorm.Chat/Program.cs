@@ -1,7 +1,7 @@
 using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chat.Extensions;
-using BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
+using BookWorm.Chat.Infrastructure.AgentOrchestration;
 using BookWorm.ServiceDefaults;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,11 +23,7 @@ app.UseExceptionHandler();
 
 app.UseStatusCodePages();
 
-app.UseOutputCache();
-
 app.UseDefaultCors();
-
-app.UseRequestTimeouts();
 
 app.UseMiddleware<KeycloakTokenIntrospectionMiddleware>();
 

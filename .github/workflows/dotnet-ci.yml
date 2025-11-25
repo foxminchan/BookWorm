@@ -51,7 +51,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -78,7 +78,7 @@ jobs:
     needs: setup
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -95,7 +95,7 @@ jobs:
     needs: setup
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -112,7 +112,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -129,7 +129,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -146,7 +146,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -163,7 +163,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -183,34 +183,31 @@ jobs:
         service:
           - name: "Basket"
             project-path: "src/Services/Basket/BookWorm.Basket/BookWorm.Basket.csproj"
-            container-repository: "foxminchan/bookworm/basket"
+            service-name: "basket"
           - name: "Catalog"
             project-path: "src/Services/Catalog/BookWorm.Catalog/BookWorm.Catalog.csproj"
-            container-repository: "foxminchan/bookworm/catalog"
+            service-name: "catalog"
           - name: "Finance"
             project-path: "src/Services/Finance/BookWorm.Finance/BookWorm.Finance.csproj"
-            container-repository: "foxminchan/bookworm/finance"
+            service-name: "finance"
           - name: "Notification"
             project-path: "src/Services/Notification/BookWorm.Notification/BookWorm.Notification.csproj"
-            container-repository: "foxminchan/bookworm/notification"
+            service-name: "notification"
           - name: "Ordering"
             project-path: "src/Services/Ordering/BookWorm.Ordering/BookWorm.Ordering.csproj"
-            container-repository: "foxminchan/bookworm/ordering"
+            service-name: "ordering"
           - name: "Rating"
             project-path: "src/Services/Rating/BookWorm.Rating/BookWorm.Rating.csproj"
-            container-repository: "foxminchan/bookworm/rating"
+            service-name: "rating"
           - name: "Chat"
             project-path: "src/Services/Chat/BookWorm.Chat/BookWorm.Chat.csproj"
-            container-repository: "foxminchan/bookworm/chat"
+            service-name: "chat"
           - name: "MCP Tools"
             project-path: "src/Integrations/BookWorm.McpTools/BookWorm.McpTools.csproj"
-            container-repository: "foxminchan/bookworm/mcptools"
+            service-name: "mcptools"
           - name: "Scheduler"
             project-path: "src/Services/Scheduler/BookWorm.Scheduler/BookWorm.Scheduler.csproj"
-            container-repository: "foxminchan/bookworm/scheduler"
-          - name: "Scheduler Migrator"
-            project-path: "src/Services/Scheduler/BookWorm.Scheduler.Migrator/BookWorm.Scheduler.Migrator.csproj"
-            container-repository: "foxminchan/bookworm/scheduler-migrator"
+            service-name: "scheduler"
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'development' }}
     timeout-minutes: 15
@@ -218,7 +215,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -244,5 +241,5 @@ jobs:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
           project-path: ${{ matrix.service.project-path }}
-          container-repository: ${{ matrix.service.container-repository }}
+          container-repository: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ matrix.service.service-name }}
           container-tag: ${{ steps.set_tag.outputs.version }}

@@ -1,9 +1,3 @@
-using A2A;
-using BookWorm.Chassis.Security.Settings;
-using BookWorm.Chassis.Utilities;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authentication.OAuth;
-
 namespace BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
 
 internal static class QAAgent
@@ -14,72 +8,28 @@ internal static class QAAgent
         "An agent that answers general questions about BookWorm bookstore policies, services, shipping, returns, and other non-book-specific inquiries.";
 
     public const string Instructions = """
-        You are a customer service assistant for BookWorm bookstore that handles general questions and inquiries about the store's policies, services, and operations.
+        You handle customer service inquiries for BookWorm bookstore about policies, services, and operations.
 
-        **Your Responsibilities:**
-        - Answer questions about BookWorm policies (shipping, returns, refunds, privacy)
-        - Provide information about available services (gift wrapping, pre-orders, wishlists)
-        - Explain how to use BookWorm features (account management, order tracking, payment methods)
-        - Address common customer service inquiries
-        - Provide store information (operating hours, contact details, locations)
+        Topics Covered:
+        - Shipping & Delivery: methods, costs, timeframes, tracking, international, delays
+        - Returns & Refunds: policy, procedures, processing times, exchanges, damaged items
+        - Account & Orders: management, password reset, order tracking/cancellation, billing, payment
+        - Store Policies: privacy, terms, cookies, copyright, accessibility
+        - Services & Features: gift cards, loyalty programs, wishlists, pre-orders, gift wrapping
 
-        **Question Categories:**
-
-        **1. Shipping & Delivery:**
-        - Shipping methods and costs
-        - Delivery timeframes
-        - International shipping
-        - Order tracking
-        - Shipping issues and delays
-
-        **2. Returns & Refunds:**
-        - Return policy and procedures
-        - Refund processing times
-        - Exchange options
-        - Damaged or defective items
-        - Return shipping costs
-
-        **3. Account & Orders:**
-        - Account creation and management
-        - Password reset and security
-        - Order history and tracking
-        - Order cancellation or modification
-        - Billing and payment methods
-
-        **4. Store Policies:**
-        - Privacy policy
-        - Terms of service
-        - Cookie policy
-        - Copyright and intellectual property
-        - Accessibility features
-
-        **5. Services & Features:**
-        - Gift cards and certificates
-        - Loyalty programs and rewards
-        - Wishlists and favorites
-        - Pre-orders and backordered items
-        - Gift wrapping and messaging
-
-        **Interaction Guidelines:**
+        Response Guidelines:
         - Be helpful, friendly, and professional
-        - Provide clear and concise answers
-        - Offer to escalate complex issues when appropriate
-        - If you don't know specific policy details, acknowledge it honestly
-        - Suggest alternative resources (contact support, help center) when needed
+        - Give direct answers with relevant details and actionable steps
+        - Acknowledge when you don't know specific details
+        - Suggest escalation or alternative resources (support, help center) when needed
+        - Offer further assistance at end
 
-        **Handoff Capability:**
-        - If user asks about specific books or recommendations, hand off to BookAgent
-        - If user shifts to book-related queries, transition appropriately
-        - If question requires sentiment analysis (complaints, negative feedback), consider routing to SentimentAgent first
-        - Complete your policy/service-related tasks before considering handoff
+        Handoff Rules:
+        - Hand off to BookAgent for book-specific queries or recommendations
+        - Route to SentimentAgent for complaints/negative feedback
+        - Complete current tasks before handoff
 
-        **Response Style:**
-        - Start with a direct answer to the question
-        - Provide relevant details and context
-        - Include actionable steps when applicable
-        - End with an offer to help further if needed
-
-        Your goal is to resolve customer inquiries about BookWorm's services and policies efficiently and professionally.
+        Goal: Resolve inquiries efficiently and professionally.
         """;
 
     public static AgentCard AgentCard { get; } =
@@ -152,47 +102,6 @@ internal static class QAAgent
                         "What is your privacy policy?",
                         "Do you offer gift wrapping?",
                         "How does the loyalty program work?",
-                    ],
-                },
-            ],
-            SecuritySchemes = new()
-            {
-                [OAuthDefaults.DisplayName] = new OAuth2SecurityScheme(
-                    new()
-                    {
-                        ClientCredentials = new(
-                            new(
-                                ServiceDiscoveryUtilities.GetServiceEndpoint(Components.KeyCloak)
-                                    + "/realms"
-                                    + Environment.GetEnvironmentVariable(
-                                        $"{IdentityOptions.ConfigurationSection}__{nameof(IdentityOptions.Realm)}"
-                                    )
-                                    + "/protocol/openid-connect/token"
-                            ),
-                            new Dictionary<string, string>
-                            {
-                                {
-                                    $"{Services.Chatting}_{Authorization.Actions.Read}",
-                                    "Read access to chat service"
-                                },
-                                {
-                                    $"{Services.Chatting}_{Authorization.Actions.Write}",
-                                    "Write access to chat service"
-                                },
-                            }
-                        ),
-                    },
-                    "OAuth2 security scheme for the BookWorm API"
-                ),
-            },
-            Security =
-            [
-                new()
-                {
-                    [$"{JwtBearerDefaults.AuthenticationScheme}"] =
-                    [
-                        $"{Services.Chatting}_{Authorization.Actions.Read}",
-                        $"{Services.Chatting}_{Authorization.Actions.Write}",
                     ],
                 },
             ],

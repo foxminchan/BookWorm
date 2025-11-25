@@ -2,5 +2,5 @@
 
 public interface IBasketService
 {
-    Task<BasketResponse> GetBasket(CancellationToken cancellationToken = default);
+    Task<GetBasketResponse> GetBasket(CancellationToken cancellationToken = default);
 }

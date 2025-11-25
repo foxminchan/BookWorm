@@ -1,6 +1,8 @@
 ﻿using BookWorm.Chassis.AI.Agents;
 using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.AI.Middlewares;
+using BookWorm.Chassis.Utilities;
+using BookWorm.Constants.Core;
 using BookWorm.Constants.Other;
 using BookWorm.Rating.Tools;
 using Microsoft.Agents.AI;
@@ -26,7 +28,11 @@ public static class Extensions
         services.AddScoped<ReviewTool>();
         services.AddHttpClient<AgentDiscoveryClient>(client =>
             client.BaseAddress = new(
-                $"{Protocols.HttpOrHttps}://{Constants.Aspire.Services.Chatting}"
+                HttpUtilities
+                    .AsUrlBuilder()
+                    .WithScheme(Http.Schemes.HttpOrHttps)
+                    .WithHost(Constants.Aspire.Services.Chatting)
+                    .Build()
             )
         );
 
@@ -69,26 +75,31 @@ public static class Extensions
                 (sp, key) =>
                 {
                     var summarizeAgent = A2AClientFactory.CreateA2AAgentClient(
+                        sp,
                         Constants.Aspire.Services.Chatting,
                         Constants.Other.Agents.SummarizeAgent
                     );
 
                     var languageAgent = A2AClientFactory.CreateA2AAgentClient(
+                        sp,
                         Constants.Aspire.Services.Chatting,
                         Constants.Other.Agents.LanguageAgent
                     );
 
                     var sentimentAgent = A2AClientFactory.CreateA2AAgentClient(
+                        sp,
                         Constants.Aspire.Services.Chatting,
                         Constants.Other.Agents.SentimentAgent
                     );
 
                     var routerAgent = A2AClientFactory.CreateA2AAgentClient(
+                        sp,
                         Constants.Aspire.Services.Chatting,
                         Constants.Other.Agents.RouterAgent
                     );
 
                     var qaAgent = A2AClientFactory.CreateA2AAgentClient(
+                        sp,
                         Constants.Aspire.Services.Chatting,
                         Constants.Other.Agents.QAAgent
                     );
@@ -144,9 +155,6 @@ public static class Extensions
     public static void MapAgentsDiscovery(this WebApplication app)
     {
         app.MapAgentDiscovery("/agents");
-
-        app.MapA2A(RatingAgent.Name, $"/a2a/{RatingAgent.Name}", RatingAgent.AgentCard)
-            .WithTags(nameof(RatingAgent));
 
         app.MapAGUI(
                 "/ag-ui",

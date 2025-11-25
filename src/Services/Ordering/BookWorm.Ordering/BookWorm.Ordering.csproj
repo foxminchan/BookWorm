@@ -1,26 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
-    <IncludeHttpRuleProtos>true</IncludeHttpRuleProtos>
     <SuppressCheckGrpcNetClientFactoryVersion>true</SuppressCheckGrpcNetClientFactoryVersion>
   </PropertyGroup>
-  <ItemGroup>
+  <ItemGroup Label="OCI Labels">
     <ContainerLabel
       Include="org.opencontainers.image.description"
       Value="BookWorm Ordering Service Image"
     />
+    <ContainerLabel Include="org.opencontainers.image.authors" Value="Nhan Nguyen" />
   </ItemGroup>
   <ItemGroup Label="Core Dependencies">
     <PackageReference Include="Marten.AspNetCore" />
     <PackageReference Include="DistributedLock.Redis" />
-    <PackageReference Include="Microsoft.Azure.SignalR.Management" />
-    <PackageReference Include="Microsoft.FeatureManagement.AspNetCore" />
     <PackageReference Include="Mediator.SourceGenerator" PrivateAssets="all" />
-    <PackageReference Include="Aspire.StackExchange.Redis.DistributedCaching" />
+    <PackageReference Include="Aspire.Microsoft.Azure.StackExchangeRedis" />
     <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
   </ItemGroup>
   <ItemGroup Label="Grpc">
     <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
-    <PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" />
   </ItemGroup>
   <ItemGroup Label="EF Core">
     <PackageReference Include="Aspire.Azure.Npgsql" />
@@ -42,13 +39,13 @@
   </ItemGroup>
   <ItemGroup>
     <Protobuf
-      Include="..\..\Catalog\BookWorm.Catalog\Grpc\Protos\book.proto"
-      Link="Grpc\Protos\book.proto"
+      Include="..\..\Catalog\BookWorm.Catalog\Grpc\Protos\book\v1\book.proto"
+      Link="Grpc\Protos\book\v1\book.proto"
       GrpcServices="Client"
     />
     <Protobuf
-      Include="..\..\Basket\BookWorm.Basket\Grpc\Protos\basket.proto"
-      Link="Grpc\Protos\basket.proto"
+      Include="..\..\Basket\BookWorm.Basket\Grpc\Protos\basket\v1\basket.proto"
+      Link="Grpc\Protos\basket\v1\basket.proto"
       GrpcServices="Client"
     />
   </ItemGroup>

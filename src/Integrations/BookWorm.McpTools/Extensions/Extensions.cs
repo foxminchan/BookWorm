@@ -1,4 +1,6 @@
-﻿using BookWorm.Chassis.Utilities.Configuration;
+﻿using BookWorm.Chassis.Utilities;
+using BookWorm.Chassis.Utilities.Configuration;
+using BookWorm.Constants.Core;
 using BookWorm.McpTools.Options;
 using Microsoft.Extensions.Options;
 using ModelContextProtocol.Protocol;
@@ -22,7 +24,11 @@ internal static class Extensions
 
         // Configure HTTP client
         services.AddHttpServiceReference<ICatalogApi>(
-            $"{Protocols.HttpOrHttps}://{Constants.Aspire.Services.Catalog}",
+            HttpUtilities
+                .AsUrlBuilder()
+                .WithScheme(Http.Schemes.HttpOrHttps)
+                .WithHost(Constants.Aspire.Services.Catalog)
+                .Build(),
             HealthStatus.Degraded
         );
 

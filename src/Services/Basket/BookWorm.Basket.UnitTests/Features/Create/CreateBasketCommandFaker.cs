@@ -8,14 +8,12 @@ public sealed class CreateBasketCommandFaker : Faker<CreateBasketCommand>
     public CreateBasketCommandFaker()
     {
         CustomInstantiator(f =>
-            new(
-                [
-                    .. f.Make(
-                        f.Random.Int(1, 10),
-                        () => new BasketItemRequest(f.Commerce.ProductName(), f.Random.Int(1, 10))
-                    ),
-                ]
-            )
+            new([
+                .. f.Make(
+                    f.Random.Int(1, 10),
+                    () => new BasketItemRequest(f.Commerce.ProductName(), f.Random.Int(1, 10))
+                ),
+            ])
         );
     }
 

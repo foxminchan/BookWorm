@@ -1,17 +1,20 @@
-﻿using BookWorm.Constants.Aspire;
+﻿using BookWorm.Constants.Core;
 using Microsoft.Extensions.Hosting;
 
 namespace BookWorm.Chassis.Utilities.Configuration;
 
 public static class LaunchProfileExtensions
 {
-    public static bool IsHttpsLaunchProfile(this IHostApplicationBuilder builder)
+    extension(IHostApplicationBuilder builder)
     {
-        return builder.Configuration["DOTNET_LAUNCH_PROFILE"] == Protocols.Https;
-    }
+        public bool IsHttpsLaunchProfile()
+        {
+            return builder.Configuration["DOTNET_LAUNCH_PROFILE"] == Http.Schemes.Https;
+        }
 
-    public static string GetScheme(this IHostApplicationBuilder builder)
-    {
-        return builder.IsHttpsLaunchProfile() ? Protocols.Https : Protocols.Http;
+        public string GetScheme()
+        {
+            return builder.IsHttpsLaunchProfile() ? Http.Schemes.Https : Http.Schemes.Http;
+        }
     }
 }

@@ -1,18 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-  <ItemGroup>
+  <ItemGroup Label="OCI Labels">
     <ContainerLabel
       Include="org.opencontainers.image.description"
       Value="BookWorm Scheduler Service Image"
     />
+    <ContainerLabel Include="org.opencontainers.image.authors" Value="Nhan Nguyen" />
   </ItemGroup>
-  <ItemGroup Label="TickerQ">
-    <PackageReference Include="TickerQ" />
-    <PackageReference Include="TickerQ.Dashboard" />
-    <PackageReference Include="TickerQ.Instrumentation.OpenTelemetry" />
-  </ItemGroup>
-  <ItemGroup Label="EF Core">
-    <PackageReference Include="MassTransit.EntityFrameworkCore" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
+  <ItemGroup Label="Quartz">
+    <PackageReference Include="Quartz.AspNetCore" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Quartz" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="$(AssemblyName).UnitTests" />

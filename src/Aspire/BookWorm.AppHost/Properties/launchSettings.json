@@ -25,15 +25,6 @@
         "DOTNET_RESOURCE_SERVICE_ENDPOINT_URL": "http://localhost:20237",
         "ASPIRE_ALLOW_UNSECURED_TRANSPORT": "true"
       }
-    },
-    "generate-manifest": {
-      "commandName": "Project",
-      "dotnetRunMessages": true,
-      "commandLineArgs": "--publisher manifest --output-path aspire-manifest.json",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
-        "DOTNET_ENVIRONMENT": "Development"
-      }
     }
   }
 }

@@ -58,7 +58,7 @@ internal static class Extensions
         // Add database configuration
         builder
             .AddRedisClientBuilder(Components.Redis, o => o.DisableAutoActivation = false)
-            .WithDistributedCache(options => options.InstanceName = "ShoppingCarts");
+            .WithAzureAuthentication();
 
         services.AddSingleton<IBasketRepository, BasketRepository>();
 

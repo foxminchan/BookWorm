@@ -22,22 +22,18 @@ internal sealed class SecuritySchemeDefinitionsTransformer(IdentityOptions ident
             return Task.CompletedTask;
         }
 
-        var authUrlBuilder = new StringBuilder();
-        authUrlBuilder.Append(keycloakUrl);
-        authUrlBuilder.Append('/');
-        authUrlBuilder.Append(
-            KeycloakEndpoints.Authorize.Replace("{realm}", identityOptions.Realm).TrimStart('/')
-        );
+        var authUrl = HttpUtilities
+            .AsUrlBuilder()
+            .WithBase(keycloakUrl)
+            .WithPath(KeycloakEndpoints.Authorize.Replace("{realm}", identityOptions.Realm))
+            .Build();
 
-        // Please refer: https://github.com/scalar/scalar/issues/6225
-        var tokenUrlBuilder = new StringBuilder();
-        tokenUrlBuilder.Append(Protocols.Http);
-        tokenUrlBuilder.Append("://");
-        tokenUrlBuilder.Append(Components.KeyCloak);
-        tokenUrlBuilder.Append('/');
-        tokenUrlBuilder.Append(
-            KeycloakEndpoints.Token.Replace("{realm}", identityOptions.Realm).TrimStart('/')
-        );
+        var tokenUrl = HttpUtilities
+            .AsUrlBuilder()
+            .WithScheme(Http.Schemes.Http)
+            .WithHost(Components.KeyCloak)
+            .WithPath(KeycloakEndpoints.Token.Replace("{realm}", identityOptions.Realm))
+            .Build();
 
         var securityScheme = new OpenApiSecurityScheme
         {
@@ -48,8 +44,8 @@ internal sealed class SecuritySchemeDefinitionsTransformer(IdentityOptions ident
                 AuthorizationCode = new()
                 {
                     Scopes = identityOptions.Scopes!,
-                    AuthorizationUrl = new(authUrlBuilder.ToString()),
-                    TokenUrl = new(tokenUrlBuilder.ToString()),
+                    AuthorizationUrl = new(authUrl),
+                    TokenUrl = new(tokenUrl),
                 },
             },
         };

@@ -5,73 +5,73 @@ namespace BookWorm.AppHost.Extensions.Network;
 
 public static class ProxyExtensions
 {
-    public static ApiGatewayProxyBuilder AddApiGatewayProxy(
-        this IDistributedApplicationBuilder builder
-    )
+    extension(IDistributedApplicationBuilder builder)
     {
-        return new(builder);
-    }
+        public ApiGatewayProxyBuilder AddApiGatewayProxy()
+        {
+            return new(builder);
+        }
 
-    internal static IResourceBuilder<YarpResource> BuildApiGatewayProxy(
-        this IDistributedApplicationBuilder builder,
-        IReadOnlyList<Service> services,
-        IResourceBuilder<IResource> resource
-    )
-    {
-        var yarp = builder
-            .AddYarp(Services.Gateway)
-            .WithStaticFiles()
-            .WithExternalHttpEndpoints()
-            .WithIconName("SerialPort")
-            .WithConfiguration(yarpBuilder =>
-            {
-                foreach (var service in services)
+        internal IResourceBuilder<YarpResource> BuildApiGatewayProxy(
+            IReadOnlyList<Service> services,
+            IResourceBuilder<IResource> resource
+        )
+        {
+            var yarp = builder
+                .AddYarp(Services.Gateway)
+                .WithStaticFiles()
+                .WithExternalHttpEndpoints()
+                .WithIconName("SerialPort")
+                .WithConfiguration(yarpBuilder =>
                 {
-                    var routeBuilder = yarpBuilder.AddRoute(
-                        $"/{service.Name}/{{**remainder}}",
-                        service.Resource
-                    );
-
-                    if (service.UseProtobuf)
+                    foreach (var service in services)
                     {
-                        routeBuilder.WithTransformForwarded();
+                        var routeBuilder = yarpBuilder.AddRoute(
+                            $"/{service.Name}/{{**remainder}}",
+                            service.Resource
+                        );
+
+                        if (service.UseProtobuf)
+                        {
+                            routeBuilder.WithTransformForwarded();
+                        }
+
+                        routeBuilder
+                            .WithTransformPathPrefix("/")
+                            .WithTransformUseOriginalHostHeader()
+                            .WithTransformPathRemovePrefix($"/{service.Name}")
+                            .WithTransformXForwarded("trace-id")
+                            .WithTransformXForwarded("Trace-Id")
+                            .WithTransformResponseHeader(
+                                "X-Powered-By",
+                                $"{nameof(BookWorm)} {nameof(Services.Gateway)}"
+                            );
                     }
 
-                    routeBuilder
-                        .WithTransformPathPrefix("/")
-                        .WithTransformUseOriginalHostHeader()
-                        .WithTransformPathRemovePrefix($"/{service.Name}")
-                        .WithTransformXForwarded("trace-id")
-                        .WithTransformXForwarded("Trace-Id")
-                        .WithTransformResponseHeader(
-                            "X-Powered-By",
-                            $"{nameof(BookWorm)} {nameof(Services.Gateway)}"
-                        );
-                }
+                    switch (resource.Resource)
+                    {
+                        case ContainerResource containerResource:
+                            yarpBuilder.AddRoute(
+                                "/identity/{**remainder}",
+                                containerResource.GetEndpoint(Http.Schemes.Http)
+                            );
+                            break;
+                        case ExternalServiceResource externalServiceResource:
+                            yarpBuilder.AddRoute(
+                                "/identity/{**remainder}",
+                                builder.CreateResourceBuilder(externalServiceResource)
+                            );
+                            break;
+                        default:
+                            throw new InvalidOperationException(
+                                $"Unsupported resource type for identity endpoint: {resource.Resource.GetType().Name}"
+                            );
+                    }
+                })
+                .WithExplicitStart();
 
-                switch (resource.Resource)
-                {
-                    case ContainerResource containerResource:
-                        yarpBuilder.AddRoute(
-                            "/identity/{**remainder}",
-                            containerResource.GetEndpoint(Protocols.Http)
-                        );
-                        break;
-                    case ExternalServiceResource externalServiceResource:
-                        yarpBuilder.AddRoute(
-                            "/identity/{**remainder}",
-                            builder.CreateResourceBuilder(externalServiceResource)
-                        );
-                        break;
-                    default:
-                        throw new InvalidOperationException(
-                            $"Unsupported resource type for identity endpoint: {resource.Resource.GetType().Name}"
-                        );
-                }
-            })
-            .WithExplicitStart();
-
-        return yarp;
+            return yarp;
+        }
     }
 }
 

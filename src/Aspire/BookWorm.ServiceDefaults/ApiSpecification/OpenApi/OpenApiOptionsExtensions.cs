@@ -6,29 +6,31 @@ namespace BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
 
 public static class OpenApiOptionsExtensions
 {
-    public static void ApplyApiVersionInfo(
-        this OpenApiOptions options,
-        DocumentOptions? openApiDocument,
-        ApiVersionDescription apiDescription
-    )
+    extension(OpenApiOptions options)
     {
-        options.AddDocumentTransformer(
-            new OpenApiInfoDefinitionsTransformer(openApiDocument, apiDescription)
-        );
-    }
+        public void ApplyApiVersionInfo(
+            DocumentOptions? openApiDocument,
+            ApiVersionDescription apiDescription
+        )
+        {
+            options.AddDocumentTransformer(
+                new OpenApiInfoDefinitionsTransformer(openApiDocument, apiDescription)
+            );
+        }
 
-    public static void ApplySecuritySchemeDefinitions(this OpenApiOptions options)
-    {
-        options.AddDocumentTransformer<SecuritySchemeDefinitionsTransformer>();
-    }
+        public void ApplySecuritySchemeDefinitions()
+        {
+            options.AddDocumentTransformer<SecuritySchemeDefinitionsTransformer>();
+        }
 
-    public static void ApplyOperationDeprecatedStatus(this OpenApiOptions options)
-    {
-        options.AddOperationTransformer<OperationDeprecatedStatusTransformer>();
-    }
+        public void ApplyOperationDeprecatedStatus()
+        {
+            options.AddOperationTransformer<OperationDeprecatedStatusTransformer>();
+        }
 
-    public static void ApplyAuthorizationChecks(this OpenApiOptions options, string[] scopes)
-    {
-        options.AddOperationTransformer(new AuthorizationChecksTransformer(scopes));
+        public void ApplyAuthorizationChecks(string[] scopes)
+        {
+            options.AddOperationTransformer(new AuthorizationChecksTransformer(scopes));
+        }
     }
 }

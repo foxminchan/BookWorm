@@ -11,7 +11,10 @@ public sealed class BasketService(IBasketRepository repository, ILogger<BasketSe
 {
     [Authorize]
     [EnableRateLimiting("PerUserRateLimit")]
-    public override async Task<BasketResponse> GetBasket(Empty request, ServerCallContext context)
+    public override async Task<GetBasketResponse> GetBasket(
+        Empty request,
+        ServerCallContext context
+    )
     {
         var userId = context.GetUserIdentity();
         if (string.IsNullOrEmpty(userId))
@@ -38,9 +41,9 @@ public sealed class BasketService(IBasketRepository repository, ILogger<BasketSe
         return data is not null ? MapToBasketResponse(data) : new();
     }
 
-    private static BasketResponse MapToBasketResponse(CustomerBasket basket)
+    private static GetBasketResponse MapToBasketResponse(CustomerBasket basket)
     {
-        var response = new BasketResponse { Id = basket.Id };
+        var response = new GetBasketResponse { Id = basket.Id };
         var items = basket.Items.Select(item => new Item
         {
             Id = item.Id,

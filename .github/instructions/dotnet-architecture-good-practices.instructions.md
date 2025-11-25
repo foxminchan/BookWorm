@@ -1,6 +1,7 @@
 ---
 description: "DDD and .NET architecture guidelines"
 applyTo: "**/*.cs,**/*.csproj,**/Program.cs,**/*.razor"
+name: Architecture-DDD-.NET
 ---
 
 # DDD Systems & .NET Guidelines

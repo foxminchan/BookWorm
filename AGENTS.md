@@ -2,36 +2,69 @@
 
 ## Project Overview
 
-BookWorm is a distributed microservices application built with .NET 8+, using Aspire for orchestration and a clean architecture approach. The project includes multiple services (Basket, Catalog, Chat, Finance, Notification, Ordering, Rating, Scheduler) with supporting building blocks and integration components.
+BookWorm is a distributed microservices application built with .NET 10, using Aspire 13+ for orchestration and a clean architecture approach. The project showcases:
+
+- **Microservices Architecture**: Multiple services (Basket, Catalog, Chat, Finance, Notification, Ordering, Rating, Scheduler)
+- **AI Integration**: Multi-agent orchestration, Model Context Protocol (MCP), Agent-to-Agent (A2A) communication
+- **DDD & VSA**: Domain-Driven Design with Vertical Slice Architecture
+- **Event-Driven**: Saga patterns, event sourcing, outbox/inbox patterns
+- **Supporting components**: Building blocks and integration components
+
+## Prerequisites
+
+Before contributing, ensure you have:
+
+- [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+- [Docker Desktop](https://www.docker.com/get-started) (must be running)
+- [Aspire CLI](https://learn.microsoft.com/en-us/dotnet/aspire/cli/install)
+- [Node.js](https://nodejs.org/en/download/)
+- [Bun](https://bun.sh/)
+- [Just](https://github.com/casey/just) (task runner)
+- **OpenAI API key** (required for AI features) - [Get one here](https://platform.openai.com/api-keys)
+- Optional: [Gitleaks](https://gitleaks.io/), [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
 
 ## Setup Commands
 
-- **Restore dependencies**: `dotnet restore`
-- **Build solution**: `dotnet build`
-- **Run with Aspire**: Navigate to `src/Aspire/BookWorm.AppHost` and run `dotnet run`
-- **Run tests**: `dotnet test`
-- **Architecture tests**: `dotnet test tests/BookWorm.ArchTests/`
+The project uses a `.justfile` for common tasks. Run these commands:
+
+- **Restore dependencies**: `just restore` (or `dotnet restore`)
+- **Build solution**: `just build` (or `dotnet build`)
+- **Run with Aspire**: `just run` (handles setup + runs Aspire)
+- **Run tests**: `just test` (or `dotnet test`)
+- **Format code**: `just format`
+- **Clean build**: `just clean`
+- **Trust dev certificate**: `just trust`
+- **Update packages**: `just update`
+
+> [!TIP]
+> Run `just` without arguments to see the default action (runs the application).
 
 ## Development Environment
 
-- Use C# 14 features and latest .NET version
-- The solution uses Aspire for service orchestration and development
-- Services are organized in the `src/Services/` directory
-- Building blocks are in `src/BuildingBlocks/`
-- All projects follow clean architecture principles
+- **Framework**: .NET 10 with C# preview features
+- **Orchestration**: Aspire 13+ for service orchestration and local development
+- **Project Structure**:
+  - `src/Services/` - Individual microservices
+  - `src/BuildingBlocks/` - Shared libraries (Chassis, Constants, SharedKernel)
+  - `src/Integrations/` - Integration components (HealthChecks, MCP Tools)
+  - `src/Aspire/` - Aspire host and service defaults
+- **Architecture**: Clean architecture with DDD and Vertical Slice Architecture principles
+- **Authentication**: Keycloak for AuthN/AuthZ (Authorization Code Flow with PKCE, Token Exchange)
 
 ## Code Style Guidelines
 
-- **Language**: Use C# 14 features exclusively
-- **Formatting**: Follow `.editorconfig` rules
+- **Language**: Use C# preview features (configured in `Directory.Build.props`)
+- **Target Framework**: .NET 10 (`net10.0`)
+- **Formatting**: Follow `.editorconfig` rules; use `just format` to apply CSharpier formatting
 - **Namespaces**: Use file-scoped namespace declarations
-- **Null Safety**: Declare variables non-nullable, use `is null`/`is not null`
+- **Null Safety**: Enable nullable reference types; declare variables non-nullable, use `is null`/`is not null`
 - **Pattern Matching**: Use pattern matching and switch expressions where possible
 - **Constructors**: Use primary constructors for immutable properties
 - **Members**: Use expression-bodied members for methods and properties
-- **Variables**: Use `var` when type is obvious
-- **Naming**: Use `nameof` instead of string literals for member names
-- **Structure**: Place private class declarations at bottom of files
+- **Variables**: Use `var` when type is obvious from the right side
+- **Naming**: Use `nameof()` instead of string literals for member names
+- **Structure**: Place private nested classes at the bottom of files
+- **Warnings**: Treat warnings as errors (`TreatWarningsAsErrors` is enabled)
 
 ## Architecture Patterns
 
@@ -43,11 +76,32 @@ BookWorm is a distributed microservices application built with .NET 8+, using As
 
 ## Testing Instructions
 
-- **Unit Tests**: Run `dotnet test` for all tests
-- **Architecture Tests**: Use TUnit framework in `tests/BookWorm.ArchTests/`
-- **Integration Tests**: Each service may have its own integration tests
+- **Unit Tests**: Run `just test` or `dotnet test` for all tests
+- **Test Framework**: Uses **TUnit** (not xUnit/NUnit/MSTest)
+- **Architecture Tests**: Located in `tests/BookWorm.ArchTests/` using ArchUnitNET with TUnit
+- **Snapshot Tests**: Use `Verify.TUnit` for snapshot testing
+- **Contract Tests**: Service contract tests in `*ContractTests` projects
+- **Integration Tests**: Each service may have integration tests using `Aspire.Hosting.Testing`
+- **Coverage**: Run tests with coverage using Microsoft.Testing.Extensions.CodeCoverage
+- **Test Naming**: Follow TUnit conventions for test methods and classes
 - **Test Coverage**: Ensure new features have corresponding tests
-- **Snapshot Testing**: Use `SnapshotTestBase` for snapshot tests when applicable
+- **Assertion Library**: Use Shouldly for fluent assertions
+
+### Running Specific Tests
+
+```powershell
+# Run all tests
+just test
+
+# Run architecture tests only
+dotnet test tests/BookWorm.ArchTests/
+
+# Run tests for a specific service
+dotnet test src/Services/Finance/BookWorm.Finance.UnitTests/
+
+# Run with coverage
+dotnet test --collect:"Code Coverage"
+```
 
 ## Build and Deployment
 
@@ -98,17 +152,23 @@ Each service in `src/Services/` follows the same pattern:
 
 ## Common Commands
 
-- **Clean solution**: `dotnet clean`
-- **Format code**: Use IDE formatting or `dotnet format`
-- **Package restore**: `dotnet restore --no-cache` (if needed)
+- **Clean solution**: `just clean` or `dotnet clean`
+- **Format code**: `just format` (uses CSharpier via dnx)
+- **Package restore**: `just restore` or `dotnet restore --no-cache`
 - **Watch mode**: `dotnet watch run` (from service directory)
+- **Trust dev certs**: `just trust` or `dotnet dev-certs https --trust`
+- **Update bun packages**: `just update` (updates EventCatalog, Docusaurus, K6, Keycloakify)
+- **Check OpenAI key**: `just check-openai` (validates OpenAI API key setup)
 
 ## Troubleshooting
 
 - **Build Issues**: Check `Directory.Build.props` and `global.json` for version conflicts
-- **Aspire Issues**: Ensure Docker is running if using containerized services
+- **Aspire Issues**: Ensure Docker Desktop is running before launching Aspire
 - **Test Failures**: Check test output and ensure proper test isolation
-- **Architecture Violations**: Review architecture test failures for guidance
+- **Architecture Violations**: Review architecture test failures for guidance on fixing structural issues
+- **OpenAI Errors**: Verify your OpenAI API key is configured in User Secrets or environment variables
+- **Authentication Issues**: Check Keycloak container is running and properly configured
+- **Missing Dependencies**: Run `just restore` to restore all NuGet packages and tools
 
 ## File Modifications
 

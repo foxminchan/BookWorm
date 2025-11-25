@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <IsAspireSharedProject>true</IsAspireSharedProject>
+    <NoWarn>EXTEXP0001</NoWarn>
   </PropertyGroup>
   <ItemGroup Label="Framework">
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
   <ItemGroup Label="Integration">
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
-    <PackageReference Include="AspNetCore.HealthChecks.UI.Client" />
   </ItemGroup>
   <ItemGroup Label="HTTP Communication">
     <PackageReference Include="Refit.HttpClientFactory" />

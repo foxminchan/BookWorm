@@ -6,10 +6,10 @@ namespace BookWorm.McpTools.Tools;
 public sealed class Echo
 {
     [McpMeta("category", "ping")]
-    [McpServerTool(Name = "Echo", Title = "Echo Tool")]
-    [Description("Echoes back the provided input string.")]
-    [return: Description("The echoed string with a greeting.")]
-    public string EchoInput([Description("The string to be echoed back.")] string input)
+    [McpServerTool(Name = "echo", Title = "Echo Tool")]
+    [Description("Echoes back the provided input string")]
+    [return: Description("The echoed string with a greeting")]
+    public string EchoInput([Description("The string to be echoed back")] string input)
     {
         return string.Concat("Hello from BookWorm! You said: ", input);
     }

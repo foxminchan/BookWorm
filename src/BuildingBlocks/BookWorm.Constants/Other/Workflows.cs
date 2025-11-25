@@ -2,6 +2,6 @@
 
 public static class Workflows
 {
-    public const string Chat = "ChatWorkflow";
-    public const string RatingSummarizer = "RatingSummarizerWorkflow";
+    public const string Chat = "chat-workflow";
+    public const string RatingSummarizer = "rating-summarizer-workflow";
 }

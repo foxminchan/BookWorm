@@ -70,7 +70,8 @@
 - [Gitleaks](https://gitleaks.io/)
 - [Bun](https://bun.sh/)
 - [Just](https://github.com/casey/just)
-- [Aspire CLI](https://learn.microsoft.com/en-us/dotnet/aspire/cli/install)
+- [Buf CLI](https://docs.buf.build/installation)
+- [Aspire CLI](https://aspire.dev/get-started/install-cli/)
 - [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
 - Optional: [Spec-Kit](https://github.com/github/spec-kit)
 - Optional: [GitHub Copilot CLI](https://github.com/github/copilot-cli)
@@ -79,7 +80,6 @@
 >
 > - 🤖 Ensure you have an [OpenAI API key](https://platform.openai.com/api-keys) to use the AI features
 > - 📧 Email services use [SendGrid](https://sendgrid.com/) in production and [Mailpit](https://mailpit.axllent.org/) locally
-> - 🍎 Mac with Apple Silicon users need [Rosetta 2](https://support.apple.com/en-us/102527) for grpc-tools compatibility
 > - 🐳 Docker Desktop must be running before starting the application
 
 ### Run the Application
@@ -96,10 +96,6 @@ cd BookWorm
 # 3. Run the application (starts all services)
 just run
 ```
-
-> [!TIP]
->
-> - Run `just help` to see all available commands.
 
 ### Deploy the Application
 

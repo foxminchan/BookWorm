@@ -9,16 +9,13 @@ namespace BookWorm.McpTools.Tools;
 public sealed class Product(ICatalogApi catalogApi)
 {
     [McpMeta("category", "catalog")]
-    [McpServerTool(Name = "SearchCatalog", Title = "Search BookWorm Catalog")]
+    [McpServerTool(Name = "search_catalog", Title = "Search BookWorm Catalog")]
     [Description("Searches the BookWorm catalog for a provided book description")]
     [return: Description("A JSON array of books matching the description or a not found message")]
     public async Task<string> SearchCatalogAsync(
         [Description("The product description for which to search")] string description
     )
     {
-        const string notFoundMessage =
-            "We couldn't find any books matching your description. Please try again with a different description.";
-
         var response = await catalogApi.ListBooksAsync(description);
 
         if (!response.IsSuccessStatusCode)
@@ -27,7 +24,7 @@ public sealed class Product(ICatalogApi catalogApi)
         }
 
         return response.Content?.Items.Count == 0
-            ? notFoundMessage
+            ? "We couldn't find any books matching your description. Please try again with a different description."
             : JsonSerializer.Serialize(
                 response.Content?.Items,
                 BookSerializationContext.Default.IReadOnlyListBook

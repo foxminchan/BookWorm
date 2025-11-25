@@ -1,9 +1,3 @@
-using A2A;
-using BookWorm.Chassis.Security.Settings;
-using BookWorm.Chassis.Utilities;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authentication.OAuth;
-
 namespace BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
 
 internal static class SummarizeAgent
@@ -14,31 +8,22 @@ internal static class SummarizeAgent
         "An agent that summarizes and condenses translated English text while preserving key information and context.";
 
     public const string Instructions = """
-        You are a text summarization assistant for BookWorm bookstore. Your role is to process English text from the Language Agent and create concise, meaningful summaries.
+        You condense lengthy BookWorm user messages into concise summaries for efficient processing.
 
-        **Summarization Capabilities:**
-        - Condense lengthy user messages while preserving essential information
-        - Extract key points, questions, and requests from user input
-        - Maintain context and intent of the original message
-        - Identify main topics and relevant details for book-related conversations
+        Tasks:
+        - Condense long messages while preserving intent and context
+        - Extract key points: questions, requests, book titles, authors, genres, preferences
+        - Maintain original meaning in clear, simple language
 
-        **Key Features:**
-        - **Preserve Intent**: Keep the core purpose and meaning of the original message
-        - **Extract Keywords**: Identify important terms, book titles, authors, genres, or preferences
-        - **Maintain Context**: Ensure summary provides enough context for downstream agents
-        - **Concise Output**: Create brief, clear summaries that capture essential information
+        Output:
+        - Brief summary retaining essential information
+        - Highlight book-related details for searches/recommendations
+        - Preserve user questions and specific requests
 
-        **Output Requirements:**
-        - Provide a concise summary that retains the original meaning
-        - Highlight key information relevant to book searches or recommendations
-        - Preserve user questions, preferences, and specific requests
-        - Use clear, simple language that maintains the user's intent
+        Handoff:
+        - After summarizing, ALWAYS hand off to BookAgent with condensed summary
 
-        **Handoff Strategy:**
-        - After summarizing lengthy or complex messages, ALWAYS hand off to BookAgent
-        - BookAgent will use your condensed summary to efficiently process the request
-
-        Your summaries help the Book Agent understand user needs efficiently and provide better responses.
+        Goal: Help BookAgent understand user needs efficiently.
         """;
 
     public static AgentCard AgentCard { get; } =
@@ -97,47 +82,6 @@ internal static class SummarizeAgent
                         "Summarize this while keeping the context for the Book Agent",
                         "Preserve the user's intent in a shorter format",
                         "Create a context-aware summary of this request",
-                    ],
-                },
-            ],
-            SecuritySchemes = new()
-            {
-                [OAuthDefaults.DisplayName] = new OAuth2SecurityScheme(
-                    new()
-                    {
-                        ClientCredentials = new(
-                            new(
-                                ServiceDiscoveryUtilities.GetServiceEndpoint(Components.KeyCloak)
-                                    + "/realms"
-                                    + Environment.GetEnvironmentVariable(
-                                        $"{IdentityOptions.ConfigurationSection}__{nameof(IdentityOptions.Realm)}"
-                                    )
-                                    + "/protocol/openid-connect/token"
-                            ),
-                            new Dictionary<string, string>
-                            {
-                                {
-                                    $"{Services.Chatting}_{Authorization.Actions.Read}",
-                                    "Read access to chat service"
-                                },
-                                {
-                                    $"{Services.Chatting}_{Authorization.Actions.Write}",
-                                    "Write access to chat service"
-                                },
-                            }
-                        ),
-                    },
-                    "OAuth2 security scheme for the BookWorm API"
-                ),
-            },
-            Security =
-            [
-                new()
-                {
-                    [$"{JwtBearerDefaults.AuthenticationScheme}"] =
-                    [
-                        $"{Services.Chatting}_{Authorization.Actions.Read}",
-                        $"{Services.Chatting}_{Authorization.Actions.Write}",
                     ],
                 },
             ],

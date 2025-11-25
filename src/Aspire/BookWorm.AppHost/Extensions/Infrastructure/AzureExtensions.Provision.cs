@@ -10,10 +10,27 @@ namespace BookWorm.AppHost.Extensions.Infrastructure;
 public static partial class AzureExtensions
 {
     /// <summary>
-    ///     Configures the Azure Storage resource to be provisioned as a service with specific infrastructure settings.
+    ///     Provisions an Azure Storage resource with BookWorm-specific configuration.
     /// </summary>
     /// <param name="builder">The resource builder for Azure Storage.</param>
-    /// <returns>The updated resource builder with configured infrastructure settings.</returns>
+    /// <returns>The configured resource builder for method chaining.</returns>
+    /// <remarks>
+    ///     This method configures the Azure Storage resource with:
+    ///     <list type="bullet">
+    ///         <item>
+    ///             <description>Standard LRS (Locally Redundant Storage) SKU</description>
+    ///         </item>
+    ///         <item>
+    ///             <description>Southeast Asia location</description>
+    ///         </item>
+    ///         <item>
+    ///             <description>Cool access tier for cost optimization</description>
+    ///         </item>
+    ///         <item>
+    ///             <description>Environment and project tags for resource management</description>
+    ///         </item>
+    ///     </list>
+    /// </remarks>
     public static IResourceBuilder<AzureStorageResource> ProvisionAsService(
         this IResourceBuilder<AzureStorageResource> builder
     )
@@ -40,39 +57,33 @@ public static partial class AzureExtensions
     }
 
     /// <summary>
-    ///     Configures the Azure SignalR resource to be provisioned as a service with specific infrastructure settings.
-    /// </summary>
-    /// <param name="builder">The resource builder for Azure SignalR.</param>
-    /// <returns>The updated resource builder with configured infrastructure settings.</returns>
-    public static IResourceBuilder<AzureSignalRResource> ProvisionAsService(
-        this IResourceBuilder<AzureSignalRResource> builder
-    )
-    {
-        builder.ConfigureInfrastructure(infra =>
-        {
-            var resource = infra.GetProvisionableResources().OfType<SignalRService>().Single();
-
-            resource.Sku = new() { Tier = SignalRSkuTier.Free };
-
-            resource.Location = AzureLocation.SoutheastAsia;
-
-            resource.Tags.Add(
-                nameof(Environment),
-                builder.ApplicationBuilder.Environment.EnvironmentName
-            );
-
-            resource.Tags.Add(nameof(Projects), nameof(BookWorm));
-        });
-
-        return builder;
-    }
-
-    /// <summary>
-    ///     Configures the Azure PostgreSQL Flexible Server resource to be provisioned as a service with specific
-    ///     infrastructure settings.
+    ///     Provisions an Azure PostgreSQL Flexible Server resource with BookWorm-specific configuration.
     /// </summary>
     /// <param name="builder">The resource builder for Azure PostgreSQL Flexible Server.</param>
-    /// <returns>The updated resource builder with configured infrastructure settings.</returns>
+    /// <returns>The configured resource builder for method chaining.</returns>
+    /// <remarks>
+    ///     This method configures the PostgreSQL Flexible Server with:
+    ///     <list type="bullet">
+    ///         <item>
+    ///             <description>Burstable tier SKU for cost-effective workloads</description>
+    ///         </item>
+    ///         <item>
+    ///             <description>Southeast Asia location</description>
+    ///         </item>
+    ///         <item>
+    ///             <description>Zone-redundant high availability with standby in zone 2</description>
+    ///         </item>
+    ///         <item>
+    ///             <description>7-day backup retention with geo-redundant backup disabled</description>
+    ///         </item>
+    ///         <item>
+    ///             <description>32 GB storage with auto-grow disabled</description>
+    ///         </item>
+    ///         <item>
+    ///             <description>Environment and project tags for resource management</description>
+    ///         </item>
+    ///     </list>
+    /// </remarks>
     public static IResourceBuilder<AzurePostgresFlexibleServerResource> ProvisionAsService(
         this IResourceBuilder<AzurePostgresFlexibleServerResource> builder
     )
@@ -114,10 +125,24 @@ public static partial class AzureExtensions
     }
 
     /// <summary>
-    ///     Configures the Azure Redis Cache resource to be provisioned as a service with specific infrastructure settings.
+    ///     Provisions an Azure Redis Cache resource with BookWorm-specific configuration.
     /// </summary>
     /// <param name="builder">The resource builder for Azure Redis Cache.</param>
-    /// <returns>The updated resource builder with configured infrastructure settings.</returns>
+    /// <returns>The configured resource builder for method chaining.</returns>
+    /// <remarks>
+    ///     This method configures the Redis Cache with:
+    ///     <list type="bullet">
+    ///         <item>
+    ///             <description>Basic SKU with capacity 1 for development/testing workloads</description>
+    ///         </item>
+    ///         <item>
+    ///             <description>Southeast Asia location</description>
+    ///         </item>
+    ///         <item>
+    ///             <description>Environment and project tags for resource management</description>
+    ///         </item>
+    ///     </list>
+    /// </remarks>
     public static IResourceBuilder<AzureRedisCacheResource> ProvisionAsService(
         this IResourceBuilder<AzureRedisCacheResource> builder
     )
@@ -147,10 +172,29 @@ public static partial class AzureExtensions
     }
 
     /// <summary>
-    ///     Configures the Azure Container App Environment resource to be provisioned as a service with specific infrastructure
-    ///     settings.
+    ///     Provisions an Azure Container App Environment resource with BookWorm-specific configuration.
     /// </summary>
     /// <param name="builder">The resource builder for Azure Container App Environment.</param>
+    /// <remarks>
+    ///     This method configures the Container App Environment with:
+    ///     <list type="bullet">
+    ///         <item>
+    ///             <description>Dashboard integration for monitoring</description>
+    ///         </item>
+    ///         <item>
+    ///             <description>Azure Developer CLI (azd) resource naming conventions</description>
+    ///         </item>
+    ///         <item>
+    ///             <description>Consumption workload profile for serverless execution</description>
+    ///         </item>
+    ///         <item>
+    ///             <description>Southeast Asia location</description>
+    ///         </item>
+    ///         <item>
+    ///             <description>Environment and project tags for resource management</description>
+    ///         </item>
+    ///     </list>
+    /// </remarks>
     public static void ProvisionAsService(
         this IResourceBuilder<AzureContainerAppEnvironmentResource> builder
     )
