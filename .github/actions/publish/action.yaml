@@ -10,12 +10,14 @@ inputs:
     description: "The path to the .bun-version file"
     required: false
     default: ".bun-version"
-  project-path:
-    description: "The path to the project file"
+  repositoy-owner:
+    description: "The owner of the repository"
     required: true
-  container-repository:
-    description: "The name of the container repository"
+    default: "${{ github.repository_owner }}"
+  repository-name:
+    description: "The name of the repository"
     required: true
+    default: "${{ github.event.repository.name }}"
   container-tag:
     description: "The tag for the container image"
     required: true
@@ -34,19 +36,18 @@ runs:
       with:
         bun-version-file: ${{ inputs.bun-version-file }}
 
-    - name: Build
+    - name: Install Aspire CLI
       shell: bash
-      run: |
-        dotnet build ${{ inputs.project-path }} --configuration Release
+      run: curl -sSL https://aspire.dev/install.sh | bash -s -- -q dev
 
-    - name: Publish
+    - name: Add Aspire CLI to PATH
       shell: bash
-      run: >
-        dotnet publish ${{ inputs.project-path }}
-        -t:PublishContainer
-        --verbosity "quiet"
-        --nologo
-        -r "linux-x64"
-        -p:ContainerRegistry="ghcr.io"
-        -p:ContainerRepository="${{ inputs.container-repository }}"
-        -p:ContainerImageTag="${{ inputs.container-tag }}"
+      run: echo "$HOME/.aspire/bin" >> $GITHUB_PATH
+
+    - name: Push to GitHub Container Registry
+      shell: bash
+      run: aspire do push-gh
+      env:
+        CONTAINER_TAG: ${{ inputs.container-tag }}
+        GHCR_ORGANIZATION: ${{ inputs.repositoy-owner }}
+        GHCR_REPOSITORY: ${{ inputs.repository-name }}

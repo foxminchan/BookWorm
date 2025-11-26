@@ -176,38 +176,6 @@ jobs:
   publish:
     name: Publish Artifacts
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.publish || false
-    strategy:
-      fail-fast: false
-      max-parallel: 5
-      matrix:
-        service:
-          - name: "Basket"
-            project-path: "src/Services/Basket/BookWorm.Basket/BookWorm.Basket.csproj"
-            service-name: "basket"
-          - name: "Catalog"
-            project-path: "src/Services/Catalog/BookWorm.Catalog/BookWorm.Catalog.csproj"
-            service-name: "catalog"
-          - name: "Finance"
-            project-path: "src/Services/Finance/BookWorm.Finance/BookWorm.Finance.csproj"
-            service-name: "finance"
-          - name: "Notification"
-            project-path: "src/Services/Notification/BookWorm.Notification/BookWorm.Notification.csproj"
-            service-name: "notification"
-          - name: "Ordering"
-            project-path: "src/Services/Ordering/BookWorm.Ordering/BookWorm.Ordering.csproj"
-            service-name: "ordering"
-          - name: "Rating"
-            project-path: "src/Services/Rating/BookWorm.Rating/BookWorm.Rating.csproj"
-            service-name: "rating"
-          - name: "Chat"
-            project-path: "src/Services/Chat/BookWorm.Chat/BookWorm.Chat.csproj"
-            service-name: "chat"
-          - name: "MCP Tools"
-            project-path: "src/Integrations/BookWorm.McpTools/BookWorm.McpTools.csproj"
-            service-name: "mcptools"
-          - name: "Scheduler"
-            project-path: "src/Services/Scheduler/BookWorm.Scheduler/BookWorm.Scheduler.csproj"
-            service-name: "scheduler"
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'development' }}
     timeout-minutes: 15
@@ -235,11 +203,11 @@ jobs:
             echo "version=latest" >> $GITHUB_OUTPUT
           fi
 
-      - name: Publish ${{ matrix.service.name }} Service
+      - name: Publish Service
         uses: ./.github/actions/publish
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
-          project-path: ${{ matrix.service.project-path }}
-          container-repository: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ matrix.service.service-name }}
+          repositoy-owner: ${{ github.repository_owner }}
+          repository-name: ${{ github.event.repository.name }}
           container-tag: ${{ steps.set_tag.outputs.version }}
