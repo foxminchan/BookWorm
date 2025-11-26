@@ -37,7 +37,17 @@ jobs:
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
 
+      - name: Cache Aspire CLI
+        id: cache-aspire
+        uses: actions/cache@v4
+        with:
+          path: ~/.aspire
+          key: ${{ runner.os }}-aspire-cli
+          restore-keys: |
+            ${{ runner.os }}-aspire-
+
       - name: Install Aspire CLI
+        if: steps.cache-aspire.outputs.cache-hit != 'true'
         run: curl -sSL https://aspire.dev/install.sh | bash -s -- -q dev
 
       - name: Add Aspire CLI to PATH

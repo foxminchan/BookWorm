@@ -211,3 +211,4 @@ jobs:
           repository-owner: ${{ github.repository_owner }}
           repository-name: ${{ github.event.repository.name }}
           container-tag: ${{ steps.set_tag.outputs.version }}
+          operations-environment: ${{ runner.os }}
