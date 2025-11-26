@@ -46,7 +46,7 @@ public static class PipelineExtensions
                         $"{ghcrOrganization}/{ghcrRepository}/{resource.Name}";
 
                     context.Logger.LogInformation(
-                        "Pushing Docker image {ImageName} to GHCR...",
+                        "Pushing image {ImageName} to GHCR...",
                         containerRepository
                     );
 
@@ -78,7 +78,7 @@ public static class PipelineExtensions
                     await command.ExecuteAsync();
                 }
             },
-            dependsOn: WellKnownPipelineSteps.Build
+            WellKnownPipelineSteps.Build
         );
     }
 }
