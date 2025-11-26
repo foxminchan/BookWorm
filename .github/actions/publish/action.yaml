@@ -22,6 +22,10 @@ inputs:
     description: "The tag for the container image"
     required: true
     default: "latest"
+  operations-environment:
+    description: "The operations environment to use for Aspire commands"
+    required: false
+    default: ${{ runner.os }}
 
 runs:
   using: "composite"
@@ -36,7 +40,17 @@ runs:
       with:
         bun-version-file: ${{ inputs.bun-version-file }}
 
+    - name: Cache Aspire CLI
+      id: cache-aspire
+      uses: actions/cache@v4
+      with:
+        path: ~/.aspire
+        key: ${{ inputs.operations-environment }}-aspire-cli
+        restore-keys: |
+          ${{ inputs.operations-environment }}-aspire-
+
     - name: Install Aspire CLI
+      if: steps.cache-aspire.outputs.cache-hit != 'true'
       shell: bash
       run: curl -sSL https://aspire.dev/install.sh | bash -s -- -q dev
 
