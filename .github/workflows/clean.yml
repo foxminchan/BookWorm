@@ -10,6 +10,7 @@ jobs:
   delete-package-versions:
     name: Delete untagged package versions
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: snok/container-retention-policy@v3.0.1
         with:

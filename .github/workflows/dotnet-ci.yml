@@ -7,7 +7,7 @@ on:
     paths:
       - "src/**"
       - "tests/**"
-      - ".github/workflows/ci.yaml"
+      - ".github/workflows/dotnet-ci.yml"
       - ".github/actions/**"
       - "Directory.Packages.props"
       - "Directory.Build.props"
@@ -41,7 +41,7 @@ permissions:
   packages: write
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:

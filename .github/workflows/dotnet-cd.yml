@@ -53,6 +53,9 @@ jobs:
       - name: Add Aspire CLI to PATH
         run: echo "$HOME/.aspire/bin" >> $GITHUB_PATH
 
+      - name: Verify Aspire Installation
+        run: aspire --version
+
       - name: List files
         run: ls -a
 
