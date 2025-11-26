@@ -33,6 +33,7 @@ jobs:
   build:
     name: Build Keycloak Theme
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment: ${{ github.event.inputs.environment || 'development' }}
 
     steps:

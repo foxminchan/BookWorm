@@ -58,6 +58,10 @@ runs:
       shell: bash
       run: echo "$HOME/.aspire/bin" >> $GITHUB_PATH
 
+    - name: Verify Aspire Installation
+      shell: bash
+      run: aspire --version
+
     - name: Push to GitHub Container Registry
       shell: bash
       run: aspire do push-gh
