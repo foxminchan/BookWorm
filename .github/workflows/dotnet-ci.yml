@@ -208,6 +208,6 @@ jobs:
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
-          repositoy-owner: ${{ github.repository_owner }}
+          repository-owner: ${{ github.repository_owner }}
           repository-name: ${{ github.event.repository.name }}
           container-tag: ${{ steps.set_tag.outputs.version }}

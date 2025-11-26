@@ -10,7 +10,7 @@ inputs:
     description: "The path to the .bun-version file"
     required: false
     default: ".bun-version"
-  repositoy-owner:
+  repository-owner:
     description: "The owner of the repository"
     required: true
     default: "${{ github.repository_owner }}"
@@ -49,5 +49,5 @@ runs:
       run: aspire do push-gh
       env:
         CONTAINER_TAG: ${{ inputs.container-tag }}
-        GHCR_ORGANIZATION: ${{ inputs.repositoy-owner }}
+        GHCR_ORGANIZATION: ${{ inputs.repository-owner }}
         GHCR_REPOSITORY: ${{ inputs.repository-name }}

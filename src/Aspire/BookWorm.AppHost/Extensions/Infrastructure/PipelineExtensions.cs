@@ -20,12 +20,12 @@ public static class PipelineExtensions
                 var ghcrOrganization =
                     configuration["GHCR_ORGANIZATION"]
                     ?? throw new InvalidOperationException(
-                        "No GHCR_ORGANIZATION found in environment variables"
+                        "GHCR_ORGANIZATION configuration value not found"
                     );
                 var ghcrRepository =
                     configuration["GHCR_REPOSITORY"]
                     ?? throw new InvalidOperationException(
-                        "No GHCR_REPOSITORY found in environment variables"
+                        "GHCR_REPOSITORY configuration value not found"
                     );
 
                 var resources = context.Model.Resources.OfType<ProjectResource>().ToList();
