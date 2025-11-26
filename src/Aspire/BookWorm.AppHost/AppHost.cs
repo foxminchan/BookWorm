@@ -181,4 +181,6 @@ if (builder.ExecutionContext.IsRunMode)
     builder.AddK6(gateway);
 }
 
+builder.Pipeline.AddGhcrPushStep();
+
 await builder.Build().RunAsync();
