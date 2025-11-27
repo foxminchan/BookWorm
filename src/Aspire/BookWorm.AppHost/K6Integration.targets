@@ -1,23 +1,27 @@
 <Project>
-  <Target Name="BuildK6Container" BeforeTargets="Build">
+  <PropertyGroup>
+    <K6ContainerPath>$(MSBuildProjectDirectory)\Container\k6</K6ContainerPath>
+  </PropertyGroup>
+  <Target
+    Name="BuildK6Container"
+    BeforeTargets="Build"
+    Inputs="$(K6ContainerPath)\src\**\*;$(K6ContainerPath)\package.json;$(K6ContainerPath)\webpack.config.js"
+    Outputs="$(K6ContainerPath)\dist\main.js"
+    Condition="'$(SkipK6Build)' != 'true' AND Exists('$(K6ContainerPath)\package.json')"
+  >
     <Message Text="Installing node packages" Importance="high" />
     <Exec
       Command="bun install --frozen-lockfile"
-      WorkingDirectory="Container/k6"
-      Condition="Exists('Container/k6/package.json')"
+      WorkingDirectory="$(K6ContainerPath)"
+      IgnoreExitCode="false"
     />
-    <Message Text="Lint And Format K6 code" Importance="high" />
+    <Message Text="Lint And Format K6 code" Importance="normal" />
     <Exec
       Command="bun run precommit"
-      WorkingDirectory="Container/k6"
-      Condition="Exists('Container/k6/package.json')"
+      WorkingDirectory="$(K6ContainerPath)"
       ContinueOnError="true"
     />
     <Message Text="Bundle k6 scripts" Importance="high" />
-    <Exec
-      Command="bun run build"
-      WorkingDirectory="Container/k6"
-      Condition="Exists('Container/k6/package.json')"
-    />
+    <Exec Command="bun run build" WorkingDirectory="$(K6ContainerPath)" IgnoreExitCode="false" />
   </Target>
 </Project>

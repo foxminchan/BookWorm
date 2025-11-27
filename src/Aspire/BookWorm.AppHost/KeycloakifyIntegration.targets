@@ -1,23 +1,31 @@
 <Project>
-  <Target Name="BuildKeycloakifyContainer" BeforeTargets="Build">
+  <PropertyGroup>
+    <KeycloakifyContainerPath>$(MSBuildProjectDirectory)\Container\keycloak\keycloakify</KeycloakifyContainerPath>
+  </PropertyGroup>
+  <Target
+    Name="BuildKeycloakifyContainer"
+    BeforeTargets="Build"
+    Inputs="$(KeycloakifyContainerPath)\src\**\*;$(KeycloakifyContainerPath)\package.json;$(KeycloakifyContainerPath)\vite.config.ts"
+    Outputs="$(KeycloakifyContainerPath)\dist_keycloak\**\*"
+    Condition="'$(SkipKeycloakifyBuild)' != 'true' AND Exists('$(KeycloakifyContainerPath)\package.json')"
+  >
     <Message Text="Installing node packages for Keycloakify" Importance="high" />
     <Exec
       Command="bun install --frozen-lockfile"
-      WorkingDirectory="Container/keycloak/keycloakify"
-      Condition="Exists('Container/keycloak/keycloakify/package.json')"
+      WorkingDirectory="$(KeycloakifyContainerPath)"
+      IgnoreExitCode="false"
     />
-    <Message Text="Formatting Keycloakify code" Importance="high" />
+    <Message Text="Formatting Keycloakify code" Importance="normal" />
     <Exec
       Command="bun run format"
-      WorkingDirectory="Container/keycloak/keycloakify"
-      Condition="Exists('Container/keycloak/keycloakify/package.json')"
+      WorkingDirectory="$(KeycloakifyContainerPath)"
       ContinueOnError="true"
     />
     <Message Text="Building Keycloakify themes" Importance="high" />
     <Exec
       Command="bun run build"
-      WorkingDirectory="Container/keycloak/keycloakify"
-      Condition="Exists('Container/keycloak/keycloakify/package.json')"
+      WorkingDirectory="$(KeycloakifyContainerPath)"
+      IgnoreExitCode="false"
     />
   </Target>
 </Project>
