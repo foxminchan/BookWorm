@@ -86,7 +86,12 @@ jobs:
           GITLEAKS_CONFIG: .gitleaks.toml
 
       - name: Build
-        run: dotnet build --configuration Release --no-incremental
+        run: >
+          dotnet build
+          --configuration Release
+          --no-incremental
+          -p:SkipK6Build=true
+          -p:SkipKeycloakifyBuild=true
 
       - name: Test
         run: >
