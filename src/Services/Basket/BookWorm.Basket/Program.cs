@@ -1,5 +1,7 @@
 using BookWorm.Basket.Extensions;
 using BookWorm.Basket.Grpc.Services.Basket;
+using BookWorm.Basket.Infrastructure.Agents;
+using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,8 +37,12 @@ app.MapGrpcService<BasketService>();
 
 app.MapGrpcHealthChecksService();
 
+app.MapAgentsDiscovery();
+
 app.MapDefaultEndpoints();
 
 app.UseDefaultOpenApi();
+
+app.UseDevUI();
 
 app.Run();

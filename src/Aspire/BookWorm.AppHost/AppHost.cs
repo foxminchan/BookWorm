@@ -92,9 +92,11 @@ var basketApi = builder
     .WaitFor(redis)
     .WithReference(queue)
     .WaitFor(queue)
+    .WithReference(chat)
+    .WithReference(embedding)
     .WithReference(catalogApi)
     .WithKeycloak(keycloak)
-    .WithFriendlyUrls();
+    .WithFriendlyUrls("Dev UI", path: Http.Endpoints.DevUIEndpointPath);
 
 var orderingApi = builder
     .AddProject<BookWorm_Ordering>(Services.Ordering)
