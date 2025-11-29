@@ -38,11 +38,7 @@ internal static class QAAgent
             Name = Name,
             Description = Description,
             Version = "1.0",
-            Provider = new()
-            {
-                Organization = nameof(BookWorm),
-                Url = "https://github.com/foxminchan/BookWorm",
-            },
+            Provider = new() { Organization = nameof(OpenAI), Url = "https://openai.com/" },
             DefaultInputModes = ["text"],
             DefaultOutputModes = ["text"],
             Capabilities = new() { Streaming = false, PushNotifications = false },
