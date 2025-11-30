@@ -2,6 +2,8 @@
 using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.AI.Middlewares;
 using BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
+using BookWorm.Chat.Infrastructure.AgentOrchestration.Conditions;
+using BookWorm.Chat.Infrastructure.AgentOrchestration.Executors;
 using BookWorm.Constants.Other;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
@@ -200,6 +202,8 @@ internal static class Extensions
                 {
                     var orchestrateAgents = sp.GetRequiredService<OrchestrateAgents>();
 
+                    // Build handoff workflow for dynamic agent routing
+                    // RouterAgent analyzes requests and delegates to specialized agents
                     var handoffWorkflow = AgentWorkflowBuilder
                         .CreateHandoffBuilderWith(orchestrateAgents.RouterAgent)
                         .WithHandoffs(
@@ -211,6 +215,7 @@ internal static class Extensions
                                 orchestrateAgents.BookAgent,
                             ]
                         )
+                        // Define handoff paths for agent collaboration
                         .WithHandoff(
                             orchestrateAgents.LanguageAgent,
                             orchestrateAgents.BookAgent,
@@ -232,15 +237,47 @@ internal static class Extensions
                         )
                         .Build();
 
+                    // Bind handoff workflow as executor for composition with conditional routing
                     var handoffWorkflowExecutor = handoffWorkflow.BindAsExecutor(
                         "AgentHandoffWorkflowExecutor"
                     );
 
-                    var workflow = new WorkflowBuilder(handoffWorkflowExecutor)
-                        .AddEdge(handoffWorkflowExecutor, orchestrateAgents.QAAgent)
+                    // Create custom executors for input validation and response formatting
+                    InputValidationExecutor inputValidator = new();
+                    ResponseFormatterExecutor responseFormatter = new();
+
+                    // Build workflow with 4-layer architecture:
+                    // 1. Input Validation - Validates and preprocesses user input
+                    // 2. Agent Handoff - Routes to appropriate specialized agent
+                    // 3. Conditional Post-Processing - Intelligent routing based on output analysis
+                    // 4. Response Formatting - Ensures consistent, well-formatted responses
+                    var workflow = new WorkflowBuilder(inputValidator)
+                        // Layer 1→2: Connect input validator to handoff workflow
+                        .AddEdge<ChatMessage>(inputValidator, handoffWorkflowExecutor)
+                        // Layer 2→3: Route to QAAgent if output contains policy/service-related content
+                        .AddEdge<List<ChatMessage>>(
+                            handoffWorkflowExecutor,
+                            orchestrateAgents.QAAgent,
+                            condition: PolicyKeywordCondition.Evaluate
+                        )
+                        // Layer 2→3: Route to SentimentAgent if negative sentiment is detected
+                        .AddEdge<List<ChatMessage>>(
+                            handoffWorkflowExecutor,
+                            orchestrateAgents.SentimentAgent,
+                            condition: NegativeSentimentCondition.Evaluate
+                        )
+                        // Layer 3→4: Connect all paths to response formatter
+                        .AddEdge<List<ChatMessage>>(handoffWorkflowExecutor, responseFormatter)
+                        .AddEdge<List<ChatMessage>>(orchestrateAgents.QAAgent, responseFormatter)
+                        .AddEdge<List<ChatMessage>>(
+                            orchestrateAgents.SentimentAgent,
+                            responseFormatter
+                        )
+                        // Set response formatter as the final output
+                        .WithOutputFrom(responseFormatter)
                         .WithName(key)
                         .WithDescription(
-                            "Orchestrates multiple AI agents to handle user chat messages"
+                            "Production-grade workflow with input validation, intelligent agent routing, conditional post-processing, and response formatting"
                         )
                         .Build();
 
