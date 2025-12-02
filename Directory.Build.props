@@ -13,6 +13,7 @@
     <DisableRarCache>true</DisableRarCache>
     <!-- Temporarily disable security warnings for transitive packages. -->
     <NoWarn>NU1608;NU1901;NU1902;NU1903;NU1904</NoWarn>
+    <UseArtifactsOutput>true</UseArtifactsOutput>
   </PropertyGroup>
   <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
