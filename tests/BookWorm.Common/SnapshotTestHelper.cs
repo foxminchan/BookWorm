@@ -1,10 +1,11 @@
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
 namespace BookWorm.Common;
 
 public static partial class SnapshotTestHelper
 {
-    public static Task Verify(object target)
+    public static Task Verify(object target, [CallerFilePath] string sourceFilePath = "")
     {
         return Verifier
             .Verify(target)
@@ -22,21 +23,27 @@ public static partial class SnapshotTestHelper
                 builder.Clear();
                 builder.Append(scrubbedContent);
             })
-            .UseDirectory(GetSnapshotsDirectory());
+            .UseSnapshotDirectory(sourceFilePath);
     }
 
-    private static string GetSnapshotsDirectory()
+    private static SettingsTask UseSnapshotDirectory(
+        this SettingsTask settingsTask,
+        string sourceFilePath
+    )
     {
-        // Start from the current directory and traverse up to find the test project root
-        var currentDirectory = Directory.GetCurrentDirectory();
+        // If we have a caller file path, start from that directory
+        var startDirectory = !string.IsNullOrWhiteSpace(sourceFilePath)
+            ? Path.GetDirectoryName(sourceFilePath) ?? Directory.GetCurrentDirectory()
+            : Directory.GetCurrentDirectory();
 
         var projectRoot =
-            FindTestProjectRoot(currentDirectory)
+            FindTestProjectRoot(startDirectory)
             ?? throw new DirectoryNotFoundException(
                 "Could not locate test project root directory. Please ensure the test project file (.csproj) exists."
             );
 
-        return Path.Combine(projectRoot, "Snapshots");
+        var snapshotsDirectory = Path.Combine(projectRoot, "Snapshots");
+        return settingsTask.UseDirectory(snapshotsDirectory);
     }
 
     private static string? FindTestProjectRoot(string startPath)
