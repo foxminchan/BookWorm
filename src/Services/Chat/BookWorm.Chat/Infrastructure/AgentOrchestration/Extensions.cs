@@ -57,10 +57,10 @@ internal static class Extensions
                     options: new()
                     {
                         Name = key,
-                        Instructions = BookAgent.Instructions,
                         Description = BookAgent.Description,
                         ChatOptions = new()
                         {
+                            Instructions = BookAgent.Instructions,
                             Temperature = 0.7f,
                             MaxOutputTokens = 2000,
                             TopP = 0.95f,
@@ -88,9 +88,13 @@ internal static class Extensions
                     options: new()
                     {
                         Name = key,
-                        Instructions = LanguageAgent.Instructions,
                         Description = LanguageAgent.Description,
-                        ChatOptions = new() { Temperature = 0.3f, MaxOutputTokens = 500 },
+                        ChatOptions = new()
+                        {
+                            Instructions = LanguageAgent.Instructions,
+                            Temperature = 0.3f,
+                            MaxOutputTokens = 500,
+                        },
                     }
                 );
 
@@ -112,9 +116,13 @@ internal static class Extensions
                     options: new()
                     {
                         Name = key,
-                        Instructions = SentimentAgent.Instructions,
                         Description = SentimentAgent.Description,
-                        ChatOptions = new() { Temperature = 0.2f, MaxOutputTokens = 300 },
+                        ChatOptions = new()
+                        {
+                            Instructions = SentimentAgent.Instructions,
+                            Temperature = 0.2f,
+                            MaxOutputTokens = 300,
+                        },
                     }
                 );
 
@@ -137,9 +145,13 @@ internal static class Extensions
                     options: new()
                     {
                         Name = key,
-                        Instructions = SummarizeAgent.Instructions,
                         Description = SummarizeAgent.Description,
-                        ChatOptions = new() { Temperature = 0.4f, MaxOutputTokens = 800 },
+                        ChatOptions = new()
+                        {
+                            Instructions = SummarizeAgent.Instructions,
+                            Temperature = 0.4f,
+                            MaxOutputTokens = 800,
+                        },
                     }
                 );
 
@@ -161,9 +173,13 @@ internal static class Extensions
                     options: new()
                     {
                         Name = key,
-                        Instructions = QAAgent.Instructions,
                         Description = QAAgent.Description,
-                        ChatOptions = new() { Temperature = 0.5f, MaxOutputTokens = 1000 },
+                        ChatOptions = new()
+                        {
+                            Instructions = QAAgent.Instructions,
+                            Temperature = 0.5f,
+                            MaxOutputTokens = 1000,
+                        },
                     }
                 );
 
@@ -185,9 +201,13 @@ internal static class Extensions
                     options: new()
                     {
                         Name = key,
-                        Instructions = RouterAgent.Instructions,
                         Description = RouterAgent.Description,
-                        ChatOptions = new() { Temperature = 0.1f, MaxOutputTokens = 200 },
+                        ChatOptions = new()
+                        {
+                            Instructions = RouterAgent.Instructions,
+                            Temperature = 0.1f,
+                            MaxOutputTokens = 200,
+                        },
                     }
                 );
 

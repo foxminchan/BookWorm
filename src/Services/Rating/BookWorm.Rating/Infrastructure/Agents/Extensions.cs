@@ -54,10 +54,10 @@ public static class Extensions
                     options: new()
                     {
                         Name = key,
-                        Instructions = RatingAgent.Instructions,
                         Description = RatingAgent.Description,
                         ChatOptions = new()
                         {
+                            Instructions = RatingAgent.Instructions,
                             Temperature = 0.4f,
                             MaxOutputTokens = 1500,
                             Tools = [.. reviewPlugin.AsAITools()],
