@@ -2,10 +2,10 @@
 agent: CSharp-Expert
 description: "Get best practices for C# async programming"
 tools:
-  - "changes"
+  - "search/changes"
   - "search/codebase"
   - "edit/editFiles"
-  - "problems"
+  - "read/problems"
 model: Claude Sonnet 4.5 (copilot)
 ---
 
