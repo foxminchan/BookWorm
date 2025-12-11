@@ -3,10 +3,10 @@ name: Planner
 description: "Generate an implementation plan for new features or refactoring existing code."
 tools:
   - "search/codebase"
-  - "fetch"
-  - "githubRepo"
+  - "web/fetch"
+  - "web/githubRepo"
   - "search"
-  - "usages"
+  - "search/usages"
 model: GPT-5.1-Codex (Preview) (copilot)
 handoffs:
   - label: Start Implementation

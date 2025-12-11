@@ -4,12 +4,15 @@ description: "Get best practices for TUnit unit testing, including data-driven t
 tools:
   - "edit/editFiles"
   - "search"
-  - "runCommands"
+  - "execute/getTerminalOutput"
+  - "execute/runInTerminal"
+  - "read/terminalLastCommand"
+  - "read/terminalSelection"
   - "sequential-thinking/*"
   - "microsoft-docs/*"
   - "context7/*"
-  - "problems"
-  - "changes"
+  - "read/problems"
+  - "search/changes"
 model: Claude Sonnet 4.5 (copilot)
 ---
 

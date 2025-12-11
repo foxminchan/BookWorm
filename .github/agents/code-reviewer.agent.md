@@ -3,9 +3,9 @@ name: Code-Reviewer
 description: "Review code changes for quality, security, and best practices compliance."
 tools:
   - "search/codebase"
-  - "githubRepo"
+  - "web/githubRepo"
   - "search"
-  - "usages"
+  - "search/usages"
 model: Gemini 3 Pro (Preview) (copilot)
 handoffs:
   - label: Fix Issues Found
