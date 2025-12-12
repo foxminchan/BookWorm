@@ -50,7 +50,7 @@ jobs:
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
       - name: Cache SonarQube Cloud packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
@@ -58,7 +58,7 @@ jobs:
 
       - name: Cache SonarQube Cloud scanner
         id: cache-sonar-scanner
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ./.sonar/scanner
           key: ${{ runner.os }}-sonar-scanner
