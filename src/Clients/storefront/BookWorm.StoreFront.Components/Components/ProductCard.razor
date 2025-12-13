@@ -1,0 +1,18 @@
+<div class="product-card">
+    <div class="product-image">
+        <img src="@ImageUrl" alt="@Title" />
+    </div>
+    <h4>@Title</h4>
+    <p class="price">@Price</p>
+</div>
+
+@code {
+    [Parameter]
+    public string ImageUrl { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Price { get; set; } = string.Empty;
+}

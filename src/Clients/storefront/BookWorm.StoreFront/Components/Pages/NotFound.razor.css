@@ -1,0 +1,113 @@
+.not-found-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 70vh;
+    padding: 2rem;
+}
+
+.not-found-content {
+    text-align: center;
+    max-width: 600px;
+}
+
+.error-code {
+    font-size: 10rem;
+    font-weight: 900;
+    color: #b8815e;
+    line-height: 1;
+    margin: 0;
+    text-shadow: 4px 4px 0 rgba(0, 0, 0, 0.1);
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-20px);
+    }
+}
+
+.not-found-content h1 {
+    font-size: 2.5rem;
+    color: #2c3e50;
+    margin: 1rem 0;
+    font-weight: 700;
+}
+
+.not-found-content p {
+    font-size: 1.125rem;
+    color: #5a6c7d;
+    margin: 1.5rem 0 2rem;
+    line-height: 1.6;
+}
+
+.actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-primary,
+.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.75rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: var(--brand-primary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+    .btn-primary:hover {
+        background: var(--brand-secondary);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+    }
+
+.btn-secondary {
+    background: white;
+    color: var(--brand-primary);
+    border: 2px solid var(--brand-primary);
+}
+
+    .btn-secondary:hover {
+        background: var(--brand-primary);
+        color: white;
+        transform: translateY(-2px);
+    }
+
+@media (max-width: 768px) {
+    .error-code {
+        font-size: 6rem;
+    }
+
+    .not-found-content h1 {
+        font-size: 1.75rem;
+    }
+
+    .not-found-content p {
+        font-size: 1rem;
+    }
+
+    .actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        width: 100%;
+        justify-content: center;
+    }
+}

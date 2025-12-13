@@ -165,6 +165,8 @@ var gateway = builder
     .WithService(catalogApi, true)
     .WithService(keycloak);
 
+builder.AddProject<BookWorm_StoreFront>(Clients.StoreFront).WithReference(gateway).WaitFor(gateway);
+
 if (builder.ExecutionContext.IsRunMode)
 {
     builder

@@ -8,6 +8,10 @@
     <Project Path="src/BuildingBlocks/BookWorm.Constants/BookWorm.Constants.csproj" />
     <Project Path="src/BuildingBlocks/BookWorm.SharedKernel/BookWorm.SharedKernel.csproj" />
   </Folder>
+  <Folder Name="/Clients/">
+    <Project Path="src/Clients/storefront/BookWorm.StoreFront.Components/BookWorm.StoreFront.Components.csproj" />
+    <Project Path="src/Clients/storefront/BookWorm.StoreFront/BookWorm.StoreFront.csproj" />
+  </Folder>
   <Folder Name="/E2E/">
     <Project Path="tests/BookWorm.ArchTests/BookWorm.ArchTests.csproj" />
   </Folder>

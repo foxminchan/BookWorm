@@ -1,0 +1,35 @@
+﻿@inherits LayoutComponentBase
+
+<FluentLayout>
+    <section class="hero-section">
+        <div class="banner-icons">
+            <FluentAnchor Href="/profile" Appearance="Appearance.Neutral" IconStart="@(new Icons.Regular.Size20.Person())" />
+            <FluentAnchor Href="/cart" Appearance="Appearance.Neutral" IconStart="@(new Icons.Regular.Size20.ShoppingBag())" />
+        </div>
+
+        <div class="hero-content">
+            <h1>BOOKWORM</h1>
+            <p>Your favorite online bookstore</p>
+        </div>
+    </section>
+
+    <FluentBodyContent Class="body-content">
+        <div class="content">
+            @Body
+        </div>
+    </FluentBodyContent>
+
+    <FluentFooter>
+        <div class="footer-content">
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center" VerticalAlignment="VerticalAlignment.Center">
+                <FluentLabel Typo="Typography.Body">&copy; @DateTime.Now.Year BookWorm - Your Online Bookstore</FluentLabel>
+            </FluentStack>
+        </div>
+    </FluentFooter>
+</FluentLayout>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>

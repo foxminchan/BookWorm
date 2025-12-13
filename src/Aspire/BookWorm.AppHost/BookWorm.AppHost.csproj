@@ -28,7 +28,7 @@
   <ItemGroup Label="Extras">
     <PackageReference Include="CliWrap" />
   </ItemGroup>
-  <ItemGroup Label="Services">
+  <ItemGroup Label="Components">
     <ProjectReference Include="..\..\Services\Basket\BookWorm.Basket\BookWorm.Basket.csproj" />
     <ProjectReference Include="..\..\Services\Catalog\BookWorm.Catalog\BookWorm.Catalog.csproj" />
     <ProjectReference Include="..\..\Services\Chat\BookWorm.Chat\BookWorm.Chat.csproj" />
@@ -38,6 +38,7 @@
     <ProjectReference Include="..\..\Services\Rating\BookWorm.Rating\BookWorm.Rating.csproj" />
     <ProjectReference Include="..\..\Services\Scheduler\BookWorm.Scheduler\BookWorm.Scheduler.csproj" />
     <ProjectReference Include="..\..\Integrations\BookWorm.McpTools\BookWorm.McpTools.csproj" />
+    <ProjectReference Include="..\..\Clients\storefront\BookWorm.StoreFront\BookWorm.StoreFront.csproj" />
   </ItemGroup>
   <ItemGroup Label="Integrations">
     <ProjectReference
