@@ -1,0 +1,32 @@
+<Project>
+  <Target
+    Name="TailwindBuild"
+    BeforeTargets="CoreBuild"
+    DependsOnTargets="GetTailwindInputs"
+    Inputs="@(TailwindFileInputs)"
+    Outputs="$(TailwindCssOutput)"
+  >
+    <Message
+      Importance="Normal"
+      Text="Installing node packages"
+      Condition="!Exists('node_modules')"
+    />
+    <Exec
+      Command="bun install"
+      Condition="!Exists('node_modules')"
+      WorkingDirectory="$(MSBuildProjectDirectory)"
+    />
+    <Message Importance="Normal" Text="Building Tailwind CSS" />
+    <Exec Command="bunx @tailwindcss/cli -i $(TailwindCssInput) -o $(TailwindCssOutput)" />
+    <Touch Files="$(TailwindCssOutput)" />
+    <ItemGroup>
+      <FileWrites Include="$(TailwindCssOutput)" />
+    </ItemGroup>
+  </Target>
+  <Target Name="GetTailwindInputs">
+    <ItemGroup>
+      <TailwindFileInputs Include="$(MSBuildProjectDirectory)**\*.css;$(MSBuildProjectDirectory)**\*.razor;$(MSBuildProjectDirectory)**\*.cshtml" />
+      <UpToDateCheckInput Include="@(TailwindFileInputs)" />
+    </ItemGroup>
+  </Target>
+</Project>

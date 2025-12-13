@@ -3,16 +3,17 @@
 
 <PageTitle>Page Not Found - BookWorm</PageTitle>
 
-<div class="not-found-container">
-    <div class="not-found-content">
-        <div class="error-code">404</div>
-        <h1>Lost in the Library?</h1>
-        <p>Sorry, we couldn't find the page you're looking for. It might have been moved, deleted, or never existed.</p>
-        <div class="actions">
-            <a href="/" class="btn-primary">
-                <FluentIcon Value="@(new Icons.Regular.Size20.Home())" />
-                Back to Home
-            </a>
+<div class="flex justify-center items-center min-h-[70vh] p-8">
+    <div class="text-center max-w-150">
+        <div class="text-[6rem] md:text-[10rem] font-black text-red-500 leading-none m-0" style="text-shadow: 4px 4px 0 rgba(0, 0, 0, 0.1);">404</div>
+        <h1 class="text-[1.75rem] md:text-[2.5rem] text-[#2c3e50] my-4 font-bold">Lost in the Library?</h1>
+        <p class="text-base md:text-lg text-[#5a6c7d] mt-6 mb-8 leading-relaxed">Sorry, we couldn't find the page you're looking for. It might have been moved, deleted, or never existed.</p>
+        <div class="flex gap-4 justify-center flex-wrap md:flex-row flex-col md:items-center items-stretch">
+            <FluentAnchor
+                Href="/"
+                Appearance="Appearance.Accent">
+                Go Home
+            </FluentAnchor>                
         </div>
     </div>
 </div>

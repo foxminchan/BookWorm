@@ -1,22 +1,25 @@
 @using Microsoft.FluentUI.AspNetCore.Components
 
-<aside class="filters-sidebar">
-    <h3>Filters</h3>
+<aside class="bg-white p-6 rounded-lg shadow-sm sticky top-4 h-fit lg:block">
+    <h3 class="m-0 mb-6 text-xl text-[var(--brand-primary)]">Filters</h3>
 
-    <div class="filter-group">
-        <h4>Category</h4>
-        <FluentCheckbox>Fiction</FluentCheckbox>
-        <FluentCheckbox>Non-Fiction</FluentCheckbox>
-        <FluentCheckbox>Mystery</FluentCheckbox>
-        <FluentCheckbox>Romance</FluentCheckbox>
-        <FluentCheckbox>Science Fiction</FluentCheckbox>
+    <div class="mb-6 pb-6 border-b border-gray-200">
+        <h4 class="m-0 mb-4 text-base font-semibold text-gray-700">Category</h4>
+        <div class="flex flex-wrap gap-2">
+            <button class="px-3 py-1.5 rounded-full text-sm border border-gray-300 hover:bg-gray-100 transition-colors">All</button>
+            <button class="px-3 py-1.5 rounded-full text-sm border border-gray-300 hover:bg-gray-100 transition-colors">Fiction</button>
+            <button class="px-3 py-1.5 rounded-full text-sm border border-gray-300 hover:bg-gray-100 transition-colors">Non-Fiction</button>
+            <button class="px-3 py-1.5 rounded-full text-sm border border-gray-300 hover:bg-gray-100 transition-colors">Mystery</button>
+            <button class="px-3 py-1.5 rounded-full text-sm border border-gray-300 hover:bg-gray-100 transition-colors">Romance</button>
+            <button class="px-3 py-1.5 rounded-full text-sm border border-gray-300 hover:bg-gray-100 transition-colors">Science Fiction</button>
+        </div>
     </div>
 
-    <div class="filter-group">
-        <h4>Price Range</h4>
-        <FluentCheckbox>Under $10</FluentCheckbox>
-        <FluentCheckbox>$10 - $20</FluentCheckbox>
-        <FluentCheckbox>$20 - $30</FluentCheckbox>
-        <FluentCheckbox>Over $30</FluentCheckbox>
+    <div class="mb-0 pb-0">
+        <h4 class="m-0 mb-4 text-base font-semibold text-gray-700">Price Range</h4>
+        <FluentCheckbox Class="block mb-2">Under $10</FluentCheckbox>
+        <FluentCheckbox Class="block mb-2">$10 - $20</FluentCheckbox>
+        <FluentCheckbox Class="block mb-2">$20 - $30</FluentCheckbox>
+        <FluentCheckbox Class="block mb-2">Over $30</FluentCheckbox>
     </div>
 </aside>

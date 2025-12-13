@@ -1,4 +1,5 @@
-@import '_content/Microsoft.FluentUI.AspNetCore.Components/css/reboot.css';
+@import "tailwindcss";
+@source "../../BookWorm.StoreFront.Components";
 
 :root {
     --brand-primary: #6366f1;
@@ -9,145 +10,15 @@
 body {
     --body-font: "Segoe UI Variable", "Segoe UI", sans-serif;
     font-family: var(--body-font);
-    font-size: var(--type-ramp-base-font-size);
-    line-height: var(--type-ramp-base-line-height);
     margin: 0;
-    background: #fafafa;
-}
-
-/* Hero Banner */
-.hero-section {
-    width: 100%;
-    background: url('/images/banner.webp') center/cover no-repeat;
-    background-color: #b8815e;
-    position: relative;
-    margin: 0 0 3rem 0;
-    padding: 3rem 2rem;
-}
-
-/* Icons positioned in top-right corner */
-.banner-icons {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    display: flex;
-    gap: 0.5rem;
-    z-index: 10;
-}
-
-.icon-link {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.5rem;
-    background: white;
-    border-radius: 4px;
-    text-decoration: none;
-    color: #374151;
-    transition: background 0.2s;
-}
-
-    .icon-link:hover {
-        background: #f3f4f6;
-    }
-
-.hero-content {
-    text-align: center;
-    color: #f5e6d3;
-}
-
-    .hero-content h1 {
-        font-size: 5rem;
-        font-weight: 700;
-        margin: 0 0 1rem 0;
-        line-height: 1;
-        letter-spacing: 0.05em;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-    }
-
-    .hero-content p {
-        font-size: 1.5rem;
-        margin: 0;
-        opacity: 0.9;
-    }
-
-.body-content {
-    width: 100%;
-}
-
-.content {
-    width: 100%;
-    min-height: calc(100vh - 120px);
-}
-
-.manage {
-    width: 100dvw;
-}
-
-footer {
-    background: var(--neutral-layer-4);
-    color: var(--neutral-foreground-rest);
-    align-items: center;
-    padding: 1.5rem;
-    margin-top: 3rem;
-}
-
-.footer-content {
-    max-width: 1400px;
-    margin: 0 auto;
-    text-align: center;
-}
-
-    footer a {
-        color: var(--neutral-foreground-rest);
-        text-decoration: none;
-    }
-
-        footer a:focus {
-            outline: 1px dashed;
-            outline-offset: 3px;
-        }
-
-        footer a:hover {
-            text-decoration: underline;
-        }
-
-.alert {
-    border: 1px dashed var(--accent-fill-rest);
-    padding: 5px;
-    margin: 10px 0;
-}
-
-.alert-danger {
-    border: 1px dashed var(--error);
-}
-
-.alert-success {
-    border: 1px dashed var(--success);
-}
-
-.alert-warning {
-    border: 1px dashed var(--warning);
 }
 
 #blazor-error-ui {
-    background: lightyellow;
-    bottom: 0;
-    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
-    display: none;
-    left: 0;
-    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
-    position: fixed;
-    width: 100%;
-    z-index: 1000;
-    margin: 20px 0;
+    @apply hidden fixed bottom-0 left-0 w-full bg-yellow-100 shadow-md z-[1000] px-5 py-3;
 }
 
     #blazor-error-ui .dismiss {
-        cursor: pointer;
-        position: absolute;
-        right: 0.75rem;
-        top: 0.5rem;
+        @apply cursor-pointer absolute right-3 top-2;
     }
 
 .blazor-error-boundary {
@@ -161,11 +32,7 @@ footer {
     }
 
 .loading-progress {
-    position: relative;
-    display: block;
-    width: 8rem;
-    height: 8rem;
-    margin: 20vh auto 1rem auto;
+    @apply relative block w-32 h-32 mx-auto mt-[20vh] mb-4;
 }
 
     .loading-progress circle {
@@ -183,9 +50,7 @@ footer {
         }
 
 .loading-progress-text {
-    position: absolute;
-    text-align: center;
-    font-weight: bold;
+    @apply absolute text-center font-bold;
     inset: calc(20vh + 3.25rem) 0 auto 0.2rem;
 }
 
@@ -194,83 +59,5 @@ footer {
     }
 
 code {
-    color: #c02d76;
+    @apply text-pink-600;
 }
-
-@media (max-width: 600px) {
-    .header-gutters {
-        margin: 0.5rem 3rem 0.5rem 1.5rem !important;
-    }
-
-    [dir="rtl"] .header-gutters {
-        margin: 0.5rem 1.5rem 0.5rem 3rem !important;
-    }
-
-    .main {
-        flex-direction: column !important;
-        row-gap: 0 !important;
-    }
-
-    nav.sitenav {
-        width: 100%;
-        height: 100%;
-    }
-
-    #main-menu {
-        width: 100% !important;
-    }
-
-        #main-menu > div:first-child:is(.expander) {
-            display: none;
-        }
-
-    .navmenu {
-        width: 100%;
-    }
-
-    #navmenu-toggle {
-        appearance: none;
-    }
-
-        #navmenu-toggle ~ nav {
-            display: none;
-        }
-
-        #navmenu-toggle:checked ~ nav {
-            display: block;
-        }
-
-    .navmenu-icon {
-        cursor: pointer;
-        z-index: 10;
-        display: block;
-        position: absolute;
-        top: 15px;
-        left: unset;
-        right: 20px;
-        width: 20px;
-        height: 20px;
-        border: none;
-    }
-
-    [dir="rtl"] .navmenu-icon {
-        left: 20px;
-        right: unset;
-    }
-}
-
-/* Table */
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    border-spacing: 0;
-}
-
-    table td,
-    table th {
-        padding: var(--spacingVerticalS) var(--spacingHorizontalM);
-        text-align: left;
-        vertical-align: middle;
-        border-bottom: calc(var(--stroke-width) * 1px) solid var(--neutral-stroke-divider-rest);
-    }

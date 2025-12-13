@@ -1,26 +1,26 @@
 ﻿@inherits LayoutComponentBase
 
 <FluentLayout>
-    <section class="hero-section">
-        <div class="banner-icons">
-            <FluentAnchor Href="/profile" Appearance="Appearance.Neutral" IconStart="@(new Icons.Regular.Size20.Person())" />
-            <FluentAnchor Href="/cart" Appearance="Appearance.Neutral" IconStart="@(new Icons.Regular.Size20.ShoppingBag())" />
+    <header class="w-full bg-white shadow-sm relative py-10 px-8">
+        <div class="max-w-7xl mx-auto relative flex items-center justify-center">
+            <FluentAnchor Href="/" Appearance="Appearance.Hypertext" Class="no-underline!">
+                <FluentLabel Typo="Typography.H1">BOOKWORM</FluentLabel>
+            </FluentAnchor>
+            <div class="absolute right-0 flex gap-3 items-center">
+                <FluentAnchor Href="/profile" Appearance="Appearance.Hypertext" IconStart="@(new Icons.Regular.Size20.Person())"/>
+                <FluentAnchor Href="/cart" Appearance="Appearance.Hypertext" IconStart="@(new Icons.Regular.Size20.ShoppingBag())"/>
+            </div>
         </div>
+    </header>
 
-        <div class="hero-content">
-            <h1>BOOKWORM</h1>
-            <p>Your favorite online bookstore</p>
-        </div>
-    </section>
-
-    <FluentBodyContent Class="body-content">
-        <div class="content">
+    <FluentBodyContent Class="w-full">
+        <div class="w-full min-h-[calc(100vh-120px)]">
             @Body
         </div>
     </FluentBodyContent>
 
-    <FluentFooter>
-        <div class="footer-content">
+    <FluentFooter Class="mt-12 py-6">
+        <div class="max-w-7xl mx-auto text-center">
             <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center" VerticalAlignment="VerticalAlignment.Center">
                 <FluentLabel Typo="Typography.Body">&copy; @DateTime.Now.Year BookWorm - Your Online Bookstore</FluentLabel>
             </FluentStack>

@@ -1,9 +1,9 @@
-<div class="product-card">
-    <div class="product-image">
-        <img src="@ImageUrl" alt="@Title" />
+<div class="bg-white rounded-lg overflow-hidden transition-all duration-300 ease-in-out shadow-sm hover:-translate-y-1 hover:shadow-lg">
+    <div class="w-full aspect-[2/3] overflow-hidden bg-gray-100">
+        <img src="@GetImageUrl()" alt="@Title" class="w-full h-full object-cover" />
     </div>
-    <h4>@Title</h4>
-    <p class="price">@Price</p>
+    <h4 class="m-4 text-base text-gray-800 leading-normal">@Title</h4>
+    <p class="mx-4 mb-4 text-xl font-bold text-[var(--brand-primary)]">@Price</p>
 </div>
 
 @code {
@@ -15,4 +15,9 @@
 
     [Parameter]
     public string Price { get; set; } = string.Empty;
+
+    private string GetImageUrl()
+    {
+        return string.IsNullOrWhiteSpace(ImageUrl) ? Assets["/images/no-image.webp"] : ImageUrl;
+    }
 }
