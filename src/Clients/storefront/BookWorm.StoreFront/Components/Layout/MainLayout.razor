@@ -1,57 +1,11 @@
 ﻿@inherits LayoutComponentBase
 
 <div class="min-h-screen flex flex-col">
-    <!-- Top Navigation Bar -->
-    <header class="navbar bg-primary text-primary-content sticky top-0 z-50 shadow-lg">
-        <div class="navbar-start">
-            <div class="dropdown lg:hidden">
-                <label tabindex="0" class="btn btn-ghost">
-                    <img src="@Assets["/icons/menu.svg"]" alt="Menu" class="h-5 w-5"/>
-                </label>
-                <ul tabindex="0"
-                    class="menu menu-sm dropdown-content mt-3 z-1 p-2 shadow bg-base-100 rounded-box w-52 text-base-content">
-                    <li><a href="/">Home</a></li>
-                    <li><a href="catalog">Shop</a></li>
-                </ul>
-            </div>
-            <a href="/" class="btn btn-ghost text-xl font-bold normal-case">
-                📚 BookWorm
-            </a>
-        </div>
-
-        <div class="navbar-center hidden lg:flex">
-            <ul class="menu menu-horizontal px-1">
-                <li><a href="/">Home</a></li>
-                <li><a href="catalog">Shop</a></li>
-            </ul>
-        </div>
-
-        <div class="navbar-end gap-2">
-            <a href="account" class="btn btn-ghost btn-circle">
-                <img src="@Assets["/icons/account.svg"]" alt="Account" class="h-6 w-6"/>
-            </a>
-            <a href="basket" class="btn btn-ghost btn-circle">
-                <div class="indicator">
-                    <img src="@Assets["/icons/cart.svg"]" class="h-6 w-6" alt="Cart"/>
-                    <span class="badge badge-sm indicator-item badge-secondary">0</span>
-                </div>
-            </a>
-        </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="flex-1 bg-base-100">
+    <Header />
+    <main class="flex-1 bg-base-100" role="main">
         @Body
     </main>
-
-    <!-- Footer -->
-    <footer class="footer footer-center p-10 bg-base-200 text-base-content mt-auto">
-        <div>
-            <p class="font-bold text-lg">📚 BookWorm Store</p>
-            <p>Your favorite online bookstore</p>
-            <p>Copyright © 2025 - All rights reserved</p>
-        </div>
-    </footer>
+    <Footer />
 </div>
 
 <div id="blazor-error-ui" data-nosnippet>

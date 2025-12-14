@@ -3,6 +3,29 @@
 @plugin "daisyui";
 @source "../../BookWorm.StoreFront.Components";
 
+:root {
+    --color-glacier-50: #f2f9f9;
+    --color-glacier-100: #deedef;
+    --color-glacier-200: #c0dce1;
+    --color-glacier-300: #94c1cc;
+    --color-glacier-400: #73aab8;
+    --color-glacier-500: #468394;
+    --color-glacier-600: #3d6c7d;
+    --color-glacier-700: #365968;
+    --color-glacier-800: #334c57;
+    --color-glacier-900: #2e414b;
+    --color-glacier-950: #1b2931;
+}
+
+@theme {
+    --color-primary: var(--color-glacier-600);
+    --color-primary-content: #ffffff;
+    --color-secondary: var(--color-glacier-400);
+    --color-secondary-content: #ffffff;
+    --color-accent: var(--color-glacier-500);
+    --color-accent-content: #ffffff;
+}
+
 h1:focus {
     outline: none;
 }
