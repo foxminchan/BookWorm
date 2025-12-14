@@ -1,0 +1,65 @@
+﻿@page "/"
+
+<PageTitle>BookWorm Store - Your Online Bookstore</PageTitle>
+
+<!-- Hero Banner -->
+<div class="hero min-h-[500px] bg-gradient-to-r from-primary to-secondary">
+    <div class="hero-content text-center text-primary-content">
+        <div class="max-w-2xl">
+            <h1 class="text-6xl font-bold mb-6">Find Your Next Great Read</h1>
+            <p class="text-xl mb-8">
+                Discover thousands of books across all genres. Free shipping on orders over $50!
+            </p>
+            <a href="/catalog" class="btn btn-lg btn-neutral">
+                Shop Now
+                <img src="@Assets["/icons/arrow-right.svg"]" alt="Arrow" class="h-6 w-6 ml-2"/>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="container mx-auto px-4 py-16">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+        <div class="text-center">
+            <div class="flex justify-center mb-4">
+                <img src="@Assets["/icons/shipping.svg"]" alt="Shipping" class="h-16 w-16 text-primary"/>
+            </div>
+            <h3 class="text-xl font-bold mb-2">Free Shipping</h3>
+            <p class="text-base-content/70">On orders over $50</p>
+        </div>
+        <div class="text-center">
+            <div class="flex justify-center mb-4">
+                <img src="@Assets["/icons/shield.svg"]" alt="Security" class="h-16 w-16 text-primary"/>
+            </div>
+            <h3 class="text-xl font-bold mb-2">Secure Payment</h3>
+            <p class="text-base-content/70">100% secure transactions</p>
+        </div>
+        <div class="text-center">
+            <div class="flex justify-center mb-4">
+                <img src="@Assets["/icons/refresh.svg"]" alt="Returns" class="h-16 w-16 text-primary"/>
+            </div>
+            <h3 class="text-xl font-bold mb-2">Easy Returns</h3>
+            <p class="text-base-content/70">30-day return policy</p>
+        </div>
+    </div>
+
+    <!-- Call to Action Sections -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="card bg-base-200 shadow-xl image-full h-64">
+            <div class="card-body justify-center items-center text-center">
+                <h2 class="card-title text-3xl mb-4">Browse Our Catalog</h2>
+                <p class="mb-4">Explore thousands of titles</p>
+                <a href="/catalog" class="btn btn-primary">Shop Books</a>
+            </div>
+        </div>
+
+        <div class="card bg-base-200 shadow-xl image-full h-64">
+            <div class="card-body justify-center items-center text-center">
+                <h2 class="card-title text-3xl mb-4">Share Your Opinion</h2>
+                <p class="mb-4">Rate and review your favorite books</p>
+                <a href="/ratings" class="btn btn-secondary">Write a Review</a>
+            </div>
+        </div>
+    </div>
+</div>

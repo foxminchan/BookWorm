@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 
 <head>
     <meta charset="utf-8"/>
@@ -8,15 +8,14 @@
     <ResourcePreloader/>
     <link rel="stylesheet" href="@Assets["app.output.css"]"/>
     <link rel="stylesheet" href="@Assets["BookWorm.StoreFront.styles.css"]"/>
-    <link rel="stylesheet" href="@Assets["_content/Microsoft.FluentUI.AspNetCore.Components/css/reboot.css"]"/>
     <ImportMap/>
-    <link rel="icon" type="image/x-icon" href="favicon.ico"/>
     <HeadOutlet/>
 </head>
 
 <body>
-    <Routes/>
-    <script src="@Assets["_framework/blazor.web.js"]"></script>
+<Routes/>
+<ReconnectModal/>
+<script src="@Assets["_framework/blazor.web.js"]"></script>
 </body>
 
 </html>
