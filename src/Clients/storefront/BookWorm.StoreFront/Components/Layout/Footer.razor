@@ -17,3 +17,15 @@
         <p class="text-sm text-(--color-glacier-700)">© @DateTime.Now.Year BookWorm. All rights reserved.</p>
     </div>
 </footer>
+
+@code
+{
+    private sealed record SocialMediaLink(string Url, string IconPath, string Platform);
+
+    private readonly SocialMediaLink[] _socialMediaLinks =
+    [
+        new("https://facebook.com", "/icons/facebook.svg", "Facebook"),
+        new("https://instagram.com", "/icons/instagram.svg", "Instagram"),
+        new("https://linkedin.com", "/icons/linkedin.svg", "LinkedIn"),
+    ];
+}

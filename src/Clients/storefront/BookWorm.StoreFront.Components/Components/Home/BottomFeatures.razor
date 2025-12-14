@@ -1,0 +1,63 @@
+<section class="border-t" style="border-color: var(--color-glacier-200)" aria-label="Store Features">
+    <div class="container mx-auto px-4 py-12">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-8">
+            @foreach (var feature in _features)
+            {
+                <article class="text-center">
+                    <div class="flex justify-center mb-3">
+                        @if (feature.IconPath is not null)
+                        {
+                            <img src="@Assets[feature.IconPath]" alt="@feature.Title" class="h-12 w-12" style="filter: invert(40%) sepia(20%) saturate(1000%) hue-rotate(150deg)" />
+                        }
+                        else if (feature.Emoji is not null)
+                        {
+                            <span class="text-5xl" role="img" aria-label="@feature.Title">@feature.Emoji</span>
+                        }
+                    </div>
+                    <h3 class="font-bold mb-1" style="color: var(--color-glacier-900)">@feature.Title</h3>
+                    <p class="text-sm" style="color: var(--color-glacier-600)">@feature.Description</p>
+                </article>
+            }
+        </div>
+    </div>
+</section>
+
+@code
+{
+    private readonly List<Feature> _features = GetFeatures();
+
+    private static List<Feature> GetFeatures()
+    {
+        return
+        [
+            new(
+                IconPath: "/icons/shipping.svg",
+                Title: "Free Shipping",
+                Description: "On all orders over $75"
+            ),
+            new(
+                IconPath: "/icons/refresh.svg",
+                Title: "Easy Returns",
+                Description: "30-day return policy"
+            ),
+            new(
+                IconPath: "/icons/shield.svg",
+                Title: "Secure Checkout",
+                Description: "SSL & protected shopping"
+            ),
+            new(
+                IconPath: null,
+                Title: "Customer Support",
+                Description: "Available 24/7 for you",
+                Emoji: "💬"
+            )
+        ];
+    }
+
+    private sealed record Feature(
+        string? IconPath,
+        string Title,
+        string Description,
+        string? Emoji = null
+    );
+}
