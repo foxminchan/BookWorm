@@ -9,7 +9,7 @@ public static class KeycloakExtensions
     private const string ProxyHeadersEnvVarName = "KC_PROXY_HEADERS";
     private const string HostNameStrictEnvVarName = "KC_HOSTNAME_STRICT";
     private const string BaseContainerPath = "Container/keycloak";
-    private static readonly string DefaultLocalKeycloakName = nameof(BookWorm).ToLowerInvariant();
+    private static readonly string _defaultLocalKeycloakName = nameof(BookWorm).ToLowerInvariant();
 
     /// <summary>
     ///     Configures the project resource to integrate with Keycloak as an Identity Provider (IdP).
@@ -72,7 +72,7 @@ public static class KeycloakExtensions
             builder
                 .WithReference(keycloakContainer)
                 .WaitForStart(keycloakContainer)
-                .WithEnvironment("Identity__Realm", DefaultLocalKeycloakName)
+                .WithEnvironment("Identity__Realm", _defaultLocalKeycloakName)
                 .WithEnvironment("Identity__ClientId", clientId)
                 .WithEnvironment("Identity__ClientSecret", clientSecret)
                 .WithEnvironment(
@@ -136,11 +136,12 @@ public static class KeycloakExtensions
             var keycloak = builder
                 .AddKeycloak(name)
                 .WithDataVolume()
+                .WithOtlpExporter()
                 .WithIconName("LockClosedRibbon")
-                .WithCustomTheme(DefaultLocalKeycloakName)
+                .WithCustomTheme(_defaultLocalKeycloakName)
                 .WithImagePullPolicy(ImagePullPolicy.Always)
                 .WithLifetime(ContainerLifetime.Persistent)
-                .WithSampleRealmImport(DefaultLocalKeycloakName, nameof(BookWorm));
+                .WithSampleRealmImport(_defaultLocalKeycloakName, nameof(BookWorm));
 
             return keycloak;
         }

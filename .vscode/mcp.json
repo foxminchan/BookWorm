@@ -10,11 +10,17 @@
   "servers": {
     "sequential-thinking": {
       "command": "bunx",
-      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
     },
     "memory": {
       "command": "bunx",
-      "args": ["-y", "@modelcontextprotocol/server-memory"]
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ]
     },
     "microsoft-docs": {
       "type": "http",
@@ -28,6 +34,22 @@
         "@upstash/context7-mcp",
         "--api-key",
         "${input:context7-api-key}"
+      ]
+    },
+    "aspire": {
+      "type": "stdio",
+      "command": "aspire",
+      "args": [
+        "mcp",
+        "start"
+      ]
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "bunx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
       ]
     }
   }

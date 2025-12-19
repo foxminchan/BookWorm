@@ -1,7 +1,7 @@
 ﻿namespace BookWorm.Constants.Aspire;
 
-public sealed class Clients
+public static class Clients
 {
-    public static readonly string StoreFront = nameof(StoreFront).ToLowerInvariant();
-    public static readonly string BackOffice = nameof(BackOffice).ToLowerInvariant();
+    public const string StoreFront = "storefront";
+    public const string BackOffice = "backoffice";
 }

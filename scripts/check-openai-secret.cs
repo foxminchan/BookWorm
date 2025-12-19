@@ -2,7 +2,7 @@
 
 #:property ManagePackageVersionsCentrally=false
 #:package Spectre.Console@0.54.0
-#:package Microsoft.Extensions.Configuration.UserSecrets@10.0.0
+#:package Microsoft.Extensions.Configuration.UserSecrets@10.0.1
 
 using System.Text.Json;
 using System.Text.Json.Serialization;

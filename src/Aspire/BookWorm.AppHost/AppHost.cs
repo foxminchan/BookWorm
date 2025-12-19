@@ -2,6 +2,14 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 builder.AddAzureContainerAppEnvironment(Components.Azure.ContainerApp).ProvisionAsService();
 
+var endpointParameter = builder.AddParameter(Components.Container.Endpoint);
+var repositoryParameter = builder.AddParameter(Components.Container.Repository);
+var registry = builder.AddContainerRegistry(
+    Components.Container.Registry,
+    endpointParameter,
+    repositoryParameter
+);
+
 var postgres = builder
     .AddAzurePostgresFlexibleServer(Components.Postgres)
     .WithPasswordAuthentication()
@@ -10,7 +18,7 @@ var postgres = builder
     .ProvisionAsService();
 
 var redis = builder
-    .AddAzureRedis(Components.Redis)
+    .AddAzureManagedRedis(Components.Redis)
     .WithAccessKeyAuthentication()
     .WithIconName("Memory")
     .RunAsLocalContainer()
@@ -38,7 +46,9 @@ var storage = builder
     .RunAsLocalContainer()
     .ProvisionAsService();
 
-var blobStorage = storage.AddBlobContainer(Components.Azure.Storage.BlobContainer);
+var catalogContainer = storage.AddBlobContainer(
+    Components.Azure.Storage.BlobContainer(Services.Catalog)
+);
 
 var ratingDb = postgres.AddDatabase(Components.Database.Rating);
 var catalogDb = postgres.AddDatabase(Components.Database.Catalog);
@@ -70,8 +80,8 @@ var catalogApi = builder
     .WithReference(qdrant)
     .WaitFor(qdrant)
     .WithKeycloak(keycloak)
-    .WithReference(blobStorage)
-    .WaitFor(blobStorage)
+    .WithReference(catalogContainer)
+    .WaitFor(catalogContainer)
     .WithReference(chat)
     .WithReference(embedding)
     .WithRoleAssignments(
@@ -79,11 +89,13 @@ var catalogApi = builder
         StorageBuiltInRole.StorageBlobDataContributor,
         StorageBuiltInRole.StorageBlobDataOwner
     )
+    .WithContainerRegistry(registry)
     .WithFriendlyUrls();
 
 var mcp = builder
     .AddProject<BookWorm_McpTools>(Services.McpTools)
     .WithReference(catalogApi)
+    .WithContainerRegistry(registry)
     .WithFriendlyUrls();
 
 var basketApi = builder
@@ -94,6 +106,7 @@ var basketApi = builder
     .WaitFor(queue)
     .WithReference(catalogApi)
     .WithKeycloak(keycloak)
+    .WithContainerRegistry(registry)
     .WithFriendlyUrls();
 
 var orderingApi = builder
@@ -107,6 +120,7 @@ var orderingApi = builder
     .WithKeycloak(keycloak)
     .WithReference(catalogApi)
     .WithReference(basketApi)
+    .WithContainerRegistry(registry)
     .WithSecret("hmac-key", "HMAC__Key")
     .WithFriendlyUrls();
 
@@ -116,6 +130,7 @@ var chatApi = builder
     .WithReference(embedding)
     .WithReference(mcp)
     .WithKeycloak(keycloak)
+    .WithContainerRegistry(registry)
     .WithFriendlyUrls("Dev UI", path: Http.Endpoints.DevUIEndpointPath);
 
 var ratingApi = builder
@@ -130,6 +145,7 @@ var ratingApi = builder
     .WithKeycloak(keycloak)
     .WithReference(chatApi)
     .WaitFor(chatApi)
+    .WithContainerRegistry(registry)
     .WithFriendlyUrls("Dev UI", path: Http.Endpoints.DevUIEndpointPath);
 
 builder
@@ -139,6 +155,7 @@ builder
     .WaitFor(queue)
     .WithReference(notificationDb)
     .WaitFor(notificationDb)
+    .WithContainerRegistry(registry)
     .WithFriendlyUrls(path: Http.Endpoints.AlivenessEndpointPath);
 
 builder
@@ -147,12 +164,14 @@ builder
     .WaitFor(financeDb)
     .WithReference(queue)
     .WaitFor(queue)
+    .WithContainerRegistry(registry)
     .WithFriendlyUrls(path: Http.Endpoints.AlivenessEndpointPath);
 
 builder
     .AddProject<BookWorm_Scheduler>(Services.Scheduler)
     .WithReference(queue)
     .WaitFor(queue)
+    .WithContainerRegistry(registry)
     .WithFriendlyUrls(path: Http.Endpoints.AlivenessEndpointPath)
     .WithExplicitStart();
 
@@ -165,7 +184,11 @@ var gateway = builder
     .WithService(catalogApi, true)
     .WithService(keycloak);
 
-builder.AddProject<BookWorm_StoreFront>(Clients.StoreFront).WithReference(gateway).WaitFor(gateway);
+builder
+    .AddProject<BookWorm_StoreFront>(Clients.StoreFront)
+    .WithReference(gateway)
+    .WaitFor(gateway)
+    .WithContainerRegistry(registry);
 
 if (builder.ExecutionContext.IsRunMode)
 {
@@ -182,7 +205,5 @@ if (builder.ExecutionContext.IsRunMode)
 
     builder.AddK6(gateway);
 }
-
-builder.Pipeline.AddGhcrPushStep();
 
 await builder.Build().RunAsync();

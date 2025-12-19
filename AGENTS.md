@@ -1,29 +1,13 @@
 # Project Contributor Guide
 
-## Project Overview
+## General recommendations for working with Aspire
 
-BookWorm is a distributed microservices application built with .NET 10, using Aspire 13+ for orchestration and a clean architecture approach. The project showcases:
+1. Before making any changes always run the apphost using `aspire run` and inspect the state of resources to make sure you are building from a known state.
+1. Changes to the _AppHost.cs_ file will require a restart of the application to take effect.
+2. Make changes incrementally and run the aspire application using the `aspire run` command to validate changes.
+3. Use the Aspire MCP tools to check the status of resources and debug issues.
 
-- **Microservices Architecture**: Multiple services (Basket, Catalog, Chat, Finance, Notification, Ordering, Rating, Scheduler)
-- **AI Integration**: Multi-agent orchestration, Model Context Protocol (MCP), Agent-to-Agent (A2A) communication
-- **DDD & VSA**: Domain-Driven Design with Vertical Slice Architecture
-- **Event-Driven**: Saga patterns, event sourcing, outbox/inbox patterns
-- **Supporting components**: Building blocks and integration components
-
-## Prerequisites
-
-Before contributing, ensure you have:
-
-- [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- [Docker Desktop](https://www.docker.com/get-started) (must be running)
-- [Aspire CLI](https://learn.microsoft.com/en-us/dotnet/aspire/cli/install)
-- [Node.js](https://nodejs.org/en/download/)
-- [Bun](https://bun.sh/)
-- [Just](https://github.com/casey/just) (task runner)
-- **OpenAI API key** (required for AI features) - [Get one here](https://platform.openai.com/api-keys)
-- Optional: [Gitleaks](https://gitleaks.io/), [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
-
-## Setup Commands
+## Getting Started
 
 The project uses a `.justfile` for common tasks. Run these commands:
 
@@ -36,80 +20,49 @@ The project uses a `.justfile` for common tasks. Run these commands:
 - **Trust dev certificate**: `just trust`
 - **Update packages**: `just update`
 
-> [!TIP]
-> Run `just` without arguments to see the default action (runs the application).
+If there is already an instance of the application running it will prompt to stop the existing instance. You only need to restart the application if code in `apphost.cs` is changed, but if you experience problems it can be useful to reset everything to the starting state.
 
-## Development Environment
+## Checking resources
 
-- **Framework**: .NET 10 with C# preview features
-- **Orchestration**: Aspire 13+ for service orchestration and local development
-- **Project Structure**:
-  - `src/Services/` - Individual microservices
-  - `src/BuildingBlocks/` - Shared libraries (Chassis, Constants, SharedKernel)
-  - `src/Integrations/` - Integration components (HealthChecks, MCP Tools)
-  - `src/Aspire/` - Aspire host and service defaults
-- **Architecture**: Clean architecture with DDD and Vertical Slice Architecture principles
-- **Authentication**: Keycloak for AuthN/AuthZ (Authorization Code Flow with PKCE, Token Exchange)
+To check the status of resources defined in the app model use the _list resources_ tool. This will show you the current state of each resource and if there are any issues. If a resource is not running as expected you can use the _execute resource command_ tool to restart it or perform other actions.
 
-## Code Style Guidelines
+## Listing integrations
 
-- **Language**: Use C# preview features (configured in `Directory.Build.props`)
-- **Target Framework**: .NET 10 (`net10.0`)
-- **Formatting**: Follow `.editorconfig` rules; use `just format` to apply CSharpier formatting
-- **Namespaces**: Use file-scoped namespace declarations
-- **Null Safety**: Enable nullable reference types; declare variables non-nullable, use `is null`/`is not null`
-- **Pattern Matching**: Use pattern matching and switch expressions where possible
-- **Constructors**: Use primary constructors for immutable properties
-- **Members**: Use expression-bodied members for methods and properties
-- **Variables**: Use `var` when type is obvious from the right side
-- **Naming**: Use `nameof()` instead of string literals for member names
-- **Structure**: Place private nested classes at the bottom of files
-- **Warnings**: Treat warnings as errors (`TreatWarningsAsErrors` is enabled)
+IMPORTANT! When a user asks you to add a resource to the app model you should first use the _list integrations_ tool to get a list of the current versions of all the available integrations. You should try to use the version of the integration which aligns with the version of the Aspire.AppHost.Sdk. Some integration versions may have a preview suffix. Once you have identified the correct integration you should always use the _get integration docs_ tool to fetch the latest documentation for the integration and follow the links to get additional guidance.
 
-## Architecture Patterns
+## Debugging issues
 
-- **Domain-Driven Design**: Each service has its own domain model
-- **Clean Architecture**: Separate layers (Domain, Application, Infrastructure, API)
-- **CQRS**: Command Query Responsibility Segregation where applicable
-- **Event-Driven**: Services communicate via events
-- **Microservices**: Each service is independently deployable
+IMPORTANT! Aspire is designed to capture rich logs and telemetry for all resources defined in the app model. Use the following diagnostic tools when debugging issues with the application before making changes to make sure you are focusing on the right things.
 
-## Testing Instructions
+1. _list structured logs_; use this tool to get details about structured logs.
+2. _list console logs_; use this tool to get details about console logs.
+3. _list traces_; use this tool to get details about traces.
+4. _list trace structured logs_; use this tool to get logs related to a trace
 
-- **Unit Tests**: Run `just test` or `dotnet test` for all tests
-- **Test Framework**: Uses **TUnit** (not xUnit/NUnit/MSTest)
-- **Architecture Tests**: Located in `tests/BookWorm.ArchTests/` using ArchUnitNET with TUnit
-- **Snapshot Tests**: Use `Verify.TUnit` for snapshot testing
-- **Contract Tests**: Service contract tests in `*ContractTests` projects
-- **Integration Tests**: Each service may have integration tests using `Aspire.Hosting.Testing`
-- **Coverage**: Run tests with coverage using Microsoft.Testing.Extensions.CodeCoverage
-- **Test Naming**: Follow TUnit conventions for test methods and classes
-- **Test Coverage**: Ensure new features have corresponding tests
-- **Assertion Library**: Use Shouldly for fluent assertions
+## Other Aspire MCP tools
 
-### Running Specific Tests
+1. _select apphost_; use this tool if working with multiple app hosts within a workspace.
+2. _list apphosts_; use this tool to get details about active app hosts.
 
-```powershell
-# Run all tests
-just test
+## Playwright MCP server
 
-# Run architecture tests only
-dotnet test tests/BookWorm.ArchTests/
+The playwright MCP server has also been configured in this repository and you should use it to perform functional investigations of the resources defined in the app model as you work on the codebase. To get endpoints that can be used for navigation using the playwright MCP server use the list resources tool.
 
-# Run tests for a specific service
-dotnet test src/Services/Finance/BookWorm.Finance.UnitTests/
+## Updating the app host
 
-# Run with coverage
-dotnet test --collect:"Code Coverage"
+The user may request that you update the Aspire apphost. You can do this using the `aspire update` command. This will update the apphost to the latest version and some of the Aspire specific packages in referenced projects, however you may need to manually update other packages in the solution to ensure compatibility. You can consider using the `dotnet-outdated` with the users consent. To install the `dotnet-outdated` tool use the following command:
+
+```
+dotnet tool install dotnet-outdated-tool
 ```
 
-## Build and Deployment
+## Persistent containers
 
-- **Solution File**: Use `BookWorm.slnx` for the main solution
-- **Dependencies**: Managed via `Directory.Packages.props`
-- **Versioning**: Controlled by `Versions.props`
-- **Docker**: Services can be containerized (check individual service directories)
-- **Azure**: Uses `azure.yaml` for Azure deployment configuration
+IMPORTANT! Consider avoiding persistent containers early during development to avoid creating state management issues when restarting the app.
+
+## Aspire workload
+
+IMPORTANT! The aspire workload is obsolete. You should never attempt to install or use the Aspire workload.
 
 ## Project Structure
 
@@ -120,59 +73,17 @@ dotnet test --collect:"Code Coverage"
 - `tests/`: Test projects including architecture tests
 - `docs/`: Documentation including EventCatalog and Docusaurus
 
-## Security Considerations
-
-- Services should validate all inputs
-- Use proper authentication and authorization
-- Follow OWASP guidelines for web applications
-- Sensitive configuration should use secure storage
-
-## Development Workflow
-
-1. **Feature Development**: Create feature branches from `main`
-2. **Code Changes**: Follow the architectural patterns and code style
-3. **Testing**: Write unit and integration tests for new features
-4. **Architecture Validation**: Run architecture tests to ensure compliance
-5. **Documentation**: Update relevant documentation if needed
-
-## Service-Specific Notes
-
-Each service in `src/Services/` follows the same pattern:
-
-- API layer for HTTP endpoints
-- Application layer for business logic
-- Domain layer for core business rules
-- Infrastructure layer for external dependencies
-
 ## Documentation
 
 - **Architecture**: See `docs/docusaurus/` for detailed documentation
 - **Events**: Event schemas and documentation in `docs/eventcatalog/`
 - **API**: OpenAPI specifications in `docs/eventcatalog/openapi-files/`
 
-## Common Commands
 
-- **Clean solution**: `just clean` or `dotnet clean`
-- **Format code**: `just format` (uses CSharpier via dnx)
-- **Package restore**: `just restore` or `dotnet restore --no-cache`
-- **Watch mode**: `dotnet watch run` (from service directory)
-- **Trust dev certs**: `just trust` or `dotnet dev-certs https --trust`
-- **Update bun packages**: `just update` (updates EventCatalog, Docusaurus, K6, Keycloakify)
-- **Check OpenAI key**: `just check-openai` (validates OpenAI API key setup)
+## Official documentation
 
-## Troubleshooting
+IMPORTANT! Always prefer official documentation when available. The following sites contain the official documentation for Aspire and related components
 
-- **Build Issues**: Check `Directory.Build.props` and `global.json` for version conflicts
-- **Aspire Issues**: Ensure Docker Desktop is running before launching Aspire
-- **Test Failures**: Check test output and ensure proper test isolation
-- **Architecture Violations**: Review architecture test failures for guidance on fixing structural issues
-- **OpenAI Errors**: Verify your OpenAI API key is configured in User Secrets or environment variables
-- **Authentication Issues**: Check Keycloak container is running and properly configured
-- **Missing Dependencies**: Run `just restore` to restore all NuGet packages and tools
-
-## File Modifications
-
-- **Never change** `global.json` unless explicitly requested
-- **Never change** `nuget.config` files unless explicitly requested
-- **Always respect** the `.editorconfig` formatting rules
-- **Maintain** the established project structure and patterns
+1. https://aspire.dev
+2. https://learn.microsoft.com/dotnet/aspire
+3. https://nuget.org (for specific integration package details)
