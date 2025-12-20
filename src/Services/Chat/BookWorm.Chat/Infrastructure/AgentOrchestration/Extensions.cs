@@ -289,10 +289,7 @@ internal static class Extensions
                         // Layer 3→4: Connect all paths to response formatter
                         .AddEdge(handoffWorkflowExecutor, responseFormatter)
                         .AddEdge(orchestrateAgents.QAAgent, responseFormatter)
-                        .AddEdge(
-                            orchestrateAgents.SentimentAgent,
-                            responseFormatter
-                        )
+                        .AddEdge(orchestrateAgents.SentimentAgent, responseFormatter)
                         // Set response formatter as the final output
                         .WithOutputFrom(responseFormatter)
                         .WithName(key)
