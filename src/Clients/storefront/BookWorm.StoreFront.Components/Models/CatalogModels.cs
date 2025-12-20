@@ -12,8 +12,7 @@ public sealed record Book(
     Publisher? Publisher,
     IReadOnlyList<Author> Authors,
     double AverageRating,
-    int TotalReviews,
-    DateTime? CreatedAt
+    int TotalReviews
 );
 
 public sealed record Publisher(Guid Id, string Name);

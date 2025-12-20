@@ -23,8 +23,7 @@ public sealed partial class NewArrivals : ComponentBase
                 Publisher: new Publisher(Guid.NewGuid(), "Classic Publishers"),
                 Authors: [new Author(Guid.NewGuid(), "John Doe")],
                 AverageRating: 4.8,
-                TotalReviews: 120,
-                CreatedAt: DateTime.Now.AddDays(-5)
+                TotalReviews: 120
             ),
             new Book(
                 Id: Guid.NewGuid(),
@@ -38,8 +37,7 @@ public sealed partial class NewArrivals : ComponentBase
                 Publisher: new Publisher(Guid.NewGuid(), "Modern Press"),
                 Authors: [new Author(Guid.NewGuid(), "Jane Smith")],
                 AverageRating: 4.9,
-                TotalReviews: 87,
-                CreatedAt: DateTime.Now.AddDays(-3)
+                TotalReviews: 87
             ),
             new Book(
                 Id: Guid.NewGuid(),
@@ -53,8 +51,7 @@ public sealed partial class NewArrivals : ComponentBase
                 Publisher: new Publisher(Guid.NewGuid(), "Adventure Books"),
                 Authors: [new Author(Guid.NewGuid(), "Mike Johnson")],
                 AverageRating: 4.7,
-                TotalReviews: 203,
-                CreatedAt: DateTime.Now.AddDays(-7)
+                TotalReviews: 203
             ),
             new Book(
                 Id: Guid.NewGuid(),
@@ -68,8 +65,7 @@ public sealed partial class NewArrivals : ComponentBase
                 Publisher: new Publisher(Guid.NewGuid(), "Premium Publishing"),
                 Authors: [new Author(Guid.NewGuid(), "Sarah Williams")],
                 AverageRating: 5.0,
-                TotalReviews: 456,
-                CreatedAt: DateTime.Now.AddDays(-2)
+                TotalReviews: 456
             ),
         ];
     }

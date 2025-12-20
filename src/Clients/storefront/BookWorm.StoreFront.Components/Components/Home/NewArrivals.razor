@@ -53,6 +53,6 @@
     private static string GetStarRating(double rating)
     {
         var fullStars = (int)Math.Round(rating);
-        return new string('★', fullStars);
+        return new('★', fullStars);
     }
 }
