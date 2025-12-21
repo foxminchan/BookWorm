@@ -1,13 +1,16 @@
 <section class="container mx-auto px-4 py-16" aria-labelledby="social-heading">
     <header class="text-center mb-8">
-        <h2 id="social-heading" class="text-3xl font-bold mb-2" style="color: var(--color-glacier-900)">Follow Us @@bookwormreads</h2>
+        <h2 id="social-heading" class="text-3xl font-bold mb-2" style="color: var(--color-glacier-900)">
+            Follow Us @@bookwormreads
+        </h2>
         <p style="color: var(--color-glacier-600)">Tag us in your photos for a chance to be featured</p>
     </header>
 
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         @foreach (var post in _posts)
         {
-            <div class="aspect-square bg-(--color-glacier-100) rounded-lg flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer">
+            <div
+                class="aspect-square bg-(--color-glacier-100) rounded-lg flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer">
                 <span class="text-6xl" role="img" aria-label="@post.Label">@post.Emoji</span>
             </div>
         }
@@ -22,7 +25,8 @@
 
     protected override void OnInitialized()
     {
-        _posts = [
+        _posts =
+        [
             new("📖", "Open Book"),
             new("📚", "Stack of Books"),
             new("📘", "Blue Book"),

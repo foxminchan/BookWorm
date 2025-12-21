@@ -1,0 +1,36 @@
+<div class="flex justify-center items-center gap-2 mt-8">
+    <button @onclick="() => HandlePageChange(CurrentPage - 1)"
+            disabled="@(CurrentPage <= 1)"
+            class="btn btn-sm btn-ghost">
+        ‹
+    </button>
+    @for (var i = 1; i <= TotalPages; i++)
+    {
+        var page = i;
+        <button @onclick="() => HandlePageChange(page)"
+                class="btn btn-sm @(CurrentPage == page ? "btn-active" : "btn-ghost")">
+            @(page)
+        </button>
+    }
+    <button @onclick="() => HandlePageChange(CurrentPage + 1)"
+            disabled="@(CurrentPage >= TotalPages)"
+            class="btn btn-sm btn-ghost">
+        ›
+    </button>
+</div>
+
+@code {
+    [Parameter] public int CurrentPage { get; set; } = 1;
+
+    [Parameter] public int TotalPages { get; set; }
+
+    [Parameter] public EventCallback<int> OnPageChanged { get; set; }
+
+    private async Task HandlePageChange(int page)
+    {
+        if (page >= 1 && page <= TotalPages)
+        {
+            await OnPageChanged.InvokeAsync(page);
+        }
+    }
+}

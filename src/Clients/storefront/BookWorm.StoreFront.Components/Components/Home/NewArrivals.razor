@@ -1,0 +1,29 @@
+@using BookWorm.StoreFront.Components.Components.Base
+@using Microsoft.AspNetCore.Components.Routing
+@if (_isLoading || _books.Count > 0)
+{
+    <section class="container mx-auto px-4 py-16" aria-labelledby="new-arrivals-heading">
+        <header class="flex justify-between items-center mb-8">
+            <h2 id="new-arrivals-heading" class="text-3xl font-bold" style="color: var(--color-glacier-900)">New
+                Arrivals</h2>
+            @if (_books.Count > 0)
+            {
+                <NavLink href="catalog" class="text-sm font-semibold" style="color: var(--color-glacier-600)"
+                         Match="NavLinkMatch.All">View all →
+                </NavLink>
+            }
+        </header>
+
+        <LoadingSpinner IsLoading="_isLoading" Message="Loading new arrivals..."/>
+
+        @if (!_isLoading && _books.Count > 0)
+        {
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                @foreach (var book in _books)
+                {
+                    <ProductCard Book="book" ShowAddToCart="false"/>
+                }
+            </div>
+        }
+    </section>
+}

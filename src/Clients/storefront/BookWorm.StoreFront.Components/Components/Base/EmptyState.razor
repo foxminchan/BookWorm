@@ -1,0 +1,33 @@
+<div class="flex flex-col items-center justify-center py-20">
+    <div class="w-32 h-32 mb-6 rounded-full flex items-center justify-center"
+         style="background-color: var(--color-glacier-100);">
+        <img src="/icons/search.svg" alt="Search" class="w-16 h-16" style="color: var(--color-glacier-400)"
+             loading="lazy"/>
+    </div>
+    <h3 class="text-2xl font-bold mb-2" style="color: var(--color-glacier-900)">@Title</h3>
+    <p class="text-base mb-6 text-center max-w-md" style="color: var(--color-glacier-600)">
+        @Message
+    </p>
+    @if (ShowClearButton)
+    {
+        <button @onclick="HandleClearFilters" class="btn btn-primary">
+            <img src="/icons/refresh.svg" alt="Refresh" class="w-5 h-5 mr-2" loading="lazy"/>
+            Clear All Filters
+        </button>
+    }
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "No products found";
+
+    [Parameter] public string Message { get; set; } = "We couldn't find any products matching your criteria. Try adjusting your filters or clear them to see all available products.";
+
+    [Parameter] public bool ShowClearButton { get; set; } = true;
+
+    [Parameter] public EventCallback OnClearFilters { get; set; }
+
+    private async Task HandleClearFilters()
+    {
+        await OnClearFilters.InvokeAsync();
+    }
+}

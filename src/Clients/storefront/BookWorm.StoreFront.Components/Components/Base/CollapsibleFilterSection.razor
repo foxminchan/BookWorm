@@ -1,0 +1,32 @@
+<div class="border-b pb-6" style="border-color: var(--color-glacier-200)">
+    <button @onclick="ToggleExpanded"
+            class="flex justify-between items-center w-full font-semibold mb-4"
+            style="color: var(--color-glacier-900)">
+        <span>@Title</span>
+        <span>@(_isExpanded ? "−" : "+")</span>
+    </button>
+    @if (_isExpanded)
+    {
+        @ChildContent
+    }
+</div>
+
+@code {
+    private bool _isExpanded = true;
+
+    [Parameter][EditorRequired] public required string Title { get; set; }
+
+    [Parameter] public bool InitiallyExpanded { get; set; } = true;
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    protected override void OnInitialized()
+    {
+        _isExpanded = InitiallyExpanded;
+    }
+
+    private void ToggleExpanded()
+    {
+        _isExpanded = !_isExpanded;
+    }
+}

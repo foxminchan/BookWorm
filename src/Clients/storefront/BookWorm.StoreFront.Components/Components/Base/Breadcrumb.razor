@@ -1,4 +1,4 @@
-@namespace BookWorm.StoreFront.Components.Components
+@namespace BookWorm.StoreFront.Components.Components.Base
 
 <nav class="container mx-auto px-4 py-4" aria-label="Breadcrumb">
     <ol class="flex items-center space-x-2 text-sm" style="color: var(--color-glacier-600)">
@@ -8,6 +8,7 @@
             {
                 <li><span class="mx-2">/</span></li>
             }
+
             <li style="@(index == Items.Count - 1 ? "color: var(--color-glacier-900)" : "")">
                 @if (!string.IsNullOrEmpty(item.Url) && index < Items.Count - 1)
                 {
@@ -23,8 +24,6 @@
 </nav>
 
 @code {
-    [Parameter, EditorRequired]
-    public required List<BreadcrumbItem> Items { get; set; }
-
+    [Parameter][EditorRequired] public required List<BreadcrumbItem> Items { get; set; }
     public sealed record BreadcrumbItem(string Label, string? Url = null);
 }

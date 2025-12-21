@@ -1,0 +1,22 @@
+<aside class="w-64 shrink-0">
+    <div class="sticky top-4 space-y-6">
+        <div>
+            <h2 class="text-xl font-bold mb-4" style="color: var(--color-glacier-900)">Filters</h2>
+        </div>
+
+        <PriceRangeFilter MinPrice="MinPrice"
+                          MaxPrice="MaxPrice"
+                          OnMinPriceChanged="OnMinPriceChanged"
+                          OnMaxPriceChanged="OnMaxPriceChanged"
+                          OnPriceRangeSelected="OnPriceRangeSelected"/>
+
+        <PublisherFilter Publishers="AvailablePublishers"
+                         SelectedPublisherIds="SelectedPublisherIds"
+                         OnPublisherToggled="OnPublisherToggled"/>
+
+        <button @onclick="HandleClearFilters"
+                class="btn btn-outline btn-sm w-full">
+            Clear All Filters
+        </button>
+    </div>
+</aside>

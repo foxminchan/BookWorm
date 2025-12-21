@@ -7,7 +7,8 @@
                     <div class="flex justify-center mb-3">
                         @if (feature.IconPath is not null)
                         {
-                            <img src="@Assets[feature.IconPath]" alt="@feature.Title" class="h-12 w-12" style="filter: invert(40%) sepia(20%) saturate(1000%) hue-rotate(150deg)" />
+                            <img src="@Assets[feature.IconPath]" alt="@feature.Title" class="h-12 w-12"
+                                 style="filter: invert(40%) sepia(20%) saturate(1000%) hue-rotate(150deg)"/>
                         }
                         else if (feature.Emoji is not null)
                         {
@@ -35,27 +36,28 @@
 
     protected override void OnInitialized()
     {
-        _features = [
+        _features =
+        [
             new(
-                IconPath: "/icons/shipping.svg",
-                Title: "Free Shipping",
-                Description: "On all orders over $75"
+                "/icons/shipping.svg",
+                "Free Shipping",
+                "On all orders over $75"
             ),
             new(
-                IconPath: "/icons/refresh.svg",
-                Title: "Easy Returns",
-                Description: "30-day return policy"
+                "/icons/refresh.svg",
+                "Easy Returns",
+                "30-day return policy"
             ),
             new(
-                IconPath: "/icons/shield.svg",
-                Title: "Secure Checkout",
-                Description: "SSL & protected shopping"
+                "/icons/shield.svg",
+                "Secure Checkout",
+                "SSL & protected shopping"
             ),
             new(
-                IconPath: null,
-                Title: "Customer Support",
-                Description: "Available 24/7 for you",
-                Emoji: "💬"
+                null,
+                "Customer Support",
+                "Available 24/7 for you",
+                "💬"
             )
         ];
     }

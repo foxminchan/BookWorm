@@ -38,7 +38,6 @@
     --font-weight-semibold: 600;
     --font-weight-bold: 700;
     --radius-lg: 0.5rem;
-    --radius-2xl: 1rem;
     --radius-3xl: 1.5rem;
     --default-transition-duration: 150ms;
     --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
@@ -1114,9 +1113,6 @@
   .inline-block {
     display: inline-block;
   }
-  .aspect-2\/3 {
-    aspect-ratio: 2/3;
-  }
   .aspect-square {
     aspect-ratio: 1 / 1;
   }
@@ -1236,9 +1232,6 @@
   .flex-col {
     flex-direction: column;
   }
-  .flex-wrap {
-    flex-wrap: wrap;
-  }
   .items-center {
     align-items: center;
   }
@@ -1305,10 +1298,6 @@
   }
   .rounded-lg {
     border-radius: var(--radius-lg);
-  }
-  .rounded-t-2xl {
-    border-top-left-radius: var(--radius-2xl);
-    border-top-right-radius: var(--radius-2xl);
   }
   .border-t {
     border-top-style: var(--tw-border-style);
