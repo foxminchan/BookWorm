@@ -4,6 +4,7 @@
 
 <PageTitle>Not Found | BookWorm</PageTitle>
 <SectionContent SectionName="page-header-title">Not Found</SectionContent>
+<SectionContent SectionName="page-header-subtitle">Oops! The page you're looking for doesn't exist</SectionContent>
 
 <section class="min-h-screen flex items-center justify-center bg-(--color-glacier-50) px-4">
     <div class="text-center max-w-2xl mx-auto">
@@ -11,10 +12,11 @@
         <p class="text-lg mb-8" style="color: var(--color-glacier-600)">
             We couldn't find the page you were looking for.
         </p>
-        <a href="/"
-           class="inline-block px-12 py-4 rounded-lg font-semibold text-lg hover:opacity-90 transition-opacity text-white"
-           style="background-color: var(--color-glacier-600)">
+        <NavLink href="/"
+                 Match="NavLinkMatch.All"
+                 class="inline-block px-12 py-4 rounded-lg font-semibold text-lg hover:opacity-90 transition-opacity text-white"
+                 style="background-color: var(--color-glacier-600)">
             Return Home
-        </a>
+        </NavLink>
     </div>
 </section>

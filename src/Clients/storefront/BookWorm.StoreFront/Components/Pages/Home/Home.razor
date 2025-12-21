@@ -16,10 +16,13 @@
                 <p class="text-lg mb-6" style="color: var(--color-glacier-700)">
                     Discover our curated collection of high-quality books designed to enhance your reading experience.
                 </p>
-                <a href="catalog" class="btn text-white px-8 py-3 rounded-lg font-semibold"
-                   style="background-color: var(--color-glacier-600); border-color: var(--color-glacier-600)">
+                <NavLink href="catalog" 
+                         class="btn text-white px-8 py-3 rounded-lg font-semibold"
+                         style="background-color: var(--color-glacier-600); border-color: var(--color-glacier-600)"
+                         Match="NavLinkMatch.All"
+                >
                     Shop Collection
-                </a>
+                </NavLink>            
             </div>
             <div class="hidden lg:flex justify-center items-center">
                 <img src="@Assets["/images/banner.webp"]" alt="BookWorm Banner" class="w-full max-h-80 rounded-3xl object-contain" loading="lazy" />

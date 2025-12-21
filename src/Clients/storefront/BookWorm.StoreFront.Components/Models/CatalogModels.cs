@@ -20,5 +20,3 @@ public sealed record Publisher(Guid Id, string Name);
 public sealed record Author(Guid Id, string Name);
 
 public sealed record Category(Guid Id, string Name);
-
-public sealed record CatalogListResponse(List<Book> Items, int TotalCount);

@@ -16,18 +16,17 @@
 
 @code
 {
-    private readonly List<SocialMediaPost> _posts = GetPosts();
+    private sealed record SocialMediaPost(string Emoji, string Label);
 
-    private static List<SocialMediaPost> GetPosts()
+    private List<SocialMediaPost> _posts = [];
+
+    protected override void OnInitialized()
     {
-        return
-        [
+        _posts = [
             new("📖", "Open Book"),
             new("📚", "Stack of Books"),
             new("📘", "Blue Book"),
             new("📕", "Red Book")
         ];
     }
-
-    private sealed record SocialMediaPost(string Emoji, string Label);
 }

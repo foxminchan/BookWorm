@@ -1,16 +1,23 @@
-<!-- Footer -->
-<footer class="footer footer-center p-10 bg-(--color-glacier-50) text-(--color-glacier-900) mt-auto border-t border-(--color-glacier-200)" role="contentinfo">
+<footer
+    class="footer footer-center p-10 bg-(--color-glacier-50) text-(--color-glacier-900) mt-auto border-t border-(--color-glacier-200)"
+    role="contentinfo">
     <div class="flex flex-col items-center gap-4">
         <div class="flex items-center gap-2">
-            <img src="@Assets["/images/logo.svg"]" alt="BookWorm logo" class="h-8 w-8" loading="lazy"/><h3 class="text-2xl font-bold"><span style="color: var(--color-glacier-600)">Book</span><span style="color: var(--color-glacier-900)">Worm</span></h3>
+            <img src="@Assets["/images/logo.svg"]" alt="BookWorm logo" class="h-8 w-8" loading="lazy"/>
+            <h3 class="text-2xl font-bold">
+                <span style="color: var(--color-glacier-600)">Book</span>
+                <span style="color: var(--color-glacier-900)">Worm</span>
+            </h3>
         </div>
 
         <nav class="flex gap-4" aria-label="Social media links">
             @foreach (var link in _socialMediaLinks)
             {
-                <a href="@link.Url" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-circle hover:bg-(--color-glacier-200)" aria-label="Visit our @link.Platform page">
-                    <img src="@Assets[link.IconPath]" alt="@link.Platform icon" class="h-6 w-6" style="filter: invert(40%) sepia(20%) saturate(1000%) hue-rotate(150deg)" loading="lazy"/>
-                </a>
+                <NavLink Match="NavLinkMatch.All" href="@link.Url" target="_blank" rel="noopener noreferrer"
+                         class="btn btn-ghost btn-circle hover:bg-(--color-glacier-200)">
+                    <img src="@Assets[link.IconPath]" alt="@link.Platform icon" class="h-6 w-6"
+                         style="filter: invert(40%) sepia(20%) saturate(1000%) hue-rotate(150deg)" loading="lazy"/>
+                </NavLink>
             }
         </nav>
 
@@ -22,10 +29,15 @@
 {
     private sealed record SocialMediaLink(string Url, string IconPath, string Platform);
 
-    private readonly SocialMediaLink[] _socialMediaLinks =
-    [
-        new("https://facebook.com", "/icons/facebook.svg", "Facebook"),
-        new("https://instagram.com", "/icons/instagram.svg", "Instagram"),
-        new("https://linkedin.com", "/icons/linkedin.svg", "LinkedIn"),
-    ];
+    private SocialMediaLink[] _socialMediaLinks = [];
+
+    protected override void OnInitialized()
+    {
+        _socialMediaLinks =
+        [
+            new("https://facebook.com", "/icons/facebook.svg", "Facebook"),
+            new("https://instagram.com", "/icons/instagram.svg", "Instagram"),
+            new("https://linkedin.com", "/icons/linkedin.svg", "LinkedIn")
+        ];
+    }
 }

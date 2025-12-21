@@ -1,17 +1,20 @@
-<!-- Top Navigation Bar -->
 <header class="navbar bg-white sticky top-0 z-50 shadow-md border-b border-(--color-glacier-200)" role="banner">
     <div class="navbar-start">
-        <a href="/" class="flex items-center gap-2 text-2xl font-bold" aria-label="BookWorm Home">
-            <img src="@Assets["/images/logo.svg"]" alt="BookWorm logo" class="h-8 w-8" loading="eager"/><span style="color: var(--color-glacier-600)">Book</span><span style="color: var(--color-glacier-900)">Worm</span>
-        </a>
+        <NavLink Match="NavLinkMatch.All" href="/" class="flex items-center gap-2 text-2xl font-bold">
+            <img src="@Assets["/images/logo.svg"]" alt="BookWorm logo" class="h-8 w-8" loading="eager"/>
+            <span class="flex">
+                <span style="color: var(--color-glacier-600)">Book</span>
+                <span style="color: var(--color-glacier-900)">Worm</span>
+            </span>
+        </NavLink>
     </div>
 
     <nav class="navbar-end gap-1" aria-label="Main navigation">
         @foreach (var item in _navigationItems)
         {
-            <a href="@item.Href" class="btn btn-ghost btn-circle hover:bg-(--color-glacier-100)" aria-label="@item.AriaLabel">
+            <NavLink Match="NavLinkMatch.All" href="@item.Href" class="btn btn-ghost btn-circle hover:bg-(--color-glacier-100)">
                 <img src="@Assets[item.IconPath]" alt="@item.AriaLabel icon" class="h-6 w-6" style="filter: invert(40%) sepia(20%) saturate(1000%) hue-rotate(150deg)" loading="lazy"/>
-            </a>
+            </NavLink>
         }
     </nav>
 </header>
@@ -20,11 +23,16 @@
 {
     private sealed record NavigationItem(string Href, string IconPath, string AriaLabel);
 
-    private readonly NavigationItem[] _navigationItems =
-    [
-        new("/", "/icons/home.svg", "Home"),
-        new("/catalog", "/icons/books.svg", "Books"),
-        new("/basket", "/icons/cart.svg", "Shopping cart"),
-        new("/account", "/icons/account.svg", "Account"),
-    ];
+    private NavigationItem[] _navigationItems = [];
+
+    protected override void OnInitialized()
+    {
+        _navigationItems =
+        [
+            new("/", "/icons/home.svg", "Home"),
+            new("catalog", "/icons/books.svg", "Books"),
+            new("basket", "/icons/cart.svg", "Shopping cart"),
+            new("account", "/icons/account.svg", "Account"),
+        ];
+    }
 }

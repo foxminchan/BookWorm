@@ -1,0 +1,528 @@
+@page "/catalog"
+@using BookWorm.StoreFront.Components.Components
+@using BookWorm.StoreFront.Components.Models
+@using Microsoft.AspNetCore.Components.Sections
+@rendermode InteractiveServer
+
+<PageTitle>Catalog | BookWorm</PageTitle>
+<SectionContent SectionName="page-header-title">Catalog</SectionContent>
+<SectionContent SectionName="page-header-subtitle">Explore Our Extensive Collection of Books</SectionContent>
+
+<div class="bg-base-100 min-h-screen">
+    <Breadcrumb Items="_breadcrumbItems" />
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex gap-8">
+            <!-- Filters Sidebar -->
+            <aside class="w-64 shrink-0">
+                <div class="sticky top-4 space-y-6">
+                    <div>
+                        <h2 class="text-xl font-bold mb-4" style="color: var(--color-glacier-900)">Filters</h2>
+                    </div>
+
+                    <!-- Price Range Filter -->
+                    <div class="border-b pb-6" style="border-color: var(--color-glacier-200)">
+                        <button @onclick="() => ToggleSection(FilterSection.PriceRange)"
+                                class="flex justify-between items-center w-full font-semibold mb-4"
+                                style="color: var(--color-glacier-900)">
+                            <span>Price Range</span>
+                            <span>@(_expandedSections.Contains(FilterSection.PriceRange) ? "−" : "+")</span>
+                        </button>
+                        @if (_expandedSections.Contains(FilterSection.PriceRange))
+                        {
+                            <div class="space-y-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="flex-1">
+                                        <label class="text-xs block mb-1 font-medium" style="color: var(--color-glacier-600)">Min</label>
+                                        <div class="relative">
+                                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style="color: var(--color-glacier-500)">$</span>
+                                            <input type="number"
+                                                   min="0"
+                                                   max="500"
+                                                   step="10"
+                                                   value="@(_filters.MinPrice ?? 0)"
+                                                   @onchange="@(e => OnMinPriceChange(decimal.Parse(e.Value?.ToString() ?? "0")))"
+                                                   placeholder="0"
+                                                   class="input input-bordered input-sm w-full pl-7"
+                                                   style="font-size: 0.875rem;"/>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1">
+                                        <label class="text-xs block mb-1 font-medium" style="color: var(--color-glacier-600)">Max</label>
+                                        <div class="relative">
+                                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style="color: var(--color-glacier-500)">$</span>
+                                            <input type="number"
+                                                   min="0"
+                                                   max="9999"
+                                                   step="10"
+                                                   value="@(_filters.MaxPrice ?? 9999)"
+                                                   @onchange="@(e => OnMaxPriceChange(decimal.Parse(e.Value?.ToString() ?? "9999")))"
+                                                   placeholder="9999"
+                                                   class="input input-bordered input-sm w-full pl-7"
+                                                   style="font-size: 0.875rem;"/>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-wrap gap-2">
+                                    <button @onclick="() => SetPriceRange(0, 50)" class="btn btn-xs btn-outline">Under $50</button>
+                                    <button @onclick="() => SetPriceRange(50, 100)" class="btn btn-xs btn-outline">$50 - $100</button>
+                                    <button @onclick="() => SetPriceRange(100, 200)" class="btn btn-xs btn-outline">$100 - $200</button>
+                                    <button @onclick="() => SetPriceRange(200, 9999)" class="btn btn-xs btn-outline">$200+</button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Publishers Filter -->
+                    <div class="border-b pb-6" style="border-color: var(--color-glacier-200)">
+                        <button @onclick="() => ToggleSection(FilterSection.Publishers)"
+                                class="flex justify-between items-center w-full font-semibold mb-4"
+                                style="color: var(--color-glacier-900)">
+                            <span>Publishers</span>
+                            <span>@(_expandedSections.Contains(FilterSection.Publishers) ? "−" : "+")</span>
+                        </button>
+                        @if (_expandedSections.Contains(FilterSection.Publishers))
+                        {
+                            <div class="space-y-2">
+                                @foreach (var publisher in _availablePublishers)
+                                {
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="checkbox"
+                                               checked="@_filters.PublisherIds.Contains(publisher.Id)"
+                                               @onchange="@(e => TogglePublisher(publisher.Id, (bool)e.Value!))"
+                                               class="checkbox checkbox-sm checkbox-primary mr-2"/>
+                                        <span style="color: var(--color-glacier-700)">@publisher.Name (@publisher.Count)</span>
+                                    </label>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Clear Filters Button -->
+                    <button @onclick="ClearFilters"
+                            class="btn btn-outline btn-sm w-full">
+                        Clear All Filters
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="flex-1">
+                <!-- Header with View Toggle and Sort -->
+                <div class="flex justify-between items-center mb-6">
+                    <p class="text-sm" style="color: var(--color-glacier-600)">
+                        Showing @_filteredBooks.Count of @_totalBooks products
+                    </p>
+                    <div class="flex items-center gap-4">
+                        <!-- Sort Dropdown -->
+                        <select @bind="_filters.SortBy"
+                                @bind:after="ApplyFilters"
+                                class="select select-bordered select-sm"
+                                style="width: 180px">
+                            <option value="price-low">Price: Low to High</option>
+                            <option value="price-high">Price: High to Low</option>
+                            <option value="name-asc">Name: A to Z</option>
+                            <option value="name-desc">Name: Z to A</option>
+                            <option value="rating">Rating</option>
+                            <option value="reviews">Most Reviews</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Products Grid -->
+                <LoadingSpinner IsLoading="_isLoading" />
+
+                @if (!_isLoading && _filteredBooks.Count > 0)
+                {
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        @foreach (var book in _filteredBooks)
+                            {
+                                <article class="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow relative">
+                                    @if (book.PriceSale.HasValue)
+                                    {
+                                        <div class="badge badge-primary absolute top-4 left-4 z-10">SALE</div>
+                                    }
+                                    <a href="/catalog/@book.Id" class="cursor-pointer">
+                                        <figure class="relative w-full aspect-square" style="min-height: 250px; max-height: 400px; background-color: var(--color-glacier-50);">
+                                            <img src="@book.ImageUrl" alt="@book.Name" class="w-full h-full object-cover" style="object-position: center;"/>
+                                        </figure>
+                                    </a>
+                                    <div class="card-body p-4">
+                                        <a href="/catalog/@book.Id" class="cursor-pointer">
+                                            <h3 class="card-title text-base hover:underline" style="color: var(--color-glacier-900)">@book.Name</h3>
+                                        </a>
+                                        <div class="flex items-center gap-1 my-2">
+                                            @for (var i = 0; i < 5; i++)
+                                            {
+                                                @if (i < Math.Floor(book.AverageRating))
+                                                {
+                                                    <span class="text-yellow-400">★</span>
+                                                }
+                                                else
+                                                {
+                                                    <span style="color: var(--color-glacier-300)">★</span>
+                                                }
+                                            }
+                                            <span class="text-xs ml-1" style="color: var(--color-glacier-600)">(@book.TotalReviews)</span>
+                                        </div>
+                                        <div class="flex items-center gap-2 mb-4">
+                                            @if (book.PriceSale.HasValue)
+                                            {
+                                                <span class="text-xl font-bold" style="color: var(--color-glacier-900)">$@book.PriceSale.Value.ToString("F2")</span>
+                                                <span class="text-sm line-through" style="color: var(--color-glacier-500)">$@book.Price.ToString("F2")</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-xl font-bold" style="color: var(--color-glacier-900)">$@book.Price.ToString("F2")</span>
+                                            }
+                                        </div>
+                                        <button @onclick="() => AddToCart(book.Id)"
+                                                class="btn btn-primary btn-sm w-full">
+                                            Add to Cart
+                                        </button>
+                                    </div>
+                                </article>
+                        }
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="flex justify-center items-center gap-2 mt-8">
+                        <button @onclick="() => ChangePage(_filters.PageIndex - 1)"
+                                disabled="@(_filters.PageIndex <= 1)"
+                                class="btn btn-sm btn-ghost">
+                            ‹
+                        </button>
+                        @for (var i = 1; i <= _totalPages; i++)
+                        {
+                            var page = i;
+                            <button @onclick="() => ChangePage(page)"
+                                    class="btn btn-sm @(_filters.PageIndex == page ? "btn-active" : "btn-ghost")">
+                                @(page)
+                            </button>
+                        }
+                        <button @onclick="() => ChangePage(_filters.PageIndex + 1)"
+                                disabled="@(_filters.PageIndex >= _totalPages)"
+                                class="btn btn-sm btn-ghost">
+                            ›
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="flex flex-col items-center justify-center py-20">
+                        <div class="w-32 h-32 mb-6 rounded-full flex items-center justify-center" style="background-color: var(--color-glacier-100);">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16" style="color: var(--color-glacier-400)" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-2" style="color: var(--color-glacier-900)">No products found</h3>
+                        <p class="text-base mb-6 text-center max-w-md" style="color: var(--color-glacier-600)">
+                            We couldn't find any products matching your criteria. Try adjusting your filters or clear them to see all available products.
+                        </p>
+                        <button @onclick="ClearFilters" class="btn btn-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                            </svg>
+                            Clear All Filters
+                        </button>
+                    </div>
+                }
+            </main>
+        </div>
+    </div>
+</div>
+
+@code {
+    private enum FilterSection { PriceRange, Publishers }
+
+    private readonly HashSet<FilterSection> _expandedSections = [FilterSection.PriceRange, FilterSection.Publishers];
+
+    private readonly List<Breadcrumb.BreadcrumbItem> _breadcrumbItems =
+    [
+        new("Home", "/"),
+        new("Catalog")
+    ];
+
+    private CatalogFilters _filters = new();
+    private List<Book> _allBooks = [];
+    private List<Book> _filteredBooks = [];
+    private int _totalBooks;
+    private int _totalPages;
+    private bool _isLoading = true;
+
+    private List<PublisherFilter> _availablePublishers = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        // Initialize with mock data
+        InitializeMockData();
+        ApplyFilters();
+        _isLoading = false;
+        await base.OnInitializedAsync();
+    }
+
+    private void InitializeMockData()
+    {
+        _allBooks =
+        [
+            new Book(
+                Guid.NewGuid(),
+                "Professional Drone",
+                "4K camera with 30-minute flight time",
+                "https://images.unsplash.com/photo-1508614999368-9260051292e5?w=400",
+                399.99m,
+                499.99m,
+                "Available",
+                new Category(Guid.NewGuid(), "Electronics"),
+                new Publisher(Guid.NewGuid(), "Apple Inc."),
+                [new Author(Guid.NewGuid(), "Tech Author")],
+                4.5,
+                218
+            ),
+            new Book(
+                Guid.NewGuid(),
+                "Digital Camera",
+                "24MP with 4K video recording",
+                "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400",
+                349.99m,
+                null,
+                "Available",
+                new Category(Guid.NewGuid(), "Electronics"),
+                new Publisher(Guid.NewGuid(), "Samsung (54)"),
+                [new Author(Guid.NewGuid(), "Camera Expert")],
+                4.0,
+                95
+            ),
+            new Book(
+                Guid.NewGuid(),
+                "Mechanical Keyboard",
+                "Blue switches with RGB lighting",
+                "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=400",
+                129.99m,
+                null,
+                "Available",
+                new Category(Guid.NewGuid(), "Accessories"),
+                new Publisher(Guid.NewGuid(), "Google (37)"),
+                [new Author(Guid.NewGuid(), "Keyboard Pro")],
+                4.8,
+                142
+            ),
+            new Book(
+                Guid.NewGuid(),
+                "Travel Backpack",
+                "Water resistant with laptop compartment",
+                "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400",
+                59.99m,
+                79.99m,
+                "Available",
+                new Category(Guid.NewGuid(), "Accessories"),
+                new Publisher(Guid.NewGuid(), "Sony (48)"),
+                [new Author(Guid.NewGuid(), "Travel Writer")],
+                4.6,
+                324
+            ),
+            new Book(
+                Guid.NewGuid(),
+                "Indoor Plant",
+                "Low maintenance air purifying plant",
+                "https://images.unsplash.com/photo-1509937528035-ad76254b0356?w=400",
+                34.99m,
+                null,
+                "Available",
+                new Category(Guid.NewGuid(), "Home & Garden"),
+                new Publisher(Guid.NewGuid(), "Apple Inc."),
+                [new Author(Guid.NewGuid(), "Botanist")],
+                4.2,
+                87
+            ),
+            new Book(
+                Guid.NewGuid(),
+                "Smart Speaker",
+                "Voice control with premium sound",
+                "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=400",
+                99.99m,
+                129.99m,
+                "Available",
+                new Category(Guid.NewGuid(), "Electronics"),
+                new Publisher(Guid.NewGuid(), "Samsung (54)"),
+                [new Author(Guid.NewGuid(), "Audio Expert")],
+                4.4,
+                203
+            ),
+            new Book(
+                Guid.NewGuid(),
+                "Premium Headphones",
+                "Noise cancelling with 30-hour battery",
+                "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400",
+                149.99m,
+                199.99m,
+                "Available",
+                new Category(Guid.NewGuid(), "Electronics"),
+                new Publisher(Guid.NewGuid(), "Sony (48)"),
+                [new Author(Guid.NewGuid(), "Sound Engineer")],
+                4.7,
+                512
+            ),
+            new Book(
+                Guid.NewGuid(),
+                "Athletic Sneakers",
+                "Lightweight with cushioned support",
+                "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400",
+                89.99m,
+                119.99m,
+                "Available",
+                new Category(Guid.NewGuid(), "Fashion"),
+                new Publisher(Guid.NewGuid(), "Google (37)"),
+                [new Author(Guid.NewGuid(), "Sports Expert")],
+                4.3,
+                876
+            ),
+            new Book(
+                Guid.NewGuid(),
+                "Premium Coffee Maker",
+                "12-cup capacity with programmable timer",
+                "https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?w=400",
+                79.99m,
+                null,
+                "Available",
+                new Category(Guid.NewGuid(), "Home & Kitchen"),
+                new Publisher(Guid.NewGuid(), "Apple Inc."),
+                [new Author(Guid.NewGuid(), "Coffee Expert")],
+                4.5,
+                342
+            )
+        ];
+
+        _totalBooks = _allBooks.Count;
+
+        // Initialize publisher filters
+        _availablePublishers =
+        [
+            new PublisherFilter(Guid.NewGuid(), "Apple Inc.", 87),
+            new PublisherFilter(Guid.NewGuid(), "Samsung (54)", 54),
+            new PublisherFilter(Guid.NewGuid(), "Google (37)", 37),
+            new PublisherFilter(Guid.NewGuid(), "Sony (48)", 48)
+        ];
+    }
+
+    private void ApplyFilters()
+    {
+        _filteredBooks = _allBooks;
+
+        // Apply price filter
+        if (_filters.MinPrice.HasValue)
+        {
+            _filteredBooks = _filteredBooks.Where(b => b.Price >= _filters.MinPrice.Value).ToList();
+        }
+        if (_filters.MaxPrice.HasValue)
+        {
+            _filteredBooks = _filteredBooks.Where(b => b.Price <= _filters.MaxPrice.Value).ToList();
+        }
+
+        // Apply publisher filter
+        if (_filters.PublisherIds.Count > 0)
+        {
+            _filteredBooks = _filteredBooks.Where(b => b.Publisher != null && _filters.PublisherIds.Contains(b.Publisher.Id)).ToList();
+        }
+
+        // Apply sorting
+        _filteredBooks = _filters.SortBy switch
+        {
+            "price-low" => _filteredBooks.OrderBy(b => b.Price).ToList(),
+            "price-high" => _filteredBooks.OrderByDescending(b => b.Price).ToList(),
+            "name-asc" => _filteredBooks.OrderBy(b => b.Name).ToList(),
+            "name-desc" => _filteredBooks.OrderByDescending(b => b.Name).ToList(),
+            "rating" => _filteredBooks.OrderByDescending(b => b.AverageRating).ToList(),
+            "reviews" => _filteredBooks.OrderByDescending(b => b.TotalReviews).ToList(),
+            _ => _filteredBooks
+        };
+
+        // Calculate pagination
+        _totalPages = (int)Math.Ceiling(_filteredBooks.Count / (double)_filters.PageSize);
+        var skip = (_filters.PageIndex - 1) * _filters.PageSize;
+        _filteredBooks = _filteredBooks.Skip(skip).Take(_filters.PageSize).ToList();
+    }
+
+    private void ToggleSection(FilterSection section)
+    {
+        if (!_expandedSections.Add(section))
+        {
+            _expandedSections.Remove(section);
+        }
+
+        StateHasChanged();
+    }
+
+    private void TogglePublisher(Guid publisherId, bool isChecked)
+    {
+        if (isChecked)
+        {
+            _filters.PublisherIds.Add(publisherId);
+        }
+        else
+        {
+            _filters.PublisherIds.Remove(publisherId);
+        }
+        ApplyFilters();
+    }
+
+    private void OnMinPriceChange(decimal value)
+    {
+        if (value <= (_filters.MaxPrice ?? 500))
+        {
+            _filters.MinPrice = value == 0 ? null : value;
+            ApplyFilters();
+        }
+    }
+
+    private void OnMaxPriceChange(decimal value)
+    {
+        if (value >= (_filters.MinPrice ?? 0))
+        {
+            _filters.MaxPrice = value == 500 ? null : value;
+            ApplyFilters();
+        }
+    }
+
+    private void SetPriceRange(decimal? min, decimal? max)
+    {
+        _filters.MinPrice = min;
+        _filters.MaxPrice = max;
+        ApplyFilters();
+    }
+
+    private void ClearFilters()
+    {
+        _filters = new CatalogFilters();
+        ApplyFilters();
+    }
+
+    private void ChangePage(int page)
+    {
+        if (page >= 1 && page <= _totalPages)
+        {
+            _filters.PageIndex = page;
+            ApplyFilters();
+        }
+    }
+
+    private void AddToCart(Guid bookId)
+    {
+        // TODO: Implement add to cart functionality
+        Console.WriteLine($"Added book {bookId} to cart");
+    }
+
+    private sealed class CatalogFilters
+    {
+        public int PageIndex { get; set; } = 1;
+        public int PageSize { get; set; } = 9;
+        public decimal? MinPrice { get; set; }
+        public decimal? MaxPrice { get; set; }
+        public HashSet<Guid> PublisherIds { get; set; } = [];
+        public string SortBy { get; set; } = "price-low";
+    }
+
+    private sealed record PublisherFilter(Guid Id, string Name, int Count);
+}

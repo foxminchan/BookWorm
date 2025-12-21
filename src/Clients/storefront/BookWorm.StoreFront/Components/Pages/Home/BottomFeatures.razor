@@ -24,12 +24,18 @@
 
 @code
 {
-    private readonly List<Feature> _features = GetFeatures();
+    private sealed record Feature(
+        string? IconPath,
+        string Title,
+        string Description,
+        string? Emoji = null
+    );
 
-    private static List<Feature> GetFeatures()
+    private List<Feature> _features = [];
+
+    protected override void OnInitialized()
     {
-        return
-        [
+        _features = [
             new(
                 IconPath: "/icons/shipping.svg",
                 Title: "Free Shipping",
@@ -53,11 +59,4 @@
             )
         ];
     }
-
-    private sealed record Feature(
-        string? IconPath,
-        string Title,
-        string Description,
-        string? Emoji = null
-    );
 }
