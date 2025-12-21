@@ -10,6 +10,7 @@ public static class Components
     public const string KeyCloak = "keycloak";
     public const string Inspector = "inspector";
     public const string VectorDb = "vectordb";
+    public const string ContainerRegistry = "container-registry";
 
     public static class Database
     {
@@ -39,12 +40,5 @@ public static class Components
 
             public static string BlobContainer(string containerName) => $"{containerName}-blob";
         }
-    }
-
-    public static class Container
-    {
-        public const string Registry = "container-registry";
-        public const string Repository = "container-repository";
-        public const string Endpoint = "container-endpoint";
     }
 }

@@ -2,13 +2,7 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 builder.AddAzureContainerAppEnvironment(Components.Azure.ContainerApp).ProvisionAsService();
 
-var endpointParameter = builder.AddParameter(Components.Container.Endpoint);
-var repositoryParameter = builder.AddParameter(Components.Container.Repository);
-var registry = builder.AddContainerRegistry(
-    Components.Container.Registry,
-    endpointParameter,
-    repositoryParameter
-);
+var registry = builder.AddContainerRegistry();
 
 var postgres = builder
     .AddAzurePostgresFlexibleServer(Components.Postgres)

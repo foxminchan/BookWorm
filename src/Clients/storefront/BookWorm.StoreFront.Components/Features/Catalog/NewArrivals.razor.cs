@@ -1,7 +1,7 @@
 using BookWorm.StoreFront.Components.Models;
 using Microsoft.AspNetCore.Components;
 
-namespace BookWorm.StoreFront.Components.Components.Home;
+namespace BookWorm.StoreFront.Components.Features.Catalog;
 
 public sealed partial class NewArrivals : ComponentBase
 {
@@ -70,7 +70,7 @@ public sealed partial class NewArrivals : ComponentBase
         ];
     }
 
-    // private async Task<List<Book>> GetBooksAsync()
+    // protected override async Task OnInitializedAsync()
     // {
     // 	return await _catalogService.GetNewArrivalsAsync();
     // }

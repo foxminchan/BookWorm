@@ -103,4 +103,25 @@ public static class ParameterDescriptions
             - Email deliverability best practices: https://docs.sendgrid.com/ui/sending-email/deliverability
             """;
     }
+
+    public static class ContainerRegistry
+    {
+        public const string Endpoint = """
+            🌐 The endpoint URL of your container registry.
+            This is where your container images are stored and accessed.
+
+            💡 Example: 'ghcr.io'
+            ⚠️  Important: Must be accessible from the BookWorm application in production
+            📋 Format: Must be a valid URL (including protocol)
+            """;
+
+        public const string Repository = """
+            📦 The name of the repository within your container registry.
+            This is where your specific container images for BookWorm will be stored.
+
+            💡 Example: 'foxminchan/bookworm'
+            ⚠️  Important: Ensure the repository exists in your container registry
+            📋 Format: Alphanumeric characters, dashes, and underscores only
+            """;
+    }
 }
