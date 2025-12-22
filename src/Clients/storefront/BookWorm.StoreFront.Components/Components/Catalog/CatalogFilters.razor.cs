@@ -11,6 +11,9 @@ public sealed partial class CatalogFilters
     public decimal? MaxPrice { get; set; }
 
     [Parameter]
+    public HashSet<Guid> SelectedCategoryIds { get; set; } = [];
+
+    [Parameter]
     public HashSet<Guid> SelectedPublisherIds { get; set; } = [];
 
     [Parameter]
@@ -21,6 +24,9 @@ public sealed partial class CatalogFilters
 
     [Parameter]
     public Action<(decimal? Min, decimal? Max)>? OnPriceRangeSelected { get; set; }
+
+    [Parameter]
+    public Action<(Guid CategoryId, bool IsChecked)>? OnCategoryToggled { get; set; }
 
     [Parameter]
     public Action<(Guid PublisherId, bool IsChecked)>? OnPublisherToggled { get; set; }

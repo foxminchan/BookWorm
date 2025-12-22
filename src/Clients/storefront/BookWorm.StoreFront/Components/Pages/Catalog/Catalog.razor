@@ -1,8 +1,6 @@
 @page "/catalog"
 @using BookWorm.StoreFront.Components.Components.Base
 @using BookWorm.StoreFront.Components.Components.Catalog
-@using BookWorm.StoreFront.Components.Mocks
-@using BookWorm.StoreFront.Components.Models
 @using Microsoft.AspNetCore.Components.Sections
 @rendermode InteractiveServer
 
@@ -14,19 +12,41 @@
     <Breadcrumb Items="_breadcrumbItems"/>
 
     <section class="container mx-auto px-4 py-8">
-        <div class="flex gap-8">
+        <div class="lg:flex lg:gap-8">
+            <!-- Mobile Filter Toggle Button -->
+            <div class="lg:hidden mb-4">
+                <button @onclick="ToggleFilters"
+                        class="btn btn-outline btn-sm w-full">
+                    <img src="/icons/filter.svg" alt="Filter" class="h-5 w-5 mr-2" loading="lazy"/>
+                    Filters
+                </button>
+            </div>
+
             <!-- Filters Sidebar -->
-            <CatalogFilters MinPrice="_filters.MinPrice"
-                            MaxPrice="_filters.MaxPrice"
-                            SelectedPublisherIds="new HashSet<Guid>(_filters.PublisherId ?? [])"
-                            OnMinPriceChanged="OnMinPriceChange"
-                            OnMaxPriceChanged="OnMaxPriceChange"
-                            OnPriceRangeSelected="OnPriceRangeSelected"
-                            OnPublisherToggled="OnPublisherToggled"
-                            OnClearFilters="ClearFilters"/>
+            <div class="@(_showFilters ? "block" : "hidden") lg:block @(_showFilters ? "fixed inset-0 z-50 bg-base-100 overflow-y-auto p-4 lg:relative lg:p-0 lg:bg-transparent" : "")">
+                @if (_showFilters)
+                {
+                    <div class="lg:hidden flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold" style="color: var(--color-glacier-900)">Filters</h2>
+                        <button @onclick="ToggleFilters" class="btn btn-ghost btn-sm btn-circle">
+                            <img src="/icons/close.svg" alt="Close" class="h-6 w-6" loading="lazy"/>
+                        </button>
+                    </div>
+                }
+                <CatalogFilters MinPrice="_filters.MinPrice"
+                                MaxPrice="_filters.MaxPrice"
+                                SelectedCategoryIds="new HashSet<Guid>(_filters.CategoryId ?? [])"
+                                SelectedPublisherIds="new HashSet<Guid>(_filters.PublisherId ?? [])"
+                                OnMinPriceChanged="OnMinPriceChange"
+                                OnMaxPriceChanged="OnMaxPriceChange"
+                                OnPriceRangeSelected="OnPriceRangeSelected"
+                                OnCategoryToggled="OnCategoryToggled"
+                                OnPublisherToggled="OnPublisherToggled"
+                                OnClearFilters="ClearFilters"/>
+            </div>
 
             <!-- Main Content -->
-            <main class="flex-1">
+            <main class="flex-1 w-full">
                 <CatalogHeader FilteredCount="_filteredBooks.Count"
                                TotalCount="_totalBooks"
                                CurrentSortBy="@GetSortByValue()"
@@ -37,7 +57,7 @@
 
                 @if (!_isLoading && _filteredBooks.Count > 0)
                 {
-                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-6">
                         @foreach (var book in _filteredBooks)
                         {
                             <ProductCard Book="book" OnAddToCart="AddToCart"/>
@@ -56,183 +76,3 @@
         </div>
     </section>
 </div>
-
-@code {
-
-    private readonly List<Breadcrumb.BreadcrumbItem> _breadcrumbItems =
-    [
-        new("Home", "/"),
-        new("Catalog")
-    ];
-
-    private CatalogQueryParams _filters = new();
-    private List<Book> _allBooks = [];
-    private List<Book> _filteredBooks = [];
-    private int _totalBooks;
-    private int _totalPages;
-    private bool _isLoading = true;
-
-    protected override async Task OnInitializedAsync()
-    {
-        _isLoading = true;
-        InitializeMockData();
-        ApplyFilters();
-        _isLoading = false;
-        await base.OnInitializedAsync();
-    }
-
-    private void InitializeMockData()
-    {
-        _allBooks = MockDataProvider.GetAllBooks();
-        _totalBooks = _allBooks.Count;
-    }
-
-    private void ApplyFilters()
-    {
-        var query = _allBooks.AsEnumerable();
-
-        // Apply price filter
-        if (_filters.MinPrice.HasValue)
-        {
-            query = query.Where(b => b.Price >= _filters.MinPrice.Value);
-        }
-
-        if (_filters.MaxPrice.HasValue)
-        {
-            query = query.Where(b => b.Price <= _filters.MaxPrice.Value);
-        }
-
-        // Apply publisher filter
-        if (_filters.PublisherId is { Length: > 0 })
-        {
-            query = query.Where(b => b.Publisher is not null && _filters.PublisherId.Contains(b.Publisher.Id));
-        }
-
-        // Apply sorting
-        query = _filters.OrderBy switch
-        {
-            nameof(Book.Price) => _filters.IsDescending ? query.OrderByDescending(b => b.Price) : query.OrderBy(b => b.Price),
-            nameof(Book.Name) => _filters.IsDescending ? query.OrderByDescending(b => b.Name) : query.OrderBy(b => b.Name),
-            nameof(Book.AverageRating) => query.OrderByDescending(b => b.AverageRating),
-            nameof(Book.TotalReviews) => query.OrderByDescending(b => b.TotalReviews),
-            _ => query
-        };
-
-        // Calculate pagination on full filtered results
-        var filteredCount = query.Count();
-        _totalPages = (int)Math.Ceiling(filteredCount / (double)_filters.PageSize);
-
-        // Apply pagination
-        var skip = (_filters.PageIndex - 1) * _filters.PageSize;
-        _filteredBooks = query.Skip(skip).Take(_filters.PageSize).ToList();
-    }
-
-    private void OnPublisherToggled((Guid PublisherId, bool IsChecked) args)
-    {
-        var publisherIds = _filters.PublisherId?.ToHashSet() ?? [];
-
-        if (args.IsChecked)
-        {
-            publisherIds.Add(args.PublisherId);
-        }
-        else
-        {
-            publisherIds.Remove(args.PublisherId);
-        }
-
-        _filters.PublisherId = publisherIds.Count > 0 ? [.. publisherIds] : null;
-        ApplyFilters();
-    }
-
-    private void OnMinPriceChange(decimal? value)
-    {
-        if (value.HasValue && value.Value > (_filters.MaxPrice ?? 9999)) return;
-        _filters.MinPrice = value;
-        ApplyFilters();
-    }
-
-    private void OnMaxPriceChange(decimal? value)
-    {
-        if (value.HasValue && value.Value < (_filters.MinPrice ?? 0)) return;
-        _filters.MaxPrice = value;
-        ApplyFilters();
-    }
-
-    private void OnPriceRangeSelected((decimal? Min, decimal? Max) range)
-    {
-        _filters.MinPrice = range.Min;
-        _filters.MaxPrice = range.Max;
-        ApplyFilters();
-    }
-
-    private void ClearFilters()
-    {
-        _filters = new();
-        ApplyFilters();
-    }
-
-    private void OnSortChanged(string sortBy)
-    {
-        switch (sortBy)
-        {
-            case "price-low":
-                _filters.OrderBy = nameof(Book.Price);
-                _filters.IsDescending = false;
-                break;
-            case "price-high":
-                _filters.OrderBy = nameof(Book.Price);
-                _filters.IsDescending = true;
-                break;
-            case "name-asc":
-                _filters.OrderBy = nameof(Book.Name);
-                _filters.IsDescending = false;
-                break;
-            case "name-desc":
-                _filters.OrderBy = nameof(Book.Name);
-                _filters.IsDescending = true;
-                break;
-            case "rating":
-                _filters.OrderBy = nameof(Book.AverageRating);
-                _filters.IsDescending = true;
-                break;
-            case "reviews":
-                _filters.OrderBy = nameof(Book.TotalReviews);
-                _filters.IsDescending = true;
-                break;
-            default:
-                _filters.OrderBy = nameof(Book.Price);
-                _filters.IsDescending = false;
-                break;
-        }
-
-        ApplyFilters();
-    }
-
-    private string GetSortByValue()
-    {
-        return _filters.OrderBy switch
-        {
-            nameof(Book.Price) when !_filters.IsDescending => "price-low",
-            nameof(Book.Price) when _filters.IsDescending => "price-high",
-            nameof(Book.Name) when !_filters.IsDescending => "name-asc",
-            nameof(Book.Name) when _filters.IsDescending => "name-desc",
-            nameof(Book.AverageRating) => "rating",
-            nameof(Book.TotalReviews) => "reviews",
-            _ => "price-low"
-        };
-    }
-
-    private void ChangePage(int page)
-    {
-        if (page < 1 || page > _totalPages) return;
-        _filters.PageIndex = page;
-        ApplyFilters();
-    }
-
-    private void AddToCart(Guid bookId)
-    {
-        // TODO: Implement add to cart functionality
-        Console.WriteLine($"Added book {bookId} to cart");
-    }
-
-}

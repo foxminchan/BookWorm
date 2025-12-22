@@ -97,38 +97,50 @@
 
                     <!-- Quantity and Add to Cart -->
                     <div class="mb-6">
-                        <label class="block text-xs font-semibold mb-2" style="color: var(--color-glacier-900)">Quantity</label>
-                        <div class="flex items-center gap-3">
-                            <div class="flex items-center gap-1">
-                                <button @onclick="DecrementQuantity"
-                                        class="btn btn-outline btn-sm btn-square"
-                                        disabled="@(_quantity <= 1)">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                        @if (_book.Status.Equals("OutOfStock", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <div class="alert alert-warning">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                <span>This item is currently out of stock. Please check back later.</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <label class="block text-xs font-semibold mb-2" style="color: var(--color-glacier-900)">Quantity</label>
+                            <div class="flex items-center gap-3">
+                                <div class="flex items-center gap-1">
+                                    <button @onclick="DecrementQuantity"
+                                            class="btn btn-outline btn-sm btn-square"
+                                            disabled="@(_quantity <= 1)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                                        </svg>
+                                    </button>
+                                    <input type="number"
+                                           @bind="_quantity"
+                                           @bind:event="oninput"
+                                           min="1"
+                                           max="99"
+                                           class="input input-bordered input-sm w-16 text-center" />
+                                    <button @onclick="IncrementQuantity"
+                                            class="btn btn-outline btn-sm btn-square"
+                                            disabled="@(_quantity >= 99)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <button @onclick="AddToCart"
+                                        class="btn btn-primary flex-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                                     </svg>
-                                </button>
-                                <input type="number"
-                                       @bind="_quantity"
-                                       @bind:event="oninput"
-                                       min="1"
-                                       max="99"
-                                       class="input input-bordered input-sm w-16 text-center" />
-                                <button @onclick="IncrementQuantity"
-                                        class="btn btn-outline btn-sm btn-square"
-                                        disabled="@(_quantity >= 99)">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                    </svg>
+                                    Add to Cart
                                 </button>
                             </div>
-                            <button @onclick="AddToCart"
-                                    class="btn btn-primary flex-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                                </svg>
-                                Add to Cart
-                            </button>
-                        </div>
+                        }
                     </div>
 
                     <!-- Status Badges -->
@@ -139,12 +151,24 @@
                             </svg>
                             <span class="text-sm font-medium" style="color: var(--color-glacier-700)">Free Shipping</span>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span class="text-sm font-medium text-success">In Stock</span>
-                        </div>
+                        @if (_book.Status.Equals("OutOfStock", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <div class="flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span class="text-sm font-medium text-error">Out of Stock</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span class="text-sm font-medium text-success">In Stock</span>
+                            </div>
+                        }
                     </div>
 
                     <!-- Additional Info -->
@@ -164,12 +188,6 @@
                                     <dd style="color: var(--color-glacier-900)">@_book.Category.Name</dd>
                                 </div>
                             }
-                            <div class="flex">
-                                <dt class="font-semibold w-32" style="color: var(--color-glacier-700)">Status:</dt>
-                                <dd>
-                                    <span class="badge badge-success">@_book.Status</span>
-                                </dd>
-                            </div>
                         </dl>
                     </div>
                 </div>
@@ -190,52 +208,57 @@
                     </button>
                 </div>
 
-                @if (_activeTab == "description")
+                @switch (_activeTab)
                 {
-                    <div class="prose max-w-none">
-                        <h3 class="text-2xl font-bold mb-4" style="color: var(--color-glacier-900)">Product Description</h3>
-                        @if (!string.IsNullOrWhiteSpace(_book.Description))
-                        {
-                            <div class="text-base leading-relaxed" style="color: var(--color-glacier-700)">
-                                @((MarkupString)_book.Description.Replace("\n", "<br />"))
-                            </div>
-                        }
-                        else
-                        {
-                            <p style="color: var(--color-glacier-600)">No description available for this book.</p>
-                        }
-                    </div>
-                }
-                else if (_activeTab == "reviews")
-                {
-                    <div>
-                        <h3 class="text-2xl font-bold mb-4" style="color: var(--color-glacier-900)">Customer Reviews</h3>
-                        <div class="flex items-center gap-4 mb-6">
-                            <div class="text-center">
-                                <div class="text-5xl font-bold" style="color: var(--color-glacier-900)">@_book.AverageRating.ToString("F1")</div>
-                                <div class="flex items-center gap-1 justify-center mt-2">
-                                    @for (var i = 0; i < 5; i++)
-                                    {
-                                        @if (i < Math.Floor(_book.AverageRating))
-                                        {
-                                            <span class="text-yellow-400 text-xl">★</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-xl" style="color: var(--color-glacier-300)">★</span>
-                                        }
-                                    }
+                    case "description":
+                    {
+                        <div class="prose max-w-none">
+                            <h3 class="text-2xl font-bold mb-4" style="color: var(--color-glacier-900)">Product Description</h3>
+                            @if (!string.IsNullOrWhiteSpace(_book.Description))
+                            {
+                                <div class="text-base leading-relaxed" style="color: var(--color-glacier-700)">
+                                    @((MarkupString)_book.Description.Replace("\n", "<br />"))
                                 </div>
-                                <div class="text-sm mt-1" style="color: var(--color-glacier-600)">@_book.TotalReviews reviews</div>
+                            }
+                            else
+                            {
+                                <p style="color: var(--color-glacier-600)">No description available for this book.</p>
+                            }
+                        </div>
+                        break;
+                    }
+                    case "reviews":
+                    {
+                        <div>
+                            <h3 class="text-2xl font-bold mb-4" style="color: var(--color-glacier-900)">Customer Reviews</h3>
+                            <div class="flex items-center gap-4 mb-6">
+                                <div class="text-center">
+                                    <div class="text-5xl font-bold" style="color: var(--color-glacier-900)">@_book.AverageRating.ToString("F1")</div>
+                                    <div class="flex items-center gap-1 justify-center mt-2">
+                                        @for (var i = 0; i < 5; i++)
+                                        {
+                                            if (i < Math.Floor(_book.AverageRating))
+                                            {
+                                                <span class="text-yellow-400 text-xl">★</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-xl" style="color: var(--color-glacier-300)">★</span>
+                                            }
+                                        }
+                                    </div>
+                                    <div class="text-sm mt-1" style="color: var(--color-glacier-600)">@_book.TotalReviews reviews</div>
+                                </div>
+                            </div>
+                            <div class="alert alert-info">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>Reviews feature coming soon! You'll be able to read and write reviews for books.</span>
                             </div>
                         </div>
-                        <div class="alert alert-info">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span>Reviews feature coming soon! You'll be able to read and write reviews for books.</span>
-                        </div>
-                    </div>
+                        break;
+                    }
                 }
             </div>
         </div>

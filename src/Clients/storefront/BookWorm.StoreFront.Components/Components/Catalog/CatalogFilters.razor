@@ -1,21 +1,28 @@
-<aside class="w-64 shrink-0">
-    <div class="sticky top-4 space-y-6">
-        <div>
-            <h2 class="text-xl font-bold mb-4" style="color: var(--color-glacier-900)">Filters</h2>
+<aside class="w-full lg:w-64 lg:shrink-0">
+    <div class="lg:sticky lg:top-4 flex flex-col max-h-[calc(100vh-2rem)]">
+        <div class="mb-4 hidden lg:block">
+            <h2 class="text-xl font-bold" style="color: var(--color-glacier-900)">Filters</h2>
         </div>
 
-        <PriceRangeFilter MinPrice="MinPrice"
-                          MaxPrice="MaxPrice"
-                          OnMinPriceChanged="OnMinPriceChanged"
-                          OnMaxPriceChanged="OnMaxPriceChanged"
-                          OnPriceRangeSelected="OnPriceRangeSelected"/>
+        <div class="flex-1 overflow-y-auto space-y-6 pr-2">
+            <PriceRangeFilter MinPrice="MinPrice"
+                              MaxPrice="MaxPrice"
+                              OnMinPriceChanged="OnMinPriceChanged"
+                              OnMaxPriceChanged="OnMaxPriceChanged"
+                              OnPriceRangeSelected="OnPriceRangeSelected"/>
 
-        <PublisherFilter SelectedPublisherIds="SelectedPublisherIds"
-                         OnPublisherToggled="OnPublisherToggled"/>
+            <CategoryFilter SelectedCategoryIds="SelectedCategoryIds"
+                            OnCategoryToggled="OnCategoryToggled"/>
 
-        <button @onclick="HandleClearFilters"
-                class="btn btn-outline btn-sm w-full">
-            Clear All Filters
-        </button>
+            <PublisherFilter SelectedPublisherIds="SelectedPublisherIds"
+                             OnPublisherToggled="OnPublisherToggled"/>
+        </div>
+
+        <div class="mt-4 pt-4 border-t">
+            <button @onclick="HandleClearFilters"
+                    class="btn btn-outline btn-sm w-full">
+                Clear All Filters
+            </button>
+        </div>
     </div>
 </aside>

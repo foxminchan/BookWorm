@@ -1,8 +1,8 @@
 @using BookWorm.StoreFront.Components.Components.Base
 
-@if (_isLoading || Publishers.Count > 0)
+@if (_isLoading || Categories.Count > 0)
 {
-    <CollapsibleFilterSection Title="Publishers">
+    <CollapsibleFilterSection Title="Categories">
         <div class="space-y-2">
             @if (_isLoading)
             {
@@ -10,14 +10,14 @@
             }
             else
             {
-                @foreach (var publisher in Publishers)
+                @foreach (var category in Categories)
                 {
                     <label class="flex items-center cursor-pointer">
                         <input type="checkbox"
-                               checked="@SelectedPublisherIds.Contains(publisher.Id)"
-                               @onchange="@(e => HandlePublisherToggle(publisher.Id, (bool)e.Value!))"
+                               checked="@SelectedCategoryIds.Contains(category.Id)"
+                               @onchange="@(e => HandleCategoryToggle(category.Id, (bool)e.Value!))"
                                class="checkbox checkbox-sm checkbox-primary mr-2"/>
-                        <span style="color: var(--color-glacier-700)">@publisher.Name</span>
+                        <span style="color: var(--color-glacier-700)">@category.Name</span>
                     </label>
                 }
             }

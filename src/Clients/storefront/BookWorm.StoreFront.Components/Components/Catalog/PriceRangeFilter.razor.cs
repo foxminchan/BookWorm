@@ -11,6 +11,9 @@ public sealed partial class PriceRangeFilter
     private const decimal RangeBoundary2 = 100;
     private const decimal RangeBoundary3 = 200;
 
+    private decimal? _localMinPrice;
+    private decimal? _localMaxPrice;
+
     [Parameter]
     public decimal? MinPrice { get; set; }
 
@@ -25,6 +28,12 @@ public sealed partial class PriceRangeFilter
 
     [Parameter]
     public Action<(decimal? Min, decimal? Max)>? OnPriceRangeSelected { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _localMinPrice = MinPrice;
+        _localMaxPrice = MaxPrice;
+    }
 
     private void HandleMinPriceChange(decimal value)
     {

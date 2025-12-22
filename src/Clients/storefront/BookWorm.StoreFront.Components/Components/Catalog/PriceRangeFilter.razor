@@ -10,10 +10,11 @@
                           style="color: var(--color-glacier-500)">$</span>
                     <input type="number"
                            min="@DefaultMinPrice"
-                           max="@RangeBoundary1"
+                           max="@DefaultMaxPrice"
                            step="@PriceStep"
-                           value="@(MinPrice ?? DefaultMinPrice)"
-                           @onchange="@(e => HandleMinPriceChange(decimal.Parse(e.Value?.ToString() ?? DefaultMinPrice.ToString())))"
+                           @bind="_localMinPrice"
+                           @bind:event="oninput"
+                           @bind:after="() => HandleMinPriceChange(_localMinPrice ?? DefaultMinPrice)"
                            placeholder="@DefaultMinPrice"
                            class="input input-bordered input-sm w-full pl-7"
                            style="font-size: 0.875rem;"/>
@@ -28,8 +29,9 @@
                            min="@DefaultMinPrice"
                            max="@DefaultMaxPrice"
                            step="@PriceStep"
-                           value="@(MaxPrice ?? DefaultMaxPrice)"
-                           @onchange="@(e => HandleMaxPriceChange(decimal.Parse(e.Value?.ToString() ?? DefaultMaxPrice.ToString())))"
+                           @bind="_localMaxPrice"
+                           @bind:event="oninput"
+                           @bind:after="() => HandleMaxPriceChange(_localMaxPrice ?? DefaultMaxPrice)"
                            placeholder="@DefaultMaxPrice"
                            class="input input-bordered input-sm w-full pl-7"
                            style="font-size: 0.875rem;"/>

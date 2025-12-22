@@ -1,6 +1,6 @@
 @using BookWorm.StoreFront.Components.Models
 
-<article class="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow relative">
+<article class="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow relative flex flex-col h-full">
     @if (Book.PriceSale.HasValue)
     {
         <div class="badge badge-primary absolute top-4 left-4 z-10">SALE</div>
@@ -12,7 +12,7 @@
                  style="object-position: center;"/>
         </figure>
     </a>
-    <div class="card-body p-4">
+    <div class="card-body p-4 flex-1 flex flex-col">
         <a href="/catalog/@Book.Id" class="cursor-pointer">
             <h3 class="card-title text-base hover:underline" style="color: var(--color-glacier-900)">@Book.Name</h3>
         </a>
@@ -46,10 +46,19 @@
         </div>
         @if (ShowAddToCart)
         {
-            <button @onclick="HandleAddToCart"
-                    class="btn btn-primary btn-sm w-full">
-                Add to Cart
-            </button>
+            @if (Book.Status.Equals("OutOfStock", StringComparison.OrdinalIgnoreCase))
+            {
+                <button class="btn btn-sm w-full mt-auto" disabled>
+                    Out of Stock
+                </button>
+            }
+            else
+            {
+                <button @onclick="HandleAddToCart"
+                        class="btn btn-primary btn-sm w-full mt-auto">
+                    Add to Cart
+                </button>
+            }
         }
     </div>
 </article>

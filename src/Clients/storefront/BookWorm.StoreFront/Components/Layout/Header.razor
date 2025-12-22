@@ -12,7 +12,7 @@
     <nav class="navbar-end gap-1" aria-label="Main navigation">
         @foreach (var item in _navigationItems)
         {
-            <NavLink Match="NavLinkMatch.All" href="@item.Href" class="btn btn-ghost btn-circle hover:bg-(--color-glacier-100)">
+            <NavLink Match="NavLinkMatch.All" ActiveClass="bg-(--color-glacier-100)" href="@item.Href" class="btn btn-ghost btn-circle hover:bg-(--color-glacier-100)">
                 <img src="@Assets[item.IconPath]" alt="@item.AriaLabel icon" class="h-6 w-6" style="filter: invert(40%) sepia(20%) saturate(1000%) hue-rotate(150deg)" loading="lazy"/>
             </NavLink>
         }

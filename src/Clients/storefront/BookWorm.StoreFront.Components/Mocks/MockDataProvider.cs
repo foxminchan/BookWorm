@@ -26,10 +26,18 @@ Perfect for book clubs, students, and anyone interested in American classics.",
                 "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=400",
                 15.99m,
                 null,
-                "Available",
-                new Category(Guid.Parse("00000001-0001-0001-0001-000000000001"), "Classic Literature"),
+                "InStock",
+                new Category(
+                    Guid.Parse("00000001-0001-0001-0001-000000000001"),
+                    "Classic Literature"
+                ),
                 new Publisher(Guid.Parse("00000001-0002-0002-0002-000000000001"), "Scribner"),
-                [new Author(Guid.Parse("00000001-0003-0003-0003-000000000001"), "F. Scott Fitzgerald")],
+                [
+                    new Author(
+                        Guid.Parse("00000001-0003-0003-0003-000000000001"),
+                        "F. Scott Fitzgerald"
+                    ),
+                ],
                 4.5,
                 2180
             ),
@@ -51,8 +59,11 @@ Key Features:
                 "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400",
                 14.99m,
                 null,
-                "Available",
-                new Category(Guid.Parse("00000001-0001-0001-0001-000000000001"), "Classic Literature"),
+                "InStock",
+                new Category(
+                    Guid.Parse("00000001-0001-0001-0001-000000000001"),
+                    "Classic Literature"
+                ),
                 new Publisher(Guid.Parse("00000002-0002-0002-0002-000000000002"), "HarperCollins"),
                 [new Author(Guid.Parse("00000002-0003-0003-0003-000000000002"), "Harper Lee")],
                 4.8,
@@ -74,7 +85,7 @@ Key Features:
                 "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=400",
                 13.99m,
                 null,
-                "Available",
+                "OutOfStock",
                 new Category(Guid.Parse("00000002-0001-0001-0001-000000000002"), "Science Fiction"),
                 new Publisher(Guid.Parse("00000003-0002-0002-0002-000000000003"), "Signet Classic"),
                 [new Author(Guid.Parse("00000003-0003-0003-0003-000000000003"), "George Orwell")],
@@ -97,9 +108,12 @@ Key Features:
                 "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400",
                 12.99m,
                 16.99m,
-                "Available",
+                "InStock",
                 new Category(Guid.Parse("00000003-0001-0001-0001-000000000003"), "Romance"),
-                new Publisher(Guid.Parse("00000004-0002-0002-0002-000000000004"), "Penguin Classics"),
+                new Publisher(
+                    Guid.Parse("00000004-0002-0002-0002-000000000004"),
+                    "Penguin Classics"
+                ),
                 [new Author(Guid.Parse("00000004-0003-0003-0003-000000000004"), "Jane Austen")],
                 4.6,
                 5324
@@ -120,9 +134,12 @@ Key Features:
                 "https://images.unsplash.com/photo-1519682337058-a94d519337bc?w=400",
                 14.99m,
                 null,
-                "Available",
+                "InStock",
                 new Category(Guid.Parse("00000004-0001-0001-0001-000000000004"), "Fantasy"),
-                new Publisher(Guid.Parse("00000005-0002-0002-0002-000000000005"), "Houghton Mifflin"),
+                new Publisher(
+                    Guid.Parse("00000005-0002-0002-0002-000000000005"),
+                    "Houghton Mifflin"
+                ),
                 [new Author(Guid.Parse("00000005-0003-0003-0003-000000000005"), "J.R.R. Tolkien")],
                 4.8,
                 6287
@@ -145,7 +162,7 @@ Key Features:
                 "https://images.unsplash.com/photo-1621351183012-e2f9972dd9bf?w=400",
                 10.99m,
                 14.99m,
-                "Available",
+                "InStock",
                 new Category(Guid.Parse("00000004-0001-0001-0001-000000000004"), "Fantasy"),
                 new Publisher(Guid.Parse("00000006-0002-0002-0002-000000000006"), "Scholastic"),
                 [new Author(Guid.Parse("00000006-0003-0003-0003-000000000006"), "J.K. Rowling")],
@@ -168,8 +185,11 @@ Key Features:
                 "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400",
                 13.99m,
                 17.99m,
-                "Available",
-                new Category(Guid.Parse("00000001-0001-0001-0001-000000000001"), "Classic Literature"),
+                "InStock",
+                new Category(
+                    Guid.Parse("00000001-0001-0001-0001-000000000001"),
+                    "Classic Literature"
+                ),
                 new Publisher(Guid.Parse("00000007-0002-0002-0002-000000000007"), "Little, Brown"),
                 [new Author(Guid.Parse("00000007-0003-0003-0003-000000000007"), "J.D. Salinger")],
                 4.2,
@@ -193,9 +213,12 @@ Key Features:
                 "https://images.unsplash.com/photo-1621351183012-e2f9972dd9bf?w=400",
                 24.99m,
                 29.99m,
-                "Available",
+                "InStock",
                 new Category(Guid.Parse("00000004-0001-0001-0001-000000000004"), "Fantasy"),
-                new Publisher(Guid.Parse("00000005-0002-0002-0002-000000000005"), "Houghton Mifflin"),
+                new Publisher(
+                    Guid.Parse("00000005-0002-0002-0002-000000000005"),
+                    "Houghton Mifflin"
+                ),
                 [new Author(Guid.Parse("00000005-0003-0003-0003-000000000005"), "J.R.R. Tolkien")],
                 4.9,
                 9128
@@ -216,8 +239,11 @@ Key Features:
                 "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400",
                 16.99m,
                 null,
-                "Available",
-                new Category(Guid.Parse("00000005-0001-0001-0001-000000000005"), "Mystery & Thriller"),
+                "InStock",
+                new Category(
+                    Guid.Parse("00000005-0001-0001-0001-000000000005"),
+                    "Mystery & Thriller"
+                ),
                 new Publisher(Guid.Parse("00000008-0002-0002-0002-000000000008"), "Doubleday"),
                 [new Author(Guid.Parse("00000008-0003-0003-0003-000000000008"), "Dan Brown")],
                 4.3,
@@ -239,7 +265,7 @@ Key Features:
                 "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=400",
                 18.99m,
                 null,
-                "Available",
+                "InStock",
                 new Category(Guid.Parse("00000006-0001-0001-0001-000000000006"), "Self-Help"),
                 new Publisher(Guid.Parse("00000009-0002-0002-0002-000000000009"), "Avery"),
                 [new Author(Guid.Parse("00000009-0003-0003-0003-000000000009"), "James Clear")],
@@ -267,6 +293,20 @@ Key Features:
             new Publisher(Guid.Parse("00000007-0002-0002-0002-000000000007"), "Little, Brown"),
             new Publisher(Guid.Parse("00000008-0002-0002-0002-000000000008"), "Doubleday"),
             new Publisher(Guid.Parse("00000009-0002-0002-0002-000000000009"), "Avery"),
+        ];
+    }
+
+    public static List<Category> GetCategories()
+    {
+        return
+        [
+            new Category(Guid.Parse("00000001-0001-0001-0001-000000000001"), "Classic Literature"),
+            new Category(Guid.Parse("00000002-0001-0001-0001-000000000002"), "Science Fiction"),
+            new Category(Guid.Parse("00000003-0001-0001-0001-000000000003"), "Romance"),
+            new Category(Guid.Parse("00000004-0001-0001-0001-000000000004"), "Fantasy"),
+            new Category(Guid.Parse("00000005-0001-0001-0001-000000000005"), "Mystery"),
+            new Category(Guid.Parse("00000006-0001-0001-0001-000000000006"), "Non-Fiction"),
+            new Category(Guid.Parse("00000007-0001-0001-0001-000000000007"), "Self-Help"),
         ];
     }
 }
