@@ -309,4 +309,43 @@ Key Features:
             new Category(Guid.Parse("00000007-0001-0001-0001-000000000007"), "Self-Help"),
         ];
     }
+
+    public static List<Feedback> GetFeedbacksByBookId(Guid bookId)
+    {
+        return
+        [
+            new(
+                Guid.NewGuid(),
+                "Michael",
+                "T.",
+                "I've been reading this book for about a month now and I'm extremely impressed with the quality of both the writing and the story. The character development is excellent and the plot keeps you engaged throughout.",
+                5,
+                bookId
+            ),
+            new(
+                Guid.NewGuid(),
+                "Sarah",
+                "L.",
+                "One of the best books I've read this year. The author's style is captivating and the narrative flows beautifully. Couldn't put it down!",
+                5,
+                bookId
+            ),
+            new(
+                Guid.NewGuid(),
+                "James",
+                "R.",
+                "Overall a solid book with an interesting premise. A few pacing issues in the middle section, but the ending makes up for it. Would still recommend.",
+                4,
+                bookId
+            ),
+            new(
+                Guid.NewGuid(),
+                "Emily",
+                "K.",
+                "Bought this on a whim and was pleasantly surprised. The depth of the characters and the world-building are phenomenal. Looking forward to more from this author.",
+                5,
+                bookId
+            )
+        ];
+    }
 }

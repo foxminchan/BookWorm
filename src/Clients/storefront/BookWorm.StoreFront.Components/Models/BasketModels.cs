@@ -1,4 +1,4 @@
-namespace BookWorm.StoreFront.Models;
+namespace BookWorm.StoreFront.Components.Models;
 
 public sealed record BasketItem(Guid BookId, string BookTitle, decimal Price, int Quantity);
 

@@ -230,31 +230,103 @@
                     case "reviews":
                     {
                         <div>
-                            <h3 class="text-2xl font-bold mb-4" style="color: var(--color-glacier-900)">Customer Reviews</h3>
-                            <div class="flex items-center gap-4 mb-6">
-                                <div class="text-center">
-                                    <div class="text-5xl font-bold" style="color: var(--color-glacier-900)">@_book.AverageRating.ToString("F1")</div>
-                                    <div class="flex items-center gap-1 justify-center mt-2">
-                                        @for (var i = 0; i < 5; i++)
-                                        {
-                                            if (i < Math.Floor(_book.AverageRating))
-                                            {
-                                                <span class="text-yellow-400 text-xl">★</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="text-xl" style="color: var(--color-glacier-300)">★</span>
-                                            }
-                                        }
+                            <!-- Write Review Form -->
+                            <div class="bg-base-100 rounded-lg p-6 border mb-6" style="border-color: var(--color-glacier-200)">
+                                <h3 class="text-2xl font-bold mb-4" style="color: var(--color-glacier-900)">Write a Review</h3>
+                                <div class="space-y-4">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-semibold mb-2" style="color: var(--color-glacier-700)">First Name</label>
+                                            <input type="text"
+                                                   @bind="_reviewFirstName"
+                                                   placeholder="Enter your first name"
+                                                   class="input input-bordered w-full"/>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-semibold mb-2" style="color: var(--color-glacier-700)">Last Name</label>
+                                            <input type="text"
+                                                   @bind="_reviewLastName"
+                                                   placeholder="Enter your last name"
+                                                   class="input input-bordered w-full"/>
+                                        </div>
                                     </div>
-                                    <div class="text-sm mt-1" style="color: var(--color-glacier-600)">@_book.TotalReviews reviews</div>
+
+                                    <div>
+                                        <label class="block text-sm font-semibold mb-2" style="color: var(--color-glacier-700)">Rating</label>
+                                        <div class="flex items-center gap-2">
+                                            @for (var i = 1; i <= 5; i++)
+                                            {
+                                                var starIndex = i;
+                                                <button type="button"
+                                                        @onclick="() => _reviewRating = starIndex"
+                                                        class="btn btn-ghost btn-sm p-0">
+                                                    <span class="@(_reviewRating >= starIndex ? "text-yellow-400" : "") text-2xl"
+                                                          style="@(_reviewRating < starIndex ? "color: var(--color-glacier-300)" : "")">★</span>
+                                                </button>
+                                            }
+                                            <span class="text-sm ml-2" style="color: var(--color-glacier-600)">
+                                                @(_reviewRating > 0 ? $"{_reviewRating} star{(_reviewRating > 1 ? "s" : "")}" : "Select rating")
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-semibold mb-2" style="color: var(--color-glacier-700)">Your Review</label>
+                                        <textarea @bind="_reviewComment"
+                                                  placeholder="Share your thoughts about this book..."
+                                                  rows="4"
+                                                  class="textarea textarea-bordered w-full"></textarea>
+                                    </div>
+
+                                    <div class="flex justify-end">
+                                        <button @onclick="SubmitReview"
+                                                class="btn btn-primary"
+                                                disabled="@(!IsReviewValid())">
+                                            Submit Review
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="alert alert-info">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <span>Reviews feature coming soon! You'll be able to read and write reviews for books.</span>
+
+                            <h3 class="text-2xl font-bold mb-4" style="color: var(--color-glacier-900)">Customer Reviews</h3>
+                            <div class="space-y-4">
+                                @if (_reviews.Any())
+                                {
+                                    @foreach (var review in _reviews)
+                                    {
+                                        <article class="bg-base-100 rounded-lg p-6 border" style="border-color: var(--color-glacier-200)">
+                                            <div class="flex justify-between items-start mb-2">
+                                                <h4 class="font-bold text-lg" style="color: var(--color-glacier-900)">
+                                                    @if (!string.IsNullOrEmpty(review.Comment) && review.Comment.Length > 30)
+                                                    {
+                                                        @review.Comment.Substring(0, 30)@:...
+                                                    }
+                                                    else
+                                                    {
+                                                        @(review.Comment ?? "Customer Review")
+                                                    }
+                                                </h4>
+                                            </div>
+                                            <div class="flex items-center gap-1 mb-3">
+                                                @for (var i = 0; i < 5; i++)
+                                                {
+                                                    <span class="@(i < review.Rating ? "text-yellow-400" : "") text-lg" style="@(i >= review.Rating ? "color: var(--color-glacier-300)" : "")">★</span>
+                                                }
+                                            </div>
+                                            <p class="mb-4 leading-relaxed" style="color: var(--color-glacier-700)">@review.Comment</p>
+                                            <p class="font-semibold" style="color: var(--color-glacier-900)">@review.FirstName @review.LastName</p>
+                                        </article>
+                                    }
+                                }
+                                else
+                                {
+                                    <div class="alert alert-info">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <span>No reviews yet. Be the first to review this book!</span>
+                                    </div>
+                                }
                             </div>
                         </div>
                         break;
@@ -274,11 +346,17 @@
     private int _quantity = 1;
     private string _activeTab = "description";
     private readonly List<Breadcrumb.BreadcrumbItem> _breadcrumbItems = [];
+    private List<Feedback> _reviews = [];
+    private string? _reviewFirstName;
+    private string? _reviewLastName;
+    private string? _reviewComment;
+    private int _reviewRating;
 
     protected override async Task OnInitializedAsync()
     {
         _isLoading = true;
         await LoadBook();
+        LoadReviews();
         _isLoading = false;
     }
 
@@ -300,6 +378,46 @@
         }
 
         return Task.CompletedTask;
+    }
+
+    private void LoadReviews()
+    {
+        if (_book is null) return;
+        _reviews = MockDataProvider.GetFeedbacksByBookId(_book.Id);
+    }
+    private bool IsReviewValid()
+    {
+        return !string.IsNullOrWhiteSpace(_reviewFirstName) &&
+               !string.IsNullOrWhiteSpace(_reviewLastName) &&
+               !string.IsNullOrWhiteSpace(_reviewComment) &&
+               _reviewRating > 0;
+    }
+
+    private void SubmitReview()
+    {
+        if (_book is null || !IsReviewValid()) return;
+
+        // Create new feedback
+        var feedback = new Feedback(
+            Guid.NewGuid(),
+            _reviewFirstName,
+            _reviewLastName,
+            _reviewComment,
+            _reviewRating,
+            _book.Id
+        );
+
+        // Add to reviews list
+        _reviews.Insert(0, feedback);
+
+        // Reset form
+        _reviewFirstName = null;
+        _reviewLastName = null;
+        _reviewComment = null;
+        _reviewRating = 0;
+
+        // TODO: Send to backend API
+        Console.WriteLine($"Review submitted for book {_book.Name} by {feedback.FirstName} {feedback.LastName}");
     }
 
     private void IncrementQuantity()

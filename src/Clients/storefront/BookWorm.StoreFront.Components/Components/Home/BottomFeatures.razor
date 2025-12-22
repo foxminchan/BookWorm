@@ -8,6 +8,7 @@
                         @if (feature.IconPath is not null)
                         {
                             <img src="@Assets[feature.IconPath]" alt="@feature.Title" class="h-12 w-12"
+                                 loading="lazy"
                                  style="filter: invert(40%) sepia(20%) saturate(1000%) hue-rotate(150deg)"/>
                         }
                         else if (feature.Emoji is not null)
@@ -22,43 +23,3 @@
         </div>
     </div>
 </section>
-
-@code
-{
-    private sealed record Feature(
-        string? IconPath,
-        string Title,
-        string Description,
-        string? Emoji = null
-    );
-
-    private List<Feature> _features = [];
-
-    protected override void OnInitialized()
-    {
-        _features =
-        [
-            new(
-                "/icons/shipping.svg",
-                "Free Shipping",
-                "On all orders over $75"
-            ),
-            new(
-                "/icons/refresh.svg",
-                "Easy Returns",
-                "30-day return policy"
-            ),
-            new(
-                "/icons/shield.svg",
-                "Secure Checkout",
-                "SSL & protected shopping"
-            ),
-            new(
-                null,
-                "Customer Support",
-                "Available 24/7 for you",
-                "💬"
-            )
-        ];
-    }
-}
