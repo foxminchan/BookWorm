@@ -123,7 +123,7 @@
         // Apply publisher filter
         if (_filters.PublisherIds.Count > 0)
         {
-            _filteredBooks = _filteredBooks.Where(b => b.Publisher != null && _filters.PublisherIds.Contains(b.Publisher.Id)).ToList();
+            _filteredBooks = _filteredBooks.Where(b => b.Publisher is not null && _filters.PublisherIds.Contains(b.Publisher.Id)).ToList();
         }
 
         // Apply sorting

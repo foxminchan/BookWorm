@@ -53,16 +53,3 @@
         }
     </div>
 </article>
-
-@code {
-    [Parameter][EditorRequired] public required Book Book { get; set; }
-
-    [Parameter] public bool ShowAddToCart { get; set; } = true;
-
-    [Parameter] public EventCallback<Guid> OnAddToCart { get; set; }
-
-    private async Task HandleAddToCart()
-    {
-        await OnAddToCart.InvokeAsync(Book.Id);
-    }
-}

@@ -22,8 +22,3 @@
         }
     </ol>
 </nav>
-
-@code {
-    [Parameter][EditorRequired] public required List<BreadcrumbItem> Items { get; set; }
-    public sealed record BreadcrumbItem(string Label, string? Url = null);
-}

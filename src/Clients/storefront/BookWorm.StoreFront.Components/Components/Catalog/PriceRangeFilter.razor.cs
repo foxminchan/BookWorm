@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Components;
 
 namespace BookWorm.StoreFront.Components.Components.Catalog;
 
-public sealed partial class PriceRangeFilter : ComponentBase
+public sealed partial class PriceRangeFilter
 {
     private const decimal DefaultMinPrice = 0;
     private const decimal DefaultMaxPrice = 9999;

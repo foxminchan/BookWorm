@@ -18,19 +18,3 @@
         ›
     </button>
 </div>
-
-@code {
-    [Parameter] public int CurrentPage { get; set; } = 1;
-
-    [Parameter] public int TotalPages { get; set; }
-
-    [Parameter] public EventCallback<int> OnPageChanged { get; set; }
-
-    private async Task HandlePageChange(int page)
-    {
-        if (page >= 1 && page <= TotalPages)
-        {
-            await OnPageChanged.InvokeAsync(page);
-        }
-    }
-}

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Components;
 
 namespace BookWorm.StoreFront.Components.Components.Catalog;
 
-public sealed partial class CatalogFilters : ComponentBase
+public sealed partial class CatalogFilters
 {
     [Parameter]
     public decimal? MinPrice { get; set; }

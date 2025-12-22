@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Components;
 
 namespace BookWorm.StoreFront.Components.Components.Catalog;
 
-public sealed partial class PublisherFilter : ComponentBase
+public sealed partial class PublisherFilter
 {
     [Parameter]
     [EditorRequired]
