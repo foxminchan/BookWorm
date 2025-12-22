@@ -19,7 +19,6 @@
             <CatalogFilters MinPrice="_filters.MinPrice"
                            MaxPrice="_filters.MaxPrice"
                            SelectedPublisherIds="_filters.PublisherIds"
-                           AvailablePublishers="_availablePublishers"
                            OnMinPriceChanged="OnMinPriceChange"
                            OnMaxPriceChanged="OnMaxPriceChange"
                            OnPriceRangeSelected="OnPriceRangeSelected"
@@ -28,26 +27,10 @@
 
             <!-- Main Content -->
             <main class="flex-1">
-                <!-- Header with View Toggle and Sort -->
-                <div class="flex justify-between items-center mb-6">
-                    <p class="text-sm" style="color: var(--color-glacier-600)">
-                        Showing @_filteredBooks.Count of @_totalBooks products
-                    </p>
-                    <div class="flex items-center gap-4">
-                        <!-- Sort Dropdown -->
-                        <select @bind="_filters.SortBy"
-                                @bind:after="ApplyFilters"
-                                class="select select-bordered select-sm"
-                                style="width: 180px">
-                            <option value="price-low">Price: Low to High</option>
-                            <option value="price-high">Price: High to Low</option>
-                            <option value="name-asc">Name: A to Z</option>
-                            <option value="name-desc">Name: Z to A</option>
-                            <option value="rating">Rating</option>
-                            <option value="reviews">Most Reviews</option>
-                        </select>
-                    </div>
-                </div>
+                <CatalogHeader FilteredCount="_filteredBooks.Count"
+                              TotalCount="_totalBooks"
+                              @bind-CurrentSortBy="_filters.SortBy"
+                              OnSortChanged="ApplyFilters" />
 
                 <!-- Products Grid -->
                 <LoadingSpinner IsLoading="_isLoading" />
@@ -88,8 +71,6 @@
     private int _totalPages;
     private bool _isLoading = true;
 
-    private List<Publisher> _availablePublishers = [];
-
     protected override async Task OnInitializedAsync()
     {
         _isLoading = true;
@@ -103,7 +84,6 @@
     {
         _allBooks = MockDataProvider.GetAllBooks();
         _totalBooks = _allBooks.Count;
-        _availablePublishers = MockDataProvider.GetPublishers();
     }
 
     private void ApplyFilters()

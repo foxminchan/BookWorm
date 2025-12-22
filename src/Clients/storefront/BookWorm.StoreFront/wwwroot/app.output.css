@@ -1159,6 +1159,11 @@
       width: calc(var(--size-selector, 0.25rem) * 7);
     }
   }
+  .loading-sm {
+    @layer daisyui.l1.l2 {
+      width: calc(var(--size-selector, 0.25rem) * 5);
+    }
+  }
   .w-5 {
     width: calc(var(--spacing) * 5);
   }

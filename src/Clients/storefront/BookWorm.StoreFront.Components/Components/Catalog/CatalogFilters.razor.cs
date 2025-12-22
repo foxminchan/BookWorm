@@ -15,10 +15,6 @@ public sealed partial class CatalogFilters
     public HashSet<Guid> SelectedPublisherIds { get; set; } = [];
 
     [Parameter]
-    [EditorRequired]
-    public required List<Publisher> AvailablePublishers { get; set; }
-
-    [Parameter]
     public EventCallback<decimal?> OnMinPriceChanged { get; set; }
 
     [Parameter]

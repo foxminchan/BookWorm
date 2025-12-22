@@ -2,15 +2,22 @@
 
 <CollapsibleFilterSection Title="Publishers">
     <div class="space-y-2">
-        @foreach (var publisher in Publishers)
+        @if (_isLoading)
         {
-            <label class="flex items-center cursor-pointer">
-                <input type="checkbox"
-                       checked="@SelectedPublisherIds.Contains(publisher.Id)"
-                       @onchange="@(e => HandlePublisherToggle(publisher.Id, (bool)e.Value!))"
-                       class="checkbox checkbox-sm checkbox-primary mr-2"/>
-                <span style="color: var(--color-glacier-700)">@publisher.Name</span>
-            </label>
+            <LoadingSpinner IsLoading="true" SpinnerSize="loading-sm" ContainerClass="py-4" />
+        }
+        else
+        {
+            @foreach (var publisher in Publishers)
+            {
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox"
+                           checked="@SelectedPublisherIds.Contains(publisher.Id)"
+                           @onchange="@(e => HandlePublisherToggle(publisher.Id, (bool)e.Value!))"
+                           class="checkbox checkbox-sm checkbox-primary mr-2"/>
+                    <span style="color: var(--color-glacier-700)">@publisher.Name</span>
+                </label>
+            }
         }
     </div>
 </CollapsibleFilterSection>

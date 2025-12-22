@@ -1,0 +1,16 @@
+<section class="flex justify-between items-center mb-6">
+    <p class="text-sm" style="color: var(--color-glacier-600)">
+        Showing @FilteredCount of @TotalCount products
+    </p>
+    <div class="flex items-center gap-4">
+        <select @bind="CurrentSortBy"
+                @bind:after="OnSortChanged.InvokeAsync"
+                class="select select-bordered select-sm"
+                style="width: 180px">
+            @foreach (var option in _sortOptions)
+            {
+                <option value="@option.Value">@option.Label</option>
+            }
+        </select>
+    </div>
+</section>
