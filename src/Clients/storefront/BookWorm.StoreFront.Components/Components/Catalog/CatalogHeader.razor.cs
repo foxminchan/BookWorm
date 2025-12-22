@@ -14,10 +14,10 @@ public sealed partial class CatalogHeader
     public string CurrentSortBy { get; set; } = "price-low";
 
     [Parameter]
-    public EventCallback<string> CurrentSortByChanged { get; set; }
+    public Action<string>? CurrentSortByChanged { get; set; }
 
     [Parameter]
-    public EventCallback OnSortChanged { get; set; }
+    public Action? OnSortChanged { get; set; }
 
     private readonly List<SortOption> _sortOptions =
     [

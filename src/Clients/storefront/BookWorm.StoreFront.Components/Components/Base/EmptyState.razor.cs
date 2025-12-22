@@ -15,10 +15,10 @@ public sealed partial class EmptyState
     public bool ShowClearButton { get; set; } = true;
 
     [Parameter]
-    public EventCallback OnClearFilters { get; set; }
+    public Action? OnClearFilters { get; set; }
 
-    private async Task HandleClearFilters()
+    private void HandleClearFilters()
     {
-        await OnClearFilters.InvokeAsync();
+        OnClearFilters?.Invoke();
     }
 }

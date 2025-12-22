@@ -18,26 +18,26 @@ public sealed partial class PriceRangeFilter
     public decimal? MaxPrice { get; set; }
 
     [Parameter]
-    public EventCallback<decimal?> OnMinPriceChanged { get; set; }
+    public Action<decimal?>? OnMinPriceChanged { get; set; }
 
     [Parameter]
-    public EventCallback<decimal?> OnMaxPriceChanged { get; set; }
+    public Action<decimal?>? OnMaxPriceChanged { get; set; }
 
     [Parameter]
-    public EventCallback<(decimal? Min, decimal? Max)> OnPriceRangeSelected { get; set; }
+    public Action<(decimal? Min, decimal? Max)>? OnPriceRangeSelected { get; set; }
 
-    private async Task HandleMinPriceChange(decimal value)
+    private void HandleMinPriceChange(decimal value)
     {
-        await OnMinPriceChanged.InvokeAsync(value == DefaultMinPrice ? null : value);
+        OnMinPriceChanged?.Invoke(value == DefaultMinPrice ? null : value);
     }
 
-    private async Task HandleMaxPriceChange(decimal value)
+    private void HandleMaxPriceChange(decimal value)
     {
-        await OnMaxPriceChanged.InvokeAsync(value == DefaultMaxPrice ? null : value);
+        OnMaxPriceChanged?.Invoke(value == DefaultMaxPrice ? null : value);
     }
 
-    private async Task HandlePriceRangeClick(decimal? min, decimal? max)
+    private void HandlePriceRangeClick(decimal? min, decimal? max)
     {
-        await OnPriceRangeSelected.InvokeAsync((min, max));
+        OnPriceRangeSelected?.Invoke((min, max));
     }
 }

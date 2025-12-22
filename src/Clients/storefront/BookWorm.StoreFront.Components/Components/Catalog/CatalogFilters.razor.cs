@@ -1,4 +1,3 @@
-using BookWorm.StoreFront.Components.Models;
 using Microsoft.AspNetCore.Components;
 
 namespace BookWorm.StoreFront.Components.Components.Catalog;
@@ -15,22 +14,22 @@ public sealed partial class CatalogFilters
     public HashSet<Guid> SelectedPublisherIds { get; set; } = [];
 
     [Parameter]
-    public EventCallback<decimal?> OnMinPriceChanged { get; set; }
+    public Action<decimal?>? OnMinPriceChanged { get; set; }
 
     [Parameter]
-    public EventCallback<decimal?> OnMaxPriceChanged { get; set; }
+    public Action<decimal?>? OnMaxPriceChanged { get; set; }
 
     [Parameter]
-    public EventCallback<(decimal? Min, decimal? Max)> OnPriceRangeSelected { get; set; }
+    public Action<(decimal? Min, decimal? Max)>? OnPriceRangeSelected { get; set; }
 
     [Parameter]
-    public EventCallback<(Guid PublisherId, bool IsChecked)> OnPublisherToggled { get; set; }
+    public Action<(Guid PublisherId, bool IsChecked)>? OnPublisherToggled { get; set; }
 
     [Parameter]
-    public EventCallback OnClearFilters { get; set; }
+    public Action? OnClearFilters { get; set; }
 
-    private async Task HandleClearFilters()
+    private void HandleClearFilters()
     {
-        await OnClearFilters.InvokeAsync();
+        OnClearFilters?.Invoke();
     }
 }

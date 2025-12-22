@@ -11,13 +11,13 @@ public sealed partial class Pagination
     public int TotalPages { get; set; }
 
     [Parameter]
-    public EventCallback<int> OnPageChanged { get; set; }
+    public Action<int>? OnPageChanged { get; set; }
 
-    private async Task HandlePageChange(int page)
+    private void HandlePageChange(int page)
     {
         if (page >= 1 && page <= TotalPages)
         {
-            await OnPageChanged.InvokeAsync(page);
+            OnPageChanged?.Invoke(page);
         }
     }
 }

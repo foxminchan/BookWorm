@@ -1,0 +1,305 @@
+@page "/catalog/{id:guid}"
+@using BookWorm.StoreFront.Components.Components.Base
+@using BookWorm.StoreFront.Components.Models
+@using BookWorm.StoreFront.Components.Mocks
+@using Microsoft.AspNetCore.Components.Sections
+@rendermode InteractiveServer
+
+<PageTitle>@(_book?.Name ?? "Product") | BookWorm</PageTitle>
+<SectionContent SectionName="page-header-title">@(_book?.Name ?? "Product Details")</SectionContent>
+<SectionContent SectionName="page-header-subtitle">@_book?.Category?.Name</SectionContent>
+
+<div class="bg-base-100 min-h-screen">
+    <Breadcrumb Items="_breadcrumbItems" />
+
+    @if (_isLoading)
+    {
+        <div class="container mx-auto px-4 py-8">
+            <LoadingSpinner IsLoading="true" />
+        </div>
+    }
+    else if (_book is null)
+    {
+        <div class="container mx-auto px-4 py-8">
+            <div class="alert alert-warning">
+                <span>Book not found</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="container mx-auto px-4 py-8">
+            <!-- Product Detail Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+                <!-- Left Column - Image -->
+                <div class="relative">
+                    <div class="sticky top-4">
+                        @if (_book.PriceSale.HasValue)
+                        {
+                            <div class="badge badge-primary absolute top-4 left-4 z-10 text-lg px-4 py-3">SALE</div>
+                        }
+                        <figure class="relative w-full bg-white rounded-lg shadow-lg overflow-hidden"
+                                style="aspect-ratio: 3/4; max-height: 600px;">
+                            <img src="@_book.ImageUrl"
+                                 alt="@_book.Name"
+                                 class="w-full h-full object-cover" />
+                        </figure>
+                    </div>
+                </div>
+
+                <!-- Right Column - Product Info -->
+                <div class="flex flex-col">
+                    <h1 class="text-4xl font-bold mb-4" style="color: var(--color-glacier-900)">@_book.Name</h1>
+
+                    <!-- Authors -->
+                    @if (_book.Authors.Any())
+                    {
+                        <p class="text-lg mb-3" style="color: var(--color-glacier-700)">
+                            by @string.Join(", ", _book.Authors.Select(a => a.Name))
+                        </p>
+                    }
+
+                    <!-- Rating and Reviews -->
+                    <div class="flex items-center gap-2 mb-6">
+                        <div class="flex items-center gap-1">
+                            @for (var i = 0; i < 5; i++)
+                            {
+                                @if (i < Math.Floor(_book.AverageRating))
+                                {
+                                    <span class="text-yellow-400 text-xl">★</span>
+                                }
+                                else if (i < _book.AverageRating)
+                                {
+                                    <span class="text-yellow-400 text-xl">½</span>
+                                }
+                                else
+                                {
+                                    <span class="text-xl" style="color: var(--color-glacier-300)">★</span>
+                                }
+                            }
+                        </div>
+                        <span class="text-lg font-semibold" style="color: var(--color-glacier-900)">@_book.AverageRating.ToString("F1")</span>
+                        <span class="text-base" style="color: var(--color-glacier-600)">(@_book.TotalReviews reviews)</span>
+                    </div>
+
+                    <!-- Price -->
+                    <div class="flex items-center gap-3 mb-6">
+                        @if (_book.PriceSale.HasValue)
+                        {
+                            <span class="text-5xl font-bold" style="color: var(--color-glacier-900)">$@_book.PriceSale.Value.ToString("F2")</span>
+                            <span class="text-2xl line-through" style="color: var(--color-glacier-500)">$@_book.Price.ToString("F2")</span>
+                        }
+                        else
+                        {
+                            <span class="text-5xl font-bold" style="color: var(--color-glacier-900)">$@_book.Price.ToString("F2")</span>
+                        }
+                    </div>
+
+                    <!-- Quantity and Add to Cart -->
+                    <div class="mb-6">
+                        <label class="block text-xs font-semibold mb-2" style="color: var(--color-glacier-900)">Quantity</label>
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center gap-1">
+                                <button @onclick="DecrementQuantity"
+                                        class="btn btn-outline btn-sm btn-square"
+                                        disabled="@(_quantity <= 1)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                                    </svg>
+                                </button>
+                                <input type="number"
+                                       @bind="_quantity"
+                                       @bind:event="oninput"
+                                       min="1"
+                                       max="99"
+                                       class="input input-bordered input-sm w-16 text-center" />
+                                <button @onclick="IncrementQuantity"
+                                        class="btn btn-outline btn-sm btn-square"
+                                        disabled="@(_quantity >= 99)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <button @onclick="AddToCart"
+                                    class="btn btn-primary flex-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                                Add to Cart
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Status Badges -->
+                    <div class="flex flex-wrap gap-4 mb-6">
+                        <div class="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" style="color: var(--color-glacier-700)" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                            </svg>
+                            <span class="text-sm font-medium" style="color: var(--color-glacier-700)">Free Shipping</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span class="text-sm font-medium text-success">In Stock</span>
+                        </div>
+                    </div>
+
+                    <!-- Additional Info -->
+                    <div class="border-t pt-6" style="border-color: var(--color-glacier-300)">
+                        <dl class="space-y-3">
+                            @if (_book.Publisher is not null)
+                            {
+                                <div class="flex">
+                                    <dt class="font-semibold w-32" style="color: var(--color-glacier-700)">Publisher:</dt>
+                                    <dd style="color: var(--color-glacier-900)">@_book.Publisher.Name</dd>
+                                </div>
+                            }
+                            @if (_book.Category is not null)
+                            {
+                                <div class="flex">
+                                    <dt class="font-semibold w-32" style="color: var(--color-glacier-700)">Category:</dt>
+                                    <dd style="color: var(--color-glacier-900)">@_book.Category.Name</dd>
+                                </div>
+                            }
+                            <div class="flex">
+                                <dt class="font-semibold w-32" style="color: var(--color-glacier-700)">Status:</dt>
+                                <dd>
+                                    <span class="badge badge-success">@_book.Status</span>
+                                </dd>
+                            </div>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs Section -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div role="tablist" class="tabs tabs-bordered mb-6">
+                    <button role="tab"
+                            class="tab @(_activeTab == "description" ? "tab-active" : "")"
+                            @onclick="@(() => _activeTab = "description")">
+                        Description
+                    </button>
+                    <button role="tab"
+                            class="tab @(_activeTab == "reviews" ? "tab-active" : "")"
+                            @onclick="@(() => _activeTab = "reviews")">
+                        Reviews (@_book.TotalReviews)
+                    </button>
+                </div>
+
+                @if (_activeTab == "description")
+                {
+                    <div class="prose max-w-none">
+                        <h3 class="text-2xl font-bold mb-4" style="color: var(--color-glacier-900)">Product Description</h3>
+                        @if (!string.IsNullOrWhiteSpace(_book.Description))
+                        {
+                            <div class="text-base leading-relaxed" style="color: var(--color-glacier-700)">
+                                @((MarkupString)_book.Description.Replace("\n", "<br />"))
+                            </div>
+                        }
+                        else
+                        {
+                            <p style="color: var(--color-glacier-600)">No description available for this book.</p>
+                        }
+                    </div>
+                }
+                else if (_activeTab == "reviews")
+                {
+                    <div>
+                        <h3 class="text-2xl font-bold mb-4" style="color: var(--color-glacier-900)">Customer Reviews</h3>
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="text-center">
+                                <div class="text-5xl font-bold" style="color: var(--color-glacier-900)">@_book.AverageRating.ToString("F1")</div>
+                                <div class="flex items-center gap-1 justify-center mt-2">
+                                    @for (var i = 0; i < 5; i++)
+                                    {
+                                        @if (i < Math.Floor(_book.AverageRating))
+                                        {
+                                            <span class="text-yellow-400 text-xl">★</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-xl" style="color: var(--color-glacier-300)">★</span>
+                                        }
+                                    }
+                                </div>
+                                <div class="text-sm mt-1" style="color: var(--color-glacier-600)">@_book.TotalReviews reviews</div>
+                            </div>
+                        </div>
+                        <div class="alert alert-info">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>Reviews feature coming soon! You'll be able to read and write reviews for books.</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private Book? _book;
+    private bool _isLoading = true;
+    private int _quantity = 1;
+    private string _activeTab = "description";
+    private readonly List<Breadcrumb.BreadcrumbItem> _breadcrumbItems = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        await LoadBook();
+        _isLoading = false;
+    }
+
+    private Task LoadBook()
+    {
+        // Get book from mock data
+        _book = MockDataProvider.GetAllBooks().FirstOrDefault(b => b.Id == Id);
+
+        if (_book is not null)
+        {
+            _breadcrumbItems.Clear();
+            _breadcrumbItems.Add(new("Home", "/"));
+            _breadcrumbItems.Add(new("Catalog", "/catalog"));
+            if (_book.Category is not null)
+            {
+                _breadcrumbItems.Add(new(_book.Category.Name, $"/catalog?category={_book.Category.Id}"));
+            }
+            _breadcrumbItems.Add(new(_book.Name ?? "Product"));
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void IncrementQuantity()
+    {
+        if (_quantity < 99)
+        {
+            _quantity++;
+        }
+    }
+
+    private void DecrementQuantity()
+    {
+        if (_quantity > 1)
+        {
+            _quantity--;
+        }
+    }
+
+    private void AddToCart()
+    {
+        if (_book is null) return;
+
+        // TODO: Implement add to cart functionality
+        Console.WriteLine($"Added {_quantity} of book {_book.Name} (ID: {Id}) to cart");
+    }
+}

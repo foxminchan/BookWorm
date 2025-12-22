@@ -4,7 +4,7 @@
     </p>
     <div class="flex items-center gap-4">
         <select @bind="CurrentSortBy"
-                @bind:after="OnSortChanged.InvokeAsync"
+                @bind:after="() => { CurrentSortByChanged?.Invoke(CurrentSortBy); OnSortChanged?.Invoke(); }"
                 class="select select-bordered select-sm"
                 style="width: 180px">
             @foreach (var option in _sortOptions)

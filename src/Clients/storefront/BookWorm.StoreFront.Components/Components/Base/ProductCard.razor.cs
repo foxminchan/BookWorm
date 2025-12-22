@@ -13,10 +13,10 @@ public sealed partial class ProductCard
     public bool ShowAddToCart { get; set; } = true;
 
     [Parameter]
-    public EventCallback<Guid> OnAddToCart { get; set; }
+    public Action<Guid>? OnAddToCart { get; set; }
 
-    private async Task HandleAddToCart()
+    private void HandleAddToCart()
     {
-        await OnAddToCart.InvokeAsync(Book.Id);
+        OnAddToCart?.Invoke(Book.Id);
     }
 }

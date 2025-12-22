@@ -10,7 +10,7 @@ public sealed partial class PublisherFilter
     public HashSet<Guid> SelectedPublisherIds { get; set; } = [];
 
     [Parameter]
-    public EventCallback<(Guid PublisherId, bool IsChecked)> OnPublisherToggled { get; set; }
+    public Action<(Guid PublisherId, bool IsChecked)>? OnPublisherToggled { get; set; }
 
     private List<Publisher> Publishers { get; set; } = [];
     private bool _isLoading = true;
@@ -22,8 +22,8 @@ public sealed partial class PublisherFilter
         _isLoading = false;
     }
 
-    private async Task HandlePublisherToggle(Guid publisherId, bool isChecked)
+    private void HandlePublisherToggle(Guid publisherId, bool isChecked)
     {
-        await OnPublisherToggled.InvokeAsync((publisherId, isChecked));
+        OnPublisherToggled?.Invoke((publisherId, isChecked));
     }
 }
