@@ -1,0 +1,38 @@
+<div class="mb-6">
+    @if (IsOutOfStock)
+    {
+        <div class="alert alert-warning">
+            <img src="/icons/warning.svg" alt="Warning" class="h-6 w-6 shrink-0" />
+            <span>This item is currently out of stock. Please check back later.</span>
+        </div>
+    }
+    else
+    {
+        <label class="block text-xs font-semibold mb-2" style="color: var(--color-glacier-900)">Quantity</label>
+        <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1">
+                <button @onclick="DecrementQuantity"
+                        class="btn btn-outline btn-sm btn-square"
+                        disabled="@(Quantity <= 1)">
+                    <img src="/icons/minus.svg" alt="Decrease" class="h-4 w-4" />
+                </button>
+                <input type="number"
+                       @bind="Quantity"
+                       @bind:event="oninput"
+                       min="1"
+                       max="99"
+                       class="input input-bordered input-sm w-16 text-center" />
+                <button @onclick="IncrementQuantity"
+                        class="btn btn-outline btn-sm btn-square"
+                        disabled="@(Quantity >= 99)">
+                    <img src="/icons/plus.svg" alt="Increase" class="h-4 w-4" />
+                </button>
+            </div>
+            <button @onclick="OnAddToCart"
+                    class="btn btn-primary flex-1">
+                <img src="/icons/cart.svg" alt="Cart" class="h-5 w-5 mr-2" />
+                Add to Cart
+            </button>
+        </div>
+    }
+</div>

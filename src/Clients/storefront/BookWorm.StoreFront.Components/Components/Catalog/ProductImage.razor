@@ -1,0 +1,15 @@
+<div class="relative">
+    <div class="sticky top-4">
+        @if (PriceSale.HasValue)
+        {
+            <div class="badge badge-primary absolute top-4 left-4 z-10 text-lg px-4 py-3">SALE</div>
+        }
+        <figure class="relative w-full bg-white rounded-lg shadow-lg overflow-hidden"
+                style="aspect-ratio: 3/4; max-height: 600px;">
+            <img src="@ImageUrl"
+                 alt="@AltText"
+                 loading="lazy"
+                 class="w-full h-full object-cover" />
+        </figure>
+    </div>
+</div>

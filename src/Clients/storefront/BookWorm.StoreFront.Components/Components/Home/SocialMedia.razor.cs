@@ -13,7 +13,7 @@ public sealed partial class SocialMedia
             new("📖", "Open Book"),
             new("📚", "Stack of Books"),
             new("📘", "Blue Book"),
-            new("📕", "Red Book")
+            new("📕", "Red Book"),
         ];
     }
 }

@@ -15,27 +15,10 @@ public sealed partial class BottomFeatures
     {
         _features =
         [
-            new(
-                "/icons/shipping.svg",
-                "Free Shipping",
-                "On all orders over $75"
-            ),
-            new(
-                "/icons/refresh.svg",
-                "Easy Returns",
-                "30-day return policy"
-            ),
-            new(
-                "/icons/shield.svg",
-                "Secure Checkout",
-                "SSL & protected shopping"
-            ),
-            new(
-                null,
-                "Customer Support",
-                "Available 24/7 for you",
-                "💬"
-            )
+            new("/icons/shipping.svg", "Free Shipping", "On all orders over $75"),
+            new("/icons/refresh.svg", "Easy Returns", "30-day return policy"),
+            new("/icons/shield.svg", "Secure Checkout", "SSL & protected shopping"),
+            new(null, "Customer Support", "Available 24/7 for you", "💬"),
         ];
     }
 }

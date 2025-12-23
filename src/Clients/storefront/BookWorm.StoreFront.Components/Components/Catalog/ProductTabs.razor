@@ -1,0 +1,33 @@
+@using BookWorm.StoreFront.Components.Components.Rating
+
+<div class="bg-white rounded-lg shadow-lg p-6">
+    <div role="tablist" class="tabs tabs-bordered mb-6">
+        <button role="tab"
+                class="tab @(ActiveTab == "description" ? "tab-active" : "")"
+                @onclick="@(() => SetActiveTab("description"))">
+            Description
+        </button>
+        <button role="tab"
+                class="tab @(ActiveTab == "reviews" ? "tab-active" : "")"
+                @onclick="@(() => SetActiveTab("reviews"))">
+            Reviews (@TotalReviews)
+        </button>
+    </div>
+
+    @switch (ActiveTab)
+    {
+        case "description":
+            <ProductDescription Description="@Description" />
+            break;
+        case "reviews":
+            <div>
+                <ReviewForm @bind-FirstName="_reviewFirstName"
+                           @bind-LastName="_reviewLastName"
+                           @bind-Comment="_reviewComment"
+                           @bind-Rating="_reviewRating"
+                           OnSubmitReview="HandleReviewSubmit" />
+                <ReviewsList BookId="@BookId" RefreshTrigger="@_refreshTrigger" />
+            </div>
+            break;
+    }
+</div>

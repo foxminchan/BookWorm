@@ -1,0 +1,20 @@
+<div class="flex flex-wrap gap-4 mb-6">
+    <div class="flex items-center gap-2">
+        <img src="/icons/box.svg" alt="Shipping" class="h-5 w-5" style="color: var(--color-glacier-700)" />
+        <span class="text-sm font-medium" style="color: var(--color-glacier-700)">Free Shipping</span>
+    </div>
+    @if (IsOutOfStock)
+    {
+        <div class="flex items-center gap-2">
+            <img src="/icons/x-circle.svg" alt="Out of Stock" class="h-5 w-5 text-error" />
+            <span class="text-sm font-medium text-error">Out of Stock</span>
+        </div>
+    }
+    else
+    {
+        <div class="flex items-center gap-2">
+            <img src="/icons/check-circle.svg" alt="In Stock" class="h-5 w-5 text-success" />
+            <span class="text-sm font-medium text-success">In Stock</span>
+        </div>
+    }
+</div>

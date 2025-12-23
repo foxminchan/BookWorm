@@ -1,0 +1,20 @@
+@using BookWorm.StoreFront.Components.Models
+
+<div class="border-t pt-6" style="border-color: var(--color-glacier-300)">
+    <dl class="space-y-3">
+        @if (Publisher is not null)
+        {
+            <div class="flex">
+                <dt class="font-semibold w-32" style="color: var(--color-glacier-700)">Publisher:</dt>
+                <dd style="color: var(--color-glacier-900)">@Publisher.Name</dd>
+            </div>
+        }
+        @if (Category is not null)
+        {
+            <div class="flex">
+                <dt class="font-semibold w-32" style="color: var(--color-glacier-700)">Category:</dt>
+                <dd style="color: var(--color-glacier-900)">@Category.Name</dd>
+            </div>
+        }
+    </dl>
+</div>

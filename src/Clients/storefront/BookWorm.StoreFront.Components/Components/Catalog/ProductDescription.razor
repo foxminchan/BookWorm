@@ -1,0 +1,13 @@
+<div class="prose max-w-none">
+    <h3 class="text-2xl font-bold mb-4" style="color: var(--color-glacier-900)">Product Description</h3>
+    @if (!string.IsNullOrWhiteSpace(Description))
+    {
+        <div class="text-base leading-relaxed" style="color: var(--color-glacier-700)">
+            @((MarkupString)Description.Replace("\n", "<br />"))
+        </div>
+    }
+    else
+    {
+        <p style="color: var(--color-glacier-600)">No description available for this book.</p>
+    }
+</div>

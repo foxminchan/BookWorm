@@ -1,0 +1,56 @@
+<div class="bg-base-100 rounded-lg p-6 border mb-6" style="border-color: var(--color-glacier-200)">
+    <h3 class="text-2xl font-bold mb-4" style="color: var(--color-glacier-900)">Write a Review</h3>
+    <div class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-semibold mb-2" style="color: var(--color-glacier-700)">First Name</label>
+                <input type="text"
+                       @bind="FirstName"
+                       placeholder="Enter your first name"
+                       class="input input-bordered w-full"/>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold mb-2" style="color: var(--color-glacier-700)">Last Name</label>
+                <input type="text"
+                       @bind="LastName"
+                       placeholder="Enter your last name"
+                       class="input input-bordered w-full"/>
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-semibold mb-2" style="color: var(--color-glacier-700)">Rating</label>
+            <div class="flex items-center gap-2">
+                @for (var i = 1; i <= 5; i++)
+                {
+                    var starIndex = i;
+                    <button type="button"
+                            @onclick="() => Rating = starIndex"
+                            class="btn btn-ghost btn-sm p-0">
+                        <span class="@(Rating >= starIndex ? "text-yellow-400" : "") text-2xl"
+                              style="@(Rating < starIndex ? "color: var(--color-glacier-300)" : "")">★</span>
+                    </button>
+                }
+                <span class="text-sm ml-2" style="color: var(--color-glacier-600)">
+                    @(Rating > 0 ? $"{Rating} star{(Rating > 1 ? "s" : "")}" : "Select rating")
+                </span>
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-semibold mb-2" style="color: var(--color-glacier-700)">Your Review</label>
+            <textarea @bind="Comment"
+                      placeholder="Share your thoughts about this book..."
+                      rows="4"
+                      class="textarea textarea-bordered w-full"></textarea>
+        </div>
+
+        <div class="flex justify-end">
+            <button @onclick="OnSubmit"
+                    class="btn btn-primary"
+                    disabled="@(!IsValid())">
+                Submit Review
+            </button>
+        </div>
+    </div>
+</div>

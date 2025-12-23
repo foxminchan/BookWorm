@@ -345,7 +345,7 @@ Key Features:
                 "Bought this on a whim and was pleasantly surprised. The depth of the characters and the world-building are phenomenal. Looking forward to more from this author.",
                 5,
                 bookId
-            )
+            ),
         ];
     }
 }
