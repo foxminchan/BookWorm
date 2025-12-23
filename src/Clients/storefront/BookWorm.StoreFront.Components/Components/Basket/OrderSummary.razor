@@ -1,5 +1,3 @@
-@using BookWorm.StoreFront.Components.Models
-
 <div class="card bg-base-100 shadow-lg sticky top-4">
     <div class="card-body">
         <h2 class="card-title mb-4">Order Summary</h2>
@@ -39,41 +37,13 @@
 
         <!-- Trust Badges -->
         <div class="mt-6 pt-6 border-t space-y-2 text-sm text-gray-600">
-            <div class="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>Cash on Delivery</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Free returns within 30 days</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                </svg>
-                <span>Fast & reliable shipping</span>
-            </div>
+            @foreach (var badge in _trustBadges)
+            {
+                <div class="flex items-center gap-2">
+                    <img src="@badge.IconUrl" alt="@badge.AltText" class="h-5 w-5" loading="lazy" />
+                    <span>@badge.Text</span>
+                </div>
+            }
         </div>
     </div>
 </div>
-
-@code {
-    [Parameter, EditorRequired]
-    public required int TotalItems { get; set; }
-
-    [Parameter, EditorRequired]
-    public required decimal Subtotal { get; set; }
-
-    [Parameter, EditorRequired]
-    public required decimal Total { get; set; }
-
-    [Parameter]
-    public decimal TotalSavings { get; set; }
-
-    [Parameter]
-    public EventCallback OnCheckout { get; set; }
-}

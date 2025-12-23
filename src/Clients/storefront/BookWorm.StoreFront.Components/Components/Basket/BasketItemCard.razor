@@ -39,25 +39,9 @@
             <!-- Remove Button -->
             <div>
                 <button class="btn btn-ghost btn-sm btn-circle" @onclick="OnRemove">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <img src="/icons/x.svg" alt="Remove" class="h-5 w-5" loading="lazy" />
                 </button>
             </div>
         </div>
     </div>
 </div>
-
-@code {
-    [Parameter, EditorRequired]
-    public required BasketItem Item { get; set; }
-
-    [Parameter]
-    public EventCallback OnIncrease { get; set; }
-
-    [Parameter]
-    public EventCallback OnDecrease { get; set; }
-
-    [Parameter]
-    public EventCallback OnRemove { get; set; }
-}

@@ -13,13 +13,19 @@
 <div class="container mx-auto px-4 py-8">
     <h1 class="text-3xl font-bold mb-8">Shopping Basket</h1>
 
-    @if (isLoading)
+    @if (_isLoading)
     {
         <LoadingSpinner IsLoading="true" Message="Loading your basket..." />
     }
-    else if (basket?.Items is null || !basket.Items.Any())
+    else if (_basket?.Items is null || !_basket.Items.Any())
     {
-        <EmptyBasket />
+        <div class="text-center py-12">
+            <div class="text-6xl mb-4">🛒</div>
+            <h2 class="text-2xl font-semibold mb-2">Your basket is empty</h2>
+            <p class="text-gray-600 mb-6">Add some books to get started!</p>
+            <a href="/" class="btn btn-primary" style="background-color: var(--color-glacier-600)">Continue Shopping</a>
+        </div>
+
     }
     else
     {
@@ -27,7 +33,7 @@
             <!-- Basket Items -->
             <div class="lg:col-span-2">
                 <div class="space-y-4">
-                    @foreach (var item in basket.Items)
+                    @foreach (var item in _basket.Items)
                     {
                         <BasketItemCard
                             Item="@item"
@@ -46,7 +52,7 @@
             <!-- Order Summary -->
             <div class="lg:col-span-1">
                 <OrderSummary
-                    TotalItems="@basket.Items.Sum(i => i.Quantity)"
+                    TotalItems="@_basket.Items.Sum(i => i.Quantity)"
                     Subtotal="@GetSubtotal()"
                     Total="@GetTotal()"
                     TotalSavings="@GetTotalSavings()"
@@ -57,8 +63,8 @@
 </div>
 
 @code {
-    private CustomerBasket? basket;
-    private bool isLoading = true;
+    private CustomerBasket? _basket;
+    private bool _isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -66,50 +72,50 @@
         await Task.Delay(500);
 
         // Load mock basket data
-        basket = MockDataProvider.GetMockBasket();
-        isLoading = false;
+        _basket = MockDataProvider.GetMockBasket();
+        _isLoading = false;
     }
 
     private void IncreaseQuantity(string itemId)
     {
-        var item = basket?.Items.FirstOrDefault(i => i.Id == itemId);
+        var item = _basket?.Items.FirstOrDefault(i => i.Id == itemId);
         if (item != null)
         {
-            var index = basket!.Items.IndexOf(item);
-            basket.Items[index] = item with { Quantity = item.Quantity + 1 };
+            var index = _basket!.Items.IndexOf(item);
+            _basket.Items[index] = item with { Quantity = item.Quantity + 1 };
         }
     }
 
     private void DecreaseQuantity(string itemId)
     {
-        var item = basket?.Items.FirstOrDefault(i => i.Id == itemId);
+        var item = _basket?.Items.FirstOrDefault(i => i.Id == itemId);
         if (item != null && item.Quantity > 1)
         {
-            var index = basket!.Items.IndexOf(item);
-            basket.Items[index] = item with { Quantity = item.Quantity - 1 };
+            var index = _basket!.Items.IndexOf(item);
+            _basket.Items[index] = item with { Quantity = item.Quantity - 1 };
         }
     }
 
     private void RemoveItem(string itemId)
     {
-        if (basket != null)
+        if (_basket != null)
         {
-            var item = basket.Items.FirstOrDefault(i => i.Id == itemId);
+            var item = _basket.Items.FirstOrDefault(i => i.Id == itemId);
             if (item != null)
             {
-                basket.Items.Remove(item);
+                _basket.Items.Remove(item);
             }
         }
     }
 
     private decimal GetSubtotal()
     {
-        return basket?.Items.Sum(i => (i.PriceSale ?? i.Price) * i.Quantity) ?? 0;
+        return _basket?.Items.Sum(i => (i.PriceSale ?? i.Price) * i.Quantity) ?? 0;
     }
 
     private decimal GetTotalSavings()
     {
-        return basket?.Items
+        return _basket?.Items
             .Where(i => i.PriceSale.HasValue)
             .Sum(i => (i.Price - i.PriceSale!.Value) * i.Quantity) ?? 0;
     }

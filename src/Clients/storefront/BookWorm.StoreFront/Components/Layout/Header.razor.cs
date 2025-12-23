@@ -13,7 +13,15 @@ public sealed partial class Header
             new("/", "/icons/home.svg", "Home"),
             new("catalog", "/icons/books.svg", "Books"),
             new("basket", "/icons/cart.svg", "Shopping cart"),
-            new("account", "/icons/account.svg", "Account"),
         ];
+    }
+
+    private void HandleLogout()
+    {
+        // TODO: Implement logout logic
+        // This could involve:
+        // - Clearing authentication state
+        // - Redirecting to login page
+        // - Calling authentication service
     }
 }

@@ -16,5 +16,31 @@
                 <img src="@Assets[item.IconPath]" alt="@item.AriaLabel icon" class="h-6 w-6" style="filter: invert(40%) sepia(20%) saturate(1000%) hue-rotate(150deg)" loading="lazy"/>
             </NavLink>
         }
+
+        <div class="dropdown dropdown-end">
+            <button tabindex="0" role="button" class="btn btn-ghost btn-circle hover:bg-(--color-glacier-100)" aria-label="Account menu">
+                <img src="@Assets["/icons/account.svg"]" alt="Account icon" class="h-6 w-6" style="filter: invert(40%) sepia(20%) saturate(1000%) hue-rotate(150deg)" loading="lazy"/>
+            </button>
+            <ul tabindex="0" class="dropdown-content menu bg-white rounded-box z-[1] w-52 p-2 shadow-lg border border-(--color-glacier-200) mt-3">
+                <li>
+                    <NavLink href="account/profile" class="hover:bg-(--color-glacier-100)">
+                        <img src="@Assets["/icons/account.svg"]" alt="" class="h-5 w-5" style="filter: invert(40%) sepia(20%) saturate(1000%) hue-rotate(150deg)"/>
+                        <span>My Profile</span>
+                    </NavLink>
+                </li>
+                <li>
+                    <NavLink href="account/orders" class="hover:bg-(--color-glacier-100)">
+                        <img src="@Assets["/icons/package.svg"]" alt="" class="h-5 w-5" style="filter: invert(40%) sepia(20%) saturate(1000%) hue-rotate(150deg)"/>
+                        <span>Order History</span>
+                    </NavLink>
+                </li>
+                <li class="border-t border-(--color-glacier-200) mt-1 pt-1">
+                    <button @onclick="HandleLogout" class="hover:bg-(--color-glacier-100) text-red-600">
+                        <img src="@Assets["/icons/logout.svg"]" alt="" class="h-5 w-5" style="filter: invert(40%) sepia(100%) saturate(600%) hue-rotate(340deg)"/>
+                        <span>Logout</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
     </nav>
 </header>
