@@ -1,7 +1,7 @@
 using BookWorm.StoreFront.Components.Models;
 using Microsoft.AspNetCore.Components;
 
-namespace BookWorm.StoreFront.Components.Components.Base;
+namespace BookWorm.StoreFront.Components.Components.Product;
 
 public sealed partial class ProductCard
 {

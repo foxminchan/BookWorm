@@ -1,0 +1,128 @@
+@page "/basket"
+@using BookWorm.StoreFront.Components.Models
+@using BookWorm.StoreFront.Components.Mocks
+@using BookWorm.StoreFront.Components.Components.Base
+@using BookWorm.StoreFront.Components.Components.Basket
+@using Microsoft.AspNetCore.Components.Sections
+@rendermode InteractiveServer
+
+<PageTitle>Shopping Basket | BookWorm</PageTitle>
+<SectionContent SectionName="page-header-title">Shopping Basket</SectionContent>
+<SectionContent SectionName="page-header-subtitle">Review Your Selected Items</SectionContent>
+
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-8">Shopping Basket</h1>
+
+    @if (isLoading)
+    {
+        <LoadingSpinner IsLoading="true" Message="Loading your basket..." />
+    }
+    else if (basket?.Items is null || !basket.Items.Any())
+    {
+        <EmptyBasket />
+    }
+    else
+    {
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Basket Items -->
+            <div class="lg:col-span-2">
+                <div class="space-y-4">
+                    @foreach (var item in basket.Items)
+                    {
+                        <BasketItemCard
+                            Item="@item"
+                            OnIncrease="@(() => IncreaseQuantity(item.Id!))"
+                            OnDecrease="@(() => DecreaseQuantity(item.Id!))"
+                            OnRemove="@(() => RemoveItem(item.Id!))" />
+                    }
+                </div>
+
+                <!-- Continue Shopping Button -->
+                <div class="mt-6">
+                    <a href="/" class="btn btn-outline">← Continue Shopping</a>
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="lg:col-span-1">
+                <OrderSummary
+                    TotalItems="@basket.Items.Sum(i => i.Quantity)"
+                    Subtotal="@GetSubtotal()"
+                    Total="@GetTotal()"
+                    TotalSavings="@GetTotalSavings()"
+                    OnCheckout="@ProceedToCheckout" />
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private CustomerBasket? basket;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Simulate loading delay
+        await Task.Delay(500);
+
+        // Load mock basket data
+        basket = MockDataProvider.GetMockBasket();
+        isLoading = false;
+    }
+
+    private void IncreaseQuantity(string itemId)
+    {
+        var item = basket?.Items.FirstOrDefault(i => i.Id == itemId);
+        if (item != null)
+        {
+            var index = basket!.Items.IndexOf(item);
+            basket.Items[index] = item with { Quantity = item.Quantity + 1 };
+        }
+    }
+
+    private void DecreaseQuantity(string itemId)
+    {
+        var item = basket?.Items.FirstOrDefault(i => i.Id == itemId);
+        if (item != null && item.Quantity > 1)
+        {
+            var index = basket!.Items.IndexOf(item);
+            basket.Items[index] = item with { Quantity = item.Quantity - 1 };
+        }
+    }
+
+    private void RemoveItem(string itemId)
+    {
+        if (basket != null)
+        {
+            var item = basket.Items.FirstOrDefault(i => i.Id == itemId);
+            if (item != null)
+            {
+                basket.Items.Remove(item);
+            }
+        }
+    }
+
+    private decimal GetSubtotal()
+    {
+        return basket?.Items.Sum(i => (i.PriceSale ?? i.Price) * i.Quantity) ?? 0;
+    }
+
+    private decimal GetTotalSavings()
+    {
+        return basket?.Items
+            .Where(i => i.PriceSale.HasValue)
+            .Sum(i => (i.Price - i.PriceSale!.Value) * i.Quantity) ?? 0;
+    }
+
+    private decimal GetTotal()
+    {
+        return GetSubtotal();
+    }
+
+    private void ProceedToCheckout()
+    {
+        // Navigate to checkout page (to be implemented)
+        // For now, just show an alert
+        Console.WriteLine("Proceeding to checkout...");
+    }
+}

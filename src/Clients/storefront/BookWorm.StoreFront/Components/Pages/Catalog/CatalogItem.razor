@@ -1,8 +1,7 @@
 @page "/catalog/{id:guid}"
 @using BookWorm.StoreFront.Components.Components.Base
 @using BookWorm.StoreFront.Components.Components.Catalog
-@using BookWorm.StoreFront.Components.Models
-@using BookWorm.StoreFront.Components.Mocks
+@using BookWorm.StoreFront.Components.Components.Product
 @using Microsoft.AspNetCore.Components.Sections
 @rendermode InteractiveServer
 
@@ -56,7 +55,7 @@
 
                     <!-- Additional Info -->
                     <ProductDetails Publisher="@_book.Publisher"
-                                   Category="@_book.Category" />
+                                    Category="@_book.Category" />
                 </div>
             </div>
 

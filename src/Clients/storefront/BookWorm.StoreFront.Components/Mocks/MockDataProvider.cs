@@ -348,4 +348,41 @@ Key Features:
             ),
         ];
     }
+
+    public static CustomerBasket GetMockBasket()
+    {
+        return new CustomerBasket(
+            "customer-123",
+            [
+                new BasketItem(
+                    "11111111-1111-1111-1111-111111111111",
+                    2,
+                    "The Great Gatsby",
+                    15.99m,
+                    null
+                ),
+                new BasketItem(
+                    "44444444-4444-4444-4444-444444444444",
+                    1,
+                    "Pride and Prejudice",
+                    12.99m,
+                    16.99m
+                ),
+                new BasketItem(
+                    "66666666-6666-6666-6666-666666666666",
+                    1,
+                    "Harry Potter and the Sorcerer's Stone",
+                    10.99m,
+                    14.99m
+                ),
+                new BasketItem(
+                    "88888888-8888-8888-8888-888888888888",
+                    1,
+                    "The Lord of the Rings",
+                    24.99m,
+                    29.99m
+                ),
+            ]
+        );
+    }
 }

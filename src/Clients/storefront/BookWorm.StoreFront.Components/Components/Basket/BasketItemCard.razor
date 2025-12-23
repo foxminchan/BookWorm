@@ -1,0 +1,63 @@
+@using BookWorm.StoreFront.Components.Models
+
+<div class="card bg-base-100 shadow-md">
+    <div class="card-body">
+        <div class="flex gap-4">
+            <!-- Item Details -->
+            <div class="flex-1">
+                <h3 class="font-semibold text-lg mb-2">@Item.Name</h3>
+
+                <div class="flex items-center gap-2 mb-2">
+                    @if (Item.PriceSale.HasValue)
+                    {
+                        <span class="text-xl font-bold text-error">$@Item.PriceSale.Value.ToString("0.00")</span>
+                        <span class="text-sm line-through text-gray-500">$@Item.Price.ToString("0.00")</span>
+                        <span class="badge badge-error badge-sm">Sale</span>
+                    }
+                    else
+                    {
+                        <span class="text-xl font-bold">$@Item.Price.ToString("0.00")</span>
+                    }
+                </div>
+
+                <!-- Quantity Controls -->
+                <div class="flex items-center gap-3 mb-2">
+                    <label class="text-sm font-medium">Quantity:</label>
+                    <div class="join">
+                        <button class="btn btn-sm join-item" @onclick="OnDecrease">-</button>
+                        <input type="text" value="@Item.Quantity" readonly class="input input-sm input-bordered join-item w-16 text-center" />
+                        <button class="btn btn-sm join-item" @onclick="OnIncrease">+</button>
+                    </div>
+                </div>
+
+                <!-- Item Total -->
+                <div class="text-sm text-gray-600">
+                    Subtotal: <span class="font-semibold">$@(((Item.PriceSale ?? Item.Price) * Item.Quantity).ToString("0.00"))</span>
+                </div>
+            </div>
+
+            <!-- Remove Button -->
+            <div>
+                <button class="btn btn-ghost btn-sm btn-circle" @onclick="OnRemove">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public required BasketItem Item { get; set; }
+
+    [Parameter]
+    public EventCallback OnIncrease { get; set; }
+
+    [Parameter]
+    public EventCallback OnDecrease { get; set; }
+
+    [Parameter]
+    public EventCallback OnRemove { get; set; }
+}

@@ -1,7 +1,7 @@
 using BookWorm.StoreFront.Components.Models;
 using Microsoft.AspNetCore.Components;
 
-namespace BookWorm.StoreFront.Components.Components.Catalog;
+namespace BookWorm.StoreFront.Components.Components.Product;
 
 public partial class ProductInfo
 {

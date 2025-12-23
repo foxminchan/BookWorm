@@ -1,5 +1,3 @@
-@using BookWorm.StoreFront.Components.Models
-
 <article class="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow relative flex flex-col h-full">
     @if (Book.PriceSale.HasValue)
     {
@@ -55,7 +53,8 @@
             else
             {
                 <button @onclick="HandleAddToCart"
-                        class="btn btn-primary btn-sm w-full mt-auto">
+                        class="btn btn-primary btn-sm w-full mt-auto"
+                        style="background-color: var(--color-glacier-600)">
                     Add to Cart
                 </button>
             }
