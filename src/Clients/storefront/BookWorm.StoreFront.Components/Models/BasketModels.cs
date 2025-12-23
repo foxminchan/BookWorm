@@ -1,6 +1,12 @@
 namespace BookWorm.StoreFront.Components.Models;
 
-public sealed record BasketItem(string? Id, int Quantity, string? Name, decimal Price, decimal? PriceSale);
+public sealed record BasketItem(
+    string? Id,
+    int Quantity,
+    string? Name,
+    decimal Price,
+    decimal? PriceSale
+);
 
 public sealed record CustomerBasket(string? Id, List<BasketItem> Items);
 
