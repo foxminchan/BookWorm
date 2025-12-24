@@ -1,24 +1,38 @@
+@using BookWorm.StoreFront.Components.Components.Image
+
 <div class="flex items-center gap-2" role="status" aria-label="@(AriaLabel ?? Text)">
-    <img loading="lazy" src="@Assets[IconUrl]" alt="@AltText" aria-hidden="true" class="h-5 w-5 @IconClass"
-         style="@IconStyle"/>
+    @if (!string.IsNullOrEmpty(IconUrl))
+    {
+        <span aria-hidden="true">
+            <Image Src="@Assets[IconUrl]" Alt="@AltText" AdditionalClasses="@($"h-5 w-5 {IconClass}")" Style="@IconStyle" Width="20" Height="20" />
+        </span>
+    }
     <span class="text-sm font-medium @TextClass" style="@TextStyle" aria-hidden="true">@Text</span>
 </div>
 
 @code
 {
-    [Parameter][EditorRequired] public required string IconUrl { get; set; }
+    [Parameter]
+    public string? IconUrl { get; set; }
 
-    [Parameter][EditorRequired] public required string Text { get; set; }
+    [Parameter]
+    [EditorRequired]
+    public required string Text { get; set; }
 
-    [Parameter][EditorRequired] public required string AltText { get; set; }
+    [Parameter]
+    public string AltText { get; set; } = string.Empty;
+    [Parameter]
+    public string? IconClass { get; set; }
 
-    [Parameter] public string? IconClass { get; set; }
+    [Parameter]
+    public string? IconStyle { get; set; }
 
-    [Parameter] public string? IconStyle { get; set; }
+    [Parameter]
+    public string? TextClass { get; set; }
 
-    [Parameter] public string? TextClass { get; set; }
+    [Parameter]
+    public string? TextStyle { get; set; }
 
-    [Parameter] public string? TextStyle { get; set; }
-
-    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter]
+    public string? AriaLabel { get; set; }
 }

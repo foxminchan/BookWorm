@@ -2,6 +2,7 @@
 @using BookWorm.StoreFront.Components.Components.Badge
 @using BookWorm.StoreFront.Components.Components.Breadcrumb
 @using BookWorm.StoreFront.Components.Components.Spinner
+@using BookWorm.StoreFront.Components.Components.Image
 @using BookWorm.StoreFront.Components.Components.Product
 @using BookWorm.StoreFront.Components.Components.QuantitySelector
 @using Microsoft.AspNetCore.Components.Sections
@@ -32,9 +33,22 @@
     {
         <div class="container mx-auto px-4 py-8">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-                <ProductImage ImageUrl="@_book.ImageUrl"
-                             AltText="@_book.Name"
-                             PriceSale="@_book.PriceSale" />
+                <div class="relative">
+                    <div class="sticky top-4">
+                        @if (_book.PriceSale.HasValue)
+                        {
+                            <div class="absolute top-4 left-4 z-10">
+                                <Badge Text="SALE" TextClass="badge badge-primary text-lg px-4 py-3" />
+                            </div>
+                        }
+                        <figure class="relative w-full bg-white rounded-lg shadow-lg overflow-hidden"
+                                style="aspect-ratio: 3/4; max-height: 600px;">
+                            <Image Src="@_book.ImageUrl"
+                                   Alt="@_book.Name"
+                                   AdditionalClasses="w-full h-full" />
+                        </figure>
+                    </div>
+                </div>
                 <div class="flex flex-col">
                     <ProductInfo Book="@_book" />
                     <QuantitySelector @bind-Quantity="_quantity"
@@ -61,7 +75,28 @@
                                    TextClass="text-success" />
                         }
                     </div>
-                    <ProductDetails Publisher="@_book.Publisher" Category="@_book.Category" />
+                    <div class="border-t pt-6" style="border-color: var(--color-glacier-300)">
+                        <dl class="space-y-3">
+                            @if (_book.Publisher is not null)
+                            {
+                                <div class="flex">
+                                    <dt class="font-semibold w-32" style="color: var(--color-glacier-700)">Publisher:</dt>
+                                    <dd style="color: var(--color-glacier-900)">
+                                        <a href="catalog?category=@_book.Publisher.Id" class="hover:underline">@_book.Publisher.Name</a>
+                                    </dd>
+                                </div>
+                            }
+                            @if (_book.Category is not null)
+                            {
+                                <div class="flex">
+                                    <dt class="font-semibold w-32" style="color: var(--color-glacier-700)">Category:</dt>
+                                    <dd style="color: var(--color-glacier-900)">
+                                        <a href="catalog?category=@_book.Category.Id" class="hover:underline">@_book.Category.Name</a>
+                                    </dd>
+                                </div>
+                            }
+                        </dl>
+                    </div>
                 </div>
             </div>
             <ProductTabs @bind-ActiveTab="_activeTab"

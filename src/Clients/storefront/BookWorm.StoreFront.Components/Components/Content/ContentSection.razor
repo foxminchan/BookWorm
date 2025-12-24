@@ -1,0 +1,25 @@
+<div class="prose max-w-none">
+    <h3 class="text-2xl font-bold mb-4" style="color: var(--color-glacier-900)">@Title</h3>
+    @if (!string.IsNullOrWhiteSpace(Content))
+    {
+        <div class="text-base leading-relaxed" style="color: var(--color-glacier-700)">
+            @((MarkupString)Content.Replace("\n", "<br />"))
+        </div>
+    }
+    else
+    {
+        <p style="color: var(--color-glacier-600)">@EmptyMessage</p>
+    }
+</div>
+
+@code
+{
+    [Parameter, EditorRequired]
+    public required string Title { get; set; }
+
+    [Parameter]
+    public string? Content { get; set; }
+
+    [Parameter]
+    public string EmptyMessage { get; set; } = "No content available.";
+}

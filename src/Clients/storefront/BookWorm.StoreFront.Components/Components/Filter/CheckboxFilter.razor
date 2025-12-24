@@ -1,0 +1,59 @@
+@using BookWorm.StoreFront.Components.Components.Collapse
+@using BookWorm.StoreFront.Components.Components.Spinner
+@typeparam TItem
+
+@if (IsLoading || Items.Count > 0)
+{
+    <Collapse Title="@Title">
+        <div class="space-y-2">
+            @if (IsLoading)
+            {
+                <Spinner IsLoading="true" SpinnerSize="loading-sm" ContainerClass="py-4" />
+            }
+            else
+            {
+                @foreach (var item in Items)
+                {
+                    var itemId = GetItemId(item);
+                    var itemName = GetItemName(item);
+
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox"
+                               checked="@SelectedIds.Contains(itemId)"
+                               @onchange="@(e => HandleToggle(itemId, (bool)e.Value!))"
+                               class="checkbox checkbox-sm checkbox-primary mr-2"/>
+                        <span style="color: var(--color-glacier-700)">@itemName</span>
+                    </label>
+                }
+            }
+        </div>
+    </Collapse>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public required string Title { get; set; }
+
+    [Parameter, EditorRequired]
+    public required List<TItem> Items { get; set; }
+
+    [Parameter, EditorRequired]
+    public required HashSet<Guid> SelectedIds { get; set; }
+
+    [Parameter, EditorRequired]
+    public required Func<TItem, Guid> GetItemId { get; set; }
+
+    [Parameter, EditorRequired]
+    public required Func<TItem, string> GetItemName { get; set; }
+
+    [Parameter, EditorRequired]
+    public required EventCallback<(Guid Id, bool IsChecked)> OnToggle { get; set; }
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    private async Task HandleToggle(Guid id, bool isChecked)
+    {
+        await OnToggle.InvokeAsync((id, isChecked));
+    }
+}

@@ -8,4 +8,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\Aspire\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <AdditionalFiles Include="Components\Custom\Order\OrderSummary.razor" />
+  </ItemGroup>
 </Project>

@@ -1,3 +1,4 @@
+@using BookWorm.StoreFront.Components.Components.Content
 @using BookWorm.StoreFront.Components.Components.Review
 <div class="bg-white rounded-lg shadow-lg p-6">
     <div role="tablist" class="tabs tabs-bordered mb-6">
@@ -16,7 +17,9 @@
     @switch (ActiveTab)
     {
         case "description":
-            <ProductDescription Description="@Description" />
+            <ContentSection Title="Product Description"
+                            Content="@Description"
+                            EmptyMessage="No description available for this book." />
             break;
         case "reviews":
             <div>

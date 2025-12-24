@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Components;
 
-namespace BookWorm.StoreFront.Components.Components.Other;
+namespace BookWorm.StoreFront.Components.Components.Custom.Catalog;
 
 public sealed partial class CatalogHeader
 {

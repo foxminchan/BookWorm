@@ -1,4 +1,4 @@
-namespace BookWorm.StoreFront.Components.Components.Other;
+namespace BookWorm.StoreFront.Components.Components.Custom.Home;
 
 public sealed partial class BottomFeatures
 {

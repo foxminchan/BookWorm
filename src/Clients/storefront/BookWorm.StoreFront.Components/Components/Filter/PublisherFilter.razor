@@ -1,27 +1,13 @@
-@using BookWorm.StoreFront.Components.Components.Collapse
-@using BookWorm.StoreFront.Components.Components.Spinner
+@using BookWorm.StoreFront.Components.Models
 
 @if (_isLoading || Publishers.Count > 0)
 {
-    <Collapse Title="Publishers">
-        <div class="space-y-2">
-            @if (_isLoading)
-            {
-                <Spinner IsLoading="true" SpinnerSize="loading-sm" ContainerClass="py-4" />
-            }
-            else
-            {
-                @foreach (var publisher in Publishers)
-                {
-                    <label class="flex items-center cursor-pointer">
-                        <input type="checkbox"
-                               checked="@SelectedPublisherIds.Contains(publisher.Id)"
-                               @onchange="@(e => HandlePublisherToggle(publisher.Id, (bool)e.Value!))"
-                               class="checkbox checkbox-sm checkbox-primary mr-2"/>
-                        <span style="color: var(--color-glacier-700)">@publisher.Name</span>
-                    </label>
-                }
-            }
-        </div>
-    </Collapse>
+    <CheckboxFilter TItem="Publisher"
+                    Title="Publishers"
+                    Items="Publishers"
+                    SelectedIds="SelectedPublisherIds"
+                    GetItemId="@(p => p.Id)"
+                    GetItemName="@(p => p.Name)"
+                    OnToggle="HandlePublisherToggleInternal"
+                    IsLoading="_isLoading" />
 }

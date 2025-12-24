@@ -2,7 +2,7 @@ using BookWorm.StoreFront.Components.Mocks;
 using BookWorm.StoreFront.Components.Models;
 using Microsoft.AspNetCore.Components;
 
-namespace BookWorm.StoreFront.Components.Components.Other;
+namespace BookWorm.StoreFront.Components.Components.Custom.Home;
 
 public sealed partial class NewArrivals : ComponentBase
 {

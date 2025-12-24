@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Components;
 
-namespace BookWorm.StoreFront.Components.Components.Basket;
+namespace BookWorm.StoreFront.Components.Components.Custom.Order;
 
 public sealed partial class OrderSummary
 {

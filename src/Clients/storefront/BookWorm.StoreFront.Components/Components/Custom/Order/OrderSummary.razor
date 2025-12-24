@@ -1,3 +1,6 @@
+@using BookWorm.StoreFront.Components.Components.Badge
+@using BookWorm.StoreFront.Components.Components.Button
+
 <div class="card bg-base-100 shadow-lg sticky top-4">
     <div class="card-body">
         <h2 class="card-title mb-4">Order Summary</h2>
@@ -30,20 +33,16 @@
         </div>
 
         <div class="card-actions mt-6">
-            <button class="btn btn-primary btn-block" @onclick="OnCheckout"
-                    style="background-color: var(--color-glacier-600)">
+            <Button OnClick="OnCheckout" AdditionalClasses="btn-block">
                 Proceed to Checkout
-            </button>
+            </Button>
         </div>
 
         <!-- Trust Badges -->
         <div class="mt-6 pt-6 border-t space-y-2 text-sm text-gray-600">
             @foreach (var badge in _trustBadges)
             {
-                <div class="flex items-center gap-2">
-                    <img src="@badge.IconUrl" alt="@badge.AltText" class="h-5 w-5" loading="lazy"/>
-                    <span>@badge.Text</span>
-                </div>
+                <Badge IconUrl="@badge.IconUrl" Text="@badge.Text" AltText="@badge.AltText" />
             }
         </div>
     </div>

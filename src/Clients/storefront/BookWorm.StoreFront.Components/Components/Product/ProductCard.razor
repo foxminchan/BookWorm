@@ -12,14 +12,14 @@
     <a href="/catalog/@Book.Id" class="cursor-pointer">
         <figure class="relative w-full aspect-square"
                 style="min-height: 250px; max-height: 400px; background-color: var(--color-glacier-50);">
-            @if (isImageLoading)
+            @if (_isImageLoading)
             {
                 <div class="absolute inset-0 animate-pulse bg-gradient-to-r from-base-300 via-base-200 to-base-300"></div>
             }
             <Image Src="@Book.ImageUrl"
                    Alt="@Book.Name"
                    ObjectFit="ImageFit.Cover"
-                   AdditionalClasses="@($"w-full h-full transition-all duration-300 {(isImageLoading ? "blur-sm" : "blur-0")}")"
+                   AdditionalClasses="@($"w-full h-full transition-all duration-300 {(_isImageLoading ? "blur-sm" : "blur-0")}")"
                    Style="object-position: center;"
                    OnLoad="HandleImageLoad" />
         </figure>
@@ -83,7 +83,7 @@
     [Parameter]
     public Action<Guid>? OnAddToCart { get; set; }
 
-    private bool isImageLoading = true;
+    private bool _isImageLoading;
 
     private void HandleAddToCart()
     {
@@ -92,7 +92,7 @@
 
     private async Task HandleImageLoad()
     {
-        isImageLoading = false;
+        _isImageLoading = false;
         StateHasChanged();
         await Task.CompletedTask;
     }

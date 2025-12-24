@@ -26,4 +26,9 @@ public sealed partial class PublisherFilter
     {
         OnPublisherToggled?.Invoke((publisherId, isChecked));
     }
+
+    private void HandlePublisherToggleInternal((Guid Id, bool IsChecked) args)
+    {
+        HandlePublisherToggle(args.Id, args.IsChecked);
+    }
 }

@@ -26,4 +26,9 @@ public sealed partial class CategoryFilter
     {
         OnCategoryToggled?.Invoke((categoryId, isChecked));
     }
+
+    private void HandleCategoryToggleInternal((Guid Id, bool IsChecked) args)
+    {
+        HandleCategoryToggle(args.Id, args.IsChecked);
+    }
 }

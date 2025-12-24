@@ -1,27 +1,13 @@
-@using BookWorm.StoreFront.Components.Components.Collapse
-@using BookWorm.StoreFront.Components.Components.Spinner
+@using BookWorm.StoreFront.Components.Models
 
 @if (_isLoading || Categories.Count > 0)
 {
-    <Collapse Title="Categories">
-        <div class="space-y-2">
-            @if (_isLoading)
-            {
-                <Spinner IsLoading="true" SpinnerSize="loading-sm" ContainerClass="py-4" />
-            }
-            else
-            {
-                @foreach (var category in Categories)
-                {
-                    <label class="flex items-center cursor-pointer">
-                        <input type="checkbox"
-                               checked="@SelectedCategoryIds.Contains(category.Id)"
-                               @onchange="@(e => HandleCategoryToggle(category.Id, (bool)e.Value!))"
-                               class="checkbox checkbox-sm checkbox-primary mr-2"/>
-                        <span style="color: var(--color-glacier-700)">@category.Name</span>
-                    </label>
-                }
-            }
-        </div>
-    </Collapse>
+    <CheckboxFilter TItem="Category"
+                    Title="Categories"
+                    Items="Categories"
+                    SelectedIds="SelectedCategoryIds"
+                    GetItemId="@(c => c.Id)"
+                    GetItemName="@(c => c.Name)"
+                    OnToggle="HandleCategoryToggleInternal"
+                    IsLoading="_isLoading" />
 }
