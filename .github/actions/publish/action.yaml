@@ -22,6 +22,39 @@ inputs:
     description: "The operations environment to use for Aspire commands"
     required: false
     default: ${{ runner.os }}
+  openai-apikey:
+    description: "OpenAI API Key"
+    required: false
+  kc-url:
+    description: "Keycloak URL"
+    required: false
+  kc-realm:
+    description: "Keycloak Realm"
+    required: false
+  catalog-secret:
+    description: "Catalog Service Client Secret"
+    required: false
+  basket-secret:
+    description: "Basket Service Client Secret"
+    required: false
+  ordering-secret:
+    description: "Ordering Service Client Secret"
+    required: false
+  chatting-secret:
+    description: "Chatting Service Client Secret"
+    required: false
+  rating-secret:
+    description: "Rating Service Client Secret"
+    required: false
+  sendgrid-api-key:
+    description: "SendGrid API Key"
+    required: false
+  sendgrid-email:
+    description: "SendGrid Email"
+    required: false
+  sendgrid-sender-name:
+    description: "SendGrid Sender Name"
+    required: false
 
 runs:
   using: "composite"
@@ -62,5 +95,16 @@ runs:
       shell: bash
       run: aspire do push
       env:
-        Parameters__container-repository: ${{ inputs.repository-owner }}/${{ inputs.repository-name }}
-        Parameters__container-endpoint: ghcr.io
+        Parameters__container_endpoint: ghcr.io
+        Parameters__container_repository: ${{ inputs.repository-owner }}/${{ inputs.repository-name }}
+        Parameters__openai_openai_apikey: ${{ inputs.openai-apikey }}
+        Parameters__kc_url: ${{ inputs.kc-url }}
+        Parameters__kc_realm: ${{ inputs.kc-realm }}
+        Parameters__catalog_secret: ${{ inputs.catalog-secret }}
+        Parameters__basket_secret: ${{ inputs.basket-secret }}
+        Parameters__ordering_secret: ${{ inputs.ordering-secret }}
+        Parameters__chatting_secret: ${{ inputs.chatting-secret }}
+        Parameters__rating_secret: ${{ inputs.rating-secret }}
+        Parameters__sendgrid_api_key: ${{ inputs.sendgrid-api-key }}
+        Parameters__sendgrid_email: ${{ inputs.sendgrid-email }}
+        Parameters__sendgrid_sender_name: ${{ inputs.sendgrid-sender-name }}

@@ -29,7 +29,7 @@ public sealed class KeycloakTokenIntrospectionMiddleware(
         if (!string.IsNullOrWhiteSpace(token))
         {
             var introspectionEndpoint = KeycloakEndpoints
-                .Introspect.Replace("{realm}", identityOptions.Realm)
+                .Introspect(identityOptions.Realm)
                 .TrimStart('/');
 
             using var httpClient = httpClientFactory.CreateClient(Components.KeyCloak);

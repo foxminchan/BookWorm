@@ -2,7 +2,18 @@
 
 public static class KeycloakEndpoints
 {
-    public const string Token = "/realms/{realm}/protocol/openid-connect/token";
-    public const string Authorize = "/realms/{realm}/protocol/openid-connect/auth";
-    public const string Introspect = "/realms/{realm}/protocol/openid-connect/token/introspect";
+    public static string Token(string realm)
+    {
+        return $"/realms/{realm}/protocol/openid-connect/token";
+    }
+
+    public static string Authorize(string realm)
+    {
+        return $"/realms/{realm}/protocol/openid-connect/auth";
+    }
+
+    public static string Introspect(string realm)
+    {
+        return $"/realms/{realm}/protocol/openid-connect/token/introspect";
+    }
 }

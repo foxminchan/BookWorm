@@ -37,20 +37,21 @@ public static partial class AzureExtensions
     {
         builder.ConfigureInfrastructure(infra =>
         {
-            var resource = infra.GetProvisionableResources().OfType<StorageAccount>().Single();
+            var resource = infra
+                .GetProvisionableResources()
+                .OfType<StorageAccount>()
+                .FirstOrDefault();
+
+            if (resource is null)
+            {
+                return;
+            }
 
             resource.Sku = new() { Name = StorageSkuName.StandardLrs };
 
             resource.Location = AzureLocation.SoutheastAsia;
 
             resource.AccessTier = StorageAccountAccessTier.Cool;
-
-            resource.Tags.Add(
-                nameof(Environment),
-                builder.ApplicationBuilder.Environment.EnvironmentName
-            );
-
-            resource.Tags.Add(nameof(Projects), nameof(BookWorm));
         });
 
         return builder;
@@ -93,7 +94,12 @@ public static partial class AzureExtensions
             var resource = infra
                 .GetProvisionableResources()
                 .OfType<PostgreSqlFlexibleServer>()
-                .Single();
+                .FirstOrDefault();
+
+            if (resource is null)
+            {
+                return;
+            }
 
             resource.Sku = new() { Tier = PostgreSqlFlexibleServerSkuTier.Burstable };
 
@@ -112,13 +118,6 @@ public static partial class AzureExtensions
             };
 
             resource.Storage = new() { StorageSizeInGB = 32, AutoGrow = StorageAutoGrow.Disabled };
-
-            resource.Tags.Add(
-                nameof(Environment),
-                builder.ApplicationBuilder.Environment.EnvironmentName
-            );
-
-            resource.Tags.Add(nameof(Projects), nameof(BookWorm));
         });
 
         return builder;
@@ -149,7 +148,15 @@ public static partial class AzureExtensions
     {
         builder.ConfigureInfrastructure(infra =>
         {
-            var resource = infra.GetProvisionableResources().OfType<RedisResource>().Single();
+            var resource = infra
+                .GetProvisionableResources()
+                .OfType<RedisResource>()
+                .FirstOrDefault();
+
+            if (resource is null)
+            {
+                return;
+            }
 
             resource.Sku = new()
             {
@@ -159,13 +166,6 @@ public static partial class AzureExtensions
             };
 
             resource.Location = AzureLocation.SoutheastAsia;
-
-            resource.Tags.Add(
-                nameof(Environment),
-                builder.ApplicationBuilder.Environment.EnvironmentName
-            );
-
-            resource.Tags.Add(nameof(Projects), nameof(BookWorm));
         });
 
         return builder;
@@ -207,7 +207,12 @@ public static partial class AzureExtensions
                 var resource = infra
                     .GetProvisionableResources()
                     .OfType<ContainerAppManagedEnvironment>()
-                    .Single();
+                    .FirstOrDefault();
+
+                if (resource is null)
+                {
+                    return;
+                }
 
                 resource.WorkloadProfiles.Add(
                     new ContainerAppWorkloadProfile
@@ -218,13 +223,6 @@ public static partial class AzureExtensions
                 );
 
                 resource.Location = AzureLocation.SoutheastAsia;
-
-                resource.Tags.Add(
-                    nameof(Environment),
-                    builder.ApplicationBuilder.Environment.EnvironmentName
-                );
-
-                resource.Tags.Add(nameof(Projects), nameof(BookWorm));
             });
     }
 }

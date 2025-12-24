@@ -70,11 +70,14 @@ public sealed class UrlBuilder
             return this;
         }
 
-        var segment = path.Trim('/');
+        var segments = path.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
 
-        if (segment.Length > 0)
+        foreach (var segment in segments)
         {
-            _pathSegments.Add(segment);
+            if (segment.Length > 0)
+            {
+                _pathSegments.Add(segment);
+            }
         }
 
         return this;
@@ -121,7 +124,7 @@ public sealed class UrlBuilder
         if (_pathSegments.Count > 0)
         {
             builder.Append('/');
-            builder.Append(string.Join('/', _pathSegments.Select(Uri.EscapeDataString)));
+            builder.Append(string.Join('/', _pathSegments));
         }
 
         if (_query.Count > 0)
