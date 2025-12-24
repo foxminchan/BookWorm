@@ -35,6 +35,21 @@
 		"@eventcatalog/generator-openapi": "latest"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.3.8"
+		"@biomejs/biome": "2.3.10"
+	},
+	"browserslist": {
+		"production": [
+			">0.5%",
+			"not dead",
+			"not op_mini all"
+		],
+		"development": [
+			"last 3 chrome version",
+			"last 3 firefox version",
+			"last 5 safari version"
+		]
+	},
+	"engines": {
+		"node": ">=18.0"
 	}
 }

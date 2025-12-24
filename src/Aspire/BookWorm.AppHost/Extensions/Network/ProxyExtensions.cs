@@ -1,4 +1,5 @@
-﻿using Aspire.Hosting.Yarp;
+﻿using System.Diagnostics.CodeAnalysis;
+using Aspire.Hosting.Yarp;
 using Aspire.Hosting.Yarp.Transforms;
 
 namespace BookWorm.AppHost.Extensions.Network;
@@ -19,7 +20,7 @@ public static class ProxyExtensions
         {
             var yarp = builder
                 .AddYarp(Services.Gateway)
-                .WithStaticFiles()
+                .WithHttpsDeveloperCertificate()
                 .WithExternalHttpEndpoints()
                 .WithIconName("SerialPort")
                 .WithConfiguration(yarpBuilder =>

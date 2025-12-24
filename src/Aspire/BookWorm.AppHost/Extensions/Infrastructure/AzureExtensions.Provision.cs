@@ -143,8 +143,8 @@ public static partial class AzureExtensions
     ///         </item>
     ///     </list>
     /// </remarks>
-    public static IResourceBuilder<AzureRedisCacheResource> ProvisionAsService(
-        this IResourceBuilder<AzureRedisCacheResource> builder
+    public static IResourceBuilder<AzureManagedRedisResource> ProvisionAsService(
+        this IResourceBuilder<AzureManagedRedisResource> builder
     )
     {
         builder.ConfigureInfrastructure(infra =>

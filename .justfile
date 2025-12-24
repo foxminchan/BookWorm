@@ -49,14 +49,9 @@ hook:
     git add .husky/pre-commit || echo "Warning: .husky/pre-commit not found"
     echo "Pre-commit hook setup complete"
 
-# Check if OpenAI API key is configured
-
-check-openai:
-    dotnet run scripts/check-openai-secret.cs
-
 # Run the application
 
-run: restore trust hook check-openai
+run: restore trust hook
     aspire run
 
 # Update EventCatalog bun packages

@@ -2,35 +2,32 @@
 
 public static class Components
 {
-    public static readonly string K6 = nameof(K6).ToLowerInvariant();
-    public static readonly string Queue = nameof(Queue).ToLowerInvariant();
-    public static readonly string Redis = nameof(Redis).ToLowerInvariant();
-    public static readonly string MailPit = nameof(MailPit).ToLowerInvariant();
-    public static readonly string Postgres = nameof(Postgres).ToLowerInvariant();
-    public static readonly string KeyCloak = nameof(KeyCloak).ToLowerInvariant();
-    public static readonly string Inspector = nameof(Inspector).ToLowerInvariant();
-    public static readonly string VectorDb = nameof(VectorDb).ToLowerInvariant();
+    public const string K6 = "k6";
+    public const string Queue = "queue";
+    public const string Redis = "redis";
+    public const string MailPit = "mailpit";
+    public const string Postgres = "postgres";
+    public const string KeyCloak = "keycloak";
+    public const string Inspector = "inspector";
+    public const string VectorDb = "vectordb";
+    public const string ContainerRegistry = "container-registry";
 
     public static class Database
     {
-        private const string Suffix = "db";
-
-        public static readonly string Rating = $"{nameof(Rating).ToLowerInvariant()}{Suffix}";
-        public static readonly string Finance = $"{nameof(Finance).ToLowerInvariant()}{Suffix}";
-        public static readonly string Catalog = $"{nameof(Catalog).ToLowerInvariant()}{Suffix}";
-        public static readonly string Ordering = $"{nameof(Ordering).ToLowerInvariant()}{Suffix}";
-
-        public static readonly string Notification =
-            $"{nameof(Notification).ToLowerInvariant()}{Suffix}";
+        public const string Rating = "ratingdb";
+        public const string Finance = "financedb";
+        public const string Catalog = "catalogdb";
+        public const string Ordering = "orderingdb";
+        public const string Notification = "notificationdb";
     }
 
     public static class OpenAI
     {
         public const string OpenAIGpt4oMini = "gpt-4o-mini";
         public const string TextEmbedding3Large = "text-embedding-3-large";
-        public static readonly string Resource = nameof(OpenAI).ToLowerInvariant();
-        public static readonly string Chat = $"{nameof(Chat).ToLowerInvariant()}";
-        public static readonly string Embedding = $"{nameof(Embedding).ToLowerInvariant()}";
+        public const string Resource = "openai";
+        public const string Chat = "chat";
+        public const string Embedding = "embedding";
     }
 
     public static class Azure
@@ -39,9 +36,9 @@ public static class Components
 
         public static class Storage
         {
-            public static readonly string Resource = nameof(Storage).ToLowerInvariant();
-            public static readonly string Blob = nameof(Blob).ToLowerInvariant();
-            public static readonly string BlobContainer = $"{Services.Catalog}-{Blob}";
+            public const string Resource = "storage";
+
+            public static string BlobContainer(string containerName) => $"{containerName}-blob";
         }
     }
 }

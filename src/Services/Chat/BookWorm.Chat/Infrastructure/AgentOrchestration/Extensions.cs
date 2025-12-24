@@ -273,7 +273,7 @@ internal static class Extensions
                     // 4. Response Formatting - Ensures consistent, well-formatted responses
                     var workflow = new WorkflowBuilder(inputValidator)
                         // Layer 1→2: Connect input validator to handoff workflow
-                        .AddEdge<ChatMessage>(inputValidator, handoffWorkflowExecutor)
+                        .AddEdge(inputValidator, handoffWorkflowExecutor)
                         // Layer 2→3: Route to QAAgent if output contains policy/service-related content
                         .AddEdge<List<ChatMessage>>(
                             handoffWorkflowExecutor,
@@ -287,12 +287,9 @@ internal static class Extensions
                             condition: NegativeSentimentCondition.Evaluate
                         )
                         // Layer 3→4: Connect all paths to response formatter
-                        .AddEdge<List<ChatMessage>>(handoffWorkflowExecutor, responseFormatter)
-                        .AddEdge<List<ChatMessage>>(orchestrateAgents.QAAgent, responseFormatter)
-                        .AddEdge<List<ChatMessage>>(
-                            orchestrateAgents.SentimentAgent,
-                            responseFormatter
-                        )
+                        .AddEdge(handoffWorkflowExecutor, responseFormatter)
+                        .AddEdge(orchestrateAgents.QAAgent, responseFormatter)
+                        .AddEdge(orchestrateAgents.SentimentAgent, responseFormatter)
                         // Set response formatter as the final output
                         .WithOutputFrom(responseFormatter)
                         .WithName(key)

@@ -97,6 +97,10 @@ cd BookWorm
 just run
 ```
 
+> [!NOTE]
+>
+> On first run, you'll be prompted to enter necessary environment variables
+
 ### Deploy the Application
 
 To deploy BookWorm to Azure Container Apps, follow these steps:
