@@ -79,14 +79,16 @@ jobs:
           Azure__SubscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           Azure__Location: ${{ secrets.AZURE_LOCATION || 'eastus' }}
           Azure__ResourceGroup: ${{ secrets.AZURE_RESOURCE_GROUP }}
-          Parameters__sendgrid-api-key: ${{ secrets.SENDGRID_API_KEY }}
-          Parameters__sendgrid-email: ${{ secrets.SENDGRID_EMAIL }}
-          Parameters__sendgrid-sender-name: ${{ secrets.SENDGRID_SENDER_NAME }}
-          Parameters__kc-url: ${{ secrets.KC_URL }}
-          Parameters__kc-realm: ${{ secrets.KC_REALM }}
-          Parameters__catalog-secret: ${{ secrets.CATALOG_SECRET }}
-          Parameters__basket-secret: ${{ secrets.BASKET_SECRET }}
-          Parameters__ordering-secret: ${{ secrets.ORDERING_SECRET }}
-          Parameters__chatting-secret: ${{ secrets.CHATTING_SECRET }}
-          Parameters__rating-secret: ${{ secrets.RATING_SECRET }}
-          Parameters__openai-openai-apikey: ${{ secrets.OPENAI_APIKEY }}
+          Parameters__container_endpoint: ghcr.io
+          Parameters__container_repository: ${{ github.repository_owner }}/${{ github.repository }}
+          Parameters__openai_openai_apikey: ${{ secrets.OPENAI_APIKEY }}
+          Parameters__kc_url: ${{ secrets.KC_URL }}
+          Parameters__kc_realm: ${{ secrets.KC_REALM }}
+          Parameters__catalog_secret: ${{ secrets.CATALOG_SECRET }}
+          Parameters__basket_secret: ${{ secrets.BASKET_SECRET }}
+          Parameters__ordering_secret: ${{ secrets.ORDERING_SECRET }}
+          Parameters__chatting_secret: ${{ secrets.CHATTING_SECRET }}
+          Parameters__rating_secret: ${{ secrets.RATING_SECRET }}
+          Parameters__sendgrid_api_key: ${{ secrets.SENDGRID_API_KEY }}
+          Parameters__sendgrid_email: ${{ secrets.SENDGRID_EMAIL }}
+          Parameters__sendgrid_sender_name: ${{ secrets.SENDGRID_SENDER_NAME }}

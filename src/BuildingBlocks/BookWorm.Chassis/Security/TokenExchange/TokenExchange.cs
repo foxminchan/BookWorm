@@ -18,9 +18,7 @@ public sealed class TokenExchange(
         CancellationToken cancellationToken = default
     )
     {
-        var tokenEndpoint = KeycloakEndpoints
-            .Token.Replace("{realm}", identityOptions.Realm)
-            .TrimStart('/');
+        var tokenEndpoint = KeycloakEndpoints.Token(identityOptions.Realm).TrimStart('/');
 
         var requestContent = GetRequestContent(claimsPrincipal, audience, scope);
 

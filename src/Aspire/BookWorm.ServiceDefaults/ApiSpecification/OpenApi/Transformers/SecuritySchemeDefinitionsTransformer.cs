@@ -25,14 +25,14 @@ internal sealed class SecuritySchemeDefinitionsTransformer(IdentityOptions ident
         var authUrl = HttpUtilities
             .AsUrlBuilder()
             .WithBase(keycloakUrl)
-            .WithPath(KeycloakEndpoints.Authorize.Replace("{realm}", identityOptions.Realm))
+            .WithPath(KeycloakEndpoints.Authorize(identityOptions.Realm))
             .Build();
 
         var tokenUrl = HttpUtilities
             .AsUrlBuilder()
             .WithScheme(Http.Schemes.Http)
             .WithHost(Components.KeyCloak)
-            .WithPath(KeycloakEndpoints.Token.Replace("{realm}", identityOptions.Realm))
+            .WithPath(KeycloakEndpoints.Token(identityOptions.Realm))
             .Build();
 
         var securityScheme = new OpenApiSecurityScheme
