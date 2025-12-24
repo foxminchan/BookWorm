@@ -1,4 +1,3 @@
-using BookWorm.StoreFront.Components.Components.Base;
 using BookWorm.StoreFront.Components.Mocks;
 using BookWorm.StoreFront.Components.Models;
 using Microsoft.AspNetCore.Components;
@@ -14,7 +13,7 @@ public partial class CatalogItem
     private bool _isLoading = true;
     private int _quantity = 1;
     private string _activeTab = "description";
-    private readonly List<Breadcrumb.BreadcrumbItem> _breadcrumbItems = [];
+    private readonly List<BreadcrumbItem> _breadcrumbItems = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -30,6 +29,7 @@ public partial class CatalogItem
 
         if (_book is null)
             return Task.CompletedTask;
+
         _breadcrumbItems.Clear();
         _breadcrumbItems.Add(new("Home", "/"));
         _breadcrumbItems.Add(new("Catalog", "/catalog"));

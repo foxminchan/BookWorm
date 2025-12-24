@@ -3,9 +3,10 @@ using Microsoft.AspNetCore.Components;
 
 namespace BookWorm.StoreFront.Components.Components.Basket;
 
-public partial class BasketItemCard
+public sealed partial class BasketItemCard
 {
-    [Parameter, EditorRequired]
+    [Parameter]
+    [EditorRequired]
     public required BasketItem Item { get; set; }
 
     [Parameter]

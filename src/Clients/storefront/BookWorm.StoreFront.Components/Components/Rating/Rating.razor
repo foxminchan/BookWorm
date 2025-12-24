@@ -1,0 +1,62 @@
+@namespace BookWorm.StoreFront.Components.Components.Rating
+
+<div class="flex items-center gap-1" role="@(Interactive ? "radiogroup" : "img")" aria-label="@GetAriaLabel()">
+    @for (var i = 1; i <= MaxStars; i++)
+    {
+        var starIndex = i;
+        var isFilled = starIndex <= Math.Floor(Value);
+        var isHalfFilled = !isFilled && starIndex <= Math.Ceiling(Value) && Value % 1 != 0;
+
+        @if (Interactive)
+        {
+            <button type="button"
+                    class="@GetStarClasses(starIndex)"
+                    @onclick="() => HandleStarClick(starIndex)"
+                    @onmouseover="@(() => HandleStarHover(starIndex))"
+                    @onmouseout="@(HandleMouseOut)"
+                    aria-label="@($"Rate {starIndex} out of {MaxStars} stars")"
+                    role="radio"
+                    aria-checked="@(Math.Abs(starIndex - Value) < 0.001 ? "true" : "false")">
+                @if (isHalfFilled)
+                {
+                    <text>⯨</text>
+                }
+                else if (isFilled || (_hoveredStar.HasValue && starIndex <= _hoveredStar.Value))
+                {
+                    <text>★</text>
+                }
+                else
+                {
+                    <text>☆</text>
+                }
+            </button>
+        }
+        else
+        {
+            <span class="@GetStarClasses(starIndex, false)">
+                @if (isHalfFilled)
+                {
+                    <text>⯨</text>
+                }
+                else if (isFilled)
+                {
+                    <text>★</text>
+                }
+                else
+                {
+                    <text>☆</text>
+                }
+            </span>
+        }
+    }
+
+    @if (ShowCount && TotalCount.HasValue)
+    {
+        <span class="@GetCountClasses()">(@TotalCount.Value)</span>
+    }
+
+    @if (ShowValue)
+    {
+        <span class="@GetCountClasses()">@Value.ToString("F1")</span>
+    }
+</div>

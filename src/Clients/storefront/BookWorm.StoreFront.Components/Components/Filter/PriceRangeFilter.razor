@@ -1,0 +1,54 @@
+@using BookWorm.StoreFront.Components.Components.Collapse
+
+<Collapse Title="Price Range">
+    <div class="space-y-4">
+        <div class="flex items-center gap-3">
+            <div class="flex-1">
+                <label class="text-xs block mb-1 font-medium" style="color: var(--color-glacier-600)">Min</label>
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm"
+                          style="color: var(--color-glacier-500)">$</span>
+                    <input type="number"
+                           min="@DefaultMinPrice"
+                           max="@DefaultMaxPrice"
+                           step="@PriceStep"
+                           @bind="_localMinPrice"
+                           @bind:event="oninput"
+                           @bind:after="() => HandleMinPriceChange(_localMinPrice ?? DefaultMinPrice)"
+                           placeholder="@DefaultMinPrice"
+                           class="input input-bordered input-sm w-full pl-7"
+                           style="font-size: 0.875rem;"/>
+                </div>
+            </div>
+            <div class="flex-1">
+                <label class="text-xs block mb-1 font-medium" style="color: var(--color-glacier-600)">Max</label>
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm"
+                          style="color: var(--color-glacier-500)">$</span>
+                    <input type="number"
+                           min="@DefaultMinPrice"
+                           max="@DefaultMaxPrice"
+                           step="@PriceStep"
+                           @bind="_localMaxPrice"
+                           @bind:event="oninput"
+                           @bind:after="() => HandleMaxPriceChange(_localMaxPrice ?? DefaultMaxPrice)"
+                           placeholder="@DefaultMaxPrice"
+                           class="input input-bordered input-sm w-full pl-7"
+                           style="font-size: 0.875rem;"/>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+            <button @onclick="() => HandlePriceRangeClick(DefaultMinPrice, RangeBoundary1)"
+                    class="btn btn-xs btn-outline">Under $@RangeBoundary1</button>
+            <button @onclick="() => HandlePriceRangeClick(RangeBoundary1, RangeBoundary2)"
+                    class="btn btn-xs btn-outline">$@RangeBoundary1 - $@RangeBoundary2</button>
+            <button @onclick="() => HandlePriceRangeClick(RangeBoundary2, RangeBoundary3)"
+                    class="btn btn-xs btn-outline">$@RangeBoundary2 - $@RangeBoundary3</button>
+            <button @onclick="() => HandlePriceRangeClick(RangeBoundary3, DefaultMaxPrice)"
+                    class="btn btn-xs btn-outline">$@RangeBoundary3+
+            </button>
+        </div>
+    </div>
+</Collapse>

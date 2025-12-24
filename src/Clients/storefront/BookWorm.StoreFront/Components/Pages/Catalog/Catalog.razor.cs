@@ -1,5 +1,4 @@
 using System.Globalization;
-using BookWorm.StoreFront.Components.Components.Base;
 using BookWorm.StoreFront.Components.Mocks;
 using BookWorm.StoreFront.Components.Models;
 using Microsoft.AspNetCore.Components;
@@ -9,11 +8,7 @@ namespace BookWorm.StoreFront.Components.Pages.Catalog;
 
 public sealed partial class Catalog
 {
-    private readonly List<Breadcrumb.BreadcrumbItem> _breadcrumbItems =
-    [
-        new("Home", "/"),
-        new("Catalog"),
-    ];
+    private readonly List<BreadcrumbItem> _breadcrumbItems = [new("Home", "/"), new("Catalog")];
 
     private CatalogQueryParams _filters = new();
     private List<Book> _allBooks = [];

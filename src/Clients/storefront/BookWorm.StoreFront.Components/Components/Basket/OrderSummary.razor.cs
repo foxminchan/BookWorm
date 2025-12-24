@@ -2,15 +2,20 @@ using Microsoft.AspNetCore.Components;
 
 namespace BookWorm.StoreFront.Components.Components.Basket;
 
-public partial class OrderSummary
+public sealed partial class OrderSummary
 {
-    [Parameter, EditorRequired]
+    private List<TrustBadge> _trustBadges = [];
+
+    [Parameter]
+    [EditorRequired]
     public required int TotalItems { get; set; }
 
-    [Parameter, EditorRequired]
+    [Parameter]
+    [EditorRequired]
     public required decimal Subtotal { get; set; }
 
-    [Parameter, EditorRequired]
+    [Parameter]
+    [EditorRequired]
     public required decimal Total { get; set; }
 
     [Parameter]
@@ -18,8 +23,6 @@ public partial class OrderSummary
 
     [Parameter]
     public EventCallback OnCheckout { get; set; }
-
-    private List<TrustBadge> _trustBadges = [];
 
     protected override void OnInitialized()
     {

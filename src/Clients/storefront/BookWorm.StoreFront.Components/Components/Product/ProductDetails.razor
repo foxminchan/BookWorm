@@ -1,3 +1,4 @@
+@using BookWorm.StoreFront.Components.Models
 <div class="border-t pt-6" style="border-color: var(--color-glacier-300)">
     <dl class="space-y-3">
         @if (Publisher is not null)
@@ -20,3 +21,12 @@
         }
     </dl>
 </div>
+
+@code
+{
+    [Parameter]
+    public Publisher? Publisher { get; set; }
+
+    [Parameter]
+    public Category? Category { get; set; }
+}

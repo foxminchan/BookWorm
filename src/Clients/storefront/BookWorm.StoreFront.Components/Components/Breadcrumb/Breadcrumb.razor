@@ -1,0 +1,36 @@
+@using BookWorm.StoreFront.Components.Models
+@namespace BookWorm.StoreFront.Components.Components.Breadcrumb
+
+@if (Items.Any())
+{
+    <nav class="container mx-auto px-4 py-4" aria-label="breadcrumb">
+        <ol class="flex items-center space-x-2 text-sm" style="color: var(--color-glacier-600)">
+            @foreach (var (item, index) in Items.Select((item, i) => (item, i)))
+            {
+                @if (index > 0)
+                {
+                    <li aria-hidden="true"><span class="mx-2">/</span></li>
+                }
+
+                <li style="@(index == Items.Count - 1 ? "color: var(--color-glacier-900)" : "")"
+                    aria-current="@(index == Items.Count - 1 ? "page" : null)">
+                    @if (!string.IsNullOrEmpty(item.Href) && index < Items.Count - 1)
+                    {
+                        <a href="@item.Href" class="hover:underline">@item.Text</a>
+                    }
+                    else
+                    {
+                        <span>@item.Text</span>
+                    }
+                </li>
+            }
+        </ol>
+    </nav>
+}
+
+@code
+{
+    [Parameter]
+    [EditorRequired]
+    public required List<BreadcrumbItem> Items { get; set; }
+}

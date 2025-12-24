@@ -1,7 +1,9 @@
 @page "/catalog/{id:guid}"
-@using BookWorm.StoreFront.Components.Components.Base
-@using BookWorm.StoreFront.Components.Components.Catalog
+@using BookWorm.StoreFront.Components.Components.Badge
+@using BookWorm.StoreFront.Components.Components.Breadcrumb
+@using BookWorm.StoreFront.Components.Components.Spinner
 @using BookWorm.StoreFront.Components.Components.Product
+@using BookWorm.StoreFront.Components.Components.QuantitySelector
 @using Microsoft.AspNetCore.Components.Sections
 @rendermode InteractiveServer
 
@@ -15,7 +17,7 @@
     @if (_isLoading)
     {
         <div class="container mx-auto px-4 py-8">
-            <LoadingSpinner IsLoading="true" />
+            <Spinner IsLoading="true" />
         </div>
     }
     else if (_book is null)
@@ -29,37 +31,39 @@
     else
     {
         <div class="container mx-auto px-4 py-8">
-            <!-- Product Detail Section -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-                <!-- Left Column - Image -->
                 <ProductImage ImageUrl="@_book.ImageUrl"
                              AltText="@_book.Name"
                              PriceSale="@_book.PriceSale" />
-
-                <!-- Right Column - Product Info -->
                 <div class="flex flex-col">
-                    <ProductInfo Name="@_book.Name"
-                                Authors="@_book.Authors"
-                                AverageRating="@_book.AverageRating"
-                                TotalReviews="@_book.TotalReviews"
-                                Price="@_book.Price"
-                                PriceSale="@_book.PriceSale" />
-
-                    <!-- Quantity and Add to Cart -->
+                    <ProductInfo Book="@_book" />
                     <QuantitySelector @bind-Quantity="_quantity"
                                      IsOutOfStock="@_book.Status.Equals("OutOfStock", StringComparison.OrdinalIgnoreCase)"
                                      OnAddToCartClick="@AddToCart" />
-
-                    <!-- Status Badges -->
-                    <StatusBadges IsOutOfStock="@_book.Status.Equals("OutOfStock", StringComparison.OrdinalIgnoreCase)" />
-
-                    <!-- Additional Info -->
-                    <ProductDetails Publisher="@_book.Publisher"
-                                    Category="@_book.Category" />
+                    <div class="flex flex-wrap gap-4 mb-6">
+                        <Badge IconUrl="box"
+                               Text="Free Shipping"
+                               AltText="Shipping"
+                               IconStyle="color: var(--color-glacier-700)"
+                               TextStyle="color: var(--color-glacier-700)" />
+                        @if (_book.Status.Equals("OutOfStock", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <Badge IconUrl="x-circle"
+                                   Text="Out of Stock"
+                                   AltText="Out of Stock"
+                                   TextClass="text-error" />
+                        }
+                        else
+                        {
+                            <Badge IconUrl="check-circle"
+                                   Text="In Stock"
+                                   AltText="In Stock"
+                                   TextClass="text-success" />
+                        }
+                    </div>
+                    <ProductDetails Publisher="@_book.Publisher" Category="@_book.Category" />
                 </div>
             </div>
-
-            <!-- Tabs Section -->
             <ProductTabs @bind-ActiveTab="_activeTab"
                         Description="@_book.Description"
                         TotalReviews="@_book.TotalReviews"

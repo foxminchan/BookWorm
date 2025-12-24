@@ -1,6 +1,10 @@
 @page "/catalog"
-@using BookWorm.StoreFront.Components.Components.Base
-@using BookWorm.StoreFront.Components.Components.Catalog
+@using BookWorm.StoreFront.Components.Components.Breadcrumb
+@using BookWorm.StoreFront.Components.Components.EmptyState
+@using BookWorm.StoreFront.Components.Components.Filter
+@using BookWorm.StoreFront.Components.Components.Spinner
+@using BookWorm.StoreFront.Components.Components.Other
+@using BookWorm.StoreFront.Components.Components.Pagination
 @using BookWorm.StoreFront.Components.Components.Product
 @using Microsoft.AspNetCore.Components.Sections
 @rendermode InteractiveServer
@@ -54,7 +58,7 @@
                                CurrentSortByChanged="OnSortChanged"
                                OnSortChanged="ApplyFilters"/>
 
-                <LoadingSpinner IsLoading="_isLoading"/>
+                <Spinner IsLoading="_isLoading"/>
 
                 @if (!_isLoading && _filteredBooks.Count > 0)
                 {

@@ -13,3 +13,15 @@
         </figure>
     </div>
 </div>
+
+@code
+{
+    [Parameter, EditorRequired]
+    public required string ImageUrl { get; set; }
+
+    [Parameter, EditorRequired]
+    public required string AltText { get; set; }
+
+    [Parameter]
+    public decimal? PriceSale { get; set; }
+}

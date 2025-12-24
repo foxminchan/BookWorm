@@ -1,0 +1,19 @@
+@if (IsLoading)
+{
+    @if (Inline)
+    {
+        <span class="loading loading-spinner @SpinnerSize" style="color: var(--color-glacier-600);" role="status" aria-label="Loading"></span>
+    }
+    else
+    {
+        <div class="@ContainerClass">
+            <div class="flex flex-col items-center">
+                <span class="loading loading-spinner @SpinnerSize" style="color: var(--color-glacier-600);"></span>
+                @if (!string.IsNullOrEmpty(Message))
+                {
+                    <p class="mt-4 text-sm" style="color: var(--color-glacier-600);">@Message</p>
+                }
+            </div>
+        </div>
+    }
+}

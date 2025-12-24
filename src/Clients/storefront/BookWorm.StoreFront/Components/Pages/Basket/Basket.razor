@@ -1,8 +1,8 @@
 @page "/basket"
+@using BookWorm.StoreFront.Components.Components.Basket
+@using BookWorm.StoreFront.Components.Components.Spinner
 @using BookWorm.StoreFront.Components.Models
 @using BookWorm.StoreFront.Components.Mocks
-@using BookWorm.StoreFront.Components.Components.Base
-@using BookWorm.StoreFront.Components.Components.Basket
 @using Microsoft.AspNetCore.Components.Sections
 @rendermode InteractiveServer
 
@@ -15,7 +15,7 @@
 
     @if (_isLoading)
     {
-        <LoadingSpinner IsLoading="true" Message="Loading your basket..." />
+        <Spinner IsLoading="true" Message="Loading your basket..." />
     }
     else if (_basket?.Items is null || !_basket.Items.Any())
     {

@@ -1,13 +1,13 @@
 @using BookWorm.StoreFront.Components.Models
 
 <div class="flex flex-col">
-    <h1 class="text-4xl font-bold mb-4" style="color: var(--color-glacier-900)">@Name</h1>
+    <h1 class="text-4xl font-bold mb-4" style="color: var(--color-glacier-900)">@Book.Name</h1>
 
     <!-- Authors -->
-    @if (Authors.Any())
+    @if (Book.Authors.Any())
     {
         <p class="text-lg mb-3" style="color: var(--color-glacier-700)">
-            by @string.Join(", ", Authors.Select(a => a.Name))
+            by @string.Join(", ", Book.Authors.Select(a => a.Name))
         </p>
     }
 
@@ -16,11 +16,11 @@
         <div class="flex items-center gap-1">
             @for (var i = 0; i < 5; i++)
             {
-                @if (i < Math.Floor(AverageRating))
+                @if (i < Math.Floor(Book.AverageRating))
                 {
                     <span class="text-yellow-400 text-xl">★</span>
                 }
-                else if (i < AverageRating)
+                else if (i < Book.AverageRating)
                 {
                     <span class="text-yellow-400 text-xl">½</span>
                 }
@@ -30,20 +30,26 @@
                 }
             }
         </div>
-        <span class="text-lg font-semibold" style="color: var(--color-glacier-900)">@AverageRating.ToString("F1")</span>
-        <span class="text-base" style="color: var(--color-glacier-600)">(@TotalReviews reviews)</span>
+        <span class="text-lg font-semibold" style="color: var(--color-glacier-900)">@Book.AverageRating.ToString("F1")</span>
+        <span class="text-base" style="color: var(--color-glacier-600)">(@Book.TotalReviews reviews)</span>
     </div>
 
     <!-- Price -->
     <div class="flex items-center gap-3 mb-6">
-        @if (PriceSale.HasValue)
+        @if (Book.PriceSale.HasValue)
         {
-            <span class="text-5xl font-bold" style="color: var(--color-glacier-900)">$@PriceSale.Value.ToString("F2")</span>
-            <span class="text-2xl line-through" style="color: var(--color-glacier-500)">$@Price.ToString("F2")</span>
+            <span class="text-5xl font-bold" style="color: var(--color-glacier-900)">$@Book.PriceSale.Value.ToString("F2")</span>
+            <span class="text-2xl line-through" style="color: var(--color-glacier-500)">$@Book.Price.ToString("F2")</span>
         }
         else
         {
-            <span class="text-5xl font-bold" style="color: var(--color-glacier-900)">$@Price.ToString("F2")</span>
+            <span class="text-5xl font-bold" style="color: var(--color-glacier-900)">$@Book.Price.ToString("F2")</span>
         }
     </div>
 </div>
+
+@code
+{
+    [Parameter, EditorRequired]
+    public required Book Book { get; set; }
+}

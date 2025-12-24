@@ -1,0 +1,31 @@
+@using BookWorm.StoreFront.Components.Components.Pagination
+@using BookWorm.StoreFront.Components.Components.Spinner
+
+<h3 class="text-2xl font-bold mb-4" style="color: var(--color-glacier-900)">Customer Reviews</h3>
+<div class="space-y-4">
+    @if (_isLoading)
+    {
+        <Spinner IsLoading="true" />
+    }
+    else if (_reviews.Any())
+    {
+        @foreach (var review in _pagedReviews)
+        {
+            <ReviewItem Review="review" />
+        }
+
+        @if (_totalPages > 1)
+        {
+            <Pagination CurrentPage="_currentPage"
+                       TotalPages="_totalPages"
+                       OnPageChanged="HandlePageChange" />
+        }
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <img src="/icons/info-circle.svg" alt="Info" class="h-6 w-6 shrink-0" />
+            <span>No reviews yet. Be the first to review this book!</span>
+        </div>
+    }
+</div>

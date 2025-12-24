@@ -30,7 +30,8 @@
         </div>
 
         <div class="card-actions mt-6">
-            <button class="btn btn-primary btn-block" @onclick="OnCheckout" style="background-color: var(--color-glacier-600)">
+            <button class="btn btn-primary btn-block" @onclick="OnCheckout"
+                    style="background-color: var(--color-glacier-600)">
                 Proceed to Checkout
             </button>
         </div>
@@ -40,7 +41,7 @@
             @foreach (var badge in _trustBadges)
             {
                 <div class="flex items-center gap-2">
-                    <img src="@badge.IconUrl" alt="@badge.AltText" class="h-5 w-5" loading="lazy" />
+                    <img src="@badge.IconUrl" alt="@badge.AltText" class="h-5 w-5" loading="lazy"/>
                     <span>@badge.Text</span>
                 </div>
             }

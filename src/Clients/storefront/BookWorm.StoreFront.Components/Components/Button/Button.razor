@@ -1,0 +1,51 @@
+@using BookWorm.StoreFront.Components.Components.Spinner
+@using BookWorm.StoreFront.Components.Enums
+@namespace BookWorm.StoreFront.Components.Components.Button
+
+@if (Type == ButtonType.Link)
+{
+    <a href="@Href"
+       class="@GetButtonClasses()"
+			 style="background-color: var(--color-glacier-600)"
+       aria-disabled="@(Disabled || IsLoading ? "true" : null)"
+       @onclick="HandleClick"
+       @onclick:preventDefault="@(Disabled || IsLoading)">
+        @RenderContent()
+    </a>
+}
+else
+{
+    <button type="@GetHtmlButtonType()"
+            class="@GetButtonClasses()"
+						style="background-color: var(--color-glacier-600)"
+            disabled="@(Disabled || IsLoading)"
+            aria-busy="@(IsLoading ? "true" : null)"
+            @onclick="HandleClick">
+        @RenderContent()
+    </button>
+}
+
+@code {
+    private RenderFragment RenderContent() => __builder =>
+    {
+        @if (IsLoading)
+        {
+            <span class="mr-2">
+                <Spinner IsLoading="true" Inline="true" SpinnerSize="@GetSpinnerSize()" />
+            </span>
+        }
+        else if (!string.IsNullOrEmpty(IconUrl) && IconPosition == IconPosition.Left)
+        {
+            <img loading="lazy" src="@Assets[IconUrl]" alt="@(IconAlt ?? "")" class="@GetIconSize() mr-2" aria-hidden="@(string.IsNullOrEmpty(IconAlt) ? "true" : null)" />
+        }
+
+        <span>@ChildContent</span>
+
+        @if (IsLoading || string.IsNullOrEmpty(IconUrl) || IconPosition != IconPosition.Right)
+        {
+            return;
+        }
+
+        <img loading="lazy" src="@Assets[IconUrl]" alt="@(IconAlt ?? "")" class="@GetIconSize() ml-2" aria-hidden="@(string.IsNullOrEmpty(IconAlt) ? "true" : null)" />
+    };
+}

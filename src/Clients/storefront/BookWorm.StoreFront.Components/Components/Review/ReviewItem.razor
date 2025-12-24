@@ -1,0 +1,31 @@
+@using BookWorm.StoreFront.Components.Models
+
+<article class="bg-base-100 rounded-lg p-6 border" style="border-color: var(--color-glacier-200)">
+    <div class="flex justify-between items-start mb-2">
+        <h4 class="font-bold text-lg" style="color: var(--color-glacier-900)">
+            @if (!string.IsNullOrEmpty(Review.Comment) && Review.Comment.Length > 30)
+            {
+                @Review.Comment[..30]@:...
+            }
+            else
+            {
+                @(Review.Comment ?? "Customer Review")
+            }
+        </h4>
+    </div>
+    <div class="flex items-center gap-1 mb-3">
+        @for (var i = 0; i < 5; i++)
+        {
+            <span class="@(i < Review.Rating ? "text-yellow-400" : "") text-lg"
+                  style="@(i >= Review.Rating ? "color: var(--color-glacier-300)" : "")">★</span>
+        }
+    </div>
+    <p class="mb-4 leading-relaxed" style="color: var(--color-glacier-700)">@Review.Comment</p>
+    <p class="font-semibold" style="color: var(--color-glacier-900)">@Review.FirstName @Review.LastName</p>
+</article>
+
+@code
+{
+    [Parameter, EditorRequired]
+    public required Feedback Review { get; set; }
+}
