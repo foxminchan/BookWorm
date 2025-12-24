@@ -53,8 +53,8 @@ public static partial class AzureExtensions
     /// </summary>
     /// <param name="builder">The resource builder for Azure Redis Cache.</param>
     /// <returns>The updated resource builder with appropriate configuration for the execution context.</returns>
-    public static IResourceBuilder<AzureRedisCacheResource> RunAsLocalContainer(
-        this IResourceBuilder<AzureRedisCacheResource> builder
+    public static IResourceBuilder<AzureManagedRedisResource> RunAsLocalContainer(
+        this IResourceBuilder<AzureManagedRedisResource> builder
     )
     {
         builder.RunAsContainer(config =>

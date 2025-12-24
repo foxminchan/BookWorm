@@ -1,10 +1,10 @@
-﻿<Project Sdk="Aspire.AppHost.Sdk/13.0.2">
+﻿<Project Sdk="Aspire.AppHost.Sdk/13.1.0">
   <Import Project="K6Integration.targets" />
   <Import Project="KeycloakifyIntegration.targets" />
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <UserSecretsId>78a33324-5add-4731-b2fc-e0fc06ef0564</UserSecretsId>
-    <NoWarn>ASPIREINTERACTION001;ASPIREPIPELINES001</NoWarn>
+    <NoWarn>ASPIREINTERACTION001;ASPIREPIPELINES001;ASPIRECOMPUTE003;ASPIRECERTIFICATES001</NoWarn>
   </PropertyGroup>
   <ItemGroup Label="Aspire">
     <PackageReference Include="Scalar.Aspire" />
@@ -24,9 +24,6 @@
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.k6" />
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.MailPit" />
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.McpInspector" />
-  </ItemGroup>
-  <ItemGroup Label="Extras">
-    <PackageReference Include="CliWrap" />
   </ItemGroup>
   <ItemGroup Label="Services">
     <ProjectReference Include="..\..\Services\Basket\BookWorm.Basket\BookWorm.Basket.csproj" />

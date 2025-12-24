@@ -29,7 +29,7 @@
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.MailPit" Version="$(ToolKitVersion)" />
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.McpInspector" Version="$(ToolKitVersion)" />
     <!-- Extra -->
-    <PackageVersion Include="Scalar.Aspire" Version="0.8.4" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.8.8" />
   </ItemGroup>
   <ItemGroup Label="Core Packages">
     <!-- Microsoft Extensions -->
@@ -64,7 +64,7 @@
     <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.1" PrivateAssets="All" />
     <PackageVersion Include="Refit.HttpClientFactory" Version="9.0.2" />
     <PackageVersion Include="Mediator.Abstractions" Version="3.0.1" />
-    <PackageVersion Include="Marten.AspNetCore" Version="8.16.4" />
+    <PackageVersion Include="Marten.AspNetCore" Version="8.17.0" />
     <PackageVersion Include="Scrutor" Version="7.0.0" />
     <PackageVersion Include="DistributedLock.Redis" Version="1.1.1" />
   </ItemGroup>
@@ -86,16 +86,15 @@
     <PackageVersion Include="SendGrid" Version="9.29.3" />
     <!-- Other Integrations -->
     <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.5.0-preview.1" />
-    <PackageVersion Include="CliWrap" Version="3.10.0" />
   </ItemGroup>
   <ItemGroup Label="Testing">
     <PackageVersion Include="Bogus" Version="35.6.5" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
-    <PackageVersion Include="TngTech.ArchUnitNET.TUnit" Version="0.13.0" />
-    <PackageVersion Include="TUnit" Version="1.5.48" />
+    <PackageVersion Include="TngTech.ArchUnitNET.TUnit" Version="0.13.1" />
+    <PackageVersion Include="TUnit" Version="1.6.27" />
     <!-- Contract Testing -->
-    <PackageVersion Include="Verify.TUnit" Version="31.8.0" />
+    <PackageVersion Include="Verify.TUnit" Version="31.9.0" />
     <PackageVersion Include="Verify.MassTransit" Version="2.1.0" />
     <!-- Microsoft Testing Platform -->
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.1.0" />

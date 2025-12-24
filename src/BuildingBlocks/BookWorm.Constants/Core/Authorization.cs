@@ -4,21 +4,21 @@ public static class Authorization
 {
     public static class Roles
     {
-        public static readonly string Admin = nameof(Admin).ToLowerInvariant();
-        public static readonly string User = nameof(User).ToLowerInvariant();
-        public static readonly string Reporter = nameof(Reporter).ToLowerInvariant();
+        public const string Admin = "admin";
+        public const string User = "user";
+        public const string Reporter = "reporter";
     }
 
     public static class Policies
     {
-        public const string Admin = nameof(Admin);
-        public const string User = nameof(User);
-        public const string Reporter = nameof(Reporter);
+        public const string Admin = Roles.Admin;
+        public const string User = Roles.User;
+        public const string Reporter = Roles.Reporter;
     }
 
     public static class Actions
     {
-        public static readonly string Read = nameof(Read).ToLowerInvariant();
-        public static readonly string Write = nameof(Write).ToLowerInvariant();
+        public const string Read = "read";
+        public const string Write = "write";
     }
 }

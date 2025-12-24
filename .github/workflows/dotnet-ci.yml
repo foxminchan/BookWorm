@@ -194,15 +194,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GH_TOKEN }}
 
-      - name: Set tag version
-        id: set_tag
-        run: |
-          if [[ $GITHUB_REF == refs/tags/* ]]; then
-            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-          else
-            echo "version=latest" >> $GITHUB_OUTPUT
-          fi
-
       - name: Publish Service
         uses: ./.github/actions/publish
         with:
@@ -210,5 +201,4 @@ jobs:
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
           repository-owner: ${{ github.repository_owner }}
           repository-name: ${{ github.event.repository.name }}
-          container-tag: ${{ steps.set_tag.outputs.version }}
           operations-environment: ${{ runner.os }}

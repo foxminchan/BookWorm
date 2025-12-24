@@ -16,10 +16,6 @@
       "command": "bunx",
       "args": ["-y", "@modelcontextprotocol/server-memory"]
     },
-    "microsoft-docs": {
-      "type": "http",
-      "url": "https://learn.microsoft.com/api/mcp"
-    },
     "context7": {
       "type": "stdio",
       "command": "bunx",
@@ -29,6 +25,16 @@
         "--api-key",
         "${input:context7-api-key}"
       ]
+    },
+    "aspire": {
+      "type": "stdio",
+      "command": "aspire",
+      "args": ["mcp", "start"]
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "bunx",
+      "args": ["-y", "@playwright/mcp@latest"]
     }
   }
 }
