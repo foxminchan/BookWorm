@@ -87,7 +87,7 @@ public sealed class ListFeedbacksEndpointTests
         // Assert
         result.ShouldBeOfType<Ok<PagedResult<FeedbackDto>>>();
         result.Value.ShouldBe(emptyResult);
-        result.Value?.Items.Count.ShouldBe(0);
+        result.Value?.Count.ShouldBe(0);
         result.StatusCode.ShouldBe(StatusCodes.Status200OK);
     }
 }

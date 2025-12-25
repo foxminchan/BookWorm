@@ -50,9 +50,7 @@ public sealed class ListBooksQueryTests
         ];
 
         // Setup mapper mock
-        _mockMapper
-            .Setup(m => m.Map((It.IsAny<IEnumerable<Book>>() as IReadOnlyList<Book>)!))
-            .Returns(_bookDtos);
+        _mockMapper.Setup(m => m.Map(It.IsAny<IReadOnlyList<Book>>())).Returns(_bookDtos);
     }
 
     [Test]
@@ -340,7 +338,6 @@ public sealed class ListBooksQueryTests
 
         // Assert
         result.ShouldNotBeNull();
-        result.Items.ShouldBeNull();
         result.PageIndex.ShouldBe(query.PageIndex);
         result.PageSize.ShouldBe(query.PageSize);
         result.TotalItems.ShouldBe(totalItems);

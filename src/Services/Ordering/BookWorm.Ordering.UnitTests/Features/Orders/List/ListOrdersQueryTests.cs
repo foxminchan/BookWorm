@@ -47,7 +47,7 @@ public sealed class ListOrdersQueryTests
         var result = await handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.Items.Count.ShouldBe(_orders.Length);
+        result.Count.ShouldBe(_orders.Length);
         result.PageIndex.ShouldBe(1);
         result.PageSize.ShouldBe(10);
         result.TotalItems.ShouldBe(_orders.Length);
@@ -87,7 +87,7 @@ public sealed class ListOrdersQueryTests
         var result = await handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.Items.Count.ShouldBe(_orders.Length);
+        result.Count.ShouldBe(_orders.Length);
     }
 
     [Test]
@@ -109,7 +109,7 @@ public sealed class ListOrdersQueryTests
         var result = await handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.Items.Count.ShouldBe(_orders.Length);
+        result.Count.ShouldBe(_orders.Length);
 
         _repositoryMock.Verify(
             x => x.ListAsync(It.IsAny<OrderFilterSpec>(), It.IsAny<CancellationToken>()),
@@ -176,7 +176,7 @@ public sealed class ListOrdersQueryTests
         var result = await handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.Items.Count.ShouldBe(0);
+        result.Count.ShouldBe(0);
         result.TotalItems.ShouldBe(0);
         result.TotalPages.ShouldBe(0);
         result.HasNextPage.ShouldBeFalse();

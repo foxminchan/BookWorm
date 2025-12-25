@@ -38,7 +38,7 @@ public sealed class ListFeedbacksQueryTests
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.Items.Count.ShouldBe(_feedbacks.Length);
+        result.Count.ShouldBe(_feedbacks.Length);
         result.PageIndex.ShouldBe(0);
         result.PageSize.ShouldBe(10);
         result.TotalItems.ShouldBe(_feedbacks.Length);
@@ -46,12 +46,12 @@ public sealed class ListFeedbacksQueryTests
 
         foreach (var feedback in _feedbacks)
         {
-            result.Items.ShouldContain(x => x.Id == feedback.Id);
-            result.Items.ShouldContain(x => x.FirstName == feedback.FirstName);
-            result.Items.ShouldContain(x => x.LastName == feedback.LastName);
-            result.Items.ShouldContain(x => x.Comment == feedback.Comment);
-            result.Items.ShouldContain(x => x.Rating == feedback.Rating);
-            result.Items.ShouldContain(x => x.BookId == feedback.BookId);
+            result.ShouldContain(x => x.Id == feedback.Id);
+            result.ShouldContain(x => x.FirstName == feedback.FirstName);
+            result.ShouldContain(x => x.LastName == feedback.LastName);
+            result.ShouldContain(x => x.Comment == feedback.Comment);
+            result.ShouldContain(x => x.Rating == feedback.Rating);
+            result.ShouldContain(x => x.BookId == feedback.BookId);
         }
 
         _repositoryMock.Verify(
@@ -104,7 +104,7 @@ public sealed class ListFeedbacksQueryTests
         result.PageSize.ShouldBe(pageSize);
         result.TotalItems.ShouldBe(totalItems);
         result.TotalPages.ShouldBe(totalPages);
-        result.Items.Count.ShouldBe(feedbacks.Count);
+        result.Count.ShouldBe(feedbacks.Count);
 
         _repositoryMock.Verify(
             x => x.ListAsync(It.IsAny<FeedbackFilterSpec>(), It.IsAny<CancellationToken>()),
@@ -134,7 +134,7 @@ public sealed class ListFeedbacksQueryTests
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.Items.ShouldBeEmpty();
+        result.ShouldBeEmpty();
         result.TotalItems.ShouldBe(0);
         result.TotalPages.ShouldBe(0);
 

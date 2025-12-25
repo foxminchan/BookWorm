@@ -18,9 +18,9 @@ public sealed class ReviewTool(ISender sender)
     {
         var reviews = await sender.Send(new ListFeedbacksQuery(bookId, 1, int.MaxValue));
 
-        return reviews.Items.Any()
+        return reviews.Any()
             ? JsonSerializer.Serialize(
-                reviews.Items,
+                reviews,
                 FeedbackSerializationContext.Default.IReadOnlyListFeedbackDto
             )
             : "No reviews found for this book";

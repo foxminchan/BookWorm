@@ -14,6 +14,7 @@ public sealed class ListFeedbacksEndpoint
                     await HandleAsync(query, sender)
             )
             .ProducesGet<PagedResult<FeedbackDto>>(true)
+            .WithPaginationHeaders()
             .WithTags(nameof(Feedback))
             .WithName(nameof(ListFeedbacksEndpoint))
             .WithSummary("List Feedbacks")

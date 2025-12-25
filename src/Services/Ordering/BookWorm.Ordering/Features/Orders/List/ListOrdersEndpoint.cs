@@ -14,6 +14,7 @@ public sealed class ListOrdersEndpoint
                     await HandleAsync(query, sender)
             )
             .ProducesGet<PagedResult<OrderDto>>(true)
+            .WithPaginationHeaders()
             .WithTags(nameof(Order))
             .WithName(nameof(ListOrdersEndpoint))
             .WithSummary("List Orders")
