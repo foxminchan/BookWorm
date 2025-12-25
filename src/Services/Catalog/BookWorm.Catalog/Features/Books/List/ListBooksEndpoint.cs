@@ -12,6 +12,7 @@ public sealed class ListBooksEndpoint : IEndpoint<Ok<PagedResult<BookDto>>, List
                 async ([AsParameters] ListBooksQuery query, ISender sender) =>
                     await HandleAsync(query, sender)
             )
+            .WithPaginationHeaders()
             .ProducesGet<PagedResult<BookDto>>(true)
             .WithTags(nameof(Book))
             .WithName(nameof(ListBooksEndpoint))
@@ -27,7 +28,6 @@ public sealed class ListBooksEndpoint : IEndpoint<Ok<PagedResult<BookDto>>, List
     )
     {
         var result = await sender.Send(query, cancellationToken);
-
         return TypedResults.Ok(result);
     }
 }

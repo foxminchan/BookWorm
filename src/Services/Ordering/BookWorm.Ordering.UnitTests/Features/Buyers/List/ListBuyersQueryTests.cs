@@ -42,8 +42,8 @@ public sealed class ListBuyersQueryTests
 
         // Assert
         result.ShouldNotBeNull();
-        result.Items.ShouldNotBeNull();
-        result.Items.Count.ShouldBe(_buyers.Length);
+        result.ShouldNotBeNull();
+        result.Count.ShouldBe(_buyers.Length);
         result.PageIndex.ShouldBe(pageIndex);
         result.PageSize.ShouldBe(pageSize);
         result.TotalItems.ShouldBe(totalItems);
@@ -122,7 +122,7 @@ public sealed class ListBuyersQueryTests
 
         // Assert
         result.ShouldNotBeNull();
-        result.Items.ShouldBeEmpty();
+        result.ShouldBeEmpty();
         result.TotalItems.ShouldBe(totalItems);
         result.TotalPages.ShouldBe(0);
     }

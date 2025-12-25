@@ -59,7 +59,7 @@ public sealed class ListBooksEndpointTests
         result.ShouldNotBeNull();
         result.ShouldBeOfType<Ok<PagedResult<BookDto>>>();
         result.Value.ShouldBe(_expectedResult);
-        result.Value?.Items.Count.ShouldBe(1);
+        result.Value?.Count.ShouldBe(1);
         result.Value?.PageIndex.ShouldBe(1);
         result.Value?.PageSize.ShouldBe(10);
         result.Value?.TotalItems.ShouldBe(1);
@@ -84,7 +84,7 @@ public sealed class ListBooksEndpointTests
         // Assert
         result.ShouldNotBeNull();
         result.ShouldBeOfType<Ok<PagedResult<BookDto>>>();
-        result.Value?.Items.Count.ShouldBe(0);
+        result.Value?.Count.ShouldBe(0);
         result.Value?.TotalItems.ShouldBe(0);
         result.Value?.TotalPages.ShouldBe(0);
     }

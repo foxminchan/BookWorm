@@ -23,10 +23,10 @@ public sealed class Product(ICatalogApi catalogApi)
             return "There was an error while searching the catalog. Please try again later.";
         }
 
-        return response.Content?.Items.Count == 0
+        return response.Content?.Count == 0
             ? "We couldn't find any books matching your description. Please try again with a different description."
             : JsonSerializer.Serialize(
-                response.Content?.Items,
+                response.Content,
                 BookSerializationContext.Default.IReadOnlyListBook
             );
     }
