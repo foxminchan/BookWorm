@@ -176,7 +176,31 @@ var gateway = builder
     .WithService(orderingApi)
     .WithService(basketApi, true)
     .WithService(catalogApi, true)
-    .WithService(keycloak);
+    .Build();
+
+var turbo = builder
+    .AddTurborepoApp(
+        Components.TurboRepo,
+        Path.GetFullPath("../../Clients", builder.AppHostDirectory)
+    )
+    .WithPnpm(true)
+    .WithPackageManagerLaunch();
+
+turbo
+    .AddApp(Clients.StoreFront, Clients.StoreFrontTurboApp)
+    .WithHttpEndpoint(env: "PORT")
+    .WithMappedEndpointPort()
+    .WithHttpHealthCheck()
+    .WithReference(gateway)
+    .WaitFor(gateway);
+
+turbo
+    .AddApp(Clients.BackOffice, Clients.BackOfficeTurboApp)
+    .WithHttpEndpoint(env: "PORT")
+    .WithMappedEndpointPort()
+    .WithHttpHealthCheck()
+    .WithReference(gateway)
+    .WaitFor(gateway);
 
 if (builder.ExecutionContext.IsRunMode)
 {

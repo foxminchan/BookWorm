@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using Aspire.Hosting.Yarp;
+﻿using Aspire.Hosting.Yarp;
 using Aspire.Hosting.Yarp.Transforms;
 
 namespace BookWorm.AppHost.Extensions.Network;
@@ -14,8 +13,7 @@ public static class ProxyExtensions
         }
 
         internal IResourceBuilder<YarpResource> BuildApiGatewayProxy(
-            IReadOnlyList<Service> services,
-            IResourceBuilder<IResource> resource
+            IReadOnlyList<Service> services
         )
         {
             var yarp = builder
@@ -48,26 +46,6 @@ public static class ProxyExtensions
                                 $"{nameof(BookWorm)} {nameof(Services.Gateway)}"
                             );
                     }
-
-                    switch (resource.Resource)
-                    {
-                        case ContainerResource containerResource:
-                            yarpBuilder.AddRoute(
-                                "/identity/{**remainder}",
-                                containerResource.GetEndpoint(Http.Schemes.Http)
-                            );
-                            break;
-                        case ExternalServiceResource externalServiceResource:
-                            yarpBuilder.AddRoute(
-                                "/identity/{**remainder}",
-                                builder.CreateResourceBuilder(externalServiceResource)
-                            );
-                            break;
-                        default:
-                            throw new InvalidOperationException(
-                                $"Unsupported resource type for identity endpoint: {resource.Resource.GetType().Name}"
-                            );
-                    }
                 })
                 .WithExplicitStart();
 
@@ -86,7 +64,6 @@ public sealed class Service
 public sealed class ApiGatewayProxyBuilder
 {
     private readonly List<Service> _services = [];
-    private IResourceBuilder<IResource>? _container;
 
     internal ApiGatewayProxyBuilder(IDistributedApplicationBuilder builder)
     {
@@ -112,16 +89,8 @@ public sealed class ApiGatewayProxyBuilder
         return this;
     }
 
-    public IResourceBuilder<YarpResource> WithService(IResourceBuilder<IResource> container)
+    public IResourceBuilder<YarpResource> Build()
     {
-        _container = container;
-        return Build();
-    }
-
-    private IResourceBuilder<YarpResource> Build()
-    {
-        return _container is null
-            ? throw new InvalidOperationException("Container resource must be set before building")
-            : Builder.BuildApiGatewayProxy(_services, _container);
+        return Builder.BuildApiGatewayProxy(_services);
     }
 }
