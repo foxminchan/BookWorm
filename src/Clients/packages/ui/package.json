@@ -1,8 +1,25 @@
 {
   "name": "@workspace/ui",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "description": "Shared UI components and utilities for BookWorm frontend clients",
+  "author": "Nhan Nguyen <nguyenxuannhan407@gmail.com> (https://github.com/foxminchan)",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  ],
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foxminchan/BookWorm.git",
+    "directory": "src/Clients/packages/ui"
+  },
+  "bugs": {
+    "url": "https://github.com/foxminchan/BookWorm/issues"
+  },
+  "homepage": "https://foxminchan.github.io/BookWorm/",
   "scripts": {
     "lint": "eslint . --max-warnings 0"
   },

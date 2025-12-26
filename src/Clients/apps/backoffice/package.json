@@ -1,8 +1,25 @@
 {
   "name": "@bookworm/backoffice",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "type": "module",
+  "description": "Administrator backoffice application for BookWorm",
+  "author": "Nhan Nguyen <nguyenxuannhan407@gmail.com> (https://github.com/foxminchan)",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  ],
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foxminchan/BookWorm.git",
+    "directory": "src/Clients/apps/backoffice"
+  },
+  "bugs": {
+    "url": "https://github.com/foxminchan/BookWorm/issues"
+  },
+  "homepage": "https://foxminchan.github.io/BookWorm/",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",

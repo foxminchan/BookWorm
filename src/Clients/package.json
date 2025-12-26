@@ -1,7 +1,24 @@
 {
   "name": "@bookworm/clients",
-  "version": "0.0.1",
+  "version": "1.0.0",
+  "description": "Frontend clients for BookWorm application",
+  "author": "Nhan Nguyen <nguyenxuannhan407@gmail.com> (https://github.com/foxminchan)",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  ],
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foxminchan/BookWorm.git",
+    "directory": "src/Clients"
+  },
+  "bugs": {
+    "url": "https://github.com/foxminchan/BookWorm/issues"
+  },
+  "homepage": "https://foxminchan.github.io/BookWorm/",
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
@@ -15,7 +32,7 @@
     "turbo": "^2.7.2",
     "typescript": "5.7.3"
   },
-  "packageManager": "pnpm@10.4.1",
+  "packageManager": "pnpm@10.26.2",
   "engines": {
     "node": ">=20"
   },
