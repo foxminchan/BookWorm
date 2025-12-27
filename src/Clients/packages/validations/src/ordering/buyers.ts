@@ -5,42 +5,42 @@ const MAX_LENGTH_MEDIUM = 50;
 export const createBuyerSchema = z.object({
   street: z
     .string()
-    .min(1, { message: "Street is required" })
+    .min(1, { error: "Street is required" })
     .max(MAX_LENGTH_MEDIUM, {
-      message: `Street must not exceed ${MAX_LENGTH_MEDIUM} characters`,
+      error: `Street must not exceed ${MAX_LENGTH_MEDIUM} characters`,
     }),
   city: z
     .string()
-    .min(1, { message: "City is required" })
+    .min(1, { error: "City is required" })
     .max(MAX_LENGTH_MEDIUM, {
-      message: `City must not exceed ${MAX_LENGTH_MEDIUM} characters`,
+      error: `City must not exceed ${MAX_LENGTH_MEDIUM} characters`,
     }),
   province: z
     .string()
-    .min(1, { message: "Province is required" })
+    .min(1, { error: "Province is required" })
     .max(MAX_LENGTH_MEDIUM, {
-      message: `Province must not exceed ${MAX_LENGTH_MEDIUM} characters`,
+      error: `Province must not exceed ${MAX_LENGTH_MEDIUM} characters`,
     }),
 });
 
 export const updateAddressSchema = z.object({
   street: z
     .string()
-    .min(1, { message: "Street is required" })
+    .min(1, { error: "Street is required" })
     .max(MAX_LENGTH_MEDIUM, {
-      message: `Street must not exceed ${MAX_LENGTH_MEDIUM} characters`,
+      error: `Street must not exceed ${MAX_LENGTH_MEDIUM} characters`,
     }),
   city: z
     .string()
-    .min(1, { message: "City is required" })
+    .min(1, { error: "City is required" })
     .max(MAX_LENGTH_MEDIUM, {
-      message: `City must not exceed ${MAX_LENGTH_MEDIUM} characters`,
+      error: `City must not exceed ${MAX_LENGTH_MEDIUM} characters`,
     }),
   province: z
     .string()
-    .min(1, { message: "Province is required" })
+    .min(1, { error: "Province is required" })
     .max(MAX_LENGTH_MEDIUM, {
-      message: `Province must not exceed ${MAX_LENGTH_MEDIUM} characters`,
+      error: `Province must not exceed ${MAX_LENGTH_MEDIUM} characters`,
     }),
 });
 

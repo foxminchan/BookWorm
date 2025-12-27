@@ -13,7 +13,7 @@ export const createCategorySchema = z.object({
 });
 
 export const updateCategorySchema = z.object({
-  id: z.uuid({ message: "Invalid ID format" }),
+  id: z.uuid({ error: "Invalid ID format" }),
   name: z
     .string()
     .min(1, "Name is required")
