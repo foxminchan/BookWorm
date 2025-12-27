@@ -1,15 +1,20 @@
 import { http, HttpResponse } from "msw";
 import type {
-  CategoryDto,
+  Category,
   CreateCategoryRequest,
   UpdateCategoryRequest,
 } from "@workspace/types/catalog/categories";
+import {
+  createCategorySchema,
+  updateCategorySchema,
+} from "@workspace/validations/catalog/categories";
 import { categoriesStore } from "./data.js";
-import { generateTraceId } from "../../helpers/trace";
-import { CATALOG_API_BASE_URL } from "../constants";
+import { formatValidationErrors } from "../../helpers/validation.js";
+import { generateTraceId } from "../../helpers/trace.js";
+import { CATALOG_API_BASE_URL } from "../constants.js";
 
 export const categoriesHandlers = [
-  http.get<never, never, CategoryDto[]>(
+  http.get<never, never, Category[]>(
     `${CATALOG_API_BASE_URL}/api/v1/categories`,
     () => {
       const categories = categoriesStore.getAll();
@@ -21,23 +26,15 @@ export const categoriesHandlers = [
     `${CATALOG_API_BASE_URL}/api/v1/categories`,
     async ({ request }) => {
       const body = await request.json();
+      const result = createCategorySchema.safeParse(body);
 
-      if (!body.name || body.name.trim().length === 0) {
-        return HttpResponse.json(
-          {
-            type: "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-            title: "One or more validation errors occurred.",
-            status: 400,
-            errors: {
-              Name: ["'Name' must not be empty."],
-            },
-            traceId: generateTraceId(),
-          },
-          { status: 400 },
-        );
+      if (!result.success) {
+        return HttpResponse.json(formatValidationErrors(result.error), {
+          status: 400,
+        });
       }
 
-      const newCategoryId = categoriesStore.create(body.name);
+      const newCategoryId = categoriesStore.create(result.data.name);
       return HttpResponse.json(newCategoryId, { status: 200 });
     },
   ),
@@ -46,31 +43,15 @@ export const categoriesHandlers = [
     `${CATALOG_API_BASE_URL}/api/v1/categories`,
     async ({ request }) => {
       const body = await request.json();
+      const result = updateCategorySchema.safeParse(body);
 
-      const errors: Record<string, string[]> = {};
-
-      if (!body.id) {
-        errors.Id = ["'Id' must not be empty."];
+      if (!result.success) {
+        return HttpResponse.json(formatValidationErrors(result.error), {
+          status: 400,
+        });
       }
 
-      if (!body.name || body.name.trim().length === 0) {
-        errors.Name = ["'Name' must not be empty."];
-      }
-
-      if (Object.keys(errors).length > 0) {
-        return HttpResponse.json(
-          {
-            type: "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-            title: "One or more validation errors occurred.",
-            status: 400,
-            errors,
-            traceId: generateTraceId(),
-          },
-          { status: 400 },
-        );
-      }
-
-      const updated = categoriesStore.update(body.id, body.name);
+      const updated = categoriesStore.update(result.data.id, result.data.name);
 
       if (!updated) {
         return new HttpResponse("Category not found", { status: 404 });

@@ -1,7 +1,7 @@
 export { booksHandlers } from "./handlers";
 export { booksStore, mockBooks } from "./data";
 export type {
-  BookDto,
+  Book,
   CreateBookRequest,
   UpdateBookRequest,
   ListBooksQuery,

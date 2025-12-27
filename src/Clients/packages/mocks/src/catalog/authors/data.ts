@@ -1,7 +1,7 @@
 import { v7 as uuidv7 } from "uuid";
-import type { AuthorDto } from "@workspace/types/catalog/authors";
+import type { Author } from "@workspace/types/catalog/authors";
 
-export const mockAuthors: AuthorDto[] = [
+export const mockAuthors: Author[] = [
   {
     id: uuidv7(),
     name: "J.K. Rowling",
@@ -47,11 +47,11 @@ export const mockAuthors: AuthorDto[] = [
 export const authorsStore = {
   authors: [...mockAuthors],
 
-  getAll(): AuthorDto[] {
+  getAll(): Author[] {
     return [...this.authors];
   },
 
-  getById(id: string): AuthorDto | undefined {
+  getById(id: string): Author | undefined {
     return this.authors.find((author) => author.id === id);
   },
 

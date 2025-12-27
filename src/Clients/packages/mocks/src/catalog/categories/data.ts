@@ -1,7 +1,7 @@
 import { v7 as uuidv7 } from "uuid";
-import type { CategoryDto } from "@workspace/types/catalog/categories";
+import type { Category } from "@workspace/types/catalog/categories";
 
-export const mockCategories: CategoryDto[] = [
+export const mockCategories: Category[] = [
   {
     id: uuidv7(),
     name: "Fiction",
@@ -47,11 +47,11 @@ export const mockCategories: CategoryDto[] = [
 export const categoriesStore = {
   categories: [...mockCategories],
 
-  getAll(): CategoryDto[] {
+  getAll(): Category[] {
     return [...this.categories];
   },
 
-  getById(id: string): CategoryDto | undefined {
+  getById(id: string): Category | undefined {
     return this.categories.find((category) => category.id === id);
   },
 

@@ -1,15 +1,20 @@
 import { http, HttpResponse } from "msw";
 import type {
-  PublisherDto,
+  Publisher,
   CreatePublisherRequest,
   UpdatePublisherRequest,
 } from "@workspace/types/catalog/publishers";
-import { publishersStore } from "./data";
-import { generateTraceId } from "../../helpers/trace";
-import { CATALOG_API_BASE_URL } from "../constants";
+import {
+  createPublisherSchema,
+  updatePublisherSchema,
+} from "@workspace/validations/catalog/publishers";
+import { publishersStore } from "./data.js";
+import { formatValidationErrors } from "../../helpers/validation.js";
+import { generateTraceId } from "../../helpers/trace.js";
+import { CATALOG_API_BASE_URL } from "../constants.js";
 
 export const publishersHandlers = [
-  http.get<never, never, PublisherDto[]>(
+  http.get<never, never, Publisher[]>(
     `${CATALOG_API_BASE_URL}/api/v1/publishers`,
     () => {
       const publishers = publishersStore.getAll();
@@ -21,23 +26,15 @@ export const publishersHandlers = [
     `${CATALOG_API_BASE_URL}/api/v1/publishers`,
     async ({ request }) => {
       const body = await request.json();
+      const result = createPublisherSchema.safeParse(body);
 
-      if (!body.name || body.name.trim().length === 0) {
-        return HttpResponse.json(
-          {
-            type: "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-            title: "One or more validation errors occurred.",
-            status: 400,
-            errors: {
-              Name: ["'Name' must not be empty."],
-            },
-            traceId: generateTraceId(),
-          },
-          { status: 400 },
-        );
+      if (!result.success) {
+        return HttpResponse.json(formatValidationErrors(result.error), {
+          status: 400,
+        });
       }
 
-      const newPublisherId = publishersStore.create(body.name);
+      const newPublisherId = publishersStore.create(result.data.name);
       return HttpResponse.json(newPublisherId, { status: 200 });
     },
   ),
@@ -46,31 +43,15 @@ export const publishersHandlers = [
     `${CATALOG_API_BASE_URL}/api/v1/publishers`,
     async ({ request }) => {
       const body = await request.json();
+      const result = updatePublisherSchema.safeParse(body);
 
-      const errors: Record<string, string[]> = {};
-
-      if (!body.id) {
-        errors.Id = ["'Id' must not be empty."];
+      if (!result.success) {
+        return HttpResponse.json(formatValidationErrors(result.error), {
+          status: 400,
+        });
       }
 
-      if (!body.name || body.name.trim().length === 0) {
-        errors.Name = ["'Name' must not be empty."];
-      }
-
-      if (Object.keys(errors).length > 0) {
-        return HttpResponse.json(
-          {
-            type: "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-            title: "One or more validation errors occurred.",
-            status: 400,
-            errors,
-            traceId: generateTraceId(),
-          },
-          { status: 400 },
-        );
-      }
-
-      const updated = publishersStore.update(body.id, body.name);
+      const updated = publishersStore.update(result.data.id, result.data.name);
 
       if (!updated) {
         return new HttpResponse("Publisher not found", { status: 404 });

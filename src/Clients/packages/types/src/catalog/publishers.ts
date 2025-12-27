@@ -1,4 +1,4 @@
-export type PublisherDto = {
+export type Publisher = {
   id: string;
   name: string | null;
 };

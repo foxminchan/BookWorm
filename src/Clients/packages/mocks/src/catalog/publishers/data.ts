@@ -1,7 +1,7 @@
 import { v7 as uuidv7 } from "uuid";
-import type { PublisherDto } from "@workspace/types/catalog/publishers";
+import type { Publisher } from "@workspace/types/catalog/publishers";
 
-export const mockPublishers: PublisherDto[] = [
+export const mockPublishers: Publisher[] = [
   {
     id: uuidv7(),
     name: "Penguin Random House",

@@ -64,11 +64,13 @@
   },
   "dependencies": {
     "@workspace/types": "workspace:*",
+    "@workspace/validations": "workspace:*",
     "msw": "^2.12.6",
-    "uuid": "^11.1.0"
+    "uuid": "^13.0.0",
+    "zod": "^4.2.1"
   },
   "devDependencies": {
-    "@types/node": "^25.0.0",
+    "@types/node": "^25.0.3",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "eslint": "^9.39.2",

@@ -1,4 +1,4 @@
-export type AuthorDto = {
+export type Author = {
   id: string;
   name: string | null;
 };

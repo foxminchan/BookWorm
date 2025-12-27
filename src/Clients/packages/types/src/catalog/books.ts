@@ -1,4 +1,4 @@
-export type BookDto = {
+export type Book = {
   id: string;
   name: string | null;
   description: string | null;

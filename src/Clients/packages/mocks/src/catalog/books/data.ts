@@ -1,11 +1,11 @@
 import { v7 as uuidv7 } from "uuid";
-import type { BookDto } from "@workspace/types/catalog/books";
+import type { Book } from "@workspace/types/catalog/books";
 
 const getMockCategoryId = () => uuidv7();
 const getMockPublisherId = () => uuidv7();
 const getMockAuthorId = () => uuidv7();
 
-export const mockBooks: BookDto[] = [
+export const mockBooks: Book[] = [
   {
     id: uuidv7(),
     name: "Harry Potter and the Philosopher's Stone",
@@ -88,7 +88,7 @@ export const booksStore = {
     pageSize?: number;
     searchTerm?: string;
   }): {
-    items: BookDto[];
+    items: Book[];
     pageIndex: number;
     pageSize: number;
     totalCount: number;
@@ -125,7 +125,7 @@ export const booksStore = {
     };
   },
 
-  getById(id: string): BookDto | undefined {
+  getById(id: string): Book | undefined {
     return this.books.find((book) => book.id === id);
   },
 

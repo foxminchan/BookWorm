@@ -1,17 +1,23 @@
 import { http, HttpResponse } from "msw";
 import type {
-  BookDto,
+  Book,
   CreateBookRequest,
   UpdateBookRequest,
   ListBooksQuery,
   PagedResult,
 } from "@workspace/types/catalog/books";
+import {
+  createBookSchema,
+  updateBookSchema,
+} from "@workspace/validations/catalog/books";
 import { booksStore } from "./data.js";
-import { generateTraceId, buildPaginationLinks } from "../../helpers/index.js";
+import { formatValidationErrors } from "../../helpers/validation.js";
+import { generateTraceId } from "../../helpers/trace.js";
+import { buildPaginationLinks } from "../../helpers/link.js";
 import { CATALOG_API_BASE_URL } from "../constants.js";
 
 export const booksHandlers = [
-  http.get<never, never, PagedResult<BookDto>>(
+  http.get<never, never, PagedResult<Book>>(
     `${CATALOG_API_BASE_URL}/api/v1/books`,
     ({ request }) => {
       const url = new URL(request.url);
@@ -85,7 +91,7 @@ export const booksHandlers = [
             status: 400,
             errors: {
               ContentType: [
-                "'Content-Type' must be 'multipart/form-data' for this endpoint.",
+                "Content-Type must be multipart/form-data for this endpoint.",
               ],
             },
             traceId: generateTraceId(),
@@ -95,46 +101,15 @@ export const booksHandlers = [
       }
 
       const body = await request.json();
-      const errors: Record<string, string[]> = {};
+      const result = createBookSchema.safeParse(body);
 
-      if (!body.name || body.name.trim().length === 0) {
-        errors.Name = ["'Name' must not be empty."];
+      if (!result.success) {
+        return HttpResponse.json(formatValidationErrors(result.error), {
+          status: 400,
+        });
       }
 
-      if (!body.description || body.description.trim().length === 0) {
-        errors.Description = ["'Description' must not be empty."];
-      }
-
-      if (body.price <= 0) {
-        errors.Price = ["'Price' must be greater than 0."];
-      }
-
-      if (!body.categoryId) {
-        errors.CategoryId = ["'Category Id' must not be empty."];
-      }
-
-      if (!body.publisherId) {
-        errors.PublisherId = ["'Publisher Id' must not be empty."];
-      }
-
-      if (!body.authorIds || body.authorIds.length === 0) {
-        errors.AuthorIds = ["'Author Ids' must contain at least one item."];
-      }
-
-      if (Object.keys(errors).length > 0) {
-        return HttpResponse.json(
-          {
-            type: "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-            title: "One or more validation errors occurred.",
-            status: 400,
-            errors,
-            traceId: generateTraceId(),
-          },
-          { status: 400 },
-        );
-      }
-
-      const newBookId = booksStore.create(body);
+      const newBookId = booksStore.create(result.data);
 
       const headers = new Headers();
       headers.set(
@@ -158,7 +133,7 @@ export const booksHandlers = [
             status: 400,
             errors: {
               ContentType: [
-                "'Content-Type' must be 'multipart/form-data' for this endpoint.",
+                "Content-Type must be multipart/form-data for this endpoint.",
               ],
             },
             traceId: generateTraceId(),
@@ -168,50 +143,15 @@ export const booksHandlers = [
       }
 
       const body = await request.json();
-      const errors: Record<string, string[]> = {};
+      const result = updateBookSchema.safeParse(body);
 
-      if (!body.id) {
-        errors.Id = ["'Id' must not be empty."];
+      if (!result.success) {
+        return HttpResponse.json(formatValidationErrors(result.error), {
+          status: 400,
+        });
       }
 
-      if (!body.name || body.name.trim().length === 0) {
-        errors.Name = ["'Name' must not be empty."];
-      }
-
-      if (!body.description || body.description.trim().length === 0) {
-        errors.Description = ["'Description' must not be empty."];
-      }
-
-      if (body.price <= 0) {
-        errors.Price = ["'Price' must be greater than 0."];
-      }
-
-      if (!body.categoryId) {
-        errors.CategoryId = ["'Category Id' must not be empty."];
-      }
-
-      if (!body.publisherId) {
-        errors.PublisherId = ["'Publisher Id' must not be empty."];
-      }
-
-      if (!body.authorIds || body.authorIds.length === 0) {
-        errors.AuthorIds = ["'Author Ids' must contain at least one item."];
-      }
-
-      if (Object.keys(errors).length > 0) {
-        return HttpResponse.json(
-          {
-            type: "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-            title: "One or more validation errors occurred.",
-            status: 400,
-            errors,
-            traceId: generateTraceId(),
-          },
-          { status: 400 },
-        );
-      }
-
-      const updated = booksStore.update(body);
+      const updated = booksStore.update(result.data);
 
       if (!updated) {
         return new HttpResponse("Book not found", { status: 404 });

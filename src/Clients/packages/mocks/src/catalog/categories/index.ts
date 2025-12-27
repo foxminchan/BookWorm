@@ -1,7 +1,7 @@
 export { categoriesHandlers } from "./handlers";
 export { categoriesStore, mockCategories } from "./data";
 export type {
-  CategoryDto,
+  Category,
   CreateCategoryRequest,
   UpdateCategoryRequest,
 } from "@workspace/types/catalog/categories";
