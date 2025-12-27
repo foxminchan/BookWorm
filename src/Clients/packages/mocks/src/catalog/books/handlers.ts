@@ -3,8 +3,6 @@ import type {
   Book,
   CreateBookRequest,
   UpdateBookRequest,
-  ListBooksQuery,
-  PagedResult,
 } from "@workspace/types/catalog/books";
 import {
   createBookSchema,
@@ -15,6 +13,7 @@ import { formatValidationErrors } from "@workspace/utils/validation";
 import { generateTraceId } from "@workspace/utils/trace";
 import { buildPaginationLinks } from "@workspace/utils/link";
 import { BASE_URL } from "../../constants";
+import { PagedResult } from "@workspace/types/shared";
 
 export const booksHandlers = [
   http.get<never, never, PagedResult<Book>>(
@@ -78,7 +77,6 @@ export const booksHandlers = [
   http.post<never, CreateBookRequest>(
     `${BASE_URL}/api/v1/books`,
     async ({ request }) => {
-      // Check Content-Type
       const contentType = request.headers.get("Content-Type");
       if (!contentType?.includes("multipart/form-data")) {
         return HttpResponse.json(
@@ -109,7 +107,7 @@ export const booksHandlers = [
       const newBookId = booksStore.create(result.data);
 
       const headers = new Headers();
-      headers.set("Location", `${BASE_URL}/api/v1/books/${newBookId}`);
+      headers.set("Location", `/api/v1/books/${newBookId}`);
 
       return HttpResponse.json(newBookId, { status: 201, headers });
     },

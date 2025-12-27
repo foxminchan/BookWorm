@@ -42,6 +42,22 @@
     "./catalog/books": {
       "import": "./src/catalog/books.ts",
       "types": "./src/catalog/books.ts"
+    },
+    "./basket": {
+      "import": "./src/basket/index.ts",
+      "types": "./src/basket/index.ts"
+    },
+    "./ordering/buyers": {
+      "import": "./src/ordering/buyers.ts",
+      "types": "./src/ordering/buyers.ts"
+    },
+    "./ordering/orders": {
+      "import": "./src/ordering/orders.ts",
+      "types": "./src/ordering/orders.ts"
+    },
+    "./rating": {
+      "import": "./src/rating/index.ts",
+      "types": "./src/rating/index.ts"
     }
   },
   "scripts": {

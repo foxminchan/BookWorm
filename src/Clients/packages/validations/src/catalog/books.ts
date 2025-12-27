@@ -1,39 +1,54 @@
 import { z } from "zod";
 
+const MAX_BOOK_DESCRIPTION_LENGTH = 500;
+const MAX_BOOK_NAME_LENGTH = 50;
+
 export const createBookSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  description: z.string().min(1, "Description is required"),
+  name: z
+    .string()
+    .min(1, "Name is required")
+    .max(
+      MAX_BOOK_NAME_LENGTH,
+      `Name must be ${MAX_BOOK_NAME_LENGTH} characters or less`,
+    ),
+  description: z
+    .string()
+    .min(1, "Description is required")
+    .max(
+      MAX_BOOK_DESCRIPTION_LENGTH,
+      `Description must be ${MAX_BOOK_DESCRIPTION_LENGTH} characters or less`,
+    ),
   price: z.number().positive("Price must be greater than 0"),
   priceSale: z.number().nullable().optional(),
-  categoryId: z
-    .string()
-    .uuid("Invalid category ID format")
-    .min(1, "Category is required"),
-  publisherId: z
-    .string()
-    .uuid("Invalid publisher ID format")
-    .min(1, "Publisher is required"),
+  categoryId: z.uuid({ message: "Invalid category ID format" }),
+  publisherId: z.uuid({ message: "Invalid publisher ID format" }),
   authorIds: z
-    .array(z.string().uuid("Invalid author ID format"))
+    .array(z.uuid({ message: "Invalid author ID format" }))
     .min(1, "At least one author is required"),
 });
 
 export const updateBookSchema = z.object({
-  id: z.string().uuid("Invalid ID format").min(1, "ID is required"),
-  name: z.string().min(1, "Name is required"),
-  description: z.string().min(1, "Description is required"),
+  id: z.uuid({ message: "Invalid ID format" }),
+  name: z
+    .string()
+    .min(1, "Name is required")
+    .max(
+      MAX_BOOK_NAME_LENGTH,
+      `Name must be ${MAX_BOOK_NAME_LENGTH} characters or less`,
+    ),
+  description: z
+    .string()
+    .min(1, "Description is required")
+    .max(
+      MAX_BOOK_DESCRIPTION_LENGTH,
+      `Description must be ${MAX_BOOK_DESCRIPTION_LENGTH} characters or less`,
+    ),
   price: z.number().positive("Price must be greater than 0"),
   priceSale: z.number().nullable().optional(),
-  categoryId: z
-    .string()
-    .uuid("Invalid category ID format")
-    .min(1, "Category is required"),
-  publisherId: z
-    .string()
-    .uuid("Invalid publisher ID format")
-    .min(1, "Publisher is required"),
+  categoryId: z.uuid({ message: "Invalid category ID format" }),
+  publisherId: z.uuid({ message: "Invalid publisher ID format" }),
   authorIds: z
-    .array(z.string().uuid("Invalid author ID format"))
+    .array(z.uuid({ message: "Invalid author ID format" }))
     .min(1, "At least one author is required"),
   isRemoveImage: z.boolean().optional(),
 });
