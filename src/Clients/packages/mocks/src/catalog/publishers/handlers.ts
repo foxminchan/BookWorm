@@ -8,22 +8,19 @@ import {
   createPublisherSchema,
   updatePublisherSchema,
 } from "@workspace/validations/catalog/publishers";
-import { publishersStore } from "./data.js";
-import { formatValidationErrors } from "../../helpers/validation.js";
-import { generateTraceId } from "../../helpers/trace.js";
-import { CATALOG_API_BASE_URL } from "../constants.js";
+import { publishersStore } from "./data";
+import { formatValidationErrors } from "@workspace/utils/validation";
+import { generateTraceId } from "@workspace/utils/trace";
+import { BASE_URL } from "../../constants";
 
 export const publishersHandlers = [
-  http.get<never, never, Publisher[]>(
-    `${CATALOG_API_BASE_URL}/api/v1/publishers`,
-    () => {
-      const publishers = publishersStore.getAll();
-      return HttpResponse.json(publishers, { status: 200 });
-    },
-  ),
+  http.get<never, never, Publisher[]>(`${BASE_URL}/api/v1/publishers`, () => {
+    const publishers = publishersStore.getAll();
+    return HttpResponse.json(publishers, { status: 200 });
+  }),
 
   http.post<never, CreatePublisherRequest>(
-    `${CATALOG_API_BASE_URL}/api/v1/publishers`,
+    `${BASE_URL}/api/v1/publishers`,
     async ({ request }) => {
       const body = await request.json();
       const result = createPublisherSchema.safeParse(body);
@@ -40,7 +37,7 @@ export const publishersHandlers = [
   ),
 
   http.put<never, UpdatePublisherRequest>(
-    `${CATALOG_API_BASE_URL}/api/v1/publishers`,
+    `${BASE_URL}/api/v1/publishers`,
     async ({ request }) => {
       const body = await request.json();
       const result = updatePublisherSchema.safeParse(body);
@@ -62,7 +59,7 @@ export const publishersHandlers = [
   ),
 
   http.delete<{ id: string }>(
-    `${CATALOG_API_BASE_URL}/api/v1/publishers/:id`,
+    `${BASE_URL}/api/v1/publishers/:id`,
     ({ params }) => {
       const { id } = params;
 

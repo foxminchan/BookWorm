@@ -1,4 +1,4 @@
-import { generateTraceId } from "./trace";
+import { generateTraceId } from "./trace.js";
 
 /**
  * Convert Zod validation errors to FluentValidation-compatible error response
@@ -7,7 +7,7 @@ import { generateTraceId } from "./trace";
  * @see https://tools.ietf.org/html/rfc9110#section-15.5.1
  */
 export function formatValidationErrors(error: {
-  issues: Array<{ path: Array<string | number>; message: string }>;
+  issues: Array<{ path: PropertyKey[]; message: string }>;
 }): {
   type: string;
   title: string;

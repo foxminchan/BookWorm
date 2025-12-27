@@ -8,22 +8,19 @@ import {
   createCategorySchema,
   updateCategorySchema,
 } from "@workspace/validations/catalog/categories";
-import { categoriesStore } from "./data.js";
-import { formatValidationErrors } from "../../helpers/validation.js";
-import { generateTraceId } from "../../helpers/trace.js";
-import { CATALOG_API_BASE_URL } from "../constants.js";
+import { categoriesStore } from "./data";
+import { formatValidationErrors } from "@workspace/utils/validation";
+import { generateTraceId } from "@workspace/utils/trace";
+import { BASE_URL } from "../../constants";
 
 export const categoriesHandlers = [
-  http.get<never, never, Category[]>(
-    `${CATALOG_API_BASE_URL}/api/v1/categories`,
-    () => {
-      const categories = categoriesStore.getAll();
-      return HttpResponse.json(categories, { status: 200 });
-    },
-  ),
+  http.get<never, never, Category[]>(`${BASE_URL}/api/v1/categories`, () => {
+    const categories = categoriesStore.getAll();
+    return HttpResponse.json(categories, { status: 200 });
+  }),
 
   http.post<never, CreateCategoryRequest>(
-    `${CATALOG_API_BASE_URL}/api/v1/categories`,
+    `${BASE_URL}/api/v1/categories`,
     async ({ request }) => {
       const body = await request.json();
       const result = createCategorySchema.safeParse(body);
@@ -40,7 +37,7 @@ export const categoriesHandlers = [
   ),
 
   http.put<never, UpdateCategoryRequest>(
-    `${CATALOG_API_BASE_URL}/api/v1/categories`,
+    `${BASE_URL}/api/v1/categories`,
     async ({ request }) => {
       const body = await request.json();
       const result = updateCategorySchema.safeParse(body);
@@ -62,7 +59,7 @@ export const categoriesHandlers = [
   ),
 
   http.delete<{ id: string }>(
-    `${CATALOG_API_BASE_URL}/api/v1/categories/:id`,
+    `${BASE_URL}/api/v1/categories/:id`,
     ({ params }) => {
       const { id } = params;
 
