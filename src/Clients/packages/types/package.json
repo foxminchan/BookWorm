@@ -1,0 +1,55 @@
+{
+  "name": "@workspace/types",
+  "version": "1.0.0",
+  "description": "Type definitions for BookWorm frontend clients",
+  "author": "Nhan Nguyen <nguyenxuannhan407@gmail.com> (https://github.com/foxminchan)",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  ],
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foxminchan/BookWorm.git",
+    "directory": "src/Clients/packages/mocks"
+  },
+  "bugs": {
+    "url": "https://github.com/foxminchan/BookWorm/issues"
+  },
+  "homepage": "https://foxminchan.github.io/BookWorm/",
+  "engines": {
+    "node": ">=25.0.0"
+  },
+  "exports": {
+    "./catalog": {
+      "import": "./src/catalog/index.ts",
+      "types": "./src/catalog/index.ts"
+    },
+    "./catalog/authors": {
+      "import": "./src/catalog/authors.ts",
+      "types": "./src/catalog/authors.ts"
+    },
+    "./catalog/categories": {
+      "import": "./src/catalog/categories.ts",
+      "types": "./src/catalog/categories.ts"
+    },
+    "./catalog/publishers": {
+      "import": "./src/catalog/publishers.ts",
+      "types": "./src/catalog/publishers.ts"
+    },
+    "./catalog/books": {
+      "import": "./src/catalog/books.ts",
+      "types": "./src/catalog/books.ts"
+    }
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@workspace/eslint-config": "workspace:*",
+    "@workspace/typescript-config": "workspace:*"
+  }
+}

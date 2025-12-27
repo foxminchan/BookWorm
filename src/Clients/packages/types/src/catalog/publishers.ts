@@ -1,0 +1,13 @@
+export type PublisherDto = {
+  id: string;
+  name: string | null;
+};
+
+export type CreatePublisherRequest = {
+  name: string;
+};
+
+export type UpdatePublisherRequest = {
+  id: string;
+  name: string;
+};
