@@ -216,6 +216,31 @@ importers:
         specifier: workspace:*
         version: link:../typescript-config
 
+  packages/api-hooks:
+    dependencies:
+      '@tanstack/react-query':
+        specifier: ^5.90.12
+        version: 5.90.12(react@19.2.3)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.7
+        version: 19.2.7
+      '@workspace/api-client':
+        specifier: workspace:*
+        version: link:../api-client
+      '@workspace/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@workspace/types':
+        specifier: workspace:*
+        version: link:../types
+      '@workspace/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      react:
+        specifier: ^19.2.3
+        version: 19.2.3
+
   packages/eslint-config:
     devDependencies:
       '@eslint/js':
