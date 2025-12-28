@@ -12,12 +12,12 @@ import { booksStore } from "./data";
 import { formatValidationErrors } from "@workspace/utils/validation";
 import { generateTraceId } from "@workspace/utils/trace";
 import { buildPaginationLinks } from "@workspace/utils/link";
-import { BASE_URL } from "../../constants";
+import { CATALOG_API_BASE_URL } from "../constants";
 import { PagedResult } from "@workspace/types/shared";
 
 export const booksHandlers = [
   http.get<never, never, PagedResult<Book>>(
-    `${BASE_URL}/api/v1/books`,
+    `${CATALOG_API_BASE_URL}/api/v1/books`,
     ({ request }) => {
       const url = new URL(request.url);
       const pageIndex = Number.parseInt(
@@ -47,35 +47,38 @@ export const booksHandlers = [
     },
   ),
 
-  http.get<{ id: string }>(`${BASE_URL}/api/v1/books/:id`, ({ params }) => {
-    const { id } = params;
+  http.get<{ id: string }>(
+    `${CATALOG_API_BASE_URL}/api/v1/books/:id`,
+    ({ params }) => {
+      const { id } = params;
 
-    if (!id) {
-      return HttpResponse.json(
-        {
-          type: "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-          title: "One or more validation errors occurred.",
-          status: 400,
-          errors: {
-            Id: ["'Id' must not be empty."],
+      if (!id) {
+        return HttpResponse.json(
+          {
+            type: "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+            title: "One or more validation errors occurred.",
+            status: 400,
+            errors: {
+              Id: ["'Id' must not be empty."],
+            },
+            traceId: generateTraceId(),
           },
-          traceId: generateTraceId(),
-        },
-        { status: 400 },
-      );
-    }
+          { status: 400 },
+        );
+      }
 
-    const book = booksStore.getById(id);
+      const book = booksStore.getById(id);
 
-    if (!book) {
-      return new HttpResponse("Book not found", { status: 404 });
-    }
+      if (!book) {
+        return new HttpResponse("Book not found", { status: 404 });
+      }
 
-    return HttpResponse.json(book, { status: 200 });
-  }),
+      return HttpResponse.json(book, { status: 200 });
+    },
+  ),
 
   http.post<never, CreateBookRequest>(
-    `${BASE_URL}/api/v1/books`,
+    `${CATALOG_API_BASE_URL}/api/v1/books`,
     async ({ request }) => {
       const contentType = request.headers.get("Content-Type");
       if (!contentType?.includes("multipart/form-data")) {
@@ -114,7 +117,7 @@ export const booksHandlers = [
   ),
 
   http.put<never, UpdateBookRequest>(
-    `${BASE_URL}/api/v1/books`,
+    `${CATALOG_API_BASE_URL}/api/v1/books`,
     async ({ request }) => {
       const contentType = request.headers.get("Content-Type");
       if (!contentType?.includes("multipart/form-data")) {
@@ -153,30 +156,33 @@ export const booksHandlers = [
     },
   ),
 
-  http.delete<{ id: string }>(`${BASE_URL}/api/v1/books/:id`, ({ params }) => {
-    const { id } = params;
+  http.delete<{ id: string }>(
+    `${CATALOG_API_BASE_URL}/api/v1/books/:id`,
+    ({ params }) => {
+      const { id } = params;
 
-    if (!id) {
-      return HttpResponse.json(
-        {
-          type: "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-          title: "One or more validation errors occurred.",
-          status: 400,
-          errors: {
-            Id: ["'Id' must not be empty."],
+      if (!id) {
+        return HttpResponse.json(
+          {
+            type: "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+            title: "One or more validation errors occurred.",
+            status: 400,
+            errors: {
+              Id: ["'Id' must not be empty."],
+            },
+            traceId: generateTraceId(),
           },
-          traceId: generateTraceId(),
-        },
-        { status: 400 },
-      );
-    }
+          { status: 400 },
+        );
+      }
 
-    const deleted = booksStore.delete(id);
+      const deleted = booksStore.delete(id);
 
-    if (!deleted) {
-      return new HttpResponse("Book not found", { status: 404 });
-    }
+      if (!deleted) {
+        return new HttpResponse("Book not found", { status: 404 });
+      }
 
-    return new HttpResponse(null, { status: 204 });
-  }),
+      return new HttpResponse(null, { status: 204 });
+    },
+  ),
 ];

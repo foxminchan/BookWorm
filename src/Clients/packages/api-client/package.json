@@ -1,0 +1,68 @@
+{
+  "name": "@workspace/api-client",
+  "version": "1.0.0",
+  "description": "Axios-based API client for BookWorm services",
+  "author": "Nhan Nguyen <nguyenxuannhan407@gmail.com> (https://github.com/foxminchan)",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  ],
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foxminchan/BookWorm.git",
+    "directory": "src/Clients/packages/api-client"
+  },
+  "bugs": {
+    "url": "https://github.com/foxminchan/BookWorm/issues"
+  },
+  "homepage": "https://foxminchan.github.io/BookWorm/",
+  "engines": {
+    "node": ">=25.0.0"
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts"
+    },
+    "./client": {
+      "import": "./src/client.ts",
+      "types": "./src/client.ts"
+    },
+    "./basket": {
+      "import": "./src/basket/index.ts",
+      "types": "./src/basket/index.ts"
+    },
+    "./catalog": {
+      "import": "./src/catalog/index.ts",
+      "types": "./src/catalog/index.ts"
+    },
+    "./ordering": {
+      "import": "./src/ordering/index.ts",
+      "types": "./src/ordering/index.ts"
+    },
+    "./rating": {
+      "import": "./src/rating/index.ts",
+      "types": "./src/rating/index.ts"
+    }
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.3",
+    "@types/uuid": "^11.0.0",
+    "@workspace/eslint-config": "workspace:*",
+    "@workspace/typescript-config": "workspace:*",
+    "@workspace/types": "workspace:*"
+  }
+}

@@ -11,16 +11,19 @@ import {
 import { publishersStore } from "./data";
 import { formatValidationErrors } from "@workspace/utils/validation";
 import { generateTraceId } from "@workspace/utils/trace";
-import { BASE_URL } from "../../constants";
+import { CATALOG_API_BASE_URL } from "../constants";
 
 export const publishersHandlers = [
-  http.get<never, never, Publisher[]>(`${BASE_URL}/api/v1/publishers`, () => {
-    const publishers = publishersStore.getAll();
-    return HttpResponse.json(publishers, { status: 200 });
-  }),
+  http.get<never, never, Publisher[]>(
+    `${CATALOG_API_BASE_URL}/api/v1/publishers`,
+    () => {
+      const publishers = publishersStore.getAll();
+      return HttpResponse.json(publishers, { status: 200 });
+    },
+  ),
 
   http.post<never, CreatePublisherRequest>(
-    `${BASE_URL}/api/v1/publishers`,
+    `${CATALOG_API_BASE_URL}/api/v1/publishers`,
     async ({ request }) => {
       const body = await request.json();
       const result = createPublisherSchema.safeParse(body);
@@ -37,7 +40,7 @@ export const publishersHandlers = [
   ),
 
   http.put<never, UpdatePublisherRequest>(
-    `${BASE_URL}/api/v1/publishers`,
+    `${CATALOG_API_BASE_URL}/api/v1/publishers`,
     async ({ request }) => {
       const body = await request.json();
       const result = updatePublisherSchema.safeParse(body);
@@ -59,7 +62,7 @@ export const publishersHandlers = [
   ),
 
   http.delete<{ id: string }>(
-    `${BASE_URL}/api/v1/publishers/:id`,
+    `${CATALOG_API_BASE_URL}/api/v1/publishers/:id`,
     ({ params }) => {
       const { id } = params;
 

@@ -11,16 +11,19 @@ import {
 import { authorsStore } from "./data";
 import { formatValidationErrors } from "@workspace/utils/validation";
 import { generateTraceId } from "@workspace/utils/trace";
-import { BASE_URL } from "../../constants";
+import { CATALOG_API_BASE_URL } from "../constants";
 
 export const authorsHandlers = [
-  http.get<never, never, Author[]>(`${BASE_URL}/api/v1/authors`, () => {
-    const authors = authorsStore.getAll();
-    return HttpResponse.json(authors, { status: 200 });
-  }),
+  http.get<never, never, Author[]>(
+    `${CATALOG_API_BASE_URL}/api/v1/authors`,
+    () => {
+      const authors = authorsStore.getAll();
+      return HttpResponse.json(authors, { status: 200 });
+    },
+  ),
 
   http.post<never, CreateAuthorRequest>(
-    `${BASE_URL}/api/v1/authors`,
+    `${CATALOG_API_BASE_URL}/api/v1/authors`,
     async ({ request }) => {
       const body = await request.json();
       const result = createAuthorSchema.safeParse(body);
@@ -37,7 +40,7 @@ export const authorsHandlers = [
   ),
 
   http.put<never, UpdateAuthorRequest>(
-    `${BASE_URL}/api/v1/authors`,
+    `${CATALOG_API_BASE_URL}/api/v1/authors`,
     async ({ request }) => {
       const body = await request.json();
       const result = updateAuthorSchema.safeParse(body);
@@ -59,7 +62,7 @@ export const authorsHandlers = [
   ),
 
   http.delete<{ id: string }>(
-    `${BASE_URL}/api/v1/authors/:id`,
+    `${CATALOG_API_BASE_URL}/api/v1/authors/:id`,
     ({ params }) => {
       const { id } = params;
 

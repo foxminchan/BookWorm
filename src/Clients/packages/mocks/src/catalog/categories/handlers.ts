@@ -11,16 +11,19 @@ import {
 import { categoriesStore } from "./data";
 import { formatValidationErrors } from "@workspace/utils/validation";
 import { generateTraceId } from "@workspace/utils/trace";
-import { BASE_URL } from "../../constants";
+import { CATALOG_API_BASE_URL } from "../constants";
 
 export const categoriesHandlers = [
-  http.get<never, never, Category[]>(`${BASE_URL}/api/v1/categories`, () => {
-    const categories = categoriesStore.getAll();
-    return HttpResponse.json(categories, { status: 200 });
-  }),
+  http.get<never, never, Category[]>(
+    `${CATALOG_API_BASE_URL}/api/v1/categories`,
+    () => {
+      const categories = categoriesStore.getAll();
+      return HttpResponse.json(categories, { status: 200 });
+    },
+  ),
 
   http.post<never, CreateCategoryRequest>(
-    `${BASE_URL}/api/v1/categories`,
+    `${CATALOG_API_BASE_URL}/api/v1/categories`,
     async ({ request }) => {
       const body = await request.json();
       const result = createCategorySchema.safeParse(body);
@@ -37,7 +40,7 @@ export const categoriesHandlers = [
   ),
 
   http.put<never, UpdateCategoryRequest>(
-    `${BASE_URL}/api/v1/categories`,
+    `${CATALOG_API_BASE_URL}/api/v1/categories`,
     async ({ request }) => {
       const body = await request.json();
       const result = updateCategorySchema.safeParse(body);
@@ -59,7 +62,7 @@ export const categoriesHandlers = [
   ),
 
   http.delete<{ id: string }>(
-    `${BASE_URL}/api/v1/categories/:id`,
+    `${CATALOG_API_BASE_URL}/api/v1/categories/:id`,
     ({ params }) => {
       const { id } = params;
 
