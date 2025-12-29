@@ -1,89 +1,35 @@
 import { v7 as uuidv7 } from "uuid";
+import type { Author } from "@workspace/types/catalog/authors";
 import type { Book } from "@workspace/types/catalog/books";
+import booksData from "@/data/books.json";
+import { mockAuthors } from "@/catalog/authors/data";
+import { mockCategories } from "@/catalog/categories/data";
+import { mockPublishers } from "@/catalog/publishers/data";
 
-const getMockCategoryId = () => uuidv7();
-const getMockPublisherId = () => uuidv7();
-const getMockAuthorId = () => uuidv7();
+export const mockBooks: Book[] = booksData.map((book) => {
+  const { categoryId, publisherId, authorIds, ...bookData } = book;
 
-export const mockBooks: Book[] = [
-  {
-    id: uuidv7(),
-    name: "Harry Potter and the Philosopher's Stone",
-    description:
-      "The first novel in the Harry Potter series and Rowling's debut novel.",
-    imageUrl: "https://placehold.co/400x600/png?text=Harry+Potter",
-    price: 25.99,
-    priceSale: 19.99,
-    status: "InStock",
-    category: { id: getMockCategoryId(), name: "Fantasy" },
-    publisher: { id: getMockPublisherId(), name: "Bloomsbury Publishing" },
-    authors: [{ id: getMockAuthorId(), name: "J.K. Rowling" }],
-    averageRating: 4.8,
-    totalReviews: 1250,
-  },
-  {
-    id: uuidv7(),
-    name: "The Hobbit",
-    description: "A fantasy novel and children's book by J.R.R. Tolkien.",
-    imageUrl: "https://placehold.co/400x600/png?text=The+Hobbit",
-    price: 22.5,
-    priceSale: null,
-    status: "InStock",
-    category: { id: getMockCategoryId(), name: "Fantasy" },
-    publisher: { id: getMockPublisherId(), name: "Oxford University Press" },
-    authors: [{ id: getMockAuthorId(), name: "J.R.R. Tolkien" }],
-    averageRating: 4.7,
-    totalReviews: 980,
-  },
-  {
-    id: uuidv7(),
-    name: "1984",
-    description:
-      "A dystopian social science fiction novel by English novelist George Orwell.",
-    imageUrl: "https://placehold.co/400x600/png?text=1984",
-    price: 18.99,
-    priceSale: 14.99,
-    status: "InStock",
-    category: { id: getMockCategoryId(), name: "Fiction" },
-    publisher: { id: getMockPublisherId(), name: "Penguin Random House" },
-    authors: [{ id: getMockAuthorId(), name: "George Orwell" }],
-    averageRating: 4.6,
-    totalReviews: 2100,
-  },
-  {
-    id: uuidv7(),
-    name: "The Shining",
-    description: "A horror novel by American author Stephen King.",
-    imageUrl: "https://placehold.co/400x600/png?text=The+Shining",
-    price: 21.99,
-    priceSale: null,
-    status: "OutOfStock",
-    category: { id: getMockCategoryId(), name: "Thriller" },
-    publisher: { id: getMockPublisherId(), name: "Simon & Schuster" },
-    authors: [{ id: getMockAuthorId(), name: "Stephen King" }],
-    averageRating: 4.5,
-    totalReviews: 850,
-  },
-  {
-    id: uuidv7(),
-    name: "And Then There Were None",
-    description: "A mystery novel by Agatha Christie.",
-    imageUrl: "https://placehold.co/400x600/png?text=And+Then+There+Were+None",
-    price: 16.99,
-    priceSale: 12.99,
-    status: "InStock",
-    category: { id: getMockCategoryId(), name: "Mystery" },
-    publisher: { id: getMockPublisherId(), name: "HarperCollins" },
-    authors: [{ id: getMockAuthorId(), name: "Agatha Christie" }],
-    averageRating: 4.7,
-    totalReviews: 1500,
-  },
-];
+  const category = mockCategories.find((c) => c.id === categoryId) ?? null;
+  const publisher = mockPublishers.find((p) => p.id === publisherId) ?? null;
+  const authors = authorIds
+    .map((authorId) => mockAuthors.find((a) => a.id === authorId))
+    .filter((author): author is Author => author !== undefined);
+
+  return {
+    ...bookData,
+    status: bookData.status as "InStock" | "OutOfStock",
+    category,
+    publisher,
+    authors,
+    averageRating: Math.random() * 5,
+    totalReviews: Math.floor(Math.random() * 2000),
+  };
+});
 
 export const booksStore = {
   books: [...mockBooks],
 
-  getAll(query?: {
+  list(query?: {
     pageIndex?: number;
     pageSize?: number;
     searchTerm?: string;
@@ -125,11 +71,12 @@ export const booksStore = {
     };
   },
 
-  getById(id: string): Book | undefined {
+  get(id: string): Book | undefined {
     return this.books.find((book) => book.id === id);
   },
 
   create(data: {
+    id?: string;
     name: string;
     description: string;
     price: number;
@@ -138,7 +85,15 @@ export const booksStore = {
     publisherId: string;
     authorIds: string[];
   }): string {
-    const newId = uuidv7();
+    const newId = data.id || uuidv7();
+    const category =
+      mockCategories.find((c) => c.id === data.categoryId) ?? null;
+    const publisher =
+      mockPublishers.find((p) => p.id === data.publisherId) ?? null;
+    const authors = data.authorIds
+      .map((authorId) => mockAuthors.find((a) => a.id === authorId))
+      .filter((author): author is Author => author !== undefined);
+
     this.books.push({
       id: newId,
       name: data.name,
@@ -147,9 +102,9 @@ export const booksStore = {
       price: data.price,
       priceSale: data.priceSale ?? null,
       status: "InStock",
-      category: { id: data.categoryId, name: "Mock Category" },
-      publisher: { id: data.publisherId, name: "Mock Publisher" },
-      authors: data.authorIds.map((id) => ({ id, name: "Mock Author" })),
+      category,
+      publisher,
+      authors,
       averageRating: 0,
       totalReviews: 0,
     });
@@ -170,6 +125,14 @@ export const booksStore = {
     if (index === -1) return false;
 
     const existingBook = this.books[index]!;
+    const category =
+      mockCategories.find((c) => c.id === data.categoryId) ?? null;
+    const publisher =
+      mockPublishers.find((p) => p.id === data.publisherId) ?? null;
+    const authors = data.authorIds
+      .map((authorId) => mockAuthors.find((a) => a.id === authorId))
+      .filter((author): author is Author => author !== undefined);
+
     this.books[index] = {
       id: data.id,
       name: data.name,
@@ -178,9 +141,9 @@ export const booksStore = {
       price: data.price,
       priceSale: data.priceSale ?? null,
       status: existingBook.status,
-      category: { id: data.categoryId, name: "Mock Category" },
-      publisher: { id: data.publisherId, name: "Mock Publisher" },
-      authors: data.authorIds.map((id) => ({ id, name: "Mock Author" })),
+      category,
+      publisher,
+      authors,
       averageRating: existingBook.averageRating,
       totalReviews: existingBook.totalReviews,
     };

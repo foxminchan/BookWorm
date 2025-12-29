@@ -1,5 +1,4 @@
 import { http, HttpResponse } from "msw";
-import type { Buyer } from "@workspace/types/ordering/buyers";
 import {
   createBuyerSchema,
   updateAddressSchema,
@@ -7,12 +6,11 @@ import {
 import { buyersStoreManager, MOCK_USER_ID } from "./data";
 import { formatValidationErrors } from "@workspace/utils/validation";
 import { buildPaginationLinks } from "@workspace/utils/link";
-import { ORDERING_API_BASE_URL } from "../constants";
-import { PagedResult } from "@workspace/types/shared";
+import { ORDERING_API_BASE_URL } from "@/ordering/constants";
 
 export const buyersHandlers = [
   http.get(`${ORDERING_API_BASE_URL}/api/v1/buyers/me`, () => {
-    const buyer = buyersStoreManager.getCurrentBuyer();
+    const buyer = buyersStoreManager.getCurrent();
 
     if (!buyer) {
       return new HttpResponse(null, { status: 404 });
@@ -26,37 +24,30 @@ export const buyersHandlers = [
     const pageIndex = Number.parseInt(url.searchParams.get("pageIndex") || "1");
     const pageSize = Number.parseInt(url.searchParams.get("pageSize") || "10");
 
-    const allBuyers = buyersStoreManager.getAll();
+    const allBuyers = buyersStoreManager.list();
     const totalCount = allBuyers.length;
     const totalPages = Math.ceil(totalCount / pageSize);
     const startIndex = (pageIndex - 1) * pageSize;
     const endIndex = startIndex + pageSize;
     const items = allBuyers.slice(startIndex, endIndex);
 
-    const result: PagedResult<Buyer> = {
-      items,
-      pageIndex,
-      pageSize,
-      totalCount,
-      totalPages,
-      hasPreviousPage: pageIndex > 1,
-      hasNextPage: pageIndex < totalPages,
-    };
+    const hasPreviousPage = pageIndex > 1;
+    const hasNextPage = pageIndex < totalPages;
 
     const links = buildPaginationLinks(
       request.url,
       pageIndex,
       pageSize,
       totalPages,
-      result.hasPreviousPage,
-      result.hasNextPage,
+      hasPreviousPage,
+      hasNextPage,
     );
 
     const headers = new Headers();
     headers.set("Link", links.join(","));
     headers.set("Pagination-Count", totalCount.toString());
 
-    return HttpResponse.json(result, { status: 200, headers });
+    return HttpResponse.json(items, { status: 200, headers });
   }),
 
   http.post(`${ORDERING_API_BASE_URL}/api/v1/buyers`, async ({ request }) => {

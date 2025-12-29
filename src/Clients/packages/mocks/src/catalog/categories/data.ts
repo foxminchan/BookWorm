@@ -1,62 +1,18 @@
 import { v7 as uuidv7 } from "uuid";
 import type { Category } from "@workspace/types/catalog/categories";
+import categoriesData from "@/data/categories.json";
 
-export const mockCategories: Category[] = [
-  {
-    id: uuidv7(),
-    name: "Fiction",
-  },
-  {
-    id: uuidv7(),
-    name: "Non-Fiction",
-  },
-  {
-    id: uuidv7(),
-    name: "Science Fiction",
-  },
-  {
-    id: uuidv7(),
-    name: "Fantasy",
-  },
-  {
-    id: uuidv7(),
-    name: "Mystery",
-  },
-  {
-    id: uuidv7(),
-    name: "Thriller",
-  },
-  {
-    id: uuidv7(),
-    name: "Romance",
-  },
-  {
-    id: uuidv7(),
-    name: "Biography",
-  },
-  {
-    id: uuidv7(),
-    name: "History",
-  },
-  {
-    id: uuidv7(),
-    name: "Self-Help",
-  },
-];
+export const mockCategories: Category[] = categoriesData;
 
 export const categoriesStore = {
   categories: [...mockCategories],
 
-  getAll(): Category[] {
+  list(): Category[] {
     return [...this.categories];
   },
 
-  getById(id: string): Category | undefined {
-    return this.categories.find((category) => category.id === id);
-  },
-
-  create(name: string): string {
-    const newId = uuidv7();
+  create(name: string, id?: string): string {
+    const newId = id || uuidv7();
     this.categories.push({
       id: newId,
       name,

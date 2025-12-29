@@ -1,62 +1,18 @@
 import { v7 as uuidv7 } from "uuid";
 import type { Publisher } from "@workspace/types/catalog/publishers";
+import publishersData from "@/data/publishers.json";
 
-export const mockPublishers: Publisher[] = [
-  {
-    id: uuidv7(),
-    name: "Penguin Random House",
-  },
-  {
-    id: uuidv7(),
-    name: "HarperCollins",
-  },
-  {
-    id: uuidv7(),
-    name: "Simon & Schuster",
-  },
-  {
-    id: uuidv7(),
-    name: "Macmillan Publishers",
-  },
-  {
-    id: uuidv7(),
-    name: "Hachette Book Group",
-  },
-  {
-    id: uuidv7(),
-    name: "Scholastic",
-  },
-  {
-    id: uuidv7(),
-    name: "Pearson",
-  },
-  {
-    id: uuidv7(),
-    name: "Oxford University Press",
-  },
-  {
-    id: uuidv7(),
-    name: "Cambridge University Press",
-  },
-  {
-    id: uuidv7(),
-    name: "Bloomsbury Publishing",
-  },
-];
+export const mockPublishers: Publisher[] = publishersData;
 
 export const publishersStore = {
   publishers: [...mockPublishers],
 
-  getAll(): PublisherDto[] {
+  list(): Publisher[] {
     return [...this.publishers];
   },
 
-  getById(id: string): PublisherDto | undefined {
-    return this.publishers.find((publisher) => publisher.id === id);
-  },
-
-  create(name: string): string {
-    const newId = uuidv7();
+  create(name: string, id?: string): string {
+    const newId = id || uuidv7();
     this.publishers.push({
       id: newId,
       name,

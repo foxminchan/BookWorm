@@ -1,3 +1,7 @@
+import type { Author } from "./authors";
+import type { Category } from "./categories";
+import type { Publisher } from "./publishers";
+
 export type Book = {
   id: string;
   name: string | null;
@@ -6,18 +10,9 @@ export type Book = {
   price: number;
   priceSale: number | null;
   status: "InStock" | "OutOfStock";
-  category: {
-    id: string;
-    name: string | null;
-  };
-  publisher: {
-    id: string;
-    name: string | null;
-  };
-  authors: Array<{
-    id: string;
-    name: string | null;
-  }>;
+  category: Category | null;
+  publisher: Publisher | null;
+  authors: Author[];
   averageRating: number;
   totalReviews: number;
 };

@@ -5,11 +5,11 @@ import {
 } from "@workspace/validations/basket";
 import { basketStore, MOCK_USER_ID } from "./data";
 import { formatValidationErrors } from "@workspace/utils/validation";
-import { BASKET_API_BASE_URL } from "./constants";
+import { BASKET_API_BASE_URL } from "@/basket/constants";
 
 export const basketHandlers = [
   http.get(`${BASKET_API_BASE_URL}/api/v1/baskets`, () => {
-    const basket = basketStore.getBasket(MOCK_USER_ID);
+    const basket = basketStore.get(MOCK_USER_ID);
 
     if (!basket) {
       return new HttpResponse(null, { status: 404 });
@@ -55,7 +55,7 @@ export const basketHandlers = [
       });
     }
 
-    const existingBasket = basketStore.getBasket(MOCK_USER_ID);
+    const existingBasket = basketStore.get(MOCK_USER_ID);
 
     if (!existingBasket) {
       return new HttpResponse(null, { status: 404 });

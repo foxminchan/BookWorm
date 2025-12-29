@@ -1,48 +1,23 @@
 import { v7 as uuidv7 } from "uuid";
 import type { Buyer } from "@workspace/types/ordering/buyers";
+import buyersData from "@/data/buyers.json";
 
-export const MOCK_USER_ID = uuidv7();
+const mockBuyers: Buyer[] = buyersData;
 
-const mockBuyers: Buyer[] = [
-  {
-    id: MOCK_USER_ID,
-    name: "John Doe",
-    address: "123 Main St, New York, NY",
-  },
-  {
-    id: uuidv7(),
-    name: "Jane Smith",
-    address: "456 Oak Ave, Los Angeles, CA",
-  },
-  {
-    id: uuidv7(),
-    name: "Bob Johnson",
-    address: "789 Pine Rd, Chicago, IL",
-  },
-  {
-    id: uuidv7(),
-    name: "Alice Williams",
-    address: "321 Elm St, Houston, TX",
-  },
-  {
-    id: uuidv7(),
-    name: "Charlie Brown",
-    address: "654 Maple Dr, Phoenix, AZ",
-  },
-];
+export const MOCK_USER_ID = mockBuyers[0]?.id || "";
 
 let buyersStore = [...mockBuyers];
 
 export const buyersStoreManager = {
-  getAll: (): Buyer[] => {
+  list: (): Buyer[] => {
     return buyersStore;
   },
 
-  getById: (id: string): Buyer | undefined => {
+  get: (id: string): Buyer | undefined => {
     return buyersStore.find((b) => b.id === id);
   },
 
-  getCurrentBuyer: (): Buyer | undefined => {
+  getCurrent: (): Buyer | undefined => {
     return buyersStore.find((b) => b.id === MOCK_USER_ID);
   },
 
@@ -51,9 +26,10 @@ export const buyersStoreManager = {
     street: string,
     city: string,
     province: string,
+    id?: string,
   ): Buyer => {
     const newBuyer: Buyer = {
-      id: uuidv7(),
+      id: id || uuidv7(),
       name,
       address: `${street}, ${city}, ${province}`,
     };

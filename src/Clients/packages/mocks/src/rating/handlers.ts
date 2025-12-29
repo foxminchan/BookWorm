@@ -1,6 +1,5 @@
 import { http, HttpResponse } from "msw";
-import type { Feedback, ListFeedbacksQuery } from "@workspace/types/rating";
-import type { PagedResult } from "@workspace/types/shared";
+import type { Feedback } from "@workspace/types/rating";
 import { feedbacksStoreManager } from "./data";
 import {
   createFeedbackSchema,
@@ -8,7 +7,7 @@ import {
 } from "@workspace/validations/rating";
 import { formatValidationErrors } from "@workspace/utils/validation";
 import { buildPaginationLinks } from "@workspace/utils/link";
-import { RATING_API_BASE_URL } from "./constants";
+import { RATING_API_BASE_URL } from "@/rating/constants";
 
 export const feedbacksHandlers = [
   http.get(`${RATING_API_BASE_URL}/api/v1/feedbacks`, ({ request }) => {
@@ -45,7 +44,7 @@ export const feedbacksHandlers = [
       });
     }
 
-    let allFeedbacks = feedbacksStoreManager.getByBookId(bookId);
+    let allFeedbacks = feedbacksStoreManager.get(bookId);
 
     allFeedbacks.sort((a, b) => {
       const aValue = a[orderBy as keyof Feedback];
@@ -64,30 +63,23 @@ export const feedbacksHandlers = [
     const endIndex = startIndex + pageSize;
     const items = allFeedbacks.slice(startIndex, endIndex);
 
-    const result: PagedResult<Feedback> = {
-      items,
-      pageIndex,
-      pageSize,
-      totalCount,
-      totalPages,
-      hasPreviousPage: pageIndex > 1,
-      hasNextPage: pageIndex < totalPages,
-    };
+    const hasPreviousPage = pageIndex > 1;
+    const hasNextPage = pageIndex < totalPages;
 
     const links = buildPaginationLinks(
       request.url,
       pageIndex,
       pageSize,
       totalPages,
-      result.hasPreviousPage,
-      result.hasNextPage,
+      hasPreviousPage,
+      hasNextPage,
     );
 
     const headers = new Headers();
     headers.set("Link", links.join(","));
     headers.set("Pagination-Count", totalCount.toString());
 
-    return HttpResponse.json(result, { status: 200, headers });
+    return HttpResponse.json(items, { status: 200, headers });
   }),
 
   http.post(`${RATING_API_BASE_URL}/api/v1/feedbacks`, async ({ request }) => {

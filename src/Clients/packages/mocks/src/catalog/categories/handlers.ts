@@ -11,13 +11,13 @@ import {
 import { categoriesStore } from "./data";
 import { formatValidationErrors } from "@workspace/utils/validation";
 import { generateTraceId } from "@workspace/utils/trace";
-import { CATALOG_API_BASE_URL } from "../constants";
+import { CATALOG_API_BASE_URL } from "@/catalog/constants";
 
 export const categoriesHandlers = [
   http.get<never, never, Category[]>(
     `${CATALOG_API_BASE_URL}/api/v1/categories`,
     () => {
-      const categories = categoriesStore.getAll();
+      const categories = categoriesStore.list();
       return HttpResponse.json(categories, { status: 200 });
     },
   ),

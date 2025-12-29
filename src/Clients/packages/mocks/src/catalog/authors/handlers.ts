@@ -11,13 +11,13 @@ import {
 import { authorsStore } from "./data";
 import { formatValidationErrors } from "@workspace/utils/validation";
 import { generateTraceId } from "@workspace/utils/trace";
-import { CATALOG_API_BASE_URL } from "../constants";
+import { CATALOG_API_BASE_URL } from "@/catalog/constants";
 
 export const authorsHandlers = [
   http.get<never, never, Author[]>(
     `${CATALOG_API_BASE_URL}/api/v1/authors`,
     () => {
-      const authors = authorsStore.getAll();
+      const authors = authorsStore.list();
       return HttpResponse.json(authors, { status: 200 });
     },
   ),

@@ -1,9 +1,8 @@
 import { http, HttpResponse } from "msw";
 import type { Order } from "@workspace/types/ordering/orders";
-import type { PagedResult } from "@workspace/types/shared";
 import { ordersStoreManager } from "./data";
 import { buildPaginationLinks } from "@workspace/utils/link";
-import { ORDERING_API_BASE_URL } from "../constants";
+import { ORDERING_API_BASE_URL } from "@/ordering/constants";
 
 export const ordersHandlers = [
   http.get(`${ORDERING_API_BASE_URL}/api/v1/orders/:id`, ({ params }) => {
@@ -13,7 +12,7 @@ export const ordersHandlers = [
       return new HttpResponse(null, { status: 400 });
     }
 
-    const order = ordersStoreManager.getById(id);
+    const order = ordersStoreManager.get(id);
 
     if (!order) {
       return new HttpResponse(null, { status: 404 });
@@ -27,9 +26,8 @@ export const ordersHandlers = [
     const pageIndex = Number.parseInt(url.searchParams.get("pageIndex") || "1");
     const pageSize = Number.parseInt(url.searchParams.get("pageSize") || "10");
     const statusFilter = url.searchParams.get("status");
-    const buyerIdFilter = url.searchParams.get("buyerId");
 
-    let allOrders = ordersStoreManager.getAll();
+    let allOrders = ordersStoreManager.list();
 
     if (statusFilter) {
       allOrders = allOrders.filter((o) => o.status === statusFilter);
@@ -48,33 +46,26 @@ export const ordersHandlers = [
       status: o.status,
     }));
 
-    const result: PagedResult<Order> = {
-      items: orderList,
-      pageIndex,
-      pageSize,
-      totalCount,
-      totalPages,
-      hasPreviousPage: pageIndex > 1,
-      hasNextPage: pageIndex < totalPages,
-    };
+    const hasPreviousPage = pageIndex > 1;
+    const hasNextPage = pageIndex < totalPages;
 
     const links = buildPaginationLinks(
       request.url,
       pageIndex,
       pageSize,
       totalPages,
-      result.hasPreviousPage,
-      result.hasNextPage,
+      hasPreviousPage,
+      hasNextPage,
     );
 
     const headers = new Headers();
     headers.set("Link", links.join(","));
     headers.set("Pagination-Count", totalCount.toString());
 
-    return HttpResponse.json(result, { status: 200, headers });
+    return HttpResponse.json(orderList, { status: 200, headers });
   }),
 
-  http.post(`${ORDERING_API_BASE_URL}/api/v1/orders`, async ({ request }) => {
+  http.post(`${ORDERING_API_BASE_URL}/api/v1/orders`, async () => {
     const order = ordersStoreManager.create([
       { id: "mock-item", quantity: 1, price: 29.99, name: "Mock Book" },
     ]);

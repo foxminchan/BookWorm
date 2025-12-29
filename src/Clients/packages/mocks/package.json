@@ -83,9 +83,6 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@workspace/types": "workspace:*",
-    "@workspace/utils": "workspace:*",
-    "@workspace/validations": "workspace:*",
     "msw": "^2.12.6",
     "uuid": "^13.0.0"
   },
@@ -96,5 +93,10 @@
     "eslint": "^9.39.2",
     "@types/uuid": "^11.0.0",
     "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "@workspace/types": "workspace:*",
+    "@workspace/utils": "workspace:*",
+    "@workspace/validations": "workspace:*"
   }
 }

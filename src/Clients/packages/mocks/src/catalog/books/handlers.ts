@@ -12,7 +12,7 @@ import { booksStore } from "./data";
 import { formatValidationErrors } from "@workspace/utils/validation";
 import { generateTraceId } from "@workspace/utils/trace";
 import { buildPaginationLinks } from "@workspace/utils/link";
-import { CATALOG_API_BASE_URL } from "../constants";
+import { CATALOG_API_BASE_URL } from "@/catalog/constants";
 import { PagedResult } from "@workspace/types/shared";
 
 export const booksHandlers = [
@@ -28,7 +28,7 @@ export const booksHandlers = [
       );
       const searchTerm = url.searchParams.get("search") || undefined;
 
-      const result = booksStore.getAll({ pageIndex, pageSize, searchTerm });
+      const result = booksStore.list({ pageIndex, pageSize, searchTerm });
 
       const links = buildPaginationLinks(
         request.url,
@@ -67,7 +67,7 @@ export const booksHandlers = [
         );
       }
 
-      const book = booksStore.getById(id);
+      const book = booksStore.get(id);
 
       if (!book) {
         return new HttpResponse("Book not found", { status: 404 });
