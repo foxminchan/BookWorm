@@ -3,10 +3,10 @@ import {
   useQueryClient,
   type UseMutationOptions,
 } from "@tanstack/react-query";
-import { categoriesApiClient } from "@workspace/api-client";
-import { catalogKeys } from "../../keys";
+import categoriesApiClient from "@workspace/api-client/catalog/categories";
+import { catalogKeys } from "@/keys";
 
-export function useDeleteCategory(
+export default function useDeleteCategory(
   options?: UseMutationOptions<void, Error, string>,
 ) {
   const queryClient = useQueryClient();

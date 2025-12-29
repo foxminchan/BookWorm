@@ -1,23 +1,16 @@
-import axios, { type AxiosInstance } from "axios";
-import type { AxiosRequestConfig } from "./global";
-import axiosConfig from "./config";
+import axios, { type AxiosInstance, type AxiosResponse } from "axios";
+import type { AxiosRequestConfig } from "@/global";
+import axiosConfig from "@/config";
 
-export type ApiClientConfig = {
-  baseURL: string;
-  timeout?: number;
-  headers?: Record<string, string>;
-};
-
-export class ApiClient {
+export default class ApiClient {
   private readonly client: AxiosInstance;
 
-  constructor(config: ApiClientConfig | AxiosRequestConfig = axiosConfig) {
+  constructor(config = axiosConfig) {
     const axiosConfigs = "baseURL" in config ? config : axiosConfig;
 
     const instance = axios.create({
       ...axiosConfigs,
       headers: {
-        "Content-Type": "application/json",
         ...(axiosConfigs.headers as Record<string, string>),
       },
     });
@@ -27,18 +20,14 @@ export class ApiClient {
 
   private setupInterceptors(instance: AxiosInstance): AxiosInstance {
     instance.interceptors.request.use(
-      async (config) => {
-        return config;
-      },
+      async (config) => config,
       (error) => {
         console.error(`[request error] [${JSON.stringify(error)}]`);
         return Promise.reject(new Error(error));
       },
     );
     instance.interceptors.response.use(
-      async (response) => {
-        return response.data;
-      },
+      async (response) => response,
       (error) => {
         return Promise.reject(new Error(error));
       },
@@ -47,39 +36,41 @@ export class ApiClient {
     return instance;
   }
 
-  async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    return this.client.get<T>(url, config) as Promise<T>;
+  public async get<T>(
+    url: string,
+    config?: AxiosRequestConfig,
+  ): Promise<AxiosResponse<T>> {
+    return this.client.get<T>(url, config);
   }
 
-  async post<T>(
+  public async post<T>(
     url: string,
     data?: unknown,
     config?: AxiosRequestConfig,
-  ): Promise<T> {
-    return this.client.post<T>(url, data, config) as Promise<T>;
+  ): Promise<AxiosResponse<T>> {
+    return this.client.post<T>(url, data, config);
   }
 
-  async put<T>(
+  public async put<T>(
     url: string,
     data?: unknown,
     config?: AxiosRequestConfig,
-  ): Promise<T> {
-    return this.client.put<T>(url, data, config) as Promise<T>;
+  ): Promise<AxiosResponse<T>> {
+    return this.client.put<T>(url, data, config);
   }
 
-  async patch<T>(
+  public async patch<T>(
     url: string,
     data?: unknown,
     config?: AxiosRequestConfig,
-  ): Promise<T> {
-    return this.client.patch<T>(url, data, config) as Promise<T>;
+  ): Promise<AxiosResponse<T>> {
+    return this.client.patch<T>(url, data, config);
   }
 
-  async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    return this.client.delete<T>(url, config) as Promise<T>;
-  }
-
-  getClient(): AxiosInstance {
-    return this.client;
+  public async delete<T>(
+    url: string,
+    config?: AxiosRequestConfig,
+  ): Promise<AxiosResponse<T>> {
+    return this.client.delete<T>(url, config);
   }
 }

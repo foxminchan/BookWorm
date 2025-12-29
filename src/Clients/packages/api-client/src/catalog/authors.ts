@@ -1,46 +1,48 @@
-import { ApiClient } from "../client";
-import axiosConfig from "../config";
+import ApiClient from "@/client";
 import type {
   Author,
   CreateAuthorRequest,
   UpdateAuthorRequest,
 } from "@workspace/types/catalog/authors";
-import type { PagedResult } from "@workspace/types/shared";
 
-export class AuthorsApiClient {
+class AuthorsApiClient {
   private readonly client: ApiClient;
 
   constructor() {
-    this.client = new ApiClient(axiosConfig);
+    this.client = new ApiClient();
   }
 
-  async listAuthors(params?: {
-    pageIndex?: number;
-    pageSize?: number;
-  }): Promise<PagedResult<Author>> {
-    return this.client.get<PagedResult<Author>>("/catalog/api/v1/authors", {
-      params,
-    });
+  public async list(): Promise<Author[]> {
+    const response = await this.client.get<Author[]>("/catalog/api/v1/authors");
+    return response.data;
   }
 
-  async getAuthor(id: string): Promise<Author> {
-    return this.client.get<Author>(`/catalog/api/v1/authors/${id}`);
+  public async get(id: string): Promise<Author> {
+    const response = await this.client.get<Author>(
+      `/catalog/api/v1/authors/${id}`,
+    );
+    return response.data;
   }
 
-  async createAuthor(request: CreateAuthorRequest): Promise<Author> {
-    return this.client.post<Author>("/catalog/api/v1/authors", request);
+  public async create(request: CreateAuthorRequest): Promise<Author> {
+    const response = await this.client.post<Author>(
+      "/catalog/api/v1/authors",
+      request,
+    );
+    return response.data;
   }
 
-  async updateAuthor(
-    id: string,
-    request: UpdateAuthorRequest,
-  ): Promise<Author> {
-    return this.client.put<Author>(`/catalog/api/v1/authors/${id}`, request);
+  public async update(request: UpdateAuthorRequest): Promise<Author> {
+    const response = await this.client.put<Author>(
+      `/catalog/api/v1/authors`,
+      request,
+    );
+    return response.data;
   }
 
-  async deleteAuthor(id: string): Promise<void> {
-    return this.client.delete<void>(`/catalog/api/v1/authors/${id}`);
+  public async delete(id: string): Promise<void> {
+    await this.client.delete<void>(`/catalog/api/v1/authors/${id}`);
   }
 }
 
-export const authorsApiClient = new AuthorsApiClient();
+export default new AuthorsApiClient();

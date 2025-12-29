@@ -3,17 +3,17 @@ import {
   useQueryClient,
   type UseMutationOptions,
 } from "@tanstack/react-query";
-import { ordersApiClient } from "@workspace/api-client";
+import ordersApiClient from "@workspace/api-client/ordering/orders";
 import type { Order } from "@workspace/types/ordering/orders";
-import { orderingKeys } from "../../keys";
+import { orderingKeys } from "@/keys";
 
-export function useCompleteOrder(
+export default function useCompleteOrder(
   options?: UseMutationOptions<Order, Error, string>,
 ) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id) => ordersApiClient.completeOrder(id),
+    mutationFn: (id) => ordersApiClient.complete(id),
     onSuccess: (data, id) => {
       queryClient.setQueryData(orderingKeys.orders.detail(id), data);
       queryClient.invalidateQueries({ queryKey: orderingKeys.orders.lists() });

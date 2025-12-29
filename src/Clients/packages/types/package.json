@@ -27,10 +27,6 @@
       "import": "./src/shared/index.ts",
       "types": "./src/shared/index.ts"
     },
-    "./catalog": {
-      "import": "./src/catalog/index.ts",
-      "types": "./src/catalog/index.ts"
-    },
     "./catalog/authors": {
       "import": "./src/catalog/authors.ts",
       "types": "./src/catalog/authors.ts"
@@ -50,10 +46,6 @@
     "./basket": {
       "import": "./src/basket/index.ts",
       "types": "./src/basket/index.ts"
-    },
-    "./ordering": {
-      "import": "./src/ordering/index.ts",
-      "types": "./src/ordering/index.ts"
     },
     "./ordering/buyers": {
       "import": "./src/ordering/buyers.ts",

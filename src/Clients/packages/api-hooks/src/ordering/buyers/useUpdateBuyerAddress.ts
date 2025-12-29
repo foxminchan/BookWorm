@@ -3,26 +3,22 @@ import {
   useQueryClient,
   type UseMutationOptions,
 } from "@tanstack/react-query";
-import { buyersApiClient } from "@workspace/api-client";
+import buyersApiClient from "@workspace/api-client/ordering/buyers";
 import type {
   Buyer,
   UpdateAddressRequest,
 } from "@workspace/types/ordering/buyers";
-import { orderingKeys } from "../../keys";
+import { orderingKeys } from "@/keys";
 
-export function useUpdateBuyerAddress(
-  options?: UseMutationOptions<
-    Buyer,
-    Error,
-    { id: string; request: UpdateAddressRequest }
-  >,
+export default function useUpdateBuyerAddress(
+  options?: UseMutationOptions<Buyer, Error, { request: UpdateAddressRequest }>,
 ) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, request }) => buyersApiClient.updateAddress(id, request),
-    onSuccess: (data, variables) => {
-      queryClient.setQueryData(orderingKeys.buyers.detail(variables.id), data);
+    mutationFn: ({ request }) => buyersApiClient.updateAddress(request),
+    onSuccess: (data) => {
+      queryClient.setQueryData(orderingKeys.buyers.current(), data);
       queryClient.invalidateQueries({ queryKey: orderingKeys.buyers.lists() });
     },
     ...options,

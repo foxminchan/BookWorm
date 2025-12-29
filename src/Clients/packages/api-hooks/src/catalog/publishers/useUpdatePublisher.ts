@@ -3,28 +3,27 @@ import {
   useQueryClient,
   type UseMutationOptions,
 } from "@tanstack/react-query";
-import { publishersApiClient } from "@workspace/api-client";
+import publishersApiClient from "@workspace/api-client/catalog/publishers";
 import type {
   Publisher,
   UpdatePublisherRequest,
 } from "@workspace/types/catalog/publishers";
-import { catalogKeys } from "../../keys";
+import { catalogKeys } from "@/keys";
 
-export function useUpdatePublisher(
+export default function useUpdatePublisher(
   options?: UseMutationOptions<
     Publisher,
     Error,
-    { id: string; request: UpdatePublisherRequest }
+    { request: UpdatePublisherRequest }
   >,
 ) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, request }) =>
-      publishersApiClient.updatePublisher(id, request),
+    mutationFn: ({ request }) => publishersApiClient.update(request),
     onSuccess: (data, variables) => {
       queryClient.setQueryData(
-        catalogKeys.publishers.detail(variables.id),
+        catalogKeys.publishers.detail(variables.request.id),
         data,
       );
       queryClient.invalidateQueries({

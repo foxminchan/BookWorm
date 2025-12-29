@@ -1,5 +1,4 @@
-import { ApiClient } from "../client";
-import axiosConfig from "../config";
+import ApiClient from "@/client";
 import type {
   Book,
   CreateBookRequest,
@@ -8,34 +7,49 @@ import type {
 } from "@workspace/types/catalog/books";
 import type { PagedResult } from "@workspace/types/shared";
 
-export class BooksApiClient {
+class BooksApiClient {
   private readonly client: ApiClient;
 
   constructor() {
-    this.client = new ApiClient(axiosConfig);
+    this.client = new ApiClient();
   }
 
-  async listBooks(query?: ListBooksQuery): Promise<PagedResult<Book>> {
-    return this.client.get<PagedResult<Book>>("/catalog/api/v1/books", {
+  public async list(query?: ListBooksQuery): Promise<PagedResult<Book>> {
+    const response = await this.client.get<Book[]>("/catalog/api/v1/books", {
       params: query,
     });
+
+    return {
+      items: response.data,
+      totalCount: Number(response.headers["Pagination-Count"] || 0),
+      link: response.headers["Link"],
+    };
   }
 
-  async getBook(id: string): Promise<Book> {
-    return this.client.get<Book>(`/catalog/api/v1/books/${id}`);
+  public async get(id: string): Promise<Book> {
+    const response = await this.client.get<Book>(`/catalog/api/v1/books/${id}`);
+    return response.data;
   }
 
-  async createBook(request: CreateBookRequest): Promise<Book> {
-    return this.client.post<Book>("/catalog/api/v1/books", request);
+  public async create(request: CreateBookRequest): Promise<Book> {
+    const response = await this.client.post<Book>(
+      "/catalog/api/v1/books",
+      request,
+    );
+    return response.data;
   }
 
-  async updateBook(id: string, request: UpdateBookRequest): Promise<Book> {
-    return this.client.put<Book>(`/catalog/api/v1/books/${id}`, request);
+  public async update(request: UpdateBookRequest): Promise<Book> {
+    const response = await this.client.put<Book>(
+      `/catalog/api/v1/books`,
+      request,
+    );
+    return response.data;
   }
 
-  async deleteBook(id: string): Promise<void> {
-    return this.client.delete<void>(`/catalog/api/v1/books/${id}`);
+  public async delete(id: string): Promise<void> {
+    await this.client.delete<void>(`/catalog/api/v1/books/${id}`);
   }
 }
 
-export const booksApiClient = new BooksApiClient();
+export default new BooksApiClient();

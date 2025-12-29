@@ -1,50 +1,50 @@
-import { ApiClient } from "../client";
-import axiosConfig from "../config";
+import ApiClient from "@/client";
 import type {
   Category,
   CreateCategoryRequest,
   UpdateCategoryRequest,
 } from "@workspace/types/catalog/categories";
-import type { PagedResult } from "@workspace/types/shared";
 
-export class CategoriesApiClient {
+class CategoriesApiClient {
   private readonly client: ApiClient;
 
   constructor() {
-    this.client = new ApiClient(axiosConfig);
+    this.client = new ApiClient();
   }
 
-  async listCategories(params?: {
-    pageIndex?: number;
-    pageSize?: number;
-  }): Promise<PagedResult<Category>> {
-    return this.client.get<PagedResult<Category>>(
+  public async list(): Promise<Category[]> {
+    const response = await this.client.get<Category[]>(
       "/catalog/api/v1/categories",
-      { params },
     );
+    return response.data;
   }
 
-  async getCategory(id: string): Promise<Category> {
-    return this.client.get<Category>(`/catalog/api/v1/categories/${id}`);
-  }
-
-  async createCategory(request: CreateCategoryRequest): Promise<Category> {
-    return this.client.post<Category>("/catalog/api/v1/categories", request);
-  }
-
-  async updateCategory(
-    id: string,
-    request: UpdateCategoryRequest,
-  ): Promise<Category> {
-    return this.client.put<Category>(
+  public async get(id: string): Promise<Category> {
+    const response = await this.client.get<Category>(
       `/catalog/api/v1/categories/${id}`,
+    );
+    return response.data;
+  }
+
+  public async create(request: CreateCategoryRequest): Promise<Category> {
+    const response = await this.client.post<Category>(
+      "/catalog/api/v1/categories",
       request,
     );
+    return response.data;
   }
 
-  async deleteCategory(id: string): Promise<void> {
-    return this.client.delete<void>(`/catalog/api/v1/categories/${id}`);
+  public async update(request: UpdateCategoryRequest): Promise<Category> {
+    const response = await this.client.put<Category>(
+      `/catalog/api/v1/categories`,
+      request,
+    );
+    return response.data;
+  }
+
+  public async deleteCategory(id: string): Promise<void> {
+    await this.client.delete<void>(`/catalog/api/v1/categories/${id}`);
   }
 }
 
-export const categoriesApiClient = new CategoriesApiClient();
+export default new CategoriesApiClient();

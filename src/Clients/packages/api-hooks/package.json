@@ -22,34 +22,6 @@
   "engines": {
     "node": ">=25.0.0"
   },
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
-  "exports": {
-    ".": {
-      "import": "./src/index.ts",
-      "types": "./src/index.ts"
-    },
-    "./basket": {
-      "import": "./src/basket/index.ts",
-      "types": "./src/basket/index.ts"
-    },
-    "./catalog": {
-      "import": "./src/catalog/index.ts",
-      "types": "./src/catalog/index.ts"
-    },
-    "./ordering": {
-      "import": "./src/ordering/index.ts",
-      "types": "./src/ordering/index.ts"
-    },
-    "./rating": {
-      "import": "./src/rating/index.ts",
-      "types": "./src/rating/index.ts"
-    },
-    "./keys": {
-      "import": "./src/keys.ts",
-      "types": "./src/keys.ts"
-    }
-  },
   "scripts": {
     "lint": "eslint .",
     "type-check": "tsc --noEmit"
@@ -68,5 +40,14 @@
   "peerDependencies": {
     "@workspace/api-client": "workspace:*",
     "react": "^19.2.3"
+  },
+  "exports": {
+    "./catalog/publishers/*": "./src/catalog/publishers/*.ts",
+    "./catalog/categories/*": "./src/catalog/categories/*.ts",
+    "./catalog/books/*": "./src/catalog/books/*.ts",
+    "./basket/*": "./src/basket/*.ts",
+    "./ordering/buyers/*": "./src/ordering/buyers/*.ts",
+    "./ordering/orders/*": "./src/ordering/orders/*.ts",
+    "./rating/*": "./src/rating/*.ts"
   }
 }

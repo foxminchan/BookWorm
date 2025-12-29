@@ -22,3 +22,7 @@ export type ListFeedbacksQuery = {
   orderBy?: string;
   isDescending?: boolean;
 };
+
+export type FeedbackSummary = {
+  summary: string;
+};

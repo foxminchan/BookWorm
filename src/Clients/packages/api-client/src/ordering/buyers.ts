@@ -1,5 +1,4 @@
-import { ApiClient } from "../client";
-import axiosConfig from "../config";
+import ApiClient from "@/client";
 import type {
   Buyer,
   CreateBuyerRequest,
@@ -8,40 +7,51 @@ import type {
 } from "@workspace/types/ordering/buyers";
 import type { PagedResult } from "@workspace/types/shared";
 
-export class BuyersApiClient {
+class BuyersApiClient {
   private readonly client: ApiClient;
 
   constructor() {
-    this.client = new ApiClient(axiosConfig);
+    this.client = new ApiClient();
   }
 
-  async listBuyers(query?: ListBuyersQuery): Promise<PagedResult<Buyer>> {
-    return this.client.get<PagedResult<Buyer>>("/ordering/api/v1/buyers", {
+  public async list(query?: ListBuyersQuery): Promise<PagedResult<Buyer>> {
+    const response = await this.client.get<Buyer[]>("/ordering/api/v1/buyers", {
       params: query,
     });
+
+    return {
+      items: response.data,
+      totalCount: Number(response.headers["Pagination-Count"] || 0),
+      link: response.headers["Link"],
+    };
   }
 
-  async getBuyer(id: string): Promise<Buyer> {
-    return this.client.get<Buyer>(`/ordering/api/v1/buyers/${id}`);
+  public async get(id: string): Promise<Buyer> {
+    const response = await this.client.get<Buyer>(
+      `/ordering/api/v1/buyers/${id}`,
+    );
+    return response.data;
   }
 
-  async createBuyer(request: CreateBuyerRequest): Promise<Buyer> {
-    return this.client.post<Buyer>("/ordering/api/v1/buyers", request);
-  }
-
-  async updateAddress(
-    id: string,
-    request: UpdateAddressRequest,
-  ): Promise<Buyer> {
-    return this.client.patch<Buyer>(
-      `/ordering/api/v1/buyers/${id}/address`,
+  public async create(request: CreateBuyerRequest): Promise<Buyer> {
+    const response = await this.client.post<Buyer>(
+      "/ordering/api/v1/buyers",
       request,
     );
+    return response.data;
   }
 
-  async deleteBuyer(id: string): Promise<void> {
-    return this.client.delete<void>(`/ordering/api/v1/buyers/${id}`);
+  public async updateAddress(request: UpdateAddressRequest): Promise<Buyer> {
+    const response = await this.client.patch<Buyer>(
+      `/ordering/api/v1/buyers/address`,
+      request,
+    );
+    return response.data;
+  }
+
+  public async delete(id: string): Promise<void> {
+    await this.client.delete<void>(`/ordering/api/v1/buyers/${id}`);
   }
 }
 
-export const buyersApiClient = new BuyersApiClient();
+export default new BuyersApiClient();

@@ -1,50 +1,50 @@
-import { ApiClient } from "../client";
-import axiosConfig from "../config";
+import ApiClient from "../client";
 import type {
   Publisher,
   CreatePublisherRequest,
   UpdatePublisherRequest,
 } from "@workspace/types/catalog/publishers";
-import type { PagedResult } from "@workspace/types/shared";
 
-export class PublishersApiClient {
+class PublishersApiClient {
   private readonly client: ApiClient;
 
   constructor() {
-    this.client = new ApiClient(axiosConfig);
+    this.client = new ApiClient();
   }
 
-  async listPublishers(params?: {
-    pageIndex?: number;
-    pageSize?: number;
-  }): Promise<PagedResult<Publisher>> {
-    return this.client.get<PagedResult<Publisher>>(
+  public async list(): Promise<Publisher[]> {
+    const response = await this.client.get<Publisher[]>(
       "/catalog/api/v1/publishers",
-      { params },
     );
+    return response.data;
   }
 
-  async getPublisher(id: string): Promise<Publisher> {
-    return this.client.get<Publisher>(`/catalog/api/v1/publishers/${id}`);
-  }
-
-  async createPublisher(request: CreatePublisherRequest): Promise<Publisher> {
-    return this.client.post<Publisher>("/catalog/api/v1/publishers", request);
-  }
-
-  async updatePublisher(
-    id: string,
-    request: UpdatePublisherRequest,
-  ): Promise<Publisher> {
-    return this.client.put<Publisher>(
+  public async get(id: string): Promise<Publisher> {
+    const response = await this.client.get<Publisher>(
       `/catalog/api/v1/publishers/${id}`,
+    );
+    return response.data;
+  }
+
+  public async create(request: CreatePublisherRequest): Promise<Publisher> {
+    const response = await this.client.post<Publisher>(
+      "/catalog/api/v1/publishers",
       request,
     );
+    return response.data;
   }
 
-  async deletePublisher(id: string): Promise<void> {
-    return this.client.delete<void>(`/catalog/api/v1/publishers/${id}`);
+  public async update(request: UpdatePublisherRequest): Promise<Publisher> {
+    const response = await this.client.put<Publisher>(
+      `/catalog/api/v1/publishers`,
+      request,
+    );
+    return response.data;
+  }
+
+  public async delete(id: string): Promise<void> {
+    await this.client.delete<void>(`/catalog/api/v1/publishers/${id}`);
   }
 }
 
-export const publishersApiClient = new PublishersApiClient();
+export default new PublishersApiClient();

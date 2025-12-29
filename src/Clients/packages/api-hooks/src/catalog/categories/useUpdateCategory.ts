@@ -3,28 +3,27 @@ import {
   useQueryClient,
   type UseMutationOptions,
 } from "@tanstack/react-query";
-import { categoriesApiClient } from "@workspace/api-client";
+import categoriesApiClient from "@workspace/api-client/catalog/categories";
 import type {
   Category,
   UpdateCategoryRequest,
 } from "@workspace/types/catalog/categories";
-import { catalogKeys } from "../../keys";
+import { catalogKeys } from "@/keys";
 
-export function useUpdateCategory(
+export default function useUpdateCategory(
   options?: UseMutationOptions<
     Category,
     Error,
-    { id: string; request: UpdateCategoryRequest }
+    { request: UpdateCategoryRequest }
   >,
 ) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, request }) =>
-      categoriesApiClient.updateCategory(id, request),
+    mutationFn: ({ request }) => categoriesApiClient.update(request),
     onSuccess: (data, variables) => {
       queryClient.setQueryData(
-        catalogKeys.categories.detail(variables.id),
+        catalogKeys.categories.detail(variables.request.id),
         data,
       );
       queryClient.invalidateQueries({
