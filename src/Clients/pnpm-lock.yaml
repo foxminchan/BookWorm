@@ -154,6 +154,9 @@ importers:
 
   packages/api-client:
     dependencies:
+      '@workspace/types':
+        specifier: workspace:*
+        version: link:../types
       axios:
         specifier: ^1.13.2
         version: 1.13.2
@@ -170,9 +173,6 @@ importers:
       '@workspace/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@workspace/types':
-        specifier: workspace:*
-        version: link:../types
       '@workspace/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
