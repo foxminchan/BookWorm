@@ -35,6 +35,7 @@ import {
   ReviewsContainer,
   ProductLoadingSkeleton,
 } from "@/features/product";
+import { getReviewSortParams } from "@/lib/pattern";
 
 const REVIEWS_PER_PAGE = 5;
 
@@ -61,19 +62,7 @@ export default function BookDetailPage({ params }: BookDetailPageProps) {
   });
 
   // Convert sortBy to API parameters
-  const getSortParams = () => {
-    switch (sortBy) {
-      case "highest":
-        return { orderBy: "rating", isDescending: true };
-      case "lowest":
-        return { orderBy: "rating", isDescending: false };
-      case "newest":
-      default:
-        return { orderBy: "createdAt", isDescending: true };
-    }
-  };
-
-  const sortParams = getSortParams();
+  const sortParams = getReviewSortParams(sortBy);
 
   // API hooks
   const { data: book, isLoading: isLoadingBook, isError } = useBook(id);
@@ -89,9 +78,17 @@ export default function BookDetailPage({ params }: BookDetailPageProps) {
     isLoading: isSummarizing,
     refetch: refetchSummary,
   } = useSummaryFeedback(id, { enabled: false });
-  const { data: basket } = useBasket();
-  const createBasketMutation = useCreateBasket();
-  const updateBasketMutation = useUpdateBasket();
+  const { data: basket, refetch: refetchBasket } = useBasket();
+  const createBasketMutation = useCreateBasket({
+    onSuccess: () => {
+      refetchBasket();
+    },
+  });
+  const updateBasketMutation = useUpdateBasket({
+    onSuccess: () => {
+      refetchBasket();
+    },
+  });
   const deleteBasketMutation = useDeleteBasket();
   const createFeedbackMutation = useCreateFeedback();
 

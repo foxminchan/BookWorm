@@ -6,8 +6,8 @@ import { Footer } from "@/components/footer";
 import { BookGrid } from "@/features/shop/book-grid";
 import { ShopFilters } from "@/features/shop/shop-filters";
 import { ShopToolbar } from "@/features/shop/shop-toolbar";
-import { useShopFilters } from "@/features/shop/use-shop-filters";
-import { useShopData } from "@/features/shop/use-shop-data";
+import { useShopFilters } from "@/hooks/use-shop-filters";
+import { useShopData } from "@/hooks/use-shop-data";
 
 const ITEMS_PER_PAGE = 8;
 

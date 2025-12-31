@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Badge } from "@workspace/ui/components/badge";
+import { DEFAULT_BOOK_IMAGE } from "@/lib/constants";
 
 type ProductImageProps = {
   imageUrl?: string;
@@ -21,7 +22,7 @@ export function ProductImage({ imageUrl, name, hasSale }: ProductImageProps) {
         </Badge>
       )}
       <Image
-        src={imgError || !imageUrl ? "/book-placeholder.svg" : imageUrl}
+        src={imgError || !imageUrl ? DEFAULT_BOOK_IMAGE : imageUrl}
         alt={`${name} book cover`}
         fill
         className="object-cover transition-transform duration-700 group-hover:scale-105"

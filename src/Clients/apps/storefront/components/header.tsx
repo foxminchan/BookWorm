@@ -7,16 +7,20 @@ import Image from "next/image";
 import Link from "next/link";
 import { ShoppingBag, User, Home, Search } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
+import { useAtomValue } from "jotai";
+import { basketItemsAtom } from "@/atoms/basket-atom";
+import { Button } from "@workspace/ui/components/button";
 
 export function Header() {
   const router = useRouter();
   const pathname = usePathname();
+  const items = useAtomValue(basketItemsAtom);
+  const totalItems = items.length;
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [hideAccountTimeout, setHideAccountTimeout] =
     useState<NodeJS.Timeout | null>(null);
-  const [, setIsMobileMenuOpen] = useState(false);
   const [searchHoverTimeout, setSearchHoverTimeout] =
     useState<NodeJS.Timeout | null>(null);
 
@@ -50,11 +54,6 @@ export function Header() {
     setHideAccountTimeout(timeout);
   };
 
-  const handleNavClick = (path: string) => {
-    router.push(path);
-    setIsMobileMenuOpen(false);
-  };
-
   const handleSearchMouseEnter = () => {
     if (searchHoverTimeout) {
       clearTimeout(searchHoverTimeout);
@@ -69,6 +68,13 @@ export function Header() {
     }, 150);
     setSearchHoverTimeout(timeout);
   };
+
+  const navLinks = [
+    { href: "/shop", label: "Shop" },
+    { href: "/categories", label: "Categories" },
+    { href: "/publishers", label: "Publishers" },
+    { href: "/about", label: "Our Story" },
+  ];
 
   // Helper function to check if link is active
   const isActive = (href: string) => {
@@ -105,46 +111,19 @@ export function Header() {
             className="hidden md:flex flex-1 justify-center items-center gap-8 text-sm font-medium"
             aria-label="Main Navigation"
           >
-            <Link
-              href="/shop"
-              className={`transition-colors pb-1 border-b-2 ${
-                isActive("/shop")
-                  ? "text-primary border-primary"
-                  : "text-foreground hover:text-primary border-b-2 border-transparent"
-              }`}
-            >
-              Shop
-            </Link>
-            <Link
-              href="/categories"
-              className={`transition-colors pb-1 border-b-2 ${
-                isActive("/categories")
-                  ? "text-primary border-primary"
-                  : "text-foreground hover:text-primary border-b-2 border-transparent"
-              }`}
-            >
-              Categories
-            </Link>
-            <Link
-              href="/publishers"
-              className={`transition-colors pb-1 border-b-2 ${
-                isActive("/publishers")
-                  ? "text-primary border-primary"
-                  : "text-foreground hover:text-primary border-b-2 border-transparent"
-              }`}
-            >
-              Publishers
-            </Link>
-            <Link
-              href="/about"
-              className={`transition-colors pb-1 border-b-2 ${
-                isActive("/about")
-                  ? "text-primary border-primary"
-                  : "text-foreground hover:text-primary border-b-2 border-transparent"
-              }`}
-            >
-              Our Story
-            </Link>
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`transition-colors pb-1 border-b-2 ${
+                  isActive(link.href)
+                    ? "text-primary border-primary"
+                    : "text-foreground hover:text-primary border-b-2 border-transparent"
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
           </nav>
 
           <div className="flex items-center gap-2 md:gap-5 ml-auto">
@@ -222,13 +201,14 @@ export function Header() {
                   >
                     Order History
                   </Link>
-                  <button
+                  <Button
+                    variant="ghost"
                     onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 hover:bg-secondary transition-colors flex items-center gap-2 text-primary"
+                    className="w-full justify-start px-4 py-2 h-auto text-primary font-normal"
                     role="menuitem"
                   >
                     Logout
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
@@ -239,13 +219,15 @@ export function Header() {
               aria-label="Shopping basket"
             >
               <ShoppingBag className="size-4 md:size-5" />
-              <span
-                className="absolute -top-0.5 -right-0.5 size-4 bg-primary text-[10px] font-bold text-primary-foreground rounded-full flex items-center justify-center"
-                aria-live="polite"
-                aria-label="Number of items in basket"
-              >
-                0
-              </span>
+              {totalItems > 0 && (
+                <span
+                  className="absolute -top-0.5 -right-0.5 size-4 bg-primary text-[10px] font-bold text-primary-foreground rounded-full flex items-center justify-center"
+                  aria-live="polite"
+                  aria-label="Number of items in basket"
+                >
+                  {totalItems}
+                </span>
+              )}
               <span className="sr-only">Basket</span>
             </Link>
           </div>

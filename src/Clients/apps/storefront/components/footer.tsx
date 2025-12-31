@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { PolicyDialog } from "@/components/policy-dialog";
+import { Button } from "@workspace/ui/components/button";
 
 const PRIVACY_POLICY_CONTENT = `
 # Privacy Policy
@@ -23,11 +24,11 @@ The words whose initial letters are capitalized have meanings defined under the 
 
 For the purposes of this Privacy Policy:
 
-- **Account** means a unique account created for You to access our Service or parts of our Service.
-- **Company** refers to BookWorm.
-- **Personal Data** is any information that relates to an identified or identifiable individual.
-- **Service** refers to the Website.
-- **Website** refers to BookWorm.
+- Account means a unique account created for You to access our Service or parts of our Service.
+- Company refers to BookWorm.
+- Personal Data is any information that relates to an identified or identifiable individual.
+- Service refers to the Website.
+- Website refers to BookWorm.
 
 ## Collecting and Using Your Personal Data
 
@@ -75,10 +76,10 @@ The words whose initial letters are capitalized have meanings defined under the 
 
 For the purposes of these Terms and Conditions:
 
-- **Company** refers to BookWorm.
-- **Service** refers to the Website.
-- **Website** refers to BookWorm.
-- **You** means the individual accessing or using the Service.
+- Company refers to BookWorm.
+- Service refers to the Website.
+- Website refers to BookWorm.
+- You means the individual accessing or using the Service.
 
 ## Acknowledgment
 
@@ -107,6 +108,18 @@ export function Footer() {
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
 
+  const quickLinks = [
+    { href: "/shop", label: "Books" },
+    { href: "/categories", label: "Categories" },
+    { href: "/publishers", label: "Publishers" },
+  ];
+
+  const helpLinks = [
+    { href: "/shipping", label: "Shipping Info" },
+    { href: "/returns", label: "Returns" },
+    { href: "/about", label: "Our Story" },
+  ];
+
   return (
     <>
       <footer
@@ -132,21 +145,13 @@ export function Footer() {
                 Quick Links
               </h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <Link href="/shop" className="hover:text-primary">
-                    Books
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/categories" className="hover:text-primary">
-                    Categories
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/publishers" className="hover:text-primary">
-                    Publishers
-                  </Link>
-                </li>
+                {quickLinks.map((link) => (
+                  <li key={link.href}>
+                    <Link href={link.href} className="hover:text-primary">
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </nav>
             <nav aria-label="Help">
@@ -154,44 +159,37 @@ export function Footer() {
                 Help
               </h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <Link href="/shipping" className="hover:text-primary">
-                    Shipping Info
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/returns" className="hover:text-primary">
-                    Returns
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/about" className="hover:text-primary">
-                    Our Story
-                  </Link>
-                </li>
+                {helpLinks.map((link) => (
+                  <li key={link.href}>
+                    <Link href={link.href} className="hover:text-primary">
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </nav>
           </div>
           <div className="mt-12 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
             <p>© {new Date().getFullYear()} BookWorm. All rights reserved.</p>
             <div className="flex gap-6">
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => setPrivacyOpen(true)}
-                className="hover:text-primary transition-colors cursor-pointer"
+                className="hover:text-primary transition-colors cursor-pointer h-auto p-0 font-normal"
               >
                 Privacy Policy
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="ghost"
                 onClick={() => setTermsOpen(true)}
-                className="hover:text-primary transition-colors cursor-pointer"
+                className="hover:text-primary transition-colors cursor-pointer h-auto p-0 font-normal"
               >
                 Terms of Service
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       </footer>
-
       <PolicyDialog
         policyType="privacy"
         isOpen={privacyOpen}

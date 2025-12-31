@@ -6,6 +6,7 @@ import type { Book } from "@workspace/types/catalog/books";
 import { useState } from "react";
 import { Star } from "lucide-react";
 import Image from "next/image";
+import { DEFAULT_BOOK_IMAGE } from "@/lib/constants";
 
 type BookCardProps = {
   book: Book;
@@ -40,9 +41,7 @@ export function BookCard({ book, onClick }: BookCardProps) {
             )}
             <Image
               src={
-                imgError || !book.imageUrl
-                  ? "/book-placeholder.svg"
-                  : book.imageUrl
+                imgError || !book.imageUrl ? DEFAULT_BOOK_IMAGE : book.imageUrl
               }
               alt={book.name ?? "Book cover"}
               fill

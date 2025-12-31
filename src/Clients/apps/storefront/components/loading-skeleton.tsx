@@ -56,3 +56,41 @@ export function BasketItemSkeleton() {
     </div>
   );
 }
+
+export function ConfirmationPageSkeleton() {
+  return (
+    <div className="max-w-3xl mx-auto">
+      <div className="text-center mb-24 space-y-8">
+        <div className="flex justify-center">
+          <Skeleton className="size-24 rounded-full" />
+        </div>
+        <Skeleton className="h-16 w-96 mx-auto" />
+        <Skeleton className="h-8 w-64 mx-auto" />
+        <div className="pt-8">
+          <Skeleton className="h-4 w-32 mx-auto mb-2" />
+          <Skeleton className="h-10 w-40 mx-auto" />
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-8 mb-24 py-12 border-y border-border">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="space-y-4">
+            <Skeleton className="h-6 w-32" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-5/6" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <Skeleton className="h-20 w-full mb-12 rounded-xl" />
+
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+        <Skeleton className="h-14 w-64 rounded-full" />
+        <Skeleton className="h-14 w-48 rounded-full" />
+      </div>
+    </div>
+  );
+}

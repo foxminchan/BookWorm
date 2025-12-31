@@ -4,10 +4,10 @@ import { useRef } from "react";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { ChatBot, type ChatBotRef } from "@/components/chat-bot";
-import HeroSection from "@/features/Home/hero-section";
-import FeaturedBooksSection from "@/features/Home/featured-books-section";
-import CategoriesSection from "@/features/Home/categories-section";
-import AiRecommendationsSection from "@/features/Home/ai-recommendations-section";
+import HeroSection from "@/features/home/hero-section";
+import FeaturedBooksSection from "@/features/home/featured-books-section";
+import CategoriesSection from "@/features/home/categories-section";
+import AiRecommendationsSection from "@/features/home/ai-recommendations-section";
 import useBooks from "@workspace/api-hooks/catalog/books/useBooks";
 import useCategories from "@workspace/api-hooks/catalog/categories/useCategories";
 

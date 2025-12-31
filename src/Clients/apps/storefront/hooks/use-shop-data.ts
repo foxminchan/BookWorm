@@ -4,6 +4,7 @@ import useBooks from "@workspace/api-hooks/catalog/books/useBooks";
 import usePublishers from "@workspace/api-hooks/catalog/publishers/usePublishers";
 import useCategories from "@workspace/api-hooks/catalog/categories/useCategories";
 import useAuthors from "@workspace/api-hooks/catalog/authors/useAuthors";
+import { getShopSortParams } from "@/lib/pattern";
 
 const ITEMS_PER_PAGE = 8;
 
@@ -17,21 +18,6 @@ type UseShopDataParams = {
   sortBy: string;
 };
 
-// Convert sortBy to API parameters
-function getSortParams(sortBy: string) {
-  switch (sortBy) {
-    case "price-low":
-      return { orderBy: "price", isDescending: false };
-    case "price-high":
-      return { orderBy: "price", isDescending: true };
-    case "rating":
-      return { orderBy: "averageRating", isDescending: true };
-    case "name":
-    default:
-      return { orderBy: "name", isDescending: false };
-  }
-}
-
 export function useShopData({
   currentPage,
   priceRange,
@@ -41,7 +27,7 @@ export function useShopData({
   searchQuery,
   sortBy,
 }: UseShopDataParams) {
-  const sortParams = getSortParams(sortBy);
+  const sortParams = getShopSortParams(sortBy);
 
   // API hooks with windowed pagination
   const { data: booksData, isLoading: isLoadingBooks } = useBooks({

@@ -18,6 +18,7 @@ import {
 } from "@workspace/ui/components/select";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import useOrders from "@workspace/api-hooks/ordering/orders/useOrders";
+import { getOrderStatusColorBordered } from "@/lib/pattern";
 
 const ORDERS_PER_PAGE = 5;
 const STATUS_OPTIONS: (OrderStatus | "All")[] = [
@@ -26,19 +27,6 @@ const STATUS_OPTIONS: (OrderStatus | "All")[] = [
   "Completed",
   "Cancelled",
 ];
-
-function getStatusColor(status: OrderStatus): string {
-  switch (status) {
-    case "Completed":
-      return "bg-green-50 text-green-900 border border-green-200 dark:bg-green-950/20 dark:text-green-300 dark:border-green-800";
-    case "Cancelled":
-      return "bg-red-50 text-red-900 border border-red-200 dark:bg-red-950/20 dark:text-red-300 dark:border-red-800";
-    case "New":
-      return "bg-blue-50 text-blue-900 border border-blue-200 dark:bg-blue-950/20 dark:text-blue-300 dark:border-blue-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-}
 
 function OrdersSkeleton() {
   return (
@@ -195,7 +183,7 @@ export default function OrdersPage() {
                             </h3>
                           </div>
                           <Badge
-                            className={`${getStatusColor(order.status)} px-3 py-1 text-xs font-semibold`}
+                            className={`${getOrderStatusColorBordered(order.status)} px-3 py-1 text-xs font-semibold`}
                           >
                             {order.status}
                           </Badge>

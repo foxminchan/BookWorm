@@ -21,8 +21,8 @@ export default function useUpdateBasket(
 
   return useMutation({
     mutationFn: ({ request }) => basketApiClient.update(request),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: basketKeys.detail() });
+    onSuccess: (data) => {
+      queryClient.setQueryData(basketKeys.detail(), data);
     },
     ...options,
   });

@@ -10,19 +10,7 @@ import Link from "next/link";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import type { OrderStatus } from "@workspace/types/ordering/orders";
 import useOrder from "@workspace/api-hooks/ordering/orders/useOrder";
-
-function getStatusColor(status: OrderStatus): string {
-  switch (status) {
-    case "Completed":
-      return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
-    case "Cancelled":
-      return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
-    case "New":
-      return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-}
+import { getOrderStatusColor } from "@/lib/pattern";
 
 function OrderDetailSkeleton() {
   return (
@@ -119,7 +107,7 @@ export default function OrderDetailPage({
           <div className="flex flex-wrap items-center gap-3 mb-2">
             <h1 className="font-serif text-4xl">Order {orderDetail.id}</h1>
             <Badge
-              className={`${getStatusColor(orderDetail.status)} border-0 text-sm`}
+              className={`${getOrderStatusColor(orderDetail.status)} border-0 text-sm`}
             >
               {orderDetail.status}
             </Badge>

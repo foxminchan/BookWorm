@@ -5,7 +5,7 @@ import { atomWithQuery } from "jotai-tanstack-query";
 import basketApiClient from "@workspace/api-client/basket/baskets";
 
 export const basketAtom = atomWithQuery(() => ({
-  queryKey: ["basket"],
+  queryKey: ["basket", "detail"],
   queryFn: () => basketApiClient.get(),
 }));
 

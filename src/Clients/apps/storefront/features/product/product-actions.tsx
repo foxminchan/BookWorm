@@ -3,6 +3,7 @@
 import type React from "react";
 import { Button } from "@workspace/ui/components/button";
 import { ShoppingBasket, Loader2 } from "lucide-react";
+import { QuantityControl } from "@/components/quantity-control";
 
 type ProductActionsProps = {
   quantity: number;
@@ -44,36 +45,15 @@ export function ProductActions({
           )}
         </Button>
       ) : (
-        <div className="flex items-center bg-secondary/50 rounded-full h-12 p-1 w-fit shadow-inner">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full size-10 hover:bg-background shadow-sm transition-all"
-            onClick={onDecrease}
-            aria-label="Decrease quantity"
-          >
-            <span className="text-lg font-medium">-</span>
-          </Button>
-          <input
-            type="text"
-            inputMode="numeric"
-            min="1"
-            max="99"
-            value={quantity}
-            onChange={onQuantityChange}
-            className="w-12 bg-transparent text-center text-lg font-serif font-bold focus:outline-none border-none [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
-            aria-label="Book quantity"
-          />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full size-10 hover:bg-background shadow-sm transition-all"
-            onClick={onIncrease}
-            aria-label="Increase quantity"
-          >
-            <span className="text-lg font-medium">+</span>
-          </Button>
-        </div>
+        <QuantityControl
+          quantity={quantity}
+          onDecrease={onDecrease}
+          onIncrease={onIncrease}
+          onQuantityChange={onQuantityChange}
+          variant="input"
+          size="lg"
+          showBorder={false}
+        />
       )}
     </div>
   );

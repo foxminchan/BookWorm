@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@workspace/ui/components/card";
-import { Trash2, Plus, Minus } from "lucide-react";
+import { Trash2 } from "lucide-react";
+import { QuantityControl } from "@/components/quantity-control";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,27 +59,12 @@ export function BasketItem({
             </div>
             <p className="text-sm text-muted-foreground">Hardcover</p>
             <div className="flex items-center gap-3 pt-4">
-              <div className="flex items-center gap-2">
-                <div className="flex items-center border rounded-full px-2 py-1 bg-white dark:bg-gray-900 dark:border-gray-700">
-                  <button
-                    onClick={() => onUpdateQuantity(item.id, -1)}
-                    className="p-1 hover:text-primary transition-colors"
-                  >
-                    <Minus className="size-4" />
-                  </button>
-                  <span
-                    className={`w-8 text-center font-medium text-sm ${displayQuantity <= 0 ? "text-destructive" : ""}`}
-                  >
-                    {displayQuantity}
-                  </span>
-                  <button
-                    onClick={() => onUpdateQuantity(item.id, 1)}
-                    className="p-1 hover:text-primary transition-colors"
-                  >
-                    <Plus className="size-4" />
-                  </button>
-                </div>
-              </div>
+              <QuantityControl
+                quantity={displayQuantity}
+                onDecrease={() => onUpdateQuantity(item.id, -1)}
+                onIncrease={() => onUpdateQuantity(item.id, 1)}
+                size="md"
+              />
               <div className="ml-auto text-right">
                 {item.priceSale ? (
                   <div className="flex flex-col items-end">

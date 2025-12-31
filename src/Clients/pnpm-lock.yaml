@@ -156,6 +156,9 @@ importers:
       tailwind-merge:
         specifier: ^3.4.0
         version: 3.4.0
+      ts-pattern:
+        specifier: ^5.9.0
+        version: 5.9.0
       usehooks-ts:
         specifier: 3.1.1
         version: 3.1.1(react@19.2.3)
@@ -4810,6 +4813,9 @@ packages:
         optional: true
       '@swc/wasm':
         optional: true
+
+  ts-pattern@5.9.0:
+    resolution: {integrity: sha512-6s5V71mX8qBUmlgbrfL33xDUwO0fq48rxAu2LBE11WBeGdpCPOsXksQbZJHvHwhrd3QjUusd3mAOM5Gg0mFBLg==}
 
   tslib@1.14.1:
     resolution: {integrity: sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==}
@@ -10375,6 +10381,8 @@ snapshots:
       typescript: 5.9.3
       v8-compile-cache-lib: 3.0.1
       yn: 3.1.1
+
+  ts-pattern@5.9.0: {}
 
   tslib@1.14.1: {}
 

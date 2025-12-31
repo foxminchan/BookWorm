@@ -16,12 +16,14 @@ import { useRouter } from "next/navigation";
 import type { BasketItem } from "@workspace/types/basket";
 import { useAtom, useAtomValue } from "jotai";
 import { basketAtom, basketItemsAtom } from "@/atoms/basket-atom";
+import useBasket from "@workspace/api-hooks/basket/useBasket";
 import useUpdateBasket from "@workspace/api-hooks/basket/useUpdateBasket";
 import useDeleteBasket from "@workspace/api-hooks/basket/useDeleteBasket";
 import useCreateOrder from "@workspace/api-hooks/ordering/orders/useCreateOrder";
 
 export default function BasketPage() {
-  const [{ isPending: isLoadingBasket }] = useAtom(basketAtom);
+  useBasket();
+  const [{ isPending: isLoadingBasket, data: basket }] = useAtom(basketAtom);
   const items = useAtomValue(basketItemsAtom);
   const [modifiedItems, setModifiedItems] = useState<Record<string, number>>(
     {},
@@ -33,7 +35,6 @@ export default function BasketPage() {
   const updateBasket = useUpdateBasket();
   const deleteBasket = useDeleteBasket();
   const createOrder = useCreateOrder();
-  const [{ data: basket }] = useAtom(basketAtom);
 
   const updateQuantity = (id: string, delta: number) => {
     const item = items.find((i: BasketItem) => i.id === id);
