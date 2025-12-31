@@ -4,12 +4,11 @@ import type { Buyer } from "@workspace/types/ordering/buyers";
 import { orderingKeys } from "../../keys";
 
 export default function useBuyer(
-  id: string,
   options?: Omit<UseQueryOptions<Buyer>, "queryKey" | "queryFn">,
 ) {
   return useQuery({
-    queryKey: orderingKeys.buyers.detail(id),
-    queryFn: () => buyersApiClient.get(id),
+    queryKey: orderingKeys.buyers.current(),
+    queryFn: () => buyersApiClient.getCurrentBuyer(),
     ...options,
   });
 }

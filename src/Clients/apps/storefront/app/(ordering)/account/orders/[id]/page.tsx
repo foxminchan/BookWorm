@@ -1,5 +1,6 @@
 "use client";
 
+import { use } from "react";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { Button } from "@workspace/ui/components/button";
@@ -63,9 +64,10 @@ function OrderDetailSkeleton() {
 export default function OrderDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const { data: orderDetail, isLoading, error } = useOrder(params.id);
+  const { id } = use(params);
+  const { data: orderDetail, isLoading, error } = useOrder(id);
 
   if (isLoading) {
     return (

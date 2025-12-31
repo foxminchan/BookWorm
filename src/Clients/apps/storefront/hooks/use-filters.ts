@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { useDebounceValue } from "./use-debounce-value";
 import { DEBOUNCE_DELAY } from "@/lib/constants";
 
-interface UseFiltersOptions<T> {
+type UseFiltersOptions<T> = {
   items: T[];
   initialPriceRange?: [number, number];
   filterFn: (
@@ -16,7 +16,7 @@ interface UseFiltersOptions<T> {
       priceRange: [number, number];
     },
   ) => boolean;
-}
+};
 
 export function useFilters<T>({
   items,

@@ -1,22 +1,14 @@
 "use client";
 
 import { forwardRef, useImperativeHandle, useState } from "react";
-import { useCopilotChat } from "@copilotkit/react-core";
 import { CopilotChat } from "@copilotkit/react-ui";
 import "@copilotkit/react-ui/styles.css";
-import {
-  AlertCircle,
-  BookOpen,
-  Copy,
-  MessageCircle,
-  Paperclip,
-  X,
-} from "lucide-react";
+import { AlertCircle, Copy, MessageCircle, Paperclip, X } from "lucide-react";
 import { Card, CardHeader, CardContent } from "@workspace/ui/components/card";
 
-export interface ChatBotRef {
+export type ChatBotRef = {
   openChat: () => void;
-}
+};
 
 const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
   const [isOpen, setIsOpen] = useState(false);
@@ -92,26 +84,13 @@ const UnavailableChatUI = ({
   isOpen: boolean;
   onClose: () => void;
 }) => {
-  const [isOpenState, setIsOpenState] = useState(false);
-
-  if (!isOpenState) {
-    return (
-      <button
-        onClick={() => setIsOpenState(true)}
-        className="fixed bottom-6 right-6 z-50 hidden md:flex w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors items-center justify-center"
-        aria-label="Open chat"
-      >
-        <MessageCircle className="w-6 h-6" />
-      </button>
-    );
+  if (!isOpen) {
+    return null;
   }
 
   return (
     <div className="fixed inset-0 z-50 hidden md:flex items-end justify-end p-6">
-      <div
-        className="fixed inset-0 bg-black/20"
-        onClick={() => setIsOpenState(false)}
-      />
+      <div className="fixed inset-0 bg-black/20" onClick={onClose} />
       <Card className="w-96 sm:w-105 h-150 flex flex-col shadow-2xl border-secondary/30 rounded-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300 relative z-10">
         <CardHeader className="bg-linear-to-br from-primary via-primary to-primary/90 text-primary-foreground p-6 flex flex-row items-center justify-between gap-3 border-b border-primary-foreground/10">
           <div className="flex items-center gap-3">
@@ -124,7 +103,7 @@ const UnavailableChatUI = ({
             </div>
           </div>
           <button
-            onClick={() => setIsOpenState(false)}
+            onClick={onClose}
             className="p-1 hover:bg-primary-foreground/20 rounded-full transition-colors"
           >
             <X className="w-5 h-5" />

@@ -5,8 +5,9 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
-import { Package, ChevronRight, ArrowLeft, ChevronLeft } from "lucide-react";
+import { Package, ChevronRight, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { Pagination } from "@/components/pagination";
 import type { OrderStatus } from "@workspace/types/ordering/orders";
 import {
   Select,
@@ -243,43 +244,12 @@ export default function OrdersPage() {
             </div>
 
             {totalPages > 1 && (
-              <div className="mt-16 flex items-center justify-center gap-3 pt-8 border-t border-border">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="rounded-full"
-                >
-                  <ChevronLeft className="size-4" />
-                </Button>
-
-                <div className="flex items-center gap-2">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                    (page) => (
-                      <Button
-                        key={page}
-                        variant={currentPage === page ? "default" : "outline"}
-                        className="size-11 p-0 rounded-full"
-                        onClick={() => setCurrentPage(page)}
-                      >
-                        {page}
-                      </Button>
-                    ),
-                  )}
-                </div>
-
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() =>
-                    setCurrentPage((p) => Math.min(totalPages, p + 1))
-                  }
-                  disabled={currentPage === totalPages}
-                  className="rounded-full"
-                >
-                  <ChevronRight className="size-4" />
-                </Button>
+              <div className="mt-16 pt-8 border-t border-border">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
               </div>
             )}
           </>

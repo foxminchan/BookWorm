@@ -26,6 +26,11 @@ class BuyersApiClient {
     };
   }
 
+  public async getCurrentBuyer(): Promise<Buyer> {
+    const response = await this.client.get<Buyer>(`/ordering/api/v1/buyers/me`);
+    return response.data;
+  }
+
   public async get(id: string): Promise<Buyer> {
     const response = await this.client.get<Buyer>(
       `/ordering/api/v1/buyers/${id}`,

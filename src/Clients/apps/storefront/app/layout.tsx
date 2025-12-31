@@ -1,8 +1,9 @@
 import type React from "react";
+import { Geist, Geist_Mono } from "next/font/google";
 import type { Metadata, Viewport } from "next";
 import { JsonLd } from "@/components/json-ld";
 import { generateOrganizationJsonLd, generateWebsiteJsonLd } from "@/lib/seo";
-import { Providers } from "./providers";
+import { Providers } from "@/components/providers";
 import "@workspace/ui/globals.css";
 
 export const viewport: Viewport = {
@@ -68,6 +69,9 @@ export const metadata: Metadata = {
     title: "BookWorm",
   },
 };
+
+const _geist = Geist({ subsets: ["latin"] });
+const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export default function RootLayout({
   children,

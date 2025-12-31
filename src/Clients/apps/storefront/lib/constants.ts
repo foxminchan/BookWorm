@@ -36,3 +36,5 @@ export const DEBOUNCE_DELAY = {
   quantity: 300,
   priceRange: 500,
 } as const;
+
+export const DEFAULT_BOOK_IMAGE = "/book-placeholder.jpg";

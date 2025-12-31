@@ -33,8 +33,8 @@ class OrdersApiClient {
     return response.data;
   }
 
-  public async create(basketId: string): Promise<Order> {
-    const response = await this.client.post<Order>(
+  public async create(basketId: string): Promise<string> {
+    const response = await this.client.post<string>(
       "/ordering/api/v1/orders",
       { basketId },
       { headers: { "x-request-id": uuidv7() } },

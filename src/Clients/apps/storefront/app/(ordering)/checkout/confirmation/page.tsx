@@ -4,12 +4,84 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
-import { CheckCircle2, ArrowRight } from "lucide-react";
+import { CheckCircle2, ArrowRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 import type { OrderStatus } from "@workspace/types/ordering/orders";
+import { useSearchParams } from "next/navigation";
+import useOrder from "@workspace/api-hooks/ordering/orders/useOrder";
+import { Skeleton } from "@workspace/ui/components/skeleton";
 
 export default function ConfirmationPage() {
-  const orderStatus: OrderStatus = "New";
+  const searchParams = useSearchParams();
+  const orderId = searchParams.get("orderId");
+
+  const { data: order, isPending } = useOrder(orderId ?? "", {
+    enabled: !!orderId,
+  });
+
+  if (!orderId) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="grow container mx-auto px-4 py-24">
+          <div className="max-w-3xl mx-auto text-center">
+            <h1 className="font-serif text-4xl font-medium mb-4">
+              Order Not Found
+            </h1>
+            <p className="text-muted-foreground mb-8">
+              No order ID was provided.
+            </p>
+            <Button asChild>
+              <Link href="/basket">Return to Basket</Link>
+            </Button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (isPending) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="grow container mx-auto px-4 py-24">
+          <div className="max-w-3xl mx-auto">
+            <div className="text-center mb-24 space-y-8">
+              <div className="flex justify-center">
+                <Loader2 className="size-12 animate-spin text-primary" />
+              </div>
+              <Skeleton className="h-12 w-96 mx-auto" />
+              <Skeleton className="h-6 w-64 mx-auto" />
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="grow container mx-auto px-4 py-24">
+          <div className="max-w-3xl mx-auto text-center">
+            <h1 className="font-serif text-4xl font-medium mb-4">
+              Order Not Found
+            </h1>
+            <p className="text-muted-foreground mb-8">
+              Unable to load order details.
+            </p>
+            <Button asChild>
+              <Link href="/basket">Return to Basket</Link>
+            </Button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   const getStatusColor = (status: OrderStatus): string => {
     switch (status) {
@@ -54,7 +126,7 @@ export default function ConfirmationPage() {
                 Order Number
               </p>
               <p className="font-serif text-3xl font-medium text-foreground">
-                #BW-829472
+                #{order.id.slice(0, 8).toUpperCase()}
               </p>
             </div>
           </div>
@@ -82,9 +154,9 @@ export default function ConfirmationPage() {
                   Current Status
                 </p>
                 <Badge
-                  className={`${getStatusColor(orderStatus)} border-0 text-base px-3 py-1`}
+                  className={`${getStatusColor(order.status)} border-0 text-base px-3 py-1`}
                 >
-                  {orderStatus}
+                  {order.status}
                 </Badge>
               </div>
             </div>
@@ -99,7 +171,7 @@ export default function ConfirmationPage() {
                   Amount Paid
                 </p>
                 <p className="font-serif text-4xl font-medium text-primary">
-                  $67.00
+                  ${order.total.toFixed(2)}
                 </p>
               </div>
             </div>
@@ -132,7 +204,7 @@ export default function ConfirmationPage() {
               size="lg"
               className="rounded-full h-14 px-12 text-lg border-primary/20 hover:bg-primary/5 bg-transparent"
             >
-              <Link href="/account/orders">View Order</Link>
+              <Link href={`/account/orders/${order.id}`}>View Order</Link>
             </Button>
           </div>
         </div>

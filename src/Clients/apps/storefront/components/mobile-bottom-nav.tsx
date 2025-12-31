@@ -6,7 +6,7 @@ import { Home, ShoppingBag, ShoppingCart, User, Menu } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@workspace/ui/components/badge";
 import { useAtomValue } from "jotai";
-import { basketItemCountAtom } from "@/lib/basket-context";
+import { basketItemCountAtom } from "@/atoms/basket-atom";
 
 export function MobileBottomNav() {
   const pathname = usePathname();

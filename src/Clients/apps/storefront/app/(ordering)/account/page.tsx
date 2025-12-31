@@ -22,14 +22,11 @@ import useBuyer from "@workspace/api-hooks/ordering/buyers/useBuyer";
 import useUpdateBuyerAddress from "@workspace/api-hooks/ordering/buyers/useUpdateBuyerAddress";
 
 export default function AccountPage() {
-  // For now, use a hardcoded buyer ID - in production this would come from auth context
-  const CURRENT_BUYER_ID = "1";
-
   const {
     data: buyer,
     isLoading: isLoadingBuyer,
     error: buyerError,
-  } = useBuyer(CURRENT_BUYER_ID);
+  } = useBuyer();
   const updateAddressMutation = useUpdateBuyerAddress();
 
   const [isEditingAddress, setIsEditingAddress] = useState(false);
