@@ -6,7 +6,7 @@ import {
 import { buyersStoreManager, MOCK_USER_ID } from "./data";
 import { formatValidationErrors } from "@workspace/utils/validation";
 import { buildPaginationLinks } from "@workspace/utils/link";
-import { ORDERING_API_BASE_URL } from "@/ordering/constants";
+import { ORDERING_API_BASE_URL } from "../../ordering/constants";
 
 export const buyersHandlers = [
   http.get(`${ORDERING_API_BASE_URL}/api/v1/buyers/me`, () => {

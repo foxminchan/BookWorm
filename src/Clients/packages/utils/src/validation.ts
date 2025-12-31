@@ -1,4 +1,4 @@
-import { generateTraceId } from "./trace.js";
+import { generateTraceId } from "./trace";
 
 /**
  * Convert Zod validation errors to FluentValidation-compatible error response

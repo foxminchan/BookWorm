@@ -8,7 +8,7 @@ import type {
   CustomerBasket,
   UpdateBasketRequest,
 } from "@workspace/types/basket";
-import { basketKeys } from "@/keys";
+import { basketKeys } from "../keys";
 
 export default function useUpdateBasket(
   options?: UseMutationOptions<

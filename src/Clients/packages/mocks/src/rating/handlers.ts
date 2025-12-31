@@ -7,7 +7,7 @@ import {
 } from "@workspace/validations/rating";
 import { formatValidationErrors } from "@workspace/utils/validation";
 import { buildPaginationLinks } from "@workspace/utils/link";
-import { RATING_API_BASE_URL } from "@/rating/constants";
+import { RATING_API_BASE_URL } from "../rating/constants";
 
 export const feedbacksHandlers = [
   http.get(`${RATING_API_BASE_URL}/api/v1/feedbacks`, ({ request }) => {
@@ -113,4 +113,48 @@ export const feedbacksHandlers = [
 
     return new HttpResponse(null, { status: 204 });
   }),
+
+  http.get(
+    `${RATING_API_BASE_URL}/api/v1/feedbacks/:bookId/summarize`,
+    ({ params }) => {
+      const { bookId } = params;
+
+      if (!bookId || typeof bookId !== "string") {
+        return HttpResponse.json(
+          {
+            type: "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+            title: "One or more validation errors occurred.",
+            status: 400,
+            errors: { BookId: ["Book ID is required"] },
+          },
+          { status: 400 },
+        );
+      }
+
+      const feedbacks = feedbacksStoreManager.get(bookId);
+
+      if (feedbacks.length === 0) {
+        return HttpResponse.json({
+          summary: "No reviews available for this book yet.",
+        });
+      }
+
+      // Generate a mock summary based on ratings
+      const avgRating =
+        feedbacks.reduce((sum, f) => sum + f.rating, 0) / feedbacks.length;
+      const positiveCount = feedbacks.filter((f) => f.rating >= 4).length;
+      const negativeCount = feedbacks.filter((f) => f.rating <= 2).length;
+
+      let summary = "";
+      if (avgRating >= 4) {
+        summary = `Readers highly praise this book! ${positiveCount} out of ${feedbacks.length} reviewers gave it 4 or 5 stars. Common themes include engaging storytelling, well-developed characters, and compelling plot twists.`;
+      } else if (avgRating >= 3) {
+        summary = `This book receives mixed reviews from readers. While some appreciate its unique approach and interesting concepts, others find it somewhat lacking in execution. ${positiveCount} readers rated it positively, while ${negativeCount} had reservations.`;
+      } else {
+        summary = `Reviews for this book are generally critical. ${negativeCount} out of ${feedbacks.length} reviewers gave it 2 stars or lower. Common criticisms include pacing issues, character development concerns, and plot inconsistencies.`;
+      }
+
+      return HttpResponse.json({ summary }, { status: 200 });
+    },
+  ),
 ];

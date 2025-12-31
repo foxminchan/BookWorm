@@ -1,6 +1,6 @@
 import { v7 as uuidv7 } from "uuid";
 import type { Publisher } from "@workspace/types/catalog/publishers";
-import publishersData from "@/data/publishers.json";
+import publishersData from "../../data/publishers.json";
 
 export const mockPublishers: Publisher[] = publishersData;
 

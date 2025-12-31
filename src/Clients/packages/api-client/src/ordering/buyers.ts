@@ -1,4 +1,3 @@
-import ApiClient from "@/client";
 import type {
   Buyer,
   CreateBuyerRequest,
@@ -6,6 +5,7 @@ import type {
   UpdateAddressRequest,
 } from "@workspace/types/ordering/buyers";
 import type { PagedResult } from "@workspace/types/shared";
+import ApiClient from "../client";
 
 class BuyersApiClient {
   private readonly client: ApiClient;

@@ -1,9 +1,9 @@
-import ApiClient from "@/client";
 import type {
   Category,
   CreateCategoryRequest,
   UpdateCategoryRequest,
 } from "@workspace/types/catalog/categories";
+import ApiClient from "../client";
 
 class CategoriesApiClient {
   private readonly client: ApiClient;

@@ -2,7 +2,7 @@ import { http, HttpResponse } from "msw";
 import type { Order } from "@workspace/types/ordering/orders";
 import { ordersStoreManager } from "./data";
 import { buildPaginationLinks } from "@workspace/utils/link";
-import { ORDERING_API_BASE_URL } from "@/ordering/constants";
+import { ORDERING_API_BASE_URL } from "../../ordering/constants";
 
 export const ordersHandlers = [
   http.get(`${ORDERING_API_BASE_URL}/api/v1/orders/:id`, ({ params }) => {

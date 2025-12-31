@@ -1,7 +1,7 @@
 import { useQuery, UseQueryOptions } from "@tanstack/react-query";
 import type { FeedbackSummary } from "@workspace/types/rating";
 import ratingApiClient from "@workspace/api-client/rating/feedbacks";
-import { ratingKeys } from "@/keys";
+import { ratingKeys } from "../keys";
 
 export default function useSummaryFeedback(
   bookId: string,

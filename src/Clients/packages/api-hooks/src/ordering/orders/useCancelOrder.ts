@@ -5,7 +5,7 @@ import {
 } from "@tanstack/react-query";
 import ordersApiClient from "@workspace/api-client/ordering/orders";
 import type { Order } from "@workspace/types/ordering/orders";
-import { orderingKeys } from "@/keys";
+import { orderingKeys } from "../../keys";
 
 export default function useCancelOrder(
   options?: UseMutationOptions<Order, Error, string>,

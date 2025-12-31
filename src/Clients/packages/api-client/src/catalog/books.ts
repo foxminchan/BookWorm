@@ -1,4 +1,3 @@
-import ApiClient from "@/client";
 import type {
   Book,
   CreateBookRequest,
@@ -6,6 +5,7 @@ import type {
   UpdateBookRequest,
 } from "@workspace/types/catalog/books";
 import type { PagedResult } from "@workspace/types/shared";
+import ApiClient from "../client";
 
 class BooksApiClient {
   private readonly client: ApiClient;
@@ -15,15 +15,14 @@ class BooksApiClient {
   }
 
   public async list(query?: ListBooksQuery): Promise<PagedResult<Book>> {
-    const response = await this.client.get<Book[]>("/catalog/api/v1/books", {
-      params: query,
-    });
+    const response = await this.client.get<PagedResult<Book>>(
+      "/catalog/api/v1/books",
+      {
+        params: query,
+      },
+    );
 
-    return {
-      items: response.data,
-      totalCount: Number(response.headers["Pagination-Count"] || 0),
-      link: response.headers["Link"],
-    };
+    return response.data;
   }
 
   public async get(id: string): Promise<Book> {

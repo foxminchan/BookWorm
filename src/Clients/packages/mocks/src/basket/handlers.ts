@@ -5,7 +5,7 @@ import {
 } from "@workspace/validations/basket";
 import { basketStore, MOCK_USER_ID } from "./data";
 import { formatValidationErrors } from "@workspace/utils/validation";
-import { BASKET_API_BASE_URL } from "@/basket/constants";
+import { BASKET_API_BASE_URL } from "../basket/constants";
 
 export const basketHandlers = [
   http.get(`${BASKET_API_BASE_URL}/api/v1/baskets`, () => {

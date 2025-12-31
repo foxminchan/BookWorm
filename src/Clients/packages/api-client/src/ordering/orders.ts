@@ -1,4 +1,3 @@
-import ApiClient from "@/client";
 import type {
   Order,
   OrderDetail,
@@ -6,6 +5,7 @@ import type {
 } from "@workspace/types/ordering/orders";
 import type { PagedResult } from "@workspace/types/shared";
 import { v7 as uuidv7 } from "uuid";
+import ApiClient from "../client";
 
 class OrdersApiClient {
   private readonly client: ApiClient;

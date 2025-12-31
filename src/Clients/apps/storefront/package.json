@@ -29,19 +29,29 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@copilotkit/react-core": "1.50.1",
+    "@copilotkit/react-ui": "1.50.1",
     "@t3-oss/env-nextjs": "^0.13.10",
+    "@tanstack/query-core": "^5.90.16",
     "@tanstack/react-form": "^1.27.6",
     "@tanstack/react-query": "^5.90.12",
     "@tanstack/react-table": "^8.21.3",
+    "@vercel/analytics": "1.3.1",
     "better-auth": "^1.4.9",
     "class-variance-authority": "^0.7.1",
+    "classnames": "2.5.1",
+    "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "jotai": "^2.10.6",
+    "jotai-tanstack-query": "^0.11.0",
     "lodash": "^4.17.21",
     "lucide-react": "^0.475.0",
     "next": "16.0.10",
     "next-themes": "^0.4.6",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
+    "tailwind-merge": "^3.4.0",
+    "usehooks-ts": "3.1.1",
     "zod": "^4.2.1"
   },
   "devDependencies": {
@@ -55,9 +65,15 @@
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
-    "@workspace/ui": "workspace:*",
-    "@workspace/mocks": "workspace:*",
+    "@workspace/api-client": "workspace:*",
     "@workspace/api-hooks": "workspace:*",
-    "@workspace/types": "workspace:*"
+    "@workspace/mocks": "workspace:*",
+    "@workspace/types": "workspace:*",
+    "@workspace/ui": "workspace:*"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }

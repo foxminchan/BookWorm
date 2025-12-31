@@ -4,7 +4,7 @@ import {
   type UseMutationOptions,
 } from "@tanstack/react-query";
 import basketApiClient from "@workspace/api-client/basket/baskets";
-import { basketKeys } from "@/keys";
+import { basketKeys } from "../keys";
 
 export default function useDeleteBasket(
   options?: UseMutationOptions<void, Error, string>,

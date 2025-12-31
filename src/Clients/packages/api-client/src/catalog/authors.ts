@@ -1,9 +1,9 @@
-import ApiClient from "@/client";
 import type {
   Author,
   CreateAuthorRequest,
   UpdateAuthorRequest,
 } from "@workspace/types/catalog/authors";
+import ApiClient from "../client";
 
 class AuthorsApiClient {
   private readonly client: ApiClient;

@@ -8,7 +8,7 @@ import type {
   Author,
   UpdateAuthorRequest,
 } from "@workspace/types/catalog/authors";
-import { catalogKeys } from "@/keys";
+import { catalogKeys } from "../../keys";
 
 export default function useUpdateAuthor(
   options?: UseMutationOptions<Author, Error, { request: UpdateAuthorRequest }>,

@@ -8,7 +8,7 @@ import type {
   CreateBasketRequest,
   CustomerBasket,
 } from "@workspace/types/basket";
-import { basketKeys } from "@/keys";
+import { basketKeys } from "../keys";
 
 export default function useCreateBasket(
   options?: UseMutationOptions<CustomerBasket, Error, CreateBasketRequest>,

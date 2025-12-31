@@ -1,4 +1,3 @@
-import ApiClient from "@/client";
 import type {
   Feedback,
   FeedbackSummary,
@@ -6,6 +5,7 @@ import type {
   ListFeedbacksQuery,
 } from "@workspace/types/rating";
 import type { PagedResult } from "@workspace/types/shared";
+import ApiClient from "../client";
 
 class RatingApiClient {
   private readonly client: ApiClient;

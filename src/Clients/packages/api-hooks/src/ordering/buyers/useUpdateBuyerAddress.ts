@@ -8,7 +8,7 @@ import type {
   Buyer,
   UpdateAddressRequest,
 } from "@workspace/types/ordering/buyers";
-import { orderingKeys } from "@/keys";
+import { orderingKeys } from "../../keys";
 
 export default function useUpdateBuyerAddress(
   options?: UseMutationOptions<Buyer, Error, { request: UpdateAddressRequest }>,

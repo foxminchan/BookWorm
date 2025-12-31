@@ -40,6 +40,8 @@
     "@workspace/types": "workspace:*"
   },
   "exports": {
+    "./client": "./src/client.ts",
+    "./config": "./src/config.ts",
     "./catalog/*": "./src/catalog/*.ts",
     "./ordering/*": "./src/ordering/*.ts",
     "./basket/*": "./src/basket/*.ts",

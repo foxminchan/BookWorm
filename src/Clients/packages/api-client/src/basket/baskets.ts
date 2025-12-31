@@ -1,4 +1,4 @@
-import ApiClient from "@/client";
+import ApiClient from "../client";
 import type {
   CreateBasketRequest,
   CustomerBasket,

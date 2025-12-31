@@ -8,7 +8,7 @@ import type {
   Publisher,
   UpdatePublisherRequest,
 } from "@workspace/types/catalog/publishers";
-import { catalogKeys } from "@/keys";
+import { catalogKeys } from "../../keys";
 
 export default function useUpdatePublisher(
   options?: UseMutationOptions<

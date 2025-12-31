@@ -2,7 +2,7 @@ import { setupWorker } from "msw/browser";
 import { authorsHandlers } from "./catalog/authors/index";
 import { categoriesHandlers } from "./catalog/categories/index";
 import { publishersHandlers } from "./catalog/publishers/index";
-import { booksHandlers } from "./catalog/books/index.js";
+import { booksHandlers } from "./catalog/books/index";
 import { basketHandlers } from "./basket/index";
 import { buyersHandlers } from "./ordering/buyers/index";
 import { ordersHandlers } from "./ordering/orders/index";
@@ -22,5 +22,9 @@ export const worker = setupWorker(
 export const startMocking = async () => {
   await worker.start({
     onUnhandledRequest: "warn",
+    serviceWorker: {
+      url: "/mockServiceWorker.js",
+    },
+    quiet: false,
   });
 };

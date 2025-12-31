@@ -4,8 +4,8 @@ import type {
   OrderItem,
   OrderStatus,
 } from "@workspace/types/ordering/orders";
-import ordersData from "@/data/orders.json";
-import orderItemsData from "@/data/orderItems.json";
+import ordersData from "../../data/orders.json";
+import orderItemsData from "../../data/orderItems.json";
 
 const mockOrders: OrderDetail[] = ordersData.map((order) => {
   const orderItems = orderItemsData.find((oi) => oi.orderId === order.id);
@@ -15,8 +15,6 @@ const mockOrders: OrderDetail[] = ordersData.map((order) => {
     items: orderItems?.items || [],
   };
 });
-
-export const MOCK_USER_ID = mockOrders[0]?.id || "";
 
 let ordersStore = [...mockOrders];
 

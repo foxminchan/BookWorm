@@ -11,7 +11,7 @@ import {
 import { authorsStore } from "./data";
 import { formatValidationErrors } from "@workspace/utils/validation";
 import { generateTraceId } from "@workspace/utils/trace";
-import { CATALOG_API_BASE_URL } from "@/catalog/constants";
+import { CATALOG_API_BASE_URL } from "../../catalog/constants";
 
 export const authorsHandlers = [
   http.get<never, never, Author[]>(

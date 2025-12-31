@@ -8,7 +8,7 @@ import type {
   Category,
   CreateCategoryRequest,
 } from "@workspace/types/catalog/categories";
-import { catalogKeys } from "@/keys";
+import { catalogKeys } from "../../keys";
 
 export default function useCreateCategory(
   options?: UseMutationOptions<Category, Error, CreateCategoryRequest>,

@@ -4,7 +4,7 @@ import {
   type UseMutationOptions,
 } from "@tanstack/react-query";
 import buyersApiClient from "@workspace/api-client/ordering/buyers";
-import { orderingKeys } from "@/keys";
+import { orderingKeys } from "../../keys";
 
 export default function useDeleteBuyer(
   options?: UseMutationOptions<void, Error, string>,

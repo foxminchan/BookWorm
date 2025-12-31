@@ -5,5 +5,4 @@ export type {
   CreateBookRequest,
   UpdateBookRequest,
   ListBooksQuery,
-  PagedResult,
 } from "@workspace/types/catalog/books";

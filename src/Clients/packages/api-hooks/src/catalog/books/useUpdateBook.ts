@@ -5,7 +5,7 @@ import {
 } from "@tanstack/react-query";
 import booksApiClient from "@workspace/api-client/catalog/books";
 import type { Book, UpdateBookRequest } from "@workspace/types/catalog/books";
-import { catalogKeys } from "@/keys";
+import { catalogKeys } from "../../keys";
 
 export default function useUpdateBook(
   options?: UseMutationOptions<Book, Error, { request: UpdateBookRequest }>,

@@ -1,7 +1,7 @@
 import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
 import publishersApiClient from "@workspace/api-client/catalog/publishers";
 import type { Publisher } from "@workspace/types/catalog/publishers";
-import { catalogKeys } from "@/keys";
+import { catalogKeys } from "../../keys";
 
 export default function usePublisher(
   id: string,

@@ -8,7 +8,7 @@ import type {
   Buyer,
   CreateBuyerRequest,
 } from "@workspace/types/ordering/buyers";
-import { orderingKeys } from "@/keys";
+import { orderingKeys } from "../../keys";
 
 export default function useCreateBuyer(
   options?: UseMutationOptions<Buyer, Error, CreateBuyerRequest>,

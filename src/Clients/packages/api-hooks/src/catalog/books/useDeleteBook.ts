@@ -4,7 +4,7 @@ import {
   type UseMutationOptions,
 } from "@tanstack/react-query";
 import booksApiClient from "@workspace/api-client/catalog/books";
-import { catalogKeys } from "@/keys";
+import { catalogKeys } from "../../keys";
 
 export default function useDeleteBook(
   options?: UseMutationOptions<void, Error, string>,

@@ -1,6 +1,6 @@
 import axios, { type AxiosInstance, type AxiosResponse } from "axios";
-import type { AxiosRequestConfig } from "@/global";
-import axiosConfig from "@/config";
+import axiosConfig from "./config";
+import { AxiosRequestConfig } from "./global";
 
 export default class ApiClient {
   private readonly client: AxiosInstance;
