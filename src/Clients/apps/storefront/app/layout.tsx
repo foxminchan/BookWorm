@@ -1,10 +1,16 @@
 import type React from "react";
-import type { Metadata } from "next";
-import { SkipToMain } from "@/components/skip-to-main";
+import type { Metadata, Viewport } from "next";
 import { JsonLd } from "@/components/json-ld";
 import { generateOrganizationJsonLd, generateWebsiteJsonLd } from "@/lib/seo";
 import { Providers } from "./providers";
 import "@workspace/ui/globals.css";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+};
 
 export const metadata: Metadata = {
   title: "BookWorm - Curated Books & Design Inspiration | Online Bookstore",
@@ -23,12 +29,6 @@ export const metadata: Metadata = {
   authors: [{ name: "BookWorm Team" }],
   creator: "BookWorm",
   manifest: "/manifest.json",
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 5,
-    userScalable: true,
-  },
   openGraph: {
     type: "website",
     url: "https://bookworm.com",
@@ -102,7 +102,6 @@ export default function RootLayout({
         />
       </head>
       <body className={`font-sans antialiased`}>
-        <SkipToMain />
         <Providers>{children}</Providers>
       </body>
     </html>

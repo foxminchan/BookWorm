@@ -152,7 +152,7 @@ export default function BookshopPage() {
                   : categories.map((cat) => (
                       <a
                         key={cat.id}
-                        href={`/categories?name=${encodeURIComponent(cat.name ?? "Uncategorized")}`}
+                        href={`/shop?category=${encodeURIComponent(cat.id)}`}
                         className="bg-background p-6 rounded-lg text-center hover:shadow-md transition-all hover:-translate-y-1 group"
                       >
                         <h3 className="font-serif font-medium mb-1 group-hover:text-primary">

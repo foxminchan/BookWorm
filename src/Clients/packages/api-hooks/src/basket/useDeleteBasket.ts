@@ -14,7 +14,7 @@ export default function useDeleteBasket(
   return useMutation({
     mutationFn: () => basketApiClient.delete(),
     onSuccess: () => {
-      queryClient.removeQueries({ queryKey: basketKeys.detail() });
+      queryClient.setQueryData(basketKeys.detail(), null);
     },
     ...options,
   });

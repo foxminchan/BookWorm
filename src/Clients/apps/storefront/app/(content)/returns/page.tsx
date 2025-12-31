@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
-import { Button } from "@workspace/ui/components/button"
-import { Card, CardContent } from "@workspace/ui/components/card"
-import { RotateCcw, Clock, CheckCircle, AlertCircle } from "lucide-react"
+import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
+import { Button } from "@workspace/ui/components/button";
+import { Card, CardContent } from "@workspace/ui/components/card";
+import { RotateCcw, Clock, CheckCircle, AlertCircle } from "lucide-react";
 
 export default function ReturnsPage() {
   return (
@@ -17,7 +17,8 @@ export default function ReturnsPage() {
             Hassle-Free Returns
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto text-pretty">
-            Not satisfied with your purchase? We make returns simple and straightforward.
+            Not satisfied with your purchase? We make returns simple and
+            straightforward.
           </p>
         </section>
 
@@ -26,10 +27,13 @@ export default function ReturnsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
             <div className="space-y-8">
               <div>
-                <h2 className="text-4xl font-serif font-medium mb-6">30-Day Return Guarantee</h2>
+                <h2 className="text-4xl font-serif font-medium mb-6">
+                  30-Day Return Guarantee
+                </h2>
                 <p className="text-lg text-muted-foreground mb-4 leading-relaxed">
-                  We're confident you'll love your books. If you're not completely satisfied, we'll accept returns
-                  within 30 days of purchase for a full refund or exchange.
+                  We're confident you'll love your books. If you're not
+                  completely satisfied, we'll accept returns within 30 days of
+                  purchase for a full refund or exchange.
                 </p>
               </div>
               <div className="space-y-4">
@@ -37,21 +41,27 @@ export default function ReturnsPage() {
                   <CheckCircle className="size-6 text-primary shrink-0 mt-1" />
                   <div>
                     <h3 className="font-medium mb-1">Full Refunds</h3>
-                    <p className="text-muted-foreground text-sm">Get your money back, no questions asked</p>
+                    <p className="text-muted-foreground text-sm">
+                      Get your money back, no questions asked
+                    </p>
                   </div>
                 </div>
                 <div className="flex gap-4">
                   <CheckCircle className="size-6 text-primary shrink-0 mt-1" />
                   <div>
                     <h3 className="font-medium mb-1">Free Return Shipping</h3>
-                    <p className="text-muted-foreground text-sm">We cover the cost of shipping your return</p>
+                    <p className="text-muted-foreground text-sm">
+                      We cover the cost of shipping your return
+                    </p>
                   </div>
                 </div>
                 <div className="flex gap-4">
                   <CheckCircle className="size-6 text-primary shrink-0 mt-1" />
                   <div>
                     <h3 className="font-medium mb-1">Easy Exchange</h3>
-                    <p className="text-muted-foreground text-sm">Swap for a different title at no cost</p>
+                    <p className="text-muted-foreground text-sm">
+                      Swap for a different title at no cost
+                    </p>
                   </div>
                 </div>
               </div>
@@ -65,20 +75,32 @@ export default function ReturnsPage() {
                   </h3>
                   <ol className="space-y-3 text-muted-foreground text-sm">
                     <li className="flex gap-3">
-                      <span className="font-medium text-primary shrink-0">1.</span>
-                      <span>Start a return from your account or contact support</span>
+                      <span className="font-medium text-primary shrink-0">
+                        1.
+                      </span>
+                      <span>
+                        Start a return from your account or contact support
+                      </span>
                     </li>
                     <li className="flex gap-3">
-                      <span className="font-medium text-primary shrink-0">2.</span>
+                      <span className="font-medium text-primary shrink-0">
+                        2.
+                      </span>
                       <span>Receive a prepaid return shipping label</span>
                     </li>
                     <li className="flex gap-3">
-                      <span className="font-medium text-primary shrink-0">3.</span>
+                      <span className="font-medium text-primary shrink-0">
+                        3.
+                      </span>
                       <span>Ship your books back in original condition</span>
                     </li>
                     <li className="flex gap-3">
-                      <span className="font-medium text-primary shrink-0">4.</span>
-                      <span>Receive your refund or exchange within 5-7 business days</span>
+                      <span className="font-medium text-primary shrink-0">
+                        4.
+                      </span>
+                      <span>
+                        Receive your refund or exchange within 5-7 business days
+                      </span>
                     </li>
                   </ol>
                 </div>
@@ -90,7 +112,9 @@ export default function ReturnsPage() {
         {/* Eligibility */}
         <section className="py-24 bg-secondary">
           <div className="container mx-auto px-4">
-            <h2 className="text-4xl font-serif font-medium text-center mb-16">Return Eligibility</h2>
+            <h2 className="text-4xl font-serif font-medium text-center mb-16">
+              Return Eligibility
+            </h2>
             <div className="max-w-3xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-4">
                 <h3 className="font-serif font-medium text-lg flex items-center gap-2 text-green-700">
@@ -124,7 +148,9 @@ export default function ReturnsPage() {
 
         {/* Timeline */}
         <section className="py-24 container mx-auto px-4">
-          <h2 className="text-4xl font-serif font-medium text-center mb-16">Refund Timeline</h2>
+          <h2 className="text-4xl font-serif font-medium text-center mb-16">
+            Refund Timeline
+          </h2>
           <div className="max-w-2xl mx-auto space-y-6">
             {[
               {
@@ -137,7 +163,8 @@ export default function ReturnsPage() {
                 icon: RotateCcw,
                 title: "Ship Your Books",
                 timeline: "Days 2-5",
-                description: "Use the prepaid label to ship your books back to us",
+                description:
+                  "Use the prepaid label to ship your books back to us",
               },
               {
                 icon: CheckCircle,
@@ -149,10 +176,11 @@ export default function ReturnsPage() {
                 icon: Clock,
                 title: "Refund Issued",
                 timeline: "Days 10-15",
-                description: "Refund appears in your account (5-7 business days after approval)",
+                description:
+                  "Refund appears in your account (5-7 business days after approval)",
               },
             ].map((step, idx) => {
-              const Icon = step.icon
+              const Icon = step.icon;
               return (
                 <div key={idx} className="flex gap-6">
                   <div className="flex flex-col items-center">
@@ -161,13 +189,19 @@ export default function ReturnsPage() {
                   </div>
                   <div className="grow pb-8">
                     <div className="flex items-baseline gap-3 mb-2">
-                      <h3 className="font-serif font-medium text-lg">{step.title}</h3>
-                      <span className="text-sm text-muted-foreground">{step.timeline}</span>
+                      <h3 className="font-serif font-medium text-lg">
+                        {step.title}
+                      </h3>
+                      <span className="text-sm text-muted-foreground">
+                        {step.timeline}
+                      </span>
                     </div>
-                    <p className="text-muted-foreground leading-relaxed">{step.description}</p>
+                    <p className="text-muted-foreground leading-relaxed">
+                      {step.description}
+                    </p>
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         </section>
@@ -175,7 +209,9 @@ export default function ReturnsPage() {
         {/* FAQ */}
         <section className="py-24 bg-secondary">
           <div className="container mx-auto px-4">
-            <h2 className="text-4xl font-serif font-medium text-center mb-16">Return Questions</h2>
+            <h2 className="text-4xl font-serif font-medium text-center mb-16">
+              Return Questions
+            </h2>
             <div className="max-w-2xl mx-auto space-y-6">
               {[
                 {
@@ -199,9 +235,16 @@ export default function ReturnsPage() {
                   a: "Contact us immediately with photos. We'll send a replacement or issue a full refund right away.",
                 },
               ].map((item, idx) => (
-                <div key={idx} className="border-b border-primary/20 pb-6 last:border-b-0">
-                  <h3 className="font-serif font-medium text-lg mb-2">{item.q}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{item.a}</p>
+                <div
+                  key={idx}
+                  className="border-b border-primary/20 pb-6 last:border-b-0"
+                >
+                  <h3 className="font-serif font-medium text-lg mb-2">
+                    {item.q}
+                  </h3>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {item.a}
+                  </p>
                 </div>
               ))}
             </div>
@@ -210,9 +253,12 @@ export default function ReturnsPage() {
 
         {/* CTA */}
         <section className="py-24 container mx-auto px-4 text-center">
-          <h2 className="text-4xl font-serif font-medium mb-8">Need help with a return?</h2>
+          <h2 className="text-4xl font-serif font-medium mb-8">
+            Need help with a return?
+          </h2>
           <p className="text-lg text-muted-foreground mb-12 max-w-2xl mx-auto">
-            Our customer support team is here to make the process as smooth as possible.
+            Our customer support team is here to make the process as smooth as
+            possible.
           </p>
           <a href="mailto:support@bookworm.com">
             <Button size="lg" className="rounded-full px-8">
@@ -223,5 +269,5 @@ export default function ReturnsPage() {
       </main>
       <Footer />
     </div>
-  )
+  );
 }

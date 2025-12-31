@@ -20,10 +20,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@workspace/ui/components/sheet";
-import { Star, Filter } from "lucide-react";
+import { Star, Filter, X } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useDebounceValue } from "usehooks-ts";
 import { BookCardSkeleton } from "@/components/book-card-skeleton";
 import { Badge } from "@workspace/ui/components/badge";
@@ -39,6 +39,7 @@ type ShopContentProps = {
   categories: any[] | undefined;
   publishers: any[] | undefined;
   authors: any[] | undefined;
+  searchQuery: string;
   priceRange: number[];
   setPriceRange: (range: number[]) => void;
   selectedAuthors: string[];
@@ -89,6 +90,7 @@ function ShopContent({
   categories,
   publishers,
   authors,
+  searchQuery,
   priceRange,
   setPriceRange,
   selectedAuthors,
@@ -112,6 +114,21 @@ function ShopContent({
   setCurrentPage,
 }: ShopContentProps) {
   const router = useRouter();
+
+  const clearSearch = () => {
+    const params = new URLSearchParams();
+    if (selectedCategories.length > 0 && selectedCategories[0]) {
+      params.set("category", selectedCategories[0]);
+    }
+    if (selectedPublishers.length > 0 && selectedPublishers[0]) {
+      params.set("publisher", selectedPublishers[0]);
+    }
+    if (selectedAuthors.length > 0 && selectedAuthors[0]) {
+      params.set("author", selectedAuthors[0]);
+    }
+    params.set("page", "1");
+    router.push(`/shop?${params.toString()}`);
+  };
 
   const updateFilters = (
     categories: string[],
@@ -903,11 +920,35 @@ function ShopContent({
             <h1 id="shop-title" className="text-3xl font-serif font-medium">
               Shop All Books
             </h1>
-            <p className="text-sm text-muted-foreground">
-              Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}–
-              {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} of{" "}
-              {totalCount} results
-            </p>
+            {searchQuery ? (
+              <div className="flex items-center gap-2 mt-2">
+                <p className="text-sm text-muted-foreground">
+                  Search results for
+                </p>
+                <Badge
+                  variant="secondary"
+                  className="font-normal flex items-center gap-1.5"
+                >
+                  "{searchQuery}"
+                  <button
+                    onClick={clearSearch}
+                    className="ml-1 hover:bg-secondary-foreground/10 rounded-full p-0.5 transition-colors"
+                    aria-label="Clear search"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </Badge>
+                <p className="text-sm text-muted-foreground">
+                  ({totalCount} {totalCount === 1 ? "result" : "results"})
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}–
+                {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} of{" "}
+                {totalCount} results
+              </p>
+            )}
           </div>
 
           <div className="flex items-center gap-4 w-full sm:w-auto">
@@ -1116,14 +1157,51 @@ function ShopContent({
 
 export default function ShopPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [currentPage, setCurrentPage] = useState(1);
   const [priceRange, setPriceRange] = useState([0, 100]);
   const [debouncedPriceRange] = useDebounceValue(priceRange, 300);
   const [selectedAuthors, setSelectedAuthors] = useState<string[]>([]);
   const [selectedPublishers, setSelectedPublishers] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [sortBy, setSortBy] = useState("name");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  // Initialize filters from URL params on mount
+  useEffect(() => {
+    const categoryParam = searchParams.get("category");
+    const publisherParam = searchParams.get("publisher");
+    const authorParam = searchParams.get("author");
+    const searchParam = searchParams.get("search");
+    const pageParam = searchParams.get("page");
+
+    if (categoryParam) {
+      setSelectedCategories([categoryParam]);
+    } else {
+      setSelectedCategories([]);
+    }
+    if (publisherParam) {
+      setSelectedPublishers([publisherParam]);
+    } else {
+      setSelectedPublishers([]);
+    }
+    if (authorParam) {
+      setSelectedAuthors([authorParam]);
+    } else {
+      setSelectedAuthors([]);
+    }
+    if (searchParam) {
+      setSearchQuery(searchParam);
+    } else {
+      setSearchQuery("");
+    }
+    if (pageParam) {
+      setCurrentPage(parseInt(pageParam, 10));
+    } else {
+      setCurrentPage(1);
+    }
+  }, [searchParams]);
 
   // Convert sortBy to API parameters
   const getSortParams = () => {
@@ -1149,6 +1227,7 @@ export default function ShopPage() {
     categoryId: selectedCategories[0],
     publisherId: selectedPublishers[0],
     authorId: selectedAuthors[0],
+    search: searchQuery || undefined,
     minPrice: priceRange[0],
     maxPrice: priceRange[1],
     orderBy: sortParams.orderBy,
@@ -1184,6 +1263,7 @@ export default function ShopPage() {
           categories={categories}
           publishers={publishers}
           authors={authors}
+          searchQuery={searchQuery}
           priceRange={priceRange}
           setPriceRange={setPriceRange}
           selectedAuthors={selectedAuthors}

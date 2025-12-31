@@ -1,7 +1,7 @@
-import type { MetadataRoute } from "next"
+import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://bookworm.com"
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://bookworm.com";
 
   return [
     {
@@ -47,5 +47,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.6,
     },
-  ]
+  ];
 }

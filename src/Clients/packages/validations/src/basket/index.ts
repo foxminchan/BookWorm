@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const basketItemRequestSchema = z.object({
-  id: z.uuid({ error: "Invalid ID format" }),
+  id: z.string().min(1, { error: "Item ID is required" }),
   quantity: z
     .number()
     .int()

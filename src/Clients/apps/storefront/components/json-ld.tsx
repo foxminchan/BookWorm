@@ -6,5 +6,5 @@ export function JsonLd({ data }: { data: object }) {
         __html: JSON.stringify(data),
       }}
     />
-  )
+  );
 }

@@ -88,17 +88,19 @@ export function PolicyDialog({
           {parsedContent.map((item, idx) => {
             if (!item) return null;
             const Element = item.tag as any;
-            return (
+            return item.tag === "li" ? (
               <Element key={idx} className={item.className}>
-                {item.tag === "li" ? (
-                  <div className="flex gap-2">
-                    <span>•</span>
-                    <span>{item.text}</span>
-                  </div>
-                ) : (
-                  <div dangerouslySetInnerHTML={{ __html: item.text }} />
-                )}
+                <div className="flex gap-2">
+                  <span>•</span>
+                  <span>{item.text}</span>
+                </div>
               </Element>
+            ) : (
+              <Element
+                key={idx}
+                className={item.className}
+                dangerouslySetInnerHTML={{ __html: item.text }}
+              />
             );
           })}
         </div>

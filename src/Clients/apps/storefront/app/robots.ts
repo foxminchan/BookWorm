@@ -1,7 +1,8 @@
-import type { MetadataRoute } from "next"
+import type { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://bookworm.example.com"
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL || "https://bookworm.example.com";
 
   return {
     rules: [
@@ -20,5 +21,5 @@ export default function robots(): MetadataRoute.Robots {
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,
-  }
+  };
 }

@@ -50,6 +50,7 @@ import useSummaryFeedback from "@workspace/api-hooks/rating/useSummaryFeedback";
 import useBasket from "@workspace/api-hooks/basket/useBasket";
 import useCreateBasket from "@workspace/api-hooks/basket/useCreateBasket";
 import useUpdateBasket from "@workspace/api-hooks/basket/useUpdateBasket";
+import useDeleteBasket from "@workspace/api-hooks/basket/useDeleteBasket";
 
 const REVIEWS_PER_PAGE = 5;
 
@@ -109,6 +110,7 @@ export default function BookDetailPage({ params }: BookDetailPageProps) {
   const { data: basket } = useBasket();
   const createBasketMutation = useCreateBasket();
   const updateBasketMutation = useUpdateBasket();
+  const deleteBasketMutation = useDeleteBasket();
   const createFeedbackMutation = useCreateFeedback();
 
   // Check if item is in basket
@@ -178,10 +180,23 @@ export default function BookDetailPage({ params }: BookDetailPageProps) {
   };
 
   const handleSubmitReview = () => {
-    createFeedbackMutation.mutate({
-      ...newReview,
-      bookId: id,
-    });
+    createFeedbackMutation.mutate(
+      {
+        ...newReview,
+        bookId: id,
+      },
+      {
+        onSuccess: () => {
+          setNewReview({
+            firstName: "",
+            lastName: "",
+            comment: "",
+            rating: 0,
+          });
+          setShowReviewForm(false);
+        },
+      },
+    );
   };
 
   const handleAddToBasket = async () => {
@@ -206,11 +221,7 @@ export default function BookDetailPage({ params }: BookDetailPageProps) {
     const value = e.target.value;
 
     if (value === "") {
-      updateBasketMutation.mutate({
-        request: {
-          items: [{ id: id, quantity: 0 }],
-        },
-      });
+      setShowRemoveDialog(true);
       return;
     }
 
@@ -228,11 +239,24 @@ export default function BookDetailPage({ params }: BookDetailPageProps) {
   };
 
   const handleConfirmRemove = () => {
-    updateBasketMutation.mutate({
-      request: {
-        items: [{ id: id, quantity: 0 }],
-      },
-    });
+    // Filter out the current item from basket
+    const remainingItems =
+      basket?.items?.filter((item) => item.id !== id) ?? [];
+
+    if (remainingItems.length === 0) {
+      // Delete the basket if no items remain
+      deleteBasketMutation.mutate("");
+    } else {
+      // Update basket with remaining items
+      updateBasketMutation.mutate({
+        request: {
+          items: remainingItems.map((item) => ({
+            id: item.id,
+            quantity: item.quantity,
+          })),
+        },
+      });
+    }
     setShowRemoveDialog(false);
   };
 

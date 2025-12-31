@@ -3,7 +3,7 @@ import { z } from "zod";
 const MAX_COMMENT_LENGTH = 1000;
 
 export const createFeedbackSchema = z.object({
-  bookId: z.uuid({ error: "Invalid book ID format" }),
+  bookId: z.string().min(1, "Book ID is required"),
   firstName: z.string().min(1, "First name is required").optional().nullable(),
   lastName: z.string().min(1, "Last name is required").optional().nullable(),
   comment: z
@@ -22,7 +22,7 @@ export const createFeedbackSchema = z.object({
 });
 
 export const listFeedbacksSchema = z.object({
-  bookId: z.uuid({ error: "Invalid book ID format" }),
+  bookId: z.string().min(1, "Book ID is required"),
   pageIndex: z.number().int().positive().default(1).optional(),
   pageSize: z.number().int().positive().default(10).optional(),
   orderBy: z.string().default("rating").optional(),

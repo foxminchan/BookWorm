@@ -1,6 +1,12 @@
-import { Skeleton } from "@workspace/ui/components/skeleton"
+import { Skeleton } from "@workspace/ui/components/skeleton";
 
-export function LoadingSkeleton({ count = 1, className = "" }: { count?: number; className?: string }) {
+export function LoadingSkeleton({
+  count = 1,
+  className = "",
+}: {
+  count?: number;
+  className?: string;
+}) {
   return (
     <>
       {Array.from({ length: count }).map((_, i) => (
@@ -9,7 +15,7 @@ export function LoadingSkeleton({ count = 1, className = "" }: { count?: number;
         </div>
       ))}
     </>
-  )
+  );
 }
 
 export function BookGridSkeleton({ count = 8 }: { count?: number }) {
@@ -24,7 +30,7 @@ export function BookGridSkeleton({ count = 8 }: { count?: number }) {
         </div>
       ))}
     </div>
-  )
+  );
 }
 
 export function OrderListSkeleton({ count = 3 }: { count?: number }) {
@@ -41,5 +47,5 @@ export function OrderListSkeleton({ count = 3 }: { count?: number }) {
         </div>
       ))}
     </div>
-  )
+  );
 }
