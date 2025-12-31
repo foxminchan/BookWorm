@@ -11,10 +11,15 @@ export type CustomerBasket = {
   items: BasketItem[];
 };
 
+export type BasketItemRequest = {
+  id: string;
+  quantity: number;
+};
+
 export type CreateBasketRequest = {
-  items: Array<{ id: string; quantity: number }>;
+  items: BasketItemRequest[];
 };
 
 export type UpdateBasketRequest = {
-  items: Array<{ id: string; quantity: number }>;
+  items: BasketItemRequest[];
 };
