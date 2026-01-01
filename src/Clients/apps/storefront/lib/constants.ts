@@ -1,3 +1,5 @@
+import { env } from "@/env.mjs";
+
 export const APP_CONFIG = {
   name: "BookWorm",
   email: {
@@ -7,7 +9,7 @@ export const APP_CONFIG = {
     twitter: "https://twitter.com/bookworm",
     facebook: "https://facebook.com/bookworm",
   },
-  url: process.env.NEXT_PUBLIC_BASE_URL || "https://bookworm.com",
+  url: env.NEXT_PUBLIC_BASE_URL || "https://bookworm.com",
 } as const;
 
 export const FILTER_SECTIONS = {

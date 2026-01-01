@@ -1,3 +1,5 @@
+import "./env.mjs";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ["@workspace/ui"],
@@ -15,6 +17,10 @@ const nextConfig = {
             },
             {
               protocol: "http",
+              hostname: "localhost",
+            },
+            {
+              protocol: "https",
               hostname: "localhost",
             },
           ]

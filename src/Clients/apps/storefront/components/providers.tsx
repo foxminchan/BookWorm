@@ -10,6 +10,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { BackToTop } from "@/components/back-to-top";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { initMocks } from "@/lib/msw";
+import { env } from "@/env.mjs";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,7 +22,7 @@ const queryClient = new QueryClient({
 });
 
 const gatewayUrl =
-  process.env.NEXT_PUBLIC_GATEWAY_HTTPS || process.env.NEXT_PUBLIC_GATEWAY_HTTP;
+  env.NEXT_PUBLIC_GATEWAY_HTTPS || env.NEXT_PUBLIC_GATEWAY_HTTP;
 const copilotKitUrl = gatewayUrl ? `${gatewayUrl}/chat/ag-ui` : undefined;
 const shouldRenderCopilotKit = !!copilotKitUrl;
 

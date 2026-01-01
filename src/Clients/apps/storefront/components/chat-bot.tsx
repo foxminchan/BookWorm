@@ -5,6 +5,7 @@ import { CopilotChat } from "@copilotkit/react-ui";
 import "@copilotkit/react-ui/styles.css";
 import { AlertCircle, Copy, MessageCircle, Paperclip, X } from "lucide-react";
 import { Card, CardHeader, CardContent } from "@workspace/ui/components/card";
+import { env } from "@/env.mjs";
 
 export type ChatBotRef = {
   openChat: () => void;
@@ -128,8 +129,7 @@ const UnavailableChatUI = ({
 
 export const ChatBot = forwardRef<ChatBotRef>(function ChatBot(_, ref) {
   const hasGateway = !!(
-    process.env.NEXT_PUBLIC_GATEWAY_HTTPS ||
-    process.env.NEXT_PUBLIC_GATEWAY_HTTP
+    env.NEXT_PUBLIC_GATEWAY_HTTPS || env.NEXT_PUBLIC_GATEWAY_HTTP
   );
   const [isUnavailableChatOpen, setIsUnavailableChatOpen] = useState(false);
 

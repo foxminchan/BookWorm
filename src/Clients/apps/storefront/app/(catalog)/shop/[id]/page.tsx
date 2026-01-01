@@ -292,7 +292,10 @@ export default function BookDetailPage({ params }: BookDetailPageProps) {
             averageRating={book?.averageRating || 0}
             totalReviews={book?.totalReviews || 0}
             sortBy={sortBy}
-            onSortChange={setSortBy}
+            onSortChange={(newSort) => {
+              setSortBy(newSort);
+              setCurrentPage(1);
+            }}
             isSummarizing={isSummarizing}
             onSummarize={handleSummarize}
             showReviewForm={showReviewForm}
