@@ -7,7 +7,7 @@ type OrdersEmptyStateProps = {
   onClearFilter: () => void;
 };
 
-export function OrdersEmptyState({
+export default function OrdersEmptyState({
   selectedStatus,
   onClearFilter,
 }: OrdersEmptyStateProps) {

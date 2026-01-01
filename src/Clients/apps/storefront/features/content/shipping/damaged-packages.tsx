@@ -5,7 +5,7 @@ const content = [
   "We'll work quickly to resolve the issue—whether that means reshipping your order, issuing a refund, or finding a solution that works for you.",
 ];
 
-export function DamagedPackages() {
+export default function DamagedPackages() {
   return (
     <section className="py-24 container mx-auto px-4">
       <div className="max-w-3xl mx-auto">

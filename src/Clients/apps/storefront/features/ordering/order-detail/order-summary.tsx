@@ -2,7 +2,7 @@ type OrderSummaryProps = {
   total: number;
 };
 
-export function OrderSummary({ total }: OrderSummaryProps) {
+export default function OrderSummary({ total }: OrderSummaryProps) {
   return (
     <div className="border border-border/40 rounded-lg p-6 bg-background hover:bg-secondary/20 transition-colors">
       <h2 className="font-serif text-xl font-semibold mb-4">Order Summary</h2>

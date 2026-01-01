@@ -23,7 +23,7 @@ const processSteps = [
   "Receive your refund or exchange within 5-7 business days",
 ];
 
-export function PolicyOverview() {
+export default function PolicyOverview() {
   return (
     <section className="py-24 container mx-auto px-4">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">

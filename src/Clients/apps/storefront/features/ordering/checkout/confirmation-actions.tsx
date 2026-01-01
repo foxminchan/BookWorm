@@ -6,7 +6,9 @@ type ConfirmationActionsProps = {
   orderId: string;
 };
 
-export function ConfirmationActions({ orderId }: ConfirmationActionsProps) {
+export default function ConfirmationActions({
+  orderId,
+}: ConfirmationActionsProps) {
   return (
     <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
       <Button

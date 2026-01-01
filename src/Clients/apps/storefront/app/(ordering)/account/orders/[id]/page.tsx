@@ -5,13 +5,11 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { EmptyState } from "@/components/empty-state";
 import { OrderDetailSkeleton } from "@/components/loading-skeleton";
-import {
-  OrderDetailHeader,
-  OrderItemsList,
-  OrderSummary,
-} from "@/features/ordering/order-detail";
 import { PackageX } from "lucide-react";
 import useOrder from "@workspace/api-hooks/ordering/orders/useOrder";
+import OrderDetailHeader from "@/features/ordering/order-detail/order-detail-header";
+import OrderItemsList from "@/features/ordering/order-detail/order-items-list";
+import OrderSummary from "@/features/ordering/order-detail/order-summary";
 
 export default function OrderDetailPage({
   params,

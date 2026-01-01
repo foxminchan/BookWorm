@@ -16,7 +16,7 @@ type OrdersListProps = {
   orders: Order[];
 };
 
-export function OrdersList({ orders }: OrdersListProps) {
+export default function OrdersList({ orders }: OrdersListProps) {
   return (
     <div className="space-y-px border border-border/40 bg-border/40">
       {orders.map((order) => (

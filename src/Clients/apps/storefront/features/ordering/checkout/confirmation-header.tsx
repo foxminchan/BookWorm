@@ -4,7 +4,9 @@ type ConfirmationHeaderProps = {
   orderId: string;
 };
 
-export function ConfirmationHeader({ orderId }: ConfirmationHeaderProps) {
+export default function ConfirmationHeader({
+  orderId,
+}: ConfirmationHeaderProps) {
   return (
     <div className="text-center mb-24 space-y-8">
       <div className="flex justify-center">

@@ -1,7 +1,7 @@
 import { Button } from "@workspace/ui/components/button";
 import { Package } from "lucide-react";
 
-export function OrdersErrorState() {
+export default function OrdersErrorState() {
   return (
     <div className="bg-background border border-border p-16 text-center">
       <div className="size-20 bg-secondary rounded-full flex items-center justify-center mx-auto mb-6">

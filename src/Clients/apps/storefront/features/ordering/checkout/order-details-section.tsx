@@ -5,11 +5,15 @@ import { getOrderStatusColor } from "@/lib/pattern";
 type OrderDetailsSectionProps = {
   status: OrderStatus;
   total: number;
+  buyerName?: string;
+  buyerAddress?: string;
 };
 
-export function OrderDetailsSection({
+export default function OrderDetailsSection({
   status,
   total,
+  buyerName,
+  buyerAddress,
 }: OrderDetailsSectionProps) {
   return (
     <div className="grid md:grid-cols-3 gap-8 mb-24 py-12 border-y border-border">
@@ -19,9 +23,14 @@ export function OrderDetailsSection({
           Shipping Address
         </h3>
         <div className="space-y-1 text-muted-foreground leading-relaxed">
-          <p className="font-medium text-foreground">Jane Doe</p>
-          <p>123 Literary Lane, Apt 4B</p>
-          <p>Booktown, NY 10001</p>
+          {buyerName && (
+            <p className="font-medium text-foreground">{buyerName}</p>
+          )}
+          {buyerAddress ? (
+            <p>{buyerAddress}</p>
+          ) : (
+            <p className="text-muted-foreground italic">No address set</p>
+          )}
         </div>
       </div>
 

@@ -2,13 +2,23 @@
 
 import { useState } from "react";
 import { MapPin, Edit2, Save, X, Loader2 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
-import { Label } from "@workspace/ui/components/label";
-import type {
-  Buyer,
-  UpdateAddressRequest,
-} from "@workspace/types/ordering/buyers";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@workspace/ui/components/form";
+import type { Buyer } from "@workspace/types/ordering/buyers";
+import {
+  updateAddressSchema,
+  type UpdateAddressInput,
+} from "@workspace/validations/ordering/buyers";
 import useUpdateBuyerAddress from "@workspace/api-hooks/ordering/buyers/useUpdateBuyerAddress";
 
 type DeliveryAddressSectionProps = {
@@ -20,15 +30,19 @@ export default function DeliveryAddressSection({
 }: DeliveryAddressSectionProps) {
   const updateAddressMutation = useUpdateBuyerAddress();
   const [isEditingAddress, setIsEditingAddress] = useState(false);
-  const [addressForm, setAddressForm] = useState<UpdateAddressRequest>({
-    street: "",
-    city: "",
-    province: "",
+
+  const form = useForm<UpdateAddressInput>({
+    resolver: zodResolver(updateAddressSchema),
+    defaultValues: {
+      street: "",
+      city: "",
+      province: "",
+    },
   });
 
   const handleEditAddress = () => {
     const parts = buyer?.address?.split(", ") || [];
-    setAddressForm({
+    form.reset({
       street: parts[0] || "",
       city: parts[1] || "",
       province: parts[2] || "",
@@ -36,9 +50,9 @@ export default function DeliveryAddressSection({
     setIsEditingAddress(true);
   };
 
-  const handleSaveAddress = async () => {
+  const handleSaveAddress = async (data: UpdateAddressInput) => {
     try {
-      await updateAddressMutation.mutateAsync({ request: addressForm });
+      await updateAddressMutation.mutateAsync({ request: data });
       setIsEditingAddress(false);
     } catch (error) {
       console.error("Failed to update address:", error);
@@ -47,7 +61,7 @@ export default function DeliveryAddressSection({
 
   const handleCancelEdit = () => {
     setIsEditingAddress(false);
-    setAddressForm({ street: "", city: "", province: "" });
+    form.reset();
   };
 
   return (
@@ -77,87 +91,90 @@ export default function DeliveryAddressSection({
           {buyer.address || "No address set"}
         </p>
       ) : (
-        <div className="space-y-4 mt-6 pl-13">
-          <div>
-            <Label htmlFor="street" className="text-sm font-medium mb-2 block">
-              Street Address
-            </Label>
-            <Input
-              id="street"
-              value={addressForm.street}
-              onChange={(e) =>
-                setAddressForm({
-                  ...addressForm,
-                  street: e.target.value,
-                })
-              }
-              placeholder="Enter street address"
-              className="border-border/40"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="city" className="text-sm font-medium mb-2 block">
-                City
-              </Label>
-              <Input
-                id="city"
-                value={addressForm.city}
-                onChange={(e) =>
-                  setAddressForm({
-                    ...addressForm,
-                    city: e.target.value,
-                  })
-                }
-                placeholder="Enter city"
-                className="border-border/40"
-              />
-            </div>
-            <div>
-              <Label
-                htmlFor="province"
-                className="text-sm font-medium mb-2 block"
-              >
-                Province
-              </Label>
-              <Input
-                id="province"
-                value={addressForm.province}
-                onChange={(e) =>
-                  setAddressForm({
-                    ...addressForm,
-                    province: e.target.value,
-                  })
-                }
-                placeholder="Enter province"
-                className="border-border/40"
-              />
-            </div>
-          </div>
-          <div className="flex gap-3 pt-2">
-            <Button
-              onClick={handleSaveAddress}
-              className="flex-1 gap-2 bg-primary hover:bg-primary/90"
-              disabled={updateAddressMutation.isPending}
-            >
-              {updateAddressMutation.isPending ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Save className="size-4" />
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(handleSaveAddress)}
+            className="space-y-4 mt-6 pl-13"
+          >
+            <FormField
+              control={form.control}
+              name="street"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Street Address</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter street address"
+                      className="border-border/40"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
               )}
-              {updateAddressMutation.isPending ? "Saving..." : "Save Address"}
-            </Button>
-            <Button
-              onClick={handleCancelEdit}
-              variant="outline"
-              className="gap-2 bg-transparent"
-              disabled={updateAddressMutation.isPending}
-            >
-              <X className="size-4" />
-              Cancel
-            </Button>
-          </div>
-        </div>
+            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="city"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>City</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter city"
+                        className="border-border/40"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="province"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Province</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter province"
+                        className="border-border/40"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button
+                type="submit"
+                className="flex-1 gap-2 bg-primary hover:bg-primary/90"
+                disabled={updateAddressMutation.isPending}
+              >
+                {updateAddressMutation.isPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Save className="size-4" />
+                )}
+                {updateAddressMutation.isPending ? "Saving..." : "Save Address"}
+              </Button>
+              <Button
+                type="button"
+                onClick={handleCancelEdit}
+                variant="outline"
+                className="gap-2 bg-transparent"
+                disabled={updateAddressMutation.isPending}
+              >
+                <X className="size-4" />
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </Form>
       )}
     </div>
   );

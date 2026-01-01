@@ -29,6 +29,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
     "@copilotkit/react-core": "1.50.1",
     "@copilotkit/react-ui": "1.50.1",
     "@t3-oss/env-nextjs": "^0.13.10",
@@ -50,6 +51,7 @@
     "next-themes": "^0.4.6",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
+    "react-hook-form": "^7.69.0",
     "shiki": "^3.20.0",
     "tailwind-merge": "^3.4.0",
     "ts-pattern": "^5.9.0",
@@ -71,7 +73,8 @@
     "@workspace/api-hooks": "workspace:*",
     "@workspace/mocks": "workspace:*",
     "@workspace/types": "workspace:*",
-    "@workspace/ui": "workspace:*"
+    "@workspace/ui": "workspace:*",
+    "@workspace/validations": "workspace:*"
   },
   "msw": {
     "workerDirectory": [

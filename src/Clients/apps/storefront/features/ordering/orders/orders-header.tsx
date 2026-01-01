@@ -22,7 +22,7 @@ type OrdersHeaderProps = {
   onStatusChange: (status: OrderStatus | "All") => void;
 };
 
-export function OrdersHeader({
+export default function OrdersHeader({
   selectedStatus,
   onStatusChange,
 }: OrdersHeaderProps) {

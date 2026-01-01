@@ -1,6 +1,6 @@
 import { Button } from "@workspace/ui/components/button";
 
-export function CtaSection() {
+export default function CtaSection() {
   return (
     <section className="py-24 container mx-auto px-4 text-center">
       <h2 className="text-4xl font-serif font-medium mb-8">

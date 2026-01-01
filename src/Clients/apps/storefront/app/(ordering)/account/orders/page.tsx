@@ -5,14 +5,12 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { Pagination } from "@/components/pagination";
 import { OrdersSkeleton } from "@/components/loading-skeleton";
-import {
-  OrdersHeader,
-  OrdersList,
-  OrdersEmptyState,
-  OrdersErrorState,
-} from "@/features/ordering/orders";
 import type { OrderStatus } from "@workspace/types/ordering/orders";
 import useOrders from "@workspace/api-hooks/ordering/orders/useOrders";
+import OrdersEmptyState from "@/features/ordering/orders/orders-empty-state";
+import OrdersErrorState from "@/features/ordering/orders/orders-error-state";
+import OrdersHeader from "@/features/ordering/orders/orders-header";
+import OrdersList from "@/features/ordering/orders/orders-list";
 
 const ORDERS_PER_PAGE = 5;
 
@@ -22,7 +20,6 @@ export default function OrdersPage() {
   );
   const [currentPage, setCurrentPage] = useState(1);
 
-  // API hook with windowed pagination
   const {
     data: ordersData,
     isLoading,

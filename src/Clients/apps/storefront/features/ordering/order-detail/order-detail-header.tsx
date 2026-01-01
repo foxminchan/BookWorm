@@ -11,7 +11,7 @@ type OrderDetailHeaderProps = {
   date: string;
 };
 
-export function OrderDetailHeader({
+export default function OrderDetailHeader({
   orderId,
   status,
   date,

@@ -219,7 +219,6 @@ export default function BookDetailPage({ params }: BookDetailPageProps) {
     setShowRemoveDialog(false);
   };
 
-  // API handles pagination
   const visibleFeedbacks = feedbacks;
   const totalCount = feedbacksData?.totalCount ?? 0;
   const totalPages = Math.ceil(totalCount / REVIEWS_PER_PAGE);

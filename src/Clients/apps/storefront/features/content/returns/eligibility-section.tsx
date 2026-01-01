@@ -16,7 +16,7 @@ const nonReturnableItems = [
   "Digital or e-book purchases",
 ];
 
-export function EligibilitySection() {
+export default function EligibilitySection() {
   return (
     <section className="py-24 bg-secondary">
       <div className="container mx-auto px-4">

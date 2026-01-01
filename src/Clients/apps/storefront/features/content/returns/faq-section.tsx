@@ -21,7 +21,7 @@ const faqs = [
   },
 ];
 
-export function FaqSection() {
+export default function FaqSection() {
   return (
     <section className="py-24 bg-secondary">
       <div className="container mx-auto px-4">

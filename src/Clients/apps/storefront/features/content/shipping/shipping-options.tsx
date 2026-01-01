@@ -35,7 +35,7 @@ const shippingOptions: ShippingOption[] = [
   },
 ];
 
-export function ShippingOptions() {
+export default function ShippingOptions() {
   return (
     <section className="py-24 container mx-auto px-4">
       <h2 className="text-4xl font-serif font-medium mb-16 text-center">

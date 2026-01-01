@@ -28,7 +28,7 @@ const timelineSteps = [
   },
 ];
 
-export function TimelineSection() {
+export default function TimelineSection() {
   return (
     <section className="py-24 container mx-auto px-4">
       <h2 className="text-4xl font-serif font-medium text-center mb-16">

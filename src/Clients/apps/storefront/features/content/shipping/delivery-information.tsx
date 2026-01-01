@@ -21,7 +21,7 @@ const deliveryInfo = [
   },
 ];
 
-export function DeliveryInformation() {
+export default function DeliveryInformation() {
   return (
     <section className="py-24 bg-secondary">
       <div className="container mx-auto px-4">

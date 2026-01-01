@@ -11,7 +11,7 @@ type OrderItemsListProps = {
   items: OrderItem[];
 };
 
-export function OrderItemsList({ items }: OrderItemsListProps) {
+export default function OrderItemsList({ items }: OrderItemsListProps) {
   return (
     <div className="border border-border/40 rounded-lg overflow-hidden bg-background">
       <div className="border-b border-border/40 px-6 py-4">
