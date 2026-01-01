@@ -5,11 +5,9 @@ import { Footer } from "@/components/footer";
 import { EmptyState } from "@/components/empty-state";
 import { Building2 } from "lucide-react";
 import usePublishers from "@workspace/api-hooks/catalog/publishers/usePublishers";
-import {
-  PublishersHeader,
-  PublishersGrid,
-  PublishersInfoSection,
-} from "@/features/publisher";
+import PublishersGrid from "@/features/catalog/publisher/publishers-grid";
+import PublishersHeader from "@/features/catalog/publisher/publishers-header";
+import PublishersInfoSection from "@/features/catalog/publisher/publishers-info-section";
 
 export default function PublishersPage() {
   const { data: publishers, isLoading } = usePublishers();

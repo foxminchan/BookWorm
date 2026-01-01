@@ -12,7 +12,7 @@ import {
   OrderDetailsSection,
   EmailConfirmationBanner,
   ConfirmationActions,
-} from "@/features/checkout";
+} from "@/features/ordering/checkout";
 
 export default function ConfirmationPage() {
   const searchParams = useSearchParams();

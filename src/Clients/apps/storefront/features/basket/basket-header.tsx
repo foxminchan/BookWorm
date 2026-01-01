@@ -19,7 +19,7 @@ type BasketHeaderProps = {
   onClearBasket: () => void;
 };
 
-export function BasketHeader({
+export default function BasketHeader({
   hasChanges,
   hasItems,
   onSaveChanges,

@@ -11,7 +11,7 @@ type BasketSummaryProps = {
   onCheckout: () => void;
 };
 
-export function BasketSummary({
+export default function BasketSummary({
   subtotal,
   shipping,
   total,

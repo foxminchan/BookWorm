@@ -5,21 +5,14 @@ import { useDebounceCallback } from "usehooks-ts";
 
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
+import { RemoveItemDialog } from "@/components/remove-item-dialog";
+import { ProductLoadingSkeleton } from "@/components/loading-skeleton";
 import { Separator } from "@workspace/ui/components/separator";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import type { CreateFeedbackRequest } from "@workspace/types/rating";
 import { useState, use } from "react";
 import { notFound } from "next/navigation";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@workspace/ui/components/alert-dialog";
 import { JsonLd } from "@/components/json-ld";
 import { generateProductJsonLd, generateBreadcrumbJsonLd } from "@/lib/seo";
 import useBook from "@workspace/api-hooks/catalog/books/useBook";
@@ -30,12 +23,9 @@ import useBasket from "@workspace/api-hooks/basket/useBasket";
 import useCreateBasket from "@workspace/api-hooks/basket/useCreateBasket";
 import useUpdateBasket from "@workspace/api-hooks/basket/useUpdateBasket";
 import useDeleteBasket from "@workspace/api-hooks/basket/useDeleteBasket";
-import {
-  ProductSection,
-  ReviewsContainer,
-  ProductLoadingSkeleton,
-} from "@/features/product";
 import { getReviewSortParams } from "@/lib/pattern";
+import { ProductSection } from "@/features/catalog/product/product-section";
+import ReviewsContainer from "@/features/catalog/product/reviews-container";
 
 const REVIEWS_PER_PAGE = 5;
 
@@ -326,33 +316,21 @@ export default function BookDetailPage({ params }: BookDetailPageProps) {
         </section>
       </main>
 
-      <AlertDialog open={showRemoveDialog} onOpenChange={setShowRemoveDialog}>
-        <AlertDialogContent className="rounded-2xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-2xl">
-              Remove from Basket?
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-base pt-2">
+      <RemoveItemDialog
+        open={showRemoveDialog}
+        onOpenChange={setShowRemoveDialog}
+        items={book ? [{ id: book.id, name: book.name || "Book" }] : []}
+        onConfirm={handleConfirmRemove}
+        description={
+          book ? (
+            <>
               You're about to remove{" "}
-              <span className="font-semibold text-foreground">
-                {book?.name}
-              </span>{" "}
+              <span className="font-semibold text-foreground">{book.name}</span>{" "}
               from your basket. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="flex gap-3 justify-end">
-            <AlertDialogCancel className="rounded-full px-6">
-              Keep Item
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmRemove}
-              className="rounded-full px-6 bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Remove
-            </AlertDialogAction>
-          </div>
-        </AlertDialogContent>
-      </AlertDialog>
+            </>
+          ) : undefined
+        }
+      />
 
       <Footer />
     </div>

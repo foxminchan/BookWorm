@@ -5,7 +5,8 @@ import { Footer } from "@/components/footer";
 import { EmptyState } from "@/components/empty-state";
 import { FolderOpen } from "lucide-react";
 import useCategories from "@workspace/api-hooks/catalog/categories/useCategories";
-import { CategoriesHeader, CategoriesGrid } from "@/features/categories";
+import CategoriesGrid from "@/features/catalog/categories/categories-grid";
+import CategoriesHeader from "@/features/catalog/categories/categories-header";
 
 export default function CategoriesPage() {
   const { data: categories, isLoading } = useCategories();

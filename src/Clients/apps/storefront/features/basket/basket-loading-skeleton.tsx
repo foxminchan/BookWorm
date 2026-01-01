@@ -1,9 +1,9 @@
-import { Card, CardContent } from "@workspace/ui/components/card";
+import { Card } from "@workspace/ui/components/card";
 import { Separator } from "@workspace/ui/components/separator";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { BasketItemSkeleton } from "@/components/loading-skeleton";
 
-export function BasketLoadingSkeleton() {
+export default function BasketLoadingSkeleton() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 max-w-5xl mx-auto">
       <div className="lg:col-span-8 space-y-6">

@@ -3,13 +3,7 @@
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { EmptyState } from "@/components/empty-state";
-import {
-  BasketHeader,
-  BasketItemsList,
-  BasketSummary,
-  BasketLoadingSkeleton,
-  RemoveItemsDialog,
-} from "@/features/basket";
+import { RemoveItemDialog } from "@/components/remove-item-dialog";
 import { ShoppingBag } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -20,6 +14,10 @@ import useBasket from "@workspace/api-hooks/basket/useBasket";
 import useUpdateBasket from "@workspace/api-hooks/basket/useUpdateBasket";
 import useDeleteBasket from "@workspace/api-hooks/basket/useDeleteBasket";
 import useCreateOrder from "@workspace/api-hooks/ordering/orders/useCreateOrder";
+import BasketHeader from "@/features/basket/basket-header";
+import BasketItemsList from "@/features/basket/basket-items-list";
+import BasketLoadingSkeleton from "@/features/basket/basket-loading-skeleton";
+import BasketSummary from "@/features/basket/basket-summary";
 
 export default function BasketPage() {
   useBasket();
@@ -202,11 +200,17 @@ export default function BasketPage() {
           />
         )}
       </main>
-      <RemoveItemsDialog
+      <RemoveItemDialog
         open={showRemoveDialog}
         onOpenChange={setShowRemoveDialog}
-        itemsToRemove={itemsToRemove}
+        items={itemsToRemove.map((item) => ({
+          id: item.id,
+          name: item.name || "Unknown Item",
+        }))}
         onConfirm={confirmRemoveZeroItems}
+        title="Remove items with zero quantity?"
+        cancelLabel="Keep in Basket"
+        confirmLabel="Remove Items"
       />
       <Footer />
     </div>

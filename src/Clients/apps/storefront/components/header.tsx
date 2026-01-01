@@ -10,12 +10,14 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAtomValue } from "jotai";
 import { basketItemsAtom } from "@/atoms/basket-atom";
 import { Button } from "@workspace/ui/components/button";
+import { useLogout } from "@/hooks/useLogout";
 
 export function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const items = useAtomValue(basketItemsAtom);
   const totalItems = items.length;
+  const { logout } = useLogout();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isAccountOpen, setIsAccountOpen] = useState(false);
@@ -34,9 +36,8 @@ export function Header() {
   };
 
   const handleLogout = () => {
-    // TODO: Implement actual logout logic
-    console.log("Logout clicked");
     setIsAccountOpen(false);
+    logout();
   };
 
   const handleAccountMouseEnter = () => {

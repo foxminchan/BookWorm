@@ -94,3 +94,160 @@ export function ConfirmationPageSkeleton() {
     </div>
   );
 }
+
+export function OrdersSkeleton() {
+  return (
+    <div className="space-y-px border border-border/40 bg-border/40">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div
+          key={i}
+          className="bg-background p-8 border-b border-border/40 last:border-b-0"
+        >
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-8 w-32" />
+              <Skeleton className="h-6 w-20" />
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6 pt-6 border-t border-border">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function OrderDetailSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-32" />
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-4 w-48" />
+      </div>
+
+      {/* Order Items Skeleton */}
+      <div className="border border-border/40 rounded-lg overflow-hidden">
+        <div className="border-b border-border/40 px-6 py-4">
+          <Skeleton className="h-6 w-32" />
+        </div>
+        <div className="divide-y divide-border/40">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="px-6 py-4 space-y-3">
+              <Skeleton className="h-5 w-48" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Order Summary Skeleton */}
+      <div className="border border-border/40 rounded-lg p-6">
+        <Skeleton className="h-6 w-32 mb-6" />
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-6 w-full" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function AccountPageSkeleton() {
+  return (
+    <div>
+      <div className="mb-12 md:mb-16">
+        <Skeleton className="h-16 w-64 mb-3" />
+        <Skeleton className="h-6 w-96" />
+      </div>
+
+      <div className="grid gap-8 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-8">
+          {/* Profile Section Skeleton */}
+          <div className="border border-border/40 rounded-lg p-6">
+            <div className="flex items-center gap-4">
+              <Skeleton className="size-16 rounded-full" />
+              <div className="space-y-2 flex-1">
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-4 w-48" />
+              </div>
+            </div>
+          </div>
+
+          {/* Delivery Address Section Skeleton */}
+          <div className="border border-border/40 rounded-lg p-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <Skeleton className="size-10 rounded-lg" />
+                <Skeleton className="h-6 w-40" />
+              </div>
+              <Skeleton className="h-9 w-20" />
+            </div>
+            <Skeleton className="h-4 w-full" />
+          </div>
+        </div>
+
+        <div className="lg:col-span-1">
+          <div className="sticky top-24 space-y-6">
+            {/* Navigation Card Skeleton */}
+            <div className="border border-border/40 rounded-lg overflow-hidden">
+              <div className="p-4">
+                <Skeleton className="h-6 w-32" />
+              </div>
+            </div>
+
+            {/* Logout Button Skeleton */}
+            <Skeleton className="h-12 w-full rounded-lg" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function ReviewsLoadingSkeleton() {
+  return (
+    <div className="space-y-6">
+      <Skeleton className="h-10 w-1/3 rounded-lg" />
+      <Skeleton className="h-6 w-1/2 rounded-lg" />
+      <div className="space-y-8">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="space-y-4">
+            <div className="flex gap-3">
+              <Skeleton className="size-10 rounded-full shrink-0" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-1/4 rounded" />
+                <div className="flex gap-1">
+                  {Array.from({ length: 5 }).map((_, j) => (
+                    <Skeleton key={j} className="size-3 rounded" />
+                  ))}
+                </div>
+              </div>
+            </div>
+            <Skeleton className="h-16 rounded" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function ProductLoadingSkeleton() {
+  return (
+    <div className="space-y-8">
+      <Skeleton className="h-6 w-32 rounded" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+        <Skeleton className="aspect-3/4 rounded-2xl" />
+        <div className="space-y-6">
+          <Skeleton className="h-8 w-3/4 rounded" />
+          <Skeleton className="h-6 w-1/2 rounded" />
+          <Skeleton className="h-24 rounded" />
+        </div>
+      </div>
+    </div>
+  );
+}

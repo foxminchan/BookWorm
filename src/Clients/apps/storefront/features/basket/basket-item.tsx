@@ -21,7 +21,7 @@ type BasketItemProps = {
   onRemoveItem: (id: string) => void;
 };
 
-export function BasketItem({
+export default function BasketItem({
   item,
   displayQuantity,
   onUpdateQuantity,

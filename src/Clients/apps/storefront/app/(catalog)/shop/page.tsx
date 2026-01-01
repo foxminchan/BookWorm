@@ -3,11 +3,11 @@
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
-import { BookGrid } from "@/features/shop/book-grid";
-import { ShopFilters } from "@/features/shop/shop-filters";
-import { ShopToolbar } from "@/features/shop/shop-toolbar";
-import { useShopFilters } from "@/hooks/use-shop-filters";
-import { useShopData } from "@/hooks/use-shop-data";
+import { useShopFilters } from "@/hooks/useShopFilters";
+import { useShopData } from "@/hooks/useShopData";
+import ShopFilters from "@/features/catalog/shop/shop-filters";
+import BookGrid from "@/features/catalog/shop/book-grid";
+import ShopToolbar from "@/features/catalog/shop/shop-toolbar";
 
 const ITEMS_PER_PAGE = 8;
 

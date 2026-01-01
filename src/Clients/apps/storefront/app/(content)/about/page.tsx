@@ -2,13 +2,11 @@
 
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
-import {
-  HeroSection,
-  MissionSection,
-  ValuesSection,
-  TimelineSection,
-  ContactSection,
-} from "@/features/about";
+import ContactSection from "@/features/content/about/contact-section";
+import MissionSection from "@/features/content/about/mission-section";
+import ValuesSection from "@/features/content/about/values-section";
+import HeroSection from "@/features/content/about/hero-section";
+import TimelineSection from "@/features/content/about/timeline-section";
 
 export default function AboutPage() {
   return (

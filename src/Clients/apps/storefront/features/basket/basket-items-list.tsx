@@ -1,5 +1,5 @@
 import type { BasketItem as BasketItemType } from "@workspace/types/basket";
-import { BasketItem } from "./basket-item";
+import BasketItem from "./basket-item";
 
 type BasketItemsListProps = {
   items: BasketItemType[];
@@ -8,7 +8,7 @@ type BasketItemsListProps = {
   onRemoveItem: (id: string) => void;
 };
 
-export function BasketItemsList({
+export default function BasketItemsList({
   items,
   modifiedItems,
   onUpdateQuantity,
