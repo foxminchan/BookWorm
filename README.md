@@ -69,6 +69,7 @@
 - [Docker](https://www.docker.com/get-started)
 - [Gitleaks](https://gitleaks.io/)
 - [Bun](https://bun.sh/)
+- [Pnpm](https://pnpm.io/installation)
 - [Just](https://github.com/casey/just)
 - [Buf CLI](https://docs.buf.build/installation)
 - [Aspire CLI](https://aspire.dev/get-started/install-cli/)
