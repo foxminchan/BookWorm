@@ -1,6 +1,8 @@
-import type { LucideIcon } from "lucide-react";
-import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
+
+import type { LucideIcon } from "lucide-react";
+
+import { Button } from "@workspace/ui/components/button";
 
 type EmptyStateProps = {
   icon: LucideIcon;
@@ -18,11 +20,11 @@ export function EmptyState({
   actionHref,
 }: EmptyStateProps) {
   return (
-    <div className="text-center py-24 space-y-6">
-      <div className="size-20 bg-secondary rounded-full flex items-center justify-center mx-auto text-muted-foreground">
+    <div className="space-y-6 py-24 text-center">
+      <div className="bg-secondary text-muted-foreground mx-auto flex size-20 items-center justify-center rounded-full">
         <Icon className="size-10" aria-hidden="true" />
       </div>
-      <h2 className="text-2xl font-serif font-medium">{title}</h2>
+      <h2 className="font-serif text-2xl font-medium">{title}</h2>
       <p className="text-muted-foreground">{description}</p>
       {actionLabel && actionHref && (
         <Button asChild className="rounded-full">

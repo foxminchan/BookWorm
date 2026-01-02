@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { genericOAuth, keycloak } from "better-auth/plugins";
+
 import { env } from "@/env.mjs";
 
 export const auth = betterAuth({

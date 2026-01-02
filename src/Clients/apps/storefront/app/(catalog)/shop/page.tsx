@@ -1,13 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Header } from "@/components/header";
+
 import { Footer } from "@/components/footer";
-import { useShopFilters } from "@/hooks/useShopFilters";
-import { useShopData } from "@/hooks/useShopData";
-import ShopFilters from "@/features/catalog/shop/shop-filters";
+import { Header } from "@/components/header";
 import BookGrid from "@/features/catalog/shop/book-grid";
+import ShopFilters from "@/features/catalog/shop/shop-filters";
 import ShopToolbar from "@/features/catalog/shop/shop-toolbar";
+import { useShopData } from "@/hooks/useShopData";
+import { useShopFilters } from "@/hooks/useShopFilters";
 
 const ITEMS_PER_PAGE = 8;
 
@@ -115,10 +116,10 @@ export default function ShopPage() {
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex min-h-screen flex-col">
       <Header />
-      <main className="grow container mx-auto px-4 py-8">
-        <div className="flex flex-col md:flex-row gap-8">
+      <main className="container mx-auto grow px-4 py-8">
+        <div className="flex flex-col gap-8 md:flex-row">
           <ShopFilters
             priceRange={priceRange}
             setPriceRange={setPriceRange}

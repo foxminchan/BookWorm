@@ -1,11 +1,13 @@
-import { http, HttpResponse } from "msw";
+import { HttpResponse, http } from "msw";
+
+import { formatValidationErrors } from "@workspace/utils/validation";
 import {
   createBasketSchema,
   updateBasketSchema,
 } from "@workspace/validations/basket";
-import { basketStore, MOCK_USER_ID } from "./data";
-import { formatValidationErrors } from "@workspace/utils/validation";
+
 import { BASKET_API_BASE_URL } from "../basket/constants";
+import { MOCK_USER_ID, basketStore } from "./data";
 
 export const basketHandlers = [
   http.get(`${BASKET_API_BASE_URL}/api/v1/baskets`, () => {

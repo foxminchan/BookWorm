@@ -3,6 +3,7 @@ import type {
   CreateCategoryRequest,
   UpdateCategoryRequest,
 } from "@workspace/types/catalog/categories";
+
 import ApiClient from "../client";
 
 class CategoriesApiClient {

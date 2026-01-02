@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { MapPin, Edit2, Save, X, Loader2 } from "lucide-react";
-import { useForm } from "react-hook-form";
+
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Edit2, Loader2, MapPin, Save, X } from "lucide-react";
+import { useForm } from "react-hook-form";
+
+import useUpdateBuyerAddress from "@workspace/api-hooks/ordering/buyers/useUpdateBuyerAddress";
+import type { Buyer } from "@workspace/types/ordering/buyers";
 import { Button } from "@workspace/ui/components/button";
-import { Input } from "@workspace/ui/components/input";
 import {
   Form,
   FormControl,
@@ -14,12 +17,11 @@ import {
   FormLabel,
   FormMessage,
 } from "@workspace/ui/components/form";
-import type { Buyer } from "@workspace/types/ordering/buyers";
+import { Input } from "@workspace/ui/components/input";
 import {
-  updateAddressSchema,
   type UpdateAddressInput,
+  updateAddressSchema,
 } from "@workspace/validations/ordering/buyers";
-import useUpdateBuyerAddress from "@workspace/api-hooks/ordering/buyers/useUpdateBuyerAddress";
 
 type DeliveryAddressSectionProps = {
   buyer: Buyer;
@@ -65,11 +67,11 @@ export default function DeliveryAddressSection({
   };
 
   return (
-    <div className="border border-border/40 rounded-lg p-8 hover:bg-secondary/20 transition-colors">
-      <div className="flex items-center justify-between mb-6">
+    <div className="border-border/40 hover:bg-secondary/20 rounded-lg border p-8 transition-colors">
+      <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="size-10 bg-primary/10 rounded-lg flex items-center justify-center">
-            <MapPin className="size-5 text-primary" />
+          <div className="bg-primary/10 flex size-10 items-center justify-center rounded-lg">
+            <MapPin className="text-primary size-5" />
           </div>
           <h3 className="font-serif text-xl font-semibold">Delivery Address</h3>
         </div>
@@ -78,7 +80,7 @@ export default function DeliveryAddressSection({
             variant="ghost"
             size="sm"
             onClick={handleEditAddress}
-            className="gap-2 text-primary hover:text-primary hover:bg-primary/5"
+            className="text-primary hover:text-primary hover:bg-primary/5 gap-2"
           >
             <Edit2 className="size-4" />
             <span>Edit</span>
@@ -87,14 +89,14 @@ export default function DeliveryAddressSection({
       </div>
 
       {!isEditingAddress ? (
-        <p className="text-base text-muted-foreground leading-relaxed pl-13">
+        <p className="text-muted-foreground pl-13 text-base leading-relaxed">
           {buyer.address || "No address set"}
         </p>
       ) : (
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(handleSaveAddress)}
-            className="space-y-4 mt-6 pl-13"
+            className="mt-6 space-y-4 pl-13"
           >
             <FormField
               control={form.control}
@@ -152,7 +154,7 @@ export default function DeliveryAddressSection({
             <div className="flex gap-3 pt-2">
               <Button
                 type="submit"
-                className="flex-1 gap-2 bg-primary hover:bg-primary/90"
+                className="bg-primary hover:bg-primary/90 flex-1 gap-2"
                 disabled={updateAddressMutation.isPending}
               >
                 {updateAddressMutation.isPending ? (

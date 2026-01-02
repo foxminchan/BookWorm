@@ -1,13 +1,15 @@
 import {
+  type UseMutationOptions,
   useMutation,
   useQueryClient,
-  type UseMutationOptions,
 } from "@tanstack/react-query";
+
 import buyersApiClient from "@workspace/api-client/ordering/buyers";
 import type {
   Buyer,
   UpdateAddressRequest,
 } from "@workspace/types/ordering/buyers";
+
 import { orderingKeys } from "../../keys";
 
 export default function useUpdateBuyerAddress(

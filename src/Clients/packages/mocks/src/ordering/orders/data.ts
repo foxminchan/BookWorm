@@ -1,11 +1,13 @@
 import { v7 as uuidv7 } from "uuid";
+
 import type {
   OrderDetail,
   OrderItem,
   OrderStatus,
 } from "@workspace/types/ordering/orders";
-import ordersData from "../../data/orders.json";
+
 import orderItemsData from "../../data/orderItems.json";
+import ordersData from "../../data/orders.json";
 
 const mockOrders: OrderDetail[] = ordersData.map((order) => {
   const orderItems = orderItemsData.find((oi) => oi.orderId === order.id);

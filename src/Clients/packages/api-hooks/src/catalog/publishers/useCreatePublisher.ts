@@ -1,13 +1,15 @@
 import {
+  type UseMutationOptions,
   useMutation,
   useQueryClient,
-  type UseMutationOptions,
 } from "@tanstack/react-query";
+
 import publishersApiClient from "@workspace/api-client/catalog/publishers";
 import type {
-  Publisher,
   CreatePublisherRequest,
+  Publisher,
 } from "@workspace/types/catalog/publishers";
+
 import { catalogKeys } from "../../keys";
 
 export default function useCreatePublisher(

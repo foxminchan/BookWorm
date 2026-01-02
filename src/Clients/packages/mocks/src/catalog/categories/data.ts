@@ -1,5 +1,7 @@
 import { v7 as uuidv7 } from "uuid";
+
 import type { Category } from "@workspace/types/catalog/categories";
+
 import categoriesData from "../../data/categories.json";
 
 export const mockCategories: Category[] = categoriesData;

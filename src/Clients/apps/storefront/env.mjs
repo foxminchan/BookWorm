@@ -1,20 +1,18 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
-// Debug logging - show ALL environment variables
-console.log("🔍 All Environment Variables:");
-console.log(JSON.stringify(process.env, null, 2));
+const isDev = process.env.NODE_ENV === "development";
 
 export const env = createEnv({
   server: {
     KEYCLOAK_URL: z.url(),
-    KEYCLOAK_REALM: z.string().min(1),
+    KEYCLOAK_REALM: string().min(1),
     KEYCLOAK_CLIENT_ID: z.string().min(1),
   },
 
   client: {
-    NEXT_PUBLIC_GATEWAY_HTTPS: z.url().optional(),
-    NEXT_PUBLIC_GATEWAY_HTTP: z.url().optional(),
+    NEXT_PUBLIC_GATEWAY_HTTPS: isDev ? z.url().optional() : z.url(),
+    NEXT_PUBLIC_GATEWAY_HTTP: isDev ? z.url().optional() : z.url(),
   },
 
   runtimeEnv: {

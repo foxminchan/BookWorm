@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
-import { signIn } from "@/lib/auth-client";
+
 import { Loader2 } from "lucide-react";
+
+import { signIn } from "@/lib/auth-client";
 
 export default function RegisterPage() {
   useEffect(() => {
@@ -18,8 +20,8 @@ export default function RegisterPage() {
 
   return (
     <div className="container mx-auto flex min-h-[60vh] items-center justify-center">
-      <div className="text-center space-y-4">
-        <Loader2 className="size-12 animate-spin mx-auto text-primary" />
+      <div className="space-y-4 text-center">
+        <Loader2 className="text-primary mx-auto size-12 animate-spin" />
         <h1 className="text-2xl font-semibold">
           Redirecting to registration...
         </h1>

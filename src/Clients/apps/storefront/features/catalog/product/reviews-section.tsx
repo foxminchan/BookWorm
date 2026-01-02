@@ -1,5 +1,7 @@
 "use client";
 
+import { ChevronDown, Loader2, MessageSquare, Sparkles } from "lucide-react";
+
 import { Button } from "@workspace/ui/components/button";
 import {
   DropdownMenu,
@@ -7,7 +9,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu";
-import { MessageSquare, Sparkles, Loader2, ChevronDown } from "lucide-react";
 
 type ReviewsSectionProps = {
   sortBy: "newest" | "highest" | "lowest";
@@ -30,9 +31,9 @@ export default function ReviewsSection({
 }: ReviewsSectionProps) {
   return (
     <>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+      <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
         <header>
-          <h2 className="text-3xl font-serif font-medium mb-2">
+          <h2 className="mb-2 font-serif text-3xl font-medium">
             Customer Feedback
           </h2>
           <p className="text-muted-foreground">
@@ -45,7 +46,7 @@ export default function ReviewsSection({
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                className="rounded-full gap-2 px-6 bg-transparent"
+                className="gap-2 rounded-full bg-transparent px-6"
                 aria-label="Sort reviews by"
               >
                 Sort by: {sortBy.charAt(0).toUpperCase() + sortBy.slice(1)}{" "}
@@ -67,7 +68,7 @@ export default function ReviewsSection({
 
           <Button
             variant="outline"
-            className="rounded-full gap-2 px-6 border-primary/20 text-primary hover:bg-primary/5 transition-all bg-transparent"
+            className="border-primary/20 text-primary hover:bg-primary/5 gap-2 rounded-full bg-transparent px-6 transition-all"
             onClick={onSummarize}
             disabled={isSummarizing}
             aria-label="Summarize reviews"
@@ -75,13 +76,13 @@ export default function ReviewsSection({
             {isSummarizing ? (
               <Loader2 className="size-4 animate-spin" aria-hidden="true" />
             ) : (
-              <Sparkles className="size-4 text-primary" aria-hidden="true" />
+              <Sparkles className="text-primary size-4" aria-hidden="true" />
             )}
             {isSummarizing ? "Summarizing..." : "Summarize Reviews"}
           </Button>
           <Button
             variant={showReviewForm ? "ghost" : "outline"}
-            className="rounded-full gap-2 px-6 bg-transparent"
+            className="gap-2 rounded-full bg-transparent px-6"
             onClick={onToggleReviewForm}
             aria-label={
               showReviewForm ? "Cancel writing a review" : "Write a review"
@@ -94,14 +95,14 @@ export default function ReviewsSection({
       </div>
 
       {summary && (
-        <aside className="mb-12 bg-primary/5 border border-primary/10 rounded-2xl p-8 animate-in fade-in slide-in-from-top-4 duration-500">
-          <div className="flex items-center gap-2 mb-4 text-primary">
+        <aside className="bg-primary/5 border-primary/10 animate-in fade-in slide-in-from-top-4 mb-12 rounded-2xl border p-8 duration-500">
+          <div className="text-primary mb-4 flex items-center gap-2">
             <Sparkles className="size-5" aria-hidden="true" />
             <h3 className="font-serif font-bold tracking-tight">
               AI Review Summary
             </h3>
           </div>
-          <p className="text-lg leading-relaxed text-foreground/80 italic font-serif">
+          <p className="text-foreground/80 font-serif text-lg leading-relaxed italic">
             "{summary}"
           </p>
         </aside>

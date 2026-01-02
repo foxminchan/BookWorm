@@ -1,10 +1,12 @@
 "use client";
 
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
-import { EmptyState } from "@/components/empty-state";
 import { Building2 } from "lucide-react";
+
 import usePublishers from "@workspace/api-hooks/catalog/publishers/usePublishers";
+
+import { EmptyState } from "@/components/empty-state";
+import { Footer } from "@/components/footer";
+import { Header } from "@/components/header";
 import PublishersGrid from "@/features/catalog/publisher/publishers-grid";
 import PublishersHeader from "@/features/catalog/publisher/publishers-header";
 import PublishersInfoSection from "@/features/catalog/publisher/publishers-info-section";
@@ -14,12 +16,12 @@ export default function PublishersPage() {
   const publisherItems = publishers ?? [];
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="bg-background flex min-h-screen flex-col">
       <Header />
 
-      <main className="grow container mx-auto px-4 py-16 md:py-24">
+      <main className="container mx-auto grow px-4 py-16 md:py-24">
         {!isLoading && publisherItems.length === 0 ? (
-          <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="flex min-h-[60vh] items-center justify-center">
             <EmptyState
               icon={Building2}
               title="Coming Soon"

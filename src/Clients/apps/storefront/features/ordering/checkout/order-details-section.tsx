@@ -1,5 +1,6 @@
-import { Badge } from "@workspace/ui/components/badge";
 import type { OrderStatus } from "@workspace/types/ordering/orders";
+import { Badge } from "@workspace/ui/components/badge";
+
 import { getOrderStatusColor } from "@/lib/pattern";
 
 type OrderDetailsSectionProps = {
@@ -16,15 +17,15 @@ export default function OrderDetailsSection({
   buyerAddress,
 }: OrderDetailsSectionProps) {
   return (
-    <div className="grid md:grid-cols-3 gap-8 mb-24 py-12 border-y border-border">
+    <div className="border-border mb-24 grid gap-8 border-y py-12 md:grid-cols-3">
       {/* Shipping Address */}
       <div className="space-y-4">
-        <h3 className="font-serif text-lg font-medium text-foreground uppercase tracking-wide">
+        <h3 className="text-foreground font-serif text-lg font-medium tracking-wide uppercase">
           Shipping Address
         </h3>
-        <div className="space-y-1 text-muted-foreground leading-relaxed">
+        <div className="text-muted-foreground space-y-1 leading-relaxed">
           {buyerName && (
-            <p className="font-medium text-foreground">{buyerName}</p>
+            <p className="text-foreground font-medium">{buyerName}</p>
           )}
           {buyerAddress ? (
             <p>{buyerAddress}</p>
@@ -36,13 +37,13 @@ export default function OrderDetailsSection({
 
       {/* Order Status */}
       <div className="space-y-4">
-        <h3 className="font-serif text-lg font-medium text-foreground uppercase tracking-wide">
+        <h3 className="text-foreground font-serif text-lg font-medium tracking-wide uppercase">
           Order Status
         </h3>
         <div className="flex flex-col items-start">
-          <p className="text-sm text-muted-foreground mb-2">Current Status</p>
+          <p className="text-muted-foreground mb-2 text-sm">Current Status</p>
           <Badge
-            className={`${getOrderStatusColor(status)} border-0 text-base px-3 py-1`}
+            className={`${getOrderStatusColor(status)} border-0 px-3 py-1 text-base`}
           >
             {status}
           </Badge>
@@ -51,12 +52,12 @@ export default function OrderDetailsSection({
 
       {/* Order Total */}
       <div className="space-y-4">
-        <h3 className="font-serif text-lg font-medium text-foreground uppercase tracking-wide">
+        <h3 className="text-foreground font-serif text-lg font-medium tracking-wide uppercase">
           Order Total
         </h3>
         <div className="flex flex-col items-start">
-          <p className="text-sm text-muted-foreground mb-2">Amount Paid</p>
-          <p className="font-serif text-4xl font-medium text-primary">
+          <p className="text-muted-foreground mb-2 text-sm">Amount Paid</p>
+          <p className="text-primary font-serif text-4xl font-medium">
             ${total.toFixed(2)}
           </p>
         </div>

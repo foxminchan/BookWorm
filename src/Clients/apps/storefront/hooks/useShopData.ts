@@ -1,9 +1,10 @@
 "use client";
 
-import useBooks from "@workspace/api-hooks/catalog/books/useBooks";
-import usePublishers from "@workspace/api-hooks/catalog/publishers/usePublishers";
-import useCategories from "@workspace/api-hooks/catalog/categories/useCategories";
 import useAuthors from "@workspace/api-hooks/catalog/authors/useAuthors";
+import useBooks from "@workspace/api-hooks/catalog/books/useBooks";
+import useCategories from "@workspace/api-hooks/catalog/categories/useCategories";
+import usePublishers from "@workspace/api-hooks/catalog/publishers/usePublishers";
+
 import { getShopSortParams } from "@/lib/pattern";
 
 const ITEMS_PER_PAGE = 8;
@@ -29,7 +30,6 @@ export function useShopData({
 }: UseShopDataParams) {
   const sortParams = getShopSortParams(sortBy);
 
-  // API hooks with windowed pagination
   const { data: booksData, isLoading: isLoadingBooks } = useBooks({
     pageIndex: currentPage,
     pageSize: ITEMS_PER_PAGE,

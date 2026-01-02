@@ -1,10 +1,12 @@
 "use client";
 
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
-import { EmptyState } from "@/components/empty-state";
 import { FolderOpen } from "lucide-react";
+
 import useCategories from "@workspace/api-hooks/catalog/categories/useCategories";
+
+import { EmptyState } from "@/components/empty-state";
+import { Footer } from "@/components/footer";
+import { Header } from "@/components/header";
 import CategoriesGrid from "@/features/catalog/categories/categories-grid";
 import CategoriesHeader from "@/features/catalog/categories/categories-header";
 
@@ -13,10 +15,10 @@ export default function CategoriesPage() {
   const categoryItems = categories ?? [];
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="bg-background flex min-h-screen flex-col">
       <Header />
 
-      <main className="grow container mx-auto px-4 py-16 md:py-24">
+      <main className="container mx-auto grow px-4 py-16 md:py-24">
         <CategoriesHeader />
 
         {!isLoading && categoryItems.length === 0 ? (

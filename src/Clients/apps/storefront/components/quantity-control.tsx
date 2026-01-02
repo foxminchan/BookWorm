@@ -1,7 +1,9 @@
 "use client";
 
 import type React from "react";
-import { Plus, Minus } from "lucide-react";
+
+import { Minus, Plus } from "lucide-react";
+
 import { Button } from "@workspace/ui/components/button";
 
 type QuantityControlProps = {
@@ -40,12 +42,12 @@ export function QuantityControl({
   if (variant === "input") {
     return (
       <div
-        className={`flex items-center bg-secondary/50 dark:bg-gray-800/50 rounded-full ${sizeClasses[size]} p-1 w-fit shadow-inner ${className}`}
+        className={`bg-secondary/50 flex items-center rounded-full dark:bg-gray-800/50 ${sizeClasses[size]} w-fit p-1 shadow-inner ${className}`}
       >
         <Button
           variant="ghost"
           size="icon"
-          className="rounded-full size-10 hover:bg-background dark:hover:bg-gray-700 shadow-sm transition-all"
+          className="hover:bg-background size-10 rounded-full shadow-sm transition-all dark:hover:bg-gray-700"
           onClick={onDecrease}
           aria-label="Decrease quantity"
         >
@@ -58,13 +60,13 @@ export function QuantityControl({
           max="99"
           value={quantity}
           onChange={onQuantityChange}
-          className="w-12 bg-transparent text-center text-lg font-serif font-bold focus:outline-none border-none [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
+          className="w-12 border-none bg-transparent text-center font-serif text-lg font-bold focus:outline-none [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden"
           aria-label="Book quantity"
         />
         <Button
           variant="ghost"
           size="icon"
-          className="rounded-full size-10 hover:bg-background dark:hover:bg-gray-700 shadow-sm transition-all"
+          className="hover:bg-background size-10 rounded-full shadow-sm transition-all dark:hover:bg-gray-700"
           onClick={onIncrease}
           aria-label="Increase quantity"
         >
@@ -76,11 +78,11 @@ export function QuantityControl({
 
   return (
     <div
-      className={`flex items-center ${showBorder ? "border rounded-full bg-white dark:bg-gray-900 dark:border-gray-700" : ""} ${sizeClasses[size]} ${className}`}
+      className={`flex items-center ${showBorder ? "rounded-full border bg-white dark:border-gray-700 dark:bg-gray-900" : ""} ${sizeClasses[size]} ${className}`}
     >
       <button
         onClick={onDecrease}
-        className="p-1 hover:text-primary transition-colors disabled:opacity-50"
+        className="hover:text-primary p-1 transition-colors disabled:opacity-50"
         aria-label="Decrease quantity"
       >
         <Minus className={iconSizes[size]} />
@@ -94,7 +96,7 @@ export function QuantityControl({
       </span>
       <button
         onClick={onIncrease}
-        className="p-1 hover:text-primary transition-colors"
+        className="hover:text-primary p-1 transition-colors"
         aria-label="Increase quantity"
       >
         <Plus className={iconSizes[size]} />

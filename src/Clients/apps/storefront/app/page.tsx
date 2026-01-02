@@ -1,15 +1,17 @@
 "use client";
 
 import { useRef } from "react";
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
-import { ChatBot, type ChatBotRef } from "@/components/chat-bot";
-import HeroSection from "@/features/home/hero-section";
-import FeaturedBooksSection from "@/features/home/featured-books-section";
-import CategoriesSection from "@/features/home/categories-section";
-import AiRecommendationsSection from "@/features/home/ai-recommendations-section";
+
 import useBooks from "@workspace/api-hooks/catalog/books/useBooks";
 import useCategories from "@workspace/api-hooks/catalog/categories/useCategories";
+
+import { ChatBot, type ChatBotRef } from "@/components/chat-bot";
+import { Footer } from "@/components/footer";
+import { Header } from "@/components/header";
+import AiRecommendationsSection from "@/features/home/ai-recommendations-section";
+import CategoriesSection from "@/features/home/categories-section";
+import FeaturedBooksSection from "@/features/home/featured-books-section";
+import HeroSection from "@/features/home/hero-section";
 
 export default function BookshopPage() {
   const chatBotRef = useRef<ChatBotRef>(null);
@@ -30,7 +32,7 @@ export default function BookshopPage() {
     : [];
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex min-h-screen flex-col">
       <Header />
       <main className="grow" id="main-content">
         <HeroSection />

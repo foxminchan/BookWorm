@@ -1,12 +1,13 @@
 "use client";
 
+import { useMemo } from "react";
+
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@workspace/ui/components/dialog";
-import { useMemo } from "react";
 
 type PolicyDialogProps = {
   policyType: "privacy" | "terms";
@@ -80,7 +81,7 @@ export function PolicyDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-serif text-2xl">{title}</DialogTitle>
         </DialogHeader>

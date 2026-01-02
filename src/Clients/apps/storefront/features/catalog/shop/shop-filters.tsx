@@ -1,13 +1,14 @@
 "use client";
 
-import { Slider } from "@workspace/ui/components/slider";
-import { FilterSection } from "@/components/filter-section";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
 } from "@workspace/ui/components/sheet";
+import { Slider } from "@workspace/ui/components/slider";
+
+import { FilterSection } from "@/components/filter-section";
 
 type ShopFiltersProps = {
   priceRange: number[];
@@ -34,7 +35,7 @@ function PriceRangeFilter({
 }) {
   return (
     <div>
-      <h3 className="font-serif font-medium mb-4">Price Range</h3>
+      <h3 className="mb-4 font-serif font-medium">Price Range</h3>
       <Slider
         value={priceRange}
         onValueChange={(value) =>
@@ -44,7 +45,7 @@ function PriceRangeFilter({
         step={1}
         className="mb-2"
       />
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
+      <div className="text-muted-foreground flex items-center justify-between text-sm">
         <span>${priceRange[0]}</span>
         <span>${priceRange[1]}+</span>
       </div>
@@ -71,7 +72,7 @@ export default function ShopFilters({
     <>
       {/* Desktop Sidebar Filters */}
       <aside
-        className="hidden md:block w-64 space-y-8 shrink-0"
+        className="hidden w-64 shrink-0 space-y-8 md:block"
         aria-label="Filters"
       >
         <PriceRangeFilter
@@ -114,7 +115,7 @@ export default function ShopFilters({
             <SheetTitle>Filters</SheetTitle>
           </SheetHeader>
 
-          <div className="space-y-8 mt-8 px-4">
+          <div className="mt-8 space-y-8 px-4">
             <PriceRangeFilter
               priceRange={priceRange}
               setPriceRange={setPriceRange}

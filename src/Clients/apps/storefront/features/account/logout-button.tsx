@@ -1,7 +1,9 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
+
 import { Button } from "@workspace/ui/components/button";
+
 import { useLogout } from "@/hooks/useLogout";
 
 export default function LogoutButton() {
@@ -11,7 +13,7 @@ export default function LogoutButton() {
     <Button
       onClick={logout}
       disabled={isLoggingOut}
-      className="w-full border border-border/40 bg-transparent hover:bg-secondary/20 text-foreground justify-center gap-2 h-12 font-medium"
+      className="border-border/40 hover:bg-secondary/20 text-foreground h-12 w-full justify-center gap-2 border bg-transparent font-medium"
     >
       {isLoggingOut ? (
         <>

@@ -1,7 +1,9 @@
-import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
+import { type UseQueryOptions, useQuery } from "@tanstack/react-query";
+
 import ratingApiClient from "@workspace/api-client/rating/feedbacks";
 import type { Feedback, ListFeedbacksQuery } from "@workspace/types/rating";
 import type { PagedResult } from "@workspace/types/shared";
+
 import { ratingKeys } from "../keys";
 
 export default function useFeedbacks(

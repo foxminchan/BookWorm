@@ -13,25 +13,25 @@ type OrderItemsListProps = {
 
 export default function OrderItemsList({ items }: OrderItemsListProps) {
   return (
-    <div className="border border-border/40 rounded-lg overflow-hidden bg-background">
-      <div className="border-b border-border/40 px-6 py-4">
+    <div className="border-border/40 bg-background overflow-hidden rounded-lg border">
+      <div className="border-border/40 border-b px-6 py-4">
         <div className="flex items-center gap-2">
-          <Package className="size-5 text-muted-foreground" />
+          <Package className="text-muted-foreground size-5" />
           <h2 className="font-serif text-xl font-semibold">Order Items</h2>
         </div>
       </div>
-      <div className="divide-y divide-border/40">
+      <div className="divide-border/40 divide-y">
         {items.map((item) => (
           <div
             key={item.id}
-            className="px-6 py-4 hover:bg-secondary/20 transition-colors"
+            className="hover:bg-secondary/20 px-6 py-4 transition-colors"
           >
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <h3 className="font-medium mb-1">
+                <h3 className="mb-1 font-medium">
                   {item.name || "Unnamed Item"}
                 </h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Quantity: {item.quantity}
                 </p>
               </div>
@@ -39,7 +39,7 @@ export default function OrderItemsList({ items }: OrderItemsListProps) {
                 <p className="font-semibold">
                   ${(item.price * item.quantity).toFixed(2)}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   ${item.price.toFixed(2)} each
                 </p>
               </div>

@@ -2,11 +2,11 @@ import { Button } from "@workspace/ui/components/button";
 
 export default function CtaSection() {
   return (
-    <section className="py-24 container mx-auto px-4 text-center">
-      <h2 className="text-4xl font-serif font-medium mb-8">
+    <section className="container mx-auto px-4 py-24 text-center">
+      <h2 className="mb-8 font-serif text-4xl font-medium">
         Need help with a return?
       </h2>
-      <p className="text-lg text-muted-foreground mb-12 max-w-2xl mx-auto">
+      <p className="text-muted-foreground mx-auto mb-12 max-w-2xl text-lg">
         Our customer support team is here to make the process as smooth as
         possible.
       </p>

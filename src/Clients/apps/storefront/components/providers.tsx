@@ -1,16 +1,18 @@
 "use client";
 
 import * as React from "react";
-import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { useEffect, useState } from "react";
+
 import { CopilotKit } from "@copilotkit/react-core";
-import { Provider } from "jotai";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/next";
+import { Provider } from "jotai";
+import { ThemeProvider as NextThemesProvider } from "next-themes";
+
 import { BackToTop } from "@/components/back-to-top";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
-import { initMocks } from "@/lib/msw";
 import { env } from "@/env.mjs";
+import { initMocks } from "@/lib/msw";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,7 +50,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <CopilotKit runtimeUrl={copilotKitUrl}>
         <QueryClientProvider client={queryClient}>
           <Provider>
-            <div className="md:pb-0 pb-16">{children}</div>
+            <div className="pb-16 md:pb-0">{children}</div>
             <MobileBottomNav />
             <BackToTop />
             <Analytics />
@@ -66,7 +68,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     >
       <QueryClientProvider client={queryClient}>
         <Provider>
-          <div className="md:pb-0 pb-16">{children}</div>
+          <div className="pb-16 md:pb-0">{children}</div>
           <MobileBottomNav />
           <BackToTop />
           <Analytics />

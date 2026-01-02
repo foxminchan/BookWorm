@@ -1,7 +1,8 @@
 "use client";
 
-import PublisherCard from "./publisher-card";
 import { PublisherCardSkeleton } from "@/components/loading-skeleton";
+
+import PublisherCard from "./publisher-card";
 
 type Publisher = {
   id: string;
@@ -19,7 +20,7 @@ export default function PublishersGrid({
 }: PublishersGridProps) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-20">
+      <div className="mb-20 grid grid-cols-2 gap-6 md:grid-cols-3">
         {Array.from({ length: 9 }).map((_, i) => (
           <PublisherCardSkeleton key={i} />
         ))}
@@ -28,7 +29,7 @@ export default function PublishersGrid({
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-20">
+    <div className="mb-20 grid grid-cols-2 gap-6 md:grid-cols-3">
       {publishers.map((publisher) => (
         <PublisherCard
           key={publisher.id}

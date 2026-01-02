@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+
 import { Button } from "@workspace/ui/components/button";
+
 import { BookCard } from "@/components/book-card";
 import { BookCardSkeleton } from "@/components/loading-skeleton";
 import { Pagination } from "@/components/pagination";
@@ -26,7 +28,7 @@ export default function BookGrid({
   if (isLoading) {
     return (
       <div
-        className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12"
+        className="mb-12 grid grid-cols-2 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
         role="status"
         aria-label="Loading books"
       >
@@ -44,7 +46,7 @@ export default function BookGrid({
         role="region"
         aria-labelledby="no-results"
       >
-        <h2 id="no-results" className="text-3xl font-serif font-medium mb-4">
+        <h2 id="no-results" className="mb-4 font-serif text-3xl font-medium">
           No Books Found
         </h2>
         <p className="text-muted-foreground mb-8 max-w-md">
@@ -65,7 +67,7 @@ export default function BookGrid({
   return (
     <>
       <div
-        className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12"
+        className="mb-12 grid grid-cols-2 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
         role="list"
       >
         {books.map((book: any) => (

@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
-import { Pagination } from "@/components/pagination";
-import { OrdersSkeleton } from "@/components/loading-skeleton";
-import type { OrderStatus } from "@workspace/types/ordering/orders";
+
 import useOrders from "@workspace/api-hooks/ordering/orders/useOrders";
+import type { OrderStatus } from "@workspace/types/ordering/orders";
+
+import { Footer } from "@/components/footer";
+import { Header } from "@/components/header";
+import { OrdersSkeleton } from "@/components/loading-skeleton";
+import { Pagination } from "@/components/pagination";
 import OrdersEmptyState from "@/features/ordering/orders/orders-empty-state";
 import OrdersErrorState from "@/features/ordering/orders/orders-error-state";
 import OrdersHeader from "@/features/ordering/orders/orders-header";
@@ -40,10 +42,10 @@ export default function OrdersPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="bg-background flex min-h-screen flex-col">
       <Header />
 
-      <main className="flex-1 container mx-auto px-4 py-16 max-w-5xl">
+      <main className="container mx-auto max-w-5xl flex-1 px-4 py-16">
         <OrdersHeader
           selectedStatus={selectedStatus}
           onStatusChange={handleStatusChange}
@@ -63,7 +65,7 @@ export default function OrdersPage() {
             <OrdersList orders={orders} />
 
             {totalPages > 1 && (
-              <div className="mt-16 pt-8 border-t border-border">
+              <div className="border-border mt-16 border-t pt-8">
                 <Pagination
                   currentPage={currentPage}
                   totalPages={totalPages}

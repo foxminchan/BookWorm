@@ -21,21 +21,21 @@ const timeline = [
 
 export default function TimelineSection() {
   return (
-    <section className="py-24 bg-secondary">
+    <section className="bg-secondary py-24">
       <div className="container mx-auto px-4">
-        <h2 className="text-4xl font-serif font-medium text-center mb-16">
+        <h2 className="mb-16 text-center font-serif text-4xl font-medium">
           Our Journey
         </h2>
-        <div className="max-w-3xl mx-auto space-y-12">
+        <div className="mx-auto max-w-3xl space-y-12">
           {timeline.map((milestone, idx) => (
-            <div key={idx} className="flex gap-8 items-start">
+            <div key={idx} className="flex items-start gap-8">
               <div className="min-w-24">
-                <span className="text-2xl font-serif font-bold text-primary">
+                <span className="text-primary font-serif text-2xl font-bold">
                   {milestone.year}
                 </span>
               </div>
-              <div className="grow pb-8 border-b border-primary/20 last:border-b-0">
-                <h3 className="font-serif font-medium text-xl mb-2">
+              <div className="border-primary/20 grow border-b pb-8 last:border-b-0">
+                <h3 className="mb-2 font-serif text-xl font-medium">
                   {milestone.title}
                 </h3>
                 <p className="text-muted-foreground leading-relaxed">

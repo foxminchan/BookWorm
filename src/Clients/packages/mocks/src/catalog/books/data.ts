@@ -1,10 +1,12 @@
 import { v7 as uuidv7 } from "uuid";
+
 import type { Author } from "@workspace/types/catalog/authors";
 import type { Book } from "@workspace/types/catalog/books";
-import booksData from "../../data/books.json";
+
 import { mockAuthors } from "../../catalog/authors/data";
 import { mockCategories } from "../../catalog/categories/data";
 import { mockPublishers } from "../../catalog/publishers/data";
+import booksData from "../../data/books.json";
 
 export const mockBooks: Book[] = booksData.map((book) => {
   const { categoryId, publisherId, authorIds, ...bookData } = book;

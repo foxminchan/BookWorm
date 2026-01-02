@@ -1,4 +1,4 @@
-import { CheckCircle, AlertCircle } from "lucide-react";
+import { AlertCircle, CheckCircle } from "lucide-react";
 
 const eligibleItems = [
   "Books in original condition",
@@ -18,29 +18,29 @@ const nonReturnableItems = [
 
 export default function EligibilitySection() {
   return (
-    <section className="py-24 bg-secondary">
+    <section className="bg-secondary py-24">
       <div className="container mx-auto px-4">
-        <h2 className="text-4xl font-serif font-medium text-center mb-16">
+        <h2 className="mb-16 text-center font-serif text-4xl font-medium">
           Return Eligibility
         </h2>
-        <div className="max-w-3xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="mx-auto grid max-w-3xl grid-cols-1 gap-8 md:grid-cols-2">
           <div className="space-y-4">
-            <h3 className="font-serif font-medium text-lg flex items-center gap-2 text-green-700">
+            <h3 className="flex items-center gap-2 font-serif text-lg font-medium text-green-700">
               <CheckCircle className="size-5" />
               Eligible for Return
             </h3>
-            <ul className="space-y-2 text-muted-foreground text-sm">
+            <ul className="text-muted-foreground space-y-2 text-sm">
               {eligibleItems.map((item, idx) => (
                 <li key={idx}>✓ {item}</li>
               ))}
             </ul>
           </div>
           <div className="space-y-4">
-            <h3 className="font-serif font-medium text-lg flex items-center gap-2 text-destructive">
+            <h3 className="text-destructive flex items-center gap-2 font-serif text-lg font-medium">
               <AlertCircle className="size-5" />
               Non-Returnable Items
             </h3>
-            <ul className="space-y-2 text-muted-foreground text-sm">
+            <ul className="text-muted-foreground space-y-2 text-sm">
               {nonReturnableItems.map((item, idx) => (
                 <li key={idx}>✗ {item}</li>
               ))}

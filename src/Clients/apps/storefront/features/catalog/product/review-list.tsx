@@ -1,9 +1,11 @@
 "use client";
 
-import { Star, User } from "lucide-react";
-import { Separator } from "@workspace/ui/components/separator";
-import { Pagination } from "@/components/pagination";
 import cn from "classnames";
+import { Star, User } from "lucide-react";
+
+import { Separator } from "@workspace/ui/components/separator";
+
+import { Pagination } from "@/components/pagination";
 
 type Review = {
   id: string;
@@ -27,13 +29,13 @@ export default function ReviewList({
   onPageChange,
 }: ReviewListProps) {
   return (
-    <div className="lg:col-span-2 space-y-8">
+    <div className="space-y-8 lg:col-span-2">
       {reviews.map((feedback) => (
         <div key={feedback.id} className="group">
-          <div className="flex items-center justify-between mb-4">
+          <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="size-10 rounded-full bg-secondary flex items-center justify-center">
-                <User className="size-5 text-muted-foreground" />
+              <div className="bg-secondary flex size-10 items-center justify-center rounded-full">
+                <User className="text-muted-foreground size-5" />
               </div>
               <div>
                 <p className="font-medium">
@@ -55,7 +57,7 @@ export default function ReviewList({
               </div>
             </div>
           </div>
-          <p className="text-muted-foreground leading-relaxed pl-13">
+          <p className="text-muted-foreground pl-13 leading-relaxed">
             {feedback.comment}
           </p>
           <Separator className="mt-8 group-last:hidden" />

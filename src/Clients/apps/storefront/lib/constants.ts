@@ -9,7 +9,6 @@ export const APP_CONFIG = {
     twitter: "https://twitter.com/bookworm",
     facebook: "https://facebook.com/bookworm",
   },
-  url: env.NEXT_PUBLIC_BASE_URL || "https://bookworm.com",
 } as const;
 
 export const FILTER_SECTIONS = {

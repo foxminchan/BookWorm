@@ -1,9 +1,11 @@
 import {
+  type UseMutationOptions,
   useMutation,
   useQueryClient,
-  type UseMutationOptions,
 } from "@tanstack/react-query";
+
 import authorsApiClient from "@workspace/api-client/catalog/authors";
+
 import { catalogKeys } from "../../keys";
 
 export default function useDeleteAuthor(

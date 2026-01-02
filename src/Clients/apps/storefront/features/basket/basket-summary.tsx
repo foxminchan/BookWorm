@@ -1,7 +1,8 @@
-import { Card } from "@workspace/ui/components/card";
-import { Button } from "@workspace/ui/components/button";
-import { Separator } from "@workspace/ui/components/separator";
 import { ArrowRight, Loader2 } from "lucide-react";
+
+import { Button } from "@workspace/ui/components/button";
+import { Card } from "@workspace/ui/components/card";
+import { Separator } from "@workspace/ui/components/separator";
 
 type BasketSummaryProps = {
   subtotal: number;
@@ -20,8 +21,8 @@ export default function BasketSummary({
 }: BasketSummaryProps) {
   return (
     <div className="lg:col-span-4">
-      <Card className="border-none shadow-none bg-white dark:bg-gray-800 p-8 sticky top-32">
-        <h2 className="text-2xl font-serif font-medium mb-6">Order Summary</h2>
+      <Card className="sticky top-32 border-none bg-white p-8 shadow-none dark:bg-gray-800">
+        <h2 className="mb-6 font-serif text-2xl font-medium">Order Summary</h2>
         <div className="space-y-4">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Subtotal</span>
@@ -39,7 +40,7 @@ export default function BasketSummary({
           <Button
             onClick={onCheckout}
             disabled={isCheckingOut}
-            className="w-full h-12 rounded-full text-lg mt-4 group disabled:opacity-80"
+            className="group mt-4 h-12 w-full rounded-full text-lg disabled:opacity-80"
           >
             {isCheckingOut ? (
               <>
@@ -49,11 +50,11 @@ export default function BasketSummary({
             ) : (
               <>
                 Checkout{" "}
-                <ArrowRight className="ml-2 size-5 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="ml-2 size-5 transition-transform group-hover:translate-x-1" />
               </>
             )}
           </Button>
-          <p className="text-center text-xs text-muted-foreground mt-4 italic">
+          <p className="text-muted-foreground mt-4 text-center text-xs italic">
             Taxes calculated at checkout
           </p>
         </div>

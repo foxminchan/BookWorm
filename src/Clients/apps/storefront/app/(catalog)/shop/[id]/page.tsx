@@ -1,31 +1,34 @@
 "use client";
 
 import type React from "react";
+import { use, useState } from "react";
+
+import Link from "next/link";
+import { notFound } from "next/navigation";
+
+import { ArrowLeft } from "lucide-react";
 import { useDebounceCallback } from "usehooks-ts";
 
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
-import { RemoveItemDialog } from "@/components/remove-item-dialog";
-import { ProductLoadingSkeleton } from "@/components/loading-skeleton";
-import { Separator } from "@workspace/ui/components/separator";
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
-import type { CreateFeedbackRequest } from "@workspace/types/rating";
-import { useState, use } from "react";
-import { notFound } from "next/navigation";
-import { JsonLd } from "@/components/json-ld";
-import { generateProductJsonLd, generateBreadcrumbJsonLd } from "@/lib/seo";
-import useBook from "@workspace/api-hooks/catalog/books/useBook";
-import useFeedbacks from "@workspace/api-hooks/rating/useFeedbacks";
-import useCreateFeedback from "@workspace/api-hooks/rating/useCreateFeedback";
-import useSummaryFeedback from "@workspace/api-hooks/rating/useSummaryFeedback";
 import useBasket from "@workspace/api-hooks/basket/useBasket";
 import useCreateBasket from "@workspace/api-hooks/basket/useCreateBasket";
-import useUpdateBasket from "@workspace/api-hooks/basket/useUpdateBasket";
 import useDeleteBasket from "@workspace/api-hooks/basket/useDeleteBasket";
-import { getReviewSortParams } from "@/lib/pattern";
-import { ProductSection } from "@/features/catalog/product/product-section";
+import useUpdateBasket from "@workspace/api-hooks/basket/useUpdateBasket";
+import useBook from "@workspace/api-hooks/catalog/books/useBook";
+import useCreateFeedback from "@workspace/api-hooks/rating/useCreateFeedback";
+import useFeedbacks from "@workspace/api-hooks/rating/useFeedbacks";
+import useSummaryFeedback from "@workspace/api-hooks/rating/useSummaryFeedback";
+import type { CreateFeedbackRequest } from "@workspace/types/rating";
+import { Separator } from "@workspace/ui/components/separator";
+
+import { Footer } from "@/components/footer";
+import { Header } from "@/components/header";
+import { JsonLd } from "@/components/json-ld";
+import { ProductLoadingSkeleton } from "@/components/loading-skeleton";
+import { RemoveItemDialog } from "@/components/remove-item-dialog";
+import ProductSection from "@/features/catalog/product/product-section";
 import ReviewsContainer from "@/features/catalog/product/reviews-container";
+import { getReviewSortParams } from "@/lib/pattern";
+import { generateBreadcrumbJsonLd, generateProductJsonLd } from "@/lib/seo";
 
 const REVIEWS_PER_PAGE = 5;
 
@@ -81,8 +84,6 @@ export default function BookDetailPage({ params }: BookDetailPageProps) {
   });
   const deleteBasketMutation = useDeleteBasket();
   const createFeedbackMutation = useCreateFeedback();
-
-  // Check if item is in basket
   const basketItem = basket?.items?.find((item) => item.id === id);
   const quantity = basketItem?.quantity ?? 0;
   const isLoading = isLoadingBook || isLoadingFeedbacks;
@@ -120,9 +121,9 @@ export default function BookDetailPage({ params }: BookDetailPageProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
+      <div className="bg-background flex min-h-screen flex-col">
         <Header />
-        <main className="grow container mx-auto px-4 py-8">
+        <main className="container mx-auto grow px-4 py-8">
           <ProductLoadingSkeleton />
         </main>
         <Footer />
@@ -233,16 +234,16 @@ export default function BookDetailPage({ params }: BookDetailPageProps) {
     : null;
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="bg-background flex min-h-screen flex-col">
       {productJsonLd && <JsonLd data={productJsonLd} />}
       {breadcrumbJsonLd && <JsonLd data={breadcrumbJsonLd} />}
 
       <Header />
 
-      <main className="grow container mx-auto px-4 py-8" role="main">
+      <main className="container mx-auto grow px-4 py-8" role="main">
         <Link
           href="/shop"
-          className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-8 transition-colors"
+          className="text-muted-foreground hover:text-primary mb-8 inline-flex items-center text-sm transition-colors"
           rel="prev"
         >
           <ArrowLeft className="mr-2 size-4" aria-hidden="true" /> Back to Shop
@@ -277,7 +278,7 @@ export default function BookDetailPage({ params }: BookDetailPageProps) {
         {/* Reviews Section */}
         <section
           id="reviews"
-          className="max-w-4xl mx-auto"
+          className="mx-auto max-w-4xl"
           aria-label="Customer Reviews"
         >
           <ReviewsContainer
@@ -327,7 +328,7 @@ export default function BookDetailPage({ params }: BookDetailPageProps) {
           book ? (
             <>
               You're about to remove{" "}
-              <span className="font-semibold text-foreground">{book.name}</span>{" "}
+              <span className="text-foreground font-semibold">{book.name}</span>{" "}
               from your basket. This action cannot be undone.
             </>
           ) : undefined

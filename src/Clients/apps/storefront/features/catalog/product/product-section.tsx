@@ -1,6 +1,7 @@
 "use client";
 
 import type React from "react";
+
 import ProductActions from "./product-actions";
 import ProductImage from "./product-image";
 import ProductInfo from "./product-info";
@@ -27,7 +28,7 @@ type ProductSectionProps = {
   onIncrease: () => void;
 };
 
-export function ProductSection({
+export default function ProductSection({
   book,
   quantity,
   isAddingToBasket,
@@ -38,7 +39,7 @@ export function ProductSection({
 }: ProductSectionProps) {
   return (
     <article
-      className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20 mb-16"
+      className="mb-16 grid grid-cols-1 gap-12 md:grid-cols-2 lg:gap-20"
       itemScope
       itemType="https://schema.org/Book"
     >

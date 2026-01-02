@@ -7,19 +7,19 @@ const content = [
 
 export default function DamagedPackages() {
   return (
-    <section className="py-24 container mx-auto px-4">
-      <div className="max-w-3xl mx-auto">
-        <h2 className="text-4xl font-serif font-medium mb-8">
+    <section className="container mx-auto px-4 py-24">
+      <div className="mx-auto max-w-3xl">
+        <h2 className="mb-8 font-serif text-4xl font-medium">
           Damaged or Lost Packages?
         </h2>
-        <div className="bg-secondary p-8 rounded-lg space-y-4">
+        <div className="bg-secondary space-y-4 rounded-lg p-8">
           {content.map((text, idx) => (
             <p key={idx} className="text-muted-foreground leading-relaxed">
               {text}
             </p>
           ))}
           <a href="mailto:support@bookworm.com">
-            <Button size="lg" className="rounded-full px-8 mt-4">
+            <Button size="lg" className="mt-4 rounded-full px-8">
               Contact Support
             </Button>
           </a>

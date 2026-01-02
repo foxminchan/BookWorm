@@ -3,6 +3,7 @@ import type {
   CreateAuthorRequest,
   UpdateAuthorRequest,
 } from "@workspace/types/catalog/authors";
+
 import ApiClient from "../client";
 
 class AuthorsApiClient {

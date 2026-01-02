@@ -1,5 +1,8 @@
 "use client";
 
+import { Filter, X } from "lucide-react";
+
+import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import {
   Select,
@@ -8,8 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
-import { Filter, X } from "lucide-react";
-import { Badge } from "@workspace/ui/components/badge";
 
 const ITEMS_PER_PAGE = 8;
 
@@ -34,36 +35,38 @@ export default function ShopToolbar({
 }: ShopToolbarProps) {
   return (
     <div
-      className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8"
+      className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center"
       role="region"
       aria-labelledby="shop-title"
     >
       <div>
-        <h1 id="shop-title" className="text-3xl font-serif font-medium">
+        <h1 id="shop-title" className="font-serif text-3xl font-medium">
           Shop All Books
         </h1>
         {searchQuery ? (
-          <div className="flex items-center gap-2 mt-2">
-            <p className="text-sm text-muted-foreground">Search results for</p>
+          <div className="mt-2 flex items-center gap-2">
+            <p className="text-muted-foreground text-sm">Search results for</p>
             <Badge
               variant="secondary"
-              className="font-normal flex items-center gap-1.5"
+              className="flex items-center gap-1.5 font-normal"
             >
               "{searchQuery}"
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={onClearSearch}
-                className="ml-1 hover:bg-secondary-foreground/10 rounded-full p-0.5 transition-colors"
+                className="hover:bg-secondary-foreground/10 ml-1 h-5 w-5 rounded-full p-0"
                 aria-label="Clear search"
               >
                 <X className="size-3" />
-              </button>
+              </Button>
             </Badge>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               ({totalCount} {totalCount === 1 ? "result" : "results"})
             </p>
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}–
             {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} of {totalCount}{" "}
             results
@@ -71,11 +74,11 @@ export default function ShopToolbar({
         )}
       </div>
 
-      <div className="flex items-center gap-4 w-full sm:w-auto">
+      <div className="flex w-full items-center gap-4 sm:w-auto">
         <Button
           variant="outline"
           size="sm"
-          className="md:hidden flex items-center gap-2 bg-transparent"
+          className="flex items-center gap-2 bg-transparent md:hidden"
           onClick={onOpenFilters}
           aria-label="Open filters"
         >

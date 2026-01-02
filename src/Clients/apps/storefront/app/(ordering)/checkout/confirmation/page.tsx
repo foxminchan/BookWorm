@@ -1,15 +1,18 @@
 "use client";
 
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
-import { EmptyState } from "@/components/empty-state";
 import { useSearchParams } from "next/navigation";
+
 import { AlertCircle } from "lucide-react";
-import useOrder from "@workspace/api-hooks/ordering/orders/useOrder";
+
 import useBuyer from "@workspace/api-hooks/ordering/buyers/useBuyer";
+import useOrder from "@workspace/api-hooks/ordering/orders/useOrder";
+
+import { EmptyState } from "@/components/empty-state";
+import { Footer } from "@/components/footer";
+import { Header } from "@/components/header";
 import { ConfirmationPageSkeleton } from "@/components/loading-skeleton";
-import ConfirmationHeader from "@/features/ordering/checkout/confirmation-header";
 import ConfirmationActions from "@/features/ordering/checkout/confirmation-actions";
+import ConfirmationHeader from "@/features/ordering/checkout/confirmation-header";
 import OrderDetailsSection from "@/features/ordering/checkout/order-details-section";
 
 export default function ConfirmationPage() {
@@ -23,9 +26,9 @@ export default function ConfirmationPage() {
 
   if (isPending) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
+      <div className="bg-background flex min-h-screen flex-col">
         <Header />
-        <main className="grow container mx-auto px-4 py-24">
+        <main className="container mx-auto grow px-4 py-24">
           <ConfirmationPageSkeleton />
         </main>
         <Footer />
@@ -35,10 +38,10 @@ export default function ConfirmationPage() {
 
   if (!order) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
+      <div className="bg-background flex min-h-screen flex-col">
         <Header />
-        <main className="grow container mx-auto px-4 py-24">
-          <div className="max-w-3xl mx-auto">
+        <main className="container mx-auto grow px-4 py-24">
+          <div className="mx-auto max-w-3xl">
             <EmptyState
               icon={AlertCircle}
               title="Order Not Found"
@@ -54,10 +57,10 @@ export default function ConfirmationPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="bg-background flex min-h-screen flex-col">
       <Header />
-      <main className="grow container mx-auto px-4 py-24">
-        <div className="max-w-3xl mx-auto">
+      <main className="container mx-auto grow px-4 py-24">
+        <div className="mx-auto max-w-3xl">
           <ConfirmationHeader orderId={order.id} />
           <OrderDetailsSection
             status={order.status}
@@ -65,8 +68,8 @@ export default function ConfirmationPage() {
             buyerName={buyer?.name ?? undefined}
             buyerAddress={buyer?.address ?? undefined}
           />
-          <div className="text-center mb-12 py-8 bg-secondary/30 rounded-xl">
-            <p className="text-sm text-muted-foreground">
+          <div className="bg-secondary/30 mb-12 rounded-xl py-8 text-center">
+            <p className="text-muted-foreground text-sm">
               <span className="font-medium">
                 Confirmation email sent to your email
               </span>

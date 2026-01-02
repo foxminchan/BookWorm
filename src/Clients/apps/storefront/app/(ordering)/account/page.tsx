@@ -1,11 +1,13 @@
 "use client";
 
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
-import { AccountPageSkeleton } from "@/components/loading-skeleton";
-import { EmptyState } from "@/components/empty-state";
 import { AlertCircle } from "lucide-react";
+
 import useBuyer from "@workspace/api-hooks/ordering/buyers/useBuyer";
+
+import { EmptyState } from "@/components/empty-state";
+import { Footer } from "@/components/footer";
+import { Header } from "@/components/header";
+import { AccountPageSkeleton } from "@/components/loading-skeleton";
 import AccountNavigation from "@/features/account/account-navigation";
 import DeliveryAddressSection from "@/features/account/delivery-address-section";
 import LogoutButton from "@/features/account/logout-button";
@@ -20,9 +22,9 @@ export default function AccountPage() {
 
   if (isLoadingBuyer) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
+      <div className="bg-background flex min-h-screen flex-col">
         <Header />
-        <main className="flex-1 container mx-auto px-4 md:px-8 py-16 max-w-5xl">
+        <main className="container mx-auto max-w-5xl flex-1 px-4 py-16 md:px-8">
           <AccountPageSkeleton />
         </main>
         <Footer />
@@ -32,9 +34,9 @@ export default function AccountPage() {
 
   if (buyerError || !buyer) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
+      <div className="bg-background flex min-h-screen flex-col">
         <Header />
-        <main className="flex-1 container mx-auto px-4 md:px-8 py-16 max-w-5xl">
+        <main className="container mx-auto max-w-5xl flex-1 px-4 py-16 md:px-8">
           <EmptyState
             icon={AlertCircle}
             title="Error Loading Account"
@@ -49,22 +51,22 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="bg-background flex min-h-screen flex-col">
       <Header />
 
-      <main className="flex-1 container mx-auto px-4 md:px-8 py-16 max-w-5xl">
+      <main className="container mx-auto max-w-5xl flex-1 px-4 py-16 md:px-8">
         <div className="mb-12 md:mb-16">
-          <h1 className="font-serif text-5xl md:text-6xl font-light mb-3 text-balance">
+          <h1 className="mb-3 font-serif text-5xl font-light text-balance md:text-6xl">
             Your Account
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">
+          <p className="text-muted-foreground max-w-2xl text-lg leading-relaxed">
             Manage your profile information, delivery address, and view your
             order history
           </p>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-8">
+          <div className="space-y-8 lg:col-span-2">
             <ProfileSection buyer={buyer} />
             <DeliveryAddressSection buyer={buyer} />
           </div>

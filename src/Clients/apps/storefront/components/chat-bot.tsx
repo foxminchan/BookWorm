@@ -1,10 +1,14 @@
 "use client";
 
 import { forwardRef, useImperativeHandle, useState } from "react";
+
 import { CopilotChat } from "@copilotkit/react-ui";
 import "@copilotkit/react-ui/styles.css";
 import { AlertCircle, Copy, MessageCircle, Paperclip, X } from "lucide-react";
-import { Card, CardHeader, CardContent } from "@workspace/ui/components/card";
+
+import { Button } from "@workspace/ui/components/button";
+import { Card, CardContent, CardHeader } from "@workspace/ui/components/card";
+
 import { env } from "@/env.mjs";
 
 export type ChatBotRef = {
@@ -22,38 +26,41 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
 
   if (!isOpen) {
     return (
-      <button
+      <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-50 hidden md:flex w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors items-center justify-center"
+        size="icon"
+        className="fixed right-6 bottom-6 z-50 hidden h-12 w-12 rounded-full shadow-lg md:flex"
         aria-label="Open chat"
       >
-        <MessageCircle className="w-6 h-6" aria-hidden="true" />
-      </button>
+        <MessageCircle className="h-6 w-6" aria-hidden="true" />
+      </Button>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-50 hidden md:flex items-end justify-end p-6">
+    <div className="fixed inset-0 z-50 hidden items-end justify-end p-6 md:flex">
       <div
         className="fixed inset-0 bg-black/20"
         onClick={() => setIsOpen(false)}
       />
       <div className="relative z-10">
-        <Card className="w-96 sm:w-105 h-150 flex flex-col shadow-2xl border-secondary/30 rounded-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
-          <CardHeader className="bg-linear-to-br from-primary via-primary to-primary/90 text-primary-foreground p-6 flex flex-row items-center justify-between gap-3 border-b border-primary-foreground/10">
+        <Card className="border-secondary/30 animate-in fade-in slide-in-from-bottom-4 flex h-150 w-96 flex-col overflow-hidden rounded-2xl shadow-2xl duration-300 sm:w-105">
+          <CardHeader className="from-primary via-primary to-primary/90 text-primary-foreground border-primary-foreground/10 flex flex-row items-center justify-between gap-3 border-b bg-linear-to-br p-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-                <MessageCircle className="w-5 h-5" />
+              <div className="bg-primary-foreground/20 flex h-10 w-10 items-center justify-center rounded-full">
+                <MessageCircle className="h-5 w-5" />
               </div>
               <h2 className="font-semibold">BookWorm Literary Guide</h2>
             </div>
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => setIsOpen(false)}
-              className="p-1 hover:bg-primary-foreground/20 rounded-full transition-colors"
+              className="hover:bg-primary-foreground/20 h-8 w-8 rounded-full"
               aria-label="Close chat"
             >
-              <X className="w-5 h-5" />
-            </button>
+              <X className="h-5 w-5" />
+            </Button>
           </CardHeader>
           <CardContent className="flex-1 overflow-auto">
             <CopilotChat
@@ -62,13 +69,13 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
                 placeholder: "Ask about a book...",
               }}
               icons={{
-                activityIcon: <AlertCircle className="w-6 h-6" />,
-                copyIcon: <Copy className="w-4 h-4" />,
-                headerCloseIcon: <X className="w-5 h-5" />,
-                sendIcon: <Paperclip className="w-5 h-5 rotate-45" />,
-                closeIcon: <X className="w-5 h-5" />,
-                openIcon: <MessageCircle className="w-6 h-6" />,
-                stopIcon: <X className="w-4 h-4" />,
+                activityIcon: <AlertCircle className="h-6 w-6" />,
+                copyIcon: <Copy className="h-4 w-4" />,
+                headerCloseIcon: <X className="h-5 w-5" />,
+                sendIcon: <Paperclip className="h-5 w-5 rotate-45" />,
+                closeIcon: <X className="h-5 w-5" />,
+                openIcon: <MessageCircle className="h-6 w-6" />,
+                stopIcon: <X className="h-4 w-4" />,
               }}
             />
           </CardContent>
@@ -90,34 +97,36 @@ const UnavailableChatUI = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 hidden md:flex items-end justify-end p-6">
+    <div className="fixed inset-0 z-50 hidden items-end justify-end p-6 md:flex">
       <div className="fixed inset-0 bg-black/20" onClick={onClose} />
-      <Card className="w-96 sm:w-105 h-150 flex flex-col shadow-2xl border-secondary/30 rounded-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300 relative z-10">
-        <CardHeader className="bg-linear-to-br from-primary via-primary to-primary/90 text-primary-foreground p-6 flex flex-row items-center justify-between gap-3 border-b border-primary-foreground/10">
+      <Card className="border-secondary/30 animate-in fade-in slide-in-from-bottom-4 relative z-10 flex h-150 w-96 flex-col overflow-hidden rounded-2xl shadow-2xl duration-300 sm:w-105">
+        <CardHeader className="from-primary via-primary to-primary/90 text-primary-foreground border-primary-foreground/10 flex flex-row items-center justify-between gap-3 border-b bg-linear-to-br p-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-              <MessageCircle className="w-5 h-5" />
+            <div className="bg-primary-foreground/20 flex h-10 w-10 items-center justify-center rounded-full">
+              <MessageCircle className="h-5 w-5" />
             </div>
             <div>
               <h2 className="font-semibold">BookWorm Literary Guide</h2>
               <p className="text-xs opacity-90">Chat unavailable</p>
             </div>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onClose}
-            className="p-1 hover:bg-primary-foreground/20 rounded-full transition-colors"
+            className="hover:bg-primary-foreground/20 h-8 w-8 rounded-full"
           >
-            <X className="w-5 h-5" />
-          </button>
+            <X className="h-5 w-5" />
+          </Button>
         </CardHeader>
 
-        <CardContent className="flex-1 flex flex-col items-center justify-center p-6 gap-4">
-          <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
-            <AlertCircle className="w-8 h-8 text-red-600" />
+        <CardContent className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+            <AlertCircle className="h-8 w-8 text-red-600" />
           </div>
           <div className="text-center">
-            <h3 className="font-semibold text-lg mb-2">Chat Unavailable</h3>
-            <p className="text-sm text-muted-foreground">
+            <h3 className="mb-2 text-lg font-semibold">Chat Unavailable</h3>
+            <p className="text-muted-foreground text-sm">
               The chat feature is currently unavailable. Please try again later.
             </p>
           </div>
@@ -151,14 +160,15 @@ export const ChatBot = forwardRef<ChatBotRef>(function ChatBot(_, ref) {
   if (!hasGateway) {
     return (
       <>
-        <button
+        <Button
           onClick={() => setIsUnavailableChatOpen(true)}
-          className="fixed bottom-6 right-6 z-50 hidden md:flex w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors items-center justify-center"
+          size="icon"
+          className="fixed right-6 bottom-6 z-50 hidden h-12 w-12 rounded-full shadow-lg md:flex"
           aria-label="Open chat - feature currently unavailable"
           title="Chat feature is unavailable"
         >
-          <MessageCircle className="w-6 h-6" aria-hidden="true" />
-        </button>
+          <MessageCircle className="h-6 w-6" aria-hidden="true" />
+        </Button>
         <UnavailableChatUI
           isOpen={isUnavailableChatOpen}
           onClose={() => setIsUnavailableChatOpen(false)}

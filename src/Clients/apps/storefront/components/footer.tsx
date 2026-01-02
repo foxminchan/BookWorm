@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+
 import Link from "next/link";
-import { PolicyDialog } from "@/components/policy-dialog";
+
 import { Button } from "@workspace/ui/components/button";
+
+import { PolicyDialog } from "@/components/policy-dialog";
 
 const PRIVACY_POLICY_CONTENT = `
 # Privacy Policy
@@ -123,28 +126,28 @@ export function Footer() {
   return (
     <>
       <footer
-        className="hidden md:block border-t bg-secondary py-12"
+        className="bg-secondary hidden border-t py-12 md:block"
         role="contentinfo"
       >
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
             <div className="col-span-1 md:col-span-2">
               <Link
                 href="/"
-                className="text-xl text-foreground font-bold mb-4 block"
+                className="text-foreground mb-4 block text-xl font-bold"
               >
                 BookWorm
               </Link>
-              <p className="text-muted-foreground text-sm max-w-xs leading-relaxed">
+              <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
                 Curating the finest selection of literature and design
                 inspiration for the modern reader.
               </p>
             </div>
             <nav aria-label="Quick Links">
-              <h3 className="font-bold text-sm mb-4 uppercase tracking-wider">
+              <h3 className="mb-4 text-sm font-bold tracking-wider uppercase">
                 Quick Links
               </h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
+              <ul className="text-muted-foreground space-y-2 text-sm">
                 {quickLinks.map((link) => (
                   <li key={link.href}>
                     <Link href={link.href} className="hover:text-primary">
@@ -155,10 +158,10 @@ export function Footer() {
               </ul>
             </nav>
             <nav aria-label="Help">
-              <h3 className="font-bold text-sm mb-4 uppercase tracking-wider">
+              <h3 className="mb-4 text-sm font-bold tracking-wider uppercase">
                 Help
               </h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
+              <ul className="text-muted-foreground space-y-2 text-sm">
                 {helpLinks.map((link) => (
                   <li key={link.href}>
                     <Link href={link.href} className="hover:text-primary">
@@ -169,20 +172,20 @@ export function Footer() {
               </ul>
             </nav>
           </div>
-          <div className="mt-12 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
+          <div className="border-border text-muted-foreground mt-12 flex flex-col items-center justify-between gap-4 border-t pt-8 text-xs md:flex-row">
             <p>© {new Date().getFullYear()} BookWorm. All rights reserved.</p>
             <div className="flex gap-6">
               <Button
                 variant="ghost"
                 onClick={() => setPrivacyOpen(true)}
-                className="hover:text-primary transition-colors cursor-pointer h-auto p-0 font-normal"
+                className="hover:text-primary h-auto cursor-pointer p-0 font-normal transition-colors"
               >
                 Privacy Policy
               </Button>
               <Button
                 variant="ghost"
                 onClick={() => setTermsOpen(true)}
-                className="hover:text-primary transition-colors cursor-pointer h-auto p-0 font-normal"
+                className="hover:text-primary h-auto cursor-pointer p-0 font-normal transition-colors"
               >
                 Terms of Service
               </Button>

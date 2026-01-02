@@ -1,9 +1,10 @@
-import ApiClient from "../client";
 import type {
-  Publisher,
   CreatePublisherRequest,
+  Publisher,
   UpdatePublisherRequest,
 } from "@workspace/types/catalog/publishers";
+
+import ApiClient from "../client";
 
 class PublishersApiClient {
   private readonly client: ApiClient;

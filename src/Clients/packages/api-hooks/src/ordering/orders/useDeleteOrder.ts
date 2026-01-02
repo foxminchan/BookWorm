@@ -1,10 +1,12 @@
-import { orderingKeys } from "../../keys";
 import {
   UseMutationOptions,
-  useQueryClient,
   useMutation,
+  useQueryClient,
 } from "@tanstack/react-query";
+
 import ordersApiClient from "@workspace/api-client/ordering/orders";
+
+import { orderingKeys } from "../../keys";
 
 export default function useDeleteOrder(
   id: string,

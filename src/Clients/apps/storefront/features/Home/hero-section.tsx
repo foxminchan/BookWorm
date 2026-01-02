@@ -1,27 +1,28 @@
 "use client";
 
-import { Button } from "@workspace/ui/components/button";
 import { useRouter } from "next/navigation";
+
+import { Button } from "@workspace/ui/components/button";
 
 export default function HeroSection() {
   const router = useRouter();
 
   return (
     <section
-      className="py-20 md:py-32 container mx-auto px-4 text-center border-b"
+      className="container mx-auto border-b px-4 py-20 text-center md:py-32"
       aria-labelledby="hero-heading"
     >
       <h1
         id="hero-heading"
-        className="text-5xl md:text-7xl font-serif font-light mb-8 tracking-tight max-w-4xl mx-auto text-balance"
+        className="mx-auto mb-8 max-w-4xl font-serif text-5xl font-light tracking-tight text-balance md:text-7xl"
       >
         Great stories await your next chapter.
       </h1>
-      <p className="text-lg md:text-xl text-muted-foreground mb-12 max-w-2xl mx-auto">
+      <p className="text-muted-foreground mx-auto mb-12 max-w-2xl text-lg md:text-xl">
         Discover a curated collection of literature, design, and inspiration for
         the modern intellect.
       </p>
-      <div className="flex flex-col sm:flex-row gap-4 justify-center">
+      <div className="flex flex-col justify-center gap-4 sm:flex-row">
         <Button
           size="lg"
           className="rounded-full px-8"

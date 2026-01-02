@@ -1,6 +1,8 @@
-import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
+import { type UseQueryOptions, useQuery } from "@tanstack/react-query";
+
 import booksApiClient from "@workspace/api-client/catalog/books";
 import type { Book } from "@workspace/types/catalog/books";
+
 import { catalogKeys } from "../../keys";
 
 export default function useBook(

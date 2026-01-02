@@ -1,7 +1,9 @@
-import { Button } from "@workspace/ui/components/button";
-import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+
+import { ArrowLeft } from "lucide-react";
+
 import type { OrderStatus } from "@workspace/types/ordering/orders";
+import { Button } from "@workspace/ui/components/button";
 import {
   Select,
   SelectContent,
@@ -27,12 +29,12 @@ export default function OrdersHeader({
   onStatusChange,
 }: OrdersHeaderProps) {
   return (
-    <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-8">
+    <div className="mb-12 flex flex-col justify-between gap-8 md:flex-row md:items-end">
       <div className="flex-1">
         <Link href="/account">
           <Button
             variant="ghost"
-            className="mb-6 gap-2 -ml-2 text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground mb-6 -ml-2 gap-2"
           >
             <ArrowLeft className="size-4" />
             Back to Account
@@ -42,18 +44,18 @@ export default function OrdersHeader({
           <h1 className="font-serif text-5xl font-medium text-balance">
             Order History
           </h1>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-muted-foreground text-lg">
             Track and manage all your purchases
           </p>
         </div>
       </div>
 
       <div className="w-full md:w-56">
-        <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3 block">
+        <label className="text-muted-foreground mb-3 block text-xs font-semibold tracking-widest uppercase">
           Filter Orders
         </label>
         <Select value={selectedStatus} onValueChange={onStatusChange}>
-          <SelectTrigger className="border-2 hover:border-primary/50 transition-colors">
+          <SelectTrigger className="hover:border-primary/50 border-2 transition-colors">
             <SelectValue placeholder="Select status" />
           </SelectTrigger>
           <SelectContent>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+
 import { ArrowRight } from "lucide-react";
 
 type CategoryCardProps = {
@@ -12,19 +13,19 @@ export default function CategoryCard({ id, name }: CategoryCardProps) {
   return (
     <Link
       href={`/shop?category=${id}`}
-      className="group relative flex items-center justify-between p-8 md:p-12 bg-background hover:bg-secondary/20 transition-all duration-300"
+      className="group bg-background hover:bg-secondary/20 relative flex items-center justify-between p-8 transition-all duration-300 md:p-12"
     >
       <div className="flex flex-col gap-1">
-        <span className="text-xs font-mono text-muted-foreground tracking-widest uppercase">
+        <span className="text-muted-foreground font-mono text-xs tracking-widest uppercase">
           Genre
         </span>
-        <h2 className="text-3xl md:text-4xl font-serif font-medium group-hover:translate-x-2 transition-transform duration-500">
+        <h2 className="font-serif text-3xl font-medium transition-transform duration-500 group-hover:translate-x-2 md:text-4xl">
           {name}
         </h2>
       </div>
 
-      <div className="relative size-12 flex items-center justify-center border border-border group-hover:bg-primary group-hover:border-primary transition-all duration-500 rounded-full">
-        <ArrowRight className="size-5 group-hover:text-primary-foreground group-hover:translate-x-1 transition-all" />
+      <div className="border-border group-hover:bg-primary group-hover:border-primary relative flex size-12 items-center justify-center rounded-full border transition-all duration-500">
+        <ArrowRight className="group-hover:text-primary-foreground size-5 transition-all group-hover:translate-x-1" />
       </div>
     </Link>
   );

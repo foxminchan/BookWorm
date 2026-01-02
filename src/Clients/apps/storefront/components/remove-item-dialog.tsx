@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -7,7 +9,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@workspace/ui/components/alert-dialog";
-import type { ReactNode } from "react";
 
 type RemoveItemDialogProps = {
   open: boolean;
@@ -42,12 +43,12 @@ export function RemoveItemDialog({
       <AlertDialogContent className="rounded-2xl">
         <AlertDialogHeader>
           <AlertDialogTitle className="text-2xl">{title}</AlertDialogTitle>
-          <AlertDialogDescription className="text-base pt-2">
+          <AlertDialogDescription className="pt-2 text-base">
             {description || defaultDescription}
             {isMultipleItems && (
               <div className="mt-4 space-y-2">
                 {items.map((item) => (
-                  <div key={item.id} className="text-sm text-foreground">
+                  <div key={item.id} className="text-foreground text-sm">
                     • {item.name}
                   </div>
                 ))}
@@ -55,13 +56,13 @@ export function RemoveItemDialog({
             )}
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <div className="flex gap-3 justify-end">
+        <div className="flex justify-end gap-3">
           <AlertDialogCancel className="rounded-full px-6">
             {cancelLabel}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
-            className="rounded-full px-6 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full px-6"
           >
             {confirmLabel}
           </AlertDialogAction>

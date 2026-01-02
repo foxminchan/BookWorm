@@ -1,12 +1,16 @@
 "use client";
 
-import { Card, CardContent } from "@workspace/ui/components/card";
-import { calculateDiscount } from "@/lib/format";
-import type { Book } from "@workspace/types/catalog/books";
 import { useState } from "react";
-import { Star } from "lucide-react";
+
 import Image from "next/image";
+
+import { Star } from "lucide-react";
+
+import type { Book } from "@workspace/types/catalog/books";
+import { Card, CardContent } from "@workspace/ui/components/card";
+
 import { DEFAULT_BOOK_IMAGE } from "@/lib/constants";
+import { calculateDiscount } from "@/lib/format";
 
 type BookCardProps = {
   book: Book;
@@ -18,7 +22,7 @@ export function BookCard({ book, onClick }: BookCardProps) {
 
   return (
     <article
-      className="border-none shadow-none group cursor-pointer bg-transparent"
+      className="group cursor-pointer border-none bg-transparent shadow-none"
       onClick={onClick}
       role="listitem"
       itemScope
@@ -31,11 +35,11 @@ export function BookCard({ book, onClick }: BookCardProps) {
         }
       }}
     >
-      <Card className="border-none shadow-none group cursor-pointer bg-transparent">
+      <Card className="group cursor-pointer border-none bg-transparent shadow-none">
         <CardContent className="p-0">
-          <div className="aspect-3/4 overflow-hidden rounded-lg mb-4 bg-secondary relative">
+          <div className="bg-secondary relative mb-4 aspect-3/4 overflow-hidden rounded-lg">
             {book.priceSale && (
-              <div className="absolute top-2 left-2 z-10 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">
+              <div className="bg-destructive text-destructive-foreground absolute top-2 left-2 z-10 rounded-full px-2 py-1 text-[10px] font-bold tracking-wider uppercase">
                 -{calculateDiscount(book.price, book.priceSale)}% OFF
               </div>
             )}
@@ -52,18 +56,18 @@ export function BookCard({ book, onClick }: BookCardProps) {
           </div>
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
+              <p className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase">
                 {book.category?.name}
               </p>
-              <div className="flex items-center text-xs gap-0.5">
-                <Star className="size-3 fill-primary text-primary" />
+              <div className="flex items-center gap-0.5 text-xs">
+                <Star className="fill-primary text-primary size-3" />
                 <span>{book.averageRating?.toFixed(1) ?? "0.0"}</span>
               </div>
             </div>
-            <h3 className="font-serif font-medium text-lg leading-snug group-hover:underline">
+            <h3 className="font-serif text-lg leading-snug font-medium group-hover:underline">
               {book.name}
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               {book.authors && book.authors.length > 0
                 ? book.authors.length > 3
                   ? `${book.authors
@@ -76,10 +80,10 @@ export function BookCard({ book, onClick }: BookCardProps) {
             <div className="flex items-center gap-2 pt-1">
               {book.priceSale ? (
                 <>
-                  <span className="font-bold text-primary">
+                  <span className="text-primary font-bold">
                     ${book.priceSale.toFixed(2)}
                   </span>
-                  <span className="text-sm text-muted-foreground line-through decoration-muted-foreground/50">
+                  <span className="text-muted-foreground decoration-muted-foreground/50 text-sm line-through">
                     ${book.price.toFixed(2)}
                   </span>
                 </>

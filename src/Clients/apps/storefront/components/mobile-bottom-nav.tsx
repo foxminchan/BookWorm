@@ -1,11 +1,16 @@
 "use client";
 
+import { useState } from "react";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ShoppingBag, ShoppingCart, User, Menu } from "lucide-react";
-import { useState } from "react";
-import { Badge } from "@workspace/ui/components/badge";
+
 import { useAtomValue } from "jotai";
+import { Home, Menu, ShoppingBag, ShoppingCart, User } from "lucide-react";
+
+import { Badge } from "@workspace/ui/components/badge";
+import { Button } from "@workspace/ui/components/button";
+
 import { basketItemCountAtom } from "@/atoms/basket-atom";
 import { useSession } from "@/lib/auth-client";
 
@@ -30,7 +35,7 @@ export function MobileBottomNav() {
   return (
     <>
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t bg-background flex items-center justify-around h-16"
+        className="bg-background fixed right-0 bottom-0 left-0 z-40 flex h-16 items-center justify-around border-t md:hidden"
         aria-label="Mobile main navigation"
       >
         {navigationItems.map((item) => {
@@ -42,9 +47,9 @@ export function MobileBottomNav() {
               key={item.href}
               href={item.href}
               onClick={() => setIsMenuOpen(false)}
-              className={`flex flex-col items-center justify-center flex-1 h-full gap-1 text-xs transition-colors relative ${
+              className={`relative flex h-full flex-1 flex-col items-center justify-center gap-1 text-xs transition-colors ${
                 active
-                  ? "text-primary border-t-2 border-primary"
+                  ? "text-primary border-primary border-t-2"
                   : "text-muted-foreground hover:text-foreground"
               }`}
               aria-current={active ? "page" : undefined}
@@ -54,7 +59,7 @@ export function MobileBottomNav() {
                 <Icon className="size-5" aria-hidden="true" />
                 {showBadge && (
                   <Badge
-                    className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-[10px]"
+                    className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center p-0 text-[10px]"
                     aria-label={`${itemCount} items in basket`}
                   >
                     {itemCount}
@@ -65,9 +70,10 @@ export function MobileBottomNav() {
             </Link>
           );
         })}
-        <button
+        <Button
+          variant="ghost"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="flex flex-col items-center justify-center flex-1 h-full gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="text-muted-foreground hover:text-foreground flex h-full flex-1 flex-col items-center justify-center gap-1 p-0 text-xs"
           aria-label={
             isMenuOpen ? "Close additional menu" : "Open additional menu"
           }
@@ -76,33 +82,33 @@ export function MobileBottomNav() {
         >
           <Menu className="size-5" aria-hidden="true" />
           <span className="text-[10px]">More</span>
-        </button>
+        </Button>
       </nav>
 
       {isMenuOpen && (
         <div
-          className="md:hidden fixed bottom-16 left-0 right-0 z-40 border-t bg-background"
+          className="bg-background fixed right-0 bottom-16 left-0 z-40 border-t md:hidden"
           role="navigation"
           aria-label="Additional navigation"
         >
-          <div className="flex flex-col p-3 gap-2 text-sm">
+          <div className="flex flex-col gap-2 p-3 text-sm">
             <Link
               href="/categories"
-              className="px-3 py-2 hover:bg-secondary rounded transition-colors"
+              className="hover:bg-secondary rounded px-3 py-2 transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
               Categories
             </Link>
             <Link
               href="/publishers"
-              className="px-3 py-2 hover:bg-secondary rounded transition-colors"
+              className="hover:bg-secondary rounded px-3 py-2 transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
               Publishers
             </Link>
             <Link
               href="/about"
-              className="px-3 py-2 hover:bg-secondary rounded transition-colors"
+              className="hover:bg-secondary rounded px-3 py-2 transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
               Our Story

@@ -1,4 +1,5 @@
 import type { BasketItem as BasketItemType } from "@workspace/types/basket";
+
 import BasketItem from "./basket-item";
 
 type BasketItemsListProps = {
@@ -15,10 +16,9 @@ export default function BasketItemsList({
   onRemoveItem,
 }: BasketItemsListProps) {
   return (
-    <div className="lg:col-span-8 space-y-6">
+    <div className="space-y-6 lg:col-span-8">
       {items.map((item) => {
         const displayQuantity = item.quantity + (modifiedItems[item.id] || 0);
-
         return (
           <BasketItem
             key={item.id}

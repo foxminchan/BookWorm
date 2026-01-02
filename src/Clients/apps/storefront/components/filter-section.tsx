@@ -1,8 +1,12 @@
 "use client";
 
 import { useState } from "react";
+
 import { Search } from "lucide-react";
+
+import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
+
 import { FilterCheckbox } from "@/components/filter-checkbox";
 
 type FilterItem = {
@@ -46,25 +50,27 @@ export function FilterSection({
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-2 mb-4">
+      <div className="mb-4 flex items-center justify-between gap-2">
         <h3 className="font-serif font-medium">{title}</h3>
         {searchable && (
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setIsSearchOpen(!isSearchOpen)}
-            className="text-muted-foreground hover:text-foreground transition"
+            className="text-muted-foreground hover:text-foreground h-8 w-8"
             aria-label={`Search ${title.toLowerCase()}`}
           >
             <Search className="size-4" />
-          </button>
+          </Button>
         )}
       </div>
 
       {isSearchOpen && (
         <div className="relative mb-4">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Search className="text-muted-foreground absolute top-1/2 left-2 size-4 -translate-y-1/2" />
           <Input
             placeholder={`Search ${title.toLowerCase()}...`}
-            className="pl-8 h-8 text-sm"
+            className="h-8 pl-8 text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             autoFocus
@@ -88,12 +94,13 @@ export function FilterSection({
       </div>
 
       {showToggle && (
-        <button
+        <Button
+          variant="link"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="text-sm text-primary hover:underline mt-2 transition-colors"
+          className="text-primary mt-2 h-auto p-0 text-sm hover:underline"
         >
           {isExpanded ? "Show Less" : "Show More"}
-        </button>
+        </Button>
       )}
     </div>
   );

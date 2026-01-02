@@ -1,5 +1,7 @@
 import { v7 as uuidv7 } from "uuid";
+
 import type { Author } from "@workspace/types/catalog/authors";
+
 import authorsData from "../../data/authors.json";
 
 export const mockAuthors: Author[] = authorsData;

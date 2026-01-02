@@ -1,7 +1,7 @@
 "use client";
 
-import { Star } from "lucide-react";
 import cn from "classnames";
+import { Star } from "lucide-react";
 
 type ReviewSummaryCardProps = {
   averageRating: number;
@@ -13,11 +13,11 @@ export default function ReviewSummaryCard({
   totalReviews,
 }: ReviewSummaryCardProps) {
   return (
-    <div className="bg-secondary/30 p-8 rounded-2xl text-center">
-      <p className="text-5xl font-serif font-bold mb-2">
+    <div className="bg-secondary/30 rounded-2xl p-8 text-center">
+      <p className="mb-2 font-serif text-5xl font-bold">
         {averageRating.toFixed(1)}
       </p>
-      <div className="flex justify-center gap-1 mb-2">
+      <div className="mb-2 flex justify-center gap-1">
         {[...Array(5)].map((_, i) => (
           <Star
             key={i}
@@ -30,7 +30,7 @@ export default function ReviewSummaryCard({
           />
         ))}
       </div>
-      <p className="text-sm text-muted-foreground">
+      <p className="text-muted-foreground text-sm">
         Based on {totalReviews} reviews
       </p>
     </div>

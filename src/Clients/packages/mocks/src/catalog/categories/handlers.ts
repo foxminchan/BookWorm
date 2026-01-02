@@ -1,17 +1,19 @@
-import { http, HttpResponse } from "msw";
+import { HttpResponse, http } from "msw";
+
 import type {
   Category,
   CreateCategoryRequest,
   UpdateCategoryRequest,
 } from "@workspace/types/catalog/categories";
+import { generateTraceId } from "@workspace/utils/trace";
+import { formatValidationErrors } from "@workspace/utils/validation";
 import {
   createCategorySchema,
   updateCategorySchema,
 } from "@workspace/validations/catalog/categories";
-import { categoriesStore } from "./data";
-import { formatValidationErrors } from "@workspace/utils/validation";
-import { generateTraceId } from "@workspace/utils/trace";
+
 import { CATALOG_API_BASE_URL } from "../../catalog/constants";
+import { categoriesStore } from "./data";
 
 export const categoriesHandlers = [
   http.get<never, never, Category[]>(

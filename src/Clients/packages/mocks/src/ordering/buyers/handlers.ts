@@ -1,12 +1,14 @@
-import { http, HttpResponse } from "msw";
+import { HttpResponse, http } from "msw";
+
+import { buildPaginationLinks } from "@workspace/utils/link";
+import { formatValidationErrors } from "@workspace/utils/validation";
 import {
   createBuyerSchema,
   updateAddressSchema,
 } from "@workspace/validations/ordering/buyers";
-import { buyersStoreManager, MOCK_USER_ID } from "./data";
-import { formatValidationErrors } from "@workspace/utils/validation";
-import { buildPaginationLinks } from "@workspace/utils/link";
+
 import { ORDERING_API_BASE_URL } from "../../ordering/constants";
+import { MOCK_USER_ID, buyersStoreManager } from "./data";
 
 export const buyersHandlers = [
   http.get(`${ORDERING_API_BASE_URL}/api/v1/buyers/me`, () => {

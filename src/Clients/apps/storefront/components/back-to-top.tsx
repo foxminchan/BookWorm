@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import { ArrowUp } from "lucide-react";
+
 import { Button } from "@workspace/ui/components/button";
 
 export function BackToTop() {
@@ -32,12 +34,12 @@ export function BackToTop() {
   return (
     <Button
       onClick={scrollToTop}
-      className="fixed bottom-24 right-6 w-12 h-12 rounded-full shadow-xl hover:scale-110 transition-transform duration-300 bg-transparent border-2 border-primary z-40 group hidden md:flex items-center justify-center"
+      className="border-primary group fixed right-6 bottom-24 z-40 hidden h-12 w-12 items-center justify-center rounded-full border-2 bg-transparent shadow-xl transition-transform duration-300 hover:scale-110 md:flex"
       aria-label="Scroll to top of page"
       title="Back to top"
     >
       <ArrowUp
-        className="w-5 h-5 text-primary group-hover:text-white transition-colors duration-300"
+        className="text-primary h-5 w-5 transition-colors duration-300 group-hover:text-white"
         aria-hidden="true"
       />
     </Button>

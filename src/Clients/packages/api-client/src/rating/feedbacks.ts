@@ -1,10 +1,11 @@
 import type {
+  CreateFeedbackRequest,
   Feedback,
   FeedbackSummary,
-  CreateFeedbackRequest,
   ListFeedbacksQuery,
 } from "@workspace/types/rating";
 import type { PagedResult } from "@workspace/types/shared";
+
 import ApiClient from "../client";
 
 class RatingApiClient {

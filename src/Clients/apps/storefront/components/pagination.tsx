@@ -1,12 +1,13 @@
 "use client";
 
-import { Button } from "@workspace/ui/components/button";
 import {
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-react";
+
+import { Button } from "@workspace/ui/components/button";
 
 type PaginationProps = {
   currentPage: number;
@@ -89,7 +90,7 @@ export function Pagination({
           <Button
             key={page}
             variant={currentPage === page ? "default" : "outline"}
-            className="size-11 p-0 rounded-full"
+            className="size-11 rounded-full p-0"
             onClick={() => onPageChange(page)}
             aria-label={`Page ${page}`}
             aria-current={currentPage === page ? "page" : undefined}

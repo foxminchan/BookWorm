@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
+
 import Image from "next/image";
+
 import { Badge } from "@workspace/ui/components/badge";
+
 import { DEFAULT_BOOK_IMAGE } from "@/lib/constants";
 
 type ProductImageProps = {
@@ -19,9 +22,9 @@ export default function ProductImage({
   const [imgError, setImgError] = useState(false);
 
   return (
-    <figure className="aspect-3/4 bg-secondary rounded-2xl overflow-hidden shadow-sm relative group">
+    <figure className="bg-secondary group relative aspect-3/4 overflow-hidden rounded-2xl shadow-sm">
       {hasSale && (
-        <Badge className="absolute top-6 left-6 z-10 bg-destructive text-destructive-foreground font-bold px-3 py-1">
+        <Badge className="bg-destructive text-destructive-foreground absolute top-6 left-6 z-10 px-3 py-1 font-bold">
           SALE
         </Badge>
       )}

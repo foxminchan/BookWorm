@@ -1,11 +1,12 @@
 "use client";
 
+import { ReviewsLoadingSkeleton } from "@/components/loading-skeleton";
+
 import ReviewForm from "./review-form";
 import ReviewList from "./review-list";
 import ReviewSummaryCard from "./review-summary-card";
 import ReviewsEmptyState from "./reviews-empty-state";
 import ReviewsSection from "./reviews-section";
-import { ReviewsLoadingSkeleton } from "@/components/loading-skeleton";
 
 type Review = {
   id: string;
@@ -78,8 +79,8 @@ export default function ReviewsContainer({
         summary={summary}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-        <div className="lg:col-span-1 space-y-8">
+      <div className="grid grid-cols-1 gap-12 lg:grid-cols-3">
+        <div className="space-y-8 lg:col-span-1">
           <ReviewSummaryCard
             averageRating={averageRating}
             totalReviews={totalReviews}

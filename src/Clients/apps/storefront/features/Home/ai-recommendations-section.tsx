@@ -1,7 +1,11 @@
 "use client";
 
+import Image from "next/image";
+
+import { BookOpen, MessageSquare, Quote } from "lucide-react";
+
 import { Button } from "@workspace/ui/components/button";
-import { BookOpen, Quote, MessageSquare } from "lucide-react";
+
 import type { ChatBotRef } from "@/components/chat-bot";
 
 type AiRecommendationsSectionProps = {
@@ -13,29 +17,29 @@ export default function AiRecommendationsSection({
 }: AiRecommendationsSectionProps) {
   return (
     <section
-      className="py-24 container mx-auto px-4"
+      className="container mx-auto px-4 py-24"
       aria-labelledby="ai-heading"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
         <div className="space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest">
+          <div className="bg-primary/10 text-primary inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold tracking-widest uppercase">
             <BookOpen className="size-3" aria-hidden="true" />
             Personalized Discovery
           </div>
           <h2
             id="ai-heading"
-            className="text-4xl md:text-5xl font-serif font-medium leading-tight text-balance"
+            className="font-serif text-4xl leading-tight font-medium text-balance md:text-5xl"
           >
             Your Next Favorite Book is a Conversation Away.
           </h2>
-          <p className="text-lg text-muted-foreground text-pretty">
+          <p className="text-muted-foreground text-lg text-pretty">
             Not sure what to read next? Our AI literary assistant has read
             thousands of titles to help you find the perfect match for your
             current mood and interests.
           </p>
-          <blockquote className="bg-secondary/50 p-6 rounded-2xl border border-primary/20 italic relative">
+          <blockquote className="bg-secondary/50 border-primary/20 relative rounded-2xl border p-6 italic">
             <Quote
-              className="absolute -top-3 -left-3 size-8 text-primary/20"
+              className="text-primary/20 absolute -top-3 -left-3 size-8"
               aria-hidden="true"
             />
             <p className="text-muted-foreground">
@@ -47,30 +51,32 @@ export default function AiRecommendationsSection({
               — Julian, Frequent Reader
             </p>
           </blockquote>
-          <div className="pt-4 hidden lg:block">
+          <div className="hidden pt-4 lg:block">
             <Button
               variant="outline"
-              className="rounded-full px-8 bg-transparent border-primary/20 hover:bg-primary/5"
+              className="border-primary/20 hover:bg-primary/5 rounded-full bg-transparent px-8"
               onClick={() => chatBotRef.current?.openChat()}
             >
               Try AI Recommendations
             </Button>
           </div>
         </div>
-        <figure className="relative aspect-square rounded-2xl overflow-hidden shadow-2xl group">
-          <img
+        <figure className="group relative aspect-square overflow-hidden rounded-2xl shadow-2xl">
+          <Image
             src="/aesthetic-book-journal-photography.jpg"
             alt="AI Book Recommendations - person writing in a journal surrounded by books"
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            fill
+            className="object-cover transition-transform duration-700 group-hover:scale-105"
+            priority
           />
-          <figcaption className="absolute inset-0 bg-linear-to-t from-black/60 via-black/0 to-transparent flex flex-col justify-end p-8">
+          <figcaption className="absolute inset-0 flex flex-col justify-end bg-linear-to-t from-black/60 via-black/0 to-transparent p-8">
             <div className="flex items-center gap-4 text-white">
-              <div className="size-12 rounded-full bg-primary flex items-center justify-center shadow-lg">
+              <div className="bg-primary flex size-12 items-center justify-center rounded-full shadow-lg">
                 <MessageSquare className="size-6" aria-hidden="true" />
               </div>
               <div>
                 <p className="font-serif text-xl">BookWorm AI</p>
-                <p className="text-white/70 text-sm">
+                <p className="text-sm text-white/70">
                   Available 24/7 for literary guidance
                 </p>
               </div>

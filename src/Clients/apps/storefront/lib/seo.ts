@@ -1,5 +1,6 @@
 import type { Book } from "@workspace/types/catalog/books";
 import type { Feedback } from "@workspace/types/rating/index";
+
 import { APP_CONFIG } from "./constants";
 
 export function generateProductJsonLd(book: Book, reviews?: Feedback[]) {
@@ -37,7 +38,7 @@ export function generateProductJsonLd(book: Book, reviews?: Feedback[]) {
     "@type": "Book",
     name: book.name,
     description: book.description,
-    image: book.imageUrl ? `${APP_CONFIG.url}${book.imageUrl}` : undefined,
+    image: book.imageUrl ? book.imageUrl : undefined,
     author: book.authors.map((author) => ({
       "@type": "Person",
       name: author.name,
@@ -54,7 +55,7 @@ export function generateProductJsonLd(book: Book, reviews?: Feedback[]) {
         book.status === "InStock"
           ? "https://schema.org/InStock"
           : "https://schema.org/OutOfStock",
-      url: `${APP_CONFIG.url}/shop/${book.id}`,
+      url: `/shop/${book.id}`,
       priceValidUntil: new Date(
         Date.now() + 30 * 24 * 60 * 60 * 1000,
       ).toISOString(),
@@ -74,7 +75,7 @@ export function generateBreadcrumbJsonLd(
       "@type": "ListItem",
       position: index + 1,
       name: item.name,
-      item: `${APP_CONFIG.url}${item.url}`,
+      item: item.url,
     })),
   };
 }
@@ -84,8 +85,7 @@ export function generateOrganizationJsonLd() {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: APP_CONFIG.name,
-    url: APP_CONFIG.url,
-    logo: `${APP_CONFIG.url}/logo.svg`,
+    logo: `/logo.svg`,
     description:
       "Curated online bookstore with literature, design, and inspiration books",
     sameAs: [APP_CONFIG.social.twitter, APP_CONFIG.social.facebook],
@@ -102,12 +102,11 @@ export function generateWebsiteJsonLd() {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: APP_CONFIG.name,
-    url: APP_CONFIG.url,
     potentialAction: {
       "@type": "SearchAction",
       target: {
         "@type": "EntryPoint",
-        urlTemplate: `${APP_CONFIG.url}/shop?search={search_term_string}`,
+        urlTemplate: `/shop?search={search_term_string}`,
       },
       "query-input": "required name=search_term_string",
     },

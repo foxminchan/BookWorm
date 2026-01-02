@@ -19,18 +19,18 @@ const faqs = [
 
 export default function FaqSection() {
   return (
-    <section className="py-24 bg-secondary">
+    <section className="bg-secondary py-24">
       <div className="container mx-auto px-4">
-        <h2 className="text-4xl font-serif font-medium text-center mb-16">
+        <h2 className="mb-16 text-center font-serif text-4xl font-medium">
           Frequently Asked Questions
         </h2>
-        <div className="max-w-2xl mx-auto space-y-6">
+        <div className="mx-auto max-w-2xl space-y-6">
           {faqs.map((item, idx) => (
             <div
               key={idx}
-              className="border-b border-primary/20 pb-6 last:border-b-0"
+              className="border-primary/20 border-b pb-6 last:border-b-0"
             >
-              <h3 className="font-serif font-medium text-lg mb-2">{item.q}</h3>
+              <h3 className="mb-2 font-serif text-lg font-medium">{item.q}</h3>
               <p className="text-muted-foreground leading-relaxed">{item.a}</p>
             </div>
           ))}

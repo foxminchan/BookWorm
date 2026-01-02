@@ -1,7 +1,9 @@
-import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
+import { type UseQueryOptions, useQuery } from "@tanstack/react-query";
+
 import buyersApiClient from "@workspace/api-client/ordering/buyers";
 import type { Buyer, ListBuyersQuery } from "@workspace/types/ordering/buyers";
 import type { PagedResult } from "@workspace/types/shared";
+
 import { orderingKeys } from "../../keys";
 
 export default function useBuyers(

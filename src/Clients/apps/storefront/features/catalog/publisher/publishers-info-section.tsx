@@ -15,10 +15,10 @@ const INFO_SECTIONS = [
 
 export default function PublishersInfoSection() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 border-t border-border/40 pt-16">
+    <div className="border-border/40 grid grid-cols-1 gap-12 border-t pt-16 md:grid-cols-2">
       {INFO_SECTIONS.map((section) => (
         <div key={section.title}>
-          <h3 className="text-2xl font-serif mb-4">{section.title}</h3>
+          <h3 className="mb-4 font-serif text-2xl">{section.title}</h3>
           <p className="text-muted-foreground leading-relaxed">
             {section.description}
           </p>

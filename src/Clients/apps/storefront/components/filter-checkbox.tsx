@@ -12,18 +12,18 @@ export function FilterCheckbox({
   onChange,
 }: FilterCheckboxProps) {
   return (
-    <label className="flex items-center gap-2 cursor-pointer group">
-      <div className="relative w-4 h-4">
+    <label className="group flex cursor-pointer items-center gap-2">
+      <div className="relative h-4 w-4">
         <input
           type="checkbox"
           checked={checked}
           onChange={onChange}
-          className="appearance-none w-4 h-4 border border-border rounded bg-card checked:bg-primary checked:border-primary transition cursor-pointer"
+          className="border-border bg-card checked:bg-primary checked:border-primary h-4 w-4 cursor-pointer appearance-none rounded border transition"
           aria-label={label}
         />
         {checked && (
           <svg
-            className="absolute inset-0 w-4 h-4 text-primary-foreground pointer-events-none"
+            className="text-primary-foreground pointer-events-none absolute inset-0 h-4 w-4"
             viewBox="0 0 16 16"
             fill="none"
             stroke="currentColor"
@@ -34,7 +34,7 @@ export function FilterCheckbox({
           </svg>
         )}
       </div>
-      <span className="text-sm group-hover:text-primary transition-colors">
+      <span className="group-hover:text-primary text-sm transition-colors">
         {label}
       </span>
     </label>

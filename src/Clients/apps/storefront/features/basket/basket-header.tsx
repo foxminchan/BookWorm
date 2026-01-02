@@ -1,5 +1,5 @@
-import { Button } from "@workspace/ui/components/button";
 import { Check, Trash2 } from "lucide-react";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,6 +11,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@workspace/ui/components/alert-dialog";
+import { Button } from "@workspace/ui/components/button";
 
 type BasketHeaderProps = {
   hasChanges: boolean;
@@ -26,14 +27,14 @@ export default function BasketHeader({
   onClearBasket,
 }: BasketHeaderProps) {
   return (
-    <div className="mb-12 max-w-5xl mx-auto">
+    <div className="mx-auto mb-12 max-w-5xl">
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-4xl font-serif font-medium">Your Basket</h1>
+        <h1 className="font-serif text-4xl font-medium">Your Basket</h1>
         <div className="flex items-center gap-3 md:gap-4">
           {hasChanges && (
             <Button
               variant="outline"
-              className="rounded-full gap-2 border-primary text-primary hover:bg-primary/5 animate-in fade-in slide-in-from-right-4 duration-300 bg-transparent text-sm md:text-base"
+              className="border-primary text-primary hover:bg-primary/5 animate-in fade-in slide-in-from-right-4 gap-2 rounded-full bg-transparent text-sm duration-300 md:text-base"
               onClick={onSaveChanges}
             >
               <Check className="size-4" />{" "}

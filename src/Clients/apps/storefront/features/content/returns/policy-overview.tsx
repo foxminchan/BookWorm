@@ -1,5 +1,6 @@
+import { CheckCircle, RotateCcw } from "lucide-react";
+
 import { Card, CardContent } from "@workspace/ui/components/card";
-import { RotateCcw, CheckCircle } from "lucide-react";
 
 const benefits = [
   {
@@ -25,14 +26,14 @@ const processSteps = [
 
 export default function PolicyOverview() {
   return (
-    <section className="py-24 container mx-auto px-4">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+    <section className="container mx-auto px-4 py-24">
+      <div className="grid grid-cols-1 items-start gap-16 lg:grid-cols-2">
         <div className="space-y-8">
           <div>
-            <h2 className="text-4xl font-serif font-medium mb-6">
+            <h2 className="mb-6 font-serif text-4xl font-medium">
               30-Day Return Guarantee
             </h2>
-            <p className="text-lg text-muted-foreground mb-4 leading-relaxed">
+            <p className="text-muted-foreground mb-4 text-lg leading-relaxed">
               We're confident you'll love your books. If you're not completely
               satisfied, we'll accept returns within 30 days of purchase for a
               full refund or exchange.
@@ -41,9 +42,9 @@ export default function PolicyOverview() {
           <div className="space-y-4">
             {benefits.map((benefit, idx) => (
               <div key={idx} className="flex gap-4">
-                <CheckCircle className="size-6 text-primary shrink-0 mt-1" />
+                <CheckCircle className="text-primary mt-1 size-6 shrink-0" />
                 <div>
-                  <h3 className="font-medium mb-1">{benefit.title}</h3>
+                  <h3 className="mb-1 font-medium">{benefit.title}</h3>
                   <p className="text-muted-foreground text-sm">
                     {benefit.description}
                   </p>
@@ -52,17 +53,17 @@ export default function PolicyOverview() {
             ))}
           </div>
         </div>
-        <Card className="border-none bg-secondary">
-          <CardContent className="pt-8 space-y-6">
+        <Card className="bg-secondary border-none">
+          <CardContent className="space-y-6 pt-8">
             <div className="space-y-3">
-              <h3 className="font-serif font-medium text-lg flex items-center gap-2">
-                <RotateCcw className="size-5 text-primary" />
+              <h3 className="flex items-center gap-2 font-serif text-lg font-medium">
+                <RotateCcw className="text-primary size-5" />
                 Return Process
               </h3>
-              <ol className="space-y-3 text-muted-foreground text-sm">
+              <ol className="text-muted-foreground space-y-3 text-sm">
                 {processSteps.map((step, idx) => (
                   <li key={idx} className="flex gap-3">
-                    <span className="font-medium text-primary shrink-0">
+                    <span className="text-primary shrink-0 font-medium">
                       {idx + 1}.
                     </span>
                     <span>{step}</span>

@@ -1,5 +1,6 @@
+import { BookOpen, Globe, Heart, Users } from "lucide-react";
+
 import { Card, CardContent } from "@workspace/ui/components/card";
-import { BookOpen, Heart, Globe, Users } from "lucide-react";
 
 const values = [
   {
@@ -30,21 +31,21 @@ const values = [
 
 export default function ValuesSection() {
   return (
-    <section className="py-24 container mx-auto px-4">
-      <h2 className="text-4xl font-serif font-medium text-center mb-16">
+    <section className="container mx-auto px-4 py-24">
+      <h2 className="mb-16 text-center font-serif text-4xl font-medium">
         What we stand for
       </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
         {values.map((value, idx) => {
           const Icon = value.icon;
           return (
             <Card
               key={idx}
-              className="border-none bg-secondary hover:shadow-lg transition-all hover:-translate-y-1"
+              className="bg-secondary border-none transition-all hover:-translate-y-1 hover:shadow-lg"
             >
-              <CardContent className="pt-8 space-y-4 text-center">
-                <Icon className="size-12 text-primary mx-auto" />
-                <h3 className="font-serif font-medium text-lg">
+              <CardContent className="space-y-4 pt-8 text-center">
+                <Icon className="text-primary mx-auto size-12" />
+                <h3 className="font-serif text-lg font-medium">
                   {value.title}
                 </h3>
                 <p className="text-muted-foreground text-sm leading-relaxed">

@@ -1,4 +1,5 @@
 import axios, { type AxiosInstance, type AxiosResponse } from "axios";
+
 import axiosConfig from "./config";
 import { AxiosRequestConfig } from "./global";
 

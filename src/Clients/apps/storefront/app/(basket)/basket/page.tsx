@@ -1,19 +1,23 @@
 "use client";
 
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
-import { EmptyState } from "@/components/empty-state";
-import { RemoveItemDialog } from "@/components/remove-item-dialog";
-import { ShoppingBag } from "lucide-react";
 import { useState } from "react";
+
 import { useRouter } from "next/navigation";
-import type { BasketItem } from "@workspace/types/basket";
+
 import { useAtom, useAtomValue } from "jotai";
-import { basketAtom, basketItemsAtom } from "@/atoms/basket-atom";
+import { ShoppingBag } from "lucide-react";
+
 import useBasket from "@workspace/api-hooks/basket/useBasket";
-import useUpdateBasket from "@workspace/api-hooks/basket/useUpdateBasket";
 import useDeleteBasket from "@workspace/api-hooks/basket/useDeleteBasket";
+import useUpdateBasket from "@workspace/api-hooks/basket/useUpdateBasket";
 import useCreateOrder from "@workspace/api-hooks/ordering/orders/useCreateOrder";
+import type { BasketItem } from "@workspace/types/basket";
+
+import { basketAtom, basketItemsAtom } from "@/atoms/basket-atom";
+import { EmptyState } from "@/components/empty-state";
+import { Footer } from "@/components/footer";
+import { Header } from "@/components/header";
+import { RemoveItemDialog } from "@/components/remove-item-dialog";
 import BasketHeader from "@/features/basket/basket-header";
 import BasketItemsList from "@/features/basket/basket-items-list";
 import BasketLoadingSkeleton from "@/features/basket/basket-loading-skeleton";
@@ -162,9 +166,9 @@ export default function BasketPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FDFCFB] dark:bg-gray-950">
+    <div className="flex min-h-screen flex-col bg-[#FDFCFB] dark:bg-gray-950">
       <Header />
-      <main className="grow container mx-auto px-4 py-12">
+      <main className="container mx-auto grow px-4 py-12">
         <BasketHeader
           hasChanges={hasChanges}
           hasItems={items.length > 0}
@@ -175,7 +179,7 @@ export default function BasketPage() {
         {isLoadingBasket ? (
           <BasketLoadingSkeleton />
         ) : items.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 max-w-5xl mx-auto">
+          <div className="mx-auto grid max-w-5xl grid-cols-1 gap-12 lg:grid-cols-12">
             <BasketItemsList
               items={items}
               modifiedItems={modifiedItems}

@@ -1,10 +1,10 @@
 export default function HeroSection() {
   return (
-    <section className="py-32 container mx-auto px-4 text-center border-b">
-      <h1 className="text-6xl md:text-7xl font-serif font-light mb-8 tracking-tight max-w-5xl mx-auto text-balance">
+    <section className="container mx-auto border-b px-4 py-32 text-center">
+      <h1 className="mx-auto mb-8 max-w-5xl font-serif text-6xl font-light tracking-tight text-balance md:text-7xl">
         Hassle-Free Returns
       </h1>
-      <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto text-pretty">
+      <p className="text-muted-foreground mx-auto max-w-2xl text-lg text-pretty md:text-xl">
         Not satisfied with your purchase? We make returns simple and
         straightforward.
       </p>

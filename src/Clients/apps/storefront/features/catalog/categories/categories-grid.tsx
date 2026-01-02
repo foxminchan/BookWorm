@@ -1,7 +1,8 @@
 "use client";
 
-import CategoryCard from "./category-card";
 import { CategoryCardSkeleton } from "@/components/loading-skeleton";
+
+import CategoryCard from "./category-card";
 
 type Category = {
   id: string;
@@ -19,7 +20,7 @@ export default function CategoriesGrid({
 }: CategoriesGridProps) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-border/40 border border-border/40">
+      <div className="bg-border/40 border-border/40 grid grid-cols-1 gap-px border md:grid-cols-2">
         {Array.from({ length: 8 }).map((_, i) => (
           <CategoryCardSkeleton key={i} />
         ))}
@@ -28,7 +29,7 @@ export default function CategoriesGrid({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-border/40 border border-border/40">
+    <div className="bg-border/40 border-border/40 grid grid-cols-1 gap-px border md:grid-cols-2">
       {categories.map((category) => (
         <CategoryCard
           key={category.id}

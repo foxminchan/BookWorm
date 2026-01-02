@@ -1,8 +1,9 @@
 "use client";
 
-import { Star } from "lucide-react";
-import { Separator } from "@workspace/ui/components/separator";
 import cn from "classnames";
+import { Star } from "lucide-react";
+
+import { Separator } from "@workspace/ui/components/separator";
 
 type ProductInfoProps = {
   category?: string;
@@ -32,22 +33,22 @@ export default function ProductInfo({
   return (
     <div className="flex flex-col">
       <div className="mb-6">
-        <p className="text-sm font-bold uppercase tracking-widest text-primary mb-2">
+        <p className="text-primary mb-2 text-sm font-bold tracking-widest uppercase">
           {category}
         </p>
         <h1
-          className="text-4xl md:text-5xl font-serif font-medium leading-tight mb-4"
+          className="mb-4 font-serif text-4xl leading-tight font-medium md:text-5xl"
           itemProp="name"
         >
           {name}
         </h1>
-        <p className="text-xl text-muted-foreground">
+        <p className="text-muted-foreground text-xl">
           by{" "}
           <span itemProp="author">{authors.map((a) => a.name).join(", ")}</span>
         </p>
       </div>
 
-      <div className="flex items-center gap-4 mb-8">
+      <div className="mb-8 flex items-center gap-4">
         <div className="flex items-center gap-1">
           {[...Array(5)].map((_, i) => (
             <Star
@@ -73,14 +74,14 @@ export default function ProductInfo({
           </span>
         </div>
         <Separator orientation="vertical" className="h-4" aria-hidden="true" />
-        <span className="text-sm text-muted-foreground">
+        <span className="text-muted-foreground text-sm">
           {totalReviews} Reviews
         </span>
       </div>
 
       <div className="mb-8">
         <div
-          className="flex items-baseline gap-3 mb-2"
+          className="mb-2 flex items-baseline gap-3"
           itemProp="offers"
           itemScope
           itemType="https://schema.org/Offer"
@@ -88,12 +89,12 @@ export default function ProductInfo({
           {priceSale ? (
             <>
               <span
-                className="text-3xl font-bold text-primary"
+                className="text-primary text-3xl font-bold"
                 itemProp="price"
               >
                 ${priceSale.toFixed(2)}
               </span>
-              <span className="text-xl text-muted-foreground line-through">
+              <span className="text-muted-foreground text-xl line-through">
                 ${price.toFixed(2)}
               </span>
             </>
@@ -118,9 +119,9 @@ export default function ProductInfo({
         </p>
       </div>
 
-      <div className="space-y-6 mb-10">
+      <div className="mb-10 space-y-6">
         <p
-          className="text-muted-foreground leading-relaxed text-lg"
+          className="text-muted-foreground text-lg leading-relaxed"
           itemProp="description"
         >
           {description}
@@ -128,7 +129,7 @@ export default function ProductInfo({
 
         <div className="grid grid-cols-2 gap-y-4 text-sm">
           <div>
-            <p className="font-bold text-muted-foreground uppercase tracking-wider text-[10px]">
+            <p className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
               Publisher
             </p>
             <p className="font-medium" itemProp="publisher">
@@ -136,7 +137,7 @@ export default function ProductInfo({
             </p>
           </div>
           <div>
-            <p className="font-bold text-muted-foreground uppercase tracking-wider text-[10px]">
+            <p className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
               Category
             </p>
             <p className="font-medium" itemProp="bookEdition">

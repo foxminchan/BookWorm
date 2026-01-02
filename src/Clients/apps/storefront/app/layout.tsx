@@ -1,10 +1,13 @@
 import type React from "react";
-import { Geist, Geist_Mono } from "next/font/google";
+
 import type { Metadata, Viewport } from "next";
-import { JsonLd } from "@/components/json-ld";
-import { generateOrganizationJsonLd, generateWebsiteJsonLd } from "@/lib/seo";
-import { Providers } from "@/components/providers";
+import { Geist, Geist_Mono } from "next/font/google";
+
 import "@workspace/ui/globals.css";
+
+import { JsonLd } from "@/components/json-ld";
+import { Providers } from "@/components/providers";
+import { generateOrganizationJsonLd, generateWebsiteJsonLd } from "@/lib/seo";
 
 export const viewport: Viewport = {
   width: "device-width",

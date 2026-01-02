@@ -1,11 +1,14 @@
 "use client";
 
-import { Button } from "@workspace/ui/components/button";
-import { ArrowRight } from "lucide-react";
-import { BookCardSkeleton } from "@/components/loading-skeleton";
-import { BookCard } from "@/components/book-card";
 import { useRouter } from "next/navigation";
+
+import { ArrowRight } from "lucide-react";
+
 import type { Book } from "@workspace/types/catalog/books";
+import { Button } from "@workspace/ui/components/button";
+
+import { BookCard } from "@/components/book-card";
+import { BookCardSkeleton } from "@/components/loading-skeleton";
 
 type FeaturedBooksSectionProps = {
   books: Book[];
@@ -21,14 +24,14 @@ export default function FeaturedBooksSection({
 
   return (
     <section
-      className="py-24 container mx-auto px-4"
+      className="container mx-auto px-4 py-24"
       aria-labelledby="featured-heading"
     >
-      <div className="flex items-end justify-between mb-12">
+      <div className="mb-12 flex items-end justify-between">
         <div>
           <h2
             id="featured-heading"
-            className="text-3xl font-serif font-medium mb-2"
+            className="mb-2 font-serif text-3xl font-medium"
           >
             Featured Books
           </h2>
@@ -39,7 +42,7 @@ export default function FeaturedBooksSection({
         {hasFeaturedBooks && (
           <Button
             variant="ghost"
-            className="hidden md:flex gap-2"
+            className="hidden gap-2 md:flex"
             onClick={() => router.push("/shop")}
           >
             View All <ArrowRight className="size-4" />
@@ -47,7 +50,7 @@ export default function FeaturedBooksSection({
         )}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-2 gap-8 sm:grid-cols-2 lg:grid-cols-4">
         {isLoading
           ? Array.from({ length: 4 }).map((_, i) => (
               <BookCardSkeleton key={i} />

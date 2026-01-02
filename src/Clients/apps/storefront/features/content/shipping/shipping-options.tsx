@@ -1,5 +1,6 @@
+import { Clock, Globe, type LucideIcon, Package, Truck } from "lucide-react";
+
 import { Card, CardContent } from "@workspace/ui/components/card";
-import { Package, Clock, Truck, Globe, type LucideIcon } from "lucide-react";
 
 type ShippingOption = {
   icon: LucideIcon;
@@ -37,26 +38,26 @@ const shippingOptions: ShippingOption[] = [
 
 export default function ShippingOptions() {
   return (
-    <section className="py-24 container mx-auto px-4">
-      <h2 className="text-4xl font-serif font-medium mb-16 text-center">
+    <section className="container mx-auto px-4 py-24">
+      <h2 className="mb-16 text-center font-serif text-4xl font-medium">
         Shipping Options
       </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
         {shippingOptions.map((option, idx) => {
           const Icon = option.icon;
           return (
             <Card
               key={idx}
-              className="border-none bg-secondary hover:shadow-lg transition-all"
+              className="bg-secondary border-none transition-all hover:shadow-lg"
             >
-              <CardContent className="pt-8 space-y-4 text-center">
-                <Icon className="size-12 text-primary mx-auto" />
-                <h3 className="font-serif font-medium text-lg">
+              <CardContent className="space-y-4 pt-8 text-center">
+                <Icon className="text-primary mx-auto size-12" />
+                <h3 className="font-serif text-lg font-medium">
                   {option.title}
                 </h3>
                 <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">{option.time}</p>
-                  <p className="font-medium text-primary">{option.price}</p>
+                  <p className="text-muted-foreground text-sm">{option.time}</p>
+                  <p className="text-primary font-medium">{option.price}</p>
                 </div>
               </CardContent>
             </Card>

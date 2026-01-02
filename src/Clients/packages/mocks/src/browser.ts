@@ -1,9 +1,10 @@
 import { setupWorker } from "msw/browser";
+
+import { basketHandlers } from "./basket/index";
 import { authorsHandlers } from "./catalog/authors/index";
+import { booksHandlers } from "./catalog/books/index";
 import { categoriesHandlers } from "./catalog/categories/index";
 import { publishersHandlers } from "./catalog/publishers/index";
-import { booksHandlers } from "./catalog/books/index";
-import { basketHandlers } from "./basket/index";
 import { buyersHandlers } from "./ordering/buyers/index";
 import { ordersHandlers } from "./ordering/orders/index";
 import { feedbacksHandlers } from "./rating/index";

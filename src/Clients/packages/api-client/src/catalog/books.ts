@@ -5,6 +5,7 @@ import type {
   UpdateBookRequest,
 } from "@workspace/types/catalog/books";
 import type { PagedResult } from "@workspace/types/shared";
+
 import ApiClient from "../client";
 
 class BooksApiClient {

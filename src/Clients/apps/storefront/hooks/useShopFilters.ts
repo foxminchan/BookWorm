@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import { useSearchParams } from "next/navigation";
 
 export function useShopFilters() {
@@ -14,7 +15,6 @@ export function useShopFilters() {
   const [sortBy, setSortBy] = useState("name");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  // Initialize filters from URL params on mount
   useEffect(() => {
     const categoryParam = searchParams.get("category");
     const publisherParam = searchParams.get("publisher");

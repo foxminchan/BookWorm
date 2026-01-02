@@ -1,4 +1,5 @@
 import type { CustomerBasket } from "@workspace/types/basket";
+
 import basketsData from "../data/baskets.json";
 
 const mockBaskets: CustomerBasket[] = basketsData;

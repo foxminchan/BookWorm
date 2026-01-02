@@ -2,11 +2,12 @@
 
 import type React from "react";
 import { useState } from "react";
-import { Button } from "@workspace/ui/components/button";
-import { ShoppingBasket, Loader2 } from "lucide-react";
-import { QuantityControl } from "@/components/quantity-control";
-import { useSession } from "@/lib/auth-client";
+
 import { useRouter } from "next/navigation";
+
+import { Loader2, ShoppingBasket } from "lucide-react";
+
+import { Button } from "@workspace/ui/components/button";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +16,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@workspace/ui/components/dialog";
+
+import { QuantityControl } from "@/components/quantity-control";
+import { useSession } from "@/lib/auth-client";
 
 type ProductActionsProps = {
   quantity: number;
@@ -49,11 +53,11 @@ export default function ProductActions({
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row">
         {quantity === 0 ? (
           <Button
             size="lg"
-            className="rounded-full h-14 text-lg gap-3 w-full sm:w-auto px-10 shadow-lg shadow-primary/20"
+            className="shadow-primary/20 h-14 w-full gap-3 rounded-full px-10 text-lg shadow-lg sm:w-auto"
             onClick={handleAddToBasket}
             disabled={status !== "InStock" || isAddingToBasket}
           >
