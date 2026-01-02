@@ -12,6 +12,52 @@ public static class KeycloakExtensions
     private static readonly string _defaultLocalKeycloakName = nameof(BookWorm).ToLowerInvariant();
 
     /// <summary>
+    ///     Configures the turborepo app resource to integrate with Keycloak as an Identity Provider (IdP).
+    /// </summary>
+    /// <param name="builder">The turborepo app resource builder.</param>
+    /// <param name="keycloak">The Keycloak resource builder to configure as an IdP.</param>
+    /// <returns>The turborepo app resource builder for method chaining.</returns>
+    public static IResourceBuilder<TurborepoAppResource> WithKeycloak(
+        this IResourceBuilder<TurborepoAppResource> builder,
+        IResourceBuilder<IResource> keycloak
+    )
+    {
+        var clientId = builder.Resource.Name;
+        var applicationBuilder = builder.ApplicationBuilder;
+
+        if (
+            applicationBuilder.ExecutionContext.IsRunMode
+            && keycloak is IResourceBuilder<KeycloakResource> keycloakContainer
+        )
+        {
+            builder
+                .WithReference(keycloakContainer)
+                .WaitForStart(keycloakContainer)
+                .WithEnvironment("KEYCLOAK_URL", keycloakContainer.GetEndpoint(Http.Schemes.Http))
+                .WithEnvironment("KEYCLOAK_REALM", _defaultLocalKeycloakName)
+                .WithEnvironment("KEYCLOAK_CLIENT_ID", clientId);
+        }
+        else if (
+            applicationBuilder.ExecutionContext.IsPublishMode
+            && keycloak is IResourceBuilder<ExternalServiceResource> keycloakHosted
+        )
+        {
+            var realmParameter = applicationBuilder
+                .Resources.OfType<ParameterResource>()
+                .First(r => string.Equals(r.Name, "kc-realm", StringComparison.OrdinalIgnoreCase));
+
+            builder
+                .WithReference(keycloakHosted)
+                .WaitFor(keycloakHosted)
+                .WithEnvironment("KEYCLOAK_URL", keycloakHosted)
+                .WithEnvironment("KEYCLOAK_REALM", realmParameter)
+                .WithEnvironment("KEYCLOAK_CLIENT_ID", clientId);
+        }
+
+        return builder;
+    }
+
+    /// <summary>
     ///     Configures the project resource to integrate with Keycloak as an Identity Provider (IdP).
     /// </summary>
     /// <param name="builder">The project resource builder.</param>
@@ -37,7 +83,6 @@ public static class KeycloakExtensions
             var clientEnv = clientId.ToUpperInvariant();
 
             keycloakContainer
-                .WithOtlpExporter()
                 .WithEnvironment(HttpEnabledEnvVarName, "true")
                 .WithEnvironment(ProxyHeadersEnvVarName, "xforwarded")
                 .WithEnvironment(HostNameStrictEnvVarName, "false")
@@ -136,6 +181,7 @@ public static class KeycloakExtensions
         {
             var keycloak = builder
                 .AddKeycloak(name)
+                .WithOtlpExporter()
                 .WithDataVolume()
                 .WithIconName("LockClosedRibbon")
                 .WithCustomTheme(_defaultLocalKeycloakName)

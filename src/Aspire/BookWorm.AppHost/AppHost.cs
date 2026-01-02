@@ -192,7 +192,8 @@ turbo
     .WithMappedEndpointPort()
     .WithHttpHealthCheck()
     .WithReference(gateway)
-    .WaitFor(gateway);
+    .WaitFor(gateway)
+    .WithKeycloak(keycloak);
 
 turbo
     .AddApp(Clients.BackOffice, Clients.BackOfficeTurboApp)
@@ -200,7 +201,8 @@ turbo
     .WithMappedEndpointPort()
     .WithHttpHealthCheck()
     .WithReference(gateway)
-    .WaitFor(gateway);
+    .WaitFor(gateway)
+    .WithKeycloak(keycloak);
 
 if (builder.ExecutionContext.IsRunMode)
 {

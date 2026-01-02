@@ -7,11 +7,13 @@ import { useState } from "react";
 import { Badge } from "@workspace/ui/components/badge";
 import { useAtomValue } from "jotai";
 import { basketItemCountAtom } from "@/atoms/basket-atom";
+import { useSession } from "@/lib/auth-client";
 
 export function MobileBottomNav() {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const itemCount = useAtomValue(basketItemCountAtom);
+  const { data: session } = useSession();
 
   const isActive = (path: string) =>
     pathname === path || pathname.startsWith(path + "/");
@@ -19,7 +21,9 @@ export function MobileBottomNav() {
   const navigationItems = [
     { href: "/", icon: Home, label: "Home" },
     { href: "/shop", icon: ShoppingBag, label: "Shop" },
-    { href: "/basket", icon: ShoppingCart, label: "Basket" },
+    ...(session?.user
+      ? [{ href: "/basket", icon: ShoppingCart, label: "Basket" }]
+      : []),
     { href: "/account", icon: User, label: "Account" },
   ];
 

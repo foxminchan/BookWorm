@@ -28,21 +28,7 @@ export const booksHandlers = [
       );
       const searchTerm = url.searchParams.get("search") || undefined;
 
-      console.log("[MSW Books] Request params:", {
-        pageIndex,
-        pageSize,
-        searchTerm,
-      });
-
       const result = booksStore.list({ pageIndex, pageSize, searchTerm });
-
-      console.log("[MSW Books] Result:", {
-        itemsCount: result.items.length,
-        totalCount: result.totalCount,
-        pageIndex: result.pageIndex,
-        pageSize: result.pageSize,
-        firstBook: result.items[0],
-      });
 
       const links = buildPaginationLinks(
         request.url,

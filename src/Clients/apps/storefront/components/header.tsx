@@ -10,14 +10,14 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAtomValue } from "jotai";
 import { basketItemsAtom } from "@/atoms/basket-atom";
 import { Button } from "@workspace/ui/components/button";
-import { useLogout } from "@/hooks/useLogout";
+import { useSession, signOut } from "@/lib/auth-client";
 
 export function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const items = useAtomValue(basketItemsAtom);
   const totalItems = items.length;
-  const { logout } = useLogout();
+  const { data: session, isPending } = useSession();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isAccountOpen, setIsAccountOpen] = useState(false);
@@ -35,9 +35,10 @@ export function Header() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setIsAccountOpen(false);
-    logout();
+    await signOut();
+    router.push("/");
   };
 
   const handleAccountMouseEnter = () => {
@@ -172,14 +173,14 @@ export function Header() {
               onMouseEnter={handleAccountMouseEnter}
               onMouseLeave={handleAccountMouseLeave}
             >
-              <Link
-                href="/account"
-                className={`p-1.5 md:p-2 rounded-full transition-colors shrink-0 block ${isActive("/account") ? "bg-secondary" : "hover:bg-secondary"}`}
+              <button
+                type="button"
+                className={`p-1.5 md:p-2 rounded-full transition-colors shrink-0 ${isActive("/account") ? "bg-secondary" : "hover:bg-secondary"}`}
                 aria-label="Account"
               >
                 <User className="size-4 md:size-5" />
                 <span className="sr-only">Account</span>
-              </Link>
+              </button>
 
               {/* Dropdown Menu */}
               {isAccountOpen && (
@@ -188,49 +189,72 @@ export function Header() {
                   role="menu"
                   aria-label="Account menu"
                 >
-                  <Link
-                    href="/account"
-                    className="block px-4 py-2 hover:bg-secondary transition-colors"
-                    role="menuitem"
-                  >
-                    My Profile
-                  </Link>
-                  <Link
-                    href="/account/orders"
-                    className="block px-4 py-2 hover:bg-secondary transition-colors"
-                    role="menuitem"
-                  >
-                    Order History
-                  </Link>
-                  <Button
-                    variant="ghost"
-                    onClick={handleLogout}
-                    className="w-full justify-start px-4 py-2 h-auto text-primary font-normal"
-                    role="menuitem"
-                  >
-                    Logout
-                  </Button>
+                  {session?.user ? (
+                    <>
+                      <Link
+                        href="/account"
+                        className="block px-4 py-2 hover:bg-secondary transition-colors"
+                        role="menuitem"
+                      >
+                        My Profile
+                      </Link>
+                      <Link
+                        href="/account/orders"
+                        className="block px-4 py-2 hover:bg-secondary transition-colors"
+                        role="menuitem"
+                      >
+                        Order History
+                      </Link>
+                      <Button
+                        variant="ghost"
+                        onClick={handleLogout}
+                        className="w-full justify-start px-4 py-2 h-auto text-primary font-normal"
+                        role="menuitem"
+                      >
+                        Logout
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        href="/login"
+                        className="block px-4 py-2 hover:bg-secondary transition-colors"
+                        role="menuitem"
+                      >
+                        Login
+                      </Link>
+                      <Link
+                        href="/register"
+                        className="block px-4 py-2 hover:bg-secondary transition-colors"
+                        role="menuitem"
+                      >
+                        Register
+                      </Link>
+                    </>
+                  )}
                 </div>
               )}
             </div>
 
-            <Link
-              href="/basket"
-              className={`p-1.5 md:p-2 rounded-full transition-colors relative shrink-0 ${isActive("/basket") ? "bg-secondary" : "hover:bg-secondary"}`}
-              aria-label="Shopping basket"
-            >
-              <ShoppingBag className="size-4 md:size-5" />
-              {totalItems > 0 && (
-                <span
-                  className="absolute -top-0.5 -right-0.5 size-4 bg-primary text-[10px] font-bold text-primary-foreground rounded-full flex items-center justify-center"
-                  aria-live="polite"
-                  aria-label="Number of items in basket"
-                >
-                  {totalItems}
-                </span>
-              )}
-              <span className="sr-only">Basket</span>
-            </Link>
+            {session?.user && (
+              <Link
+                href="/basket"
+                className={`p-1.5 md:p-2 rounded-full transition-colors relative shrink-0 ${isActive("/basket") ? "bg-secondary" : "hover:bg-secondary"}`}
+                aria-label="Shopping basket"
+              >
+                <ShoppingBag className="size-4 md:size-5" />
+                {totalItems > 0 && (
+                  <span
+                    className="absolute -top-0.5 -right-0.5 size-4 bg-primary text-[10px] font-bold text-primary-foreground rounded-full flex items-center justify-center"
+                    aria-live="polite"
+                    aria-label="Number of items in basket"
+                  >
+                    {totalItems}
+                  </span>
+                )}
+                <span className="sr-only">Basket</span>
+              </Link>
+            )}
           </div>
         </div>
       </header>
