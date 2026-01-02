@@ -30,7 +30,14 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "test:e2e": "cucumber-js",
+    "test:e2e:headed": "HEADLESS=false cucumber-js",
+    "test:e2e:chrome": "cucumber-js --profile default",
+    "test:e2e:ci": "cucumber-js --profile ci",
+    "test:e2e:report": "node e2e/support/generate-report.js",
+    "playwright:install": "playwright install --with-deps chromium",
+    "playwright:install:all": "playwright install --with-deps"
   },
   "dependencies": {
     "@copilotkit/react-core": "1.50.1",
@@ -66,6 +73,11 @@
     "zod": "^4.3.4"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.0",
+    "@cucumber/cucumber": "^12.5.0",
+    "@cucumber/pretty-formatter": "^2.4.1",
+    "@faker-js/faker": "^10.1.0",
+    "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4.1.18",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.1",
@@ -78,8 +90,11 @@
     "@vitest/ui": "^4.0.16",
     "@workspace/eslint-config": "workspace:^",
     "@workspace/typescript-config": "workspace:*",
+    "cucumber-html-reporter": "^7.2.0",
     "eslint": "^9.39.2",
     "happy-dom": "^15.11.7",
+    "multiple-cucumber-html-reporter": "^3.9.3",
+    "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
     "vitest": "^4.0.16"
   },

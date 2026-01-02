@@ -1,0 +1,31 @@
+# Test Reports
+reports/
+*.json
+*.html
+
+# Screenshots and Videos
+screenshots/
+videos/
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Cucumber
+.cucumber/
+rerun.txt
+
+# Temporary files
+*.tmp
+*.log
+.DS_Store
+
+# Node modules (if any)
+node_modules/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

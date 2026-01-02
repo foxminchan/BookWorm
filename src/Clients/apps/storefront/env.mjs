@@ -6,7 +6,7 @@ const isDev = process.env.NODE_ENV === "development";
 export const env = createEnv({
   server: {
     KEYCLOAK_URL: z.url(),
-    KEYCLOAK_REALM: string().min(1),
+    KEYCLOAK_REALM: z.string().min(1),
     KEYCLOAK_CLIENT_ID: z.string().min(1),
   },
 
