@@ -55,7 +55,7 @@ describe("ProductActions", () => {
     const addButton = screen.getByRole("button", { name: /add to basket/i });
     await user.click(addButton);
 
-    expect(mockOnAddToBasket).toHaveBeenCalled();
+    expect(mockOnAddToBasket).toHaveBeenCalledTimes(1);
   });
 
   it("should disable button when out of stock", () => {
@@ -91,5 +91,47 @@ describe("ProductActions", () => {
       screen.queryByRole("button", { name: /add to basket/i }),
     ).not.toBeInTheDocument();
     expect(screen.getByRole("textbox")).toBeInTheDocument();
+  });
+
+  it("should have shopping basket icon", () => {
+    const { container } = renderWithProviders(
+      <ProductActions {...defaultProps} />,
+    );
+
+    const icon = container.querySelector("svg");
+    expect(icon).toBeInTheDocument();
+  });
+
+  it("should have loader icon when adding", () => {
+    const { container } = renderWithProviders(
+      <ProductActions {...defaultProps} isAddingToBasket={true} />,
+    );
+
+    const loader = container.querySelector(".animate-spin");
+    expect(loader).toBeInTheDocument();
+  });
+
+  it("should pass quantity to control component", () => {
+    renderWithProviders(<ProductActions {...defaultProps} quantity={3} />);
+
+    const input = screen.getByRole("textbox") as HTMLInputElement;
+    expect(input.value).toBe("3");
+  });
+
+  it("should have correct button styling", () => {
+    renderWithProviders(<ProductActions {...defaultProps} />);
+
+    const button = screen.getByRole("button", { name: /add to basket/i });
+    expect(button).toHaveClass("rounded-full");
+  });
+
+  it("should display out of stock correctly", () => {
+    renderWithProviders(
+      <ProductActions {...defaultProps} status="OutOfStock" />,
+    );
+
+    const button = screen.getByRole("button", { name: /add to basket/i });
+    expect(button).toBeDisabled();
+    expect(screen.getByText(/add to basket/i)).toBeInTheDocument();
   });
 });
