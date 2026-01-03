@@ -50,14 +50,32 @@ When(
   "I set price range to {string}",
   async function (this: { page: Page }, priceRange: string) {
     const match = priceRange.match(/\$(\d+)-\$(\d+)/);
-    if (!match || !match[1] || !match[2]) {
+
+    // Validate regex match and capture groups exist
+    if (!match) {
       throw new Error(
         `Invalid price range format: "${priceRange}". Expected format: "$min-$max" (e.g., "$20-$50")`,
       );
     }
 
-    const min = parseInt(match[1], 10);
-    const max = parseInt(match[2], 10);
+    const minStr = match[1];
+    const maxStr = match[2];
+
+    if (!minStr || !maxStr) {
+      throw new Error(
+        `Failed to extract price values from: "${priceRange}". Expected format: "$min-$max" (e.g., "$20-$50")`,
+      );
+    }
+
+    const min = parseInt(minStr, 10);
+    const max = parseInt(maxStr, 10);
+
+    if (isNaN(min) || isNaN(max)) {
+      throw new Error(
+        `Invalid numeric values in price range: "${priceRange}". Min: ${minStr}, Max: ${maxStr}`,
+      );
+    }
+
     const shopPage = new ShopPage(this.page);
     await shopPage.setPriceRange(min, max);
   },

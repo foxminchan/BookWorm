@@ -130,13 +130,28 @@ export class ShopPage extends BasePage {
   }
 
   async setPriceRange(min: number, max: number): Promise<void> {
-    // This is simplified - actual implementation may vary based on UI
     const sliders = await this.priceRangeSlider.all();
-    if (sliders.length >= 2) {
-      await sliders[0]!.fill(min.toString());
-      await sliders[1]!.fill(max.toString());
-      await this.waitForPageLoad();
+
+    if (sliders.length < 2) {
+      throw new Error(
+        `Expected 2 price range sliders but found ${sliders.length}. ` +
+          `Verify the price filter UI is properly loaded.`,
+      );
     }
+
+    const minSlider = sliders[0];
+    const maxSlider = sliders[1];
+
+    if (!minSlider || !maxSlider) {
+      throw new Error(
+        `Price range sliders not accessible despite length check. ` +
+          `Found ${sliders.length} sliders.`,
+      );
+    }
+
+    await minSlider.fill(min.toString());
+    await maxSlider.fill(max.toString());
+    await this.waitForPageLoad();
   }
 
   async clearFilters(): Promise<void> {

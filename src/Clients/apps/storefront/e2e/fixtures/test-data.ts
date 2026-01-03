@@ -145,7 +145,7 @@ export const testBooks: Book[] = [
 export const testBuyer: Buyer = {
   id: faker.string.uuid(),
   name: faker.person.fullName(),
-  address: `${faker.location.streetAddress()}, ${faker.location.city()}, ${faker.location.state()}, ${faker.location.zipCode()}, ${faker.location.country()}`,
+  address: `${faker.location.streetAddress()}, ${faker.location.city()}, ${faker.location.state()}`,
 };
 
 /**
@@ -363,8 +363,8 @@ export function createRandomBook(overrides?: Partial<Book>): Book {
         })
       : null,
     status: faker.helpers.arrayElement(["InStock", "OutOfStock"] as const),
-    category: faker.helpers.arrayElement(testCategories) ?? null,
-    publisher: faker.helpers.arrayElement(testPublishers) ?? null,
+    category: faker.helpers.arrayElement(testCategories),
+    publisher: faker.helpers.arrayElement(testPublishers),
     authors: [faker.helpers.arrayElement(testAuthors)!],
     averageRating: faker.number.float({ min: 3, max: 5, fractionDigits: 1 }),
     totalReviews: faker.number.int({ min: 10, max: 5000 }),
