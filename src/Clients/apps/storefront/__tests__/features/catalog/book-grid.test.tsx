@@ -1,3 +1,4 @@
+import { faker } from "@faker-js/faker";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -12,22 +13,22 @@ describe("BookGrid", () => {
 
   const mockBooks = [
     {
-      id: "1",
-      name: "Book One",
-      authors: [{ name: "Author One" }],
-      price: 19.99,
-      imageUrl: "/book1.jpg",
-      averageRating: 4.5,
-      category: { name: "Fiction" },
+      id: faker.string.uuid(),
+      name: faker.commerce.productName(),
+      authors: [{ name: faker.person.fullName() }],
+      price: faker.number.float({ min: 10, max: 50, fractionDigits: 2 }),
+      imageUrl: faker.image.url(),
+      averageRating: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
+      category: { name: faker.commerce.department() },
     },
     {
-      id: "2",
-      name: "Book Two",
-      authors: [{ name: "Author Two" }],
-      price: 29.99,
-      imageUrl: "/book2.jpg",
-      averageRating: 3.8,
-      category: { name: "Non-Fiction" },
+      id: faker.string.uuid(),
+      name: faker.commerce.productName(),
+      authors: [{ name: faker.person.fullName() }],
+      price: faker.number.float({ min: 10, max: 50, fractionDigits: 2 }),
+      imageUrl: faker.image.url(),
+      averageRating: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
+      category: { name: faker.commerce.department() },
     },
   ];
 
@@ -52,7 +53,8 @@ describe("BookGrid", () => {
   });
 
   it("should display books grid", () => {
-    renderWithProviders(<BookGrid {...defaultProps} />);
+    const books = [{ ...mockBooks[0]!, name: "Book One" }, mockBooks[1]!];
+    renderWithProviders(<BookGrid {...defaultProps} books={books} />);
 
     expect(screen.getByRole("list")).toBeInTheDocument();
     expect(screen.getByText("Book One")).toBeInTheDocument();

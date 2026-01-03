@@ -1,28 +1,31 @@
+import { faker } from "@faker-js/faker";
 import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+
+import { OrderItem } from "@workspace/types/ordering/orders";
 
 import OrderItemsList from "@/features/ordering/order-detail/order-items-list";
 
 import { renderWithProviders } from "../../utils/test-utils";
 
-const mockItems = [
+const mockItems: OrderItem[] = [
   {
-    id: "item-1",
-    name: "The Great Gatsby",
-    quantity: 2,
-    price: 15.99,
+    id: faker.string.uuid(),
+    name: faker.commerce.productName(),
+    quantity: faker.number.int({ min: 1, max: 5 }),
+    price: faker.number.float({ min: 10, max: 50, fractionDigits: 2 }),
   },
   {
-    id: "item-2",
-    name: "To Kill a Mockingbird",
-    quantity: 1,
-    price: 12.5,
+    id: faker.string.uuid(),
+    name: faker.commerce.productName(),
+    quantity: faker.number.int({ min: 1, max: 5 }),
+    price: faker.number.float({ min: 10, max: 50, fractionDigits: 2 }),
   },
   {
-    id: "item-3",
+    id: faker.string.uuid(),
     name: null,
-    quantity: 3,
-    price: 10.0,
+    quantity: faker.number.int({ min: 1, max: 5 }),
+    price: faker.number.float({ min: 10, max: 50, fractionDigits: 2 }),
   },
 ];
 
@@ -34,14 +37,24 @@ describe("OrderItemsList", () => {
   });
 
   it("should render all items", () => {
-    renderWithProviders(<OrderItemsList items={mockItems} />);
+    const items = [
+      { ...mockItems[0]!, name: "The Great Gatsby" },
+      { ...mockItems[1]!, name: "To Kill a Mockingbird" },
+      mockItems[2]!,
+    ];
+    renderWithProviders(<OrderItemsList items={items} />);
 
     expect(screen.getByText("The Great Gatsby")).toBeInTheDocument();
     expect(screen.getByText("To Kill a Mockingbird")).toBeInTheDocument();
   });
 
   it("should display item quantities", () => {
-    renderWithProviders(<OrderItemsList items={mockItems} />);
+    const items = [
+      { ...mockItems[0]!, quantity: 2 },
+      { ...mockItems[1]!, quantity: 1 },
+      { ...mockItems[2]!, quantity: 3 },
+    ];
+    renderWithProviders(<OrderItemsList items={items} />);
 
     expect(screen.getByText("Quantity: 2")).toBeInTheDocument();
     expect(screen.getByText("Quantity: 1")).toBeInTheDocument();
@@ -49,7 +62,12 @@ describe("OrderItemsList", () => {
   });
 
   it("should calculate and display total prices", () => {
-    renderWithProviders(<OrderItemsList items={mockItems} />);
+    const items = [
+      { ...mockItems[0]!, quantity: 2, price: 15.99 },
+      { ...mockItems[1]!, quantity: 1, price: 12.5 },
+      { ...mockItems[2]!, quantity: 3, price: 10.0 },
+    ];
+    renderWithProviders(<OrderItemsList items={items} />);
 
     // 2 * $15.99 = $31.98
     expect(screen.getByText("$31.98")).toBeInTheDocument();
@@ -60,7 +78,12 @@ describe("OrderItemsList", () => {
   });
 
   it("should display unit prices", () => {
-    renderWithProviders(<OrderItemsList items={mockItems} />);
+    const items = [
+      { ...mockItems[0]!, price: 15.99 },
+      { ...mockItems[1]!, price: 12.5 },
+      { ...mockItems[2]!, price: 10.0 },
+    ];
+    renderWithProviders(<OrderItemsList items={items} />);
 
     expect(screen.getByText("$15.99 each")).toBeInTheDocument();
     expect(screen.getByText("$12.50 each")).toBeInTheDocument();
@@ -118,7 +141,8 @@ describe("OrderItemsList", () => {
   });
 
   it("should handle single item", () => {
-    renderWithProviders(<OrderItemsList items={[mockItems[0]!]} />);
+    const items = [{ ...mockItems[0]!, name: "The Great Gatsby" }];
+    renderWithProviders(<OrderItemsList items={items} />);
 
     expect(screen.getByText("The Great Gatsby")).toBeInTheDocument();
     expect(screen.queryByText("To Kill a Mockingbird")).not.toBeInTheDocument();

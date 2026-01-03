@@ -1,3 +1,4 @@
+import { faker } from "@faker-js/faker";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
@@ -8,14 +9,13 @@ import { renderWithProviders } from "../../utils/test-utils";
 
 describe("CategoryCard", () => {
   const mockCategory = {
-    id: "cat-123",
-    name: "Science Fiction",
+    id: faker.string.uuid(),
+    name: faker.commerce.department(),
   };
 
   it("should render category name", () => {
-    renderWithProviders(
-      <CategoryCard id={mockCategory.id} name={mockCategory.name} />,
-    );
+    const category = { ...mockCategory, name: "Science Fiction" };
+    renderWithProviders(<CategoryCard id={category.id} name={category.name} />);
 
     expect(screen.getByText("Science Fiction")).toBeInTheDocument();
   });
@@ -65,9 +65,8 @@ describe("CategoryCard", () => {
   });
 
   it("should render title with proper typography", () => {
-    renderWithProviders(
-      <CategoryCard id={mockCategory.id} name={mockCategory.name} />,
-    );
+    const category = { ...mockCategory, name: "Science Fiction" };
+    renderWithProviders(<CategoryCard id={category.id} name={category.name} />);
 
     const title = screen.getByText("Science Fiction");
     expect(title).toHaveClass("font-serif");

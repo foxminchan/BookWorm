@@ -1,3 +1,4 @@
+import { faker } from "@faker-js/faker";
 import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
@@ -6,20 +7,22 @@ import ProfileSection from "@/features/account/profile-section";
 import { renderWithProviders } from "../../utils/test-utils";
 
 const mockBuyer = {
-  id: "buyer-123",
-  name: "John Doe",
-  address: "123 Main St, New York, NY",
+  id: faker.string.uuid(),
+  name: faker.person.fullName(),
+  address: faker.location.streetAddress(true),
 };
 
 describe("ProfileSection", () => {
   it("should display buyer name", () => {
-    renderWithProviders(<ProfileSection buyer={mockBuyer} />);
+    const buyer = { ...mockBuyer, name: "John Doe" };
+    renderWithProviders(<ProfileSection buyer={buyer} />);
 
     expect(screen.getByText("John Doe")).toBeInTheDocument();
   });
 
   it("should display customer ID", () => {
-    renderWithProviders(<ProfileSection buyer={mockBuyer} />);
+    const buyer = { ...mockBuyer, id: "buyer-123" };
+    renderWithProviders(<ProfileSection buyer={buyer} />);
 
     expect(screen.getByText(/customer id:/i)).toBeInTheDocument();
     expect(screen.getByText("buyer-123")).toBeInTheDocument();
@@ -67,14 +70,16 @@ describe("ProfileSection", () => {
   });
 
   it("should display name with serif font", () => {
-    renderWithProviders(<ProfileSection buyer={mockBuyer} />);
+    const buyer = { ...mockBuyer, name: "John Doe" };
+    renderWithProviders(<ProfileSection buyer={buyer} />);
 
     const name = screen.getByText("John Doe");
     expect(name).toHaveClass("font-serif");
   });
 
   it("should display customer ID with monospace font", () => {
-    renderWithProviders(<ProfileSection buyer={mockBuyer} />);
+    const buyer = { ...mockBuyer, id: "buyer-123" };
+    renderWithProviders(<ProfileSection buyer={buyer} />);
 
     const customerId = screen.getByText("buyer-123");
     expect(customerId).toHaveClass("font-mono");
@@ -108,8 +113,8 @@ describe("ProfileSection", () => {
   });
 
   it("should handle different buyer IDs", () => {
-    const differentBuyer = { ...mockBuyer, id: "buyer-999" };
-    renderWithProviders(<ProfileSection buyer={differentBuyer} />);
+    const buyer = { ...mockBuyer, id: "buyer-999" };
+    renderWithProviders(<ProfileSection buyer={buyer} />);
 
     expect(screen.getByText("buyer-999")).toBeInTheDocument();
   });

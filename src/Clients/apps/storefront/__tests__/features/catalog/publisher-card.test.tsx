@@ -1,3 +1,4 @@
+import { faker } from "@faker-js/faker";
 import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
@@ -7,13 +8,14 @@ import { renderWithProviders } from "../../utils/test-utils";
 
 describe("PublisherCard", () => {
   const mockPublisher = {
-    id: "pub-123",
-    name: "Penguin Random House",
+    id: faker.string.uuid(),
+    name: faker.company.name(),
   };
 
   it("should render publisher name", () => {
+    const publisher = { ...mockPublisher, name: "Penguin Random House" };
     renderWithProviders(
-      <PublisherCard id={mockPublisher.id} name={mockPublisher.name} />,
+      <PublisherCard id={publisher.id} name={publisher.name} />,
     );
 
     expect(screen.getByText("Penguin Random House")).toBeInTheDocument();
@@ -121,8 +123,9 @@ describe("PublisherCard", () => {
   });
 
   it("should render title with serif font", () => {
+    const publisher = { ...mockPublisher, name: "Penguin Random House" };
     renderWithProviders(
-      <PublisherCard id={mockPublisher.id} name={mockPublisher.name} />,
+      <PublisherCard id={publisher.id} name={publisher.name} />,
     );
 
     const title = screen.getByText("Penguin Random House");

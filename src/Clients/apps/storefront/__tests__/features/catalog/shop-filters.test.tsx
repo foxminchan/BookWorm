@@ -1,3 +1,4 @@
+import { faker } from "@faker-js/faker";
 import { screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -13,18 +14,18 @@ describe("ShopFilters", () => {
   const mockSetIsFilterOpen = vi.fn();
 
   const mockCategories = [
-    { id: "1", name: "Fiction" },
-    { id: "2", name: "Non-Fiction" },
+    { id: faker.string.uuid(), name: faker.commerce.department() },
+    { id: faker.string.uuid(), name: faker.commerce.department() },
   ];
 
   const mockPublishers = [
-    { id: "1", name: "Penguin" },
-    { id: "2", name: "Harper" },
+    { id: faker.string.uuid(), name: faker.company.name() },
+    { id: faker.string.uuid(), name: faker.company.name() },
   ];
 
   const mockAuthors = [
-    { id: "1", name: "Author One" },
-    { id: "2", name: "Author Two" },
+    { id: faker.string.uuid(), name: faker.person.fullName() },
+    { id: faker.string.uuid(), name: faker.person.fullName() },
   ];
 
   const defaultProps = {

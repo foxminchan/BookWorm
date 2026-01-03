@@ -1,3 +1,4 @@
+import { faker } from "@faker-js/faker";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -8,25 +9,25 @@ import { renderWithProviders } from "../../utils/test-utils";
 
 const mockReviews = [
   {
-    id: "rev-1",
-    firstName: "John",
-    lastName: "Doe",
-    rating: 5,
-    comment: "Excellent book! Highly recommended.",
+    id: faker.string.uuid(),
+    firstName: faker.person.firstName(),
+    lastName: faker.person.lastName(),
+    rating: faker.number.int({ min: 1, max: 5 }),
+    comment: faker.lorem.sentence(),
   },
   {
-    id: "rev-2",
-    firstName: "Jane",
-    lastName: "Smith",
-    rating: 4,
-    comment: "Great read, very informative.",
+    id: faker.string.uuid(),
+    firstName: faker.person.firstName(),
+    lastName: faker.person.lastName(),
+    rating: faker.number.int({ min: 1, max: 5 }),
+    comment: faker.lorem.sentence(),
   },
   {
-    id: "rev-3",
-    firstName: "Bob",
-    lastName: "Johnson",
-    rating: 3,
-    comment: "Good book but could be better.",
+    id: faker.string.uuid(),
+    firstName: faker.person.firstName(),
+    lastName: faker.person.lastName(),
+    rating: faker.number.int({ min: 1, max: 5 }),
+    comment: faker.lorem.sentence(),
   },
 ];
 
@@ -38,9 +39,15 @@ describe("ReviewList", () => {
   });
 
   it("should render all reviews", () => {
+    const reviews = [
+      { ...mockReviews[0]!, firstName: "John", lastName: "Doe" },
+      { ...mockReviews[1]!, firstName: "Jane", lastName: "Smith" },
+      { ...mockReviews[2]!, firstName: "Bob", lastName: "Johnson" },
+    ];
+
     renderWithProviders(
       <ReviewList
-        reviews={mockReviews}
+        reviews={reviews}
         currentPage={1}
         totalPages={1}
         onPageChange={mockOnPageChange}
@@ -53,9 +60,15 @@ describe("ReviewList", () => {
   });
 
   it("should display review comments", () => {
+    const reviews = [
+      { ...mockReviews[0]!, comment: "Excellent book! Highly recommended." },
+      { ...mockReviews[1]!, comment: "Great read, very informative." },
+      { ...mockReviews[2]!, comment: "Good book but could be better." },
+    ];
+
     renderWithProviders(
       <ReviewList
-        reviews={mockReviews}
+        reviews={reviews}
         currentPage={1}
         totalPages={1}
         onPageChange={mockOnPageChange}
@@ -89,9 +102,11 @@ describe("ReviewList", () => {
   });
 
   it("should display filled stars based on rating", () => {
+    const reviews = [{ ...mockReviews[0]!, rating: 5 }];
+
     const { container } = renderWithProviders(
       <ReviewList
-        reviews={[mockReviews[0]!]}
+        reviews={reviews}
         currentPage={1}
         totalPages={1}
         onPageChange={mockOnPageChange}
@@ -175,9 +190,13 @@ describe("ReviewList", () => {
   });
 
   it("should handle single review", () => {
+    const reviews = [
+      { ...mockReviews[0]!, firstName: "John", lastName: "Doe" },
+    ];
+
     renderWithProviders(
       <ReviewList
-        reviews={[mockReviews[0]!]}
+        reviews={reviews}
         currentPage={1}
         totalPages={1}
         onPageChange={mockOnPageChange}
@@ -204,9 +223,15 @@ describe("ReviewList", () => {
   });
 
   it("should display reviewer names in correct format", () => {
+    const reviews = [
+      { ...mockReviews[0]!, firstName: "John", lastName: "Doe" },
+      { ...mockReviews[1]!, firstName: "Jane", lastName: "Smith" },
+      mockReviews[2]!,
+    ];
+
     renderWithProviders(
       <ReviewList
-        reviews={mockReviews}
+        reviews={reviews}
         currentPage={1}
         totalPages={1}
         onPageChange={mockOnPageChange}
@@ -232,9 +257,13 @@ describe("ReviewList", () => {
   });
 
   it("should style review comments correctly", () => {
+    const reviews = [
+      { ...mockReviews[0]!, comment: "Excellent book! Highly recommended." },
+    ];
+
     renderWithProviders(
       <ReviewList
-        reviews={[mockReviews[0]!]}
+        reviews={reviews}
         currentPage={1}
         totalPages={1}
         onPageChange={mockOnPageChange}

@@ -1,3 +1,4 @@
+import { faker } from "@faker-js/faker";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -9,18 +10,18 @@ import { renderWithProviders } from "../../utils/test-utils";
 describe("ReviewsContainer", () => {
   const mockReviews = [
     {
-      id: "1",
-      firstName: "John",
-      lastName: "Doe",
-      rating: 5,
-      comment: "Great book!",
+      id: faker.string.uuid(),
+      firstName: faker.person.firstName(),
+      lastName: faker.person.lastName(),
+      rating: faker.number.int({ min: 1, max: 5 }),
+      comment: faker.lorem.sentence(),
     },
     {
-      id: "2",
-      firstName: "Jane",
-      lastName: "Smith",
-      rating: 4,
-      comment: "Good read.",
+      id: faker.string.uuid(),
+      firstName: faker.person.firstName(),
+      lastName: faker.person.lastName(),
+      rating: faker.number.int({ min: 1, max: 5 }),
+      comment: faker.lorem.sentence(),
     },
   ];
 
@@ -82,7 +83,13 @@ describe("ReviewsContainer", () => {
   });
 
   it("should display reviews when available", () => {
-    renderWithProviders(<ReviewsContainer {...defaultProps} />);
+    const reviews = [
+      { ...mockReviews[0]!, comment: "Great book!" },
+      { ...mockReviews[1]!, comment: "Good read." },
+    ];
+    renderWithProviders(
+      <ReviewsContainer {...defaultProps} reviews={reviews} />,
+    );
 
     expect(screen.getByText("Great book!")).toBeInTheDocument();
     expect(screen.getByText("Good read.")).toBeInTheDocument();

@@ -1,3 +1,4 @@
+import { faker } from "@faker-js/faker";
 import { screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -9,33 +10,39 @@ import { renderWithProviders } from "../../utils/test-utils";
 
 const mockItems: BasketItem[] = [
   {
-    id: "item-1",
-    name: "First Book",
-    price: 19.99,
+    id: faker.string.uuid(),
+    name: faker.commerce.productName(),
+    price: faker.number.float({ min: 10, max: 50, fractionDigits: 2 }),
     priceSale: null,
-    quantity: 2,
+    quantity: faker.number.int({ min: 1, max: 5 }),
   },
   {
-    id: "item-2",
-    name: "Second Book",
-    price: 29.99,
-    priceSale: 24.99,
-    quantity: 1,
+    id: faker.string.uuid(),
+    name: faker.commerce.productName(),
+    price: faker.number.float({ min: 10, max: 50, fractionDigits: 2 }),
+    priceSale: faker.number.float({ min: 10, max: 40, fractionDigits: 2 }),
+    quantity: faker.number.int({ min: 1, max: 5 }),
   },
   {
-    id: "item-3",
-    name: "Third Book",
-    price: 39.99,
+    id: faker.string.uuid(),
+    name: faker.commerce.productName(),
+    price: faker.number.float({ min: 10, max: 50, fractionDigits: 2 }),
     priceSale: null,
-    quantity: 3,
+    quantity: faker.number.int({ min: 1, max: 5 }),
   },
 ];
 
 describe("BasketItemsList", () => {
   it("should render all basket items", () => {
+    const items: BasketItem[] = [
+      { ...mockItems[0]!, name: "First Book" },
+      { ...mockItems[1]!, name: "Second Book" },
+      { ...mockItems[2]!, name: "Third Book" },
+    ];
+
     renderWithProviders(
       <BasketItemsList
-        items={mockItems}
+        items={items}
         modifiedItems={{}}
         onUpdateQuantity={vi.fn()}
         onRemoveItem={vi.fn()}
@@ -62,6 +69,12 @@ describe("BasketItemsList", () => {
   });
 
   it("should display correct quantity including modifications", () => {
+    const items: BasketItem[] = [
+      { ...mockItems[0]!, id: "item-1", name: "First Book", quantity: 2 },
+      { ...mockItems[1]!, id: "item-2", name: "Second Book", quantity: 1 },
+      { ...mockItems[2]!, id: "item-3", name: "Third Book", quantity: 3 },
+    ];
+
     const modifiedItems = {
       "item-1": 2, // 2 + 2 = 4
       "item-2": -1, // 1 - 1 = 0
@@ -70,7 +83,7 @@ describe("BasketItemsList", () => {
 
     renderWithProviders(
       <BasketItemsList
-        items={mockItems}
+        items={items}
         modifiedItems={modifiedItems}
         onUpdateQuantity={vi.fn()}
         onRemoveItem={vi.fn()}
@@ -103,13 +116,18 @@ describe("BasketItemsList", () => {
   });
 
   it("should handle negative modifications correctly", () => {
+    const items: BasketItem[] = [
+      { ...mockItems[0]!, id: "item-1", name: "First Book", quantity: 2 },
+      ...mockItems.slice(1),
+    ];
+
     const modifiedItems = {
       "item-1": -1, // 2 - 1 = 1
     };
 
     renderWithProviders(
       <BasketItemsList
-        items={mockItems}
+        items={items}
         modifiedItems={modifiedItems}
         onUpdateQuantity={vi.fn()}
         onRemoveItem={vi.fn()}
@@ -134,7 +152,7 @@ describe("BasketItemsList", () => {
   });
 
   it("should handle single item correctly", () => {
-    const singleItem = [mockItems[0]!];
+    const singleItem: BasketItem[] = [{ ...mockItems[0]!, name: "First Book" }];
 
     renderWithProviders(
       <BasketItemsList
@@ -151,9 +169,15 @@ describe("BasketItemsList", () => {
   });
 
   it("should not break with empty modifiedItems object", () => {
+    const items: BasketItem[] = [
+      { ...mockItems[0]!, name: "First Book" },
+      { ...mockItems[1]!, name: "Second Book" },
+      { ...mockItems[2]!, name: "Third Book" },
+    ];
+
     renderWithProviders(
       <BasketItemsList
-        items={mockItems}
+        items={items}
         modifiedItems={{}}
         onUpdateQuantity={vi.fn()}
         onRemoveItem={vi.fn()}
@@ -166,6 +190,12 @@ describe("BasketItemsList", () => {
   });
 
   it("should calculate display quantity as item.quantity + modification", () => {
+    const items: BasketItem[] = [
+      { ...mockItems[0]!, id: "item-1", name: "First Book", quantity: 2 },
+      { ...mockItems[1]!, id: "item-2", name: "Second Book", quantity: 1 },
+      { ...mockItems[2]!, id: "item-3", name: "Third Book", quantity: 3 },
+    ];
+
     const modifiedItems = {
       "item-1": 3, // 2 + 3 = 5
       "item-2": 0, // 1 + 0 = 1 (no change)
@@ -174,7 +204,7 @@ describe("BasketItemsList", () => {
 
     renderWithProviders(
       <BasketItemsList
-        items={mockItems}
+        items={items}
         modifiedItems={modifiedItems}
         onUpdateQuantity={vi.fn()}
         onRemoveItem={vi.fn()}

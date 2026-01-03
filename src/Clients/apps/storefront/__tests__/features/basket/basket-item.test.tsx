@@ -1,3 +1,4 @@
+import { faker } from "@faker-js/faker";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -9,21 +10,22 @@ import BasketItem from "@/features/basket/basket-item";
 import { renderWithProviders } from "../../utils/test-utils";
 
 const mockItem: BasketItemType = {
-  id: "item-1",
-  name: "Test Book",
-  price: 29.99,
+  id: faker.string.uuid(),
+  name: faker.commerce.productName(),
+  price: faker.number.float({ min: 10, max: 50, fractionDigits: 2 }),
   priceSale: null,
-  quantity: 2,
+  quantity: faker.number.int({ min: 1, max: 5 }),
 };
 
 describe("BasketItem", () => {
   it("should render basket item with correct details", () => {
     const mockUpdateQuantity = vi.fn();
     const mockRemoveItem = vi.fn();
+    const item = { ...mockItem, name: "Test Book", price: 29.99 };
 
     renderWithProviders(
       <BasketItem
-        item={mockItem}
+        item={item}
         displayQuantity={2}
         onUpdateQuantity={mockUpdateQuantity}
         onRemoveItem={mockRemoveItem}
@@ -38,6 +40,7 @@ describe("BasketItem", () => {
   it("should display sale price when available", () => {
     const itemWithSale: BasketItemType = {
       ...mockItem,
+      price: 29.99,
       priceSale: 19.99,
     };
 
@@ -59,10 +62,11 @@ describe("BasketItem", () => {
   it("should call onUpdateQuantity when increasing quantity", async () => {
     const user = userEvent.setup();
     const mockUpdateQuantity = vi.fn();
+    const item = { ...mockItem, id: "item-1" };
 
     renderWithProviders(
       <BasketItem
-        item={mockItem}
+        item={item}
         displayQuantity={2}
         onUpdateQuantity={mockUpdateQuantity}
         onRemoveItem={vi.fn()}
@@ -78,10 +82,11 @@ describe("BasketItem", () => {
   it("should call onUpdateQuantity when decreasing quantity", async () => {
     const user = userEvent.setup();
     const mockUpdateQuantity = vi.fn();
+    const item = { ...mockItem, id: "item-1" };
 
     renderWithProviders(
       <BasketItem
-        item={mockItem}
+        item={item}
         displayQuantity={2}
         onUpdateQuantity={mockUpdateQuantity}
         onRemoveItem={vi.fn()}
@@ -118,10 +123,11 @@ describe("BasketItem", () => {
   it("should call onRemoveItem when confirming removal", async () => {
     const user = userEvent.setup();
     const mockRemoveItem = vi.fn();
+    const item = { ...mockItem, id: "item-1" };
 
     renderWithProviders(
       <BasketItem
-        item={mockItem}
+        item={item}
         displayQuantity={2}
         onUpdateQuantity={vi.fn()}
         onRemoveItem={mockRemoveItem}
@@ -140,9 +146,11 @@ describe("BasketItem", () => {
   });
 
   it("should display correct total for modified quantity", () => {
+    const item = { ...mockItem, price: 29.99 };
+
     renderWithProviders(
       <BasketItem
-        item={mockItem}
+        item={item}
         displayQuantity={5}
         onUpdateQuantity={vi.fn()}
         onRemoveItem={vi.fn()}
@@ -168,6 +176,7 @@ describe("BasketItem", () => {
   it("should calculate sale price correctly with modified quantity", () => {
     const itemWithSale: BasketItemType = {
       ...mockItem,
+      price: 29.99,
       priceSale: 24.99,
       quantity: 1,
     };

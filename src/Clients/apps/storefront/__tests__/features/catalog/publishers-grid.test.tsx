@@ -1,3 +1,4 @@
+import { faker } from "@faker-js/faker";
 import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
@@ -11,15 +12,21 @@ type Publisher = {
 };
 
 const mockPublishers: Publisher[] = [
-  { id: "pub-1", name: "Penguin Random House" },
-  { id: "pub-2", name: "HarperCollins" },
-  { id: "pub-3", name: "Simon & Schuster" },
+  { id: faker.string.uuid(), name: faker.company.name() },
+  { id: faker.string.uuid(), name: faker.company.name() },
+  { id: faker.string.uuid(), name: faker.company.name() },
 ];
 
 describe("PublishersGrid", () => {
   it("should render all publishers", () => {
+    const publishers = [
+      { ...mockPublishers[0]!, name: "Penguin Random House" },
+      { ...mockPublishers[1]!, name: "HarperCollins" },
+      { ...mockPublishers[2]!, name: "Simon & Schuster" },
+    ];
+
     renderWithProviders(
-      <PublishersGrid publishers={mockPublishers} isLoading={false} />,
+      <PublishersGrid publishers={publishers} isLoading={false} />,
     );
 
     expect(screen.getByText("Penguin Random House")).toBeInTheDocument();
@@ -57,8 +64,8 @@ describe("PublishersGrid", () => {
 
   it("should display 'Unknown Publisher' for null names", () => {
     const publishersWithNull: Publisher[] = [
-      { id: "pub-1", name: null },
-      { id: "pub-2", name: "Penguin Random House" },
+      { ...mockPublishers[0]!, name: null },
+      { ...mockPublishers[1]!, name: "Penguin Random House" },
     ];
 
     renderWithProviders(
@@ -97,8 +104,9 @@ describe("PublishersGrid", () => {
   });
 
   it("should create proper publisher filter links", () => {
+    const publishers = [{ ...mockPublishers[0]!, id: "pub-1" }];
     renderWithProviders(
-      <PublishersGrid publishers={[mockPublishers[0]!]} isLoading={false} />,
+      <PublishersGrid publishers={publishers} isLoading={false} />,
     );
 
     const link = screen.getByRole("link");
@@ -106,8 +114,11 @@ describe("PublishersGrid", () => {
   });
 
   it("should handle single publisher", () => {
+    const publishers = [
+      { ...mockPublishers[0]!, name: "Penguin Random House" },
+    ];
     renderWithProviders(
-      <PublishersGrid publishers={[mockPublishers[0]!]} isLoading={false} />,
+      <PublishersGrid publishers={publishers} isLoading={false} />,
     );
 
     expect(screen.getByText("Penguin Random House")).toBeInTheDocument();

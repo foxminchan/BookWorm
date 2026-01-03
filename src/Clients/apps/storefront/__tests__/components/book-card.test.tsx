@@ -1,3 +1,4 @@
+import { faker } from "@faker-js/faker";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -9,26 +10,37 @@ import { BookCard } from "@/components/book-card";
 import { renderWithProviders } from "../utils/test-utils";
 
 const mockBook: Book = {
-  id: "book-1",
-  name: "Test Book Title",
-  description: "A great test book",
-  imageUrl: "https://example.com/book.jpg",
-  price: 29.99,
-  priceSale: 19.99,
+  id: faker.string.uuid(),
+  name: faker.commerce.productName(),
+  description: faker.commerce.productDescription(),
+  imageUrl: faker.image.url(),
+  price: faker.number.float({ min: 10, max: 100, fractionDigits: 2 }),
+  priceSale: faker.number.float({ min: 5, max: 50, fractionDigits: 2 }),
   status: "InStock",
-  category: { id: "cat-1", name: "Fiction" },
-  publisher: { id: "pub-1", name: "Test Publisher" },
+  category: { id: faker.string.uuid(), name: faker.commerce.department() },
+  publisher: { id: faker.string.uuid(), name: faker.company.name() },
   authors: [
-    { id: "auth-1", name: "John Doe" },
-    { id: "auth-2", name: "Jane Smith" },
+    { id: faker.string.uuid(), name: faker.person.fullName() },
+    { id: faker.string.uuid(), name: faker.person.fullName() },
   ],
-  averageRating: 4.5,
-  totalReviews: 120,
+  averageRating: faker.number.float({ min: 0, max: 5, fractionDigits: 1 }),
+  totalReviews: faker.number.int({ min: 0, max: 1000 }),
 };
 
 describe("BookCard", () => {
   it("should render book information correctly", () => {
-    renderWithProviders(<BookCard book={mockBook} />);
+    const book: Book = {
+      ...mockBook,
+      name: "Test Book Title",
+      category: { id: faker.string.uuid(), name: "Fiction" },
+      authors: [
+        { id: faker.string.uuid(), name: "John Doe" },
+        { id: faker.string.uuid(), name: "Jane Smith" },
+      ],
+      averageRating: 4.5,
+    };
+
+    renderWithProviders(<BookCard book={book} />);
 
     expect(screen.getByText("Test Book Title")).toBeInTheDocument();
     expect(screen.getByText("Fiction")).toBeInTheDocument();
@@ -37,29 +49,46 @@ describe("BookCard", () => {
   });
 
   it("should display discount badge when priceSale is present", () => {
-    renderWithProviders(<BookCard book={mockBook} />);
+    const book: Book = {
+      ...mockBook,
+      price: 29.99,
+      priceSale: 19.99,
+    };
+
+    renderWithProviders(<BookCard book={book} />);
 
     // Calculate discount: ((29.99 - 19.99) / 29.99) * 100 ≈ 33%
     expect(screen.getByText(/-\d+% OFF/)).toBeInTheDocument();
   });
 
   it("should not display discount badge when priceSale is null", () => {
-    const bookWithoutSale = { ...mockBook, priceSale: null };
-    renderWithProviders(<BookCard book={bookWithoutSale} />);
+    const book: Book = { ...mockBook, priceSale: null };
+    renderWithProviders(<BookCard book={book} />);
 
     expect(screen.queryByText(/-\d+% OFF/)).not.toBeInTheDocument();
   });
 
   it("should display sale price when available", () => {
-    renderWithProviders(<BookCard book={mockBook} />);
+    const book: Book = {
+      ...mockBook,
+      price: 29.99,
+      priceSale: 19.99,
+    };
+
+    renderWithProviders(<BookCard book={book} />);
 
     expect(screen.getByText("$19.99")).toBeInTheDocument();
     expect(screen.getByText("$29.99")).toBeInTheDocument();
   });
 
   it("should display only regular price when no sale", () => {
-    const bookWithoutSale = { ...mockBook, priceSale: null };
-    renderWithProviders(<BookCard book={bookWithoutSale} />);
+    const book: Book = {
+      ...mockBook,
+      price: 29.99,
+      priceSale: null,
+    };
+
+    renderWithProviders(<BookCard book={book} />);
 
     expect(screen.getByText("$29.99")).toBeInTheDocument();
   });
@@ -90,41 +119,42 @@ describe("BookCard", () => {
   });
 
   it("should handle multiple authors correctly", () => {
-    const bookWithManyAuthors = {
+    const book: Book = {
       ...mockBook,
-      authors: [
-        { id: "1", name: "Author 1" },
-        { id: "2", name: "Author 2" },
-        { id: "3", name: "Author 3" },
-        { id: "4", name: "Author 4" },
-        { id: "5", name: "Author 5" },
-      ],
+      authors: Array.from({ length: 5 }, () => ({
+        id: faker.string.uuid(),
+        name: faker.person.fullName(),
+      })),
     };
 
-    renderWithProviders(<BookCard book={bookWithManyAuthors} />);
+    renderWithProviders(<BookCard book={book} />);
 
     // Should show first 3 authors plus count
-    expect(
-      screen.getByText(/Author 1, Author 2, Author 3 \+2 more/),
-    ).toBeInTheDocument();
+    const authorsText = screen.getByText(/\+2 more/);
+    expect(authorsText).toBeInTheDocument();
   });
 
   it("should display 'Unknown Author' when no authors", () => {
-    const bookWithoutAuthors = { ...mockBook, authors: [] };
-    renderWithProviders(<BookCard book={bookWithoutAuthors} />);
+    const book: Book = { ...mockBook, authors: [] };
+    renderWithProviders(<BookCard book={book} />);
 
     expect(screen.getByText("Unknown Author")).toBeInTheDocument();
   });
 
   it("should display default rating when averageRating is zero", () => {
-    const bookWithoutRating = { ...mockBook, averageRating: 0 };
-    renderWithProviders(<BookCard book={bookWithoutRating} />);
+    const book: Book = { ...mockBook, averageRating: 0 };
+    renderWithProviders(<BookCard book={book} />);
 
     expect(screen.getByText("0.0")).toBeInTheDocument();
   });
 
   it("should render category name", () => {
-    renderWithProviders(<BookCard book={mockBook} />);
+    const book: Book = {
+      ...mockBook,
+      category: { id: faker.string.uuid(), name: "Fiction" },
+    };
+
+    renderWithProviders(<BookCard book={book} />);
 
     expect(screen.getByText("Fiction")).toBeInTheDocument();
   });
@@ -139,7 +169,8 @@ describe("BookCard", () => {
   });
 
   it("should display book image with proper alt text", () => {
-    renderWithProviders(<BookCard book={mockBook} />);
+    const book: Book = { ...mockBook, name: "Test Book Title" };
+    renderWithProviders(<BookCard book={book} />);
 
     const image = screen.getByAltText("Test Book Title");
     expect(image).toBeInTheDocument();

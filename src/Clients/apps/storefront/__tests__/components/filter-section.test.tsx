@@ -1,4 +1,5 @@
-import { screen, within } from "@testing-library/react";
+import { faker } from "@faker-js/faker";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -6,22 +7,22 @@ import { FilterSection } from "@/components/filter-section";
 
 import { renderWithProviders } from "../utils/test-utils";
 
-const mockItems = [
-  { id: "1", name: "Fiction" },
-  { id: "2", name: "Science Fiction" },
-  { id: "3", name: "Mystery" },
-  { id: "4", name: "Romance" },
-  { id: "5", name: "Thriller" },
-  { id: "6", name: "Fantasy" },
-  { id: "7", name: "Biography" },
-];
+const mockItems = Array.from({ length: 7 }, () => ({
+  id: faker.string.uuid(),
+  name: faker.commerce.department(),
+}));
 
 describe("FilterSection", () => {
   it("should render title and items", () => {
+    const items = [
+      { id: faker.string.uuid(), name: "Fiction" },
+      { id: faker.string.uuid(), name: "Science Fiction" },
+    ];
+
     renderWithProviders(
       <FilterSection
         title="Categories"
-        items={mockItems}
+        items={items}
         selectedItems={[]}
         onToggle={vi.fn()}
       />,
@@ -33,10 +34,17 @@ describe("FilterSection", () => {
   });
 
   it("should show only maxVisibleItems by default", () => {
+    const items = [
+      { id: faker.string.uuid(), name: "Fiction" },
+      { id: faker.string.uuid(), name: "Science Fiction" },
+      { id: faker.string.uuid(), name: "Mystery" },
+      { id: faker.string.uuid(), name: "Romance" },
+    ];
+
     renderWithProviders(
       <FilterSection
         title="Categories"
-        items={mockItems}
+        items={items}
         selectedItems={[]}
         onToggle={vi.fn()}
         maxVisibleItems={3}
@@ -51,11 +59,15 @@ describe("FilterSection", () => {
 
   it("should expand to show all items when show more is clicked", async () => {
     const user = userEvent.setup();
+    const items = Array.from({ length: 7 }, (_, i) => ({
+      id: faker.string.uuid(),
+      name: i === 6 ? "Biography" : faker.commerce.department(),
+    }));
 
     renderWithProviders(
       <FilterSection
         title="Categories"
-        items={mockItems}
+        items={items}
         selectedItems={[]}
         onToggle={vi.fn()}
         maxVisibleItems={3}
@@ -73,12 +85,16 @@ describe("FilterSection", () => {
   it("should toggle selected items", async () => {
     const user = userEvent.setup();
     const mockToggle = vi.fn();
+    const items = [
+      { id: "item-1", name: "Fiction" },
+      { id: faker.string.uuid(), name: faker.commerce.department() },
+    ];
 
     renderWithProviders(
       <FilterSection
         title="Categories"
-        items={mockItems}
-        selectedItems={["1"]}
+        items={items}
+        selectedItems={["item-1"]}
         onToggle={mockToggle}
       />,
     );
@@ -86,15 +102,21 @@ describe("FilterSection", () => {
     const fictionCheckbox = screen.getByRole("checkbox", { name: "Fiction" });
     await user.click(fictionCheckbox);
 
-    expect(mockToggle).toHaveBeenCalledWith("1");
+    expect(mockToggle).toHaveBeenCalledWith("item-1");
   });
 
   it("should show checked state for selected items", () => {
+    const items = [
+      { id: "item-1", name: "Fiction" },
+      { id: "item-2", name: "Mystery" },
+      { id: "item-3", name: "Romance" },
+    ];
+
     renderWithProviders(
       <FilterSection
         title="Categories"
-        items={mockItems}
-        selectedItems={["1", "3"]}
+        items={items}
+        selectedItems={["item-1", "item-2"]}
         onToggle={vi.fn()}
       />,
     );
@@ -166,41 +188,48 @@ describe("FilterSection", () => {
 
   it("should filter items based on search term", async () => {
     const user = userEvent.setup();
+    const items = [
+      { id: faker.string.uuid(), name: "Fiction" },
+      { id: faker.string.uuid(), name: "Science Fiction" },
+      { id: faker.string.uuid(), name: "Biography" },
+      { id: faker.string.uuid(), name: "Mystery" },
+    ];
 
     renderWithProviders(
       <FilterSection
         title="Categories"
-        items={mockItems}
+        items={items}
         selectedItems={[]}
         onToggle={vi.fn()}
         searchable
       />,
     );
 
-    // Open search
     const searchButton = screen.getByRole("button", {
       name: /search categories/i,
     });
     await user.click(searchButton);
 
-    // Type search term
     const searchInput = screen.getByPlaceholderText(/search categories/i);
     await user.type(searchInput, "fiction");
 
-    // Should show matching items
     expect(screen.getByText("Fiction")).toBeInTheDocument();
     expect(screen.getByText("Science Fiction")).toBeInTheDocument();
-    // Should not show non-matching items
     expect(screen.queryByText("Biography")).not.toBeInTheDocument();
   });
 
   it("should be case-insensitive when searching", async () => {
     const user = userEvent.setup();
+    const items = [
+      { id: faker.string.uuid(), name: "Fiction" },
+      { id: faker.string.uuid(), name: "Science Fiction" },
+      { id: faker.string.uuid(), name: "Mystery" },
+    ];
 
     renderWithProviders(
       <FilterSection
         title="Categories"
-        items={mockItems}
+        items={items}
         selectedItems={[]}
         onToggle={vi.fn()}
         searchable
@@ -220,10 +249,15 @@ describe("FilterSection", () => {
   });
 
   it("should not show toggle button when items count is less than maxVisibleItems", () => {
+    const items = Array.from({ length: 3 }, () => ({
+      id: faker.string.uuid(),
+      name: faker.commerce.department(),
+    }));
+
     renderWithProviders(
       <FilterSection
         title="Categories"
-        items={mockItems.slice(0, 3)}
+        items={items}
         selectedItems={[]}
         onToggle={vi.fn()}
         maxVisibleItems={5}
@@ -235,19 +269,22 @@ describe("FilterSection", () => {
   });
 
   it("should not collapse when collapsible is false", () => {
+    const items = Array.from({ length: 7 }, (_, i) => ({
+      id: faker.string.uuid(),
+      name: i === 6 ? "Biography" : faker.commerce.department(),
+    }));
+
     renderWithProviders(
       <FilterSection
         title="Categories"
-        items={mockItems}
+        items={items}
         selectedItems={[]}
         onToggle={vi.fn()}
         collapsible={false}
       />,
     );
 
-    // All items should be visible
     expect(screen.getByText("Biography")).toBeInTheDocument();
-    // Toggle button should not exist
     expect(
       screen.queryByRole("button", { name: /show more/i }),
     ).not.toBeInTheDocument();
@@ -291,11 +328,16 @@ describe("FilterSection", () => {
 
   it("should update displayed items when search term changes", async () => {
     const user = userEvent.setup();
+    const items = [
+      { id: faker.string.uuid(), name: "Romance" },
+      { id: faker.string.uuid(), name: "Fiction" },
+      { id: faker.string.uuid(), name: "Mystery" },
+    ];
 
     renderWithProviders(
       <FilterSection
         title="Categories"
-        items={mockItems}
+        items={items}
         selectedItems={[]}
         onToggle={vi.fn()}
         searchable
