@@ -1,55 +1,55 @@
 {
-	"name": "@bookworm/eventcatalog",
-	"version": "1.0.0",
-	"description": "Living event-driven architecture catalog with service contracts and documentation",
-	"author": "Nhan Nguyen <nguyenxuannhan407@gmail.com> (https://github.com/foxminchan)",
-	"licenses": [
-		{
-			"type": "MIT",
-			"url": "https://opensource.org/licenses/MIT"
-		}
-	],
-	"private": true,
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/foxminchan/BookWorm.git",
-		"directory": "docs/eventcatalog"
-	},
-	"bugs": {
-		"url": "https://github.com/foxminchan/BookWorm/issues"
-	},
-	"homepage": "https://bookwormdev.netlify.app/",
-	"scripts": {
-		"dev": "eventcatalog dev",
-		"build": "eventcatalog build",
-		"start": "eventcatalog start",
-		"preview": "eventcatalog preview",
-		"generate": "eventcatalog generate",
-		"lint": "biome lint --write",
-		"format": "biome format --write",
-		"check": "biome check"
-	},
-	"dependencies": {
-		"@eventcatalog/core": "latest",
-		"@eventcatalog/generator-asyncapi": "latest",
-		"@eventcatalog/generator-openapi": "latest"
-	},
-	"devDependencies": {
-		"@biomejs/biome": "2.3.10"
-	},
-	"browserslist": {
-		"production": [
-			">0.5%",
-			"not dead",
-			"not op_mini all"
-		],
-		"development": [
-			"last 3 chrome version",
-			"last 3 firefox version",
-			"last 5 safari version"
-		]
-	},
-	"engines": {
-		"node": ">=18.0"
-	}
+  "name": "@bookworm/eventcatalog",
+  "version": "1.0.0",
+  "description": "Living event-driven architecture catalog with service contracts and documentation",
+  "author": "Nhan Nguyen <nguyenxuannhan407@gmail.com> (https://github.com/foxminchan)",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  ],
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foxminchan/BookWorm.git",
+    "directory": "docs/eventcatalog"
+  },
+  "bugs": {
+    "url": "https://github.com/foxminchan/BookWorm/issues"
+  },
+  "homepage": "https://bookwormdev.netlify.app/",
+  "scripts": {
+    "dev": "eventcatalog dev",
+    "build": "eventcatalog build",
+    "start": "eventcatalog start",
+    "preview": "eventcatalog preview",
+    "generate": "eventcatalog generate",
+    "lint": "biome lint --write",
+    "format": "biome format --write",
+    "check": "biome check"
+  },
+  "dependencies": {
+    "@eventcatalog/core": "latest",
+    "@eventcatalog/generator-asyncapi": "latest",
+    "@eventcatalog/generator-openapi": "latest"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.3.10"
+  },
+  "browserslist": {
+    "production": [
+      ">0.5%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 3 chrome version",
+      "last 3 firefox version",
+      "last 5 safari version"
+    ]
+  },
+  "engines": {
+    "node": ">=25.0.0"
+  }
 }

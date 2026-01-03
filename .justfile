@@ -74,7 +74,12 @@ update-k6:
 update-keycloakify:
     cd src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify && bun update
 
-# Update all bun packages
+# Update frontend packages
 
-update: update-eventcatalog update-docusaurus update-k6 update-keycloakify
-    echo "All bun packages updated successfully!"
+update-fe:
+    cd src/Clients && pnpm update --recursive --filter=*
+
+# Update all packages
+
+update: update-eventcatalog update-docusaurus update-k6 update-keycloakify update-fe
+    echo "All packages updated successfully!"

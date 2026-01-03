@@ -1,0 +1,102 @@
+{
+  "name": "@workspace/mocks",
+  "version": "1.0.0",
+  "description": "MSW mocks for BookWorm API services",
+  "author": "Nhan Nguyen <nguyenxuannhan407@gmail.com> (https://github.com/foxminchan)",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  ],
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foxminchan/BookWorm.git",
+    "directory": "src/Clients/packages/mocks"
+  },
+  "bugs": {
+    "url": "https://github.com/foxminchan/BookWorm/issues"
+  },
+  "homepage": "https://foxminchan.github.io/BookWorm/",
+  "engines": {
+    "node": ">=25.0.0"
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts"
+    },
+    "./browser": {
+      "import": "./src/browser.ts",
+      "types": "./src/browser.ts"
+    },
+    "./node": {
+      "import": "./src/node.ts",
+      "types": "./src/node.ts"
+    },
+    "./catalog": {
+      "import": "./src/catalog/index.ts",
+      "types": "./src/catalog/index.ts"
+    },
+    "./catalog/authors": {
+      "import": "./src/catalog/authors/index.ts",
+      "types": "./src/catalog/authors/index.ts"
+    },
+    "./catalog/categories": {
+      "import": "./src/catalog/categories/index.ts",
+      "types": "./src/catalog/categories/index.ts"
+    },
+    "./catalog/publishers": {
+      "import": "./src/catalog/publishers/index.ts",
+      "types": "./src/catalog/publishers/index.ts"
+    },
+    "./catalog/books": {
+      "import": "./src/catalog/books/index.ts",
+      "types": "./src/catalog/books/index.ts"
+    },
+    "./basket": {
+      "import": "./src/basket/index.ts",
+      "types": "./src/basket/index.ts"
+    },
+    "./ordering": {
+      "import": "./src/ordering/index.ts",
+      "types": "./src/ordering/index.ts"
+    },
+    "./ordering/buyers": {
+      "import": "./src/ordering/buyers/index.ts",
+      "types": "./src/ordering/buyers/index.ts"
+    },
+    "./ordering/orders": {
+      "import": "./src/ordering/orders/index.ts",
+      "types": "./src/ordering/orders/index.ts"
+    },
+    "./rating": {
+      "import": "./src/rating/index.ts",
+      "types": "./src/rating/index.ts"
+    }
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "msw": "^2.12.7",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.3",
+    "@types/uuid": "^11.0.0",
+    "@workspace/eslint-config": "workspace:*",
+    "@workspace/typescript-config": "workspace:*",
+    "eslint": "^9.39.2",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "@workspace/types": "workspace:*",
+    "@workspace/utils": "workspace:*",
+    "@workspace/validations": "workspace:*"
+  }
+}

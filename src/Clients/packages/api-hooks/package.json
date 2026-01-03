@@ -1,0 +1,53 @@
+{
+  "name": "@workspace/api-hooks",
+  "version": "1.0.0",
+  "description": "TanStack Query hooks for BookWorm API services",
+  "author": "Nhan Nguyen <nguyenxuannhan407@gmail.com> (https://github.com/foxminchan)",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  ],
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foxminchan/BookWorm.git",
+    "directory": "src/Clients/packages/api-hooks"
+  },
+  "bugs": {
+    "url": "https://github.com/foxminchan/BookWorm/issues"
+  },
+  "homepage": "https://foxminchan.github.io/BookWorm/",
+  "engines": {
+    "node": ">=25.0.0"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.90.16"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.7",
+    "@workspace/api-client": "workspace:*",
+    "@workspace/eslint-config": "workspace:*",
+    "@workspace/typescript-config": "workspace:*",
+    "@workspace/types": "workspace:*",
+    "react": "^19.2.3"
+  },
+  "peerDependencies": {
+    "@workspace/api-client": "workspace:*",
+    "react": "^19.2.3"
+  },
+  "exports": {
+    "./catalog/publishers/*": "./src/catalog/publishers/*.ts",
+    "./catalog/categories/*": "./src/catalog/categories/*.ts",
+    "./catalog/books/*": "./src/catalog/books/*.ts",
+    "./basket/*": "./src/basket/*.ts",
+    "./ordering/buyers/*": "./src/ordering/buyers/*.ts",
+    "./ordering/orders/*": "./src/ordering/orders/*.ts",
+    "./rating/*": "./src/rating/*.ts"
+  }
+}

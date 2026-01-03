@@ -3,8 +3,7 @@
   "dotnet.defaultSolution": "BookWorm.slnx",
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "dotnet.automaticallyCreateSolutionInWorkspace": false,
-  "dotnet.previewSolution-freeWorkspaceMode": true,
-  "dotnet.testWindow.useTestingPlatformProtocol": true,
+  "dotnet.enableWorkspaceBasedDevelopment": true,
   "sonarlint.connectedMode.project": {
     "connectionId": "foxminchan",
     "projectKey": "foxminchan_BookWorm"
@@ -12,5 +11,6 @@
   "editor.defaultFormatter": "biomejs.biome",
   "[csharp]": {
     "editor.defaultFormatter": "ms-dotnettools.csharp"
-  }
+  },
+  "tailwindCSS.experimental.configFile": "src/Clients/packages/ui/src/styles/globals.css",
 }

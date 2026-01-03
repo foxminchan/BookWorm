@@ -146,6 +146,51 @@ updates:
           - "@storybook/*"
           - "storybook"
 
+  - package-ecosystem: "npm"
+    directory: "/src/Clients"
+    schedule:
+      interval: weekly
+      day: friday
+      time: "10:00"
+      timezone: "Asia/Ho_Chi_Minh"
+    commit-message:
+      prefix: "Node (Frontend)"
+      include: scope
+    open-pull-requests-limit: 15
+    versioning-strategy: increase
+    groups:
+      nextjs:
+        patterns:
+          - "next"
+          - "@next/*"
+          - "eslint-config-next"
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react*"
+      tanstack:
+        patterns:
+          - "@tanstack/*"
+      radix:
+        patterns:
+          - "@radix-ui/*"
+      better-auth:
+        patterns:
+          - "better-auth"
+      turbo:
+        patterns:
+          - "turbo"
+          - "@turbo/*"
+      typescript:
+        patterns:
+          - "typescript"
+          - "@types/*"
+      eslint:
+        patterns:
+          - "eslint*"
+          - "@typescript-eslint/*"
+
   - package-ecosystem: docker
     directory: "/docs/eventcatalog"
     schedule:

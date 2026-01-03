@@ -10,6 +10,7 @@ public static class Components
     public const string KeyCloak = "keycloak";
     public const string Inspector = "inspector";
     public const string VectorDb = "vectordb";
+    public const string TurboRepo = "turborepo";
     public const string ContainerRegistry = "container-registry";
 
     public static class Database

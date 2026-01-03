@@ -1,0 +1,43 @@
+{
+  "name": "@workspace/eslint-config",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "ESLint configuration for BookWorm frontend clients",
+  "author": "Nhan Nguyen <nguyenxuannhan407@gmail.com> (https://github.com/foxminchan)",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  ],
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foxminchan/BookWorm.git",
+    "directory": "src/Clients/packages/eslint-config"
+  },
+  "bugs": {
+    "url": "https://github.com/foxminchan/BookWorm/issues"
+  },
+  "homepage": "https://foxminchan.github.io/BookWorm/",
+  "exports": {
+    "./base": "./base.js",
+    "./next-js": "./next.js",
+    "./react-internal": "./react-internal.js"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@next/eslint-plugin-next": "^15.5.9",
+    "@typescript-eslint/eslint-plugin": "^8.51.0",
+    "@typescript-eslint/parser": "^8.51.0",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^9.1.2",
+    "eslint-plugin-only-warn": "^1.1.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-turbo": "^2.7.2",
+    "globals": "^15.15.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.51.0"
+  }
+}

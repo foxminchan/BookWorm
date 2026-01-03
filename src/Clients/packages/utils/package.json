@@ -1,0 +1,39 @@
+{
+  "name": "@workspace/utils",
+  "version": "1.0.0",
+  "description": "Shared utility functions for BookWorm frontend clients",
+  "author": "Nhan Nguyen <nguyenxuannhan407@gmail.com> (https://github.com/foxminchan)",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  ],
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foxminchan/BookWorm.git",
+    "directory": "src/Clients/packages/utils"
+  },
+  "bugs": {
+    "url": "https://github.com/foxminchan/BookWorm/issues"
+  },
+  "homepage": "https://foxminchan.github.io/BookWorm/",
+  "engines": {
+    "node": ">=25.0.0"
+  },
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.3",
+    "@types/uuid": "^11.0.0",
+    "typescript": "^5.9.3"
+  }
+}

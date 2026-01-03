@@ -1,0 +1,25 @@
+{
+  "name": "@workspace/typescript-config",
+  "version": "1.0.0",
+  "description": "TypeScript configuration for BookWorm frontend clients",
+  "author": "Nhan Nguyen <nguyenxuannhan407@gmail.com> (https://github.com/foxminchan)",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  ],
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foxminchan/BookWorm.git",
+    "directory": "src/Clients/packages/typescript-config"
+  },
+  "bugs": {
+    "url": "https://github.com/foxminchan/BookWorm/issues"
+  },
+  "homepage": "https://foxminchan.github.io/BookWorm/",
+  "publishConfig": {
+    "access": "public"
+  }
+}
