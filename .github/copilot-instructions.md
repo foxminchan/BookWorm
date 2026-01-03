@@ -2,34 +2,45 @@
 
 ## System overview
 
-BookWorm is a microservices-based system built around .NET Aspire for service orchestration, local developer experience, and cloud-ready composition. It combines:
+BookWorm is a microservices-based bookstore system built around .NET Aspire for service orchestration, local developer experience, and cloud-ready composition. It combines:
 
-- Microservices with clear bounded contexts (e.g., Catalog, Orders, Users/Identity, Recommendations, etc.).
-- AI Agents integrated as first-class components to augment features (e.g., content enrichment, personalized recommendations, summarization, routing, or workflow orchestration).
-- A unified developer experience via Aspire’s AppHost, service discovery, health, and observability.
-- A TypeScript-based frontend or UI shell (if present) communicating with service APIs and/or a gateway.
-- Automated local and CI test flows with TUnit and Moq for .NET services.
+- **8 Microservices** with clear bounded contexts: Catalog, Basket, Ordering, Rating, Chat, Finance, Notification, and Scheduler.
+- **Microsoft Agents AI Framework** integrated as first-class components for content enrichment, personalized recommendations, chat functionality, and RAG patterns.
+- **Next.js 16 + React 19 frontend applications** in a Turbo monorepo: Backoffice (admin) and Storefront (customer-facing).
+- A unified developer experience via Aspire's AppHost with service discovery, health checks, and observability.
+- Custom API Gateway proxy routing to backend services with Keycloak authentication.
+- Automated testing with **TUnit** framework, Moq for mocking, Bogus for test data, and Shouldly for assertions.
 
 Goals:
-- Demonstrate modern .NET microservices patterns with Aspire.
-- Show safe, incremental adoption of AI agents/tools within core flows.
-- Provide end-to-end reference for local dev, testing, and observability.
+- Demonstrate modern .NET 10 microservices patterns with Aspire orchestration.
+- Show DDD with Clean Architecture and Vertical Slice organization.
+- Integrate AI agents using MCP (Model Context Protocol) for standardized AI tooling.
+- Provide end-to-end reference for event-driven architecture with MassTransit/RabbitMQ.
 
 ## Tech stack and key dependencies
 
-- Runtime: .NET (C#; use the latest language features as configured in this repo).
-- Orchestration: .NET Aspire (AppHost, ServiceDefaults).
-- Application code: C# (primary), TypeScript (frontend or tooling), PowerShell/Shell for scripts, Justfile for dev ergonomics (if present).
-- Testing: TUnit, Moq.
-- Data and messaging: Inspect code for concrete providers (e.g., PostgreSQL/MSSQL, Redis, Kafka/Azure Service Bus/RabbitMQ). Do not assume—search the code.
-- Observability: Aspire-enabled OpenTelemetry wiring, health endpoints, dashboards (verify in AppHost).
-- AI: Agent orchestration and tools. Verify implemented providers and key management (e.g., Azure OpenAI, OpenAI, local models, semantic memory, vector stores).
+- **Runtime**: .NET 10 with C# preview language features (`LangVersion=preview`).
+- **Orchestration**: .NET Aspire (AppHost in `BookWorm.AppHost`, ServiceDefaults in `BookWorm.ServiceDefaults`).
+- **Application code**: C# (backend services), TypeScript 5.7+ (frontend in Turbo monorepo), PowerShell for scripts, Justfile for dev ergonomics.
+- **Backend framework**: ASP.NET Core Minimal APIs with custom `IEndpoint<TResult, TRequest>` pattern from BookWorm.Chassis.
+- **CQRS**: Mediator library (source generator-based, NOT MediatR) for command/query separation.
+- **Testing**: **TUnit** with Microsoft Testing Platform, **Moq**, **Bogus**, **Shouldly**, **Verify.TUnit** for contract tests, **TngTech.ArchUnitNET.TUnit** for architecture tests.
+- **Database**: Azure PostgreSQL Flexible Server with EF Core and `EFCore.NamingConventions` (snake_case).
+- **Messaging**: **MassTransit with RabbitMQ** for event-driven communication with outbox/inbox patterns.
+- **Caching**: `Microsoft.Extensions.Caching.Hybrid` with Azure Managed Redis.
+- **Storage**: Azure Storage (blob containers) for Catalog service.
+- **Vector DB**: Qdrant for embeddings and RAG patterns.
+- **Authentication**: Keycloak with token introspection middleware.
+- **Observability**: Aspire-enabled OpenTelemetry, health endpoints, distributed tracing.
+- **AI**: Microsoft Agents AI Framework with Azure OpenAI (GPT-4o-mini, text-embedding-3-large), Semantic Kernel, MCP server (`BookWorm.McpTools`), A2A Protocol.
+- **Frontend**: Next.js 16, React 19, TanStack Query/Table/Form, Radix UI, Tailwind CSS v4, Better Auth, pnpm + Turbo.
 
-Where to confirm:
-- AppHost project: references to services, dashboards, storage/messaging resources.
-- Service projects: Program.cs/ServiceDefaults for DI, HTTP endpoints, and telemetry setup.
-- Frontend: TypeScript project/package.json if present.
-- Infrastructure scripts: PowerShell/Shell/Justfile tasks.
+Key locations:
+- AppHost: `src/Aspire/BookWorm.AppHost/AppHost.cs`
+- Services: `src/Services/{ServiceName}/BookWorm.{ServiceName}/`
+- Frontend: `src/Clients/` (monorepo with `apps/` and `packages/`)
+- Shared libraries: `src/BuildingBlocks/` (Chassis, Constants, SharedKernel)
+- MCP Tools: `src/Integrations/BookWorm.McpTools/`
 
 ## Local development and onboarding
 
@@ -48,7 +59,7 @@ Recommended flow:
    - Inspect the Aspire dashboard URL from console output for health, traces, and service links.
 
 3) Frontend (if present)
-   - From the frontend folder: `bun i`, then `bun run dev`/`build`.
+   - From the frontend folder: `pnpm i`, then `pnpm run dev`/`build`.
    - Ensure API base URLs match local dev settings or proxy via API Gateway/BFF.
 
 4) Configuration and secrets
@@ -59,15 +70,17 @@ Recommended flow:
    - Run `dotnet test` from the solution root or specific test projects.
    - Follow TUnit patterns; use Moq for mocks.
 
-## Common tasks (suggested; verify with repo)
+## Common tasks (Justfile commands)
 
-- just build: compile all projects
-- just run: start AppHost and services
-- just test: run all unit tests
-- just fmt: apply formatting
-- just clean: clean artifacts
+- `just restore`: Restore .NET and pnpm dependencies
+- `just build`: Compile all backend projects and frontend apps
+- `just run`: Start Aspire AppHost with all services and frontend
+- `just test`: Run all TUnit tests with coverage
+- `just format`: Apply formatting (.NET + frontend)
+- `just clean`: Clean build artifacts
+- `just trust`: Trust .NET dev certificates
 
-If no Justfile: use the equivalent `dotnet` and package manager commands.
+If no Justfile: Use equivalent `dotnet` and `pnpm` commands directly.
 
 ## Security and compliance
 

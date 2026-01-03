@@ -12,6 +12,45 @@ public static class KeycloakExtensions
     private static readonly string _defaultLocalKeycloakName = nameof(BookWorm).ToLowerInvariant();
 
     /// <summary>
+    ///     Configures the turborepo app resource to integrate with Keycloak as an Identity Provider (IdP).
+    /// </summary>
+    /// <param name="builder">The turborepo app resource builder.</param>
+    /// <param name="keycloak">The Keycloak resource builder to configure as an IdP.</param>
+    /// <returns>The turborepo app resource builder for method chaining.</returns>
+    public static IResourceBuilder<TurborepoAppResource> WithKeycloak(
+        this IResourceBuilder<TurborepoAppResource> builder,
+        IResourceBuilder<IResource> keycloak
+    )
+    {
+        var clientId = builder.Resource.Name;
+
+        if (keycloak is IResourceBuilder<KeycloakResource> keycloakContainer)
+        {
+            ConfigureKeycloakForClient(
+                keycloakContainer,
+                builder,
+                clientId,
+                clientType: "APP",
+                clientSecret: null,
+                includeContainerHostUrl: false
+            );
+
+            builder
+                .WithReference(keycloakContainer)
+                .WaitForStart(keycloakContainer)
+                .WithEnvironment("KEYCLOAK_URL", keycloakContainer.GetEndpoint(Http.Schemes.Http))
+                .WithEnvironment("KEYCLOAK_REALM", _defaultLocalKeycloakName)
+                .WithEnvironment("KEYCLOAK_CLIENT_ID", clientId);
+        }
+        else if (keycloak is IResourceBuilder<ExternalServiceResource> keycloakHosted)
+        {
+            ConfigureClientForHostedKeycloak(builder, keycloakHosted, clientId);
+        }
+
+        return builder;
+    }
+
+    /// <summary>
     ///     Configures the project resource to integrate with Keycloak as an Identity Provider (IdP).
     /// </summary>
     /// <param name="builder">The project resource builder.</param>
@@ -25,50 +64,20 @@ public static class KeycloakExtensions
         var clientId = builder.Resource.Name;
         var applicationBuilder = builder.ApplicationBuilder;
 
-        if (
-            applicationBuilder.ExecutionContext.IsRunMode
-            && keycloak is IResourceBuilder<KeycloakResource> keycloakContainer
-        )
+        if (keycloak is IResourceBuilder<KeycloakResource> keycloakContainer)
         {
             var clientSecret = applicationBuilder
                 .AddParameter($"{clientId}-secret", true)
                 .WithGeneratedDefault(new() { MinLength = 32, Special = false });
 
-            var clientEnv = clientId.ToUpperInvariant();
-
-            keycloakContainer
-                .WithOtlpExporter()
-                .WithEnvironment(HttpEnabledEnvVarName, "true")
-                .WithEnvironment(ProxyHeadersEnvVarName, "xforwarded")
-                .WithEnvironment(HostNameStrictEnvVarName, "false")
-                .WithEnvironment($"CLIENT_{clientEnv}_ID", clientId)
-                .WithEnvironment($"CLIENT_{clientEnv}_NAME", Services.ToClientName(clientId, "API"))
-                .WithEnvironment($"CLIENT_{clientEnv}_SECRET", clientSecret)
-                .OnResourceEndpointsAllocated(
-                    (resource, _, _) =>
-                    {
-                        var resourceBuilder = builder.ApplicationBuilder.CreateResourceBuilder(
-                            resource
-                        );
-
-                        resourceBuilder.WithEnvironment(context =>
-                        {
-                            var endpoint = builder.GetEndpoint(Http.Schemes.Http);
-
-                            context.EnvironmentVariables.Add(
-                                $"CLIENT_{clientEnv}_URL",
-                                endpoint.Url
-                            );
-
-                            context.EnvironmentVariables.Add(
-                                $"CLIENT_{clientEnv}_URL_CONTAINERHOST",
-                                endpoint
-                            );
-                        });
-
-                        return Task.CompletedTask;
-                    }
-                );
+            ConfigureKeycloakForClient(
+                keycloakContainer,
+                builder,
+                clientId,
+                clientType: "API",
+                clientSecret,
+                includeContainerHostUrl: true
+            );
 
             builder
                 .WithReference(keycloakContainer)
@@ -85,10 +94,7 @@ public static class KeycloakExtensions
                     $"{nameof(Authorization.Actions.Write)} for {Services.ToClientName(clientId, "API")}"
                 );
         }
-        else if (
-            applicationBuilder.ExecutionContext.IsPublishMode
-            && keycloak is IResourceBuilder<ExternalServiceResource> keycloakHosted
-        )
+        else if (keycloak is IResourceBuilder<ExternalServiceResource> keycloakHosted)
         {
             var clientSecret = applicationBuilder
                 .AddParameter($"{clientId}-secret", true)
@@ -122,6 +128,79 @@ public static class KeycloakExtensions
         return builder;
     }
 
+    private static void ConfigureKeycloakForClient<TResource>(
+        IResourceBuilder<KeycloakResource> keycloakContainer,
+        IResourceBuilder<TResource> clientBuilder,
+        string clientId,
+        string clientType,
+        IResourceBuilder<ParameterResource>? clientSecret,
+        bool includeContainerHostUrl
+    )
+        where TResource : IResourceWithEndpoints
+    {
+        var clientEnv = clientId.ToUpperInvariant();
+
+        keycloakContainer
+            .WithEnvironment(HttpEnabledEnvVarName, "true")
+            .WithEnvironment(ProxyHeadersEnvVarName, "xforwarded")
+            .WithEnvironment(HostNameStrictEnvVarName, "false")
+            .WithEnvironment($"CLIENT_{clientEnv}_ID", clientId)
+            .WithEnvironment(
+                $"CLIENT_{clientEnv}_NAME",
+                Services.ToClientName(clientId, clientType)
+            );
+
+        if (clientSecret is not null)
+        {
+            keycloakContainer.WithEnvironment($"CLIENT_{clientEnv}_SECRET", clientSecret);
+        }
+
+        keycloakContainer.OnResourceEndpointsAllocated(
+            (resource, _, _) =>
+            {
+                var resourceBuilder = clientBuilder.ApplicationBuilder.CreateResourceBuilder(
+                    resource
+                );
+
+                resourceBuilder.WithEnvironment(context =>
+                {
+                    var endpoint = clientBuilder.GetEndpoint(Http.Schemes.Http);
+
+                    context.EnvironmentVariables.Add($"CLIENT_{clientEnv}_URL", endpoint.Url);
+
+                    if (includeContainerHostUrl)
+                    {
+                        context.EnvironmentVariables.Add(
+                            $"CLIENT_{clientEnv}_URL_CONTAINERHOST",
+                            endpoint
+                        );
+                    }
+                });
+
+                return Task.CompletedTask;
+            }
+        );
+    }
+
+    private static void ConfigureClientForHostedKeycloak<TResource>(
+        IResourceBuilder<TResource> clientBuilder,
+        IResourceBuilder<ExternalServiceResource> keycloakHosted,
+        string clientId
+    )
+        where TResource : IResourceWithEnvironment, IResourceWithWaitSupport
+    {
+        var realmParameter = clientBuilder
+            .ApplicationBuilder.Resources.OfType<ParameterResource>()
+            .First(r => string.Equals(r.Name, "kc-realm", StringComparison.OrdinalIgnoreCase));
+
+        clientBuilder
+            .WithReference(keycloakHosted)
+            .WaitFor(keycloakHosted)
+            .WithEnvironment("KEYCLOAK_URL", keycloakHosted)
+            .WithEnvironment("KEYCLOAK_REALM", realmParameter)
+            .WithEnvironment("KEYCLOAK_CLIENT_ID", clientId);
+    }
+
     extension(IDistributedApplicationBuilder builder)
     {
         /// <summary>
@@ -136,6 +215,7 @@ public static class KeycloakExtensions
         {
             var keycloak = builder
                 .AddKeycloak(name)
+                .WithOtlpExporter()
                 .WithDataVolume()
                 .WithIconName("LockClosedRibbon")
                 .WithCustomTheme(_defaultLocalKeycloakName)

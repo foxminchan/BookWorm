@@ -49,11 +49,17 @@
 - [x] Created comprehensive documentation:
   - [x] Used OpenAPI for REST API & AsyncAPI for event-driven endpoints
   - [x] Utilized EventCatalog for centralized architecture documentation
+- [x] Built modern client applications:
+  - [x] Monorepo architecture powered by `Turborepo`
+  - [x] Customer-facing storefront using `Next.js`
+  - [ ] Admin backoffice dashboard with `Next.js`
 - [x] Established a testing strategy:
   - [x] Conducted service unit tests
   - [x] Implemented snapshot tests
   - [x] Established architecture testing strategy
   - [x] Performed load testing with k6
+  - [x] Implemented frontend unit tests and component tests
+  - [x] Conducted end-to-end testing with BDD
   - [ ] Planned integration tests
 
 ## Project Architecture
@@ -69,6 +75,7 @@
 - [Docker](https://www.docker.com/get-started)
 - [Gitleaks](https://gitleaks.io/)
 - [Bun](https://bun.sh/)
+- [Pnpm](https://pnpm.io/installation)
 - [Just](https://github.com/casey/just)
 - [Buf CLI](https://docs.buf.build/installation)
 - [Aspire CLI](https://aspire.dev/get-started/install-cli/)
