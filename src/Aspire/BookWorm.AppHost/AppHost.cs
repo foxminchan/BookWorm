@@ -186,7 +186,7 @@ var turbo = builder
     .WithPnpm(true)
     .WithPackageManagerLaunch();
 
-turbo
+var storefront = turbo
     .AddApp(Clients.StoreFront, Clients.StoreFrontTurboApp)
     .WithHttpEndpoint(env: "PORT")
     .WithMappedEndpointPort()
@@ -195,6 +195,8 @@ turbo
     .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTPS", gateway.Resource.GetEndpoint(Http.Schemes.Https))
     .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTP", gateway.Resource.GetEndpoint(Http.Schemes.Http))
     .WithKeycloak(keycloak);
+
+storefront.WithEnvironment("NEXT_PUBLIC_APP_URL", storefront.GetEndpoint(Http.Schemes.Http));
 
 turbo
     .AddApp(Clients.BackOffice, Clients.BackOfficeTurboApp)

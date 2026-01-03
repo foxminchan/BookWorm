@@ -4,6 +4,7 @@ import { genericOAuth, keycloak } from "better-auth/plugins";
 import { env } from "@/env.mjs";
 
 export const auth = betterAuth({
+  baseURL: env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
   trustedOrigins: [
     env.KEYCLOAK_URL,
     env.NEXT_PUBLIC_GATEWAY_HTTP || "",
