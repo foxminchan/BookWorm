@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 import { env } from "@/env.mjs";
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = env.NEXT_PUBLIC_BASE_URL || "https://bookworm.example.com";
+  const baseUrl = env.NEXT_PUBLIC_APP_URL || "https://bookworm.example.com";
 
   return {
     rules: [

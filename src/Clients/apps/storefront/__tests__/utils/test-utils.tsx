@@ -1,8 +1,13 @@
 import type { ReactElement, ReactNode } from "react";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { type RenderOptions, render } from "@testing-library/react";
+import {
+  type RenderOptions,
+  type RenderResult,
+  render,
+} from "@testing-library/react";
 import { Provider as JotaiProvider } from "jotai";
+import { vi } from "vitest";
 
 /**
  * Create a new QueryClient for testing with default options
@@ -20,17 +25,12 @@ export function createTestQueryClient() {
         retry: false,
       },
     },
-    logger: {
-      log: () => {},
-      warn: () => {},
-      error: () => {},
-    },
   });
 }
 
-interface AllTheProvidersProps {
+type AllTheProvidersProps = {
   children: ReactNode;
-}
+};
 
 /**
  * Wrapper component that provides all necessary contexts for testing
@@ -58,7 +58,7 @@ export function createWrapper() {
 export function renderWithProviders(
   ui: ReactElement,
   options?: Omit<RenderOptions, "wrapper">,
-) {
+): RenderResult {
   return render(ui, { wrapper: AllTheProviders, ...options });
 }
 
@@ -75,12 +75,24 @@ export const mockSession = {
     token: "mock-token",
     expiresAt: new Date(Date.now() + 3600000).toISOString(),
   },
+} as const;
+
+type MockAuthClient = {
+  useSession: () => {
+    data: typeof mockSession;
+    isPending: boolean;
+    error: null;
+  };
+  signIn: {
+    social: ReturnType<typeof vi.fn>;
+  };
+  signOut: ReturnType<typeof vi.fn>;
 };
 
 /**
  * Mock auth client for testing
  */
-export const mockAuthClient = {
+export const mockAuthClient: MockAuthClient = {
   useSession: () => ({
     data: mockSession,
     isPending: false,

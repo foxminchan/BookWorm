@@ -32,9 +32,9 @@ import { generateBreadcrumbJsonLd, generateProductJsonLd } from "@/lib/seo";
 
 const REVIEWS_PER_PAGE = 5;
 
-interface BookDetailPageProps {
+type BookDetailPageProps = {
   params: Promise<{ id: string }>;
-}
+};
 
 export default function BookDetailPage({ params }: BookDetailPageProps) {
   const { id } = use(params);
