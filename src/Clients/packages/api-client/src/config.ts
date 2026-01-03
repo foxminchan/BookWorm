@@ -2,8 +2,8 @@ import type { AxiosRequestConfig } from "./global";
 
 const getBaseURL = (): string => {
   return (
-    process.env.GATEWAY_HTTPS ||
-    process.env.GATEWAY_HTTP ||
+    process.env.NEXT_PUBLIC_GATEWAY_HTTPS ||
+    process.env.NEXT_PUBLIC_GATEWAY_HTTP ||
     "http://localhost:5000"
   );
 };

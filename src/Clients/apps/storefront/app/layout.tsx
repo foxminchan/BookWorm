@@ -5,8 +5,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import "@workspace/ui/globals.css";
 
+import { Providers } from "@/app/providers";
 import { JsonLd } from "@/components/json-ld";
-import { Providers } from "@/components/providers";
+import { showCopilotKit } from "@/flags";
 import { generateOrganizationJsonLd, generateWebsiteJsonLd } from "@/lib/seo";
 
 export const viewport: Viewport = {
@@ -76,16 +77,17 @@ export const metadata: Metadata = {
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const organizationJsonLd = generateOrganizationJsonLd();
   const websiteJsonLd = generateWebsiteJsonLd();
+  const isCopilotEnabled = await showCopilotKit();
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <JsonLd data={organizationJsonLd} />
         <JsonLd data={websiteJsonLd} />
@@ -94,7 +96,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
-              "@type": "Organization",
+              "@typ suppressHydrationWarninge": "Organization",
               name: "BookWorm",
               url: "https://bookworm.com",
               logo: "https://bookworm.com/logo.svg",
@@ -109,7 +111,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`font-sans antialiased`}>
-        <Providers>{children}</Providers>
+        <Providers isCopilotEnabled={isCopilotEnabled}>{children}</Providers>
       </body>
     </html>
   );

@@ -19,7 +19,6 @@ public static class ProxyExtensions
             var yarp = builder
                 .AddYarp(Services.Gateway)
                 .WithHttpsDeveloperCertificate()
-                .WithExternalHttpEndpoints()
                 .WithIconName("SerialPort")
                 .WithConfiguration(yarpBuilder =>
                 {

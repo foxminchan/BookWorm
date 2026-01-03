@@ -4,11 +4,13 @@ import { forwardRef, useImperativeHandle, useState } from "react";
 
 import { CopilotChat } from "@copilotkit/react-ui";
 import "@copilotkit/react-ui/styles.css";
+import { useAtomValue } from "jotai";
 import { AlertCircle, Copy, MessageCircle, Paperclip, X } from "lucide-react";
 
 import { Button } from "@workspace/ui/components/button";
 import { Card, CardContent, CardHeader } from "@workspace/ui/components/card";
 
+import { isCopilotEnabledAtom } from "@/atoms/feature-flags-atom";
 import { env } from "@/env.mjs";
 
 export type ChatBotRef = {
@@ -88,9 +90,11 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
 const UnavailableChatUI = ({
   isOpen,
   onClose,
+  isFeatureDisabled = false,
 }: {
   isOpen: boolean;
   onClose: () => void;
+  isFeatureDisabled?: boolean;
 }) => {
   if (!isOpen) {
     return null;
@@ -107,7 +111,9 @@ const UnavailableChatUI = ({
             </div>
             <div>
               <h2 className="font-semibold">BookWorm Literary Guide</h2>
-              <p className="text-xs opacity-90">Chat unavailable</p>
+              <p className="text-xs opacity-90">
+                {isFeatureDisabled ? "Coming Soon" : "Chat unavailable"}
+              </p>
             </div>
           </div>
           <Button
@@ -121,13 +127,19 @@ const UnavailableChatUI = ({
         </CardHeader>
 
         <CardContent className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
-            <AlertCircle className="h-8 w-8 text-red-600" />
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-950">
+            <AlertCircle className="h-8 w-8 text-orange-600 dark:text-orange-400" />
           </div>
           <div className="text-center">
-            <h3 className="mb-2 text-lg font-semibold">Chat Unavailable</h3>
+            <h3 className="mb-2 text-lg font-semibold">
+              {isFeatureDisabled
+                ? "Feature in Development"
+                : "Chat Unavailable"}
+            </h3>
             <p className="text-muted-foreground text-sm">
-              The chat feature is currently unavailable. Please try again later.
+              {isFeatureDisabled
+                ? "Our AI chat assistant is currently under development and will be available soon. Stay tuned!"
+                : "The chat feature is currently unavailable. Please try again later."}
             </p>
           </div>
         </CardContent>
@@ -137,14 +149,18 @@ const UnavailableChatUI = ({
 };
 
 export const ChatBot = forwardRef<ChatBotRef>(function ChatBot(_, ref) {
+  const isCopilotEnabled = useAtomValue(isCopilotEnabledAtom);
   const hasGateway = !!(
     env.NEXT_PUBLIC_GATEWAY_HTTPS || env.NEXT_PUBLIC_GATEWAY_HTTP
   );
   const [isUnavailableChatOpen, setIsUnavailableChatOpen] = useState(false);
 
+  const isFeatureDisabled = !isCopilotEnabled;
+  const canShowChat = isCopilotEnabled && hasGateway;
+
   useImperativeHandle(ref, () => ({
     openChat: () => {
-      if (!hasGateway) {
+      if (!canShowChat) {
         setIsUnavailableChatOpen(true);
       } else {
         const chatButton = document.querySelector(
@@ -157,21 +173,30 @@ export const ChatBot = forwardRef<ChatBotRef>(function ChatBot(_, ref) {
     },
   }));
 
-  if (!hasGateway) {
+  if (!canShowChat) {
     return (
       <>
         <Button
           onClick={() => setIsUnavailableChatOpen(true)}
           size="icon"
           className="fixed right-6 bottom-6 z-50 hidden h-12 w-12 rounded-full shadow-lg md:flex"
-          aria-label="Open chat - feature currently unavailable"
-          title="Chat feature is unavailable"
+          aria-label={
+            isFeatureDisabled
+              ? "Chat feature coming soon"
+              : "Open chat - feature currently unavailable"
+          }
+          title={
+            isFeatureDisabled
+              ? "Feature in development"
+              : "Chat feature is unavailable"
+          }
         >
           <MessageCircle className="h-6 w-6" aria-hidden="true" />
         </Button>
         <UnavailableChatUI
           isOpen={isUnavailableChatOpen}
           onClose={() => setIsUnavailableChatOpen(false)}
+          isFeatureDisabled={isFeatureDisabled}
         />
       </>
     );

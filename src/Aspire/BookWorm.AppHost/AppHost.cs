@@ -191,8 +191,9 @@ turbo
     .WithHttpEndpoint(env: "PORT")
     .WithMappedEndpointPort()
     .WithHttpHealthCheck()
-    .WithReference(gateway)
-    .WaitFor(gateway)
+    .WithExternalHttpEndpoints()
+    .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTPS", gateway.Resource.GetEndpoint(Http.Schemes.Https))
+    .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTP", gateway.Resource.GetEndpoint(Http.Schemes.Http))
     .WithKeycloak(keycloak);
 
 turbo
@@ -200,8 +201,9 @@ turbo
     .WithHttpEndpoint(env: "PORT")
     .WithMappedEndpointPort()
     .WithHttpHealthCheck()
-    .WithReference(gateway)
-    .WaitFor(gateway)
+    .WithExternalHttpEndpoints()
+    .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTPS", gateway.Resource.GetEndpoint(Http.Schemes.Https))
+    .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTP", gateway.Resource.GetEndpoint(Http.Schemes.Http))
     .WithKeycloak(keycloak);
 
 if (builder.ExecutionContext.IsRunMode)

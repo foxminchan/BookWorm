@@ -83,15 +83,15 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "msw": "^2.12.6",
+    "msw": "^2.12.7",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@types/node": "^25.0.3",
+    "@types/uuid": "^11.0.0",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "eslint": "^9.39.2",
-    "@types/uuid": "^11.0.0",
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
