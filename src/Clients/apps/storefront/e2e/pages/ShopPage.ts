@@ -153,7 +153,9 @@ export class ShopPage extends BasePage {
       await this.waitForPageLoad();
     } else {
       throw new Error(
-        `Book card at index ${index} not found. Total cards: ${cards.length}`,
+        `Book card at index ${index} not found. Total cards: ${cards.length}. ` +
+          `Suggestions: Verify that books are loaded before attempting to click. ` +
+          `Try using clickBookByTitle() instead for more reliable selection.`,
       );
     }
   }

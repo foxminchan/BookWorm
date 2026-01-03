@@ -49,14 +49,17 @@ When(
 When(
   "I set price range to {string}",
   async function (this: { page: Page }, priceRange: string) {
-    // Price range format: "$20-$50"
     const match = priceRange.match(/\$(\d+)-\$(\d+)/);
-    if (match) {
-      const min = parseInt(match[1]!);
-      const max = parseInt(match[2]!);
-      const shopPage = new ShopPage(this.page);
-      await shopPage.setPriceRange(min, max);
+    if (!match || !match[1] || !match[2]) {
+      throw new Error(
+        `Invalid price range format: "${priceRange}". Expected format: "$min-$max" (e.g., "$20-$50")`,
+      );
     }
+
+    const min = parseInt(match[1], 10);
+    const max = parseInt(match[2], 10);
+    const shopPage = new ShopPage(this.page);
+    await shopPage.setPriceRange(min, max);
   },
 );
 

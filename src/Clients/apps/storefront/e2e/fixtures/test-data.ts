@@ -17,8 +17,16 @@ import type {
   OrderStatus,
 } from "@workspace/types/ordering/orders";
 
-// Seed faker for consistent test data across runs
-faker.seed(12345);
+/**
+ * Seed faker for test data generation
+ * - Uses FAKER_SEED environment variable if provided for deterministic data
+ * - Falls back to default seed (12345) for consistent test runs
+ * - Set FAKER_SEED to different values or omit for varied test scenarios
+ */
+const fakerSeed = process.env.FAKER_SEED
+  ? parseInt(process.env.FAKER_SEED, 10)
+  : 12345;
+faker.seed(fakerSeed);
 
 /**
  * Test Authors

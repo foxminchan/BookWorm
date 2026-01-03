@@ -22,8 +22,22 @@ export class World {
 
   /**
    * Retrieve stored data
+   * Returns undefined if key doesn't exist
    */
-  getData<T = any>(key: string): T {
+  getData<T = any>(key: string): T | undefined {
+    return this.testData[key] as T | undefined;
+  }
+
+  /**
+   * Retrieve stored data or throw if key doesn't exist
+   * Use when the data is expected to be present
+   */
+  getDataOrThrow<T = any>(key: string): T {
+    if (!this.hasData(key)) {
+      throw new Error(
+        `Test data key "${key}" not found. Available keys: ${Object.keys(this.testData).join(", ") || "none"}`,
+      );
+    }
     return this.testData[key] as T;
   }
 
