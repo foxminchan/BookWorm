@@ -48,8 +48,8 @@ describe("BookGrid", () => {
   it("should display loading state", () => {
     renderWithProviders(<BookGrid {...defaultProps} isLoading={true} />);
 
-    const loadingContainer = screen.getByRole("status");
-    expect(loadingContainer).toBeInTheDocument();
+    const loadingContainers = screen.getAllByRole("status");
+    expect(loadingContainers.length).toBeGreaterThan(0);
   });
 
   it("should display books grid", () => {
@@ -70,7 +70,7 @@ describe("BookGrid", () => {
     renderWithProviders(<BookGrid {...defaultProps} books={[]} />);
 
     expect(
-      screen.getByRole("button", { name: /clear filters/i }),
+      screen.getByRole("button", { name: /clear all filters/i }),
     ).toBeInTheDocument();
   });
 
@@ -78,7 +78,9 @@ describe("BookGrid", () => {
     const user = userEvent.setup();
     renderWithProviders(<BookGrid {...defaultProps} books={[]} />);
 
-    const clearButton = screen.getByRole("button", { name: /clear filters/i });
+    const clearButton = screen.getByRole("button", {
+      name: /clear all filters/i,
+    });
     await user.click(clearButton);
 
     expect(mockOnClearFilters).toHaveBeenCalled();

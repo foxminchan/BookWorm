@@ -3,6 +3,7 @@ import type React from "react";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
+import { Button } from "@workspace/ui/components/button";
 import "@workspace/ui/globals.css";
 
 import { JsonLd } from "@/components/json-ld";
@@ -16,16 +17,24 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fbf8f1" },
+    { media: "(prefers-color-scheme: dark)", color: "#1a1a1a" },
+  ],
 };
 
 export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
   ),
-  title: "BookWorm - Curated Books & Design Inspiration | Online Bookstore",
+  title: {
+    default: "BookWorm - Curated Books & Design Inspiration | Online Bookstore",
+    template: "%s | BookWorm",
+  },
   description:
     "Discover a carefully curated collection of literature, design books, and inspiration for the modern reader. Shop fiction, non-fiction, design, science, and more.",
   generator: "Next.js",
+  applicationName: "BookWorm",
   keywords: [
     "books",
     "online bookstore",
@@ -37,6 +46,12 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "BookWorm Team" }],
   creator: "BookWorm",
+  publisher: "BookWorm",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   manifest: "/manifest.json",
   openGraph: {
     type: "website",
@@ -93,29 +108,30 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Preconnect to external domains for faster loading */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+
+        {/* Structured Data */}
         <JsonLd data={organizationJsonLd} />
         <JsonLd data={websiteJsonLd} />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@typ suppressHydrationWarninge": "Organization",
-              name: "BookWorm",
-              url: "https://bookworm.com",
-              logo: "https://bookworm.com/logo.svg",
-              description:
-                "Curated online bookstore with literature, design, and inspiration books",
-              sameAs: [
-                "https://twitter.com/bookworm",
-                "https://facebook.com/bookworm",
-              ],
-            }),
-          }}
-        />
       </head>
       <body className={`font-sans antialiased`}>
-        <Providers isCopilotEnabled={isCopilotEnabled}>{children}</Providers>
+        <Button
+          asChild
+          variant="outline"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50"
+        >
+          <a href="#main-content">Skip to main content</a>
+        </Button>
+        <div id="main-content">
+          <Providers isCopilotEnabled={isCopilotEnabled}>{children}</Providers>
+        </div>
       </body>
     </html>
   );

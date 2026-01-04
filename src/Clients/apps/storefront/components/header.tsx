@@ -10,6 +10,7 @@ import { useAtomValue } from "jotai";
 import { Home, Search, ShoppingBag, User } from "lucide-react";
 import { useForm } from "react-hook-form";
 
+import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import {
   Form,
@@ -161,9 +162,19 @@ export function Header() {
                 size="icon"
                 className="h-9 w-9 rounded-full"
                 onClick={() => setIsSearchOpen(!isSearchOpen)}
-                aria-label="Toggle search"
+                onKeyDown={(e) => {
+                  if (e.key === "Escape" && isSearchOpen) {
+                    setIsSearchOpen(false);
+                  }
+                }}
+                aria-label="Search books"
+                aria-expanded={isSearchOpen}
+                aria-haspopup="true"
               >
-                <Search className="text-foreground/60 size-4 md:size-5" />
+                <Search
+                  className="text-foreground/60 size-4 md:size-5"
+                  aria-hidden="true"
+                />
               </Button>
               {isSearchOpen && (
                 <div className="bg-background border-foreground/10 animate-in fade-in slide-in-from-top-2 absolute top-full right-0 mt-2 w-48 rounded-lg border p-2 shadow-lg duration-200 md:w-64">
@@ -174,12 +185,18 @@ export function Header() {
                         name="search"
                         render={({ field }) => (
                           <FormItem>
+                            <label
+                              htmlFor="header-search-input"
+                              className="sr-only"
+                            >
+                              Search books
+                            </label>
                             <FormControl>
                               <Input
+                                id="header-search-input"
                                 placeholder="Search books..."
                                 autoFocus
                                 className="border-foreground/20 focus:border-primary placeholder:text-foreground/40 border-x-0 border-t-0 border-b bg-transparent px-3 py-2 text-sm"
-                                aria-label="Search books"
                                 {...field}
                               />
                             </FormControl>
@@ -197,7 +214,7 @@ export function Header() {
               className={`shrink-0 rounded-full p-1.5 transition-colors md:p-2 ${isActive("/") ? "bg-secondary" : "hover:bg-secondary"}`}
               aria-label="Home"
             >
-              <Home className="size-4 md:size-5" />
+              <Home className="size-4 md:size-5" aria-hidden="true" />
               <span className="sr-only">Home</span>
             </Link>
 
@@ -213,9 +230,16 @@ export function Header() {
                 className={`h-9 w-9 rounded-full ${
                   isActive("/account") ? "bg-secondary" : ""
                 }`}
-                aria-label="Account"
+                onKeyDown={(e) => {
+                  if (e.key === "Escape" && isAccountOpen) {
+                    setIsAccountOpen(false);
+                  }
+                }}
+                aria-label="Account menu"
+                aria-expanded={isAccountOpen}
+                aria-haspopup="true"
               >
-                <User className="size-4 md:size-5" />
+                <User className="size-4 md:size-5" aria-hidden="true" />
                 <span className="sr-only">Account</span>
               </Button>
 
@@ -269,19 +293,23 @@ export function Header() {
               <Link
                 href="/basket"
                 className={`relative shrink-0 rounded-full p-1.5 transition-colors md:p-2 ${isActive("/basket") ? "bg-secondary" : "hover:bg-secondary"}`}
-                aria-label="Shopping basket"
+                aria-label={`Shopping basket${totalItems > 0 ? `, ${totalItems} item${totalItems > 1 ? "s" : ""}` : ""}`}
               >
-                <ShoppingBag className="size-4 md:size-5" />
+                <ShoppingBag className="size-4 md:size-5" aria-hidden="true" />
                 {totalItems > 0 && (
-                  <span
-                    className="bg-primary text-primary-foreground absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full text-[10px] font-bold"
-                    aria-live="polite"
-                    aria-label="Number of items in basket"
+                  <Badge
+                    className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full px-0 text-[10px] font-bold"
+                    aria-hidden="true"
                   >
                     {totalItems}
-                  </span>
+                  </Badge>
                 )}
-                <span className="sr-only">Basket</span>
+                <span className="sr-only">
+                  Basket
+                  {totalItems > 0
+                    ? ` (${totalItems} item${totalItems > 1 ? "s" : ""})`
+                    : ""}
+                </span>
               </Link>
             )}
           </div>
@@ -300,6 +328,9 @@ export function Header() {
               role="search"
               aria-label="Search books"
             >
+              <label htmlFor="mobile-search-input" className="sr-only">
+                Search books
+              </label>
               <Search
                 className="text-foreground/60 pointer-events-none size-4 shrink-0"
                 aria-hidden="true"
@@ -311,9 +342,9 @@ export function Header() {
                   <FormItem className="flex-1">
                     <FormControl>
                       <Input
+                        id="mobile-search-input"
                         placeholder="Search books..."
                         className="w-full border-0 bg-transparent py-1 pl-2 text-sm outline-none focus-visible:ring-0"
-                        aria-label="Search books input"
                         {...field}
                       />
                     </FormControl>

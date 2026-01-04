@@ -216,7 +216,7 @@ export class FooterComponent {
 
   get backToTopButton(): Locator {
     return this.page.locator(
-      'button:has-text("Back to top"), [aria-label="Back to top"]',
+      'button[aria-label="Scroll to top of page"], button:has-text("Back to top")',
     );
   }
 

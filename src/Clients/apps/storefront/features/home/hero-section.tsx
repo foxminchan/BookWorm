@@ -24,9 +24,11 @@ export default function HeroSection() {
       </p>
       <div className="flex flex-col justify-center gap-4 sm:flex-row">
         <Button
+          type="button"
           size="lg"
           className="rounded-full px-8"
           onClick={() => router.push("/shop")}
+          aria-label="Browse book collection"
         >
           Browse Collection
         </Button>

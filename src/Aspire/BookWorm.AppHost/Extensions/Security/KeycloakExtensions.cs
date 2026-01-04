@@ -23,28 +23,34 @@ public static class KeycloakExtensions
     )
     {
         var clientId = builder.Resource.Name;
+        
+        var betterAuthSecret = builder.ApplicationBuilder
+            .AddParameter($"{clientId}-better-auth-secret", true)
+            .WithGeneratedDefault(new() { MinLength = 32, Special = false });
 
-        if (keycloak is IResourceBuilder<KeycloakResource> keycloakContainer)
+        switch (keycloak)
         {
-            ConfigureKeycloakForClient(
-                keycloakContainer,
-                builder,
-                clientId,
-                clientType: "APP",
-                clientSecret: null,
-                includeContainerHostUrl: false
-            );
+            case IResourceBuilder<KeycloakResource> keycloakContainer:
+                ConfigureKeycloakForClient(
+                    keycloakContainer,
+                    builder,
+                    clientId,
+                    clientType: "APP",
+                    clientSecret: null,
+                    includeContainerHostUrl: false
+                );
 
-            builder
-                .WithReference(keycloakContainer)
-                .WaitForStart(keycloakContainer)
-                .WithEnvironment("KEYCLOAK_URL", keycloakContainer.GetEndpoint(Http.Schemes.Http))
-                .WithEnvironment("KEYCLOAK_REALM", _defaultLocalKeycloakName)
-                .WithEnvironment("KEYCLOAK_CLIENT_ID", clientId);
-        }
-        else if (keycloak is IResourceBuilder<ExternalServiceResource> keycloakHosted)
-        {
-            ConfigureClientForHostedKeycloak(builder, keycloakHosted, clientId);
+                builder
+                    .WithReference(keycloakContainer)
+                    .WaitForStart(keycloakContainer)
+                    .WithEnvironment("BETTER_AUTH_SECRET", betterAuthSecret)
+                    .WithEnvironment("KEYCLOAK_URL", keycloakContainer.GetEndpoint(Http.Schemes.Http))
+                    .WithEnvironment("KEYCLOAK_REALM", _defaultLocalKeycloakName)
+                    .WithEnvironment("KEYCLOAK_CLIENT_ID", clientId);
+                break;
+            case IResourceBuilder<ExternalServiceResource> keycloakHosted:
+                ConfigureClientForHostedKeycloak(builder, keycloakHosted, betterAuthSecret, clientId);
+                break;
         }
 
         return builder;
@@ -64,65 +70,70 @@ public static class KeycloakExtensions
         var clientId = builder.Resource.Name;
         var applicationBuilder = builder.ApplicationBuilder;
 
-        if (keycloak is IResourceBuilder<KeycloakResource> keycloakContainer)
+        switch (keycloak)
         {
-            var clientSecret = applicationBuilder
-                .AddParameter($"{clientId}-secret", true)
-                .WithGeneratedDefault(new() { MinLength = 32, Special = false });
+            case IResourceBuilder<KeycloakResource> keycloakContainer:
+            {
+                var clientSecret = applicationBuilder
+                    .AddParameter($"{clientId}-secret", true)
+                    .WithGeneratedDefault(new() { MinLength = 32, Special = false });
 
-            ConfigureKeycloakForClient(
-                keycloakContainer,
-                builder,
-                clientId,
-                clientType: "API",
-                clientSecret,
-                includeContainerHostUrl: true
-            );
-
-            builder
-                .WithReference(keycloakContainer)
-                .WaitForStart(keycloakContainer)
-                .WithEnvironment("Identity__Realm", _defaultLocalKeycloakName)
-                .WithEnvironment("Identity__ClientId", clientId)
-                .WithEnvironment("Identity__ClientSecret", clientSecret)
-                .WithEnvironment(
-                    $"Identity__Scopes__{clientId}_{Authorization.Actions.Read}",
-                    $"{nameof(Authorization.Actions.Read)} for {Services.ToClientName(clientId, "API")}"
-                )
-                .WithEnvironment(
-                    $"Identity__Scopes__{clientId}_{Authorization.Actions.Write}",
-                    $"{nameof(Authorization.Actions.Write)} for {Services.ToClientName(clientId, "API")}"
-                );
-        }
-        else if (keycloak is IResourceBuilder<ExternalServiceResource> keycloakHosted)
-        {
-            var clientSecret = applicationBuilder
-                .AddParameter($"{clientId}-secret", true)
-                .WithDescription(ParameterDescriptions.Keycloak.ClientSecret, true)
-                .WithCustomInput(_ =>
-                    new()
-                    {
-                        Name = "KeycloakClientSecretParameter",
-                        Label = "Keycloak Client Secret",
-                        InputType = InputType.SecretText,
-                        Description = "Enter your Keycloak client secret here",
-                    }
+                ConfigureKeycloakForClient(
+                    keycloakContainer,
+                    builder,
+                    clientId,
+                    clientType: "API",
+                    clientSecret,
+                    includeContainerHostUrl: true
                 );
 
-            var realmParameter = applicationBuilder
-                .Resources.OfType<ParameterResource>()
-                .First(r => string.Equals(r.Name, "kc-realm", StringComparison.OrdinalIgnoreCase));
+                builder
+                    .WithReference(keycloakContainer)
+                    .WaitForStart(keycloakContainer)
+                    .WithEnvironment("Identity__Realm", _defaultLocalKeycloakName)
+                    .WithEnvironment("Identity__ClientId", clientId)
+                    .WithEnvironment("Identity__ClientSecret", clientSecret)
+                    .WithEnvironment(
+                        $"Identity__Scopes__{clientId}_{Authorization.Actions.Read}",
+                        $"{nameof(Authorization.Actions.Read)} for {Services.ToClientName(clientId, "API")}"
+                    )
+                    .WithEnvironment(
+                        $"Identity__Scopes__{clientId}_{Authorization.Actions.Write}",
+                        $"{nameof(Authorization.Actions.Write)} for {Services.ToClientName(clientId, "API")}"
+                    );
+                break;
+            }
+            case IResourceBuilder<ExternalServiceResource> keycloakHosted:
+            {
+                var clientSecret = applicationBuilder
+                    .AddParameter($"{clientId}-secret", true)
+                    .WithDescription(ParameterDescriptions.Keycloak.ClientSecret, true)
+                    .WithCustomInput(_ =>
+                        new()
+                        {
+                            Name = "KeycloakClientSecretParameter",
+                            Label = "Keycloak Client Secret",
+                            InputType = InputType.SecretText,
+                            Description = "Enter your Keycloak client secret here",
+                        }
+                    );
 
-            builder
-                .WithReference(keycloakHosted)
-                .WaitFor(keycloakHosted)
-                .WithEnvironment("Identity__Realm", realmParameter)
-                .WithEnvironment("Identity__ClientId", clientId)
-                .WithEnvironment("Identity__ClientSecret", clientSecret)
-                .WithEnvironment(
-                    $"Identity__Scopes__{clientId}",
-                    Services.ToClientName(clientId, "API")
-                );
+                var realmParameter = applicationBuilder
+                    .Resources.OfType<ParameterResource>()
+                    .First(r => string.Equals(r.Name, "kc-realm", StringComparison.OrdinalIgnoreCase));
+
+                builder
+                    .WithReference(keycloakHosted)
+                    .WaitFor(keycloakHosted)
+                    .WithEnvironment("Identity__Realm", realmParameter)
+                    .WithEnvironment("Identity__ClientId", clientId)
+                    .WithEnvironment("Identity__ClientSecret", clientSecret)
+                    .WithEnvironment(
+                        $"Identity__Scopes__{clientId}",
+                        Services.ToClientName(clientId, "API")
+                    );
+                break;
+            }
         }
 
         return builder;
@@ -185,6 +196,7 @@ public static class KeycloakExtensions
     private static void ConfigureClientForHostedKeycloak<TResource>(
         IResourceBuilder<TResource> clientBuilder,
         IResourceBuilder<ExternalServiceResource> keycloakHosted,
+        IResourceBuilder<ParameterResource> betterAuthSecret,
         string clientId
     )
         where TResource : IResourceWithEnvironment, IResourceWithWaitSupport
@@ -196,6 +208,7 @@ public static class KeycloakExtensions
         clientBuilder
             .WithReference(keycloakHosted)
             .WaitFor(keycloakHosted)
+            .WithEnvironment("BETTER_AUTH_SECRET", betterAuthSecret)
             .WithEnvironment("KEYCLOAK_URL", keycloakHosted)
             .WithEnvironment("KEYCLOAK_REALM", realmParameter)
             .WithEnvironment("KEYCLOAK_CLIENT_ID", clientId);

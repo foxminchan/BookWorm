@@ -4,7 +4,7 @@ import * as React from "react";
 import { useEffect } from "react";
 
 import { CopilotKit } from "@copilotkit/react-core";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/next";
 import { useSetAtom } from "jotai";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
@@ -14,15 +14,7 @@ import { BackToTop } from "@/components/back-to-top";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { env } from "@/env.mjs";
 import { initMocks } from "@/lib/msw";
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60 * 1000,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+import { getQueryClient } from "@/lib/query-client";
 
 export function Providers({
   children,
@@ -32,6 +24,7 @@ export function Providers({
   isCopilotEnabled: boolean;
 }) {
   const setIsCopilotEnabled = useSetAtom(isCopilotEnabledAtom);
+  const queryClient = getQueryClient();
 
   useEffect(() => {
     const gatewayUrl =

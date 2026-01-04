@@ -47,6 +47,12 @@ export class OrdersPage extends BasePage {
     );
   }
 
+  get clearFilterButton(): Locator {
+    return this.page.locator(
+      'button[aria-label="Clear order status filter"], button:has-text("Clear Filter"), button:has-text("Clear")',
+    );
+  }
+
   get sortDropdown(): Locator {
     return this.page.locator('select[name="sort"], [data-testid="order-sort"]');
   }

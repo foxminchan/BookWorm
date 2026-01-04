@@ -75,7 +75,7 @@ describe("ReviewsContainer", () => {
     renderWithProviders(<ReviewsContainer {...defaultProps} reviews={[]} />);
 
     const writeReviewButton = screen.getByRole("button", {
-      name: /write first review/i,
+      name: /write the first review for this book/i,
     });
     await user.click(writeReviewButton);
 

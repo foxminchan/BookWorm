@@ -4,22 +4,21 @@ import { useRouter } from "next/navigation";
 
 import { ArrowRight } from "lucide-react";
 
-import type { Book } from "@workspace/types/catalog/books";
+import useBooks from "@workspace/api-hooks/catalog/books/useBooks";
 import { Button } from "@workspace/ui/components/button";
 
 import { BookCard } from "@/components/book-card";
 import { BookCardSkeleton } from "@/components/loading-skeleton";
 
-type FeaturedBooksSectionProps = {
-  books: Book[];
-  isLoading: boolean;
-};
-
-export default function FeaturedBooksSection({
-  books,
-  isLoading,
-}: FeaturedBooksSectionProps) {
+export default function FeaturedBooksSection() {
   const router = useRouter();
+
+  // This will use the hydrated data from the server
+  const { data: booksData, isLoading } = useBooks({ pageSize: 4 });
+
+  const books = Array.isArray(booksData?.items)
+    ? booksData.items.slice(0, 4)
+    : [];
   const hasFeaturedBooks = books.length > 0;
 
   return (
@@ -41,11 +40,13 @@ export default function FeaturedBooksSection({
         </div>
         {hasFeaturedBooks && (
           <Button
+            type="button"
             variant="ghost"
             className="hidden gap-2 md:flex"
             onClick={() => router.push("/shop")}
+            aria-label="View all books"
           >
-            View All <ArrowRight className="size-4" />
+            View All <ArrowRight className="size-4" aria-hidden="true" />
           </Button>
         )}
       </div>

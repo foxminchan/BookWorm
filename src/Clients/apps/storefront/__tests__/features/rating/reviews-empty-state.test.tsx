@@ -37,7 +37,9 @@ describe("ReviewsEmptyState", () => {
     );
 
     expect(
-      screen.getByRole("button", { name: /write first review/i }),
+      screen.getByRole("button", {
+        name: /write the first review for this book/i,
+      }),
     ).toBeInTheDocument();
   });
 
@@ -47,7 +49,9 @@ describe("ReviewsEmptyState", () => {
       <ReviewsEmptyState onWriteReview={mockOnWriteReview} />,
     );
 
-    const button = screen.getByRole("button", { name: /write first review/i });
+    const button = screen.getByRole("button", {
+      name: /write the first review for this book/i,
+    });
     await user.click(button);
 
     expect(mockOnWriteReview).toHaveBeenCalledTimes(1);
@@ -85,7 +89,9 @@ describe("ReviewsEmptyState", () => {
       <ReviewsEmptyState onWriteReview={mockOnWriteReview} />,
     );
 
-    const button = screen.getByRole("button", { name: /write first review/i });
+    const button = screen.getByRole("button", {
+      name: /write the first review for this book/i,
+    });
     expect(button).toHaveClass("rounded-full");
   });
 
@@ -94,7 +100,9 @@ describe("ReviewsEmptyState", () => {
       <ReviewsEmptyState onWriteReview={mockOnWriteReview} />,
     );
 
-    const button = screen.getByRole("button", { name: /write first review/i });
+    const button = screen.getByRole("button", {
+      name: /write the first review for this book/i,
+    });
     const icon = button.querySelector("svg");
     expect(icon).toBeInTheDocument();
   });

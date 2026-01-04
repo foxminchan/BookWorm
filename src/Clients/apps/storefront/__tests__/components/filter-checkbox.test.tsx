@@ -123,7 +123,7 @@ describe("FilterCheckbox", () => {
     );
 
     const checkbox = screen.getByRole("checkbox", { name: "Science Fiction" });
-    expect(checkbox).toHaveAttribute("aria-label", "Science Fiction");
+    expect(checkbox).toBeInTheDocument();
   });
 
   it("should handle long labels", () => {

@@ -71,7 +71,7 @@ describe("OrdersEmptyState", () => {
     );
 
     expect(
-      screen.getByRole("button", { name: /clear filter/i }),
+      screen.getByRole("button", { name: /clear order status filter/i }),
     ).toBeInTheDocument();
   });
 
@@ -84,7 +84,9 @@ describe("OrdersEmptyState", () => {
       />,
     );
 
-    const button = screen.getByRole("button", { name: /clear filter/i });
+    const button = screen.getByRole("button", {
+      name: /clear order status filter/i,
+    });
     await user.click(button);
 
     expect(mockOnClearFilter).toHaveBeenCalledTimes(1);
@@ -123,7 +125,7 @@ describe("OrdersEmptyState", () => {
     );
 
     expect(
-      screen.getByRole("button", { name: /clear filter/i }),
+      screen.getByRole("button", { name: /clear order status filter/i }),
     ).toBeInTheDocument();
   });
 });

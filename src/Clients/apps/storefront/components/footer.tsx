@@ -176,16 +176,20 @@ export function Footer() {
             <p>© {new Date().getFullYear()} BookWorm. All rights reserved.</p>
             <div className="flex gap-6">
               <Button
+                type="button"
                 variant="ghost"
                 onClick={() => setPrivacyOpen(true)}
                 className="hover:text-primary h-auto cursor-pointer p-0 font-normal transition-colors"
+                aria-label="Open privacy policy"
               >
                 Privacy Policy
               </Button>
               <Button
+                type="button"
                 variant="ghost"
                 onClick={() => setTermsOpen(true)}
                 className="hover:text-primary h-auto cursor-pointer p-0 font-normal transition-colors"
+                aria-label="Open terms of service"
               >
                 Terms of Service
               </Button>

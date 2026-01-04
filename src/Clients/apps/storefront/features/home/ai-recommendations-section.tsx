@@ -53,9 +53,11 @@ export default function AiRecommendationsSection({
           </blockquote>
           <div className="hidden pt-4 lg:block">
             <Button
+              type="button"
               variant="outline"
               className="border-primary/20 hover:bg-primary/5 rounded-full bg-transparent px-8"
               onClick={() => chatBotRef.current?.openChat()}
+              aria-label="Try AI book recommendations"
             >
               Try AI Recommendations
             </Button>

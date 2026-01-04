@@ -1,158 +1,191 @@
-"use client";
+import type { Metadata } from "next";
 
-import { useRouter } from "next/navigation";
+import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 
-import BookGrid from "@/features/catalog/shop/book-grid";
-import ShopFilters from "@/features/catalog/shop/shop-filters";
-import ShopToolbar from "@/features/catalog/shop/shop-toolbar";
-import { useShopData } from "@/hooks/useShopData";
-import { useShopFilters } from "@/hooks/useShopFilters";
+import authorsApiClient from "@workspace/api-client/catalog/authors";
+import booksApiClient from "@workspace/api-client/catalog/books";
+import categoriesApiClient from "@workspace/api-client/catalog/categories";
+import publishersApiClient from "@workspace/api-client/catalog/publishers";
+import { catalogKeys } from "@workspace/api-hooks/keys";
+
+import ShopPageClient from "@/features/catalog/shop/shop-page-client";
+import { getShopSortParams } from "@/lib/pattern";
+import { getQueryClient } from "@/lib/query-client";
+import { buildQueryString } from "@/lib/seo";
 
 const ITEMS_PER_PAGE = 8;
 
-export default function ShopPage() {
-  const router = useRouter();
-  const {
-    currentPage,
-    setCurrentPage,
-    priceRange,
-    setPriceRange,
-    selectedAuthors,
-    setSelectedAuthors,
-    selectedPublishers,
-    setSelectedPublishers,
-    selectedCategories,
-    setSelectedCategories,
-    searchQuery,
-    sortBy,
-    setSortBy,
-    isFilterOpen,
-    setIsFilterOpen,
-  } = useShopFilters();
+type ShopPageProps = {
+  searchParams: Promise<{
+    category?: string;
+    publisher?: string;
+    author?: string;
+    search?: string;
+    page?: string;
+    sort?: string;
+  }>;
+};
 
-  const { booksData, categories, publishers, authors, isLoading } = useShopData(
-    {
-      currentPage,
-      priceRange,
-      selectedCategories,
-      selectedPublishers,
-      selectedAuthors,
-      searchQuery,
-      sortBy,
+/**
+ * Generates dynamic metadata for shop page based on filters.
+ * Optimizes SEO for filtered and search result pages.
+ */
+export async function generateMetadata({
+  searchParams,
+}: ShopPageProps): Promise<Metadata> {
+  const params = await searchParams;
+  const url = `${process.env.NEXT_PUBLIC_APP_URL || "https://bookworm.com"}/shop`;
+
+  let title = "Shop Books | BookWorm";
+  let description =
+    "Browse our curated collection of books across various genres and categories.";
+  const keywords = ["books", "online bookstore", "buy books", "literature"];
+
+  // Customize metadata based on filters
+  if (params.search) {
+    title = `Search: "${params.search}" | BookWorm`;
+    description = `Search results for "${params.search}" in our book collection.`;
+    keywords.push(params.search);
+  } else if (params.category) {
+    const categories = await categoriesApiClient.list();
+    const category = categories.find((c) => c.id === params.category);
+    if (category) {
+      title = `${category.name} Books | BookWorm`;
+      description = `Explore our collection of ${category.name} books. Find your next great read in this category.`;
+      keywords.push(category.name || "Unknown Category");
+    }
+  }
+
+  if (params.page && params.page !== "1") {
+    title = `${title} - Page ${params.page}`;
+  }
+
+  // Build canonical URL with normalized query params
+  const queryString = buildQueryString({
+    category: params.category,
+    publisher: params.publisher,
+    author: params.author,
+    search: params.search,
+    sort: params.sort,
+    page: params.page,
+  });
+
+  const canonicalUrl = queryString ? `${url}?${queryString}` : url;
+
+  // Generate prev/next pagination links
+  const currentPage = parseInt(params.page ?? "1", 10);
+  const searchParamsObj = new URLSearchParams(queryString);
+  const prevParams = new URLSearchParams(searchParamsObj);
+  const nextParams = new URLSearchParams(searchParamsObj);
+
+  if (currentPage > 1) {
+    if (currentPage === 2) {
+      prevParams.delete("page");
+    } else {
+      prevParams.set("page", String(currentPage - 1));
+    }
+  }
+  nextParams.set("page", String(currentPage + 1));
+
+  const prevUrl =
+    currentPage > 1 ? `${url}?${prevParams.toString()}` : undefined;
+  const nextUrl = `${url}?${nextParams.toString()}`;
+
+  return {
+    title,
+    description,
+    keywords,
+    openGraph: {
+      type: "website",
+      title,
+      description,
+      url: canonicalUrl,
+      siteName: "BookWorm",
+      locale: "en_US",
     },
-  );
-
-  const updateFilters = (
-    categories: string[],
-    publishers: string[],
-    authors: string[],
-  ) => {
-    const params = new URLSearchParams();
-    if (categories.length > 0 && categories[0]) {
-      params.set("category", categories[0]);
-    }
-    if (publishers.length > 0 && publishers[0]) {
-      params.set("publisher", publishers[0]);
-    }
-    if (authors.length > 0 && authors[0]) {
-      params.set("author", authors[0]);
-    }
-    params.set("page", "1");
-    router.push(`/shop?${params.toString()}`);
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    other: {
+      // Pagination links for SEO
+      ...(prevUrl && { prev: prevUrl }),
+      next: nextUrl,
+    },
+    robots: {
+      index: currentPage === 1, // Only index first page to avoid duplicate content
+      follow: true,
+      googleBot: {
+        index: currentPage === 1,
+        follow: true,
+        "max-video-preview": -1,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+      },
+    },
   };
+}
 
-  const handleToggleCategory = (categoryId: string) => {
-    const updated = selectedCategories.includes(categoryId)
-      ? selectedCategories.filter((id: string) => id !== categoryId)
-      : [...selectedCategories, categoryId];
-    setSelectedCategories(updated);
-    updateFilters(updated, selectedPublishers, selectedAuthors);
-  };
+export default async function ShopPage({ searchParams }: ShopPageProps) {
+  const params = await searchParams;
+  const queryClient = getQueryClient();
 
-  const handleTogglePublisher = (publisherId: string) => {
-    const updated = selectedPublishers.includes(publisherId)
-      ? selectedPublishers.filter((id: string) => id !== publisherId)
-      : [...selectedPublishers, publisherId];
-    setSelectedPublishers(updated);
-    updateFilters(selectedCategories, updated, selectedAuthors);
-  };
+  const currentPage = parseInt(params.page ?? "1", 10);
+  const sortBy = params.sort ?? "name";
+  const sortParams = getShopSortParams(sortBy);
 
-  const handleToggleAuthor = (authorId: string) => {
-    const updated = selectedAuthors.includes(authorId)
-      ? selectedAuthors.filter((id: string) => id !== authorId)
-      : [...selectedAuthors, authorId];
-    setSelectedAuthors(updated);
-    updateFilters(selectedCategories, selectedPublishers, updated);
-  };
-
-  const handleClearSearch = () => {
-    const params = new URLSearchParams();
-    if (selectedCategories.length > 0 && selectedCategories[0]) {
-      params.set("category", selectedCategories[0]);
-    }
-    if (selectedPublishers.length > 0 && selectedPublishers[0]) {
-      params.set("publisher", selectedPublishers[0]);
-    }
-    if (selectedAuthors.length > 0 && selectedAuthors[0]) {
-      params.set("author", selectedAuthors[0]);
-    }
-    params.set("page", "1");
-    router.push(`/shop?${params.toString()}`);
-  };
-
-  const handleClearAllFilters = () => {
-    setSelectedCategories([]);
-    setSelectedPublishers([]);
-    setPriceRange([0, 100]);
-    setSelectedAuthors([]);
-    setCurrentPage(1);
-    router.push(`/shop?page=1`);
-  };
-
-  const books = Array.isArray(booksData?.items) ? booksData.items : [];
-  const totalCount = booksData?.totalCount ?? 0;
-  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+  // Prefetch all necessary data in parallel
+  await Promise.all([
+    // Prefetch books with current filters
+    queryClient.prefetchQuery({
+      queryKey: catalogKeys.books.list({
+        pageIndex: currentPage,
+        pageSize: ITEMS_PER_PAGE,
+        categoryId: params.category,
+        publisherId: params.publisher,
+        authorId: params.author,
+        search: params.search,
+        minPrice: 0,
+        maxPrice: 100,
+        orderBy: sortParams.orderBy,
+        isDescending: sortParams.isDescending,
+      }),
+      queryFn: () =>
+        booksApiClient.list({
+          pageIndex: currentPage,
+          pageSize: ITEMS_PER_PAGE,
+          categoryId: params.category,
+          publisherId: params.publisher,
+          authorId: params.author,
+          search: params.search,
+          minPrice: 0,
+          maxPrice: 100,
+          orderBy: sortParams.orderBy,
+          isDescending: sortParams.isDescending,
+        }),
+    }),
+    // Prefetch filter options
+    queryClient.prefetchQuery({
+      queryKey: catalogKeys.categories.lists(),
+      queryFn: () => categoriesApiClient.list(),
+    }),
+    queryClient.prefetchQuery({
+      queryKey: catalogKeys.publishers.lists(),
+      queryFn: () => publishersApiClient.list(),
+    }),
+    queryClient.prefetchQuery({
+      queryKey: catalogKeys.authors.lists(),
+      queryFn: () => authorsApiClient.list(),
+    }),
+  ]);
 
   return (
-    <main className="container mx-auto grow px-4 py-8">
-      <div className="flex flex-col gap-8 md:flex-row">
-        <ShopFilters
-          priceRange={priceRange}
-          setPriceRange={setPriceRange}
-          categories={categories}
-          selectedCategories={selectedCategories}
-          onToggleCategory={handleToggleCategory}
-          publishers={publishers}
-          selectedPublishers={selectedPublishers}
-          onTogglePublisher={handleTogglePublisher}
-          authors={authors}
-          selectedAuthors={selectedAuthors}
-          onToggleAuthor={handleToggleAuthor}
-          isFilterOpen={isFilterOpen}
-          setIsFilterOpen={setIsFilterOpen}
-        />
-
-        <section className="grow">
-          <ShopToolbar
-            searchQuery={searchQuery}
-            onClearSearch={handleClearSearch}
-            totalCount={totalCount}
-            currentPage={currentPage}
-            sortBy={sortBy}
-            onSortChange={setSortBy}
-            onOpenFilters={() => setIsFilterOpen(true)}
-          />
-
-          <BookGrid
-            books={books}
-            isLoading={isLoading}
-            totalPages={totalPages}
-            currentPage={currentPage}
-            onPageChange={setCurrentPage}
-            onClearFilters={handleClearAllFilters}
-          />
-        </section>
-      </div>
-    </main>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <ShopPageClient />
+    </HydrationBoundary>
   );
 }
