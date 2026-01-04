@@ -1,7 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import type { Order } from "@workspace/types/ordering/orders";
 

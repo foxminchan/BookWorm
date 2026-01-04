@@ -1,50 +1,60 @@
-FROM node:25.0.0-alpine AS base
+ARG NODE_VERSION=25.0.0
+FROM node:${NODE_VERSION}-slim AS base
+
+# Check https://github.com/nodejs/docker-node/tree/main#nodealpine to understand why libc6-compat might be needed
 RUN corepack enable pnpm && corepack install -g pnpm@10.26.2
 WORKDIR /app
 
-FROM base AS deps
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc ./
-COPY apps/storefront/package.json ./apps/storefront/
-COPY packages/*/package.json ./packages/
+# ---
+FROM base AS prepare
+RUN pnpm install -g turbo@^2
+COPY . .
+# Generate a partial monorepo with a pruned lockfile for a target workspace
+# Assuming "@bookworm/storefront" is the name in the project's package.json
+RUN turbo prune @bookworm/storefront --docker
+
+# ---
+FROM base AS builder
+
+# First install the dependencies (as they change less often)
+COPY --from=prepare /app/out/json/ .
 RUN pnpm install --frozen-lockfile
 
-FROM base AS builder
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/storefront/node_modules ./apps/storefront/node_modules
-COPY --from=deps /app/packages/ ./packages/
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml turbo.json ./
-COPY apps/storefront/ ./apps/storefront/
-COPY packages/ ./packages/
+# Build the project
+COPY --from=prepare /app/out/full/ .
 
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_ENV=production
+# Uncomment and use build args to enable remote caching
+# ARG TURBO_TEAM
+# ENV TURBO_TEAM=$TURBO_TEAM
+# ARG TURBO_TOKEN
+# ENV TURBO_TOKEN=$TURBO_TOKEN
 
-WORKDIR /app/apps/storefront
-RUN pnpm run build
+RUN pnpm turbo build --filter=@bookworm/storefront
 
-FROM base AS runner
+# ---
+FROM node:${NODE_VERSION}-alpine AS runner
 WORKDIR /app
+
+# Don't run production as root for security reasons
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
-
-COPY --from=builder /app/apps/storefront/public ./public
-
-RUN mkdir .next && chown nextjs:nodejs .next
-
-COPY --from=builder --chown=nextjs:nodejs /app/apps/storefront/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/storefront/.next/static ./.next/static
-
 USER nextjs
+
+# Automatically leverage output traces to reduce image size
+# https://nextjs.org/docs/advanced-features/output-file-tracing
+COPY --from=builder --chown=nextjs:nodejs /app/apps/storefront/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/storefront/.next/static ./apps/storefront/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/storefront/public ./apps/storefront/public
 
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})" || exit 1
 
-CMD ["node", "server.js"]
+CMD ["node", "apps/storefront/server.js"]

@@ -12,8 +12,8 @@ export const env = createEnv({
   },
 
   client: {
-    NEXT_PUBLIC_GATEWAY_HTTPS: isDev ? z.url().optional() : z.url(),
-    NEXT_PUBLIC_GATEWAY_HTTP: isDev ? z.url().optional() : z.url(),
+    NEXT_PUBLIC_GATEWAY_HTTPS: z.url().optional(),
+    NEXT_PUBLIC_GATEWAY_HTTP: z.url().optional(),
   },
 
   runtimeEnv: {

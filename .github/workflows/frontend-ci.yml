@@ -1,0 +1,73 @@
+name: BookWorm CI (Frontend)
+run-name: Frontend CI - ${{ github.event_name }} by ${{ github.actor }}
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/Clients/**"
+      - ".github/workflows/frontend-ci.yml"
+      - "!**.md"
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "src/Clients/**"
+      - ".github/workflows/frontend-ci.yml"
+      - "!**.md"
+  workflow_dispatch:
+
+env:
+  PNPM_VERSION: "10.27.0"
+
+permissions:
+  checks: write
+  pull-requests: write
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  lint-build-test:
+    name: Lint, Build & Test
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
+    defaults:
+      run:
+        working-directory: src/Clients
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: "src/Clients/.nvmrc"
+          cache: "pnpm"
+          cache-dependency-path: "src/Clients/pnpm-lock.yaml"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        run: pnpm test

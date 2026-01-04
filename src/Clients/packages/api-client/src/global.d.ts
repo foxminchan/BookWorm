@@ -10,4 +10,4 @@ export type ApiDataError = {
   errors?: Record<string, string[]>;
 };
 
-export type AppAxiosError = import("axios").AxiosError<ApiDataError, any>;
+export type AppAxiosError = import("axios").AxiosError<ApiDataError, unknown>;

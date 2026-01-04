@@ -46,7 +46,7 @@ export const feedbacksHandlers = [
       });
     }
 
-    let allFeedbacks = feedbacksStoreManager.get(bookId);
+    const allFeedbacks = feedbacksStoreManager.get(bookId);
 
     allFeedbacks.sort((a, b) => {
       const aValue = a[orderBy as keyof Feedback];

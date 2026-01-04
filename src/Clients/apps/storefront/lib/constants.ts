@@ -1,5 +1,3 @@
-import { env } from "@/env.mjs";
-
 export const APP_CONFIG = {
   name: "BookWorm",
   email: {
