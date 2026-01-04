@@ -315,7 +315,7 @@ Then(
   'I should see "Clear Filters" button',
   async function (this: { page: Page }) {
     const clearButton = this.page.locator(
-      'button:has-text("Clear Filters"), button:has-text("Reset")',
+      'button[aria-label="Clear all filters"], button:has-text("Clear Filters"), button:has-text("Reset")',
     );
     await expect(clearButton).toBeVisible();
   },

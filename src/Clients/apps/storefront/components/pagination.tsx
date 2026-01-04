@@ -58,7 +58,7 @@ export function Pagination({
     <nav
       className="flex items-center justify-center gap-3"
       role="navigation"
-      aria-label="Pagination"
+      aria-label="Pagination navigation"
     >
       {/* First Page */}
       <Button

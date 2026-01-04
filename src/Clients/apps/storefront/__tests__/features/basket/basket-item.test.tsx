@@ -111,7 +111,9 @@ describe("BasketItem", () => {
       />,
     );
 
-    const trashButton = screen.getByRole("button", { name: "" }); // Icon button
+    const trashButton = screen.getByRole("button", {
+      name: /remove .* from basket/i,
+    });
     await user.click(trashButton);
 
     // Dialog should appear (alertdialog role, not dialog)
@@ -135,7 +137,9 @@ describe("BasketItem", () => {
     );
 
     // Click trash button to open dialog
-    const trashButton = screen.getByRole("button", { name: "" });
+    const trashButton = screen.getByRole("button", {
+      name: /remove .* from basket/i,
+    });
     await user.click(trashButton);
 
     // Find and click confirm button in dialog

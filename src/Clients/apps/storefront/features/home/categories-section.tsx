@@ -1,16 +1,14 @@
 "use client";
 
-import type { Category } from "@workspace/types/catalog/categories";
+import useCategories from "@workspace/api-hooks/catalog/categories/useCategories";
 
-type CategoriesSectionProps = {
-  categories: Category[];
-  isLoading: boolean;
-};
+export default function CategoriesSection() {
+  // This will use the hydrated data from the server
+  const { data: categoriesData, isLoading } = useCategories();
 
-export default function CategoriesSection({
-  categories,
-  isLoading,
-}: CategoriesSectionProps) {
+  const categories = Array.isArray(categoriesData)
+    ? categoriesData.slice(0, 6)
+    : [];
   const hasCategories = categories.length > 0;
 
   if (!hasCategories && !isLoading) {

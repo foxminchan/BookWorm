@@ -160,7 +160,7 @@ export class BasketPage extends BasePage {
   async removeItem(index: number, confirm: boolean = true): Promise<void> {
     const item = this.basketItems.nth(index);
     const removeButton = item.locator(
-      'button[aria-label*="Remove"], button:has-text("Remove"), [data-testid="remove-button"]',
+      'button[aria-label*="Remove"][aria-label*="from basket"], button:has-text("Remove"), [data-testid="remove-button"]',
     );
 
     await removeButton.click();

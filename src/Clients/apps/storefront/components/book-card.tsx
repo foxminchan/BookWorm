@@ -7,6 +7,7 @@ import Image from "next/image";
 import { Star } from "lucide-react";
 
 import type { Book } from "@workspace/types/catalog/books";
+import { Badge } from "@workspace/ui/components/badge";
 import { Card, CardContent } from "@workspace/ui/components/card";
 
 import { DEFAULT_BOOK_IMAGE } from "@/lib/constants";
@@ -19,29 +20,40 @@ type BookCardProps = {
 
 export function BookCard({ book, onClick }: BookCardProps) {
   const [imgError, setImgError] = useState(false);
+  const authorText =
+    book.authors && book.authors.length > 0
+      ? book.authors.map((a) => a.name).join(", ")
+      : "Unknown Author";
+  const priceText = book.priceSale
+    ? `Sale price $${book.priceSale.toFixed(2)}, original price $${book.price.toFixed(2)}`
+    : `$${book.price.toFixed(2)}`;
 
   return (
     <article
-      className="group cursor-pointer border-none bg-transparent shadow-none"
+      className="group focus-visible:ring-ring focus-within:ring-ring cursor-pointer rounded-lg border-none bg-transparent shadow-none focus-within:ring-2 focus-within:ring-offset-2 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
       onClick={onClick}
-      role="listitem"
       itemScope
       itemType="https://schema.org/Book"
-      tabIndex={0}
+      tabIndex={onClick ? 0 : -1}
       onKeyDown={(e) => {
         if ((e.key === "Enter" || e.key === " ") && onClick) {
           e.preventDefault();
           onClick();
         }
       }}
+      aria-label={`${book.name} by ${authorText}. ${priceText}. Rating ${book.averageRating?.toFixed(1) ?? "0.0"} stars`}
     >
-      <Card className="group cursor-pointer border-none bg-transparent shadow-none">
+      <Card className="border-none bg-transparent shadow-none">
         <CardContent className="p-0">
           <div className="bg-secondary relative mb-4 aspect-3/4 overflow-hidden rounded-lg">
             {book.priceSale && (
-              <div className="bg-destructive text-destructive-foreground absolute top-2 left-2 z-10 rounded-full px-2 py-1 text-[10px] font-bold tracking-wider uppercase">
+              <Badge
+                variant="destructive"
+                className="absolute top-2 left-2 z-10 rounded-full px-2 py-1 text-[10px] font-bold tracking-wider uppercase"
+                aria-label={`On sale: ${calculateDiscount(book.price, book.priceSale)}% off`}
+              >
                 -{calculateDiscount(book.price, book.priceSale)}% OFF
-              </div>
+              </Badge>
             )}
             <Image
               src={

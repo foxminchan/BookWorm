@@ -1,32 +1,14 @@
-"use client";
+import type { Metadata } from "next";
 
-import type React from "react";
-import { use, useState } from "react";
+import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 
-import Link from "next/link";
-import { notFound } from "next/navigation";
+import booksApiClient from "@workspace/api-client/catalog/books";
+import feedbacksApiClient from "@workspace/api-client/rating/feedbacks";
+import { catalogKeys, ratingKeys } from "@workspace/api-hooks/keys";
 
-import { ArrowLeft } from "lucide-react";
-import { useDebounceCallback } from "usehooks-ts";
-
-import useBasket from "@workspace/api-hooks/basket/useBasket";
-import useCreateBasket from "@workspace/api-hooks/basket/useCreateBasket";
-import useDeleteBasket from "@workspace/api-hooks/basket/useDeleteBasket";
-import useUpdateBasket from "@workspace/api-hooks/basket/useUpdateBasket";
-import useBook from "@workspace/api-hooks/catalog/books/useBook";
-import useCreateFeedback from "@workspace/api-hooks/rating/useCreateFeedback";
-import useFeedbacks from "@workspace/api-hooks/rating/useFeedbacks";
-import useSummaryFeedback from "@workspace/api-hooks/rating/useSummaryFeedback";
-import type { CreateFeedbackRequest } from "@workspace/types/rating";
-import { Separator } from "@workspace/ui/components/separator";
-
-import { JsonLd } from "@/components/json-ld";
-import { ProductLoadingSkeleton } from "@/components/loading-skeleton";
-import { RemoveItemDialog } from "@/components/remove-item-dialog";
-import ProductSection from "@/features/catalog/product/product-section";
-import ReviewsContainer from "@/features/catalog/product/reviews-container";
-import { getReviewSortParams } from "@/lib/pattern";
-import { generateBreadcrumbJsonLd, generateProductJsonLd } from "@/lib/seo";
+import BookDetailPageClient from "@/features/catalog/product/book-detail-page-client";
+import { getQueryClient } from "@/lib/query-client";
+import { generateImageObject } from "@/lib/seo";
 
 const REVIEWS_PER_PAGE = 5;
 
@@ -34,298 +16,121 @@ type BookDetailPageProps = {
   params: Promise<{ id: string }>;
 };
 
-export default function BookDetailPage({ params }: BookDetailPageProps) {
-  const { id } = use(params);
+/**
+ * Generates dynamic metadata for book detail pages.
+ * Provides rich SEO with Open Graph and Twitter Card support.
+ */
+export async function generateMetadata({
+  params,
+}: BookDetailPageProps): Promise<Metadata> {
+  const { id } = await params;
 
-  const [showReviewForm, setShowReviewForm] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [showRemoveDialog, setShowRemoveDialog] = useState(false);
-  const [sortBy, setSortBy] = useState<"newest" | "highest" | "lowest">(
-    "newest",
-  );
-  const [newReview, setNewReview] = useState<
-    Omit<CreateFeedbackRequest, "bookId">
-  >({
-    firstName: "",
-    lastName: "",
-    comment: "",
-    rating: 0,
-  });
-
-  // Convert sortBy to API parameters
-  const sortParams = getReviewSortParams(sortBy);
-
-  // API hooks
-  const { data: book, isLoading: isLoadingBook, isError } = useBook(id);
-  const { data: feedbacksData, isLoading: isLoadingFeedbacks } = useFeedbacks({
-    bookId: id,
-    pageSize: REVIEWS_PER_PAGE,
-    pageIndex: currentPage,
-    orderBy: sortParams.orderBy,
-    isDescending: sortParams.isDescending,
-  });
-  const {
-    data: summaryData,
-    isLoading: isSummarizing,
-    refetch: refetchSummary,
-  } = useSummaryFeedback(id, { enabled: false });
-  const { data: basket, refetch: refetchBasket } = useBasket();
-  const createBasketMutation = useCreateBasket({
-    onSuccess: () => {
-      refetchBasket();
-    },
-  });
-  const updateBasketMutation = useUpdateBasket({
-    onSuccess: () => {
-      refetchBasket();
-    },
-  });
-  const deleteBasketMutation = useDeleteBasket();
-  const createFeedbackMutation = useCreateFeedback();
-  const basketItem = basket?.items?.find((item) => item.id === id);
-  const quantity = basketItem?.quantity ?? 0;
-  const isLoading = isLoadingBook || isLoadingFeedbacks;
-  const feedbacks = feedbacksData?.items ?? [];
-
-  const handleQuantityDecreaseDebounced = useDebounceCallback(
-    () => {
-      if (quantity === 1) {
-        setShowRemoveDialog(true);
-      } else {
-        const newQuantity = Math.max(0, quantity - 1);
-        updateBasketMutation.mutate({
-          request: {
-            items: [{ id: id, quantity: newQuantity }],
-          },
-        });
-      }
-    },
-    300,
-    { leading: true, trailing: false },
-  );
-
-  const handleQuantityIncreaseDebounced = useDebounceCallback(
-    () => {
-      const newQuantity = Math.min(99, quantity + 1);
-      updateBasketMutation.mutate({
-        request: {
-          items: [{ id: id, quantity: newQuantity }],
-        },
-      });
-    },
-    300,
-    { leading: true, trailing: false },
-  );
-
-  if (isLoading) {
-    return (
-      <main className="container mx-auto grow px-4 py-8">
-        <ProductLoadingSkeleton />
-      </main>
-    );
+  // Try to fetch book data, but don't fail if it's not available
+  let book;
+  try {
+    book = await booksApiClient.get(id);
+  } catch (error) {
+    return {
+      title: "Book Details | BookWorm",
+      description: "View book details at BookWorm online bookstore.",
+    };
   }
 
-  if (isError || !book) {
-    notFound();
+  const bookName = book.name ?? "Book";
+  const authorNames = book.authors
+    .map((a) => a.name)
+    .filter((name): name is string => name !== null);
+  const title = `${bookName} | BookWorm`;
+  const description =
+    book.description ??
+    `Buy ${bookName}${authorNames.length > 0 ? ` by ${authorNames.join(", ")}` : ""} at BookWorm. ${book.priceSale ? `On sale for $${book.priceSale}` : `$${book.price}`}.`;
+  const imageUrl = book.imageUrl ?? "";
+  const url = `${process.env.NEXT_PUBLIC_APP_URL || "https://bookworm.com"}/shop/${id}`;
+
+  const keywords = [
+    bookName,
+    ...authorNames,
+    book.category?.name,
+    book.publisher?.name,
+    "buy book online",
+    "bookstore",
+  ].filter((k): k is string => Boolean(k));
+
+  const authors =
+    authorNames.length > 0 ? authorNames.map((name) => ({ name })) : undefined;
+
+  // Generate rich image object with proper alt text
+  const imageObject = generateImageObject(
+    book.imageUrl,
+    bookName,
+    book.authors,
+  );
+  const images = imageObject ? [imageObject] : undefined;
+
+  return {
+    title,
+    description,
+    keywords,
+    ...(authors && { authors }),
+    openGraph: {
+      type: "book",
+      title,
+      description,
+      url,
+      ...(images && { images }),
+      siteName: "BookWorm",
+      locale: "en_US",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      ...(images && { images }),
+    },
+    alternates: {
+      canonical: url,
+    },
+  };
+}
+
+export default async function BookDetailPage({ params }: BookDetailPageProps) {
+  const { id } = await params;
+  const queryClient = getQueryClient();
+
+  // Prefetch book data and initial reviews in parallel
+  // Using try-catch to handle SSR errors gracefully
+  try {
+    await Promise.all([
+      queryClient.prefetchQuery({
+        queryKey: catalogKeys.books.detail(id),
+        queryFn: () => booksApiClient.get(id),
+      }),
+      queryClient.prefetchQuery({
+        queryKey: ratingKeys.feedbacks.byBook(id, {
+          bookId: id,
+          pageSize: REVIEWS_PER_PAGE,
+          pageIndex: 1,
+          orderBy: "createdAt",
+          isDescending: true,
+        }),
+        queryFn: () =>
+          feedbacksApiClient.list({
+            bookId: id,
+            pageSize: REVIEWS_PER_PAGE,
+            pageIndex: 1,
+            orderBy: "createdAt",
+            isDescending: true,
+          }),
+      }),
+    ]);
+  } catch (error) {
+    // Log error but don't fail the page - let client-side query handle it
+    console.error("Failed to prefetch book data:", error);
   }
-
-  const handleSummarize = () => {
-    refetchSummary();
-  };
-
-  const handleSubmitReview = () => {
-    createFeedbackMutation.mutate(
-      {
-        ...newReview,
-        bookId: id,
-      },
-      {
-        onSuccess: () => {
-          setNewReview({
-            firstName: "",
-            lastName: "",
-            comment: "",
-            rating: 0,
-          });
-          setShowReviewForm(false);
-        },
-      },
-    );
-  };
-
-  const handleAddToBasket = async () => {
-    if (!book) return;
-
-    if (quantity > 0) {
-      // Update existing basket item
-      updateBasketMutation.mutate({
-        request: {
-          items: [{ id: id, quantity: quantity + 1 }],
-        },
-      });
-    } else {
-      // Add new item to basket
-      createBasketMutation.mutate({
-        items: [{ id: id, quantity: 1 }],
-      });
-    }
-  };
-
-  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-
-    if (value === "") {
-      setShowRemoveDialog(true);
-      return;
-    }
-
-    const numValue = Number.parseInt(value, 10);
-
-    if (!isNaN(numValue) && numValue > 0 && numValue <= 99) {
-      updateBasketMutation.mutate({
-        request: {
-          items: [{ id: id, quantity: numValue }],
-        },
-      });
-    } else if (numValue <= 0) {
-      setShowRemoveDialog(true);
-    }
-  };
-
-  const handleConfirmRemove = () => {
-    // Filter out the current item from basket
-    const remainingItems =
-      basket?.items?.filter((item) => item.id !== id) ?? [];
-
-    if (remainingItems.length === 0) {
-      // Delete the basket if no items remain
-      deleteBasketMutation.mutate("");
-    } else {
-      // Update basket with remaining items
-      updateBasketMutation.mutate({
-        request: {
-          items: remainingItems.map((item) => ({
-            id: item.id,
-            quantity: item.quantity,
-          })),
-        },
-      });
-    }
-    setShowRemoveDialog(false);
-  };
-
-  const visibleFeedbacks = feedbacks;
-  const totalCount = feedbacksData?.totalCount ?? 0;
-  const totalPages = Math.ceil(totalCount / REVIEWS_PER_PAGE);
-
-  const productJsonLd = book ? generateProductJsonLd(book, feedbacks) : null;
-  const breadcrumbJsonLd = book
-    ? generateBreadcrumbJsonLd([
-        { name: "Home", url: "/" },
-        { name: "Shop", url: "/shop" },
-        { name: book.name || "Book", url: `/shop/${book.id}` },
-      ])
-    : null;
 
   return (
-    <>
-      {productJsonLd && <JsonLd data={productJsonLd} />}
-      {breadcrumbJsonLd && <JsonLd data={breadcrumbJsonLd} />}
-
-      <main className="container mx-auto grow px-4 py-8" role="main">
-        <Link
-          href="/shop"
-          className="text-muted-foreground hover:text-primary mb-8 inline-flex items-center text-sm transition-colors"
-          rel="prev"
-        >
-          <ArrowLeft className="mr-2 size-4" aria-hidden="true" /> Back to Shop
-        </Link>
-
-        <ProductSection
-          book={{
-            imageUrl: book?.imageUrl,
-            name: book?.name || "Book",
-            priceSale: book?.priceSale,
-            category: book?.category,
-            authors: book?.authors || [],
-            averageRating: book?.averageRating || 0,
-            totalReviews: book?.totalReviews || 0,
-            price: book?.price || 0,
-            status: book?.status || "",
-            description: book?.description,
-            publisher: book?.publisher,
-          }}
-          quantity={quantity}
-          isAddingToBasket={
-            createBasketMutation.isPending || updateBasketMutation.isPending
-          }
-          onAddToBasket={handleAddToBasket}
-          onQuantityChange={handleQuantityChange}
-          onDecrease={handleQuantityDecreaseDebounced}
-          onIncrease={handleQuantityIncreaseDebounced}
-        />
-
-        <Separator className="my-16" aria-hidden="true" />
-
-        {/* Reviews Section */}
-        <section
-          id="reviews"
-          className="mx-auto max-w-4xl"
-          aria-label="Customer Reviews"
-        >
-          <ReviewsContainer
-            isLoading={isLoading}
-            reviews={visibleFeedbacks.map((f) => ({
-              id: f.id,
-              firstName: f.firstName || "",
-              lastName: f.lastName || "",
-              rating: f.rating,
-              comment: f.comment || "",
-            }))}
-            averageRating={book?.averageRating || 0}
-            totalReviews={book?.totalReviews || 0}
-            sortBy={sortBy}
-            onSortChange={(newSort) => {
-              setSortBy(newSort);
-              setCurrentPage(1);
-            }}
-            isSummarizing={isSummarizing}
-            onSummarize={handleSummarize}
-            showReviewForm={showReviewForm}
-            onToggleReviewForm={() => setShowReviewForm(!showReviewForm)}
-            summary={summaryData?.summary}
-            reviewForm={{
-              firstName: newReview.firstName || "",
-              lastName: newReview.lastName || "",
-              comment: newReview.comment || "",
-              rating: newReview.rating,
-              isSubmitting: createFeedbackMutation.isPending,
-              onChange: (field, value) =>
-                setNewReview({ ...newReview, [field]: value }),
-              onSubmit: handleSubmitReview,
-            }}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
-        </section>
-      </main>
-
-      <RemoveItemDialog
-        open={showRemoveDialog}
-        onOpenChange={setShowRemoveDialog}
-        items={book ? [{ id: book.id, name: book.name || "Book" }] : []}
-        onConfirm={handleConfirmRemove}
-        description={
-          book ? (
-            <>
-              You're about to remove{" "}
-              <span className="text-foreground font-semibold">{book.name}</span>{" "}
-              from your basket. This action cannot be undone.
-            </>
-          ) : undefined
-        }
-      />
-    </>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <BookDetailPageClient id={id} />
+    </HydrationBoundary>
   );
 }

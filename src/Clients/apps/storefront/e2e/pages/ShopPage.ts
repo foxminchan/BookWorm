@@ -65,7 +65,7 @@ export class ShopPage extends BasePage {
 
   get clearFiltersButton(): Locator {
     return this.page.locator(
-      'button:has-text("Clear Filters"), button:has-text("Reset")',
+      'button[aria-label="Clear all filters"], button:has-text("Clear Filters"), button:has-text("Reset")',
     );
   }
 

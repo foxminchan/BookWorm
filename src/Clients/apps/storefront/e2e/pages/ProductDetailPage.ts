@@ -105,7 +105,7 @@ export class ProductDetailPage extends BasePage {
 
   get writeReviewButton(): Locator {
     return this.page.locator(
-      'button:has-text("Write a Review"), button:has-text("Add Review")',
+      'button[aria-label*="Write the first review"], button[aria-label*="Write a Review"], button:has-text("Write a Review"), button:has-text("Add Review")',
     );
   }
 

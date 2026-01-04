@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 
 import type { OrderStatus } from "@workspace/types/ordering/orders";
 import { Button } from "@workspace/ui/components/button";
+import { Label } from "@workspace/ui/components/label";
 import {
   Select,
   SelectContent,
@@ -51,9 +52,9 @@ export default function OrdersHeader({
       </div>
 
       <div className="w-full md:w-56">
-        <label className="text-muted-foreground mb-3 block text-xs font-semibold tracking-widest uppercase">
+        <Label className="text-muted-foreground mb-3 block text-xs font-semibold tracking-widest uppercase">
           Filter Orders
-        </label>
+        </Label>
         <Select value={selectedStatus} onValueChange={onStatusChange}>
           <SelectTrigger className="hover:border-primary/50 border-2 transition-colors">
             <SelectValue placeholder="Select status" />

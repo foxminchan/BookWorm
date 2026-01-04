@@ -6,6 +6,7 @@ import { Search } from "lucide-react";
 
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
+import { Label } from "@workspace/ui/components/label";
 
 import { FilterCheckbox } from "@/components/filter-checkbox";
 
@@ -36,6 +37,7 @@ export function FilterSection({
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const sectionId = title.toLowerCase().replace(/\s+/g, "-");
 
   const filteredItems = items.filter((item) =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -54,34 +56,50 @@ export function FilterSection({
         <h3 className="font-serif font-medium">{title}</h3>
         {searchable && (
           <Button
+            type="button"
             variant="ghost"
             size="icon"
             onClick={() => setIsSearchOpen(!isSearchOpen)}
             className="text-muted-foreground hover:text-foreground h-8 w-8"
             aria-label={`Search ${title.toLowerCase()}`}
+            aria-expanded={isSearchOpen}
           >
-            <Search className="size-4" />
+            <Search className="size-4" aria-hidden="true" />
           </Button>
         )}
       </div>
 
       {isSearchOpen && (
         <div className="relative mb-4">
-          <Search className="text-muted-foreground absolute top-1/2 left-2 size-4 -translate-y-1/2" />
+          <Label htmlFor={`filter-search-${sectionId}`} className="sr-only">
+            Search {title.toLowerCase()}
+          </Label>
+          <Search
+            className="text-muted-foreground absolute top-1/2 left-2 size-4 -translate-y-1/2"
+            aria-hidden="true"
+          />
           <Input
+            id={`filter-search-${sectionId}`}
             placeholder={`Search ${title.toLowerCase()}...`}
             className="h-8 pl-8 text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             autoFocus
+            aria-describedby={`${sectionId}-filter-description`}
           />
+          <span id={`${sectionId}-filter-description`} className="sr-only">
+            Filter {title.toLowerCase()} list
+          </span>
         </div>
       )}
 
       <div
+        id={`${sectionId}-filter-list`}
         className={`space-y-2 overflow-hidden transition-all duration-300 ease-in-out ${
           isExpanded ? "max-h-96" : "max-h-56"
         }`}
+        role="group"
+        aria-label={`${title} filters`}
       >
         {displayedItems.map((item) => (
           <FilterCheckbox
@@ -94,13 +112,20 @@ export function FilterSection({
       </div>
 
       {showToggle && (
-        <Button
-          variant="link"
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="text-primary mt-2 h-auto p-0 text-sm hover:underline"
-        >
-          {isExpanded ? "Show Less" : "Show More"}
-        </Button>
+        <>
+          <Button
+            variant="link"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="text-primary mt-2 h-auto p-0 text-sm hover:underline"
+            aria-expanded={isExpanded}
+            aria-controls={`${sectionId}-filter-list`}
+          >
+            {isExpanded ? "Show Less" : "Show More"}
+          </Button>
+          <span className="sr-only" aria-live="polite" aria-atomic="true">
+            {isExpanded ? "Showing all filters" : "Showing limited filters"}
+          </span>
+        </>
       )}
     </div>
   );

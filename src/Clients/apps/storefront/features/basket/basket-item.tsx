@@ -23,20 +23,28 @@ export default function BasketItem({
   onRemoveItem,
 }: BasketItemProps) {
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
+  const totalPrice = (item.priceSale || item.price) * displayQuantity;
+
   return (
-    <Card className="border-none bg-white/50 shadow-none backdrop-blur-sm dark:bg-gray-800/50">
+    <Card
+      className="border-none bg-white/50 shadow-none backdrop-blur-sm dark:bg-gray-800/50"
+      role="article"
+      aria-label={`${item.name}, quantity ${displayQuantity}, total $${totalPrice.toFixed(2)}`}
+    >
       <CardContent className="p-6">
         <div className="flex gap-6">
           <div className="grow space-y-1">
             <div className="flex items-start justify-between">
               <h3 className="font-serif text-xl font-medium">{item.name}</h3>
               <Button
+                type="button"
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowRemoveDialog(true)}
                 className="text-muted-foreground hover:text-destructive"
+                aria-label={`Remove ${item.name} from basket`}
               >
-                <Trash2 className="size-5" />
+                <Trash2 className="size-5" aria-hidden="true" />
               </Button>
             </div>
             <p className="text-muted-foreground text-sm">Hardcover</p>
@@ -56,11 +64,21 @@ export default function BasketItem({
                     <span className="text-muted-foreground decoration-muted-foreground/50 text-xs line-through">
                       ${(item.price * displayQuantity).toFixed(2)}
                     </span>
+                    <span className="sr-only">
+                      Sale price: $
+                      {(item.priceSale * displayQuantity).toFixed(2)}, original
+                      price: ${(item.price * displayQuantity).toFixed(2)}
+                    </span>
                   </div>
                 ) : (
-                  <span className="font-bold">
-                    ${(item.price * displayQuantity).toFixed(2)}
-                  </span>
+                  <>
+                    <span className="font-bold">
+                      ${(item.price * displayQuantity).toFixed(2)}
+                    </span>
+                    <span className="sr-only">
+                      Total: ${(item.price * displayQuantity).toFixed(2)}
+                    </span>
+                  </>
                 )}
               </div>
             </div>

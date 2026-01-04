@@ -23,7 +23,7 @@ export class HomePage extends BasePage {
 
   get browseCollectionButton(): Locator {
     return this.page.locator(
-      'a:has-text("Browse Collection"), a[href="/shop"]',
+      'a[aria-label="Browse book collection"], a:has-text("Browse Collection"), a[href="/shop"]',
     );
   }
 

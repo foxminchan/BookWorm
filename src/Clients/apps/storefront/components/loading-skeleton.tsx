@@ -2,44 +2,59 @@ import { Skeleton } from "@workspace/ui/components/skeleton";
 
 export function BookCardSkeleton() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" role="status" aria-label="Loading book card">
       <Skeleton className="aspect-3/4 w-full rounded-lg" />
       <Skeleton className="h-3 w-16 rounded-full" />
       <Skeleton className="h-6 w-full rounded-md" />
       <Skeleton className="h-4 w-24 rounded-md" />
       <Skeleton className="h-5 w-20 rounded-md" />
+      <span className="sr-only">Loading book information...</span>
     </div>
   );
 }
 
 export function CategoryCardSkeleton() {
   return (
-    <div className="bg-background border-border/40 flex items-center justify-between border p-8 md:p-12">
+    <div
+      className="bg-background border-border/40 flex items-center justify-between border p-8 md:p-12"
+      role="status"
+      aria-label="Loading category"
+    >
       <div className="flex flex-1 flex-col gap-4">
         <Skeleton className="h-4 w-16" />
         <Skeleton className="h-10 w-48" />
       </div>
       <Skeleton className="size-12 rounded-full" />
+      <span className="sr-only">Loading category information...</span>
     </div>
   );
 }
 
 export function PublisherCardSkeleton() {
   return (
-    <div className="bg-secondary/10 border-border/40 relative flex aspect-square flex-col justify-between overflow-hidden rounded-lg border p-8">
+    <div
+      className="bg-secondary/10 border-border/40 relative flex aspect-square flex-col justify-between overflow-hidden rounded-lg border p-8"
+      role="status"
+      aria-label="Loading publisher"
+    >
       <Skeleton className="mb-4 h-7 w-28 rounded-full" />
       <div className="space-y-3">
         <Skeleton className="h-8 w-full rounded-md" />
         <Skeleton className="h-8 w-3/4 rounded-md" />
         <Skeleton className="mt-4 h-5 w-20 rounded-md" />
       </div>
+      <span className="sr-only">Loading publisher information...</span>
     </div>
   );
 }
 
 export function BasketItemSkeleton() {
   return (
-    <div className="rounded-lg border-none bg-white/50 p-6 shadow-none dark:bg-gray-800/50">
+    <div
+      className="rounded-lg border-none bg-white/50 p-6 shadow-none dark:bg-gray-800/50"
+      role="status"
+      aria-label="Loading basket item"
+    >
       <div className="flex gap-6">
         <div className="grow space-y-4">
           <div className="flex items-start justify-between">
@@ -48,6 +63,7 @@ export function BasketItemSkeleton() {
           </div>
           <Skeleton className="h-4 w-20" />
           <div className="flex items-center gap-3 pt-4">
+            <span className="sr-only">Loading basket item...</span>
             <Skeleton className="h-10 w-32" />
             <Skeleton className="ml-auto h-6 w-24" />
           </div>

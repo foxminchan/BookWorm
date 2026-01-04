@@ -87,13 +87,16 @@ export function QuantityControl({
         onClick={onDecrease}
         className="hover:text-primary h-auto w-auto p-1 transition-colors disabled:opacity-50"
         aria-label="Decrease quantity"
+        disabled={quantity <= 0}
       >
-        <Minus className={iconSizes[size]} />
+        <Minus className={iconSizes[size]} aria-hidden="true" />
       </Button>
       <span
         className={`w-8 text-center font-medium ${quantity <= 0 ? "text-destructive" : ""}`}
+        role="status"
         aria-live="polite"
         aria-atomic="true"
+        aria-label={`Quantity: ${quantity}`}
       >
         {quantity}
       </span>
@@ -104,7 +107,7 @@ export function QuantityControl({
         className="hover:text-primary h-auto w-auto p-1 transition-colors"
         aria-label="Increase quantity"
       >
-        <Plus className={iconSizes[size]} />
+        <Plus className={iconSizes[size]} aria-hidden="true" />
       </Button>
     </div>
   );

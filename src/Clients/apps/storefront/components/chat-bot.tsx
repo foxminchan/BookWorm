@@ -1,6 +1,12 @@
 "use client";
 
-import { forwardRef, useImperativeHandle, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 
 import { CopilotChat } from "@copilotkit/react-ui";
 import "@copilotkit/react-ui/styles.css";
@@ -19,12 +25,51 @@ export type ChatBotRef = {
 
 const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
   const [isOpen, setIsOpen] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useImperativeHandle(ref, () => ({
     openChat: () => {
       setIsOpen(true);
     },
   }));
+
+  // Focus trap and keyboard navigation
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsOpen(false);
+      }
+
+      // Focus trap
+      if (e.key === "Tab" && dialogRef.current) {
+        const focusableElements = dialogRef.current.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        );
+        const firstElement = focusableElements[0] as HTMLElement;
+        const lastElement = focusableElements[
+          focusableElements.length - 1
+        ] as HTMLElement;
+
+        if (e.shiftKey && document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement?.focus();
+        } else if (!e.shiftKey && document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement?.focus();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    closeButtonRef.current?.focus();
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
 
   if (!isOpen) {
     return (
@@ -40,28 +85,42 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 hidden items-end justify-end p-6 md:flex">
+    <div
+      className="fixed inset-0 z-50 hidden items-end justify-end p-6 md:flex"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="chat-dialog-title"
+    >
       <div
         className="fixed inset-0 bg-black/20"
         onClick={() => setIsOpen(false)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            setIsOpen(false);
+          }
+        }}
+        aria-label="Close chat"
       />
-      <div className="relative z-10">
+      <div className="relative z-10" ref={dialogRef}>
         <Card className="border-secondary/30 animate-in fade-in slide-in-from-bottom-4 flex h-150 w-96 flex-col overflow-hidden rounded-2xl shadow-2xl duration-300 sm:w-105">
           <CardHeader className="from-primary via-primary to-primary/90 text-primary-foreground border-primary-foreground/10 flex flex-row items-center justify-between gap-3 border-b bg-linear-to-br p-6">
             <div className="flex items-center gap-3">
               <div className="bg-primary-foreground/20 flex h-10 w-10 items-center justify-center rounded-full">
-                <MessageCircle className="h-5 w-5" />
+                <MessageCircle className="h-5 w-5" aria-hidden="true" />
               </div>
-              <h2 className="font-semibold">BookWorm Literary Guide</h2>
+              <h2 id="chat-dialog-title" className="font-semibold">
+                BookWorm Literary Guide
+              </h2>
             </div>
             <Button
+              ref={closeButtonRef}
               variant="ghost"
               size="icon"
               onClick={() => setIsOpen(false)}
               className="hover:bg-primary-foreground/20 h-8 w-8 rounded-full"
               aria-label="Close chat"
             >
-              <X className="h-5 w-5" />
+              <X className="h-5 w-5" aria-hidden="true" />
             </Button>
           </CardHeader>
           <CardContent className="flex-1 overflow-auto">
@@ -101,16 +160,32 @@ const UnavailableChatUI = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 hidden items-end justify-end p-6 md:flex">
-      <div className="fixed inset-0 bg-black/20" onClick={onClose} />
+    <div
+      className="fixed inset-0 z-50 hidden items-end justify-end p-6 md:flex"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="chat-unavailable-title"
+    >
+      <div
+        className="fixed inset-0 bg-black/20"
+        onClick={onClose}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+            onClose();
+          }
+        }}
+        aria-label="Close dialog"
+      />
       <Card className="border-secondary/30 animate-in fade-in slide-in-from-bottom-4 relative z-10 flex h-150 w-96 flex-col overflow-hidden rounded-2xl shadow-2xl duration-300 sm:w-105">
         <CardHeader className="from-primary via-primary to-primary/90 text-primary-foreground border-primary-foreground/10 flex flex-row items-center justify-between gap-3 border-b bg-linear-to-br p-6">
           <div className="flex items-center gap-3">
             <div className="bg-primary-foreground/20 flex h-10 w-10 items-center justify-center rounded-full">
-              <MessageCircle className="h-5 w-5" />
+              <MessageCircle className="h-5 w-5" aria-hidden="true" />
             </div>
             <div>
-              <h2 className="font-semibold">BookWorm Literary Guide</h2>
+              <h2 id="chat-unavailable-title" className="font-semibold">
+                BookWorm Literary Guide
+              </h2>
               <p className="text-xs opacity-90">
                 {isFeatureDisabled ? "Coming Soon" : "Chat unavailable"}
               </p>
@@ -121,8 +196,9 @@ const UnavailableChatUI = ({
             size="icon"
             onClick={onClose}
             className="hover:bg-primary-foreground/20 h-8 w-8 rounded-full"
+            aria-label="Close dialog"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5" aria-hidden="true" />
           </Button>
         </CardHeader>
 

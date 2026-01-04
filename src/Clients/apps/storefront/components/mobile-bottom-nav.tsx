@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -19,6 +19,20 @@ export function MobileBottomNav() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const itemCount = useAtomValue(basketItemCountAtom);
   const { data: session } = useSession();
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isMenuOpen]);
 
   const isActive = (path: string) =>
     pathname === path || pathname.startsWith(path + "/");
@@ -58,15 +72,20 @@ export function MobileBottomNav() {
               <div className="relative">
                 <Icon className="size-5" aria-hidden="true" />
                 {showBadge && (
-                  <Badge
-                    className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center p-0 text-[10px]"
-                    aria-label={`${itemCount} items in basket`}
-                  >
-                    {itemCount}
-                  </Badge>
+                  <>
+                    <Badge
+                      className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center p-0 text-[10px]"
+                      aria-hidden="true"
+                    >
+                      {itemCount}
+                    </Badge>
+                    <span className="sr-only">{itemCount} items in basket</span>
+                  </>
                 )}
               </div>
-              <span className="text-[10px]">{item.label}</span>
+              <span className="text-[10px]" aria-hidden="true">
+                {item.label}
+              </span>
             </Link>
           );
         })}
@@ -87,15 +106,17 @@ export function MobileBottomNav() {
 
       {isMenuOpen && (
         <div
+          ref={menuRef}
           className="bg-background fixed right-0 bottom-16 left-0 z-40 border-t md:hidden"
           role="navigation"
           aria-label="Additional navigation"
         >
-          <div className="flex flex-col gap-2 p-3 text-sm">
+          <div className="flex flex-col gap-2 p-3 text-sm" role="menu">
             <Link
               href="/categories"
               className="hover:bg-secondary rounded px-3 py-2 transition-colors"
               onClick={() => setIsMenuOpen(false)}
+              role="menuitem"
             >
               Categories
             </Link>
@@ -103,6 +124,7 @@ export function MobileBottomNav() {
               href="/publishers"
               className="hover:bg-secondary rounded px-3 py-2 transition-colors"
               onClick={() => setIsMenuOpen(false)}
+              role="menuitem"
             >
               Publishers
             </Link>
@@ -110,6 +132,7 @@ export function MobileBottomNav() {
               href="/about"
               className="hover:bg-secondary rounded px-3 py-2 transition-colors"
               onClick={() => setIsMenuOpen(false)}
+              role="menuitem"
             >
               Our Story
             </Link>

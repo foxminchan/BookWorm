@@ -19,8 +19,14 @@ export default function ReviewsEmptyState({
         <p className="text-muted-foreground mb-6">
           Be the first to share your thoughts about this book
         </p>
-        <Button className="rounded-full" onClick={onWriteReview}>
-          <MessageSquare className="mr-2 size-4" /> Write First Review
+        <Button
+          type="button"
+          className="rounded-full"
+          onClick={onWriteReview}
+          aria-label="Write the first review for this book"
+        >
+          <MessageSquare className="mr-2 size-4" aria-hidden="true" /> Write
+          First Review
         </Button>
       </div>
     </div>

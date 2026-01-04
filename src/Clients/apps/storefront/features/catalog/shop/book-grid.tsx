@@ -54,9 +54,11 @@ export default function BookGrid({
           selection or browse all our titles.
         </p>
         <Button
+          type="button"
           variant="outline"
           onClick={onClearFilters}
           className="rounded-full bg-transparent"
+          aria-label="Clear all filters"
         >
           Clear Filters
         </Button>
@@ -69,11 +71,14 @@ export default function BookGrid({
       <div
         className="mb-12 grid grid-cols-2 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
         role="list"
+        aria-label="Book catalog"
       >
         {books.map((book: any) => (
-          <Link key={book.id} href={`/shop/${book.id}`}>
-            <BookCard book={book} />
-          </Link>
+          <div key={book.id} role="listitem">
+            <Link href={`/shop/${book.id}`}>
+              <BookCard book={book} />
+            </Link>
+          </div>
         ))}
       </div>
 

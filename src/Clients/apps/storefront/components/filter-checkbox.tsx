@@ -14,16 +14,18 @@ export function FilterCheckbox({
   checked,
   onChange,
 }: FilterCheckboxProps) {
+  const id = `filter-${label.toLowerCase().replace(/\s+/g, "-")}`;
+
   return (
     <div className="flex items-center gap-2">
       <Checkbox
-        id={label}
+        id={id}
         checked={checked}
         onCheckedChange={onChange}
-        aria-label={label}
+        aria-checked={checked}
       />
       <Label
-        htmlFor={label}
+        htmlFor={id}
         className="group-hover:text-primary cursor-pointer transition-colors"
       >
         {label}
