@@ -1,5 +1,3 @@
-import { v7 as uuidv7 } from "uuid";
-
 import type { Publisher } from "@workspace/types/catalog/publishers";
 
 import publishersData from "../../data/publishers.json";
@@ -14,7 +12,7 @@ export const publishersStore = {
   },
 
   create(name: string, id?: string): string {
-    const newId = id || uuidv7();
+    const newId = id || crypto.randomUUID();
     this.publishers.push({
       id: newId,
       name,

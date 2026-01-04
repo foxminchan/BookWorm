@@ -1,5 +1,3 @@
-import { v7 as uuidv7 } from "uuid";
-
 import type { Feedback } from "@workspace/types/rating";
 
 import feedbacksData from "../data/feedbacks.json";
@@ -22,7 +20,7 @@ export const feedbacksStoreManager = {
     id?: string;
   }): Feedback => {
     const newFeedback: Feedback = {
-      id: data.id || uuidv7(),
+      id: data.id || crypto.randomUUID(),
       bookId: data.bookId,
       firstName: data.firstName ?? null,
       lastName: data.lastName ?? null,

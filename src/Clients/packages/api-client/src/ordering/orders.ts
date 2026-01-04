@@ -1,5 +1,3 @@
-import { v7 as uuidv7 } from "uuid";
-
 import type {
   ListOrdersQuery,
   Order,
@@ -39,7 +37,7 @@ class OrdersApiClient {
     const response = await this.client.post<string>(
       "/ordering/api/v1/orders",
       { basketId },
-      { headers: { "x-request-id": uuidv7() } },
+      { headers: { "x-request-id": crypto.randomUUID() } },
     );
     return response.data;
   }
@@ -49,7 +47,7 @@ class OrdersApiClient {
       `/ordering/api/v1/orders/${id}/cancel`,
       undefined,
       {
-        headers: { "x-request-id": uuidv7() },
+        headers: { "x-request-id": crypto.randomUUID() },
       },
     );
 
@@ -61,7 +59,7 @@ class OrdersApiClient {
       `/ordering/api/v1/orders/${id}/complete`,
       undefined,
       {
-        headers: { "x-request-id": uuidv7() },
+        headers: { "x-request-id": crypto.randomUUID() },
       },
     );
 

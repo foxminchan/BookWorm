@@ -15,8 +15,6 @@ import type { BasketItem } from "@workspace/types/basket";
 
 import { basketAtom, basketItemsAtom } from "@/atoms/basket-atom";
 import { EmptyState } from "@/components/empty-state";
-import { Footer } from "@/components/footer";
-import { Header } from "@/components/header";
 import { RemoveItemDialog } from "@/components/remove-item-dialog";
 import BasketHeader from "@/features/basket/basket-header";
 import BasketItemsList from "@/features/basket/basket-items-list";
@@ -166,8 +164,7 @@ export default function BasketPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#FDFCFB] dark:bg-gray-950">
-      <Header />
+    <>
       <main className="container mx-auto grow px-4 py-12">
         <BasketHeader
           hasChanges={hasChanges}
@@ -216,7 +213,6 @@ export default function BasketPage() {
         cancelLabel="Keep in Basket"
         confirmLabel="Remove Items"
       />
-      <Footer />
-    </div>
+    </>
   );
 }

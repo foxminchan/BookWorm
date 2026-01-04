@@ -73,7 +73,7 @@ export function ConfirmationPageSkeleton() {
       </div>
 
       <div className="border-border mb-24 grid gap-8 border-y py-12 md:grid-cols-3">
-        {[1, 2, 3].map((i) => (
+        {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="space-y-4">
             <Skeleton className="h-6 w-32" />
             <div className="space-y-2">

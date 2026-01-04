@@ -2,8 +2,6 @@
 
 import { useRouter } from "next/navigation";
 
-import { Footer } from "@/components/footer";
-import { Header } from "@/components/header";
 import BookGrid from "@/features/catalog/shop/book-grid";
 import ShopFilters from "@/features/catalog/shop/shop-filters";
 import ShopToolbar from "@/features/catalog/shop/shop-toolbar";
@@ -116,49 +114,45 @@ export default function ShopPage() {
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-      <main className="container mx-auto grow px-4 py-8">
-        <div className="flex flex-col gap-8 md:flex-row">
-          <ShopFilters
-            priceRange={priceRange}
-            setPriceRange={setPriceRange}
-            categories={categories}
-            selectedCategories={selectedCategories}
-            onToggleCategory={handleToggleCategory}
-            publishers={publishers}
-            selectedPublishers={selectedPublishers}
-            onTogglePublisher={handleTogglePublisher}
-            authors={authors}
-            selectedAuthors={selectedAuthors}
-            onToggleAuthor={handleToggleAuthor}
-            isFilterOpen={isFilterOpen}
-            setIsFilterOpen={setIsFilterOpen}
+    <main className="container mx-auto grow px-4 py-8">
+      <div className="flex flex-col gap-8 md:flex-row">
+        <ShopFilters
+          priceRange={priceRange}
+          setPriceRange={setPriceRange}
+          categories={categories}
+          selectedCategories={selectedCategories}
+          onToggleCategory={handleToggleCategory}
+          publishers={publishers}
+          selectedPublishers={selectedPublishers}
+          onTogglePublisher={handleTogglePublisher}
+          authors={authors}
+          selectedAuthors={selectedAuthors}
+          onToggleAuthor={handleToggleAuthor}
+          isFilterOpen={isFilterOpen}
+          setIsFilterOpen={setIsFilterOpen}
+        />
+
+        <section className="grow">
+          <ShopToolbar
+            searchQuery={searchQuery}
+            onClearSearch={handleClearSearch}
+            totalCount={totalCount}
+            currentPage={currentPage}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            onOpenFilters={() => setIsFilterOpen(true)}
           />
 
-          <section className="grow">
-            <ShopToolbar
-              searchQuery={searchQuery}
-              onClearSearch={handleClearSearch}
-              totalCount={totalCount}
-              currentPage={currentPage}
-              sortBy={sortBy}
-              onSortChange={setSortBy}
-              onOpenFilters={() => setIsFilterOpen(true)}
-            />
-
-            <BookGrid
-              books={books}
-              isLoading={isLoading}
-              totalPages={totalPages}
-              currentPage={currentPage}
-              onPageChange={setCurrentPage}
-              onClearFilters={handleClearAllFilters}
-            />
-          </section>
-        </div>
-      </main>
-      <Footer />
-    </div>
+          <BookGrid
+            books={books}
+            isLoading={isLoading}
+            totalPages={totalPages}
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+            onClearFilters={handleClearAllFilters}
+          />
+        </section>
+      </div>
+    </main>
   );
 }

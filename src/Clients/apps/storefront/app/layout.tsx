@@ -5,10 +5,11 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import "@workspace/ui/globals.css";
 
-import { Providers } from "@/app/providers";
 import { JsonLd } from "@/components/json-ld";
 import { showCopilotKit } from "@/flags";
 import { generateOrganizationJsonLd, generateWebsiteJsonLd } from "@/lib/seo";
+
+import { Providers } from "./providers";
 
 export const viewport: Viewport = {
   width: "device-width",

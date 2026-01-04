@@ -114,11 +114,7 @@ public sealed class PaginationHeaderFilter : IEndpointFilter
 
         links.Add(BuildLink(basePath, queryParams, metadata.TotalPages, metadata.PageSize, "last"));
 
-        if (links.Count > 0)
-        {
-            context.Response.Headers.Append("Link", string.Join(",", links));
-        }
-
+        context.Response.Headers.Append("Link", string.Join(",", links));
         context.Response.Headers.Append("Pagination-Count", metadata.TotalItems.ToString());
     }
 

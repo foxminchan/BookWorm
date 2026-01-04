@@ -1,5 +1,3 @@
-import { v7 as uuidv7 } from "uuid";
-
 import type { Author } from "@workspace/types/catalog/authors";
 import type { Book } from "@workspace/types/catalog/books";
 
@@ -87,7 +85,7 @@ export const booksStore = {
     publisherId: string;
     authorIds: string[];
   }): string {
-    const newId = data.id || uuidv7();
+    const newId = data.id || crypto.randomUUID();
     const category =
       mockCategories.find((c) => c.id === data.categoryId) ?? null;
     const publisher =

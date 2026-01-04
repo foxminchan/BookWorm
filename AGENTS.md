@@ -4,8 +4,8 @@
 
 1. Before making any changes always run the apphost using `aspire run` and inspect the state of resources to make sure you are building from a known state.
 1. Changes to the _AppHost.cs_ file will require a restart of the application to take effect.
-2. Make changes incrementally and run the aspire application using the `aspire run` command to validate changes.
-3. Use the Aspire MCP tools to check the status of resources and debug issues.
+1. Make changes incrementally and run the aspire application using the `aspire run` command to validate changes.
+1. Use the Aspire MCP tools to check the status of resources and debug issues.
 
 ## Getting Started
 
@@ -68,6 +68,7 @@ IMPORTANT! The aspire workload is obsolete. You should never attempt to install 
 
 - `src/Aspire/`: Aspire host and service defaults
 - `src/BuildingBlocks/`: Shared libraries (Chassis, Constants, SharedKernel)
+- `src/Clients/`: Frontend applications (Next.js 16 monorepo)
 - `src/Services/`: Individual microservices
 - `src/Integrations/`: Integration components (HealthChecks, MCP Tools)
 - `tests/`: Test projects including architecture tests
@@ -78,7 +79,6 @@ IMPORTANT! The aspire workload is obsolete. You should never attempt to install 
 - **Architecture**: See `docs/docusaurus/` for detailed documentation
 - **Events**: Event schemas and documentation in `docs/eventcatalog/`
 - **API**: OpenAPI specifications in `docs/eventcatalog/openapi-files/`
-
 
 ## Official documentation
 

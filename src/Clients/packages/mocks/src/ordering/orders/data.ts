@@ -1,5 +1,3 @@
-import { v7 as uuidv7 } from "uuid";
-
 import type {
   OrderDetail,
   OrderItem,
@@ -35,7 +33,7 @@ export const ordersStoreManager = {
       0,
     );
     const newOrder: OrderDetail = {
-      id: id || uuidv7(),
+      id: id || crypto.randomUUID(),
       date: new Date().toISOString(),
       total,
       status: "New",
