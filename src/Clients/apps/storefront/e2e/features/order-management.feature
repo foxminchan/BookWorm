@@ -5,7 +5,7 @@ Feature: Order Management
   So that I can track my purchases and order history
 
   Background:
-    Given I am on the home page
+    Given the storefront application is running
     And I am logged in as a customer
 
   @smoke
@@ -95,7 +95,23 @@ Feature: Order Management
     When I click "Back to Orders"
     Then I should return to my order history page
 
-  Scenario: View order items details
+  Scenario: View order item details from order
     Given I am viewing an order detail page
     When I click on an item in the order
+    Then I should be redirected to that product's detail page
+    And I can add it to my basket again
+
+  @account-integration
+  Scenario: Access orders from account page
+    Given I am on the account page
+    When I click "My Orders" link
+    Then I should be redirected to the orders page
+
+  @mobile-experience
+  Scenario: Order management on mobile devices
+    Given I am on a mobile device
+    And I am on the orders page
+    Then the order list should be mobile-friendly
+    And I can swipe to see order details
+    And all actions should be accessible
     Then I should be redirected to that book's detail page

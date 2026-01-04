@@ -172,7 +172,10 @@ describe("BookCard", () => {
     const book: Book = { ...mockBook, name: "Test Book Title" };
     renderWithProviders(<BookCard book={book} />);
 
-    const image = screen.getByAltText("Test Book Title");
+    // Alt text format is "Cover of {book name} by {authors}"
+    const authorNames = book.authors?.map((a) => a.name).join(", ");
+    const expectedAltText = `Cover of Test Book Title by ${authorNames}`;
+    const image = screen.getByAltText(expectedAltText);
     expect(image).toBeInTheDocument();
   });
 });

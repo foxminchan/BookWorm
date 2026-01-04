@@ -65,11 +65,11 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "zod": "^4.3.4"
+    "zod": "^4.3.5"
   },
   "devDependencies": {
-    "eslint": "^9.39.2",
     "@workspace/eslint-config": "workspace:*",
-    "@workspace/typescript-config": "workspace:*"
+    "@workspace/typescript-config": "workspace:*",
+    "eslint": "^9.39.2"
   }
 }

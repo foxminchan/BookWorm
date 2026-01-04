@@ -11,10 +11,6 @@ import ShopToolbar from "./shop-toolbar";
 
 const ITEMS_PER_PAGE = 8;
 
-/**
- * Client Component: Handles shop page interactivity with hydrated server data.
- * This component receives prefetched data from the server for instant rendering.
- */
 export default function ShopPageClient() {
   const router = useRouter();
   const {
@@ -120,6 +116,7 @@ export default function ShopPageClient() {
 
   return (
     <main className="container mx-auto grow px-4 py-8">
+      <h1 className="sr-only">Shop Books - Browse Our Collection</h1>
       <div className="flex flex-col gap-8 md:flex-row">
         <ShopFilters
           priceRange={priceRange}

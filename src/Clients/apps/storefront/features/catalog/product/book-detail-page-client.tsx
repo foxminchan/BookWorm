@@ -34,10 +34,6 @@ type BookDetailPageClientProps = {
   id: string;
 };
 
-/**
- * Client Component: Handles book detail page interactivity with hydrated data.
- * This receives prefetched book and reviews data from the server.
- */
 export default function BookDetailPageClient({
   id,
 }: BookDetailPageClientProps) {
@@ -124,6 +120,7 @@ export default function BookDetailPageClient({
   if (isLoading) {
     return (
       <main className="container mx-auto grow px-4 py-8">
+        <h1 className="sr-only">Loading Book Details</h1>
         <ProductLoadingSkeleton />
       </main>
     );
