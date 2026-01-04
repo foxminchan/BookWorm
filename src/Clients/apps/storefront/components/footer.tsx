@@ -125,10 +125,7 @@ export function Footer() {
 
   return (
     <>
-      <footer
-        className="bg-secondary hidden border-t py-12 md:block"
-        role="contentinfo"
-      >
+      <footer className="bg-secondary hidden border-t py-12 md:block">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
             <div className="col-span-1 md:col-span-2">

@@ -29,7 +29,7 @@ export async function generateMetadata({
   let book;
   try {
     book = await booksApiClient.get(id);
-  } catch (error) {
+  } catch {
     return {
       title: "Book Details | BookWorm",
       description: "View book details at BookWorm online bookstore.",
@@ -44,7 +44,6 @@ export async function generateMetadata({
   const description =
     book.description ??
     `Buy ${bookName}${authorNames.length > 0 ? ` by ${authorNames.join(", ")}` : ""} at BookWorm. ${book.priceSale ? `On sale for $${book.priceSale}` : `$${book.price}`}.`;
-  const imageUrl = book.imageUrl ?? "";
   const url = `${process.env.NEXT_PUBLIC_APP_URL || "https://bookworm.com"}/shop/${id}`;
 
   const keywords = [

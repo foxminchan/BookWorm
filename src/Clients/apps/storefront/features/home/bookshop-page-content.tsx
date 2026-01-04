@@ -8,10 +8,6 @@ import CategoriesSection from "@/features/home/categories-section";
 import FeaturedBooksSection from "@/features/home/featured-books-section";
 import HeroSection from "@/features/home/hero-section";
 
-/**
- * Client Component: Renders the homepage content using hydrated data.
- * This component will receive the prefetched data from the server.
- */
 export default function BookshopPageContent() {
   const chatBotRef = useRef<ChatBotRef>(null);
 

@@ -1,7 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
-  "envMode": "loose",
   "globalEnv": [
     "NODE_ENV",
     "NEXT_PUBLIC_GATEWAY_HTTPS",
@@ -9,6 +8,7 @@
     "KEYCLOAK_URL",
     "KEYCLOAK_REALM",
     "KEYCLOAK_CLIENT_ID",
+    "BETTER_AUTH_SECRET",
     "SKIP_ENV_VALIDATION",
     "FAKER_SEED",
     "SLOW_MO",

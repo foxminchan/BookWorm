@@ -3,6 +3,8 @@ import { NextRequest } from "next/server";
 
 import booksApiClient from "@workspace/api-client/catalog/books";
 
+import { DEFAULT_BOOK_IMAGE } from "@/lib/constants";
+
 export const runtime = "edge";
 export const size = {
   width: 1200,
@@ -55,34 +57,18 @@ export default async function Image(
           justifyContent: "center",
         }}
       >
-        {book.imageUrl ? (
-          <img
-            src={book.imageUrl}
-            alt={bookName}
-            width={300}
-            height={450}
-            style={{
-              objectFit: "cover",
-              borderRadius: 8,
-              boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
-            }}
-          />
-        ) : (
-          <div
-            style={{
-              width: 300,
-              height: 450,
-              background: "rgba(255, 255, 255, 0.7)",
-              borderRadius: 8,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 100,
-            }}
-          >
-            📖
-          </div>
-        )}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={book.imageUrl ?? DEFAULT_BOOK_IMAGE}
+          alt={bookName}
+          width={300}
+          height={450}
+          style={{
+            objectFit: "cover",
+            borderRadius: 8,
+            boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
+          }}
+        />
       </div>
 
       {/* Book Details */}

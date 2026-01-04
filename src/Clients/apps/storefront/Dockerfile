@@ -2,7 +2,7 @@ ARG NODE_VERSION=25.0.0
 FROM node:${NODE_VERSION}-slim AS base
 
 # Check https://github.com/nodejs/docker-node/tree/main#nodealpine to understand why libc6-compat might be needed
-RUN corepack enable pnpm && corepack install -g pnpm@10.26.2
+RUN corepack enable pnpm && corepack install -g pnpm@10.27.0
 WORKDIR /app
 
 # ---

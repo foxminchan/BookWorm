@@ -111,10 +111,7 @@ export function Header() {
 
   return (
     <>
-      <header
-        className="bg-background/80 sticky top-0 z-50 hidden w-full border-b backdrop-blur-md md:block"
-        role="banner"
-      >
+      <header className="bg-background/80 sticky top-0 z-50 hidden w-full border-b backdrop-blur-md md:block">
         <div className="container mx-auto flex h-20 items-center gap-4 px-4">
           {/* Left: Logo */}
           <Link
@@ -133,7 +130,7 @@ export function Header() {
 
           <nav
             className="hidden flex-1 items-center justify-center gap-8 text-sm font-medium md:flex"
-            aria-label="Main Navigation"
+            aria-label="Main navigation"
           >
             {navLinks.map((link) => (
               <Link
@@ -185,17 +182,18 @@ export function Header() {
                         name="search"
                         render={({ field }) => (
                           <FormItem>
-                            <label
-                              htmlFor="header-search-input"
-                              className="sr-only"
-                            >
-                              Search books
-                            </label>
                             <FormControl>
+                              <label
+                                htmlFor="header-search-input"
+                                className="sr-only"
+                              >
+                                Search books
+                              </label>
                               <Input
                                 id="header-search-input"
                                 placeholder="Search books..."
                                 autoFocus
+                                aria-label="Search books"
                                 className="border-foreground/20 focus:border-primary placeholder:text-foreground/40 border-x-0 border-t-0 border-b bg-transparent px-3 py-2 text-sm"
                                 {...field}
                               />
