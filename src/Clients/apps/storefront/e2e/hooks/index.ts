@@ -3,10 +3,10 @@ import {
   AfterAll,
   Before,
   BeforeAll,
+  ITestCaseHookParameter,
   Status,
   setDefaultTimeout,
 } from "@cucumber/cucumber";
-import { ITestCaseHookParameter } from "@cucumber/cucumber/lib/support_code_library_builder/types";
 import { Browser, BrowserContext, Page, chromium } from "@playwright/test";
 
 // Set default timeout for steps

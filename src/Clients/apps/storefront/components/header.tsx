@@ -20,7 +20,7 @@ export function Header() {
   const pathname = usePathname();
   const items = useAtomValue(basketItemsAtom);
   const totalItems = items.length;
-  const { data: session, isPending } = useSession();
+  const { data: session } = useSession();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isAccountOpen, setIsAccountOpen] = useState(false);

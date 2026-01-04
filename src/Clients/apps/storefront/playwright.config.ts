@@ -14,8 +14,10 @@ export default defineConfig({
   reporter: [
     ["html", { outputFolder: "playwright-report" }],
     ["json", { outputFile: "playwright-report/results.json" }],
+    ["junit", { outputFile: "playwright-report/junit.xml" }],
     ["list"],
   ],
+  outputDir: "test-results",
   use: {
     baseURL: process.env.BASE_URL || "http://localhost:3000",
     trace: "on-first-retry",
@@ -49,11 +51,15 @@ export default defineConfig({
     },
   ],
 
-  // Run local dev server before starting tests
-  webServer: {
-    command: "pnpm run dev",
-    url: "http://localhost:3000",
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
-  },
+  // Note: webServer disabled - use Turborepo's build dependency chain
+  // Run `turbo run test:e2e --only` after starting dev server separately
+  // Or let CI handle build via dependsOn in turbo.json
+  webServer: process.env.CI
+    ? undefined
+    : {
+        command: "pnpm run dev",
+        url: "http://localhost:3000",
+        reuseExistingServer: true,
+        timeout: 120000,
+      },
 });
