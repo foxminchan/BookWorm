@@ -5,6 +5,7 @@ import type React from "react";
 import { Minus, Plus } from "lucide-react";
 
 import { Button } from "@workspace/ui/components/button";
+import { Input } from "@workspace/ui/components/input";
 
 type QuantityControlProps = {
   quantity: number;
@@ -53,14 +54,14 @@ export function QuantityControl({
         >
           <Minus className={iconSizes[size]} />
         </Button>
-        <input
+        <Input
           type="text"
           inputMode="numeric"
           min="1"
           max="99"
           value={quantity}
           onChange={onQuantityChange}
-          className="w-12 border-none bg-transparent text-center font-serif text-lg font-bold focus:outline-none [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden"
+          className="h-auto w-12 border-0 bg-transparent text-center font-serif text-lg font-bold shadow-none focus-visible:ring-0"
           aria-label="Book quantity"
         />
         <Button
@@ -80,13 +81,15 @@ export function QuantityControl({
     <div
       className={`flex items-center ${showBorder ? "rounded-full border bg-white dark:border-gray-700 dark:bg-gray-900" : ""} ${sizeClasses[size]} ${className}`}
     >
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={onDecrease}
-        className="hover:text-primary p-1 transition-colors disabled:opacity-50"
+        className="hover:text-primary h-auto w-auto p-1 transition-colors disabled:opacity-50"
         aria-label="Decrease quantity"
       >
         <Minus className={iconSizes[size]} />
-      </button>
+      </Button>
       <span
         className={`w-8 text-center font-medium ${quantity <= 0 ? "text-destructive" : ""}`}
         aria-live="polite"
@@ -94,13 +97,15 @@ export function QuantityControl({
       >
         {quantity}
       </span>
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={onIncrease}
-        className="hover:text-primary p-1 transition-colors"
+        className="hover:text-primary h-auto w-auto p-1 transition-colors"
         aria-label="Increase quantity"
       >
         <Plus className={iconSizes[size]} />
-      </button>
+      </Button>
     </div>
   );
 }

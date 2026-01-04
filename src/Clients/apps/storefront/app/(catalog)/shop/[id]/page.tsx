@@ -20,8 +20,6 @@ import useSummaryFeedback from "@workspace/api-hooks/rating/useSummaryFeedback";
 import type { CreateFeedbackRequest } from "@workspace/types/rating";
 import { Separator } from "@workspace/ui/components/separator";
 
-import { Footer } from "@/components/footer";
-import { Header } from "@/components/header";
 import { JsonLd } from "@/components/json-ld";
 import { ProductLoadingSkeleton } from "@/components/loading-skeleton";
 import { RemoveItemDialog } from "@/components/remove-item-dialog";
@@ -121,13 +119,9 @@ export default function BookDetailPage({ params }: BookDetailPageProps) {
 
   if (isLoading) {
     return (
-      <div className="bg-background flex min-h-screen flex-col">
-        <Header />
-        <main className="container mx-auto grow px-4 py-8">
-          <ProductLoadingSkeleton />
-        </main>
-        <Footer />
-      </div>
+      <main className="container mx-auto grow px-4 py-8">
+        <ProductLoadingSkeleton />
+      </main>
     );
   }
 
@@ -234,11 +228,9 @@ export default function BookDetailPage({ params }: BookDetailPageProps) {
     : null;
 
   return (
-    <div className="bg-background flex min-h-screen flex-col">
+    <>
       {productJsonLd && <JsonLd data={productJsonLd} />}
       {breadcrumbJsonLd && <JsonLd data={breadcrumbJsonLd} />}
-
-      <Header />
 
       <main className="container mx-auto grow px-4 py-8" role="main">
         <Link
@@ -334,8 +326,6 @@ export default function BookDetailPage({ params }: BookDetailPageProps) {
           ) : undefined
         }
       />
-
-      <Footer />
-    </div>
+    </>
   );
 }

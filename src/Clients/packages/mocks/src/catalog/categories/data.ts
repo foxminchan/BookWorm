@@ -1,5 +1,3 @@
-import { v7 as uuidv7 } from "uuid";
-
 import type { Category } from "@workspace/types/catalog/categories";
 
 import categoriesData from "../../data/categories.json";
@@ -14,7 +12,7 @@ export const categoriesStore = {
   },
 
   create(name: string, id?: string): string {
-    const newId = id || uuidv7();
+    const newId = id || crypto.randomUUID();
     this.categories.push({
       id: newId,
       name,

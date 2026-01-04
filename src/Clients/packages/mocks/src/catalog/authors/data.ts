@@ -1,5 +1,3 @@
-import { v7 as uuidv7 } from "uuid";
-
 import type { Author } from "@workspace/types/catalog/authors";
 
 import authorsData from "../../data/authors.json";
@@ -18,7 +16,7 @@ export const authorsStore = {
   },
 
   create(name: string, id?: string): string {
-    const newId = id || uuidv7();
+    const newId = id || crypto.randomUUID();
     this.authors.push({
       id: newId,
       name,

@@ -1,5 +1,3 @@
-import { v7 as uuidv7 } from "uuid";
-
 import type { Buyer } from "@workspace/types/ordering/buyers";
 
 import buyersData from "../../data/buyers.json";
@@ -31,7 +29,7 @@ export const buyersStoreManager = {
     id?: string,
   ): Buyer => {
     const newBuyer: Buyer = {
-      id: id || uuidv7(),
+      id: id || crypto.randomUUID(),
       name,
       address: `${street}, ${city}, ${province}`,
     };

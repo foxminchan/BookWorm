@@ -1,7 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
-
 import {
   Dialog,
   DialogContent,
@@ -75,7 +73,7 @@ export function PolicyDialog({
   onOpenChange,
   content,
 }: PolicyDialogProps) {
-  const parsedContent = useMemo(() => parseMarkdown(content), [content]);
+  const parsedContent = parseMarkdown(content);
   const title =
     policyType === "privacy" ? "Privacy Policy" : "Terms of Service";
 

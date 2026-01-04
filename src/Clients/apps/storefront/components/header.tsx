@@ -1,6 +1,5 @@
 "use client";
 
-import type React from "react";
 import { useState } from "react";
 
 import Image from "next/image";
@@ -9,8 +8,16 @@ import { usePathname, useRouter } from "next/navigation";
 
 import { useAtomValue } from "jotai";
 import { Home, Search, ShoppingBag, User } from "lucide-react";
+import { useForm } from "react-hook-form";
 
 import { Button } from "@workspace/ui/components/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+} from "@workspace/ui/components/form";
+import { Input } from "@workspace/ui/components/input";
 
 import { basketItemsAtom } from "@/atoms/basket-atom";
 import { signOut, useSession } from "@/lib/auth-client";
@@ -22,19 +29,20 @@ export function Header() {
   const totalItems = items.length;
   const { data: session } = useSession();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const searchForm = useForm<{ search: string }>({
+    defaultValues: { search: "" },
+  });
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [hideAccountTimeout, setHideAccountTimeout] =
     useState<NodeJS.Timeout | null>(null);
   const [searchHoverTimeout, setSearchHoverTimeout] =
     useState<NodeJS.Timeout | null>(null);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/shop?search=${encodeURIComponent(searchQuery)}`);
+  const handleSearch = (data: { search: string }) => {
+    if (data.search.trim()) {
+      router.push(`/shop?search=${encodeURIComponent(data.search)}`);
       setIsSearchOpen(false);
-      setSearchQuery("");
+      searchForm.reset();
     }
   };
 
@@ -79,6 +87,16 @@ export function Header() {
     { href: "/categories", label: "Categories" },
     { href: "/publishers", label: "Publishers" },
     { href: "/about", label: "Our Story" },
+  ];
+
+  const authenticatedMenuItems = [
+    { href: "/account", label: "My Profile" },
+    { href: "/account/orders", label: "Order History" },
+  ];
+
+  const guestMenuItems = [
+    { href: "/login", label: "Login" },
+    { href: "/register", label: "Register" },
   ];
 
   // Helper function to check if link is active
@@ -137,31 +155,41 @@ export function Header() {
               onMouseEnter={handleSearchMouseEnter}
               onMouseLeave={handleSearchMouseLeave}
             >
-              <form onSubmit={handleSearch}>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 rounded-full"
-                  onClick={() => setIsSearchOpen(!isSearchOpen)}
-                  aria-label="Toggle search"
-                >
-                  <Search className="text-foreground/60 size-4 md:size-5" />
-                </Button>
-                {isSearchOpen && (
-                  <div className="bg-background border-foreground/10 animate-in fade-in slide-in-from-top-2 absolute top-full right-0 mt-2 w-48 rounded-lg border p-2 shadow-lg duration-200 md:w-64">
-                    <input
-                      type="text"
-                      placeholder="Search books..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      autoFocus
-                      className="border-foreground/20 focus:border-primary placeholder:text-foreground/40 w-full border-b bg-transparent px-3 py-2 text-sm outline-none"
-                      aria-label="Search books"
-                    />
-                  </div>
-                )}
-              </form>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 rounded-full"
+                onClick={() => setIsSearchOpen(!isSearchOpen)}
+                aria-label="Toggle search"
+              >
+                <Search className="text-foreground/60 size-4 md:size-5" />
+              </Button>
+              {isSearchOpen && (
+                <div className="bg-background border-foreground/10 animate-in fade-in slide-in-from-top-2 absolute top-full right-0 mt-2 w-48 rounded-lg border p-2 shadow-lg duration-200 md:w-64">
+                  <Form {...searchForm}>
+                    <form onSubmit={searchForm.handleSubmit(handleSearch)}>
+                      <FormField
+                        control={searchForm.control}
+                        name="search"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input
+                                placeholder="Search books..."
+                                autoFocus
+                                className="border-foreground/20 focus:border-primary placeholder:text-foreground/40 border-x-0 border-t-0 border-b bg-transparent px-3 py-2 text-sm"
+                                aria-label="Search books"
+                                {...field}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </form>
+                  </Form>
+                </div>
+              )}
             </div>
 
             <Link
@@ -200,20 +228,16 @@ export function Header() {
                 >
                   {session?.user ? (
                     <>
-                      <Link
-                        href="/account"
-                        className="hover:bg-secondary block px-4 py-2 transition-colors"
-                        role="menuitem"
-                      >
-                        My Profile
-                      </Link>
-                      <Link
-                        href="/account/orders"
-                        className="hover:bg-secondary block px-4 py-2 transition-colors"
-                        role="menuitem"
-                      >
-                        Order History
-                      </Link>
+                      {authenticatedMenuItems.map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          className="hover:bg-secondary block px-4 py-2 transition-colors"
+                          role="menuitem"
+                        >
+                          {item.label}
+                        </Link>
+                      ))}
                       <Button
                         variant="ghost"
                         onClick={handleLogout}
@@ -225,20 +249,16 @@ export function Header() {
                     </>
                   ) : (
                     <>
-                      <Link
-                        href="/login"
-                        className="hover:bg-secondary block px-4 py-2 transition-colors"
-                        role="menuitem"
-                      >
-                        Login
-                      </Link>
-                      <Link
-                        href="/register"
-                        className="hover:bg-secondary block px-4 py-2 transition-colors"
-                        role="menuitem"
-                      >
-                        Register
-                      </Link>
+                      {guestMenuItems.map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          className="hover:bg-secondary block px-4 py-2 transition-colors"
+                          role="menuitem"
+                        >
+                          {item.label}
+                        </Link>
+                      ))}
                     </>
                   )}
                 </div>
@@ -273,27 +293,35 @@ export function Header() {
       >
         <div className="container mx-auto flex h-16 items-center gap-2 px-3">
           {/* Search Form */}
-          <form
-            onSubmit={handleSearch}
-            className="hover:bg-secondary relative flex w-full items-center rounded-full p-2 transition-colors"
-            onMouseEnter={() => setIsSearchOpen(true)}
-            onMouseLeave={() => setIsSearchOpen(false)}
-            role="search"
-            aria-label="Search books"
-          >
-            <Search
-              className="text-foreground/60 pointer-events-none size-4 shrink-0"
-              aria-hidden="true"
-            />
-            <input
-              type="text"
-              placeholder="Search books..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-transparent py-1 pl-2 text-sm outline-none"
-              aria-label="Search books input"
-            />
-          </form>
+          <Form {...searchForm}>
+            <form
+              onSubmit={searchForm.handleSubmit(handleSearch)}
+              className="hover:bg-secondary relative flex w-full items-center rounded-full p-2 transition-colors"
+              role="search"
+              aria-label="Search books"
+            >
+              <Search
+                className="text-foreground/60 pointer-events-none size-4 shrink-0"
+                aria-hidden="true"
+              />
+              <FormField
+                control={searchForm.control}
+                name="search"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormControl>
+                      <Input
+                        placeholder="Search books..."
+                        className="w-full border-0 bg-transparent py-1 pl-2 text-sm outline-none focus-visible:ring-0"
+                        aria-label="Search books input"
+                        {...field}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </form>
+          </Form>
         </div>
       </header>
     </>
