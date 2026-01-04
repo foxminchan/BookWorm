@@ -25,6 +25,12 @@ export default [
     },
   },
   {
+    files: ["**/opengraph-image.tsx", "**/twitter-image.tsx"],
+    rules: {
+      "@next/next/no-img-element": "off",
+    },
+  },
+  {
     files: [
       "**/__tests__/**",
       "**/e2e/**",

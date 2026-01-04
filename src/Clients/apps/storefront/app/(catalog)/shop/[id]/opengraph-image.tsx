@@ -57,7 +57,6 @@ export default async function Image(
           justifyContent: "center",
         }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={book.imageUrl ?? DEFAULT_BOOK_IMAGE}
           alt={bookName}
