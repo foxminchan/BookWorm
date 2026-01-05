@@ -30,8 +30,38 @@ test: build
 
 # Format C# code
 
-format:
+format-cs:
     dnx csharpier format .
+
+# Format frontend code
+
+format-fe:
+    cd src/Clients && pnpm format
+
+# Format EventCatalog
+
+format-eventcatalog:
+    cd docs/eventcatalog && bun run format
+
+# Format Docusaurus
+
+format-docusaurus:
+    cd docs/docusaurus && bun run format
+
+# Format K6
+
+format-k6:
+    cd src/Aspire/BookWorm.AppHost/Container/k6 && bun run format
+
+# Format Keycloakify
+
+format-keycloakify:
+    cd src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify && bun run format
+
+# Format all code
+
+format: format-cs format-fe format-eventcatalog format-docusaurus format-k6 format-keycloakify
+    echo "All code formatted successfully!"
 
 # Clean build artifacts
 

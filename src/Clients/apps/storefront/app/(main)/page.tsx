@@ -6,6 +6,7 @@ import booksApiClient from "@workspace/api-client/catalog/books";
 import categoriesApiClient from "@workspace/api-client/catalog/categories";
 import { catalogKeys } from "@workspace/api-hooks/keys";
 
+import { env } from "@/env.mjs";
 import BookshopPageContent from "@/features/home/bookshop-page-content";
 import { getQueryClient } from "@/lib/query-client";
 
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
     title: "BookWorm - Curated Books & Design Inspiration",
     description:
       "Discover a carefully curated collection of literature and design books for the modern reader.",
-    url: process.env.NEXT_PUBLIC_APP_URL || "https://bookworm.com",
+    url: env.NEXT_PUBLIC_APP_URL || "https://bookworm.com",
     siteName: "BookWorm",
     locale: "en_US",
   },
@@ -40,7 +41,7 @@ export const metadata: Metadata = {
       "Discover a carefully curated collection of literature and design books.",
   },
   alternates: {
-    canonical: process.env.NEXT_PUBLIC_APP_URL || "https://bookworm.com",
+    canonical: env.NEXT_PUBLIC_APP_URL || "https://bookworm.com",
   },
   robots: {
     index: true,

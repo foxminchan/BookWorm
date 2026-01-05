@@ -1,6 +1,8 @@
 import type { Book } from "@workspace/types/catalog/books";
 import type { Feedback } from "@workspace/types/rating/index";
 
+import { env } from "@/env.mjs";
+
 import { APP_CONFIG } from "./constants";
 
 export function generateProductJsonLd(book: Book, reviews?: Feedback[]) {
@@ -108,12 +110,12 @@ export function generateWebsiteJsonLd() {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: APP_CONFIG.name,
-    url: process.env.NEXT_PUBLIC_APP_URL || "https://bookworm.com",
+    url: env.NEXT_PUBLIC_APP_URL || "https://bookworm.com",
     potentialAction: {
       "@type": "SearchAction",
       target: {
         "@type": "EntryPoint",
-        urlTemplate: `${process.env.NEXT_PUBLIC_APP_URL || "https://bookworm.com"}/shop?search={search_term_string}`,
+        urlTemplate: `${env.NEXT_PUBLIC_APP_URL || "https://bookworm.com"}/shop?search={search_term_string}`,
       },
       "query-input": "required name=search_term_string",
     },
@@ -135,7 +137,7 @@ export function generateItemListJsonLd(books: Book[], listName: string) {
       position: index + 1,
       item: {
         "@type": "Book",
-        "@id": `${process.env.NEXT_PUBLIC_APP_URL || "https://bookworm.com"}/shop/${book.id}`,
+        "@id": `${env.NEXT_PUBLIC_APP_URL || "https://bookworm.com"}/shop/${book.id}`,
         name: book.name,
         image: book.imageUrl,
         author: book.authors.map((author) => ({
@@ -211,7 +213,7 @@ export function truncateDescription(text: string, maxLength = 160): string {
  * Generates canonical URL for the current page.
  */
 export function getCanonicalUrl(path: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://bookworm.com";
+  const baseUrl = env.NEXT_PUBLIC_APP_URL || "https://bookworm.com";
   return `${baseUrl}${path}`;
 }
 

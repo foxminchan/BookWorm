@@ -6,6 +6,7 @@ import booksApiClient from "@workspace/api-client/catalog/books";
 import feedbacksApiClient from "@workspace/api-client/rating/feedbacks";
 import { catalogKeys, ratingKeys } from "@workspace/api-hooks/keys";
 
+import { env } from "@/env.mjs";
 import BookDetailPageClient from "@/features/catalog/product/book-detail-page-client";
 import { getQueryClient } from "@/lib/query-client";
 import { generateImageObject } from "@/lib/seo";
@@ -44,7 +45,7 @@ export async function generateMetadata({
   const description =
     book.description ??
     `Buy ${bookName}${authorNames.length > 0 ? ` by ${authorNames.join(", ")}` : ""} at BookWorm. ${book.priceSale ? `On sale for $${book.priceSale}` : `$${book.price}`}.`;
-  const url = `${process.env.NEXT_PUBLIC_APP_URL || "https://bookworm.com"}/shop/${id}`;
+  const url = `${env.NEXT_PUBLIC_APP_URL || "https://bookworm.com"}/shop/${id}`;
 
   const keywords = [
     bookName,

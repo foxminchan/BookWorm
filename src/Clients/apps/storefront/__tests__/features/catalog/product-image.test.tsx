@@ -8,8 +8,10 @@ import { renderWithProviders } from "../../utils/test-utils";
 // Mock next/image to avoid URL validation issues in test environment
 vi.mock("next/image", () => ({
   default: (props: any) => {
+    // Filter out Next.js-specific props that shouldn't be passed to img element
+    const { fill, priority, quality, sizes, loader, ...imgProps } = props;
     // eslint-disable-next-line @next/next/no-img-element
-    return <img {...props} />;
+    return <img {...imgProps} />;
   },
 }));
 

@@ -7,6 +7,7 @@ import { Button } from "@workspace/ui/components/button";
 import "@workspace/ui/globals.css";
 
 import { JsonLd } from "@/components/json-ld";
+import { env } from "@/env.mjs";
 import { showCopilotKit } from "@/flags";
 import { generateOrganizationJsonLd, generateWebsiteJsonLd } from "@/lib/seo";
 
@@ -24,9 +25,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-  ),
+  metadataBase: new URL(env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
   title: {
     default: "BookWorm - Curated Books & Design Inspiration | Online Bookstore",
     template: "%s | BookWorm",
@@ -55,7 +54,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   openGraph: {
     type: "website",
-    url: "https://bookworm.com",
+    url: env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
     title: "BookWorm - Curated Books & Design Inspiration",
     description:
       "Discover a carefully curated collection of literature and design books for the modern reader.",
@@ -107,20 +106,6 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        {/* Preconnect to external domains for faster loading */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
-
-        {/* Structured Data */}
-        <JsonLd data={organizationJsonLd} />
-        <JsonLd data={websiteJsonLd} />
-      </head>
       <body className={`font-sans antialiased`}>
         <Button
           asChild
@@ -132,6 +117,8 @@ export default async function RootLayout({
         <div id="main-content">
           <Providers isCopilotEnabled={isCopilotEnabled}>{children}</Providers>
         </div>
+        <JsonLd data={organizationJsonLd} />
+        <JsonLd data={websiteJsonLd} />
       </body>
     </html>
   );
