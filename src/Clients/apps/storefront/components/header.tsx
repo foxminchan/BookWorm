@@ -19,6 +19,7 @@ import {
   FormItem,
 } from "@workspace/ui/components/form";
 import { Input } from "@workspace/ui/components/input";
+import { Label } from "@workspace/ui/components/label";
 
 import { basketItemsAtom } from "@/atoms/basket-atom";
 import { signOut, useSession } from "@/lib/auth-client";
@@ -183,12 +184,12 @@ export function Header() {
                         render={({ field }) => (
                           <FormItem>
                             <FormControl>
-                              <label
+                              <Label
                                 htmlFor="header-search-input"
                                 className="sr-only"
                               >
                                 Search books
-                              </label>
+                              </Label>
                               <Input
                                 id="header-search-input"
                                 placeholder="Search books..."
@@ -326,9 +327,9 @@ export function Header() {
               role="search"
               aria-label="Search books"
             >
-              <label htmlFor="mobile-search-input" className="sr-only">
+              <Label htmlFor="mobile-search-input" className="sr-only">
                 Search books
-              </label>
+              </Label>
               <Search
                 className="text-foreground/60 pointer-events-none size-4 shrink-0"
                 aria-hidden="true"

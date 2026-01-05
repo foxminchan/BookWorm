@@ -8,6 +8,7 @@ import categoriesApiClient from "@workspace/api-client/catalog/categories";
 import publishersApiClient from "@workspace/api-client/catalog/publishers";
 import { catalogKeys } from "@workspace/api-hooks/keys";
 
+import { env } from "@/env.mjs";
 import ShopPageClient from "@/features/catalog/shop/shop-page-client";
 import { getShopSortParams } from "@/lib/pattern";
 import { getQueryClient } from "@/lib/query-client";
@@ -34,7 +35,7 @@ export async function generateMetadata({
   searchParams,
 }: ShopPageProps): Promise<Metadata> {
   const params = await searchParams;
-  const url = `${process.env.NEXT_PUBLIC_APP_URL || "https://bookworm.com"}/shop`;
+  const url = `${env.NEXT_PUBLIC_APP_URL || "https://bookworm.com"}/shop`;
 
   let title = "Shop Books | BookWorm";
   let description =

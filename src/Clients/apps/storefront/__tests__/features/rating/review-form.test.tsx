@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -108,20 +108,24 @@ describe("ReviewForm", () => {
     expect(filledStars.length).toBeGreaterThanOrEqual(3);
   });
 
-  it("should pre-fill form with provided values", () => {
-    renderWithProviders(
-      <ReviewForm
-        {...defaultProps}
-        firstName="John"
-        lastName="Doe"
-        comment="Great book!"
-        rating={4}
-      />,
-    );
+  it("should pre-fill form with provided values", async () => {
+    act(() => {
+      renderWithProviders(
+        <ReviewForm
+          {...defaultProps}
+          firstName="John"
+          lastName="Doe"
+          comment="Great book!"
+          rating={4}
+        />,
+      );
+    });
 
-    expect(screen.getByDisplayValue("John")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("Doe")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("Great book!")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByDisplayValue("John")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Doe")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Great book!")).toBeInTheDocument();
+    });
   });
 
   it("should disable submit button when submitting", () => {
