@@ -8,8 +8,10 @@ on:
     paths:
       - "src/**"
       - "tests/**"
-      - ".github/workflows/sonar.yml"
+      - ".sonarlint/**"
       - "!src/Aspire/BookWorm.AppHost/Container/**"
+      - ".github/workflows/sonar.yml"
+      - "SonarQube.Analysis.xml"
   pull_request:
     types:
       - opened
