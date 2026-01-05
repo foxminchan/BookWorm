@@ -24,4 +24,7 @@
   <Property Name="sonar.sarifReportPaths">
     results.sarif
   </Property>
+  <Property Name="sonar.architecture.configpath">
+    ./.sonarlint/architecture.json
+  </Property>
 </SonarQubeAnalysisProperties>

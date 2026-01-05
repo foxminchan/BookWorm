@@ -1,0 +1,436 @@
+{
+  "perspectives": [
+    {
+      "label": "Layers",
+      "description": "Clean Architecture Layers - Domain, Application, Infrastructure, and API",
+      "groups": [
+        {
+          "label": "Domain",
+          "description": "Domain models, entities, value objects, and domain events",
+          "patterns": ["src/Services/*/BookWorm.*/Domain/**"]
+        },
+        {
+          "label": "Application",
+          "description": "Application logic, CQRS handlers, and use cases",
+          "patterns": [
+            "src/Services/*/BookWorm.*/Application/**",
+            "src/Services/*/BookWorm.*/Features/**"
+          ]
+        },
+        {
+          "label": "Infrastructure",
+          "description": "Data access, external services, and infrastructure concerns",
+          "patterns": ["src/Services/*/BookWorm.*/Infrastructure/**"]
+        },
+        {
+          "label": "API",
+          "description": "API endpoints and presentation layer",
+          "patterns": [
+            "src/Services/*/BookWorm.*/Endpoints/**",
+            "src/Services/*/BookWorm.*/Program.cs"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "message": "Domain layer must not depend on Application layer",
+          "from": ["Domain"],
+          "to": ["Application"],
+          "relation": "deny"
+        },
+        {
+          "message": "Domain layer must not depend on Infrastructure layer",
+          "from": ["Domain"],
+          "to": ["Infrastructure"],
+          "relation": "deny"
+        },
+        {
+          "message": "Domain layer must not depend on API layer",
+          "from": ["Domain"],
+          "to": ["API"],
+          "relation": "deny"
+        },
+        {
+          "message": "Application layer must not depend on Infrastructure layer",
+          "from": ["Application"],
+          "to": ["Infrastructure"],
+          "relation": "deny"
+        },
+        {
+          "message": "Application layer must not depend on API layer",
+          "from": ["Application"],
+          "to": ["API"],
+          "relation": "deny"
+        },
+        {
+          "message": "Infrastructure layer must not depend on API layer",
+          "from": ["Infrastructure"],
+          "to": ["API"],
+          "relation": "deny"
+        }
+      ]
+    },
+    {
+      "label": "Services",
+      "description": "Microservices bounded contexts",
+      "groups": [
+        {
+          "label": "Catalog",
+          "description": "Book catalog management service",
+          "patterns": ["src/Services/Catalog/BookWorm.Catalog/**"]
+        },
+        {
+          "label": "Basket",
+          "description": "Shopping basket service",
+          "patterns": ["src/Services/Basket/BookWorm.Basket/**"]
+        },
+        {
+          "label": "Ordering",
+          "description": "Order management service",
+          "patterns": ["src/Services/Ordering/BookWorm.Ordering/**"]
+        },
+        {
+          "label": "Rating",
+          "description": "Book ratings and reviews service",
+          "patterns": ["src/Services/Rating/BookWorm.Rating/**"]
+        },
+        {
+          "label": "Chat",
+          "description": "Customer support chat service with AI agents",
+          "patterns": ["src/Services/Chat/BookWorm.Chat/**"]
+        },
+        {
+          "label": "Finance",
+          "description": "Payment and financial transactions service",
+          "patterns": ["src/Services/Finance/BookWorm.Finance/**"]
+        },
+        {
+          "label": "Notification",
+          "description": "Notification and messaging service",
+          "patterns": ["src/Services/Notification/BookWorm.Notification/**"]
+        },
+        {
+          "label": "Scheduler",
+          "description": "Background job scheduling service",
+          "patterns": ["src/Services/Scheduler/BookWorm.Scheduler/**"]
+        }
+      ],
+      "constraints": [
+        {
+          "message": "Services should communicate via events, not direct references",
+          "from": ["Catalog"],
+          "to": [
+            "Basket",
+            "Ordering",
+            "Rating",
+            "Chat",
+            "Finance",
+            "Notification",
+            "Scheduler"
+          ],
+          "relation": "deny"
+        },
+        {
+          "message": "Services should communicate via events, not direct references",
+          "from": ["Basket"],
+          "to": [
+            "Catalog",
+            "Ordering",
+            "Rating",
+            "Chat",
+            "Finance",
+            "Notification",
+            "Scheduler"
+          ],
+          "relation": "deny"
+        },
+        {
+          "message": "Services should communicate via events, not direct references",
+          "from": ["Ordering"],
+          "to": [
+            "Catalog",
+            "Basket",
+            "Rating",
+            "Chat",
+            "Finance",
+            "Notification",
+            "Scheduler"
+          ],
+          "relation": "deny"
+        },
+        {
+          "message": "Services should communicate via events, not direct references",
+          "from": ["Rating"],
+          "to": [
+            "Catalog",
+            "Basket",
+            "Ordering",
+            "Chat",
+            "Finance",
+            "Notification",
+            "Scheduler"
+          ],
+          "relation": "deny"
+        },
+        {
+          "message": "Services should communicate via events, not direct references",
+          "from": ["Chat"],
+          "to": [
+            "Catalog",
+            "Basket",
+            "Ordering",
+            "Rating",
+            "Finance",
+            "Notification",
+            "Scheduler"
+          ],
+          "relation": "deny"
+        },
+        {
+          "message": "Services should communicate via events, not direct references",
+          "from": ["Finance"],
+          "to": [
+            "Catalog",
+            "Basket",
+            "Ordering",
+            "Rating",
+            "Chat",
+            "Notification",
+            "Scheduler"
+          ],
+          "relation": "deny"
+        },
+        {
+          "message": "Services should communicate via events, not direct references",
+          "from": ["Notification"],
+          "to": [
+            "Catalog",
+            "Basket",
+            "Ordering",
+            "Rating",
+            "Chat",
+            "Finance",
+            "Scheduler"
+          ],
+          "relation": "deny"
+        },
+        {
+          "message": "Services should communicate via events, not direct references",
+          "from": ["Scheduler"],
+          "to": [
+            "Catalog",
+            "Basket",
+            "Ordering",
+            "Rating",
+            "Chat",
+            "Finance",
+            "Notification"
+          ],
+          "relation": "deny"
+        }
+      ]
+    },
+    {
+      "label": "Components",
+      "description": "System components and building blocks",
+      "groups": [
+        {
+          "label": "Services",
+          "description": "Microservices",
+          "patterns": ["src/Services/**"]
+        },
+        {
+          "label": "BuildingBlocks",
+          "description": "Shared libraries and common code",
+          "patterns": ["src/BuildingBlocks/**"]
+        },
+        {
+          "label": "Aspire",
+          "description": "Aspire orchestration and service defaults",
+          "patterns": ["src/Aspire/**"]
+        },
+        {
+          "label": "Clients",
+          "description": "Frontend applications",
+          "patterns": ["src/Clients/**"]
+        },
+        {
+          "label": "Integrations",
+          "description": "External integrations and tools",
+          "patterns": ["src/Integrations/**"]
+        }
+      ],
+      "constraints": [
+        {
+          "message": "Services should only depend on BuildingBlocks, not on other services",
+          "from": ["Services"],
+          "to": ["Aspire", "Clients", "Integrations"],
+          "relation": "deny"
+        },
+        {
+          "message": "BuildingBlocks should not depend on Services",
+          "from": ["BuildingBlocks"],
+          "to": ["Services"],
+          "relation": "deny"
+        },
+        {
+          "message": "BuildingBlocks should not depend on Aspire",
+          "from": ["BuildingBlocks"],
+          "to": ["Aspire"],
+          "relation": "deny"
+        },
+        {
+          "message": "BuildingBlocks should not depend on Clients",
+          "from": ["BuildingBlocks"],
+          "to": ["Clients"],
+          "relation": "deny"
+        }
+      ]
+    },
+    {
+      "label": "MainAndTest",
+      "description": "Production code vs Test code separation",
+      "groups": [
+        {
+          "label": "Main",
+          "description": "Production code",
+          "patterns": ["src/**"]
+        },
+        {
+          "label": "Test",
+          "description": "Test code",
+          "patterns": ["tests/**"]
+        }
+      ],
+      "constraints": [
+        {
+          "message": "Production code must not depend on test code",
+          "from": ["Main"],
+          "to": ["Test"],
+          "relation": "deny"
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "message": "Tests should only reference their corresponding service code",
+      "from": [
+        "tests/BookWorm.Catalog.UnitTests/**",
+        "tests/BookWorm.Catalog.ContractTests/**"
+      ],
+      "to": [
+        "src/Services/Basket/**",
+        "src/Services/Ordering/**",
+        "src/Services/Rating/**",
+        "src/Services/Chat/**",
+        "src/Services/Finance/**",
+        "src/Services/Notification/**",
+        "src/Services/Scheduler/**"
+      ],
+      "relation": "deny"
+    },
+    {
+      "message": "Tests should only reference their corresponding service code",
+      "from": [
+        "tests/BookWorm.Basket.UnitTests/**",
+        "tests/BookWorm.Basket.ContractTests/**"
+      ],
+      "to": [
+        "src/Services/Catalog/**",
+        "src/Services/Ordering/**",
+        "src/Services/Rating/**",
+        "src/Services/Chat/**",
+        "src/Services/Finance/**",
+        "src/Services/Notification/**",
+        "src/Services/Scheduler/**"
+      ],
+      "relation": "deny"
+    },
+    {
+      "message": "Tests should only reference their corresponding service code",
+      "from": [
+        "tests/BookWorm.Ordering.UnitTests/**",
+        "tests/BookWorm.Ordering.ContractTests/**"
+      ],
+      "to": [
+        "src/Services/Catalog/**",
+        "src/Services/Basket/**",
+        "src/Services/Rating/**",
+        "src/Services/Chat/**",
+        "src/Services/Finance/**",
+        "src/Services/Notification/**",
+        "src/Services/Scheduler/**"
+      ],
+      "relation": "deny"
+    },
+    {
+      "message": "Tests should only reference their corresponding service code",
+      "from": [
+        "tests/BookWorm.Rating.UnitTests/**",
+        "tests/BookWorm.Rating.ContractTests/**"
+      ],
+      "to": [
+        "src/Services/Catalog/**",
+        "src/Services/Basket/**",
+        "src/Services/Ordering/**",
+        "src/Services/Chat/**",
+        "src/Services/Finance/**",
+        "src/Services/Notification/**",
+        "src/Services/Scheduler/**"
+      ],
+      "relation": "deny"
+    },
+    {
+      "message": "Tests should only reference their corresponding service code",
+      "from": [
+        "tests/BookWorm.Finance.UnitTests/**",
+        "tests/BookWorm.Finance.ContractTests/**"
+      ],
+      "to": [
+        "src/Services/Catalog/**",
+        "src/Services/Basket/**",
+        "src/Services/Ordering/**",
+        "src/Services/Chat/**",
+        "src/Services/Rating/**",
+        "src/Services/Notification/**",
+        "src/Services/Scheduler/**"
+      ],
+      "relation": "deny"
+    },
+    {
+      "message": "Tests should only reference their corresponding service code",
+      "from": [
+        "tests/BookWorm.Notification.UnitTests/**",
+        "tests/BookWorm.Notification.ContractTests/**"
+      ],
+      "to": [
+        "src/Services/Catalog/**",
+        "src/Services/Basket/**",
+        "src/Services/Ordering/**",
+        "src/Services/Chat/**",
+        "src/Services/Rating/**",
+        "src/Services/Finance/**",
+        "src/Services/Scheduler/**"
+      ],
+      "relation": "deny"
+    },
+    {
+      "message": "Tests should only reference their corresponding service code",
+      "from": [
+        "tests/BookWorm.Scheduler.UnitTests/**",
+        "tests/BookWorm.Scheduler.ContractTests/**"
+      ],
+      "to": [
+        "src/Services/Catalog/**",
+        "src/Services/Basket/**",
+        "src/Services/Ordering/**",
+        "src/Services/Chat/**",
+        "src/Services/Rating/**",
+        "src/Services/Finance/**",
+        "src/Services/Notification/**"
+      ],
+      "relation": "deny"
+    }
+  ]
+}
