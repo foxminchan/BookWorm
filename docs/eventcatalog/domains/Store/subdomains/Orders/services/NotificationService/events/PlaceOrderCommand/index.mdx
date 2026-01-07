@@ -3,17 +3,12 @@ id: PlaceOrderCommand
 version: 1.0.0
 name: Order Placed
 summary: Receive a message when an order is placed
-channels:
-  - id: notification.{env}.events
-    version: 1.0.0
-    parameters:
-      env: stg
 badges:
   - content: Orchestrated
     textColor: orange
     backgroundColor: orange
     icon: CubeTransparentIcon
-  - content: Broker:AMQP
+  - content: 'Broker:AMQP'
     backgroundColor: green
     textColor: white
     icon: ArrowPathIcon

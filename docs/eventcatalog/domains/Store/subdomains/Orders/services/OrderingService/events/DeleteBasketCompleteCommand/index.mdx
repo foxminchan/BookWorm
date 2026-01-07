@@ -3,11 +3,6 @@ id: DeleteBasketCompleteCommand
 version: 1.0.0
 name: Basket Deleted Complete
 summary: Represents a domain event that is published when reverse basket is completed
-channels:
-  - id: ordering.{env}.events
-    version: 1.0.0
-    parameters:
-      env: stg
 badges:
   - content: Orchestrated
     textColor: orange
@@ -17,7 +12,7 @@ badges:
     textColor: green
     backgroundColor: green
     icon: ArrowPathIcon
-  - content: Broker:AMQP
+  - content: 'Broker:AMQP'
     backgroundColor: green
     textColor: white
     icon: ArrowPathIcon

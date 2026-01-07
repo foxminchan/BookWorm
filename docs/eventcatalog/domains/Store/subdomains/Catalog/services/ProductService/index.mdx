@@ -2,7 +2,9 @@
 id: ProductService
 name: Product Service
 version: 1.0.0
-summary: Manages the catalog of products for the BookWorm platform, including books, authors, and categories
+summary: >-
+  Manages the catalog of products for the BookWorm platform, including books,
+  authors, and categories
 badges:
   - content: Event-Driven
     textColor: purple
@@ -19,49 +21,46 @@ badges:
 sends:
   - id: BookUpdatedRatingFailedEvent
     version: 1.0.0
+    to:
+      - &ref_0
+        id: 'rating.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - *ref_0
 receives:
-  - id: UpdatePublisherCommand
-    version: 1.0.0
-  - id: GetPublisherQuery
-    version: 1.0.0
-  - id: CreatePublisherCommand
-    version: 1.0.0
-  - id: DeletePublisherCommand
-    version: 1.0.0
-  - id: UpdateCategoryCommand
-    version: 1.0.0
-  - id: ListCategoriesQuery
-    version: 1.0.0
-  - id: CreateCategoryCommand
-    version: 1.0.0
-  - id: DeleteCategoryCommand
-    version: 1.0.0
-  - id: UpdateBookCommand
-    version: 1.0.0
-  - id: GetBookQuery
-    version: 1.0.0
-  - id: DeleteBookCommand
-    version: 1.0.0
-  - id: ListBooksQuery
-    version: 1.0.0
   - id: GetBookGrpc
     version: 1.0.0
+    from:
+      - id: 'catalog.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
   - id: ListBooksGrpc
     version: 1.0.0
-  - id: CreateBookCommand
-    version: 1.0.0
-  - id: DeleteAuthorCommand
-    version: 1.0.0
-  - id: ListAuthorsQuery
-    version: 1.0.0
-  - id: CreateAuthorCommand
-    version: 1.0.0
-  - id: UpdateAuthorCommand
-    version: 1.0.0
+    from:
+      - id: 'catalog.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
   - id: FeedbackCreatedEvent
     version: 1.0.0
+    from:
+      - &ref_1
+        id: 'catalog.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - *ref_1
   - id: FeedbackDeletedEvent
     version: 1.0.0
+    from:
+      - &ref_2
+        id: 'catalog.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - *ref_2
 schemaPath: openapi-v1.yml
 specifications:
   - type: asyncapi
@@ -74,40 +73,47 @@ owners:
   - nhanxnguyen
 repository:
   language: C#
-  url: https://github.com/foxminchan/BookWorm
+  url: 'https://github.com/foxminchan/BookWorm'
 writesTo:
-    - id: CatalogDatabase
-      version: 1.0.0
-    - id: CatalogBlob
-      version: 1.0.0
-    - id: CatalogVectorDB
-      version: 1.0.0
-    - id: CatalogCache
-      version: 1.0.0
+  - id: CatalogDatabase
+    version: 1.0.0
+  - id: CatalogBlob
+    version: 1.0.0
+  - id: CatalogVectorDB
+    version: 1.0.0
+  - id: CatalogCache
+    version: 1.0.0
 readsFrom:
-    - id: CatalogDatabase
-      version: 1.0.0
-    - id: CatalogBlob
-      version: 1.0.0
-    - id: CatalogVectorDB
-      version: 1.0.0
-    - id: CatalogCache
-      version: 1.0.0
+  - id: CatalogDatabase
+    version: 1.0.0
+  - id: CatalogBlob
+    version: 1.0.0
+  - id: CatalogVectorDB
+    version: 1.0.0
+  - id: CatalogCache
+    version: 1.0.0
 attachments:
-  - url: https://foxminchan.github.io/BookWorm/docs/architecture-decisions/adr-004-postgresql-database
+  - url: >-
+      https://foxminchan.github.io/BookWorm/docs/architecture-decisions/adr-004-postgresql-database
     title: ADR-004 - PostgreSQL Database
     description: Learn more about the PostgreSQL database choice for the BookWorm platform.
-    type: 'architecture-decisions'
+    type: architecture-decisions
     icon: FileTextIcon
-  - url: https://foxminchan.github.io/BookWorm/docs/architecture-decisions/adr-016-ddd-catalog
+  - url: >-
+      https://foxminchan.github.io/BookWorm/docs/architecture-decisions/adr-016-ddd-catalog
     title: ADR-016 - DDD for Catalog Management
-    description: Learn more about the Domain-Driven Design approach for catalog management in BookWorm.
-    type: 'architecture-decisions'
+    description: >-
+      Learn more about the Domain-Driven Design approach for catalog management
+      in BookWorm.
+    type: architecture-decisions
     icon: FileTextIcon
-  - url: https://foxminchan.github.io/BookWorm/docs/architecture-decisions/adr-017-grpc
+  - url: >-
+      https://foxminchan.github.io/BookWorm/docs/architecture-decisions/adr-017-grpc
     title: ADR-017 - gRPC for Internal Service Communication
-    description: Learn more about the gRPC communication strategy for internal services in BookWorm.
-    type: 'architecture-decisions'
+    description: >-
+      Learn more about the gRPC communication strategy for internal services in
+      BookWorm.
+    type: architecture-decisions
     icon: FileTextIcon
 ---
 

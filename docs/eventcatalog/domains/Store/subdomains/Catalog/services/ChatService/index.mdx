@@ -24,22 +24,13 @@ sends:
   - id: GetMcpComponentsQuery
     version: 1.0.0
 receives:
-  - id: CreateChatCommand
-    version: 1.0.0
-  - id: CancelChatCommand
-    version: 1.0.0
-  - id: UpdateChatCommand
-    version: 1.0.0
-  - id: DeleteChatCommand
-    version: 1.0.0
   - id: ChatStream
     version: 1.0.0
-  - id: GetChatQuery
-    version: 1.0.0
-  - id: ListChatsQuery
-    version: 1.0.0
-  - id: VisualizeChatWorkflowQuery
-    version: 1.0.0
+    from:
+      - id: 'chat.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
 schemaPath: openapi-v1.yml
 specifications:
   - type: openapi
@@ -49,7 +40,7 @@ owners:
   - nhanxnguyen
 repository:
   language: C#
-  url: https://github.com/foxminchan/BookWorm
+  url: 'https://github.com/foxminchan/BookWorm'
 writesTo:
   - id: ChatDatabase
     version: 1.0.0
@@ -57,25 +48,31 @@ readsFrom:
   - id: ChatDatabase
     version: 1.0.0
 attachments:
-  - url: https://foxminchan.github.io/BookWorm/docs/architecture-decisions/adr-006-signalr-realtime
+  - url: >-
+      https://foxminchan.github.io/BookWorm/docs/architecture-decisions/adr-006-signalr-realtime
     title: ADR-006 - SignalR for Real-time Communication
     description: Learn more about the real-time communication strategy using SignalR.
-    type: 'architecture-decisions'
+    type: architecture-decisions
     icon: FileTextIcon
-  - url: https://foxminchan.github.io/BookWorm/docs/architecture-decisions/adr-009-ai-integration
+  - url: >-
+      https://foxminchan.github.io/BookWorm/docs/architecture-decisions/adr-009-ai-integration
     title: ADR-009 - AI Integration Strategy
-    description: Learn more about the AI integration strategy within the BookWorm ecosystem.
-    type: 'architecture-decisions'
+    description: >-
+      Learn more about the AI integration strategy within the BookWorm
+      ecosystem.
+    type: architecture-decisions
     icon: FileTextIcon
-  - url: https://foxminchan.github.io/BookWorm/docs/architecture-decisions/adr-020-mcp-tools-standardize
+  - url: >-
+      https://foxminchan.github.io/BookWorm/docs/architecture-decisions/adr-020-mcp-tools-standardize
     title: ADR-020 - MCP Tools Standardization
     description: Learn more about the standardization of tools within the MCP ecosystem.
-    type: 'architecture-decisions'
+    type: architecture-decisions
     icon: FileTextIcon
-  - url: https://foxminchan.github.io/BookWorm/docs/architecture-decisions/adr-021-agent-to-agent-via-a2a
+  - url: >-
+      https://foxminchan.github.io/BookWorm/docs/architecture-decisions/adr-021-agent-to-agent-via-a2a
     title: ADR-021 - Agent-to-Agent Communication via A2A
     description: Learn more about the agent-to-agent communication strategy using A2A.
-    type: 'architecture-decisions'
+    type: architecture-decisions
     icon: FileTextIcon
 ---
 

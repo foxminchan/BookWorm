@@ -3,11 +3,6 @@ id: CancelOrderCommand
 version: 1.0.0
 name: Cancelled Order
 summary: Represents a command to cancel an order in the system
-channels:
-  - id: notification.{env}.events
-    version: 1.0.0
-    parameters:
-      env: stg
 badges:
   - content: Orchestrated
     textColor: orange
@@ -17,7 +12,7 @@ badges:
     textColor: blue
     backgroundColor: blue
     icon: BellIcon
-  - content: Broker:AMQP
+  - content: 'Broker:AMQP'
     backgroundColor: green
     textColor: white
     icon: ArrowPathIcon

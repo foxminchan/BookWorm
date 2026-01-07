@@ -2,7 +2,9 @@
 id: FinanceService
 name: Finance Service
 version: 1.0.0
-summary: Orchestrates order processing and financial transactions for BookWorm using the Saga pattern
+summary: >-
+  Orchestrates order processing and financial transactions for BookWorm using
+  the Saga pattern
 badges:
   - content: Saga Orchestrator
     textColor: blue
@@ -19,27 +21,117 @@ badges:
 sends:
   - id: CancelOrderCommand
     version: 1.0.0
+    to:
+      - id: 'notification.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - id: 'notification.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
   - id: CompleteOrderCommand
     version: 1.0.0
+    to:
+      - id: 'notification.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - id: 'notification.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
   - id: DeleteBasketCompleteCommand
     version: 1.0.0
+    to:
+      - id: 'ordering.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - id: 'ordering.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
   - id: DeleteBasketFailedCommand
     version: 1.0.0
+    to:
+      - id: 'ordering.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - id: 'ordering.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
   - id: PlaceOrderCommand
     version: 1.0.0
+    to:
+      - id: 'notification.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - id: 'basket.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - id: 'basket.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
 receives:
-  - id: GetOrderStateMachineQuery
-    version: 1.0.0
   - id: BasketDeletedCompletedEvent
     version: 1.0.0
+    from:
+      - &ref_0
+        id: 'finance.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - *ref_0
   - id: BasketDeletedFailedEvent
     version: 1.0.0
+    from:
+      - id: 'finance.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - id: 'finance.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
   - id: OrderStatusChangedToCancelEvent
     version: 1.0.0
+    from:
+      - id: 'finance.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - id: 'finance.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
   - id: OrderStatusChangedToCompleteEvent
     version: 1.0.0
+    from:
+      - id: 'finance.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - id: 'finance.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
   - id: UserCheckedOutEvent
     version: 1.0.0
+    from:
+      - id: 'finance.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - id: 'finance.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
 schemaPath: openapi-v1.yml
 specifications:
   - type: openapi
@@ -52,13 +144,13 @@ owners:
   - nhanxnguyen
 repository:
   language: C#
-  url: https://github.com/foxminchan/BookWorm
+  url: 'https://github.com/foxminchan/BookWorm'
 writesTo:
-    - id: FinanceDatabase
-      version: 1.0.0
+  - id: FinanceDatabase
+    version: 1.0.0
 readsFrom:
-    - id: FinanceDatabase
-      version: 1.0.0
+  - id: FinanceDatabase
+    version: 1.0.0
 ---
 
 <Tiles>
