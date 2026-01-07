@@ -14,15 +14,15 @@ Feature: AI-Powered Book Recommendations
     When I click "Try AI Recommendations" button
     Then the AI chatbot dialog should open
     And the chatbot should be focused
-    And I should see the welcome message "Hi! How can I help you find a book today?"
+    And I should see the welcome message "Hi! I'm your literary assistant. I can help you find books, manage your basket, and answer questions about our collection. What would you like to explore today?"
 
   @smoke @chat
   Scenario: Open AI chatbot from floating button
     Given I am on any page
-    When I click the floating chat button with label "Open chat"
+    When I click the floating chat button with label "Open BookWorm Literary Guide chat"
     Then the AI chatbot dialog should open with title "BookWorm Literary Guide"
     And the chatbot should be ready to receive messages
-    And I should see the placeholder text "Ask about a book..."
+    And I should see the placeholder text "Ask about books, search for titles, or manage your basket..."
 
   @chat-interaction
   Scenario: Get book recommendation based on mood
@@ -92,12 +92,21 @@ Feature: AI-Powered Book Recommendations
     Then focus should cycle within the dialog
     And focus should not escape to the page behind
 
-  @chat-close
-  Scenario: Close chatbot with escape key or close button
-    Given the AI chatbot is open
-    When I press Escape or click the close button
+  @accessibility @focus-management
+  Scenario: Focus returns to trigger button after closing dialog
+    Given I am on the homepage
+    When I click the floating chat button
+    Then the AI chatbot dialog should open
+    When I press Escape
     Then the chatbot should close
     And focus should return to the trigger button
+
+  @chat-close
+  Scenario: Close chatbot with escape key, close button, or clicking outside
+    Given the AI chatbot is open
+    When I press Escape or click the close button or click outside
+    Then the chatbot should close
+    And the floating chat button should be visible
 
   @error-handling @feature-disabled
   Scenario: Show unavailable message when feature is disabled

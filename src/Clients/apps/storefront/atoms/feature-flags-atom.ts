@@ -2,4 +2,8 @@
 
 import { atom } from "jotai";
 
-export const isCopilotEnabledAtom = atom<boolean>(false);
+import { env } from "@/env.mjs";
+
+export const isCopilotEnabledAtom = atom<boolean>(
+  env.NEXT_PUBLIC_COPILOT_ENABLED,
+);

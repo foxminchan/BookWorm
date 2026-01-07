@@ -39,9 +39,9 @@ When(
 When(
   "I click the floating chat button with label {string}",
   async function (this: { page: Page }, ariaLabel: string) {
-    const floatingButton = this.page.locator(
-      `button[aria-label="${ariaLabel}"], [data-copilot-chat-trigger]`,
-    );
+    const floatingButton = this.page
+      .locator(`button[aria-label="${ariaLabel}"]`)
+      .or(this.page.locator("[data-copilot-chat-trigger]"));
     await floatingButton.click();
     await this.page.waitForTimeout(500);
   },
@@ -49,7 +49,7 @@ When(
 
 When("I click the floating chat button", async function (this: { page: Page }) {
   const floatingButton = this.page.locator(
-    '[data-copilot-chat-trigger], button[aria-label*="chat"]',
+    '[data-copilot-chat-trigger], button[aria-label*="BookWorm Literary Guide"]',
   );
   await floatingButton.click();
   await this.page.waitForTimeout(500);
@@ -122,7 +122,9 @@ Then(
 // Chat interactions
 Given("the AI chatbot is open", async function (this: { page: Page }) {
   const chatButton = this.page
-    .locator('[data-testid="chat-button"], button[aria-label*="chat"]')
+    .locator(
+      '[data-copilot-chat-trigger], button[aria-label*="BookWorm Literary Guide"]',
+    )
     .first();
   await chatButton.click();
   await this.page.waitForTimeout(500);
@@ -242,7 +244,7 @@ Then(
   "the chatbot should remain available",
   async function (this: { page: Page }) {
     const chatButton = this.page.locator(
-      '[data-testid="chat-button"], button[aria-label*="chat"]',
+      '[data-copilot-chat-trigger], button[aria-label*="BookWorm Literary Guide"]',
     );
     await expect(chatButton).toBeVisible();
   },
@@ -393,16 +395,20 @@ Then(
 
 // Close with Escape or close button
 When(
-  "I press Escape or click the close button",
+  "I press Escape or click the close button or click outside",
   async function (this: { page: Page }) {
-    const escapeOrClose = Math.random() > 0.5;
-    if (escapeOrClose) {
+    const action = Math.floor(Math.random() * 3);
+    if (action === 0) {
       await this.page.keyboard.press("Escape");
-    } else {
+    } else if (action === 1) {
       const closeButton = this.page
         .locator('button[aria-label*="Close"], button:has([class*="X"])')
         .first();
       await closeButton.click();
+    } else {
+      // Click outside on the overlay
+      const overlay = this.page.locator(".fixed.inset-0").first();
+      await overlay.click({ position: { x: 10, y: 10 } });
     }
     await this.page.waitForTimeout(500);
   },
@@ -421,8 +427,27 @@ Then("the chatbot should close", async function (this: { page: Page }) {
 Then(
   "focus should return to the trigger button",
   async function (this: { page: Page }) {
-    const chatButton = this.page.locator('[data-testid="chat-button"]');
+    // Wait for dialog to close and focus to be restored
+    await this.page.waitForTimeout(300);
+
+    const chatButton = this.page
+      .locator(
+        '[data-copilot-chat-trigger], button[aria-label*="BookWorm Literary Guide"]',
+      )
+      .first();
+
+    // Verify the chat button is focused
     await expect(chatButton).toBeFocused();
+  },
+);
+
+Then(
+  "the floating chat button should be visible",
+  async function (this: { page: Page }) {
+    const chatButton = this.page.locator(
+      '[data-copilot-chat-trigger], button[aria-label*="BookWorm Literary Guide"]',
+    );
+    await expect(chatButton).toBeVisible();
   },
 );
 
@@ -447,7 +472,7 @@ Then(
   "my conversation should be preserved",
   async function (this: { page: Page }) {
     // Reopen and check messages still there
-    const chatButton = this.page.locator('[data-testid="chat-button"]').first();
+    const chatButton = this.page.locator("[data-copilot-chat-trigger]").first();
     await chatButton.click();
     await this.page.waitForTimeout(500);
     const messages = this.page.locator('[data-testid="chat-message"]');
@@ -461,7 +486,7 @@ Then(
   'I should see an "unavailable" dialog',
   async function (this: { page: Page }) {
     const unavailableDialog = this.page.locator(
-      '[role="dialog"]:has-text("unavailable"), [role="dialog"]:has-text("Development")',
+      '[role="dialog"]:has-text("Unavailable"), [role="dialog"]:has-text("Development"), [aria-label="BookWorm Literary Guide Chat"]',
     );
     await expect(unavailableDialog).toBeVisible();
   },
@@ -595,7 +620,7 @@ Then(
   "the floating chat button should be hidden on mobile",
   async function (this: { page: Page }) {
     const chatButton = this.page.locator(
-      '[data-copilot-chat-trigger], button[aria-label*="chat"]',
+      '[data-copilot-chat-trigger], button[aria-label*="BookWorm Literary Guide"]',
     );
     // Button exists but is hidden (md:flex class)
     const isVisible = await chatButton.isVisible();
@@ -619,7 +644,7 @@ Given("I am on a desktop device", async function (this: { page: Page }) {
 
 When("I open the AI chatbot", async function (this: { page: Page }) {
   const chatButton = this.page.locator(
-    '[data-copilot-chat-trigger], button[aria-label*="chat"]',
+    '[data-copilot-chat-trigger], button[aria-label*="BookWorm Literary Guide"]',
   );
   await chatButton.click();
   await this.page.waitForTimeout(500);

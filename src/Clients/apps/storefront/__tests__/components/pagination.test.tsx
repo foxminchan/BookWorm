@@ -141,8 +141,11 @@ describe("Pagination", () => {
       <Pagination currentPage={3} totalPages={5} onPageChange={vi.fn()} />,
     );
 
-    const currentPageButton = screen.getByRole("button", { name: "Page 3" });
+    const currentPageButton = screen.getByRole("button", {
+      name: /current page, page 3/i,
+    });
     expect(currentPageButton).toHaveClass("bg-primary");
+    expect(currentPageButton).toHaveAttribute("aria-current", "page");
   });
 
   it("should call onPageChange when first page button is clicked", async () => {

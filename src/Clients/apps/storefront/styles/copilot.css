@@ -1,0 +1,282 @@
+/* Custom CopilotKit Styling for BookWorm */
+
+/* Sidebar Container */
+[data-copilotkit-sidebar] {
+  --copilot-primary: hsl(var(--primary));
+  --copilot-primary-foreground: hsl(var(--primary-foreground));
+  --copilot-background: hsl(var(--background));
+  --copilot-foreground: hsl(var(--foreground));
+  --copilot-muted: hsl(var(--muted));
+  --copilot-muted-foreground: hsl(var(--muted-foreground));
+  --copilot-border: hsl(var(--border));
+  --copilot-radius: var(--radius);
+}
+
+/* Sidebar Header */
+[data-copilotkit-sidebar-header] {
+  background: linear-gradient(
+    135deg,
+    var(--copilot-primary) 0%,
+    var(--copilot-primary) 100%
+  );
+  color: var(--copilot-primary-foreground);
+  border-bottom: 1px solid var(--copilot-border);
+  padding: 1.5rem;
+}
+
+/* Message Container */
+[data-copilotkit-messages-container] {
+  background: var(--copilot-background);
+  padding: 1rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--copilot-muted) transparent;
+}
+
+[data-copilotkit-messages-container]::-webkit-scrollbar {
+  width: 6px;
+}
+
+[data-copilotkit-messages-container]::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+[data-copilotkit-messages-container]::-webkit-scrollbar-thumb {
+  background: var(--copilot-muted);
+  border-radius: 3px;
+}
+
+[data-copilotkit-messages-container]::-webkit-scrollbar-thumb:hover {
+  background: var(--copilot-muted-foreground);
+}
+
+/* User Messages */
+[data-copilotkit-message-role="user"] {
+  background: var(--copilot-primary);
+  color: var(--copilot-primary-foreground);
+  border-radius: calc(var(--copilot-radius) - 2px);
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+  max-width: 80%;
+  margin-left: auto;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Assistant Messages */
+[data-copilotkit-message-role="assistant"] {
+  background: var(--copilot-muted);
+  color: var(--copilot-foreground);
+  border-radius: calc(var(--copilot-radius) - 2px);
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+  max-width: 80%;
+  margin-right: auto;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Input Container */
+[data-copilotkit-input-container] {
+  background: var(--copilot-background);
+  border-top: 1px solid var(--copilot-border);
+  padding: 1rem;
+}
+
+/* Input Textarea */
+[data-copilotkit-textarea] {
+  background: var(--copilot-muted);
+  color: var(--copilot-foreground);
+  border: 1px solid var(--copilot-border);
+  border-radius: calc(var(--copilot-radius) - 2px);
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  resize: none;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+[data-copilotkit-textarea]:focus {
+  outline: none;
+  border-color: var(--copilot-primary);
+  box-shadow: 0 0 0 2px hsla(var(--primary) / 0.1);
+}
+
+[data-copilotkit-textarea]::placeholder {
+  color: var(--copilot-muted-foreground);
+}
+
+/* Send Button */
+[data-copilotkit-send-button] {
+  background: var(--copilot-primary);
+  color: var(--copilot-primary-foreground);
+  border-radius: calc(var(--copilot-radius) - 2px);
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  transition:
+    opacity 0.2s,
+    transform 0.1s;
+  border: none;
+  cursor: pointer;
+}
+
+[data-copilotkit-send-button]:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+[data-copilotkit-send-button]:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+[data-copilotkit-send-button]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Loading Indicator */
+[data-copilotkit-loading] {
+  color: var(--copilot-muted-foreground);
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+}
+
+/* Typing Indicator */
+.copilot-typing-indicator {
+  display: flex;
+  gap: 4px;
+  padding: 0.75rem 1rem;
+  background: var(--copilot-muted);
+  border-radius: calc(var(--copilot-radius) - 2px);
+  width: fit-content;
+}
+
+.copilot-typing-indicator span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--copilot-muted-foreground);
+  animation: typing-pulse 1.4s infinite;
+}
+
+.copilot-typing-indicator span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.copilot-typing-indicator span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing-pulse {
+  0%,
+  60%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Error Messages */
+[data-copilotkit-error] {
+  background: hsl(var(--destructive) / 0.1);
+  color: hsl(var(--destructive));
+  border: 1px solid hsl(var(--destructive) / 0.3);
+  border-radius: calc(var(--copilot-radius) - 2px);
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+  font-size: 0.875rem;
+}
+
+/* Action Buttons in Messages */
+[data-copilotkit-action-button] {
+  background: transparent;
+  color: var(--copilot-primary);
+  border: 1px solid var(--copilot-primary);
+  border-radius: calc(var(--copilot-radius) - 4px);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+  margin: 0.25rem 0.25rem 0 0;
+}
+
+[data-copilotkit-action-button]:hover {
+  background: var(--copilot-primary);
+  color: var(--copilot-primary-foreground);
+}
+
+/* Offline Indicator */
+.copilot-offline-badge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: hsl(var(--destructive));
+  color: hsl(var(--destructive-foreground));
+  padding: 0.25rem 0.5rem;
+  border-radius: calc(var(--copilot-radius) - 4px);
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  z-index: 10;
+}
+
+/* Rate Limit Warning */
+.copilot-rate-limit-warning {
+  background: hsl(var(--warning) / 0.1);
+  color: hsl(var(--warning-foreground));
+  border: 1px solid hsl(var(--warning) / 0.3);
+  border-radius: calc(var(--copilot-radius) - 2px);
+  padding: 0.5rem 0.75rem;
+  margin: 0.5rem 0;
+  font-size: 0.8125rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Animations */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+[data-copilotkit-message] {
+  animation: slide-up 0.3s ease-out;
+}
+
+/* Dark Mode Adjustments */
+@media (prefers-color-scheme: dark) {
+  [data-copilotkit-message-role="user"] {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+
+  [data-copilotkit-message-role="assistant"] {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  [data-copilotkit-sidebar] {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+  }
+
+  [data-copilotkit-message-role="user"],
+  [data-copilotkit-message-role="assistant"] {
+    max-width: 90%;
+  }
+}

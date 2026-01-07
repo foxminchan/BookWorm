@@ -46,6 +46,12 @@ export function MobileBottomNav() {
     { href: "/account", icon: User, label: "Account" },
   ];
 
+  const additionalMenuItems = [
+    { href: "/categories", label: "Categories" },
+    { href: "/publishers", label: "Publishers" },
+    { href: "/about", label: "Our Story" },
+  ];
+
   return (
     <>
       <nav
@@ -105,39 +111,34 @@ export function MobileBottomNav() {
       </nav>
 
       {isMenuOpen && (
-        <div
-          ref={menuRef}
-          className="bg-background fixed right-0 bottom-16 left-0 z-40 border-t md:hidden"
-          role="navigation"
-          aria-label="Additional navigation"
-        >
-          <div className="flex flex-col gap-2 p-3 text-sm" role="menu">
-            <Link
-              href="/categories"
-              className="hover:bg-secondary rounded px-3 py-2 transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-              role="menuitem"
-            >
-              Categories
-            </Link>
-            <Link
-              href="/publishers"
-              className="hover:bg-secondary rounded px-3 py-2 transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-              role="menuitem"
-            >
-              Publishers
-            </Link>
-            <Link
-              href="/about"
-              className="hover:bg-secondary rounded px-3 py-2 transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-              role="menuitem"
-            >
-              Our Story
-            </Link>
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-30 bg-black/20 md:hidden"
+            onClick={() => setIsMenuOpen(false)}
+            aria-hidden="true"
+          />
+          <div
+            ref={menuRef}
+            className="bg-background fixed right-0 bottom-16 left-0 z-40 border-t md:hidden"
+            role="navigation"
+            aria-label="Additional navigation menu"
+          >
+            <div className="flex flex-col gap-2 p-3 text-sm" role="menu">
+              {additionalMenuItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="hover:bg-secondary rounded px-3 py-2 transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                  role="menuitem"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </>
   );
