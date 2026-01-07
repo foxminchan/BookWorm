@@ -39,7 +39,7 @@ export function Providers({
   const gatewayUrl =
     env.NEXT_PUBLIC_GATEWAY_HTTPS || env.NEXT_PUBLIC_GATEWAY_HTTP;
 
-  const copilotKitUrl = gatewayUrl ? `${gatewayUrl}/chatting/ag-ui` : undefined;
+  const copilotKitUrl = gatewayUrl ? "/api/copilotkit" : undefined;
   const shouldShowCopilot = !!(isCopilotEnabled && copilotKitUrl);
 
   return (
@@ -52,7 +52,7 @@ export function Providers({
         enableColorScheme
       >
         {shouldShowCopilot ? (
-          <CopilotKit runtimeUrl={copilotKitUrl}>
+          <CopilotKit runtimeUrl={copilotKitUrl} agent="chat-workflow">
             <div className="pb-16 md:pb-0">{children}</div>
           </CopilotKit>
         ) : (

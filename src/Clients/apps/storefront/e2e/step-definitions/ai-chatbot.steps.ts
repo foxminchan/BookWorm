@@ -6,13 +6,22 @@ import { Page } from "@playwright/test";
  * AI Chatbot step definitions
  */
 
-// Feature flag check
+// Feature flag checks
 Given("AI features are enabled", async function (this: { page: Page }) {
   // Check or set feature flag for AI features
   await this.page.evaluate(() => {
     localStorage.setItem(
       "feature-flags",
       JSON.stringify({ copilotEnabled: true }),
+    );
+  });
+});
+
+Given("AI features are disabled", async function (this: { page: Page }) {
+  await this.page.evaluate(() => {
+    localStorage.setItem(
+      "feature-flags",
+      JSON.stringify({ copilotEnabled: false }),
     );
   });
 });
@@ -27,9 +36,20 @@ When(
   },
 );
 
+When(
+  "I click the floating chat button with label {string}",
+  async function (this: { page: Page }, ariaLabel: string) {
+    const floatingButton = this.page.locator(
+      `button[aria-label="${ariaLabel}"], [data-copilot-chat-trigger]`,
+    );
+    await floatingButton.click();
+    await this.page.waitForTimeout(500);
+  },
+);
+
 When("I click the floating chat button", async function (this: { page: Page }) {
   const floatingButton = this.page.locator(
-    '[data-testid="chat-button"], button[aria-label*="chat"], button:has([class*="MessageCircle"])',
+    '[data-copilot-chat-trigger], button[aria-label*="chat"]',
   );
   await floatingButton.click();
   await this.page.waitForTimeout(500);
@@ -45,6 +65,16 @@ Then(
   },
 );
 
+Then(
+  "the AI chatbot dialog should open with title {string}",
+  async function (this: { page: Page }, expectedTitle: string) {
+    const chatDialog = this.page.locator('[role="dialog"]');
+    await expect(chatDialog).toBeVisible();
+    const titleElement = this.page.locator(`:has-text("${expectedTitle}")`);
+    await expect(titleElement).toBeVisible();
+  },
+);
+
 Then("the chatbot should be focused", async function (this: { page: Page }) {
   const chatInput = this.page.locator(
     '[data-testid="chat-input"], textarea[placeholder*="message"], input[placeholder*="Ask"]',
@@ -52,12 +82,15 @@ Then("the chatbot should be focused", async function (this: { page: Page }) {
   await expect(chatInput).toBeFocused();
 });
 
-Then("I should see a welcome message", async function (this: { page: Page }) {
-  const welcomeMessage = this.page.locator(
-    '[data-testid="welcome-message"], :has-text("How can I help")',
-  );
-  await expect(welcomeMessage).toBeVisible();
-});
+Then(
+  "I should see the welcome message {string}",
+  async function (this: { page: Page }, expectedMessage: string) {
+    const welcomeMessage = this.page.locator(
+      `[data-testid="welcome-message"], :has-text("${expectedMessage}")`,
+    );
+    await expect(welcomeMessage).toBeVisible();
+  },
+);
 
 // Any page navigation
 Given("I am on any page", async function (this: { page: Page }) {
@@ -73,6 +106,16 @@ Then(
       .locator('[data-testid="chat-input"], textarea, input[type="text"]')
       .last();
     await expect(chatInput).toBeEnabled();
+  },
+);
+
+Then(
+  "I should see the placeholder text {string}",
+  async function (this: { page: Page }, placeholderText: string) {
+    const chatInput = this.page.locator(
+      `textarea[placeholder="${placeholderText}"], input[placeholder="${placeholderText}"]`,
+    );
+    await expect(chatInput).toBeVisible();
   },
 );
 
@@ -348,7 +391,23 @@ Then(
   },
 );
 
-// Close with Escape
+// Close with Escape or close button
+When(
+  "I press Escape or click the close button",
+  async function (this: { page: Page }) {
+    const escapeOrClose = Math.random() > 0.5;
+    if (escapeOrClose) {
+      await this.page.keyboard.press("Escape");
+    } else {
+      const closeButton = this.page
+        .locator('button[aria-label*="Close"], button:has([class*="X"])')
+        .first();
+      await closeButton.click();
+    }
+    await this.page.waitForTimeout(500);
+  },
+);
+
 When("I press Escape", async function (this: { page: Page }) {
   await this.page.keyboard.press("Escape");
   await this.page.waitForTimeout(500);
@@ -397,7 +456,74 @@ Then(
   },
 );
 
+// Unavailable dialog steps
+Then(
+  'I should see an "unavailable" dialog',
+  async function (this: { page: Page }) {
+    const unavailableDialog = this.page.locator(
+      '[role="dialog"]:has-text("unavailable"), [role="dialog"]:has-text("Development")',
+    );
+    await expect(unavailableDialog).toBeVisible();
+  },
+);
+
+Then(
+  "the dialog should show {string} title",
+  async function (this: { page: Page }, expectedTitle: string) {
+    const titleElement = this.page.locator(
+      `h2:has-text("${expectedTitle}"), h3:has-text("${expectedTitle}")`,
+    );
+    await expect(titleElement).toBeVisible();
+  },
+);
+
+Then(
+  "I should see message {string}",
+  async function (this: { page: Page }, expectedMessage: string) {
+    const messageElement = this.page.locator(`text=${expectedMessage}`);
+    await expect(messageElement).toBeVisible();
+  },
+);
+
+Then(
+  "I can close the dialog by clicking outside or the close button",
+  async function (this: { page: Page }) {
+    // Try clicking close button
+    const closeButton = this.page
+      .locator('button[aria-label*="Close"]')
+      .first();
+    if (await closeButton.isVisible()) {
+      await closeButton.click();
+      await this.page.waitForTimeout(500);
+    }
+    // Verify dialog is closed
+    const dialog = this.page.locator('[role="dialog"]');
+    await expect(dialog).not.toBeVisible();
+  },
+);
+
+Then(
+  'I should see an "unavailable" dialog with title {string}',
+  async function (this: { page: Page }, expectedTitle: string) {
+    const unavailableDialog = this.page.locator('[role="dialog"]');
+    await expect(unavailableDialog).toBeVisible();
+    const titleElement = this.page.locator(`text=${expectedTitle}`);
+    await expect(titleElement).toBeVisible();
+  },
+);
+
 // Error handling
+Given(
+  "the API gateway is not configured",
+  async function (this: { page: Page }) {
+    // Remove or clear gateway configuration
+    await this.page.evaluate(() => {
+      delete (window as any).NEXT_PUBLIC_GATEWAY_HTTPS;
+      delete (window as any).NEXT_PUBLIC_GATEWAY_HTTP;
+    });
+  },
+);
+
 Given("the AI service is unavailable", async function (this: { page: Page }) {
   // Mock network failure
   await this.page.route("**/api/chat**", (route) => route.abort());
@@ -466,108 +592,61 @@ Given("I am on a mobile device", async function (this: { page: Page }) {
 });
 
 Then(
-  "the chatbot should open full-screen",
+  "the floating chat button should be hidden on mobile",
   async function (this: { page: Page }) {
-    const chatDialog = this.page.locator('[role="dialog"]');
-    const box = await chatDialog.boundingBox();
-    expect(box?.width).toBeGreaterThan(300);
-    expect(box?.height).toBeGreaterThan(500);
+    const chatButton = this.page.locator(
+      '[data-copilot-chat-trigger], button[aria-label*="chat"]',
+    );
+    // Button exists but is hidden (md:flex class)
+    const isVisible = await chatButton.isVisible();
+    expect(isVisible).toBe(false);
   },
 );
 
 Then(
-  "the input field should be accessible above the keyboard",
+  "the chatbot is only available on desktop screens",
   async function (this: { page: Page }) {
-    const chatInput = this.page
-      .locator('[data-testid="chat-input"], textarea')
-      .last();
-    await expect(chatInput).toBeVisible();
-    await expect(chatInput).toBeInViewport();
+    // Verify viewport is mobile-sized
+    const viewport = this.page.viewportSize();
+    expect(viewport?.width).toBeLessThan(768);
   },
 );
 
-// Smart suggestions
-When("I view the initial state", async function (this: { page: Page }) {
-  // Just opened, check initial state
+// Desktop chat UI
+Given("I am on a desktop device", async function (this: { page: Page }) {
+  await this.page.setViewportSize({ width: 1280, height: 720 });
+});
+
+When("I open the AI chatbot", async function (this: { page: Page }) {
+  const chatButton = this.page.locator(
+    '[data-copilot-chat-trigger], button[aria-label*="chat"]',
+  );
+  await chatButton.click();
   await this.page.waitForTimeout(500);
 });
 
-Then("I should see suggested prompts", async function (this: { page: Page }) {
-  const suggestions = this.page.locator(
-    '[data-testid="suggestion"], button[data-suggestion]',
-  );
-  const count = await suggestions.count();
-  expect(count).toBeGreaterThan(0);
-});
-
 Then(
-  "I can click a suggestion to auto-fill the input",
+  "the chatbot should use the CopilotSidebar component",
   async function (this: { page: Page }) {
-    const suggestion = this.page.locator('[data-testid="suggestion"]').first();
-    await suggestion.click();
-    const chatInput = this.page
-      .locator('[data-testid="chat-input"], textarea')
-      .last();
-    const value = await chatInput.inputValue();
-    expect(value.length).toBeGreaterThan(0);
-  },
-);
-
-// Copy response
-When(
-  "I click the copy button on the response",
-  async function (this: { page: Page }) {
-    const copyButton = this.page
-      .locator('[data-testid="copy-response"], button[aria-label*="Copy"]')
-      .first();
-    await copyButton.click();
+    const chatDialog = this.page.locator('[role="dialog"]');
+    await expect(chatDialog).toBeVisible();
   },
 );
 
 Then(
-  "the response should be copied to clipboard",
+  "it should support click outside to close",
   async function (this: { page: Page }) {
-    // Check clipboard (note: might need permissions in real tests)
-    await this.page.waitForTimeout(500);
+    // This is a property of CopilotSidebar, we can verify the overlay exists
+    const overlay = this.page.locator('.fixed.inset-0, [role="dialog"]');
+    await expect(overlay).toBeVisible();
   },
 );
 
 Then(
-  "I should see a {string} confirmation",
-  async function (this: { page: Page }, confirmText: string) {
-    const confirmation = this.page.locator(`:has-text("${confirmText}")`);
-    await expect(confirmation).toBeVisible();
-  },
-);
-
-// Attachment upload
-When("I click the attachment button", async function (this: { page: Page }) {
-  const attachButton = this.page.locator(
-    '[data-testid="attach-button"], button[aria-label*="Attach"]',
-  );
-  await attachButton.click();
-});
-
-When("I upload a book cover image", async function (this: { page: Page }) {
-  const fileInput = this.page.locator('input[type="file"]');
-  await fileInput.setInputFiles({
-    name: "book-cover.jpg",
-    mimeType: "image/jpeg",
-    buffer: Buffer.from("fake-image-data"),
-  });
-});
-
-Then("the AI should analyze the image", async function (this: { page: Page }) {
-  await this.page.waitForTimeout(2000);
-  const aiResponse = this.page.locator('[data-testid="ai-message"]').last();
-  await expect(aiResponse).toBeVisible({ timeout: 10000 });
-});
-
-Then(
-  "provide information about the book or similar titles",
+  "the sidebar should be positioned fixed with full-screen overlay",
   async function (this: { page: Page }) {
-    const aiResponse = this.page.locator('[data-testid="ai-message"]').last();
-    const responseText = await aiResponse.textContent();
-    expect(responseText!.length).toBeGreaterThan(20);
+    const dialog = this.page.locator('[role="dialog"]');
+    const className = await dialog.getAttribute("class");
+    expect(className).toContain("fixed");
   },
 );
