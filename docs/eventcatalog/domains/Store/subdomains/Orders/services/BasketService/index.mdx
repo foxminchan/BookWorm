@@ -2,7 +2,9 @@
 id: BasketService
 name: Basket Service
 version: 1.0.0
-summary: Manages the lifecycle of customer shopping baskets in the BookWorm e-commerce system
+summary: >-
+  Manages the lifecycle of customer shopping baskets in the BookWorm e-commerce
+  system
 badges:
   - content: Event-Driven
     textColor: purple
@@ -19,23 +21,54 @@ badges:
 sends:
   - id: BasketDeletedCompletedEvent
     version: 1.0.0
+    to:
+      - &ref_0
+        id: 'finance.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - *ref_0
   - id: BasketDeletedFailedEvent
     version: 1.0.0
+    to:
+      - id: 'finance.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - id: 'finance.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
   - id: ListBooksGrpc
     version: 1.0.0
+    to:
+      - id: 'catalog.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
 receives:
-  - id: UpdateBasketCommand
-    version: 1.0.0
-  - id: GetBasketQuery
-    version: 1.0.0
   - id: GetBasketGrpc
     version: 1.0.0
-  - id: DeleteBasketCommand
-    version: 1.0.0
-  - id: AddBasketCommand
-    version: 1.0.0
+    from:
+      - id: 'basket.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
   - id: PlaceOrderCommand
     version: 1.0.0
+    from:
+      - id: 'notification.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - id: 'basket.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - id: 'basket.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
 schemaPath: openapi-v1.yml
 specifications:
   - type: openapi
@@ -48,13 +81,13 @@ owners:
   - nhanxnguyen
 repository:
   language: C#
-  url: https://github.com/foxminchan/BookWorm
+  url: 'https://github.com/foxminchan/BookWorm'
 writesTo:
-    - id: BasketDatabase
-      version: 1.0.0
+  - id: BasketDatabase
+    version: 1.0.0
 readsFrom:
-    - id: BasketDatabase
-      version: 1.0.0
+  - id: BasketDatabase
+    version: 1.0.0
 ---
 
 <Tiles>

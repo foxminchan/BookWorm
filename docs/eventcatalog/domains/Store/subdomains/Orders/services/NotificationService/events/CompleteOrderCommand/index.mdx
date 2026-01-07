@@ -3,11 +3,6 @@ id: CompleteOrderCommand
 version: 1.0.0
 name: Completed Order
 summary: Receive a message when an order is completed
-channels:
-  - id: notification.{env}.events
-    version: 1.0.0
-    parameters:
-      env: stg
 badges:
   - content: Orchestrated
     textColor: orange
@@ -17,7 +12,7 @@ badges:
     textColor: blue
     backgroundColor: blue
     icon: BellIcon
-  - content: Broker:AMQP
+  - content: 'Broker:AMQP'
     backgroundColor: green
     textColor: white
     icon: ArrowPathIcon

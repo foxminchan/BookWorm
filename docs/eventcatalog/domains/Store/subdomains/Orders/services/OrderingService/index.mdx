@@ -2,7 +2,9 @@
 id: OrderingService
 name: Ordering Service
 version: 1.0.0
-summary: Orchestrates the entire order lifecycle, from creation to completion or cancellation, for the BookWorm platform
+summary: >-
+  Orchestrates the entire order lifecycle, from creation to completion or
+  cancellation, for the BookWorm platform
 badges:
   - content: Event-Driven
     textColor: purple
@@ -23,45 +25,103 @@ badges:
 sends:
   - id: UserCheckedOutEvent
     version: 1.0.0
+    to:
+      - id: 'finance.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - id: 'finance.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
   - id: OrderStatusChangedToCompleteEvent
     version: 1.0.0
+    to:
+      - id: 'finance.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - id: 'finance.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
   - id: OrderStatusChangedToCancelEvent
     version: 1.0.0
+    to:
+      - id: 'finance.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - id: 'finance.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
   - id: ListBooksGrpc
     version: 1.0.0
+    to:
+      - id: 'catalog.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
   - id: GetBasketGrpc
     version: 1.0.0
+    to:
+      - id: 'basket.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
 receives:
-  - id: GetOrderSummaryOrder
-    version: 1.0.0
-  - id: ListOrdersQuery
-    version: 1.0.0
-  - id: CreateOrderCommand
-    version: 1.0.0
-  - id: GetOrderQuery
-    version: 1.0.0
-  - id: DeleteOrderCommand
-    version: 1.0.0
   - id: CompleteOrderCommand
     version: 1.0.0
+    from:
+      - id: 'notification.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - id: 'notification.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
   - id: CancelOrderCommand
     version: 1.0.0
+    from:
+      - id: 'notification.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - id: 'notification.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
   - id: OrderStream
     version: 1.0.0
-  - id: UpdateBuyerAddressCommand
-    version: 1.0.0
-  - id: ListBuyersQuery
-    version: 1.0.0
-  - id: CreateBuyerCommand
-    version: 1.0.0
-  - id: GetBuyerQuery
-    version: 1.0.0
-  - id: DeleteBuyerCommand
-    version: 1.0.0
+    from:
+      - id: 'ordering.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
   - id: DeleteBasketCompleteCommand
     version: 1.0.0
+    from:
+      - id: 'ordering.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - id: 'ordering.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
   - id: DeleteBasketFailedCommand
     version: 1.0.0
+    from:
+      - id: 'ordering.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - id: 'ordering.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
 schemaPath: openapi-v1.yml
 specifications:
   - type: openapi
@@ -74,27 +134,31 @@ owners:
   - nhanxnguyen
 repository:
   language: C#
-  url: https://github.com/foxminchan/BookWorm
+  url: 'https://github.com/foxminchan/BookWorm'
 writesTo:
-    - id: OrderingDatabase
-      version: 1.0.0
-    - id: OrderingCache
-      version: 1.0.0
+  - id: OrderingDatabase
+    version: 1.0.0
+  - id: OrderingCache
+    version: 1.0.0
 readsFrom:
-    - id: OrderingDatabase
-      version: 1.0.0
-    - id: OrderingCache
-      version: 1.0.0
+  - id: OrderingDatabase
+    version: 1.0.0
+  - id: OrderingCache
+    version: 1.0.0
 attachments:
-  - url: https://foxminchan.github.io/BookWorm/docs/architecture-decisions/adr-004-postgresql-database
+  - url: >-
+      https://foxminchan.github.io/BookWorm/docs/architecture-decisions/adr-004-postgresql-database
     title: ADR-004 - PostgreSQL Database
     description: Learn more about the PostgreSQL database choice for the BookWorm platform.
-    type: 'architecture-decisions'
+    type: architecture-decisions
     icon: FileTextIcon
-  - url: https://foxminchan.github.io/BookWorm/docs/architecture-decisions/adr-013-ordering-eventsoucring
+  - url: >-
+      https://foxminchan.github.io/BookWorm/docs/architecture-decisions/adr-013-ordering-eventsoucring
     title: ADR-013 - Event Sourcing for Ordering Service
-    description: Learn more about the Event Sourcing pattern implemented in the Ordering Service.
-    type: 'architecture-decisions'
+    description: >-
+      Learn more about the Event Sourcing pattern implemented in the Ordering
+      Service.
+    type: architecture-decisions
     icon: FileTextIcon
 ---
 

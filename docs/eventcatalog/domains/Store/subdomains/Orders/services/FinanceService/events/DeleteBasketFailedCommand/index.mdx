@@ -3,11 +3,6 @@ id: DeleteBasketFailedCommand
 version: 1.0.0
 name: Deleted Basket Fail
 summary: Represents a command to notify the system about the failure to delete a basket
-channels:
-  - id: ordering.{env}.events
-    version: 1.0.0
-    parameters:
-      env: stg
 badges:
   - content: Orchestrated
     textColor: orange
@@ -17,7 +12,7 @@ badges:
     textColor: red
     backgroundColor: red
     icon: ExclamationCircleIcon
-  - content: Broker:AMQP
+  - content: 'Broker:AMQP'
     backgroundColor: green
     textColor: white
     icon: ArrowPathIcon

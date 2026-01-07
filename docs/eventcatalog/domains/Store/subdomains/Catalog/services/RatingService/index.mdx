@@ -2,7 +2,9 @@
 id: RatingService
 name: Rating Service
 version: 1.0.0
-summary: Handles the collection, storage, and aggregation of user feedback and ratings for books on the BookWorm platform
+summary: >-
+  Handles the collection, storage, and aggregation of user feedback and ratings
+  for books on the BookWorm platform
 badges:
   - content: Event-Driven
     textColor: purple
@@ -15,21 +17,32 @@ badges:
 sends:
   - id: FeedbackCreatedEvent
     version: 1.0.0
+    to:
+      - &ref_0
+        id: 'catalog.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - *ref_0
   - id: FeedbackDeletedEvent
     version: 1.0.0
+    to:
+      - &ref_1
+        id: 'catalog.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - *ref_1
 receives:
   - id: BookUpdatedRatingFailedEvent
     version: 1.0.0
-  - id: ListFeedbacksQuery
-    version: 1.0.0
-  - id: SummarizeFeedbackQuery
-    version: 1.0.0
-  - id: CreateFeedbackCommand
-    version: 1.0.0
-  - id: DeleteFeedbackCommand
-    version: 1.0.0
-  - id: VisualizeRatingWorkflowQuery
-    version: 1.0.0
+    from:
+      - &ref_2
+        id: 'rating.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - *ref_2
 schemaPath: openapi-v1.yml
 specifications:
   - type: openapi
@@ -42,7 +55,7 @@ owners:
   - nhanxnguyen
 repository:
   language: C#
-  url: https://github.com/foxminchan/BookWorm
+  url: 'https://github.com/foxminchan/BookWorm'
 writesTo:
   - id: RatingDatabase
     version: 1.0.0
@@ -50,10 +63,11 @@ readsFrom:
   - id: RatingDatabase
     version: 1.0.0
 attachments:
-  - url: https://foxminchan.github.io/BookWorm/docs/architecture-decisions/adr-004-postgresql-database
+  - url: >-
+      https://foxminchan.github.io/BookWorm/docs/architecture-decisions/adr-004-postgresql-database
     title: ADR-004 - PostgreSQL Database
     description: Learn more about the PostgreSQL database choice for the BookWorm platform.
-    type: 'architecture-decisions'
+    type: architecture-decisions
     icon: FileTextIcon
 ---
 

@@ -20,14 +20,59 @@ sends: []
 receives:
   - id: CancelOrderCommand
     version: 1.0.0
+    from:
+      - id: 'notification.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - id: 'notification.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
   - id: CompleteOrderCommand
     version: 1.0.0
+    from:
+      - id: 'notification.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - id: 'notification.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
   - id: PlaceOrderCommand
     version: 1.0.0
+    from:
+      - id: 'notification.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - id: 'basket.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - id: 'basket.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
   - id: CleanUpSentEmailIntegrationEvent
     version: 1.0.0
+    from:
+      - &ref_0
+        id: 'notification.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - *ref_0
   - id: ResendErrorEmailIntegrationEvent
     version: 1.0.0
+    from:
+      - &ref_1
+        id: 'notification.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - *ref_1
 schemaPath: asyncapi-v1.yml
 specifications:
   - type: asyncapi
@@ -37,23 +82,27 @@ owners:
   - nhanxnguyen
 repository:
   language: C#
-  url: https://github.com/foxminchan/BookWorm
+  url: 'https://github.com/foxminchan/BookWorm'
 writesTo:
-    - id: NotificationDatabase
-      version: 1.0.0
+  - id: NotificationDatabase
+    version: 1.0.0
 readsFrom:
-    - id: NotificationDatabase
-      version: 1.0.0
+  - id: NotificationDatabase
+    version: 1.0.0
 attachments:
-  - url: https://foxminchan.github.io/BookWorm/docs/architecture-decisions/adr-011-rabbitmq-message
+  - url: >-
+      https://foxminchan.github.io/BookWorm/docs/architecture-decisions/adr-011-rabbitmq-message
     title: ADR-011 - RabbitMQ for Message Brokering
     description: Learn more about the RabbitMQ choice for message brokering in BookWorm.
-    type: 'architecture-decisions'
+    type: architecture-decisions
     icon: FileTextIcon
-  - url: https://foxminchan.github.io/BookWorm/docs/architecture-decisions/adr-014-sendgrid-email-provider
+  - url: >-
+      https://foxminchan.github.io/BookWorm/docs/architecture-decisions/adr-014-sendgrid-email-provider
     title: ADR-014 - SendGrid Email Provider
-    description: Learn more about the SendGrid email provider choice for the Notification Service.
-    type: 'architecture-decisions'
+    description: >-
+      Learn more about the SendGrid email provider choice for the Notification
+      Service.
+    type: architecture-decisions
     icon: FileTextIcon
 ---
 

@@ -3,11 +3,6 @@ id: CleanUpSentEmailIntegrationEvent
 version: 1.0.0
 name: Clean Up Sent Email
 summary: Receive a message to trigger cleanup of sent emails for system maintenance
-channels:
-  - id: notification.{env}.events
-    version: 1.0.0
-    parameters:
-      env: stg
 badges:
   - content: Orchestrated
     textColor: orange
@@ -17,7 +12,7 @@ badges:
     textColor: blue
     backgroundColor: blue
     icon: BellIcon
-  - content: Broker:AMQP
+  - content: 'Broker:AMQP'
     backgroundColor: green
     textColor: white
     icon: ArrowPathIcon

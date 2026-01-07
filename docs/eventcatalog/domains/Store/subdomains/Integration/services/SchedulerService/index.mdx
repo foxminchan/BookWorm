@@ -2,7 +2,9 @@
 id: SchedulerService
 name: Scheduler Service
 version: 1.0.0
-summary: Service responsible for scheduling and triggering periodic tasks in the BookWorm e-commerce system.
+summary: >-
+  Service responsible for scheduling and triggering periodic tasks in the
+  BookWorm e-commerce system.
 badges:
   - content: Background Jobs
     textColor: purple
@@ -23,8 +25,22 @@ badges:
 sends:
   - id: CleanUpSentEmailIntegrationEvent
     version: 1.0.0
+    to:
+      - &ref_0
+        id: 'notification.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - *ref_0
   - id: ResendErrorEmailIntegrationEvent
     version: 1.0.0
+    to:
+      - &ref_1
+        id: 'notification.{env}.events'
+        version: 1.0.0
+        parameters:
+          env: stg
+      - *ref_1
 receives: []
 schemaPath: asyncapi-v1.yml
 specifications:
@@ -35,13 +51,13 @@ owners:
   - nhanxnguyen
 repository:
   language: C#
-  url: https://github.com/foxminchan/BookWorm
+  url: 'https://github.com/foxminchan/BookWorm'
 writesTo:
-    - id: SchedulerDatabase
-      version: 1.0.0
+  - id: SchedulerDatabase
+    version: 1.0.0
 readsFrom:
-    - id: SchedulerDatabase
-      version: 1.0.0
+  - id: SchedulerDatabase
+    version: 1.0.0
 ---
 
 <Tiles>

@@ -2,12 +2,9 @@
 id: OrderStatusChangedToCancelEvent
 version: 1.0.0
 name: Order Status Changed To Cancel
-summary: Represents an integration event to notify the system about the status change of an order to `Cancel`
-channels:
-  - id: finance.{env}.events
-    version: 1.0.0
-    parameters:
-      env: stg
+summary: >-
+  Represents an integration event to notify the system about the status change
+  of an order to `Cancel`
 badges:
   - content: Order Lifecycle
     textColor: orange
@@ -17,7 +14,7 @@ badges:
     textColor: blue
     backgroundColor: blue
     icon: SparklesIcon
-  - content: Broker:AMQP
+  - content: 'Broker:AMQP'
     backgroundColor: green
     textColor: white
     icon: ArrowPathIcon

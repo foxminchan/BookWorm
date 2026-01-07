@@ -3,11 +3,6 @@ id: UserCheckedOutEvent
 version: 1.0.0
 name: User Checked Out
 summary: Represents an integration event when a user has completed the checkout process
-channels:
-  - id: finance.{env}.events
-    version: 1.0.0
-    parameters:
-      env: stg
 badges:
   - content: Checkout Flow
     textColor: green
@@ -17,7 +12,7 @@ badges:
     textColor: blue
     backgroundColor: blue
     icon: PlusCircleIcon
-  - content: Broker:AMQP
+  - content: 'Broker:AMQP'
     backgroundColor: green
     textColor: white
     icon: ArrowPathIcon
