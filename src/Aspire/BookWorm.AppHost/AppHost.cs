@@ -194,6 +194,7 @@ var storefront = turbo
     .WithExternalHttpEndpoints()
     .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTPS", gateway.Resource.GetEndpoint(Http.Schemes.Https))
     .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTP", gateway.Resource.GetEndpoint(Http.Schemes.Http))
+    .WithEnvironment("NEXT_PUBLIC_COPILOT_ENABLED", "true")
     .WithKeycloak(keycloak);
 
 storefront.WithEnvironment("NEXT_PUBLIC_APP_URL", storefront.GetEndpoint(Http.Schemes.Http));

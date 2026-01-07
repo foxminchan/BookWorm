@@ -36,11 +36,7 @@ export function Providers({
     setIsCopilotEnabled(isCopilotEnabled);
   }, [isCopilotEnabled, setIsCopilotEnabled]);
 
-  const gatewayUrl =
-    env.NEXT_PUBLIC_GATEWAY_HTTPS || env.NEXT_PUBLIC_GATEWAY_HTTP;
-
-  const copilotKitUrl = gatewayUrl ? "/api/copilotkit" : undefined;
-  const shouldShowCopilot = !!(isCopilotEnabled && copilotKitUrl);
+  const shouldShowCopilot = !!isCopilotEnabled;
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -52,7 +48,10 @@ export function Providers({
         enableColorScheme
       >
         {shouldShowCopilot ? (
-          <CopilotKit runtimeUrl={copilotKitUrl} agent="chat-workflow">
+          <CopilotKit
+            runtimeUrl="/api/copilotkit"
+            agent={env.NEXT_PUBLIC_COPILOT_AGENT_NAME}
+          >
             <div className="pb-16 md:pb-0">{children}</div>
           </CopilotKit>
         ) : (

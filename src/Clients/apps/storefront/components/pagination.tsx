@@ -67,9 +67,9 @@ export function Pagination({
         onClick={() => onPageChange(1)}
         disabled={currentPage === 1}
         className="rounded-full"
-        aria-label="First page"
+        aria-label="Go to first page"
       >
-        <ChevronsLeft className="size-4" />
+        <ChevronsLeft className="size-4" aria-hidden="true" />
       </Button>
 
       {/* Previous Page */}
@@ -79,9 +79,9 @@ export function Pagination({
         onClick={() => onPageChange(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
         className="rounded-full"
-        aria-label="Previous page"
+        aria-label="Go to previous page"
       >
-        <ChevronLeft className="size-4" />
+        <ChevronLeft className="size-4" aria-hidden="true" />
       </Button>
 
       {/* Page Numbers */}
@@ -92,7 +92,7 @@ export function Pagination({
             variant={currentPage === page ? "default" : "outline"}
             className="size-11 rounded-full p-0"
             onClick={() => onPageChange(page)}
-            aria-label={`Page ${page}`}
+            aria-label={`${currentPage === page ? "Current page," : "Go to"} page ${page} of ${totalPages}`}
             aria-current={currentPage === page ? "page" : undefined}
           >
             {page}
@@ -107,9 +107,9 @@ export function Pagination({
         onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
         disabled={currentPage === totalPages}
         className="rounded-full"
-        aria-label="Next page"
+        aria-label="Go to next page"
       >
-        <ChevronRight className="size-4" />
+        <ChevronRight className="size-4" aria-hidden="true" />
       </Button>
 
       {/* Last Page */}
@@ -119,9 +119,9 @@ export function Pagination({
         onClick={() => onPageChange(totalPages)}
         disabled={currentPage === totalPages}
         className="rounded-full"
-        aria-label="Last page"
+        aria-label={`Go to last page, page ${totalPages}`}
       >
-        <ChevronsRight className="size-4" />
+        <ChevronsRight className="size-4" aria-hidden="true" />
       </Button>
     </nav>
   );

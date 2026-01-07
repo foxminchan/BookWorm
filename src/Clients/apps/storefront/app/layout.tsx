@@ -8,7 +8,6 @@ import "@workspace/ui/globals.css";
 
 import { JsonLd } from "@/components/json-ld";
 import { env } from "@/env.mjs";
-import { showCopilotKit } from "@/flags";
 import { generateOrganizationJsonLd, generateWebsiteJsonLd } from "@/lib/seo";
 
 import { Providers } from "./providers";
@@ -102,7 +101,7 @@ export default async function RootLayout({
 }>) {
   const organizationJsonLd = generateOrganizationJsonLd();
   const websiteJsonLd = generateWebsiteJsonLd();
-  const isCopilotEnabled = await showCopilotKit();
+  const isCopilotEnabled = env.NEXT_PUBLIC_COPILOT_ENABLED;
 
   return (
     <html lang="en" suppressHydrationWarning>
