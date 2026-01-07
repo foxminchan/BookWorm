@@ -1,17 +1,11 @@
 "use client";
 
-import {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from "react";
+import { forwardRef, useImperativeHandle, useState } from "react";
 
-import { CopilotChat } from "@copilotkit/react-ui";
+import { CopilotSidebar } from "@copilotkit/react-ui";
 import "@copilotkit/react-ui/styles.css";
 import { useAtomValue } from "jotai";
-import { AlertCircle, Copy, MessageCircle, Paperclip, X } from "lucide-react";
+import { AlertCircle, MessageCircle, X } from "lucide-react";
 
 import { Button } from "@workspace/ui/components/button";
 import { Card, CardContent, CardHeader } from "@workspace/ui/components/card";
@@ -25,51 +19,12 @@ export type ChatBotRef = {
 
 const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
   const [isOpen, setIsOpen] = useState(false);
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useImperativeHandle(ref, () => ({
     openChat: () => {
       setIsOpen(true);
     },
   }));
-
-  // Focus trap and keyboard navigation
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setIsOpen(false);
-      }
-
-      // Focus trap
-      if (e.key === "Tab" && dialogRef.current) {
-        const focusableElements = dialogRef.current.querySelectorAll(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        );
-        const firstElement = focusableElements[0] as HTMLElement;
-        const lastElement = focusableElements[
-          focusableElements.length - 1
-        ] as HTMLElement;
-
-        if (e.shiftKey && document.activeElement === firstElement) {
-          e.preventDefault();
-          lastElement?.focus();
-        } else if (!e.shiftKey && document.activeElement === lastElement) {
-          e.preventDefault();
-          firstElement?.focus();
-        }
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    closeButtonRef.current?.focus();
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isOpen]);
 
   if (!isOpen) {
     return (
@@ -78,6 +33,7 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
         size="icon"
         className="fixed right-6 bottom-6 z-50 hidden h-12 w-12 rounded-full shadow-lg md:flex"
         aria-label="Open chat"
+        data-copilot-chat-trigger
       >
         <MessageCircle className="h-6 w-6" aria-hidden="true" />
       </Button>
@@ -85,63 +41,17 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 hidden items-end justify-end p-6 md:flex"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="chat-dialog-title"
-    >
-      <div
-        className="fixed inset-0 bg-black/20"
-        onClick={() => setIsOpen(false)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            setIsOpen(false);
-          }
+    <div className="fixed inset-0 z-50 md:block" role="dialog">
+      <CopilotSidebar
+        labels={{
+          title: "BookWorm Literary Guide",
+          initial: "Hi! How can I help you find a book today?",
+          placeholder: "Ask about a book...",
         }}
-        aria-label="Close chat"
+        defaultOpen={isOpen}
+        onSetOpen={setIsOpen}
+        clickOutsideToClose={true}
       />
-      <div className="relative z-10" ref={dialogRef}>
-        <Card className="border-secondary/30 animate-in fade-in slide-in-from-bottom-4 flex h-150 w-96 flex-col overflow-hidden rounded-2xl shadow-2xl duration-300 sm:w-105">
-          <CardHeader className="from-primary via-primary to-primary/90 text-primary-foreground border-primary-foreground/10 flex flex-row items-center justify-between gap-3 border-b bg-linear-to-br p-6">
-            <div className="flex items-center gap-3">
-              <div className="bg-primary-foreground/20 flex h-10 w-10 items-center justify-center rounded-full">
-                <MessageCircle className="h-5 w-5" aria-hidden="true" />
-              </div>
-              <h2 id="chat-dialog-title" className="font-semibold">
-                BookWorm Literary Guide
-              </h2>
-            </div>
-            <Button
-              ref={closeButtonRef}
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsOpen(false)}
-              className="hover:bg-primary-foreground/20 h-8 w-8 rounded-full"
-              aria-label="Close chat"
-            >
-              <X className="h-5 w-5" aria-hidden="true" />
-            </Button>
-          </CardHeader>
-          <CardContent className="flex-1 overflow-auto">
-            <CopilotChat
-              labels={{
-                title: "BookWorm Literary Guide",
-                placeholder: "Ask about a book...",
-              }}
-              icons={{
-                activityIcon: <AlertCircle className="h-6 w-6" />,
-                copyIcon: <Copy className="h-4 w-4" />,
-                headerCloseIcon: <X className="h-5 w-5" />,
-                sendIcon: <Paperclip className="h-5 w-5 rotate-45" />,
-                closeIcon: <X className="h-5 w-5" />,
-                openIcon: <MessageCircle className="h-6 w-6" />,
-                stopIcon: <X className="h-4 w-4" />,
-              }}
-            />
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 });

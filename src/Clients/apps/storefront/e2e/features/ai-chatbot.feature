@@ -14,14 +14,15 @@ Feature: AI-Powered Book Recommendations
     When I click "Try AI Recommendations" button
     Then the AI chatbot dialog should open
     And the chatbot should be focused
-    And I should see a welcome message
+    And I should see the welcome message "Hi! How can I help you find a book today?"
 
   @smoke @chat
   Scenario: Open AI chatbot from floating button
     Given I am on any page
-    When I click the floating chat button
-    Then the AI chatbot dialog should open
+    When I click the floating chat button with label "Open chat"
+    Then the AI chatbot dialog should open with title "BookWorm Literary Guide"
     And the chatbot should be ready to receive messages
+    And I should see the placeholder text "Ask about a book..."
 
   @chat-interaction
   Scenario: Get book recommendation based on mood
@@ -92,18 +93,27 @@ Feature: AI-Powered Book Recommendations
     And focus should not escape to the page behind
 
   @chat-close
-  Scenario: Close chatbot with escape key
+  Scenario: Close chatbot with escape key or close button
     Given the AI chatbot is open
-    When I press Escape
+    When I press Escape or click the close button
     Then the chatbot should close
     And focus should return to the trigger button
 
-  @chat-close
-  Scenario: Close chatbot with close button
-    Given the AI chatbot is open
-    When I click the close button
-    Then the chatbot should close smoothly
-    And my conversation should be preserved
+  @error-handling @feature-disabled
+  Scenario: Show unavailable message when feature is disabled
+    Given AI features are disabled
+    When I click the floating chat button
+    Then I should see an "unavailable" dialog
+    And the dialog should show "Feature in Development" title
+    And I should see message "Our AI chat assistant is currently under development and will be available soon. Stay tuned!"
+    And I can close the dialog by clicking outside or the close button
+
+  @error-handling @gateway-unavailable
+  Scenario: Show unavailable message when gateway is not configured
+    Given the API gateway is not configured
+    When I click the floating chat button
+    Then I should see an "unavailable" dialog with title "Chat Unavailable"
+    And I should see message "The chat feature is currently unavailable. Please try again later."
 
   @error-handling
   Scenario: Handle AI service unavailability
@@ -125,29 +135,13 @@ Feature: AI-Powered Book Recommendations
   Scenario: Chatbot is responsive on mobile
     Given I am on a mobile device
     And I am on the homepage
-    When I click the floating chat button
-    Then the chatbot should open full-screen
-    And the input field should be accessible above the keyboard
+    Then the floating chat button should be hidden on mobile
+    And the chatbot is only available on desktop screens
 
-  @smart-suggestions
-  Scenario: Chatbot provides contextual suggestions
-    Given the AI chatbot is open
-    When I view the initial state
-    Then I should see suggested prompts
-    And I can click a suggestion to auto-fill the input
-
-  @copy-response
-  Scenario: Copy AI response to clipboard
-    Given the AI chatbot is open
-    And I received a book recommendation
-    When I click the copy button on the response
-    Then the response should be copied to clipboard
-    And I should see a "Copied!" confirmation
-
-  @attachment
-  Scenario: Upload book cover for identification
-    Given the AI chatbot is open
-    When I click the attachment button
-    And I upload a book cover image
-    Then the AI should analyze the image
-    And provide information about the book or similar titles
+  @chat-ui
+  Scenario: Chatbot uses CopilotSidebar component
+    Given I am on a desktop device
+    When I open the AI chatbot
+    Then the chatbot should use the CopilotSidebar component
+    And it should support click outside to close
+    And the sidebar should be positioned fixed with full-screen overlay
