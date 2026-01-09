@@ -58,6 +58,7 @@ export default {
   homepageLink: "https://github.com/foxminchan/BookWorm/",
   repositoryUrl: "https://github.com/foxminchan/BookWorm",
   editUrl: "https://github.com/foxminchan/BookWorm/edit/main/docs/eventcatalog",
+  theme: "sapphire",
   trailingSlash: false,
   base: "/",
   mdxOptimize: true,
