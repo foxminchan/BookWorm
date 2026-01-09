@@ -35,6 +35,9 @@ updates:
       prefix: "NuGet"
       include: scope
     open-pull-requests-limit: 15
+    ignore:
+      - dependency-name: "MassTransit.*"
+        update-types: ["version-update:semver-major"]
     groups:
       Aspire:
         patterns:
@@ -56,6 +59,9 @@ updates:
       EntityFrameworkCore:
         patterns:
           - "Microsoft.EntityFrameworkCore.*"
+      MicrosoftAgents:
+        patterns:
+          - "Microsoft.Agents.*"
 
   - package-ecosystem: "npm"
     directory: "/docs/eventcatalog"
