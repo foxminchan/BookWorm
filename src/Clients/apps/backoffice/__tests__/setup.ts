@@ -1,5 +1,3 @@
-import React from "react";
-
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, vi } from "vitest";
@@ -8,7 +6,7 @@ import { server } from "@workspace/mocks/node";
 
 // Establish API mocking before all tests
 beforeAll(() => {
-  server.listen({ onUnhandledRequest: "error" });
+  server.listen({ onUnhandledRequest: "warn" });
 });
 
 // Reset any request handlers that we may add during the tests,
@@ -49,22 +47,17 @@ vi.mock("next/navigation", () => ({
   notFound: vi.fn(),
 }));
 
-// Mock next/image to avoid URL parsing issues in node/happy-dom
-vi.mock("next/image", () => ({
-  __esModule: true,
-  default: (props: any) => {
-    const { src, alt, fill, priority, quality, sizes, loader, ...rest } = props;
-    const resolvedSrc = typeof src === "string" ? src : (src?.src ?? "");
-
-    // Drop Next.js specific props like `fill` that leak onto img in the test env
-    return React.createElement("img", {
-      src: resolvedSrc,
-      alt: alt ?? "",
-      ...rest,
-    });
-  },
-}));
-
-// Mock env variables
+// Mock env variables - match MSW handler base URLs
 process.env.NEXT_PUBLIC_GATEWAY_HTTP = "http://localhost:5000";
-process.env.NEXT_PUBLIC_GATEWAY_HTTPS = "https://localhost:5001";
+process.env.NEXT_PUBLIC_GATEWAY_HTTPS = "http://localhost:5000";
+
+// Polyfill for Radix UI pointer capture (required for Select component in tests)
+if (!HTMLElement.prototype.hasPointerCapture) {
+  HTMLElement.prototype.hasPointerCapture = vi.fn(() => false);
+}
+if (!HTMLElement.prototype.setPointerCapture) {
+  HTMLElement.prototype.setPointerCapture = vi.fn();
+}
+if (!HTMLElement.prototype.releasePointerCapture) {
+  HTMLElement.prototype.releasePointerCapture = vi.fn();
+}

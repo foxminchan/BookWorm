@@ -52,7 +52,7 @@ describe("ShopFilters", () => {
     renderWithProviders(<ShopFilters {...defaultProps} />);
 
     expect(screen.getAllByText("Price Range")[0]).toBeInTheDocument();
-    expect(screen.getAllByText("$0")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("$0.00")[0]).toBeInTheDocument();
   });
 
   it("should display category filter", () => {
@@ -78,7 +78,7 @@ describe("ShopFilters", () => {
       <ShopFilters {...defaultProps} priceRange={[20, 80]} />,
     );
 
-    expect(screen.getAllByText("$20")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("$20.00")[0]).toBeInTheDocument();
   });
 
   it("should handle empty categories", () => {

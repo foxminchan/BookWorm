@@ -11,7 +11,13 @@ export default [
     },
   },
   {
-    ignores: [".next/**", "public/mockServiceWorker.js"],
+    ignores: [
+      ".next/**",
+      "public/mockServiceWorker.js",
+      "coverage/**",
+      "**/coverage/**",
+      "coverage/lcov-report/**",
+    ],
   },
   {
     rules: {
@@ -20,6 +26,12 @@ export default [
       "react-hooks/immutability": "off",
       "@typescript-eslint/no-unused-vars": "off",
       "no-undef": "off",
+    },
+  },
+  {
+    files: ["**/__tests__/**/*.test.tsx", "**/__tests__/**/*.test.ts"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
     },
   },
 ];
