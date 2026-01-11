@@ -1,3 +1,5 @@
+import { addDays, formatISO } from "date-fns";
+
 import type { Book } from "@workspace/types/catalog/books";
 import type { Feedback } from "@workspace/types/rating/index";
 
@@ -25,7 +27,7 @@ export function generateProductJsonLd(book: Book, reviews?: Feedback[]) {
         `${review.firstName || ""} ${review.lastName || ""}`.trim() ||
         "Anonymous",
     },
-    datePublished: new Date().toISOString(),
+    datePublished: formatISO(new Date()),
     reviewBody: review.comment || "",
     reviewRating: {
       "@type": "Rating",
@@ -64,9 +66,7 @@ export function generateProductJsonLd(book: Book, reviews?: Feedback[]) {
           ? "https://schema.org/InStock"
           : "https://schema.org/OutOfStock",
       url: `/shop/${book.id}`,
-      priceValidUntil: new Date(
-        Date.now() + 30 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
+      priceValidUntil: formatISO(addDays(new Date(), 30)),
     },
     aggregateRating,
     review: reviewsData,

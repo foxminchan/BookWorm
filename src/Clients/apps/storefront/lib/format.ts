@@ -1,3 +1,5 @@
+import { format, parseISO } from "date-fns";
+
 export function formatPrice(price: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -6,21 +8,13 @@ export function formatPrice(price: number): string {
 }
 
 export function formatDate(date: string | Date): string {
-  const dateObj = typeof date === "string" ? new Date(date) : date;
-  return new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  }).format(dateObj);
+  const dateObj = typeof date === "string" ? parseISO(date) : date;
+  return format(dateObj, "MMMM d, yyyy");
 }
 
 export function formatCompactDate(date: string | Date): string {
-  const dateObj = typeof date === "string" ? new Date(date) : date;
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(dateObj);
+  const dateObj = typeof date === "string" ? parseISO(date) : date;
+  return format(dateObj, "MMM d, yyyy");
 }
 
 export function truncateText(text: string, maxLength: number): string {

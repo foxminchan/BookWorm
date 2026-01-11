@@ -127,4 +127,20 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Enhanced focus visibility for keyboard navigation */
+  *:focus-visible {
+    @apply outline-ring outline-2 outline-offset-2;
+  }
+
+  /* Ensure focus is visible on interactive elements */
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [role="button"]:focus-visible,
+  [tabindex]:not([tabindex="-1"]):focus-visible {
+    @apply outline-ring outline-2 outline-offset-2;
+  }
 }

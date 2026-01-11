@@ -20,10 +20,10 @@ export const createBookSchema = z.object({
     ),
   price: z.number().positive("Price must be greater than 0"),
   priceSale: z.number().nullable().optional(),
-  categoryId: z.uuid({ message: "Invalid category ID format" }),
-  publisherId: z.uuid({ message: "Invalid publisher ID format" }),
+  categoryId: z.string().min(1, "Category is required"),
+  publisherId: z.string().min(1, "Publisher is required"),
   authorIds: z
-    .array(z.uuid({ message: "Invalid author ID format" }))
+    .array(z.string().min(1, "Invalid author ID format"))
     .min(1, "At least one author is required"),
 });
 
@@ -45,8 +45,8 @@ export const updateBookSchema = z.object({
     ),
   price: z.number().positive("Price must be greater than 0"),
   priceSale: z.number().nullable().optional(),
-  categoryId: z.uuid({ error: "Invalid category ID format" }),
-  publisherId: z.uuid({ error: "Invalid publisher ID format" }),
+  categoryId: z.string().min(1, "Category is required"),
+  publisherId: z.string().min(1, "Publisher is required"),
   authorIds: z
     .array(z.uuid({ error: "Invalid author ID format" }))
     .min(1, "At least one author is required"),

@@ -115,7 +115,10 @@ export function parseCurrency(currencyString: string): number {
  * Format number as currency (e.g., 25.99 -> "$25.99")
  */
 export function formatCurrency(amount: number): string {
-  return `$${amount.toFixed(2)}`;
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount);
 }
 
 /**

@@ -78,7 +78,7 @@ After(async function (this: CucumberWorld, { result, pickle }: any) {
     this.attach(screenshot, "image/png");
 
     // Save screenshot to file
-    const timestamp = new Date().getTime();
+    const timestamp = Date.now();
     const screenshotPath = `e2e/reports/screenshots/${pickle.name}-${timestamp}.png`;
     await page.screenshot({ path: screenshotPath, fullPage: true });
   }

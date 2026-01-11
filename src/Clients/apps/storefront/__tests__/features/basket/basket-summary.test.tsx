@@ -118,9 +118,9 @@ describe("BasketSummary", () => {
 
     renderWithProviders(<BasketSummary {...largeProps} />);
 
-    expect(screen.getByText("$9999.99")).toBeInTheDocument();
+    expect(screen.getByText("$9,999.99")).toBeInTheDocument();
     expect(screen.getByText("$50.00")).toBeInTheDocument();
-    expect(screen.getByText("$10049.99")).toBeInTheDocument();
+    expect(screen.getByText("$10,049.99")).toBeInTheDocument();
   });
 
   it("should not call onCheckout when button is disabled", async () => {

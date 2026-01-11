@@ -14,14 +14,14 @@ import {
   DialogTitle,
 } from "@workspace/ui/components/dialog";
 
-interface ConfirmationState {
+type ConfirmationState = {
   isOpen: boolean;
   bookId: string;
   bookTitle?: string;
   price?: number;
   quantity: number;
   resolve?: (confirmed: boolean) => void;
-}
+};
 
 export function useBasketConfirmation() {
   const [confirmation, setConfirmation] = useState<ConfirmationState>({
@@ -59,6 +59,10 @@ export function useBasketConfirmation() {
   };
 
   const ConfirmationDialog = () => {
+    const formatter = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    });
     return (
       <Dialog
         open={confirmation.isOpen}
@@ -88,8 +92,8 @@ export function useBasketConfirmation() {
             </p>
             {confirmation.price && (
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                <span className="font-medium">Price:</span> $
-                {(confirmation.price * confirmation.quantity).toFixed(2)}
+                <span className="font-medium">Price:</span>{" "}
+                {formatter.format(confirmation.price * confirmation.quantity)}
               </p>
             )}
           </div>

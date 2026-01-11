@@ -1,0 +1,108 @@
+{
+  "name": "@bookworm/backoffice",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Administration backoffice for BookWorm online bookstore",
+  "author": "Nhan Nguyen <nguyenxuannhan407@gmail.com> (https://github.com/foxminchan)",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  ],
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foxminchan/BookWorm.git",
+    "directory": "src/Clients/apps/backoffice"
+  },
+  "bugs": {
+    "url": "https://github.com/foxminchan/BookWorm/issues"
+  },
+  "homepage": "https://foxminchan.github.io/BookWorm/",
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui",
+    "test:e2e": "cucumber-js",
+    "test:e2e:headed": "HEADLESS=false cucumber-js",
+    "test:e2e:chrome": "cucumber-js --profile default",
+    "test:e2e:ci": "cucumber-js --profile ci",
+    "test:e2e:report": "node e2e/support/generate-report.js",
+    "playwright:install": "playwright install --with-deps chromium",
+    "playwright:install:all": "playwright install --with-deps"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.209.0",
+    "@opentelemetry/sdk-node": "^0.209.0",
+    "@opentelemetry/sdk-trace-node": "^2.3.0",
+    "@t3-oss/env-nextjs": "^0.13.10",
+    "@tanstack/react-query": "^5.90.16",
+    "@tanstack/react-table": "^8.21.3",
+    "@vercel/analytics": "1.6.1",
+    "@vercel/speed-insights": "^1.3.1",
+    "better-auth": "^1.4.10",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.562.0",
+    "next": "16.1.1",
+    "next-themes": "^0.4.6",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-hook-form": "^7.71.0",
+    "recharts": "^3.6.0",
+    "sonner": "^2.0.7",
+    "tailwind-merge": "^3.4.0",
+    "ts-pattern": "^5.9.0",
+    "usehooks-ts": "3.1.1",
+    "zod": "^4.3.5"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.11.0",
+    "@cucumber/cucumber": "^12.5.0",
+    "@cucumber/pretty-formatter": "^2.4.1",
+    "@faker-js/faker": "^10.2.0",
+    "@playwright/test": "^1.57.0",
+    "@tailwindcss/postcss": "^4.1.18",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.1",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^25.0.6",
+    "@types/react": "^19.2.8",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.2",
+    "@vitest/coverage-v8": "^4.0.16",
+    "@vitest/ui": "^4.0.16",
+    "@workspace/eslint-config": "workspace:^",
+    "@workspace/typescript-config": "workspace:*",
+    "cucumber-html-reporter": "^7.2.0",
+    "eslint": "^9.39.2",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "happy-dom": "^20.1.0",
+    "multiple-cucumber-html-reporter": "^3.9.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16"
+  },
+  "peerDependencies": {
+    "@workspace/api-client": "workspace:*",
+    "@workspace/api-hooks": "workspace:*",
+    "@workspace/mocks": "workspace:*",
+    "@workspace/types": "workspace:*",
+    "@workspace/ui": "workspace:*",
+    "@workspace/utils": "workspace:*",
+    "@workspace/validations": "workspace:*"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
+  }
+}

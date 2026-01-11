@@ -1,0 +1,96 @@
+"use client";
+
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+
+import type { Order } from "@workspace/types/ordering/orders";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card";
+
+import { OrdersRevenueChartSkeleton } from "@/components/loading-skeleton";
+import { CHART_COLORS, CHART_THEME } from "@/lib/constants";
+
+type OrdersRevenueChartProps = {
+  orders: Order[];
+  isLoading: boolean;
+};
+
+export function OrdersRevenueChart({
+  orders,
+  isLoading,
+}: OrdersRevenueChartProps) {
+  if (isLoading) {
+    return <OrdersRevenueChartSkeleton />;
+  }
+
+  const ordersByDate = orders.reduce(
+    (
+      acc: Array<{ date: string; orders: number; revenue: number }>,
+      order: Order,
+    ) => {
+      const date = new Date(order.date).toLocaleDateString();
+      const existing = acc.find((d) => d.date === date);
+      if (existing) {
+        existing.orders += 1;
+        existing.revenue += order.total || 0;
+      } else {
+        acc.push({ date, orders: 1, revenue: order.total || 0 });
+      }
+      return acc;
+    },
+    [],
+  );
+
+  return (
+    <Card className="lg:col-span-2">
+      <CardHeader>
+        <CardTitle>Orders & Revenue Trend</CardTitle>
+        <CardDescription>Daily orders and revenue</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={ordersByDate.slice(-7)}>
+            <CartesianGrid
+              strokeDasharray={CHART_THEME.grid.strokeDasharray}
+              stroke={CHART_THEME.grid.stroke}
+            />
+            <XAxis dataKey="date" stroke={CHART_THEME.axis.stroke} />
+            <YAxis stroke={CHART_THEME.axis.stroke} />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "#171717",
+                border: "1px solid #262626",
+              }}
+            />
+            <Legend />
+            <Line
+              type="monotone"
+              dataKey="orders"
+              stroke={CHART_COLORS[1]}
+              name="Orders"
+            />
+            <Line
+              type="monotone"
+              dataKey="revenue"
+              stroke={CHART_COLORS[0]}
+              name="Revenue ($)"
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
+  );
+}
