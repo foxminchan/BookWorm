@@ -179,9 +179,12 @@ describe("Books CellAction", () => {
 
   it("closes delete dialog on successful mutation", async () => {
     const user = userEvent.setup();
-    const mutateFn = vi.fn((bookId, { onSuccess }) => {
-      onSuccess?.();
-    });
+    const mutateFn = vi.fn(
+      (bookId: string, options?: { onSuccess?: () => void }) => {
+        // Simulate successful mutation by calling onSuccess
+        options?.onSuccess?.();
+      },
+    );
     mockUseDeleteBook.mockReturnValue({
       mutate: mutateFn,
       isPending: false,
@@ -192,11 +195,22 @@ describe("Books CellAction", () => {
     const deleteButton = screen.getByLabelText(`Delete ${mockBook.name}`);
     await user.click(deleteButton);
 
+    // Wait for dialog to appear
+    await waitFor(() => {
+      expect(screen.getByText("Delete Book")).toBeInTheDocument();
+    });
+
     const confirmButton = screen.getByRole("button", { name: /delete/i });
     await user.click(confirmButton);
 
     await waitFor(() => {
-      expect(mutateFn).toHaveBeenCalled();
+      expect(mutateFn).toHaveBeenCalledWith(
+        mockBook.id,
+        expect.objectContaining({
+          onSuccess: expect.any(Function),
+        }),
+      );
+      expect(screen.queryByText("Delete Book")).not.toBeInTheDocument();
     });
   });
 });

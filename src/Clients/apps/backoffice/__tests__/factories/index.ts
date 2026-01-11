@@ -4,11 +4,12 @@ import { faker } from "@faker-js/faker";
  * Factory functions for generating realistic test data using faker
  */
 
-export function createMockAuthor(overrides = {}) {
+export function createMockAuthor(
+  overrides: Partial<{ id: string; name: string }> = {},
+) {
   return {
-    id: faker.string.uuid(),
-    name: faker.person.fullName(),
-    ...overrides,
+    id: overrides.id ?? faker.string.uuid(),
+    name: overrides.name ?? faker.person.fullName(),
   };
 }
 

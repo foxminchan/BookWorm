@@ -25,6 +25,8 @@ describe("AuthorsFilter", () => {
       createMockAuthor({ name: "John Doe" }),
       createMockAuthor({ name: "Jane Smith" }),
     ];
+    // Clear all mocks before each test
+    vi.clearAllMocks();
   });
 
   it("renders authors label", () => {
