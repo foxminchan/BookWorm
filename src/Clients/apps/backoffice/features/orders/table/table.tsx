@@ -5,14 +5,17 @@ import { useState } from "react";
 import type { SortingState } from "@tanstack/react-table";
 
 import useOrders from "@workspace/api-hooks/ordering/orders/useOrders";
-import type { ListOrdersQuery } from "@workspace/types/ordering/orders";
+import type {
+  ListOrdersQuery,
+  OrderStatus,
+} from "@workspace/types/ordering/orders";
 
 import { FilterTable } from "@/components/filter-table";
 
 import { columns } from "./columns";
 
 type OrdersTableProps = {
-  statusFilter?: string;
+  statusFilter?: OrderStatus;
 };
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -25,10 +28,10 @@ export function OrdersTable({ statusFilter }: OrdersTableProps) {
   const query: ListOrdersQuery = {
     pageIndex: pageIndex + 1,
     pageSize,
-    ...(statusFilter && { status: statusFilter as any }),
+    ...(statusFilter && { status: statusFilter }),
     ...(sorting.length > 0 && sorting[0]
       ? {
-          orderBy: sorting[0].id as any,
+          orderBy: sorting[0].id as string,
           isDescending: sorting[0].desc,
         }
       : {}),

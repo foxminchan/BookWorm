@@ -33,7 +33,7 @@ export function Providers({
       initMocks();
     }
     setIsCopilotEnabled(isCopilotEnabled);
-  }, [isCopilotEnabled, setIsCopilotEnabled]);
+  }, [isCopilotEnabled, setIsCopilotEnabled, gatewayUrl]);
 
   const shouldShowCopilot = !!isCopilotEnabled && !!gatewayUrl;
 

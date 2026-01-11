@@ -25,21 +25,20 @@ export default function BooksPage() {
   const [query, setQuery] = useState<
     Omit<ListBooksQuery, "pageIndex" | "pageSize">
   >({});
+  const newBookId = searchParams.get("new");
   const [highlightedBookId, setHighlightedBookId] = useState<string | null>(
-    null,
+    newBookId,
   );
 
   useEffect(() => {
-    const newBookId = searchParams.get("new");
     if (newBookId) {
-      setHighlightedBookId(newBookId);
       // Clear the URL parameter
       router.replace("/books", { scroll: false });
       // Remove highlight after 3 seconds
       const timeout = setTimeout(() => setHighlightedBookId(null), 3000);
       return () => clearTimeout(timeout);
     }
-  }, [searchParams, router]);
+  }, [newBookId, router]);
 
   return (
     <div className="space-y-6">

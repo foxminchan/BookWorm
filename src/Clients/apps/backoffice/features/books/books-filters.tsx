@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useDebounceCallback } from "usehooks-ts";
@@ -50,6 +50,35 @@ export function BooksFilters({ onFiltersChange }: BooksFiltersProps) {
     string | undefined
   >(undefined);
 
+  const updateQuery = useCallback(() => {
+    const query: Omit<ListBooksQuery, "pageIndex" | "pageSize"> = {
+      search: debouncedSearch || undefined,
+      minPrice:
+        debouncedPriceRange[0] !== PRICE_RANGE.min
+          ? debouncedPriceRange[0]
+          : undefined,
+      maxPrice:
+        debouncedPriceRange[1] !== PRICE_RANGE.max
+          ? debouncedPriceRange[1]
+          : undefined,
+      orderBy,
+      isDescending,
+      categoryId: selectedCategory,
+      authorId: debouncedAuthors.length > 0 ? debouncedAuthors[0] : undefined,
+      publisherId: selectedPublisher || undefined,
+    };
+    onFiltersChange(query);
+  }, [
+    debouncedSearch,
+    debouncedPriceRange,
+    orderBy,
+    isDescending,
+    selectedCategory,
+    debouncedAuthors,
+    selectedPublisher,
+    onFiltersChange,
+  ]);
+
   const handleSearchChange = useDebounceCallback(
     (term: string) => {
       setDebouncedSearch(term);
@@ -76,26 +105,6 @@ export function BooksFilters({ onFiltersChange }: BooksFiltersProps) {
     500,
     { leading: false, trailing: true },
   );
-
-  const updateQuery = () => {
-    const query: Omit<ListBooksQuery, "pageIndex" | "pageSize"> = {
-      search: debouncedSearch || undefined,
-      minPrice:
-        debouncedPriceRange[0] !== PRICE_RANGE.min
-          ? debouncedPriceRange[0]
-          : undefined,
-      maxPrice:
-        debouncedPriceRange[1] !== PRICE_RANGE.max
-          ? debouncedPriceRange[1]
-          : undefined,
-      orderBy,
-      isDescending,
-      categoryId: selectedCategory,
-      authorId: debouncedAuthors.length > 0 ? debouncedAuthors[0] : undefined,
-      publisherId: selectedPublisher || undefined,
-    };
-    onFiltersChange(query);
-  };
 
   const handleAuthorToggle = (authorId: string) => {
     const newAuthors = selectedAuthors.includes(authorId)

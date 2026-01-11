@@ -5,7 +5,7 @@ import { useState } from "react";
 import type { SortingState } from "@tanstack/react-table";
 
 import useBooks from "@workspace/api-hooks/catalog/books/useBooks";
-import type { ListBooksQuery } from "@workspace/types/catalog/books";
+import type { Book, ListBooksQuery } from "@workspace/types/catalog/books";
 
 import { FilterTable } from "@/components/filter-table";
 
@@ -29,7 +29,7 @@ export function BooksTable({ query, highlightedBookId }: BooksTableProps) {
     pageSize,
     ...(sorting.length > 0 && sorting[0]
       ? {
-          orderBy: sorting[0].id as any,
+          orderBy: sorting[0].id as string,
           isDescending: sorting[0].desc,
         }
       : {}),
@@ -66,7 +66,7 @@ export function BooksTable({ query, highlightedBookId }: BooksTableProps) {
       onPaginationChange={handlePaginationChange}
       onSortingChange={handleSortingChange}
       highlightedId={highlightedBookId}
-      getRowId={(row: any) => row.id}
+      getRowId={(row: Book) => row.id}
     />
   );
 }

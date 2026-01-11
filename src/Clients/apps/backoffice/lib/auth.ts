@@ -4,7 +4,7 @@ import { genericOAuth, keycloak } from "better-auth/plugins";
 import { env } from "@/env.mjs";
 
 export const auth = betterAuth({
-  baseURL: env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+  baseURL: env.NEXT_PUBLIC_APP_URL || "http://localhost:3001",
   secret:
     env.BETTER_AUTH_SECRET ||
     "replace_with_a_secure_random_secret_in_production",
@@ -30,8 +30,7 @@ export const auth = betterAuth({
             "profile",
             "email",
             "catalog_read",
-            "basket_read",
-            "basket_write",
+            "catalog_write",
             "ordering_read",
             "ordering_write",
             "rating_read",

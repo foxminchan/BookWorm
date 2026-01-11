@@ -2,6 +2,18 @@ import { DEFAULT_BOOK_IMAGE, PRICE_RANGE } from "@workspace/utils/constants";
 
 export { DEFAULT_BOOK_IMAGE, PRICE_RANGE };
 
+// Authentication
+export const AUTH = {
+  PROVIDER: "keycloak",
+  CALLBACK_URL: "/",
+} as const;
+
+// API
+export const API = {
+  DEFAULT_RETRY: 3,
+  DEFAULT_TIMEOUT: 30000,
+} as const;
+
 // Pagination
 export const PAGE_SIZES = [10, 20, 50] as const;
 export const DEFAULT_PAGE_SIZE = 10;

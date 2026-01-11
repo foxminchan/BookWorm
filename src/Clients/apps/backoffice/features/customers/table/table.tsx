@@ -23,7 +23,7 @@ export function CustomersTable() {
     pageSize,
     ...(sorting.length > 0 && sorting[0]
       ? {
-          orderBy: sorting[0].id as any,
+          orderBy: sorting[0].id as string,
           isDescending: sorting[0].desc,
         }
       : {}),

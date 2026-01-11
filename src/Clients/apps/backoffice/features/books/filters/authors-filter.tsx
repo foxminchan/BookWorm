@@ -3,7 +3,6 @@
 import { X } from "lucide-react";
 
 import useAuthors from "@workspace/api-hooks/catalog/authors/useAuthors";
-import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { Label } from "@workspace/ui/components/label";
 import { Skeleton } from "@workspace/ui/components/skeleton";
