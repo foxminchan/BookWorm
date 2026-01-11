@@ -12,8 +12,15 @@ type SearchInputProps = {
 export function SearchInput({ value, onChange }: SearchInputProps) {
   return (
     <div className="relative">
-      <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+      <label htmlFor="book-search" className="sr-only">
+        Search books by title or author
+      </label>
+      <Search
+        className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2"
+        aria-hidden="true"
+      />
       <Input
+        id="book-search"
         type="text"
         placeholder="Search by title or author..."
         value={value}

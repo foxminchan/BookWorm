@@ -54,6 +54,8 @@ type FilterTableProps<TData> = {
   error?: Error | null;
   onPaginationChange: (pageIndex: number, pageSize: number) => void;
   onSortingChange?: (sorting: SortingState) => void;
+  highlightedId?: string | null;
+  getRowId?: (row: TData) => string;
 };
 
 export function FilterTable<TData>({
@@ -67,6 +69,8 @@ export function FilterTable<TData>({
   isLoading,
   onPaginationChange,
   onSortingChange,
+  highlightedId,
+  getRowId,
 }: FilterTableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -137,7 +141,7 @@ export function FilterTable<TData>({
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map((header) => (
-                      <TableHead key={header.id}>
+                      <TableHead key={header.id} scope="col">
                         {header.isPlaceholder
                           ? null
                           : flexRender(
@@ -151,21 +155,31 @@ export function FilterTable<TData>({
               </TableHeader>
               <TableBody>
                 {table.getRowModel().rows?.length ? (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow
-                      key={row.id}
-                      data-state={row.getIsSelected() && "selected"}
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
+                  table.getRowModel().rows.map((row) => {
+                    const rowId = getRowId?.(row.original);
+                    const isHighlighted =
+                      highlightedId && rowId === highlightedId;
+                    return (
+                      <TableRow
+                        key={row.id}
+                        data-state={row.getIsSelected() && "selected"}
+                        className={
+                          isHighlighted
+                            ? "bg-green-50 dark:bg-green-950/20"
+                            : ""
+                        }
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell key={cell.id}>
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    );
+                  })
                 ) : (
                   <TableRow>
                     <TableCell
@@ -187,14 +201,19 @@ export function FilterTable<TData>({
               </div>
               <div className="flex items-center space-x-6 lg:space-x-8">
                 <div className="flex items-center space-x-2">
-                  <p className="text-sm font-medium">Rows per page</p>
+                  <p className="text-sm font-medium" id="rows-per-page-label">
+                    Rows per page
+                  </p>
                   <Select
                     value={pageSize.toString()}
                     onValueChange={(value) =>
                       handlePageSizeChange(Number.parseInt(value))
                     }
                   >
-                    <SelectTrigger className="h-8 w-17.5">
+                    <SelectTrigger
+                      className="h-8 w-17.5"
+                      aria-labelledby="rows-per-page-label"
+                    >
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -215,8 +234,9 @@ export function FilterTable<TData>({
                     size="sm"
                     onClick={handlePreviousPage}
                     disabled={pageIndex === 0}
+                    aria-label={`Go to previous page, currently on page ${pageIndex + 1}`}
                   >
-                    <ChevronLeft className="mr-2 h-4 w-4" />
+                    <ChevronLeft className="mr-2 h-4 w-4" aria-hidden="true" />
                     Previous
                   </Button>
                   <Button
@@ -224,9 +244,10 @@ export function FilterTable<TData>({
                     size="sm"
                     onClick={handleNextPage}
                     disabled={pageIndex >= totalPages - 1}
+                    aria-label={`Go to next page, currently on page ${pageIndex + 1}`}
                   >
                     Next
-                    <ChevronRight className="ml-2 h-4 w-4" />
+                    <ChevronRight className="ml-2 h-4 w-4" aria-hidden="true" />
                   </Button>
                 </div>
               </div>

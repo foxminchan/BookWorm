@@ -20,6 +20,10 @@ type OrdersListProps = {
 };
 
 export default function OrdersList({ orders }: OrdersListProps) {
+  const formatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  });
   return (
     <div className="border-border/40 bg-border/40 space-y-px border">
       {orders.map((order) => (
@@ -61,7 +65,7 @@ export default function OrdersList({ orders }: OrdersListProps) {
                       Total Amount
                     </p>
                     <p className="font-serif text-lg font-medium">
-                      ${order.total.toFixed(2)}
+                      {formatter.format(order.total)}
                     </p>
                   </div>
                   <div className="col-span-2 flex items-end md:col-span-1">

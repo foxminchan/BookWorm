@@ -3,7 +3,8 @@ import { Skeleton } from "@workspace/ui/components/skeleton";
 
 export function OrderDetailSkeleton() {
   return (
-    <Card>
+    <Card role="status" aria-live="polite" aria-busy="true">
+      <span className="sr-only">Loading order details...</span>
       <CardContent className="space-y-4 pt-6">
         <Skeleton className="h-12 w-full" />
         <Skeleton className="h-12 w-full" />
@@ -15,7 +16,13 @@ export function OrderDetailSkeleton() {
 
 export function BookFormSkeleton() {
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-6"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <span className="sr-only">Loading book form...</span>
       <Card>
         <CardHeader>
           <Skeleton className="h-8 w-48" />
@@ -91,7 +98,13 @@ export function BookFormSkeleton() {
 
 export function TableSkeleton({ rows = 5 }: { rows?: number }) {
   return (
-    <div className="space-y-4">
+    <div
+      className="space-y-4"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <span className="sr-only">Loading table data...</span>
       <div className="flex items-center justify-between">
         <Skeleton className="h-10 w-64" />
         <Skeleton className="h-10 w-32" />
@@ -153,7 +166,8 @@ export function SimpleTableSkeleton({
   columns?: number;
 }) {
   return (
-    <Card>
+    <Card role="status" aria-live="polite" aria-busy="true">
+      <span className="sr-only">Loading table...</span>
       <CardHeader>
         <Skeleton className="h-6 w-48" />
         <Skeleton className="h-4 w-64" />
@@ -187,7 +201,8 @@ export function FilterTableSkeleton({
   columns?: number;
 }) {
   return (
-    <Card>
+    <Card role="status" aria-live="polite" aria-busy="true">
+      <span className="sr-only">Loading filtered table...</span>
       <CardHeader>
         <Skeleton className="h-7 w-48" />
         {description && <Skeleton className="h-4 w-64" />}
@@ -212,7 +227,8 @@ export function FilterTableSkeleton({
 
 export function RecentOrdersTableSkeleton() {
   return (
-    <Card>
+    <Card role="status" aria-live="polite" aria-busy="true">
+      <span className="sr-only">Loading recent orders...</span>
       <CardHeader>
         <Skeleton className="h-6 w-32" />
         <Skeleton className="h-4 w-40" />
@@ -239,7 +255,13 @@ export function RecentOrdersTableSkeleton() {
 
 export function OrdersRevenueChartSkeleton() {
   return (
-    <Card className="lg:col-span-2">
+    <Card
+      className="lg:col-span-2"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <span className="sr-only">Loading revenue chart...</span>
       <CardHeader>
         <Skeleton className="h-6 w-48" />
         <Skeleton className="h-4 w-32" />
@@ -253,7 +275,13 @@ export function OrdersRevenueChartSkeleton() {
 
 export function KPICardsSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div
+      className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <span className="sr-only">Loading statistics...</span>
       {Array.from({ length: 4 }).map((_, i) => (
         <Card key={i}>
           <CardHeader className="pb-2">
@@ -271,7 +299,8 @@ export function KPICardsSkeleton() {
 
 export function BooksCategoryChartSkeleton() {
   return (
-    <Card>
+    <Card role="status" aria-live="polite" aria-busy="true">
+      <span className="sr-only">Loading category chart...</span>
       <CardHeader>
         <Skeleton className="h-6 w-40" />
       </CardHeader>
@@ -279,5 +308,29 @@ export function BooksCategoryChartSkeleton() {
         <Skeleton className="h-75 w-full rounded-full" />
       </CardContent>
     </Card>
+  );
+}
+
+export function ClassificationSkeleton() {
+  return (
+    <div role="status" aria-live="polite" aria-busy="true">
+      <span className="sr-only">Loading classification options...</span>
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-16" />
+        <div className="space-y-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-6 w-full" />
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

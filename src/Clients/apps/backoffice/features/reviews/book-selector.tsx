@@ -35,13 +35,15 @@ export function BookSelector({
 
   return (
     <div className="space-y-3">
-      <label className="text-sm font-medium">Select a Book</label>
+      <label htmlFor="book-select" className="text-sm font-medium">
+        Select a Book
+      </label>
       <Select
         value={selectedBookId}
         onValueChange={onBookSelect}
         disabled={isLoading}
       >
-        <SelectTrigger>
+        <SelectTrigger id="book-select">
           <SelectValue placeholder="Choose a book to view reviews..." />
         </SelectTrigger>
         <SelectContent>

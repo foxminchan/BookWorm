@@ -10,14 +10,6 @@ import {
 } from "@tanstack/react-table";
 import { Edit, Trash2 } from "lucide-react";
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogTitle,
-} from "@workspace/ui/components/alert-dialog";
 import { Button } from "@workspace/ui/components/button";
 import {
   Card,
@@ -71,6 +63,13 @@ export function SimpleTable<T extends BaseItem>({
 
   const columns: ColumnDef<T>[] = [
     {
+      id: "number",
+      header: () => <div className="w-1">#</div>,
+      cell: ({ row }) => (
+        <div className="text-muted-foreground w-1">{row.index + 1}</div>
+      ),
+    },
+    {
       accessorKey: "name",
       header: "Name",
       cell: ({ row }) => {
@@ -122,8 +121,9 @@ export function SimpleTable<T extends BaseItem>({
                 setEditingId(item.id);
                 setEditValue(item.name || "");
               }}
+              aria-label={`Edit ${item.name || "item"}`}
             >
-              <Edit className="h-4 w-4" />
+              <Edit className="h-4 w-4" aria-hidden="true" />
             </Button>
             <Button
               size="sm"
@@ -133,8 +133,9 @@ export function SimpleTable<T extends BaseItem>({
                 setDeleteConfirmId(item.id);
                 setDeleteConfirmName(item.name || "this item");
               }}
+              aria-label={`Delete ${item.name || "item"}`}
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
         );
@@ -188,6 +189,7 @@ export function SimpleTable<T extends BaseItem>({
         <CardContent>
           <div className="rounded-lg border">
             <Table>
+              <caption className="sr-only">{description}</caption>
               <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
@@ -195,6 +197,7 @@ export function SimpleTable<T extends BaseItem>({
                       <TableHead
                         key={header.id}
                         className={header.id === "actions" ? "w-30" : ""}
+                        scope="col"
                       >
                         {header.isPlaceholder
                           ? null
@@ -226,8 +229,11 @@ export function SimpleTable<T extends BaseItem>({
                     <TableCell
                       colSpan={columns.length}
                       className="h-24 text-center"
+                      role="status"
                     >
-                      No data found
+                      <span className="text-muted-foreground">
+                        No data found
+                      </span>
                     </TableCell>
                   </TableRow>
                 )}

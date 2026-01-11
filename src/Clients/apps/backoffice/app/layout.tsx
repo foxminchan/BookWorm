@@ -10,8 +10,8 @@ import { Providers } from "./providers";
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 5,
-  userScalable: true,
+  maximumScale: 1,
+  userScalable: false,
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#f8f8f8" },
     { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },

@@ -13,11 +13,12 @@ import { columns } from "./columns";
 
 type BooksTableProps = {
   query: Omit<ListBooksQuery, "pageIndex" | "pageSize">;
+  highlightedBookId?: string | null;
 };
 
 const DEFAULT_PAGE_SIZE = 10;
 
-export function BooksTable({ query }: BooksTableProps) {
+export function BooksTable({ query, highlightedBookId }: BooksTableProps) {
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -64,6 +65,8 @@ export function BooksTable({ query }: BooksTableProps) {
       error={error}
       onPaginationChange={handlePaginationChange}
       onSortingChange={handleSortingChange}
+      highlightedId={highlightedBookId}
+      getRowId={(row: any) => row.id}
     />
   );
 }

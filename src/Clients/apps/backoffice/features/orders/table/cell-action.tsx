@@ -5,6 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 
 import { CheckCircle2, Eye, Trash2, XCircle } from "lucide-react";
+import { toast } from "sonner";
 
 import useCancelOrder from "@workspace/api-hooks/ordering/orders/useCancelOrder";
 import useCompleteOrder from "@workspace/api-hooks/ordering/orders/useCompleteOrder";
@@ -46,7 +47,10 @@ export function CellAction({ order }: CellActionProps) {
       isLoading: completeOrderMutation.isPending,
       onConfirm: async () => {
         completeOrderMutation.mutate(order.id, {
-          onSuccess: () => setOpenComplete(false),
+          onSuccess: () => {
+            setOpenComplete(false);
+            toast.success("Order has been completed");
+          },
         });
       },
     },
@@ -60,7 +64,10 @@ export function CellAction({ order }: CellActionProps) {
       isLoading: cancelOrderMutation.isPending,
       onConfirm: async () => {
         cancelOrderMutation.mutate(order.id, {
-          onSuccess: () => setOpenCancel(false),
+          onSuccess: () => {
+            setOpenCancel(false);
+            toast.info("Order has been canceled");
+          },
         });
       },
     },
@@ -74,7 +81,10 @@ export function CellAction({ order }: CellActionProps) {
       isLoading: deleteOrderMutation.isPending,
       onConfirm: async () => {
         deleteOrderMutation.mutate(undefined, {
-          onSuccess: () => setOpenDelete(false),
+          onSuccess: () => {
+            setOpenDelete(false);
+            toast.success("Order has been deleted");
+          },
         });
       },
     },
@@ -91,8 +101,9 @@ export function CellAction({ order }: CellActionProps) {
               className="gap-1 bg-transparent text-green-600 hover:text-green-700"
               onClick={() => setOpenComplete(true)}
               disabled={completeOrderMutation.isPending}
+              aria-label={`Complete order ${order.id.slice(0, 8)}`}
             >
-              <CheckCircle2 className="h-4 w-4" />
+              <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
               {completeOrderMutation.isPending ? "Processing..." : "Complete"}
             </Button>
             <Button
@@ -101,15 +112,19 @@ export function CellAction({ order }: CellActionProps) {
               className="gap-1 bg-transparent text-orange-600 hover:text-orange-700"
               onClick={() => setOpenCancel(true)}
               disabled={cancelOrderMutation.isPending}
+              aria-label={`Cancel order ${order.id.slice(0, 8)}`}
             >
-              <XCircle className="h-4 w-4" />
+              <XCircle className="h-4 w-4" aria-hidden="true" />
               {cancelOrderMutation.isPending ? "Processing..." : "Cancel"}
             </Button>
           </>
         )}
         <Button variant="ghost" size="sm" asChild>
-          <Link href={`/orders/${order.id}`}>
-            <Eye className="h-4 w-4" />
+          <Link
+            href={`/orders/${order.id}`}
+            aria-label={`View order details ${order.id.slice(0, 8)}`}
+          >
+            <Eye className="h-4 w-4" aria-hidden="true" />
           </Link>
         </Button>
         <Button
@@ -118,8 +133,9 @@ export function CellAction({ order }: CellActionProps) {
           className="text-destructive hover:text-destructive"
           onClick={() => setOpenDelete(true)}
           disabled={deleteOrderMutation.isPending}
+          aria-label={`Delete order ${order.id.slice(0, 8)}`}
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="h-4 w-4" aria-hidden="true" />
         </Button>
       </div>
 

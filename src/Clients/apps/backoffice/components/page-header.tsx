@@ -23,20 +23,22 @@ export function PageHeader({
 }: PageHeaderProps) {
   return (
     <div className="space-y-6">
-      <Breadcrumb>
-        <BreadcrumbList>
-          {breadcrumbs.map((item, index) => (
-            <div key={index} className="flex items-center gap-2">
-              {index > 0 && <BreadcrumbSeparator />}
-              {item.isActive || !item.href ? (
-                <BreadcrumbPage>{item.label}</BreadcrumbPage>
-              ) : (
-                <BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
-              )}
-            </div>
-          ))}
-        </BreadcrumbList>
-      </Breadcrumb>
+      <nav aria-label="Breadcrumb">
+        <Breadcrumb>
+          <BreadcrumbList>
+            {breadcrumbs.map((item, index) => (
+              <div key={index} className="flex items-center gap-2">
+                {index > 0 && <BreadcrumbSeparator />}
+                {item.isActive || !item.href ? (
+                  <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                ) : (
+                  <BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
+                )}
+              </div>
+            ))}
+          </BreadcrumbList>
+        </Breadcrumb>
+      </nav>
 
       <div className="flex items-center justify-between">
         <div>

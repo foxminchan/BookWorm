@@ -1,3 +1,5 @@
+import { formatISO } from "date-fns";
+
 import type {
   OrderDetail,
   OrderItem,
@@ -34,7 +36,7 @@ export const ordersStoreManager = {
     );
     const newOrder: OrderDetail = {
       id: id || crypto.randomUUID(),
-      date: new Date().toISOString(),
+      date: formatISO(new Date()),
       total,
       status: "New",
       items,

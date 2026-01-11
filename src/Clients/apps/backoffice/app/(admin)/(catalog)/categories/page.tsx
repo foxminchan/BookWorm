@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { toast } from "sonner";
+
 import useCategories from "@workspace/api-hooks/catalog/categories/useCategories";
 import useCreateCategory from "@workspace/api-hooks/catalog/categories/useCreateCategory";
 import useDeleteCategory from "@workspace/api-hooks/catalog/categories/useDeleteCategory";
@@ -29,7 +31,11 @@ export default function CategoriesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    await deleteMutation.mutateAsync(id);
+    await deleteMutation.mutateAsync(id, {
+      onSuccess: () => {
+        toast.success("Category has been deleted");
+      },
+    });
   };
 
   return (

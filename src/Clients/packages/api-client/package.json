@@ -30,10 +30,10 @@
     "axios": "^1.13.2"
   },
   "devDependencies": {
-    "@types/node": "^25.0.3",
-    "eslint": "^9.39.2",
+    "@types/node": "^25.0.6",
     "@workspace/eslint-config": "workspace:*",
-    "@workspace/typescript-config": "workspace:*"
+    "@workspace/typescript-config": "workspace:*",
+    "eslint": "^9.39.2"
   },
   "peerDependencies": {
     "@workspace/types": "workspace:*"

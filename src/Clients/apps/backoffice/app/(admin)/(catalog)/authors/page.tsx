@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 
+import { toast } from "sonner";
+
 import useAuthors from "@workspace/api-hooks/catalog/authors/useAuthors";
 import useCreateAuthor from "@workspace/api-hooks/catalog/authors/useCreateAuthor";
 import useDeleteAuthor from "@workspace/api-hooks/catalog/authors/useDeleteAuthor";
@@ -28,7 +30,11 @@ export default function AuthorsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    await deleteMutation.mutateAsync(id);
+    await deleteMutation.mutateAsync(id, {
+      onSuccess: () => {
+        toast.success("Author has been deleted");
+      },
+    });
   };
 
   return (

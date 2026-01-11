@@ -19,6 +19,10 @@ export default function BasketSummary({
   isCheckingOut,
   onCheckout,
 }: BasketSummaryProps) {
+  const formatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  });
   return (
     <div className="lg:col-span-4">
       <Card className="sticky top-32 border-none bg-white p-8 shadow-none dark:bg-gray-800">
@@ -26,16 +30,16 @@ export default function BasketSummary({
         <div className="space-y-4">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Subtotal</span>
-            <span className="font-medium">${subtotal.toFixed(2)}</span>
+            <span className="font-medium">{formatter.format(subtotal)}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Shipping</span>
-            <span className="font-medium">${shipping.toFixed(2)}</span>
+            <span className="font-medium">{formatter.format(shipping)}</span>
           </div>
           <Separator />
           <div className="flex justify-between text-lg font-bold">
             <span>Total</span>
-            <span className="text-primary">${total.toFixed(2)}</span>
+            <span className="text-primary">{formatter.format(total)}</span>
           </div>
           <Button
             onClick={onCheckout}

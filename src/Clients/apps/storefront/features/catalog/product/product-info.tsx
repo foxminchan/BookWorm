@@ -30,6 +30,10 @@ export default function ProductInfo({
   description,
   publisher,
 }: ProductInfoProps) {
+  const formatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  });
   return (
     <div className="flex flex-col">
       <div className="mb-6">
@@ -92,15 +96,15 @@ export default function ProductInfo({
                 className="text-primary text-3xl font-bold"
                 itemProp="price"
               >
-                ${priceSale.toFixed(2)}
+                {formatter.format(priceSale)}
               </span>
               <span className="text-muted-foreground text-xl line-through">
-                ${price.toFixed(2)}
+                {formatter.format(price)}
               </span>
             </>
           ) : (
             <span className="text-3xl font-bold" itemProp="price">
-              ${price.toFixed(2)}
+              {formatter.format(price)}
             </span>
           )}
           <meta itemProp="priceCurrency" content="USD" />

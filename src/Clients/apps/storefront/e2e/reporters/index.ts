@@ -1,4 +1,5 @@
 import * as reporter from "cucumber-html-reporter";
+import { format } from "date-fns";
 import { resolve } from "path";
 
 const options = {
@@ -15,7 +16,7 @@ const options = {
     Browser: "Chromium",
     Platform: process.platform,
     Parallel: "Scenarios",
-    Executed: new Date().toLocaleString(),
+    Executed: format(new Date(), "PPpp"),
   },
   failedSummaryReport: true,
 };

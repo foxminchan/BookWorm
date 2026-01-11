@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 
+import { toast } from "sonner";
+
 import useCreatePublisher from "@workspace/api-hooks/catalog/publishers/useCreatePublisher";
 import useDeletePublisher from "@workspace/api-hooks/catalog/publishers/useDeletePublisher";
 import usePublishers from "@workspace/api-hooks/catalog/publishers/usePublishers";
@@ -36,6 +38,7 @@ export default function PublishersPage() {
 
   const handleDelete = async (id: string) => {
     await deleteMutation.mutateAsync(id);
+    toast.success("Publisher has been deleted");
   };
 
   const handleDialogOpen = (mode: "create" | "update", id?: string) => {

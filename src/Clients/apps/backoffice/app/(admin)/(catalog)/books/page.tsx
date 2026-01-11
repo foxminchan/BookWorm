@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { Plus } from "lucide-react";
 
@@ -19,9 +20,26 @@ const breadcrumbs = [
 ];
 
 export default function BooksPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [query, setQuery] = useState<
     Omit<ListBooksQuery, "pageIndex" | "pageSize">
   >({});
+  const [highlightedBookId, setHighlightedBookId] = useState<string | null>(
+    null,
+  );
+
+  useEffect(() => {
+    const newBookId = searchParams.get("new");
+    if (newBookId) {
+      setHighlightedBookId(newBookId);
+      // Clear the URL parameter
+      router.replace("/books", { scroll: false });
+      // Remove highlight after 3 seconds
+      const timeout = setTimeout(() => setHighlightedBookId(null), 3000);
+      return () => clearTimeout(timeout);
+    }
+  }, [searchParams, router]);
 
   return (
     <div className="space-y-6">
@@ -39,7 +57,7 @@ export default function BooksPage() {
         }
       />
       <BooksFilters onFiltersChange={setQuery} />
-      <BooksTable query={query} />
+      <BooksTable query={query} highlightedBookId={highlightedBookId} />
     </div>
   );
 }

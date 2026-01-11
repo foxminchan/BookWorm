@@ -19,6 +19,10 @@ export function OrderSummaryCards({
   total,
   itemCount,
 }: OrderSummaryCardsProps) {
+  const formatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  });
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
       <Card>
@@ -34,7 +38,7 @@ export function OrderSummaryCards({
           <CardTitle className="text-sm">Order Total</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">${total.toFixed(2)}</div>
+          <div className="text-2xl font-bold">{formatter.format(total)}</div>
         </CardContent>
       </Card>
       <Card>

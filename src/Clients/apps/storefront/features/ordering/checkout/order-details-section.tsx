@@ -16,6 +16,10 @@ export default function OrderDetailsSection({
   buyerName,
   buyerAddress,
 }: OrderDetailsSectionProps) {
+  const formatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  });
   return (
     <div className="border-border mb-24 grid gap-8 border-y py-12 md:grid-cols-3">
       {/* Shipping Address */}
@@ -58,7 +62,7 @@ export default function OrderDetailsSection({
         <div className="flex flex-col items-start">
           <p className="text-muted-foreground mb-2 text-sm">Amount Paid</p>
           <p className="text-primary font-serif text-4xl font-medium">
-            ${total.toFixed(2)}
+            {formatter.format(total)}
           </p>
         </div>
       </div>

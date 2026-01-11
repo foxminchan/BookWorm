@@ -54,34 +54,44 @@ export function DashboardNav() {
   };
 
   return (
-    <nav className="border-border bg-background flex w-64 flex-col border-r px-4 py-6">
+    <nav
+      className="border-border bg-background flex w-64 flex-col border-r px-4 py-6"
+      aria-label="Main navigation"
+    >
       <div className="mb-8">
         <h1 className="text-foreground text-lg font-bold">BookWorm</h1>
       </div>
 
-      <div className="flex-1 space-y-2">
+      <ul className="flex-1 space-y-2">
         {navigations.map((section, sectionIndex) => (
-          <div key={sectionIndex} className={section.title ? "mt-6" : ""}>
+          <li key={sectionIndex} className={section.title ? "mt-6" : ""}>
             {section.title && (
               <p className="text-muted-foreground px-3 py-2 text-xs font-semibold tracking-wider uppercase">
                 {section.title}
               </p>
             )}
-            {section.items.map((item) => (
-              <NavLink
-                key={item.href}
-                href={item.href}
-                icon={<item.icon className="h-5 w-5" />}
-                label={item.label}
-                active={isActive(item.href)}
-              />
-            ))}
-          </div>
+            <ul className="space-y-1">
+              {section.items.map((item) => (
+                <li key={item.href}>
+                  <NavLink
+                    href={item.href}
+                    icon={<item.icon className="h-5 w-5" aria-hidden="true" />}
+                    label={item.label}
+                    active={isActive(item.href)}
+                  />
+                </li>
+              ))}
+            </ul>
+          </li>
         ))}
-      </div>
+      </ul>
 
       <div className="border-border border-t pt-4">
-        <Button variant="outline" className="w-full bg-transparent text-xs">
+        <Button
+          variant="outline"
+          className="w-full bg-transparent text-xs"
+          aria-label="Logout from admin portal"
+        >
           Logout
         </Button>
       </div>
@@ -101,17 +111,15 @@ function NavLink({
   active: boolean;
 }) {
   return (
-    <Link href={href}>
-      <Button
-        variant={active ? "default" : "ghost"}
-        className="w-full justify-start gap-3"
-        asChild
-      >
-        <div>
-          {icon}
-          {label}
-        </div>
-      </Button>
-    </Link>
+    <Button
+      variant={active ? "default" : "ghost"}
+      className="w-full justify-start gap-3"
+      asChild
+    >
+      <Link href={href}>
+        {icon}
+        <span>{label}</span>
+      </Link>
+    </Button>
   );
 }

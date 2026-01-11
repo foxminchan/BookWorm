@@ -39,15 +39,23 @@ export const columns: ColumnDef<Book>[] = [
     cell: ({ row }) => {
       const price = row.original.price;
       const salePrice = row.original.priceSale;
+      const formatter = new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+      });
       return (
         <div className="text-sm">
           {salePrice ? (
-            <>
-              <span className="text-gray-400 line-through">${price}</span>
-              <span className="ml-2 font-medium">${salePrice}</span>
-            </>
+            <span
+              aria-label={`Sale price ${formatter.format(salePrice)}, original price ${formatter.format(price)}`}
+            >
+              <del className="text-gray-400">{formatter.format(price)}</del>
+              <span className="ml-2 font-medium">
+                {formatter.format(salePrice)}
+              </span>
+            </span>
           ) : (
-            <span>${price}</span>
+            <span>{formatter.format(price)}</span>
           )}
         </div>
       );
@@ -58,15 +66,26 @@ export const columns: ColumnDef<Book>[] = [
     header: "Status",
     cell: ({ row }) => {
       const status = row.original.status;
+      const isInStock = status === "InStock";
       return (
         <div
-          className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
-            status === "InStock"
-              ? "bg-green-100 text-green-800"
-              : "bg-red-100 text-red-800"
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${
+            isInStock
+              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+              : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
           }`}
+          role="status"
+          aria-label={`Book status: ${isInStock ? "In Stock" : "Out of Stock"}`}
         >
-          {status === "InStock" ? "In Stock" : "Out of Stock"}
+          <span
+            className={`h-1.5 w-1.5 rounded-full ${
+              isInStock
+                ? "bg-green-600 dark:bg-green-400"
+                : "bg-red-600 dark:bg-red-400"
+            }`}
+            aria-hidden="true"
+          />
+          {isInStock ? "In Stock" : "Out of Stock"}
         </div>
       );
     },
@@ -74,11 +93,20 @@ export const columns: ColumnDef<Book>[] = [
   {
     accessorKey: "averageRating",
     header: "Rating",
-    cell: ({ row }) => (
-      <div className="text-sm">
-        {row.original.averageRating.toFixed(1)} ({row.original.totalReviews})
-      </div>
-    ),
+    cell: ({ row }) => {
+      const rating = row.original.averageRating.toFixed(1);
+      const reviews = row.original.totalReviews;
+      return (
+        <div
+          className="text-sm"
+          aria-label={`Rating ${rating} out of 5 based on ${reviews} ${reviews === 1 ? "review" : "reviews"}`}
+        >
+          <span aria-hidden="true">
+            {rating} ({reviews})
+          </span>
+        </div>
+      );
+    },
   },
   {
     id: "actions",

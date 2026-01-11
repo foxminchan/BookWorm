@@ -48,7 +48,10 @@ import {
   createBookSchema,
 } from "@workspace/validations/catalog/books";
 
-import { BookFormSkeleton } from "@/components/loading-skeleton";
+import {
+  BookFormSkeleton,
+  ClassificationSkeleton,
+} from "@/components/loading-skeleton";
 import { DEFAULT_BOOK_IMAGE } from "@/lib/constants";
 
 type BookFormProps = {
@@ -68,9 +71,11 @@ export function BookForm({ bookId }: BookFormProps) {
     enabled: !!bookId,
   });
 
-  const { data: authorsData } = useAuthors();
-  const { data: categoriesData } = useCategories();
-  const { data: publishersData } = usePublishers();
+  const { data: authorsData, isLoading: isLoadingAuthors } = useAuthors();
+  const { data: categoriesData, isLoading: isLoadingCategories } =
+    useCategories();
+  const { data: publishersData, isLoading: isLoadingPublishers } =
+    usePublishers();
 
   const authors = authorsData || [];
   const categories = categoriesData || [];
@@ -107,7 +112,7 @@ export function BookForm({ bookId }: BookFormProps) {
     }
   }, [bookData, bookId, form]);
 
-  const onSubmit = (data: CreateBookInput) => {
+  const onSubmit = async (data: CreateBookInput) => {
     if (bookId) {
       updateMutation.mutate(
         {
@@ -131,7 +136,7 @@ export function BookForm({ bookId }: BookFormProps) {
           image: imageFile,
         },
         {
-          onSuccess: () => router.push("/books"),
+          onSuccess: (response) => router.push(`/books?new=${response.id}`),
         },
       );
     }
@@ -151,11 +156,11 @@ export function BookForm({ bookId }: BookFormProps) {
   };
 
   const toggleAuthor = (authorId: string) => {
-    setSelectedAuthors((prev) =>
-      prev.includes(authorId)
-        ? prev.filter((id) => id !== authorId)
-        : [...prev, authorId],
-    );
+    const newAuthors = selectedAuthors.includes(authorId)
+      ? selectedAuthors.filter((id) => id !== authorId)
+      : [...selectedAuthors, authorId];
+    setSelectedAuthors(newAuthors);
+    form.setValue("authorIds", newAuthors, { shouldValidate: true });
   };
 
   if (bookId && isLoadingBook) {
@@ -163,6 +168,8 @@ export function BookForm({ bookId }: BookFormProps) {
   }
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
+  const isLoadingClassificationData =
+    isLoadingCategories || isLoadingPublishers || isLoadingAuthors;
 
   return (
     <Form {...form}>
@@ -270,88 +277,105 @@ export function BookForm({ bookId }: BookFormProps) {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <FormField
-              control={form.control}
-              name="categoryId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {isLoadingClassificationData ? (
+              <ClassificationSkeleton />
+            ) : (
+              <>
+                <FormField
+                  control={form.control}
+                  name="categoryId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {categories.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.id}>
+                              {cat.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <FormField
-              control={form.control}
-              name="publisherId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Publisher</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select a publisher" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {publishers.map((pub) => (
-                        <SelectItem key={pub.id} value={pub.id}>
-                          {pub.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <FormField
+                  control={form.control}
+                  name="publisherId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Publisher</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select a publisher" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {publishers.map((pub) => (
+                            <SelectItem key={pub.id} value={pub.id}>
+                              {pub.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <div>
-              <Label className="text-foreground mb-3 block text-sm font-medium">
-                Authors
-              </Label>
-              <div className="space-y-2">
-                {authors.map((author) => (
-                  <Label
-                    key={author.id}
-                    className="flex cursor-pointer items-center gap-2"
+                <fieldset>
+                  <legend className="text-foreground mb-3 block text-sm font-medium">
+                    Authors
+                  </legend>
+                  <div
+                    className="space-y-2"
+                    role="group"
+                    aria-label="Select book authors"
                   >
-                    <Checkbox
-                      checked={selectedAuthors.includes(author.id)}
-                      onCheckedChange={() => toggleAuthor(author.id)}
-                    />
-                    <span className="text-foreground">{author.name}</span>
-                  </Label>
-                ))}
-              </div>
-              {selectedAuthors.length === 0 && (
-                <p className="text-destructive mt-1 text-sm">
-                  At least one author is required
-                </p>
-              )}
-            </div>
+                    {authors.map((author) => (
+                      <div key={author.id} className="flex items-center gap-2">
+                        <Checkbox
+                          id={`author-${author.id}`}
+                          checked={selectedAuthors.includes(author.id)}
+                          onCheckedChange={() => toggleAuthor(author.id)}
+                        />
+                        <Label
+                          htmlFor={`author-${author.id}`}
+                          className="text-foreground cursor-pointer text-sm font-normal"
+                        >
+                          {author.name}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                  {selectedAuthors.length === 0 && (
+                    <p
+                      className="text-destructive mt-1 text-sm"
+                      role="alert"
+                      aria-live="polite"
+                    >
+                      At least one author is required
+                    </p>
+                  )}
+                </fieldset>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -368,17 +392,26 @@ export function BookForm({ bookId }: BookFormProps) {
                 <div className="flex flex-col items-center gap-4">
                   <Image
                     src={imagePreview || DEFAULT_BOOK_IMAGE}
-                    alt="Preview"
+                    alt={
+                      bookData?.name
+                        ? `Cover image for ${bookData.name}`
+                        : "Book cover preview"
+                    }
                     width={96}
                     height={128}
                     onError={() => setImagePreview(DEFAULT_BOOK_IMAGE)}
                     className="rounded object-cover"
                   />
                   <div className="flex w-full flex-col gap-2">
+                    <label htmlFor="book-image-change" className="sr-only">
+                      Change book cover image
+                    </label>
                     <Input
+                      id="book-image-change"
                       type="file"
                       accept="image/*"
                       onChange={handleImageChange}
+                      aria-label="Change book cover image"
                     />
                     {bookId && (
                       <Button
@@ -390,6 +423,7 @@ export function BookForm({ bookId }: BookFormProps) {
                           setImageFile(undefined);
                           setIsRemoveImage(true);
                         }}
+                        aria-label="Remove current book cover image"
                       >
                         Remove Image
                       </Button>
@@ -397,12 +431,19 @@ export function BookForm({ bookId }: BookFormProps) {
                   </div>
                 </div>
               ) : (
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  placeholder="Select image"
-                />
+                <div>
+                  <label htmlFor="book-image-upload" className="sr-only">
+                    Upload book cover image
+                  </label>
+                  <Input
+                    id="book-image-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    placeholder="Select image"
+                    aria-label="Upload book cover image"
+                  />
+                </div>
               )}
             </div>
           </CardContent>
@@ -414,7 +455,12 @@ export function BookForm({ bookId }: BookFormProps) {
           </Button>
           <Button
             type="submit"
-            disabled={isLoading || selectedAuthors.length === 0}
+            disabled={
+              isLoading ||
+              selectedAuthors.length === 0 ||
+              !form.watch("categoryId") ||
+              !form.watch("publisherId")
+            }
           >
             {isLoading ? (
               <>

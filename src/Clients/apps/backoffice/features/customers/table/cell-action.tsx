@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 import useDeleteBuyer from "@workspace/api-hooks/ordering/buyers/useDeleteBuyer";
 import type { Buyer } from "@workspace/types/ordering/buyers";
@@ -42,7 +43,10 @@ export function CellAction({ customer }: CellActionProps) {
         isLoading={deleteCustomerMutation.isPending}
         onConfirm={async () => {
           deleteCustomerMutation.mutate(customer.id, {
-            onSuccess: () => setOpenDelete(false),
+            onSuccess: () => {
+              setOpenDelete(false);
+              toast.success("Customer has been deleted");
+            },
           });
         }}
       />

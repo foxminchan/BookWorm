@@ -23,6 +23,10 @@ export function KPICards({
   totalBooks,
   isLoading,
 }: KPICardsProps) {
+  const formatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  });
   if (isLoading) {
     return <KPICardsSkeleton />;
   }
@@ -36,7 +40,7 @@ export function KPICards({
   const kpiData = [
     {
       title: "Total Revenue",
-      value: `$${totalRevenue.toFixed(2)}`,
+      value: formatter.format(totalRevenue),
       change: `${orders.length} orders`,
     },
     {

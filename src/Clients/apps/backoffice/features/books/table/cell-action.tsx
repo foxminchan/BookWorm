@@ -5,6 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 
 import { Edit, Loader2, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 import useDeleteBook from "@workspace/api-hooks/catalog/books/useDeleteBook";
 import type { Book } from "@workspace/types/catalog/books";
@@ -24,8 +25,11 @@ export function CellAction({ book }: CellActionProps) {
     <>
       <div className="flex items-center justify-end gap-2">
         <Button variant="ghost" size="sm" asChild>
-          <Link href={`/books/${book.id}`}>
-            <Edit className="h-4 w-4" />
+          <Link
+            href={`/books/${book.id}`}
+            aria-label={`Edit ${book.name || "book"}`}
+          >
+            <Edit className="h-4 w-4" aria-hidden="true" />
           </Link>
         </Button>
         <Button
@@ -34,11 +38,12 @@ export function CellAction({ book }: CellActionProps) {
           className="text-destructive hover:text-destructive"
           onClick={() => setOpenDelete(true)}
           disabled={deleteBookMutation.isPending}
+          aria-label={`Delete ${book.name || "book"}`}
         >
           {deleteBookMutation.isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
           ) : (
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-4 w-4" aria-hidden="true" />
           )}
         </Button>
       </div>
@@ -53,7 +58,10 @@ export function CellAction({ book }: CellActionProps) {
         isLoading={deleteBookMutation.isPending}
         onConfirm={async () => {
           deleteBookMutation.mutate(book.id, {
-            onSuccess: () => setOpenDelete(false),
+            onSuccess: () => {
+              setOpenDelete(false);
+              toast.success("Book has been deleted");
+            },
           });
         }}
       />

@@ -51,6 +51,10 @@ export function useBookSearchActions() {
       };
     },
     render: ({ status, result }) => {
+      const formatter = new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+      });
       if (status === "executing") {
         return (
           <Card>
@@ -85,7 +89,7 @@ export function useBookSearchActions() {
                       {book.author}
                     </div>
                     <div className="mt-1 text-xs font-semibold">
-                      ${book.price}
+                      {formatter.format(book.price)}
                     </div>
                   </div>
                 </div>

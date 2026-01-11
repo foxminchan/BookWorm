@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 import useDeleteFeedback from "@workspace/api-hooks/rating/useDeleteFeedback";
 import type { Feedback } from "@workspace/types/rating";
@@ -19,12 +20,12 @@ export function CellAction({ feedback }: CellActionProps) {
   const deleteFeedbackMutation = useDeleteFeedback();
 
   const onConfirmDelete = async () => {
-    try {
-      await deleteFeedbackMutation.mutateAsync(feedback.id);
-      setOpenDelete(false);
-    } catch (error) {
-      console.error("[v0] Delete feedback failed:", error);
-    }
+    await deleteFeedbackMutation.mutateAsync(feedback.id, {
+      onSuccess: () => {
+        setOpenDelete(false);
+        toast.success("Review has been deleted");
+      },
+    });
   };
 
   return (

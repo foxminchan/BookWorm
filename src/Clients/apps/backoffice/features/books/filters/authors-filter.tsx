@@ -37,18 +37,25 @@ export function AuthorsFilter({
   return (
     <div className="space-y-2">
       <Label className="text-xs">Authors</Label>
-      <div className="flex flex-wrap gap-2">
+      <div
+        className="flex flex-wrap gap-2"
+        role="group"
+        aria-label="Filter by authors"
+      >
         {authors?.map((author) => (
-          <Badge
+          <Button
             key={author.id}
             variant={
               selectedAuthors.includes(author.id) ? "default" : "outline"
             }
-            className="cursor-pointer"
+            size="sm"
+            className="h-6 rounded-full px-3 text-xs"
             onClick={() => onToggle(author.id)}
+            aria-pressed={selectedAuthors.includes(author.id)}
+            aria-label={`${selectedAuthors.includes(author.id) ? "Remove" : "Add"} ${author.name} filter`}
           >
             {author.name}
-          </Badge>
+          </Button>
         ))}
       </div>
       {selectedAuthors.length > 0 && (
@@ -57,8 +64,9 @@ export function AuthorsFilter({
           size="sm"
           onClick={onClear}
           className="text-muted-foreground hover:text-foreground mt-2 flex items-center gap-1 text-xs"
+          aria-label="Clear all author filters"
         >
-          <X className="h-3 w-3" />
+          <X className="h-3 w-3" aria-hidden="true" />
           Clear authors
         </Button>
       )}

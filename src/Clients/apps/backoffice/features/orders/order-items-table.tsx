@@ -21,6 +21,10 @@ type OrderItemsTableProps = {
 };
 
 export function OrderItemsTable({ items, total }: OrderItemsTableProps) {
+  const formatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  });
   return (
     <Card>
       <CardHeader>
@@ -41,9 +45,9 @@ export function OrderItemsTable({ items, total }: OrderItemsTableProps) {
               <TableRow key={item.id}>
                 <TableCell>{item.name || "Product"}</TableCell>
                 <TableCell>{item.quantity}</TableCell>
-                <TableCell>${item.price.toFixed(2)}</TableCell>
+                <TableCell>{formatter.format(item.price)}</TableCell>
                 <TableCell className="font-medium">
-                  ${(item.quantity * item.price).toFixed(2)}
+                  {formatter.format(item.quantity * item.price)}
                 </TableCell>
               </TableRow>
             ))}
@@ -51,7 +55,9 @@ export function OrderItemsTable({ items, total }: OrderItemsTableProps) {
           <TableFooter>
             <TableRow>
               <TableCell colSpan={3}>Total</TableCell>
-              <TableCell className="font-bold">${total.toFixed(2)}</TableCell>
+              <TableCell className="font-bold">
+                {formatter.format(total)}
+              </TableCell>
             </TableRow>
           </TableFooter>
         </Table>
