@@ -25,18 +25,17 @@ export function Providers({
 }) {
   const setIsCopilotEnabled = useSetAtom(isCopilotEnabledAtom);
   const queryClient = getQueryClient();
+  const gatewayUrl =
+    env.NEXT_PUBLIC_GATEWAY_HTTPS || env.NEXT_PUBLIC_GATEWAY_HTTP;
 
   useEffect(() => {
-    const gatewayUrl =
-      env.NEXT_PUBLIC_GATEWAY_HTTPS || env.NEXT_PUBLIC_GATEWAY_HTTP;
     if (!gatewayUrl && process.env.NODE_ENV === "development") {
       initMocks();
     }
-
     setIsCopilotEnabled(isCopilotEnabled);
   }, [isCopilotEnabled, setIsCopilotEnabled]);
 
-  const shouldShowCopilot = !!isCopilotEnabled;
+  const shouldShowCopilot = !!isCopilotEnabled && !!gatewayUrl;
 
   return (
     <QueryClientProvider client={queryClient}>

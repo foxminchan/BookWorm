@@ -23,14 +23,19 @@ export const booksHandlers = [
     ({ request }) => {
       const url = new URL(request.url);
       const pageIndex = Number.parseInt(
-        url.searchParams.get("pageIndex") || "1",
+        url.searchParams.get("pageIndex") || "0",
       );
       const pageSize = Number.parseInt(
         url.searchParams.get("pageSize") || "10",
       );
       const searchTerm = url.searchParams.get("search") || undefined;
 
-      const result = booksStore.list({ pageIndex, pageSize, searchTerm });
+      // Convert 0-indexed to 1-indexed for the store
+      const result = booksStore.list({
+        pageIndex: pageIndex + 1,
+        pageSize,
+        searchTerm,
+      });
 
       const links = buildPaginationLinks(
         request.url,
