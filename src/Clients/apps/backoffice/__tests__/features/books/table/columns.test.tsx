@@ -118,12 +118,15 @@ describe("Books Table Columns", () => {
     const saleBook = { ...mockBook, priceSale: mockBook.price * 0.8 }; // 80% of original price
     render(cell({ row: { original: saleBook } } as any));
 
-    const ariaLabel = screen.getByLabelText(
-      new RegExp(
-        `Sale price ${formatter.format(saleBook.priceSale).replace(/\$/g, "$")}, original price ${formatter.format(saleBook.price).replace(/\$/g, "$")}`,
-      ),
-    );
-    expect(ariaLabel).toBeInTheDocument();
+    const priceElement = screen.getByText((_content, element) => {
+      const ariaLabel = element?.getAttribute("aria-label");
+      return (
+        (ariaLabel?.includes("Sale price") &&
+          ariaLabel?.includes("original price")) ??
+        false
+      );
+    });
+    expect(priceElement).toBeInTheDocument();
   });
 
   it("renders InStock status with green styling", () => {

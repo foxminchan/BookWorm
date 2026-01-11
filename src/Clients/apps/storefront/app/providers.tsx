@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { CopilotKit } from "@copilotkit/react-core";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { useSetAtom } from "jotai";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 
@@ -58,6 +59,7 @@ export function Providers({
         <MobileBottomNav />
         <BackToTop />
         <Analytics />
+        <SpeedInsights />
       </NextThemesProvider>
     </QueryClientProvider>
   );

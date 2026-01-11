@@ -1,17 +1,18 @@
 "use client";
 
+import type { OrderStatus } from "@workspace/types/ordering/orders";
 import { Button } from "@workspace/ui/components/button";
 
 type StatusFilterProps = {
-  statusFilter: string | undefined;
-  onStatusChange: (status: string | undefined) => void;
+  statusFilter: OrderStatus | undefined;
+  onStatusChange: (status: OrderStatus | undefined) => void;
 };
 
 export function StatusFilter({
   statusFilter,
   onStatusChange,
 }: StatusFilterProps) {
-  const statuses = [
+  const statuses: Array<{ value: OrderStatus | undefined; label: string }> = [
     { value: undefined, label: "All Orders" },
     { value: "New", label: "New" },
     { value: "Completed", label: "Completed" },

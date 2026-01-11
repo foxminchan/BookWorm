@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 
+import type { OrderStatus } from "@workspace/types/ordering/orders";
+
 import { PageHeader } from "@/components/page-header";
 import { StatusFilter } from "@/features/orders/status-filter";
 import { OrdersTable } from "@/features/orders/table/table";
 
 export default function OrdersPage() {
-  const [statusFilter, setStatusFilter] = useState<string | undefined>(
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | undefined>(
     undefined,
   );
 

@@ -1,10 +1,17 @@
 import React from "react";
 
+import { faker } from "@faker-js/faker";
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, vi } from "vitest";
 
 import { server } from "@workspace/mocks/node";
+
+// Set a consistent seed for faker to ensure deterministic test data
+const fakerSeed = process.env.FAKER_SEED
+  ? parseInt(process.env.FAKER_SEED, 10)
+  : 12345;
+faker.seed(fakerSeed);
 
 // Establish API mocking before all tests
 beforeAll(() => {

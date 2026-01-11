@@ -16,6 +16,13 @@ export default defineConfig({
     setupFiles: ["./__tests__/setup.ts"],
     include: ["**/__tests__/**/*.test.{ts,tsx}", "**/*.test.{ts,tsx}"],
     exclude: ["node_modules", ".next", "e2e"],
+    // Set unique MSW cookie database per worker to avoid lock contention
+    env: {
+      MSW_COOKIE_STORE_PATH: path.resolve(
+        os.tmpdir(),
+        `msw-cookies-${process.pid}-${Date.now()}.db`,
+      ),
+    },
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "json-summary", "html", "lcov"],
