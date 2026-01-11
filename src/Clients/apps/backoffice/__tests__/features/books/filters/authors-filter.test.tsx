@@ -1,9 +1,7 @@
-import { faker } from "@faker-js/faker";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createMockAuthor } from "@/__tests__/factories";
 import { AuthorsFilter } from "@/features/books/filters/authors-filter";
 
 vi.mock("@workspace/api-hooks/catalog/authors/useAuthors");
@@ -15,16 +13,13 @@ vi.mock("@workspace/api-hooks/catalog/authors/useAuthors", () => ({
 }));
 
 describe("AuthorsFilter", () => {
-  let mockAuthors: ReturnType<typeof createMockAuthor>[];
+  // Use static mock data to avoid faker seed issues
+  const mockAuthors = [
+    { id: "author-1", name: "John Doe" },
+    { id: "author-2", name: "Jane Smith" },
+  ];
 
   beforeEach(() => {
-    // Reset faker seed for consistent test data
-    faker.seed(123);
-    // Recreate mock data for each test
-    mockAuthors = [
-      createMockAuthor({ name: "John Doe" }),
-      createMockAuthor({ name: "Jane Smith" }),
-    ];
     // Clear all mocks before each test
     vi.clearAllMocks();
   });

@@ -78,6 +78,9 @@ describe("Books CellAction", () => {
     const deleteButton = screen.getByLabelText(`Delete ${mockBook.name}`);
     await user.click(deleteButton);
 
+    // Wait for dialog to open
+    await screen.findByRole("alertdialog");
+
     await waitFor(() => {
       expect(screen.getByText("Delete Book")).toBeInTheDocument();
       expect(
