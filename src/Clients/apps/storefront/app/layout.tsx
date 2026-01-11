@@ -2,6 +2,7 @@ import type React from "react";
 
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Link from "next/link";
 
 import { Button } from "@workspace/ui/components/button";
 import "@workspace/ui/globals.css";
@@ -111,7 +112,7 @@ export default async function RootLayout({
           variant="outline"
           className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50"
         >
-          <a href="#main-content">Skip to main content</a>
+          <Link href="#main-content">Skip to main content</Link>
         </Button>
         <div id="main-content">
           <Providers isCopilotEnabled={isCopilotEnabled}>{children}</Providers>

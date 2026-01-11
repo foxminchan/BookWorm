@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { Button } from "@workspace/ui/components/button";
 
 export default function ContactSection() {
@@ -11,7 +13,7 @@ export default function ContactSection() {
         to hear from you.
       </p>
       <Button size="lg" className="rounded-full px-8" asChild>
-        <a href="mailto:support@bookworm.com">Get In Touch</a>
+        <Link href="mailto:support@bookworm.com">Get In Touch</Link>
       </Button>
     </section>
   );

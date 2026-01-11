@@ -32,17 +32,63 @@ class BooksApiClient {
   }
 
   public async create(request: CreateBookRequest): Promise<Book> {
+    const formData = new FormData();
+    formData.append("name", request.name);
+    formData.append("description", request.description);
+    formData.append("price", request.price.toString());
+    if (request.priceSale !== null && request.priceSale !== undefined) {
+      formData.append("priceSale", request.priceSale.toString());
+    }
+    formData.append("categoryId", request.categoryId);
+    formData.append("publisherId", request.publisherId);
+    for (const authorId of request.authorIds) {
+      formData.append("authorIds", authorId);
+    }
+    if (request.image) {
+      formData.append("image", request.image);
+    }
+
     const response = await this.client.post<Book>(
       "/catalog/api/v1/books",
-      request,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
     );
     return response.data;
   }
 
   public async update(request: UpdateBookRequest): Promise<Book> {
+    const formData = new FormData();
+    formData.append("id", request.id);
+    formData.append("name", request.name);
+    formData.append("description", request.description);
+    formData.append("price", request.price.toString());
+    if (request.priceSale !== null && request.priceSale !== undefined) {
+      formData.append("priceSale", request.priceSale.toString());
+    }
+    formData.append("categoryId", request.categoryId);
+    formData.append("publisherId", request.publisherId);
+    for (const authorId of request.authorIds) {
+      formData.append("authorIds", authorId);
+    }
+    if (request.image) {
+      formData.append("image", request.image);
+    }
+    if (request.isRemoveImage) {
+      formData.append("isRemoveImage", "true");
+    }
+
     const response = await this.client.put<Book>(
       `/catalog/api/v1/books`,
-      request,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
     );
     return response.data;
   }

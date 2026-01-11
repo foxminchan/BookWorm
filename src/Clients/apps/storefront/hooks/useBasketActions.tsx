@@ -127,6 +127,11 @@ export function useBasketActions() {
       };
     },
     render: ({ status, result }) => {
+      const formatter = new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+      });
+
       if (status === "executing") {
         return (
           <div className="flex items-center gap-2 rounded-lg border p-4">
@@ -158,15 +163,14 @@ export function useBasketActions() {
                       <div className="flex-1 text-sm">
                         <div className="font-medium">{item.name}</div>
                         <div className="text-muted-foreground text-xs">
-                          Qty: {item.quantity} × $
-                          {(item.priceSale || item.price).toFixed(2)}
+                          Qty: {item.quantity} ×{" "}
+                          {formatter.format(item.priceSale || item.price)}
                         </div>
                       </div>
                       <div className="font-semibold">
-                        $
-                        {(
-                          item.quantity * (item.priceSale || item.price)
-                        ).toFixed(2)}
+                        {formatter.format(
+                          item.quantity * (item.priceSale || item.price),
+                        )}
                       </div>
                     </div>
                   ))}
@@ -174,7 +178,7 @@ export function useBasketActions() {
                 <div className="border-t pt-3">
                   <div className="flex justify-between font-bold">
                     <span>Total:</span>
-                    <span>${result.totalPrice.toFixed(2)}</span>
+                    <span>{formatter.format(result.totalPrice)}</span>
                   </div>
                 </div>
               </>

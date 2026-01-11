@@ -13,15 +13,23 @@
   </a>
 </div>
 
+> [!WARNING]
+>
+> **Disclaimer**: This example is for demo use only. It’s not production-ready and may omit important features.
+
 ## Introduction
 
 <p align="justify">
   ⭐ BookWorm showcases Aspire in a cloud-native application with AI integration. Built with DDD and VSA, it features multi-agent orchestration and standardized AI tooling through MCP with A2A & AG-UI Protocol support.
 </p>
 
-> [!WARNING]
->
-> **Disclaimer**: This example is for demo use only. It’s not production-ready and may omit important features.
+<details>
+<summary>View Screenshots</summary>
+
+![BookWorm Storefront](assets/Storefront.png)
+![BookWorm Backoffice](assets/Backoffice.png)
+
+</details>
 
 ## Project Goals
 
@@ -51,8 +59,8 @@
   - [x] Utilized EventCatalog for centralized architecture documentation
 - [x] Built modern client applications:
   - [x] Monorepo architecture powered by `Turborepo`
-  - [x] Customer-facing storefront using `Next.js`
-  - [ ] Admin backoffice dashboard with `Next.js`
+  - [x] Customer-facing storefront and admin backoffice dashboard with `Next.js`
+  - [x] Supported WCAG 2.1 AA accessibility standards
 - [x] Established a testing strategy:
   - [x] Conducted service unit tests
   - [x] Implemented snapshot tests

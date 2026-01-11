@@ -23,14 +23,19 @@ export const booksHandlers = [
     ({ request }) => {
       const url = new URL(request.url);
       const pageIndex = Number.parseInt(
-        url.searchParams.get("pageIndex") || "1",
+        url.searchParams.get("pageIndex") || "0",
       );
       const pageSize = Number.parseInt(
         url.searchParams.get("pageSize") || "10",
       );
       const searchTerm = url.searchParams.get("search") || undefined;
 
-      const result = booksStore.list({ pageIndex, pageSize, searchTerm });
+      // Convert 0-indexed to 1-indexed for the store
+      const result = booksStore.list({
+        pageIndex: pageIndex + 1,
+        pageSize,
+        searchTerm,
+      });
 
       const links = buildPaginationLinks(
         request.url,
@@ -106,7 +111,20 @@ export const booksHandlers = [
         );
       }
 
-      const body = await request.json();
+      const formData = await request.formData();
+      const body: CreateBookRequest = {
+        name: formData.get("name") as string,
+        description: formData.get("description") as string,
+        price: Number.parseFloat(formData.get("price") as string),
+        priceSale: formData.get("priceSale")
+          ? Number.parseFloat(formData.get("priceSale") as string)
+          : null,
+        categoryId: formData.get("categoryId") as string,
+        publisherId: formData.get("publisherId") as string,
+        authorIds: formData.getAll("authorIds") as string[],
+        image: formData.get("image") as File | undefined,
+      };
+
       const result = createBookSchema.safeParse(body);
 
       if (!result.success) {
@@ -116,11 +134,12 @@ export const booksHandlers = [
       }
 
       const newBookId = booksStore.create(result.data);
+      const createdBook = booksStore.get(newBookId);
 
       const headers = new Headers();
       headers.set("Location", `/api/v1/books/${newBookId}`);
 
-      return HttpResponse.json(newBookId, { status: 201, headers });
+      return HttpResponse.json(createdBook, { status: 201, headers });
     },
   ),
 
@@ -145,7 +164,22 @@ export const booksHandlers = [
         );
       }
 
-      const body = await request.json();
+      const formData = await request.formData();
+      const body: UpdateBookRequest = {
+        id: formData.get("id") as string,
+        name: formData.get("name") as string,
+        description: formData.get("description") as string,
+        price: Number.parseFloat(formData.get("price") as string),
+        priceSale: formData.get("priceSale")
+          ? Number.parseFloat(formData.get("priceSale") as string)
+          : null,
+        categoryId: formData.get("categoryId") as string,
+        publisherId: formData.get("publisherId") as string,
+        authorIds: formData.getAll("authorIds") as string[],
+        image: formData.get("image") as File | undefined,
+        isRemoveImage: formData.get("isRemoveImage") === "true",
+      };
+
       const result = updateBookSchema.safeParse(body);
 
       if (!result.success) {

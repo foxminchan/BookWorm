@@ -208,6 +208,28 @@ updates:
       prefix: "Docker (Event Catalog)"
       include: scope
 
+  - package-ecosystem: docker
+    directory: "/src/Clients/apps/storefront"
+    schedule:
+      interval: weekly
+      day: friday
+      time: "10:00"
+      timezone: "Asia/Ho_Chi_Minh"
+    commit-message:
+      prefix: "Docker (Storefront)"
+      include: scope
+
+  - package-ecosystem: docker
+    directory: "/src/Clients/apps/backoffice"
+    schedule:
+      interval: weekly
+      day: friday
+      time: "10:00"
+      timezone: "Asia/Ho_Chi_Minh"
+    commit-message:
+      prefix: "Docker (Backoffice)"
+      include: scope
+
   - package-ecosystem: github-actions
     directories:
       - "/"

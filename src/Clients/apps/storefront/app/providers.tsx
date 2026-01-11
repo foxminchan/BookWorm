@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { CopilotKit } from "@copilotkit/react-core";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { useSetAtom } from "jotai";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 
@@ -25,25 +26,23 @@ export function Providers({
 }) {
   const setIsCopilotEnabled = useSetAtom(isCopilotEnabledAtom);
   const queryClient = getQueryClient();
+  const gatewayUrl =
+    env.NEXT_PUBLIC_GATEWAY_HTTPS || env.NEXT_PUBLIC_GATEWAY_HTTP;
 
   useEffect(() => {
-    const gatewayUrl =
-      env.NEXT_PUBLIC_GATEWAY_HTTPS || env.NEXT_PUBLIC_GATEWAY_HTTP;
     if (!gatewayUrl && process.env.NODE_ENV === "development") {
       initMocks();
     }
-
     setIsCopilotEnabled(isCopilotEnabled);
-  }, [isCopilotEnabled, setIsCopilotEnabled]);
+  }, [isCopilotEnabled, setIsCopilotEnabled, gatewayUrl]);
 
-  const shouldShowCopilot = !!isCopilotEnabled;
+  const shouldShowCopilot = !!isCopilotEnabled && !!gatewayUrl;
 
   return (
     <QueryClientProvider client={queryClient}>
       <NextThemesProvider
         attribute="class"
-        defaultTheme="system"
-        enableSystem
+        defaultTheme="light"
         disableTransitionOnChange
         enableColorScheme
       >
@@ -60,6 +59,7 @@ export function Providers({
         <MobileBottomNav />
         <BackToTop />
         <Analytics />
+        <SpeedInsights />
       </NextThemesProvider>
     </QueryClientProvider>
   );

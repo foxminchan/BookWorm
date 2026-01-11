@@ -1,3 +1,7 @@
+import { DEFAULT_BOOK_IMAGE, PRICE_RANGE } from "@workspace/utils/constants";
+
+export { DEFAULT_BOOK_IMAGE, PRICE_RANGE };
+
 export const APP_CONFIG = {
   name: "BookWorm",
   email: {
@@ -17,12 +21,6 @@ export const FILTER_SECTIONS = {
 
 export const ITEMS_PER_PAGE = 12;
 
-export const PRICE_RANGE = {
-  min: 0,
-  max: 100,
-  step: 1,
-} as const;
-
 export const SORT_OPTIONS = [
   { value: "default", label: "Featured" },
   { value: "price-low", label: "Price: Low to High" },
@@ -35,5 +33,3 @@ export const DEBOUNCE_DELAY = {
   quantity: 300,
   priceRange: 500,
 } as const;
-
-export const DEFAULT_BOOK_IMAGE = "/book-placeholder.svg";

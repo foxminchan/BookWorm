@@ -24,12 +24,16 @@ export default function BasketItem({
 }: BasketItemProps) {
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
   const totalPrice = (item.priceSale || item.price) * displayQuantity;
+  const formatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  });
 
   return (
     <Card
       className="border-none bg-white/50 shadow-none backdrop-blur-sm dark:bg-gray-800/50"
       role="article"
-      aria-label={`${item.name}, quantity ${displayQuantity}, total $${totalPrice.toFixed(2)}`}
+      aria-label={`${item.name}, quantity ${displayQuantity}, total ${formatter.format(totalPrice)}`}
     >
       <CardContent className="p-6">
         <div className="flex gap-6">
@@ -59,24 +63,25 @@ export default function BasketItem({
                 {item.priceSale ? (
                   <div className="flex flex-col items-end">
                     <span className="text-primary font-bold">
-                      ${(item.priceSale * displayQuantity).toFixed(2)}
+                      {formatter.format(item.priceSale * displayQuantity)}
                     </span>
                     <span className="text-muted-foreground decoration-muted-foreground/50 text-xs line-through">
-                      ${(item.price * displayQuantity).toFixed(2)}
+                      {formatter.format(item.price * displayQuantity)}
                     </span>
                     <span className="sr-only">
-                      Sale price: $
-                      {(item.priceSale * displayQuantity).toFixed(2)}, original
-                      price: ${(item.price * displayQuantity).toFixed(2)}
+                      Sale price:{" "}
+                      {formatter.format(item.priceSale * displayQuantity)},
+                      original price:{" "}
+                      {formatter.format(item.price * displayQuantity)}
                     </span>
                   </div>
                 ) : (
                   <>
                     <span className="font-bold">
-                      ${(item.price * displayQuantity).toFixed(2)}
+                      {formatter.format(item.price * displayQuantity)}
                     </span>
                     <span className="sr-only">
-                      Total: ${(item.price * displayQuantity).toFixed(2)}
+                      Total: {formatter.format(item.price * displayQuantity)}
                     </span>
                   </>
                 )}

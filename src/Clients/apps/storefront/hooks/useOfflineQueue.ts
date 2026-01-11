@@ -2,18 +2,18 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-interface QueuedMessage {
+type QueuedMessage = {
   id: string;
   content: string;
   timestamp: number;
   retryCount: number;
-}
+};
 
-interface OfflineQueueState {
+type OfflineQueueState = {
   isOnline: boolean;
   queue: QueuedMessage[];
   isSyncing: boolean;
-}
+};
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000;

@@ -33,6 +33,10 @@ function PriceRangeFilter({
   priceRange: number[];
   setPriceRange: (range: number[]) => void;
 }) {
+  const formatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  });
   return (
     <div>
       <h3 className="mb-4 font-serif font-medium">Price Range</h3>
@@ -46,8 +50,8 @@ function PriceRangeFilter({
         className="mb-2"
       />
       <div className="text-muted-foreground flex items-center justify-between text-sm">
-        <span>${priceRange[0]}</span>
-        <span>${priceRange[1]}+</span>
+        <span>{formatter.format(priceRange[0] ?? 0)}</span>
+        <span>{formatter.format(priceRange[1] ?? 100)}+</span>
       </div>
     </div>
   );

@@ -11,7 +11,7 @@ import { Badge } from "@workspace/ui/components/badge";
 import { Card, CardContent } from "@workspace/ui/components/card";
 
 import { DEFAULT_BOOK_IMAGE } from "@/lib/constants";
-import { calculateDiscount } from "@/lib/format";
+import { calculateDiscount, formatPrice } from "@/lib/format";
 
 type BookCardProps = {
   book: Book;
@@ -20,13 +20,17 @@ type BookCardProps = {
 
 export function BookCard({ book, onClick }: BookCardProps) {
   const [imgError, setImgError] = useState(false);
+  const formatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  });
   const authorText =
     book.authors && book.authors.length > 0
       ? book.authors.map((a) => a.name).join(", ")
       : "Unknown Author";
   const priceText = book.priceSale
-    ? `Sale price $${book.priceSale.toFixed(2)}, original price $${book.price.toFixed(2)}`
-    : `$${book.price.toFixed(2)}`;
+    ? `Sale price ${formatPrice(book.priceSale)}, original price ${formatPrice(book.price)}`
+    : formatPrice(book.price);
 
   return (
     <article
@@ -93,14 +97,16 @@ export function BookCard({ book, onClick }: BookCardProps) {
               {book.priceSale ? (
                 <>
                   <span className="text-primary font-bold">
-                    ${book.priceSale.toFixed(2)}
+                    {formatter.format(book.priceSale)}
                   </span>
                   <span className="text-muted-foreground decoration-muted-foreground/50 text-sm line-through">
-                    ${book.price.toFixed(2)}
+                    {formatter.format(book.price)}
                   </span>
                 </>
               ) : (
-                <span className="font-bold">${book.price.toFixed(2)}</span>
+                <span className="font-bold">
+                  {formatter.format(book.price)}
+                </span>
               )}
             </div>
           </div>

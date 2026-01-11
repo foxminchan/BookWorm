@@ -36,6 +36,10 @@ export default async function Image(
     .filter((name): name is string => name !== null)
     .join(", ");
   const price = book.priceSale ?? book.price;
+  const formatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  });
 
   return new ImageResponse(
     <div
@@ -156,7 +160,7 @@ export default async function Image(
             gap: 15,
           }}
         >
-          <div>${price?.toFixed(2)}</div>
+          <div>{price ? formatter.format(price) : "N/A"}</div>
           {book.priceSale && book.priceSale < book.price && (
             <div
               style={{
@@ -165,7 +169,7 @@ export default async function Image(
                 textDecoration: "line-through",
               }}
             >
-              ${book.price.toFixed(2)}
+              {formatter.format(book.price)}
             </div>
           )}
         </div>

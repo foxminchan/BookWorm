@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { Button } from "@workspace/ui/components/button";
 
 const content = [
@@ -18,11 +20,11 @@ export default function DamagedPackages() {
               {text}
             </p>
           ))}
-          <a href="mailto:support@bookworm.com">
+          <Link href="mailto:support@bookworm.com">
             <Button size="lg" className="mt-4 rounded-full px-8">
               Contact Support
             </Button>
-          </a>
+          </Link>
         </div>
       </div>
     </section>

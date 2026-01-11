@@ -200,6 +200,19 @@ var storefront = turbo
 
 storefront.WithEnvironment("NEXT_PUBLIC_APP_URL", storefront.GetEndpoint(Http.Schemes.Http));
 
+var backoffice = turbo
+    .AddApp(Clients.BackOffice, Clients.BackOfficeTurboApp)
+    .WithOtlpExporter()
+    .WithHttpEndpoint(env: "PORT")
+    .WithMappedEndpointPort()
+    .WithHttpHealthCheck()
+    .WithExternalHttpEndpoints()
+    .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTPS", gateway.GetEndpoint(Http.Schemes.Https))
+    .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTP", gateway.GetEndpoint(Http.Schemes.Http))
+    .WithKeycloak(keycloak);
+
+backoffice.WithEnvironment("NEXT_PUBLIC_APP_URL", backoffice.GetEndpoint(Http.Schemes.Http));
+
 if (builder.ExecutionContext.IsRunMode)
 {
     builder

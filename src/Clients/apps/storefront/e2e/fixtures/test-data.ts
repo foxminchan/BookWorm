@@ -4,6 +4,7 @@
  * Integrates Faker for realistic data generation
  */
 import { faker } from "@faker-js/faker";
+import { formatISO, subDays } from "date-fns";
 
 import type { BasketItem, CustomerBasket } from "@workspace/types/basket/index";
 import type { Author } from "@workspace/types/catalog/authors";
@@ -193,19 +194,19 @@ export const testBasket: CustomerBasket = {
 export const testOrders: Order[] = [
   {
     id: faker.string.uuid(),
-    date: new Date(Date.now() - 86400000 * 2).toISOString(), // 2 days ago
+    date: formatISO(subDays(new Date(), 2)), // 2 days ago
     total: 104.97,
     status: "Completed",
   },
   {
     id: faker.string.uuid(),
-    date: new Date(Date.now() - 86400000 * 5).toISOString(), // 5 days ago
+    date: formatISO(subDays(new Date(), 5)), // 5 days ago
     total: 49.99,
     status: "New",
   },
   {
     id: faker.string.uuid(),
-    date: new Date(Date.now() - 86400000 * 10).toISOString(), // 10 days ago
+    date: formatISO(subDays(new Date(), 10)), // 10 days ago
     total: 79.97,
     status: "Cancelled",
   },
@@ -310,7 +311,7 @@ export function createTestOrder(
 
   return {
     id: faker.string.uuid(),
-    date: faker.date.recent({ days: 30 }).toISOString(),
+    date: formatISO(faker.date.recent({ days: 30 })),
     total: total + shippingCost,
     status,
     items: basket.items.map((item) => ({

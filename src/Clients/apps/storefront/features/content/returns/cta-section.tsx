@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { Button } from "@workspace/ui/components/button";
 
 export default function CtaSection() {
@@ -10,11 +12,11 @@ export default function CtaSection() {
         Our customer support team is here to make the process as smooth as
         possible.
       </p>
-      <a href="mailto:support@bookworm.com">
+      <Link href="mailto:support@bookworm.com">
         <Button size="lg" className="rounded-full px-8">
           Contact Our Support Team
         </Button>
-      </a>
+      </Link>
     </section>
   );
 }

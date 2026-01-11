@@ -110,7 +110,7 @@ export abstract class BasePage {
    * Take screenshot
    */
   async screenshot(name: string): Promise<void> {
-    const timestamp = new Date().getTime();
+    const timestamp = Date.now();
     await this.page.screenshot({
       path: `e2e/reports/screenshots/${name}-${timestamp}.png`,
       fullPage: true,

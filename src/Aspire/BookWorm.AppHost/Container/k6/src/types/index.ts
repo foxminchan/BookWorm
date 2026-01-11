@@ -1,11 +1,11 @@
 // Type definitions for BookWorm K6 performance tests
 
-export interface SortOption {
+export type SortOption = {
 	orderBy: string;
 	isDescending: boolean;
-}
+};
 
-export interface SearchParams {
+export type SearchParams = {
 	search?: string;
 	minPrice?: number;
 	maxPrice?: number;
@@ -14,57 +14,57 @@ export interface SearchParams {
 	orderBy?: string;
 	isDescending?: boolean;
 	category?: string;
-}
+};
 
-export interface BookItem {
+export type BookItem = {
 	id: string;
 	title: string;
 	price: number;
 	[key: string]: unknown;
-}
+};
 
-export interface PagedResponse<T> {
+export type PagedResponse<T> = {
 	items: T[];
 	pageIndex: number;
 	pageSize: number;
 	totalItems: number;
 	totalPages?: number;
-}
+};
 
-export interface TestData {
+export type TestData = {
 	searchTerms: string[];
 	categoryFilters: string[];
 	sortOptions: SortOption[];
 	authorNames: string[];
 	publisherNames: string[];
-}
+};
 
-export interface TestScenario {
+export type TestScenario = {
 	name: string;
 	execute: () => void;
-}
-export interface TestConstants {
+};
+export type TestConstants = {
 	HTTP_OK: number;
 	HTTP_BAD_REQUEST: number;
 	HTTP_NOT_FOUND: number;
 	RESPONSE_TIME_THRESHOLD_95: number;
 	RESPONSE_TIME_THRESHOLD_99: number;
 	CHECK_RATE_THRESHOLD: number;
-}
+};
 
-export interface TestEndpoint {
+export type TestEndpoint = {
 	url: string;
 	name: string;
 	maxDuration?: number;
-}
+};
 
-export interface TestConfiguration {
+export type TestConfiguration = {
 	baseUrl: string;
 	randomSeed: number;
-}
+};
 
 // K6 Summary Types
-export interface K6MetricValues {
+export type K6MetricValues = {
 	avg?: number;
 	min?: number;
 	med?: number;
@@ -76,16 +76,16 @@ export interface K6MetricValues {
 	rate?: number;
 	passes?: number;
 	fails?: number;
-}
+};
 
-export interface K6Metric {
+export type K6Metric = {
 	type: string;
 	contains: string;
 	values: K6MetricValues;
 	thresholds?: Record<string, boolean>;
-}
+};
 
-export interface K6SummaryData {
+export type K6SummaryData = {
 	metrics: {
 		http_reqs?: K6Metric;
 		http_req_failed?: K6Metric;
@@ -98,4 +98,4 @@ export interface K6SummaryData {
 		[key: string]: unknown;
 	};
 	[key: string]: unknown;
-}
+};

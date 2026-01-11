@@ -27,9 +27,9 @@ export const kcEnvDefaults: Record<KcEnvName, string> = {};
 export type KcContext = import("./login/KcContext").KcContext;
 
 declare global {
-  interface Window {
+  type Window = {
     kcContext?: KcContext;
-  }
+  };
 }
 
 export const KcLoginPage = lazy(() => import("./login/KcPage"));

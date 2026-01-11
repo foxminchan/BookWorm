@@ -11,6 +11,7 @@ export const auth = betterAuth({
   trustedOrigins: [
     env.KEYCLOAK_URL,
     env.NEXT_PUBLIC_GATEWAY_HTTP || "",
+    env.NEXT_PUBLIC_APP_URL || "",
     ...(process.env.NODE_ENV === "development" ? ["http://localhost:*"] : []),
   ].filter((origin): origin is string => Boolean(origin)),
   emailAndPassword: {
