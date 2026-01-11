@@ -126,7 +126,14 @@ describe("Books CellAction", () => {
 
   it("calls delete mutation when confirmed", async () => {
     const user = userEvent.setup();
-    const mutateFn = vi.fn();
+    const mutateFn = vi.fn(
+      (_bookId: string, options?: { onSuccess?: () => void }) => {
+        // Immediately call onSuccess to simulate successful mutation
+        if (options?.onSuccess) {
+          Promise.resolve().then(options.onSuccess);
+        }
+      },
+    );
     mockUseDeleteBook.mockReturnValue({
       mutate: mutateFn,
       isPending: false,
@@ -138,13 +145,20 @@ describe("Books CellAction", () => {
     const deleteButton = screen.getByLabelText(`Delete ${mockBook.name}`);
     await user.click(deleteButton);
 
-    // Confirm deletion
+    // Wait for dialog and confirm
     await waitFor(() => {
       expect(screen.getByText("Delete Book")).toBeInTheDocument();
     });
 
-    const confirmButton = screen.getByRole("button", { name: /delete/i });
-    await user.click(confirmButton);
+    // Get all buttons and find the Delete action button (not Cancel)
+    const buttons = screen.getAllByRole("button");
+    const deleteActionButton = buttons.find(
+      (btn) =>
+        btn.textContent?.includes("Delete") &&
+        !btn.textContent?.includes("Cancel"),
+    );
+    expect(deleteActionButton).toBeDefined();
+    await user.click(deleteActionButton!);
 
     await waitFor(() => {
       expect(mutateFn).toHaveBeenCalledWith(mockBook.id, expect.any(Object));
@@ -180,7 +194,7 @@ describe("Books CellAction", () => {
   it("closes delete dialog on successful mutation", async () => {
     const user = userEvent.setup();
     const mutateFn = vi.fn(
-      (bookId: string, options?: { onSuccess?: () => void }) => {
+      (_bookId: string, options?: { onSuccess?: () => void }) => {
         // Simulate successful mutation by calling onSuccess
         options?.onSuccess?.();
       },
@@ -200,8 +214,15 @@ describe("Books CellAction", () => {
       expect(screen.getByText("Delete Book")).toBeInTheDocument();
     });
 
-    const confirmButton = screen.getByRole("button", { name: /delete/i });
-    await user.click(confirmButton);
+    // Get all buttons and find the Delete action button (not Cancel)
+    const buttons = screen.getAllByRole("button");
+    const deleteActionButton = buttons.find(
+      (btn) =>
+        btn.textContent?.includes("Delete") &&
+        !btn.textContent?.includes("Cancel"),
+    );
+    expect(deleteActionButton).toBeDefined();
+    await user.click(deleteActionButton!);
 
     await waitFor(() => {
       expect(mutateFn).toHaveBeenCalledWith(
