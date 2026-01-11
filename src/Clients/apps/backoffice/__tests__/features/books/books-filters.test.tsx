@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -8,7 +8,6 @@ import {
   createMockPublisher,
 } from "@/__tests__/factories";
 import { BooksFilters } from "@/features/books/books-filters";
-import { PRICE_RANGE } from "@/lib/constants";
 
 vi.mock("@workspace/api-hooks/catalog/authors/useAuthors");
 vi.mock("@workspace/api-hooks/catalog/categories/useCategories");

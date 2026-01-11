@@ -1,5 +1,4 @@
 import { Page } from "@playwright/test";
-import { expect } from "@playwright/test";
 
 /**
  * World context for Cucumber scenarios

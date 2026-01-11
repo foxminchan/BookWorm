@@ -249,7 +249,6 @@ describe("BookForm", () => {
   });
 
   it("handles category selection", async () => {
-    const user = userEvent.setup();
     render(<BookForm />);
 
     const categorySelect = screen.getByRole("combobox", { name: /category/i });
@@ -257,7 +256,6 @@ describe("BookForm", () => {
   });
 
   it("handles publisher selection", async () => {
-    const user = userEvent.setup();
     render(<BookForm />);
 
     const publisherSelect = screen.getByRole("combobox", {
@@ -276,7 +274,6 @@ describe("BookForm", () => {
   });
 
   it("handles image file selection", async () => {
-    const user = userEvent.setup();
     render(<BookForm />);
 
     const fileInput = screen.getByLabelText(/Upload book cover/i);
