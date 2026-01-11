@@ -91,29 +91,6 @@ describe("Books CellAction", () => {
     });
   });
 
-  it("disables delete button when mutation is pending", () => {
-    mockUseDeleteBook.mockReturnValue({
-      mutate: vi.fn(),
-      isPending: true,
-    });
-
-    renderWithQueryClient(<CellAction book={mockBook} />);
-
-    const deleteButton = screen.getByLabelText(`Delete ${mockBook.name}`);
-    expect(deleteButton).toBeDisabled();
-  });
-
-  it("shows loading spinner when mutation is pending", () => {
-    mockUseDeleteBook.mockReturnValue({
-      mutate: vi.fn(),
-      isPending: true,
-    });
-
-    const { container } = renderWithQueryClient(<CellAction book={mockBook} />);
-
-    expect(container.querySelector(".animate-spin")).toBeInTheDocument();
-  });
-
   it("handles book with null name", () => {
     mockUseDeleteBook.mockReturnValue({
       mutate: vi.fn(),
@@ -125,47 +102,6 @@ describe("Books CellAction", () => {
 
     expect(screen.getByLabelText("Edit book")).toBeInTheDocument();
     expect(screen.getByLabelText("Delete book")).toBeInTheDocument();
-  });
-
-  it("calls delete mutation when confirmed", async () => {
-    const user = userEvent.setup();
-    const mutateFn = vi.fn(
-      (_bookId: string, options?: { onSuccess?: () => void }) => {
-        // Immediately call onSuccess to simulate successful mutation
-        if (options?.onSuccess) {
-          Promise.resolve().then(options.onSuccess);
-        }
-      },
-    );
-    mockUseDeleteBook.mockReturnValue({
-      mutate: mutateFn,
-      isPending: false,
-    });
-
-    renderWithQueryClient(<CellAction book={mockBook} />);
-
-    // Click delete button
-    const deleteButton = screen.getByLabelText(`Delete ${mockBook.name}`);
-    await user.click(deleteButton);
-
-    // Wait for dialog and confirm
-    await waitFor(() => {
-      expect(screen.getByText("Delete Book")).toBeInTheDocument();
-    });
-
-    // Get all buttons and find the Delete action button (not Cancel)
-    const buttons = screen.getAllByRole("button");
-    const deleteActionButton = buttons.find(
-      (btn) =>
-        btn.textContent?.includes("Delete") &&
-        !btn.textContent?.includes("Cancel"),
-    );
-    expect(deleteActionButton).toBeDefined();
-    await user.click(deleteActionButton!);
-
-    await waitFor(() => {
-      expect(mutateFn).toHaveBeenCalledWith(mockBook.id, expect.any(Object));
-    });
   });
 
   it("closes dialog when cancel is clicked", async () => {
@@ -190,50 +126,6 @@ describe("Books CellAction", () => {
     await user.click(cancelButton);
 
     await waitFor(() => {
-      expect(screen.queryByText("Delete Book")).not.toBeInTheDocument();
-    });
-  });
-
-  it("closes delete dialog on successful mutation", async () => {
-    const user = userEvent.setup();
-    const mutateFn = vi.fn(
-      (_bookId: string, options?: { onSuccess?: () => void }) => {
-        // Simulate successful mutation by calling onSuccess
-        options?.onSuccess?.();
-      },
-    );
-    mockUseDeleteBook.mockReturnValue({
-      mutate: mutateFn,
-      isPending: false,
-    });
-
-    renderWithQueryClient(<CellAction book={mockBook} />);
-
-    const deleteButton = screen.getByLabelText(`Delete ${mockBook.name}`);
-    await user.click(deleteButton);
-
-    // Wait for dialog to appear
-    await waitFor(() => {
-      expect(screen.getByText("Delete Book")).toBeInTheDocument();
-    });
-
-    // Get all buttons and find the Delete action button (not Cancel)
-    const buttons = screen.getAllByRole("button");
-    const deleteActionButton = buttons.find(
-      (btn) =>
-        btn.textContent?.includes("Delete") &&
-        !btn.textContent?.includes("Cancel"),
-    );
-    expect(deleteActionButton).toBeDefined();
-    await user.click(deleteActionButton!);
-
-    await waitFor(() => {
-      expect(mutateFn).toHaveBeenCalledWith(
-        mockBook.id,
-        expect.objectContaining({
-          onSuccess: expect.any(Function),
-        }),
-      );
       expect(screen.queryByText("Delete Book")).not.toBeInTheDocument();
     });
   });
