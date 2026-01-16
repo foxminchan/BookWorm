@@ -62,6 +62,9 @@ updates:
       MicrosoftAgents:
         patterns:
           - "Microsoft.Agents.*"
+      CommunityToolkit:
+        patterns:
+          - "CommunityToolkit.*"
 
   - package-ecosystem: "npm"
     directory: "/docs/eventcatalog"
