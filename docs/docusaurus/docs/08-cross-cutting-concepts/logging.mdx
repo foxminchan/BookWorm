@@ -1,19 +1,30 @@
 ---
 sidebar_position: 2
 title: Logging
-description: Comprehensive logging with structured logging, sensitive data redaction, and custom extensions
-keywords: [logging, structured logging, log levels, data redaction, Microsoft Extensions Logging, observability]
+description:
+  Comprehensive logging with structured logging, sensitive data redaction, and custom extensions
+keywords:
+  [
+    logging,
+    structured logging,
+    log levels,
+    data redaction,
+    Microsoft Extensions Logging,
+    observability,
+  ]
 last_update:
   author: Nhan Nguyen
 ---
 
 # Logging
 
-The BookWorm application implements comprehensive logging using .NET's built-in logging framework enhanced with custom extensions and structured logging capabilities.
+The BookWorm application implements comprehensive logging using .NET's built-in logging framework
+enhanced with custom extensions and structured logging capabilities.
 
 ## Logging Architecture
 
 ### Framework Integration
+
 - **Microsoft.Extensions.Logging** - Core logging abstraction
 - **Microsoft.Extensions.Compliance.Redaction** - Sensitive data redaction
 - **Custom Logging Extensions** - Enhanced logging capabilities in BookWorm.Chassis
@@ -21,11 +32,13 @@ The BookWorm application implements comprehensive logging using .NET's built-in 
 ### Key Features
 
 #### Structured Logging
+
 - JSON-formatted log entries for better searchability and parsing
 - Consistent log structure across all microservices
 - Contextual information including correlation IDs and user context
 
 #### Log Levels
+
 - **Trace** - Detailed execution flow for debugging
 - **Debug** - Development-time diagnostic information
 - **Information** - General application flow and business events
@@ -34,6 +47,7 @@ The BookWorm application implements comprehensive logging using .NET's built-in 
 - **Critical** - Serious errors that may cause application termination
 
 #### Sensitive Data Protection
+
 - Automatic redaction of personally identifiable information (PII)
 - Configurable redaction patterns for different data types
 - Compliance with data protection regulations (GDPR, CCPA)
@@ -41,11 +55,13 @@ The BookWorm application implements comprehensive logging using .NET's built-in 
 ## Integration with OpenTelemetry
 
 ### Trace Correlation
+
 - Automatic correlation between logs and distributed traces
 - Span context injection for cross-service request tracking
 - Activity-based logging for request lifecycle monitoring
 
 ### Log Forwarding
+
 - Integration with OpenTelemetry logging pipeline
 - Export to external systems (Grafana, Elastic Stack, Azure Monitor)
 - Centralized log aggregation for distributed system monitoring
@@ -53,6 +69,7 @@ The BookWorm application implements comprehensive logging using .NET's built-in 
 ## Best Practices
 
 ### Logging Guidelines
+
 - Use structured logging with consistent property names
 - Avoid logging sensitive information in production
 - Include relevant context (user ID, correlation ID, operation)
@@ -60,6 +77,7 @@ The BookWorm application implements comprehensive logging using .NET's built-in 
 - Implement log sampling for high-volume scenarios
 
 ### Performance Considerations
+
 - Asynchronous logging to prevent blocking operations
 - Log level filtering based on environment configuration
 - Efficient serialization of log objects

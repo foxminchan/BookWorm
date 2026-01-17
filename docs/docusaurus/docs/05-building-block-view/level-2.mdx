@@ -1,19 +1,32 @@
 ---
 sidebar_position: 3
 title: Level 2
-description: Detailed internal structure of core BookWorm services including Catalog, Ordering, Basket, and Chat services
-keywords: [service decomposition, component diagram, internal structure, application layer, infrastructure layer, domain layer]
+description:
+  Detailed internal structure of core BookWorm services including Catalog, Ordering, Basket, and
+  Chat services
+keywords:
+  [
+    service decomposition,
+    component diagram,
+    internal structure,
+    application layer,
+    infrastructure layer,
+    domain layer,
+  ]
 last_update:
   author: Nhan Nguyen
 ---
 
 # Level 2 - Detailed Service Decomposition
 
-Here we zoom into the most important building blocks from Level 1, showing their internal structure and components based on the actual implementation. We focus on the core business services that represent the most complexity and business value.
+Here we zoom into the most important building blocks from Level 1, showing their internal structure
+and components based on the actual implementation. We focus on the core business services that
+represent the most complexity and business value.
 
 ## Catalog Service - Internal Structure
 
-The Catalog Service manages product catalog, AI-powered search, and file storage with sophisticated AI integration.
+The Catalog Service manages product catalog, AI-powered search, and file storage with sophisticated
+AI integration.
 
 ```mermaid
 C4Component
@@ -32,13 +45,14 @@ C4Component
         Container_Boundary(infrastructure, "Infrastructure") {
             ComponentDb(storageSystem, "Storage System", "Azure Blob Storage", "Stores book files and resources")
             ComponentQueue(eventBus, "Event Bus", "RabbitMQ", "Handles async communication")
+            ComponentDb(cacheSystem, "Cache System", "Redis", "Hybrid caching (L1: memory, L2: Redis)")
 
-            Container_Boundary(ai, "AI") {
-                Component(ollama, "Model Manager", "Ollama", "Get and run models")
+            Container_Boundary(ai, "AI Infrastructure") {
+                Component(azureOpenAI, "Azure OpenAI", "Managed AI Service", "Provides AI models")
 
-                Container_Boundary(model, "Model") {
-                    Component(chatModel, "Chat Model", "Gemma 3", "Handles chat interactions")
-                    Component(embeddingModel, "Embedding Model", "Nomic Embed Text", "Handles embedding operations")
+                Container_Boundary(model, "AI Models") {
+                    Component(chatModel, "GPT-4o-mini", "Chat Model", "Content generation and enrichment")
+                    Component(embeddingModel, "text-embedding-3-large", "Embedding Model", "Semantic embeddings (3072 dimensions)")
                 }
             }
 
@@ -53,15 +67,17 @@ C4Component
     Rel(catalogFacade, storageService, "Uses", "Internal")
     Rel(catalogFacade, vectorService, "Uses", "Internal")
     Rel(catalogFacade, llmService, "Uses", "Internal")
+    Rel(catalogFacade, cacheSystem, "Reads/Writes", "Hybrid Cache")
 
-    Rel(ollama, chatModel, "Uses", "Internal")
-    Rel(ollama, embeddingModel, "Uses", "Internal")
+    Rel(azureOpenAI, chatModel, "Provides", "Internal")
+    Rel(azureOpenAI, embeddingModel, "Provides", "Internal")
 
     Rel(catalogFacade, catalogDb, "Reads/Writes", "SQL")
     Rel(vectorService, vectorDb, "Reads/Writes", "API")
     Rel(llmService, vectorDb, "Reads/Writes", "API")
-    Rel(llmService, ollama, "Uses", "Internal")
-    Rel(storageService, storageSystem, "Reads/Writes", "File I/O")
+    Rel(llmService, azureOpenAI, "Uses", "HTTPS")
+    Rel(vectorService, azureOpenAI, "Uses", "HTTPS")
+    Rel(storageService, storageSystem, "Reads/Writes", "HTTPS")
 
     BiRel(eventHandler, eventBus, "Publishes/Subscribes", "Async")
     BiRel(catalogFacade, eventHandler, "Uses", "Internal")
@@ -70,8 +86,8 @@ C4Component
 
 ### Catalog Endpoints
 
-**Purpose/Responsibility**
-Exposes HTTP REST endpoints for catalog operations including book management, search, and metadata operations.
+**Purpose/Responsibility** Exposes HTTP REST endpoints for catalog operations including book
+management, search, and metadata operations.
 
 **Interface(s)**
 
@@ -81,8 +97,8 @@ Exposes HTTP REST endpoints for catalog operations including book management, se
 
 ### Catalog Facade
 
-**Purpose/Responsibility**
-Core business logic coordinator that orchestrates operations across storage, vector, and LLM services.
+**Purpose/Responsibility** Core business logic coordinator that orchestrates operations across
+storage, vector, and LLM services.
 
 **Interface(s)**
 
@@ -92,8 +108,8 @@ Core business logic coordinator that orchestrates operations across storage, vec
 
 ### Vector Service
 
-**Purpose/Responsibility**
-Manages vector embeddings for semantic search capabilities using AI models.
+**Purpose/Responsibility** Manages vector embeddings for semantic search capabilities using AI
+models.
 
 **Interface(s)**
 
@@ -103,8 +119,7 @@ Manages vector embeddings for semantic search capabilities using AI models.
 
 ### Storage Service
 
-**Purpose/Responsibility**
-Manages book files and metadata storage in Azure Blob Storage.
+**Purpose/Responsibility** Manages book files and metadata storage in Azure Blob Storage.
 
 **Interface(s)**
 
@@ -114,14 +129,21 @@ Manages book files and metadata storage in Azure Blob Storage.
 
 ### LLM Service
 
-**Purpose/Responsibility**
-Provides AI-powered recommendations and chat interactions using large language models.
+**Purpose/Responsibility** Provides AI-powered recommendations and content enrichment using Azure
+OpenAI (GPT-4o-mini).
 
 **Interface(s)**
 
-- AI recommendation generation
-- Chat model integration
-- Vector database queries
+- AI recommendation generation via Azure OpenAI
+- Content enrichment and categorization
+- Semantic Kernel orchestration
+- Vector database queries for RAG patterns
+
+**Quality/Performance Characteristics**
+
+- Azure OpenAI integration with managed scaling
+- Hybrid caching for AI responses
+- Streaming support for long-running operations
 
 ## Order Service - Internal Structure
 
@@ -155,8 +177,8 @@ C4Component
 
 ### Order Endpoints
 
-**Purpose/Responsibility**
-REST API endpoints for order management including creation, updates, queries, and buyer management.
+**Purpose/Responsibility** REST API endpoints for order management including creation, updates,
+queries, and buyer management.
 
 **Interface(s)**
 
@@ -167,8 +189,8 @@ REST API endpoints for order management including creation, updates, queries, an
 
 ### Order Facade
 
-**Purpose/Responsibility**
-Core business logic for order processing, state management, and business rule enforcement.
+**Purpose/Responsibility** Core business logic for order processing, state management, and business
+rule enforcement.
 
 **Interface(s)**
 
@@ -178,8 +200,7 @@ Core business logic for order processing, state management, and business rule en
 
 ### Event Publisher
 
-**Purpose/Responsibility**
-Publishes domain events for order state changes to notify other services.
+**Purpose/Responsibility** Publishes domain events for order state changes to notify other services.
 
 **Interface(s)**
 
@@ -216,8 +237,8 @@ C4Component
 
 ### Finance Endpoints
 
-**Purpose/Responsibility**
-Provides API endpoints for retrieving state machine information and financial operation status.
+**Purpose/Responsibility** Provides API endpoints for retrieving state machine information and
+financial operation status.
 
 **Interface(s)**
 
@@ -227,8 +248,8 @@ Provides API endpoints for retrieving state machine information and financial op
 
 ### Saga Orchestrator
 
-**Purpose/Responsibility**
-Coordinates distributed transactions across multiple services using the Saga pattern for order processing.
+**Purpose/Responsibility** Coordinates distributed transactions across multiple services using the
+Saga pattern for order processing.
 
 **Interface(s)**
 
@@ -281,8 +302,8 @@ C4Component
 
 ### Chat Endpoints
 
-**Purpose/Responsibility**
-REST API endpoints for chat session management and real-time conversation handling.
+**Purpose/Responsibility** REST API endpoints for chat session management and real-time conversation
+handling.
 
 **Interface(s)**
 
@@ -292,8 +313,8 @@ REST API endpoints for chat session management and real-time conversation handli
 
 ### Chat Facade
 
-**Purpose/Responsibility**
-Core business logic for chat management, session handling, and conversation flow control.
+**Purpose/Responsibility** Core business logic for chat management, session handling, and
+conversation flow control.
 
 **Interface(s)**
 
@@ -303,8 +324,8 @@ Core business logic for chat management, session handling, and conversation flow
 
 ### LLM Service
 
-**Purpose/Responsibility**
-Handles AI-powered conversations using large language models with tool integration capabilities.
+**Purpose/Responsibility** Handles AI-powered conversations using large language models with tool
+integration capabilities.
 
 **Interface(s)**
 
@@ -407,8 +428,8 @@ C4Component
 
 ### API Layer
 
-**Purpose/Responsibility**
-Exposes HTTP REST endpoints for catalog operations including product browsing, search, and catalog management.
+**Purpose/Responsibility** Exposes HTTP REST endpoints for catalog operations including product
+browsing, search, and catalog management.
 
 **Interface(s)**
 
@@ -424,8 +445,8 @@ Exposes HTTP REST endpoints for catalog operations including product browsing, s
 
 ### gRPC Service
 
-**Purpose/Responsibility**
-Provides high-performance internal API for other services to retrieve product information.
+**Purpose/Responsibility** Provides high-performance internal API for other services to retrieve
+product information.
 
 **Interface(s)**
 
@@ -441,8 +462,8 @@ Provides high-performance internal API for other services to retrieve product in
 
 ### Search Engine
 
-**Purpose/Responsibility**
-Implements AI-powered semantic search using vector embeddings for intelligent product discovery.
+**Purpose/Responsibility** Implements AI-powered semantic search using vector embeddings for
+intelligent product discovery.
 
 **Interface(s)**
 
@@ -458,8 +479,7 @@ Implements AI-powered semantic search using vector embeddings for intelligent pr
 
 ### Inventory Manager
 
-**Purpose/Responsibility**
-Manages product stock levels, availability, and inventory operations.
+**Purpose/Responsibility** Manages product stock levels, availability, and inventory operations.
 
 **Interface(s)**
 
@@ -504,12 +524,12 @@ C4Container
 
     Rel(workflow, orderDb, "Persists", "TCP")
     Rel(pricing, orderDb, "Reads", "TCP")
-````
+```
 
 ### Order API
 
-**Purpose/Responsibility**
-Provides RESTful endpoints for order creation, modification, tracking, and management.
+**Purpose/Responsibility** Provides RESTful endpoints for order creation, modification, tracking,
+and management.
 
 **Interface(s)**
 
@@ -525,8 +545,8 @@ Provides RESTful endpoints for order creation, modification, tracking, and manag
 
 ### Order Workflow
 
-**Purpose/Responsibility**
-Manages the order state machine and lifecycle from creation to completion.
+**Purpose/Responsibility** Manages the order state machine and lifecycle from creation to
+completion.
 
 **Interface(s)**
 
@@ -542,8 +562,8 @@ Manages the order state machine and lifecycle from creation to completion.
 
 ### Saga Orchestrator
 
-**Purpose/Responsibility**
-Coordinates distributed transactions across multiple services using the Saga pattern.
+**Purpose/Responsibility** Coordinates distributed transactions across multiple services using the
+Saga pattern.
 
 **Interface(s)**
 
@@ -556,3 +576,98 @@ Coordinates distributed transactions across multiple services using the Saga pat
 - Eventually consistent transactions
 - Failure isolation
 - Automatic retry and compensation
+
+---
+
+## MCP Server (BookWorm.McpTools) - Internal Structure
+
+The MCP (Model Context Protocol) Server exposes catalog and service capabilities as standardized AI
+agent tools, enabling AI agents to interact with BookWorm services.
+
+```mermaid
+C4Component
+    title Component diagram for MCP Server
+
+    Container_Boundary(mcp, "MCP Server") {
+        Container_Boundary(application, "Application") {
+            Component(mcpHost, "MCP Host", "ASP.NET Core", "ModelContextProtocol.AspNetCore host")
+            Component(catalogTools, "Catalog Tools", ".NET", "Exposes catalog operations as MCP tools")
+            Component(toolRegistry, "Tool Registry", ".NET", "Registers and manages available tools")
+        }
+
+        Container_Boundary(integration, "Integration") {
+            Component(catalogClient, "Catalog Client", "Refit", "HTTP client for Catalog service")
+        }
+    }
+
+    System_Ext(chatService, "Chat Service", "Consumes MCP tools for AI agent workflows")
+    System_Ext(ratingService, "Rating Service", "Consumes MCP tools for AI agent workflows")
+    System_Ext(catalogService, "Catalog Service", "Provides catalog data and operations")
+
+    Rel(mcpHost, toolRegistry, "Manages", "Internal")
+    Rel(toolRegistry, catalogTools, "Registers", "Internal")
+    Rel(catalogTools, catalogClient, "Uses", "Internal")
+    Rel(catalogClient, catalogService, "API calls", "HTTP")
+
+    Rel(chatService, mcpHost, "Tool calls", "HTTP/MCP")
+    Rel(ratingService, mcpHost, "Tool calls", "HTTP/MCP")
+
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+```
+
+### MCP Host
+
+**Purpose/Responsibility** ASP.NET Core host that implements the Model Context Protocol
+specification, enabling AI agents to discover and invoke tools.
+
+**Interface(s)**
+
+- MCP Protocol endpoints for tool discovery
+- Tool invocation endpoints
+- OpenAPI specification generation
+
+**Quality/Performance Characteristics**
+
+- Standardized protocol compliance
+- Async tool execution
+- Error handling and retry logic
+
+### Catalog Tools
+
+**Purpose/Responsibility** Exposes catalog service operations as MCP tools that AI agents can
+discover and use.
+
+**Interface(s)**
+
+- Book search tools
+- Catalog query tools
+- Product information retrieval tools
+
+**Quality/Performance Characteristics**
+
+- Tool schema definitions
+- Input validation
+- Result transformation
+
+### Tool Registry
+
+**Purpose/Responsibility** Manages the registration, discovery, and metadata for available MCP
+tools.
+
+**Interface(s)**
+
+- Tool registration and discovery
+- Schema management
+- Capability advertisement
+
+**Quality/Performance Characteristics**
+
+- Dynamic tool registration
+- Schema validation
+- Performance monitoring
+
+**Integration with Microsoft Agents AI Framework**:
+
+- Used by Chat and Rating services for agent tooling
+- Supports A2A Protocol for agent-to-agent communication
+- Enables standardized AI agent integration across services

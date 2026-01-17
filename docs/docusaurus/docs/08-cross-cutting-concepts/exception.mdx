@@ -1,19 +1,31 @@
 ---
 sidebar_position: 5
 title: Exception Handling
-description: Comprehensive exception handling strategy with custom exceptions, error responses, and graceful degradation
-keywords: [exception handling, error handling, custom exceptions, validation exceptions, error responses, middleware]
+description:
+  Comprehensive exception handling strategy with custom exceptions, error responses, and graceful
+  degradation
+keywords:
+  [
+    exception handling,
+    error handling,
+    custom exceptions,
+    validation exceptions,
+    error responses,
+    middleware,
+  ]
 last_update:
   author: Nhan Nguyen
 ---
 
 # Exception Handling
 
-The BookWorm application implements a comprehensive exception handling strategy that provides consistent error responses, proper logging, and graceful degradation across all microservices.
+The BookWorm application implements a comprehensive exception handling strategy that provides
+consistent error responses, proper logging, and graceful degradation across all microservices.
 
 ## Exception Architecture
 
 ### Exception Hierarchy
+
 - **Custom Domain Exceptions** - Business rule violations and domain-specific errors
 - **Validation Exceptions** - Input validation and constraint violations
 - **Infrastructure Exceptions** - Database, messaging, and external service errors
@@ -21,6 +33,7 @@ The BookWorm application implements a comprehensive exception handling strategy 
 - **System Exceptions** - Unexpected system-level errors
 
 ### Exception Handling Middleware
+
 - **Global Exception Handler** - Centralized exception processing
 - **Error Response Standardization** - Consistent error format across APIs
 - **Correlation ID Tracking** - Error tracing across distributed services
@@ -29,18 +42,21 @@ The BookWorm application implements a comprehensive exception handling strategy 
 ## Exception Categories
 
 ### Business Exceptions
+
 - **Domain Rule Violations** - Business logic constraint failures
 - **Entity Not Found** - Resource lookup failures
 - **Validation Failures** - Business rule validation errors
 - **Concurrency Conflicts** - Optimistic locking and versioning errors
 
 ### Technical Exceptions
+
 - **Database Exceptions** - Connection, query, and transaction failures
 - **Network Exceptions** - Service communication and timeout errors
 - **Serialization Exceptions** - JSON/XML processing errors
 - **Configuration Exceptions** - Missing or invalid configuration
 
 ### Security Exceptions
+
 - **Authentication Failures** - Invalid credentials or expired tokens
 - **Authorization Failures** - Insufficient permissions for operations
 - **Input Validation Failures** - Malicious or malformed input detection
@@ -49,6 +65,7 @@ The BookWorm application implements a comprehensive exception handling strategy 
 ## Error Response Format
 
 ### Standardized Error Structure
+
 - **Error Code** - Unique identifier for error type
 - **Error Message** - Human-readable error description
 - **Details** - Additional context and troubleshooting information
@@ -56,6 +73,7 @@ The BookWorm application implements a comprehensive exception handling strategy 
 - **Correlation ID** - Request tracking identifier
 
 ### HTTP Status Code Mapping
+
 - **400 Bad Request** - Client input validation errors
 - **401 Unauthorized** - Authentication required or failed
 - **403 Forbidden** - Authorization denied for authenticated user
@@ -69,12 +87,14 @@ The BookWorm application implements a comprehensive exception handling strategy 
 ## Resilience Patterns
 
 ### Retry Mechanisms
+
 - **Exponential Backoff** - Progressive retry delays with jitter
 - **Circuit Breaker** - Prevent cascading failures in distributed systems
 - **Timeout Handling** - Request timeout configuration and fallback
 - **Dead Letter Queue** - Failed message handling and reprocessing
 
 ### Fallback Strategies
+
 - **Graceful Degradation** - Reduced functionality when services are unavailable
 - **Default Responses** - Sensible defaults when data is unavailable
 - **Cache Fallback** - Serve stale data when primary sources fail
@@ -83,12 +103,14 @@ The BookWorm application implements a comprehensive exception handling strategy 
 ## Logging and Monitoring
 
 ### Exception Logging
+
 - **Structured Logging** - Consistent exception log format
 - **Log Level Classification** - Appropriate severity levels for different errors
 - **Context Preservation** - Maintain request context in exception logs
 - **Performance Impact** - Minimize logging overhead in high-throughput scenarios
 
 ### Monitoring and Alerting
+
 - **Error Rate Metrics** - Track exception frequency and trends
 - **Error Classification** - Categorize errors by type and severity
 - **Performance Impact** - Monitor exception handling performance
@@ -97,12 +119,14 @@ The BookWorm application implements a comprehensive exception handling strategy 
 ## Validation Framework
 
 ### FluentValidation Integration
+
 - **Input Validation** - Request model validation with custom rules
 - **Business Rule Validation** - Domain-specific validation logic
 - **Cross-Field Validation** - Complex validation scenarios
 - **Localization Support** - Multi-language error messages
 
 ### Validation Patterns
+
 - **Early Validation** - Fail fast at API boundaries
 - **Pipeline Validation** - Multi-stage validation in CQRS pipelines
 - **Conditional Validation** - Context-dependent validation rules
@@ -111,12 +135,14 @@ The BookWorm application implements a comprehensive exception handling strategy 
 ## Best Practices
 
 ### Exception Design
+
 - **Specific Exception Types** - Create meaningful exception hierarchies
 - **Immutable Exceptions** - Exception objects should be immutable
 - **Rich Context** - Include relevant context in exception messages
 - **Localization** - Support multiple languages for user-facing errors
 
 ### Error Handling Guidelines
+
 - **Don't Swallow Exceptions** - Always log and handle exceptions appropriately
 - **Use Finally Blocks** - Ensure resource cleanup in exception scenarios
 - **Avoid Generic Catches** - Handle specific exception types when possible

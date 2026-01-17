@@ -1,8 +1,18 @@
 ---
 sidebar_position: 4
 title: Stakeholders
-description: Key stakeholders, their roles, and expectations for BookWorm architecture and documentation
-keywords: [stakeholders, project owner, end users, cloud platform, Azure, payment providers, open source community]
+description:
+  Key stakeholders, their roles, and expectations for BookWorm architecture and documentation
+keywords:
+  [
+    stakeholders,
+    project owner,
+    end users,
+    cloud platform,
+    Azure,
+    payment providers,
+    open source community,
+  ]
 last_update:
   author: Nhan Nguyen
 ---
@@ -11,7 +21,8 @@ last_update:
 
 ## Overview
 
-Table with role names, person names, and their expectations with respect to the architecture and its documentation.
+Table with role names, person names, and their expectations with respect to the architecture and its
+documentation.
 
 | Role/Name                               | Contact        | Expectations                                                                                                                                                                                                                                                             |
 | --------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -19,7 +30,8 @@ Table with role names, person names, and their expectations with respect to the 
 
 ## Additional Stakeholders
 
-While the BookWorm project is currently a solo development effort, the following external stakeholders still influence architectural decisions:
+While the BookWorm project is currently a solo development effort, the following external
+stakeholders still influence architectural decisions:
 
 | Role/Name                  | Contact              | Expectations                                                                                                                                                                   |
 | -------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -36,11 +48,16 @@ As the sole team member, the developer assumes multiple roles and responsibiliti
 ### **Technical Roles**
 
 - **Solution Architect**: Design system architecture and make technology decisions
-- **Frontend Developer**: Implement user interface and user experience
-- **Backend Developer**: Build APIs, business logic, and data management
-- **DevOps Engineer**: Set up CI/CD, deployment, and monitoring
-- **QA Engineer**: Write tests, perform quality assurance, and bug fixing
-- **Database Administrator**: Design data models and optimize performance
+- **Frontend Developer**: Implement Next.js 16 + React 19 applications (Storefront & Backoffice)
+  with Turbo monorepo
+- **Backend Developer**: Build .NET 10 APIs, business logic, and data management across 8
+  microservices
+- **DevOps Engineer**: Set up CI/CD (GitHub Actions for frontend, Aspire for backend), Azure
+  deployment, and monitoring
+- **QA Engineer**: Write TUnit tests, perform quality assurance, and bug fixing
+- **Database Administrator**: Design PostgreSQL data models and optimize performance
+- **AI Engineer**: Integrate Azure OpenAI services with Semantic Kernel and Microsoft Agents AI
+  Framework
 
 ### **Business Roles**
 

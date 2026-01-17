@@ -1,8 +1,22 @@
 ---
 sidebar_position: 10
 title: ADR-009 - AI Integration Strategy
-description: AI integration strategy with Agent Framework for conversational support and recommendations
-keywords: [ADR-009, AI integration, Agent Framework, LLM, conversational AI, semantic search, recommendations]
+description:
+  AI integration strategy with Azure OpenAI and Microsoft Agents AI Framework for conversational
+  support and recommendations
+keywords:
+  [
+    ADR-009,
+    AI integration,
+    Azure OpenAI,
+    GPT-4o-mini,
+    text-embedding-3-large,
+    Microsoft Agents AI Framework,
+    Semantic Kernel,
+    conversational AI,
+    semantic search,
+    recommendations,
+  ]
 last_update:
   author: Nhan Nguyen
 ---
@@ -11,11 +25,12 @@ last_update:
 
 ## Status
 
-**Accepted** - March 2025
+**Accepted** - March 2025 (Updated: Migrated from Ollama to Azure OpenAI)
 
 ## Context
 
-BookWorm aims to enhance user experience through intelligent features that leverage artificial intelligence capabilities. The system requires AI integration for several key scenarios:
+BookWorm aims to enhance user experience through intelligent features that leverage artificial
+intelligence capabilities. The system requires AI integration for several key scenarios:
 
 - **Conversational Support**: Interactive chat support with natural language understanding
 - **Book Recommendations**: Personalized book suggestions based on user preferences and behavior
@@ -27,233 +42,280 @@ BookWorm aims to enhance user experience through intelligent features that lever
 - **Performance Requirements**: Sub-second response times for interactive features
 - **Cost Management**: Balance between AI capabilities and operational costs
 - **Privacy and Security**: Ensure user data protection in AI processing workflows
+- **Enterprise Requirements**: SLA guarantees, managed scaling, and Microsoft ecosystem integration
+- **Model Quality**: Latest models with superior reasoning and embedding capabilities
 
-The choice of AI technologies and integration patterns significantly impacts user experience, operational costs, development complexity, and long-term maintainability.
+The choice of AI technologies and integration patterns significantly impacts user experience,
+operational costs, development complexity, and long-term maintainability.
 
 ## Decision
 
-Implement a **comprehensive AI integration strategy** using **Ollama** for local LLM hosting, **Agent Framework** for orchestration, **Model Context Protocol (MCP)** for standardized tooling, and **multi-agent workflows** for complex AI operations.
+Implement a **comprehensive AI integration strategy** using **Azure OpenAI Service** for
+enterprise-grade AI models, **Microsoft Semantic Kernel** for orchestration, **Microsoft Agents AI
+Framework** for multi-agent workflows, and **Model Context Protocol (MCP)** for standardized
+tooling.
 
 ### AI Architecture Components
 
 #### Core AI Infrastructure
 
-- **Ollama Runtime**: Local LLM hosting and model management
-- **Agent Framework**: AI orchestration and workflow management
-- **MCP Tools**: Standardized AI tool integration
+- **Azure OpenAI Service**: Enterprise-grade managed AI service with GPT-4o-mini and
+  text-embedding-3-large
+- **Microsoft Semantic Kernel**: .NET-native AI orchestration and workflow management
+- **Microsoft Agents AI Framework**: Multi-agent coordination with A2A Protocol
+- **MCP Tools**: Standardized AI tool integration via BookWorm.McpTools
 - **Vector Database**: Qdrant for embedding storage and semantic search
-- **Agent Framework**: Multi-agent coordination for complex workflows
 
 #### Model Selection Strategy
 
-- **Chat Model**: Gemma 3 for conversational interactions
-- **Embedding Model**: Nomic Embed Text for semantic search
-- **Task-Specific Models**: Specialized models for specific use cases
-- **Model Versioning**: Controlled model updates and rollback capabilities
+- **Chat Model**: GPT-4o-mini for cost-effective conversational interactions
+- **Embedding Model**: text-embedding-3-large (3072 dimensions) for semantic search
+- **Model Versioning**: Azure-managed model lifecycle with automatic updates
+- **Health Monitoring**: Aspire-integrated health checks for model availability
 
 ### Service AI Integration Map
 
-| Service          | AI Capabilities                              | Models Used      | Integration Pattern       |
-| ---------------- | -------------------------------------------- | ---------------- | ------------------------- |
-| **Chat**         | Conversational AI, context understanding     | Gemma 3          | Direct Ollama integration |
-| **Catalog**      | Semantic search, recommendation engine       | Nomic Embed Text | Vector similarity search  |
-| **Rating**       | Sentiment analysis, review insights          | Gemma 3          | Batch processing          |
-| **Ordering**     | Order assistance, problem resolution         | Gemma 3          | Agent workflows           |
-| **Finance**      | Fraud detection, transaction analysis        | Custom models    | ML.NET integration        |
-| **Notification** | Content personalization, timing optimization | Gemma 3          | Template generation       |
+| Service          | AI Capabilities                              | Models Used            | Integration Pattern            |
+| ---------------- | -------------------------------------------- | ---------------------- | ------------------------------ |
+| **Chat**         | Conversational AI, context understanding     | GPT-4o-mini            | Semantic Kernel + A2A Protocol |
+| **Catalog**      | Semantic search, recommendation engine       | text-embedding-3-large | Vector similarity search       |
+| **Rating**       | Sentiment analysis, review insights          | GPT-4o-mini            | Semantic Kernel + MCP Tools    |
+| **Ordering**     | Order assistance, problem resolution         | GPT-4o-mini            | Agent workflows                |
+| **Finance**      | Fraud detection, transaction analysis        | Custom models          | ML.NET integration             |
+| **Notification** | Content personalization, timing optimization | GPT-4o-mini            | Template generation            |
 
 ## Rationale
 
-### Why This AI Strategy?
+### Why Azure OpenAI Over Ollama?
 
-#### Local-First AI Approach
+#### Enterprise-Grade Capabilities
 
-1. **Data Privacy**: Keep sensitive data within controlled infrastructure
-2. **Cost Control**: Avoid per-request charges from cloud AI services
-3. **Performance**: Reduce latency by eliminating external API calls
-4. **Reliability**: Independent operation without external service dependencies
-5. **Customization**: Full control over model fine-tuning and optimization
+1. **Service Level Agreement**: 99.9% uptime SLA with Microsoft support
+2. **Managed Scaling**: Automatic scaling based on demand without infrastructure management
+3. **Model Quality**: Access to latest OpenAI models (GPT-4o-mini, text-embedding-3-large)
+4. **Security and Compliance**: Enterprise security, compliance certifications, and data residency
+5. **Microsoft Integration**: Seamless integration with Azure ecosystem and Microsoft AI tools
 
-#### Ollama for LLM Runtime
+#### Performance and Cost Benefits
 
-1. **Ease of Deployment**: Simple container-based LLM deployment
-2. **Model Management**: Easy model switching and version control
-3. **Resource Efficiency**: Optimized inference performance
-4. **API Compatibility**: OpenAI-compatible API for easy integration
-5. **Local Operation**: Complete on-premises operation
+1. **No Infrastructure Management**: Eliminate costs for GPU infrastructure and maintenance
+2. **Pay-Per-Use**: Cost-effective pricing with no idle capacity costs
+3. **Token Optimization**: GPT-4o-mini provides excellent quality at lower cost per token
+4. **Elastic Scaling**: Handle traffic spikes without capacity planning
+5. **Global Distribution**: Multi-region deployment for low-latency access
 
-#### Agent Framework Orchestration
+#### Development Experience
 
-1. **.NET Integration**: Native .NET AI orchestration framework
+1. **Semantic Kernel Native**: First-class support in Microsoft Semantic Kernel
+2. **Health Check Integration**: Aspire health checks for model availability monitoring
+3. **Streaming Support**: Native streaming for real-time chat experiences
+4. **Azure AD Integration**: Managed identity authentication without API key management
+5. **Monitoring Integration**: Azure Monitor and Application Insights telemetry
+
+### Microsoft Semantic Kernel Orchestration
+
+1. **.NET Integration**: Native .NET AI orchestration framework with strong typing
 2. **Plugin System**: Extensible plugin architecture for AI functions
-3. **Planning Capabilities**: Multi-step AI workflow planning
+3. **Planning Capabilities**: Multi-step AI workflow planning and execution
 4. **Memory Management**: Context and conversation state management
-5. **Microsoft Support**: Enterprise-grade support and documentation
+5. **Microsoft Support**: Enterprise-grade support and continuous updates
 
 ### AI Architecture Overview
 
 ```mermaid
 graph TB
     subgraph "AI Infrastructure Layer"
-        Ollama[Ollama Runtime<br/>LLM Hosting]
+        AzureOpenAI[Azure OpenAI Service<br/>GPT-4o-mini + text-embedding-3-large]
         Qdrant[Qdrant<br/>Vector Database]
-        AgentFramework[Agent Framework<br/>AI Orchestration]
-        MCPTools[MCP Tools<br/>Standardized AI Tooling]
+        SemanticKernel[Microsoft Semantic Kernel<br/>AI Orchestration]
+        AgentFramework[Microsoft Agents AI Framework<br/>Multi-Agent Coordination]
+        MCP[MCP Tools<br/>BookWorm.McpTools]
     end
-
-    subgraph "AI Models"
-        Gemma3[Gemma 3<br/>Chat Model]
-        NomicEmbed[Nomic Embed Text<br/>Embedding Model]
-        CustomModels[Task-Specific<br/>Models]
-    end
-
-    subgraph "AI Services"
+    subgraph "AI Services Layer"
         ChatService[Chat Service<br/>Conversational AI]
-        SearchService[Search Service<br/>Semantic Search]
-        RecommendService[Recommendation<br/>Engine]
-        ContentService[Content Generation<br/>& Analysis]
+        CatalogService[Catalog Service<br/>Semantic Search + Content]
+        RatingService[Rating Service<br/>Sentiment Analysis]
+        OrderingService[Ordering Service<br/>Order Assistance]
     end
 
-    subgraph "Business Services"
-        Catalog[Catalog Service]
-        Chat[Chat Service]
-        Rating[Rating Service]
-        Ordering[Ordering Service]
+    subgraph "Frontend Applications"
+        Storefront[Storefront<br/>Customer UI]
+        Backoffice[Backoffice<br/>Admin UI]
     end
 
-    Ollama --> Gemma3
-    Ollama --> CustomModels
-    Qdrant --> NomicEmbed
+    AzureOpenAI --> SemanticKernel
+    SemanticKernel --> AgentFramework
+    AgentFramework --> MCP
+    MCP --> CatalogService
+    Qdrant --> CatalogService
 
-    AgentFramework --> Ollama
-    AgentFramework --> Qdrant
-    AgentFramework --> MCPTools
-
+    ChatService --> SemanticKernel
+    ChatService --> MCP
     ChatService --> AgentFramework
-    SearchService --> Qdrant
-    RecommendService --> AgentFramework
-    ContentService --> AgentFramework
 
-    Chat --> ChatService
-    Catalog --> SearchService
-    Catalog --> RecommendService
-    Rating --> ContentService
+    RatingService --> SemanticKernel
+    RatingService --> MCP
+    RatingService --> AgentFramework
+
+    CatalogService --> SemanticKernel
+    CatalogService --> Qdrant
+
+    OrderingService --> SemanticKernel
+
+    Storefront --> ChatService
+    Backoffice --> RatingService
 ```
 
 ## Implementation Strategy
 
-### Ollama Configuration and Model Management
+### Azure OpenAI Configuration
 
 #### Model Deployment
 
-```dockerfile
-# Ollama container configuration
-FROM ollama/ollama:latest
+```csharp
+// AppHost.cs - Azure OpenAI integration
+var openai = builder.AddOpenAI(Components.OpenAI.Resource);
 
-# Pre-load models during build
-RUN ollama pull gemma2:2b
-RUN ollama pull nomic-embed-text
-RUN ollama pull llama3.1:8b
+var chat = openai
+    .AddModel(Components.OpenAI.Chat, Components.OpenAI.OpenAIGpt4oMini)
+    .WithHealthCheck();
 
-# Custom model configuration
-COPY ./models/bookworm-fine-tuned.gguf /root/.ollama/models/
+var embedding = openai
+    .AddModel(Components.OpenAI.Embedding, Components.OpenAI.TextEmbedding3Large)
+    .WithHealthCheck();
+
+// Service references
+var chatService = builder
+    .AddProject<BookWorm_Chat>(Services.Chatting)
+    .WithReference(chat)
+    .WithReference(embedding);
+```
+
+#### Semantic Kernel Configuration
+
+```csharp
+// Service configuration with Semantic Kernel
+builder.Services.AddKernel()
+    .AddAzureOpenAIChatCompletion(
+        deploymentName: "gpt-4o-mini",
+        endpoint: azureOpenAIEndpoint,
+        credential: new DefaultAzureCredential())
+    .AddAzureOpenAITextEmbeddingGeneration(
+        deploymentName: "text-embedding-3-large",
+        endpoint: azureOpenAIEndpoint,
+        credential: new DefaultAzureCredential());
 ```
 
 ### Resource Management
 
-#### Model Loading Strategy
+#### Token Usage Optimization
 
-- **Lazy Loading**: Load models only when needed
-- **Model Rotation**: Unload unused models to free memory
-- **GPU Optimization**: Utilize GPU acceleration when available
-- **Memory Management**: Monitor and control memory usage
+- **Prompt Engineering**: Optimize prompts for token efficiency
+- **Streaming Responses**: Use streaming for real-time user feedback
+- **Caching**: Cache frequent AI responses using Hybrid Cache
+- **Rate Limiting**: Implement quota management per tenant/user
+
+#### Cost Management Strategy
+
+- **GPT-4o-mini**: Cost-effective model for most conversational scenarios
+- **Batch Processing**: Use batch API for non-real-time operations
+- **Response Caching**: Cache AI responses for repeated queries
+- **Quota Monitoring**: Track token usage and set alerts
 
 ## Security and Privacy
 
 ### Data Privacy
 
-- **Local Processing**: All AI processing happens within controlled infrastructure
-- **Data Minimization**: Only process necessary data for AI features
-- **Anonymization**: Remove or anonymize personal information where possible
-- **Audit Logging**: Track all AI processing for compliance
+- **Azure Data Residency**: Data processed in specified Azure regions
+- **No Training on Customer Data**: Azure OpenAI doesn't use customer data for training
+- **Data Minimization**: Only send necessary context to AI models
+- **Audit Logging**: Track all AI API calls for compliance via Azure Monitor
 
 ### Model Security
 
-- **Model Validation**: Verify model integrity and authenticity
+- **Managed Identity**: Use Azure AD managed identity for authentication
+- **Network Security**: Private endpoints for Azure OpenAI access
 - **Input Sanitization**: Validate and sanitize all inputs to AI models
-- **Output Filtering**: Filter AI outputs for inappropriate content
-- **Access Control**: Restrict access to AI capabilities based on user roles
+- **Output Filtering**: Filter AI outputs for inappropriate content via content filters
+- **Access Control**: Restrict access to AI capabilities based on user roles and RBAC
 
 ## Consequences
 
 ### Positive Outcomes
 
-- **Enhanced User Experience**: Intelligent features improve user engagement
-- **Cost Control**: Local hosting reduces per-request AI service costs
-- **Data Privacy**: Keep sensitive data within controlled infrastructure
-- **Performance**: Low-latency AI responses for interactive features
-- **Customization**: Full control over AI behavior and fine-tuning
-- **Innovation**: Platform for rapid AI feature development
+- **Enhanced User Experience**: Intelligent features improve user engagement and satisfaction
+- **Enterprise-Grade Service**: 99.9% SLA with Microsoft support ensures reliability
+- **Microsoft Ecosystem Integration**: Seamless integration with Azure services and .NET tools
+- **Latest Models**: Access to cutting-edge GPT-4o-mini and text-embedding-3-large models
+- **Managed Scaling**: Automatic scaling eliminates capacity planning concerns
+- **Developer Productivity**: Microsoft Semantic Kernel and Agents AI Framework accelerate
+  development
+- **Security**: Enterprise security, compliance certifications, and managed identity authentication
 
 ### Challenges and Considerations
 
-- **Resource Requirements**: Significant compute resources for local AI hosting
-- **Model Management**: Complexity of managing multiple AI models
-- **Development Expertise**: Requires AI/ML expertise on development team
-- **Infrastructure Costs**: Additional infrastructure for AI processing
-- **Model Updates**: Managing model versions and updates
+- **Cloud Dependency**: Requires reliable internet connectivity and Azure availability
+- **Token Costs**: Pay-per-use pricing requires careful cost management and monitoring
+- **Quota Management**: Need to manage Azure OpenAI quotas and rate limits
+- **Data Transfer**: Latency considerations for data sent to Azure OpenAI API
+- **Vendor Lock-in**: Azure OpenAI-specific integrations create platform dependency
 
 ### Risk Mitigation
 
-- **Fallback Strategies**: Graceful degradation when AI services are unavailable
-- **Monitoring**: Comprehensive monitoring of AI service health and performance
-- **Resource Scaling**: Auto-scaling for AI workloads based on demand
-- **Model Governance**: Clear processes for model updates and rollbacks
-- **Team Training**: Invest in team AI/ML capabilities and knowledge
+- **Fallback Strategies**: Graceful degradation when AI services are unavailable with cached
+  responses
+- **Monitoring**: Azure Monitor and Application Insights for AI service health and token usage
+- **Cost Controls**: Budget alerts, quota management, and response caching with Hybrid Cache
+- **Redundancy**: Multi-region deployment for high availability
+- **Team Training**: Invest in team Azure OpenAI and Semantic Kernel capabilities
 
 ## Success Metrics
 
-- **Response Quality**: User satisfaction ratings for AI-generated responses
-- **Performance**: Sub-second response times for 95% of AI requests
-- **Accuracy**: High accuracy rates for recommendations and search results
-- **Cost Efficiency**: 60% cost reduction compared to cloud AI services
-- **User Engagement**: Increased user interaction with AI-powered features
+- **Response Quality**: User satisfaction ratings &gt;85% for AI-generated responses
+- **Performance**: Sub-500ms response times for 95% of AI requests (excluding streaming)
+- **Accuracy**: &gt;90% accuracy rates for recommendations and search results
+- **Cost Efficiency**: Token cost per user interaction &lt;$0.01
+- **User Engagement**: 40% increase in user interaction with AI-powered features
+- **Availability**: 99.9% uptime for AI-powered features via Azure SLA
 
 ## Alternatives Considered
 
-### OpenAI API
+### Ollama (Local LLM Hosting)
+
+- **Pros**: Data privacy, no per-request costs, full control, offline capability
+- **Cons**: Infrastructure costs, GPU requirements, model management complexity, lower model quality
+- **Decision**: **Replaced by Azure OpenAI** - Enterprise requirements for SLA, model quality, and
+  managed scaling outweighed local hosting benefits
+
+### OpenAI API (Direct)
 
 - **Pros**: State-of-the-art models, excellent API, extensive capabilities
-- **Cons**: High costs at scale, data privacy concerns, external dependency
-- **Decision**: Rejected due to cost and privacy requirements
-
-### Azure Cognitive Services
-
-- **Pros**: Enterprise features, Azure integration, managed services
-- **Cons**: Azure lock-in, limited customization, ongoing costs
-- **Decision**: Insufficient customization and control for requirements
+- **Cons**: No enterprise SLA, less Azure integration, limited compliance features
+- **Decision**: Azure OpenAI preferred for enterprise features and Microsoft ecosystem integration
 
 ### AWS Bedrock
 
 - **Pros**: Multiple model providers, managed infrastructure, enterprise features
-- **Cons**: AWS lock-in, high costs, limited local deployment
-- **Decision**: Cloud dependency conflicts with local-first strategy
+- **Cons**: AWS lock-in, less .NET integration, multi-cloud complexity
+- **Decision**: Azure OpenAI chosen for Microsoft ecosystem alignment and .NET tooling
 
 ### Custom Model Training
 
-- **Pros**: Complete control, optimized for specific use cases
-- **Cons**: Significant development effort, expertise required, ongoing maintenance
-- **Decision**: Too resource-intensive for initial implementation
+- **Pros**: Complete control, optimized for specific use cases, potential cost savings
+- **Cons**: Significant development effort, expertise required, ongoing maintenance, GPU
+  infrastructure
+- **Decision**: Too resource-intensive; Azure OpenAI provides sufficient capabilities
 
 ## Implementation Roadmap
 
-### Phase 1: Foundation (Months 1-2)
+### Phase 1: Foundation (Completed)
 
-- Ollama deployment and model setup
-- Basic Agent Framework integration
-- Simple chat functionality
+- Azure OpenAI Service deployment with GPT-4o-mini and text-embedding-3-large
+- Microsoft Semantic Kernel integration in Chat and Rating services
+- Basic chat functionality with streaming support
+- Health checks integration with Aspire
 
-### Phase 2: Core Features (Months 3-4)
+### Phase 2: Core Features (Current)
 
 - Vector search implementation
 - Recommendation engine

@@ -1,27 +1,42 @@
 ---
 sidebar_position: 3
 title: Communication
-description: Synchronous and asynchronous communication patterns between microservices using HTTP, gRPC, and messaging
-keywords: [communication, REST APIs, gRPC, message broker, RabbitMQ, MassTransit, asynchronous messaging, SignalR]
+description:
+  Synchronous and asynchronous communication patterns between microservices using HTTP, gRPC, and
+  messaging
+keywords:
+  [
+    communication,
+    REST APIs,
+    gRPC,
+    message broker,
+    RabbitMQ,
+    MassTransit,
+    asynchronous messaging,
+    SignalR,
+  ]
 last_update:
   author: Nhan Nguyen
 ---
 
 # Communication
 
-The BookWorm application implements multiple communication patterns to support both synchronous and asynchronous interactions between microservices.
+The BookWorm application implements multiple communication patterns to support both synchronous and
+asynchronous interactions between microservices.
 
 ## Communication Patterns
 
 ### Synchronous Communication
 
 #### HTTP/REST APIs
+
 - **RESTful Services** - Standard HTTP methods for resource operations
 - **OpenAPI Specification** - Automated API documentation and client generation
 - **Content Negotiation** - Support for JSON and other media types
 - **Versioning** - API versioning strategy using Asp.Versioning
 
 #### gRPC Services
+
 - **High-Performance RPC** - Binary protocol for efficient service-to-service communication
 - **Health Checks** - Built-in gRPC health check protocol
 - **Client Factory** - Managed gRPC client creation and lifecycle
@@ -30,6 +45,7 @@ The BookWorm application implements multiple communication patterns to support b
 ### Asynchronous Communication
 
 #### Message Bus (MassTransit + RabbitMQ)
+
 - **Integration Events** - Domain events for cross-service communication
 - **Event Dispatching** - Reliable message delivery and processing
 - **Message Patterns** - Support for publish/subscribe, request/response, and saga patterns
@@ -38,6 +54,7 @@ The BookWorm application implements multiple communication patterns to support b
 ## Service Discovery
 
 ### Aspire Service Discovery
+
 - **Automatic Registration** - Services automatically register with discovery service
 - **Load Balancing** - Built-in load balancing for service instances
 - **Health-Aware Routing** - Traffic routing based on service health status
@@ -46,12 +63,14 @@ The BookWorm application implements multiple communication patterns to support b
 ## HTTP Client Configuration
 
 ### Resilience Patterns
+
 - **Microsoft.Extensions.Http.Resilience** - Built-in retry, circuit breaker, and timeout policies
 - **Polly Integration** - Advanced resilience patterns for fault tolerance
 - **Exponential Backoff** - Intelligent retry strategies with jitter
 - **Circuit Breaker** - Prevents cascading failures in distributed systems
 
 ### Client Factories
+
 - **Refit Integration** - Type-safe HTTP client generation from interfaces
 - **Named Clients** - Configured HTTP clients for different services
 - **Dependency Injection** - Managed client lifecycle and configuration
@@ -60,12 +79,14 @@ The BookWorm application implements multiple communication patterns to support b
 ## API Gateway Pattern
 
 ### Reverse Proxy
+
 - **Request Routing** - Route requests to appropriate microservices
 - **Load Balancing** - Distribute load across service instances
 - **SSL Termination** - Centralized TLS/SSL certificate management
 - **Rate Limiting** - Protect backend services from overload
 
 ### Cross-Cutting Concerns
+
 - **Authentication** - Centralized authentication and token validation
 - **Logging** - Request/response logging and correlation
 - **Metrics Collection** - API usage and performance metrics
@@ -74,11 +95,13 @@ The BookWorm application implements multiple communication patterns to support b
 ## Security
 
 ### Transport Security
+
 - **TLS/HTTPS** - Encrypted communication between services
 - **Certificate Management** - Automated certificate provisioning and renewal
 - **mTLS** - Mutual TLS for service-to-service authentication
 
 ### Authentication & Authorization
+
 - **JWT Tokens** - Bearer token-based authentication
 - **OAuth 2.0/OIDC** - Industry-standard authentication protocols
 - **Claims-Based Authorization** - Fine-grained access control

@@ -1,8 +1,18 @@
 ---
 sidebar_position: 2
 title: ADR-001 - Microservices Architecture
-description: Decision to adopt microservices architecture for independent deployment, scalability, and fault isolation
-keywords: [ADR-001, microservices, distributed architecture, service boundaries, independent deployment, scalability]
+description:
+  Decision to adopt microservices architecture for independent deployment, scalability, and fault
+  isolation
+keywords:
+  [
+    ADR-001,
+    microservices,
+    distributed architecture,
+    service boundaries,
+    independent deployment,
+    scalability,
+  ]
 last_update:
   author: Nhan Nguyen
 ---
@@ -15,7 +25,8 @@ last_update:
 
 ## Context
 
-BookWorm is designed as a comprehensive cloud-native application that demonstrates modern enterprise patterns and practices. The system needs to support:
+BookWorm is designed as a comprehensive cloud-native application that demonstrates modern enterprise
+patterns and practices. The system needs to support:
 
 - Independent development and deployment of different business capabilities
 - Scalability for different service workloads with varying performance characteristics
@@ -24,15 +35,20 @@ BookWorm is designed as a comprehensive cloud-native application that demonstrat
 - Fault isolation and system resilience across distributed components
 - Educational value to showcase real-world enterprise architecture patterns
 
-A monolithic approach would be simpler to develop and deploy initially, but wouldn't demonstrate the complexities, benefits, and challenges of distributed systems that are prevalent in modern enterprise applications. Given the educational goals and the need to showcase cloud-native patterns, a distributed architecture is more aligned with the project objectives.
+A monolithic approach would be simpler to develop and deploy initially, but wouldn't demonstrate the
+complexities, benefits, and challenges of distributed systems that are prevalent in modern
+enterprise applications. Given the educational goals and the need to showcase cloud-native patterns,
+a distributed architecture is more aligned with the project objectives.
 
 ## Decision
 
-Adopt a **microservices architecture** with domain-driven service boundaries, where each service represents a distinct business capability with clear ownership and responsibilities.
+Adopt a **microservices architecture** with domain-driven service boundaries, where each service
+represents a distinct business capability with clear ownership and responsibilities.
 
 ### Service Decomposition
 
-The system is decomposed into the following services based on business capabilities and domain boundaries:
+The system is decomposed into the following services based on business capabilities and domain
+boundaries:
 
 #### Store Domain Services
 
@@ -65,13 +81,15 @@ The system is decomposed into the following services based on business capabilit
 
 ### Why Microservices?
 
-1. **Educational Demonstration**: Showcases modern enterprise architecture patterns including DDD, CQRS, Event Sourcing, and Saga patterns
+1. **Educational Demonstration**: Showcases modern enterprise architecture patterns including DDD,
+   CQRS, Event Sourcing, and Saga patterns
 2. **Scalability Requirements**: Different services have distinct performance characteristics:
    - Catalog Service: Read-heavy with AI/vector search capabilities
    - Basket Service: High-throughput, session-based operations
    - Chat Service: Real-time communication with AI processing
    - Finance Service: Complex transaction orchestration
-3. **Technology Diversity**: Enables demonstration of various .NET technologies and architectural patterns
+3. **Technology Diversity**: Enables demonstration of various .NET technologies and architectural
+   patterns
 4. **Team Simulation**: Models real-world development scenarios with service ownership
 5. **Cloud-Native Alignment**: Integrates seamlessly with Aspire and Azure deployment strategies
 6. **Fault Isolation**: Service failures don't cascade across the entire system
@@ -133,7 +151,8 @@ graph TB
 ### Challenges and Trade-offs
 
 - **Operational Complexity**: Increased number of services to monitor, deploy, and maintain
-- **Network Communication**: Inter-service communication introduces latency and potential failure points
+- **Network Communication**: Inter-service communication introduces latency and potential failure
+  points
 - **Distributed System Complexity**:
   - Data consistency challenges across service boundaries
   - Distributed transaction management with saga patterns

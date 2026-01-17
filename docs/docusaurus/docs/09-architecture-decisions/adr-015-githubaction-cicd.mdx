@@ -1,8 +1,10 @@
 ---
 sidebar_position: 16
 title: ADR-015 - GitHub Actions CI/CD Pipeline
-description: Implementation of CI/CD pipeline with GitHub Actions for automated testing and deployment
-keywords: [ADR-015, GitHub Actions, CI/CD, continuous integration, continuous deployment, automation]
+description:
+  Implementation of CI/CD pipeline with GitHub Actions for automated testing and deployment
+keywords:
+  [ADR-015, GitHub Actions, CI/CD, continuous integration, continuous deployment, automation]
 last_update:
   author: Nhan Nguyen
 ---
@@ -15,24 +17,31 @@ last_update:
 
 ## Context
 
-BookWorm's microservices architecture requires a robust continuous integration and deployment pipeline to support rapid development, automated testing, and reliable deployments across multiple environments. The CI/CD requirements include:
+BookWorm's microservices architecture requires a robust continuous integration and deployment
+pipeline to support rapid development, automated testing, and reliable deployments across multiple
+environments. The CI/CD requirements include:
 
 - **Multi-Service Builds**: Independent build and deployment of multiple .NET microservices
 - **Automated Testing**: Unit tests, integration tests, and end-to-end testing automation
-- **Security Scanning**: Static code analysis, dependency vulnerability scanning, and secrets detection
+- **Security Scanning**: Static code analysis, dependency vulnerability scanning, and secrets
+  detection
 - **Container Management**: Docker image building, scanning, and registry management
-- **Environment Promotion**: Automated deployment to development, staging, and production environments
+- **Environment Promotion**: Automated deployment to development, staging, and production
+  environments
 - **Quality Gates**: Code coverage thresholds, performance benchmarks, and deployment approvals
 - **Monitoring Integration**: Deployment notifications and rollback capabilities
 - **Developer Experience**: Fast feedback loops and self-service deployment capabilities
 - **Cost Optimization**: Efficient resource usage and parallel execution strategies
 - **Compliance**: Audit trails, approval workflows, and change management integration
 
-The CI/CD solution must integrate seamlessly with GitHub repositories while providing enterprise-grade features for a production microservices architecture.
+The CI/CD solution must integrate seamlessly with GitHub repositories while providing
+enterprise-grade features for a production microservices architecture.
 
 ## Decision
 
-Adopt **GitHub Actions** as the primary CI/CD platform with custom workflows for each microservice and shared reusable workflows for common operations, integrated with Azure Container Registry and deployment targets.
+Adopt **GitHub Actions** as the primary CI/CD platform with custom workflows for each microservice
+and shared reusable workflows for common operations, integrated with Azure Container Registry and
+deployment targets.
 
 ### CI/CD Strategy
 
@@ -52,12 +61,12 @@ Adopt **GitHub Actions** as the primary CI/CD platform with custom workflows for
 
 ### GitHub Actions Pipeline Architecture
 
-| Workflow               | Trigger                         | Purpose                                                                            | Key Features                                          |
-| ---------------------- | ------------------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| **BookWorm CI**        | Push to main, Workflow dispatch | Complete CI pipeline with build, test, security scanning, and container publishing | Multi-stage pipeline with reusable actions            |
-| **PR Validation**      | Pull requests                   | Validate changes before merge with subset of CI checks                             | Quality gates for pull request approval               |
-| **SonarQube**          | Push/PR                         | Code quality analysis and technical debt tracking                                  | Integration with SonarQube for comprehensive analysis |
-| **Docs/EventCatalog**  | Documentation changes           | Automated documentation and event catalog deployment                               | Specialized workflows for documentation               |
+| Workflow              | Trigger                         | Purpose                                                                            | Key Features                                          |
+| --------------------- | ------------------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| **BookWorm CI**       | Push to main, Workflow dispatch | Complete CI pipeline with build, test, security scanning, and container publishing | Multi-stage pipeline with reusable actions            |
+| **PR Validation**     | Pull requests                   | Validate changes before merge with subset of CI checks                             | Quality gates for pull request approval               |
+| **SonarQube**         | Push/PR                         | Code quality analysis and technical debt tracking                                  | Integration with SonarQube for comprehensive analysis |
+| **Docs/EventCatalog** | Documentation changes           | Automated documentation and event catalog deployment                               | Specialized workflows for documentation               |
 
 ### CI Pipeline Stages
 
@@ -76,7 +85,8 @@ Adopt **GitHub Actions** as the primary CI/CD platform with custom workflows for
 
 #### Native GitHub Integration
 
-1. **Repository Integration**: Native integration with GitHub repositories, issues, and pull requests
+1. **Repository Integration**: Native integration with GitHub repositories, issues, and pull
+   requests
 2. **Code Context**: Direct access to repository contents, history, and metadata
 3. **Security Model**: Built-in secrets management and fine-grained permissions
 4. **Marketplace Ecosystem**: Extensive marketplace of pre-built actions and integrations
@@ -85,7 +95,8 @@ Adopt **GitHub Actions** as the primary CI/CD platform with custom workflows for
 #### Workflow Flexibility and Power
 
 1. **YAML Configuration**: Infrastructure-as-code approach with version-controlled workflows
-2. **Matrix Strategies**: Parallel execution across multiple dimensions (services, environments, versions)
+2. **Matrix Strategies**: Parallel execution across multiple dimensions (services, environments,
+   versions)
 3. **Conditional Logic**: Complex conditional execution based on code changes and context
 4. **Environment Management**: Built-in environment protection rules and approval gates
 5. **Artifact Management**: Native artifact storage and sharing between workflow jobs
@@ -102,17 +113,22 @@ Adopt **GitHub Actions** as the primary CI/CD platform with custom workflows for
 
 #### Multi-Stage CI/CD Pipeline
 
-1. **Concurrency Management**: Pipeline concurrency control with automatic cancellation of outdated runs
-2. **Smart Path Filtering**: Workflow triggers based on specific file patterns (src/**, tests/**, configuration files)
-3. **Dependency Caching**: Comprehensive caching for .NET packages, SDK installations, and build artifacts
+1. **Concurrency Management**: Pipeline concurrency control with automatic cancellation of outdated
+   runs
+2. **Smart Path Filtering**: Workflow triggers based on specific file patterns (src/**, tests/**,
+   configuration files)
+3. **Dependency Caching**: Comprehensive caching for .NET packages, SDK installations, and build
+   artifacts
 4. **Matrix Publishing**: Parallel container image publishing for all microservices and tools
 5. **Security-First Approach**: Multiple security scanning tools integrated into every pipeline run
 
 #### Integrated Tool Ecosystem
 
 1. **Code Quality**: SonarQube integration for technical debt and quality metrics
-2. **Security Scanning**: Snyk for vulnerability scanning and dependency analysis, Gitleaks for secrets detection
-3. **Container Management**: GitHub Container Registry (GHCR) for image storage with automated tagging
+2. **Security Scanning**: Snyk for vulnerability scanning and dependency analysis, Gitleaks for
+   secrets detection
+3. **Container Management**: GitHub Container Registry (GHCR) for image storage with automated
+   tagging
 4. **Development Tools**: Husky for commit hooks, dotnet format for code consistency
 5. **Monitoring Integration**: GitHub Actions native monitoring with custom timeout configurations
 
@@ -207,13 +223,13 @@ concurrency:
 
 # Path-Based Triggering
 paths:
-  - "src/**"                        # Source code changes
-  - "tests/**"                      # Test code changes
-  - ".github/workflows/ci.yaml"     # Pipeline changes
-  - "Directory.Packages.props"      # Package management
-  - "global.json"                   # .NET SDK version
-  - "!**.md"                        # Exclude documentation
-  - "!src/Aspire/BookWorm.AppHost/Container/**"  # Exclude container assets
+  - "src/**" # Source code changes
+  - "tests/**" # Test code changes
+  - ".github/workflows/ci.yaml" # Pipeline changes
+  - "Directory.Packages.props" # Package management
+  - "global.json" # .NET SDK version
+  - "!**.md" # Exclude documentation
+  - "!src/Aspire/BookWorm.AppHost/Container/**" # Exclude container assets
 ```
 
 ### Security and Quality Configuration
@@ -222,8 +238,8 @@ paths:
 # Security Scanning Configuration
 security_scanning:
   gitleaks:
-    version: "v8.27.2"             # Specific version pinning
-    exit_code: 0                    # Non-blocking for warnings
+    version: "v8.27.2" # Specific version pinning
+    exit_code: 0 # Non-blocking for warnings
 
   snyk:
     # Integrated via Snyk platform for:
@@ -236,7 +252,7 @@ security_scanning:
 sonarqube:
   project_key: "foxminchan_BookWorm"
   organization: "foxminchan"
-  java_version: 17                  # Required JDK version
+  java_version: 17 # Required JDK version
 ```
 
 ### Dependabot Configuration
