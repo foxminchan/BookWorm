@@ -62,7 +62,13 @@ All PRs require maintainer approval and passing CI/CD checks including SonarQube
 
 ### Documentation & API Standards
 
-Use OpenAPI for REST APIs and AsyncAPI for event-driven endpoints. Maintain EventCatalog for centralized architecture documentation. Include code comments for complex logic. Provide clear examples for API changes. Keep GitHub Wiki updated for comprehensive project documentation.
+**Documentation Infrastructure**: Project documentation maintained in `docs/` folder with two primary systems:
+
+- **EventCatalog** (`docs/eventcatalog/`): Living documentation for event-driven architecture including all integration events, domain events, services, and message flows. OpenAPI specifications stored in `openapi-files/` subdirectory. EventCatalog visualizes service interactions, event schemas, and AsyncAPI specifications. All integration events must be documented here with examples and versioning.
+
+- **Docusaurus** (`docs/docusaurus/`): Comprehensive project documentation including architecture decisions, development guides, deployment procedures, and API references. Docusaurus provides versioned documentation with search capabilities and structured navigation. Technical documentation, tutorials, and ADRs (Architecture Decision Records) live here.
+
+**API Standards**: Use OpenAPI for REST APIs and AsyncAPI for event-driven endpoints. All services must generate OpenAPI specs via Swashbuckle/NSwag. AsyncAPI documents for MassTransit consumers/producers must be maintained in EventCatalog. Include code comments for complex logic using XML documentation. Provide clear examples for API changes. API contracts (request/response DTOs) must include validation attributes and descriptive properties.
 
 **Frontend Documentation**: Document component APIs in shared `@workspace/ui` package using JSDoc/TSDoc. Maintain component documentation for both Next.js applications with usage examples. Document state management patterns (TanStack Query, React Context), form handling (TanStack Form), and integration patterns with backend services via `@workspace/api-client` and `@workspace/api-hooks`. Include deployment guides for both admin and storefront applications (Vercel/Azure/Docker). Document authentication flows (Better Auth integration), API consumption patterns, monorepo workspace conventions, and shared package development. Maintain up-to-date README files in each workspace package explaining purpose, API surface, and usage examples.
 

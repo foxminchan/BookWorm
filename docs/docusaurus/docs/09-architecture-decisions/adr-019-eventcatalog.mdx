@@ -1,8 +1,10 @@
 ---
 sidebar_position: 20
 title: ADR-019 - EventCatalog for Event Documentation
-description: Use of EventCatalog for documenting event-driven architecture and AsyncAPI specifications
-keywords: [ADR-019, EventCatalog, event documentation, AsyncAPI, event-driven architecture, event schemas]
+description:
+  Use of EventCatalog for documenting event-driven architecture and AsyncAPI specifications
+keywords:
+  [ADR-019, EventCatalog, event documentation, AsyncAPI, event-driven architecture, event schemas]
 last_update:
   author: Nhan Nguyen
 ---
@@ -15,11 +17,14 @@ last_update:
 
 ## Context
 
-BookWorm's event-driven microservices architecture produces numerous domain events, integration events, and system events that require comprehensive documentation and discoverability. The event documentation challenges include:
+BookWorm's event-driven microservices architecture produces numerous domain events, integration
+events, and system events that require comprehensive documentation and discoverability. The event
+documentation challenges include:
 
 - **Event Discovery**: Developers need to discover available events across the distributed system
 - **Schema Documentation**: Clear documentation of event schemas, payloads, and versioning
-- **Producer-Consumer Relationships**: Understanding which services produce and consume specific events
+- **Producer-Consumer Relationships**: Understanding which services produce and consume specific
+  events
 - **Event Evolution**: Tracking event schema changes and backward compatibility
 - **Domain Knowledge**: Capturing business context and meaning behind each event
 - **Integration Guidance**: Helping developers understand how to integrate with existing events
@@ -33,7 +38,8 @@ The solution must provide a centralized, searchable, and maintainable event docu
 
 ## Decision
 
-Adopt **EventCatalog** as the primary platform for documenting, discovering, and managing events across BookWorm's event-driven architecture, integrated with code generation and CI/CD pipelines.
+Adopt **EventCatalog** as the primary platform for documenting, discovering, and managing events
+across BookWorm's event-driven architecture, integrated with code generation and CI/CD pipelines.
 
 ### Event Documentation Strategy
 
@@ -140,38 +146,38 @@ Adopt **EventCatalog** as the primary platform for documenting, discovering, and
 ```javascript
 // eventcatalog.config.js
 module.exports = {
-  title: 'BookWorm Event Catalog',
-  tagline: 'Discover and understand events in the BookWorm ecosystem',
-  organizationName: 'BookWorm',
-  projectName: 'BookWorm-Events',
+  title: "BookWorm Event Catalog",
+  tagline: "Discover and understand events in the BookWorm ecosystem",
+  organizationName: "BookWorm",
+  projectName: "BookWorm-Events",
 
-  editUrl: 'https://github.com/bookworm/eventcatalog/edit/main',
+  editUrl: "https://github.com/bookworm/eventcatalog/edit/main",
 
   users: [
     {
-      id: 'development-team',
-      name: 'Development Team',
-      avatarUrl: '/img/team-avatar.png',
-      role: 'Maintainer',
+      id: "development-team",
+      name: "Development Team",
+      avatarUrl: "/img/team-avatar.png",
+      role: "Maintainer",
     },
   ],
 
   footerLinks: [
     {
-      label: 'GitHub',
-      href: 'https://github.com/bookworm/eventcatalog',
+      label: "GitHub",
+      href: "https://github.com/bookworm/eventcatalog",
     },
     {
-      label: 'API Documentation',
-      href: 'https://api.bookworm.com/docs',
+      label: "API Documentation",
+      href: "https://api.bookworm.com/docs",
     },
   ],
 
   generators: [
     [
-      '@eventcatalog/generator-asyncapi',
+      "@eventcatalog/generator-asyncapi",
       {
-        pathToSpec: './asyncapi-specs',
+        pathToSpec: "./asyncapi-specs",
         versionEvents: true,
         renderChangelog: true,
       },

@@ -15,12 +15,16 @@ last_update:
 
 ## Context
 
-BookWorm's microservices architecture requires efficient, type-safe, and high-performance communication between services for synchronous operations. The inter-service communication requirements include:
+BookWorm's microservices architecture requires efficient, type-safe, and high-performance
+communication between services for synchronous operations. The inter-service communication
+requirements include:
 
-- **High Performance**: Low-latency communication for real-time operations like inventory checks and pricing queries
+- **High Performance**: Low-latency communication for real-time operations like inventory checks and
+  pricing queries
 - **Type Safety**: Strong typing and contract enforcement to prevent integration errors
 - **Service Discovery**: Dynamic service endpoint resolution in containerized environments
-- **Cross-Platform Support**: Communication between .NET services and potential future services in other languages
+- **Cross-Platform Support**: Communication between .NET services and potential future services in
+  other languages
 - **Streaming Capabilities**: Support for real-time data streaming and bidirectional communication
 - **Load Balancing**: Client-side load balancing with health checking and failover
 - **Monitoring Integration**: Distributed tracing and metrics collection for observability
@@ -28,11 +32,13 @@ BookWorm's microservices architecture requires efficient, type-safe, and high-pe
 - **Security**: Authentication, authorization, and encrypted communication
 - **Developer Experience**: Code generation, tooling support, and debugging capabilities
 
-The solution must complement the existing event-driven architecture while providing efficient synchronous communication patterns.
+The solution must complement the existing event-driven architecture while providing efficient
+synchronous communication patterns.
 
 ## Decision
 
-Adopt **gRPC** as the primary protocol for synchronous inter-service communication, with HTTP/JSON APIs reserved for external client communication and specific integration scenarios.
+Adopt **gRPC** as the primary protocol for synchronous inter-service communication, with HTTP/JSON
+APIs reserved for external client communication and specific integration scenarios.
 
 ### gRPC Implementation Strategy
 
@@ -65,8 +71,10 @@ Adopt **gRPC** as the primary protocol for synchronous inter-service communicati
 #### Performance and Efficiency
 
 1. **Binary Protocol**: HTTP/2-based binary protocol provides superior performance over JSON/HTTP
-2. **Connection Multiplexing**: Single connection supports multiple concurrent requests with lower overhead
-3. **Streaming Support**: Native support for streaming operations reduces memory usage and improves responsiveness
+2. **Connection Multiplexing**: Single connection supports multiple concurrent requests with lower
+   overhead
+3. **Streaming Support**: Native support for streaming operations reduces memory usage and improves
+   responsiveness
 4. **Compression**: Built-in message compression reduces network bandwidth usage
 5. **Connection Reuse**: Persistent connections reduce connection establishment overhead
 
@@ -116,7 +124,8 @@ Adopt **gRPC** as the primary protocol for synchronous inter-service communicati
 
 ### Service Implementation Architecture
 
-- **Service Interface Definition**: Protocol buffer service definitions with comprehensive documentation
+- **Service Interface Definition**: Protocol buffer service definitions with comprehensive
+  documentation
 - **Server Implementation**: ASP.NET Core gRPC services implementing the generated interfaces
 - **Client Integration**: Strongly-typed gRPC clients injected via dependency injection
 - **Interceptors**: Cross-cutting concerns like authentication, logging, and monitoring
@@ -146,7 +155,8 @@ services.AddGrpcClient<BookService.BookServiceClient>(options => options.Address
 
 ### Positive
 
-- **High Performance**: Superior performance compared to HTTP/JSON for service-to-service communication
+- **High Performance**: Superior performance compared to HTTP/JSON for service-to-service
+  communication
 - **Type Safety**: Strong typing prevents integration errors and improves developer productivity
 - **Streaming Capabilities**: Native support for real-time and streaming operations
 - **Schema Evolution**: Backward-compatible API evolution with protocol buffers

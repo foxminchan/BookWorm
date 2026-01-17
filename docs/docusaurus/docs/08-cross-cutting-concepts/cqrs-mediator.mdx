@@ -1,25 +1,31 @@
 ---
 sidebar_position: 12
 title: CQRS & Mediator
-description: CQRS pattern implementation with MediatR for command query separation and pipeline behaviors
-keywords: [CQRS, MediatR, command query separation, pipeline behaviors, validation, logging, handlers]
+description:
+  CQRS pattern implementation with MediatR for command query separation and pipeline behaviors
+keywords:
+  [CQRS, MediatR, command query separation, pipeline behaviors, validation, logging, handlers]
 last_update:
   author: Nhan Nguyen
 ---
 
 # CQRS & Mediator
 
-The BookWorm application implements Command Query Responsibility Segregation (CQRS) pattern using MediatR, providing clear separation between read and write operations with comprehensive pipeline behaviors for cross-cutting concerns.
+The BookWorm application implements Command Query Responsibility Segregation (CQRS) pattern using
+MediatR, providing clear separation between read and write operations with comprehensive pipeline
+behaviors for cross-cutting concerns.
 
 ## CQRS Architecture
 
 ### Command Query Separation
+
 - **Commands** - Mutating operations that change system state
 - **Queries** - Read-only operations that return data without side effects
 - **Handlers** - Dedicated handlers for commands and queries
 - **Request/Response Pattern** - Standardized input/output contracts
 
 ### MediatR Integration
+
 - **IRequest Interface** - Base contract for all commands and queries
 - **IRequestHandler** - Handler implementation contract
 - **Dependency Injection** - Automatic handler discovery and registration
@@ -28,18 +34,21 @@ The BookWorm application implements Command Query Responsibility Segregation (CQ
 ## Pipeline Behaviors
 
 ### Validation Behavior
+
 - **FluentValidation Integration** - Automatic validation before handler execution
 - **Early Validation** - Fail fast on invalid input
 - **Validation Error Aggregation** - Collect and return all validation errors
 - **Custom Validation Rules** - Domain-specific validation logic
 
 ### Logging Behavior
+
 - **Request/Response Logging** - Comprehensive operation logging
 - **Performance Monitoring** - Execution time tracking
 - **Context Preservation** - Maintain correlation IDs and user context
 - **Structured Logging** - Consistent log format across all operations
 
 ### Activity Behavior
+
 - **Distributed Tracing** - OpenTelemetry integration for request tracking
 - **Activity Source Management** - Custom activity sources for CQRS operations
 - **Span Enrichment** - Add contextual information to traces
@@ -48,18 +57,21 @@ The BookWorm application implements Command Query Responsibility Segregation (CQ
 ## Command Pattern
 
 ### Command Structure
+
 - **Immutable Commands** - Commands should be immutable after creation
 - **Validation Attributes** - Built-in validation using data annotations
 - **Business Context** - Include all necessary business information
 - **Idempotency Support** - Safe retry behavior for commands
 
 ### Command Handlers
+
 - **Single Responsibility** - One handler per command type
 - **Transaction Management** - Automatic transaction handling
 - **Domain Event Publishing** - Raise domain events for cross-boundary communication
 - **Error Handling** - Consistent error handling and rollback
 
 ### Command Pipeline
+
 1. **Validation** - Input validation and business rule checking
 2. **Logging** - Request logging with correlation IDs
 3. **Activity Tracking** - Distributed tracing and metrics
@@ -70,18 +82,21 @@ The BookWorm application implements Command Query Responsibility Segregation (CQ
 ## Query Pattern
 
 ### Query Structure
+
 - **Read-Only Operations** - Queries never modify system state
 - **Projection Support** - Return only necessary data
 - **Filtering and Sorting** - Support for query parameters
 - **Pagination Support** - Efficient handling of large result sets
 
 ### Query Handlers
+
 - **Optimized Data Access** - Efficient database queries
 - **Caching Integration** - Cache frequently accessed data
 - **Performance Optimization** - Minimize database roundtrips
 - **Result Transformation** - Convert data to appropriate response format
 
 ### Query Pipeline
+
 1. **Validation** - Parameter validation and authorization
 2. **Caching Check** - Check for cached results
 3. **Activity Tracking** - Query performance monitoring
@@ -92,12 +107,14 @@ The BookWorm application implements Command Query Responsibility Segregation (CQ
 ## Domain Events
 
 ### Event-Driven Architecture
+
 - **Domain Events** - Business events raised during command execution
 - **Event Handlers** - Dedicated handlers for domain events
 - **Eventual Consistency** - Handle consistency across bounded contexts
 - **Event Sourcing Support** - Track all changes as events
 
 ### Event Publishing
+
 - **In-Process Events** - Handle events within the same service
 - **Cross-Service Events** - Publish events to message bus
 - **Event Ordering** - Maintain event order when necessary
@@ -106,12 +123,14 @@ The BookWorm application implements Command Query Responsibility Segregation (CQ
 ## Performance Optimization
 
 ### Handler Performance
+
 - **Async/Await** - Non-blocking handler execution
 - **Connection Pooling** - Efficient database connection usage
 - **Query Optimization** - Optimize database queries for performance
 - **Memory Management** - Efficient memory usage in handlers
 
 ### Pipeline Optimization
+
 - **Behavior Ordering** - Optimize pipeline behavior sequence
 - **Conditional Execution** - Skip behaviors when not needed
 - **Caching Strategies** - Cache validation results and metadata
@@ -120,12 +139,14 @@ The BookWorm application implements Command Query Responsibility Segregation (CQ
 ## Testing Strategies
 
 ### Unit Testing
+
 - **Handler Testing** - Test handlers in isolation
 - **Behavior Testing** - Test pipeline behaviors independently
 - **Mock Integration** - Use mocks for external dependencies
 - **Validation Testing** - Test validation rules and error scenarios
 
 ### Integration Testing
+
 - **End-to-End Testing** - Test complete CQRS pipeline
 - **Database Testing** - Test with real database interactions
 - **Event Testing** - Test domain event publishing and handling
@@ -134,12 +155,14 @@ The BookWorm application implements Command Query Responsibility Segregation (CQ
 ## Error Handling
 
 ### Command Error Handling
+
 - **Business Rule Violations** - Handle domain constraint violations
 - **Validation Errors** - Collect and return validation failures
 - **Concurrency Conflicts** - Handle optimistic locking conflicts
 - **Infrastructure Errors** - Handle database and external service failures
 
 ### Query Error Handling
+
 - **Not Found Handling** - Graceful handling of missing data
 - **Authorization Errors** - Handle unauthorized access attempts
 - **Performance Timeouts** - Handle slow or hung queries
@@ -148,18 +171,21 @@ The BookWorm application implements Command Query Responsibility Segregation (CQ
 ## Best Practices
 
 ### Command Design
+
 - **Single Purpose** - Each command should have one clear purpose
 - **Rich Domain Model** - Use domain objects in command handlers
 - **Validation at Boundaries** - Validate input at API boundaries
 - **Idempotent Commands** - Design commands to be safely retried
 
 ### Query Design
+
 - **Optimized Projections** - Return only necessary data
 - **Efficient Filtering** - Use database-level filtering when possible
 - **Caching Strategy** - Cache stable, frequently accessed data
 - **Pagination** - Always implement pagination for list queries
 
 ### Handler Implementation
+
 - **Dependency Injection** - Use DI for all dependencies
 - **Transaction Management** - Use appropriate transaction scopes
 - **Error Logging** - Log errors with sufficient context

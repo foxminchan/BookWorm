@@ -15,10 +15,13 @@ last_update:
 
 ## Context
 
-BookWorm's microservices architecture consists of multiple services with different endpoints, authentication requirements, and communication protocols. Client applications need a unified way to interact with the distributed system while addressing several challenges:
+BookWorm's microservices architecture consists of multiple services with different endpoints,
+authentication requirements, and communication protocols. Client applications need a unified way to
+interact with the distributed system while addressing several challenges:
 
 - **Service Discovery**: Clients need to know how to reach individual microservices
-- **Cross-Cutting Concerns**: Authentication, authorization, rate limiting, and logging should be centralized
+- **Cross-Cutting Concerns**: Authentication, authorization, rate limiting, and logging should be
+  centralized
 - **Protocol Translation**: Different services may use HTTP REST, gRPC, or other protocols
 - **Load Balancing**: Traffic distribution across service instances
 - **Request Routing**: Intelligent routing based on request characteristics
@@ -28,11 +31,14 @@ BookWorm's microservices architecture consists of multiple services with differe
 - **Client Simplification**: Reduce client complexity by providing a single entry point
 - **Performance**: Request aggregation, caching, and response optimization
 
-Without a unified entry point, clients would need to maintain knowledge of all service endpoints, handle different authentication mechanisms, and manage complex service interactions directly.
+Without a unified entry point, clients would need to maintain knowledge of all service endpoints,
+handle different authentication mechanisms, and manage complex service interactions directly.
 
 ## Decision
 
-Implement an **API Gateway pattern** using **YARP (Yet Another Reverse Proxy)** integrated with **Aspire** for service discovery and routing, providing a unified entry point for all BookWorm microservices.
+Implement an **API Gateway pattern** using **YARP (Yet Another Reverse Proxy)** integrated with
+**Aspire** for service discovery and routing, providing a unified entry point for all BookWorm
+microservices.
 
 ### Gateway Architecture Strategy
 

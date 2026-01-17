@@ -1,8 +1,17 @@
 ---
 sidebar_position: 1
 title: Overview
-description: Static decomposition of BookWorm system into building blocks, services, and components with their dependencies
-keywords: [building block view, system decomposition, microservices structure, component architecture, service boundaries]
+description:
+  Static decomposition of BookWorm system into building blocks, services, and components with their
+  dependencies
+keywords:
+  [
+    building block view,
+    system decomposition,
+    microservices structure,
+    component architecture,
+    service boundaries,
+  ]
 last_update:
   author: Nhan Nguyen
 ---
@@ -11,16 +20,20 @@ last_update:
 
 ## Content
 
-The building block view shows the static decomposition of the BookWorm Store system into building blocks (services, components, modules, libraries, frameworks, etc.) as well as their dependencies and relationships.
+The building block view shows the static decomposition of the BookWorm Store system into building
+blocks (services, components, modules, libraries, frameworks, etc.) as well as their dependencies
+and relationships.
 
-This view is essential for understanding the system architecture and serves as the foundation for technical discussions and implementation decisions.
+This view is essential for understanding the system architecture and serves as the foundation for
+technical discussions and implementation decisions.
 
 ## Motivation
 
 The building block view helps us:
 
 - **Maintain system overview** by making the structure understandable through abstraction
-- **Enable effective communication** with stakeholders on an architectural level without exposing implementation details
+- **Enable effective communication** with stakeholders on an architectural level without exposing
+  implementation details
 - **Support development teams** by providing clear boundaries and interfaces between components
 - **Facilitate system evolution** by understanding dependencies and impact of changes
 - **Guide deployment decisions** by showing service boundaries and scaling units
@@ -37,7 +50,8 @@ Shows the highest level decomposition of the BookWorm Store into major building 
 - **Infrastructure Layer**: Provides messaging, data persistence, and cross-cutting concerns
 - **External Systems**: Third-party integrations for authentication and notifications
 
-This level provides the "big picture" view with the container diagram showing all services and their relationships.
+This level provides the "big picture" view with the container diagram showing all services and their
+relationships.
 
 ### Level 2: Detailed Service Decomposition
 
@@ -65,4 +79,5 @@ This level shows internal structure, algorithms, and design patterns used.
 - **[Level 2 - Service Details](./level-2)** - Internal structure of key services
 - **[Level 3 - Component Implementation](./level-3)** - Deep dive into complex components
 
-Each level builds upon the previous one, providing increasing detail while maintaining clear abstraction boundaries.
+Each level builds upon the previous one, providing increasing detail while maintaining clear
+abstraction boundaries.

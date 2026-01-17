@@ -15,7 +15,8 @@ last_update:
 
 ## Context
 
-BookWorm's AI-enhanced features require a robust, scalable, and cost-effective Large Language Model (LLM) runtime to power intelligent functionalities across the platform. The requirements include:
+BookWorm's AI-enhanced features require a robust, scalable, and cost-effective Large Language Model
+(LLM) runtime to power intelligent functionalities across the platform. The requirements include:
 
 - **Book Recommendations**: Personalized book suggestions based on reading history and preferences
 - **Content Analysis**: Automatic book categorization, summary generation, and metadata extraction
@@ -29,21 +30,26 @@ BookWorm's AI-enhanced features require a robust, scalable, and cost-effective L
 - **Privacy**: On-premises or private cloud deployment for sensitive data handling
 - **Flexibility**: Support for multiple model architectures and easy model switching
 
-The choice of LLM runtime significantly impacts system performance, operational costs, data privacy, and the overall quality of AI-powered features.
+The choice of LLM runtime significantly impacts system performance, operational costs, data privacy,
+and the overall quality of AI-powered features.
 
 ## Decision
 
-Adopt **Ollama** as the primary Large Language Model runtime, integrated with **Microsoft Agent Framework** for AI orchestration, to provide powerful, cost-effective, and privacy-conscious AI capabilities across BookWorm's platform.
+Adopt **Ollama** as the primary Large Language Model runtime, integrated with **Microsoft Agent
+Framework** for AI orchestration, to provide powerful, cost-effective, and privacy-conscious AI
+capabilities across BookWorm's platform.
 
 ### AI Architecture Strategy
 
 #### Ollama Model Management
+
 - **Model Repository**: Centralized management of multiple LLM models for different use cases
 - **Resource Optimization**: GPU-aware deployment with automatic GPU detection
 - **Container Integration**: Aspire-based deployment with OpenWebUI interface
 - **Azure Container App Support**: Scalable cloud deployment with min replicas configuration
 
 #### Chat Service Agent Orchestration
+
 - **Sequential Processing**: Multi-agent pipeline for comprehensive chat responses
 - **Specialized Agents**: BookAgent, LanguageAgent, SentimentAgent, SummarizeAgent
 - **RAG Integration**: Hybrid search capabilities with vector embeddings
@@ -51,18 +57,19 @@ Adopt **Ollama** as the primary Large Language Model runtime, integrated with **
 
 ### BookWorm AI Agents
 
-| Agent | Purpose | Integration | Capabilities |
-|-------|---------|-------------|--------------|
-| **BookAgent** | Book search and recommendations | Catalog search, MCP tools | Personalized suggestions, catalog queries |
-| **LanguageAgent** | Translation and language processing | Text processing | Multi-language support |
-| **SentimentAgent** | Emotion analysis | Customer feedback | Positive/Negative/Neutral classification |
-| **SummarizeAgent** | Content summarization | Text processing | Key insights extraction |
+| Agent              | Purpose                             | Integration               | Capabilities                              |
+| ------------------ | ----------------------------------- | ------------------------- | ----------------------------------------- |
+| **BookAgent**      | Book search and recommendations     | Catalog search, MCP tools | Personalized suggestions, catalog queries |
+| **LanguageAgent**  | Translation and language processing | Text processing           | Multi-language support                    |
+| **SentimentAgent** | Emotion analysis                    | Customer feedback         | Positive/Negative/Neutral classification  |
+| **SummarizeAgent** | Content summarization               | Text processing           | Key insights extraction                   |
 
 ## Rationale
 
 ### Why Ollama?
 
 #### Cost-Effective and Predictable
+
 1. **No Token-Based Pricing**: Fixed infrastructure costs without per-request charges
 2. **Open Source Models**: Access to state-of-the-art models without licensing fees
 3. **Resource Efficiency**: Optimized model serving with quantization and optimization
@@ -70,6 +77,7 @@ Adopt **Ollama** as the primary Large Language Model runtime, integrated with **
 5. **Multi-Tenancy**: Serve multiple applications from shared infrastructure
 
 #### Privacy and Data Control
+
 1. **On-Premises Deployment**: Complete control over data and model inference
 2. **No External API Calls**: All AI processing happens within private infrastructure
 3. **Data Sovereignty**: Compliance with data protection regulations and policies
@@ -77,6 +85,7 @@ Adopt **Ollama** as the primary Large Language Model runtime, integrated with **
 5. **Audit Trail**: Complete visibility into AI processing and decision-making
 
 #### Performance and Reliability
+
 1. **Low Latency**: Direct model access without network round-trips to external services
 2. **High Throughput**: Optimized inference serving with batching and caching
 3. **Offline Capability**: Continue AI functionality during internet connectivity issues
@@ -84,6 +93,7 @@ Adopt **Ollama** as the primary Large Language Model runtime, integrated with **
 5. **Availability Control**: Service-level agreements based on internal infrastructure
 
 #### Flexibility and Model Diversity
+
 1. **Multiple Model Support**: Run different models for specialized tasks
 2. **Model Versioning**: A/B test different model versions and capabilities
 3. **Custom Models**: Deploy fine-tuned or domain-specific models
@@ -93,6 +103,7 @@ Adopt **Ollama** as the primary Large Language Model runtime, integrated with **
 ### Why Agent Framework Integration?
 
 #### .NET Ecosystem Alignment
+
 1. **Native .NET Integration**: First-class support for .NET applications and patterns
 2. **Dependency Injection**: Seamless integration with ASP.NET Core DI container
 3. **Configuration**: Familiar configuration patterns and environment management
@@ -100,6 +111,7 @@ Adopt **Ollama** as the primary Large Language Model runtime, integrated with **
 5. **Observability**: Built-in telemetry, logging, and performance monitoring
 
 #### Enterprise AI Patterns
+
 1. **Prompt Engineering**: Centralized prompt management with versioning and testing
 2. **Function Calling**: Integrate AI with business logic through semantic functions
 3. **Memory Systems**: Persistent context and conversation state management
@@ -297,9 +309,11 @@ public sealed class HybridSearch : ISearch
     }
 }
 ```
- ## Consequences
+
+## Consequences
 
 ### Benefits
+
 - **Cost predictability** with fixed infrastructure costs vs per-token pricing
 - **Data privacy** with on-premises processing and no external API calls
 - **Performance control** with direct model access and hardware optimization
@@ -308,6 +322,7 @@ public sealed class HybridSearch : ISearch
 - **Real-time streaming** for responsive chat experiences
 
 ### Trade-offs
+
 - **Infrastructure complexity** requiring GPU management and model deployment
 - **Operational overhead** for model updates and performance monitoring
 - **Resource requirements** for GPU-enabled hardware and memory management
@@ -316,16 +331,19 @@ public sealed class HybridSearch : ISearch
 ## Alternatives Considered
 
 ### OpenAI GPT API
+
 - **Pros**: Best-in-class performance, managed service, extensive capabilities
 - **Cons**: High per-token costs, data privacy concerns, external dependency
 - **Decision**: Cost and privacy concerns outweigh performance benefits
 
 ### Azure OpenAI Service
+
 - **Pros**: Enterprise-grade security, Microsoft ecosystem integration
 - **Cons**: External dependency, significant costs at scale, limited model control
 - **Decision**: Preference for self-hosted solution with complete control
 
 ### Hugging Face Transformers
+
 - **Pros**: Open source, extensive model library, community support
 - **Cons**: Complex deployment, requires ML expertise, optimization challenges
 - **Decision**: Ollama provides better production-ready deployment

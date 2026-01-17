@@ -1,19 +1,33 @@
 ---
 sidebar_position: 3
 title: Create Order
-description: End-to-end order creation process using Saga pattern for distributed transaction management across services
-keywords: [create order, saga pattern, order processing, distributed transactions, checkout flow, inventory management]
+description:
+  End-to-end order creation process using Saga pattern for distributed transaction management across
+  services
+keywords:
+  [
+    create order,
+    saga pattern,
+    order processing,
+    distributed transactions,
+    checkout flow,
+    inventory management,
+  ]
 last_update:
   author: Nhan Nguyen
 ---
 
 # Create Order Scenario
 
-The Create Order scenario represents the core business process of BookWorm, handling the complete journey from customer checkout to order fulfillment. This flow implements the **Saga pattern** to ensure data consistency across distributed services.
+The Create Order scenario represents the core business process of BookWorm, handling the complete
+journey from customer checkout to order fulfillment. This flow implements the **Saga pattern** to
+ensure data consistency across distributed services.
 
 ## Overview
 
-This end-to-end flow orchestrates multiple microservices to process customer orders, focusing on proper inventory management, basket cleanup, and customer communication throughout the order lifecycle.
+This end-to-end flow orchestrates multiple microservices to process customer orders, focusing on
+proper inventory management, basket cleanup, and customer communication throughout the order
+lifecycle.
 
 ## 🎯 Business Context
 

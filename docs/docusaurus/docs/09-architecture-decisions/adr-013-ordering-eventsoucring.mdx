@@ -15,12 +15,18 @@ last_update:
 
 ## Context
 
-BookWorm's ordering service requires sophisticated state management to handle complex business workflows, maintain comprehensive audit trails, and support advanced analytics. The ordering domain involves intricate business processes with multiple state transitions, compensation scenarios, and regulatory requirements:
+BookWorm's ordering service requires sophisticated state management to handle complex business
+workflows, maintain comprehensive audit trails, and support advanced analytics. The ordering domain
+involves intricate business processes with multiple state transitions, compensation scenarios, and
+regulatory requirements:
 
-- **Complex Order Lifecycle**: Orders transition through multiple states (placed, paid, shipped, delivered, cancelled, returned)
-- **Business Rule Evolution**: Pricing rules, discount calculations, and tax regulations change frequently
+- **Complex Order Lifecycle**: Orders transition through multiple states (placed, paid, shipped,
+  delivered, cancelled, returned)
+- **Business Rule Evolution**: Pricing rules, discount calculations, and tax regulations change
+  frequently
 - **Audit Requirements**: Complete audit trail for financial transactions and regulatory compliance
-- **Analytics and Reporting**: Historical analysis of order patterns, customer behavior, and business metrics
+- **Analytics and Reporting**: Historical analysis of order patterns, customer behavior, and
+  business metrics
 - **Temporal Queries**: Ability to reconstruct system state at any point in time
 - **Event-Driven Integration**: Seamless integration with other services through domain events
 - **Compensation Handling**: Saga patterns for distributed transaction management
@@ -28,11 +34,14 @@ BookWorm's ordering service requires sophisticated state management to handle co
 - **Data Recovery**: Point-in-time recovery and replay capabilities for disaster scenarios
 - **Compliance**: GDPR, PCI-DSS, and financial regulatory requirements
 
-Traditional CRUD-based approaches struggle with these requirements due to data loss during updates, limited audit capabilities, and tight coupling between current state and historical context.
+Traditional CRUD-based approaches struggle with these requirements due to data loss during updates,
+limited audit capabilities, and tight coupling between current state and historical context.
 
 ## Decision
 
-Implement **Event Sourcing** pattern for the Ordering Service using **Marten** as the event sourcing framework, leveraging **PostgreSQL** as the event store with **projections** for read models and **subscriptions** for event publishing.
+Implement **Event Sourcing** pattern for the Ordering Service using **Marten** as the event sourcing
+framework, leveraging **PostgreSQL** as the event store with **projections** for read models and
+**subscriptions** for event publishing.
 
 ### Event Sourcing Architecture Strategy
 
@@ -77,7 +86,8 @@ Implement **Event Sourcing** pattern for the Ordering Service using **Marten** a
 4. **Integration**: Automatic event publishing to RabbitMQ for service communication
 5. **Real-time Updates**: SignalR integration for live order status updates
 6. **Time Travel Debugging**: Debug issues by replaying events with Marten's event replay features
-7. **Historical Analytics**: Analyze business trends using Marten's projection rebuilding capabilities
+7. **Historical Analytics**: Analyze business trends using Marten's projection rebuilding
+   capabilities
 8. **Retroactive Changes**: Apply new business rules to historical data through projection updates
 9. **What-If Analysis**: Simulate scenarios using Marten's event stream querying
 

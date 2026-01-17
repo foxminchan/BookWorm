@@ -2,7 +2,8 @@
 sidebar_position: 12
 title: ADR-011 - RabbitMQ for Message Broker
 description: Selection of RabbitMQ as message broker for reliable asynchronous communication
-keywords: [ADR-011, RabbitMQ, message broker, asynchronous messaging, MassTransit, event bus, messaging]
+keywords:
+  [ADR-011, RabbitMQ, message broker, asynchronous messaging, MassTransit, event bus, messaging]
 last_update:
   author: Nhan Nguyen
 ---
@@ -15,7 +16,9 @@ last_update:
 
 ## Context
 
-BookWorm's event-driven microservices architecture requires reliable asynchronous communication between services to maintain loose coupling and ensure system resilience. The messaging requirements include:
+BookWorm's event-driven microservices architecture requires reliable asynchronous communication
+between services to maintain loose coupling and ensure system resilience. The messaging requirements
+include:
 
 - **Event-Driven Integration**: Domain and integration events between microservices
 - **Reliable Message Delivery**: Guarantee message delivery with durability and persistence
@@ -28,11 +31,14 @@ BookWorm's event-driven microservices architecture requires reliable asynchronou
 - **Performance**: Low-latency message processing for real-time business operations
 - **Integration**: Seamless integration with .NET applications and existing infrastructure
 
-The choice of message broker significantly impacts system reliability, performance, and operational complexity across the entire distributed architecture.
+The choice of message broker significantly impacts system reliability, performance, and operational
+complexity across the entire distributed architecture.
 
 ## Decision
 
-Adopt **RabbitMQ** as the primary message broker, integrated with **MassTransit** for .NET-based message handling, to provide reliable, scalable, and feature-rich asynchronous communication between BookWorm's microservices.
+Adopt **RabbitMQ** as the primary message broker, integrated with **MassTransit** for .NET-based
+message handling, to provide reliable, scalable, and feature-rich asynchronous communication between
+BookWorm's microservices.
 
 ### Messaging Architecture Strategy
 
@@ -52,7 +58,8 @@ Adopt **RabbitMQ** as the primary message broker, integrated with **MassTransit*
 
 ### Service Messaging Integration
 
-Services communicate through domain events that are mapped to integration events and published via RabbitMQ. Each service can both produce and consume events as needed.
+Services communicate through domain events that are mapped to integration events and published via
+RabbitMQ. Each service can both produce and consume events as needed.
 
 ## Rationale
 

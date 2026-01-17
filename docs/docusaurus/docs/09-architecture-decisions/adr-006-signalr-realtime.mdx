@@ -15,7 +15,8 @@ last_update:
 
 ## Context
 
-BookWorm requires real-time communication capabilities to enhance user experience and provide immediate feedback for various business scenarios. The system needs:
+BookWorm requires real-time communication capabilities to enhance user experience and provide
+immediate feedback for various business scenarios. The system needs:
 
 - **Real-time Chat**: Interactive chat support with AI-powered responses
 - **Order Updates**: Live order status updates and notifications
@@ -28,11 +29,14 @@ BookWorm requires real-time communication capabilities to enhance user experienc
 - **Cross-platform Support**: Web browsers, mobile apps, and desktop clients
 - **Security Integration**: Authentication and authorization for real-time connections
 
-Traditional HTTP polling would be inefficient for real-time scenarios, while WebSocket libraries alone would require significant custom implementation for connection management and scaling.
+Traditional HTTP polling would be inefficient for real-time scenarios, while WebSocket libraries
+alone would require significant custom implementation for connection management and scaling.
 
 ## Decision
 
-Adopt **SignalR** as the real-time communication framework for streaming AI chat responses in the BookWorm Chat service, providing bidirectional communication for interactive AI-powered conversations.
+Adopt **SignalR** as the real-time communication framework for streaming AI chat responses in the
+BookWorm Chat service, providing bidirectional communication for interactive AI-powered
+conversations.
 
 ### Implementation Strategy
 
@@ -73,7 +77,8 @@ BookWorm implements a focused SignalR solution specifically for AI chat streamin
 
 ### Implementation Overview
 
-BookWorm's SignalR implementation focuses specifically on AI chat streaming rather than general real-time communication.
+BookWorm's SignalR implementation focuses specifically on AI chat streaming rather than general
+real-time communication.
 
 ## Implementation Architecture
 
@@ -83,20 +88,20 @@ BookWorm's SignalR implementation focuses specifically on AI chat streaming rath
 
 ```javascript
 const chatConnection = new signalR.HubConnectionBuilder()
-    .withUrl("/chathub", {
-        accessTokenFactory: () => getAccessToken()
-    })
-    .withAutomaticReconnect([0, 2000, 10000, 30000])
-    .configureLogging(signalR.LogLevel.Information)
-    .build();
+  .withUrl("/chathub", {
+    accessTokenFactory: () => getAccessToken(),
+  })
+  .withAutomaticReconnect([0, 2000, 10000, 30000])
+  .configureLogging(signalR.LogLevel.Information)
+  .build();
 
 chatConnection.on("ReceiveMessage", (message) => {
-    displayChatMessage(message);
+  displayChatMessage(message);
 });
 
 chatConnection.onreconnected(() => {
-    console.log("Reconnected to chat hub");
-    rejoinChatRooms();
+  console.log("Reconnected to chat hub");
+  rejoinChatRooms();
 });
 ```
 

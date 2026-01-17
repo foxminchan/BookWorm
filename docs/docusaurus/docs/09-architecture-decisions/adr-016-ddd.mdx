@@ -2,7 +2,16 @@
 sidebar_position: 17
 title: ADR-016 - Domain-Driven Design Implementation
 description: Adoption of Domain-Driven Design principles for bounded contexts and domain modeling
-keywords: [ADR-016, DDD, domain-driven design, bounded contexts, aggregates, domain model, ubiquitous language]
+keywords:
+  [
+    ADR-016,
+    DDD,
+    domain-driven design,
+    bounded contexts,
+    aggregates,
+    domain model,
+    ubiquitous language,
+  ]
 last_update:
   author: Nhan Nguyen
 ---
@@ -15,32 +24,44 @@ last_update:
 
 ## Context
 
-BookWorm's complex business domain requires a structured approach to manage domain complexity and ensure alignment between business requirements and technical implementation. The domain challenges include:
+BookWorm's complex business domain requires a structured approach to manage domain complexity and
+ensure alignment between business requirements and technical implementation. The domain challenges
+include:
 
-- **Complex Business Logic**: Book catalog management, order processing, inventory tracking, and customer relationship management
-- **Multiple Bounded Contexts**: Distinct business areas with different vocabularies and rules (catalog, ordering, finance, rating)
-- **Domain Expert Collaboration**: Need for close collaboration between developers and business domain experts
-- **Business Rule Evolution**: Frequently changing business rules and policies requiring flexible domain models
-- **Cross-Context Integration**: Managing relationships and data consistency across different domain contexts
+- **Complex Business Logic**: Book catalog management, order processing, inventory tracking, and
+  customer relationship management
+- **Multiple Bounded Contexts**: Distinct business areas with different vocabularies and rules
+  (catalog, ordering, finance, rating)
+- **Domain Expert Collaboration**: Need for close collaboration between developers and business
+  domain experts
+- **Business Rule Evolution**: Frequently changing business rules and policies requiring flexible
+  domain models
+- **Cross-Context Integration**: Managing relationships and data consistency across different domain
+  contexts
 - **Legacy Integration**: Incorporating existing business processes and data structures
 - **Team Scaling**: Multiple development teams working on different domain areas simultaneously
 - **Technical Complexity**: Balancing domain purity with technical infrastructure requirements
 - **Model Integrity**: Maintaining domain model consistency and preventing anemic domain models
 - **Strategic Design**: Identifying bounded contexts, context mapping, and integration patterns
 
-The architecture must support rich domain models while enabling team autonomy and system scalability.
+The architecture must support rich domain models while enabling team autonomy and system
+scalability.
 
 ## Decision
 
-Adopt **Domain-Driven Design (DDD)** as the primary architectural approach with clear bounded context separation, rich domain models, and strategic design patterns to manage complexity and align technical implementation with business domain.
+Adopt **Domain-Driven Design (DDD)** as the primary architectural approach with clear bounded
+context separation, rich domain models, and strategic design patterns to manage complexity and align
+technical implementation with business domain.
 
 ### DDD Implementation Strategy
 
 #### Bounded Context Architecture
 
 - **Context Boundaries**: Clear separation of business contexts with independent domain models
-- **Ubiquitous Language**: Consistent vocabulary within each context, shared between developers and domain experts
-- **Context Integration**: Well-defined integration patterns between contexts using domain events and anti-corruption layers
+- **Ubiquitous Language**: Consistent vocabulary within each context, shared between developers and
+  domain experts
+- **Context Integration**: Well-defined integration patterns between contexts using domain events
+  and anti-corruption layers
 - **Team Organization**: Development teams aligned with bounded contexts for domain expertise
 
 #### Domain Modeling Approach
@@ -68,18 +89,22 @@ Adopt **Domain-Driven Design (DDD)** as the primary architectural approach with 
 
 #### Business Alignment and Clarity
 
-1. **Ubiquitous Language**: Shared vocabulary between business experts and developers reduces miscommunication
+1. **Ubiquitous Language**: Shared vocabulary between business experts and developers reduces
+   miscommunication
 2. **Business Focus**: Domain logic remains independent of technical concerns and infrastructure
 3. **Model Integrity**: Rich domain models prevent anemic data models and scattered business logic
 4. **Evolutionary Design**: Domain models can evolve with changing business requirements
-5. **Domain Expert Collaboration**: Structured approach for incorporating business knowledge into software design
+5. **Domain Expert Collaboration**: Structured approach for incorporating business knowledge into
+   software design
 
 #### Strategic Design Benefits
 
-1. **Bounded Context Separation**: Clear boundaries prevent model contamination and enable team autonomy
+1. **Bounded Context Separation**: Clear boundaries prevent model contamination and enable team
+   autonomy
 2. **Context Integration**: Well-defined integration patterns manage complexity between contexts
 3. **Scalability**: Teams can work independently within their bounded contexts
-4. **Legacy Integration**: Anti-corruption layers protect domain models from legacy system contamination
+4. **Legacy Integration**: Anti-corruption layers protect domain models from legacy system
+   contamination
 5. **Technical Architecture**: Strategic design guides microservice boundaries and data architecture
 
 #### Tactical Design Advantages
@@ -88,7 +113,8 @@ Adopt **Domain-Driven Design (DDD)** as the primary architectural approach with 
 2. **Domain Events**: Loose coupling between contexts through domain-driven event modeling
 3. **Repository Abstraction**: Domain-focused data access without infrastructure dependencies
 4. **Value Objects**: Immutable objects for domain concepts with built-in validation
-5. **Domain Services**: Stateless services for domain operations that don't belong to specific entities
+5. **Domain Services**: Stateless services for domain operations that don't belong to specific
+   entities
 
 ### DDD Pattern Implementation
 
@@ -102,7 +128,8 @@ Adopt **Domain-Driven Design (DDD)** as the primary architectural approach with 
 
 #### Application Layer Coordination
 
-1. **Application Services**: Orchestrate domain operations and coordinate cross-aggregate transactions
+1. **Application Services**: Orchestrate domain operations and coordinate cross-aggregate
+   transactions
 2. **Command Handlers**: Process business commands and coordinate domain operations
 3. **Query Handlers**: Handle read operations and return view models for presentation
 4. **Event Handlers**: Process domain events and coordinate cross-context communication
@@ -110,7 +137,8 @@ Adopt **Domain-Driven Design (DDD)** as the primary architectural approach with 
 
 #### Infrastructure Integration
 
-1. **Repository Implementation**: Infrastructure-specific implementations of domain repository contracts
+1. **Repository Implementation**: Infrastructure-specific implementations of domain repository
+   contracts
 2. **Event Publishing**: Infrastructure services for publishing domain events to message brokers
 3. **External Service Integration**: Adapter pattern for external API integration
 4. **Data Persistence**: Object-relational mapping with domain-focused persistence strategies
@@ -121,18 +149,23 @@ Adopt **Domain-Driven Design (DDD)** as the primary architectural approach with 
 ### Bounded Context Integration
 
 - **Domain Events**: Cross-context communication through published domain events
-- **Integration Events**: Translation between domain events and integration events for external contexts
-- **Context Mapping**: Explicit relationships between bounded contexts (Customer-Supplier, Conformist, Anti-Corruption Layer)
+- **Integration Events**: Translation between domain events and integration events for external
+  contexts
+- **Context Mapping**: Explicit relationships between bounded contexts (Customer-Supplier,
+  Conformist, Anti-Corruption Layer)
 - **Shared Kernels**: Common domain concepts shared between specific contexts where appropriate
 - **Published Language**: Well-defined schemas for cross-context data exchange
 
 ### Aggregate Design Principles
 
 - **Consistency Boundaries**: Aggregates maintain business invariants within transaction boundaries
-- **Identity Management**: Aggregate roots provide identity and control access to aggregate internals
-- **Business Rules**: Domain logic encapsulated within aggregates, not leaked to application services
+- **Identity Management**: Aggregate roots provide identity and control access to aggregate
+  internals
+- **Business Rules**: Domain logic encapsulated within aggregates, not leaked to application
+  services
 - **Event Publishing**: Domain events published for side effects and cross-aggregate coordination
-- **Performance Optimization**: Aggregate design balanced between consistency and performance requirements
+- **Performance Optimization**: Aggregate design balanced between consistency and performance
+  requirements
 
 ### Context Integration Configuration
 
@@ -171,8 +204,10 @@ bounded_contexts:
 - **Learning Curve**: DDD concepts and patterns require significant team training and expertise
 - **Initial Overhead**: Strategic design and modeling require upfront investment
 - **Over-Engineering Risk**: Potential for unnecessary complexity in simple business scenarios
-- **Context Boundaries**: Incorrect bounded context identification can lead to integration challenges
-- **Performance Considerations**: Rich domain models may have performance implications requiring optimization
+- **Context Boundaries**: Incorrect bounded context identification can lead to integration
+  challenges
+- **Performance Considerations**: Rich domain models may have performance implications requiring
+  optimization
 
 ### Risks and Mitigation
 

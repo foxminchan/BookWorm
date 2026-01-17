@@ -2,28 +2,28 @@
 slug: keycloak-identity-and-access-management
 title: Keycloak IAM for BookWorm
 authors: [foxminchan]
-tags:
-  [security, authentication, keycloak, oauth2, iam, identity, react, typescript]
+tags: [security, authentication, keycloak, oauth2, iam, identity, react, typescript]
 ---
 
-import Image from '@theme/IdealImage';
+import Image from "@theme/IdealImage";
 
 # Keycloak Identity and Access Management
 
 <p style={{ textAlign: "justify" }}>
-  This blog post explores how BookWorm leverages Keycloak for secure identity
-  and access management, detailing its integration, OAuth2 PKCE flow, and the
-  creation of a custom authentication theme using Keycloakify. You'll learn
-  about the architecture, security benefits, and development workflow for
-  customizing the user authentication experience in a modern e-commerce
-  platform.
+  This blog post explores how BookWorm leverages Keycloak for secure identity and access management,
+  detailing its integration, OAuth2 PKCE flow, and the creation of a custom authentication theme
+  using Keycloakify. You'll learn about the architecture, security benefits, and development
+  workflow for customizing the user authentication experience in a modern e-commerce platform.
 </p>
 
 {/* truncate */}
 
 ## What is Keycloak?
 
-[Keycloak](https://www.keycloak.org/) is an open-source Identity and Access Management (IAM) solution developed by Red Hat. It provides enterprise-grade security features including single sign-on (SSO), identity brokering, social login, user federation, and comprehensive admin capabilities.
+[Keycloak](https://www.keycloak.org/) is an open-source Identity and Access Management (IAM)
+solution developed by Red Hat. It provides enterprise-grade security features including single
+sign-on (SSO), identity brokering, social login, user federation, and comprehensive admin
+capabilities.
 
 ### Key Features
 
@@ -36,7 +36,8 @@ import Image from '@theme/IdealImage';
 
 ## Why Keycloak for BookWorm?
 
-We chose Keycloak over alternatives like Auth0, Firebase Auth, or AWS Cognito for several compelling reasons:
+We chose Keycloak over alternatives like Auth0, Firebase Auth, or AWS Cognito for several compelling
+reasons:
 
 ### Business Benefits
 
@@ -82,9 +83,10 @@ Before diving into the implementation details, you should have:
 
 ## BookWorm Architecture Overview
 
-Keycloak is an open-source Identity and Access Management (IAM) solution that provides authentication and authorization
-services for the BookWorm application. It serves as the central identity provider, handling user authentication, token
-management, and access control across all BookWorm microservices.
+Keycloak is an open-source Identity and Access Management (IAM) solution that provides
+authentication and authorization services for the BookWorm application. It serves as the central
+identity provider, handling user authentication, token management, and access control across all
+BookWorm microservices.
 
 ### Purpose in BookWorm Application
 
@@ -93,14 +95,16 @@ In the BookWorm e-commerce platform, Keycloak serves several critical functions:
 - **Centralized Authentication**: Single sign-on (SSO) across all BookWorm services
 - **User Management**: Registration, login, profile management, and password policies
 - **API Protection**: Securing REST APIs with JWT tokens and OAuth2 flows
-- **Role-Based Access Control**: Managing permissions for different user types (customers, admins, etc.)
+- **Role-Based Access Control**: Managing permissions for different user types (customers, admins,
+  etc.)
 - **Client Management**: Supporting multiple client applications (web app, mobile app, APIs)
 - **Custom Branding**: Providing a branded login experience with the BookWorm theme
 
 ## Authorization Code + PKCE Flow
 
-The BookWorm application implements the OAuth2 Authorization Code flow with PKCE (Proof Key for Code Exchange) for
-secure authentication. This flow is particularly important for public clients like SPAs and mobile applications.
+The BookWorm application implements the OAuth2 Authorization Code flow with PKCE (Proof Key for Code
+Exchange) for secure authentication. This flow is particularly important for public clients like
+SPAs and mobile applications.
 
 ```mermaid
 sequenceDiagram
@@ -134,20 +138,24 @@ sequenceDiagram
 
 ### PKCE Security Benefits
 
-- **Prevents Authorization Code Interception**: Even if the authorization code is intercepted, it cannot be exchanged
-  for tokens without the original `code_verifier`
+- **Prevents Authorization Code Interception**: Even if the authorization code is intercepted, it
+  cannot be exchanged for tokens without the original `code_verifier`
 - **No Client Secret Required**: Perfect for public clients that cannot securely store secrets
 - **Dynamic Challenge**: Each authentication flow uses a unique code challenge/verifier pair
 
 ## Custom Theme with Keycloakify
 
-The BookWorm application includes a custom Keycloak theme built with [Keycloakify](https://www.keycloakify.dev/), a modern React-based framework for creating Keycloak themes. This provides a branded authentication experience that matches the application's design language.
+The BookWorm application includes a custom Keycloak theme built with
+[Keycloakify](https://www.keycloakify.dev/), a modern React-based framework for creating Keycloak
+themes. This provides a branded authentication experience that matches the application's design
+language.
 
 <Image img={require("./img/keycloak-theme.jpg")} />
 
 ### Keycloakify Project Structure
 
-The theme is developed as a separate TypeScript/React project located in the `keycloakify/` directory:
+The theme is developed as a separate TypeScript/React project located in the `keycloakify/`
+directory:
 
 ```
 keycloakify/
@@ -162,8 +170,8 @@ keycloakify/
 └── tsconfig.json        # TypeScript configuration
 ```
 
-💡 **Repository Location**: The complete Keycloak conf
- suite is available at [BookWorm/src/Aspire/BookWorm.AppHost/Container/keycloak](https://github.com/foxminchan/BookWorm/tree/main/src/Aspire/BookWorm.AppHost/Container/keycloak)
+💡 **Repository Location**: The complete Keycloak conf suite is available at
+[BookWorm/src/Aspire/BookWorm.AppHost/Container/keycloak](https://github.com/foxminchan/BookWorm/tree/main/src/Aspire/BookWorm.AppHost/Container/keycloak)
 
 ### Theme Features
 
@@ -231,15 +239,18 @@ The theme is applied to the realm in the realm configuration:
 
 :::warning
 
-Maven is required to build the Keycloak theme. Please ensure you have Maven installed and configured.
+Maven is required to build the Keycloak theme. Please ensure you have Maven installed and
+configured.
 
 :::
 
 #### Deployment Process
 
-1. **Theme Build**: The Keycloakify build process generates theme files in the `../themes/` directory
+1. **Theme Build**: The Keycloakify build process generates theme files in the `../themes/`
+   directory
 2. **Delete Old Theme**: Remove any existing theme files to avoid conflicts
-3. **Rename Build Files**: Ensure the theme files are named `BookWormThemes.jar` to match the Keycloak theme configuration
+3. **Rename Build Files**: Ensure the theme files are named `BookWormThemes.jar` to match the
+   Keycloak theme configuration
 4. **Container Integration**: Theme files are automatically available to the Keycloak container
 5. **Realm Configuration**: The theme is applied through realm settings
 6. **Hot Deployment**: Changes are reflected when Keycloak restarts or reloads

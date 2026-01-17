@@ -1,19 +1,31 @@
 ---
 sidebar_position: 4
 title: Level 3
-description: Deep dive into critical components like Saga Orchestrator, Event Sourcing Engine, and Vector Search implementation
-keywords: [saga orchestrator, event sourcing, vector search, distributed transactions, compensation handler, semantic search]
+description:
+  Deep dive into critical components like Saga Orchestrator, Event Sourcing Engine, and Vector
+  Search implementation
+keywords:
+  [
+    saga orchestrator,
+    event sourcing,
+    vector search,
+    distributed transactions,
+    compensation handler,
+    semantic search,
+  ]
 last_update:
   author: Nhan Nguyen
 ---
 
 # Level 3
 
-Here we dive deeper into the most complex and critical components from Level 2, showing their internal implementation details and patterns.
+Here we dive deeper into the most complex and critical components from Level 2, showing their
+internal implementation details and patterns.
 
 ## Saga Orchestrator - Internal Implementation
 
-The Saga Orchestrator is a critical component that manages distributed transactions across multiple services. It implements the Saga pattern to ensure data consistency in a microservices environment.
+The Saga Orchestrator is a critical component that manages distributed transactions across multiple
+services. It implements the Saga pattern to ensure data consistency in a microservices environment.
 
 ```mermaid
 C4Container
@@ -43,8 +55,8 @@ C4Container
 
 ### Saga Definition
 
-**Purpose/Responsibility**
-Defines the workflow steps, compensation actions, and business rules for distributed transactions.
+**Purpose/Responsibility** Defines the workflow steps, compensation actions, and business rules for
+distributed transactions.
 
 **Implementation Details**
 
@@ -68,8 +80,8 @@ src/Services/Ordering/
 
 ### State Manager
 
-**Purpose/Responsibility**
-Tracks saga execution progress, manages state transitions, and ensures consistency.
+**Purpose/Responsibility** Tracks saga execution progress, manages state transitions, and ensures
+consistency.
 
 **Implementation Details**
 
@@ -80,8 +92,7 @@ Tracks saga execution progress, manages state transitions, and ensures consisten
 
 ### Transaction Coordinator
 
-**Purpose/Responsibility**
-Orchestrates the execution of saga steps across multiple services.
+**Purpose/Responsibility** Orchestrates the execution of saga steps across multiple services.
 
 **Implementation Details**
 
@@ -92,8 +103,8 @@ Orchestrates the execution of saga steps across multiple services.
 
 ### Compensation Handler
 
-**Purpose/Responsibility**
-Executes compensation actions when saga steps fail, ensuring system consistency.
+**Purpose/Responsibility** Executes compensation actions when saga steps fail, ensuring system
+consistency.
 
 **Implementation Details**
 
@@ -104,7 +115,8 @@ Executes compensation actions when saga steps fail, ensuring system consistency.
 
 ## Search Engine - Vector Search Implementation
 
-The Search Engine implements sophisticated AI-powered search using vector embeddings and semantic similarity.
+The Search Engine implements sophisticated AI-powered search using vector embeddings and semantic
+similarity.
 
 ```mermaid
 C4Container
@@ -134,8 +146,8 @@ C4Container
 
 ### Document Indexer
 
-**Purpose/Responsibility**
-Processes product documents and creates searchable index entries with vector embeddings.
+**Purpose/Responsibility** Processes product documents and creates searchable index entries with
+vector embeddings.
 
 **Implementation Details**
 
@@ -154,8 +166,8 @@ Processes product documents and creates searchable index entries with vector emb
 
 ### Embedding Generator
 
-**Purpose/Responsibility**
-Converts text content into high-dimensional vector representations using machine learning models.
+**Purpose/Responsibility** Converts text content into high-dimensional vector representations using
+machine learning models.
 
 **Implementation Details**
 
@@ -173,8 +185,8 @@ Converts text content into high-dimensional vector representations using machine
 
 ### Query Processor
 
-**Purpose/Responsibility**
-Processes user search queries and converts them into vector search operations.
+**Purpose/Responsibility** Processes user search queries and converts them into vector search
+operations.
 
 **Implementation Details**
 

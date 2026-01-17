@@ -1,31 +1,46 @@
 ---
 sidebar_position: 13
 title: Repository & Specifications
-description: Repository and Specification patterns for clean data access abstraction and flexible query composition
-keywords: [repository pattern, specification pattern, data access, Entity Framework Core, query composition, unit of work]
+description:
+  Repository and Specification patterns for clean data access abstraction and flexible query
+  composition
+keywords:
+  [
+    repository pattern,
+    specification pattern,
+    data access,
+    Entity Framework Core,
+    query composition,
+    unit of work,
+  ]
 last_update:
   author: Nhan Nguyen
 ---
 
 # Repository & Specifications
 
-The BookWorm application implements the Repository pattern combined with the Specification pattern to provide clean data access abstraction and flexible query composition while maintaining separation between domain logic and data persistence.
+The BookWorm application implements the Repository pattern combined with the Specification pattern
+to provide clean data access abstraction and flexible query composition while maintaining separation
+between domain logic and data persistence.
 
 ## Repository Pattern
 
 ### Core Repository Interface
+
 - **IRepository&lt;T&gt;** - Generic repository contract for entity operations
 - **Automatic Discovery** - Assembly scanning for repository implementations
 - **Dependency Injection** - Scoped lifetime management for repositories
 - **Unit of Work Integration** - Transaction and change tracking support
 
 ### Repository Features
+
 - **Generic Operations** - Common CRUD operations for all entities
 - **Specification Support** - Query composition using specification pattern
 - **Async Operations** - Non-blocking database operations
 - **Change Tracking** - Entity state management and dirty checking
 
 ### Repository Registration
+
 - **Assembly Scanning** - Automatic repository discovery and registration
 - **Interface Mapping** - Automatic mapping to implemented interfaces
 - **Scoped Lifetime** - Proper lifetime management for database contexts
@@ -34,12 +49,14 @@ The BookWorm application implements the Repository pattern combined with the Spe
 ## Specification Pattern
 
 ### Query Specifications
+
 - **ISpecification Interface** - Contract for query specifications
 - **Composable Queries** - Combine specifications using logical operators
 - **Reusable Logic** - Encapsulate query logic for reuse across the application
 - **Testable Queries** - Isolated query logic for unit testing
 
 ### Specification Builders
+
 - **Fluent API** - Intuitive specification building interface
 - **Where Conditions** - Support for complex filtering conditions
 - **Include Operations** - Eager loading of related entities
@@ -47,6 +64,7 @@ The BookWorm application implements the Repository pattern combined with the Spe
 - **Pagination Support** - Skip/take operations for paging
 
 ### Specification Types
+
 - **Filter Specifications** - Entity filtering based on conditions
 - **Include Specifications** - Related entity inclusion
 - **Order Specifications** - Sorting and ordering logic
@@ -55,18 +73,21 @@ The BookWorm application implements the Repository pattern combined with the Spe
 ## Entity Framework Integration
 
 ### DbContext Extensions
+
 - **Configuration Integration** - Connection string and options configuration
 - **Naming Conventions** - Snake case naming for PostgreSQL compatibility
 - **Migration Support** - Automatic database schema management
 - **Health Check Integration** - Database connectivity monitoring
 
 ### Query Optimization
+
 - **Compiled Queries** - Pre-compiled LINQ queries for performance
 - **Query Splitting** - Split complex queries for better performance
 - **Change Tracking** - Optimized change detection strategies
 - **Connection Pooling** - Efficient database connection management
 
 ### PostgreSQL Integration
+
 - **Aspire Integration** - Aspire-based PostgreSQL configuration
 - **Connection Resilience** - Retry policies and connection recovery
 - **Performance Monitoring** - Query performance tracking
@@ -75,18 +96,21 @@ The BookWorm application implements the Repository pattern combined with the Spe
 ## Domain-Driven Design Integration
 
 ### Aggregate Repository
+
 - **Aggregate Root Access** - Repository access through aggregate roots only
 - **Consistency Boundaries** - Maintain aggregate consistency rules
 - **Transaction Boundaries** - Align transactions with aggregate boundaries
 - **Domain Event Publishing** - Publish events when saving aggregates
 
 ### Value Object Handling
+
 - **Value Object Queries** - Query entities by value object properties
 - **Immutable Value Objects** - Proper handling of immutable objects
 - **Value Object Mapping** - Database mapping for complex value objects
 - **Equality Semantics** - Proper value object equality in queries
 
 ### Entity Identity
+
 - **Strongly Typed IDs** - Type-safe entity identifiers
 - **Identity Generation** - Consistent ID generation strategies
 - **Identity Mapping** - Proper mapping of domain identities
@@ -95,18 +119,21 @@ The BookWorm application implements the Repository pattern combined with the Spe
 ## Query Composition
 
 ### Specification Composition
+
 - **And/Or Operations** - Logical combination of specifications
 - **Not Operations** - Negation of specification conditions
 - **Conditional Specifications** - Context-dependent query building
 - **Dynamic Queries** - Runtime query composition based on criteria
 
 ### Expression Trees
+
 - **LINQ Expression Building** - Compile-time safe query construction
 - **Expression Caching** - Cache compiled expressions for performance
 - **Dynamic Expression Building** - Runtime expression tree construction
 - **Parameter Binding** - Safe parameter binding in expressions
 
 ### Query Execution
+
 - **Lazy Loading** - Deferred query execution
 - **Explicit Loading** - On-demand loading of related entities
 - **Projection Queries** - Select only required columns
@@ -115,18 +142,21 @@ The BookWorm application implements the Repository pattern combined with the Spe
 ## Performance Optimization
 
 ### Query Performance
+
 - **Index Optimization** - Database index strategies
 - **Query Plan Analysis** - Analyze and optimize query execution plans
 - **Batch Operations** - Group related operations for efficiency
 - **Connection Pooling** - Optimize database connection usage
 
 ### Caching Strategies
+
 - **Query Result Caching** - Cache frequently accessed query results
 - **Specification Caching** - Cache compiled specifications
 - **Entity Caching** - Cache stable reference data
 - **Distributed Caching** - Share cached data across service instances
 
 ### Memory Management
+
 - **Dispose Patterns** - Proper disposal of database contexts
 - **Change Tracker Management** - Optimize entity change tracking
 - **Memory Profiling** - Monitor memory usage patterns
@@ -135,12 +165,14 @@ The BookWorm application implements the Repository pattern combined with the Spe
 ## Testing Strategies
 
 ### Repository Testing
+
 - **In-Memory Database** - Use in-memory database for unit tests
 - **Mock Repositories** - Mock repository interfaces for isolated testing
 - **Integration Testing** - Test with real database for integration scenarios
 - **Test Data Management** - Consistent test data setup and cleanup
 
 ### Specification Testing
+
 - **Isolated Specification Tests** - Test specifications independently
 - **Expression Testing** - Verify generated LINQ expressions
 - **Composition Testing** - Test specification combination logic
@@ -149,12 +181,14 @@ The BookWorm application implements the Repository pattern combined with the Spe
 ## Error Handling
 
 ### Data Access Errors
+
 - **Connection Failures** - Handle database connectivity issues
 - **Constraint Violations** - Handle database constraint errors
 - **Concurrency Conflicts** - Handle optimistic concurrency violations
 - **Transaction Failures** - Handle transaction rollback scenarios
 
 ### Entity Validation
+
 - **Entity State Validation** - Validate entity state before persistence
 - **Business Rule Enforcement** - Enforce domain rules at data layer
 - **Referential Integrity** - Maintain data consistency rules
@@ -163,18 +197,21 @@ The BookWorm application implements the Repository pattern combined with the Spe
 ## Best Practices
 
 ### Repository Design
+
 - **Aggregate-Oriented** - Design repositories around aggregate roots
 - **Minimal Interface** - Keep repository interfaces focused and minimal
 - **Consistent Naming** - Use consistent naming conventions
 - **Avoid Leaky Abstractions** - Don't expose ORM-specific details
 
 ### Specification Design
+
 - **Single Responsibility** - Each specification should have one purpose
 - **Reusable Logic** - Design specifications for reuse across contexts
 - **Composable Design** - Enable easy composition of multiple specifications
 - **Performance Aware** - Consider query performance when designing specifications
 
 ### Data Access Guidelines
+
 - **Use Transactions Appropriately** - Apply transactions at correct boundaries
 - **Optimize for Common Scenarios** - Optimize for most frequent use cases
 - **Monitor Performance** - Regular monitoring of query performance

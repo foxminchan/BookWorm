@@ -2,7 +2,8 @@
 sidebar_position: 5
 title: ADR-004 - PostgreSQL as Primary Database
 description: Choice of PostgreSQL as primary database for ACID compliance and JSON support
-keywords: [ADR-004, PostgreSQL, database, ACID, JSON support, relational database, Entity Framework Core]
+keywords:
+  [ADR-004, PostgreSQL, database, ACID, JSON support, relational database, Entity Framework Core]
 last_update:
   author: Nhan Nguyen
 ---
@@ -15,7 +16,9 @@ last_update:
 
 ## Context
 
-BookWorm's microservices architecture requires a robust, scalable, and feature-rich database solution that can support diverse data patterns across multiple services. The system has specific requirements:
+BookWorm's microservices architecture requires a robust, scalable, and feature-rich database
+solution that can support diverse data patterns across multiple services. The system has specific
+requirements:
 
 - **Complex Data Relationships**: Books, authors, categories, orders, and user relationships
 - **JSON Document Storage**: Flexible schema for configuration and metadata
@@ -27,11 +30,13 @@ BookWorm's microservices architecture requires a robust, scalable, and feature-r
 - **Cloud Integration**: Managed database services for production deployment
 - **Development Experience**: Excellent .NET integration and tooling support
 
-The database choice significantly impacts development velocity, operational complexity, and long-term maintainability of the entire system.
+The database choice significantly impacts development velocity, operational complexity, and
+long-term maintainability of the entire system.
 
 ## Decision
 
-Adopt **PostgreSQL** as the primary relational database for all services requiring persistent data storage, with specialized data stores (Redis, Qdrant) for specific use cases.
+Adopt **PostgreSQL** as the primary relational database for all services requiring persistent data
+storage, with specialized data stores (Redis, Qdrant) for specific use cases.
 
 ### Service Database Allocation
 

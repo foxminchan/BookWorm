@@ -1,25 +1,38 @@
 ---
 sidebar_position: 6
 title: Health Checks
-description: Comprehensive health monitoring with ASP.NET Core health checks for service availability and dependencies
-keywords: [health checks, service monitoring, health check UI, dependency monitoring, liveness, readiness probes]
+description:
+  Comprehensive health monitoring with ASP.NET Core health checks for service availability and
+  dependencies
+keywords:
+  [
+    health checks,
+    service monitoring,
+    health check UI,
+    dependency monitoring,
+    liveness,
+    readiness probes,
+  ]
 last_update:
   author: Nhan Nguyen
 ---
 
 # Health Checks
 
-The BookWorm application implements comprehensive health monitoring using ASP.NET Core health checks, providing real-time insights into service availability and dependencies.
+The BookWorm application implements comprehensive health monitoring using ASP.NET Core health
+checks, providing real-time insights into service availability and dependencies.
 
 ## Health Check Architecture
 
 ### Core Components
+
 - **AspNetCore.HealthChecks.UI.Client** - Health check UI and reporting
 - **AspNetCore.HealthChecks.Uris** - HTTP endpoint health monitoring
 - **Grpc.AspNetCore.HealthChecks** - gRPC service health checks
 - **Custom Health Checks** - Application-specific health monitoring
 
 ### Health Check Types
+
 - **Readiness Checks** - Service is ready to accept traffic
 - **Liveness Checks** - Service is running and responsive
 - **Startup Checks** - Service has completed initialization
@@ -28,11 +41,13 @@ The BookWorm application implements comprehensive health monitoring using ASP.NE
 ## Standard Health Endpoints
 
 ### Health Check Endpoints
+
 - **/health** - Comprehensive health status with detailed information
 - **/alive** - Simple liveness check for container orchestrators
 - **Custom Endpoints** - Service-specific health monitoring endpoints
 
 ### Response Formats
+
 - **JSON Format** - Structured health status information
 - **Status Codes** - HTTP status codes indicating health state
 - **Detailed Responses** - Component-level health information
@@ -41,18 +56,21 @@ The BookWorm application implements comprehensive health monitoring using ASP.NE
 ## Dependency Health Checks
 
 ### Database Health
+
 - **PostgreSQL Connectivity** - Database connection and query execution
 - **Connection Pool Status** - Available connections and performance metrics
 - **Migration Status** - Database schema version and integrity
 - **Query Performance** - Response time and timeout monitoring
 
 ### Message Bus Health
+
 - **RabbitMQ Connectivity** - Message broker connection status
 - **Queue Status** - Queue depth and processing rates
 - **Publisher Confirmation** - Message delivery confirmation
 - **Consumer Health** - Message processing capability
 
 ### External Service Health
+
 - **HTTP Dependency Checks** - External API availability and response times
 - **gRPC Service Checks** - Remote service connectivity and health
 - **Authentication Provider** - Keycloak identity service availability
@@ -61,12 +79,14 @@ The BookWorm application implements comprehensive health monitoring using ASP.NE
 ## Health Check Configuration
 
 ### Service Registration
+
 - **Automatic Registration** - Health checks registered through service defaults
 - **Conditional Registration** - Environment-specific health checks
 - **Dependency Injection** - Health check services and dependencies
 - **Configuration Binding** - Health check settings from configuration
 
 ### Check Intervals
+
 - **Periodic Execution** - Scheduled health check execution
 - **Configurable Intervals** - Different intervals for different check types
 - **Timeout Configuration** - Health check timeout settings
@@ -75,12 +95,14 @@ The BookWorm application implements comprehensive health monitoring using ASP.NE
 ## Monitoring Integration
 
 ### Health Check UI
+
 - **Visual Dashboard** - Web-based health monitoring interface
 - **Historical Data** - Health status trends and history
 - **Alert Configuration** - Notification settings for health failures
 - **Multi-Service View** - Centralized monitoring for all services
 
 ### Metrics and Telemetry
+
 - **Health Metrics** - Prometheus-compatible health metrics
 - **OpenTelemetry Integration** - Health status in distributed tracing
 - **Custom Metrics** - Application-specific health indicators
@@ -89,12 +111,14 @@ The BookWorm application implements comprehensive health monitoring using ASP.NE
 ## Container Orchestration
 
 ### Kubernetes Integration
+
 - **Readiness Probes** - Service readiness for traffic routing
 - **Liveness Probes** - Container restart triggers
 - **Startup Probes** - Initialization completion detection
 - **Custom Probes** - Application-specific health checks
 
 ### Docker Health Checks
+
 - **HEALTHCHECK Instruction** - Container-level health monitoring
 - **Health Status Propagation** - Container orchestrator integration
 - **Graceful Shutdown** - Health-aware service termination
@@ -103,18 +127,21 @@ The BookWorm application implements comprehensive health monitoring using ASP.NE
 ## Best Practices
 
 ### Health Check Design
+
 - **Fast Execution** - Health checks should complete quickly
 - **Dependency Testing** - Check critical dependencies without causing load
 - **Graceful Degradation** - Partial functionality when dependencies are unavailable
 - **Clear Status Messages** - Descriptive health status information
 
 ### Performance Considerations
+
 - **Lightweight Checks** - Minimal resource usage for health monitoring
 - **Caching Results** - Cache health check results to reduce overhead
 - **Circuit Breaker Integration** - Respect circuit breaker states
 - **Load Balancer Integration** - Health status for traffic routing decisions
 
 ### Operational Guidelines
+
 - **Alert Thresholds** - Appropriate alerting for different health states
 - **Escalation Procedures** - Define response procedures for health failures
 - **Documentation** - Document health check meanings and troubleshooting

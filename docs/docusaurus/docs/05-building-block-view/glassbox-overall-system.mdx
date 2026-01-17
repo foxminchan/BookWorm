@@ -1,15 +1,26 @@
 ---
 sidebar_position: 2
 title: Glassbox Overall System
-description: High-level container diagram showing BookWorm's main building blocks and their relationships
-keywords: [container diagram, system architecture, microservices, API gateway, catalog service, ordering service, basket service]
+description:
+  High-level container diagram showing BookWorm's main building blocks and their relationships
+keywords:
+  [
+    container diagram,
+    system architecture,
+    microservices,
+    API gateway,
+    catalog service,
+    ordering service,
+    basket service,
+  ]
 last_update:
   author: Nhan Nguyen
 ---
 
 ## Overview Diagram
 
-The container diagram above shows the high-level decomposition of the BookWorm Store system into its main building blocks and their relationships.
+The container diagram above shows the high-level decomposition of the BookWorm Store system into its
+main building blocks and their relationships.
 
 ```mermaid
 C4Container
@@ -17,75 +28,99 @@ C4Container
 
     Enterprise_Boundary(bookworm, "BookWorm Store") {
       Person(customer, "Customer", "A user who wants to browse and purchase books")
+      Person(admin, "Admin", "A user who manages the store")
 
       System_Ext(email, "Email Service", "Handles email notifications")
-      System_Ext(identity, "Identity Provider", "Handles user authentication")
+      System_Ext(identity, "Keycloak", "Handles user authentication (OIDC)")
+      System_Ext(azureai, "Azure OpenAI", "AI models (GPT-4o-mini, text-embedding-3-large)")
+
+      System_Boundary(frontend, "Frontend Applications") {
+        Container(storefront, "Storefront", "Next.js 16, React 19", "Customer-facing ecommerce app")
+        Container(backoffice, "Backoffice", "Next.js 16, React 19", "Admin dashboard")
+      }
 
       System_Boundary(application, "Application") {
-        Container(gateway, "API Gateway", ".NET", "Routes requests to the appropriate service")
+        Container(gateway, "API Gateway Proxy", "ASP.NET Core, YARP", "Routes requests to backend services")
 
         System_Boundary(catalog, "Catalog Domain") {
-          Container(catalog, "Catalog Service", ".NET", "Manages product catalog and inventory")
-          Container(rating, "Rating Service", ".NET", "Manages product ratings and reviews")
-          Container(chat, "Chat Service", ".NET", "Manages chat interactions and conversations")
+          Container(catalogSvc, "Catalog Service", ".NET 10", "Manages product catalog and inventory")
+          Container(ratingSvc, "Rating Service", ".NET 10", "Manages product ratings and reviews with AI")
+          Container(chatSvc, "Chat Service", ".NET 10", "AI-powered chat and support")
         }
 
         System_Boundary(order, "Order Domain") {
-          Container(notification, "Notification Service", ".NET", "Sends notifications to users")
-          Container(order, "Order Service", ".NET", "Handles order processing")
-          Container(basket, "Basket Service", ".NET", "Manages shopping cart")
-          Container(finance, "Finance Service", ".NET", "Handles payment processing")
+          Container(notificationSvc, "Notification Service", ".NET 10", "Sends notifications to users")
+          Container(orderSvc, "Order Service", ".NET 10", "Handles order processing")
+          Container(basketSvc, "Basket Service", ".NET 10", "Manages shopping cart")
+          Container(financeSvc, "Finance Service", ".NET 10", "Handles payment processing with saga")
         }
+
+        Container(mcpSvc, "MCP Server", ".NET 10", "Model Context Protocol tool server")
+        Container(scheduler, "Scheduler Service", ".NET 10", "Background job processing")
       }
 
       System_Boundary(infrastructure, "Infrastructure") {
-        SystemQueue(eventBus, "Event Bus", "Handles message passing between services")
+        SystemQueue(eventBus, "Event Bus", "RabbitMQ with MassTransit")
+        ContainerDb(redis, "Redis Cache", "Azure Managed Redis", "Hybrid caching and sessions")
 
         System_Boundary(database, "Database") {
-          ContainerDb(notificationDb, "Notification DB", "NoSQL", "Stores notification records")
-          ContainerDb(catalogDb, "Catalog DB", "SQL", "Stores product information")
-          ContainerDb(vectorDb, "Vector DB", "NoSQL", "Stores vector embeddings for search")
-          ContainerDb(orderDb, "Order DB", "SQL", "Stores order information")
-          ContainerDb(basketDb, "Basket DB", "NoSQL", "Stores shopping cart data")
-          ContainerDb(financeDb, "Finance DB", "SQL", "Stores payment records")
-          ContainerDb(ratingDb, "Rating DB", "SQL", "Stores ratings and reviews")
-          ContainerDb(chatDb, "Chat DB", "SQL", "Stores chat sessions and messages")
+          ContainerDb(notificationDb, "Notification DB", "PostgreSQL", "Stores notification records")
+          ContainerDb(catalogDb, "Catalog DB", "PostgreSQL", "Stores product information")
+          ContainerDb(vectorDb, "Qdrant", "Vector Database", "Stores embeddings for semantic search")
+          ContainerDb(orderDb, "Order DB", "PostgreSQL", "Stores order information")
+          ContainerDb(financeDb, "Finance DB", "PostgreSQL", "Stores payment records")
+          ContainerDb(ratingDb, "Rating DB", "PostgreSQL", "Stores ratings and reviews")
+          ContainerDb(blobStorage, "Blob Storage", "Azure Storage", "Stores files and assets")
         }
       }
     }
 
-    BiRel(customer, gateway, "Makes requests", "HTTPS")
+    BiRel(customer, storefront, "Browses and shops", "HTTPS")
+    BiRel(admin, backoffice, "Manages store", "HTTPS")
 
-    Rel(gateway, catalog, "Routes requests", "HTTPS")
-    Rel(gateway, order, "Routes requests", "HTTPS")
-    Rel(gateway, basket, "Routes requests", "HTTPS")
-    Rel(gateway, finance, "Routes requests", "HTTPS")
-    Rel(gateway, rating, "Routes requests", "HTTPS")
-    Rel(gateway, identity, "Routes requests", "HTTPS")
-    Rel(gateway, chat, "Routes requests", "HTTPS")
+    Rel(storefront, gateway, "API requests", "HTTPS/JWT")
+    Rel(backoffice, gateway, "API requests", "HTTPS/JWT")
 
-    Rel(catalog, catalogDb, "Reads/Writes", "TCP")
-    Rel(order, orderDb, "Reads/Writes", "TCP")
-    Rel(basket, basketDb, "Reads/Writes", "TCP")
-    Rel(finance, financeDb, "Reads/Writes", "TCP")
-    Rel(rating, ratingDb, "Reads/Writes", "TCP")
-    Rel(catalog, vectorDb, "Reads/Writes", "TCP")
-    Rel(chat, chatDb, "Reads/Writes", "TCP")
-    Rel(notification, notificationDb, "Reads/Writes", "TCP")
+    Rel(gateway, catalogSvc, "Routes requests", "HTTP")
+    Rel(gateway, orderSvc, "Routes requests", "HTTP")
+    Rel(gateway, basketSvc, "Routes requests", "HTTP")
+    Rel(gateway, ratingSvc, "Routes requests", "HTTP")
+    Rel(gateway, chatSvc, "Routes requests", "HTTP")
+    Rel(gateway, identity, "Token introspection", "HTTPS")
 
-    Rel(notification, email, "Sends emails", "SMTP")
+    Rel(catalogSvc, catalogDb, "Reads/Writes", "TCP")
+    Rel(catalogSvc, blobStorage, "Stores files", "HTTPS")
+    Rel(catalogSvc, vectorDb, "Embeddings", "HTTP")
+    Rel(catalogSvc, redis, "Hybrid cache", "TCP")
+    Rel(catalogSvc, azureai, "AI models", "HTTPS")
 
-    BiRel(catalog, eventBus, "Publishes/Subscribes", "AMQP")
-    BiRel(order, eventBus, "Publishes/Subscribes", "AMQP")
-    BiRel(basket, eventBus, "Publishes/Subscribes", "AMQP")
-    BiRel(finance, eventBus, "Publishes/Subscribes", "AMQP")
-    BiRel(rating, eventBus, "Publishes/Subscribes", "AMQP")
-    Rel(eventBus, notification, "Subscribes", "AMQP")
+    Rel(orderSvc, orderDb, "Reads/Writes", "TCP")
+    Rel(basketSvc, redis, "Session storage", "TCP")
+    Rel(financeSvc, financeDb, "Reads/Writes", "TCP")
+    Rel(ratingSvc, ratingDb, "Reads/Writes", "TCP")
+    Rel(ratingSvc, azureai, "AI models", "HTTPS")
+    Rel(chatSvc, azureai, "AI models", "HTTPS")
+    Rel(chatSvc, mcpSvc, "Tool calls", "HTTP")
+    Rel(ratingSvc, mcpSvc, "Tool calls", "HTTP")
+    Rel(notificationSvc, notificationDb, "Reads/Writes", "TCP")
+    Rel(notificationSvc, email, "Sends emails", "SMTP")
 
-    Rel(basket, catalog, "Retrieves products", "gRPC")
-    Rel(order, catalog, "Retrieves products", "gRPC")
+    BiRel(catalogSvc, eventBus, "Publishes/Subscribes", "AMQP")
+    BiRel(orderSvc, eventBus, "Publishes/Subscribes", "AMQP")
+    BiRel(basketSvc, eventBus, "Publishes/Subscribes", "AMQP")
+    BiRel(financeSvc, eventBus, "Publishes/Subscribes", "AMQP")
+    BiRel(ratingSvc, eventBus, "Publishes/Subscribes", "AMQP")
+    Rel(eventBus, notificationSvc, "Subscribes", "AMQP")
+    Rel(eventBus, scheduler, "Subscribes", "AMQP")
+
+    Rel(basketSvc, catalogSvc, "Retrieves products", "HTTP")
+    Rel(orderSvc, catalogSvc, "Retrieves products", "HTTP")
+
+    Rel(chatSvc, ratingSvc, "A2A Protocol", "HTTP")
 
     Rel(email, customer, "Delivers to", "SMTP")
+    Rel(storefront, identity, "OAuth/OIDC", "HTTPS")
+    Rel(backoffice, identity, "OAuth/OIDC", "HTTPS")
 
     UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="2")
 ```
@@ -111,8 +146,8 @@ C4Container
 
 ### Application Layer
 
-**Purpose/Responsibility**
-The application layer contains all business services and the API gateway that orchestrates requests. It implements the core business logic of the BookWorm store system.
+**Purpose/Responsibility** The application layer contains all business services and the API gateway
+that orchestrates requests. It implements the core business logic of the BookWorm store system.
 
 **Interface(s)**
 
@@ -133,51 +168,57 @@ The application layer contains all business services and the API gateway that or
 - `src/Aspire/BookWorm.AppHost/` - Application orchestration
 - `src/BuildingBlocks/` - Shared components
 
-### API Gateway
+### API Gateway Proxy
 
-**Purpose/Responsibility**
-Single entry point that routes client requests to appropriate microservices. Handles cross-cutting concerns like authentication, rate limiting, and request/response transformation.
+**Purpose/Responsibility** Custom ASP.NET Core proxy using YARP (Yet Another Reverse Proxy) that
+serves as the single entry point for frontend applications. Routes requests to appropriate
+microservices (Chat, Rating, Ordering, Basket, Catalog) and handles Keycloak authentication.
 
 **Interface(s)**
 
-- HTTPS REST API endpoints for external clients
-- Internal HTTP/gRPC calls to downstream services
-- Integration with Identity Provider for authentication
+- HTTPS REST API endpoints for frontend clients (Storefront and Backoffice)
+- Keycloak token introspection middleware for JWT validation
+- Internal HTTP calls to downstream services
+- Service discovery integration with Aspire
 
 **Quality/Performance Characteristics**
 
 - High throughput with async request processing
 - Load balancing to backend services
-- Request/response caching
+- CORS policy management for frontend origins
 - Circuit breaker for service resilience
+- Health check aggregation
 
 ### Catalog Service
 
-**Purpose/Responsibility**
-Manages the product catalog with advanced AI capabilities including vector search, file storage, and LLM-powered recommendations. Integrates with Azure Blob Storage and Qdrant vector database.
+**Purpose/Responsibility** Manages the product catalog with advanced AI capabilities including
+vector search, file storage, and AI-powered recommendations. Integrates with Azure Blob Storage,
+Qdrant vector database, and Azure OpenAI for semantic search and content enrichment.
 
 **Interface(s)**
 
 - REST API for catalog management
-- Vector embedding services for semantic search
+- Azure OpenAI integration (GPT-4o-mini for content, text-embedding-3-large for embeddings)
+- Vector embedding services for semantic search via Qdrant
 - Azure Blob Storage integration for file management
-- AI model integration (Ollama with Gemma 3 and Nomic Embed Text)
+- Microsoft.Extensions.Caching.Hybrid for L1/L2 caching
 - Event publishing for catalog changes
 
-**Directory/File Location**
-`src/Services/Catalog/`
+**Directory/File Location** `src/Services/Catalog/`
 
 **Quality/Performance Characteristics**
 
-- AI-powered semantic search with vector embeddings
+- AI-powered semantic search with Azure OpenAI embeddings
 - Azure Blob Storage for scalable file management
+- Hybrid caching (in-memory + Redis) for performance
 - Real-time vector index updates
 - Event-driven architecture with RabbitMQ
 
 ### Order Service
 
-**Purpose/Responsibility**
-Handles complete order lifecycle management with event-driven architecture. Manages order entities, buyer information, and publishes domain events for order state changes.
+**Purpose/Responsibility** Handles complete order lifecycle management with event-driven
+architecture. Manages order entities, buyer information, and publishes domain events for order state
+changes.
 
 **Interface(s)**
 
@@ -186,8 +227,7 @@ Handles complete order lifecycle management with event-driven architecture. Mana
 - gRPC integration for external service calls
 - Real-time order streaming capabilities
 
-**Directory/File Location**
-`src/Services/Ordering/`
+**Directory/File Location** `src/Services/Ordering/`
 
 **Quality/Performance Characteristics**
 
@@ -198,8 +238,8 @@ Handles complete order lifecycle management with event-driven architecture. Mana
 
 ### Basket Service
 
-**Purpose/Responsibility**
-Manages shopping cart functionality with Redis-based storage. Handles basket lifecycle from creation to checkout with event publishing.
+**Purpose/Responsibility** Manages shopping cart functionality with Redis-based storage. Handles
+basket lifecycle from creation to checkout with event publishing.
 
 **Interface(s)**
 
@@ -208,8 +248,7 @@ Manages shopping cart functionality with Redis-based storage. Handles basket lif
 - Event publishing for basket state changes
 - Redis Protocol for data persistence
 
-**Directory/File Location**
-`src/Services/Basket/`
+**Directory/File Location** `src/Services/Basket/`
 
 **Quality/Performance Characteristics**
 
@@ -219,8 +258,8 @@ Manages shopping cart functionality with Redis-based storage. Handles basket lif
 
 ### Finance Service
 
-**Purpose/Responsibility**
-Implements saga orchestration pattern for distributed transaction coordination. Manages order processing workflow with state machine implementation.
+**Purpose/Responsibility** Implements saga orchestration pattern for distributed transaction
+coordination. Manages order processing workflow with state machine implementation.
 
 **Interface(s)**
 
@@ -229,8 +268,7 @@ Implements saga orchestration pattern for distributed transaction coordination. 
 - Event-driven coordination with other services
 - PostgreSQL for financial records and transaction state
 
-**Directory/File Location**
-`src/Services/Finance/`
+**Directory/File Location** `src/Services/Finance/`
 
 **Quality/Performance Characteristics**
 
@@ -241,8 +279,8 @@ Implements saga orchestration pattern for distributed transaction coordination. 
 
 ### Rating Service
 
-**Purpose/Responsibility**
-Manages product ratings and reviews with event-driven architecture. Handles feedback collection, storage, and aggregation.
+**Purpose/Responsibility** Manages product ratings and reviews with event-driven architecture.
+Handles feedback collection, storage, and aggregation.
 
 **Interface(s)**
 
@@ -250,8 +288,7 @@ Manages product ratings and reviews with event-driven architecture. Handles feed
 - Event publishing for rating changes
 - PostgreSQL for rating data persistence
 
-**Directory/File Location**
-`src/Services/Rating/`
+**Directory/File Location** `src/Services/Rating/`
 
 **Quality/Performance Characteristics**
 
@@ -261,30 +298,35 @@ Manages product ratings and reviews with event-driven architecture. Handles feed
 
 ### Chat Service
 
-**Purpose/Responsibility**
-Provides AI-powered conversational capabilities using LLM integration with Model Context Protocol (MCP) support and Ollama model management.
+**Purpose/Responsibility** Provides AI-powered conversational capabilities using Azure OpenAI
+(GPT-4o-mini) with Microsoft Agents AI Framework integration. Supports Model Context Protocol (MCP)
+for tool exposure and A2A Protocol for agent-to-agent communication.
 
 **Interface(s)**
 
 - REST API for chat operations
-- LLM integration with Ollama and Gemma 3 model
-- Model Context Protocol (MCP) for tool integration
+- Azure OpenAI integration with GPT-4o-mini model
+- Microsoft Semantic Kernel for AI orchestration
+- Model Context Protocol (MCP) server integration for tool calls
+- A2A Protocol for agent-to-agent communication with Rating service
 - Real-time chat capabilities
+- Dev UI available at `/dev/agent` endpoint for agent debugging
 
-**Directory/File Location**
-`src/Services/Chat/`
+**Directory/File Location** `src/Services/Chat/`
 
 **Quality/Performance Characteristics**
 
-- AI-powered conversations with Gemma 3 model
-- MCP integration for advanced tool usage
+- AI-powered conversations with Azure OpenAI GPT-4o-mini
+- Microsoft Agents AI Framework for agent orchestration
+- MCP integration for standardized tool usage
+- A2A Protocol for multi-agent workflows
 - Real-time chat processing
 - PostgreSQL for chat session persistence
 
 ### Notification Service
 
-**Purpose/Responsibility**
-Handles email notifications with template engine and multiple provider support. Processes events from other services to send transactional emails.
+**Purpose/Responsibility** Handles email notifications with template engine and multiple provider
+support. Processes events from other services to send transactional emails.
 
 **Interface(s)**
 
@@ -293,8 +335,7 @@ Handles email notifications with template engine and multiple provider support. 
 - Template engine for email composition
 - Azure Table Storage for notification records
 
-**Directory/File Location**
-`src/Services/Notification/`
+**Directory/File Location** `src/Services/Notification/`
 
 **Quality/Performance Characteristics**
 
@@ -305,8 +346,8 @@ Handles email notifications with template engine and multiple provider support. 
 
 ### Scheduler Service
 
-**Purpose/Responsibility**
-Manages scheduled tasks and background jobs across the system. Handles recurring operations like data cleanup and report generation.
+**Purpose/Responsibility** Manages scheduled tasks and background jobs across the system. Handles
+recurring operations like data cleanup and report generation.
 
 **Interface(s)**
 
@@ -314,13 +355,12 @@ Manages scheduled tasks and background jobs across the system. Handles recurring
 - Background job processing
 - Health monitoring for scheduled tasks
 
-**Directory/File Location**
-`src/Services/Scheduler/`
+**Directory/File Location** `src/Services/Scheduler/`
 
 ### Infrastructure Layer
 
-**Purpose/Responsibility**
-Provides foundational services including messaging, data persistence, and cross-cutting concerns that support the application layer.
+**Purpose/Responsibility** Provides foundational services including messaging, data persistence, and
+cross-cutting concerns that support the application layer.
 
 **Interface(s)**
 

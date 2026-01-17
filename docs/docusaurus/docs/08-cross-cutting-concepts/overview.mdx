@@ -1,22 +1,36 @@
 ---
 sidebar_position: 1
 title: Overview
-description: Cross-cutting concepts and architectural patterns implemented across all BookWorm microservices
-keywords: [cross-cutting concepts, BookWorm Chassis, service defaults, CQRS, event-driven architecture, repository pattern]
+description:
+  Cross-cutting concepts and architectural patterns implemented across all BookWorm microservices
+keywords:
+  [
+    cross-cutting concepts,
+    BookWorm Chassis,
+    service defaults,
+    CQRS,
+    event-driven architecture,
+    repository pattern,
+  ]
 last_update:
   author: Nhan Nguyen
 ---
 
 # Cross-Cutting Concepts Overview
 
-This section describes the cross-cutting concepts that are implemented across all services in the BookWorm application. These concepts ensure consistency, maintainability, and operational excellence throughout the system.
+This section describes the cross-cutting concepts that are implemented across all services in the
+BookWorm application. These concepts ensure consistency, maintainability, and operational excellence
+throughout the system.
 
 ## Architecture Components
 
 The BookWorm application implements cross-cutting concerns through two main components:
 
 ### BookWorm.Chassis
-A comprehensive building block library that provides core functionality for all microservices, including:
+
+A comprehensive building block library that provides core functionality for all microservices,
+including:
+
 - **CQRS Pattern Implementation** - Command and Query separation with MediatR
 - **Event-Driven Architecture** - Integration events with MassTransit and RabbitMQ
 - **Database Access** - Repository pattern with Entity Framework Core and PostgreSQL
@@ -29,7 +43,9 @@ A comprehensive building block library that provides core functionality for all 
 - **Repository & Specifications** - Data access abstraction with query composition
 
 ### BookWorm.ServiceDefaults
+
 Aspire-based service defaults that standardize common configurations:
+
 - **Authentication & Authorization** - Keycloak integration with JWT tokens
 - **Service Discovery** - Aspire service discovery for microservice communication
 - **Health Checks** - Comprehensive health monitoring endpoints
@@ -37,3 +53,259 @@ Aspire-based service defaults that standardize common configurations:
 - **Telemetry** - OpenTelemetry integration for observability
 - **Rate Limiting & CORS** - API protection and cross-origin resource sharing
 - **HTTP Client Configuration** - Resilient HTTP communication patterns
+
+## Testing Strategy (TUnit Framework)
+
+BookWorm uses **TUnit** (v1.11.45), a modern .NET testing framework integrated with the Microsoft
+Testing Platform, providing superior performance and developer experience compared to traditional
+frameworks (xUnit/NUnit/MSTest).
+
+### Why TUnit?
+
+- **Source Generator-Based**: Compile-time test discovery and execution for better performance
+- **Microsoft Testing Platform Integration**: Native integration with Visual Studio Test Explorer
+  and CLI
+- **Modern Async/Await**: First-class async support without blocking
+- **Enhanced Assertions**: Shouldly library for fluent, readable assertions
+- **Better IDE Integration**: Improved test discovery and debugging
+
+### Test Project Structure
+
+```
+tests/
+├── BookWorm.{Service}.UnitTests/        # TUnit-based unit tests
+├── BookWorm.{Service}.ContractTests/    # Verify.TUnit snapshot tests
+├── BookWorm.{Service}.IntegrationTests/ # Service integration tests
+└── BookWorm.ArchTests/                  # TngTech.ArchUnitNET.TUnit architecture tests
+```
+
+### Testing Stack
+
+| Tool                          | Purpose                                        | Version |
+| ----------------------------- | ---------------------------------------------- | ------- |
+| **TUnit**                     | Test framework with Microsoft Testing Platform | 1.11.45 |
+| **Moq**                       | Mocking library for dependencies               | 4.20.72 |
+| **Bogus**                     | Fake data generation for test scenarios        | 35.6.5  |
+| **Shouldly**                  | Fluent assertion library                       | 4.3.0   |
+| **Verify.TUnit**              | Snapshot/contract testing                      | 31.9.4  |
+| **TngTech.ArchUnitNET.TUnit** | Architecture rule enforcement                  | 0.13.1  |
+
+### Microsoft Testing Platform Extensions
+
+Integrated extensions for comprehensive test execution and diagnostics:
+
+- **Microsoft.Testing.Extensions.CodeCoverage**: Code coverage reporting with metrics
+- **Microsoft.Testing.Extensions.TrxReport**: TRX format reports for CI/CD pipelines
+- **Microsoft.Testing.Extensions.CrashDump**: Automatic crash dump collection for failures
+- **Microsoft.Testing.Extensions.HangDump**: Hang dump collection for hanging tests
+
+### Test Types
+
+**Unit Tests** (`*.UnitTests`):
+
+```csharp
+[Test]
+public async Task CreateBook_WithValidData_ShouldSucceed()
+{
+    // Arrange
+    var book = _faker.CreateBook();
+    _repositoryMock.Setup(x => x.AddAsync(book)).Returns(Task.CompletedTask);
+
+    // Act
+    await _sut.CreateBookAsync(book);
+
+    // Assert
+    _repositoryMock.Verify(x => x.AddAsync(book), Times.Once);
+    book.CreatedAt.ShouldNotBeNull();
+}
+```
+
+**Contract Tests** (`*.ContractTests`):
+
+```csharp
+[Test]
+public async Task BookCreatedEvent_ShouldMatchSnapshot()
+{
+    // Arrange
+    var @event = new BookCreatedEvent(BookId: Guid.NewGuid(), Title: "Test Book");
+
+    // Act & Assert
+    await Verify(@event).UseDirectory("Snapshots");
+}
+```
+
+**Architecture Tests** (`*.ArchTests`):
+
+```csharp
+[Test]
+public void Services_ShouldNotDependOnOtherServices()
+{
+    var rule = ArchRuleDefinition.Types()
+        .That().ResideInNamespace("BookWorm.Catalog")
+        .Should().NotDependOnAny("BookWorm.Ordering", "BookWorm.Basket");
+
+    rule.Check(Architecture);
+}
+```
+
+## CQRS Pattern with Mediator
+
+BookWorm implements Command Query Responsibility Segregation (CQRS) using
+**Mediator.SourceGenerator** (v3.0.1), a source generator-based library that provides compile-time
+command/query handling.
+
+### Why Mediator over MediatR?
+
+- **Source Generator**: No runtime reflection, all wiring generated at compile-time
+- **Performance**: Zero runtime overhead compared to MediatR's reflection-based approach
+- **Type Safety**: Compile-time errors for missing handlers
+- **Smaller Footprint**: Minimal dependencies and assembly size
+
+### Implementation Pattern
+
+**Command Example**:
+
+```csharp
+public record CreateBookCommand(string Title, string Author) : ICommand<BookId>;
+
+public class CreateBookCommandHandler : ICommandHandler<CreateBookCommand, BookId>
+{
+    private readonly IBookRepository _repository;
+
+    public CreateBookCommandHandler(IBookRepository repository)
+        => _repository = repository;
+
+    public async ValueTask<BookId> Handle(CreateBookCommand command, CancellationToken ct)
+    {
+        var book = new Book(command.Title, command.Author);
+        await _repository.AddAsync(book, ct);
+        return book.Id;
+    }
+}
+```
+
+**Query Example**:
+
+```csharp
+public record GetBookByIdQuery(BookId Id) : IQuery<BookDto>;
+
+public class GetBookByIdQueryHandler : IQueryHandler<GetBookByIdQuery, BookDto>
+{
+    private readonly IBookRepository _repository;
+
+    public GetBookByIdQueryHandler(IBookRepository repository)
+        => _repository = repository;
+
+    public async ValueTask<BookDto> Handle(GetBookByIdQuery query, CancellationToken ct)
+    {
+        var book = await _repository.GetByIdAsync(query.Id, ct);
+        return book.ToDto();
+    }
+}
+```
+
+### Registration
+
+```csharp
+services.AddMediator(); // Source generator auto-discovers handlers
+```
+
+## Hybrid Caching Strategy
+
+BookWorm uses **Microsoft.Extensions.Caching.Hybrid** for a two-level (L1 + L2) caching strategy,
+combining in-memory and distributed caching for optimal performance.
+
+### Why Hybrid Caching?
+
+- **L1 (In-Memory)**: Fast local cache with microsecond access times
+- **L2 (Redis)**: Distributed cache shared across service instances
+- **Automatic Coordination**: Hybrid cache manages L1/L2 synchronization automatically
+- **Stampede Protection**: Built-in protection against cache stampede scenarios
+- **Serialization**: Efficient binary serialization for distributed cache
+
+### Implementation
+
+**Configuration** (via BookWorm.Chassis):
+
+```csharp
+builder.Services.AddHybridCache(options =>
+{
+    options.MaximumPayloadBytes = 1024 * 1024; // 1MB max cache entry
+    options.MaximumKeyLength = 1024;
+    options.DefaultEntryOptions = new HybridCacheEntryOptions
+    {
+        Expiration = TimeSpan.FromMinutes(5),
+        LocalCacheExpiration = TimeSpan.FromMinutes(1)
+    };
+});
+```
+
+**Usage Example**:
+
+```csharp
+public class BookService
+{
+    private readonly HybridCache _cache;
+    private readonly IBookRepository _repository;
+
+    public async Task<Book> GetBookAsync(BookId id, CancellationToken ct)
+    {
+        return await _cache.GetOrCreateAsync(
+            $"book:{id}",
+            async cancel => await _repository.GetByIdAsync(id, cancel),
+            cancellationToken: ct
+        );
+    }
+}
+```
+
+### Caching Strategy
+
+| Scenario                  | L1 (Memory) | L2 (Redis) | TTL        |
+| ------------------------- | ----------- | ---------- | ---------- |
+| **Hot Data** (Books)      | ✓           | ✓          | 5 minutes  |
+| **Session Data** (Basket) | ✗           | ✓          | 30 minutes |
+| **Static Data** (Config)  | ✓           | ✓          | 1 hour     |
+| **Search Results**        | ✓           | ✓          | 2 minutes  |
+
+### Cache Invalidation
+
+**Event-Driven Invalidation**:
+
+```csharp
+public class BookUpdatedEventHandler : IConsumer<BookUpdatedEvent>
+{
+    private readonly HybridCache _cache;
+
+    public async Task Consume(ConsumeContext<BookUpdatedEvent> context)
+    {
+        await _cache.RemoveAsync($"book:{context.Message.BookId}");
+    }
+}
+```
+
+## AI Integration (Azure OpenAI)
+
+BookWorm integrates Azure OpenAI for AI-powered features using Microsoft Semantic Kernel and
+Microsoft Agents AI Framework.
+
+### AI Stack
+
+- **Provider**: Azure OpenAI Service (enterprise-grade)
+- **Models**:
+  - **GPT-4o-mini**: Chat completions, content generation
+  - **text-embedding-3-large**: Semantic embeddings (3072 dimensions)
+- **Framework**: Microsoft Semantic Kernel for orchestration
+- **Agent Framework**: Microsoft Agents AI Framework with A2A Protocol
+- **Tool Protocol**: Model Context Protocol (MCP) via BookWorm.McpTools
+
+### Integration Pattern
+
+Services consuming AI capabilities (Chat, Rating, Catalog) reference Azure OpenAI via Aspire service
+discovery and use Semantic Kernel for orchestration.
+
+**MCP Integration**:
+
+- **BookWorm.McpTools** exposes service operations as standardized AI agent tools
+- Chat and Rating services consume MCP tools for agent workflows
+- A2A Protocol enables agent-to-agent communication between services
