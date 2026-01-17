@@ -2,7 +2,8 @@
 sidebar_position: 19
 title: ADR-018 - K6 Performance Testing Framework
 description: Selection of K6 for load testing, performance testing, and scalability validation
-keywords: [ADR-018, K6, performance testing, load testing, stress testing, scalability, benchmarking]
+keywords:
+  [ADR-018, K6, performance testing, load testing, stress testing, scalability, benchmarking]
 last_update:
   author: Nhan Nguyen
 ---
@@ -15,7 +16,9 @@ last_update:
 
 ## Context
 
-BookWorm's microservices architecture requires comprehensive performance testing to ensure scalability, reliability, and optimal user experience under various load conditions. The performance testing requirements include:
+BookWorm's microservices architecture requires comprehensive performance testing to ensure
+scalability, reliability, and optimal user experience under various load conditions. The performance
+testing requirements include:
 
 - **Load Testing**: Validate system behavior under expected production load levels
 - **Stress Testing**: Determine system breaking points and failure modes under extreme load
@@ -30,11 +33,14 @@ BookWorm's microservices architecture requires comprehensive performance testing
 - **Performance Budgets**: Automated performance regression detection
 - **Scalability Planning**: Data-driven capacity planning and scaling decisions
 
-The testing framework must integrate with existing monitoring infrastructure while providing developer-friendly scripting capabilities.
+The testing framework must integrate with existing monitoring infrastructure while providing
+developer-friendly scripting capabilities.
 
 ## Decision
 
-Adopt **K6** as the primary performance testing framework with JavaScript-based test scripts, integrated with Prometheus monitoring and CI/CD pipeline automation for comprehensive performance validation.
+Adopt **K6** as the primary performance testing framework with JavaScript-based test scripts,
+integrated with Prometheus monitoring and CI/CD pipeline automation for comprehensive performance
+validation.
 
 ### Performance Testing Strategy
 
@@ -77,7 +83,8 @@ Adopt **K6** as the primary performance testing framework with JavaScript-based 
 
 #### Performance and Scalability
 
-1. **High Performance**: Go-based runtime capable of generating significant load from single instance
+1. **High Performance**: Go-based runtime capable of generating significant load from single
+   instance
 2. **Resource Efficiency**: Lower resource usage compared to browser-based testing tools
 3. **Horizontal Scaling**: Distributed load testing across multiple machines
 4. **Protocol Support**: Native support for HTTP/1.1, HTTP/2, WebSocket, and gRPC
@@ -144,16 +151,16 @@ Adopt **K6** as the primary performance testing framework with JavaScript-based 
 // Load test configuration
 export let options = {
   stages: [
-    { duration: '2m', target: 100 },   // Ramp up
-    { duration: '5m', target: 100 },   // Steady state
-    { duration: '2m', target: 200 },   // Peak load
-    { duration: '5m', target: 200 },   // Peak steady
-    { duration: '2m', target: 0 },     // Ramp down
+    { duration: "2m", target: 100 }, // Ramp up
+    { duration: "5m", target: 100 }, // Steady state
+    { duration: "2m", target: 200 }, // Peak load
+    { duration: "5m", target: 200 }, // Peak steady
+    { duration: "2m", target: 0 }, // Ramp down
   ],
   thresholds: {
-    http_req_duration: ['p(95)<200'],   // 95% under 200ms
-    http_req_failed: ['rate<0.1'],      // Error rate under 10%
-    http_reqs: ['rate>100'],            // Min 100 RPS
+    http_req_duration: ["p(95)<200"], // 95% under 200ms
+    http_req_failed: ["rate<0.1"], // Error rate under 10%
+    http_reqs: ["rate>100"], // Min 100 RPS
   },
 };
 ```
@@ -164,20 +171,20 @@ export let options = {
 // Environment-specific configuration
 const environments = {
   development: {
-    baseUrl: 'https://dev-api.bookworm.local',
+    baseUrl: "https://dev-api.bookworm.local",
     users: 50,
-    duration: '2m'
+    duration: "2m",
   },
   staging: {
-    baseUrl: 'https://staging-api.bookworm.com',
+    baseUrl: "https://staging-api.bookworm.com",
     users: 200,
-    duration: '10m'
+    duration: "10m",
   },
   production: {
-    baseUrl: 'https://api.bookworm.com',
+    baseUrl: "https://api.bookworm.com",
     users: 500,
-    duration: '30m'
-  }
+    duration: "30m",
+  },
 };
 ```
 

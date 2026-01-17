@@ -1,8 +1,18 @@
 ---
 sidebar_position: 1
 title: Overview
-description: Architecture Decision Records (ADRs) documenting significant architectural choices and their rationale for BookWorm
-keywords: [ADR, architecture decisions, decision records, architectural choices, design decisions, technical decisions]
+description:
+  Architecture Decision Records (ADRs) documenting significant architectural choices and their
+  rationale for BookWorm
+keywords:
+  [
+    ADR,
+    architecture decisions,
+    decision records,
+    architectural choices,
+    design decisions,
+    technical decisions,
+  ]
 last_update:
   date: 2025-08-16
   author: Nhan Nguyen
@@ -12,7 +22,9 @@ last_update:
 
 ## Introduction
 
-This section documents significant architectural decisions made for the BookWorm project using Architecture Decision Records (ADRs). Each ADR captures the context, decision, rationale, and consequences of important architectural choices that shape the system's design and implementation.
+This section documents significant architectural decisions made for the BookWorm project using
+Architecture Decision Records (ADRs). Each ADR captures the context, decision, rationale, and
+consequences of important architectural choices that shape the system's design and implementation.
 
 ## Decision Timeline
 
@@ -54,12 +66,12 @@ gantt
 
 ### 🏗️ Foundation Architecture
 
-| ADR                                             | Title                                    | Status   | Impact |
-| ----------------------------------------------- | ---------------------------------------- | -------- | ------ |
-| [ADR-001](./adr-001-microservices-architecture) | Microservices Architecture               | Accepted | High   |
-| [ADR-002](./adr-002-event-driven-cqrs)          | Event-Driven Architecture with CQRS      | Accepted | High   |
+| ADR                                             | Title                               | Status   | Impact |
+| ----------------------------------------------- | ----------------------------------- | -------- | ------ |
+| [ADR-001](./adr-001-microservices-architecture) | Microservices Architecture          | Accepted | High   |
+| [ADR-002](./adr-002-event-driven-cqrs)          | Event-Driven Architecture with CQRS | Accepted | High   |
 | [ADR-003](./adr-003-aspire-cloud-native)        | Aspire for Cloud-Native Development | Accepted | High   |
-| [ADR-016](./adr-016-ddd)                        | Domain-Driven Design Implementation      | Accepted | High   |
+| [ADR-016](./adr-016-ddd)                        | Domain-Driven Design Implementation | Accepted | High   |
 
 ### 💾 Data & Storage
 
@@ -87,12 +99,12 @@ gantt
 
 ### 🤖 AI & Intelligence
 
-| ADR                                         | Title                         | Status   | Impact |
-| ------------------------------------------- | ----------------------------- | -------- | ------ |
-| [ADR-009](./adr-009-ai-integration)         | AI Integration Strategy       | Accepted | High   |
-| [ADR-012](./adr-012-ollama-llm-runtime)     | Ollama for LLM Runtime        | Accepted | Medium |
-| [ADR-020](./adr-020-mcp-tools-standardize)  | MCP Tools for Standardization | Accepted | Medium |
-| [ADR-021](./adr-021-agent-to-agent-via-a2a) | Agent-to-Agent Communication  | Accepted | Medium |
+| ADR                                         | Title                               | Status     | Impact |
+| ------------------------------------------- | ----------------------------------- | ---------- | ------ |
+| [ADR-009](./adr-009-ai-integration)         | Azure OpenAI Integration Strategy   | Accepted   | High   |
+| [ADR-012](./adr-012-ollama-llm-runtime)     | Ollama for LLM Runtime (Deprecated) | Superseded | Medium |
+| [ADR-020](./adr-020-mcp-tools-standardize)  | MCP Tools for AI Standardization    | Accepted   | Medium |
+| [ADR-021](./adr-021-agent-to-agent-via-a2a) | Agent-to-Agent A2A Protocol         | Accepted   | Medium |
 
 ### ⚙️ Operations & Deployment
 
@@ -290,6 +302,8 @@ The architecture decisions are validated through:
 
 ## Related Documentation
 
-- [Technical Risks and Debts](../risks-and-technical-debts): Risk analysis related to architectural decisions
+- [Technical Risks and Debts](../risks-and-technical-debts): Risk analysis related to architectural
+  decisions
 - [Quality Requirements](../quality-requirements/overview): Quality attributes addressed by ADRs
-- [Building Block View](../building-block-view/glassbox-overall-system): How ADRs shape system components
+- [Building Block View](../building-block-view/glassbox-overall-system): How ADRs shape system
+  components

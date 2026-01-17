@@ -2,7 +2,15 @@
 sidebar_position: 22
 title: ADR-021 - Agent-to-Agent Communication via A2A Protocol
 description: Implementation of Agent-to-Agent protocol for multi-agent AI system communication
-keywords: [ADR-021, A2A protocol, agent-to-agent, multi-agent systems, AI communication, agent orchestration]
+keywords:
+  [
+    ADR-021,
+    A2A protocol,
+    agent-to-agent,
+    multi-agent systems,
+    AI communication,
+    agent orchestration,
+  ]
 last_update:
   author: Nhan Nguyen
 ---
@@ -15,9 +23,13 @@ last_update:
 
 ## Context
 
-BookWorm's intelligent chat system relies on specialized AI agents to provide comprehensive book assistance and customer support. The system requires seamless coordination between multiple agents, each with specific capabilities, to deliver optimal user experiences. The agent communication challenges include:
+BookWorm's intelligent chat system relies on specialized AI agents to provide comprehensive book
+assistance and customer support. The system requires seamless coordination between multiple agents,
+each with specific capabilities, to deliver optimal user experiences. The agent communication
+challenges include:
 
-- **Multi-Agent Coordination**: Multiple specialized agents (Book, Rating, Summarize, Sentiment, Language) need to collaborate on user requests
+- **Multi-Agent Coordination**: Multiple specialized agents (Book, Rating, Summarize, Sentiment,
+  Language) need to collaborate on user requests
 - **Seamless Agent Handoffs**: Smooth transitions between agents without losing conversation context
 - **Cross-Agent Data Flow**: Agents need to share processed information and intermediate results
 - **Agent Capability Discovery**: Dynamic discovery of agent capabilities and availability
@@ -26,28 +38,36 @@ BookWorm's intelligent chat system relies on specialized AI agents to provide co
 - **Scalable Architecture**: Agent communication must scale with increasing system complexity
 - **Error Handling**: Robust error handling when agents are unavailable or fail
 - **Real-time Coordination**: Near real-time agent collaboration for responsive user interactions
-- **Agent Orchestration**: Intelligent routing of requests to appropriate agents based on capabilities
+- **Agent Orchestration**: Intelligent routing of requests to appropriate agents based on
+  capabilities
 - **Security and Trust**: Secure communication channels between agents with proper authentication
 - **Observability**: Comprehensive monitoring and logging of inter-agent communications
 
-The solution must provide a robust, standardized foundation for agent-to-agent communication that enables sophisticated multi-agent workflows.
+The solution must provide a robust, standardized foundation for agent-to-agent communication that
+enables sophisticated multi-agent workflows.
 
 ## Decision
 
-Adopt **Agent2Agent (A2A) Protocol** as the standardized communication protocol for AI agent coordination in the BookWorm intelligent chat system, enabling seamless collaboration between specialized agents.
+Adopt **Agent2Agent (A2A) Protocol** as the standardized communication protocol for AI agent
+coordination in the BookWorm intelligent chat system, enabling seamless collaboration between
+specialized agents.
 
 ### A2A Protocol Implementation
 
 #### Agent Communication Framework
 
-- **Protocol Compliance**: Full compliance with A2A Protocol specification for standardized agent communication
-- **Agent Discovery**: Service discovery mechanisms enabling dynamic agent registration and capability advertisement
-- **Message Routing**: Intelligent routing of requests between agents based on capabilities and context
+- **Protocol Compliance**: Full compliance with A2A Protocol specification for standardized agent
+  communication
+- **Agent Discovery**: Service discovery mechanisms enabling dynamic agent registration and
+  capability advertisement
+- **Message Routing**: Intelligent routing of requests between agents based on capabilities and
+  context
 - **Context Management**: Persistent conversation context across multi-agent interactions
 
 #### Agent Orchestration Patterns
 
-- **Sequential Processing**: Step-by-step processing through agent pipeline (Language → Summarize → Sentiment → Book/Rating)
+- **Sequential Processing**: Step-by-step processing through agent pipeline (Language → Summarize →
+  Sentiment → Book/Rating)
 - **Parallel Processing**: Concurrent agent execution when appropriate for performance optimization
 - **Conditional Routing**: Dynamic agent routing based on user intent and content analysis
 - **Fallback Mechanisms**: Graceful degradation when specific agents are unavailable
@@ -60,7 +80,7 @@ Adopt **Agent2Agent (A2A) Protocol** as the standardized communication protocol 
 | **Summarize Agent** | Text summarization and key information extraction | Processes translated text from Language Agent               | → Sentiment Agent, Book Agent |
 | **Sentiment Agent** | Sentiment analysis and emotional tone evaluation  | Analyzes summarized content for sentiment                   | → Book Agent                  |
 | **Book Agent**      | Book search, recommendations, and catalog queries | Main conversational agent with context from upstream agents | Terminal agent                |
-| **Rating Agent**    | Book rating analysis and quality classification   | Provides rating insights, can delegate to Summarize Agent   | ↔ Summarize Agent (A2A)      |
+| **Rating Agent**    | Book rating analysis and quality classification   | Provides rating insights, can delegate to Summarize Agent   | ↔ Summarize Agent (A2A)       |
 
 ## Rationale
 
@@ -68,33 +88,41 @@ Adopt **Agent2Agent (A2A) Protocol** as the standardized communication protocol 
 
 #### Standardized Agent Communication
 
-1. **Protocol Maturity**: A2A is an established open standard designed specifically for agent-to-agent communication
-2. **Interoperability**: Enables seamless communication between agents built with different frameworks (Agent Framework, LangGraph, etc.)
+1. **Protocol Maturity**: A2A is an established open standard designed specifically for
+   agent-to-agent communication
+2. **Interoperability**: Enables seamless communication between agents built with different
+   frameworks (Agent Framework, LangGraph, etc.)
 3. **Vendor Independence**: Avoid lock-in to proprietary agent communication solutions
-4. **Community Support**: Backed by Linux Foundation with broad industry adoption and ecosystem support
+4. **Community Support**: Backed by Linux Foundation with broad industry adoption and ecosystem
+   support
 5. **Future-Proof**: Protocol evolution managed by open standards organization
 
 #### Agent Collaboration Benefits
 
 1. **Context Preservation**: Rich context sharing maintains conversation state across agent handoffs
 2. **Capability Discovery**: Dynamic discovery of agent capabilities enables intelligent routing
-3. **Task Delegation**: Agents can delegate specialized tasks to other agents (e.g., Rating Agent → Summarize Agent)
+3. **Task Delegation**: Agents can delegate specialized tasks to other agents (e.g., Rating Agent →
+   Summarize Agent)
 4. **Modular Architecture**: Each agent focuses on specific expertise while collaborating seamlessly
 5. **Scalable Design**: Protocol scales with increasing number and complexity of agents
 
 #### Integration with BookWorm Architecture
 
-1. **Agent Framework Integration**: A2A Protocol integrates natively with Microsoft Agent Framework agent framework
-2. **Microservice Compatibility**: Agents can be deployed as independent microservices with A2A communication
+1. **Agent Framework Integration**: A2A Protocol integrates natively with Microsoft Agent Framework
+   agent framework
+2. **Microservice Compatibility**: Agents can be deployed as independent microservices with A2A
+   communication
 3. **Event-Driven Architecture**: A2A complements existing RabbitMQ messaging for async operations
 4. **Authentication Integration**: Leverages existing identity and authentication systems
-5. **Monitoring Integration**: Agent communications are observable through existing telemetry infrastructure
+5. **Monitoring Integration**: Agent communications are observable through existing telemetry
+   infrastructure
 
 ### A2A vs Alternative Approaches
 
 #### Advantages over Direct Function Calls
 
-1. **Location Transparency**: Agents can communicate regardless of deployment location (same process, different services)
+1. **Location Transparency**: Agents can communicate regardless of deployment location (same
+   process, different services)
 2. **Protocol Standardization**: Standardized message formats vs custom integration code
 3. **Error Handling**: Built-in error handling and retry mechanisms
 4. **Context Management**: Rich context preservation across agent boundaries
@@ -111,7 +139,8 @@ Adopt **Agent2Agent (A2A) Protocol** as the standardized communication protocol 
 #### Complementary with MCP
 
 1. **Different Purposes**: A2A for agent-to-agent communication, MCP for agent-to-resource access
-2. **Integrated Workflow**: Agents use MCP to access data/tools and A2A to collaborate with other agents
+2. **Integrated Workflow**: Agents use MCP to access data/tools and A2A to collaborate with other
+   agents
 3. **Consistent Architecture**: Both protocols support the overall agent-driven architecture
 4. **Standard Compliance**: Both are open standards enabling vendor-neutral implementations
 
@@ -129,7 +158,8 @@ Adopt **Agent2Agent (A2A) Protocol** as the standardized communication protocol 
 #### Rating Service Agent Integration
 
 - **Rating Agent**: Hosted in Rating service with A2A endpoint (`/rating-agent`)
-- **Cross-Service A2A**: Rating Agent communicates with Chat service's Summarize Agent via A2A protocol
+- **Cross-Service A2A**: Rating Agent communicates with Chat service's Summarize Agent via A2A
+  protocol
 - **Function Integration**: Rating Agent uses internal ReviewPlugin and external A2A agents
 
 ### Agent Capabilities and Skills
@@ -157,11 +187,13 @@ Each agent implements standardized A2A AgentCard with:
 ### Positive
 
 - **Agent Specialization**: Each agent focuses on specific expertise while collaborating seamlessly
-- **Scalable Architecture**: Individual agents can be scaled based on demand and processing requirements
+- **Scalable Architecture**: Individual agents can be scaled based on demand and processing
+  requirements
 - **Modular Development**: Agents can be developed, tested, and deployed independently
 - **Context Continuity**: Rich conversation context maintained across multiple agent interactions
 - **Standard Compliance**: Open standard ensures long-term compatibility and vendor independence
-- **Cross-Service Integration**: Agents can collaborate across microservice boundaries (Chat ↔ Rating services)
+- **Cross-Service Integration**: Agents can collaborate across microservice boundaries (Chat ↔
+  Rating services)
 
 ### Negative
 

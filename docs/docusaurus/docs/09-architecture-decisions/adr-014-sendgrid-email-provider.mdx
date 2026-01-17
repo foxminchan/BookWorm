@@ -15,24 +15,32 @@ last_update:
 
 ## Context
 
-BookWorm's Notification Service requires a robust email delivery solution to handle transactional communications across the microservices architecture. The email requirements include:
+BookWorm's Notification Service requires a robust email delivery solution to handle transactional
+communications across the microservices architecture. The email requirements include:
 
-- **Transactional Notifications**: Order confirmations, payment receipts, shipping updates, and account verifications
+- **Transactional Notifications**: Order confirmations, payment receipts, shipping updates, and
+  account verifications
 - **System Communications**: Password resets, account activations, and security notifications
 - **Event-Driven Messaging**: Automated notifications triggered by business events across services
-- **Development vs Production**: Local development with testing capabilities and reliable production delivery
-- **Reliability Requirements**: Outbox pattern implementation for guaranteed delivery and audit trails
+- **Development vs Production**: Local development with testing capabilities and reliable production
+  delivery
+- **Reliability Requirements**: Outbox pattern implementation for guaranteed delivery and audit
+  trails
 - **Performance Needs**: High deliverability rates, fast sending speeds, and resilience to failures
 - **Environment-Specific**: Sandbox mode for staging and full delivery for production
-- **Integration Needs**: Seamless .NET integration with existing microservices and Aspire orchestration
+- **Integration Needs**: Seamless .NET integration with existing microservices and Aspire
+  orchestration
 - **Observability**: Comprehensive logging, health checks, and error handling
 - **Configuration Management**: Secure API key management and environment-specific settings
 
-The email solution must integrate with BookWorm's event-driven architecture while providing reliable delivery guarantees.
+The email solution must integrate with BookWorm's event-driven architecture while providing reliable
+delivery guarantees.
 
 ## Decision
 
-Adopt **SendGrid** as the production email service provider with **MailKit/MailPit** for development, implementing a dual-provider strategy with outbox pattern for reliable email delivery in the BookWorm Notification Service.
+Adopt **SendGrid** as the production email service provider with **MailKit/MailPit** for
+development, implementing a dual-provider strategy with outbox pattern for reliable email delivery
+in the BookWorm Notification Service.
 
 ### Email Service Strategy
 
@@ -81,7 +89,8 @@ Adopt **SendGrid** as the production email service provider with **MailKit/MailP
 
 #### Integration with BookWorm Architecture
 
-1. **Event-Driven Communication**: Integrates with RabbitMQ and MassTransit for event-driven email notifications
+1. **Event-Driven Communication**: Integrates with RabbitMQ and MassTransit for event-driven email
+   notifications
 2. **Aspire Orchestration**: Native support for Aspire with automatic provider configuration
 3. **Microservice Integration**: Centralized email service accessible to all BookWorm microservices
 4. **Configuration Management**: Azure Key Vault integration for secure API key management
@@ -275,19 +284,24 @@ public static IResourceBuilder<ProjectResource> WithEmailProvider(this IResource
 
 ### Positive
 
-- **Environment Flexibility**: Seamless development experience with MailPit, reliable production with SendGrid
+- **Environment Flexibility**: Seamless development experience with MailPit, reliable production
+  with SendGrid
 - **Delivery Guarantees**: Outbox pattern ensures no email loss with audit trail capabilities
 - **Resilience**: Polly integration provides automatic retry, circuit breaker, and timeout handling
-- **Configuration Security**: Secure API key management through Azure Key Vault and Aspire parameters
+- **Configuration Security**: Secure API key management through Azure Key Vault and Aspire
+  parameters
 - **Health Monitoring**: Integrated health checks with degraded status handling for SendGrid issues
-- **Development Experience**: Local email testing without external dependencies through MailPit web UI
+- **Development Experience**: Local email testing without external dependencies through MailPit web
+  UI
 
 ### Negative
 
-- **Dual Provider Complexity**: Maintaining compatibility between MailKit and SendGrid implementations
+- **Dual Provider Complexity**: Maintaining compatibility between MailKit and SendGrid
+  implementations
 - **SendGrid Dependency**: Production relies on external SendGrid service availability
 - **Cost Considerations**: SendGrid costs scale with email volume
-- **Environment Configuration**: Additional complexity in managing environment-specific configurations
+- **Environment Configuration**: Additional complexity in managing environment-specific
+  configurations
 
 ### Risks and Mitigation
 

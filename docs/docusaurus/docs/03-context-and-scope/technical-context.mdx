@@ -1,8 +1,21 @@
 ---
 sidebar_position: 3
 title: Technical Context
-description: Technical interfaces, protocols, and integration patterns for BookWorm's external system connections
-keywords: [technical context, API integration, protocols, HTTPS, WebSocket, Keycloak, RabbitMQ, PostgreSQL, Redis]
+description:
+  Technical interfaces, protocols, and integration patterns for BookWorm's external system
+  connections
+keywords:
+  [
+    technical context,
+    API integration,
+    protocols,
+    HTTPS,
+    WebSocket,
+    Keycloak,
+    RabbitMQ,
+    PostgreSQL,
+    Redis,
+  ]
 last_update:
   author: Nhan Nguyen
 ---
@@ -13,15 +26,72 @@ last_update:
 
 ### Input/Output Channels
 
-| Channel            | Technology | Protocol | Port | Authentication | Data Format | Purpose                |
-| ------------------ | ---------- | -------- | ---- | -------------- | ----------- | ---------------------- |
-| **Web Interface**  | HTTP/HTTPS | HTTPS    | 443  | OIDC/JWT       | HTML/CSS/JS | User interface         |
-| **API Gateway**    | REST       | HTTPS    | 443  | JWT Bearer     | JSON        | Programmatic access    |
-| **Real-time Chat** | WebSocket  | WSS      | 443  | JWT Bearer     | JSON        | Live communication     |
-| **Health Checks**  | HTTP       | HTTP     | 8080 | None           | JSON        | Service monitoring     |
-| **Metrics Export** | HTTP       | HTTP     | 9090 | Basic Auth     | Prometheus  | Performance monitoring |
+| Channel               | Technology     | Protocol | Port | Authentication | Data Format | Purpose                     |
+| --------------------- | -------------- | -------- | ---- | -------------- | ----------- | --------------------------- |
+| **Storefront App**    | Next.js 16     | HTTPS    | 443  | OIDC/JWT       | HTML/CSS/JS | Customer-facing ecommerce   |
+| **Backoffice App**    | Next.js 16     | HTTPS    | 443  | OIDC/JWT       | HTML/CSS/JS | Admin dashboard             |
+| **API Gateway Proxy** | Custom ASP.NET | HTTPS    | 443  | JWT Bearer     | JSON        | Backend service aggregation |
+| **Service APIs**      | REST           | HTTP     | 80   | JWT Bearer     | JSON        | Microservice endpoints      |
+| **Real-time Chat**    | WebSocket      | WSS      | 443  | JWT Bearer     | JSON        | Live communication          |
+| **AI Agent Dev UI**   | HTTP           | HTTP     | 80   | None           | HTML/JSON   | AI agent debugging          |
+| **Health Checks**     | HTTP           | HTTP     | 80   | None           | JSON        | Service monitoring          |
+| **Metrics Export**    | HTTP           | HTTP     | 9090 | Basic Auth     | Prometheus  | Performance monitoring      |
 
 ### External System Integration
+
+#### Frontend Applications
+
+##### Storefront (Customer-facing)
+
+- **Framework**: Next.js 16 with React 19 and Server Components
+- **Build System**: Turbo monorepo with pnpm workspace
+- **UI Stack**: TanStack Query (data fetching), TanStack Table (data grids), TanStack Form (forms),
+  Radix UI (components), Tailwind CSS v4 (styling)
+- **Authentication**: Better Auth with Keycloak OIDC integration
+- **API Integration**: Consumes API Gateway via `NEXT_PUBLIC_GATEWAY_HTTPS`/`HTTP` environment
+  variables
+- **Features**: Product catalog, shopping cart, order management, user reviews, AI-powered
+  recommendations
+- **Deployment**: Aspire-managed Turbo app with OpenTelemetry, health checks, external HTTP
+  endpoints
+
+##### Backoffice (Admin Dashboard)
+
+- **Framework**: Next.js 16 with React 19 and Server Components
+- **Build System**: Turbo monorepo with pnpm workspace
+- **UI Stack**: Radix UI components, Tailwind CSS v4, data tables with TanStack Table
+- **Authentication**: Better Auth with Keycloak OIDC and RBAC
+- **API Integration**: Consumes API Gateway via `NEXT_PUBLIC_GATEWAY_HTTPS`/`HTTP` environment
+  variables
+- **Features**: Inventory management, order processing, user management, analytics dashboards
+- **Deployment**: Aspire-managed Turbo app with OpenTelemetry, health checks, external HTTP
+  endpoints
+
+##### Shared Packages (9 packages)
+
+- **api-client**: Typed API clients for backend services
+- **api-hooks**: React hooks for data fetching with TanStack Query
+- **ui**: Shared UI component library (Radix UI-based)
+- **types**: TypeScript type definitions shared across apps
+- **utils**: Common utility functions
+- **validations**: Zod schemas for form and API validation
+- **mocks**: Testing mocks for development and testing
+- **eslint-config**: Shared ESLint configuration
+- **typescript-config**: Shared TypeScript configuration
+
+#### API Gateway Proxy
+
+- **Implementation**: Custom ASP.NET Core proxy with YARP (Yet Another Reverse Proxy)
+- **Purpose**: Aggregates and routes requests from frontend to backend microservices
+- **Routing**: Routes to 5 services: Chat, Rating, Ordering, Basket, Catalog
+- **Authentication**: Keycloak token introspection middleware validates JWT tokens
+- **Features**:
+  - Service discovery integration with Aspire
+  - Request/response transformation
+  - Health check aggregation
+  - CORS policy management for frontend origins
+- **Environment Variables Injection**: Gateway endpoints injected into frontend apps as
+  `NEXT_PUBLIC_GATEWAY_HTTPS` and `NEXT_PUBLIC_GATEWAY_HTTP`
 
 #### Authentication & Identity (Keycloak)
 
@@ -44,12 +114,28 @@ last_update:
 - **Data Format**: MIME for emails, JSON for API
 - **Templates**: Dynamic templates with personalization
 
-#### AI/ML Services
+#### AI/ML Services (Azure OpenAI)
 
-- **Protocol**: REST over HTTPS
-- **Authentication**: API keys or OAuth 2.0
-- **Data Format**: JSON with base64 encoded content
-- **Rate Limiting**: Request throttling and quota management
+- **Provider**: Azure OpenAI Service (enterprise-grade managed service)
+- **Models**:
+  - **GPT-4o-mini**: Cost-effective chat completion for AI-powered features (Chat service, Rating
+    service)
+  - **text-embedding-3-large**: High-quality embeddings for semantic search and RAG patterns
+- **Integration Framework**: Microsoft Semantic Kernel for .NET
+- **Protocol**: REST over HTTPS with Azure authentication
+- **Authentication**: Azure AD service principal with managed identity
+- **Data Format**: JSON with streaming support for chat completions
+- **Rate Limiting**: Azure-managed quota with automatic throttling
+- **Health Checks**: Model availability health checks integrated with Aspire
+- **Agent Framework**: Microsoft Agents AI Framework with A2A Protocol for agent-to-agent
+  communication
+- **Dev UI**: AI agent debugging interface available at `/dev/agent` endpoints (Chat, Rating
+  services)
+- **Use Cases**:
+  - Book content enrichment and categorization (Catalog service)
+  - Personalized recommendations (Rating service)
+  - Customer support chat (Chat service)
+  - Semantic search across book catalog
 
 ### Infrastructure Interfaces
 
@@ -140,10 +226,12 @@ graph TB
 
 ### Programming Frameworks
 
-- **Backend Services**: .NET with ASP.NET Core
-- **Frontend**: Blazor Server/WASM and React
-- **API Gateway**: YARP (Yet Another Reverse Proxy)
-- **Message Handling**: MassTransit with RabbitMQ
+- **Backend Services**: .NET 10 with ASP.NET Core Minimal APIs
+- **Frontend Applications**: Next.js 16 with React 19 (Server Components + Client Components)
+- **Frontend Build System**: Turbo monorepo with pnpm workspaces
+- **API Gateway**: Custom ASP.NET Core proxy with YARP (Yet Another Reverse Proxy)
+- **Message Handling**: MassTransit with RabbitMQ (outbox/inbox patterns)
+- **AI Integration**: Microsoft Semantic Kernel + Microsoft Agents AI Framework
 
 ### Data Technologies
 

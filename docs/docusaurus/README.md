@@ -2,7 +2,8 @@
 
 # BookWorm Docusaurus
 
-Docusaurus is a modern static website generator that makes it easy to maintain open source documentation websites.
+Docusaurus is a modern static website generator that makes it easy to maintain open source
+documentation websites.
 
 ## Prerequisites
 

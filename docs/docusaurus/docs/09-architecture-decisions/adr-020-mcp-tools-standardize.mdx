@@ -1,8 +1,18 @@
 ---
 sidebar_position: 21
 title: ADR-020 - Model Context Protocol (MCP) Integration
-description: Integration of Model Context Protocol for standardized AI model access to data and tools
-keywords: [ADR-020, MCP, Model Context Protocol, AI integration, context management, AI tools, standardization]
+description:
+  Integration of Model Context Protocol for standardized AI model access to data and tools
+keywords:
+  [
+    ADR-020,
+    MCP,
+    Model Context Protocol,
+    AI integration,
+    context management,
+    AI tools,
+    standardization,
+  ]
 last_update:
   author: Nhan Nguyen
 ---
@@ -15,14 +25,19 @@ last_update:
 
 ## Context
 
-BookWorm's AI-driven features require secure and standardized access to various data sources, tools, and services to provide intelligent recommendations, automated support, and enhanced user experiences. The AI integration challenges include:
+BookWorm's AI-driven features require secure and standardized access to various data sources, tools,
+and services to provide intelligent recommendations, automated support, and enhanced user
+experiences. The AI integration challenges include:
 
-- **Secure Data Access**: AI models need secure access to customer data, order history, and catalog information
+- **Secure Data Access**: AI models need secure access to customer data, order history, and catalog
+  information
 - **Tool Integration**: AI agents require access to various tools for automation and decision-making
 - **Context Management**: Maintaining conversation context across multiple AI interactions
 - **Permission Control**: Fine-grained access control for AI models to different data sources
-- **Standardized Interfaces**: Consistent interfaces for AI models to interact with BookWorm services
-- **Multi-Modal Support**: Integration of different AI models (LLM, embedding, vision) with unified access patterns
+- **Standardized Interfaces**: Consistent interfaces for AI models to interact with BookWorm
+  services
+- **Multi-Modal Support**: Integration of different AI models (LLM, embedding, vision) with unified
+  access patterns
 - **Audit and Compliance**: Comprehensive logging of AI data access for security and compliance
 - **Resource Management**: Efficient resource utilization and connection pooling for AI operations
 - **Error Handling**: Robust error handling and fallback mechanisms for AI service failures
@@ -30,31 +45,39 @@ BookWorm's AI-driven features require secure and standardized access to various 
 - **Performance Optimization**: Optimizing AI model access to data sources for low-latency responses
 - **Integration Testing**: Testing AI integrations with mock data sources and tools
 
-The solution must provide a secure, standardized, and extensible framework for AI model integration that enables intelligent features while maintaining data security and system reliability.
+The solution must provide a secure, standardized, and extensible framework for AI model integration
+that enables intelligent features while maintaining data security and system reliability.
 
 ## Decision
 
-Adopt **Model Context Protocol (MCP)** as the standardized framework for AI model integration, enabling secure access to BookWorm's data sources, tools, and services while maintaining fine-grained permission control and comprehensive audit capabilities.
+Adopt **Model Context Protocol (MCP)** as the standardized framework for AI model integration,
+enabling secure access to BookWorm's data sources, tools, and services while maintaining
+fine-grained permission control and comprehensive audit capabilities.
 
 ### MCP Integration Strategy
 
 #### Secure AI Data Access
 
-- **Resource Servers**: MCP servers providing secure access to BookWorm's databases, APIs, and services
-- **Permission Framework**: Fine-grained permissions controlling AI model access to different data sources
-- **Context Management**: Persistent context across AI interactions with conversation state management
+- **Resource Servers**: MCP servers providing secure access to BookWorm's databases, APIs, and
+  services
+- **Permission Framework**: Fine-grained permissions controlling AI model access to different data
+  sources
+- **Context Management**: Persistent context across AI interactions with conversation state
+  management
 - **Audit Logging**: Comprehensive logging of all AI data access and tool usage
 
 #### AI Tool Integration
 
 - **Tool Servers**: MCP servers exposing BookWorm tools and automation capabilities to AI models
-- **Function Calling**: Standardized function calling interface for AI models to invoke business operations
+- **Function Calling**: Standardized function calling interface for AI models to invoke business
+  operations
 - **Error Handling**: Robust error handling and fallback mechanisms for tool integration failures
 - **Rate Limiting**: Resource usage controls to prevent AI model abuse of system resources
 
 ## Decision
 
-Adopt **Model Context Protocol (MCP) Tools** as the foundational framework for standardizing development tools, workflows, and integrations across the BookWorm development ecosystem.
+Adopt **Model Context Protocol (MCP) Tools** as the foundational framework for standardizing
+development tools, workflows, and integrations across the BookWorm development ecosystem.
 
 ## Rationale
 
@@ -63,14 +86,17 @@ Adopt **Model Context Protocol (MCP) Tools** as the foundational framework for s
 #### AI Model Integration Benefits
 
 1. **Secure Data Access**: Standardized secure access to system data and resources for AI models
-2. **Context Preservation**: Maintain conversation context and state across different AI interactions
-3. **Tool Integration**: Enable AI models to use system tools and APIs through standardized interfaces
+2. **Context Preservation**: Maintain conversation context and state across different AI
+   interactions
+3. **Tool Integration**: Enable AI models to use system tools and APIs through standardized
+   interfaces
 4. **Permission Management**: Fine-grained control over what data and actions AI models can access
 5. **Multi-Model Support**: Framework supports different AI models and providers consistently
 
 #### Developer Productivity Enhancement
 
-1. **AI-Assisted Development**: AI models can directly access project data to provide better assistance
+1. **AI-Assisted Development**: AI models can directly access project data to provide better
+   assistance
 2. **Automated Documentation**: AI can generate and update documentation using live system data
 3. **Intelligent Code Review**: AI models can analyze code with full project context
 4. **Dynamic Help**: Context-aware AI assistance based on current development state

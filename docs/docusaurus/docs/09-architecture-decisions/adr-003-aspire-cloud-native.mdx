@@ -15,7 +15,8 @@ last_update:
 
 ## Context
 
-BookWorm's microservices architecture requires sophisticated orchestration, service discovery, observability, and deployment capabilities. The development and operational challenges include:
+BookWorm's microservices architecture requires sophisticated orchestration, service discovery,
+observability, and deployment capabilities. The development and operational challenges include:
 
 - **Local Development Complexity**: Running and debugging multiple services simultaneously
 - **Service Orchestration**: Managing dependencies and startup order across services
@@ -25,11 +26,14 @@ BookWorm's microservices architecture requires sophisticated orchestration, serv
 - **Cloud Deployment**: Streamlined deployment to cloud platforms with minimal configuration
 - **Development Experience**: Simplified developer onboarding and productivity
 
-Traditional approaches would require significant custom infrastructure code, multiple configuration files, and complex setup procedures that would hinder development velocity and system maintainability.
+Traditional approaches would require significant custom infrastructure code, multiple configuration
+files, and complex setup procedures that would hinder development velocity and system
+maintainability.
 
 ## Decision
 
-Adopt **Aspire** as the cloud-native development framework to provide integrated service orchestration, observability, and deployment capabilities for the BookWorm microservices ecosystem.
+Adopt **Aspire** as the cloud-native development framework to provide integrated service
+orchestration, observability, and deployment capabilities for the BookWorm microservices ecosystem.
 
 ### Core Aspire Components
 
@@ -67,7 +71,8 @@ Shared configuration package providing:
 
 ### Why Aspire?
 
-1. **Integrated Development Experience**: Unified dashboard for monitoring all services during development
+1. **Integrated Development Experience**: Unified dashboard for monitoring all services during
+   development
 2. **Built-in Observability**: OpenTelemetry integration with minimal configuration
 3. **Service Discovery**: Automatic service registration and endpoint resolution
 4. **Resource Orchestration**: Simplified database, cache, and message broker management

@@ -1,19 +1,31 @@
 ---
 sidebar_position: 4
 title: Configuration
-description: Comprehensive configuration system with Aspire features, environment variables, and Azure App Configuration
-keywords: [configuration, appsettings, environment variables, Azure App Configuration, Aspire configuration, service discovery]
+description:
+  Comprehensive configuration system with Aspire features, environment variables, and Azure App
+  Configuration
+keywords:
+  [
+    configuration,
+    appsettings,
+    environment variables,
+    Azure App Configuration,
+    Aspire configuration,
+    service discovery,
+  ]
 last_update:
   author: Nhan Nguyen
 ---
 
 # Configuration
 
-The BookWorm application uses a comprehensive configuration system built on .NET's configuration framework, enhanced with Aspire-specific features and custom extensions.
+The BookWorm application uses a comprehensive configuration system built on .NET's configuration
+framework, enhanced with Aspire-specific features and custom extensions.
 
 ## Configuration Architecture
 
 ### Configuration Sources
+
 - **appsettings.json** - Base application settings
 - **appsettings.Environment.json** - Environment-specific overrides
 - **Environment Variables** - Container and cloud-native configuration
@@ -22,6 +34,7 @@ The BookWorm application uses a comprehensive configuration system built on .NET
 - **Aspire Configuration** - Service discovery and orchestration settings
 
 ### Configuration Providers
+
 - **JSON Configuration Provider** - File-based configuration
 - **Environment Variables Provider** - System and container environment variables
 - **Azure Configuration Provider** - Cloud-based configuration service
@@ -30,18 +43,21 @@ The BookWorm application uses a comprehensive configuration system built on .NET
 ## Service-Specific Configuration
 
 ### Service Defaults Configuration
+
 - **Document Options** - OpenAPI documentation settings
 - **Authentication Options** - Keycloak and JWT configuration
 - **Service Discovery** - Aspire service registration settings
 - **Health Check Configuration** - Health endpoint and check intervals
 
 ### Database Configuration
+
 - **Connection Strings** - PostgreSQL connection configuration
 - **Entity Framework Options** - Database context and migration settings
 - **Naming Conventions** - Snake case naming for PostgreSQL compatibility
 - **Connection Pooling** - Database connection management
 
 ### Message Bus Configuration
+
 - **RabbitMQ Settings** - Message broker connection and queue configuration
 - **MassTransit Options** - Message routing and serialization settings
 - **Retry Policies** - Message delivery retry and error handling
@@ -50,12 +66,14 @@ The BookWorm application uses a comprehensive configuration system built on .NET
 ## Environment Management
 
 ### Development Environment
+
 - **Launch Profiles** - Visual Studio and VS Code debugging configuration
 - **Local Service Discovery** - Development-time service resolution
 - **Hot Reload Support** - Configuration changes without restart
 - **Debug Logging** - Enhanced logging for development
 
 ### Staging/Production Environment
+
 - **Configuration Validation** - Startup configuration validation
 - **Secrets Management** - Secure storage of sensitive configuration
 - **Configuration Reloading** - Runtime configuration updates
@@ -64,12 +82,14 @@ The BookWorm application uses a comprehensive configuration system built on .NET
 ## Configuration Extensions
 
 ### Custom Configuration Utilities
+
 - **Service Discovery Utilities** - Helper methods for service endpoint resolution
 - **Launch Profile Extensions** - Enhanced development configuration
 - **Configuration Validation** - Strong typing and validation rules
 - **Environment Detection** - Runtime environment identification
 
 ### Aspire Integration
+
 - **Orchestrator Configuration** - Service orchestration and dependency management
 - **Resource Configuration** - Infrastructure resource configuration
 - **Service Binding** - Automatic service endpoint configuration
@@ -78,18 +98,21 @@ The BookWorm application uses a comprehensive configuration system built on .NET
 ## Best Practices
 
 ### Configuration Security
+
 - **Secrets Separation** - Separate sensitive data from regular configuration
 - **Environment-Specific Secrets** - Different secrets per environment
 - **Access Control** - Restricted access to production configuration
 - **Encryption** - Encrypted configuration values for sensitive data
 
 ### Configuration Validation
+
 - **Startup Validation** - Validate configuration at application startup
 - **Required Settings** - Fail fast for missing critical configuration
 - **Type Safety** - Use strongly-typed configuration objects
 - **Default Values** - Sensible defaults for optional settings
 
 ### Configuration Monitoring
+
 - **Configuration Changes** - Track and audit configuration modifications
 - **Health Checks** - Monitor configuration-dependent services
 - **Logging** - Log configuration loading and validation events

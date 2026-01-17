@@ -2,7 +2,8 @@
 sidebar_position: 11
 title: ADR-010 - Redis for SignalR Scale
 description: Use of Redis backplane for SignalR horizontal scaling and distributed caching
-keywords: [ADR-010, Redis, SignalR, horizontal scaling, backplane, distributed caching, session management]
+keywords:
+  [ADR-010, Redis, SignalR, horizontal scaling, backplane, distributed caching, session management]
 last_update:
   author: Nhan Nguyen
 ---
@@ -15,9 +16,11 @@ last_update:
 
 ## Context
 
-BookWorm's microservices architecture requires high-performance caching and real-time communication scaling capabilities. The system faces several performance and scalability challenges:
+BookWorm's microservices architecture requires high-performance caching and real-time communication
+scaling capabilities. The system faces several performance and scalability challenges:
 
-- **Caching Requirements**: Fast data access for frequently requested catalog information, user sessions, and computed results
+- **Caching Requirements**: Fast data access for frequently requested catalog information, user
+  sessions, and computed results
 - **SignalR Scaling**: Multi-instance SignalR deployment requires connection state synchronization
 - **Session Management**: Distributed session storage for user authentication and basket state
 - **Performance Optimization**: Sub-second response times for catalog queries and real-time features
@@ -27,11 +30,14 @@ BookWorm's microservices architecture requires high-performance caching and real
 - **High Availability**: Ensure cache availability doesn't become a single point of failure
 - **Cost Optimization**: Balance performance benefits with operational costs
 
-Traditional in-memory caching doesn't scale across multiple instances, while database-only approaches can't meet the performance requirements for real-time features and high-traffic scenarios.
+Traditional in-memory caching doesn't scale across multiple instances, while database-only
+approaches can't meet the performance requirements for real-time features and high-traffic
+scenarios.
 
 ## Decision
 
-Adopt **Redis** as the primary distributed caching and session storage solution, serving both as a high-performance cache for application data and as the backplane for SignalR horizontal scaling.
+Adopt **Redis** as the primary distributed caching and session storage solution, serving both as a
+high-performance cache for application data and as the backplane for SignalR horizontal scaling.
 
 ### Redis Usage Strategy
 
@@ -52,7 +58,8 @@ Adopt **Redis** as the primary distributed caching and session storage solution,
 
 ### Service Redis Usage Map
 
-BookWorm uses Redis primarily for distributed state management and real-time communication scaling, with services utilizing Redis based on their specific needs:
+BookWorm uses Redis primarily for distributed state management and real-time communication scaling,
+with services utilizing Redis based on their specific needs:
 
 - **Chat Service**: Custom backplane implementation for conversation state and message buffering
 - **Caching Services**: Distributed caching for frequently accessed data
@@ -95,7 +102,8 @@ BookWorm implements a custom Redis backplane for the Chat service, providing:
 - **Cancellation Management**: Distributed cancellation token coordination
 - **Message Backlog**: Persistent storage for conversation history and replay
 
-The implementation focuses on scalable real-time chat functionality rather than traditional SignalR backplane patterns.
+The implementation focuses on scalable real-time chat functionality rather than traditional SignalR
+backplane patterns.
 
 ## Implementation Strategy
 

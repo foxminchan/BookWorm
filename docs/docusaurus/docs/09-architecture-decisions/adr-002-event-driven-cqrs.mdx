@@ -2,7 +2,8 @@
 sidebar_position: 3
 title: ADR-002 - Event-Driven Architecture with CQRS
 description: Adoption of event-driven architecture with CQRS pattern for scalability and decoupling
-keywords: [ADR-002, event-driven architecture, CQRS, MediatR, event sourcing, command query separation]
+keywords:
+  [ADR-002, event-driven architecture, CQRS, MediatR, event sourcing, command query separation]
 last_update:
   author: Nhan Nguyen
 ---
@@ -15,20 +16,27 @@ last_update:
 
 ## Context
 
-BookWorm's microservices architecture requires effective patterns for managing data consistency, service integration, and scalability across distributed services. The system faces several architectural challenges:
+BookWorm's microservices architecture requires effective patterns for managing data consistency,
+service integration, and scalability across distributed services. The system faces several
+architectural challenges:
 
-- **Data Consistency**: Maintaining consistency across service boundaries without distributed transactions
+- **Data Consistency**: Maintaining consistency across service boundaries without distributed
+  transactions
 - **Service Integration**: Loose coupling between services while ensuring reliable communication
-- **Performance Requirements**: Different read and write patterns with varying performance characteristics
+- **Performance Requirements**: Different read and write patterns with varying performance
+  characteristics
 - **Scalability**: Independent scaling of read and write operations
 - **Audit Requirements**: Complete traceability of business operations and state changes
 - **Event Sourcing**: Maintaining immutable event history for critical business processes
 
-Traditional request-response patterns and shared databases would create tight coupling and limit the independence of microservices, contradicting the architectural goals of the system.
+Traditional request-response patterns and shared databases would create tight coupling and limit the
+independence of microservices, contradicting the architectural goals of the system.
 
 ## Decision
 
-Adopt **Event-Driven Architecture** combined with **Command Query Responsibility Segregation (CQRS)** pattern to achieve loose coupling, eventual consistency, and optimized read/write performance across the distributed system.
+Adopt **Event-Driven Architecture** combined with **Command Query Responsibility Segregation
+(CQRS)** pattern to achieve loose coupling, eventual consistency, and optimized read/write
+performance across the distributed system.
 
 ### Core Patterns Implementation
 
@@ -73,7 +81,8 @@ Implement asynchronous communication through domain and integration events:
 
 ### Why CQRS?
 
-1. **Performance Optimization**: Separate read and write models optimized for their specific use cases
+1. **Performance Optimization**: Separate read and write models optimized for their specific use
+   cases
 2. **Scalability**: Independent scaling of read and write operations
 3. **Complex Business Logic**: Commands can focus on business rules without query concerns
 4. **Reporting and Analytics**: Query models can be optimized for reporting needs
@@ -156,7 +165,8 @@ sequenceDiagram
 
 #### Inbox/Outbox Pattern
 
-- **Outbox Pattern**: Ensures reliable event publishing by storing events in the same transaction as domain changes
+- **Outbox Pattern**: Ensures reliable event publishing by storing events in the same transaction as
+  domain changes
 - **Inbox Pattern**: Ensures idempotent event processing with deduplication
 - **At-Least-Once Delivery**: Guarantees message delivery with idempotency handling
 

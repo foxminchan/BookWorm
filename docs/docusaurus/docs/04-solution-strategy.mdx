@@ -1,15 +1,29 @@
 ---
 sidebar_position: 5
 title: Solution Strategy
-description: Fundamental technology decisions, architectural patterns, and solution strategies that shape BookWorm's cloud-native architecture
-keywords: [solution strategy, technology decisions, microservices, CQRS, event sourcing, DDD, ASP.NET Core, cloud-native]
+description:
+  Fundamental technology decisions, architectural patterns, and solution strategies that shape
+  BookWorm's cloud-native architecture
+keywords:
+  [
+    solution strategy,
+    technology decisions,
+    microservices,
+    CQRS,
+    event sourcing,
+    DDD,
+    ASP.NET Core,
+    cloud-native,
+  ]
 last_update:
   author: Nhan Nguyen
 ---
 
 # Solution Strategy
 
-This section summarizes the fundamental decisions and solution strategies that shape BookWorm's architecture. These cornerstone decisions provide the foundation for detailed implementation decisions and serve as guiding principles for the system's evolution.
+This section summarizes the fundamental decisions and solution strategies that shape BookWorm's
+architecture. These cornerstone decisions provide the foundation for detailed implementation
+decisions and serve as guiding principles for the system's evolution.
 
 ---
 
@@ -17,13 +31,17 @@ This section summarizes the fundamental decisions and solution strategies that s
 
 ### Core Technology Stack
 
-The foundation of BookWorm is built on carefully selected technologies that align with modern cloud-native development practices:
+The foundation of BookWorm is built on carefully selected technologies that align with modern
+cloud-native development practices:
 
-| Technology       | Decision Rationale                                                                       | Impact                                                                           | Trade-offs                                                                 |
-| ---------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| **ASP.NET Core** | Cross-platform, high-performance web framework with excellent cloud integration          | Scalable APIs, dependency injection, middleware pipeline                         | Requires deeper knowledge of middleware and async programming              |
-| **Aspire**  | Cloud-native development framework with built-in observability and service orchestration | Simplified local development, integrated telemetry, streamlined Azure deployment | Still evolving, ecosystem not as mature as other orchestrators              |
-| **Docker**       | Industry standard for containerization and orchestration                                 | Consistent deployments, scaling, and isolation                                   | Adds operational complexity and requires DevOps expertise                  |
+| Technology                | Decision Rationale                                                                        | Impact                                                                           | Trade-offs                                                            |
+| ------------------------- | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| **.NET 10**               | Latest .NET with C# preview features, enhanced performance, and cloud-native capabilities | Modern APIs, improved performance, native AOT support                            | Cutting-edge platform requires staying current with releases          |
+| **ASP.NET Core**          | Cross-platform, high-performance web framework with excellent cloud integration           | Scalable APIs, dependency injection, middleware pipeline                         | Requires deeper knowledge of middleware and async programming         |
+| **Aspire**                | Cloud-native development framework with built-in observability and service orchestration  | Simplified local development, integrated telemetry, streamlined Azure deployment | Still evolving, ecosystem not as mature as other orchestrators        |
+| **Docker**                | Industry standard for containerization and orchestration                                  | Consistent deployments, scaling, and isolation                                   | Adds operational complexity and requires DevOps expertise             |
+| **Azure OpenAI**          | Enterprise-grade AI service with GPT-4o-mini and text-embedding-3-large                   | Scalable AI capabilities, managed service, Microsoft integration                 | Cloud dependency, cost per token, requires quota management           |
+| \*\*Next.js 16 + React 19 | Modern frontend framework with server components and streaming                            | Improved performance, better UX, SEO-friendly                                    | Server component paradigm shift, requires understanding of boundaries |
 
 ---
 
@@ -52,7 +70,8 @@ The foundation of BookWorm is built on carefully selected technologies that alig
 
 - **GitHub Actions** for CI with unit/integration tests
 - **Infrastructure as Code** using Bicep for reproducible environments
-- **Trade-offs**: Increased pipeline complexity but ensures reliability, repeatability, and security in deployments
+- **Trade-offs**: Increased pipeline complexity but ensures reliability, repeatability, and security
+  in deployments
 
 ---
 
@@ -73,7 +92,6 @@ The foundation of BookWorm is built on carefully selected technologies that alig
 - **Trade-offs**: Stronger security may add latency and operational complexity
 
 ---
-
 
 ## Architectural Patterns
 
@@ -115,17 +133,22 @@ graph TB
 
 ### Event-Driven Architecture with CQRS
 
-**Decision**: Adopt event-driven architecture combined with Command Query Responsibility Segregation (CQRS) across microservices to decouple domains, improve scalability, and enable reliable integration.
+**Decision**: Adopt event-driven architecture combined with Command Query Responsibility Segregation
+(CQRS) across microservices to decouple domains, improve scalability, and enable reliable
+integration.
 
 ---
 
 #### Rationale
 
-- **Loose Coupling**: Services communicate through events without direct dependencies, enabling independent evolution and deployment.
+- **Loose Coupling**: Services communicate through events without direct dependencies, enabling
+  independent evolution and deployment.
 - **Scalability**: Read and write operations can be scaled and optimized independently.
-- **Eventual Consistency**: Acceptable for business scenarios, though requires careful user experience design to handle temporary inconsistencies.
+- **Eventual Consistency**: Acceptable for business scenarios, though requires careful user
+  experience design to handle temporary inconsistencies.
 - **Audit Trail**: Events provide natural audit logging, replay capabilities, and temporal queries.
-- **Integration**: Events enable easy integration with external systems, analytics, and third-party consumers.
+- **Integration**: Events enable easy integration with external systems, analytics, and third-party
+  consumers.
 - **Evolvability**: Supports long-term system maintainability and adaptability.
 
 ---
@@ -133,24 +156,28 @@ graph TB
 #### Implementation Patterns
 
 - **Command Processing**:
-  - *In-process*: MediatR for local command handling.
-  - *Cross-service*: Message bus (e.g., Kafka, RabbitMQ, Azure Service Bus) for distributed commands.
+  - _In-process_: MediatR for local command handling.
+  - _Cross-service_: Message bus (e.g., Kafka, RabbitMQ, Azure Service Bus) for distributed
+    commands.
 
 - **Event Publishing**:
-  - Use the **Transactional Outbox pattern** to ensure reliable event delivery as part of the database transaction.
+  - Use the **Transactional Outbox pattern** to ensure reliable event delivery as part of the
+    database transaction.
 
 - **Event Consumption**:
-  - Apply the **Idempotent Inbox pattern** to prevent duplicate event handling and support reliable retries.
+  - Apply the **Idempotent Inbox pattern** to prevent duplicate event handling and support reliable
+    retries.
 
 - **Saga Orchestration**:
-  - Manage long-running or multi-service workflows using orchestration engines (e.g., MassTransit, NServiceBus, Dapr Workflows).
+  - Manage long-running or multi-service workflows using orchestration engines (e.g., MassTransit,
+    NServiceBus, Dapr Workflows).
 
 ---
 
 #### Saga Patterns
 
-**Orchestration Saga**
-Centralized control for complex business processes:
+**Orchestration Saga** Centralized control for complex business processes:
+
 - Order processing workflow
 - Compensation handling for failed transactions
 
@@ -158,8 +185,8 @@ Centralized control for complex business processes:
 
 ---
 
-**Choreography Saga**
-Loosely coupled domain interactions where services react to published events:
+**Choreography Saga** Loosely coupled domain interactions where services react to published events:
+
 - Catalog updates triggering search index refresh
 - User actions generating analytics events
 - Cross-domain notifications
@@ -170,49 +197,100 @@ Loosely coupled domain interactions where services react to published events:
 
 #### Event Patterns
 
-| Pattern              | Implementation                          | Use Case                                 | Trade-offs / Risks                                   |
-| -------------------- | --------------------------------------- | ---------------------------------------- | --------------------------------------------------- |
-| **Outbox Pattern**   | Database transaction + event publishing | Ensuring reliable event publishing       | Adds DB complexity, requires cleanup & monitoring   |
-| **Inbox Pattern**    | Idempotent event processing             | Preventing duplicate event handling      | Needs idempotency logic and deduplication storage   |
-| **Event Sourcing**   | Domain events as source of truth        | Audit trail and temporal queries         | Higher learning curve, large event stores to manage |
-| **CQRS**             | Separate read/write models              | Optimized queries and command processing | Increases complexity, requires sync strategies      |
+| Pattern            | Implementation                          | Use Case                                 | Trade-offs / Risks                                  |
+| ------------------ | --------------------------------------- | ---------------------------------------- | --------------------------------------------------- |
+| **Outbox Pattern** | Database transaction + event publishing | Ensuring reliable event publishing       | Adds DB complexity, requires cleanup & monitoring   |
+| **Inbox Pattern**  | Idempotent event processing             | Preventing duplicate event handling      | Needs idempotency logic and deduplication storage   |
+| **Event Sourcing** | Domain events as source of truth        | Audit trail and temporal queries         | Higher learning curve, large event stores to manage |
+| **CQRS**           | Separate read/write models              | Optimized queries and command processing | Increases complexity, requires sync strategies      |
 
 ---
 
 #### Additional Considerations
 
-- **Error Handling & Monitoring**:
-  Poison message queues, retries with backoff, dead-letter queues.
+- **Error Handling & Monitoring**: Poison message queues, retries with backoff, dead-letter queues.
 
-- **Schema Evolution**:
-  Version events carefully (e.g., schema registry, backward-compatible contracts).
+- **Schema Evolution**: Version events carefully (e.g., schema registry, backward-compatible
+  contracts).
 
-- **Performance & Scalability**:
-  Use partitioning, sharding, or stream-based architectures for high-throughput systems.
+- **Performance & Scalability**: Use partitioning, sharding, or stream-based architectures for
+  high-throughput systems.
 
-- **Observability**:
-  Correlation IDs and tracing are essential for debugging distributed event flows.
+- **Observability**: Correlation IDs and tracing are essential for debugging distributed event
+  flows.
 
 ---
 
 ### AI Services Architecture
 
-- **Text Embedding**: Nomic Embed Text for semantic search capabilities
-- **Conversational AI**: LLM for intelligent chatbot interactions
-- **Search Enhancement**: AI-powered search with natural language understanding
+**Provider**: Azure OpenAI Service (enterprise-grade managed AI platform)
+
+**Models**:
+
+- **GPT-4o-mini**: Cost-effective conversational AI for chat and content generation
+  - Use cases: Customer support chatbot, book recommendations, content enrichment
+  - Performance: Fast response times with lower cost per token
+- **text-embedding-3-large**: High-quality embeddings for semantic understanding
+  - Use cases: Semantic search, similarity matching, RAG (Retrieval-Augmented Generation) patterns
+  - Vector dimensions: 3072
+
+**Integration Framework**:
+
+- **Microsoft Semantic Kernel**: .NET-native AI orchestration framework
+- **Microsoft Agents AI Framework**: Agent development with A2A Protocol for agent-to-agent
+  communication
+- **Model Context Protocol (MCP)**: Standardized AI agent tool exposure via BookWorm.McpTools
+
+**Architecture Pattern**:
 
 ```mermaid
-graph LR
-    UserQuery[User Query] --> SearchService[Search Service]
-    SearchService --> Embedding[Text Embedding]
-    SearchService --> NLP[NLP Processing]
-    Embedding --> VectorDB[Vector Database]
-    NLP --> SearchIndex[Search Index]
-    VectorDB --> Results[Search Results]
-    SearchIndex --> Results
-    Results --> Ranking[AI Ranking]
-    Ranking --> UserResponse[User Response]
+graph TB
+    subgraph "Frontend"
+        User[User Queries]
+    end
+
+    subgraph "API Gateway"
+        Gateway[API Gateway Proxy]
+    end
+
+    subgraph "AI Services"
+        Chat[Chat Service<br/>Conversational AI]
+        Rating[Rating Service<br/>Recommendations]
+        Catalog[Catalog Service<br/>Content Enrichment]
+    end
+
+    subgraph "AI Infrastructure"
+        MCP[MCP Server<br/>Tool Exposure]
+        SK[Semantic Kernel<br/>Orchestration]
+        AzureAI[Azure OpenAI<br/>GPT-4o-mini<br/>text-embedding-3-large]
+    end
+
+    subgraph "Data Layer"
+        VectorDB[Qdrant<br/>Vector Database]
+        Postgres[(PostgreSQL<br/>Relational Data)]
+    end
+
+    User --> Gateway
+    Gateway --> Chat
+    Gateway --> Rating
+    Chat --> SK
+    Rating --> SK
+    Catalog --> SK
+    SK --> MCP
+    SK --> AzureAI
+    SK --> VectorDB
+    MCP --> Postgres
+
+    Chat -.A2A Protocol.-> Rating
 ```
+
+**Trade-offs**:
+
+- **Advantages**: Enterprise SLA, managed scaling, latest models, Microsoft ecosystem integration
+- **Disadvantages**: Cloud dependency, per-token costs, quota management, no local/offline
+  capability
+- **Why not Ollama**: While Ollama provides local models, Azure OpenAI offers superior model
+  quality, enterprise reliability, and seamless Azure integration for production workloads
 
 ---
 
@@ -220,28 +298,43 @@ graph LR
 
 ### Testing Strategy
 
+**Testing Framework**: TUnit with Microsoft Testing Platform (modern .NET testing framework)
+
+**Why TUnit over xUnit/NUnit/MSTest**:
+
+- Native integration with Microsoft Testing Platform
+- Source generator-based for better performance
+- Modern async/await patterns
+- Enhanced assertion library with Shouldly
+- Better IDE integration with test discovery
+
 ```mermaid
 mindmap
     root((Testing Strategy))
         Unit Tests
+            TUnit framework
+            Moq for mocking
+            Bogus for test data
+            Shouldly assertions
             Fast execution
             Isolated testing
-            Comprehensive coverage
             ✅ Most Coverage
-        Integration Tests
-            Service boundaries
-            API contracts
-            Database interactions
-            📈 More Coverage
-        Architecture Tests
-            Design compliance
-            Dependency rules
-            Vertical Slice Architecture
-            📝 Medium Coverage
         Contract Tests
+            Verify.TUnit snapshots
             API compatibility
             Event schemas
-            Consumer-driven
+            Message contracts
+            📈 More Coverage
+        Architecture Tests
+            ArchUnitNET.TUnit
+            Design compliance
+            Dependency rules
+            Vertical Slice validation
+            📝 Medium Coverage
+        Integration Tests
+            Service boundaries
+            Database interactions
+            MassTransit messaging
             📝 Medium Coverage
         E2E Tests
             Critical user journeys
@@ -253,6 +346,20 @@ mindmap
             Stress testing
             ⚠️ Resource Intensive
 ```
+
+**Test Project Naming Convention**:
+
+- `*.UnitTests`: TUnit-based unit tests with Moq, Bogus, Shouldly
+- `*.ContractTests`: Verify.TUnit for snapshot/contract testing
+- `*.IntegrationTests`: Service integration tests
+- `*.ArchTests`: TngTech.ArchUnitNET.TUnit for architecture enforcement
+
+**Microsoft Testing Platform Extensions**:
+
+- `Microsoft.Testing.Extensions.CodeCoverage`: Code coverage reporting
+- `Microsoft.Testing.Extensions.TrxReport`: TRX report generation for CI/CD
+- `Microsoft.Testing.Extensions.CrashDump`: Crash dump collection for debugging
+- `Microsoft.Testing.Extensions.HangDump`: Hang dump collection for troubleshooting
 
 ---
 

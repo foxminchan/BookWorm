@@ -1,19 +1,34 @@
 ---
 sidebar_position: 1
 title: Overview
-description: Runtime behavior and dynamic interactions of BookWorm services during key business scenarios and operations
-keywords: [runtime view, service interactions, event-driven architecture, data flow, error handling, saga pattern]
+description:
+  Runtime behavior and dynamic interactions of BookWorm services during key business scenarios and
+  operations
+keywords:
+  [
+    runtime view,
+    service interactions,
+    event-driven architecture,
+    data flow,
+    error handling,
+    saga pattern,
+  ]
 last_update:
   author: Nhan Nguyen
 ---
 
 # Runtime View Overview
 
-The Runtime View describes the behavior of BookWorm's architecture during execution, focusing on the most important scenarios that demonstrate how the system components interact to fulfill business requirements.
+The Runtime View describes the behavior of BookWorm's architecture during execution, focusing on the
+most important scenarios that demonstrate how the system components interact to fulfill business
+requirements.
 
 ## Purpose
 
-This section illustrates how the static building blocks described in the [Building Block View](../05-building-block-view/overview.mdx) work together at runtime to deliver the BookWorm e-commerce functionality. Each scenario shows the dynamic aspects of the system, including:
+This section illustrates how the static building blocks described in the
+[Building Block View](../05-building-block-view/overview.mdx) work together at runtime to deliver
+the BookWorm e-commerce functionality. Each scenario shows the dynamic aspects of the system,
+including:
 
 - **Service Interactions**: How microservices communicate through events and commands
 - **Data Flow**: How information flows through the system during key operations
@@ -22,7 +37,8 @@ This section illustrates how the static building blocks described in the [Buildi
 
 ## Architecture Patterns in Action
 
-BookWorm implements several key architectural patterns that are demonstrated across the runtime scenarios:
+BookWorm implements several key architectural patterns that are demonstrated across the runtime
+scenarios:
 
 ### Event-Driven Architecture
 
@@ -84,9 +100,60 @@ graph TB
 
 BookWorm's runtime behavior is demonstrated through key business scenarios:
 
-### 1. User Authentication Flow
+### 1. Frontend-to-Service Communication
+
+**Scenario**: User browses products in Storefront application
+
+- **Trigger**: User navigates to catalog page
+- **Components**: Next.js Storefront, API Gateway Proxy (YARP), Catalog Service, Azure OpenAI
+- **Pattern**: RESTful API calls through gateway with authentication
+- **Data Flow**:
+  1. Next.js Server Component fetches data via API client
+  2. Request routed through API Gateway Proxy with Keycloak token validation
+  3. Catalog Service queries PostgreSQL with hybrid caching (L1 memory + L2 Redis)
+  4. Azure OpenAI embeddings for semantic search (if applicable)
+  5. Response cached and returned through gateway
+- **Outcome**: Fast page load with server-side rendering and cached data
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Storefront as Next.js Storefront
+    participant Gateway as API Gateway Proxy
+    participant Keycloak
+    participant Catalog as Catalog Service
+    participant Cache as Hybrid Cache (L1+L2)
+    participant DB as PostgreSQL
+    participant AI as Azure OpenAI
+
+    User->>Storefront: Navigate to /catalog
+    Storefront->>Gateway: GET /api/catalog/books (with JWT)
+    Gateway->>Keycloak: Validate JWT token
+    Keycloak-->>Gateway: Token valid
+    Gateway->>Catalog: Forward request
+    Catalog->>Cache: Check L1 cache
+    alt Cache miss
+        Catalog->>Cache: Check L2 Redis cache
+        alt L2 miss
+            Catalog->>DB: Query books
+            DB-->>Catalog: Book data
+            opt Semantic search
+                Catalog->>AI: Get embeddings
+                AI-->>Catalog: Embeddings
+            end
+            Catalog->>Cache: Store in L1+L2
+        end
+    end
+    Cache-->>Catalog: Cached data
+    Catalog-->>Gateway: JSON response
+    Gateway-->>Storefront: JSON response
+    Storefront-->>User: Rendered page
+```
+
+### 2. User Authentication Flow
 
 **Scenario**: User signs into the BookWorm application
+
 - **Trigger**: User initiates login process
 - **Components**: Keycloak IAM, BookWorm Client, API Gateway
 - **Pattern**: OAuth2 + PKCE authentication flow
@@ -94,9 +161,10 @@ BookWorm's runtime behavior is demonstrated through key business scenarios:
 
 [👉 View Sign In Scenario](./signin-scenario.mdx)
 
-### 2. Order Creation Flow
+### 3. Order Creation Flow
 
 **Scenario**: User creates an order and processes checkout
+
 - **Trigger**: User submits order for processing
 - **Components**: Ordering, Finance, Basket, and Notification services
 - **Pattern**: Choreography-based Saga with event sourcing
