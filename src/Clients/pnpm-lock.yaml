@@ -127,11 +127,11 @@ importers:
         specifier: ^4.11.0
         version: 4.11.0(playwright-core@1.57.0)
       '@cucumber/cucumber':
-        specifier: ^12.5.0
-        version: 12.5.0
+        specifier: ^12.6.0
+        version: 12.6.0
       '@cucumber/pretty-formatter':
         specifier: ^2.4.1
-        version: 2.4.1(@cucumber/messages@31.1.0)
+        version: 2.4.1(@cucumber/messages@31.2.0)
       '@faker-js/faker':
         specifier: ^10.2.0
         version: 10.2.0
@@ -323,11 +323,11 @@ importers:
         specifier: ^4.11.0
         version: 4.11.0(playwright-core@1.57.0)
       '@cucumber/cucumber':
-        specifier: ^12.5.0
-        version: 12.5.0
+        specifier: ^12.6.0
+        version: 12.6.0
       '@cucumber/pretty-formatter':
         specifier: ^2.4.1
-        version: 2.4.1(@cucumber/messages@31.1.0)
+        version: 2.4.1(@cucumber/messages@31.2.0)
       '@faker-js/faker':
         specifier: ^10.2.0
         version: 10.2.0
@@ -721,8 +721,8 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/gateway@2.0.27':
-    resolution: {integrity: sha512-8hbezMsGa0crSt7/DKjkYL1UbbJJW/UFxTfhmf5qcIeYeeWG4dTNmm+DWbUdIsTaWvp59KC4eeC9gYXBbTHd7w==}
+  '@ai-sdk/gateway@2.0.29':
+    resolution: {integrity: sha512-1b7E9F/B5gex/1uCkhs+sGIbH0KsZOItHnNz3iY5ir+nc4ZUA6WOU5Cu2w1USlc+3UVbhf+H+iNLlxVjLe4VvQ==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -1025,11 +1025,11 @@ packages:
   '@cucumber/cucumber-expressions@16.1.1':
     resolution: {integrity: sha512-Ugsb9qxfgrgfUKsGvbx0awVk+69NIFjWfxNT+dnm62YrF2gdTHYxAOzOLuPgvE0yqYTh+3otrFLDDfkHGThM1g==}
 
-  '@cucumber/cucumber-expressions@18.0.1':
-    resolution: {integrity: sha512-NSid6bI+7UlgMywl5octojY5NXnxR9uq+JisjOrO52VbFsQM6gTWuQFE8syI10KnIBEdPzuEUSVEeZ0VFzRnZA==}
+  '@cucumber/cucumber-expressions@18.1.0':
+    resolution: {integrity: sha512-9yc+wForrn15FaqLWNjYb19iQ/gPXhcq1kc4X1Ex1lR7NcJpa5pGnCow3bc1HERVM5IoYH+gwwrcJogSMsf+Vw==}
 
-  '@cucumber/cucumber@12.5.0':
-    resolution: {integrity: sha512-+VWxkIIpm5EWFfaF3grP1GlHobzlDBIF54FqJutdYmfpx3LJc+IS8uWdIN97m6zxizo5CPrUopTWkxzwVswUzg==}
+  '@cucumber/cucumber@12.6.0':
+    resolution: {integrity: sha512-z6XKBIcUnJebnR3W8+K7Q2jJKB+pKpoD1l3CygEa9ufq/aeGuS5LAlllNxrod8loepLJhNmp8J8aengGbkL4cg==}
     engines: {node: 20 || 22 || >=24}
     hasBin: true
 
@@ -1106,8 +1106,8 @@ packages:
   '@cucumber/messages@29.0.1':
     resolution: {integrity: sha512-aAvIYfQD6/aBdF8KFQChC3CQ1Q+GX9orlR6GurGiX6oqaCnBkxA4WU3OQUVepDynEFrPayerqKRFcAMhdcXReQ==}
 
-  '@cucumber/messages@31.1.0':
-    resolution: {integrity: sha512-BViwUQ9YMjcGL98Ww2QHMgu3S4JLUjbTz+Jo/jsq+8ZjS47/2v3IszpD6e12Y6IzZoGfrZriauZHPQ4PAmN9XA==}
+  '@cucumber/messages@31.2.0':
+    resolution: {integrity: sha512-3urzBNCwmU/YKrKR0b3XdioFcOFNuxlLwEImsxeP8rXnweLs+Ky04QURcbKpFom3T6a6v9zVioLCfHUuSQ72pg==}
 
   '@cucumber/pretty-formatter@1.0.1':
     resolution: {integrity: sha512-A1lU4VVP0aUWdOTmpdzvXOyEYuPtBDI0xYwYJnmoMDplzxMdhcHk86lyyvYDoMoPzzq6OkOE3isuosvUU4X7IQ==}
@@ -1720,8 +1720,8 @@ packages:
   '@mermaid-js/parser@0.6.3':
     resolution: {integrity: sha512-lnjOhe7zyHjc+If7yT4zoedx2vo4sHaTmtkl1+or8BRTnCtDmcTpAjpzDSfCZrshM5bCoz0GyidzadJAH1xobA==}
 
-  '@modelcontextprotocol/sdk@1.25.2':
-    resolution: {integrity: sha512-LZFeo4F9M5qOhC/Uc1aQSrBHxMrvxett+9KLHt7OhcExtoiRN9DKgbZffMP/nxjutWDQpfMDfP3nkHI4X9ijww==}
+  '@modelcontextprotocol/sdk@1.25.3':
+    resolution: {integrity: sha512-vsAMBMERybvYgKbg/l4L1rhS7VXV1c0CtyJg72vwxONVX0l4ZfKVAnZEWTQixJGTzKnELjQ59e4NbdFDALRiAQ==}
     engines: {node: '>=18'}
     peerDependencies:
       '@cfworker/json-schema': ^4.1.1
@@ -3418,8 +3418,8 @@ packages:
     resolution: {integrity: sha512-4I7Td01quW/RpocfNayFdFVk1qSuoh0E7JrbRJ16nH01HhKFQ88INq9Sd+nd72zqRySlr9BmDA8xlEJ6vJMrYA==}
     engines: {node: '>=8'}
 
-  ai@5.0.121:
-    resolution: {integrity: sha512-3iYPdARKGLryC/7OA9RgBUaym1gynvWS7UPy8NwoRNCKP52lshldtHB5xcEfVviw7liWH2zJlW9yEzsDglcIEQ==}
+  ai@5.0.123:
+    resolution: {integrity: sha512-V3Imb0tg0pHCa6a/VsoW/FZpT07mwUw/4Hj6nexJC1Nvf1eyKQJyaYVkl+YTLnA8cKQSUkoarKhXWbFy4CSgjw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -3949,8 +3949,8 @@ packages:
   core-util-is@1.0.2:
     resolution: {integrity: sha512-3lqz5YjWTYnW6dlDa5TLaTCcShfar1e40rmcJVwCBJC6mWlFuj0eCHIElmG1g5kyuJ/GD+8Wn4FFCcz4gJPfaQ==}
 
-  cors@2.8.5:
-    resolution: {integrity: sha512-KIHbLJqu73RGr/hnbrO9uBeixNGuvSQjul/jdFvS/KFSIH1hWVd1ng7zOHx+YrEfInLG7q4n6GHQ9cDtxv/P6g==}
+  cors@2.8.6:
+    resolution: {integrity: sha512-tJtZBBHA6vjIAaF6EnIaq6laBBP9aq/Y3ouVJjEfoHbRBcHBAHYcMh/w8LDrk2PvIMMq8gmopa5D4V8RmbrxGw==}
     engines: {node: '>= 0.10'}
 
   cose-base@1.0.3:
@@ -4256,8 +4256,12 @@ packages:
     resolution: {integrity: sha512-58lmxKSA4BNyLz+HHMUzlOEpg09FV+ev6ZMe3vJihgdxzgcwZ8VoEEPmALCZG9LmqfVoNMMKpttIYTVG6uDY7A==}
     engines: {node: '>=0.3.1'}
 
-  diff@5.2.0:
-    resolution: {integrity: sha512-uIFDxqpRZGZ6ThOk84hEfqWoHx2devRFvpTZcTHur85vImfaxUbTW9Ryh4CpCuDnToOP1CEtXKIgytHBPVff5A==}
+  diff@4.0.4:
+    resolution: {integrity: sha512-X07nttJQkwkfKfvTPG/KSnE2OMdcUCao6+eXF3wmnIQRn2aPAHH3VxDbDOdegkd6JbPsXqShpvEOHfAT+nCNwQ==}
+    engines: {node: '>=0.3.1'}
+
+  diff@5.2.2:
+    resolution: {integrity: sha512-vtcDfH3TOjP8UekytvnHH1o1P4FcUdt4eQ1Y+Abap1tk/OB2MWQvcwS2ClCd1zuIhc3JKOx6p3kod8Vfys3E+A==}
     engines: {node: '>=0.3.1'}
 
   dir-glob@3.0.1:
@@ -4945,6 +4949,10 @@ packages:
 
   hono@4.11.4:
     resolution: {integrity: sha512-U7tt8JsyrxSRKspfhtLET79pU8K+tInj5QZXs1jSugO1Vq5dFj3kmZsRldo29mTBfcjDRVRXrEZ6LS63Cog9ZA==}
+    engines: {node: '>=16.9.0'}
+
+  hono@4.11.5:
+    resolution: {integrity: sha512-WemPi9/WfyMwZs+ZUXdiwcCh9Y+m7L+8vki9MzDw3jJ+W9Lc+12HGsd368Qc1vZi1xwW8BWMMsnK5efYKPdt4g==}
     engines: {node: '>=16.9.0'}
 
   hosted-git-info@9.0.2:
@@ -8011,7 +8019,7 @@ snapshots:
       '@ai-sdk/provider-utils': 3.0.20(zod@3.25.76)
       zod: 3.25.76
 
-  '@ai-sdk/gateway@2.0.27(zod@3.25.76)':
+  '@ai-sdk/gateway@2.0.29(zod@3.25.76)':
     dependencies:
       '@ai-sdk/provider': 2.0.1
       '@ai-sdk/provider-utils': 3.0.20(zod@3.25.76)
@@ -8399,8 +8407,8 @@ snapshots:
       '@ai-sdk/google': 2.0.52(zod@3.25.76)
       '@ai-sdk/mcp': 0.0.8(zod@3.25.76)
       '@ai-sdk/openai': 2.0.89(zod@3.25.76)
-      '@modelcontextprotocol/sdk': 1.25.2(@cfworker/json-schema@4.1.1)(hono@4.11.4)(zod@3.25.76)
-      ai: 5.0.121(zod@3.25.76)
+      '@modelcontextprotocol/sdk': 1.25.3(@cfworker/json-schema@4.1.1)(hono@4.11.4)(zod@3.25.76)
+      ai: 5.0.123(zod@3.25.76)
       rxjs: 7.8.2
       zod: 3.25.76
     transitivePeerDependencies:
@@ -8453,9 +8461,9 @@ snapshots:
       '@ag-ui/core': 0.0.42
       '@ag-ui/encoder': 0.0.42
       '@copilotkitnext/shared': 0.0.33
-      cors: 2.8.5
+      cors: 2.8.6
       express: 4.22.1
-      hono: 4.11.4
+      hono: 4.11.5
       openai: 6.16.0(ws@8.19.0)(zod@4.3.5)
       rxjs: 7.8.1
     transitivePeerDependencies:
@@ -8493,22 +8501,22 @@ snapshots:
     dependencies:
       regexp-match-indices: 1.0.2
 
-  '@cucumber/cucumber-expressions@18.0.1':
+  '@cucumber/cucumber-expressions@18.1.0':
     dependencies:
       regexp-match-indices: 1.0.2
 
-  '@cucumber/cucumber@12.5.0':
+  '@cucumber/cucumber@12.6.0':
     dependencies:
       '@cucumber/ci-environment': 12.0.0
-      '@cucumber/cucumber-expressions': 18.0.1
+      '@cucumber/cucumber-expressions': 18.1.0
       '@cucumber/gherkin': 37.0.1
-      '@cucumber/gherkin-streams': 6.0.0(@cucumber/gherkin@37.0.1)(@cucumber/message-streams@4.0.1(@cucumber/messages@31.1.0))(@cucumber/messages@31.1.0)
+      '@cucumber/gherkin-streams': 6.0.0(@cucumber/gherkin@37.0.1)(@cucumber/message-streams@4.0.1(@cucumber/messages@31.2.0))(@cucumber/messages@31.2.0)
       '@cucumber/gherkin-utils': 10.0.0
-      '@cucumber/html-formatter': 22.3.0(@cucumber/messages@31.1.0)
-      '@cucumber/junit-xml-formatter': 0.9.0(@cucumber/messages@31.1.0)
-      '@cucumber/message-streams': 4.0.1(@cucumber/messages@31.1.0)
-      '@cucumber/messages': 31.1.0
-      '@cucumber/pretty-formatter': 1.0.1(@cucumber/cucumber@12.5.0)(@cucumber/messages@31.1.0)
+      '@cucumber/html-formatter': 22.3.0(@cucumber/messages@31.2.0)
+      '@cucumber/junit-xml-formatter': 0.9.0(@cucumber/messages@31.2.0)
+      '@cucumber/message-streams': 4.0.1(@cucumber/messages@31.2.0)
+      '@cucumber/messages': 31.2.0
+      '@cucumber/pretty-formatter': 1.0.1(@cucumber/cucumber@12.6.0)(@cucumber/messages@31.2.0)
       '@cucumber/tag-expressions': 8.1.0
       assertion-error-formatter: 3.0.0
       capital-case: 1.0.4
@@ -8591,11 +8599,11 @@ snapshots:
       commander: 9.1.0
       source-map-support: 0.5.21
 
-  '@cucumber/gherkin-streams@6.0.0(@cucumber/gherkin@37.0.1)(@cucumber/message-streams@4.0.1(@cucumber/messages@31.1.0))(@cucumber/messages@31.1.0)':
+  '@cucumber/gherkin-streams@6.0.0(@cucumber/gherkin@37.0.1)(@cucumber/message-streams@4.0.1(@cucumber/messages@31.2.0))(@cucumber/messages@31.2.0)':
     dependencies:
       '@cucumber/gherkin': 37.0.1
       '@cucumber/message-streams': 4.0.1(@cucumber/messages@21.0.1)
-      '@cucumber/messages': 31.1.0
+      '@cucumber/messages': 31.2.0
       commander: 14.0.0
       source-map-support: 0.5.21
 
@@ -8629,20 +8637,20 @@ snapshots:
 
   '@cucumber/gherkin@37.0.1':
     dependencies:
-      '@cucumber/messages': 31.1.0
+      '@cucumber/messages': 31.2.0
 
   '@cucumber/html-formatter@20.2.1(@cucumber/messages@21.0.1)':
     dependencies:
       '@cucumber/messages': 21.0.1
 
-  '@cucumber/html-formatter@22.3.0(@cucumber/messages@31.1.0)':
+  '@cucumber/html-formatter@22.3.0(@cucumber/messages@31.2.0)':
     dependencies:
-      '@cucumber/messages': 31.1.0
+      '@cucumber/messages': 31.2.0
 
-  '@cucumber/junit-xml-formatter@0.9.0(@cucumber/messages@31.1.0)':
+  '@cucumber/junit-xml-formatter@0.9.0(@cucumber/messages@31.2.0)':
     dependencies:
-      '@cucumber/messages': 31.1.0
-      '@cucumber/query': 14.7.0(@cucumber/messages@31.1.0)
+      '@cucumber/messages': 31.2.0
+      '@cucumber/query': 14.7.0(@cucumber/messages@31.2.0)
       '@teppeis/multimaps': 3.0.0
       luxon: 3.7.2
       xmlbuilder: 15.1.1
@@ -8651,9 +8659,9 @@ snapshots:
     dependencies:
       '@cucumber/messages': 21.0.1
 
-  '@cucumber/message-streams@4.0.1(@cucumber/messages@31.1.0)':
+  '@cucumber/message-streams@4.0.1(@cucumber/messages@31.2.0)':
     dependencies:
-      '@cucumber/messages': 31.1.0
+      '@cucumber/messages': 31.2.0
 
   '@cucumber/messages@19.1.4':
     dependencies:
@@ -8681,28 +8689,28 @@ snapshots:
       class-transformer: 0.5.1
       reflect-metadata: 0.2.2
 
-  '@cucumber/messages@31.1.0':
+  '@cucumber/messages@31.2.0':
     dependencies:
       class-transformer: 0.5.1
       reflect-metadata: 0.2.2
 
-  '@cucumber/pretty-formatter@1.0.1(@cucumber/cucumber@12.5.0)(@cucumber/messages@31.1.0)':
+  '@cucumber/pretty-formatter@1.0.1(@cucumber/cucumber@12.6.0)(@cucumber/messages@31.2.0)':
     dependencies:
-      '@cucumber/cucumber': 12.5.0
-      '@cucumber/messages': 31.1.0
+      '@cucumber/cucumber': 12.6.0
+      '@cucumber/messages': 31.2.0
       ansi-styles: 5.2.0
       cli-table3: 0.6.5
       figures: 3.2.0
       ts-dedent: 2.2.0
 
-  '@cucumber/pretty-formatter@2.4.1(@cucumber/messages@31.1.0)':
+  '@cucumber/pretty-formatter@2.4.1(@cucumber/messages@31.2.0)':
     dependencies:
-      '@cucumber/messages': 31.1.0
-      '@cucumber/query': 14.7.0(@cucumber/messages@31.1.0)
+      '@cucumber/messages': 31.2.0
+      '@cucumber/query': 14.7.0(@cucumber/messages@31.2.0)
 
-  '@cucumber/query@14.7.0(@cucumber/messages@31.1.0)':
+  '@cucumber/query@14.7.0(@cucumber/messages@31.2.0)':
     dependencies:
-      '@cucumber/messages': 31.1.0
+      '@cucumber/messages': 31.2.0
       '@teppeis/multimaps': 3.0.0
       lodash.sortby: 4.7.0
 
@@ -9216,13 +9224,13 @@ snapshots:
     dependencies:
       langium: 3.3.1
 
-  '@modelcontextprotocol/sdk@1.25.2(@cfworker/json-schema@4.1.1)(hono@4.11.4)(zod@3.25.76)':
+  '@modelcontextprotocol/sdk@1.25.3(@cfworker/json-schema@4.1.1)(hono@4.11.4)(zod@3.25.76)':
     dependencies:
       '@hono/node-server': 1.19.9(hono@4.11.4)
       ajv: 8.17.1
       ajv-formats: 3.0.1(ajv@8.17.1)
       content-type: 1.0.5
-      cors: 2.8.5
+      cors: 2.8.6
       cross-spawn: 7.0.6
       eventsource: 3.0.7
       eventsource-parser: 3.0.6
@@ -10675,7 +10683,7 @@ snapshots:
 
   '@types/minimatch@6.0.0':
     dependencies:
-      minimatch: 9.0.0
+      minimatch: 10.1.1
 
   '@types/ms@2.1.0': {}
 
@@ -10988,9 +10996,9 @@ snapshots:
       clean-stack: 2.2.0
       indent-string: 4.0.0
 
-  ai@5.0.121(zod@3.25.76):
+  ai@5.0.123(zod@3.25.76):
     dependencies:
-      '@ai-sdk/gateway': 2.0.27(zod@3.25.76)
+      '@ai-sdk/gateway': 2.0.29(zod@3.25.76)
       '@ai-sdk/provider': 2.0.1
       '@ai-sdk/provider-utils': 3.0.20(zod@3.25.76)
       '@opentelemetry/api': 1.9.0
@@ -11113,7 +11121,7 @@ snapshots:
 
   assertion-error-formatter@3.0.0:
     dependencies:
-      diff: 4.0.2
+      diff: 4.0.4
       pad-right: 0.2.2
       repeat-string: 1.6.1
 
@@ -11512,7 +11520,7 @@ snapshots:
 
   core-util-is@1.0.2: {}
 
-  cors@2.8.5:
+  cors@2.8.6:
     dependencies:
       object-assign: 4.1.1
       vary: 1.1.2
@@ -11847,7 +11855,9 @@ snapshots:
 
   diff@4.0.2: {}
 
-  diff@5.2.0: {}
+  diff@4.0.4: {}
+
+  diff@5.2.2: {}
 
   dir-glob@3.0.1:
     dependencies:
@@ -12823,6 +12833,8 @@ snapshots:
   highlightjs-vue@1.0.0: {}
 
   hono@4.11.4: {}
+
+  hono@4.11.5: {}
 
   hosted-git-info@9.0.2:
     dependencies:
@@ -16063,7 +16075,7 @@ snapshots:
   uvu@0.5.6:
     dependencies:
       dequal: 2.0.3
-      diff: 5.2.0
+      diff: 5.2.2
       kleur: 4.1.5
       sade: 1.8.1
 
