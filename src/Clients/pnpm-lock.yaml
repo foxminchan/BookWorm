@@ -105,8 +105,8 @@ importers:
         specifier: ^7.71.1
         version: 7.71.1(react@19.2.3)
       recharts:
-        specifier: ^3.6.0
-        version: 3.6.0(@types/react@19.2.8)(react-dom@19.2.3(react@19.2.3))(react-is@18.3.1)(react@19.2.3)(redux@5.0.1)
+        specifier: ^3.7.0
+        version: 3.7.0(@types/react@19.2.8)(react-dom@19.2.3(react@19.2.3))(react-is@18.3.1)(react@19.2.3)(redux@5.0.1)
       sonner:
         specifier: ^2.0.7
         version: 2.0.7(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -721,8 +721,8 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/gateway@2.0.27':
-    resolution: {integrity: sha512-8hbezMsGa0crSt7/DKjkYL1UbbJJW/UFxTfhmf5qcIeYeeWG4dTNmm+DWbUdIsTaWvp59KC4eeC9gYXBbTHd7w==}
+  '@ai-sdk/gateway@2.0.29':
+    resolution: {integrity: sha512-1b7E9F/B5gex/1uCkhs+sGIbH0KsZOItHnNz3iY5ir+nc4ZUA6WOU5Cu2w1USlc+3UVbhf+H+iNLlxVjLe4VvQ==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -1720,8 +1720,8 @@ packages:
   '@mermaid-js/parser@0.6.3':
     resolution: {integrity: sha512-lnjOhe7zyHjc+If7yT4zoedx2vo4sHaTmtkl1+or8BRTnCtDmcTpAjpzDSfCZrshM5bCoz0GyidzadJAH1xobA==}
 
-  '@modelcontextprotocol/sdk@1.25.2':
-    resolution: {integrity: sha512-LZFeo4F9M5qOhC/Uc1aQSrBHxMrvxett+9KLHt7OhcExtoiRN9DKgbZffMP/nxjutWDQpfMDfP3nkHI4X9ijww==}
+  '@modelcontextprotocol/sdk@1.25.3':
+    resolution: {integrity: sha512-vsAMBMERybvYgKbg/l4L1rhS7VXV1c0CtyJg72vwxONVX0l4ZfKVAnZEWTQixJGTzKnELjQ59e4NbdFDALRiAQ==}
     engines: {node: '>=18'}
     peerDependencies:
       '@cfworker/json-schema': ^4.1.1
@@ -3418,8 +3418,8 @@ packages:
     resolution: {integrity: sha512-4I7Td01quW/RpocfNayFdFVk1qSuoh0E7JrbRJ16nH01HhKFQ88INq9Sd+nd72zqRySlr9BmDA8xlEJ6vJMrYA==}
     engines: {node: '>=8'}
 
-  ai@5.0.121:
-    resolution: {integrity: sha512-3iYPdARKGLryC/7OA9RgBUaym1gynvWS7UPy8NwoRNCKP52lshldtHB5xcEfVviw7liWH2zJlW9yEzsDglcIEQ==}
+  ai@5.0.123:
+    resolution: {integrity: sha512-V3Imb0tg0pHCa6a/VsoW/FZpT07mwUw/4Hj6nexJC1Nvf1eyKQJyaYVkl+YTLnA8cKQSUkoarKhXWbFy4CSgjw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -3949,8 +3949,8 @@ packages:
   core-util-is@1.0.2:
     resolution: {integrity: sha512-3lqz5YjWTYnW6dlDa5TLaTCcShfar1e40rmcJVwCBJC6mWlFuj0eCHIElmG1g5kyuJ/GD+8Wn4FFCcz4gJPfaQ==}
 
-  cors@2.8.5:
-    resolution: {integrity: sha512-KIHbLJqu73RGr/hnbrO9uBeixNGuvSQjul/jdFvS/KFSIH1hWVd1ng7zOHx+YrEfInLG7q4n6GHQ9cDtxv/P6g==}
+  cors@2.8.6:
+    resolution: {integrity: sha512-tJtZBBHA6vjIAaF6EnIaq6laBBP9aq/Y3ouVJjEfoHbRBcHBAHYcMh/w8LDrk2PvIMMq8gmopa5D4V8RmbrxGw==}
     engines: {node: '>= 0.10'}
 
   cose-base@1.0.3:
@@ -4487,8 +4487,8 @@ packages:
   eventemitter3@4.0.7:
     resolution: {integrity: sha512-8guHBZCwKnFhYdHr2ysuRWErTwhoN2X8XELRlrRwpmfeY2jjuUN4taQMsULKUVo1K4DvZl+0pgfyoysHxvmvEw==}
 
-  eventemitter3@5.0.1:
-    resolution: {integrity: sha512-GWkBvjiSZK87ELrYOSESUYeVIc9mvLLf/nXalMOS5dYrgZq9o5OVkbZAVM06CVxYsCwH9BDZFPlQTlPA1j4ahA==}
+  eventemitter3@5.0.4:
+    resolution: {integrity: sha512-mlsTRyGaPBjPedk6Bvw+aqbsXDtoAyAzm5MO7JgU+yVRyMQ5O8bD4Kcci7BS85f93veegeCPkL8R4GLClnjLFw==}
 
   events@3.3.0:
     resolution: {integrity: sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==}
@@ -4945,6 +4945,10 @@ packages:
 
   hono@4.11.4:
     resolution: {integrity: sha512-U7tt8JsyrxSRKspfhtLET79pU8K+tInj5QZXs1jSugO1Vq5dFj3kmZsRldo29mTBfcjDRVRXrEZ6LS63Cog9ZA==}
+    engines: {node: '>=16.9.0'}
+
+  hono@4.11.5:
+    resolution: {integrity: sha512-WemPi9/WfyMwZs+ZUXdiwcCh9Y+m7L+8vki9MzDw3jJ+W9Lc+12HGsd368Qc1vZi1xwW8BWMMsnK5efYKPdt4g==}
     engines: {node: '>=16.9.0'}
 
   hosted-git-info@9.0.2:
@@ -6690,8 +6694,8 @@ packages:
     resolution: {integrity: sha512-57frrGM/OCTLqLOAh0mhVA9VBMHd+9U7Zb2THMGdBUoZVOtGbJzjxsYGDJ3A9AYYCP4hn6y1TVbaOfzWtm5GFg==}
     engines: {node: '>= 12.13.0'}
 
-  recharts@3.6.0:
-    resolution: {integrity: sha512-L5bjxvQRAe26RlToBAziKUB7whaGKEwD3znoM6fz3DrTowCIC/FnJYnuq1GEzB8Zv2kdTfaxQfi5GoH0tBinyg==}
+  recharts@3.7.0:
+    resolution: {integrity: sha512-l2VCsy3XXeraxIID9fx23eCb6iCBsxUQDnE8tWm6DFdszVAO7WVY/ChAD9wVit01y6B2PMupYiMmQwhgPHc9Ew==}
     engines: {node: '>=18'}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -8011,7 +8015,7 @@ snapshots:
       '@ai-sdk/provider-utils': 3.0.20(zod@3.25.76)
       zod: 3.25.76
 
-  '@ai-sdk/gateway@2.0.27(zod@3.25.76)':
+  '@ai-sdk/gateway@2.0.29(zod@3.25.76)':
     dependencies:
       '@ai-sdk/provider': 2.0.1
       '@ai-sdk/provider-utils': 3.0.20(zod@3.25.76)
@@ -8399,8 +8403,8 @@ snapshots:
       '@ai-sdk/google': 2.0.52(zod@3.25.76)
       '@ai-sdk/mcp': 0.0.8(zod@3.25.76)
       '@ai-sdk/openai': 2.0.89(zod@3.25.76)
-      '@modelcontextprotocol/sdk': 1.25.2(@cfworker/json-schema@4.1.1)(hono@4.11.4)(zod@3.25.76)
-      ai: 5.0.121(zod@3.25.76)
+      '@modelcontextprotocol/sdk': 1.25.3(@cfworker/json-schema@4.1.1)(hono@4.11.4)(zod@3.25.76)
+      ai: 5.0.123(zod@3.25.76)
       rxjs: 7.8.2
       zod: 3.25.76
     transitivePeerDependencies:
@@ -8453,9 +8457,9 @@ snapshots:
       '@ag-ui/core': 0.0.42
       '@ag-ui/encoder': 0.0.42
       '@copilotkitnext/shared': 0.0.33
-      cors: 2.8.5
+      cors: 2.8.6
       express: 4.22.1
-      hono: 4.11.4
+      hono: 4.11.5
       openai: 6.16.0(ws@8.19.0)(zod@4.3.5)
       rxjs: 7.8.1
     transitivePeerDependencies:
@@ -8545,7 +8549,7 @@ snapshots:
       '@cucumber/ci-environment': 9.1.0
       '@cucumber/cucumber-expressions': 16.1.1
       '@cucumber/gherkin': 26.0.3
-      '@cucumber/gherkin-streams': 5.0.1(@cucumber/gherkin@26.0.3)(@cucumber/message-streams@4.0.1(@cucumber/messages@21.0.1))(@cucumber/messages@21.0.1)
+      '@cucumber/gherkin-streams': 5.0.1(@cucumber/gherkin@26.0.3)(@cucumber/message-streams@4.0.1(@cucumber/messages@31.1.0))(@cucumber/messages@21.0.1)
       '@cucumber/gherkin-utils': 8.0.2
       '@cucumber/html-formatter': 20.2.1(@cucumber/messages@21.0.1)
       '@cucumber/message-streams': 4.0.1(@cucumber/messages@21.0.1)
@@ -8583,7 +8587,7 @@ snapshots:
       yaml: 2.8.2
       yup: 0.32.11
 
-  '@cucumber/gherkin-streams@5.0.1(@cucumber/gherkin@26.0.3)(@cucumber/message-streams@4.0.1(@cucumber/messages@21.0.1))(@cucumber/messages@21.0.1)':
+  '@cucumber/gherkin-streams@5.0.1(@cucumber/gherkin@26.0.3)(@cucumber/message-streams@4.0.1(@cucumber/messages@31.1.0))(@cucumber/messages@21.0.1)':
     dependencies:
       '@cucumber/gherkin': 26.0.3
       '@cucumber/message-streams': 4.0.1(@cucumber/messages@21.0.1)
@@ -9216,13 +9220,13 @@ snapshots:
     dependencies:
       langium: 3.3.1
 
-  '@modelcontextprotocol/sdk@1.25.2(@cfworker/json-schema@4.1.1)(hono@4.11.4)(zod@3.25.76)':
+  '@modelcontextprotocol/sdk@1.25.3(@cfworker/json-schema@4.1.1)(hono@4.11.4)(zod@3.25.76)':
     dependencies:
       '@hono/node-server': 1.19.9(hono@4.11.4)
       ajv: 8.17.1
       ajv-formats: 3.0.1(ajv@8.17.1)
       content-type: 1.0.5
-      cors: 2.8.5
+      cors: 2.8.6
       cross-spawn: 7.0.6
       eventsource: 3.0.7
       eventsource-parser: 3.0.6
@@ -10988,9 +10992,9 @@ snapshots:
       clean-stack: 2.2.0
       indent-string: 4.0.0
 
-  ai@5.0.121(zod@3.25.76):
+  ai@5.0.123(zod@3.25.76):
     dependencies:
-      '@ai-sdk/gateway': 2.0.27(zod@3.25.76)
+      '@ai-sdk/gateway': 2.0.29(zod@3.25.76)
       '@ai-sdk/provider': 2.0.1
       '@ai-sdk/provider-utils': 3.0.20(zod@3.25.76)
       '@opentelemetry/api': 1.9.0
@@ -11512,7 +11516,7 @@ snapshots:
 
   core-util-is@1.0.2: {}
 
-  cors@2.8.5:
+  cors@2.8.6:
     dependencies:
       object-assign: 4.1.1
       vary: 1.1.2
@@ -12202,7 +12206,7 @@ snapshots:
 
   eventemitter3@4.0.7: {}
 
-  eventemitter3@5.0.1: {}
+  eventemitter3@5.0.4: {}
 
   events@3.3.0: {}
 
@@ -12823,6 +12827,8 @@ snapshots:
   highlightjs-vue@1.0.0: {}
 
   hono@4.11.4: {}
+
+  hono@4.11.5: {}
 
   hosted-git-info@9.0.2:
     dependencies:
@@ -14886,13 +14892,13 @@ snapshots:
 
   real-require@0.2.0: {}
 
-  recharts@3.6.0(@types/react@19.2.8)(react-dom@19.2.3(react@19.2.3))(react-is@18.3.1)(react@19.2.3)(redux@5.0.1):
+  recharts@3.7.0(@types/react@19.2.8)(react-dom@19.2.3(react@19.2.3))(react-is@18.3.1)(react@19.2.3)(redux@5.0.1):
     dependencies:
       '@reduxjs/toolkit': 2.11.2(react-redux@9.2.0(@types/react@19.2.8)(react@19.2.3)(redux@5.0.1))(react@19.2.3)
       clsx: 2.1.1
       decimal.js-light: 2.5.1
       es-toolkit: 1.44.0
-      eventemitter3: 5.0.1
+      eventemitter3: 5.0.4
       immer: 10.2.0
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
