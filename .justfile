@@ -76,12 +76,17 @@ trust:
 # Setup pre-commit hooks
 
 hook:
-    git add .husky/pre-commit || echo "Warning: .husky/pre-commit not found"
+    git config core.hooksPath .husky
     echo "Pre-commit hook setup complete"
+
+# First-time setup after cloning
+
+prepare: restore trust hook
+    echo "Setup complete! Run 'just run' to start the application."
 
 # Run the application
 
-run: restore trust hook
+run:
     aspire run
 
 # Update EventCatalog bun packages

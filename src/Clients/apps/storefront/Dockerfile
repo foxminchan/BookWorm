@@ -1,5 +1,5 @@
 ARG NODE_VERSION=25.0.0
-FROM node:${NODE_VERSION}-slim AS base
+FROM node:${NODE_VERSION}-alpine AS base
 
 # Check https://github.com/nodejs/docker-node/tree/main#nodealpine to understand why libc6-compat might be needed
 RUN corepack enable pnpm && corepack install -g pnpm@10.28.0
@@ -23,11 +23,11 @@ RUN pnpm install --frozen-lockfile
 # Build the project
 COPY --from=prepare /app/out/full/ .
 
-# Uncomment and use build args to enable remote caching
-# ARG TURBO_TEAM
-# ENV TURBO_TEAM=$TURBO_TEAM
-# ARG TURBO_TOKEN
-# ENV TURBO_TOKEN=$TURBO_TOKEN
+# Use build args to enable remote caching
+ARG TURBO_TEAM
+ENV TURBO_TEAM=$TURBO_TEAM
+ARG TURBO_TOKEN
+ENV TURBO_TOKEN=$TURBO_TOKEN
 
 RUN pnpm turbo build --filter=@bookworm/storefront
 
