@@ -6,7 +6,7 @@ tools:
   - "search/codebase"
   - "edit/editFiles"
   - "read/problems"
-model: Claude Sonnet 4.5 (copilot)
+model: GPT-5.2-Codex (copilot)
 ---
 
 # C# Documentation Best Practices

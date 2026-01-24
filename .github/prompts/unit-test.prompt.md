@@ -9,7 +9,6 @@ tools:
   - "read/terminalLastCommand"
   - "read/terminalSelection"
   - "sequential-thinking/*"
-  - "microsoft-docs/*"
   - "context7/*"
   - "read/problems"
   - "search/changes"

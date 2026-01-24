@@ -7,7 +7,7 @@ tools:
   - "web/githubRepo"
   - "search"
   - "search/usages"
-model: GPT-5.1-Codex (Preview) (copilot)
+model: GPT-5.2-Codex (copilot)
 handoffs:
   - label: Start Implementation
     agent: CSharp-Expert

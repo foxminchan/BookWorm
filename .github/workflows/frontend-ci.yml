@@ -16,9 +16,6 @@ on:
       - "!**.md"
   workflow_dispatch:
 
-env:
-  PNPM_VERSION: "10.27.0"
-
 permissions:
   checks: write
   pull-requests: write
@@ -51,7 +48,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: ${{ env.PNPM_VERSION }}
+          package_json_file: src/Clients/package.json
 
       - name: Setup Node.js
         uses: actions/setup-node@v6

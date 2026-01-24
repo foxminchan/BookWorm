@@ -6,7 +6,7 @@ tools:
   - "search/codebase"
   - "edit/editFiles"
   - "read/problems"
-model: Claude Sonnet 4.5 (copilot)
+model: Claude Opus 4.5 (copilot)
 ---
 
 # C# Async Programming Best Practices

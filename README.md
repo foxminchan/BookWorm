@@ -108,7 +108,10 @@ git clone git@github.com:foxminchan/BookWorm.git
 # 2. Navigate to the project directory
 cd BookWorm
 
-# 3. Run the application (starts all services)
+# 3. First-time setup
+just prepare
+
+# 4. Run the application
 just run
 ```
 
