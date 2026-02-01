@@ -2,12 +2,12 @@ import { headers } from "next/headers";
 import type { NextRequest } from "next/server";
 
 import { HttpAgent } from "@ag-ui/client";
-import type { AbstractAgent } from "@ag-ui/client";
 import {
   CopilotRuntime,
   ExperimentalEmptyAdapter,
   copilotRuntimeNextJSAppRouterEndpoint,
 } from "@copilotkit/runtime";
+import { HttpStatusCode } from "axios";
 
 import { env } from "@/env.mjs";
 
@@ -38,15 +38,12 @@ const getRuntime = async () => {
     agentHeaders["cookie"] = cookieHeader;
   }
 
-  const agents: Record<string, AbstractAgent> = {
+  return new CopilotRuntime({
     [agentName]: new HttpAgent({
       url: agUiUrl,
       headers: agentHeaders,
     }),
-  };
-
-  // @ts-ignore - CopilotKit type definition incompatibility
-  return new CopilotRuntime({ agents });
+  });
 };
 
 export const POST = async (req: NextRequest) => {
@@ -68,7 +65,7 @@ export const POST = async (req: NextRequest) => {
           error instanceof Error ? error.message : "Unknown error occurred",
       }),
       {
-        status: 500,
+        status: HttpStatusCode.InternalServerError,
         headers: { "Content-Type": "application/json" },
       },
     );
