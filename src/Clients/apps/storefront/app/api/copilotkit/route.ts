@@ -45,8 +45,8 @@ const getRuntime = async () => {
     }),
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return new CopilotRuntime({ agents } as any);
+  // @ts-expect-error - CopilotKit type definition issue with MaybePromise
+  return new CopilotRuntime({ agents });
 };
 
 export const POST = async (req: NextRequest) => {
