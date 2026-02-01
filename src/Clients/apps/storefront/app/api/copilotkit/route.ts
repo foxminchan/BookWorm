@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import type { NextRequest } from "next/server";
 
 import { HttpAgent } from "@ag-ui/client";
+import type { AbstractAgent } from "@ag-ui/client";
 import {
   CopilotRuntime,
   ExperimentalEmptyAdapter,
@@ -37,14 +38,15 @@ const getRuntime = async () => {
     agentHeaders["cookie"] = cookieHeader;
   }
 
-  return new CopilotRuntime({
-    agents: {
-      [agentName]: new HttpAgent({
-        url: agUiUrl,
-        headers: agentHeaders,
-      }),
-    },
-  });
+  const agents: Record<string, AbstractAgent> = {
+    [agentName]: new HttpAgent({
+      url: agUiUrl,
+      headers: agentHeaders,
+    }),
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return new CopilotRuntime({ agents } as any);
 };
 
 export const POST = async (req: NextRequest) => {
