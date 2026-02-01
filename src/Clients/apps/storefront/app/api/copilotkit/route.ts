@@ -45,7 +45,7 @@ const getRuntime = async () => {
     }),
   };
 
-  // @ts-expect-error - CopilotKit type definition issue with MaybePromise
+  // @ts-ignore - CopilotKit type definition incompatibility
   return new CopilotRuntime({ agents });
 };
 
