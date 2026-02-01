@@ -16,10 +16,6 @@
       IgnoreExitCode="false"
     />
     <Message Text="Bundle k6 scripts" Importance="high" />
-    <Exec
-      Command="pnpm run ci"
-      WorkingDirectory="$(K6ContainerPath)"
-      IgnoreExitCode="false"
-    />
+    <Exec Command="pnpm run ci" WorkingDirectory="$(K6ContainerPath)" IgnoreExitCode="false" />
   </Target>
 </Project>
