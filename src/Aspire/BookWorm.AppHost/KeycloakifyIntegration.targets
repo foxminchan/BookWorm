@@ -11,19 +11,19 @@
   >
     <Message Text="Installing node packages for Keycloakify" Importance="high" />
     <Exec
-      Command="bun install --frozen-lockfile"
+      Command="pnpm install --frozen-lockfile"
       WorkingDirectory="$(KeycloakifyContainerPath)"
       IgnoreExitCode="false"
     />
     <Message Text="Formatting Keycloakify code" Importance="normal" />
     <Exec
-      Command="bun run format"
+      Command="pnpm run format"
       WorkingDirectory="$(KeycloakifyContainerPath)"
       ContinueOnError="true"
     />
     <Message Text="Building Keycloakify themes" Importance="high" />
     <Exec
-      Command="bun run build"
+      Command="pnpm run build"
       WorkingDirectory="$(KeycloakifyContainerPath)"
       IgnoreExitCode="false"
     />

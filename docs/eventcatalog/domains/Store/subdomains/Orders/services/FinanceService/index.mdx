@@ -22,59 +22,59 @@ sends:
   - id: CancelOrderCommand
     version: 1.0.0
     to:
-      - id: 'notification.{env}.events'
+      - id: "notification.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
-      - id: 'notification.{env}.events'
+      - id: "notification.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
   - id: CompleteOrderCommand
     version: 1.0.0
     to:
-      - id: 'notification.{env}.events'
+      - id: "notification.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
-      - id: 'notification.{env}.events'
+      - id: "notification.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
   - id: DeleteBasketCompleteCommand
     version: 1.0.0
     to:
-      - id: 'ordering.{env}.events'
+      - id: "ordering.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
-      - id: 'ordering.{env}.events'
+      - id: "ordering.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
   - id: DeleteBasketFailedCommand
     version: 1.0.0
     to:
-      - id: 'ordering.{env}.events'
+      - id: "ordering.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
-      - id: 'ordering.{env}.events'
+      - id: "ordering.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
   - id: PlaceOrderCommand
     version: 1.0.0
     to:
-      - id: 'notification.{env}.events'
+      - id: "notification.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
-      - id: 'basket.{env}.events'
+      - id: "basket.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
-      - id: 'basket.{env}.events'
+      - id: "basket.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
@@ -83,7 +83,7 @@ receives:
     version: 1.0.0
     from:
       - &ref_0
-        id: 'finance.{env}.events'
+        id: "finance.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
@@ -91,44 +91,44 @@ receives:
   - id: BasketDeletedFailedEvent
     version: 1.0.0
     from:
-      - id: 'finance.{env}.events'
+      - id: "finance.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
-      - id: 'finance.{env}.events'
+      - id: "finance.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
   - id: OrderStatusChangedToCancelEvent
     version: 1.0.0
     from:
-      - id: 'finance.{env}.events'
+      - id: "finance.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
-      - id: 'finance.{env}.events'
+      - id: "finance.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
   - id: OrderStatusChangedToCompleteEvent
     version: 1.0.0
     from:
-      - id: 'finance.{env}.events'
+      - id: "finance.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
-      - id: 'finance.{env}.events'
+      - id: "finance.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
   - id: UserCheckedOutEvent
     version: 1.0.0
     from:
-      - id: 'finance.{env}.events'
+      - id: "finance.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
-      - id: 'finance.{env}.events'
+      - id: "finance.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
@@ -144,7 +144,7 @@ owners:
   - nhanxnguyen
 repository:
   language: C#
-  url: 'https://github.com/foxminchan/BookWorm'
+  url: "https://github.com/foxminchan/BookWorm"
 writesTo:
   - id: FinanceDatabase
     version: 1.0.0
@@ -154,30 +154,30 @@ readsFrom:
 ---
 
 <Tiles>
-  <Tile
-    icon="DocumentIcon"
-    href={`/docs/services/${frontmatter.id}/${frontmatter.version}/changelog`}
-    title="View the changelog"
-    description="Want to know the history of this service? View the change logs"
-  />
-  <Tile
-    icon="UserGroupIcon"
-    href="/docs/users/nhanxnguyen"
-    title="Contact the author"
-    description="Any questions? Feel free to contact the owners"
-  />
-  <Tile
-    icon="BoltIcon"
-    href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
-    title={`Sends ${frontmatter.sends.length} messages`}
-    description="This service sends messages to downstream consumers"
-  />
-  <Tile
-    icon="BoltIcon"
-    href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
-    title={`Receives ${frontmatter.receives.length} messages`}
-    description="This service receives messages from other services"
-  />
+	<Tile
+		icon="DocumentIcon"
+		href={`/docs/services/${frontmatter.id}/${frontmatter.version}/changelog`}
+		title="View the changelog"
+		description="Want to know the history of this service? View the change logs"
+	/>
+	<Tile
+		icon="UserGroupIcon"
+		href="/docs/users/nhanxnguyen"
+		title="Contact the author"
+		description="Any questions? Feel free to contact the owners"
+	/>
+	<Tile
+		icon="BoltIcon"
+		href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
+		title={`Sends ${frontmatter.sends.length} messages`}
+		description="This service sends messages to downstream consumers"
+	/>
+	<Tile
+		icon="BoltIcon"
+		href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
+		title={`Receives ${frontmatter.receives.length} messages`}
+		description="This service receives messages from other services"
+	/>
 </Tiles>
 
 ## Overview
@@ -243,14 +243,14 @@ stateDiagram-v2
 
 ## 📊 Core Features
 
-| Feature | Description | SLA |
-|---------|-------------|-----|
-| **Payment Processing** | Integration with multiple payment providers (Stripe, PayPal) | 99.99% uptime |
-| **Saga Orchestration** | Distributed transaction management with automatic compensation | < 5s completion |
-| **Idempotency** | Duplicate request handling for financial operations | 100% accuracy |
-| **Audit Trail** | Complete transaction history with event sourcing | Permanent retention |
-| **Multi-Currency** | Support for 50+ currencies with real-time conversion | 99.9% accuracy |
-| **Fraud Detection** | ML-based transaction risk assessment | < 100ms response |
+| Feature                | Description                                                    | SLA                 |
+| ---------------------- | -------------------------------------------------------------- | ------------------- |
+| **Payment Processing** | Integration with multiple payment providers (Stripe, PayPal)   | 99.99% uptime       |
+| **Saga Orchestration** | Distributed transaction management with automatic compensation | < 5s completion     |
+| **Idempotency**        | Duplicate request handling for financial operations            | 100% accuracy       |
+| **Audit Trail**        | Complete transaction history with event sourcing               | Permanent retention |
+| **Multi-Currency**     | Support for 50+ currencies with real-time conversion           | 99.9% accuracy      |
+| **Fraud Detection**    | ML-based transaction risk assessment                           | < 100ms response    |
 
 ## 🔒 Security & Compliance
 
@@ -273,13 +273,13 @@ stateDiagram-v2
 
 ### Performance Metrics
 
-| Metric | Target | Current |
-|--------|--------|---------|
-| **Throughput** | 1000 TPS | 850 TPS |
-| **P50 Latency** | < 50ms | 42ms |
-| **P95 Latency** | < 200ms | 185ms |
-| **P99 Latency** | < 500ms | 450ms |
-| **Error Rate** | < 0.1% | 0.08% |
+| Metric          | Target   | Current |
+| --------------- | -------- | ------- |
+| **Throughput**  | 1000 TPS | 850 TPS |
+| **P50 Latency** | < 50ms   | 42ms    |
+| **P95 Latency** | < 200ms  | 185ms   |
+| **P99 Latency** | < 500ms  | 450ms   |
+| **Error Rate**  | < 0.1%   | 0.08%   |
 
 ### Scaling Strategy
 

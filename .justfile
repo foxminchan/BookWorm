@@ -41,22 +41,22 @@ format-fe:
 # Format EventCatalog
 
 format-eventcatalog:
-    cd docs/eventcatalog && bun run format
+    cd docs/eventcatalog && pnpm run format
 
 # Format Docusaurus
 
 format-docusaurus:
-    cd docs/docusaurus && bun run format
+    cd docs/docusaurus && pnpm run format
 
 # Format K6
 
 format-k6:
-    cd src/Aspire/BookWorm.AppHost/Container/k6 && bun run format
+    cd src/Aspire/BookWorm.AppHost/Container/k6 && pnpm run format
 
 # Format Keycloakify
 
 format-keycloakify:
-    cd src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify && bun run format
+    cd src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify && pnpm run format
 
 # Format all code
 
@@ -89,25 +89,25 @@ prepare: restore trust hook
 run:
     aspire run
 
-# Update EventCatalog bun packages
+# Update EventCatalog pnpm packages
 
 update-eventcatalog:
-    cd docs/eventcatalog && bun update
+    cd docs/eventcatalog && pnpm update
 
-# Update Docusaurus bun packages
+# Update Docusaurus pnpm packages
 
 update-docusaurus:
-    cd docs/docusaurus && bun update
+    cd docs/docusaurus && pnpm update
 
-# Update K6 bun packages
+# Update K6 pnpm packages
 
 update-k6:
-    cd src/Aspire/BookWorm.AppHost/Container/k6 && bun update
+    cd src/Aspire/BookWorm.AppHost/Container/k6 && pnpm update
 
-# Update Keycloakify bun packages
+# Update Keycloakify pnpm packages
 
 update-keycloakify:
-    cd src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify && bun update
+    cd src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify && pnpm update
 
 # Update frontend packages
 

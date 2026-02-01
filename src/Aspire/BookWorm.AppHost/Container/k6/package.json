@@ -1,46 +1,56 @@
 {
-  "name": "@bookworm/k6",
-  "version": "1.0.0",
-  "description": "Performance and load testing suite for BookWorm microservices with K6 and TypeScript",
-  "author": "Nhan Nguyen <nguyenxuannhan407@gmail.com> (https://github.com/foxminchan)",
-  "licenses": [
-    {
-      "type": "MIT",
-      "url": "https://opensource.org/licenses/MIT"
-    }
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/foxminchan/BookWorm.git",
-    "directory": "src/Aspire/BookWorm.AppHost/Container/k6"
-  },
-  "bugs": {
-    "url": "https://github.com/foxminchan/BookWorm/issues"
-  },
-  "homepage": "https://github.com/foxminchan/BookWorm#readme",
-  "main": "dist/main.js",
-  "type": "commonjs",
-  "scripts": {
-    "build": "webpack",
-    "build:watch": "webpack --watch",
-    "deploy": "bun run build && echo 'TypeScript build completed successfully'",
-    "format": "biome format --write",
-    "check": "biome check",
-    "lint": "biome lint --write",
-    "ci": "biome ci",
-    "precommit": "bun run format && bun run lint"
-  },
-  "devDependencies": {
-    "@babel/core": "^7.28.6",
-    "@babel/preset-env": "^7.28.6",
-    "@babel/preset-typescript": "^7.28.5",
-    "@biomejs/biome": "2.3.11",
-    "@types/k6": "^1.5.0",
-    "babel-loader": "^10.0.0",
-    "core-js": "^3.48.0",
-    "ts-loader": "^9.5.4",
-    "typescript": "^5.9.3",
-    "webpack": "^5.104.1",
-    "webpack-cli": "^6.0.1"
-  }
+	"name": "@bookworm/k6",
+	"version": "1.0.0",
+	"description": "Performance and load testing suite for BookWorm microservices with K6 and TypeScript",
+	"author": "Nhan Nguyen <nguyenxuannhan407@gmail.com> (https://github.com/foxminchan)",
+	"licenses": [
+		{
+			"type": "MIT",
+			"url": "https://opensource.org/licenses/MIT"
+		}
+	],
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/foxminchan/BookWorm.git",
+		"directory": "src/Aspire/BookWorm.AppHost/Container/k6"
+	},
+	"bugs": {
+		"url": "https://github.com/foxminchan/BookWorm/issues"
+	},
+	"homepage": "https://github.com/foxminchan/BookWorm#readme",
+	"main": "dist/main.js",
+	"type": "commonjs",
+	"scripts": {
+		"build": "webpack",
+		"build:watch": "webpack --watch",
+		"deploy": "pnpm run build && echo 'TypeScript build completed successfully'",
+		"format": "prettier --write \"src/**/*.{ts,js,json}\"",
+		"format:check": "prettier --check \"src/**/*.{ts,js,json}\"",
+		"lint": "eslint \"src/**/*.{ts,js}\" --fix",
+		"lint:check": "eslint \"src/**/*.{ts,js}\"",
+		"check": "pnpm run format:check && pnpm run lint:check",
+		"precommit": "pnpm run format && pnpm run lint",
+		"ci": "pnpm run check && pnpm run precommit && pnpm run build"
+	},
+	"devDependencies": {
+		"@babel/core": "^7.28.6",
+		"@babel/preset-env": "^7.28.6",
+		"@babel/preset-typescript": "^7.28.5",
+		"@eslint/js": "^9.39.2",
+		"@types/k6": "^1.5.0",
+		"@typescript-eslint/eslint-plugin": "^8.54.0",
+		"@typescript-eslint/parser": "^8.54.0",
+		"babel-loader": "^10.0.0",
+		"core-js": "^3.48.0",
+		"eslint": "^9.39.2",
+		"eslint-config-prettier": "^10.1.8",
+		"eslint-plugin-import": "^2.32.0",
+		"prettier": "^3.8.1",
+		"typescript-eslint": "^8.54.0",
+		"ts-loader": "^9.5.4",
+		"typescript": "^5.9.3",
+		"webpack": "^5.104.1",
+		"webpack-cli": "^6.0.1"
+	},
+	"packageManager": "pnpm@10.28.2"
 }

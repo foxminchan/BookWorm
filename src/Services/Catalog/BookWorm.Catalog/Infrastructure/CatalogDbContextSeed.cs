@@ -63,7 +63,7 @@ public sealed class CatalogDbContextSeed(
 
                 var agent = new ChatClientAgent(chatClient, instructions);
                 var options = new ChatClientAgentRunOptions(new() { Temperature = 0.6f });
-                var thread = await agent.GetNewThreadAsync();
+                var thread = await agent.GetNewSessionAsync();
 
                 var response = await agent.RunAsync(
                     $"Generate a book description for the title: '{book.Name}'",

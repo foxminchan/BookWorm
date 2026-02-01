@@ -31,7 +31,6 @@ on:
 
 env:
   GLOBAL_JSON_PATH: ${{ github.workspace }}/global.json
-  BUN_VERSION_FILE: ${{ github.workspace }}/.bun-version
 
 permissions:
   checks: write
@@ -59,7 +58,6 @@ jobs:
         uses: ./.github/actions/setup
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
-          bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
       - name: Cache .NET SDK
         uses: actions/cache@v5
@@ -103,7 +101,6 @@ jobs:
         uses: ./.github/actions/format
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
-          bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
   style:
     name: Style
@@ -120,7 +117,6 @@ jobs:
         uses: ./.github/actions/style
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
-          bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
   analyzers:
     name: Analyzers
@@ -137,7 +133,6 @@ jobs:
         uses: ./.github/actions/analyzers
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
-          bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
   build:
     name: Build
@@ -154,7 +149,6 @@ jobs:
         uses: ./.github/actions/build
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
-          bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
   test:
     name: Test
@@ -171,7 +165,6 @@ jobs:
         uses: ./.github/actions/test
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
-          bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
   publish:
     name: Publish Artifacts
@@ -198,7 +191,6 @@ jobs:
         uses: ./.github/actions/publish
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
-          bun-version-file: ${{ env.BUN_VERSION_FILE }}
           repository-owner: ${{ github.repository_owner }}
           repository-name: ${{ github.event.repository.name }}
           operations-environment: ${{ runner.os }}

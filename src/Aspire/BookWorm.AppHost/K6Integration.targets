@@ -11,17 +11,15 @@
   >
     <Message Text="Installing node packages" Importance="high" />
     <Exec
-      Command="bun install --frozen-lockfile"
+      Command="pnpm install --frozen-lockfile"
       WorkingDirectory="$(K6ContainerPath)"
       IgnoreExitCode="false"
     />
-    <Message Text="Lint And Format K6 code" Importance="normal" />
-    <Exec
-      Command="bun run precommit"
-      WorkingDirectory="$(K6ContainerPath)"
-      ContinueOnError="true"
-    />
     <Message Text="Bundle k6 scripts" Importance="high" />
-    <Exec Command="bun run build" WorkingDirectory="$(K6ContainerPath)" IgnoreExitCode="false" />
+    <Exec
+      Command="pnpm run ci"
+      WorkingDirectory="$(K6ContainerPath)"
+      IgnoreExitCode="false"
+    />
   </Target>
 </Project>

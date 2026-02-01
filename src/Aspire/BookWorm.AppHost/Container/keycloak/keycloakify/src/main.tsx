@@ -1,11 +1,17 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { KcPage } from "./kc.gen";
+import { KcPage, type KcContext } from "./kc.gen";
+
+interface KcGlobal {
+  kcContext?: KcContext;
+}
+
+const global = globalThis as unknown as KcGlobal;
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    {(globalThis as any).kcContext ? (
-      <KcPage kcContext={(globalThis as any).kcContext} />
+    {global.kcContext ? (
+      <KcPage kcContext={global.kcContext} />
     ) : (
       <h1>No Keycloak Context</h1>
     )}

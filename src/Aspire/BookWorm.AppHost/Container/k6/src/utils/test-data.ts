@@ -36,13 +36,7 @@ export const TEST_DATA: TestData = {
 		{ orderBy: "Rating", isDescending: true },
 		{ orderBy: "PublishDate", isDescending: true },
 	],
-	authorNames: [
-		"John Doe",
-		"Jane Smith",
-		"Robert Johnson",
-		"Mary Wilson",
-		"David Brown",
-	],
+	authorNames: ["John Doe", "Jane Smith", "Robert Johnson", "Mary Wilson", "David Brown"],
 	publisherNames: [
 		"TechBooks",
 		"Fiction House",

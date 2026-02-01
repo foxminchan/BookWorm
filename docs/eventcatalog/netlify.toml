@@ -1,7 +1,7 @@
 [build]
 base = "docs/eventcatalog"
 publish = "dist"
-command = "bun run build"
+command = "pnpm run build"
 environment = { NODE_OPTIONS = "--max-old-space-size=4096" }
 
 [functions]

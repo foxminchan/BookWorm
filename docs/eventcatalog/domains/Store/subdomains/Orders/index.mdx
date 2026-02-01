@@ -55,18 +55,18 @@ owners:
 The Ordering domain represents a strategic core domain within the BookWorm system, responsible for managing the complete lifecycle of customer orders from creation through fulfillment. Built on our [microservices architecture](https://foxminchan.github.io/BookWorm/architecture-decisions/adr-001-microservices-architecture), it embodies critical business capabilities that directly impact the organization's competitive advantage.
 
 <Tiles>
-  <Tile
-    icon="UserGroupIcon"
-    href="/docs/users/nhanxnguyen"
-    title="Contact the author"
-    description="Any questions? Feel free to contact the owners"
-  />
-  <Tile
-    icon="RectangleGroupIcon"
-    href={`/visualiser/domains/${frontmatter.id}/${frontmatter.version}`}
-    title={`${frontmatter.services.length} services are in this domain`}
-    description="This domain contains Ordering, Basket, Finance, and Notification services"
-  />
+	<Tile
+		icon="UserGroupIcon"
+		href="/docs/users/nhanxnguyen"
+		title="Contact the author"
+		description="Any questions? Feel free to contact the owners"
+	/>
+	<Tile
+		icon="RectangleGroupIcon"
+		href={`/visualiser/domains/${frontmatter.id}/${frontmatter.version}`}
+		title={`${frontmatter.services.length} services are in this domain`}
+		description="This domain contains Ordering, Basket, Finance, and Notification services"
+	/>
 </Tiles>
 
 ### Domain Characteristics
@@ -74,7 +74,6 @@ The Ordering domain represents a strategic core domain within the BookWorm syste
 - **Bounded Context**: The Ordering domain has a well-defined boundary with explicit integration points between its constituent services (Ordering, Basket, Finance, and Notification) through gRPC communication, managed via our [API Gateway](https://foxminchan.github.io/BookWorm/architecture-decisions/adr-008-api-gateway).
 
 - **Service Architecture**: The domain is composed of four specialized services:
-
   - **Ordering Service**: Core service managing order lifecycle and state
   - **Basket Service**: Handles shopping cart and item management
   - **Finance Service**: Manages payment processing and financial transactions

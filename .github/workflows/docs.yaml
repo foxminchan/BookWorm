@@ -19,9 +19,6 @@ concurrency:
   group: "pages"
   cancel-in-progress: false
 
-env:
-  BUN_VERSION_FILE: ${{ github.workspace }}/.bun-version
-
 jobs:
   build:
     name: Build Documentation
@@ -33,20 +30,27 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          bun-version-file: ${{ env.BUN_VERSION_FILE }}
+          package_json_file: src/docs/docusaurus/package.json
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: "src/docs/docusaurus/.nvmrc"
+          cache: "pnpm"
+          cache-dependency-path: "src/docs/docusaurus/pnpm-lock.yaml"
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
       - name: Install dependencies
-        run: bun install
+        run: pnpm install --frozen-lockfile
         working-directory: docs/docusaurus
 
       - name: Build documentation
-        run: bun run build
+        run: pnpm run build
         working-directory: docs/docusaurus
 
       - name: Upload artifact

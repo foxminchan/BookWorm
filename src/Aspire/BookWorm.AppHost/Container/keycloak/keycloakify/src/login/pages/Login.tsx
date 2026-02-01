@@ -140,7 +140,6 @@ export default function Login(
                     name="username"
                     defaultValue={login.username ?? ""}
                     type="text"
-                    autoFocus
                     autoComplete="username"
                     aria-invalid={messagesPerField.existsError(
                       "username",
@@ -280,7 +279,7 @@ function PasswordWrapper(
     assert(passwordInputElement instanceof HTMLInputElement);
 
     passwordInputElement.type = isPasswordRevealed ? "text" : "password";
-  }, [isPasswordRevealed]);
+  }, [isPasswordRevealed, passwordInputId]);
 
   return (
     <div className={kcClsx("kcInputGroup")}>

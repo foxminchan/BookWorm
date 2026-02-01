@@ -6,10 +6,6 @@ inputs:
     description: "The path to the global.json file"
     required: false
     default: "./global.json"
-  bun-version-file:
-    description: "The path to the .bun-version file"
-    required: false
-    default: ".bun-version"
   testHangTimeout:
     description: "The timeout for the test"
     required: false
@@ -27,10 +23,8 @@ runs:
       with:
         global-json-file: ${{ inputs.global-json-file }}
 
-    - name: Setup Bun
-      uses: oven-sh/setup-bun@v2
-      with:
-        bun-version-file: ${{ inputs.bun-version-file }}
+    - name: Setup PNPM
+      uses: pnpm/action-setup@v4
 
     - name: Install Tools
       shell: bash

@@ -25,20 +25,25 @@
 		"start": "eventcatalog start",
 		"preview": "eventcatalog preview",
 		"generate": "eventcatalog generate",
-		"lint": "biome lint --write",
-		"format": "biome format --write",
-		"check": "biome check"
+		"lint": "eslint . --fix",
+		"format": "prettier --write .",
+		"check": "eslint . && prettier --check ."
 	},
 	"dependencies": {
 		"@eventcatalog/core": "latest",
 		"@eventcatalog/generator-asyncapi": "latest",
-		"@eventcatalog/generator-openapi": "latest",
-		"baseline-browser-mapping": "^2.9.17",
-		"caniuse-lite": "^1.0.30001766"
+		"@eventcatalog/generator-openapi": "latest"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.3.11"
+		"@eslint/js": "^9.39.2",
+		"eslint": "^9.39.2",
+		"eslint-config-prettier": "^10.1.8",
+		"eslint-plugin-astro": "^1.5.0",
+		"eslint-plugin-jsx-a11y": "^6.10.2",
+		"prettier": "^3.8.1",
+		"prettier-plugin-astro": "^0.14.1"
 	},
+	"packageManager": "pnpm@10.28.2",
 	"browserslist": {
 		"production": [
 			">0.5%",

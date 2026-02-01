@@ -3,181 +3,189 @@ const { Tile, Tiles, Admonition } = Astro.props.components;
 ---
 
 <div class="p-8 pt-2 max-w-8xl mx-auto">
-  <h1 class="text-4xl font-bold text-gray-800 mb-4">Welcome to BookWorm EventCatalog</h1>
+	<h1 class="text-4xl font-bold text-gray-800 mb-4">Welcome to BookWorm EventCatalog</h1>
 
-  <Admonition type="info" title="BookWorm - Cloud-Native Bookstore">
-    <p>⭐ BookWorm showcases Aspire in a cloud-native application with AI integration. Built with DDD and VSA, it features multi-agent orchestration and standardized AI tooling through MCP with A2A Protocol support.</p>
-  </Admonition>
+	<Admonition type="info" title="BookWorm - Cloud-Native Bookstore">
+		<p>
+			⭐ BookWorm showcases Aspire in a cloud-native application with AI integration. Built with DDD
+			and VSA, it features multi-agent orchestration and standardized AI tooling through MCP with
+			A2A Protocol support.
+		</p>
+	</Admonition>
 
-  <div class="border-b border-gray-200 pb-8 py-4">
-    <h2 class="text-3xl font-semibold text-gray-700 py-4">Quick Navigation</h2>
-    <Tiles columns={3}>
-      <Tile
-        icon="BookOpenIcon"
-        iconColor="text-green-500"
-        href="https://github.com/foxminchan/BookWorm"
-        title="Source Code"
-        description="Explore the complete BookWorm source code on GitHub"
-      />
-      <Tile
-        icon="RocketLaunchIcon"
-        iconColor="text-blue-500"
-        href="/docs/domains/store/1.0.0"
-        title="Get Started"
-        description="Dive into the BookWorm architecture and services"
-      />
-      <Tile
-        icon="MapIcon"
-        iconColor="text-purple-500"
-        href="/visualiser/domains/store/1.0.0"
-        title="Architecture Visualizer"
-        description="Explore the interactive service dependency graph"
-      />
-    </Tiles>
-  </div>
+	<div class="border-b border-gray-200 pb-8 py-4">
+		<h2 class="text-3xl font-semibold text-gray-700 py-4">Quick Navigation</h2>
+		<Tiles columns={3}>
+			<Tile
+				icon="BookOpenIcon"
+				iconColor="text-green-500"
+				href="https://github.com/foxminchan/BookWorm"
+				title="Source Code"
+				description="Explore the complete BookWorm source code on GitHub"
+			/>
+			<Tile
+				icon="RocketLaunchIcon"
+				iconColor="text-blue-500"
+				href="/docs/domains/store/1.0.0"
+				title="Get Started"
+				description="Dive into the BookWorm architecture and services"
+			/>
+			<Tile
+				icon="MapIcon"
+				iconColor="text-purple-500"
+				href="/visualiser/domains/store/1.0.0"
+				title="Architecture Visualizer"
+				description="Explore the interactive service dependency graph"
+			/>
+		</Tiles>
+	</div>
 
-  <div class="border-b border-gray-200 pb-8 py-4">
-    <h2 class="text-3xl font-semibold text-gray-700 mb-4">What is BookWorm?</h2>
-    <p class="text-lg text-gray-600 mb-4">
-      BookWorm is a modern e-commerce platform designed specifically for book lovers. Built using cutting-edge technologies and architectural patterns, it demonstrates best practices in:
-    </p>
-    <ul class="list-disc list-inside text-gray-600 space-y-2 mb-6">
-      <li><strong>Microservices Architecture:</strong> Loosely coupled services with clear boundaries</li>
-      <li><strong>Event-Driven Design:</strong> Asynchronous communication using domain events</li>
-      <li><strong>Cloud-Native Principles:</strong> Containerized, scalable, and resilient</li>
-      <li><strong>Aspire Integration:</strong> Simplified cloud-native development experience</li>
-    </ul>
-  </div>
+	<div class="border-b border-gray-200 pb-8 py-4">
+		<h2 class="text-3xl font-semibold text-gray-700 mb-4">What is BookWorm?</h2>
+		<p class="text-lg text-gray-600 mb-4">
+			BookWorm is a modern e-commerce platform designed specifically for book lovers. Built using
+			cutting-edge technologies and architectural patterns, it demonstrates best practices in:
+		</p>
+		<ul class="list-disc list-inside text-gray-600 space-y-2 mb-6">
+			<li>
+				<strong>Microservices Architecture:</strong> Loosely coupled services with clear boundaries
+			</li>
+			<li><strong>Event-Driven Design:</strong> Asynchronous communication using domain events</li>
+			<li><strong>Cloud-Native Principles:</strong> Containerized, scalable, and resilient</li>
+			<li><strong>Aspire Integration:</strong> Simplified cloud-native development experience</li>
+		</ul>
+	</div>
 
-  <div class="border-b border-gray-200 pb-8 py-4">
-    <h2 class="text-3xl font-semibold text-gray-700 mb-4">Architecture Overview</h2>
-    <h3 class="text-2xl font-semibold text-gray-700 mb-3">Domain Architecture</h3>
-    <Tiles columns={2}>
-      <Tile
-        icon="CubeIcon"
-        iconColor="text-green-500"
-        href="/docs/domains/catalog/1.0.0"
-        title="Catalog Domain"
-        description="Manage books, authors, categories, and product information"
-      />
-      <Tile
-        icon="ShoppingCartIcon"
-        iconColor="text-blue-500"
-        href="/docs/domains/orders/1.0.0"
-        title="Orders Domain"
-        description="Handle shopping carts, order processing, and payments"
-      />
-    </Tiles>
-  </div>
+	<div class="border-b border-gray-200 pb-8 py-4">
+		<h2 class="text-3xl font-semibold text-gray-700 mb-4">Architecture Overview</h2>
+		<h3 class="text-2xl font-semibold text-gray-700 mb-3">Domain Architecture</h3>
+		<Tiles columns={2}>
+			<Tile
+				icon="CubeIcon"
+				iconColor="text-green-500"
+				href="/docs/domains/catalog/1.0.0"
+				title="Catalog Domain"
+				description="Manage books, authors, categories, and product information"
+			/>
+			<Tile
+				icon="ShoppingCartIcon"
+				iconColor="text-blue-500"
+				href="/docs/domains/orders/1.0.0"
+				title="Orders Domain"
+				description="Handle shopping carts, order processing, and payments"
+			/>
+		</Tiles>
+	</div>
 
-  <div class="border-b border-gray-200 pb-8 py-4">
-    <h2 class="text-3xl font-semibold text-gray-700 mb-4">Core Services</h2>
-    <Tiles columns={3}>
-      <Tile
-        icon="BookOpenIcon"
-        iconColor="text-emerald-500"
-        href="/docs/services/ProductService/1.0.0"
-        title="Product Service"
-        description="Book inventory and catalog management"
-      />
-      <Tile
-        icon="ShoppingBagIcon"
-        iconColor="text-blue-500"
-        href="/docs/services/BasketService/1.0.0"
-        title="Basket Service"
-        description="Shopping cart functionality"
-      />
-      <Tile
-        icon="CreditCardIcon"
-        iconColor="text-purple-500"
-        href="/docs/services/OrderingService/1.0.0"
-        title="Ordering Service"
-        description="Order lifecycle management"
-      />
-      <Tile
-        icon="BanknotesIcon"
-        iconColor="text-green-500"
-        href="/docs/services/FinanceService/1.0.0"
-        title="Finance Service"
-        description="Payment processing and saga orchestration"
-      />
-      <Tile
-        icon="StarIcon"
-        iconColor="text-yellow-500"
-        href="/docs/services/RatingService/1.0.0"
-        title="Rating Service"
-        description="Customer reviews and ratings"
-      />
-      <Tile
-        icon="ChatBubbleBottomCenterTextIcon"
-        iconColor="text-indigo-500"
-        href="/docs/services/ChatService/1.0.0"
-        title="Chat Service"
-        description="AI-powered book recommendations"
-      />
-    </Tiles>
-  </div>
+	<div class="border-b border-gray-200 pb-8 py-4">
+		<h2 class="text-3xl font-semibold text-gray-700 mb-4">Core Services</h2>
+		<Tiles columns={3}>
+			<Tile
+				icon="BookOpenIcon"
+				iconColor="text-emerald-500"
+				href="/docs/services/ProductService/1.0.0"
+				title="Product Service"
+				description="Book inventory and catalog management"
+			/>
+			<Tile
+				icon="ShoppingBagIcon"
+				iconColor="text-blue-500"
+				href="/docs/services/BasketService/1.0.0"
+				title="Basket Service"
+				description="Shopping cart functionality"
+			/>
+			<Tile
+				icon="CreditCardIcon"
+				iconColor="text-purple-500"
+				href="/docs/services/OrderingService/1.0.0"
+				title="Ordering Service"
+				description="Order lifecycle management"
+			/>
+			<Tile
+				icon="BanknotesIcon"
+				iconColor="text-green-500"
+				href="/docs/services/FinanceService/1.0.0"
+				title="Finance Service"
+				description="Payment processing and saga orchestration"
+			/>
+			<Tile
+				icon="StarIcon"
+				iconColor="text-yellow-500"
+				href="/docs/services/RatingService/1.0.0"
+				title="Rating Service"
+				description="Customer reviews and ratings"
+			/>
+			<Tile
+				icon="ChatBubbleBottomCenterTextIcon"
+				iconColor="text-indigo-500"
+				href="/docs/services/ChatService/1.0.0"
+				title="Chat Service"
+				description="AI-powered book recommendations"
+			/>
+		</Tiles>
+	</div>
 
-  <div class="bg-blue-50 p-6 rounded-lg shadow-md mb-8">
-    <h2 class="text-2xl font-semibold text-blue-800 mb-3">Key Features</h2>
-    <div class="grid grid-cols-2 gap-4 text-gray-700">
-      <div>
-        <ul class="list-disc list-inside space-y-2">
-          <li><strong>Event Sourcing:</strong> Complete audit trail of all business events</li>
-          <li><strong>Saga Pattern:</strong> Distributed transaction management</li>
-          <li><strong>CQRS Implementation:</strong> Separated read and write models</li>
-        </ul>
-      </div>
-      <div>
-        <ul class="list-disc list-inside space-y-2">
-          <li><strong>gRPC & REST APIs:</strong> Multiple communication protocols</li>
-          <li><strong>Real-time Updates:</strong> WebSocket support for live notifications</li>
-          <li><strong>AI Integration:</strong> Intelligent book recommendations</li>
-        </ul>
-      </div>
-    </div>
-  </div>
+	<div class="bg-blue-50 p-6 rounded-lg shadow-md mb-8">
+		<h2 class="text-2xl font-semibold text-blue-800 mb-3">Key Features</h2>
+		<div class="grid grid-cols-2 gap-4 text-gray-700">
+			<div>
+				<ul class="list-disc list-inside space-y-2">
+					<li><strong>Event Sourcing:</strong> Complete audit trail of all business events</li>
+					<li><strong>Saga Pattern:</strong> Distributed transaction management</li>
+					<li><strong>CQRS Implementation:</strong> Separated read and write models</li>
+				</ul>
+			</div>
+			<div>
+				<ul class="list-disc list-inside space-y-2">
+					<li><strong>gRPC & REST APIs:</strong> Multiple communication protocols</li>
+					<li><strong>Real-time Updates:</strong> WebSocket support for live notifications</li>
+					<li><strong>AI Integration:</strong> Intelligent book recommendations</li>
+				</ul>
+			</div>
+		</div>
+	</div>
 
-  <div class="border-b border-gray-200 pb-8 py-4">
-    <h2 class="text-3xl font-semibold text-gray-700 mb-4">Metrics & Monitoring</h2>
-    <Tiles columns={2}>
-      <Tile
-        icon="ChartBarIcon"
-        iconColor="text-purple-500"
-        href="https://sonarcloud.io/summary/overall?id=foxminchan_BookWorm&branch=main"
-        title="Code Quality"
-        description="View SonarCloud analysis and metrics"
-      />
-      <Tile
-        icon="ShieldCheckIcon"
-        iconColor="text-green-500"
-        href="https://github.com/foxminchan/BookWorm/security"
-        title="Security"
-        description="Security policies and vulnerability reports"
-      />
-    </Tiles>
-  </div>
+	<div class="border-b border-gray-200 pb-8 py-4">
+		<h2 class="text-3xl font-semibold text-gray-700 mb-4">Metrics & Monitoring</h2>
+		<Tiles columns={2}>
+			<Tile
+				icon="ChartBarIcon"
+				iconColor="text-purple-500"
+				href="https://sonarcloud.io/summary/overall?id=foxminchan_BookWorm&branch=main"
+				title="Code Quality"
+				description="View SonarCloud analysis and metrics"
+			/>
+			<Tile
+				icon="ShieldCheckIcon"
+				iconColor="text-green-500"
+				href="https://github.com/foxminchan/BookWorm/security"
+				title="Security"
+				description="Security policies and vulnerability reports"
+			/>
+		</Tiles>
+	</div>
 
-  <div class="pb-8 py-4">
-    <h2 class="text-3xl font-semibold text-gray-700 mb-4">Get Involved</h2>
-    <p class="text-gray-700 mb-4">
-      Join the BookWorm community and help us build the future of cloud-native e-commerce applications!
-    </p>
-    <Tiles columns={2}>
-      <Tile
-        icon="StarIcon"
-        iconColor="text-yellow-500"
-        href="https://github.com/foxminchan/BookWorm/stargazers"
-        title="Star on GitHub"
-        description="Show your support by starring the project ⭐"
-      />
-      <Tile
-        icon="CodeBracketIcon"
-        iconColor="text-green-500"
-        href="https://github.com/foxminchan/BookWorm/blob/main/.github/CONTRIBUTING.md"
-        title="Contribute"
-        description="Learn how to contribute to BookWorm"
-      />
-    </Tiles>
-  </div>
+	<div class="pb-8 py-4">
+		<h2 class="text-3xl font-semibold text-gray-700 mb-4">Get Involved</h2>
+		<p class="text-gray-700 mb-4">
+			Join the BookWorm community and help us build the future of cloud-native e-commerce
+			applications!
+		</p>
+		<Tiles columns={2}>
+			<Tile
+				icon="StarIcon"
+				iconColor="text-yellow-500"
+				href="https://github.com/foxminchan/BookWorm/stargazers"
+				title="Star on GitHub"
+				description="Show your support by starring the project ⭐"
+			/>
+			<Tile
+				icon="CodeBracketIcon"
+				iconColor="text-green-500"
+				href="https://github.com/foxminchan/BookWorm/blob/main/.github/CONTRIBUTING.md"
+				title="Contribute"
+				description="Learn how to contribute to BookWorm"
+			/>
+		</Tiles>
+	</div>
 </div>

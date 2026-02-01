@@ -79,10 +79,9 @@
 ### Prerequisites
 
 - [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- [Node.js](https://nodejs.org/en/download/)
 - [Docker](https://www.docker.com/get-started)
 - [Gitleaks](https://gitleaks.io/)
-- [Bun](https://bun.sh/)
+- [Node.js](https://nodejs.org/en/download/)
 - [Pnpm](https://pnpm.io/installation)
 - [Just](https://github.com/casey/just)
 - [Buf CLI](https://docs.buf.build/installation)

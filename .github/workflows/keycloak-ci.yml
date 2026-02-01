@@ -27,7 +27,6 @@ permissions:
 
 env:
   JAVA_VERSION: "25"
-  BUN_VERSION_FILE: ${{ github.workspace }}/.bun-version
 
 jobs:
   build:
@@ -53,22 +52,22 @@ jobs:
           mvn --version
           java -version
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          bun-version-file: ${{ env.BUN_VERSION_FILE }}
+          package_json_file: src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify/package.json
 
       - name: Install dependencies
         working-directory: src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify
-        run: bun install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Run Biome CI checks
         working-directory: src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify
-        run: bun run ci
+        run: pnpm run ci
 
       - name: Build Keycloak theme
         working-directory: src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify
-        run: bun run build-keycloak-theme
+        run: pnpm run build-keycloak-theme
 
       - name: List generated files
         working-directory: src/Aspire/BookWorm.AppHost/Container/keycloak

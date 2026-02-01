@@ -21,7 +21,6 @@ on:
 env:
   JAVA_VERSION: "25"
   GLOBAL_JSON_PATH: ${{ github.workspace }}/global.json
-  BUN_VERSION_FILE: ${{ github.workspace }}/.bun-version
   HANG_TIMEOUT: "7m"
   SESSION_TIMEOUT: "15m"
 
@@ -45,11 +44,6 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
       - name: Cache SonarQube Cloud packages
         uses: actions/cache@v5

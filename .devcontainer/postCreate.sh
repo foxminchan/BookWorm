@@ -9,13 +9,13 @@ sudo apt-get update && \
 echo Install Aspire
 curl -sSL https://aspire.dev/install.sh | bash
 
-echo Installing Bun
-curl -fsSL https://bun.sh/install | bash
+echo Installing pnpm
+curl -fsSL https://get.pnpm.io/install.sh | sh -
 
-echo "Installing just-cli globally using bun"
-bun install -g rust-just
+echo "Installing just-cli globally"
+cargo install just
 
 echo "Installing Buf CLI"
-bun install -g @bufbuild/buf
+curl -sSL https://github.com/bufbuild/buf/releases/latest/download/buf-Linux-x86_64 -o /usr/local/bin/buf && chmod +x /usr/local/bin/buf
 
 echo "✅ BookWorm development environment setup complete!"

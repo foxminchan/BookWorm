@@ -19,7 +19,7 @@ sends:
     version: 1.0.0
     to:
       - &ref_0
-        id: 'catalog.{env}.events'
+        id: "catalog.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
@@ -28,7 +28,7 @@ sends:
     version: 1.0.0
     to:
       - &ref_1
-        id: 'catalog.{env}.events'
+        id: "catalog.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
@@ -38,7 +38,7 @@ receives:
     version: 1.0.0
     from:
       - &ref_2
-        id: 'rating.{env}.events'
+        id: "rating.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
@@ -55,7 +55,7 @@ owners:
   - nhanxnguyen
 repository:
   language: C#
-  url: 'https://github.com/foxminchan/BookWorm'
+  url: "https://github.com/foxminchan/BookWorm"
 writesTo:
   - id: RatingDatabase
     version: 1.0.0
@@ -72,30 +72,30 @@ attachments:
 ---
 
 <Tiles>
-  <Tile
-    icon="DocumentIcon"
-    href={`/docs/services/${frontmatter.id}/${frontmatter.version}/changelog`}
-    title="View the changelog"
-    description="Want to know the history of this service? View the change logs"
-  />
-  <Tile
-    icon="UserGroupIcon"
-    href="/docs/users/nhanxnguyen"
-    title="Contact the author"
-    description="Any questions? Feel free to contact the owners"
-  />
-  <Tile
-    icon="BoltIcon"
-    href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
-    title={`Sends ${frontmatter.sends.length} messages`}
-    description="This service sends messages to downstream consumers"
-  />
-  <Tile
-    icon="BoltIcon"
-    href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
-    title={`Receives ${frontmatter.receives.length} messages`}
-    description="This service receives messages from other services"
-  />
+	<Tile
+		icon="DocumentIcon"
+		href={`/docs/services/${frontmatter.id}/${frontmatter.version}/changelog`}
+		title="View the changelog"
+		description="Want to know the history of this service? View the change logs"
+	/>
+	<Tile
+		icon="UserGroupIcon"
+		href="/docs/users/nhanxnguyen"
+		title="Contact the author"
+		description="Any questions? Feel free to contact the owners"
+	/>
+	<Tile
+		icon="BoltIcon"
+		href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
+		title={`Sends ${frontmatter.sends.length} messages`}
+		description="This service sends messages to downstream consumers"
+	/>
+	<Tile
+		icon="BoltIcon"
+		href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
+		title={`Receives ${frontmatter.receives.length} messages`}
+		description="This service receives messages from other services"
+	/>
 </Tiles>
 
 ## Overview
@@ -253,7 +253,6 @@ architecture-beta
 ## Key Metrics
 
 - **Business Metrics**
-
   - Average rating per book
   - Total feedbacks submitted
   - Moderation approval rate

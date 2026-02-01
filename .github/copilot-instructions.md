@@ -46,7 +46,7 @@ Key locations:
 
 Prerequisites:
 - .NET SDK (per global.json if present; do not modify global.json).
-- Node.js + bun (if a frontend exists).
+- Node.js + pnpm (if a frontend exists).
 - Dev dependencies used by AppHost (e.g., Docker, local emulators) if required by resources.
 
 Recommended flow:

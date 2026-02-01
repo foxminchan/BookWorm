@@ -11,5 +11,5 @@ documentation websites.
 
 ## Getting Started
 
-1. Run `bun install` to install dependencies
-2. Run `bun run start` to start the development server
+1. Run `pnpm install` to install dependencies
+2. Run `pnpm run start` to start the development server

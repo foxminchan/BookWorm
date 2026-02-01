@@ -155,7 +155,7 @@ deployment targets.
 │   ├── azure.yml                   # Azure deployment workflow
 │   └── clean-up.yml                # Repository maintenance
 ├── actions/
-│   ├── setup/                      # Environment setup (.NET, Bun, tools)
+│   ├── setup/                      # Environment setup (.NET, pnpm, tools)
 │   ├── build/                      # .NET build with caching
 │   ├── test/                       # Test execution with multiple loggers
 │   ├── security-scan/              # Gitleaks secrets detection
@@ -188,7 +188,7 @@ services:
 #### Setup Action
 
 - **.NET 9.0 SDK** setup with specific version management
-- **Bun runtime** setup for JavaScript tooling
+- **pnpm** setup for JavaScript/TypeScript tooling
 - **dotnet tool restore** for development tools installation
 - **Husky configuration** for Git hooks integration
 

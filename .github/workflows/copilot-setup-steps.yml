@@ -14,7 +14,6 @@ on:
 
 env:
   GLOBAL_JSON_PATH: ${{ github.workspace }}/global.json
-  BUN_VERSION_FILE: ${{ github.workspace }}/.bun-version
 
 jobs:
   # The job MUST be called `copilot-setup-steps` or it will not be picked up by Copilot.
@@ -40,10 +39,14 @@ jobs:
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
         with:
-          bun-version-file: ${{ env.BUN_VERSION_FILE }}
+          node-version-file: "docs/docusaurus/.nvmrc"
+          cache: "pnpm"
 
       - name: Install Tools
         run: dotnet tool restore
@@ -52,9 +55,9 @@ jobs:
         run: dotnet build --configuration Debug
 
       - name: Install docusaurus dependencies
-        run: bun install
+        run: pnpm install --frozen-lockfile
         working-directory: docs/docusaurus
 
       - name: Install eventcatalog dependencies
-        run: bun install
+        run: pnpm install --frozen-lockfile
         working-directory: docs/eventcatalog

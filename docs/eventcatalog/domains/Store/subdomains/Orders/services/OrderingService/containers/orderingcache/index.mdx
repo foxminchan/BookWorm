@@ -37,24 +37,28 @@ E-commerce order queries often exhibit temporal and spatial locality, where rece
 We employ multiple caching strategies based on data characteristics:
 
 **Cache-Aside (Lazy Loading)**
+
 - Most common pattern for order and buyer data
 - Load data into cache only when requested
 - First request: cache miss → load from DB → store in cache
 - Subsequent requests: cache hit → return immediately
 
 **Write-Through**
+
 - For critical order updates
 - Write to database and cache simultaneously
 - Ensures cache is always consistent
 - Used for order status changes
 
 **Write-Behind (Write-Back)**
+
 - For high-frequency updates (view counts, clicks)
 - Write to cache immediately, queue database update
 - Reduces database write pressure
 - Periodic batch updates to database
 
 **Refresh-Ahead**
+
 - For predictable access patterns
 - Proactively refresh cache before expiration
 - Used for recent orders and active buyers
