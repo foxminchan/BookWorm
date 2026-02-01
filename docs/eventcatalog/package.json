@@ -1,62 +1,49 @@
 {
-	"name": "@bookworm/eventcatalog",
-	"version": "1.0.0",
-	"description": "Living event-driven architecture catalog with service contracts and documentation",
-	"author": "Nhan Nguyen <nguyenxuannhan407@gmail.com> (https://github.com/foxminchan)",
-	"licenses": [
-		{
-			"type": "MIT",
-			"url": "https://opensource.org/licenses/MIT"
-		}
-	],
-	"private": true,
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/foxminchan/BookWorm.git",
-		"directory": "docs/eventcatalog"
-	},
-	"bugs": {
-		"url": "https://github.com/foxminchan/BookWorm/issues"
-	},
-	"homepage": "https://bookwormdev.netlify.app/",
-	"scripts": {
-		"dev": "eventcatalog dev",
-		"build": "eventcatalog build",
-		"start": "eventcatalog start",
-		"preview": "eventcatalog preview",
-		"generate": "eventcatalog generate",
-		"lint": "eslint . --fix",
-		"format": "prettier --write .",
-		"check": "eslint . && prettier --check ."
-	},
-	"dependencies": {
-		"@eventcatalog/core": "latest",
-		"@eventcatalog/generator-asyncapi": "latest",
-		"@eventcatalog/generator-openapi": "latest"
-	},
-	"devDependencies": {
-		"@eslint/js": "^9.39.2",
-		"eslint": "^9.39.2",
-		"eslint-config-prettier": "^10.1.8",
-		"eslint-plugin-astro": "^1.5.0",
-		"eslint-plugin-jsx-a11y": "^6.10.2",
-		"prettier": "^3.8.1",
-		"prettier-plugin-astro": "^0.14.1"
-	},
-	"packageManager": "pnpm@10.28.2",
-	"browserslist": {
-		"production": [
-			">0.5%",
-			"not dead",
-			"not op_mini all"
-		],
-		"development": [
-			"last 3 chrome version",
-			"last 3 firefox version",
-			"last 5 safari version"
-		]
-	},
-	"engines": {
-		"node": ">=25.0.0"
-	}
+  "name": "@bookworm/eventcatalog",
+  "version": "1.0.0",
+  "description": "Living event-driven architecture catalog with service contracts and documentation",
+  "author": "Nhan Nguyen <nguyenxuannhan407@gmail.com> (https://github.com/foxminchan)",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  ],
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foxminchan/BookWorm.git",
+    "directory": "docs/eventcatalog"
+  },
+  "bugs": {
+    "url": "https://github.com/foxminchan/BookWorm/issues"
+  },
+  "homepage": "https://bookwormdev.netlify.app/",
+  "scripts": {
+    "dev": "eventcatalog dev",
+    "build": "eventcatalog build",
+    "start": "eventcatalog start",
+    "preview": "eventcatalog preview",
+    "generate": "eventcatalog generate"
+  },
+  "dependencies": {
+    "@eventcatalog/core": "latest",
+    "@eventcatalog/generator-asyncapi": "latest",
+    "@eventcatalog/generator-openapi": "latest"
+  },
+  "browserslist": {
+    "production": [
+      ">0.5%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 3 chrome version",
+      "last 3 firefox version",
+      "last 5 safari version"
+    ]
+  },
+  "engines": {
+    "node": ">=25.0.0"
+  }
 }

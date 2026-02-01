@@ -60,5 +60,5 @@ jobs:
         working-directory: docs/docusaurus
 
       - name: Install eventcatalog dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
         working-directory: docs/eventcatalog
