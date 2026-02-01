@@ -41,7 +41,7 @@ format-fe:
 # Format EventCatalog
 
 format-eventcatalog:
-    cd docs/eventcatalog && pnpm run format
+    cd docs/eventcatalog && bun run format
 
 # Format Docusaurus
 
@@ -92,7 +92,7 @@ run:
 # Update EventCatalog pnpm packages
 
 update-eventcatalog:
-    cd docs/eventcatalog && pnpm update
+    cd docs/eventcatalog && bun update
 
 # Update Docusaurus pnpm packages
 
