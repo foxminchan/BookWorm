@@ -3,9 +3,6 @@ using MimeKit.Text;
 
 namespace BookWorm.Notification.Domain.Builders;
 
-/// <summary>
-///     Fluent builder for constructing order notification <see cref="MimeMessage" /> instances.
-/// </summary>
 public sealed class OrderMimeMessageBuilder
 {
     private OrderMimeMessageBuilder() { }
@@ -17,7 +14,10 @@ public sealed class OrderMimeMessageBuilder
     /// <summary>
     ///     Creates a new builder instance.
     /// </summary>
-    public static OrderMimeMessageBuilder Initialize() => new();
+    public static OrderMimeMessageBuilder Initialize()
+    {
+        return new();
+    }
 
     /// <summary>
     ///     Sets the recipient of the email.

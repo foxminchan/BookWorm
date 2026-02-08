@@ -10,9 +10,8 @@ internal sealed partial class MjmlTemplateRenderer : IRenderer
 {
     private static readonly Assembly Assembly = typeof(MjmlTemplateRenderer).Assembly;
 
-    private readonly MjmlRenderer _mjmlCompiler = new();
+    private static readonly MjmlRenderer _mjmlCompiler = new();
 
-    /// <inheritdoc />
     public async Task<string> RenderAsync<T>(
         T model,
         string templateName,
