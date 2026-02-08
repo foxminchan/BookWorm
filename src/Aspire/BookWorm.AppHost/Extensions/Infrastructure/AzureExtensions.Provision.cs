@@ -50,7 +50,7 @@ public static partial class AzureExtensions
 
             resource.AccessTier = StorageAccountAccessTier.Cool;
 
-            var blobService = new BlobService("blobService")
+            var blobService = new BlobService(nameof(BlobService).ToLowerInvariant())
             {
                 Parent = resource,
                 CorsRules =
