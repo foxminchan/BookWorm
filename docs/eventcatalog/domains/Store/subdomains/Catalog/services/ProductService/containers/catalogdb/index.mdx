@@ -16,7 +16,7 @@ attachments:
   - url: https://drive.google.com/file/d/1ZUFxSDuI66xw5SEimbvTefveG0GskpqI/view?usp=sharing
     title: ERD of the Catalog Database
     description: Learn more about the schema of the Catalog Database
-    type: 'diagrams'
+    type: "diagrams"
     icon: FileTextIcon
 ---
 
@@ -27,12 +27,12 @@ attachments:
 The Catalog Database is the authoritative source for all product catalog information in the BookWorm system. Built on PostgreSQL 18, it manages the complete lifecycle of book products, including their metadata, categorization, authorship, and publisher information. This database serves as the backbone of the product catalog service, enabling efficient product discovery, management, and synchronization across the BookWorm platform.
 
 <AccordionGroup>
-  <Accordion title="Catalog Database Schema">
-    <Schema file="schema.sql" lang="sql" title="Catalog Database Schema" />
-  </Accordion>
-  <Accordion title="Common Queries">
-    <Schema file="queries.sql" lang="sql" title="Common Queries" />
-  </Accordion>
+	<Accordion title="Catalog Database Schema">
+		<Schema file="schema.sql" lang="sql" title="Catalog Database Schema" />
+	</Accordion>
+	<Accordion title="Common Queries">
+		<Schema file="queries.sql" lang="sql" title="Common Queries" />
+	</Accordion>
 </AccordionGroup>
 
 ## Schema Design
@@ -40,7 +40,9 @@ The Catalog Database is the authoritative source for all product catalog informa
 The database follows Domain-Driven Design (DDD) principles with the following aggregate roots:
 
 ### Book Aggregate
+
 The central entity representing books in the catalog system. Each book contains:
+
 - **Core Information**: Name, description, and image
 - **Pricing**: Base price and optional sale price (managed as a value object)
 - **Status**: Current availability status (InStock, OutOfStock, etc.)
@@ -48,42 +50,55 @@ The central entity representing books in the catalog system. Each book contains:
 - **Relationships**: Links to Category, Publisher, and multiple Authors through BookAuthor junction table
 
 ### Category Aggregate
+
 Organizes books into logical groupings:
+
 - **Name**: Unique category identifier (e.g., Fiction, Non-Fiction, Science, History)
 - Used for product organization and filtering
 
 ### Author Aggregate
+
 Represents book authors in the system:
+
 - **Name**: Author's full name
 - **Books**: Many-to-many relationship with books through BookAuthor junction table
 - Supports co-authored books
 
 ### Publisher Aggregate
+
 Manages publisher information:
+
 - **Name**: Publisher company name
 - **Books**: One-to-many relationship with books
 
 ### BookAuthor (Junction Entity)
+
 Enables many-to-many relationships between books and authors, supporting co-authored publications. Includes soft delete capability for maintaining historical data integrity.
 
 ## Key Features
 
 ### Soft Delete Support
+
 Books and BookAuthor entities implement soft delete patterns, ensuring:
+
 - Historical data preservation for audit trails
 - Safe deletion without breaking referential integrity
 - Ability to recover accidentally deleted records
 - Compliance with data retention policies
 
 ### Audit Trail
+
 All entities inherit auditable properties tracking:
+
 - Creation timestamp
 - Last modification timestamp
 - Created by user
 - Modified by user
 
 ### Domain Events
+
 The Book aggregate emits domain events (e.g., `BookCreatedEvent`) for:
+
 - Event-driven architecture integration
 - Cross-service communication
 - Audit logging
@@ -107,6 +122,7 @@ The Book aggregate emits domain events (e.g., `BookCreatedEvent`) for:
 ## Integration Points
 
 The Catalog Database integrates with:
+
 - **Basket Service**: Product information for cart items
 - **Ordering Service**: Product details for order processing
 - **Rating Service**: Aggregated rating data updates

@@ -26,47 +26,47 @@ sends:
   - id: UserCheckedOutEvent
     version: 1.0.0
     to:
-      - id: 'finance.{env}.events'
+      - id: "finance.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
-      - id: 'finance.{env}.events'
+      - id: "finance.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
   - id: OrderStatusChangedToCompleteEvent
     version: 1.0.0
     to:
-      - id: 'finance.{env}.events'
+      - id: "finance.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
-      - id: 'finance.{env}.events'
+      - id: "finance.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
   - id: OrderStatusChangedToCancelEvent
     version: 1.0.0
     to:
-      - id: 'finance.{env}.events'
+      - id: "finance.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
-      - id: 'finance.{env}.events'
+      - id: "finance.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
   - id: ListBooksGrpc
     version: 1.0.0
     to:
-      - id: 'catalog.{env}.events'
+      - id: "catalog.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
   - id: GetBasketGrpc
     version: 1.0.0
     to:
-      - id: 'basket.{env}.events'
+      - id: "basket.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
@@ -74,51 +74,51 @@ receives:
   - id: CompleteOrderCommand
     version: 1.0.0
     from:
-      - id: 'notification.{env}.events'
+      - id: "notification.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
-      - id: 'notification.{env}.events'
+      - id: "notification.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
   - id: CancelOrderCommand
     version: 1.0.0
     from:
-      - id: 'notification.{env}.events'
+      - id: "notification.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
-      - id: 'notification.{env}.events'
+      - id: "notification.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
   - id: OrderStream
     version: 1.0.0
     from:
-      - id: 'ordering.{env}.events'
+      - id: "ordering.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
   - id: DeleteBasketCompleteCommand
     version: 1.0.0
     from:
-      - id: 'ordering.{env}.events'
+      - id: "ordering.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
-      - id: 'ordering.{env}.events'
+      - id: "ordering.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
   - id: DeleteBasketFailedCommand
     version: 1.0.0
     from:
-      - id: 'ordering.{env}.events'
+      - id: "ordering.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
-      - id: 'ordering.{env}.events'
+      - id: "ordering.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
@@ -134,7 +134,7 @@ owners:
   - nhanxnguyen
 repository:
   language: C#
-  url: 'https://github.com/foxminchan/BookWorm'
+  url: "https://github.com/foxminchan/BookWorm"
 writesTo:
   - id: OrderingDatabase
     version: 1.0.0
@@ -163,30 +163,30 @@ attachments:
 ---
 
 <Tiles>
-  <Tile
-    icon="DocumentIcon"
-    href={`/docs/services/${frontmatter.id}/${frontmatter.version}/changelog`}
-    title="View the changelog"
-    description="Want to know the history of this service? View the change logs"
-  />
-  <Tile
-    icon="UserGroupIcon"
-    href="/docs/users/nhanxnguyen"
-    title="Contact the author"
-    description="Any questions? Feel free to contact the owners"
-  />
-  <Tile
-    icon="BoltIcon"
-    href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
-    title={`Sends ${frontmatter.sends.length} messages`}
-    description="This service sends messages to downstream consumers"
-  />
-  <Tile
-    icon="BoltIcon"
-    href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
-    title={`Receives ${frontmatter.receives.length} messages`}
-    description="This service receives messages from other services"
-  />
+	<Tile
+		icon="DocumentIcon"
+		href={`/docs/services/${frontmatter.id}/${frontmatter.version}/changelog`}
+		title="View the changelog"
+		description="Want to know the history of this service? View the change logs"
+	/>
+	<Tile
+		icon="UserGroupIcon"
+		href="/docs/users/nhanxnguyen"
+		title="Contact the author"
+		description="Any questions? Feel free to contact the owners"
+	/>
+	<Tile
+		icon="BoltIcon"
+		href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
+		title={`Sends ${frontmatter.sends.length} messages`}
+		description="This service sends messages to downstream consumers"
+	/>
+	<Tile
+		icon="BoltIcon"
+		href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
+		title={`Receives ${frontmatter.receives.length} messages`}
+		description="This service receives messages from other services"
+	/>
 </Tiles>
 
 ## Overview
@@ -233,7 +233,6 @@ C4Component
 The service is structured around the Order aggregate root, which enforces invariants and business rules across the entire ordering process. Key components include:
 
 - **Order Aggregate**: Central entity that maintains order consistency and contains:
-
   - Order Items (entities)
   - Order Status (enumeration value object)
 

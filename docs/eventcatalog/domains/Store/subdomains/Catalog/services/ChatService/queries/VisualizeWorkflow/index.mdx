@@ -36,6 +36,7 @@ This query serves as a diagnostic and documentation tool that allows system admi
 ## Query Parameters
 
 ### Type (Optional)
+
 - **Description**: Specifies the output format for the workflow visualization
 - **Default Value**: Mermaid
 - **Available Options**:
@@ -58,20 +59,25 @@ This query is restricted to administrators only, as it exposes internal system a
 ## Use Cases
 
 ### Documentation Generation
+
 Technical writers can use this query to automatically generate current workflow diagrams for inclusion in system documentation, ensuring diagrams remain synchronized with the actual implementation.
 
 ### System Monitoring
+
 Operations teams can periodically retrieve workflow visualizations to verify that the agent orchestration configuration matches expected patterns and identify any unexpected changes.
 
 ### Development & Testing
+
 Development teams can use this visualization during development cycles to validate that workflow changes are correctly reflected in the agent orchestration layer.
 
 ### Training & Knowledge Transfer
+
 New team members and stakeholders can request workflow visualizations to accelerate their understanding of the chat service's internal architecture.
 
 ## Integration Points
 
 This query integrates with:
+
 - **Agent Orchestration Service**: Retrieves the current workflow configuration from the orchestration layer
 - **Authentication System**: Validates administrator credentials before processing requests
 - **Rate Limiting Service**: Ensures fair resource usage across administrator requests

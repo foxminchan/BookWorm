@@ -5,14 +5,7 @@
 		"items": {
 			"type": "array",
 			"items": {
-				"required": [
-					"id",
-					"firstName",
-					"lastName",
-					"comment",
-					"rating",
-					"bookId"
-				],
+				"required": ["id", "firstName", "lastName", "comment", "rating", "bookId"],
 				"type": "object",
 				"properties": {
 					"id": {

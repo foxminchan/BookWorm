@@ -23,7 +23,7 @@ sends:
     version: 1.0.0
     to:
       - &ref_0
-        id: 'finance.{env}.events'
+        id: "finance.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
@@ -31,18 +31,18 @@ sends:
   - id: BasketDeletedFailedEvent
     version: 1.0.0
     to:
-      - id: 'finance.{env}.events'
+      - id: "finance.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
-      - id: 'finance.{env}.events'
+      - id: "finance.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
   - id: ListBooksGrpc
     version: 1.0.0
     to:
-      - id: 'catalog.{env}.events'
+      - id: "catalog.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
@@ -50,22 +50,22 @@ receives:
   - id: GetBasketGrpc
     version: 1.0.0
     from:
-      - id: 'basket.{env}.events'
+      - id: "basket.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
   - id: PlaceOrderCommand
     version: 1.0.0
     from:
-      - id: 'notification.{env}.events'
+      - id: "notification.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
-      - id: 'basket.{env}.events'
+      - id: "basket.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
-      - id: 'basket.{env}.events'
+      - id: "basket.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
@@ -81,7 +81,7 @@ owners:
   - nhanxnguyen
 repository:
   language: C#
-  url: 'https://github.com/foxminchan/BookWorm'
+  url: "https://github.com/foxminchan/BookWorm"
 writesTo:
   - id: BasketDatabase
     version: 1.0.0
@@ -91,30 +91,30 @@ readsFrom:
 ---
 
 <Tiles>
-  <Tile
-    icon="DocumentIcon"
-    href={`/docs/services/${frontmatter.id}/${frontmatter.version}/changelog`}
-    title="View the changelog"
-    description="Want to know the history of this service? View the change logs"
-  />
-  <Tile
-    icon="UserGroupIcon"
-    href="/docs/users/nhanxnguyen"
-    title="Contact the author"
-    description="Any questions? Feel free to contact the owners"
-  />
-  <Tile
-    icon="BoltIcon"
-    href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
-    title={`Sends ${frontmatter.sends.length} messages`}
-    description="This service sends messages to downstream consumers"
-  />
-  <Tile
-    icon="BoltIcon"
-    href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
-    title={`Receives ${frontmatter.receives.length} messages`}
-    description="This service receives messages from other services"
-  />
+	<Tile
+		icon="DocumentIcon"
+		href={`/docs/services/${frontmatter.id}/${frontmatter.version}/changelog`}
+		title="View the changelog"
+		description="Want to know the history of this service? View the change logs"
+	/>
+	<Tile
+		icon="UserGroupIcon"
+		href="/docs/users/nhanxnguyen"
+		title="Contact the author"
+		description="Any questions? Feel free to contact the owners"
+	/>
+	<Tile
+		icon="BoltIcon"
+		href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
+		title={`Sends ${frontmatter.sends.length} messages`}
+		description="This service sends messages to downstream consumers"
+	/>
+	<Tile
+		icon="BoltIcon"
+		href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
+		title={`Receives ${frontmatter.receives.length} messages`}
+		description="This service receives messages from other services"
+	/>
 </Tiles>
 
 ## Overview
@@ -130,6 +130,7 @@ As a core part of our Domain-Driven Design implementation, the Basket Service ma
 - **Checkout Orchestration**: Coordinating the transition from basket to order
 - **State Persistence**: Maintaining basket state in Redis with configurable TTL
 - **Event Publishing**: Emitting domain events for basket state changes
+
 ## Component Diagram
 
 ```mermaid
@@ -160,15 +161,14 @@ C4Component
 
 ## Core Features
 
-| Feature                     | Description                                                                                               | Event Published                |
-| --------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------ |
-| **Get Basket**              | Retrieves the current basket for an authenticated user, including all items and their quantities.         | -                              |
-| **Add Item to Basket**      | Allows customers to add items to their basket, with validation ensuring quantities are greater than zero. | `BasketItemAddedEvent`         |
-| **Remove Item from Basket** | Enables customers to remove items from their basket, maintaining data consistency.                        | `BasketItemRemovedEvent`       |
+| Feature                     | Description                                                                                               | Event Published                  |
+| --------------------------- | --------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| **Get Basket**              | Retrieves the current basket for an authenticated user, including all items and their quantities.         | -                                |
+| **Add Item to Basket**      | Allows customers to add items to their basket, with validation ensuring quantities are greater than zero. | `BasketItemAddedEvent`           |
+| **Remove Item from Basket** | Enables customers to remove items from their basket, maintaining data consistency.                        | `BasketItemRemovedEvent`         |
 | **Update Item Quantity**    | Supports customers in updating the quantity of items in their basket, with built-in validation.           | `BasketItemQuantityUpdatedEvent` |
-| **Clear Basket**            | Removes all items from the basket at once.                                                               | `BasketClearedEvent`           |
-| **Delete Basket**           | Permanently removes the basket from the system.                                                           | `BasketDeletedCompletedEvent`  |
-
+| **Clear Basket**            | Removes all items from the basket at once.                                                                | `BasketClearedEvent`             |
+| **Delete Basket**           | Permanently removes the basket from the system.                                                           | `BasketDeletedCompletedEvent`    |
 
 ## Architecture diagram
 
@@ -179,15 +179,14 @@ C4Component
 ## Key Concepts
 
 <AccordionGroup>
-  <Accordion title="Basket">
-    The basket is the core domain entity representing a customer's shopping
-    cart. It is identified by a unique ID and contains a collection of basket
-    items. The basket is stored in Redis for fast access and persistence.
-  </Accordion>
-  <Accordion title="Basket Item">
-    Basket items are the individual products added to the basket by the
-    customer.
-  </Accordion>
+	<Accordion title="Basket">
+		The basket is the core domain entity representing a customer's shopping cart. It is identified
+		by a unique ID and contains a collection of basket items. The basket is stored in Redis for fast
+		access and persistence.
+	</Accordion>
+	<Accordion title="Basket Item">
+		Basket items are the individual products added to the basket by the customer.
+	</Accordion>
 </AccordionGroup>
 
 ## Infrastructure

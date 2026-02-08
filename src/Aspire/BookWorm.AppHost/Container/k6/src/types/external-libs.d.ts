@@ -12,7 +12,7 @@ declare module "https://jslib.k6.io/k6-summary/0.0.1/index.js" {
 		options?: {
 			indent?: string;
 			enableColors?: boolean;
-		},
+		}
 	): string;
 }
 
@@ -28,6 +28,6 @@ declare module "https://raw.githubusercontent.com/benc-uk/k6-reporter/main/dist/
 		options?: {
 			title?: string;
 			logoUrl?: string;
-		},
+		}
 	): string;
 }
