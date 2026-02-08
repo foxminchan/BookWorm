@@ -5,25 +5,32 @@ namespace BookWorm.Notification.Domain.Builders;
 
 public sealed class OrderMimeMessageBuilder
 {
-    private const string TemplatePath = "Templates/OrderEmail.mjml";
-
     private OrderMimeMessageBuilder() { }
 
     private string? Subject { get; set; } = string.Empty;
     private MimeEntity Body { get; set; } = new TextPart(TextFormat.Html) { Text = string.Empty };
     private MailboxAddress To { get; set; } = new(string.Empty, string.Empty);
 
+    /// <summary>
+    ///     Creates a new builder instance.
+    /// </summary>
     public static OrderMimeMessageBuilder Initialize()
     {
         return new();
     }
 
+    /// <summary>
+    ///     Sets the recipient of the email.
+    /// </summary>
     public OrderMimeMessageBuilder WithTo(string? fullName, string? email)
     {
         To = new(fullName, email);
         return this;
     }
 
+    /// <summary>
+    ///     Derives the email subject from the order status.
+    /// </summary>
     public OrderMimeMessageBuilder WithSubject(Order order)
     {
         Subject = order.Status switch
@@ -36,27 +43,28 @@ public sealed class OrderMimeMessageBuilder
         return this;
     }
 
+    /// <summary>
+    ///     Sets the email subject explicitly.
+    /// </summary>
     public OrderMimeMessageBuilder WithSubject(string? subject)
     {
         Subject = subject;
         return this;
     }
 
-    public OrderMimeMessageBuilder WithBody(Order order, IRenderer renderer)
+    /// <summary>
+    ///     Sets the email body from pre-rendered HTML content.
+    /// </summary>
+    public OrderMimeMessageBuilder WithBody(string? htmlBody)
     {
-        var htmlBody = renderer.Render(order, TemplatePath);
         var bb = new BodyBuilder { HtmlBody = htmlBody };
         Body = bb.ToMessageBody();
         return this;
     }
 
-    public OrderMimeMessageBuilder WithBody(string? body)
-    {
-        var bb = new BodyBuilder { HtmlBody = body };
-        Body = bb.ToMessageBody();
-        return this;
-    }
-
+    /// <summary>
+    ///     Builds the final <see cref="MimeMessage" />.
+    /// </summary>
     public MimeMessage Build()
     {
         var message = new MimeMessage();
