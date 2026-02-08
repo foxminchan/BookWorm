@@ -5,10 +5,7 @@ import type { SeededRandom } from "../utils/seeded-random";
 import type { TestDataGenerator } from "../utils/test-data";
 import { validateResponse } from "../utils/validation";
 
-export function spikeTestScenario(
-	_dataGen: TestDataGenerator,
-	random: SeededRandom,
-): void {
+export function spikeTestScenario(_dataGen: TestDataGenerator, random: SeededRandom): void {
 	try {
 		// Simulate sudden traffic spikes - focuses on resilience
 		const spikeEndpoints = [
@@ -16,8 +13,7 @@ export function spikeTestScenario(
 			`${getBaseUrl()}/catalog/api/v1/categories`,
 		];
 
-		const randomEndpoint =
-			spikeEndpoints[random.int(0, spikeEndpoints.length - 1)];
+		const randomEndpoint = spikeEndpoints[random.int(0, spikeEndpoints.length - 1)];
 		const response = http.get(randomEndpoint);
 
 		// During spike tests, we're more forgiving with response times

@@ -280,7 +280,7 @@ function PasswordWrapper(
     assert(passwordInputElement instanceof HTMLInputElement);
 
     passwordInputElement.type = isPasswordRevealed ? "text" : "password";
-  }, [isPasswordRevealed]);
+  }, [isPasswordRevealed, passwordInputId]);
 
   return (
     <div className={kcClsx("kcInputGroup")}>

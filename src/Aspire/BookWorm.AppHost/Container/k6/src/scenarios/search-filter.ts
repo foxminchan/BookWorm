@@ -8,10 +8,7 @@ import {
 	validateResponse,
 } from "../utils/validation";
 
-export function searchFilterScenario(
-	dataGen: TestDataGenerator,
-	random: SeededRandom,
-): void {
+export function searchFilterScenario(dataGen: TestDataGenerator, random: SeededRandom): void {
 	try {
 		// Test comprehensive search and filtering functionality
 		const searchTerm = dataGen.getRandomSearchTerm();
@@ -32,7 +29,7 @@ export function searchFilterScenario(
 		const searchResponse = testEndpointWithRetry(
 			`${getBaseUrl()}/catalog/api/v1/books`,
 			searchParams,
-			"search",
+			"search"
 		);
 		if ("body" in searchResponse) {
 			const searchData = validateResponse(searchResponse, "search", 200, 800);
@@ -48,10 +45,7 @@ export function searchFilterScenario(
 		};
 
 		const queryString = Object.entries(priceFilterParams)
-			.map(
-				([key, value]) =>
-					`${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`,
-			)
+			.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
 			.join("&");
 		const requestUrl = `${getBaseUrl()}/catalog/api/v1/books?${queryString}`;
 		const priceFilterResponse = http.get(requestUrl, {
@@ -67,10 +61,7 @@ export function searchFilterScenario(
 			};
 
 			const queryString = Object.entries(paginationParams)
-				.map(
-					([key, value]) =>
-						`${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`,
-				)
+				.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
 				.join("&");
 			const requestUrl = `${getBaseUrl()}/catalog/api/v1/books?${queryString}`;
 			const paginationResponse = http.get(requestUrl, {

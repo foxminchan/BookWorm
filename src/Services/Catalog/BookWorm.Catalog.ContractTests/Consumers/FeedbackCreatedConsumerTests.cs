@@ -60,6 +60,9 @@ public sealed class FeedbackCreatedConsumerTests
             // Assert
             var consumer = harness.GetConsumerHarness<FeedbackCreatedIntegrationEventHandler>();
 
+            // Wait for the consumer to consume the message
+            await consumer.Consumed.Any<FeedbackCreatedIntegrationEvent>();
+
             await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _repositoryMock.Verify(

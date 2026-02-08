@@ -26,9 +26,6 @@ public static partial class AzureExtensions
     ///         <item>
     ///             <description>Cool access tier for cost optimization</description>
     ///         </item>
-    ///         <item>
-    ///             <description>Environment and project tags for resource management</description>
-    ///         </item>
     ///     </list>
     /// </remarks>
     public static IResourceBuilder<AzureStorageResource> ProvisionAsService(
@@ -52,6 +49,31 @@ public static partial class AzureExtensions
             resource.Location = AzureLocation.SoutheastAsia;
 
             resource.AccessTier = StorageAccountAccessTier.Cool;
+
+            var blobService = new BlobService(nameof(BlobService).ToLowerInvariant())
+            {
+                Parent = resource,
+                CorsRules =
+                [
+                    new StorageCorsRule
+                    {
+                        AllowedMethods =
+                        [
+                            CorsRuleAllowedMethod.Get,
+                            CorsRuleAllowedMethod.Head,
+                            CorsRuleAllowedMethod.Post,
+                            CorsRuleAllowedMethod.Options,
+                        ],
+                        // Allow all origins for simplicity; in real scenarios read from parameters or configuration
+                        AllowedOrigins = ["*"],
+                        AllowedHeaders = ["*"],
+                        ExposedHeaders = ["*"],
+                        MaxAgeInSeconds = 3600,
+                    },
+                ],
+            };
+
+            infra.Add(blobService);
         });
 
         return builder;
@@ -180,9 +202,6 @@ public static partial class AzureExtensions
     ///     <list type="bullet">
     ///         <item>
     ///             <description>Dashboard integration for monitoring</description>
-    ///         </item>
-    ///         <item>
-    ///             <description>Azure Developer CLI (azd) resource naming conventions</description>
     ///         </item>
     ///         <item>
     ///             <description>Consumption workload profile for serverless execution</description>

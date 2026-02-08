@@ -16,7 +16,7 @@ Each service is independently deployable and owns its data. Services communicate
 
 ### IV. Clean Architecture & Vertical Slice
 
-Services follow Clean Architecture with clear separation between Domain (aggregates, entities, events, exceptions, value objects), Features (vertical slices with commands/queries), Infrastructure (persistence, integrations), and API layers. Implement Vertical Slice Architecture for feature organization under `/Features` folder. Use CQRS with `Mediator` library (source generator-based, not MediatR) for command/query separation. Custom `IEndpoint<TResult, TRequest>` interfaces from `BookWorm.Chassis` provide structured endpoint mapping via ASP.NET Core Minimal APIs. Domain events (inheriting from `IDomainEvent` in SharedKernel) handle side effects and cross-cutting concerns, dispatched via `IDomainEventDispatcher`.
+Services follow Clean Architecture with clear separation between Domain (aggregates, entities, events, exceptions, value objects), Features (vertical slices with commands/queries), Infrastructure (persistence, integrations), and API layers. Implement Vertical Slice Architecture for feature organization under `/Features` folder. Use CQRS with `Mediator` library (source generator-based, not Mediator) for command/query separation. Custom `IEndpoint<TResult, TRequest>` interfaces from `BookWorm.Chassis` provide structured endpoint mapping via ASP.NET Core Minimal APIs. Domain events (inheriting from `IDomainEvent` in SharedKernel) handle side effects and cross-cutting concerns, dispatched via `IDomainEventDispatcher`.
 
 ### V. .NET 10 & Modern C# Standards
 

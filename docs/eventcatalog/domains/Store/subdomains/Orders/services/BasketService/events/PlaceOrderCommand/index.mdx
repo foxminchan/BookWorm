@@ -4,7 +4,7 @@ version: 1.0.0
 name: Order Placed
 summary: Represents a command to place an order
 badges:
-  - content: 'Broker:AMQP'
+  - content: "Broker:AMQP"
     backgroundColor: green
     textColor: white
     icon: ArrowPathIcon
@@ -32,10 +32,10 @@ The `PlaceOrderCommand` is a critical domain command that initiates the order cr
 
 ```json title="Event Message"
 {
-  "basketId": "Guid",
-  "email": "string",
-  "orderId": "Guid",
-  "totalMoney": "decimal"
+	"basketId": "Guid",
+	"email": "string",
+	"orderId": "Guid",
+	"totalMoney": "decimal"
 }
 ```
 

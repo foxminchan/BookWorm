@@ -6,10 +6,7 @@ import type { SeededRandom } from "../utils/seeded-random";
 import type { TestDataGenerator } from "../utils/test-data";
 import { validateResponse } from "../utils/validation";
 
-export function apiComprehensiveScenario(
-	dataGen: TestDataGenerator,
-	random: SeededRandom,
-): void {
+export function apiComprehensiveScenario(dataGen: TestDataGenerator, random: SeededRandom): void {
 	try {
 		// Test all available API endpoints systematically
 		const endpoints = [
@@ -40,12 +37,7 @@ export function apiComprehensiveScenario(
 			const response = http.get(endpoint.url, {
 				tags: { scenario: "api_comprehensive", endpoint: endpoint.name },
 			});
-			validateResponse(
-				response,
-				endpoint.name,
-				CONSTANTS.HTTP_OK,
-				endpoint.maxDuration,
-			);
+			validateResponse(response, endpoint.name, CONSTANTS.HTTP_OK, endpoint.maxDuration);
 
 			// Test with various query parameters for books endpoint
 			if (endpoint.name === "books") {
@@ -62,10 +54,7 @@ export function apiComprehensiveScenario(
 					// Build URL with query parameters
 					const queryString = Object.entries(params)
 						.map(
-							([key, value]) =>
-								`${encodeURIComponent(key)}=${encodeURIComponent(
-									String(value),
-								)}`,
+							([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`
 						)
 						.join("&");
 					const requestUrl = `${endpoint.url}?${queryString}`;
@@ -76,10 +65,7 @@ export function apiComprehensiveScenario(
 							endpoint: `${endpoint.name}_params_${index}`,
 						},
 					});
-					validateResponse(
-						paramsResponse,
-						`${endpoint.name}_with_params_${index}`,
-					);
+					validateResponse(paramsResponse, `${endpoint.name}_with_params_${index}`);
 					index++;
 				}
 			}
@@ -97,10 +83,7 @@ export function apiComprehensiveScenario(
 		for (const testCase of edgeCases) {
 			// Build URL with query parameters
 			const queryString = Object.entries(testCase.params)
-				.map(
-					([key, value]) =>
-						`${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`,
-				)
+				.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
 				.join("&");
 			const requestUrl = `${getBaseUrl()}/catalog/api/v1/books?${queryString}`;
 
@@ -144,10 +127,7 @@ export function apiComprehensiveScenario(
 			const malformedParams = { pageSize: "invalid", minPrice: "not_a_number" };
 			// Build URL with malformed query parameters
 			const queryString = Object.entries(malformedParams)
-				.map(
-					([key, value]) =>
-						`${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`,
-				)
+				.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
 				.join("&");
 			const requestUrl = `${getBaseUrl()}/catalog/api/v1/books?${queryString}`;
 
@@ -156,20 +136,15 @@ export function apiComprehensiveScenario(
 			});
 
 			// Expecting either 400 Bad Request or the API to handle gracefully
-			const acceptableStatuses = [
-				CONSTANTS.HTTP_OK,
-				CONSTANTS.HTTP_BAD_REQUEST,
-			];
-			const isValidStatus = acceptableStatuses.includes(
-				malformedResponse.status,
-			);
+			const acceptableStatuses = [CONSTANTS.HTTP_OK, CONSTANTS.HTTP_BAD_REQUEST];
+			const isValidStatus = acceptableStatuses.includes(malformedResponse.status);
 
 			check(
 				malformedResponse,
 				{
 					"malformed params handled appropriately": () => isValidStatus,
 				},
-				{ scenario: "api_comprehensive", endpoint: "malformed_params" },
+				{ scenario: "api_comprehensive", endpoint: "malformed_params" }
 			);
 		}
 	} catch (error) {

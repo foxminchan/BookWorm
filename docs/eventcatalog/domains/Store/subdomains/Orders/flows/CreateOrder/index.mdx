@@ -171,13 +171,13 @@ The Create Order flow represents the core business process of BookWorm, handling
 
 ### Order Validation Rules
 
-| Rule | Description | Action on Violation |
-|------|-------------|-------------------|
-| **Minimum Order Value** | Orders must be >= $10 | Reject with error message |
-| **Maximum Items** | Max 50 unique items per order | Split into multiple orders |
-| **Stock Availability** | All items must be in stock | Suggest alternatives |
-| **Payment Method** | Must have valid payment | Redirect to payment setup |
-| **Shipping Address** | Must be deliverable region | Show supported regions |
+| Rule                    | Description                   | Action on Violation        |
+| ----------------------- | ----------------------------- | -------------------------- |
+| **Minimum Order Value** | Orders must be >= $10         | Reject with error message  |
+| **Maximum Items**       | Max 50 unique items per order | Split into multiple orders |
+| **Stock Availability**  | All items must be in stock    | Suggest alternatives       |
+| **Payment Method**      | Must have valid payment       | Redirect to payment setup  |
+| **Shipping Address**    | Must be deliverable region    | Show supported regions     |
 
 ### Compensation Rules
 
@@ -202,10 +202,10 @@ When failures occur, the system automatically compensates:
 
 ### Service Level Agreement
 
-| Component | Availability | Response Time | Error Rate |
-|-----------|--------------|---------------|------------|
-| **API Gateway** | 99.99% | < 50ms | < 0.01% |
-| **Ordering Service** | 99.9% | < 200ms | < 0.1% |
-| **Finance Service** | 99.95% | < 500ms | < 0.05% |
-| **Basket Service** | 99.9% | < 100ms | < 0.1% |
-| **Overall Flow** | 99.9% | < 5s | < 0.1% |
+| Component            | Availability | Response Time | Error Rate |
+| -------------------- | ------------ | ------------- | ---------- |
+| **API Gateway**      | 99.99%       | < 50ms        | < 0.01%    |
+| **Ordering Service** | 99.9%        | < 200ms       | < 0.1%     |
+| **Finance Service**  | 99.95%       | < 500ms       | < 0.05%    |
+| **Basket Service**   | 99.9%        | < 100ms       | < 0.1%     |
+| **Overall Flow**     | 99.9%        | < 5s          | < 0.1%     |

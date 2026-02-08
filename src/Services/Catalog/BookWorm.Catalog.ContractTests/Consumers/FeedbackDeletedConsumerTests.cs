@@ -61,6 +61,9 @@ public sealed class FeedbackDeletedConsumerTests
             // Assert
             var consumer = harness.GetConsumerHarness<FeedbackDeletedIntegrationEventHandler>();
 
+            // Wait for the consumer to consume the message
+            await consumer.Consumed.Any<FeedbackDeletedIntegrationEvent>();
+
             await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _repositoryMock.Verify(
@@ -104,6 +107,9 @@ public sealed class FeedbackDeletedConsumerTests
 
             // Assert
             var consumer = harness.GetConsumerHarness<FeedbackDeletedIntegrationEventHandler>();
+
+            // Wait for the consumer to consume the message
+            await consumer.Consumed.Any<FeedbackDeletedIntegrationEvent>();
 
             await SnapshotTestHelper.Verify(new { harness, consumer });
 

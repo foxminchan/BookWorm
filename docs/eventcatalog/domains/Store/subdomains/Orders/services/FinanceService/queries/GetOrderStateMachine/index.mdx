@@ -30,7 +30,7 @@ The Order State Machine represents the lifecycle of an order as it moves through
 
 The endpoint is implemented using:
 
-- **MediatR**: For handling the query via the CQRS pattern
+- **Mediator**: For handling the query via the CQRS pattern
 - **MassTransit Visualizer**: For generating the state machine graph
 - **Minimal API**: For exposing the HTTP endpoint
 
@@ -38,7 +38,7 @@ The endpoint is implemented using:
 
 1. The endpoint receives a GET request at `/api/v1/order-state-machine`
 2. The request is routed to the `GetOrderStateEndpoint` handler
-3. The handler sends a `GetOrderStateQuery` via MediatR
+3. The handler sends a `GetOrderStateQuery` via Mediator
 4. The `GetOrderStateHandler` creates a new instance of `OrderStateMachine`
 5. The handler uses `StateMachineGraphvizGenerator` to generate a DOT file representation
 6. The DOT format string is returned to the client

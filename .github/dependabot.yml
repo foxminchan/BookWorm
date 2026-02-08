@@ -201,17 +201,6 @@ updates:
           - "@typescript-eslint/*"
 
   - package-ecosystem: docker
-    directory: "/docs/eventcatalog"
-    schedule:
-      interval: weekly
-      day: friday
-      time: "10:00"
-      timezone: "Asia/Ho_Chi_Minh"
-    commit-message:
-      prefix: "Docker (Event Catalog)"
-      include: scope
-
-  - package-ecosystem: docker
     directory: "/src/Clients/apps/storefront"
     schedule:
       interval: weekly

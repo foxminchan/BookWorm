@@ -8,7 +8,7 @@ name: CSharp
 
 ## C# Instructions
 
-- Always use the latest version C#, currently C# 13 features.
+- Always use the latest version C#, currently C# 14 features.
 - Write clear and concise comments for each function.
 - Never change global.json unless explicitly asked to.
 - Never change nuget.config files unless explicitly asked to.
