@@ -1,0 +1,38 @@
+<mjml>
+  <mj-head>
+    <mj-title>BookWorm</mj-title>
+    <mj-preview>{{PreviewText}}</mj-preview>
+    <mj-font name="Roboto" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" />
+    <mj-attributes>
+      <mj-all font-family="Roboto, Arial, sans-serif" />
+      <mj-text font-size="14px" color="#333333" line-height="20px" />
+      <mj-section padding="20px 0" />
+    </mj-attributes>
+    <mj-style inline="inline">
+      a { color: #2563eb; text-decoration: none; }
+      a:hover { text-decoration: underline; }
+    </mj-style>
+  </mj-head>
+  <mj-body background-color="#f4f4f4">
+    <!-- Header -->
+    <mj-section background-color="#ffffff" padding-bottom="0">
+      <mj-column>
+        <mj-text align="center" font-size="24px" color="#333333" font-weight="bold" padding="30px 25px 20px 25px">
+          BookWorm
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Content injected here -->
+    {{Content}}
+
+    <!-- Footer -->
+    <mj-section background-color="#f4f4f4" padding="20px 25px">
+      <mj-column>
+        <mj-text align="center" font-size="12px" color="#666666">
+          &copy; {{Year}} BookWorm. All rights reserved.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

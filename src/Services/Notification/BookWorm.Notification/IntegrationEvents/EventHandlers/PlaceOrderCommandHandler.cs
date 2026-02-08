@@ -14,11 +14,17 @@ public sealed class PlaceOrderCommandHandler(ISender sender, IRenderer renderer)
 
         var order = message.ToOrder();
 
+        var htmlBody = await renderer.RenderAsync(
+            order,
+            "Orders/OrderEmail",
+            context.CancellationToken
+        );
+
         var mailMessage = OrderMimeMessageBuilder
             .Initialize()
             .WithTo(order.FullName, message.Email)
             .WithSubject(order)
-            .WithBody(order, renderer)
+            .WithBody(htmlBody)
             .Build();
 
         await sender.SendAsync(mailMessage, context.CancellationToken);

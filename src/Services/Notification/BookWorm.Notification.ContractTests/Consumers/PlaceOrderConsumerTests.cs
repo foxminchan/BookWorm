@@ -27,8 +27,10 @@ public sealed class PlaceOrderConsumerTests
 
         _rendererMock = new();
         _rendererMock
-            .Setup(x => x.Render(It.IsAny<Order>(), It.IsAny<string>()))
-            .Returns("Rendered order content");
+            .Setup(x =>
+                x.RenderAsync(It.IsAny<Order>(), It.IsAny<string>(), It.IsAny<CancellationToken>())
+            )
+            .ReturnsAsync("Rendered order content");
 
         _mailKitSettings = new() { From = "bookworm@example.com" };
     }

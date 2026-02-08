@@ -41,7 +41,7 @@ internal static class Extensions
         // Resilience pipeline for the notification service
         builder.AddMailResiliencePipeline();
 
-        services.AddTransient<IRenderer, MjmlRenderer>();
+        services.AddSingleton<IRenderer, MjmlTemplateRenderer>();
 
         // Register the mailkit sender for development
         // and the sendgrid sender for other environments
