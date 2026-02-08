@@ -21,37 +21,37 @@ receives:
   - id: CancelOrderCommand
     version: 1.0.0
     from:
-      - id: 'notification.{env}.events'
+      - id: "notification.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
-      - id: 'notification.{env}.events'
+      - id: "notification.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
   - id: CompleteOrderCommand
     version: 1.0.0
     from:
-      - id: 'notification.{env}.events'
+      - id: "notification.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
-      - id: 'notification.{env}.events'
+      - id: "notification.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
   - id: PlaceOrderCommand
     version: 1.0.0
     from:
-      - id: 'notification.{env}.events'
+      - id: "notification.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
-      - id: 'basket.{env}.events'
+      - id: "basket.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
-      - id: 'basket.{env}.events'
+      - id: "basket.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
@@ -59,7 +59,7 @@ receives:
     version: 1.0.0
     from:
       - &ref_0
-        id: 'notification.{env}.events'
+        id: "notification.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
@@ -68,7 +68,7 @@ receives:
     version: 1.0.0
     from:
       - &ref_1
-        id: 'notification.{env}.events'
+        id: "notification.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
@@ -82,7 +82,7 @@ owners:
   - nhanxnguyen
 repository:
   language: C#
-  url: 'https://github.com/foxminchan/BookWorm'
+  url: "https://github.com/foxminchan/BookWorm"
 writesTo:
   - id: NotificationDatabase
     version: 1.0.0
@@ -107,24 +107,24 @@ attachments:
 ---
 
 <Tiles>
-  <Tile
-    icon="DocumentIcon"
-    href={`/docs/services/${frontmatter.id}/${frontmatter.version}/changelog`}
-    title="View the changelog"
-    description="Want to know the history of this service? View the change logs"
-  />
-  <Tile
-    icon="UserGroupIcon"
-    href="/docs/users/nhanxnguyen"
-    title="Contact the author"
-    description="Any questions? Feel free to contact the owners"
-  />
-  <Tile
-    icon="BoltIcon"
-    href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
-    title={`Receives ${frontmatter.receives.length} messages`}
-    description="This service receives messages from other services"
-  />
+	<Tile
+		icon="DocumentIcon"
+		href={`/docs/services/${frontmatter.id}/${frontmatter.version}/changelog`}
+		title="View the changelog"
+		description="Want to know the history of this service? View the change logs"
+	/>
+	<Tile
+		icon="UserGroupIcon"
+		href="/docs/users/nhanxnguyen"
+		title="Contact the author"
+		description="Any questions? Feel free to contact the owners"
+	/>
+	<Tile
+		icon="BoltIcon"
+		href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
+		title={`Receives ${frontmatter.receives.length} messages`}
+		description="This service receives messages from other services"
+	/>
 </Tiles>
 
 ## Overview
@@ -183,13 +183,13 @@ C4Component
 
 The Notification Service processes the following commands:
 
-| Command                              | Channel                          | Purpose                              | SLA      |
-| ------------------------------------ | -------------------------------- | ------------------------------------ | -------- |
-| `PlaceOrderCommand`                  | notification-place-order         | Sends order confirmation emails      | < 5 min  |
-| `CompleteOrderCommand`               | notification-complete-order      | Sends order completion notifications | < 10 min |
-| `CancelOrderCommand`                 | notification-cancel-order        | Delivers order cancellation notices  | < 5 min  |
-| `CleanUpSentEmailIntegrationEvent`   | notification-clean-up-sent-email | Cleans up sent email records         | < 15 min |
-| `ResendErrorEmailIntegrationEvent`   | notification-resend-error-email  | Resends failed email deliveries      | < 10 min |
+| Command                            | Channel                          | Purpose                              | SLA      |
+| ---------------------------------- | -------------------------------- | ------------------------------------ | -------- |
+| `PlaceOrderCommand`                | notification-place-order         | Sends order confirmation emails      | < 5 min  |
+| `CompleteOrderCommand`             | notification-complete-order      | Sends order completion notifications | < 10 min |
+| `CancelOrderCommand`               | notification-cancel-order        | Delivers order cancellation notices  | < 5 min  |
+| `CleanUpSentEmailIntegrationEvent` | notification-clean-up-sent-email | Cleans up sent email records         | < 15 min |
+| `ResendErrorEmailIntegrationEvent` | notification-resend-error-email  | Resends failed email deliveries      | < 10 min |
 
 ### Event Processing Pipeline
 

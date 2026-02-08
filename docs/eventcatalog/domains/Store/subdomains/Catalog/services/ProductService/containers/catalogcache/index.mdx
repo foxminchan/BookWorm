@@ -37,24 +37,28 @@ E-commerce catalog queries follow the classic 80/20 rule: 20% of products genera
 We employ multiple caching strategies based on data characteristics:
 
 **Cache-Aside (Lazy Loading)**
+
 - Most common pattern for product data
 - Load data into cache only when requested
 - First request: cache miss → load from DB → store in cache
 - Subsequent requests: cache hit → return immediately
 
 **Write-Through**
+
 - For critical product updates
 - Write to database and cache simultaneously
 - Ensures cache is always consistent
 - Used for inventory status changes
 
 **Write-Behind (Write-Back)**
+
 - For high-frequency updates (view counts, clicks)
 - Write to cache immediately, queue database update
 - Reduces database write pressure
 - Periodic batch updates to database
 
 **Refresh-Ahead**
+
 - For predictable access patterns
 - Proactively refresh cache before expiration
 - Used for popular products and featured items
@@ -65,11 +69,13 @@ We employ multiple caching strategies based on data characteristics:
 ### Memory Management
 
 **Eviction Policy: `allkeys-lru`**
+
 - Least Recently Used eviction when memory limit reached
 - Ensures most valuable data stays cached
 - Alternative: `volatile-lru` (only evict keys with TTL)
 
 **Memory Limits**
+
 ```
 Max Memory: 8GB per node
 Used Memory: Typically 60-70% (4.8-5.6GB)
@@ -77,6 +83,7 @@ Reserved: 30-40% for peaks and operations
 ```
 
 **Memory Optimization Techniques**
+
 - Compression: gzip JSON before caching (30-40% size reduction)
 - Serialization: Use MessagePack instead of JSON (20-30% smaller)
 - Lazy Loading: Don't cache everything; let usage patterns decide
@@ -87,18 +94,21 @@ Reserved: 30-40% for peaks and operations
 ### Key Performance Indicators
 
 **Cache Effectiveness Metrics**
+
 - **Hit Rate**: Target greater than 85% for product queries
 - **Miss Rate**: Should be less than 15%
 - **Eviction Rate**: Should be less than 5% (indicates memory pressure)
 - **Latency**: p95 should be less than 10ms, p99 less than 20ms
 
 **Resource Metrics**
+
 - **Memory Usage**: Current vs. max memory
 - **CPU Usage**: Should remain below 70%
 - **Network Throughput**: Ops/second, bandwidth
 - **Connections**: Active connections, rejected connections
 
 **Business Metrics**
+
 - **Cache Value**: Revenue from cached vs. non-cached pages
 - **Cost Savings**: Database queries prevented
 - **User Experience**: Page load time improvement

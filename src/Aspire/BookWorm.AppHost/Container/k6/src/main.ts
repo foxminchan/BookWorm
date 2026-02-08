@@ -16,7 +16,7 @@ export { options } from "./config";
 
 // Initialize seeded random generator for test reproducibility
 const testRandom = new SeededRandom(
-	__ENV.RANDOM_SEED ? Number.parseInt(__ENV.RANDOM_SEED, 10) : 12345,
+	__ENV.RANDOM_SEED ? Number.parseInt(__ENV.RANDOM_SEED, 10) : 12345
 );
 const dataGenerator = new TestDataGenerator(testRandom);
 
@@ -29,9 +29,7 @@ export const setup = () => {
 export default function main() {
 	// Quick connectivity check
 	if (!checkServiceAvailability()) {
-		console.error(
-			"Service availability check failed. Skipping test iteration.",
-		);
+		console.error("Service availability check failed. Skipping test iteration.");
 		sleep(5); // Wait before retrying
 		return;
 	}
@@ -74,21 +72,15 @@ export function handleSummary(data: K6SummaryData) {
 	if (data.metrics) {
 		console.log("\n=== BookWorm K6 Performance Test Summary ===");
 		console.log(`Test Duration: ${data.state.testRunDurationMs}ms`);
+		console.log(`Total Requests: ${data.metrics.http_reqs?.values?.count ?? 0}`);
+		console.log(`Failed Requests: ${data.metrics.http_req_failed?.values?.fails ?? 0}`);
 		console.log(
-			`Total Requests: ${data.metrics.http_reqs?.values?.count ?? 0}`,
-		);
-		console.log(
-			`Failed Requests: ${data.metrics.http_req_failed?.values?.fails ?? 0}`,
-		);
-		console.log(
-			`Average Response Time: ${Math.round(
-				data.metrics.http_req_duration?.values?.avg ?? 0,
-			)}ms`,
+			`Average Response Time: ${Math.round(data.metrics.http_req_duration?.values?.avg ?? 0)}ms`
 		);
 		console.log(
 			`95th Percentile Response Time: ${Math.round(
-				data.metrics.http_req_duration?.values?.["p(95)"] ?? 0,
-			)}ms`,
+				data.metrics.http_req_duration?.values?.["p(95)"] ?? 0
+			)}ms`
 		);
 		const passes = data.metrics.checks?.values?.passes ?? 0;
 		const fails = data.metrics.checks?.values?.fails ?? 0;

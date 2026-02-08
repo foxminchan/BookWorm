@@ -119,10 +119,10 @@ public static class KeycloakExtensions
                     .WithCustomInput(_ =>
                         new()
                         {
-                            Name = "KeycloakClientSecretParameter",
-                            Label = "Keycloak Client Secret",
+                            Name = $"KeycloakClientSecretParameter-{clientId}",
+                            Label = $"Keycloak Client Secret ({clientId})",
                             InputType = InputType.SecretText,
-                            Description = "Enter your Keycloak client secret here",
+                            Description = $"Enter the Keycloak client secret for {clientId}",
                         }
                     );
 

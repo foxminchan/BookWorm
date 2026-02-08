@@ -36,6 +36,9 @@ public sealed class DeleteBasketCompleteConsumerTests
             // Assert
             var consumer = harness.GetConsumerHarness<DeleteBasketCompleteCommandHandler>();
 
+            // Wait for the consumer to consume the message
+            await consumer.Consumed.Any<DeleteBasketCompleteCommand>();
+
             await SnapshotTestHelper.Verify(new { harness, consumer });
 
             // Verify that information was logged

@@ -38,12 +38,10 @@ const getRuntime = async () => {
   }
 
   return new CopilotRuntime({
-    agents: {
-      [agentName]: new HttpAgent({
-        url: agUiUrl,
-        headers: agentHeaders,
-      }),
-    },
+    [agentName]: new HttpAgent({
+      url: agUiUrl,
+      headers: agentHeaders,
+    }),
   });
 };
 

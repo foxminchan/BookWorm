@@ -21,18 +21,12 @@ function parseJsonBody(body: string | ArrayBuffer | null): unknown {
 /**
  * Log JSON parsing error with context
  */
-function logParsingError(
-	name: string,
-	error: unknown,
-	response: http.Response,
-): void {
+function logParsingError(name: string, error: unknown, response: http.Response): void {
 	const errorMsg = error instanceof Error ? error.message : "Unknown error";
 	console.warn(`JSON parsing failed for ${name}:`, errorMsg);
 
 	const bodyPreview =
-		typeof response.body === "string"
-			? response.body.substring(0, 200)
-			: "binary data";
+		typeof response.body === "string" ? response.body.substring(0, 200) : "binary data";
 	console.warn(`Response status: ${response.status}, Body: ${bodyPreview}...`);
 }
 
@@ -40,10 +34,7 @@ function logParsingError(
  * Check if response has JSON content type
  */
 function isJsonResponse(response: http.Response): boolean {
-	return (
-		!!response.headers["Content-Type"]?.includes("application/json") &&
-		!!response.body
-	);
+	return !!response.headers["Content-Type"]?.includes("application/json") && !!response.body;
 }
 
 /**
@@ -53,12 +44,12 @@ export function validateResponse(
 	response: http.Response,
 	name: string,
 	expectedStatus: number = CONSTANTS.HTTP_OK,
-	_maxDuration: number = CONSTANTS.RESPONSE_TIME_THRESHOLD_95,
+	_maxDuration: number = CONSTANTS.RESPONSE_TIME_THRESHOLD_95
 ): unknown {
 	// Log unexpected status
 	if (response.status !== expectedStatus) {
 		console.warn(
-			`${name} returned unexpected status: ${response.status} (expected: ${expectedStatus})`,
+			`${name} returned unexpected status: ${response.status} (expected: ${expectedStatus})`
 		);
 		return null;
 	}
@@ -87,16 +78,11 @@ export function validatePagedResponse(data: unknown, name: string): boolean {
 	try {
 		const record = data as Record<string, unknown>;
 		// Check for basic paged response structure - using correct property names
-		const hasItems =
-			Object.hasOwn(record, "items") && Array.isArray(record.items);
-		const hasPageIndex =
-			Object.hasOwn(record, "pageIndex") &&
-			typeof record.pageIndex === "number";
-		const hasPageSize =
-			Object.hasOwn(record, "pageSize") && typeof record.pageSize === "number";
+		const hasItems = Object.hasOwn(record, "items") && Array.isArray(record.items);
+		const hasPageIndex = Object.hasOwn(record, "pageIndex") && typeof record.pageIndex === "number";
+		const hasPageSize = Object.hasOwn(record, "pageSize") && typeof record.pageSize === "number";
 		const hasTotalItems =
-			Object.hasOwn(record, "totalItems") &&
-			typeof record.totalItems === "number";
+			Object.hasOwn(record, "totalItems") && typeof record.totalItems === "number";
 
 		if (!hasItems) {
 			console.warn(`${name} - Missing or invalid 'items' array`);
@@ -129,19 +115,13 @@ export function validatePagedResponse(data: unknown, name: string): boolean {
 /**
  * Build URL with query parameters
  */
-function buildUrlWithParams(
-	url: string,
-	params: Record<string, unknown>,
-): string {
+function buildUrlWithParams(url: string, params: Record<string, unknown>): string {
 	if (!params || Object.keys(params).length === 0) {
 		return url;
 	}
 
 	const queryString = Object.entries(params)
-		.map(
-			([key, value]) =>
-				`${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`,
-		)
+		.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
 		.join("&");
 	return `${url}${url.includes("?") ? "&" : "?"}${queryString}`;
 }
@@ -150,11 +130,9 @@ export function testEndpointWithRetry(
 	url: string,
 	params: Record<string, unknown>,
 	name: string,
-	maxRetries: number = 2,
+	maxRetries: number = 2
 ): http.Response | { status: number; timings: { duration: number } } {
-	let response:
-		| http.Response
-		| { status: number; timings: { duration: number } };
+	let response: http.Response | { status: number; timings: { duration: number } };
 	let retries = 0;
 	const requestUrl = buildUrlWithParams(url, params);
 
@@ -167,25 +145,19 @@ export function testEndpointWithRetry(
 			if (response.status === CONSTANTS.HTTP_OK || retries >= maxRetries) break;
 		} catch (error) {
 			const errorMsg = error instanceof Error ? error.message : "Unknown error";
-			console.warn(
-				`Request failed for ${name} (attempt ${retries + 1}): ${errorMsg}`,
-			);
+			console.warn(`Request failed for ${name} (attempt ${retries + 1}): ${errorMsg}`);
 			response = { status: 0, timings: { duration: 10000 } }; // Mock failed response
 		}
 
 		retries++;
 		if (retries <= maxRetries) {
-			console.warn(
-				`Retrying ${name} (attempt ${retries + 1}/${maxRetries + 1})`,
-			);
+			console.warn(`Retrying ${name} (attempt ${retries + 1}/${maxRetries + 1})`);
 			sleep(0.5 * retries); // Exponential backoff
 		}
 	} while (retries <= maxRetries);
 
 	if (response.status !== CONSTANTS.HTTP_OK && retries > 0) {
-		console.warn(
-			`${name} failed after ${retries} retries. Final status: ${response.status}`,
-		);
+		console.warn(`${name} failed after ${retries} retries. Final status: ${response.status}`);
 	}
 
 	return response;

@@ -30,7 +30,7 @@ This endpoint allows for the removal of an Author entity from the Catalog domain
 - Returns proper error responses if the operation violates any domain constraints
 - Requires administrative privileges to execute
 
-The implementation uses CQRS (Command Query Responsibility Segregation) pattern with a `DeleteAuthorCommand` processed by MediatR, maintaining separation between the command interface and the domain logic.
+The implementation uses CQRS (Command Query Responsibility Segregation) pattern with a `DeleteAuthorCommand` processed by Mediator, maintaining separation between the command interface and the domain logic.
 
 :::warning
 This endpoint requires administrative privileges. Only users with the Admin policy can perform this operation.
@@ -154,20 +154,17 @@ Returned when the authenticated user does not have administrative privileges.
 The deletion process follows these steps:
 
 1. **API Endpoint (DeleteAuthorEndpoint)**:
-
    - Receives DELETE request at `/api/v1/authors/{id}`
    - Enforces Admin policy authorization
    - Creates a DeleteAuthorCommand with the author ID
    - Sends the command to the mediator
 
 2. **Validation (DeleteAuthorValidator)**:
-
    - Validates the author ID format
    - Checks if the author has any associated books using the BookAuthorFilterSpec
    - Rejects deletion if books are associated with the author
 
 3. **Command Handling (DeleteAuthorHandler)**:
-
    - Retrieves the author entity from the repository
    - Throws NotFoundException if author doesn't exist
    - Calls Delete method on the repository

@@ -27,7 +27,7 @@ sends:
     version: 1.0.0
     to:
       - &ref_0
-        id: 'notification.{env}.events'
+        id: "notification.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
@@ -36,7 +36,7 @@ sends:
     version: 1.0.0
     to:
       - &ref_1
-        id: 'notification.{env}.events'
+        id: "notification.{env}.events"
         version: 1.0.0
         parameters:
           env: stg
@@ -51,7 +51,7 @@ owners:
   - nhanxnguyen
 repository:
   language: C#
-  url: 'https://github.com/foxminchan/BookWorm'
+  url: "https://github.com/foxminchan/BookWorm"
 writesTo:
   - id: SchedulerDatabase
     version: 1.0.0
@@ -61,24 +61,24 @@ readsFrom:
 ---
 
 <Tiles>
-  <Tile
-    icon="DocumentIcon"
-    href={`/docs/services/${frontmatter.id}/${frontmatter.version}/changelog`}
-    title="View the changelog"
-    description="Want to know the history of this service? View the change logs"
-  />
-  <Tile
-    icon="UserGroupIcon"
-    href="/docs/users/nhanxnguyen"
-    title="Contact the author"
-    description="Any questions? Feel free to contact the owners"
-  />
-  <Tile
-    icon="BoltIcon"
-    href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
-    title={`Sends ${frontmatter.sends.length} messages`}
-    description="This service publishes messages to other services"
-  />
+	<Tile
+		icon="DocumentIcon"
+		href={`/docs/services/${frontmatter.id}/${frontmatter.version}/changelog`}
+		title="View the changelog"
+		description="Want to know the history of this service? View the change logs"
+	/>
+	<Tile
+		icon="UserGroupIcon"
+		href="/docs/users/nhanxnguyen"
+		title="Contact the author"
+		description="Any questions? Feel free to contact the owners"
+	/>
+	<Tile
+		icon="BoltIcon"
+		href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
+		title={`Sends ${frontmatter.sends.length} messages`}
+		description="This service publishes messages to other services"
+	/>
 </Tiles>
 
 ## Overview

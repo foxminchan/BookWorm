@@ -2,8 +2,7 @@
 openapi: 3.1.1
 info:
   title: Catalog Service API
-  description:
-    Manages the catalog of products for the BookWorm platform, including
+  description: Manages the catalog of products for the BookWorm platform, including
     books, authors, and categories
   contact:
     name: Nhan Nguyen
@@ -1771,11 +1770,7 @@ components:
             type: string
             format: uuid
           description: Array of book unique identifiers
-          example:
-            [
-              "01961eb4-668d-7e7e-ae25-0fab379614f7",
-              "01961eb4-0c29-799f-ab78-ad3e2beaa54a",
-            ]
+          example: ["01961eb4-668d-7e7e-ae25-0fab379614f7", "01961eb4-0c29-799f-ab78-ad3e2beaa54a"]
       required:
         - bookIds
     BookGrpcResponse:

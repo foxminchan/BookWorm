@@ -8,10 +8,7 @@ import {
 	validateResponse,
 } from "../utils/validation";
 
-export function browseCatalogScenario(
-	dataGen: TestDataGenerator,
-	random: SeededRandom,
-): void {
+export function browseCatalogScenario(dataGen: TestDataGenerator, random: SeededRandom): void {
 	try {
 		// Test basic catalog browsing - simulates users browsing the bookstore
 		const booksResponse = http.get(`${getBaseUrl()}/catalog/api/v1/books`, {
@@ -24,13 +21,10 @@ export function browseCatalogScenario(
 		validatePagedResponse(booksData, "books");
 
 		// Test categories endpoint
-		const categoriesResponse = http.get(
-			`${getBaseUrl()}/catalog/api/v1/categories`,
-			{
-				tags: { scenario: "browse_catalog", endpoint: "categories" },
-				timeout: "10s",
-			},
-		);
+		const categoriesResponse = http.get(`${getBaseUrl()}/catalog/api/v1/categories`, {
+			tags: { scenario: "browse_catalog", endpoint: "categories" },
+			timeout: "10s",
+		});
 		validateResponse(categoriesResponse, "categories", 200, 800);
 
 		// Simulate user viewing a specific category if available (70% chance)
@@ -43,7 +37,7 @@ export function browseCatalogScenario(
 			const categoryBooksResponse = testEndpointWithRetry(
 				`${getBaseUrl()}/catalog/api/v1/books`,
 				categoryParams,
-				"category_books",
+				"category_books"
 			);
 			if ("body" in categoryBooksResponse) {
 				validateResponse(categoryBooksResponse, "category_books");
@@ -52,13 +46,10 @@ export function browseCatalogScenario(
 
 		// Simulate browsing authors (50% chance)
 		if (random.bool(0.5)) {
-			const authorsResponse = http.get(
-				`${getBaseUrl()}/catalog/api/v1/authors`,
-				{
-					tags: { scenario: "browse_catalog", endpoint: "authors" },
-					timeout: "10s",
-				},
-			);
+			const authorsResponse = http.get(`${getBaseUrl()}/catalog/api/v1/authors`, {
+				tags: { scenario: "browse_catalog", endpoint: "authors" },
+				timeout: "10s",
+			});
 			validateResponse(authorsResponse, "authors", 200, 800);
 		}
 
@@ -69,8 +60,7 @@ export function browseCatalogScenario(
 			Array.isArray(booksData.items) &&
 			booksData.items.length > 0
 		) {
-			const randomBook =
-				booksData.items[random.int(0, booksData.items.length - 1)];
+			const randomBook = booksData.items[random.int(0, booksData.items.length - 1)];
 			if (randomBook?.id) {
 				testBookDetails(randomBook.id, "browse_book_details");
 			}
@@ -83,10 +73,7 @@ export function browseCatalogScenario(
 				pageSize: dataGen.getRandomPageSize(),
 			};
 			const queryString = Object.entries(paginationParams)
-				.map(
-					([key, value]) =>
-						`${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`,
-				)
+				.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
 				.join("&");
 			const requestUrl = `${getBaseUrl()}/catalog/api/v1/books?${queryString}`;
 			const paginationResponse = http.get(requestUrl, {

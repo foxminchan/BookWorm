@@ -47,6 +47,9 @@ public sealed class PlaceOrderConsumerTests
             // Assert
             var consumer = harness.GetConsumerHarness<PlaceOrderCommandHandler>();
 
+            // Wait for the consumer to consume the message
+            await consumer.Consumed.Any<PlaceOrderCommand>();
+
             await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _repositoryMock.Verify(x => x.DeleteBasketAsync(_basketId.ToString()), Times.Once);

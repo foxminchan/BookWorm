@@ -302,7 +302,7 @@ internal static class Extensions
                 }
             )
             .AddAsAIAgent()
-            .WithInMemoryThreadStore();
+            .WithInMemorySessionStore();
     }
 
     public static void MapAgentsDiscovery(this WebApplication app)

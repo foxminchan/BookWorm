@@ -140,26 +140,26 @@ Returns a paginated list of orders with metadata about the pagination.
 
 ```json title="200 OK"
 {
-  "pageIndex": 1,
-  "pageSize": 10,
-  "totalItems": 25,
-  "totalPages": 3,
-  "hasNextPage": true,
-  "hasPreviousPage": false,
-  "items": [
-    {
-      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      "date": "2025-03-30T15:30:45Z",
-      "total": 59.97,
-      "status": "New"
-    },
-    {
-      "id": "8a1b6a9c-7d3e-4f5a-9b2c-1d3e5f7a9b2c",
-      "date": "2025-03-29T10:15:22Z",
-      "total": 124.5,
-      "status": "New"
-    }
-  ]
+	"pageIndex": 1,
+	"pageSize": 10,
+	"totalItems": 25,
+	"totalPages": 3,
+	"hasNextPage": true,
+	"hasPreviousPage": false,
+	"items": [
+		{
+			"id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+			"date": "2025-03-30T15:30:45Z",
+			"total": 59.97,
+			"status": "New"
+		},
+		{
+			"id": "8a1b6a9c-7d3e-4f5a-9b2c-1d3e5f7a9b2c",
+			"date": "2025-03-29T10:15:22Z",
+			"total": 124.5,
+			"status": "New"
+		}
+	]
 }
 ```
 
@@ -169,16 +169,14 @@ Returned when the request validation fails.
 
 ```json title="400 Bad Request"
 {
-  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
-  "title": "Bad Request",
-  "status": 400,
-  "errors": {
-    "PageIndex": ["The field PageIndex must be greater than 0."],
-    "PageSize": ["The field PageSize must be greater than 0."],
-    "Status": [
-      "The field Status has a range of values which does not include '5'."
-    ]
-  }
+	"type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+	"title": "Bad Request",
+	"status": 400,
+	"errors": {
+		"PageIndex": ["The field PageIndex must be greater than 0."],
+		"PageSize": ["The field PageSize must be greater than 0."],
+		"Status": ["The field Status has a range of values which does not include '5'."]
+	}
 }
 ```
 

@@ -23,22 +23,26 @@ The Basket Database is a high-performance Redis-based data store that manages cu
 ### Why Redis for Baskets?
 
 **Performance**
+
 - Sub-millisecond read/write latency (typically less than 1ms)
 - In-memory operations eliminate disk I/O bottlenecks
 - Supports 100,000+ operations per second per node
 
 **Ephemeral Nature**
+
 - Shopping baskets are temporary by nature
 - Most baskets are abandoned (60-70% abandonment rate)
 - No need for durable storage of transient data
 - Automatic expiration support (TTL)
 
 **Scalability**
+
 - Horizontal scaling through Redis Cluster
 - Built-in replication for high availability
 - No complex table joins or indexing overhead
 
 **Simplicity**
+
 - Simple key-value operations: GET, SET, DELETE
 - Hash operations for structured basket data
 - Native JSON serialization support
@@ -46,6 +50,7 @@ The Basket Database is a high-performance Redis-based data store that manages cu
 ### Connection Management
 
 The repository uses `IConnectionMultiplexer` from StackExchange.Redis with:
+
 - Connection pooling for optimal resource usage
 - Semaphore-based locking (`SemaphoreSlim`) to prevent race conditions
 - Thread-safe database access
@@ -56,12 +61,14 @@ The repository uses `IConnectionMultiplexer` from StackExchange.Redis with:
 ### Performance Characteristics
 
 **Target Metrics**:
+
 - Read latency: p99 less than 5ms
 - Write latency: p99 less than 10ms
 - Throughput: 50,000+ ops/second
 - Availability: 99.9% uptime
 
 **Actual Performance**:
+
 - Average read: 1-2ms
 - Average write: 2-3ms
 - Peak throughput: 80,000+ ops/second
@@ -69,16 +76,19 @@ The repository uses `IConnectionMultiplexer` from StackExchange.Redis with:
 ### Optimization Techniques
 
 **JSON Serialization**:
+
 - Source-generated serializers (zero reflection)
 - UTF8 encoding for efficient wire format
 - Minimal allocations during serialization
 
 **Connection Pooling**:
+
 - Reused multiplexer connections
 - Single `IConnectionMultiplexer` instance per service
 - Thread-safe database access via semaphore
 
 **Hash Operations**:
+
 - O(1) complexity for get/set/delete operations
 - No full scan operations
 - Efficient memory usage with Redis hashing
@@ -88,12 +98,14 @@ The repository uses `IConnectionMultiplexer` from StackExchange.Redis with:
 ### Key Performance Indicators
 
 **Operational Metrics**:
+
 - **Hit Rate**: Percentage of successful basket retrievals
 - **Write Success Rate**: Should be greater than 99.9%
 - **Connection Health**: Active connections, failed connections
 - **Latency Distribution**: p50, p95, p99 response times
 
 **Business Metrics**:
+
 - **Active Baskets**: Current number of baskets in Redis
 - **Average Items per Basket**: Indicates customer engagement
 - **Basket Abandonment Rate**: Baskets not converted to orders
@@ -102,6 +114,7 @@ The repository uses `IConnectionMultiplexer` from StackExchange.Redis with:
 ### Health Checks
 
 The Basket Service includes Redis health checks:
+
 - Periodic connection validation
 - Database availability checks
 - Memory usage monitoring
@@ -119,12 +132,14 @@ The Basket Service includes Redis health checks:
 ### Security Considerations
 
 **Data Protection**:
+
 - Customer IDs stored as GUIDs (non-sequential, harder to enumerate)
 - No sensitive payment information stored in baskets
 - Product references only (IDs, not full product data)
 - Network encryption in transit (TLS)
 
 **Access Control**:
+
 - Service-level authentication via Keycloak
 - No direct external access to Redis
 - API gateway enforces authorization
@@ -135,6 +150,7 @@ The Basket Service includes Redis health checks:
 ### Upstream Dependencies
 
 **Catalog Service (gRPC)**:
+
 - Validates product existence during basket operations
 - Retrieves current product prices and availability
 - Ensures basket items reference valid products
@@ -142,11 +158,13 @@ The Basket Service includes Redis health checks:
 ### Downstream Consumers
 
 **Ordering Service**:
+
 - Reads basket data when order is placed
 - Triggers basket deletion after successful order creation
 - Receives `PlaceOrderCommand` event from basket
 
 **Notification Service**:
+
 - May read basket data for abandoned cart reminders
 - Sends notifications based on basket state changes
 
@@ -155,11 +173,13 @@ The Basket Service includes Redis health checks:
 ### Published Events
 
 **BasketDeletedCompletedEvent**:
+
 - Published when basket is successfully deleted
 - Triggers cleanup in dependent services
 - Contains customer ID and timestamp
 
 **BasketDeletedFailedEvent**:
+
 - Published when basket deletion fails
 - Triggers retry logic or manual intervention
 - Contains customer ID, error details, and timestamp
@@ -167,6 +187,7 @@ The Basket Service includes Redis health checks:
 ### Consumed Commands
 
 **PlaceOrderCommand**:
+
 - Received from order workflow
 - Triggers basket-to-order conversion
 - Results in basket deletion and order creation
@@ -176,11 +197,13 @@ The Basket Service includes Redis health checks:
 ### Backup Strategy
 
 **Primary**: Redis persistence disabled (ephemeral data)
+
 - Shopping baskets are recreatable
 - No backup needed for transient data
 - Reduces storage costs and complexity
 
 **Optional**: Redis RDB snapshots for debugging
+
 - Periodic snapshots for production troubleshooting
 - Not used for disaster recovery
 - Retained for 7 days maximum
@@ -188,12 +211,14 @@ The Basket Service includes Redis health checks:
 ### High Availability
 
 **Redis Configuration**:
+
 - Master-replica replication
 - Sentinel for automatic failover
 - Sub-second failover time
 - Aspire handles connection string updates
 
 **Failover Behavior**:
+
 - Minimal data loss (replication lag less than 100ms)
 - Automatic client reconnection
 - Circuit breaker for degraded scenarios
@@ -204,21 +229,25 @@ The Basket Service includes Redis health checks:
 ### Planned Improvements
 
 **Redis Cluster**:
+
 - Horizontal scaling for higher throughput
 - Sharding for larger datasets
 - Multi-region replication for global customers
 
 **Advanced Caching**:
+
 - Cache-aside pattern for product data
 - Local in-memory cache (L1) with Redis as L2
 - Reduce Redis roundtrips for frequently accessed baskets
 
 **Analytics Integration**:
+
 - Stream basket changes to analytics platform
 - Real-time dashboards for basket metrics
 - Machine learning for abandonment prediction
 
 **TTL Management**:
+
 - Automatic expiration of abandoned baskets
 - Configurable TTL based on customer behavior
 - Periodic cleanup jobs for expired data

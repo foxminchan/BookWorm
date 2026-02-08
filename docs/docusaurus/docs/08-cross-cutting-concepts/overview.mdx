@@ -31,7 +31,7 @@ The BookWorm application implements cross-cutting concerns through two main comp
 A comprehensive building block library that provides core functionality for all microservices,
 including:
 
-- **CQRS Pattern Implementation** - Command and Query separation with MediatR
+- **CQRS Pattern Implementation** - Command and Query separation with Mediator
 - **Event-Driven Architecture** - Integration events with MassTransit and RabbitMQ
 - **Database Access** - Repository pattern with Entity Framework Core and PostgreSQL
 - **Domain-Driven Design** - Specifications, guards, and domain abstractions
@@ -154,10 +154,10 @@ BookWorm implements Command Query Responsibility Segregation (CQRS) using
 **Mediator.SourceGenerator** (v3.0.1), a source generator-based library that provides compile-time
 command/query handling.
 
-### Why Mediator over MediatR?
+### Why Mediator over Mediator?
 
 - **Source Generator**: No runtime reflection, all wiring generated at compile-time
-- **Performance**: Zero runtime overhead compared to MediatR's reflection-based approach
+- **Performance**: Zero runtime overhead compared to Mediator's reflection-based approach
 - **Type Safety**: Compile-time errors for missing handlers
 - **Smaller Footprint**: Minimal dependencies and assembly size
 

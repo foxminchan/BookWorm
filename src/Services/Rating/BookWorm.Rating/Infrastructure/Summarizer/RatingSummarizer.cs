@@ -15,7 +15,7 @@ public sealed class RatingSummarizer(
         CancellationToken cancellationToken = default
     )
     {
-        var workflowAgentThread = await ratingSummarizerAgent.GetNewThreadAsync(cancellationToken);
+        var workflowAgentThread = await ratingSummarizerAgent.CreateSessionAsync(cancellationToken);
 
         var prompt = await mcpClient.GetPromptAsync(
             "summarize_rating",

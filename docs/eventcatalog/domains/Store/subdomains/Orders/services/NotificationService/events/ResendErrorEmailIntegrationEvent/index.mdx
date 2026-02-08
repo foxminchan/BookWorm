@@ -12,7 +12,7 @@ badges:
     textColor: blue
     backgroundColor: blue
     icon: BellIcon
-  - content: 'Broker:AMQP'
+  - content: "Broker:AMQP"
     backgroundColor: green
     textColor: white
     icon: ArrowPathIcon
@@ -34,6 +34,7 @@ owners:
 The `ResendErrorEmailIntegrationEvent` is triggered by the Scheduler Service to initiate the retry mechanism for failed email deliveries. This event is published hourly with high priority to ensure prompt recovery of email delivery failures and maintain customer communication reliability.
 
 ### Event Flow
+
 1. **Scheduler Service** publishes the event hourly (cron: `0 * * * *`) with high priority
 2. **Notification Service** receives the event and processes it
 3. System identifies failed email records in the outbox
@@ -41,12 +42,14 @@ The `ResendErrorEmailIntegrationEvent` is triggered by the Scheduler Service to 
 5. Results are logged for monitoring and further analysis
 
 ### Business Value
+
 - **Customer Experience**: Ensures critical notifications reach customers even after initial failures
 - **System Reliability**: Provides automatic recovery mechanism for email delivery issues
 - **Communication Continuity**: Maintains consistent customer communication flow
 - **Error Monitoring**: Enables tracking and analysis of email delivery patterns
 
 ### Processing Details
+
 - **Retry Strategy**: Parallel processing with up to 5 concurrent email sends
 - **Error Handling**: Individual email failures don't block other retries
 - **Monitoring**: Success and failure counts are logged for analysis

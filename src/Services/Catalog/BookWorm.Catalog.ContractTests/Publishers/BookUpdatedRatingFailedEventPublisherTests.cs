@@ -56,6 +56,9 @@ public sealed class BookUpdatedRatingFailedEventPublisherTests
             await harness.Bus.Publish(integrationEvent);
 
             // Assert
+            // Wait for the consumer to consume the message
+            await harness.Consumed.Any<FeedbackCreatedIntegrationEvent>();
+
             await SnapshotTestHelper.Verify(harness);
 
             _repositoryMock.Verify(

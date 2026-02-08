@@ -12,7 +12,7 @@ badges:
     textColor: blue
     backgroundColor: blue
     icon: BellIcon
-  - content: 'Broker:AMQP'
+  - content: "Broker:AMQP"
     backgroundColor: green
     textColor: white
     icon: ArrowPathIcon
@@ -30,12 +30,14 @@ owners:
 The `CleanUpSentEmailIntegrationEvent` is triggered by the Scheduler Service to initiate the cleanup process for sent emails in the notification system. This event is published daily at midnight to maintain system performance and storage efficiency by removing processed email records from the outbox.
 
 ### Event Flow
+
 1. **Scheduler Service** publishes the event daily at midnight (cron: `0 0 * * *`)
 2. **Notification Service** receives the event and processes it
 3. System identifies and removes successfully sent email records from the outbox
 4. Storage space is freed up and system performance is maintained
 
 ### Business Value
+
 - **System Performance**: Prevents database bloat by regularly cleaning up processed records
 - **Storage Optimization**: Reduces storage costs by removing unnecessary data
 - **Data Hygiene**: Maintains clean data architecture and improves query performance

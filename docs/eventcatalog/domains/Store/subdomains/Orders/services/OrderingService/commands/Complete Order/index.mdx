@@ -123,18 +123,18 @@ Returns the completed order details.
 
 ```json title="200 OK"
 {
-  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-  "date": "2025-03-31T10:05:17.223Z",
-  "status": "Completed",
-  "total": 292.4,
-  "items": [
-    {
-      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      "name": "Book Name",
-      "quantity": 10,
-      "price": 29.24
-    }
-  ]
+	"id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+	"date": "2025-03-31T10:05:17.223Z",
+	"status": "Completed",
+	"total": 292.4,
+	"items": [
+		{
+			"id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+			"name": "Book Name",
+			"quantity": 10,
+			"price": 29.24
+		}
+	]
 }
 ```
 
@@ -142,10 +142,10 @@ Returns the completed order details.
 
 ```json title="404 Not Found"
 {
-  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.4",
-  "title": "Not Found",
-  "status": 404,
-  "detail": "Order with id {orderId} not found."
+	"type": "https://tools.ietf.org/html/rfc7231#section-6.5.4",
+	"title": "Not Found",
+	"status": 404,
+	"detail": "Order with id {orderId} not found."
 }
 ```
 

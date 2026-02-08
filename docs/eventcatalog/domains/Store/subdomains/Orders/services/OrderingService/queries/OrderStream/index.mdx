@@ -33,7 +33,7 @@ The Order Stream service uses WebSocket for real-time communication. Users can c
 ```js title="order-stream.js"
 const connection = new signalR.HubConnectionBuilder()
 	.withUrl("wss://api.bookworm.com/api/v1/orders/stream", {
-		accessTokenFactory: () => "your-access-token"
+		accessTokenFactory: () => "your-access-token",
 	})
 	.build();
 

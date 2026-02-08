@@ -59,6 +59,9 @@ public sealed class BookUpdatedRatingFailedConsumerTests
             var consumer =
                 harness.GetConsumerHarness<BookUpdatedRatingFailedIntegrationEventHandler>();
 
+            // Wait for the consumer to consume the message
+            await consumer.Consumed.Any<BookUpdatedRatingFailedIntegrationEvent>();
+
             await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _repositoryMock.Verify(
@@ -107,6 +110,9 @@ public sealed class BookUpdatedRatingFailedConsumerTests
             // Assert
             var consumer =
                 harness.GetConsumerHarness<BookUpdatedRatingFailedIntegrationEventHandler>();
+
+            // Wait for the consumer to consume the message
+            await consumer.Consumed.Any<BookUpdatedRatingFailedIntegrationEvent>();
 
             await SnapshotTestHelper.Verify(new { harness, consumer });
 

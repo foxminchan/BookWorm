@@ -1,43 +1,16 @@
 {
 	"name": "@bookworm/eventcatalog",
 	"version": "1.0.0",
-	"description": "Living event-driven architecture catalog with service contracts and documentation",
 	"author": "Nhan Nguyen <nguyenxuannhan407@gmail.com> (https://github.com/foxminchan)",
-	"licenses": [
-		{
-			"type": "MIT",
-			"url": "https://opensource.org/licenses/MIT"
-		}
-	],
-	"private": true,
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/foxminchan/BookWorm.git",
 		"directory": "docs/eventcatalog"
 	},
-	"bugs": {
-		"url": "https://github.com/foxminchan/BookWorm/issues"
-	},
-	"homepage": "https://bookwormdev.netlify.app/",
-	"scripts": {
-		"dev": "eventcatalog dev",
-		"build": "eventcatalog build",
-		"start": "eventcatalog start",
-		"preview": "eventcatalog preview",
-		"generate": "eventcatalog generate",
-		"lint": "biome lint --write",
-		"format": "biome format --write",
-		"check": "biome check"
-	},
 	"dependencies": {
 		"@eventcatalog/core": "latest",
 		"@eventcatalog/generator-asyncapi": "latest",
-		"@eventcatalog/generator-openapi": "latest",
-		"baseline-browser-mapping": "^2.9.17",
-		"caniuse-lite": "^1.0.30001766"
-	},
-	"devDependencies": {
-		"@biomejs/biome": "2.3.11"
+		"@eventcatalog/generator-openapi": "latest"
 	},
 	"browserslist": {
 		"production": [
@@ -51,7 +24,33 @@
 			"last 5 safari version"
 		]
 	},
+	"bugs": {
+		"url": "https://github.com/foxminchan/BookWorm/issues"
+	},
+	"description": "Living event-driven architecture catalog with service contracts and documentation",
 	"engines": {
 		"node": ">=25.0.0"
+	},
+	"homepage": "https://bookwormdev.netlify.app/",
+	"licenses": [
+		{
+			"type": "MIT",
+			"url": "https://opensource.org/licenses/MIT"
+		}
+	],
+	"private": true,
+	"scripts": {
+		"dev": "eventcatalog dev",
+		"build": "eventcatalog build",
+		"start": "eventcatalog start",
+		"preview": "eventcatalog preview",
+		"generate": "eventcatalog generate",
+		"lint": "eventcatalog-linter",
+		"format": "prettier --write .",
+		"check": "eventcatalog-linter && prettier --check ."
+	},
+	"devDependencies": {
+		"@eventcatalog/linter": "^0.1.0",
+		"prettier": "^3.8.1"
 	}
 }

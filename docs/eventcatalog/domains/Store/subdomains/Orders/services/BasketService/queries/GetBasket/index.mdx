@@ -98,7 +98,7 @@ The implementation includes several notable features:
 
 - **Cross-Service Data Enrichment**: Basket items are enriched with book details from the Catalog service
 - **gRPC Communication**: Uses gRPC for efficient inter-service communication
-- **Post-Processing**: Uses MediatR's post-processing pipeline for separation of concerns
+- **Post-Processing**: Uses Mediator's post-processing pipeline for separation of concerns
 - **Error Handling**: Specific exceptions for different error scenarios
 
 ### Domain Context
@@ -154,16 +154,16 @@ Returns the user's basket details, including items and their prices. The respons
 
 ```json title="200 OK"
 {
-  "id": "0195e531-cc9d-7925-ba84-b9588bb3653d",
-  "items": [
-    {
-      "id": "0195e531-cc9d-71f1-ad7f-57cfc0712f1b",
-      "quantity": 2,
-      "name": "The Great Gatsby",
-      "price": 29.99,
-      "priceSale": 24.99
-    }
-  ]
+	"id": "0195e531-cc9d-7925-ba84-b9588bb3653d",
+	"items": [
+		{
+			"id": "0195e531-cc9d-71f1-ad7f-57cfc0712f1b",
+			"quantity": 2,
+			"name": "The Great Gatsby",
+			"price": 29.99,
+			"priceSale": 24.99
+		}
+	]
 }
 ```
 

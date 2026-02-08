@@ -3,7 +3,7 @@ sidebar_position: 3
 title: ADR-002 - Event-Driven Architecture with CQRS
 description: Adoption of event-driven architecture with CQRS pattern for scalability and decoupling
 keywords:
-  [ADR-002, event-driven architecture, CQRS, MediatR, event sourcing, command query separation]
+  [ADR-002, event-driven architecture, CQRS, Mediator, event sourcing, command query separation]
 last_update:
   author: Nhan Nguyen
 ---
@@ -188,7 +188,7 @@ sequenceDiagram
 
 ### CQRS Implementation
 
-- **Command Bus**: MediatR for command/query dispatching
+- **Command Bus**: Mediator for command/query dispatching
 - **Validation**: FluentValidation for command validation
 - **Mapping**: Mapster for object mapping between layers
 - **Caching**: Redis for query result caching

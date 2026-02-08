@@ -116,24 +116,24 @@ Returns a paginated list of buyers with metadata about the pagination.
 
 ```json title="200 OK"
 {
-  "pageIndex": 2,
-  "pageSize": 15,
-  "totalItems": 45,
-  "totalPages": 3,
-  "hasNextPage": false,
-  "hasPreviousPage": true,
-  "items": [
-    {
-      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      "name": "John Doe",
-      "address": "123 Main St, New York, NY"
-    },
-    {
-      "id": "8a1b6a9c-7d3e-4f5a-9b2c-1d3e5f7a9b2c",
-      "name": "Jane Smith",
-      "address": "456 Oak Ave, San Francisco, CA"
-    }
-  ]
+	"pageIndex": 2,
+	"pageSize": 15,
+	"totalItems": 45,
+	"totalPages": 3,
+	"hasNextPage": false,
+	"hasPreviousPage": true,
+	"items": [
+		{
+			"id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+			"name": "John Doe",
+			"address": "123 Main St, New York, NY"
+		},
+		{
+			"id": "8a1b6a9c-7d3e-4f5a-9b2c-1d3e5f7a9b2c",
+			"name": "Jane Smith",
+			"address": "456 Oak Ave, San Francisco, CA"
+		}
+	]
 }
 ```
 
@@ -143,12 +143,12 @@ Returned when the request validation fails.
 
 ```json title="400 Bad Request"
 {
-  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
-  "title": "Bad Request",
-  "status": 400,
-  "errors": {
-    "PageIndex": ["The field PageIndex must be greater than 0."],
-    "PageSize": ["The field PageSize must be greater than 0."]
-  }
+	"type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+	"title": "Bad Request",
+	"status": 400,
+	"errors": {
+		"PageIndex": ["The field PageIndex must be greater than 0."],
+		"PageSize": ["The field PageSize must be greater than 0."]
+	}
 }
 ```

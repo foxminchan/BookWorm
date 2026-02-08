@@ -40,35 +40,35 @@ attachments:
   - url: https://foxminchan.github.io/BookWorm/docs/architecture-decisions/adr-020-mcp-tools-standardize
     title: ADR-020 - MCP Tools Standardization
     description: Learn more about the standardization of tools within the MCP ecosystem.
-    type: 'architecture-decisions'
+    type: "architecture-decisions"
     icon: FileTextIcon
 ---
 
 <Tiles>
-  <Tile
-    icon="DocumentIcon"
-    href={`/docs/services/${frontmatter.id}/${frontmatter.version}/changelog`}
-    title="View the changelog"
-    description="Want to know the history of this service? View the change logs"
-  />
-  <Tile
-    icon="UserGroupIcon"
-    href="/docs/users/nhanxnguyen"
-    title="Contact the author"
-    description="Any questions? Feel free to contact the owners"
-  />
-  <Tile
-    icon="BoltIcon"
-    href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
-    title={`Sends ${frontmatter.sends.length} messages`}
-    description="This service sends messages to downstream consumers"
-  />
-  <Tile
-    icon="BoltIcon"
-    href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
-    title={`Receives ${frontmatter.receives.length} messages`}
-    description="This service receives messages from other services"
-  />
+	<Tile
+		icon="DocumentIcon"
+		href={`/docs/services/${frontmatter.id}/${frontmatter.version}/changelog`}
+		title="View the changelog"
+		description="Want to know the history of this service? View the change logs"
+	/>
+	<Tile
+		icon="UserGroupIcon"
+		href="/docs/users/nhanxnguyen"
+		title="Contact the author"
+		description="Any questions? Feel free to contact the owners"
+	/>
+	<Tile
+		icon="BoltIcon"
+		href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
+		title={`Sends ${frontmatter.sends.length} messages`}
+		description="This service sends messages to downstream consumers"
+	/>
+	<Tile
+		icon="BoltIcon"
+		href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
+		title={`Receives ${frontmatter.receives.length} messages`}
+		description="This service receives messages from other services"
+	/>
 </Tiles>
 
 ## Overview

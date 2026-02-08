@@ -1,13 +1,5 @@
 {
-	"required": [
-		"id",
-		"name",
-		"description",
-		"price",
-		"categoryId",
-		"publisherId",
-		"authorIds"
-	],
+	"required": ["id", "name", "description", "price", "categoryId", "publisherId", "authorIds"],
 	"type": "object",
 	"properties": {
 		"id": {

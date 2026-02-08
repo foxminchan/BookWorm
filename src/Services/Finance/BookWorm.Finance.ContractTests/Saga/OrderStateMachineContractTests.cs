@@ -67,7 +67,7 @@ public sealed class OrderStateMachineContractTests
         await _harness.Bus.Publish(@event);
 
         // Wait for saga to process
-        await Task.Delay(500);
+        await _sagaHarness.Consumed.Any<UserCheckedOutIntegrationEvent>();
 
         // Assert
         await SnapshotTestHelper.Verify(new { harness = _harness, sagaHarness = _sagaHarness });
@@ -92,7 +92,7 @@ public sealed class OrderStateMachineContractTests
         );
 
         await _harness.Bus.Publish(initialEvent);
-        await Task.Delay(500);
+        await _sagaHarness.Consumed.Any<UserCheckedOutIntegrationEvent>();
 
         var basketDeletedEvent = new BasketDeletedCompleteIntegrationEvent(
             orderId,
@@ -104,7 +104,7 @@ public sealed class OrderStateMachineContractTests
         await _harness.Bus.Publish(basketDeletedEvent);
 
         // Wait for saga to process
-        await Task.Delay(500);
+        await _sagaHarness.Consumed.Any<BasketDeletedCompleteIntegrationEvent>();
 
         // Assert
         await SnapshotTestHelper.Verify(new { harness = _harness, sagaHarness = _sagaHarness });
@@ -129,7 +129,7 @@ public sealed class OrderStateMachineContractTests
         );
 
         await _harness.Bus.Publish(initialEvent);
-        await Task.Delay(500);
+        await _sagaHarness.Consumed.Any<UserCheckedOutIntegrationEvent>();
 
         var basketDeletedFailedEvent = new BasketDeletedFailedIntegrationEvent(
             orderId,
@@ -142,7 +142,7 @@ public sealed class OrderStateMachineContractTests
         await _harness.Bus.Publish(basketDeletedFailedEvent);
 
         // Wait for saga to process
-        await Task.Delay(500);
+        await _sagaHarness.Consumed.Any<BasketDeletedFailedIntegrationEvent>();
 
         // Assert
         await SnapshotTestHelper.Verify(new { harness = _harness, sagaHarness = _sagaHarness });
@@ -167,7 +167,7 @@ public sealed class OrderStateMachineContractTests
         );
 
         await _harness.Bus.Publish(initialEvent);
-        await Task.Delay(500);
+        await _sagaHarness.Consumed.Any<UserCheckedOutIntegrationEvent>();
 
         var orderCompletedEvent = new OrderStatusChangedToCompleteIntegrationEvent(
             orderId,
@@ -181,7 +181,7 @@ public sealed class OrderStateMachineContractTests
         await _harness.Bus.Publish(orderCompletedEvent);
 
         // Wait for saga to process and finalize
-        await Task.Delay(500);
+        await _sagaHarness.Consumed.Any<OrderStatusChangedToCompleteIntegrationEvent>();
 
         // Assert
         await SnapshotTestHelper.Verify(new { harness = _harness, sagaHarness = _sagaHarness });
@@ -206,7 +206,7 @@ public sealed class OrderStateMachineContractTests
         );
 
         await _harness.Bus.Publish(initialEvent);
-        await Task.Delay(500);
+        await _sagaHarness.Consumed.Any<UserCheckedOutIntegrationEvent>();
 
         var orderCancelledEvent = new OrderStatusChangedToCancelIntegrationEvent(
             orderId,
@@ -220,7 +220,7 @@ public sealed class OrderStateMachineContractTests
         await _harness.Bus.Publish(orderCancelledEvent);
 
         // Wait for saga to process and finalize
-        await Task.Delay(500);
+        await _sagaHarness.Consumed.Any<OrderStatusChangedToCancelIntegrationEvent>();
 
         // Assert
         await SnapshotTestHelper.Verify(new { harness = _harness, sagaHarness = _sagaHarness });

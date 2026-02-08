@@ -62,6 +62,9 @@ public sealed class DeleteBasketFailedConsumerTests
             // Assert
             var consumer = harness.GetConsumerHarness<DeleteBasketFailedCommandHandler>();
 
+            // Wait for the consumer to consume the message
+            await consumer.Consumed.Any<DeleteBasketFailedCommand>();
+
             await SnapshotTestHelper.Verify(new { harness, consumer });
 
             _repositoryMock.Verify(
@@ -107,6 +110,9 @@ public sealed class DeleteBasketFailedConsumerTests
 
             // Assert
             var consumer = harness.GetConsumerHarness<DeleteBasketFailedCommandHandler>();
+
+            // Wait for the consumer to consume the message
+            await consumer.Consumed.Any<DeleteBasketFailedCommand>();
 
             await SnapshotTestHelper.Verify(new { harness, consumer });
 

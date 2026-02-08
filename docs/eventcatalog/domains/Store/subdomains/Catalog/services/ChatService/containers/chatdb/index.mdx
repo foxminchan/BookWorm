@@ -49,23 +49,27 @@ Messages are stored as `ChatHistoryItem` records with the following structure:
 ## Key Features
 
 ### 1. Thread Management
+
 - Each conversation thread is identified by a UUIDv7-based `ThreadDbKey`
 - Thread keys are generated on first message and maintained throughout the session
 - Enables concurrent conversations without interference
 
 ### 2. Message Retrieval
+
 - Retrieves up to `MaxMessages` per query (configurable via AppSettings)
 - Messages are ordered by timestamp in descending order
 - Results are reversed to maintain chronological order
 - Filters by both thread ID and user ID for security
 
 ### 3. Message Persistence
+
 - Uses upsert operations for idempotent writes
 - Serializes full `ChatMessage` objects with JSON source generation
 - Maintains metadata (timestamp, user ID) for filtering and analytics
 - Extracts message text for semantic search capabilities
 
 ### 4. State Serialization
+
 - Thread state can be serialized to JSON for session management
 - Enables conversation resumption across sessions
 - Supports state hydration from serialized JSON elements
@@ -73,11 +77,13 @@ Messages are stored as `ChatHistoryItem` records with the following structure:
 ## Technical Details
 
 ### Vector Store Configuration
+
 - **Collection Type**: `VectorStoreCollection<Guid, ChatHistoryItem>`
 - **Key Type**: Guid (for collection operations)
 - **Record Type**: ChatHistoryItem with vector data attributes
 
 ### Query Operations
+
 ```csharp
 // Retrieval query structure
 x => x.ThreadId == ThreadDbKey && x.UserId == userId
@@ -88,6 +94,7 @@ MaxMessages (from AppSettings)
 ```
 
 ### Serialization
+
 - Uses `JsonSerializerOptions` with camelCase naming policy
 - Source-generated serialization context for performance
 - Property name case-insensitive deserialization
@@ -108,6 +115,7 @@ MaxMessages (from AppSettings)
 ## Integration
 
 The vector store integrates with:
+
 - **Microsoft.Agents.AI**: Implements `ChatMessageStore` interface
 - **Microsoft.Extensions.VectorData**: Uses vector data attributes and collections
 - **ASP.NET Core Authentication**: Leverages `ClaimsPrincipal` for user context

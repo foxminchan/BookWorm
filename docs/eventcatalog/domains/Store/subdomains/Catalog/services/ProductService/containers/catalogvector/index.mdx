@@ -37,9 +37,11 @@ Traditional database searches fall short when customers search with phrases like
 Each book in the catalog is transformed into a high-dimensional vector embedding (typically 768 or 1536 dimensions) that encodes its semantic essence. These embeddings are generated from:
 
 **Primary Embedding Sources:**
+
 - Book title and subtitle
 
 **Embedding Model:**
+
 - Using state-of-the-art transformer models (e.g., OpenAI text-embedding-3-large, EmbeddingGemma)
 - Dimension: 1536 for optimal balance between accuracy and performance
 - Updated periodically as book metadata changes
@@ -51,12 +53,14 @@ Each book in the catalog is transformed into a high-dimensional vector embedding
 Transform natural language queries into meaningful results:
 
 **Example Query**: "inspiring stories about personal growth"
+
 - Query converted to vector embedding
 - Similarity search across book embeddings
 - Returns books about self-improvement, memoirs, motivational content
 - No need for exact keyword matches
 
 **Search Features:**
+
 - Typo tolerance through semantic understanding
 - Synonym awareness (e.g., "scary" matches "horror")
 - Concept matching (e.g., "space exploration" finds sci-fi and non-fiction)
@@ -94,6 +98,7 @@ Search refined by context:
 ### Indexing Strategy
 
 **HNSW Algorithm** (Hierarchical Navigable Small World):
+
 - Fast approximate nearest neighbor search
 - Trade-off between recall and latency configurable
 - Typical recall: 95-99% at sub-50ms latency
@@ -162,6 +167,7 @@ The Vector Database integrates with:
 ### Key Metrics
 
 **Performance Metrics:**
+
 - Query latency (p50, p95, p99)
 - Indexing throughput (vectors/second)
 - Memory utilization
@@ -169,12 +175,14 @@ The Vector Database integrates with:
 - Cache hit ratio
 
 **Business Metrics:**
+
 - Search result relevance (click-through rate)
 - Recommendation acceptance rate
 - Null result rate (queries with no good matches)
 - Query diversity (unique queries vs. total)
 
 **Data Quality Metrics:**
+
 - Embedding staleness (time since last update)
 - Vector coverage (percentage of books indexed)
 - Sync lag (delay from database to vector store)
@@ -239,21 +247,25 @@ The Vector Database integrates with:
 ### Discovery Scenarios
 
 **1. Natural Language Search**
+
 - User: "Books about time travel paradoxes"
 - System: Returns sci-fi novels exploring temporal mechanics
 - No exact keyword match required
 
 **2. Exploratory Browsing**
+
 - User: "Something like The Martian but not sci-fi"
 - System: Suggests survival stories, problem-solving narratives
 - Cross-genre conceptual matching
 
 **3. Gift Recommendations**
+
 - User: "Educational book for curious 10-year-old"
 - System: Age-appropriate science, history, adventure books
 - Contextual understanding of requirements
 
 **4. Mood-Based Discovery**
+
 - User: "Need something to cheer me up"
 - System: Humorous books, uplifting stories, feel-good fiction
 - Emotional context understanding

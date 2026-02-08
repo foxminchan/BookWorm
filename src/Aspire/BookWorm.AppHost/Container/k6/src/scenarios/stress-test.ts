@@ -5,10 +5,7 @@ import type { SeededRandom } from "../utils/seeded-random";
 import type { TestDataGenerator } from "../utils/test-data";
 import { validateResponse } from "../utils/validation";
 
-export function stressTestScenario(
-	dataGen: TestDataGenerator,
-	random: SeededRandom,
-): void {
+export function stressTestScenario(dataGen: TestDataGenerator, random: SeededRandom): void {
 	try {
 		// High-intensity testing with concurrent requests
 		const requests = [
@@ -46,21 +43,13 @@ export function stressTestScenario(
 		};
 
 		const queryString = Object.entries(complexSearchParams)
-			.map(
-				([key, value]) =>
-					`${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`,
-			)
+			.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
 			.join("&");
 		const requestUrl = `${getBaseUrl()}/catalog/api/v1/books?${queryString}`;
 		const stressSearchResponse = http.get(requestUrl, {
 			tags: { scenario: "stress_test", endpoint: "stress_search" },
 		});
-		validateResponse(
-			stressSearchResponse,
-			"stress_search",
-			CONSTANTS.HTTP_OK,
-			1200,
-		);
+		validateResponse(stressSearchResponse, "stress_search", CONSTANTS.HTTP_OK, 1200);
 	} catch (error) {
 		const errorMsg = error instanceof Error ? error.message : "Unknown error";
 		console.error(`Error in stressTestScenario: ${errorMsg}`);

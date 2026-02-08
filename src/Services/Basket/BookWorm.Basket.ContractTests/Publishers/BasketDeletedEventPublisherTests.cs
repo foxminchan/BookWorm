@@ -45,6 +45,9 @@ public sealed class BasketDeletedEventPublisherTests
             await harness.Bus.Publish(_command);
 
             // Assert
+            // Wait for the consumer to consume the message
+            await harness.Consumed.Any<PlaceOrderCommand>();
+
             await SnapshotTestHelper.Verify(harness);
 
             _repositoryMock.Verify(x => x.DeleteBasketAsync(_basketId.ToString()), Times.Once);
@@ -75,6 +78,9 @@ public sealed class BasketDeletedEventPublisherTests
             await harness.Bus.Publish(_command);
 
             // Assert
+            // Wait for the consumer to consume the message
+            await harness.Consumed.Any<PlaceOrderCommand>();
+
             await SnapshotTestHelper.Verify(harness);
 
             _repositoryMock.Verify(x => x.DeleteBasketAsync(_basketId.ToString()), Times.Once);
