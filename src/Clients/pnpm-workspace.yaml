@@ -1,3 +1,9 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+peerDependencyRules:
+  allowAny:
+    - "eslint"
+    - "@ag-ui/*"
+    - "openai"
