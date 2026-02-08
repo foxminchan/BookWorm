@@ -31,8 +31,10 @@ public sealed class CompleteOrderConsumerTests
             .Returns(Task.CompletedTask);
 
         _rendererMock
-            .Setup(x => x.Render(It.IsAny<Order>(), It.IsAny<string>()))
-            .Returns("Rendered order content");
+            .Setup(x =>
+                x.RenderAsync(It.IsAny<Order>(), It.IsAny<string>(), It.IsAny<CancellationToken>())
+            )
+            .ReturnsAsync("Rendered order content");
     }
 
     [Test]
@@ -206,8 +208,14 @@ public sealed class CompleteOrderConsumerTests
         var order = new Order(_orderId, FullName, TotalMoney, invalidStatus);
 
         _rendererMock
-            .Setup(x => x.Render(It.Is<Order>(o => o.Status == invalidStatus), It.IsAny<string>()))
-            .Returns("Rendered order content");
+            .Setup(x =>
+                x.RenderAsync(
+                    It.Is<Order>(o => o.Status == invalidStatus),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync("Rendered order content");
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => x.AddConsumer<CompleteOrderCommandHandler>())
