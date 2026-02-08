@@ -147,7 +147,7 @@ export const feedbacksHandlers = [
       const positiveCount = feedbacks.filter((f) => f.rating >= 4).length;
       const negativeCount = feedbacks.filter((f) => f.rating <= 2).length;
 
-      let summary = "";
+      let summary: string;
       if (avgRating >= 4) {
         summary = `Readers highly praise this book! ${positiveCount} out of ${feedbacks.length} reviewers gave it 4 or 5 stars. Common themes include engaging storytelling, well-developed characters, and compelling plot twists.`;
       } else if (avgRating >= 3) {
