@@ -29,7 +29,7 @@ This endpoint allows for the removal of a Category entity from the Catalog domai
 - Validates that the category can be safely removed without violating referential integrity
 - Returns proper error responses if the operation violates any domain constraints
 - Requires administrative privileges to execute
-  The implementation uses CQRS (Command Query Responsibility Segregation) pattern with a `DeleteCategoryCommand` processed by MediatR, maintaining separation between the command interface and the domain logic.
+  The implementation uses CQRS (Command Query Responsibility Segregation) pattern with a `DeleteCategoryCommand` processed by Mediator, maintaining separation between the command interface and the domain logic.
 
 :::warning
 This endpoint requires administrative privileges. Only users with the Admin policy can perform this operation.

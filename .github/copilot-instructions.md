@@ -23,7 +23,7 @@ Goals:
 - **Orchestration**: .NET Aspire (AppHost in `BookWorm.AppHost`, ServiceDefaults in `BookWorm.ServiceDefaults`).
 - **Application code**: C# (backend services), TypeScript 5.7+ (frontend in Turbo monorepo), PowerShell for scripts, Justfile for dev ergonomics.
 - **Backend framework**: ASP.NET Core Minimal APIs with custom `IEndpoint<TResult, TRequest>` pattern from BookWorm.Chassis.
-- **CQRS**: Mediator library (source generator-based, NOT MediatR) for command/query separation.
+- **CQRS**: Mediator library (source generator-based, NOT Mediator) for command/query separation.
 - **Testing**: **TUnit** with Microsoft Testing Platform, **Moq**, **Bogus**, **Shouldly**, **Verify.TUnit** for contract tests, **TngTech.ArchUnitNET.TUnit** for architecture tests.
 - **Database**: Azure PostgreSQL Flexible Server with EF Core and `EFCore.NamingConventions` (snake_case).
 - **Messaging**: **MassTransit with RabbitMQ** for event-driven communication with outbox/inbox patterns.

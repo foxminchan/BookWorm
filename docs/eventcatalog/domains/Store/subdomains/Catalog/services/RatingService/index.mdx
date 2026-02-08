@@ -200,7 +200,7 @@ The service implements CQRS pattern with:
 
 - **Command Stack**: Handles write operations through commands like `CreateFeedbackCommand` and `DeleteFeedbackCommand`
 - **Query Stack**: Manages read operations with queries like `ListFeedbackQuery`
-- **MediatR Pipeline**: Processes commands and queries with cross-cutting concerns:
+- **Mediator Pipeline**: Processes commands and queries with cross-cutting concerns:
   - Validation behavior
   - Activity tracking for observability
   - Logging behavior

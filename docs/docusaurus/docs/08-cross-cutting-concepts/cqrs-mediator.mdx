@@ -2,9 +2,9 @@
 sidebar_position: 12
 title: CQRS & Mediator
 description:
-  CQRS pattern implementation with MediatR for command query separation and pipeline behaviors
+  CQRS pattern implementation with Mediator for command query separation and pipeline behaviors
 keywords:
-  [CQRS, MediatR, command query separation, pipeline behaviors, validation, logging, handlers]
+  [CQRS, Mediator, command query separation, pipeline behaviors, validation, logging, handlers]
 last_update:
   author: Nhan Nguyen
 ---
@@ -12,7 +12,7 @@ last_update:
 # CQRS & Mediator
 
 The BookWorm application implements Command Query Responsibility Segregation (CQRS) pattern using
-MediatR, providing clear separation between read and write operations with comprehensive pipeline
+Mediator, providing clear separation between read and write operations with comprehensive pipeline
 behaviors for cross-cutting concerns.
 
 ## CQRS Architecture
@@ -24,7 +24,7 @@ behaviors for cross-cutting concerns.
 - **Handlers** - Dedicated handlers for commands and queries
 - **Request/Response Pattern** - Standardized input/output contracts
 
-### MediatR Integration
+### Mediator Integration
 
 - **IRequest Interface** - Base contract for all commands and queries
 - **IRequestHandler** - Handler implementation contract

@@ -30,7 +30,7 @@ This endpoint allows for the removal of an Author entity from the Catalog domain
 - Returns proper error responses if the operation violates any domain constraints
 - Requires administrative privileges to execute
 
-The implementation uses CQRS (Command Query Responsibility Segregation) pattern with a `DeleteAuthorCommand` processed by MediatR, maintaining separation between the command interface and the domain logic.
+The implementation uses CQRS (Command Query Responsibility Segregation) pattern with a `DeleteAuthorCommand` processed by Mediator, maintaining separation between the command interface and the domain logic.
 
 :::warning
 This endpoint requires administrative privileges. Only users with the Admin policy can perform this operation.

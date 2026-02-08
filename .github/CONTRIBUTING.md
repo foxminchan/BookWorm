@@ -36,12 +36,14 @@ Whether you're a first-time contributor or an experienced developer, this guide 
 
 1. **Fork the Repository**: Start by forking the main BookWorm repository.
 2. **Clone Your Fork**:
+
    ```bash
    git clone https://github.com/YOUR-USERNAME/BookWorm.git
    cd BookWorm
    ```
 
 3. **Add Upstream Remote**:
+
    ```bash
    git remote add upstream https://github.com/foxminchan/BookWorm.git
    ```
@@ -242,7 +244,7 @@ When modifying Protocol Buffers schema files (`.proto` files), you must run the 
 
 ## Design Patterns
 
-- Use CQRS with MediatR when applicable
+- Use CQRS with Mediator when applicable
 - Repository pattern for data access
 - Domain Events for cross-service communication
 - Avoid circular dependencies between services
@@ -348,6 +350,7 @@ We're here to help! If you have questions or need assistance:
 ### Response Times
 
 This is an open-source project maintained by volunteers. Please be patient:
+
 - Bug reports: We aim to respond within 48-72 hours
 - Feature requests: May take longer to evaluate and implement
 - Pull requests: We'll review as soon as possible, usually within a week
@@ -355,6 +358,7 @@ This is an open-source project maintained by volunteers. Please be patient:
 ### Community Guidelines
 
 When seeking help or contributing:
+
 - ✅ Be respectful and constructive
 - ✅ Provide detailed information about your issue
 - ✅ Search for existing solutions before asking
