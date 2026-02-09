@@ -1,3 +1,4 @@
+using BookWorm.Common;
 using BookWorm.Notification.Domain.Builders;
 using BookWorm.Notification.Domain.Models;
 using BookWorm.Notification.Infrastructure.Senders.SendGrid;
@@ -36,7 +37,7 @@ public sealed class SendGridMessageCompositionTests
         var sendGridMessage = BuildSendGridMessage(mailMessage);
 
         // Assert
-        await Verify(sendGridMessage).UseStrictJson();
+        await SnapshotTestHelper.Verify(sendGridMessage);
     }
 
     [Test]
@@ -64,7 +65,7 @@ public sealed class SendGridMessageCompositionTests
         var sendGridMessage = BuildSendGridMessage(mailMessage);
 
         // Assert
-        await Verify(sendGridMessage).UseStrictJson();
+        await SnapshotTestHelper.Verify(sendGridMessage);
     }
 
     [Test]
@@ -92,7 +93,7 @@ public sealed class SendGridMessageCompositionTests
         var sendGridMessage = BuildSendGridMessage(mailMessage);
 
         // Assert
-        await Verify(sendGridMessage).UseStrictJson();
+        await SnapshotTestHelper.Verify(sendGridMessage);
     }
 
     [Test]
@@ -121,7 +122,7 @@ public sealed class SendGridMessageCompositionTests
         sendGridMessage.AddTo(new EmailAddress("cc@example.com", "CC User"));
 
         // Assert
-        await Verify(sendGridMessage).UseStrictJson();
+        await SnapshotTestHelper.Verify(sendGridMessage);
     }
 
     [Test]
@@ -150,7 +151,7 @@ public sealed class SendGridMessageCompositionTests
         sendGridMessage.SetSandBoxMode(true);
 
         // Assert
-        await Verify(sendGridMessage).UseStrictJson();
+        await SnapshotTestHelper.Verify(sendGridMessage);
     }
 
     /// <summary>
