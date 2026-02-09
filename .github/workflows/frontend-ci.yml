@@ -60,6 +60,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Check boundaries
+        run: pnpm boundaries
+
       - name: Lint
         run: pnpm lint
 

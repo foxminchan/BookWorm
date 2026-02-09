@@ -3,10 +3,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
-      "@workspace/ui/*": ["../../packages/ui/src/*"],
-      "@workspace/api-hooks/*": ["../../packages/api-hooks/src/*"],
-      "@workspace/types/*": ["../../packages/types/src/*"]
+      "@/*": ["./*"]
     },
     "plugins": [
       {
@@ -16,7 +13,7 @@
   },
   "include": [
     "next-env.d.ts",
-    "next.config.ts",
+    "next.config.mjs",
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts"

@@ -26,7 +26,7 @@
     "start": "next start",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
-    "typecheck": "tsc --noEmit",
+    "check-types": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -50,6 +50,13 @@
     "@opentelemetry/sdk-trace-node": "^2.5.0",
     "@t3-oss/env-nextjs": "^0.13.10",
     "@tanstack/react-query": "^5.90.20",
+    "@workspace/api-client": "workspace:*",
+    "@workspace/api-hooks": "workspace:*",
+    "@workspace/mocks": "workspace:*",
+    "@workspace/types": "workspace:*",
+    "@workspace/ui": "workspace:*",
+    "@workspace/utils": "workspace:*",
+    "@workspace/validations": "workspace:*",
     "better-auth": "^1.4.18",
     "class-variance-authority": "^0.7.1",
     "classnames": "2.5.1",
@@ -97,15 +104,6 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
-  },
-  "peerDependencies": {
-    "@workspace/api-client": "workspace:*",
-    "@workspace/api-hooks": "workspace:*",
-    "@workspace/mocks": "workspace:*",
-    "@workspace/types": "workspace:*",
-    "@workspace/ui": "workspace:*",
-    "@workspace/utils": "workspace:*",
-    "@workspace/validations": "workspace:*"
   },
   "msw": {
     "workerDirectory": [

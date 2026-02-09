@@ -1,5 +1,5 @@
 {
-  "$schema": "https://turbo.build/schema.json",
+  "$schema": "https://turborepo.dev/schema.v2.json",
   "ui": "tui",
   "globalEnv": [
     "NODE_ENV",
@@ -12,27 +12,43 @@
     "KEYCLOAK_CLIENT_ID",
     "BETTER_AUTH_SECRET",
     "SKIP_ENV_VALIDATION",
-    "FAKER_SEED",
-    "SLOW_MO",
-    "VIDEO",
     "NEXT_RUNTIME",
     "OTEL_EXPORTER_OTLP_ENDPOINT",
-    "OTEL_EXPORTER_OTLP_HEADERS",
-    "TEST_ADMIN_EMAIL",
-    "TEST_ADMIN_PASSWORD",
-    "MSW_COOKIE_STORE_PATH"
+    "OTEL_EXPORTER_OTLP_HEADERS"
   ],
+  "boundaries": {
+    "tags": {
+      "config": {
+        "dependencies": {
+          "deny": ["app", "domain", "foundation"]
+        }
+      },
+      "foundation": {
+        "dependencies": {
+          "deny": ["app", "domain"]
+        }
+      },
+      "domain": {
+        "dependencies": {
+          "deny": ["app"]
+        }
+      }
+    }
+  },
   "tasks": {
+    "transit": {
+      "dependsOn": ["^transit"]
+    },
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**"]
     },
     "lint": {
-      "dependsOn": ["^lint"]
+      "dependsOn": ["transit"]
     },
     "check-types": {
-      "dependsOn": ["^check-types"]
+      "dependsOn": ["transit"]
     },
     "test": {
       "dependsOn": ["^build"],
@@ -42,7 +58,8 @@
         "**/*.test.{ts,tsx}",
         "vitest.config.ts",
         "**/__tests__/**"
-      ]
+      ],
+      "passThroughEnv": ["FAKER_SEED", "MSW_COOKIE_STORE_PATH"]
     },
     "test:watch": {
       "cache": false,
@@ -52,18 +69,43 @@
       "dependsOn": ["^build"],
       "outputs": ["playwright-report/**", "test-results/**", "e2e/reports/**"],
       "inputs": ["e2e/**", "playwright.config.ts"],
-      "passThroughEnv": ["PLAYWRIGHT_*", "BASE_URL", "HEADLESS", "CI"]
+      "passThroughEnv": [
+        "PLAYWRIGHT_*",
+        "BASE_URL",
+        "HEADLESS",
+        "CI",
+        "SLOW_MO",
+        "VIDEO",
+        "TEST_ADMIN_EMAIL",
+        "TEST_ADMIN_PASSWORD"
+      ]
     },
     "test:e2e:headed": {
       "dependsOn": ["^build"],
       "cache": false,
-      "passThroughEnv": ["PLAYWRIGHT_*", "BASE_URL", "HEADLESS"]
+      "passThroughEnv": [
+        "PLAYWRIGHT_*",
+        "BASE_URL",
+        "HEADLESS",
+        "SLOW_MO",
+        "VIDEO",
+        "TEST_ADMIN_EMAIL",
+        "TEST_ADMIN_PASSWORD"
+      ]
     },
     "test:e2e:ci": {
       "dependsOn": ["^build"],
       "outputs": ["playwright-report/**", "test-results/**", "e2e/reports/**"],
       "inputs": ["e2e/**", "playwright.config.ts"],
-      "passThroughEnv": ["PLAYWRIGHT_*", "BASE_URL", "CI"]
+      "passThroughEnv": [
+        "PLAYWRIGHT_*",
+        "BASE_URL",
+        "CI",
+        "SLOW_MO",
+        "VIDEO",
+        "TEST_ADMIN_EMAIL",
+        "TEST_ADMIN_PASSWORD"
+      ]
     },
     "playwright:install": {
       "cache": false,

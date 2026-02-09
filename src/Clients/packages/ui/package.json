@@ -21,7 +21,8 @@
   },
   "homepage": "https://foxminchan.github.io/BookWorm/",
   "scripts": {
-    "lint": "eslint . --max-warnings 0"
+    "lint": "eslint . --max-warnings 0",
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
