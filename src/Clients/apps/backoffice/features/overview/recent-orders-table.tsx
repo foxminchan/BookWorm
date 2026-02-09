@@ -1,5 +1,7 @@
 "use client";
 
+import { useMemo } from "react";
+
 import {
   type ColumnDef,
   flexRender,
@@ -27,6 +29,7 @@ import {
 } from "@workspace/ui/components/table";
 
 import { RecentOrdersTableSkeleton } from "@/components/loading-skeleton";
+import { currencyFormatter } from "@/lib/constants";
 import { type OrderStatus, getOrderStatusStyle } from "@/lib/pattern";
 
 type RecentOrdersTableProps = {
@@ -45,13 +48,9 @@ const columns: ColumnDef<Order>[] = [
   {
     accessorKey: "total",
     header: "Amount",
-    cell: ({ row }) => {
-      const formatter = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      });
-      return <div>{formatter.format(row.original.total ?? 0)}</div>;
-    },
+    cell: ({ row }) => (
+      <div>{currencyFormatter.format(row.original.total ?? 0)}</div>
+    ),
   },
   {
     accessorKey: "status",
@@ -76,8 +75,10 @@ export function RecentOrdersTable({
   orders,
   isLoading,
 }: RecentOrdersTableProps) {
+  const recentOrders = useMemo(() => orders.slice(-5), [orders]);
+
   const table = useReactTable({
-    data: orders.slice(-5),
+    data: recentOrders,
     columns,
     getCoreRowModel: getCoreRowModel(),
   });

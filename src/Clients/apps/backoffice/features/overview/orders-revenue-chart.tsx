@@ -1,5 +1,7 @@
 "use client";
 
+import { useMemo } from "react";
+
 import {
   CartesianGrid,
   Legend,
@@ -32,27 +34,27 @@ export function OrdersRevenueChart({
   orders,
   isLoading,
 }: OrdersRevenueChartProps) {
-  if (isLoading) {
-    return <OrdersRevenueChartSkeleton />;
-  }
-
-  const ordersByDate = orders.reduce(
-    (
-      acc: Array<{ date: string; orders: number; revenue: number }>,
-      order: Order,
-    ) => {
+  const ordersByDate = useMemo(() => {
+    const dateMap = new Map<
+      string,
+      { date: string; orders: number; revenue: number }
+    >();
+    for (const order of orders) {
       const date = new Date(order.date).toLocaleDateString();
-      const existing = acc.find((d) => d.date === date);
+      const existing = dateMap.get(date);
       if (existing) {
         existing.orders += 1;
         existing.revenue += order.total || 0;
       } else {
-        acc.push({ date, orders: 1, revenue: order.total || 0 });
+        dateMap.set(date, { date, orders: 1, revenue: order.total || 0 });
       }
-      return acc;
-    },
-    [],
-  );
+    }
+    return Array.from(dateMap.values()).slice(-7);
+  }, [orders]);
+
+  if (isLoading) {
+    return <OrdersRevenueChartSkeleton />;
+  }
 
   return (
     <Card className="lg:col-span-2">
@@ -62,7 +64,7 @@ export function OrdersRevenueChart({
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={ordersByDate.slice(-7)}>
+          <LineChart data={ordersByDate}>
             <CartesianGrid
               strokeDasharray={CHART_THEME.grid.strokeDasharray}
               stroke={CHART_THEME.grid.stroke}

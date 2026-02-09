@@ -1,5 +1,7 @@
 "use client";
 
+import { useMemo } from "react";
+
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 import type { Book } from "@workspace/types/catalog/books";
@@ -22,23 +24,21 @@ export function BooksCategoryChart({
   books,
   isLoading,
 }: BooksCategoryChartProps) {
+  const categoryStats = useMemo(() => {
+    const categoryMap = new Map<string, number>();
+    for (const book of books) {
+      const categoryName = book.category?.name || "Other";
+      categoryMap.set(categoryName, (categoryMap.get(categoryName) || 0) + 1);
+    }
+    return Array.from(categoryMap.entries()).map(([name, value]) => ({
+      name,
+      value,
+    }));
+  }, [books]);
+
   if (isLoading) {
     return <BooksCategoryChartSkeleton />;
   }
-
-  const categoryStats = books.reduce(
-    (acc: Array<{ name: string; value: number }>, book: Book) => {
-      const categoryName = book.category?.name || "Other";
-      const existing = acc.find((c) => c.name === categoryName);
-      if (existing) {
-        existing.value += 1;
-      } else {
-        acc.push({ name: categoryName, value: 1 });
-      }
-      return acc;
-    },
-    [],
-  );
 
   return (
     <Card>

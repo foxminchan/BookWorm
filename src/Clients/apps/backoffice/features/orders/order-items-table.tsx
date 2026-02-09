@@ -15,16 +15,14 @@ import {
   TableRow,
 } from "@workspace/ui/components/table";
 
+import { currencyFormatter } from "@/lib/constants";
+
 type OrderItemsTableProps = {
   items: OrderItem[];
   total: number;
 };
 
 export function OrderItemsTable({ items, total }: OrderItemsTableProps) {
-  const formatter = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  });
   return (
     <Card>
       <CardHeader>
@@ -45,9 +43,9 @@ export function OrderItemsTable({ items, total }: OrderItemsTableProps) {
               <TableRow key={item.id}>
                 <TableCell>{item.name || "Product"}</TableCell>
                 <TableCell>{item.quantity}</TableCell>
-                <TableCell>{formatter.format(item.price)}</TableCell>
+                <TableCell>{currencyFormatter.format(item.price)}</TableCell>
                 <TableCell className="font-medium">
-                  {formatter.format(item.quantity * item.price)}
+                  {currencyFormatter.format(item.quantity * item.price)}
                 </TableCell>
               </TableRow>
             ))}
@@ -56,7 +54,7 @@ export function OrderItemsTable({ items, total }: OrderItemsTableProps) {
             <TableRow>
               <TableCell colSpan={3}>Total</TableCell>
               <TableCell className="font-bold">
-                {formatter.format(total)}
+                {currencyFormatter.format(total)}
               </TableCell>
             </TableRow>
           </TableFooter>
