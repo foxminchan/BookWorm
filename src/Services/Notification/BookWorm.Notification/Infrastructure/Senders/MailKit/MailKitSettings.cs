@@ -11,7 +11,7 @@ public sealed partial class MailKitSettings : IValidateOptions<MailKitSettings>
 
     [Required]
     [EmailAddress]
-    public string From { get; set; } = string.Empty;
+    public string From { get; init; } = string.Empty;
 
     public Uri? Endpoint { get; private set; }
 

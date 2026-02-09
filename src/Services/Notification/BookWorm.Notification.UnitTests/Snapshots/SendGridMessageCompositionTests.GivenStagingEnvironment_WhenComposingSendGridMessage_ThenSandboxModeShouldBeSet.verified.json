@@ -1,0 +1,16 @@
+﻿{
+  "From": "BookWorm <bookworm@example.com>",
+  "Personalizations": [
+    {
+      "To": "Staging User <staging@example.com>"
+    }
+  ],
+  "Subject": "BookWorm: Your Order Has Been Received Successfully",
+  "HtmlContent": "<html><body>Staging test</body></html>",
+  "SendAt": "DateTime_1",
+  "MailSettings": {
+    "SandboxMode": {
+      "Enable": true
+    }
+  }
+}

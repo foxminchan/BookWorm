@@ -15,7 +15,7 @@ internal sealed class MailKitSender(
         CancellationToken cancellationToken = default
     )
     {
-        var client = await factory.GetSmtpClientAsync(cancellationToken);
+        using var client = await factory.CreateClientAsync(cancellationToken);
 
         try
         {
@@ -27,6 +27,8 @@ internal sealed class MailKitSender(
                 async ct => await client.SendAsync(mailMessage, ct),
                 cancellationToken
             );
+
+            await client.DisconnectAsync(true, cancellationToken);
         }
         catch (Exception ex)
         {
