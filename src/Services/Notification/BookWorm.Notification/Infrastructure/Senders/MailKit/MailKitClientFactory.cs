@@ -1,48 +1,36 @@
 namespace BookWorm.Notification.Infrastructure.Senders.MailKit;
 
-internal sealed class MailKitClientFactory(MailKitSettings settings) : IDisposable
+internal sealed class MailKitClientFactory(MailKitSettings settings)
 {
-    private readonly SemaphoreSlim _semaphore = new(1, 1);
-    private SmtpClient? _client;
-
-    public void Dispose()
+    /// <summary>
+    ///     Creates a new connected SMTP client.
+    ///     The caller is responsible for disposing the client after use.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A connected <see cref="ISmtpClient" /> instance.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when connection or authentication fails.</exception>
+    public async Task<SmtpClient> CreateClientAsync(CancellationToken cancellationToken = default)
     {
-        _client?.Dispose();
-        _semaphore.Dispose();
-    }
-
-    public async Task<ISmtpClient> GetSmtpClientAsync(CancellationToken cancellationToken = default)
-    {
-        await _semaphore.WaitAsync(cancellationToken);
+        var client = new SmtpClient();
 
         try
         {
-            if (_client is null || !_client.IsConnected)
+            await client.ConnectAsync(settings.Endpoint, cancellationToken);
+
+            if (settings.Credentials is not null)
             {
-                _client = new();
-
-                await _client.ConnectAsync(settings.Endpoint, cancellationToken);
-
-                if (settings.Credentials is not null)
-                {
-                    await _client.AuthenticateAsync(settings.Credentials, cancellationToken);
-                }
+                await client.AuthenticateAsync(settings.Credentials, cancellationToken);
             }
+
+            return client;
         }
         catch (Exception ex)
         {
-            _client?.Dispose();
-            _client = null;
+            client.Dispose();
             throw new InvalidOperationException(
                 $"Failed to create SMTP client. Exception: {ex.Message}",
                 ex
             );
         }
-        finally
-        {
-            _semaphore.Release();
-        }
-
-        return _client;
     }
 }

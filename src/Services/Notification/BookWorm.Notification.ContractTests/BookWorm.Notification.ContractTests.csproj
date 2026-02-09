@@ -4,7 +4,11 @@
     <ExcludeFromCodeCoverage>true</ExcludeFromCodeCoverage>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\BookWorm.Notification.UnitTests\BookWorm.Notification.UnitTests.csproj" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="Bogus" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BookWorm.Notification\BookWorm.Notification.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Moq" />
