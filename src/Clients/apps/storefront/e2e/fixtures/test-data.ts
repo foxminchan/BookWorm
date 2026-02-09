@@ -6,7 +6,7 @@
 import { faker } from "@faker-js/faker";
 import { formatISO, subDays } from "date-fns";
 
-import type { BasketItem, CustomerBasket } from "@workspace/types/basket/index";
+import type { BasketItem, CustomerBasket } from "@workspace/types/basket";
 import type { Author } from "@workspace/types/catalog/authors";
 import type { Book } from "@workspace/types/catalog/books";
 import type { Category } from "@workspace/types/catalog/categories";

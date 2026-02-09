@@ -25,7 +25,7 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "type-check": "tsc --noEmit"
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.20"
@@ -44,6 +44,8 @@
     "react": "^19.2.4"
   },
   "exports": {
+    "./keys": "./src/keys.ts",
+    "./catalog/authors/*": "./src/catalog/authors/*.ts",
     "./catalog/publishers/*": "./src/catalog/publishers/*.ts",
     "./catalog/categories/*": "./src/catalog/categories/*.ts",
     "./catalog/books/*": "./src/catalog/books/*.ts",

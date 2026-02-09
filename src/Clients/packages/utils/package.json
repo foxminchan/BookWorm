@@ -10,6 +10,7 @@
     }
   ],
   "private": true,
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/foxminchan/BookWorm.git",
@@ -26,10 +27,12 @@
     "./*": "./src/*.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "lint": "eslint .",
+    "check-types": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/node": "^25.2.2",
+    "@workspace/eslint-config": "workspace:*",
     "eslint": "^10.0.0",
     "typescript": "^5.9.3"
   }

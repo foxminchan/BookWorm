@@ -1,7 +1,7 @@
 import { addDays, formatISO } from "date-fns";
 
 import type { Book } from "@workspace/types/catalog/books";
-import type { Feedback } from "@workspace/types/rating/index";
+import type { Feedback } from "@workspace/types/rating";
 
 import { env } from "@/env.mjs";
 

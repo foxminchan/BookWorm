@@ -10,6 +10,7 @@
     }
   ],
   "private": true,
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/foxminchan/BookWorm.git",
@@ -22,8 +23,6 @@
   "engines": {
     "node": ">=25.0.0"
   },
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
   "exports": {
     ".": {
       "import": "./src/index.ts",
@@ -80,7 +79,7 @@
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",
-    "type-check": "tsc --noEmit"
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "date-fns": "^4.1.0",

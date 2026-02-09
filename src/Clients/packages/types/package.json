@@ -14,7 +14,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/foxminchan/BookWorm.git",
-    "directory": "src/Clients/packages/mocks"
+    "directory": "src/Clients/packages/types"
   },
   "bugs": {
     "url": "https://github.com/foxminchan/BookWorm/issues"
@@ -63,7 +63,7 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "type-check": "tsc --noEmit"
+    "check-types": "tsc --noEmit"
   },
   "devDependencies": {
     "eslint": "^10.0.0",
