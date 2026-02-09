@@ -2,6 +2,12 @@ import { DEFAULT_BOOK_IMAGE, PRICE_RANGE } from "@workspace/utils/constants";
 
 export { DEFAULT_BOOK_IMAGE, PRICE_RANGE };
 
+// Formatters — hoisted to avoid creating new instances on every render
+export const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+});
+
 // Authentication
 export const AUTH = {
   PROVIDER: "keycloak",

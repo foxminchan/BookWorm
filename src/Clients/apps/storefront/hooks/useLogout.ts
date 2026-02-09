@@ -16,13 +16,19 @@ export function useLogout(): UseLogoutReturn {
   const logout = async () => {
     setIsLoggingOut(true);
 
-    await authClient.signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          router.push("/");
+    try {
+      await authClient.signOut({
+        fetchOptions: {
+          onSuccess: () => {
+            router.push("/");
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   return { logout, isLoggingOut };

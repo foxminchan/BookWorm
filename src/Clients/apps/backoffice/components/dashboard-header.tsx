@@ -25,8 +25,7 @@ export function DashboardHeader() {
   const { logout } = useLogout();
 
   useEffect(() => {
-    const timer = setTimeout(() => setMounted(true), 0);
-    return () => clearTimeout(timer);
+    setMounted(true);
   }, []);
 
   return (

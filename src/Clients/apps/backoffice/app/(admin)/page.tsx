@@ -1,10 +1,27 @@
 "use client";
 
-import { BooksCategoryChart } from "@/features/overview/books-category-chart";
+import dynamic from "next/dynamic";
+
 import { KPICards } from "@/features/overview/kpi-cards";
-import { OrdersRevenueChart } from "@/features/overview/orders-revenue-chart";
 import { RecentOrdersTable } from "@/features/overview/recent-orders-table";
 import { useDashboardStats } from "@/hooks/use-dashboard-stats";
+
+// Dynamic imports for heavy recharts-based components (~300KB)
+const OrdersRevenueChart = dynamic(
+  () =>
+    import("@/features/overview/orders-revenue-chart").then(
+      (m) => m.OrdersRevenueChart,
+    ),
+  { ssr: false },
+);
+
+const BooksCategoryChart = dynamic(
+  () =>
+    import("@/features/overview/books-category-chart").then(
+      (m) => m.BooksCategoryChart,
+    ),
+  { ssr: false },
+);
 
 export default function OverviewTab() {
   const { books, orders, customers, isLoading } = useDashboardStats();

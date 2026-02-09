@@ -52,7 +52,9 @@ describe("DashboardHeader", () => {
   it("should render theme toggle button", () => {
     render(<DashboardHeader />);
 
-    const themeButton = screen.getByRole("button", { name: /toggle theme/i });
+    const themeButton = screen.getByRole("button", {
+      name: /switch to dark mode/i,
+    });
     expect(themeButton).toBeInTheDocument();
   });
 
@@ -60,7 +62,9 @@ describe("DashboardHeader", () => {
     const user = userEvent.setup();
     render(<DashboardHeader />);
 
-    const themeButton = screen.getByRole("button", { name: /toggle theme/i });
+    const themeButton = screen.getByRole("button", {
+      name: /switch to dark mode/i,
+    });
     await user.click(themeButton);
 
     expect(mockSetTheme).toHaveBeenCalledWith("dark");
@@ -71,7 +75,9 @@ describe("DashboardHeader", () => {
     const user = userEvent.setup();
     render(<DashboardHeader />);
 
-    const themeButton = screen.getByRole("button", { name: /toggle theme/i });
+    const themeButton = screen.getByRole("button", {
+      name: /switch to light mode/i,
+    });
     await user.click(themeButton);
 
     expect(mockSetTheme).toHaveBeenCalledWith("light");
@@ -146,7 +152,9 @@ describe("DashboardHeader", () => {
   it("should have proper accessibility attributes for theme button", () => {
     render(<DashboardHeader />);
 
-    const themeButton = screen.getByRole("button", { name: /toggle theme/i });
+    const themeButton = screen.getByRole("button", {
+      name: /switch to dark mode/i,
+    });
     expect(themeButton).toHaveAttribute("aria-label");
   });
 

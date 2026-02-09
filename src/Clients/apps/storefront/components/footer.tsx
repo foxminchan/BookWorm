@@ -107,21 +107,21 @@ The laws of Vietnam shall govern this Terms and Your use of the Service.
 If you have any questions about these Terms and Conditions, you can contact us at: nguyenxuannhan407@gmail.com
 `;
 
+const QUICK_LINKS = [
+  { href: "/shop", label: "Books" },
+  { href: "/categories", label: "Categories" },
+  { href: "/publishers", label: "Publishers" },
+] as const;
+
+const HELP_LINKS = [
+  { href: "/shipping", label: "Shipping Info" },
+  { href: "/returns", label: "Returns" },
+  { href: "/about", label: "Our Story" },
+] as const;
+
 export function Footer() {
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
-
-  const quickLinks = [
-    { href: "/shop", label: "Books" },
-    { href: "/categories", label: "Categories" },
-    { href: "/publishers", label: "Publishers" },
-  ];
-
-  const helpLinks = [
-    { href: "/shipping", label: "Shipping Info" },
-    { href: "/returns", label: "Returns" },
-    { href: "/about", label: "Our Story" },
-  ];
 
   return (
     <>
@@ -145,7 +145,7 @@ export function Footer() {
                 Quick Links
               </h3>
               <ul className="text-muted-foreground space-y-2 text-sm">
-                {quickLinks.map((link) => (
+                {QUICK_LINKS.map((link) => (
                   <li key={link.href}>
                     <Link href={link.href} className="hover:text-primary">
                       {link.label}
@@ -159,7 +159,7 @@ export function Footer() {
                 Help
               </h3>
               <ul className="text-muted-foreground space-y-2 text-sm">
-                {helpLinks.map((link) => (
+                {HELP_LINKS.map((link) => (
                   <li key={link.href}>
                     <Link href={link.href} className="hover:text-primary">
                       {link.label}

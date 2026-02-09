@@ -11,6 +11,38 @@ import { useUserContext } from "@/hooks/use-user-context";
 import { signIn } from "@/lib/auth-client";
 import { AUTH } from "@/lib/constants";
 
+function AuthStatusCard({
+  title,
+  description,
+  srLabel,
+}: {
+  title: string;
+  description: string;
+  srLabel: string;
+}) {
+  return (
+    <div className="from-background to-muted/20 flex h-screen items-center justify-center bg-linear-to-br">
+      <Card
+        className="border-muted/50 w-full max-w-md shadow-lg"
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+      >
+        <CardContent className="space-y-6 pt-6 pb-6">
+          <div className="flex justify-center" aria-hidden="true">
+            <Spinner className="size-8" />
+          </div>
+          <div className="space-y-2 text-center">
+            <h1 className="text-foreground text-xl font-semibold">{title}</h1>
+            <p className="text-muted-foreground text-sm">{description}</p>
+          </div>
+          <span className="sr-only">{srLabel}</span>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useUserContext();
   const router = useRouter();
@@ -26,57 +58,21 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="from-background to-muted/20 flex h-screen items-center justify-center bg-linear-to-br">
-        <Card
-          className="border-muted/50 w-full max-w-md shadow-lg"
-          role="status"
-          aria-live="polite"
-          aria-busy="true"
-        >
-          <CardContent className="space-y-6 pt-6 pb-6">
-            <div className="flex justify-center" aria-hidden="true">
-              <Spinner className="size-8" />
-            </div>
-            <div className="space-y-2 text-center">
-              <h1 className="text-foreground text-xl font-semibold">
-                Loading Dashboard
-              </h1>
-              <p className="text-muted-foreground text-sm">
-                Please wait while we verify your credentials...
-              </p>
-            </div>
-            <span className="sr-only">Loading dashboard, please wait</span>
-          </CardContent>
-        </Card>
-      </div>
+      <AuthStatusCard
+        title="Loading Dashboard"
+        description="Please wait while we verify your credentials..."
+        srLabel="Loading dashboard, please wait"
+      />
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <div className="from-background to-muted/20 flex h-screen items-center justify-center bg-linear-to-br">
-        <Card
-          className="border-muted/50 w-full max-w-md shadow-lg"
-          role="status"
-          aria-live="polite"
-          aria-busy="true"
-        >
-          <CardContent className="space-y-6 pt-6 pb-6">
-            <div className="flex justify-center" aria-hidden="true">
-              <Spinner className="size-8" />
-            </div>
-            <div className="space-y-2 text-center">
-              <h1 className="text-foreground text-xl font-semibold">
-                Authentication Required
-              </h1>
-              <p className="text-muted-foreground text-sm">
-                Redirecting to secure login...
-              </p>
-            </div>
-            <span className="sr-only">Redirecting to login page</span>
-          </CardContent>
-        </Card>
-      </div>
+      <AuthStatusCard
+        title="Authentication Required"
+        description="Redirecting to secure login..."
+        srLabel="Redirecting to login page"
+      />
     );
   }
 

@@ -9,6 +9,7 @@ import {
 } from "@workspace/ui/components/card";
 
 import { KPICardsSkeleton } from "@/components/loading-skeleton";
+import { currencyFormatter } from "@/lib/constants";
 
 type KPICardsProps = {
   orders: Order[];
@@ -23,10 +24,6 @@ export function KPICards({
   totalBooks,
   isLoading,
 }: KPICardsProps) {
-  const formatter = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  });
   if (isLoading) {
     return <KPICardsSkeleton />;
   }
@@ -40,7 +37,7 @@ export function KPICards({
   const kpiData = [
     {
       title: "Total Revenue",
-      value: formatter.format(totalRevenue),
+      value: currencyFormatter.format(totalRevenue),
       change: `${orders.length} orders`,
     },
     {

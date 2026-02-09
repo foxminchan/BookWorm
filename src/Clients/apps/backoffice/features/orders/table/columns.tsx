@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import type { Order } from "@workspace/types/ordering/orders";
 import { Badge } from "@workspace/ui/components/badge";
 
+import { currencyFormatter } from "@/lib/constants";
 import { type OrderStatus, getOrderStatusStyle } from "@/lib/pattern";
 
 import { CellAction } from "./cell-action";
@@ -28,17 +29,11 @@ export const columns: ColumnDef<Order>[] = [
   {
     accessorKey: "total",
     header: "Total",
-    cell: ({ row }) => {
-      const formatter = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      });
-      return (
-        <div className="font-medium">
-          {formatter.format(row.original.total)}
-        </div>
-      );
-    },
+    cell: ({ row }) => (
+      <div className="font-medium">
+        {currencyFormatter.format(row.original.total)}
+      </div>
+    ),
   },
   {
     accessorKey: "status",

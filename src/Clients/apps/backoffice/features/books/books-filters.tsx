@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useDebounceCallback } from "usehooks-ts";
@@ -39,8 +39,8 @@ export function BooksFilters({ onFiltersChange }: BooksFiltersProps) {
   const [debouncedPriceRange, setDebouncedPriceRange] = useState<
     [number, number]
   >([PRICE_RANGE.min, PRICE_RANGE.max]);
-  const [orderBy, setOrderBy] = useState<string>("name");
-  const [isDescending, setIsDescending] = useState(false);
+  const [orderBy] = useState<string>("name");
+  const [isDescending] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(
     undefined,
   );
@@ -50,7 +50,8 @@ export function BooksFilters({ onFiltersChange }: BooksFiltersProps) {
     string | undefined
   >(undefined);
 
-  const updateQuery = useCallback(() => {
+  // Sync query whenever any debounced/immediate filter value changes
+  useEffect(() => {
     const query: Omit<ListBooksQuery, "pageIndex" | "pageSize"> = {
       search: debouncedSearch || undefined,
       minPrice:
@@ -82,7 +83,6 @@ export function BooksFilters({ onFiltersChange }: BooksFiltersProps) {
   const handleSearchChange = useDebounceCallback(
     (term: string) => {
       setDebouncedSearch(term);
-      updateQuery();
     },
     500,
     { leading: false, trailing: true },
@@ -91,7 +91,6 @@ export function BooksFilters({ onFiltersChange }: BooksFiltersProps) {
   const handleDebouncedPriceChange = useDebounceCallback(
     (min: number, max: number) => {
       setDebouncedPriceRange([min, max]);
-      updateQuery();
     },
     500,
     { leading: false, trailing: true },
@@ -100,7 +99,6 @@ export function BooksFilters({ onFiltersChange }: BooksFiltersProps) {
   const handleDebouncedAuthorChange = useDebounceCallback(
     (authors: string[]) => {
       setDebouncedAuthors(authors);
-      updateQuery();
     },
     500,
     { leading: false, trailing: true },
@@ -124,13 +122,10 @@ export function BooksFilters({ onFiltersChange }: BooksFiltersProps) {
     setDebouncedSearch("");
     setPriceRange([PRICE_RANGE.min, PRICE_RANGE.max]);
     setDebouncedPriceRange([PRICE_RANGE.min, PRICE_RANGE.max]);
-    setOrderBy("name");
-    setIsDescending(false);
     setSelectedCategory(undefined);
     setSelectedAuthors([]);
     setDebouncedAuthors([]);
     setSelectedPublisher("");
-    updateQuery();
   };
 
   return (
@@ -183,7 +178,6 @@ export function BooksFilters({ onFiltersChange }: BooksFiltersProps) {
               onClear={() => {
                 setSelectedAuthors([]);
                 setDebouncedAuthors([]);
-                updateQuery();
               }}
             />
 

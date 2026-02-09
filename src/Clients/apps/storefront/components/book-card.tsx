@@ -13,6 +13,11 @@ import { Card, CardContent } from "@workspace/ui/components/card";
 import { DEFAULT_BOOK_IMAGE } from "@/lib/constants";
 import { calculateDiscount, formatPrice } from "@/lib/format";
 
+const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+});
+
 type BookCardProps = {
   book: Book;
   onClick?: () => void;
@@ -20,10 +25,6 @@ type BookCardProps = {
 
 export function BookCard({ book, onClick }: BookCardProps) {
   const [imgError, setImgError] = useState(false);
-  const formatter = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  });
   const authorText =
     book.authors && book.authors.length > 0
       ? book.authors.map((a) => a.name).join(", ")
@@ -97,15 +98,15 @@ export function BookCard({ book, onClick }: BookCardProps) {
               {book.priceSale ? (
                 <>
                   <span className="text-primary font-bold">
-                    {formatter.format(book.priceSale)}
+                    {currencyFormatter.format(book.priceSale)}
                   </span>
                   <span className="text-muted-foreground decoration-muted-foreground/50 text-sm line-through">
-                    {formatter.format(book.price)}
+                    {currencyFormatter.format(book.price)}
                   </span>
                 </>
               ) : (
                 <span className="font-bold">
-                  {formatter.format(book.price)}
+                  {currencyFormatter.format(book.price)}
                 </span>
               )}
             </div>

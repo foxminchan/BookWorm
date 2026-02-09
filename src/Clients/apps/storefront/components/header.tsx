@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -24,6 +24,23 @@ import { Label } from "@workspace/ui/components/label";
 import { basketItemsAtom } from "@/atoms/basket-atom";
 import { signOut, useSession } from "@/lib/auth-client";
 
+const NAV_LINKS = [
+  { href: "/shop", label: "Shop" },
+  { href: "/categories", label: "Categories" },
+  { href: "/publishers", label: "Publishers" },
+  { href: "/about", label: "Our Story" },
+] as const;
+
+const AUTHENTICATED_MENU_ITEMS = [
+  { href: "/account", label: "My Profile" },
+  { href: "/account/orders", label: "Order History" },
+] as const;
+
+const GUEST_MENU_ITEMS = [
+  { href: "/login", label: "Login" },
+  { href: "/register", label: "Register" },
+] as const;
+
 export function Header() {
   const router = useRouter();
   const pathname = usePathname();
@@ -35,10 +52,8 @@ export function Header() {
     defaultValues: { search: "" },
   });
   const [isAccountOpen, setIsAccountOpen] = useState(false);
-  const [hideAccountTimeout, setHideAccountTimeout] =
-    useState<NodeJS.Timeout | null>(null);
-  const [searchHoverTimeout, setSearchHoverTimeout] =
-    useState<NodeJS.Timeout | null>(null);
+  const hideAccountTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const searchHoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleSearch = (data: { search: string }) => {
     if (data.search.trim()) {
@@ -54,52 +69,33 @@ export function Header() {
     router.push("/");
   };
 
-  const handleAccountMouseEnter = () => {
-    if (hideAccountTimeout) {
-      clearTimeout(hideAccountTimeout);
-      setHideAccountTimeout(null);
+  const handleAccountMouseEnter = useCallback(() => {
+    if (hideAccountTimeoutRef.current) {
+      clearTimeout(hideAccountTimeoutRef.current);
+      hideAccountTimeoutRef.current = null;
     }
     setIsAccountOpen(true);
-  };
+  }, []);
 
-  const handleAccountMouseLeave = () => {
-    const timeout = setTimeout(() => {
+  const handleAccountMouseLeave = useCallback(() => {
+    hideAccountTimeoutRef.current = setTimeout(() => {
       setIsAccountOpen(false);
     }, 200);
-    setHideAccountTimeout(timeout);
-  };
+  }, []);
 
-  const handleSearchMouseEnter = () => {
-    if (searchHoverTimeout) {
-      clearTimeout(searchHoverTimeout);
-      setSearchHoverTimeout(null);
+  const handleSearchMouseEnter = useCallback(() => {
+    if (searchHoverTimeoutRef.current) {
+      clearTimeout(searchHoverTimeoutRef.current);
+      searchHoverTimeoutRef.current = null;
     }
     setIsSearchOpen(true);
-  };
+  }, []);
 
-  const handleSearchMouseLeave = () => {
-    const timeout = setTimeout(() => {
+  const handleSearchMouseLeave = useCallback(() => {
+    searchHoverTimeoutRef.current = setTimeout(() => {
       setIsSearchOpen(false);
     }, 150);
-    setSearchHoverTimeout(timeout);
-  };
-
-  const navLinks = [
-    { href: "/shop", label: "Shop" },
-    { href: "/categories", label: "Categories" },
-    { href: "/publishers", label: "Publishers" },
-    { href: "/about", label: "Our Story" },
-  ];
-
-  const authenticatedMenuItems = [
-    { href: "/account", label: "My Profile" },
-    { href: "/account/orders", label: "Order History" },
-  ];
-
-  const guestMenuItems = [
-    { href: "/login", label: "Login" },
-    { href: "/register", label: "Register" },
-  ];
+  }, []);
 
   // Helper function to check if link is active
   const isActive = (href: string) => {
@@ -133,7 +129,7 @@ export function Header() {
             className="hidden flex-1 items-center justify-center gap-8 text-sm font-medium md:flex"
             aria-label="Main navigation"
           >
-            {navLinks.map((link) => (
+            {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -251,7 +247,7 @@ export function Header() {
                 >
                   {session?.user ? (
                     <>
-                      {authenticatedMenuItems.map((item) => (
+                      {AUTHENTICATED_MENU_ITEMS.map((item) => (
                         <Link
                           key={item.href}
                           href={item.href}
@@ -272,7 +268,7 @@ export function Header() {
                     </>
                   ) : (
                     <>
-                      {guestMenuItems.map((item) => (
+                      {GUEST_MENU_ITEMS.map((item) => (
                         <Link
                           key={item.href}
                           href={item.href}

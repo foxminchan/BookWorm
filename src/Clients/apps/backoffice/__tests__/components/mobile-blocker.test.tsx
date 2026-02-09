@@ -3,29 +3,41 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { MobileBlocker } from "@/components/mobile-blocker";
 
-describe("MobileBlocker", () => {
-  let originalInnerWidth: number;
+type ChangeListener = (e: MediaQueryListEvent) => void;
 
+function mockMatchMedia(matches: boolean) {
+  const listeners: ChangeListener[] = [];
+
+  const mql = {
+    matches,
+    media: `(max-width: 1023px)`,
+    addEventListener: vi.fn((_event: string, cb: ChangeListener) => {
+      listeners.push(cb);
+    }),
+    removeEventListener: vi.fn((_event: string, cb: ChangeListener) => {
+      const idx = listeners.indexOf(cb);
+      if (idx >= 0) listeners.splice(idx, 1);
+    }),
+  };
+
+  vi.spyOn(window, "matchMedia").mockReturnValue(
+    mql as unknown as MediaQueryList,
+  );
+
+  return { mql, listeners };
+}
+
+describe("MobileBlocker", () => {
   beforeEach(() => {
-    originalInnerWidth = window.innerWidth;
     vi.clearAllMocks();
   });
 
   afterEach(() => {
-    // Restore original window size
-    Object.defineProperty(window, "innerWidth", {
-      writable: true,
-      configurable: true,
-      value: originalInnerWidth,
-    });
+    vi.restoreAllMocks();
   });
 
   it("should render children on desktop (width >= 1024px)", () => {
-    Object.defineProperty(window, "innerWidth", {
-      writable: true,
-      configurable: true,
-      value: 1024,
-    });
+    mockMatchMedia(false);
 
     render(
       <MobileBlocker>
@@ -38,11 +50,7 @@ describe("MobileBlocker", () => {
   });
 
   it("should show mobile blocker message on mobile (width < 1024px)", () => {
-    Object.defineProperty(window, "innerWidth", {
-      writable: true,
-      configurable: true,
-      value: 768,
-    });
+    mockMatchMedia(true);
 
     render(
       <MobileBlocker>
@@ -65,11 +73,7 @@ describe("MobileBlocker", () => {
   });
 
   it("should show mobile blocker on small tablet (width = 800px)", () => {
-    Object.defineProperty(window, "innerWidth", {
-      writable: true,
-      configurable: true,
-      value: 800,
-    });
+    mockMatchMedia(true);
 
     render(
       <MobileBlocker>
@@ -82,11 +86,7 @@ describe("MobileBlocker", () => {
   });
 
   it("should render children on exactly 1024px width", () => {
-    Object.defineProperty(window, "innerWidth", {
-      writable: true,
-      configurable: true,
-      value: 1024,
-    });
+    mockMatchMedia(false);
 
     render(
       <MobileBlocker>
@@ -99,11 +99,7 @@ describe("MobileBlocker", () => {
   });
 
   it("should show mobile blocker on 1023px width", () => {
-    Object.defineProperty(window, "innerWidth", {
-      writable: true,
-      configurable: true,
-      value: 1023,
-    });
+    mockMatchMedia(true);
 
     render(
       <MobileBlocker>
@@ -116,11 +112,7 @@ describe("MobileBlocker", () => {
   });
 
   it("should render Monitor icon in mobile view", () => {
-    Object.defineProperty(window, "innerWidth", {
-      writable: true,
-      configurable: true,
-      value: 768,
-    });
+    mockMatchMedia(true);
 
     const { container } = render(
       <MobileBlocker>

@@ -2,6 +2,8 @@ import type { ColumnDef } from "@tanstack/react-table";
 
 import type { Book } from "@workspace/types/catalog/books";
 
+import { currencyFormatter } from "@/lib/constants";
+
 import { CellAction } from "./cell-action";
 
 export const columns: ColumnDef<Book>[] = [
@@ -39,23 +41,21 @@ export const columns: ColumnDef<Book>[] = [
     cell: ({ row }) => {
       const price = row.original.price;
       const salePrice = row.original.priceSale;
-      const formatter = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      });
       return (
         <div className="text-sm">
           {salePrice ? (
             <span
-              aria-label={`Sale price ${formatter.format(salePrice)}, original price ${formatter.format(price)}`}
+              aria-label={`Sale price ${currencyFormatter.format(salePrice)}, original price ${currencyFormatter.format(price)}`}
             >
-              <del className="text-gray-400">{formatter.format(price)}</del>
+              <del className="text-gray-400">
+                {currencyFormatter.format(price)}
+              </del>
               <span className="ml-2 font-medium">
-                {formatter.format(salePrice)}
+                {currencyFormatter.format(salePrice)}
               </span>
             </span>
           ) : (
-            <span>{formatter.format(price)}</span>
+            <span>{currencyFormatter.format(price)}</span>
           )}
         </div>
       );

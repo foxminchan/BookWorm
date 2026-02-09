@@ -4,18 +4,24 @@ import { useEffect, useState } from "react";
 
 import { Monitor } from "lucide-react";
 
+const MOBILE_BREAKPOINT = 1024;
+
 export function MobileBlocker({ children }: { children: React.ReactNode }) {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
+    // Use matchMedia for efficient, threshold-based detection instead of
+    // listening to every resize pixel change
+    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
+
+    const handleChange = (e: MediaQueryListEvent | MediaQueryList) => {
+      setIsMobile(e.matches);
     };
 
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
+    handleChange(mql);
+    mql.addEventListener("change", handleChange);
 
-    return () => window.removeEventListener("resize", checkMobile);
+    return () => mql.removeEventListener("change", handleChange);
   }, []);
 
   if (isMobile) {
