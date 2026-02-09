@@ -9,7 +9,8 @@ internal sealed class MailKitHealthCheck(MailKitClientFactory factory) : IHealth
     {
         try
         {
-            _ = await factory.GetSmtpClientAsync(cancellationToken);
+            using var client = await factory.CreateClientAsync(cancellationToken);
+            await client.DisconnectAsync(true, cancellationToken);
             return HealthCheckResult.Healthy();
         }
         catch (Exception ex)

@@ -1,5 +1,4 @@
-﻿using BookWorm.Chassis.Utilities.Configuration;
-using MailKit;
+﻿using MailKit;
 
 namespace BookWorm.Notification.Infrastructure.Senders.MailKit;
 
@@ -20,8 +19,7 @@ internal static class MailKitExtensions
             Action<MailKitSettings>? configureSettings = null
         )
         {
-            AddMailKitSender(
-                builder,
+            builder.AddMailKitSender(
                 MailKitSettings.ConfigurationSection,
                 configureSettings,
                 connectionName
@@ -36,10 +34,11 @@ internal static class MailKitExtensions
         {
             var services = builder.Services;
 
-            services.Configure<MailKitSettings>(sectionName);
+            // Bind settings from configuration section
+            var settings = new MailKitSettings();
+            builder.Configuration.GetSection(sectionName).Bind(settings);
 
-            var settings = services.BuildServiceProvider().GetRequiredService<MailKitSettings>();
-
+            // Parse connection string if available
             if (builder.Configuration.GetConnectionString(connectionName) is { } connectionString)
             {
                 settings.ParseConnectionString(connectionString);
@@ -47,15 +46,21 @@ internal static class MailKitExtensions
 
             configureSettings?.Invoke(settings);
 
-            services.AddScoped(_ => new MailKitClientFactory(settings));
+            // Register settings as singleton for injection
+            services.AddSingleton(settings);
 
-            services.AddScoped<ISender, MailKitSender>();
+            // Register factory as singleton to manage SMTP connection state
+            services.AddSingleton(_ => new MailKitClientFactory(settings));
+
+            // Register both concrete type and interface for outbox pattern support
+            services.AddScoped<MailKitSender>();
+            services.AddScoped<ISender>(sp => sp.GetRequiredService<MailKitSender>());
 
             if (!settings.DisableHealthChecks)
             {
                 services
                     .AddHealthChecks()
-                    .AddCheck<MailKitHealthCheck>("MailKit", null, [Components.MailPit]);
+                    .AddCheck<MailKitHealthCheck>(nameof(MailKit), null, [connectionName]);
             }
 
             if (!settings.DisableTracing)

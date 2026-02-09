@@ -38,7 +38,9 @@ internal static class SendGridExtensions
                 (sp, options) => options.ApiKey = sp.GetRequiredService<SendGridSettings>().ApiKey
             );
 
-            services.AddTransient<ISender, SendGridSender>();
+            // Register both concrete type and interface for outbox pattern support
+            services.AddTransient<SendGridSender>();
+            services.AddTransient<ISender>(sp => sp.GetRequiredService<SendGridSender>());
 
             services
                 .AddHealthChecks()
