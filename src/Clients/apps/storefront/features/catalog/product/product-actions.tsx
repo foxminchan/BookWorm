@@ -1,7 +1,6 @@
 "use client";
 
-import type React from "react";
-import { useState } from "react";
+import { type ChangeEvent, useState } from "react";
 
 import { useRouter } from "next/navigation";
 
@@ -25,7 +24,7 @@ type ProductActionsProps = {
   status: string;
   isAddingToBasket: boolean;
   onAddToBasket: () => void;
-  onQuantityChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onQuantityChange: (e: ChangeEvent<HTMLInputElement>) => void;
   onDecrease: () => void;
   onIncrease: () => void;
 };
@@ -38,7 +37,7 @@ export default function ProductActions({
   onQuantityChange,
   onDecrease,
   onIncrease,
-}: ProductActionsProps) {
+}: Readonly<ProductActionsProps>) {
   const { data: session } = useSession();
   const router = useRouter();
   const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -63,12 +62,12 @@ export default function ProductActions({
           >
             {isAddingToBasket ? (
               <>
-                <Loader2 className="size-5 animate-spin" />
+                <Loader2 className="size-5 animate-spin" aria-hidden="true" />
                 Adding...
               </>
             ) : (
               <>
-                <ShoppingBasket className="size-5" /> Add to Basket
+                <ShoppingBasket className="size-5" aria-hidden="true" /> Add to Basket
               </>
             )}
           </Button>
@@ -80,7 +79,6 @@ export default function ProductActions({
             onQuantityChange={onQuantityChange}
             variant="input"
             size="lg"
-            showBorder={false}
           />
         )}
       </div>

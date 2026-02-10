@@ -12,12 +12,11 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select";
 
-const ITEMS_PER_PAGE = 8;
-
 type ShopToolbarProps = {
   searchQuery: string;
   onClearSearch: () => void;
   totalCount: number;
+  itemsPerPage: number;
   currentPage: number;
   sortBy: string;
   onSortChange: (value: string) => void;
@@ -28,15 +27,15 @@ export default function ShopToolbar({
   searchQuery,
   onClearSearch,
   totalCount,
+  itemsPerPage,
   currentPage,
   sortBy,
   onSortChange,
   onOpenFilters,
-}: ShopToolbarProps) {
+}: Readonly<ShopToolbarProps>) {
   return (
-    <div
+    <section
       className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center"
-      role="region"
       aria-labelledby="shop-title"
     >
       <div>
@@ -58,7 +57,7 @@ export default function ShopToolbar({
                 className="hover:bg-secondary-foreground/10 ml-1 h-5 w-5 rounded-full p-0"
                 aria-label="Clear search"
               >
-                <X className="size-3" />
+                <X className="size-3" aria-hidden="true" />
               </Button>
             </Badge>
             <p className="text-muted-foreground text-sm">
@@ -67,8 +66,8 @@ export default function ShopToolbar({
           </div>
         ) : (
           <p className="text-muted-foreground text-sm">
-            Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}–
-            {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} of {totalCount}{" "}
+            Showing {(currentPage - 1) * itemsPerPage + 1}–
+            {Math.min(currentPage * itemsPerPage, totalCount)} of {totalCount}{" "}
             results
           </p>
         )}
@@ -82,7 +81,7 @@ export default function ShopToolbar({
           onClick={onOpenFilters}
           aria-label="Open filters"
         >
-          <Filter className="size-4" /> Filters
+          <Filter className="size-4" aria-hidden="true" /> Filters
         </Button>
         <Select value={sortBy} onValueChange={onSortChange}>
           <SelectTrigger
@@ -99,6 +98,6 @@ export default function ShopToolbar({
           </SelectContent>
         </Select>
       </div>
-    </div>
+    </section>
   );
 }

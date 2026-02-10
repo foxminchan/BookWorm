@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 
 import { ArrowRight } from "lucide-react";
@@ -9,7 +7,7 @@ type PublisherCardProps = {
   name: string;
 };
 
-export default function PublisherCard({ id, name }: PublisherCardProps) {
+export default function PublisherCard({ id, name }: Readonly<PublisherCardProps>) {
   return (
     <Link
       href={`/shop?publisher=${id}`}
@@ -32,7 +30,7 @@ export default function PublisherCard({ id, name }: PublisherCardProps) {
 
         <div className="text-muted-foreground group-hover:text-primary inline-flex items-center gap-2 text-sm transition-colors">
           <span>Explore</span>
-          <ArrowRight className="size-4 transition-transform duration-500 group-hover:translate-x-2" />
+          <ArrowRight className="size-4 transition-transform duration-500 group-hover:translate-x-2" aria-hidden="true" />
         </div>
       </div>
     </Link>

@@ -18,8 +18,8 @@ import { EmptyState } from "@/components/empty-state";
 import { RemoveItemDialog } from "@/components/remove-item-dialog";
 import BasketHeader from "@/features/basket/basket-header";
 import BasketItemsList from "@/features/basket/basket-items-list";
-import BasketLoadingSkeleton from "@/features/basket/basket-loading-skeleton";
 import BasketSummary from "@/features/basket/basket-summary";
+import BasketLoadingSkeleton from "@/components/loading-skeleton";
 
 const SHIPPING_COST = 5;
 

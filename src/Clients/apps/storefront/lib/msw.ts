@@ -1,5 +1,5 @@
 export async function initMocks() {
-  if (typeof window === "undefined") {
+  if (globalThis.window === undefined) {
     return;
   }
 

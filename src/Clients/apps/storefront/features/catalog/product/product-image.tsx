@@ -18,7 +18,7 @@ export default function ProductImage({
   imageUrl,
   name,
   hasSale,
-}: ProductImageProps) {
+}: Readonly<ProductImageProps>) {
   const [imgError, setImgError] = useState(false);
 
   return (

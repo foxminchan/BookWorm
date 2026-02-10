@@ -24,7 +24,7 @@ type CellActionProps = {
   order: Order;
 };
 
-export function CellAction({ order }: CellActionProps) {
+export function CellAction({ order }: Readonly<CellActionProps>) {
   const [openDelete, setOpenDelete] = useState(false);
   const [openComplete, setOpenComplete] = useState(false);
   const [openCancel, setOpenCancel] = useState(false);

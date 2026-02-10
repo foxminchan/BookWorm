@@ -4,6 +4,8 @@ import { Button } from "@workspace/ui/components/button";
 import { Card } from "@workspace/ui/components/card";
 import { Separator } from "@workspace/ui/components/separator";
 
+import { currencyFormatter } from "@/lib/constants";
+
 type BasketSummaryProps = {
   subtotal: number;
   shipping: number;
@@ -18,11 +20,7 @@ export default function BasketSummary({
   total,
   isCheckingOut,
   onCheckout,
-}: BasketSummaryProps) {
-  const formatter = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  });
+}: Readonly<BasketSummaryProps>) {
   return (
     <div className="lg:col-span-4">
       <Card className="sticky top-32 border-none bg-white p-8 shadow-none dark:bg-gray-800">
@@ -30,16 +28,16 @@ export default function BasketSummary({
         <div className="space-y-4">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Subtotal</span>
-            <span className="font-medium">{formatter.format(subtotal)}</span>
+            <span className="font-medium">{currencyFormatter.format(subtotal)}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Shipping</span>
-            <span className="font-medium">{formatter.format(shipping)}</span>
+            <span className="font-medium">{currencyFormatter.format(shipping)}</span>
           </div>
           <Separator />
           <div className="flex justify-between text-lg font-bold">
             <span>Total</span>
-            <span className="text-primary">{formatter.format(total)}</span>
+            <span className="text-primary">{currencyFormatter.format(total)}</span>
           </div>
           <Button
             onClick={onCheckout}
@@ -48,13 +46,13 @@ export default function BasketSummary({
           >
             {isCheckingOut ? (
               <>
-                <Loader2 className="mr-2 size-5 animate-spin" />
+                <Loader2 className="mr-2 size-5 animate-spin" aria-hidden="true" />
                 Processing...
               </>
             ) : (
               <>
                 Checkout{" "}
-                <ArrowRight className="ml-2 size-5 transition-transform group-hover:translate-x-1" />
+                <ArrowRight className="ml-2 size-5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
               </>
             )}
           </Button>

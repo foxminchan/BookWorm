@@ -1,7 +1,6 @@
 "use client";
 
-import type React from "react";
-import { useState } from "react";
+import { type ChangeEvent, useState } from "react";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -30,6 +29,13 @@ import { generateBreadcrumbJsonLd, generateProductJsonLd } from "@/lib/seo";
 
 const REVIEWS_PER_PAGE = 5;
 
+const INITIAL_REVIEW: Omit<CreateFeedbackRequest, "bookId"> = {
+  firstName: "",
+  lastName: "",
+  comment: "",
+  rating: 0,
+};
+
 type BookDetailPageClientProps = {
   id: string;
 };
@@ -43,14 +49,7 @@ export default function BookDetailPageClient({
   const [sortBy, setSortBy] = useState<"newest" | "highest" | "lowest">(
     "newest",
   );
-  const [newReview, setNewReview] = useState<
-    Omit<CreateFeedbackRequest, "bookId">
-  >({
-    firstName: "",
-    lastName: "",
-    comment: "",
-    rating: 0,
-  });
+  const [newReview, setNewReview] = useState(INITIAL_REVIEW);
 
   // Convert sortBy to API parameters
   const sortParams = getReviewSortParams(sortBy);
@@ -142,21 +141,14 @@ export default function BookDetailPageClient({
       },
       {
         onSuccess: () => {
-          setNewReview({
-            firstName: "",
-            lastName: "",
-            comment: "",
-            rating: 0,
-          });
+          setNewReview(INITIAL_REVIEW);
           setShowReviewForm(false);
         },
       },
     );
   };
 
-  const handleAddToBasket = async () => {
-    if (!book) return;
-
+  const handleAddToBasket = () => {
     if (quantity > 0) {
       // Update existing basket item
       updateBasketMutation.mutate({
@@ -172,7 +164,7 @@ export default function BookDetailPageClient({
     }
   };
 
-  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleQuantityChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
 
     if (value === "") {
@@ -215,25 +207,22 @@ export default function BookDetailPageClient({
     setShowRemoveDialog(false);
   };
 
-  const visibleFeedbacks = feedbacks;
   const totalCount = feedbacksData?.totalCount ?? 0;
   const totalPages = Math.ceil(totalCount / REVIEWS_PER_PAGE);
 
-  const productJsonLd = book ? generateProductJsonLd(book, feedbacks) : null;
-  const breadcrumbJsonLd = book
-    ? generateBreadcrumbJsonLd([
-        { name: "Home", url: "/" },
-        { name: "Shop", url: "/shop" },
-        { name: book.name || "Book", url: `/shop/${book.id}` },
-      ])
-    : null;
+  const productJsonLd = generateProductJsonLd(book, feedbacks);
+  const breadcrumbJsonLd = generateBreadcrumbJsonLd([
+    { name: "Home", url: "/" },
+    { name: "Shop", url: "/shop" },
+    { name: book.name || "Book", url: `/shop/${book.id}` },
+  ]);
 
   return (
     <>
       {productJsonLd && <JsonLd data={productJsonLd} />}
       {breadcrumbJsonLd && <JsonLd data={breadcrumbJsonLd} />}
 
-      <main className="container mx-auto grow px-4 py-8" role="main">
+      <main className="container mx-auto grow px-4 py-8">
         <Link
           href="/shop"
           className="text-muted-foreground hover:text-primary mb-8 inline-flex items-center text-sm transition-colors"
@@ -244,17 +233,17 @@ export default function BookDetailPageClient({
 
         <ProductSection
           book={{
-            imageUrl: book?.imageUrl,
-            name: book?.name || "Book",
-            priceSale: book?.priceSale,
-            category: book?.category,
-            authors: book?.authors || [],
-            averageRating: book?.averageRating || 0,
-            totalReviews: book?.totalReviews || 0,
-            price: book?.price || 0,
-            status: book?.status || "",
-            description: book?.description,
-            publisher: book?.publisher,
+            imageUrl: book.imageUrl,
+            name: book.name || "Book",
+            priceSale: book.priceSale,
+            category: book.category,
+            authors: book.authors || [],
+            averageRating: book.averageRating || 0,
+            totalReviews: book.totalReviews || 0,
+            price: book.price || 0,
+            status: book.status || "",
+            description: book.description,
+            publisher: book.publisher,
           }}
           quantity={quantity}
           isAddingToBasket={
@@ -276,15 +265,9 @@ export default function BookDetailPageClient({
         >
           <ReviewsContainer
             isLoading={isLoading}
-            reviews={visibleFeedbacks.map((f) => ({
-              id: f.id,
-              firstName: f.firstName || "",
-              lastName: f.lastName || "",
-              rating: f.rating,
-              comment: f.comment || "",
-            }))}
-            averageRating={book?.averageRating || 0}
-            totalReviews={book?.totalReviews || 0}
+            reviews={feedbacks}
+            averageRating={book.averageRating || 0}
+            totalReviews={book.totalReviews || 0}
             sortBy={sortBy}
             onSortChange={(newSort) => {
               setSortBy(newSort);

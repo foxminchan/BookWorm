@@ -30,7 +30,7 @@ export function RemoveItemDialog({
   items = [],
   cancelLabel = "Keep Item",
   confirmLabel = "Remove",
-}: RemoveItemDialogProps) {
+}: Readonly<RemoveItemDialogProps>) {
   const isSingleItem = items.length === 1;
   const isMultipleItems = items.length > 1;
 

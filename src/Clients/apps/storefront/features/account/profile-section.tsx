@@ -6,7 +6,7 @@ type ProfileSectionProps = {
   buyer: Buyer;
 };
 
-export default function ProfileSection({ buyer }: ProfileSectionProps) {
+export default function ProfileSection({ buyer }: Readonly<ProfileSectionProps>) {
   return (
     <div className="border-border/40 rounded-lg border p-6">
       <div className="mb-6 flex items-center gap-4">

@@ -71,7 +71,7 @@ export function useBookSearchActions() {
           <Card>
             <CardHeader>
               <CardTitle>
-                Found {result.total} book{result.total !== 1 ? "s" : ""}
+                Found {result.total} book{result.total === 1 ? "" : "s"}
               </CardTitle>
               <CardDescription>
                 Search results for &quot;{result.query}&quot;

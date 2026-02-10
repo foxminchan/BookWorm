@@ -53,7 +53,7 @@ export const basketHandlers = [
       const headers = new Headers();
       headers.set("Location", `${BASKET_API_BASE_URL}/api/v1/baskets`);
 
-      return HttpResponse.json(basket.id!, { status: 201, headers });
+      return HttpResponse.json(basket.id, { status: 201, headers });
     }),
   ),
 

@@ -1,5 +1,7 @@
 "use client";
 
+import type { Feedback } from "@workspace/types/rating";
+
 import { ReviewsLoadingSkeleton } from "@/components/loading-skeleton";
 
 import ReviewForm from "./review-form";
@@ -8,17 +10,19 @@ import ReviewSummaryCard from "./review-summary-card";
 import ReviewsEmptyState from "./reviews-empty-state";
 import ReviewsSection from "./reviews-section";
 
-type Review = {
-  id: string;
+type ReviewFormData = {
   firstName: string;
   lastName: string;
-  rating: number;
   comment: string;
+  rating: number;
+  isSubmitting: boolean;
+  onChange: (field: string, value: string | number) => void;
+  onSubmit: () => void;
 };
 
 type ReviewsContainerProps = {
   isLoading: boolean;
-  reviews: Review[];
+  reviews: Feedback[];
   averageRating: number;
   totalReviews: number;
   sortBy: "newest" | "highest" | "lowest";
@@ -28,15 +32,7 @@ type ReviewsContainerProps = {
   showReviewForm: boolean;
   onToggleReviewForm: () => void;
   summary?: string;
-  reviewForm: {
-    firstName: string;
-    lastName: string;
-    comment: string;
-    rating: number;
-    isSubmitting: boolean;
-    onChange: (field: string, value: string | number) => void;
-    onSubmit: () => void;
-  };
+  reviewForm: ReviewFormData;
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
@@ -58,7 +54,7 @@ export default function ReviewsContainer({
   currentPage,
   totalPages,
   onPageChange,
-}: ReviewsContainerProps) {
+}: Readonly<ReviewsContainerProps>) {
   if (isLoading) {
     return <ReviewsLoadingSkeleton />;
   }

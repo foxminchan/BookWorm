@@ -2,6 +2,7 @@
 
 import {
   forwardRef,
+  useCallback,
   useEffect,
   useImperativeHandle,
   useRef,
@@ -120,11 +121,9 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
             e.preventDefault();
             lastElement?.focus();
           }
-        } else {
-          if (document.activeElement === lastElement) {
-            e.preventDefault();
-            firstElement?.focus();
-          }
+        } else if (document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement?.focus();
         }
       }
     };
@@ -144,8 +143,8 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
       }
     };
 
-    window.addEventListener("error", handleError);
-    return () => window.removeEventListener("error", handleError);
+    globalThis.addEventListener("error", handleError);
+    return () => globalThis.removeEventListener("error", handleError);
   }, []);
 
   // Show rate limit warning
@@ -163,10 +162,10 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
     }
   }, [isRateLimited, isThrottling, resetIn]);
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setErrorState({ hasError: false });
     setIsOpen(false);
-  };
+  }, []);
 
   if (!isOpen) {
     return (
@@ -185,10 +184,9 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 md:block"
-      role="dialog"
-      aria-modal="true"
+    <dialog
+      className="fixed inset-0 z-50 m-0 h-auto w-auto max-w-none border-none bg-transparent p-0 md:block"
+      open
       aria-label="BookWorm Literary Guide Chat"
     >
       {/* Render confirmation dialog for basket actions */}
@@ -198,16 +196,19 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
 
       {/* Offline indicator */}
       {!isOnline && (
-        <div
+        <output
           className="copilot-offline-badge"
-          role="status"
           aria-live="polite"
-          aria-label={`You are offline${queueSize > 0 ? `. ${queueSize} messages queued` : ""}`}
+          aria-label={
+            queueSize > 0
+              ? `You are offline. ${queueSize} messages queued`
+              : "You are offline"
+          }
         >
           <WifiOff className="h-3 w-3" aria-hidden="true" />
           <span>Offline</span>
           {queueSize > 0 && <span>({queueSize} queued)</span>}
-        </div>
+        </output>
       )}
 
       {/* Rate limit warning */}
@@ -224,9 +225,8 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
 
       {/* Syncing indicator */}
       {isSyncing && isOnline && (
-        <div
+        <output
           className="fixed top-20 right-6 z-50 flex items-center gap-2 rounded-lg border bg-blue-50 px-3 py-2 text-sm dark:bg-blue-950"
-          role="status"
           aria-live="polite"
           aria-label="Sending queued messages"
         >
@@ -235,7 +235,7 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
             aria-hidden="true"
           />
           <span>Sending queued messages...</span>
-        </div>
+        </output>
       )}
 
       {errorState.hasError ? (
@@ -260,9 +260,10 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
           clickOutsideToClose={true}
         />
       )}
-    </div>
+    </dialog>
   );
 });
+
 const UnavailableChatUI = ({
   isOpen,
   onClose,
@@ -277,22 +278,15 @@ const UnavailableChatUI = ({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 hidden items-end justify-end p-6 md:flex"
-      role="dialog"
-      aria-modal="true"
+    <dialog
+      className="fixed inset-0 z-50 m-0 hidden h-auto w-auto max-w-none items-end justify-end border-none bg-transparent p-6 md:flex"
+      open
       aria-labelledby="chat-unavailable-title"
     >
-      <div
-        className="fixed inset-0 bg-black/20 backdrop-blur-sm"
+      <button
+        type="button"
+        className="fixed inset-0 cursor-default border-none bg-black/20 backdrop-blur-sm"
         onClick={onClose}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
-            onClose();
-          }
-        }}
-        tabIndex={0}
-        role="button"
         aria-label="Close chat dialog"
       />
       <Card className="border-secondary/30 animate-in fade-in slide-in-from-bottom-4 relative z-10 flex h-150 w-96 flex-col overflow-hidden rounded-2xl shadow-2xl duration-300 sm:w-105">
@@ -339,7 +333,7 @@ const UnavailableChatUI = ({
           </div>
         </CardContent>
       </Card>
-    </div>
+    </dialog>
   );
 };
 
@@ -355,47 +349,47 @@ export const ChatBot = forwardRef<ChatBotRef>(function ChatBot(_, ref) {
 
   useImperativeHandle(ref, () => ({
     openChat: () => {
-      if (!canShowChat) {
-        setIsUnavailableChatOpen(true);
-      } else {
+      if (canShowChat) {
         const chatButton = document.querySelector(
           "[data-copilot-chat-trigger]",
         );
         if (chatButton instanceof HTMLElement) {
           chatButton.click();
         }
+      } else {
+        setIsUnavailableChatOpen(true);
       }
     },
   }));
 
-  if (!canShowChat) {
-    return (
-      <>
-        <Button
-          onClick={() => setIsUnavailableChatOpen(true)}
-          size="icon"
-          className="fixed right-6 bottom-6 z-50 hidden h-12 w-12 rounded-full shadow-lg transition-transform hover:scale-110 md:flex"
-          aria-label={
-            isFeatureDisabled
-              ? "Chat feature coming soon - click to learn more"
-              : "Open chat - feature currently unavailable"
-          }
-          title={
-            isFeatureDisabled
-              ? "Feature in development"
-              : "Chat feature is unavailable"
-          }
-        >
-          <MessageCircle className="h-6 w-6" aria-hidden="true" />
-        </Button>
-        <UnavailableChatUI
-          isOpen={isUnavailableChatOpen}
-          onClose={() => setIsUnavailableChatOpen(false)}
-          isFeatureDisabled={isFeatureDisabled}
-        />
-      </>
-    );
+  if (canShowChat) {
+    return <ChatBotContent ref={ref} />;
   }
 
-  return <ChatBotContent ref={ref} />;
+  return (
+    <>
+      <Button
+        onClick={() => setIsUnavailableChatOpen(true)}
+        size="icon"
+        className="fixed right-6 bottom-6 z-50 hidden h-12 w-12 rounded-full shadow-lg transition-transform hover:scale-110 md:flex"
+        aria-label={
+          isFeatureDisabled
+            ? "Chat feature coming soon - click to learn more"
+            : "Open chat - feature currently unavailable"
+        }
+        title={
+          isFeatureDisabled
+            ? "Feature in development"
+            : "Chat feature is unavailable"
+        }
+      >
+        <MessageCircle className="h-6 w-6" aria-hidden="true" />
+      </Button>
+      <UnavailableChatUI
+        isOpen={isUnavailableChatOpen}
+        onClose={() => setIsUnavailableChatOpen(false)}
+        isFeatureDisabled={isFeatureDisabled}
+      />
+    </>
+  );
 });

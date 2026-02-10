@@ -43,62 +43,49 @@ export default function ShopPageClient() {
     },
   );
 
-  const updateFilters = (
-    categories: string[],
-    publishers: string[],
-    authors: string[],
+  const buildFilterUrl = (
+    cats: string[],
+    pubs: string[],
+    auths: string[],
   ) => {
     const params = new URLSearchParams();
-    if (categories.length > 0 && categories[0]) {
-      params.set("category", categories[0]);
-    }
-    if (publishers.length > 0 && publishers[0]) {
-      params.set("publisher", publishers[0]);
-    }
-    if (authors.length > 0 && authors[0]) {
-      params.set("author", authors[0]);
-    }
+    if (cats[0]) params.set("category", cats[0]);
+    if (pubs[0]) params.set("publisher", pubs[0]);
+    if (auths[0]) params.set("author", auths[0]);
     params.set("page", "1");
-    router.push(`/shop?${params.toString()}`);
+    return `/shop?${params.toString()}`;
   };
 
   const handleToggleCategory = (categoryId: string) => {
     const updated = selectedCategories.includes(categoryId)
-      ? selectedCategories.filter((id: string) => id !== categoryId)
+      ? selectedCategories.filter((id) => id !== categoryId)
       : [...selectedCategories, categoryId];
     setSelectedCategories(updated);
-    updateFilters(updated, selectedPublishers, selectedAuthors);
+    router.push(buildFilterUrl(updated, selectedPublishers, selectedAuthors));
   };
 
   const handleTogglePublisher = (publisherId: string) => {
     const updated = selectedPublishers.includes(publisherId)
-      ? selectedPublishers.filter((id: string) => id !== publisherId)
+      ? selectedPublishers.filter((id) => id !== publisherId)
       : [...selectedPublishers, publisherId];
     setSelectedPublishers(updated);
-    updateFilters(selectedCategories, updated, selectedAuthors);
+    router.push(buildFilterUrl(selectedCategories, updated, selectedAuthors));
   };
 
   const handleToggleAuthor = (authorId: string) => {
     const updated = selectedAuthors.includes(authorId)
-      ? selectedAuthors.filter((id: string) => id !== authorId)
+      ? selectedAuthors.filter((id) => id !== authorId)
       : [...selectedAuthors, authorId];
     setSelectedAuthors(updated);
-    updateFilters(selectedCategories, selectedPublishers, updated);
+    router.push(
+      buildFilterUrl(selectedCategories, selectedPublishers, updated),
+    );
   };
 
   const handleClearSearch = () => {
-    const params = new URLSearchParams();
-    if (selectedCategories.length > 0 && selectedCategories[0]) {
-      params.set("category", selectedCategories[0]);
-    }
-    if (selectedPublishers.length > 0 && selectedPublishers[0]) {
-      params.set("publisher", selectedPublishers[0]);
-    }
-    if (selectedAuthors.length > 0 && selectedAuthors[0]) {
-      params.set("author", selectedAuthors[0]);
-    }
-    params.set("page", "1");
-    router.push(`/shop?${params.toString()}`);
+    router.push(
+      buildFilterUrl(selectedCategories, selectedPublishers, selectedAuthors),
+    );
   };
 
   const handleClearAllFilters = () => {
@@ -139,6 +126,7 @@ export default function ShopPageClient() {
             searchQuery={searchQuery}
             onClearSearch={handleClearSearch}
             totalCount={totalCount}
+            itemsPerPage={ITEMS_PER_PAGE}
             currentPage={currentPage}
             sortBy={sortBy}
             onSortChange={setSortBy}

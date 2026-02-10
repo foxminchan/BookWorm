@@ -1,6 +1,6 @@
 "use client";
 
-import type React from "react";
+import type { ChangeEvent } from "react";
 
 import ProductActions from "./product-actions";
 import ProductImage from "./product-image";
@@ -23,7 +23,7 @@ type ProductSectionProps = {
   quantity: number;
   isAddingToBasket: boolean;
   onAddToBasket: () => void;
-  onQuantityChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onQuantityChange: (e: ChangeEvent<HTMLInputElement>) => void;
   onDecrease: () => void;
   onIncrease: () => void;
 };
@@ -36,7 +36,7 @@ export default function ProductSection({
   onQuantityChange,
   onDecrease,
   onIncrease,
-}: ProductSectionProps) {
+}: Readonly<ProductSectionProps>) {
   return (
     <article
       className="mb-16 grid grid-cols-1 gap-12 md:grid-cols-2 lg:gap-20"

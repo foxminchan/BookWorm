@@ -11,22 +11,23 @@ type ReviewSummaryCardProps = {
 export default function ReviewSummaryCard({
   averageRating,
   totalReviews,
-}: ReviewSummaryCardProps) {
+}: Readonly<ReviewSummaryCardProps>) {
   return (
     <div className="bg-secondary/30 rounded-2xl p-8 text-center">
       <p className="mb-2 font-serif text-5xl font-bold">
         {averageRating.toFixed(1)}
       </p>
       <div className="mb-2 flex justify-center gap-1">
-        {[...Array(5)].map((_, i) => (
+        {[1, 2, 3, 4, 5].map((star) => (
           <Star
-            key={i}
+            key={star}
             className={cn(
               "size-4",
-              i < Math.floor(averageRating)
+              star <= Math.floor(averageRating)
                 ? "fill-primary text-primary"
                 : "text-muted-foreground/30",
             )}
+            aria-hidden="true"
           />
         ))}
       </div>

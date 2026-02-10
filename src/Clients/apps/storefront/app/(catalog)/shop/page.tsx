@@ -136,7 +136,9 @@ export async function generateMetadata({
   };
 }
 
-export default async function ShopPage({ searchParams }: Readonly<ShopPageProps>) {
+export default async function ShopPage({
+  searchParams,
+}: Readonly<ShopPageProps>) {
   const params = await searchParams;
   const queryClient = getQueryClient();
 

@@ -3,20 +3,13 @@
 import cn from "classnames";
 import { Star, User } from "lucide-react";
 
+import type { Feedback } from "@workspace/types/rating";
 import { Separator } from "@workspace/ui/components/separator";
 
 import { Pagination } from "@/components/pagination";
 
-type Review = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  rating: number;
-  comment: string;
-};
-
 type ReviewListProps = {
-  reviews: Review[];
+  reviews: Feedback[];
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
@@ -27,7 +20,7 @@ export default function ReviewList({
   currentPage,
   totalPages,
   onPageChange,
-}: ReviewListProps) {
+}: Readonly<ReviewListProps>) {
   return (
     <div className="space-y-8 lg:col-span-2">
       {reviews.map((feedback) => (
@@ -35,22 +28,23 @@ export default function ReviewList({
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="bg-secondary flex size-10 items-center justify-center rounded-full">
-                <User className="text-muted-foreground size-5" />
+                <User className="text-muted-foreground size-5" aria-hidden="true" />
               </div>
               <div>
                 <p className="font-medium">
-                  {feedback.firstName} {feedback.lastName}
+                  {feedback.firstName ?? ""} {feedback.lastName ?? ""}
                 </p>
                 <div className="flex gap-0.5">
-                  {[...Array(5)].map((_, i) => (
+                  {[1, 2, 3, 4, 5].map((star) => (
                     <Star
-                      key={i}
+                      key={star}
                       className={cn(
                         "size-3",
-                        i < feedback.rating
+                        star <= feedback.rating
                           ? "fill-primary text-primary"
                           : "text-muted-foreground/30",
                       )}
+                      aria-hidden="true"
                     />
                   ))}
                 </div>
@@ -60,7 +54,7 @@ export default function ReviewList({
           <p className="text-muted-foreground pl-13 leading-relaxed">
             {feedback.comment}
           </p>
-          <Separator className="mt-8 group-last:hidden" />
+          <Separator className="mt-8 group-last:hidden" aria-hidden="true" />
         </div>
       ))}
 

@@ -18,13 +18,9 @@ export function EmptyState({
   description,
   actionLabel,
   actionHref,
-}: EmptyStateProps) {
+}: Readonly<EmptyStateProps>) {
   return (
-    <section
-      className="space-y-6 py-24 text-center"
-      role="status"
-      aria-live="polite"
-    >
+    <output className="block space-y-6 py-24 text-center" aria-live="polite">
       <div className="bg-secondary text-muted-foreground mx-auto flex size-20 items-center justify-center rounded-full">
         <Icon className="size-10" aria-hidden="true" />
       </div>
@@ -35,6 +31,6 @@ export function EmptyState({
           <Link href={actionHref}>{actionLabel}</Link>
         </Button>
       )}
-    </section>
+    </output>
   );
 }

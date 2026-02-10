@@ -146,7 +146,7 @@ export function useBasketActions() {
           <div className="space-y-3 rounded-lg border p-4">
             <h3 className="font-semibold">
               Your Basket ({result.itemCount} item
-              {result.itemCount !== 1 ? "s" : ""})
+              {result.itemCount === 1 ? "" : "s"})
             </h3>
             {result.items.length === 0 ? (
               <p className="text-muted-foreground text-sm">
@@ -193,14 +193,13 @@ export function useBasketActions() {
 
   // Live region component for screen reader announcements
   const LiveRegion = () => (
-    <div
-      role="status"
+    <output
       aria-live="polite"
       aria-atomic="true"
       className="sr-only"
     >
       {announcement}
-    </div>
+    </output>
   );
 
   return { ConfirmationDialog, LiveRegion };

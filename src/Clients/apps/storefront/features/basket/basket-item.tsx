@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { Trash2 } from "lucide-react";
 
@@ -8,6 +8,7 @@ import { Card, CardContent } from "@workspace/ui/components/card";
 
 import { QuantityControl } from "@/components/quantity-control";
 import { RemoveItemDialog } from "@/components/remove-item-dialog";
+import { currencyFormatter } from "@/lib/constants";
 
 type BasketItemProps = {
   item: BasketItemType;
@@ -21,19 +22,30 @@ export default function BasketItem({
   displayQuantity,
   onUpdateQuantity,
   onRemoveItem,
-}: BasketItemProps) {
+}: Readonly<BasketItemProps>) {
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
-  const totalPrice = (item.priceSale || item.price) * displayQuantity;
-  const formatter = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  });
+
+  const saleTotal = item.priceSale
+    ? item.priceSale * displayQuantity
+    : undefined;
+  const originalTotal = item.price * displayQuantity;
+  const totalPrice = saleTotal ?? originalTotal;
+
+  const removeItems = useMemo(
+    () => [{ id: item.id, name: item.name || "Unnamed Item" }],
+    [item.id, item.name],
+  );
+
+  const handleConfirmRemove = useCallback(() => {
+    onRemoveItem(item.id);
+    setShowRemoveDialog(false);
+  }, [item.id, onRemoveItem]);
 
   return (
     <Card
       className="border-none bg-white/50 shadow-none backdrop-blur-sm dark:bg-gray-800/50"
       role="article"
-      aria-label={`${item.name}, quantity ${displayQuantity}, total ${formatter.format(totalPrice)}`}
+      aria-label={`${item.name}, quantity ${displayQuantity}, total ${currencyFormatter.format(totalPrice)}`}
     >
       <CardContent className="p-6">
         <div className="flex gap-6">
@@ -60,30 +72,29 @@ export default function BasketItem({
                 size="md"
               />
               <div className="ml-auto text-right">
-                {item.priceSale ? (
-                  <div className="flex flex-col items-end">
-                    <span className="text-primary font-bold">
-                      {formatter.format(item.priceSale * displayQuantity)}
-                    </span>
-                    <span className="text-muted-foreground decoration-muted-foreground/50 text-xs line-through">
-                      {formatter.format(item.price * displayQuantity)}
-                    </span>
-                    <span className="sr-only">
-                      Sale price:{" "}
-                      {formatter.format(item.priceSale * displayQuantity)},
-                      original price:{" "}
-                      {formatter.format(item.price * displayQuantity)}
-                    </span>
-                  </div>
-                ) : (
+                {saleTotal === undefined ? (
                   <>
                     <span className="font-bold">
-                      {formatter.format(item.price * displayQuantity)}
+                      {currencyFormatter.format(originalTotal)}
                     </span>
                     <span className="sr-only">
-                      Total: {formatter.format(item.price * displayQuantity)}
+                      Total: {currencyFormatter.format(originalTotal)}
                     </span>
                   </>
+                ) : (
+                  <div className="flex flex-col items-end">
+                    <span className="text-primary font-bold">
+                      {currencyFormatter.format(saleTotal)}
+                    </span>
+                    <span className="text-muted-foreground decoration-muted-foreground/50 text-xs line-through">
+                      {currencyFormatter.format(originalTotal)}
+                    </span>
+                    <span className="sr-only">
+                      Sale price: {currencyFormatter.format(saleTotal)},
+                      original price:{" "}
+                      {currencyFormatter.format(originalTotal)}
+                    </span>
+                  </div>
                 )}
               </div>
             </div>
@@ -93,11 +104,8 @@ export default function BasketItem({
       <RemoveItemDialog
         open={showRemoveDialog}
         onOpenChange={setShowRemoveDialog}
-        onConfirm={() => {
-          onRemoveItem(item.id);
-          setShowRemoveDialog(false);
-        }}
-        items={[{ id: item.id, name: item.name || "Unnamed Item" }]}
+        onConfirm={handleConfirmRemove}
+        items={removeItems}
       />
     </Card>
   );
