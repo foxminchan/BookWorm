@@ -40,13 +40,7 @@ type InputVariantProps = BaseProps & {
 type QuantityControlProps = SimpleVariantProps | InputVariantProps;
 
 export function QuantityControl(props: Readonly<QuantityControlProps>) {
-  const {
-    quantity,
-    onIncrease,
-    onDecrease,
-    size = "md",
-    className,
-  } = props;
+  const { quantity, onIncrease, onDecrease, size = "md", className } = props;
 
   if (props.variant === "input") {
     return (

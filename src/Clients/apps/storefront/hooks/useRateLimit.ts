@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type RateLimitConfig = {
   maxRequests: number;
@@ -21,7 +21,10 @@ const DEFAULT_CONFIG: RateLimitConfig = {
 };
 
 export function useRateLimit(config: Partial<RateLimitConfig> = {}) {
-  const fullConfig = { ...DEFAULT_CONFIG, ...config };
+  const fullConfig = useMemo(
+    () => ({ ...DEFAULT_CONFIG, ...config }),
+    [config.maxRequests, config.windowMs, config.throttleMs],
+  );
   const [state, setState] = useState<RateLimitState>({
     requests: [],
     isThrottling: false,

@@ -15,11 +15,11 @@ import type { BasketItem } from "@workspace/types/basket";
 
 import { basketAtom, basketItemsAtom } from "@/atoms/basket-atom";
 import { EmptyState } from "@/components/empty-state";
+import BasketLoadingSkeleton from "@/components/loading-skeleton";
 import { RemoveItemDialog } from "@/components/remove-item-dialog";
 import BasketHeader from "@/features/basket/basket-header";
 import BasketItemsList from "@/features/basket/basket-items-list";
 import BasketSummary from "@/features/basket/basket-summary";
-import BasketLoadingSkeleton from "@/components/loading-skeleton";
 
 const SHIPPING_COST = 5;
 

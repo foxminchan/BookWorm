@@ -43,11 +43,7 @@ export default function ShopPageClient() {
     },
   );
 
-  const buildFilterUrl = (
-    cats: string[],
-    pubs: string[],
-    auths: string[],
-  ) => {
+  const buildFilterUrl = (cats: string[], pubs: string[], auths: string[]) => {
     const params = new URLSearchParams();
     if (cats[0]) params.set("category", cats[0]);
     if (pubs[0]) params.set("publisher", pubs[0]);

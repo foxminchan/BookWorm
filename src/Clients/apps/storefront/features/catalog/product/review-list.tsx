@@ -28,7 +28,10 @@ export default function ReviewList({
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="bg-secondary flex size-10 items-center justify-center rounded-full">
-                <User className="text-muted-foreground size-5" aria-hidden="true" />
+                <User
+                  className="text-muted-foreground size-5"
+                  aria-hidden="true"
+                />
               </div>
               <div>
                 <p className="font-medium">

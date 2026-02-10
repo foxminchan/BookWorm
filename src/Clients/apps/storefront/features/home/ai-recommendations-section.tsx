@@ -9,7 +9,7 @@ import { Button } from "@workspace/ui/components/button";
 import type { ChatBotRef } from "@/components/chat-bot";
 
 type AiRecommendationsSectionProps = {
-  chatBotRef: React.RefObject<ChatBotRef | null>;
+  readonly chatBotRef: React.RefObject<ChatBotRef | null>;
 };
 
 export default function AiRecommendationsSection({

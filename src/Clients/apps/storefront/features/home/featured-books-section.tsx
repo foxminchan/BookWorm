@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 import { ArrowRight } from "lucide-react";
 
@@ -11,8 +11,6 @@ import { BookCard } from "@/components/book-card";
 import { BookCardSkeleton } from "@/components/loading-skeleton";
 
 export default function FeaturedBooksSection() {
-  const router = useRouter();
-
   // This will use the hydrated data from the server
   const { data: booksData, isLoading } = useBooks({ pageSize: 4 });
 
@@ -38,30 +36,29 @@ export default function FeaturedBooksSection() {
             The most anticipated titles of the season.
           </p>
         </div>
-        {hasFeaturedBooks && (
+        {hasFeaturedBooks ? (
           <Button
-            type="button"
             variant="ghost"
             className="hidden gap-2 md:flex"
-            onClick={() => router.push("/shop")}
             aria-label="View all books"
+            asChild
           >
-            View All <ArrowRight className="size-4" aria-hidden="true" />
+            <Link href="/shop">
+              View All <ArrowRight className="size-4" aria-hidden="true" />
+            </Link>
           </Button>
-        )}
+        ) : null}
       </div>
 
       <div className="grid grid-cols-2 gap-8 sm:grid-cols-2 lg:grid-cols-4">
         {isLoading
           ? Array.from({ length: 4 }).map((_, i) => (
-              <BookCardSkeleton key={i} />
+              <BookCardSkeleton key={`skeleton-${i.toString()}`} />
             ))
           : books.map((book) => (
-              <BookCard
-                key={book.id}
-                book={book}
-                onClick={() => router.push(`/shop/${book.id}`)}
-              />
+              <Link key={book.id} href={`/shop/${book.id}`}>
+                <BookCard book={book} />
+              </Link>
             ))}
       </div>
     </section>

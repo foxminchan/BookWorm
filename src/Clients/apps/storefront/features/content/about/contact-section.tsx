@@ -1,20 +1,12 @@
-import Link from "next/link";
-
-import { Button } from "@workspace/ui/components/button";
+import CtaSection from "@/features/content/shared/cta-section";
 
 export default function ContactSection() {
   return (
-    <section className="container mx-auto px-4 py-24 text-center">
-      <h2 className="mb-8 font-serif text-4xl font-medium md:text-5xl">
-        Get In Touch
-      </h2>
-      <p className="text-muted-foreground mx-auto mb-12 max-w-2xl text-lg">
-        Have questions or want to share your reading journey with us? We'd love
-        to hear from you.
-      </p>
-      <Button size="lg" className="rounded-full px-8" asChild>
-        <Link href="mailto:support@bookworm.com">Get In Touch</Link>
-      </Button>
-    </section>
+    <CtaSection
+      title="Get In Touch"
+      description="Have questions or want to share your reading journey with us? We'd love to hear from you."
+      href="mailto:support@bookworm.com"
+      label="Get In Touch"
+    />
   );
 }

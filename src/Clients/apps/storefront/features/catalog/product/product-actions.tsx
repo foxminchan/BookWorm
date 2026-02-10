@@ -67,7 +67,8 @@ export default function ProductActions({
               </>
             ) : (
               <>
-                <ShoppingBasket className="size-5" aria-hidden="true" /> Add to Basket
+                <ShoppingBasket className="size-5" aria-hidden="true" /> Add to
+                Basket
               </>
             )}
           </Button>

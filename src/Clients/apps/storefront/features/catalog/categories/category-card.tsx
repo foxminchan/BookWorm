@@ -9,7 +9,10 @@ type CategoryCardProps = {
   name: string;
 };
 
-export default function CategoryCard({ id, name }: Readonly<CategoryCardProps>) {
+export default function CategoryCard({
+  id,
+  name,
+}: Readonly<CategoryCardProps>) {
   return (
     <Link
       href={`/shop?category=${id}`}

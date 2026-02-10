@@ -10,7 +10,7 @@ type ConfirmationActionsProps = {
 
 export default function ConfirmationActions({
   orderId,
-}: ConfirmationActionsProps) {
+}: Readonly<ConfirmationActionsProps>) {
   return (
     <div className="flex flex-col items-center justify-center gap-6 sm:flex-row">
       <Button

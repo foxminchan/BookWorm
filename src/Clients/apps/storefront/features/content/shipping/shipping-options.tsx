@@ -3,13 +3,13 @@ import { Clock, Globe, type LucideIcon, Package, Truck } from "lucide-react";
 import { Card, CardContent } from "@workspace/ui/components/card";
 
 type ShippingOption = {
-  icon: LucideIcon;
-  title: string;
-  time: string;
-  price: string;
+  readonly icon: LucideIcon;
+  readonly title: string;
+  readonly time: string;
+  readonly price: string;
 };
 
-const shippingOptions: ShippingOption[] = [
+const shippingOptions = [
   {
     icon: Package,
     title: "Standard Shipping",
@@ -34,7 +34,7 @@ const shippingOptions: ShippingOption[] = [
     time: "10-21 Business Days",
     price: "Calculated at checkout",
   },
-];
+] as const satisfies readonly ShippingOption[];
 
 export default function ShippingOptions() {
   return (
@@ -43,11 +43,11 @@ export default function ShippingOptions() {
         Shipping Options
       </h2>
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
-        {shippingOptions.map((option, idx) => {
+        {shippingOptions.map((option) => {
           const Icon = option.icon;
           return (
             <Card
-              key={idx}
+              key={option.title}
               className="bg-secondary border-none transition-all hover:shadow-lg"
             >
               <CardContent className="space-y-4 pt-8 text-center">

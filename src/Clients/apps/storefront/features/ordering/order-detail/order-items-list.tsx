@@ -1,5 +1,7 @@
 import { Package } from "lucide-react";
 
+import { currencyFormatter } from "@/lib/constants";
+
 type OrderItem = {
   id: string;
   name?: string | null;
@@ -11,11 +13,9 @@ type OrderItemsListProps = {
   items: OrderItem[];
 };
 
-export default function OrderItemsList({ items }: OrderItemsListProps) {
-  const formatter = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  });
+export default function OrderItemsList({
+  items,
+}: Readonly<OrderItemsListProps>) {
   return (
     <div className="border-border/40 bg-background overflow-hidden rounded-lg border">
       <div className="border-border/40 border-b px-6 py-4">
@@ -33,7 +33,7 @@ export default function OrderItemsList({ items }: OrderItemsListProps) {
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <h3 className="mb-1 font-medium">
-                  {item.name || "Unnamed Item"}
+                  {item.name ?? "Unnamed Item"}
                 </h3>
                 <p className="text-muted-foreground text-sm">
                   Quantity: {item.quantity}
@@ -41,10 +41,10 @@ export default function OrderItemsList({ items }: OrderItemsListProps) {
               </div>
               <div className="text-right">
                 <p className="font-semibold">
-                  {formatter.format(item.price * item.quantity)}
+                  {currencyFormatter.format(item.price * item.quantity)}
                 </p>
                 <p className="text-muted-foreground text-xs">
-                  {formatter.format(item.price)} each
+                  {currencyFormatter.format(item.price)} each
                 </p>
               </div>
             </div>

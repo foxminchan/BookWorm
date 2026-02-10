@@ -3,6 +3,7 @@
 import { useCopilotAction } from "@copilotkit/react-core";
 
 import booksApiClient from "@workspace/api-client/catalog/books";
+import type { Book } from "@workspace/types/catalog/books";
 import {
   Card,
   CardContent,
@@ -11,6 +12,8 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 import { Spinner } from "@workspace/ui/components/spinner";
+
+import { currencyFormatter } from "@/lib/constants";
 
 export function useBookSearchActions() {
   useCopilotAction({
@@ -51,10 +54,6 @@ export function useBookSearchActions() {
       };
     },
     render: ({ status, result }) => {
-      const formatter = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      });
       if (status === "executing") {
         return (
           <Card>
@@ -78,18 +77,21 @@ export function useBookSearchActions() {
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3">
-              {result.results.slice(0, 5).map((book: any) => (
+              {result.results.slice(0, 5).map((book: Book) => (
                 <div
                   key={book.id}
                   className="hover:bg-accent flex gap-3 rounded-lg border p-3 text-sm transition-colors"
                 >
                   <div className="flex-1">
-                    <div className="font-medium">{book.title || book.name}</div>
+                    <div className="font-medium">{book.name}</div>
                     <div className="text-muted-foreground text-xs">
-                      {book.author}
+                      {book.authors
+                        .map((a) => a.name)
+                        .filter(Boolean)
+                        .join(", ")}
                     </div>
                     <div className="mt-1 text-xs font-semibold">
-                      {formatter.format(book.price)}
+                      {currencyFormatter.format(book.price)}
                     </div>
                   </div>
                 </div>

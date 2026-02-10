@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import useCategories from "@workspace/api-hooks/catalog/categories/useCategories";
 
 export default function CategoriesSection() {
@@ -39,14 +41,14 @@ export default function CategoriesSection() {
           {isLoading
             ? Array.from({ length: 6 }).map((_, i) => (
                 <div
-                  key={i}
+                  key={`skeleton-${i.toString()}`}
                   className="bg-background animate-pulse rounded-lg p-6"
                 >
                   <div className="bg-muted h-5 rounded" />
                 </div>
               ))
             : categories.map((cat) => (
-                <a
+                <Link
                   key={cat.id}
                   href={`/shop?category=${encodeURIComponent(cat.id)}`}
                   className="bg-background group rounded-lg p-6 text-center transition-all hover:-translate-y-1 hover:shadow-md"
@@ -54,7 +56,7 @@ export default function CategoriesSection() {
                   <h3 className="group-hover:text-primary mb-1 font-serif font-medium">
                     {cat.name}
                   </h3>
-                </a>
+                </Link>
               ))}
         </nav>
       </div>

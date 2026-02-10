@@ -91,8 +91,7 @@ export default function BasketItem({
                     </span>
                     <span className="sr-only">
                       Sale price: {currencyFormatter.format(saleTotal)},
-                      original price:{" "}
-                      {currencyFormatter.format(originalTotal)}
+                      original price: {currencyFormatter.format(originalTotal)}
                     </span>
                   </div>
                 )}

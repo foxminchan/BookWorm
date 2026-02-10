@@ -75,7 +75,7 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
   useBasketContext();
   useUserContext();
   useBookSearchActions();
-  const { ConfirmationDialog, LiveRegion } = useBasketActions();
+  const { ConfirmationDialog, liveRegion } = useBasketActions();
 
   // Rate limiting and offline support
   const { isRateLimited, isThrottling, resetIn } = useRateLimit({
@@ -192,7 +192,7 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
       {/* Render confirmation dialog for basket actions */}
       <ConfirmationDialog />
       {/* Live region for basket announcements */}
-      <LiveRegion />
+      {liveRegion}
 
       {/* Offline indicator */}
       {!isOnline && (

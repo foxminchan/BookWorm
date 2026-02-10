@@ -28,16 +28,22 @@ export default function BasketSummary({
         <div className="space-y-4">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Subtotal</span>
-            <span className="font-medium">{currencyFormatter.format(subtotal)}</span>
+            <span className="font-medium">
+              {currencyFormatter.format(subtotal)}
+            </span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Shipping</span>
-            <span className="font-medium">{currencyFormatter.format(shipping)}</span>
+            <span className="font-medium">
+              {currencyFormatter.format(shipping)}
+            </span>
           </div>
           <Separator />
           <div className="flex justify-between text-lg font-bold">
             <span>Total</span>
-            <span className="text-primary">{currencyFormatter.format(total)}</span>
+            <span className="text-primary">
+              {currencyFormatter.format(total)}
+            </span>
           </div>
           <Button
             onClick={onCheckout}
@@ -46,13 +52,19 @@ export default function BasketSummary({
           >
             {isCheckingOut ? (
               <>
-                <Loader2 className="mr-2 size-5 animate-spin" aria-hidden="true" />
+                <Loader2
+                  className="mr-2 size-5 animate-spin"
+                  aria-hidden="true"
+                />
                 Processing...
               </>
             ) : (
               <>
                 Checkout{" "}
-                <ArrowRight className="ml-2 size-5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                <ArrowRight
+                  className="ml-2 size-5 transition-transform group-hover:translate-x-1"
+                  aria-hidden="true"
+                />
               </>
             )}
           </Button>
