@@ -4,13 +4,14 @@ import type {
   UpdateBasketRequest,
 } from "@workspace/types/basket";
 
-import ApiClient from "../client";
+import { apiClient } from "../client";
+import type ApiClient from "../client";
 
 class BasketApiClient {
   private readonly client: ApiClient;
 
   constructor() {
-    this.client = new ApiClient();
+    this.client = apiClient;
   }
 
   public async get(): Promise<CustomerBasket> {

@@ -12,7 +12,7 @@ tools:
    - "web/fetch"
    - "search"
    - "search/usages"
-model: Claude Opus 4.5 (copilot)
+model: Claude Opus 4.6 (copilot)
 handoffs:
   - label: Get C# Expert Help
     agent: CSharp-Expert

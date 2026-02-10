@@ -30,7 +30,7 @@ export function CellAction({ order }: CellActionProps) {
   const [openCancel, setOpenCancel] = useState(false);
   const completeOrderMutation = useCompleteOrder();
   const cancelOrderMutation = useCancelOrder();
-  const deleteOrderMutation = useDeleteOrder(order.id);
+  const deleteOrderMutation = useDeleteOrder();
 
   const status = order.status as OrderStatus;
   const canComplete = canCompleteOrder(status);
@@ -80,7 +80,7 @@ export function CellAction({ order }: CellActionProps) {
       actionType: "delete" as const,
       isLoading: deleteOrderMutation.isPending,
       onConfirm: async () => {
-        deleteOrderMutation.mutate(undefined, {
+        deleteOrderMutation.mutate(order.id, {
           onSuccess: () => {
             setOpenDelete(false);
             toast.success("Order has been deleted");

@@ -1,40 +1,31 @@
 import axios, { type AxiosInstance, type AxiosResponse } from "axios";
+import axiosRetry, { exponentialDelay } from "axios-retry";
 
 import axiosConfig from "./config";
-import { AxiosRequestConfig } from "./global";
+import type { AxiosRequestConfig } from "./global";
+
+const DEFAULT_MAX_RETRIES = Number(process.env.NEXT_PUBLIC_MAX_RETRIES) || 5;
 
 export default class ApiClient {
   private readonly client: AxiosInstance;
 
-  constructor(config = axiosConfig) {
+  constructor(config = axiosConfig, maxRetries = DEFAULT_MAX_RETRIES) {
     const axiosConfigs = "baseURL" in config ? config : axiosConfig;
 
-    const instance = axios.create({
+    this.client = axios.create({
       ...axiosConfigs,
       headers: {
         ...(axiosConfigs.headers as Record<string, string>),
       },
     });
 
-    this.client = this.setupInterceptors(instance);
-  }
-
-  private setupInterceptors(instance: AxiosInstance): AxiosInstance {
-    instance.interceptors.request.use(
-      async (config) => config,
-      (error) => {
-        console.error(`[request error] [${JSON.stringify(error)}]`);
-        return Promise.reject(new Error(error));
-      },
-    );
-    instance.interceptors.response.use(
-      async (response) => response,
-      (error) => {
-        return Promise.reject(new Error(error));
-      },
-    );
-
-    return instance;
+    axiosRetry(this.client, {
+      retries: maxRetries,
+      retryDelay: exponentialDelay,
+      retryCondition: (error) =>
+        axiosRetry.isNetworkOrIdempotentRequestError(error) ||
+        error.response?.status === 429,
+    });
   }
 
   public async get<T>(
@@ -75,3 +66,5 @@ export default class ApiClient {
     return this.client.delete<T>(url, config);
   }
 }
+
+export const apiClient = new ApiClient();

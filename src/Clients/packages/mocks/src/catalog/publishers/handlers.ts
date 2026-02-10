@@ -5,14 +5,17 @@ import type {
   Publisher,
   UpdatePublisherRequest,
 } from "@workspace/types/catalog/publishers";
-import { generateTraceId } from "@workspace/utils/trace";
 import { formatValidationErrors } from "@workspace/utils/validation";
 import {
   createPublisherSchema,
   updatePublisherSchema,
 } from "@workspace/validations/catalog/publishers";
 
-import { CATALOG_API_BASE_URL } from "../../catalog/constants";
+import {
+  createNotFoundResponse,
+  createValidationErrorResponse,
+} from "../../helpers/index";
+import { CATALOG_API_BASE_URL } from "../constants";
 import { publishersStore } from "./data";
 
 export const publishersHandlers = [
@@ -56,7 +59,7 @@ export const publishersHandlers = [
       const updated = publishersStore.update(result.data.id, result.data.name);
 
       if (!updated) {
-        return new HttpResponse("Publisher not found", { status: 404 });
+        return createNotFoundResponse("Publisher");
       }
 
       return new HttpResponse(null, { status: 204 });
@@ -69,24 +72,15 @@ export const publishersHandlers = [
       const { id } = params;
 
       if (!id) {
-        return HttpResponse.json(
-          {
-            type: "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-            title: "One or more validation errors occurred.",
-            status: 400,
-            errors: {
-              Id: ["'Id' must not be empty."],
-            },
-            traceId: generateTraceId(),
-          },
-          { status: 400 },
-        );
+        return createValidationErrorResponse({
+          Id: ["'Id' must not be empty."],
+        });
       }
 
       const deleted = publishersStore.delete(id);
 
       if (!deleted) {
-        return new HttpResponse("Publisher not found", { status: 404 });
+        return createNotFoundResponse("Publisher");
       }
 
       return new HttpResponse(null, { status: 204 });

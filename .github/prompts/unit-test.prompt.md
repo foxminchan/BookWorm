@@ -12,7 +12,7 @@ tools:
   - "context7/*"
   - "read/problems"
   - "search/changes"
-model: Claude Sonnet 4.5 (copilot)
+model: Claude Opus 4.6 (copilot)
 ---
 
 # TUnit Best Practices

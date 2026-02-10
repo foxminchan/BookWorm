@@ -10,20 +10,15 @@ import type { Book } from "@workspace/types/catalog/books";
 import { Badge } from "@workspace/ui/components/badge";
 import { Card, CardContent } from "@workspace/ui/components/card";
 
-import { DEFAULT_BOOK_IMAGE } from "@/lib/constants";
+import { DEFAULT_BOOK_IMAGE, currencyFormatter } from "@/lib/constants";
 import { calculateDiscount, formatPrice } from "@/lib/format";
-
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
 
 type BookCardProps = {
   book: Book;
   onClick?: () => void;
 };
 
-export function BookCard({ book, onClick }: BookCardProps) {
+export function BookCard({ book, onClick }: Readonly<BookCardProps>) {
   const [imgError, setImgError] = useState(false);
   const authorText =
     book.authors && book.authors.length > 0

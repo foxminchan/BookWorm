@@ -268,7 +268,7 @@ describe("Orders CellAction", () => {
     await user.click(confirmButton);
 
     await waitFor(() => {
-      expect(mutateFn).toHaveBeenCalledWith(undefined, expect.any(Object));
+      expect(mutateFn).toHaveBeenCalledWith(mockOrder.id, expect.any(Object));
     });
   });
 

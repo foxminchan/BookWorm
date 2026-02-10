@@ -11,7 +11,9 @@ const breadcrumbs = [
   { label: "Edit Book", isActive: true },
 ];
 
-export default async function EditBookPage({ params }: EditBookPageProps) {
+export default async function EditBookPage({
+  params,
+}: Readonly<EditBookPageProps>) {
   const { id } = await params;
 
   return (

@@ -10,11 +10,16 @@ import { catalogKeys } from "@workspace/api-hooks/keys";
 
 import { env } from "@/env.mjs";
 import ShopPageClient from "@/features/catalog/shop/shop-page-client";
+import { PRICE_RANGE } from "@/lib/constants";
 import { getShopSortParams } from "@/lib/pattern";
 import { getQueryClient } from "@/lib/query-client";
 import { buildQueryString } from "@/lib/seo";
 
 const ITEMS_PER_PAGE = 8;
+
+function parsePageNumber(page: string | undefined): number {
+  return Number.parseInt(page ?? "1", 10);
+}
 
 type ShopPageProps = {
   searchParams: Promise<{
@@ -53,7 +58,7 @@ export async function generateMetadata({
     if (category) {
       title = `${category.name} Books | BookWorm`;
       description = `Explore our collection of ${category.name} books. Find your next great read in this category.`;
-      keywords.push(category.name || "Unknown Category");
+      keywords.push(category.name ?? "Unknown Category");
     }
   }
 
@@ -74,7 +79,7 @@ export async function generateMetadata({
   const canonicalUrl = queryString ? `${url}?${queryString}` : url;
 
   // Generate prev/next pagination links
-  const currentPage = parseInt(params.page ?? "1", 10);
+  const currentPage = parsePageNumber(params.page);
   const searchParamsObj = new URLSearchParams(queryString);
   const prevParams = new URLSearchParams(searchParamsObj);
   const nextParams = new URLSearchParams(searchParamsObj);
@@ -131,58 +136,50 @@ export async function generateMetadata({
   };
 }
 
-export default async function ShopPage({ searchParams }: ShopPageProps) {
+export default async function ShopPage({ searchParams }: Readonly<ShopPageProps>) {
   const params = await searchParams;
   const queryClient = getQueryClient();
 
-  const currentPage = parseInt(params.page ?? "1", 10);
+  const currentPage = parsePageNumber(params.page);
   const sortBy = params.sort ?? "name";
   const sortParams = getShopSortParams(sortBy);
 
+  const bookListParams = {
+    pageIndex: currentPage,
+    pageSize: ITEMS_PER_PAGE,
+    categoryId: params.category,
+    publisherId: params.publisher,
+    authorId: params.author,
+    search: params.search,
+    minPrice: PRICE_RANGE.min,
+    maxPrice: PRICE_RANGE.max,
+    orderBy: sortParams.orderBy,
+    isDescending: sortParams.isDescending,
+  };
+
   // Prefetch all necessary data in parallel
-  await Promise.all([
-    // Prefetch books with current filters
-    queryClient.prefetchQuery({
-      queryKey: catalogKeys.books.list({
-        pageIndex: currentPage,
-        pageSize: ITEMS_PER_PAGE,
-        categoryId: params.category,
-        publisherId: params.publisher,
-        authorId: params.author,
-        search: params.search,
-        minPrice: 0,
-        maxPrice: 100,
-        orderBy: sortParams.orderBy,
-        isDescending: sortParams.isDescending,
+  try {
+    await Promise.all([
+      queryClient.prefetchQuery({
+        queryKey: catalogKeys.books.list(bookListParams),
+        queryFn: () => booksApiClient.list(bookListParams),
       }),
-      queryFn: () =>
-        booksApiClient.list({
-          pageIndex: currentPage,
-          pageSize: ITEMS_PER_PAGE,
-          categoryId: params.category,
-          publisherId: params.publisher,
-          authorId: params.author,
-          search: params.search,
-          minPrice: 0,
-          maxPrice: 100,
-          orderBy: sortParams.orderBy,
-          isDescending: sortParams.isDescending,
-        }),
-    }),
-    // Prefetch filter options
-    queryClient.prefetchQuery({
-      queryKey: catalogKeys.categories.lists(),
-      queryFn: () => categoriesApiClient.list(),
-    }),
-    queryClient.prefetchQuery({
-      queryKey: catalogKeys.publishers.lists(),
-      queryFn: () => publishersApiClient.list(),
-    }),
-    queryClient.prefetchQuery({
-      queryKey: catalogKeys.authors.lists(),
-      queryFn: () => authorsApiClient.list(),
-    }),
-  ]);
+      queryClient.prefetchQuery({
+        queryKey: catalogKeys.categories.lists(),
+        queryFn: () => categoriesApiClient.list(),
+      }),
+      queryClient.prefetchQuery({
+        queryKey: catalogKeys.publishers.lists(),
+        queryFn: () => publishersApiClient.list(),
+      }),
+      queryClient.prefetchQuery({
+        queryKey: catalogKeys.authors.lists(),
+        queryFn: () => authorsApiClient.list(),
+      }),
+    ]);
+  } catch (error) {
+    console.error("Failed to prefetch shop data:", error);
+  }
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

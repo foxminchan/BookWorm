@@ -6,7 +6,7 @@ import {
   updateBasketSchema,
 } from "@workspace/validations/basket";
 
-import { BASKET_API_BASE_URL } from "../basket/constants";
+import { BASKET_API_BASE_URL } from "./constants";
 import { MOCK_USER_ID, basketStore } from "./data";
 
 // Support both direct basket URL and gateway pattern

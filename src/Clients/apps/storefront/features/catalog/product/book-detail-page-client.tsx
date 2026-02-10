@@ -36,7 +36,7 @@ type BookDetailPageClientProps = {
 
 export default function BookDetailPageClient({
   id,
-}: BookDetailPageClientProps) {
+}: Readonly<BookDetailPageClientProps>) {
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
@@ -182,7 +182,7 @@ export default function BookDetailPageClient({
 
     const numValue = Number.parseInt(value, 10);
 
-    if (!isNaN(numValue) && numValue > 0 && numValue <= 99) {
+    if (!Number.isNaN(numValue) && numValue > 0 && numValue <= 99) {
       updateBasketMutation.mutate({
         request: {
           items: [{ id: id, quantity: numValue }],
@@ -200,7 +200,7 @@ export default function BookDetailPageClient({
 
     if (remainingItems.length === 0) {
       // Delete the basket if no items remain
-      deleteBasketMutation.mutate("");
+      deleteBasketMutation.mutate(undefined);
     } else {
       // Update basket with remaining items
       updateBasketMutation.mutate({

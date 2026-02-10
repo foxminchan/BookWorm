@@ -9,12 +9,7 @@ const getBaseURL = (): string => {
 };
 
 const axiosConfigs: Record<string, AxiosRequestConfig> = {
-  development: {
-    baseURL: getBaseURL(),
-    withCredentials: true,
-    timeout: 30000,
-  },
-  production: {
+  default: {
     baseURL: getBaseURL(),
     withCredentials: true,
     timeout: 30000,
@@ -28,8 +23,7 @@ const axiosConfigs: Record<string, AxiosRequestConfig> = {
 
 const getAxiosConfig = (): AxiosRequestConfig => {
   const nodeEnv: string = process.env.NODE_ENV || "development";
-  return (axiosConfigs[nodeEnv] ||
-    axiosConfigs.development) as AxiosRequestConfig;
+  return (axiosConfigs[nodeEnv] || axiosConfigs.default) as AxiosRequestConfig;
 };
 
 const axiosConfig = getAxiosConfig();

@@ -7,7 +7,7 @@ import {
   updateAddressSchema,
 } from "@workspace/validations/ordering/buyers";
 
-import { ORDERING_API_BASE_URL } from "../../ordering/constants";
+import { ORDERING_API_BASE_URL } from "../constants";
 import { MOCK_USER_ID, buyersStoreManager } from "./data";
 
 export const buyersHandlers = [

@@ -5,13 +5,14 @@ import type {
 } from "@workspace/types/ordering/orders";
 import type { PagedResult } from "@workspace/types/shared";
 
-import ApiClient from "../client";
+import { apiClient } from "../client";
+import type ApiClient from "../client";
 
 class OrdersApiClient {
   private readonly client: ApiClient;
 
   constructor() {
-    this.client = new ApiClient();
+    this.client = apiClient;
   }
 
   public async list(query?: ListOrdersQuery): Promise<PagedResult<Order>> {
@@ -21,8 +22,8 @@ class OrdersApiClient {
 
     return {
       items: response.data,
-      totalCount: Number(response.headers["Pagination-Count"] || 0),
-      link: response.headers["Link"],
+      totalCount: Number(response.headers["pagination-count"] || 0),
+      link: response.headers["link"],
     };
   }
 

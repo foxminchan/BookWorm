@@ -6,7 +6,7 @@ tools:
   - "web/githubRepo"
   - "search"
   - "search/usages"
-model: Gemini 3 Pro (Preview) (copilot)
+model: Claude Opus 4.5 (copilot)
 handoffs:
   - label: Fix Issues Found
     agent: CSharp-Expert

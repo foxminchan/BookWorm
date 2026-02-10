@@ -23,7 +23,9 @@ const breadcrumbs = [
   { label: "Details", isActive: true },
 ];
 
-export default function OrderDetailPage({ params }: OrderDetailPageProps) {
+export default function OrderDetailPage({
+  params,
+}: Readonly<OrderDetailPageProps>) {
   const { id } = use(params);
   const { data: order, isLoading, error } = useOrder(id);
 

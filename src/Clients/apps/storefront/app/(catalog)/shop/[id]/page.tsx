@@ -8,6 +8,7 @@ import { catalogKeys, ratingKeys } from "@workspace/api-hooks/keys";
 
 import { env } from "@/env.mjs";
 import BookDetailPageClient from "@/features/catalog/product/book-detail-page-client";
+import { currencyFormatter } from "@/lib/constants";
 import { getQueryClient } from "@/lib/query-client";
 import { generateImageObject } from "@/lib/seo";
 
@@ -40,11 +41,15 @@ export async function generateMetadata({
   const bookName = book.name ?? "Book";
   const authorNames = book.authors
     .map((a) => a.name)
-    .filter((name): name is string => name !== null);
+    .filter((name): name is string => name != null);
   const title = `${bookName} | BookWorm`;
+
+  const priceText = book.priceSale
+    ? `On sale for ${currencyFormatter.format(book.priceSale)}`
+    : currencyFormatter.format(book.price);
+  const byLine = authorNames.length > 0 ? ` by ${authorNames.join(", ")}` : "";
   const description =
-    book.description ??
-    `Buy ${bookName}${authorNames.length > 0 ? ` by ${authorNames.join(", ")}` : ""} at BookWorm. ${book.priceSale ? `On sale for $${book.priceSale}` : `$${book.price}`}.`;
+    book.description ?? `Buy ${bookName}${byLine} at BookWorm. ${priceText}.`;
   const url = `${env.NEXT_PUBLIC_APP_URL || "https://bookworm.com"}/shop/${id}`;
 
   const keywords = [
@@ -93,12 +98,21 @@ export async function generateMetadata({
   };
 }
 
-export default async function BookDetailPage({ params }: BookDetailPageProps) {
+export default async function BookDetailPage({
+  params,
+}: Readonly<BookDetailPageProps>) {
   const { id } = await params;
   const queryClient = getQueryClient();
 
+  const reviewParams = {
+    bookId: id,
+    pageSize: REVIEWS_PER_PAGE,
+    pageIndex: 1,
+    orderBy: "createdAt" as const,
+    isDescending: true,
+  };
+
   // Prefetch book data and initial reviews in parallel
-  // Using try-catch to handle SSR errors gracefully
   try {
     await Promise.all([
       queryClient.prefetchQuery({
@@ -106,25 +120,11 @@ export default async function BookDetailPage({ params }: BookDetailPageProps) {
         queryFn: () => booksApiClient.get(id),
       }),
       queryClient.prefetchQuery({
-        queryKey: ratingKeys.feedbacks.byBook(id, {
-          bookId: id,
-          pageSize: REVIEWS_PER_PAGE,
-          pageIndex: 1,
-          orderBy: "createdAt",
-          isDescending: true,
-        }),
-        queryFn: () =>
-          feedbacksApiClient.list({
-            bookId: id,
-            pageSize: REVIEWS_PER_PAGE,
-            pageIndex: 1,
-            orderBy: "createdAt",
-            isDescending: true,
-          }),
+        queryKey: ratingKeys.feedbacks.byBook(id, reviewParams),
+        queryFn: () => feedbacksApiClient.list(reviewParams),
       }),
     ]);
   } catch (error) {
-    // Log error but don't fail the page - let client-side query handle it
     console.error("Failed to prefetch book data:", error);
   }
 

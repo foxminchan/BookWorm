@@ -1,12 +1,12 @@
 import type { Author } from "@workspace/types/catalog/authors";
 import type { Book } from "@workspace/types/catalog/books";
 
-import { mockAuthors } from "../../catalog/authors/data";
-import { mockCategories } from "../../catalog/categories/data";
-import { mockPublishers } from "../../catalog/publishers/data";
 import booksData from "../../data/books.json";
+import { mockAuthors } from "../authors/data";
+import { mockCategories } from "../categories/data";
+import { mockPublishers } from "../publishers/data";
 
-export const mockBooks: Book[] = booksData.map((book) => {
+export const mockBooks: Book[] = booksData.map((book, index) => {
   const { categoryId, publisherId, authorIds, ...bookData } = book;
 
   const category = mockCategories.find((c) => c.id === categoryId) ?? null;
@@ -21,8 +21,8 @@ export const mockBooks: Book[] = booksData.map((book) => {
     category,
     publisher,
     authors,
-    averageRating: Math.random() * 5,
-    totalReviews: Math.floor(Math.random() * 2000),
+    averageRating: ((index * 7 + 13) % 50) / 10,
+    totalReviews: (index * 137 + 42) % 2000,
   };
 });
 

@@ -14,9 +14,9 @@ import OrderSummary from "@/features/ordering/order-detail/order-summary";
 
 export default function OrderDetailPage({
   params,
-}: {
+}: Readonly<{
   params: Promise<{ id: string }>;
-}) {
+}>) {
   const { id } = use(params);
   const { data: orderDetail, isLoading, error } = useOrder(id);
 
