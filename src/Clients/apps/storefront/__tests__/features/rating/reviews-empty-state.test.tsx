@@ -97,7 +97,7 @@ describe("ReviewsEmptyState", () => {
 
   it("should display button with icon", () => {
     renderWithProviders(
-      <ReviewsEmptyState onWriteReview={mockOnWriteReview} />
+      <ReviewsEmptyState onWriteReview={mockOnWriteReview} />,
     );
 
     const button = screen.getByRole("button", {

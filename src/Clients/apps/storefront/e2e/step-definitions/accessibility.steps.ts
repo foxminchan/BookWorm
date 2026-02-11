@@ -1,4 +1,4 @@
-import { Given, Then, When } from "@cucumber/cucumber";
+import { Then, When } from "@cucumber/cucumber";
 import { expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
@@ -47,7 +47,7 @@ When("I press Space", async function (this: { page: Page }) {
 Then(
   "the {string} link should be focused",
   async function (this: { page: Page }, linkText: string) {
-    const focusedElement = await this.page.locator(":focus");
+    const focusedElement = this.page.locator(":focus");
     const text = await focusedElement.textContent();
     expect(text?.toLowerCase()).toContain(linkText.toLowerCase());
   },
@@ -64,7 +64,7 @@ Then(
 Then(
   "focus should move to main content area",
   async function (this: { page: Page }) {
-    const focusedElement = await this.page.locator(":focus");
+    const focusedElement = this.page.locator(":focus");
     const tagName = await focusedElement.evaluate((el) => el.tagName);
     // Should focus on #main-content or similar
     expect(["MAIN", "DIV"]).toContain(tagName);
@@ -369,14 +369,13 @@ Then(
     const landmarks = dataTable.hashes();
 
     for (const { landmark, count } of landmarks) {
-      const selector =
-        landmark === "contentinfo"
-          ? "footer, [role='contentinfo']"
-          : landmark === "navigation"
-            ? "nav, [role='navigation']"
-            : landmark === "main"
-              ? "main, [role='main']"
-              : `[role='${landmark}']`;
+      const landmarkSelectors: Record<string, string> = {
+        contentinfo: "footer, [role='contentinfo']",
+        navigation: "nav, [role='navigation']",
+        main: "main, [role='main']",
+      };
+
+      const selector = landmarkSelectors[landmark] ?? `[role='${landmark}']`;
 
       const elements = this.page.locator(selector);
       const actualCount = await elements.count();
@@ -420,15 +419,11 @@ Then("WCAG AA standards should be met", async function (this: { page: Page }) {
 Then(
   "headings should follow logical order (h1, h2, h3)",
   async function (this: { page: Page }) {
-    const headings = await this.page
-      .locator("h1, h2, h3, h4, h5, h6")
-      .allTextContents();
-
     // Get heading levels
     const levels = await this.page
       .locator("h1, h2, h3, h4, h5, h6")
       .evaluateAll((elements) =>
-        elements.map((el) => parseInt(el.tagName.substring(1))),
+        elements.map((el) => Number.parseInt(el.tagName.substring(1))),
       );
 
     // Check no levels are skipped

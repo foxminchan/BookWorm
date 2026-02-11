@@ -12,7 +12,9 @@ import { env } from "@/env.mjs";
 import { initMocks } from "@/lib/msw";
 import { getQueryClient } from "@/lib/query-client";
 
-export function Providers({ children }: Readonly<{ children: React.ReactNode }>) {
+export function Providers({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   const queryClient = getQueryClient();
 
   const gatewayUrl =

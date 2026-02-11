@@ -29,7 +29,9 @@ describe("AccountNavigation", () => {
   it("should have hover effects", () => {
     const { container } = renderWithProviders(<AccountNavigation />);
 
-    const linkDiv = container.querySelector(String.raw`.hover\:bg-secondary\/20`);
+    const linkDiv = container.querySelector(
+      String.raw`.hover\:bg-secondary\/20`,
+    );
     expect(linkDiv).toBeInTheDocument();
   });
 

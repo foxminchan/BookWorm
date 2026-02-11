@@ -1,6 +1,5 @@
 import { Given, Then, When } from "@cucumber/cucumber";
-import { expect } from "@playwright/test";
-import { Page } from "@playwright/test";
+import { Page, expect } from "@playwright/test";
 
 import { ProductDetailPage } from "../pages";
 
@@ -87,13 +86,13 @@ Then("I should see the sale price", async function (this: { page: Page }) {
   const productPage = new ProductDetailPage(this.page);
   const salePrice = await productPage.getSalePrice();
   // May or may not have sale price
-  // expect(salePrice).toBeTruthy();
+  expect(salePrice).toBeTruthy();
 });
 
 Then('I should see a "Sale" badge', async function (this: { page: Page }) {
   const productPage = new ProductDetailPage(this.page);
   // May or may not be visible
-  // await expect(productPage.saleBadge).toBeVisible();
+  await expect(productPage.saleBadge).toBeVisible();
 });
 
 // Add to basket
@@ -293,9 +292,6 @@ When('I click "Generate Summary"', async function (this: { page: Page }) {
 Then(
   "I should see an AI-generated summary of reviews",
   async function (this: { page: Page }) {
-    const summary = this.page
-      .locator('[data-testid="ai-summary"], .summary, :has-text("summary")')
-      .first();
     // May take time to generate
     await this.page.waitForTimeout(3000);
   },
@@ -343,7 +339,7 @@ Then(
   async function (this: { page: Page }, status: string) {
     const statusElement = this.page.locator(`:has-text("${status}")`).first();
     // Status may or may not be explicitly shown
-    // await expect(statusElement).toBeVisible();
+    await expect(statusElement).toBeVisible();
   },
 );
 
@@ -367,9 +363,6 @@ Then(
 
 // Validation
 Then("I should see validation errors", async function (this: { page: Page }) {
-  const errorElement = this.page
-    .locator('[role="alert"], .error, :has-text("required")')
-    .first();
   // Validation may or may not be visible
   await this.page.waitForTimeout(1000);
 });
@@ -378,9 +371,6 @@ Then("I should see validation errors", async function (this: { page: Page }) {
 Then(
   'I should see "No reviews yet" message',
   async function (this: { page: Page }) {
-    const emptyState = this.page
-      .locator(':has-text("No reviews"), :has-text("no reviews")')
-      .first();
     // May or may not be visible depending on data
     await this.page.waitForTimeout(500);
   },
@@ -389,9 +379,6 @@ Then(
 Then(
   'I should see "Be the first to review" button',
   async function (this: { page: Page }) {
-    const button = this.page
-      .locator('button:has-text("first"), button:has-text("review")')
-      .first();
     // May or may not be visible
     await this.page.waitForTimeout(500);
   },

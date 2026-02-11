@@ -221,7 +221,9 @@ describe("ReviewList", () => {
     );
 
     // Separators are rendered except for the last review
-    const separators = container.querySelectorAll(String.raw`.group-last\:hidden`);
+    const separators = container.querySelectorAll(
+      String.raw`.group-last\:hidden`,
+    );
     expect(separators).toHaveLength(3); // Same as number of reviews
   });
 
@@ -255,7 +257,9 @@ describe("ReviewList", () => {
       />,
     );
 
-    const reviewContainer = container.querySelector(String.raw`.lg\:col-span-2`);
+    const reviewContainer = container.querySelector(
+      String.raw`.lg\:col-span-2`,
+    );
     expect(reviewContainer).toBeInTheDocument();
   });
 
