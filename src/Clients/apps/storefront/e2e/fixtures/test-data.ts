@@ -25,7 +25,7 @@ import type {
  * - Set FAKER_SEED to different values or omit for varied test scenarios
  */
 const fakerSeed = process.env.FAKER_SEED
-  ? parseInt(process.env.FAKER_SEED, 10)
+  ? Number.parseInt(process.env.FAKER_SEED, 10)
   : 12345;
 faker.seed(fakerSeed);
 
@@ -366,7 +366,7 @@ export function createRandomBook(overrides?: Partial<Book>): Book {
     status: faker.helpers.arrayElement(["InStock", "OutOfStock"] as const),
     category: faker.helpers.arrayElement(testCategories),
     publisher: faker.helpers.arrayElement(testPublishers),
-    authors: [faker.helpers.arrayElement(testAuthors)!],
+    authors: [faker.helpers.arrayElement(testAuthors)],
     averageRating: faker.number.float({ min: 3, max: 5, fractionDigits: 1 }),
     totalReviews: faker.number.int({ min: 10, max: 5000 }),
     ...overrides,

@@ -1,5 +1,4 @@
-import { Locator, Page } from "@playwright/test";
-import { expect } from "@playwright/test";
+import { Locator, Page , expect } from "@playwright/test";
 
 /**
  * Base Page Object with common functionality
@@ -136,7 +135,7 @@ export abstract class BasePage {
  * Header Component - Appears on all pages
  */
 export class HeaderComponent {
-  private page: Page;
+  private readonly page: Page;
 
   constructor(page: Page) {
     this.page = page;
@@ -208,7 +207,7 @@ export class HeaderComponent {
  * Footer Component - Appears on all pages
  */
 export class FooterComponent {
-  private page: Page;
+  private readonly page: Page;
 
   constructor(page: Page) {
     this.page = page;

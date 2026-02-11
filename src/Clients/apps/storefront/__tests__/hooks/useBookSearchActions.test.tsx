@@ -75,8 +75,8 @@ describe("useBookSearchActions", () => {
       status: "complete",
       result: {
         results: [
-          { id: "1", title: "Result 1", author: "A", price: 8 },
-          { id: "2", title: "Result 2", author: "B", price: 9 },
+          { id: "1", name: "Result 1", authors: [{ name: "A" }], price: 8 },
+          { id: "2", name: "Result 2", authors: [{ name: "B" }], price: 9 },
         ],
         total: 2,
         query: "query",

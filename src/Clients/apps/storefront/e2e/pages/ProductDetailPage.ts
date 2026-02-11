@@ -1,5 +1,4 @@
-import { Locator, Page } from "@playwright/test";
-import { expect } from "@playwright/test";
+import { Locator, Page , expect } from "@playwright/test";
 
 import { BasePage } from "./BasePage";
 
@@ -185,7 +184,7 @@ export class ProductDetailPage extends BasePage {
 
   async getQuantity(): Promise<number> {
     const value = await this.quantityInput.inputValue();
-    return parseInt(value) || 1;
+    return Number.parseInt(value) || 1;
   }
 
   async setQuantity(quantity: number): Promise<void> {

@@ -7,7 +7,7 @@ import { useBasketConfirmation } from "@/hooks/useBasketConfirmation";
 describe("useBasketConfirmation", () => {
   it("resolves promise when confirming", async () => {
     const { result } = renderHook(() => useBasketConfirmation());
-    let confirmationPromise: Promise<boolean>;
+    let confirmationPromise!: Promise<boolean>;
     await act(async () => {
       confirmationPromise = result.current.requestConfirmation(
         "book-1",
@@ -26,7 +26,7 @@ describe("useBasketConfirmation", () => {
 
   it("resolves false when cancelled", async () => {
     const { result } = renderHook(() => useBasketConfirmation());
-    let confirmationPromise: Promise<boolean>;
+    let confirmationPromise!: Promise<boolean>;
     await act(async () => {
       confirmationPromise = result.current.requestConfirmation(
         "book-2",

@@ -35,16 +35,14 @@ describe("OrdersHeader", () => {
     renderWithProviders(<OrdersHeader {...defaultProps} />);
 
     expect(
-      screen.getByRole("button", { name: /back to account/i }),
+      screen.getByRole("link", { name: /back to account/i }),
     ).toBeInTheDocument();
   });
 
   it("should have link to account", () => {
     renderWithProviders(<OrdersHeader {...defaultProps} />);
 
-    const link = screen
-      .getByRole("button", { name: /back to account/i })
-      .closest("a");
+    const link = screen.getByRole("link", { name: /back to account/i });
     expect(link).toHaveAttribute("href", "/account");
   });
 

@@ -93,7 +93,7 @@ describe("OrderSummary", () => {
     const { container } = renderWithProviders(<OrderSummary total={99.99} />);
 
     const summaryContainer = container.querySelector(
-      ".hover\\:bg-secondary\\/20",
+      String.raw`.hover\:bg-secondary\/20`,
     );
     expect(summaryContainer).toBeInTheDocument();
   });

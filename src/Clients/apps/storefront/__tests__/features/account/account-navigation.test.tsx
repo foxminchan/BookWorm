@@ -29,7 +29,7 @@ describe("AccountNavigation", () => {
   it("should have hover effects", () => {
     const { container } = renderWithProviders(<AccountNavigation />);
 
-    const linkDiv = container.querySelector(".hover\\:bg-secondary\\/20");
+    const linkDiv = container.querySelector(String.raw`.hover\:bg-secondary\/20`);
     expect(linkDiv).toBeInTheDocument();
   });
 
@@ -50,7 +50,7 @@ describe("AccountNavigation", () => {
   it("should have border styling", () => {
     const { container } = renderWithProviders(<AccountNavigation />);
 
-    const border_div = container.querySelector(".border-border\\/40");
+    const border_div = container.querySelector(String.raw`.border-border\/40`);
     expect(border_div).toBeInTheDocument();
   });
 

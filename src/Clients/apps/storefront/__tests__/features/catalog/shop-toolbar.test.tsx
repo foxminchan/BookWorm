@@ -15,6 +15,7 @@ describe("ShopToolbar", () => {
     searchQuery: "",
     onClearSearch: mockOnClearSearch,
     totalCount: 100,
+    itemsPerPage: 8,
     currentPage: 1,
     sortBy: "name",
     onSortChange: mockOnSortChange,

@@ -1,5 +1,4 @@
-import { Locator, Page } from "@playwright/test";
-import { expect } from "@playwright/test";
+import { Locator, Page, expect } from "@playwright/test";
 
 import { BasePage } from "./BasePage.js";
 
@@ -157,7 +156,7 @@ export class OrderDetailPage extends BasePage {
       .locator('[data-testid="quantity"], :has-text("Qty")')
       .textContent();
     const match = text?.match(/(\d+)/);
-    return match ? parseInt(match[1]!) : 0;
+    return match ? Number.parseInt(match[1]!) : 0;
   }
 
   async getItemPrice(index: number): Promise<number> {
@@ -166,25 +165,25 @@ export class OrderDetailPage extends BasePage {
       .locator('[data-testid="price"], .price')
       .textContent();
     const match = text?.match(/\$?([\d,]+\.?\d*)/);
-    return match ? parseFloat(match[1]!.replace(/,/g, "")) : 0;
+    return match ? Number.parseFloat(match[1]!.replaceAll(",", "")) : 0;
   }
 
   async getSubtotal(): Promise<number> {
     const text = await this.subtotalAmount.textContent();
     const match = text?.match(/\$?([\d,]+\.?\d*)/);
-    return match ? parseFloat(match[1]!.replace(/,/g, "")) : 0;
+    return match ? Number.parseFloat(match[1]!.replaceAll(",", "")) : 0;
   }
 
   async getShipping(): Promise<number> {
     const text = await this.shippingAmount.textContent();
     const match = text?.match(/\$?([\d,]+\.?\d*)/);
-    return match ? parseFloat(match[1]!.replace(/,/g, "")) : 0;
+    return match ? Number.parseFloat(match[1]!.replaceAll(",", "")) : 0;
   }
 
   async getTotal(): Promise<number> {
     const text = await this.totalAmount.textContent();
     const match = text?.match(/\$?([\d,]+\.?\d*)/);
-    return match ? parseFloat(match[1]!.replace(/,/g, "")) : 0;
+    return match ? Number.parseFloat(match[1]!.replaceAll(",", "")) : 0;
   }
 
   async cancelOrder(): Promise<void> {

@@ -46,7 +46,7 @@ let page: Page;
 BeforeAll(async function () {
   browser = await chromium.launch({
     headless: parseBoolean(process.env.HEADLESS, true),
-    slowMo: process.env.SLOW_MO ? parseInt(process.env.SLOW_MO, 10) : 0,
+    slowMo: process.env.SLOW_MO ? Number.parseInt(process.env.SLOW_MO, 10) : 0,
   });
 });
 

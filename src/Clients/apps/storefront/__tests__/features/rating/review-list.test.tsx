@@ -14,6 +14,7 @@ const mockReviews = [
     lastName: faker.person.lastName(),
     rating: faker.number.int({ min: 1, max: 5 }),
     comment: faker.lorem.sentence(),
+    bookId: faker.string.uuid(),
   },
   {
     id: faker.string.uuid(),
@@ -21,6 +22,7 @@ const mockReviews = [
     lastName: faker.person.lastName(),
     rating: faker.number.int({ min: 1, max: 5 }),
     comment: faker.lorem.sentence(),
+    bookId: faker.string.uuid(),
   },
   {
     id: faker.string.uuid(),
@@ -28,6 +30,7 @@ const mockReviews = [
     lastName: faker.person.lastName(),
     rating: faker.number.int({ min: 1, max: 5 }),
     comment: faker.lorem.sentence(),
+    bookId: faker.string.uuid(),
   },
 ];
 
@@ -218,7 +221,7 @@ describe("ReviewList", () => {
     );
 
     // Separators are rendered except for the last review
-    const separators = container.querySelectorAll(".group-last\\:hidden");
+    const separators = container.querySelectorAll(String.raw`.group-last\:hidden`);
     expect(separators).toHaveLength(3); // Same as number of reviews
   });
 
@@ -252,7 +255,7 @@ describe("ReviewList", () => {
       />,
     );
 
-    const reviewContainer = container.querySelector(".lg\\:col-span-2");
+    const reviewContainer = container.querySelector(String.raw`.lg\:col-span-2`);
     expect(reviewContainer).toBeInTheDocument();
   });
 

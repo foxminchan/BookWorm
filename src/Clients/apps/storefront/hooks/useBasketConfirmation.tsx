@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useState } from "react";
 
 import { Check, ShoppingCart, X } from "lucide-react";
 
@@ -49,15 +49,15 @@ export function useBasketConfirmation() {
     });
   };
 
-  const confirm = useCallback(() => {
+  const confirm = () => {
     confirmation.resolve?.(true);
     setConfirmation((prev) => ({ ...prev, isOpen: false }));
-  }, [confirmation.resolve]);
+  };
 
-  const cancel = useCallback(() => {
+  const cancel = () => {
     confirmation.resolve?.(false);
     setConfirmation((prev) => ({ ...prev, isOpen: false }));
-  }, [confirmation.resolve]);
+  };
 
   const ConfirmationDialog = () => (
     <Dialog

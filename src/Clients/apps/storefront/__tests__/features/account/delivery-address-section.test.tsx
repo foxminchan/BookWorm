@@ -138,7 +138,7 @@ describe("DeliveryAddressSection", () => {
       <DeliveryAddressSection buyer={mockBuyer} />,
     );
 
-    const card = container.querySelector(".hover\\:bg-secondary\\/20");
+    const card = container.querySelector(String.raw`.hover\:bg-secondary\/20`);
     expect(card).toBeInTheDocument();
   });
 

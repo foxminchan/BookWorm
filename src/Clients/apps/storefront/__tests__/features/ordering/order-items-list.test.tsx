@@ -65,7 +65,7 @@ describe("OrderItemsList", () => {
     const items = [
       { ...mockItems[0]!, quantity: 2, price: 15.99 },
       { ...mockItems[1]!, quantity: 1, price: 12.5 },
-      { ...mockItems[2]!, quantity: 3, price: 10.0 },
+      { ...mockItems[2]!, quantity: 3, price: 10 },
     ];
     renderWithProviders(<OrderItemsList items={items} />);
 
@@ -81,7 +81,7 @@ describe("OrderItemsList", () => {
     const items = [
       { ...mockItems[0]!, price: 15.99 },
       { ...mockItems[1]!, price: 12.5 },
-      { ...mockItems[2]!, price: 10.0 },
+      { ...mockItems[2]!, price: 10 },
     ];
     renderWithProviders(<OrderItemsList items={items} />);
 
@@ -118,7 +118,7 @@ describe("OrderItemsList", () => {
     );
 
     const hoverElements = container.querySelectorAll(
-      ".hover\\:bg-secondary\\/20",
+      String.raw`.hover\:bg-secondary\/20`,
     );
     expect(hoverElements.length).toBeGreaterThan(0);
   });

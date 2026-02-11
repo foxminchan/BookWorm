@@ -114,8 +114,8 @@ describe("ProductActions", () => {
   it("should pass quantity to control component", () => {
     renderWithProviders(<ProductActions {...defaultProps} quantity={3} />);
 
-    const input = screen.getByRole("textbox") as HTMLInputElement;
-    expect(input.value).toBe("3");
+    const input = screen.getByRole("textbox");
+    expect(input).toHaveValue("3");
   });
 
   it("should have correct button styling", () => {

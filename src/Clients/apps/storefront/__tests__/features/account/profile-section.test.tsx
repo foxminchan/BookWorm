@@ -65,7 +65,7 @@ describe("ProfileSection", () => {
       <ProfileSection buyer={mockBuyer} />,
     );
 
-    const border = container.querySelector(".border-border\\/40");
+    const border = container.querySelector(String.raw`.border-border\/40`);
     expect(border).toBeInTheDocument();
   });
 

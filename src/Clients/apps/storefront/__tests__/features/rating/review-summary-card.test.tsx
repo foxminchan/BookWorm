@@ -59,7 +59,7 @@ describe("ReviewSummaryCard", () => {
 
   it("should display single review correctly", () => {
     renderWithProviders(
-      <ReviewSummaryCard averageRating={5.0} totalReviews={1} />,
+      <ReviewSummaryCard averageRating={5} totalReviews={1} />,
     );
 
     expect(screen.getByText(/based on 1 reviews/i)).toBeInTheDocument();
@@ -94,7 +94,7 @@ describe("ReviewSummaryCard", () => {
 
   it("should handle maximum rating", () => {
     const { container } = renderWithProviders(
-      <ReviewSummaryCard averageRating={5.0} totalReviews={200} />,
+      <ReviewSummaryCard averageRating={5} totalReviews={200} />,
     );
 
     expect(screen.getByText("5.0")).toBeInTheDocument();

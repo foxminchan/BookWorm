@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useOfflineQueue } from "@/hooks/useOfflineQueue";
 
 const setNavigatorOnline = (value: boolean) => {
-  Object.defineProperty(window.navigator, "onLine", {
+  Object.defineProperty(globalThis.navigator, "onLine", {
     value,
     configurable: true,
   });
@@ -63,13 +63,13 @@ describe("useOfflineQueue", () => {
     setNavigatorOnline(true);
 
     await act(async () => {
-      window.dispatchEvent(new Event("online"));
+      globalThis.dispatchEvent(new Event("online"));
     });
 
     const syncPromise = act(async () => {
       const pending = result.current.syncQueue();
       if (queuedId) {
-        window.dispatchEvent(
+        globalThis.dispatchEvent(
           new CustomEvent("copilot-message-sent", {
             detail: { id: queuedId, success: true },
           }),
@@ -116,12 +116,12 @@ describe("useOfflineQueue", () => {
     const { result } = renderHook(() => useOfflineQueue());
 
     act(() => {
-      window.dispatchEvent(new Event("offline"));
+      globalThis.dispatchEvent(new Event("offline"));
     });
     expect(result.current.isOnline).toBe(false);
 
     act(() => {
-      window.dispatchEvent(new Event("online"));
+      globalThis.dispatchEvent(new Event("online"));
     });
     expect(result.current.isOnline).toBe(true);
   });
@@ -162,7 +162,7 @@ describe("useOfflineQueue", () => {
     setNavigatorOnline(true);
 
     act(() => {
-      window.dispatchEvent(new Event("online"));
+      globalThis.dispatchEvent(new Event("online"));
     });
 
     expect(result.current.isOnline).toBe(true);
