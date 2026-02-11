@@ -4,9 +4,8 @@ import { ChevronRight } from "lucide-react";
 
 import type { Order } from "@workspace/types/ordering/orders";
 import { Badge } from "@workspace/ui/components/badge";
+import { formatDate, formatPrice } from "@workspace/utils/format";
 
-import { currencyFormatter } from "@/lib/constants";
-import { formatDate } from "@/lib/format";
 import { getOrderStatusColorBordered } from "@/lib/pattern";
 
 type OrdersListProps = {
@@ -48,7 +47,7 @@ function OrderCard({ order }: Readonly<{ order: Order }>) {
                   Total Amount
                 </p>
                 <p className="font-serif text-lg font-medium">
-                  {currencyFormatter.format(order.total)}
+                  {formatPrice(order.total)}
                 </p>
               </div>
               <div className="col-span-2 flex items-end md:col-span-1">

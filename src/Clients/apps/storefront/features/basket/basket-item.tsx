@@ -5,10 +5,10 @@ import { Trash2 } from "lucide-react";
 import type { BasketItem as BasketItemType } from "@workspace/types/basket";
 import { Button } from "@workspace/ui/components/button";
 import { Card, CardContent } from "@workspace/ui/components/card";
+import { formatPrice } from "@workspace/utils/format";
 
 import { QuantityControl } from "@/components/quantity-control";
 import { RemoveItemDialog } from "@/components/remove-item-dialog";
-import { currencyFormatter } from "@/lib/constants";
 
 type BasketItemProps = {
   item: BasketItemType;
@@ -45,7 +45,7 @@ export default function BasketItem({
     <Card
       className="border-none bg-white/50 shadow-none backdrop-blur-sm dark:bg-gray-800/50"
       role="article"
-      aria-label={`${item.name}, quantity ${displayQuantity}, total ${currencyFormatter.format(totalPrice)}`}
+      aria-label={`${item.name}, quantity ${displayQuantity}, total ${formatPrice(totalPrice)}`}
     >
       <CardContent className="p-6">
         <div className="flex gap-6">
@@ -75,23 +75,23 @@ export default function BasketItem({
                 {saleTotal === undefined ? (
                   <>
                     <span className="font-bold">
-                      {currencyFormatter.format(originalTotal)}
+                      {formatPrice(originalTotal)}
                     </span>
                     <span className="sr-only">
-                      Total: {currencyFormatter.format(originalTotal)}
+                      Total: {formatPrice(originalTotal)}
                     </span>
                   </>
                 ) : (
                   <div className="flex flex-col items-end">
                     <span className="text-primary font-bold">
-                      {currencyFormatter.format(saleTotal)}
+                      {formatPrice(saleTotal)}
                     </span>
                     <span className="text-muted-foreground decoration-muted-foreground/50 text-xs line-through">
-                      {currencyFormatter.format(originalTotal)}
+                      {formatPrice(originalTotal)}
                     </span>
                     <span className="sr-only">
-                      Sale price: {currencyFormatter.format(saleTotal)},
-                      original price: {currencyFormatter.format(originalTotal)}
+                      Sale price: {formatPrice(saleTotal)}, original price:{" "}
+                      {formatPrice(originalTotal)}
                     </span>
                   </div>
                 )}

@@ -1,5 +1,11 @@
 import { format, parseISO } from "date-fns";
 
+import { currencyFormatter } from "./constants";
+
+export function formatPrice(price: number): string {
+  return currencyFormatter.format(price);
+}
+
 export function formatDate(date: string | Date): string {
   const dateObj = typeof date === "string" ? parseISO(date) : date;
   return format(dateObj, "MMMM d, yyyy");

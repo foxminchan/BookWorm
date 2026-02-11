@@ -1,7 +1,7 @@
 import type { OrderStatus } from "@workspace/types/ordering/orders";
 import { Badge } from "@workspace/ui/components/badge";
+import { formatPrice } from "@workspace/utils/format";
 
-import { currencyFormatter } from "@/lib/constants";
 import { getOrderStatusColor } from "@/lib/pattern";
 
 type OrderDetailsSectionProps = {
@@ -59,7 +59,7 @@ export default function OrderDetailsSection({
         <div className="flex flex-col items-start">
           <p className="text-muted-foreground mb-2 text-sm">Amount Paid</p>
           <p className="text-primary font-serif text-4xl font-medium">
-            {currencyFormatter.format(total)}
+            {formatPrice(total)}
           </p>
         </div>
       </div>

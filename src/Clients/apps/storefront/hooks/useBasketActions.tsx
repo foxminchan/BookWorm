@@ -7,8 +7,7 @@ import { Check } from "lucide-react";
 
 import basketApiClient from "@workspace/api-client/basket/baskets";
 import type { BasketItem } from "@workspace/types/basket";
-
-import { currencyFormatter } from "@/lib/constants";
+import { formatPrice } from "@workspace/utils/format";
 
 import { useBasketConfirmation } from "./useBasketConfirmation";
 
@@ -163,13 +162,11 @@ export function useBasketActions() {
                         <div className="font-medium">{item.name}</div>
                         <div className="text-muted-foreground text-xs">
                           Qty: {item.quantity} ×{" "}
-                          {currencyFormatter.format(
-                            item.priceSale ?? item.price,
-                          )}
+                          {formatPrice(item.priceSale ?? item.price)}
                         </div>
                       </div>
                       <div className="font-semibold">
-                        {currencyFormatter.format(
+                        {formatPrice(
                           item.quantity * (item.priceSale ?? item.price),
                         )}
                       </div>
@@ -179,7 +176,7 @@ export function useBasketActions() {
                 <div className="border-t pt-3">
                   <div className="flex justify-between font-bold">
                     <span>Total:</span>
-                    <span>{currencyFormatter.format(result.totalPrice)}</span>
+                    <span>{formatPrice(result.totalPrice)}</span>
                   </div>
                 </div>
               </>

@@ -13,8 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
-
-import { PRICE_RANGE } from "@/lib/constants";
+import { PRICE_RANGE } from "@workspace/utils/constants";
 
 import { AuthorsFilter } from "./filters/authors-filter";
 import { CategorySelect } from "./filters/category-select";

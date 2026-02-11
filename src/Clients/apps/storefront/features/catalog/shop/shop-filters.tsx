@@ -10,9 +10,9 @@ import {
   SheetTitle,
 } from "@workspace/ui/components/sheet";
 import { Slider } from "@workspace/ui/components/slider";
+import { formatPrice } from "@workspace/utils/format";
 
 import { FilterSection } from "@/components/filter-section";
-import { currencyFormatter } from "@/lib/constants";
 
 type FilterItem = { id: string; name: string };
 
@@ -61,8 +61,8 @@ function PriceRangeFilter({
         className="mb-2"
       />
       <div className="text-muted-foreground flex items-center justify-between text-sm">
-        <span>{currencyFormatter.format(priceRange[0] ?? 0)}</span>
-        <span>{currencyFormatter.format(priceRange[1] ?? 100)}+</span>
+        <span>{formatPrice(priceRange[0] ?? 0)}</span>
+        <span>{formatPrice(priceRange[1] ?? 100)}+</span>
       </div>
     </div>
   );

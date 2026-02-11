@@ -7,10 +7,10 @@ import booksApiClient from "@workspace/api-client/catalog/books";
 import categoriesApiClient from "@workspace/api-client/catalog/categories";
 import publishersApiClient from "@workspace/api-client/catalog/publishers";
 import { catalogKeys } from "@workspace/api-hooks/keys";
+import { PRICE_RANGE } from "@workspace/utils/constants";
 
 import { env } from "@/env.mjs";
 import ShopPageClient from "@/features/catalog/shop/shop-page-client";
-import { PRICE_RANGE } from "@/lib/constants";
 import { getShopSortParams } from "@/lib/pattern";
 import { getQueryClient } from "@/lib/query-client";
 import { buildQueryString } from "@/lib/seo";

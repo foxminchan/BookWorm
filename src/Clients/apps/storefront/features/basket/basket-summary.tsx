@@ -3,8 +3,7 @@ import { ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
 import { Card } from "@workspace/ui/components/card";
 import { Separator } from "@workspace/ui/components/separator";
-
-import { currencyFormatter } from "@/lib/constants";
+import { formatPrice } from "@workspace/utils/format";
 
 type BasketSummaryProps = {
   subtotal: number;
@@ -28,22 +27,16 @@ export default function BasketSummary({
         <div className="space-y-4">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Subtotal</span>
-            <span className="font-medium">
-              {currencyFormatter.format(subtotal)}
-            </span>
+            <span className="font-medium">{formatPrice(subtotal)}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Shipping</span>
-            <span className="font-medium">
-              {currencyFormatter.format(shipping)}
-            </span>
+            <span className="font-medium">{formatPrice(shipping)}</span>
           </div>
           <Separator />
           <div className="flex justify-between text-lg font-bold">
             <span>Total</span>
-            <span className="text-primary">
-              {currencyFormatter.format(total)}
-            </span>
+            <span className="text-primary">{formatPrice(total)}</span>
           </div>
           <Button
             onClick={onCheckout}

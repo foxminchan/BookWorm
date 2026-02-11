@@ -1,6 +1,6 @@
 import { Package } from "lucide-react";
 
-import { currencyFormatter } from "@/lib/constants";
+import { formatPrice } from "@workspace/utils/format";
 
 type OrderItem = {
   id: string;
@@ -41,10 +41,10 @@ export default function OrderItemsList({
               </div>
               <div className="text-right">
                 <p className="font-semibold">
-                  {currencyFormatter.format(item.price * item.quantity)}
+                  {formatPrice(item.price * item.quantity)}
                 </p>
                 <p className="text-muted-foreground text-xs">
-                  {currencyFormatter.format(item.price)} each
+                  {formatPrice(item.price)} each
                 </p>
               </div>
             </div>

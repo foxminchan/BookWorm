@@ -12,8 +12,7 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 import { Spinner } from "@workspace/ui/components/spinner";
-
-import { currencyFormatter } from "@/lib/constants";
+import { formatPrice } from "@workspace/utils/format";
 
 export function useBookSearchActions() {
   useCopilotAction({
@@ -91,7 +90,7 @@ export function useBookSearchActions() {
                         .join(", ")}
                     </div>
                     <div className="mt-1 text-xs font-semibold">
-                      {currencyFormatter.format(book.price)}
+                      {formatPrice(book.price)}
                     </div>
                   </div>
                 </div>

@@ -5,8 +5,8 @@ import { ArrowLeft } from "lucide-react";
 import type { OrderStatus } from "@workspace/types/ordering/orders";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
+import { formatDate } from "@workspace/utils/format";
 
-import { formatDate } from "@/lib/format";
 import { getOrderStatusColor } from "@/lib/pattern";
 
 type OrderDetailHeaderProps = {

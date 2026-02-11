@@ -1,4 +1,4 @@
-import { currencyFormatter } from "@/lib/constants";
+import { formatPrice } from "@workspace/utils/format";
 
 type OrderSummaryProps = {
   readonly total: number;
@@ -11,7 +11,7 @@ export default function OrderSummary({ total }: OrderSummaryProps) {
       <div className="space-y-2">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Subtotal</span>
-          <span>{currencyFormatter.format(total)}</span>
+          <span>{formatPrice(total)}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Shipping</span>
@@ -20,7 +20,7 @@ export default function OrderSummary({ total }: OrderSummaryProps) {
         <div className="border-border/40 mt-2 border-t pt-2">
           <div className="flex justify-between text-lg font-semibold">
             <span>Total</span>
-            <span>{currencyFormatter.format(total)}</span>
+            <span>{formatPrice(total)}</span>
           </div>
         </div>
       </div>

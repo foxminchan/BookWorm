@@ -13,8 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@workspace/ui/components/dialog";
-
-import { currencyFormatter } from "@/lib/constants";
+import { formatPrice } from "@workspace/utils/format";
 
 type ConfirmationState = {
   isOpen: boolean;
@@ -93,9 +92,7 @@ export function useBasketConfirmation() {
           {confirmation.price != null && confirmation.price > 0 && (
             <p className="text-muted-foreground text-sm">
               <span className="font-medium">Price:</span>{" "}
-              {currencyFormatter.format(
-                confirmation.price * confirmation.quantity,
-              )}
+              {formatPrice(confirmation.price * confirmation.quantity)}
             </p>
           )}
         </div>

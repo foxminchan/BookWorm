@@ -9,9 +9,8 @@ import { Star } from "lucide-react";
 import type { Book } from "@workspace/types/catalog/books";
 import { Badge } from "@workspace/ui/components/badge";
 import { Card, CardContent } from "@workspace/ui/components/card";
-
-import { DEFAULT_BOOK_IMAGE, currencyFormatter } from "@/lib/constants";
-import { calculateDiscount, formatPrice } from "@/lib/format";
+import { DEFAULT_BOOK_IMAGE } from "@workspace/utils/constants";
+import { calculateDiscount, formatPrice } from "@workspace/utils/format";
 
 type BookCardProps = {
   book: Book;
@@ -117,16 +116,14 @@ export function BookCard({ book, onClick }: Readonly<BookCardProps>) {
               {book.priceSale ? (
                 <>
                   <span className="text-primary font-bold">
-                    {currencyFormatter.format(book.priceSale)}
+                    {formatPrice(book.priceSale)}
                   </span>
                   <span className="text-muted-foreground decoration-muted-foreground/50 text-sm line-through">
-                    {currencyFormatter.format(book.price)}
+                    {formatPrice(book.price)}
                   </span>
                 </>
               ) : (
-                <span className="font-bold">
-                  {currencyFormatter.format(book.price)}
-                </span>
+                <span className="font-bold">{formatPrice(book.price)}</span>
               )}
             </div>
           </div>

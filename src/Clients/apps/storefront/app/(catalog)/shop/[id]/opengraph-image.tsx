@@ -1,8 +1,8 @@
 import type { ImageResponse } from "next/og";
 
 import booksApiClient from "@workspace/api-client/catalog/books";
-
-import { DEFAULT_BOOK_IMAGE, currencyFormatter } from "@/lib/constants";
+import { DEFAULT_BOOK_IMAGE } from "@workspace/utils/constants";
+import { formatPrice } from "@workspace/utils/format";
 
 export const runtime = "edge";
 export const size = {
@@ -158,7 +158,7 @@ export default async function Image(
             gap: 15,
           }}
         >
-          <div>{price ? currencyFormatter.format(price) : "N/A"}</div>
+          <div>{price ? formatPrice(price) : "N/A"}</div>
           {hasSaleDiscount && (
             <div
               style={{
@@ -167,7 +167,7 @@ export default async function Image(
                 textDecoration: "line-through",
               }}
             >
-              {currencyFormatter.format(book.price)}
+              {formatPrice(book.price)}
             </div>
           )}
         </div>

@@ -5,10 +5,10 @@ import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import booksApiClient from "@workspace/api-client/catalog/books";
 import feedbacksApiClient from "@workspace/api-client/rating/feedbacks";
 import { catalogKeys, ratingKeys } from "@workspace/api-hooks/keys";
+import { formatPrice } from "@workspace/utils/format";
 
 import { env } from "@/env.mjs";
 import BookDetailPageClient from "@/features/catalog/product/book-detail-page-client";
-import { currencyFormatter } from "@/lib/constants";
 import { getQueryClient } from "@/lib/query-client";
 import { generateImageObject } from "@/lib/seo";
 
@@ -45,8 +45,8 @@ export async function generateMetadata({
   const title = `${bookName} | BookWorm`;
 
   const priceText = book.priceSale
-    ? `On sale for ${currencyFormatter.format(book.priceSale)}`
-    : currencyFormatter.format(book.price);
+    ? `On sale for ${formatPrice(book.priceSale)}`
+    : formatPrice(book.price);
   const byLine = authorNames.length > 0 ? ` by ${authorNames.join(", ")}` : "";
   const description =
     book.description ?? `Buy ${bookName}${byLine} at BookWorm. ${priceText}.`;

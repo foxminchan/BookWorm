@@ -43,6 +43,7 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select";
 import { Textarea } from "@workspace/ui/components/textarea";
+import { DEFAULT_BOOK_IMAGE } from "@workspace/utils/constants";
 import {
   type CreateBookInput,
   createBookSchema,
@@ -52,7 +53,6 @@ import {
   BookFormSkeleton,
   ClassificationSkeleton,
 } from "@/components/loading-skeleton";
-import { DEFAULT_BOOK_IMAGE } from "@/lib/constants";
 
 type BookFormProps = {
   bookId?: string;

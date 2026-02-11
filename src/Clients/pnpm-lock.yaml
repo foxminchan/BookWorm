@@ -652,6 +652,10 @@ importers:
         version: 5.9.3
 
   packages/utils:
+    dependencies:
+      date-fns:
+        specifier: ^4.1.0
+        version: 4.1.0
     devDependencies:
       '@types/node':
         specifier: ^25.2.2

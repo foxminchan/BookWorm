@@ -4,8 +4,7 @@ import cn from "classnames";
 import { Star } from "lucide-react";
 
 import { Separator } from "@workspace/ui/components/separator";
-
-import { currencyFormatter } from "@/lib/constants";
+import { formatPrice } from "@workspace/utils/format";
 
 type ProductInfoProps = {
   category?: string;
@@ -94,15 +93,15 @@ export default function ProductInfo({
                 className="text-primary text-3xl font-bold"
                 itemProp="price"
               >
-                {currencyFormatter.format(priceSale)}
+                {formatPrice(priceSale)}
               </span>
               <span className="text-muted-foreground text-xl line-through">
-                {currencyFormatter.format(price)}
+                {formatPrice(price)}
               </span>
             </>
           ) : (
             <span className="text-3xl font-bold" itemProp="price">
-              {currencyFormatter.format(price)}
+              {formatPrice(price)}
             </span>
           )}
           <meta itemProp="priceCurrency" content="USD" />

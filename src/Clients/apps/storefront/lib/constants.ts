@@ -29,9 +29,3 @@ export const DEBOUNCE_DELAY = {
   quantity: 300,
   priceRange: 500,
 } as const;
-
-export {
-  DEFAULT_BOOK_IMAGE,
-  PRICE_RANGE,
-  currencyFormatter,
-} from "@workspace/utils/constants";
