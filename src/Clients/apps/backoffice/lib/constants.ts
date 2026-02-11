@@ -24,6 +24,12 @@ export const CHART_COLORS = [
   "#ec4899",
 ] as const;
 
+// Currency
+export const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+});
+
 // Chart theme
 export const CHART_THEME = {
   tooltip: {

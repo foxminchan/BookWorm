@@ -99,8 +99,8 @@ describe("SimpleDialog", () => {
       />,
     );
 
-    const createButton = screen.getByText("Create");
-    expect(createButton).toBeDisabled();
+    const submitButton = screen.getByText("Submitting...");
+    expect(submitButton).toBeDisabled();
   });
 
   it("should call onOpenChange when cancel is clicked", async () => {

@@ -6,14 +6,14 @@ import { CellAction } from "./cell-action";
 
 function NameCell({ row }: Readonly<CellContext<Buyer, unknown>>) {
   return (
-    <div className="font-medium">{row.getValue<string>("name") ?? "N/A"}</div>
+    <div className="font-medium">{row.getValue<string>("name") || "N/A"}</div>
   );
 }
 
 function AddressCell({ row }: Readonly<CellContext<Buyer, unknown>>) {
   return (
     <div className="text-muted-foreground text-sm">
-      {row.getValue<string>("address") ?? "N/A"}
+      {row.getValue<string>("address") || "N/A"}
     </div>
   );
 }

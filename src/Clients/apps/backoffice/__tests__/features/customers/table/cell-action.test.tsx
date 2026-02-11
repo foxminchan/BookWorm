@@ -1,13 +1,10 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import type { Buyer } from "@workspace/types/ordering/buyers";
-
 import { createMockCustomer } from "@/__tests__/factories";
+import { renderWithProviders } from "@/__tests__/utils/test-utils";
 import { CellAction } from "@/features/customers/table/cell-action";
-
-vi.mock("@workspace/api-hooks/ordering/buyers/useDeleteBuyer");
 
 const mockUseDeleteBuyer = vi.hoisted(() => vi.fn());
 
@@ -24,7 +21,9 @@ describe("Customers CellAction", () => {
       isPending: false,
     });
 
-    const { container } = render(<CellAction customer={mockCustomer} />);
+    const { container } = renderWithProviders(
+      <CellAction customer={mockCustomer} />,
+    );
 
     const deleteButton = container.querySelector(
       'button[class*="destructive"]',
@@ -39,7 +38,9 @@ describe("Customers CellAction", () => {
       isPending: false,
     });
 
-    const { container } = render(<CellAction customer={mockCustomer} />);
+    const { container } = renderWithProviders(
+      <CellAction customer={mockCustomer} />,
+    );
 
     const deleteButton = container.querySelector(
       'button[class*="destructive"]',
@@ -62,7 +63,9 @@ describe("Customers CellAction", () => {
       isPending: true,
     });
 
-    const { container } = render(<CellAction customer={mockCustomer} />);
+    const { container } = renderWithProviders(
+      <CellAction customer={mockCustomer} />,
+    );
 
     const deleteButton = container.querySelector(
       'button[class*="destructive"]',
@@ -78,7 +81,9 @@ describe("Customers CellAction", () => {
     });
 
     const customerWithoutName = { ...mockCustomer, name: null as any };
-    const { container } = render(<CellAction customer={customerWithoutName} />);
+    const { container } = renderWithProviders(
+      <CellAction customer={customerWithoutName} />,
+    );
 
     const deleteButton = container.querySelector(
       'button[class*="destructive"]',
@@ -100,7 +105,9 @@ describe("Customers CellAction", () => {
       isPending: false,
     });
 
-    const { container } = render(<CellAction customer={mockCustomer} />);
+    const { container } = renderWithProviders(
+      <CellAction customer={mockCustomer} />,
+    );
 
     const deleteButton = container.querySelector(
       'button[class*="destructive"]',
@@ -132,7 +139,9 @@ describe("Customers CellAction", () => {
       isPending: false,
     });
 
-    const { container } = render(<CellAction customer={mockCustomer} />);
+    const { container } = renderWithProviders(
+      <CellAction customer={mockCustomer} />,
+    );
 
     const deleteButton = container.querySelector(
       'button[class*="destructive"]',
