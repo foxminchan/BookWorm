@@ -38,9 +38,3 @@ export const CHART_THEME = {
     stroke: "#a1a1a1",
   },
 } as const;
-
-export {
-  DEFAULT_BOOK_IMAGE,
-  PRICE_RANGE,
-  currencyFormatter,
-} from "@workspace/utils/constants";

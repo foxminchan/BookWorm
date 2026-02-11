@@ -1,8 +1,10 @@
 "use client";
 
+import { useCallback } from "react";
+
 import { Slider } from "@workspace/ui/components/slider";
 
-type PriceRangeSliderProps = {
+type PriceRangeSliderProps = Readonly<{
   min: number;
   max: number;
   step?: number;
@@ -10,7 +12,7 @@ type PriceRangeSliderProps = {
   maxPrice: number;
   onMinChange: (value: number) => void;
   onMaxChange: (value: number) => void;
-};
+}>;
 
 export function PriceRangeSlider({
   min,
@@ -21,15 +23,18 @@ export function PriceRangeSlider({
   onMinChange,
   onMaxChange,
 }: PriceRangeSliderProps) {
-  const handleValueChange = (values: number[]) => {
-    const [newMin, newMax] = values;
-    if (newMin !== undefined && newMin !== minPrice) {
-      onMinChange(newMin);
-    }
-    if (newMax !== undefined && newMax !== maxPrice) {
-      onMaxChange(newMax);
-    }
-  };
+  const handleValueChange = useCallback(
+    (values: number[]) => {
+      const [newMin, newMax] = values;
+      if (newMin !== undefined && newMin !== minPrice) {
+        onMinChange(newMin);
+      }
+      if (newMax !== undefined && newMax !== maxPrice) {
+        onMaxChange(newMax);
+      }
+    },
+    [minPrice, maxPrice, onMinChange, onMaxChange],
+  );
 
   return (
     <div className="space-y-4">

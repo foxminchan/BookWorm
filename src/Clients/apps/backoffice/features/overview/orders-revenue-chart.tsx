@@ -25,10 +25,10 @@ import {
 import { OrdersRevenueChartSkeleton } from "@/components/loading-skeleton";
 import { CHART_COLORS, CHART_THEME } from "@/lib/constants";
 
-type OrdersRevenueChartProps = {
+type OrdersRevenueChartProps = Readonly<{
   orders: Order[];
   isLoading: boolean;
-};
+}>;
 
 export function OrdersRevenueChart({
   orders,
@@ -44,9 +44,9 @@ export function OrdersRevenueChart({
       const existing = dateMap.get(date);
       if (existing) {
         existing.orders += 1;
-        existing.revenue += order.total || 0;
+        existing.revenue += order.total ?? 0;
       } else {
-        dateMap.set(date, { date, orders: 1, revenue: order.total || 0 });
+        dateMap.set(date, { date, orders: 1, revenue: order.total ?? 0 });
       }
     }
     return Array.from(dateMap.values()).slice(-7);
@@ -71,12 +71,7 @@ export function OrdersRevenueChart({
             />
             <XAxis dataKey="date" stroke={CHART_THEME.axis.stroke} />
             <YAxis stroke={CHART_THEME.axis.stroke} />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "#171717",
-                border: "1px solid #262626",
-              }}
-            />
+            <Tooltip contentStyle={CHART_THEME.tooltip} />
             <Legend />
             <Line
               type="monotone"

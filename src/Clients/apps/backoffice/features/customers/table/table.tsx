@@ -24,10 +24,10 @@ export function CustomersTable() {
     ...sortingQuery,
   };
 
-  const { data, isLoading, error } = useBuyers(query);
+  const { data, isLoading } = useBuyers(query);
 
-  const customers = data?.items || [];
-  const totalCount = data?.totalCount || 0;
+  const customers = data?.items ?? [];
+  const totalCount = data?.totalCount ?? 0;
 
   return (
     <FilterTable
@@ -39,7 +39,6 @@ export function CustomersTable() {
       pageIndex={pageIndex}
       pageSize={pageSize}
       isLoading={isLoading}
-      error={error}
       onPaginationChange={handlePaginationChange}
       onSortingChange={handleSortingChange}
     />

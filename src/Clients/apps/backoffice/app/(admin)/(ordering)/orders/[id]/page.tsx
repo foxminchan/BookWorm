@@ -29,10 +29,6 @@ export default function OrderDetailPage({
   const { id } = use(params);
   const { data: order, isLoading, error } = useOrder(id);
 
-  if (error) {
-    notFound();
-  }
-
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -46,7 +42,7 @@ export default function OrderDetailPage({
     );
   }
 
-  if (!order) {
+  if (error || !order) {
     notFound();
   }
 
@@ -54,7 +50,7 @@ export default function OrderDetailPage({
     <div className="space-y-6">
       <PageHeader
         title={`Order #${order.id.slice(0, 8)}`}
-        description={`Order placed on ${format(new Date(order.date), "MMM dd, yyyy")}`}
+        description={`Order placed on ${format(order.date, "MMM dd, yyyy")}`}
         breadcrumbs={breadcrumbs}
       />
       <OrderSummaryCards
