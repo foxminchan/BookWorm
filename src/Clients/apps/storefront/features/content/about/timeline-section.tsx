@@ -1,3 +1,9 @@
+type Milestone = {
+  readonly year: string;
+  readonly title: string;
+  readonly description: string;
+};
+
 const timeline = [
   {
     year: "2024",
@@ -17,7 +23,7 @@ const timeline = [
     description:
       "We introduce advanced AI agents to personalize recommendations, predict reading trends, and revolutionize how readers discover their next great book.",
   },
-];
+] as const satisfies readonly Milestone[];
 
 export default function TimelineSection() {
   return (
@@ -27,8 +33,8 @@ export default function TimelineSection() {
           Our Journey
         </h2>
         <div className="mx-auto max-w-3xl space-y-12">
-          {timeline.map((milestone, idx) => (
-            <div key={idx} className="flex items-start gap-8">
+          {timeline.map((milestone) => (
+            <div key={milestone.year} className="flex items-start gap-8">
               <div className="min-w-24">
                 <span className="text-primary font-serif text-2xl font-bold">
                   {milestone.year}

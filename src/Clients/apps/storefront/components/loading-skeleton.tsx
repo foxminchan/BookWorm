@@ -1,23 +1,24 @@
+import { Card } from "@workspace/ui/components/card";
+import { Separator } from "@workspace/ui/components/separator";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 
 export function BookCardSkeleton() {
   return (
-    <div className="space-y-4" role="status" aria-label="Loading book card">
+    <output className="space-y-4" aria-label="Loading book card">
       <Skeleton className="aspect-3/4 w-full rounded-lg" />
       <Skeleton className="h-3 w-16 rounded-full" />
       <Skeleton className="h-6 w-full rounded-md" />
       <Skeleton className="h-4 w-24 rounded-md" />
       <Skeleton className="h-5 w-20 rounded-md" />
       <span className="sr-only">Loading book information...</span>
-    </div>
+    </output>
   );
 }
 
 export function CategoryCardSkeleton() {
   return (
-    <div
+    <output
       className="bg-background border-border/40 flex items-center justify-between border p-8 md:p-12"
-      role="status"
       aria-label="Loading category"
     >
       <div className="flex flex-1 flex-col gap-4">
@@ -26,15 +27,14 @@ export function CategoryCardSkeleton() {
       </div>
       <Skeleton className="size-12 rounded-full" />
       <span className="sr-only">Loading category information...</span>
-    </div>
+    </output>
   );
 }
 
 export function PublisherCardSkeleton() {
   return (
-    <div
+    <output
       className="bg-secondary/10 border-border/40 relative flex aspect-square flex-col justify-between overflow-hidden rounded-lg border p-8"
-      role="status"
       aria-label="Loading publisher"
     >
       <Skeleton className="mb-4 h-7 w-28 rounded-full" />
@@ -44,15 +44,14 @@ export function PublisherCardSkeleton() {
         <Skeleton className="mt-4 h-5 w-20 rounded-md" />
       </div>
       <span className="sr-only">Loading publisher information...</span>
-    </div>
+    </output>
   );
 }
 
 export function BasketItemSkeleton() {
   return (
-    <div
+    <output
       className="rounded-lg border-none bg-white/50 p-6 shadow-none dark:bg-gray-800/50"
-      role="status"
       aria-label="Loading basket item"
     >
       <div className="flex gap-6">
@@ -68,6 +67,41 @@ export function BasketItemSkeleton() {
             <Skeleton className="ml-auto h-6 w-24" />
           </div>
         </div>
+      </div>
+    </output>
+  );
+}
+
+export default function BasketLoadingSkeleton() {
+  return (
+    <div className="mx-auto grid max-w-5xl grid-cols-1 gap-12 lg:grid-cols-12">
+      <div className="space-y-6 lg:col-span-8">
+        {[1, 2].map((i) => (
+          <BasketItemSkeleton key={i} />
+        ))}
+      </div>
+
+      <div className="lg:col-span-4">
+        <Card className="border-none bg-white p-8 shadow-none dark:bg-gray-800">
+          <Skeleton className="mb-6 h-8 w-40" />
+          <div className="space-y-4">
+            <div className="flex justify-between">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-16" />
+            </div>
+            <div className="flex justify-between">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-16" />
+            </div>
+            <Separator />
+            <div className="flex justify-between">
+              <Skeleton className="h-6 w-16" />
+              <Skeleton className="h-6 w-20" />
+            </div>
+            <Skeleton className="h-12 w-full rounded-full" />
+            <Skeleton className="mx-auto h-3 w-48" />
+          </div>
+        </Card>
       </div>
     </div>
   );
@@ -89,7 +123,7 @@ export function ConfirmationPageSkeleton() {
       </div>
 
       <div className="border-border mb-24 grid gap-8 border-y py-12 md:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => (
+        {Array.from({ length: 3 }, () => crypto.randomUUID()).map((i) => (
           <div key={i} className="space-y-4">
             <Skeleton className="h-6 w-32" />
             <div className="space-y-2">
@@ -114,7 +148,7 @@ export function ConfirmationPageSkeleton() {
 export function OrdersSkeleton() {
   return (
     <div className="border-border/40 bg-border/40 space-y-px border">
-      {Array.from({ length: 5 }).map((_, i) => (
+      {Array.from({ length: 5 }, () => crypto.randomUUID()).map((i) => (
         <div
           key={i}
           className="bg-background border-border/40 border-b p-8 last:border-b-0"
@@ -151,7 +185,7 @@ export function OrderDetailSkeleton() {
           <Skeleton className="h-6 w-32" />
         </div>
         <div className="divide-border/40 divide-y">
-          {Array.from({ length: 3 }).map((_, i) => (
+          {Array.from({ length: 3 }, () => crypto.randomUUID()).map((i) => (
             <div key={i} className="space-y-3 px-6 py-4">
               <Skeleton className="h-5 w-48" />
               <Skeleton className="h-4 w-32" />
@@ -231,16 +265,18 @@ export function ReviewsLoadingSkeleton() {
       <Skeleton className="h-10 w-1/3 rounded-lg" />
       <Skeleton className="h-6 w-1/2 rounded-lg" />
       <div className="space-y-8">
-        {Array.from({ length: 3 }).map((_, i) => (
+        {Array.from({ length: 3 }, () => crypto.randomUUID()).map((i) => (
           <div key={i} className="space-y-4">
             <div className="flex gap-3">
               <Skeleton className="size-10 shrink-0 rounded-full" />
               <div className="flex-1 space-y-2">
                 <Skeleton className="h-4 w-1/4 rounded" />
                 <div className="flex gap-1">
-                  {Array.from({ length: 5 }).map((_, j) => (
-                    <Skeleton key={j} className="size-3 rounded" />
-                  ))}
+                  {Array.from({ length: 5 }, () => crypto.randomUUID()).map(
+                    (j) => (
+                      <Skeleton key={j} className="size-3 rounded" />
+                    ),
+                  )}
                 </div>
               </div>
             </div>

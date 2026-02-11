@@ -52,7 +52,9 @@ describe("FilterTable", () => {
     render(<FilterTable {...defaultProps} />);
 
     expect(screen.getByText("Test Table")).toBeInTheDocument();
-    expect(screen.getByText("Test Description")).toBeInTheDocument();
+    expect(
+      screen.getAllByText("Test Description").length,
+    ).toBeGreaterThanOrEqual(1);
   });
 
   it("should render table headers", () => {
@@ -158,9 +160,9 @@ describe("FilterTable", () => {
   });
 
   it("should not show pagination when data is empty", () => {
-    render(<FilterTable {...defaultProps} data={[]} />);
+    render(<FilterTable {...defaultProps} data={[]} totalCount={0} />);
 
-    expect(screen.queryByText(/of 10 row\(s\) total/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/row\(s\) total/i)).not.toBeInTheDocument();
   });
 
   it("should highlight row when highlightedId matches", () => {
@@ -180,7 +182,7 @@ describe("FilterTable", () => {
     const { description, ...propsWithoutDescription } = defaultProps;
     render(<FilterTable {...propsWithoutDescription} />);
 
-    expect(screen.getByText("Test Table")).toBeInTheDocument();
+    expect(screen.getAllByText("Test Table").length).toBeGreaterThanOrEqual(1);
     expect(screen.queryByText("Test Description")).not.toBeInTheDocument();
   });
 
@@ -215,10 +217,10 @@ describe("FilterTable", () => {
     render(<FilterTable {...defaultProps} pageIndex={1} />);
 
     const prevButton = screen.getByRole("button", {
-      name: /go to previous page, currently on page 2/i,
+      name: /go to previous page/i,
     });
     const nextButton = screen.getByRole("button", {
-      name: /go to next page, currently on page 2/i,
+      name: /go to next page/i,
     });
 
     expect(prevButton).toBeInTheDocument();

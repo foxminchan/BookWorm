@@ -1,9 +1,5 @@
 "use client";
 
-import { useState } from "react";
-
-import { toast } from "sonner";
-
 import useCategories from "@workspace/api-hooks/catalog/categories/useCategories";
 import useCreateCategory from "@workspace/api-hooks/catalog/categories/useCreateCategory";
 import useDeleteCategory from "@workspace/api-hooks/catalog/categories/useDeleteCategory";
@@ -13,40 +9,45 @@ import { Button } from "@workspace/ui/components/button";
 import { PageHeader } from "@/components/page-header";
 import { SimpleDialog } from "@/components/simple-dialog";
 import { SimpleTable } from "@/components/simple-table";
+import { useCrudPage } from "@/hooks/use-crud-page";
+
+const breadcrumbs = [
+  { label: "Admin", href: "/" },
+  { label: "Categories", isActive: true },
+];
+
+const buildCreateRequest = (name: string) => ({ name });
+const buildUpdateRequest = (id: string, name: string) => ({
+  request: { id, name },
+});
 
 export default function CategoriesPage() {
-  const { data: categories = [], isLoading } = useCategories();
-  const createMutation = useCreateCategory();
-  const updateMutation = useUpdateCategory();
-  const deleteMutation = useDeleteCategory();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  const handleCreate = async (name: string) => {
-    await createMutation.mutateAsync({ name });
-    setIsDialogOpen(false);
-  };
-
-  const handleUpdate = async (id: string, name: string) => {
-    await updateMutation.mutateAsync({ request: { id, name } });
-  };
-
-  const handleDelete = async (id: string) => {
-    await deleteMutation.mutateAsync(id, {
-      onSuccess: () => {
-        toast.success("Category has been deleted");
-      },
-    });
-  };
+  const {
+    items: categories,
+    isLoading,
+    isDialogOpen,
+    setIsDialogOpen,
+    isSubmitting,
+    isCreatePending,
+    handleCreate,
+    handleUpdate,
+    handleDelete,
+  } = useCrudPage({
+    entityName: "Category",
+    listQuery: useCategories(),
+    createMutation: useCreateCategory(),
+    updateMutation: useUpdateCategory(),
+    deleteMutation: useDeleteCategory(),
+    buildCreateRequest,
+    buildUpdateRequest,
+  });
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Categories Management"
         description="Manage book categories"
-        breadcrumbs={[
-          { label: "Admin", href: "/" },
-          { label: "Categories", isActive: true },
-        ]}
+        breadcrumbs={breadcrumbs}
         action={
           <Button onClick={() => setIsDialogOpen(true)}>Create Category</Button>
         }
@@ -59,7 +60,7 @@ export default function CategoriesPage() {
         description="Enter the category name"
         placeholder="Category name"
         onSubmit={handleCreate}
-        isLoading={createMutation.isPending}
+        isLoading={isCreatePending}
       />
 
       <SimpleTable
@@ -69,7 +70,7 @@ export default function CategoriesPage() {
         isLoading={isLoading}
         onUpdate={handleUpdate}
         onDelete={handleDelete}
-        isSubmitting={updateMutation.isPending || deleteMutation.isPending}
+        isSubmitting={isSubmitting}
       />
     </div>
   );

@@ -68,8 +68,9 @@ describe("Books Table Columns", () => {
   });
 
   it("renders sale price with strikethrough on original price", () => {
+    const salePrice = mockBook.price * 0.7;
     const mockBookWithSale = createMockBook({
-      priceSale: mockBook.price * 0.7,
+      priceSale: salePrice,
     });
     const priceColumn = columns[4]!;
     const cell = priceColumn.cell as any;
@@ -85,9 +86,7 @@ describe("Books Table Columns", () => {
     expect(
       screen.getByText(formatter.format(mockBookWithSale.price)),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(formatter.format(mockBookWithSale.priceSale!)),
-    ).toBeInTheDocument();
+    expect(screen.getByText(formatter.format(salePrice))).toBeInTheDocument();
     expect(container.querySelector("del")).toHaveTextContent(
       formatter.format(mockBookWithSale.price),
     );
@@ -111,10 +110,6 @@ describe("Books Table Columns", () => {
   it("renders price with accessibility label when on sale", () => {
     const priceColumn = columns[4]!;
     const cell = priceColumn.cell as any;
-    const formatter = new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    });
     const saleBook = { ...mockBook, priceSale: mockBook.price * 0.8 }; // 80% of original price
     render(cell({ row: { original: saleBook } } as any));
 

@@ -4,6 +4,7 @@ import cn from "classnames";
 import { Star } from "lucide-react";
 
 import { Separator } from "@workspace/ui/components/separator";
+import { formatPrice } from "@workspace/utils/format";
 
 type ProductInfoProps = {
   category?: string;
@@ -29,11 +30,7 @@ export default function ProductInfo({
   status,
   description,
   publisher,
-}: ProductInfoProps) {
-  const formatter = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  });
+}: Readonly<ProductInfoProps>) {
   return (
     <div className="flex flex-col">
       <div className="mb-6">
@@ -54,12 +51,12 @@ export default function ProductInfo({
 
       <div className="mb-8 flex items-center gap-4">
         <div className="flex items-center gap-1">
-          {[...Array(5)].map((_, i) => (
+          {[1, 2, 3, 4, 5].map((star) => (
             <Star
-              key={i}
+              key={star}
               className={cn(
                 "size-5",
-                i < Math.floor(averageRating)
+                star <= Math.floor(averageRating)
                   ? "fill-primary text-primary"
                   : "text-muted-foreground/30",
               )}
@@ -96,15 +93,15 @@ export default function ProductInfo({
                 className="text-primary text-3xl font-bold"
                 itemProp="price"
               >
-                {formatter.format(priceSale)}
+                {formatPrice(priceSale)}
               </span>
               <span className="text-muted-foreground text-xl line-through">
-                {formatter.format(price)}
+                {formatPrice(price)}
               </span>
             </>
           ) : (
             <span className="text-3xl font-bold" itemProp="price">
-              {formatter.format(price)}
+              {formatPrice(price)}
             </span>
           )}
           <meta itemProp="priceCurrency" content="USD" />

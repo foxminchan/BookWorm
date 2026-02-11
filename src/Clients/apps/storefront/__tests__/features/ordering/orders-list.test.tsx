@@ -68,7 +68,7 @@ describe("OrdersList", () => {
     const orders: Order[] = [
       { ...mockOrders[0]!, total: 59.97 },
       { ...mockOrders[1]!, total: 124.5 },
-      { ...mockOrders[2]!, total: 35.0 },
+      { ...mockOrders[2]!, total: 35 },
     ];
     renderWithProviders(<OrdersList orders={orders} />);
 

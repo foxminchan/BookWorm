@@ -1,5 +1,3 @@
-"use client";
-
 export default function PublishersHeader() {
   return (
     <div className="mb-20 max-w-3xl">

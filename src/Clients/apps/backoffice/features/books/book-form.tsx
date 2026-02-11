@@ -43,6 +43,7 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select";
 import { Textarea } from "@workspace/ui/components/textarea";
+import { DEFAULT_BOOK_IMAGE } from "@workspace/utils/constants";
 import {
   type CreateBookInput,
   createBookSchema,
@@ -52,11 +53,10 @@ import {
   BookFormSkeleton,
   ClassificationSkeleton,
 } from "@/components/loading-skeleton";
-import { DEFAULT_BOOK_IMAGE } from "@/lib/constants";
 
-type BookFormProps = {
+type BookFormProps = Readonly<{
   bookId?: string;
-};
+}>;
 
 export function BookForm({ bookId }: BookFormProps) {
   const router = useRouter();
@@ -67,7 +67,7 @@ export function BookForm({ bookId }: BookFormProps) {
 
   const createMutation = useCreateBook();
   const updateMutation = useUpdateBook();
-  const { data: bookData, isLoading: isLoadingBook } = useBook(bookId || "", {
+  const { data: bookData, isLoading: isLoadingBook } = useBook(bookId ?? "", {
     enabled: !!bookId,
   });
 
@@ -77,9 +77,9 @@ export function BookForm({ bookId }: BookFormProps) {
   const { data: publishersData, isLoading: isLoadingPublishers } =
     usePublishers();
 
-  const authors = authorsData || [];
-  const categories = categoriesData || [];
-  const publishers = publishersData || [];
+  const authors = authorsData ?? [];
+  const categories = categoriesData ?? [];
+  const publishers = publishersData ?? [];
 
   const form = useForm<CreateBookInput>({
     resolver: zodResolver(createBookSchema),
@@ -97,12 +97,12 @@ export function BookForm({ bookId }: BookFormProps) {
   useEffect(() => {
     if (bookData && bookId) {
       form.reset({
-        name: bookData.name || "",
-        description: bookData.description || "",
+        name: bookData.name ?? "",
+        description: bookData.description ?? "",
         price: bookData.price,
         priceSale: bookData.priceSale,
-        categoryId: bookData.category?.id || "",
-        publisherId: bookData.publisher?.id || "",
+        categoryId: bookData.category?.id ?? "",
+        publisherId: bookData.publisher?.id ?? "",
         authorIds: bookData.authors.map((a) => a.id),
       });
       setSelectedAuthors(bookData.authors.map((a) => a.id));
@@ -170,6 +170,9 @@ export function BookForm({ bookId }: BookFormProps) {
   const isLoading = createMutation.isPending || updateMutation.isPending;
   const isLoadingClassificationData =
     isLoadingCategories || isLoadingPublishers || isLoadingAuthors;
+
+  const submitLabel = bookId ? "Update Book" : "Create Book";
+  const submittingLabel = bookId ? "Updating..." : "Creating...";
 
   return (
     <Form {...form}>
@@ -343,11 +346,7 @@ export function BookForm({ bookId }: BookFormProps) {
                   <legend className="text-foreground mb-3 block text-sm font-medium">
                     Authors
                   </legend>
-                  <div
-                    className="space-y-2"
-                    role="group"
-                    aria-label="Select book authors"
-                  >
+                  <div className="space-y-2">
                     {authors.map((author) => (
                       <div key={author.id} className="flex items-center gap-2">
                         <Checkbox
@@ -465,12 +464,10 @@ export function BookForm({ bookId }: BookFormProps) {
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {bookId ? "Updating..." : "Creating..."}
+                {submittingLabel}
               </>
-            ) : bookId ? (
-              "Update Book"
             ) : (
-              "Create Book"
+              submitLabel
             )}
           </Button>
         </div>

@@ -44,7 +44,7 @@ export default function BooksPage() {
     <div className="space-y-6">
       <PageHeader
         title="Books Management"
-        description="Manage your book inventory - 51 total books"
+        description="Manage your book inventory"
         breadcrumbs={breadcrumbs}
         action={
           <Link href="/books/new">

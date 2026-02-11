@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -11,22 +11,22 @@ import { Button } from "@workspace/ui/components/button";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
 
-type CellActionProps = {
+type CellActionProps = Readonly<{
   feedback: Feedback;
-};
+}>;
 
 export function CellAction({ feedback }: CellActionProps) {
   const [openDelete, setOpenDelete] = useState(false);
   const deleteFeedbackMutation = useDeleteFeedback();
 
-  const onConfirmDelete = async () => {
+  const handleDelete = useCallback(async () => {
     await deleteFeedbackMutation.mutateAsync(feedback.id, {
       onSuccess: () => {
         setOpenDelete(false);
         toast.success("Review has been deleted");
       },
     });
-  };
+  }, [feedback.id, deleteFeedbackMutation]);
 
   return (
     <>
@@ -37,8 +37,9 @@ export function CellAction({ feedback }: CellActionProps) {
           className="text-destructive hover:text-destructive"
           onClick={() => setOpenDelete(true)}
           disabled={deleteFeedbackMutation.isPending}
+          aria-label={`Delete review with ${feedback.rating} star rating`}
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="h-4 w-4" aria-hidden="true" />
         </Button>
       </div>
 
@@ -50,7 +51,7 @@ export function CellAction({ feedback }: CellActionProps) {
         actionLabel="Delete"
         actionType="delete"
         isLoading={deleteFeedbackMutation.isPending}
-        onConfirm={onConfirmDelete}
+        onConfirm={handleDelete}
       />
     </>
   );

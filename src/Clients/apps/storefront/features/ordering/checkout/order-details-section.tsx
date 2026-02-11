@@ -1,5 +1,6 @@
 import type { OrderStatus } from "@workspace/types/ordering/orders";
 import { Badge } from "@workspace/ui/components/badge";
+import { formatPrice } from "@workspace/utils/format";
 
 import { getOrderStatusColor } from "@/lib/pattern";
 
@@ -15,11 +16,7 @@ export default function OrderDetailsSection({
   total,
   buyerName,
   buyerAddress,
-}: OrderDetailsSectionProps) {
-  const formatter = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  });
+}: Readonly<OrderDetailsSectionProps>) {
   return (
     <div className="border-border mb-24 grid gap-8 border-y py-12 md:grid-cols-3">
       {/* Shipping Address */}
@@ -28,9 +25,9 @@ export default function OrderDetailsSection({
           Shipping Address
         </h3>
         <div className="text-muted-foreground space-y-1 leading-relaxed">
-          {buyerName && (
+          {buyerName ? (
             <p className="text-foreground font-medium">{buyerName}</p>
-          )}
+          ) : null}
           {buyerAddress ? (
             <p>{buyerAddress}</p>
           ) : (
@@ -62,7 +59,7 @@ export default function OrderDetailsSection({
         <div className="flex flex-col items-start">
           <p className="text-muted-foreground mb-2 text-sm">Amount Paid</p>
           <p className="text-primary font-serif text-4xl font-medium">
-            {formatter.format(total)}
+            {formatPrice(total)}
           </p>
         </div>
       </div>

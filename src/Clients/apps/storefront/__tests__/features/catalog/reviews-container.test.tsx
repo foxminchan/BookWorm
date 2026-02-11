@@ -15,6 +15,7 @@ describe("ReviewsContainer", () => {
       lastName: faker.person.lastName(),
       rating: faker.number.int({ min: 1, max: 5 }),
       comment: faker.lorem.sentence(),
+      bookId: faker.string.uuid(),
     },
     {
       id: faker.string.uuid(),
@@ -22,6 +23,7 @@ describe("ReviewsContainer", () => {
       lastName: faker.person.lastName(),
       rating: faker.number.int({ min: 1, max: 5 }),
       comment: faker.lorem.sentence(),
+      bookId: faker.string.uuid(),
     },
   ];
 

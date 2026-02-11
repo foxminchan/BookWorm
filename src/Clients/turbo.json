@@ -7,6 +7,7 @@
     "NEXT_PUBLIC_GATEWAY_HTTP",
     "NEXT_PUBLIC_COPILOT_ENABLED",
     "NEXT_PUBLIC_COPILOT_AGENT_NAME",
+    "NEXT_PUBLIC_MAX_RETRIES",
     "KEYCLOAK_URL",
     "KEYCLOAK_REALM",
     "KEYCLOAK_CLIENT_ID",
@@ -52,7 +53,7 @@
     },
     "test": {
       "dependsOn": ["^build"],
-      "outputs": ["coverage/**", "coverage.json"],
+      "outputs": [],
       "inputs": [
         "**/*.{ts,tsx}",
         "**/*.test.{ts,tsx}",

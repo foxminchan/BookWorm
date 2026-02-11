@@ -8,10 +8,10 @@ import { usePaginatedTable } from "@/hooks/use-paginated-table";
 
 import { columns } from "./columns";
 
-type BooksTableProps = {
+type BooksTableProps = Readonly<{
   query: Omit<ListBooksQuery, "pageIndex" | "pageSize">;
   highlightedBookId?: string | null;
-};
+}>;
 
 export function BooksTable({ query, highlightedBookId }: BooksTableProps) {
   const {
@@ -30,10 +30,10 @@ export function BooksTable({ query, highlightedBookId }: BooksTableProps) {
     ...sortingQuery,
   };
 
-  const { data, isLoading, error } = useBooks(fullQuery);
+  const { data, isLoading } = useBooks(fullQuery);
 
-  const books = data?.items || [];
-  const totalCount = data?.totalCount || 0;
+  const books = data?.items ?? [];
+  const totalCount = data?.totalCount ?? 0;
 
   return (
     <FilterTable
@@ -45,7 +45,6 @@ export function BooksTable({ query, highlightedBookId }: BooksTableProps) {
       pageIndex={pageIndex}
       pageSize={pageSize}
       isLoading={isLoading}
-      error={error}
       onPaginationChange={handlePaginationChange}
       onSortingChange={handleSortingChange}
       highlightedId={highlightedBookId}

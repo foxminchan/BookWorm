@@ -21,7 +21,7 @@ export default function useCreateCategory(
     mutationFn: (request) => categoriesApiClient.create(request),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: catalogKeys.categories.list(),
+        queryKey: catalogKeys.categories.lists(),
       });
     },
     ...options,

@@ -8,6 +8,26 @@ export const size = {
 };
 export const contentType = "image/png";
 
+const colors = {
+  primary: "#2c1810",
+  secondary: "#5c4033",
+} as const;
+
+const categories = [
+  { emoji: "📖", label: "Fiction" },
+  { emoji: "🔬", label: "Science" },
+  { emoji: "💼", label: "Business" },
+] as const;
+
+const categoryCardStyle = {
+  display: "flex" as const,
+  flexDirection: "column" as const,
+  alignItems: "center" as const,
+  padding: 20,
+  background: "rgba(255, 255, 255, 0.7)",
+  borderRadius: 12,
+};
+
 export default async function Image() {
   return new ImageResponse(
     <div
@@ -28,7 +48,7 @@ export default async function Image() {
         style={{
           fontSize: 80,
           fontWeight: "bold",
-          color: "#2c1810",
+          color: colors.primary,
           marginBottom: 20,
           display: "flex",
           alignItems: "center",
@@ -41,7 +61,7 @@ export default async function Image() {
       <div
         style={{
           fontSize: 40,
-          color: "#5c4033",
+          color: colors.secondary,
           marginBottom: 40,
           textAlign: "center",
           maxWidth: "80%",
@@ -58,51 +78,16 @@ export default async function Image() {
           marginTop: 20,
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            padding: 20,
-            background: "rgba(255, 255, 255, 0.7)",
-            borderRadius: 12,
-          }}
-        >
-          <div style={{ fontSize: 36 }}>📖</div>
-          <div style={{ fontSize: 20, color: "#5c4033", marginTop: 8 }}>
-            Fiction
+        {categories.map((cat) => (
+          <div key={cat.label} style={categoryCardStyle}>
+            <div style={{ fontSize: 36 }}>{cat.emoji}</div>
+            <div
+              style={{ fontSize: 20, color: colors.secondary, marginTop: 8 }}
+            >
+              {cat.label}
+            </div>
           </div>
-        </div>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            padding: 20,
-            background: "rgba(255, 255, 255, 0.7)",
-            borderRadius: 12,
-          }}
-        >
-          <div style={{ fontSize: 36 }}>🔬</div>
-          <div style={{ fontSize: 20, color: "#5c4033", marginTop: 8 }}>
-            Science
-          </div>
-        </div>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            padding: 20,
-            background: "rgba(255, 255, 255, 0.7)",
-            borderRadius: 12,
-          }}
-        >
-          <div style={{ fontSize: 36 }}>💼</div>
-          <div style={{ fontSize: 20, color: "#5c4033", marginTop: 8 }}>
-            Business
-          </div>
-        </div>
+        ))}
       </div>
     </div>,
     {

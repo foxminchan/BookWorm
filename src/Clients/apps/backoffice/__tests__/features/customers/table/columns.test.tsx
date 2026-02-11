@@ -1,8 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import type { Buyer } from "@workspace/types/ordering/buyers";
-
 import { createMockCustomer } from "@/__tests__/factories";
 import { columns } from "@/features/customers/table/columns";
 

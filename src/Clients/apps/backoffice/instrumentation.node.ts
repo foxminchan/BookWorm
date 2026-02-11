@@ -20,11 +20,7 @@ function parseOtlpHeaders(headerString: string): Record<string, string> {
 
 const otlpBaseEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
 
-if (!otlpBaseEndpoint) {
-  console.warn(
-    "OTEL_EXPORTER_OTLP_ENDPOINT is not set. Skipping OpenTelemetry instrumentation.",
-  );
-} else {
+if (otlpBaseEndpoint) {
   const otlpEndpoint = `${otlpBaseEndpoint}/v1/traces`;
 
   const additionalHeaders = process.env.OTEL_EXPORTER_OTLP_HEADERS
@@ -46,4 +42,8 @@ if (!otlpBaseEndpoint) {
   });
 
   sdk.start();
+} else {
+  console.warn(
+    "OTEL_EXPORTER_OTLP_ENDPOINT is not set. Skipping OpenTelemetry instrumentation.",
+  );
 }

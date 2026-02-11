@@ -1,5 +1,5 @@
 import {
-  UseMutationOptions,
+  type UseMutationOptions,
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
@@ -9,14 +9,13 @@ import ordersApiClient from "@workspace/api-client/ordering/orders";
 import { orderingKeys } from "../../keys";
 
 export default function useDeleteOrder(
-  id: string,
-  options?: Omit<UseMutationOptions<void, unknown, void>, "mutationFn">,
+  options?: UseMutationOptions<void, Error, string>,
 ) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => ordersApiClient.delete(id),
-    onSuccess: () => {
+    mutationFn: (id) => ordersApiClient.delete(id),
+    onSuccess: (_, id) => {
       queryClient.removeQueries({ queryKey: orderingKeys.orders.detail(id) });
       queryClient.invalidateQueries({ queryKey: orderingKeys.orders.lists() });
     },

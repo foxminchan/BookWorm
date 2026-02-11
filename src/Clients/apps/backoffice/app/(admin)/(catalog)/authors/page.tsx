@@ -1,7 +1,4 @@
 "use client";
-import { useState } from "react";
-
-import { toast } from "sonner";
 
 import useAuthors from "@workspace/api-hooks/catalog/authors/useAuthors";
 import useCreateAuthor from "@workspace/api-hooks/catalog/authors/useCreateAuthor";
@@ -12,40 +9,45 @@ import { Button } from "@workspace/ui/components/button";
 import { PageHeader } from "@/components/page-header";
 import { SimpleDialog } from "@/components/simple-dialog";
 import { SimpleTable } from "@/components/simple-table";
+import { useCrudPage } from "@/hooks/use-crud-page";
+
+const breadcrumbs = [
+  { label: "Admin", href: "/" },
+  { label: "Authors", isActive: true },
+];
+
+const buildCreateRequest = (name: string) => ({ name });
+const buildUpdateRequest = (id: string, name: string) => ({
+  request: { id, name },
+});
 
 export default function AuthorsPage() {
-  const { data: authors = [], isLoading } = useAuthors();
-  const createMutation = useCreateAuthor();
-  const updateMutation = useUpdateAuthor();
-  const deleteMutation = useDeleteAuthor();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  const handleCreate = async (name: string) => {
-    await createMutation.mutateAsync({ name });
-    setIsDialogOpen(false);
-  };
-
-  const handleUpdate = async (id: string, name: string) => {
-    await updateMutation.mutateAsync({ request: { id, name } });
-  };
-
-  const handleDelete = async (id: string) => {
-    await deleteMutation.mutateAsync(id, {
-      onSuccess: () => {
-        toast.success("Author has been deleted");
-      },
-    });
-  };
+  const {
+    items: authors,
+    isLoading,
+    isDialogOpen,
+    setIsDialogOpen,
+    isSubmitting,
+    isCreatePending,
+    handleCreate,
+    handleUpdate,
+    handleDelete,
+  } = useCrudPage({
+    entityName: "Author",
+    listQuery: useAuthors(),
+    createMutation: useCreateAuthor(),
+    updateMutation: useUpdateAuthor(),
+    deleteMutation: useDeleteAuthor(),
+    buildCreateRequest,
+    buildUpdateRequest,
+  });
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Authors Management"
         description="Manage book authors"
-        breadcrumbs={[
-          { label: "Admin", href: "/" },
-          { label: "Authors", isActive: true },
-        ]}
+        breadcrumbs={breadcrumbs}
         action={
           <Button onClick={() => setIsDialogOpen(true)}>Create Author</Button>
         }
@@ -58,7 +60,7 @@ export default function AuthorsPage() {
         description="Enter the author's name"
         placeholder="Author name"
         onSubmit={handleCreate}
-        isLoading={createMutation.isPending}
+        isLoading={isCreatePending}
       />
 
       <SimpleTable
@@ -68,11 +70,7 @@ export default function AuthorsPage() {
         isLoading={isLoading}
         onUpdate={handleUpdate}
         onDelete={handleDelete}
-        isSubmitting={
-          createMutation.isPending ||
-          updateMutation.isPending ||
-          deleteMutation.isPending
-        }
+        isSubmitting={isSubmitting}
       />
     </div>
   );

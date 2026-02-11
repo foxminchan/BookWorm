@@ -14,13 +14,12 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table";
+import { formatPrice } from "@workspace/utils/format";
 
-import { currencyFormatter } from "@/lib/constants";
-
-type OrderItemsTableProps = {
+type OrderItemsTableProps = Readonly<{
   items: OrderItem[];
   total: number;
-};
+}>;
 
 export function OrderItemsTable({ items, total }: OrderItemsTableProps) {
   return (
@@ -41,11 +40,11 @@ export function OrderItemsTable({ items, total }: OrderItemsTableProps) {
           <TableBody>
             {items.map((item) => (
               <TableRow key={item.id}>
-                <TableCell>{item.name || "Product"}</TableCell>
+                <TableCell>{item.name ?? "Product"}</TableCell>
                 <TableCell>{item.quantity}</TableCell>
-                <TableCell>{currencyFormatter.format(item.price)}</TableCell>
+                <TableCell>{formatPrice(item.price)}</TableCell>
                 <TableCell className="font-medium">
-                  {currencyFormatter.format(item.quantity * item.price)}
+                  {formatPrice(item.quantity * item.price)}
                 </TableCell>
               </TableRow>
             ))}
@@ -53,9 +52,7 @@ export function OrderItemsTable({ items, total }: OrderItemsTableProps) {
           <TableFooter>
             <TableRow>
               <TableCell colSpan={3}>Total</TableCell>
-              <TableCell className="font-bold">
-                {currencyFormatter.format(total)}
-              </TableCell>
+              <TableCell className="font-bold">{formatPrice(total)}</TableCell>
             </TableRow>
           </TableFooter>
         </Table>

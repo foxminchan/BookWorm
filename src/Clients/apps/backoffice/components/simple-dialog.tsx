@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -21,6 +21,8 @@ type SimpleDialogProps = {
   placeholder: string;
   onSubmit: (value: string) => Promise<void>;
   isLoading?: boolean;
+  submitLabel?: string;
+  submittingLabel?: string;
 };
 
 export function SimpleDialog({
@@ -31,31 +33,39 @@ export function SimpleDialog({
   placeholder,
   onSubmit,
   isLoading = false,
-}: SimpleDialogProps) {
+  submitLabel = "Create",
+  submittingLabel = "Submitting...",
+}: Readonly<SimpleDialogProps>) {
   const [value, setValue] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async () => {
-    if (value.trim()) {
-      setIsSubmitting(true);
-      try {
-        await onSubmit(value.trim());
-        setValue("");
-        onOpenChange(false);
-      } finally {
-        setIsSubmitting(false);
+  const handleSubmit = useCallback(async () => {
+    const trimmed = value.trim();
+    if (!trimmed || isLoading) return;
+
+    await onSubmit(trimmed);
+    setValue("");
+  }, [value, isLoading, onSubmit]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleSubmit();
       }
-    }
-  };
+    },
+    [handleSubmit],
+  );
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !isSubmitting) {
-      handleSubmit();
-    }
-  };
+  const handleOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      if (!nextOpen) setValue("");
+      onOpenChange(nextOpen);
+    },
+    [onOpenChange],
+  );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
@@ -67,21 +77,21 @@ export function SimpleDialog({
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            disabled={isSubmitting}
+            disabled={isLoading}
           />
           <div className="flex justify-end gap-2">
             <Button
               variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
+              onClick={() => handleOpenChange(false)}
+              disabled={isLoading}
             >
               Cancel
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={isSubmitting || !value.trim() || isLoading}
+              disabled={isLoading || !value.trim()}
             >
-              {isSubmitting ? "Creating..." : "Create"}
+              {isLoading ? submittingLabel : submitLabel}
             </Button>
           </div>
         </div>

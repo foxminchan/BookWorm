@@ -1,4 +1,12 @@
 import { CheckCircle, Clock, RotateCcw } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
+type TimelineStep = {
+  readonly icon: LucideIcon;
+  readonly title: string;
+  readonly timeline: string;
+  readonly description: string;
+};
 
 const timelineSteps = [
   {
@@ -26,7 +34,7 @@ const timelineSteps = [
     description:
       "Refund appears in your account (5-7 business days after approval)",
   },
-];
+] as const satisfies readonly TimelineStep[];
 
 export default function TimelineSection() {
   return (
@@ -38,12 +46,12 @@ export default function TimelineSection() {
         {timelineSteps.map((step, idx) => {
           const Icon = step.icon;
           return (
-            <div key={idx} className="flex gap-6">
+            <div key={step.title} className="flex gap-6">
               <div className="flex flex-col items-center">
                 <Icon className="text-primary mb-2 size-8" />
-                {idx < timelineSteps.length - 1 && (
+                {idx < timelineSteps.length - 1 ? (
                   <div className="bg-border h-12 w-1" />
-                )}
+                ) : null}
               </div>
               <div className="grow pb-8">
                 <div className="mb-2 flex items-baseline gap-3">

@@ -6,7 +6,7 @@ import {
   formatDate,
   formatPrice,
   truncateText,
-} from "@/lib/format";
+} from "@workspace/utils/format";
 
 describe("format utils", () => {
   describe("formatPrice", () => {

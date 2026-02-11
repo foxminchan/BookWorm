@@ -8,9 +8,9 @@ import { renderWithProviders } from "../../utils/test-utils";
 
 describe("BasketSummary", () => {
   const defaultProps = {
-    subtotal: 100.0,
-    shipping: 10.0,
-    total: 110.0,
+    subtotal: 100,
+    shipping: 10,
+    total: 110,
     isCheckingOut: false,
     onCheckout: vi.fn(),
   };
@@ -112,7 +112,7 @@ describe("BasketSummary", () => {
     const largeProps = {
       ...defaultProps,
       subtotal: 9999.99,
-      shipping: 50.0,
+      shipping: 50,
       total: 10049.99,
     };
 
@@ -159,7 +159,7 @@ describe("BasketSummary", () => {
     const freeShippingProps = {
       ...defaultProps,
       shipping: 0,
-      total: 100.0,
+      total: 100,
     };
 
     renderWithProviders(<BasketSummary {...freeShippingProps} />);

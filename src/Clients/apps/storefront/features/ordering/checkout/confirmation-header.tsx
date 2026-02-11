@@ -6,7 +6,7 @@ type ConfirmationHeaderProps = {
 
 export default function ConfirmationHeader({
   orderId,
-}: ConfirmationHeaderProps) {
+}: Readonly<ConfirmationHeaderProps>) {
   return (
     <div className="mb-24 space-y-8 text-center">
       <div className="flex justify-center">

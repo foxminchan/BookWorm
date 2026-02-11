@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
+import type { CellContext, ColumnDef } from "@tanstack/react-table";
 import {
-  type ColumnDef,
   flexRender,
   getCoreRowModel,
   useReactTable,
@@ -36,7 +36,7 @@ type BaseItem = {
   name: string | null;
 };
 
-type BaseTableProps<T extends BaseItem> = {
+type BaseTableProps<T extends BaseItem> = Readonly<{
   title: string;
   description: string;
   items: T[];
@@ -44,7 +44,121 @@ type BaseTableProps<T extends BaseItem> = {
   onUpdate: (id: string, name: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   isSubmitting?: boolean;
-};
+}>;
+
+type SimpleTableMeta = Readonly<{
+  editingId: string | null;
+  editValue: string;
+  isSubmitting: boolean;
+  setEditValue: (value: string) => void;
+  handleEditSave: (id: string) => Promise<void>;
+  cancelEditing: () => void;
+  startEditing: (id: string, name: string | null) => void;
+  requestDelete: (id: string, name: string | null) => void;
+}>;
+
+function getTableMeta(
+  context: CellContext<BaseItem, unknown>,
+): SimpleTableMeta {
+  return context.table.options.meta as SimpleTableMeta;
+}
+
+function NumberHeader() {
+  return <div className="w-1">#</div>;
+}
+
+function NumberCell({ row }: Readonly<CellContext<BaseItem, unknown>>) {
+  return <div className="text-muted-foreground w-1">{row.index + 1}</div>;
+}
+
+function NameCell(context: Readonly<CellContext<BaseItem, unknown>>) {
+  const { editingId, editValue, setEditValue, handleEditSave, cancelEditing } =
+    getTableMeta(context);
+  const item = context.row.original;
+
+  if (editingId === item.id) {
+    return (
+      <Input
+        value={editValue}
+        onChange={(e) => setEditValue(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            handleEditSave(item.id);
+          }
+          if (e.key === "Escape") {
+            cancelEditing();
+          }
+        }}
+        autoFocus
+      />
+    );
+  }
+
+  return <span className="text-foreground">{item.name ?? "N/A"}</span>;
+}
+
+function ActionsHeader() {
+  return <div className="text-right">Actions</div>;
+}
+
+function ActionsCell(context: Readonly<CellContext<BaseItem, unknown>>) {
+  const {
+    editingId,
+    isSubmitting,
+    handleEditSave,
+    cancelEditing,
+    startEditing,
+    requestDelete,
+  } = getTableMeta(context);
+  const item = context.row.original;
+
+  if (editingId === item.id) {
+    return (
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          variant="default"
+          onClick={() => handleEditSave(item.id)}
+          disabled={isSubmitting}
+        >
+          Save
+        </Button>
+        <Button size="sm" variant="outline" onClick={cancelEditing}>
+          Cancel
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex justify-end gap-2">
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={() => startEditing(item.id, item.name)}
+        aria-label={`Edit ${item.name ?? "item"}`}
+      >
+        <Edit className="h-4 w-4" aria-hidden="true" />
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="text-destructive hover:text-destructive"
+        onClick={() => requestDelete(item.id, item.name)}
+        aria-label={`Delete ${item.name ?? "item"}`}
+      >
+        <Trash2 className="h-4 w-4" aria-hidden="true" />
+      </Button>
+    </div>
+  );
+}
+
+const TABLE_COLUMNS: ColumnDef<BaseItem>[] = [
+  { id: "number", header: NumberHeader, cell: NumberCell },
+  { accessorKey: "name", header: "Name", cell: NameCell },
+  { id: "actions", header: ActionsHeader, cell: ActionsCell },
+];
 
 export function SimpleTable<T extends BaseItem>({
   title,
@@ -58,125 +172,64 @@ export function SimpleTable<T extends BaseItem>({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [deleteConfirmName, setDeleteConfirmName] = useState<string>("");
+  const [deleteConfirmName, setDeleteConfirmName] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const columns: ColumnDef<T>[] = [
-    {
-      id: "number",
-      header: () => <div className="w-1">#</div>,
-      cell: ({ row }) => (
-        <div className="text-muted-foreground w-1">{row.index + 1}</div>
-      ),
-    },
-    {
-      accessorKey: "name",
-      header: "Name",
-      cell: ({ row }) => {
-        const item = row.original;
-        if (editingId === item.id) {
-          return (
-            <Input
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              autoFocus
-            />
-          );
-        }
-        return <span className="text-foreground">{item.name || "N/A"}</span>;
-      },
-    },
-    {
-      id: "actions",
-      header: () => <div className="text-right">Actions</div>,
-      cell: ({ row }) => {
-        const item = row.original;
-        if (editingId === item.id) {
-          return (
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="default"
-                onClick={() => handleEditSave(item.id)}
-                disabled={isSubmitting}
-              >
-                Save
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setEditingId(null)}
-              >
-                Cancel
-              </Button>
-            </div>
-          );
-        }
-        return (
-          <div className="flex justify-end gap-2">
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                setEditingId(item.id);
-                setEditValue(item.name || "");
-              }}
-              aria-label={`Edit ${item.name || "item"}`}
-            >
-              <Edit className="h-4 w-4" aria-hidden="true" />
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-destructive hover:text-destructive"
-              onClick={() => {
-                setDeleteConfirmId(item.id);
-                setDeleteConfirmName(item.name || "this item");
-              }}
-              aria-label={`Delete ${item.name || "item"}`}
-            >
-              <Trash2 className="h-4 w-4" aria-hidden="true" />
-            </Button>
-          </div>
-        );
-      },
-    },
-  ];
-
-  const handleEditSave = async (id: string) => {
-    if (editValue.trim()) {
-      await onUpdate(id, editValue.trim());
-      setEditingId(null);
-    }
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (deleteConfirmId) {
-      setDeletingId(deleteConfirmId);
-      try {
-        await onDelete(deleteConfirmId);
-      } finally {
-        setDeletingId(null);
-        setDeleteConfirmId(null);
+  const handleEditSave = useCallback(
+    async (id: string) => {
+      const trimmed = editValue.trim();
+      if (trimmed) {
+        await onUpdate(id, trimmed);
+        setEditingId(null);
       }
+    },
+    [editValue, onUpdate],
+  );
+
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!deleteConfirmId) return;
+
+    setDeletingId(deleteConfirmId);
+    try {
+      await onDelete(deleteConfirmId);
+    } finally {
+      setDeletingId(null);
+      setDeleteConfirmId(null);
     }
-  };
+  }, [deleteConfirmId, onDelete]);
+
+  const startEditing = useCallback((id: string, name: string | null) => {
+    setEditingId(id);
+    setEditValue(name ?? "");
+  }, []);
+
+  const cancelEditing = useCallback(() => {
+    setEditingId(null);
+  }, []);
+
+  const requestDelete = useCallback((id: string, name: string | null) => {
+    setDeleteConfirmId(id);
+    setDeleteConfirmName(name ?? "this item");
+  }, []);
 
   const table = useReactTable({
     data: items,
-    columns,
+    columns: TABLE_COLUMNS as ColumnDef<T>[],
     getCoreRowModel: getCoreRowModel(),
+    meta: {
+      editingId,
+      editValue,
+      isSubmitting,
+      setEditValue,
+      handleEditSave,
+      cancelEditing,
+      startEditing,
+      requestDelete,
+    } satisfies SimpleTableMeta,
   });
 
   if (isLoading) {
-    return (
-      <SimpleTableSkeleton
-        title={title}
-        description={description}
-        rows={5}
-        columns={columns.length}
-      />
-    );
+    return <SimpleTableSkeleton rows={5} columns={TABLE_COLUMNS.length} />;
   }
 
   return (
@@ -227,7 +280,7 @@ export function SimpleTable<T extends BaseItem>({
                 ) : (
                   <TableRow>
                     <TableCell
-                      colSpan={columns.length}
+                      colSpan={TABLE_COLUMNS.length}
                       className="h-24 text-center"
                       role="status"
                     >

@@ -8,9 +8,9 @@ import { usePaginatedTable } from "@/hooks/use-paginated-table";
 
 import { reviewsColumns } from "./columns";
 
-type ReviewsTableProps = {
+type ReviewsTableProps = Readonly<{
   bookId: string;
-};
+}>;
 
 export function ReviewsTable({ bookId }: ReviewsTableProps) {
   const {
@@ -29,10 +29,10 @@ export function ReviewsTable({ bookId }: ReviewsTableProps) {
     ...sortingQuery,
   };
 
-  const { data, isLoading, error } = useFeedbacks(query);
+  const { data, isLoading } = useFeedbacks(query);
 
-  const reviews = data?.items || [];
-  const totalCount = data?.totalCount || 0;
+  const reviews = data?.items ?? [];
+  const totalCount = data?.totalCount ?? 0;
 
   return (
     <FilterTable
@@ -44,7 +44,6 @@ export function ReviewsTable({ bookId }: ReviewsTableProps) {
       pageIndex={pageIndex}
       pageSize={pageSize}
       isLoading={isLoading}
-      error={error}
       onPaginationChange={handlePaginationChange}
       onSortingChange={handleSortingChange}
     />

@@ -1,13 +1,3 @@
-import { DEFAULT_BOOK_IMAGE, PRICE_RANGE } from "@workspace/utils/constants";
-
-export { DEFAULT_BOOK_IMAGE, PRICE_RANGE };
-
-// Formatters — hoisted to avoid creating new instances on every render
-export const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
-
 // Authentication
 export const AUTH = {
   PROVIDER: "keycloak",
@@ -33,6 +23,12 @@ export const CHART_COLORS = [
   "#8b5cf6",
   "#ec4899",
 ] as const;
+
+// Currency
+export const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+});
 
 // Chart theme
 export const CHART_THEME = {

@@ -1,5 +1,4 @@
-import { Locator, Page } from "@playwright/test";
-import { expect } from "@playwright/test";
+import { Locator, Page, expect } from "@playwright/test";
 
 import { BasePage } from "./BasePage";
 
@@ -219,15 +218,15 @@ export class ShopPage extends BasePage {
       .locator('[data-testid="book-price"], .price')
       .allTextContents();
     return priceElements.map((price) => {
-      const cleaned = price.replace(/[$,]/g, "");
-      return parseFloat(cleaned);
+      const cleaned = price.replaceAll(/[$,]/g, "");
+      return Number.parseFloat(cleaned);
     });
   }
 
   async getCurrentPage(): Promise<number> {
-    const url = this.getCurrentUrl();
-    const match = url.match(/[?&]page=(\d+)/);
-    return match ? parseInt(match[1]!) : 1;
+    const url = new URL(this.getCurrentUrl());
+    const page = url.searchParams.get("page");
+    return page ? Number.parseInt(page) : 1;
   }
 
   // Assertions

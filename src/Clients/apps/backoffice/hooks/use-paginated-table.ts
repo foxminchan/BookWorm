@@ -1,14 +1,14 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import type { SortingState } from "@tanstack/react-table";
 
 const DEFAULT_PAGE_SIZE = 10;
 
-type UsePaginatedTableOptions = {
+type UsePaginatedTableOptions = Readonly<{
   initialPageSize?: number;
-};
+}>;
 
 export function usePaginatedTable(options?: UsePaginatedTableOptions) {
   const [pageIndex, setPageIndex] = useState(0);
@@ -29,13 +29,16 @@ export function usePaginatedTable(options?: UsePaginatedTableOptions) {
     setSorting(newSorting);
   }, []);
 
-  const sortingQuery =
-    sorting.length > 0 && sorting[0]
-      ? {
-          orderBy: sorting[0].id as string,
-          isDescending: sorting[0].desc,
-        }
-      : {};
+  const sortingQuery = useMemo(
+    () =>
+      sorting.length > 0 && sorting[0]
+        ? {
+            orderBy: sorting[0].id,
+            isDescending: sorting[0].desc,
+          }
+        : {},
+    [sorting],
+  );
 
   return {
     pageIndex,

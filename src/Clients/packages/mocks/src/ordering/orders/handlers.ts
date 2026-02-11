@@ -3,7 +3,7 @@ import { HttpResponse, http } from "msw";
 import type { Order } from "@workspace/types/ordering/orders";
 import { buildPaginationLinks } from "@workspace/utils/link";
 
-import { ORDERING_API_BASE_URL } from "../../ordering/constants";
+import { ORDERING_API_BASE_URL } from "../constants";
 import { ordersStoreManager } from "./data";
 
 export const ordersHandlers = [

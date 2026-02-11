@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@workspace/ui/components/dialog";
+import { formatPrice } from "@workspace/utils/format";
 
 type ConfirmationState = {
   isOpen: boolean;
@@ -58,64 +59,62 @@ export function useBasketConfirmation() {
     setConfirmation((prev) => ({ ...prev, isOpen: false }));
   };
 
-  const ConfirmationDialog = () => {
-    const formatter = new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    });
-    return (
-      <Dialog
-        open={confirmation.isOpen}
-        onOpenChange={(open) => !open && cancel()}
-      >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              <ShoppingCart className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-              Add to Basket
-            </DialogTitle>
-            <DialogDescription>
-              Confirm adding this item to your basket
-            </DialogDescription>
-          </DialogHeader>
+  const ConfirmationDialog = () => (
+    <Dialog
+      open={confirmation.isOpen}
+      onOpenChange={(open) => !open && cancel()}
+    >
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-3">
+            <ShoppingCart
+              className="size-6 text-blue-600 dark:text-blue-400"
+              aria-hidden="true"
+            />
+            Add to Basket
+          </DialogTitle>
+          <DialogDescription>
+            Confirm adding this item to your basket
+          </DialogDescription>
+        </DialogHeader>
 
-          <div className="space-y-2 py-4">
-            {confirmation.bookTitle && (
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                <span className="font-medium">Book:</span>{" "}
-                {confirmation.bookTitle}
-              </p>
-            )}
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              <span className="font-medium">Quantity:</span>{" "}
-              {confirmation.quantity}
+        <div className="space-y-2 py-4">
+          {confirmation.bookTitle && (
+            <p className="text-muted-foreground text-sm">
+              <span className="font-medium">Book:</span>{" "}
+              {confirmation.bookTitle}
             </p>
-            {confirmation.price && (
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                <span className="font-medium">Price:</span>{" "}
-                {formatter.format(confirmation.price * confirmation.quantity)}
-              </p>
-            )}
-          </div>
+          )}
+          <p className="text-muted-foreground text-sm">
+            <span className="font-medium">Quantity:</span>{" "}
+            {confirmation.quantity}
+          </p>
+          {confirmation.price != null && confirmation.price > 0 && (
+            <p className="text-muted-foreground text-sm">
+              <span className="font-medium">Price:</span>{" "}
+              {formatPrice(confirmation.price * confirmation.quantity)}
+            </p>
+          )}
+        </div>
 
-          <DialogFooter className="gap-2 sm:gap-2">
-            <Button
-              variant="outline"
-              onClick={cancel}
-              className="flex-1 sm:flex-1"
-            >
-              <X className="h-4 w-4" />
-              Cancel
-            </Button>
-            <Button onClick={confirm} className="flex-1 sm:flex-1">
-              <Check className="h-4 w-4" />
-              Confirm
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    );
-  };
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={cancel}
+            className="flex-1 sm:flex-1"
+          >
+            <X className="size-4" aria-hidden="true" />
+            Cancel
+          </Button>
+          <Button type="button" onClick={confirm} className="flex-1 sm:flex-1">
+            <Check className="size-4" aria-hidden="true" />
+            Confirm
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 
   return {
     requestConfirmation,

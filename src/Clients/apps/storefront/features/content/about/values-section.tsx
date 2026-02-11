@@ -1,6 +1,13 @@
 import { BookOpen, Globe, Heart, Users } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { Card, CardContent } from "@workspace/ui/components/card";
+
+type Value = {
+  readonly icon: LucideIcon;
+  readonly title: string;
+  readonly description: string;
+};
 
 const values = [
   {
@@ -27,7 +34,7 @@ const values = [
     description:
       "We're building a space where readers connect and share their love of books",
   },
-];
+] as const satisfies readonly Value[];
 
 export default function ValuesSection() {
   return (
@@ -36,11 +43,11 @@ export default function ValuesSection() {
         What we stand for
       </h2>
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
-        {values.map((value, idx) => {
+        {values.map((value) => {
           const Icon = value.icon;
           return (
             <Card
-              key={idx}
+              key={value.title}
               className="bg-secondary border-none transition-all hover:-translate-y-1 hover:shadow-lg"
             >
               <CardContent className="space-y-4 pt-8 text-center">

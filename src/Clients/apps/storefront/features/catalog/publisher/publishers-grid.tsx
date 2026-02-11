@@ -1,13 +1,10 @@
-"use client";
+import type { Publisher } from "@workspace/types/catalog/publishers";
 
 import { PublisherCardSkeleton } from "@/components/loading-skeleton";
 
 import PublisherCard from "./publisher-card";
 
-type Publisher = {
-  id: string;
-  name: string | null;
-};
+const SKELETON_KEYS = Array.from({ length: 9 }, (_, i) => `skeleton-${i}`);
 
 type PublishersGridProps = {
   publishers: Publisher[];
@@ -17,12 +14,12 @@ type PublishersGridProps = {
 export default function PublishersGrid({
   publishers,
   isLoading,
-}: PublishersGridProps) {
+}: Readonly<PublishersGridProps>) {
   if (isLoading) {
     return (
       <div className="mb-20 grid grid-cols-2 gap-6 md:grid-cols-3">
-        {Array.from({ length: 9 }).map((_, i) => (
-          <PublisherCardSkeleton key={i} />
+        {SKELETON_KEYS.map((key) => (
+          <PublisherCardSkeleton key={key} />
         ))}
       </div>
     );
@@ -34,7 +31,7 @@ export default function PublishersGrid({
         <PublisherCard
           key={publisher.id}
           id={publisher.id}
-          name={publisher.name || "Unknown Publisher"}
+          name={publisher.name ?? "Unknown Publisher"}
         />
       ))}
     </div>

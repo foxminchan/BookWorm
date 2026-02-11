@@ -1,16 +1,18 @@
 "use client";
 
+import { useCallback } from "react";
+
 import { Label } from "@workspace/ui/components/label";
 import { Slider } from "@workspace/ui/components/slider";
 
-type PriceRangeFilterProps = {
+type PriceRangeFilterProps = Readonly<{
   min: number;
   max: number;
   step?: number;
   minPrice: number;
   maxPrice: number;
   onChange: (min: number, max: number) => void;
-};
+}>;
 
 export function PriceRangeFilter({
   min,
@@ -20,12 +22,15 @@ export function PriceRangeFilter({
   maxPrice,
   onChange,
 }: PriceRangeFilterProps) {
-  const handleValueChange = (values: number[]) => {
-    const [newMin, newMax] = values;
-    if (newMin !== undefined && newMax !== undefined) {
-      onChange(newMin, newMax);
-    }
-  };
+  const handleValueChange = useCallback(
+    (values: number[]) => {
+      const [newMin, newMax] = values;
+      if (newMin !== undefined && newMax !== undefined) {
+        onChange(newMin, newMax);
+      }
+    },
+    [onChange],
+  );
 
   return (
     <div className="space-y-2">

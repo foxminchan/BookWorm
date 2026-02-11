@@ -1,12 +1,18 @@
-import { Package } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 
 import { Button } from "@workspace/ui/components/button";
 
 export default function OrdersErrorState() {
   return (
-    <div className="bg-background border-border border p-16 text-center">
+    <div
+      className="bg-background border-border border p-16 text-center"
+      role="alert"
+    >
       <div className="bg-secondary mx-auto mb-6 flex size-20 items-center justify-center rounded-full">
-        <Package className="text-muted-foreground size-10" />
+        <AlertTriangle
+          className="text-muted-foreground size-10"
+          aria-hidden="true"
+        />
       </div>
       <h2 className="mb-3 font-serif text-2xl font-medium">
         Error Loading Orders
@@ -15,7 +21,12 @@ export default function OrdersErrorState() {
         We encountered an error while loading your orders. Please try again
         later.
       </p>
-      <Button onClick={() => window.location.reload()} variant="outline">
+      <Button
+        type="button"
+        onClick={() => globalThis.location.reload()}
+        variant="outline"
+        aria-label="Retry loading orders"
+      >
         Retry
       </Button>
     </div>

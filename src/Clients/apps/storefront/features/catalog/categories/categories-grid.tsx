@@ -17,12 +17,12 @@ type CategoriesGridProps = {
 export default function CategoriesGrid({
   categories,
   isLoading,
-}: CategoriesGridProps) {
+}: Readonly<CategoriesGridProps>) {
   if (isLoading) {
     return (
       <div className="bg-border/40 border-border/40 grid grid-cols-1 gap-px border md:grid-cols-2">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <CategoryCardSkeleton key={i} />
+        {Array.from({ length: 8 }, () => crypto.randomUUID()).map((id) => (
+          <CategoryCardSkeleton key={id} />
         ))}
       </div>
     );

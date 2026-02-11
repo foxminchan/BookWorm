@@ -1,5 +1,7 @@
 "use client";
 
+import { useCallback } from "react";
+
 import { Loader2 } from "lucide-react";
 
 import {
@@ -13,7 +15,7 @@ import {
 
 type ActionType = "delete" | "complete" | "cancel" | "submit" | "default";
 
-type ConfirmDialogProps = {
+type ConfirmDialogProps = Readonly<{
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
@@ -22,7 +24,7 @@ type ConfirmDialogProps = {
   isLoading: boolean;
   onConfirm: () => Promise<void>;
   actionType?: ActionType;
-};
+}>;
 
 const actionStyles: Record<ActionType, string> = {
   delete: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
@@ -42,13 +44,20 @@ export function ConfirmDialog({
   onConfirm,
   actionType = "default",
 }: ConfirmDialogProps) {
+  const handleOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      if (!isLoading) onOpenChange(nextOpen);
+    },
+    [isLoading, onOpenChange],
+  );
+
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialog open={open} onOpenChange={handleOpenChange}>
       <AlertDialogContent>
         <AlertDialogTitle>{title}</AlertDialogTitle>
         <AlertDialogDescription>{description}</AlertDialogDescription>
         <div className="flex justify-end gap-2">
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             disabled={isLoading}

@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 
 import {
+  type CellContext,
   type ColumnDef,
   flexRender,
   getCoreRowModel,
@@ -32,43 +33,37 @@ import { RecentOrdersTableSkeleton } from "@/components/loading-skeleton";
 import { currencyFormatter } from "@/lib/constants";
 import { type OrderStatus, getOrderStatusStyle } from "@/lib/pattern";
 
-type RecentOrdersTableProps = {
+type RecentOrdersTableProps = Readonly<{
   orders: Order[];
   isLoading: boolean;
-};
+}>;
+
+function OrderIdCell({ row }: Readonly<CellContext<Order, unknown>>) {
+  return <div className="font-medium">#{row.original.id.slice(0, 8)}</div>;
+}
+
+function AmountCell({ row }: Readonly<CellContext<Order, unknown>>) {
+  return <div>{currencyFormatter.format(row.original.total ?? 0)}</div>;
+}
+
+function StatusCell({ row }: Readonly<CellContext<Order, unknown>>) {
+  const status = row.original.status as OrderStatus;
+  return <Badge className={getOrderStatusStyle(status)}>{status}</Badge>;
+}
+
+function DateCell({ row }: Readonly<CellContext<Order, unknown>>) {
+  return (
+    <div className="text-muted-foreground">
+      {format(new Date(row.original.date), "MMM dd, yyyy")}
+    </div>
+  );
+}
 
 const columns: ColumnDef<Order>[] = [
-  {
-    accessorKey: "id",
-    header: "Order ID",
-    cell: ({ row }) => (
-      <div className="font-medium">#{row.original.id.slice(0, 8)}</div>
-    ),
-  },
-  {
-    accessorKey: "total",
-    header: "Amount",
-    cell: ({ row }) => (
-      <div>{currencyFormatter.format(row.original.total ?? 0)}</div>
-    ),
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      const status = row.original.status as OrderStatus;
-      return <Badge className={getOrderStatusStyle(status)}>{status}</Badge>;
-    },
-  },
-  {
-    accessorKey: "date",
-    header: "Date",
-    cell: ({ row }) => (
-      <div className="text-muted-foreground">
-        {format(new Date(row.original.date), "MMM dd, yyyy")}
-      </div>
-    ),
-  },
+  { accessorKey: "id", header: "Order ID", cell: OrderIdCell },
+  { accessorKey: "total", header: "Amount", cell: AmountCell },
+  { accessorKey: "status", header: "Status", cell: StatusCell },
+  { accessorKey: "date", header: "Date", cell: DateCell },
 ];
 
 export function RecentOrdersTable({

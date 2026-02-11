@@ -1,8 +1,7 @@
 import { Given, Then, When } from "@cucumber/cucumber";
-import { expect } from "@playwright/test";
-import { Page } from "@playwright/test";
+import { Page, expect } from "@playwright/test";
 
-import { AccountPage, LoginPage, RegisterPage } from "../pages";
+import { AccountPage } from "../pages";
 
 /**
  * Authentication step definitions
@@ -23,7 +22,6 @@ When(
 Then(
   "I should be redirected to the login page",
   async function (this: { page: Page }) {
-    const loginPage = new LoginPage(this.page);
     await expect(this.page).toHaveURL(/\/login/);
   },
 );
@@ -31,7 +29,6 @@ Then(
 Then(
   "I should be redirected to the registration page",
   async function (this: { page: Page }) {
-    const registerPage = new RegisterPage(this.page);
     await expect(this.page).toHaveURL(/\/register/);
   },
 );

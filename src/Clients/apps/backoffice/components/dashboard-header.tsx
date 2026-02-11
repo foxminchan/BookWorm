@@ -28,10 +28,15 @@ export function DashboardHeader() {
     setMounted(true);
   }, []);
 
+  const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
+
+  const targetMode = theme === "dark" ? "light" : "dark";
+  const themeLabel = mounted ? `Switch to ${targetMode} mode` : "Toggle theme";
+
   return (
     <header className="border-border bg-background flex items-center justify-between border-b px-6 py-4">
       <div>
-        <div className="text-foreground text-2xl font-bold">Admin Portal</div>
+        <h2 className="text-foreground text-2xl font-bold">Admin Portal</h2>
         <p className="text-muted-foreground text-sm">
           Welcome back to your dashboard
         </p>
@@ -41,12 +46,8 @@ export function DashboardHeader() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          aria-label={
-            mounted
-              ? `Switch to ${theme === "dark" ? "light" : "dark"} mode`
-              : "Toggle theme"
-          }
+          onClick={toggleTheme}
+          aria-label={themeLabel}
           suppressHydrationWarning
         >
           <Sun
@@ -57,7 +58,6 @@ export function DashboardHeader() {
             className="absolute h-5 w-5 scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0"
             aria-hidden="true"
           />
-          <span className="sr-only">Toggle theme</span>
         </Button>
 
         <DropdownMenu>
@@ -70,10 +70,10 @@ export function DashboardHeader() {
             <DropdownMenuLabel>
               <div className="flex flex-col space-y-1">
                 <p className="text-sm leading-none font-medium">
-                  {user?.name || "Admin User"}
+                  {user?.name ?? "Admin User"}
                 </p>
                 <p className="text-muted-foreground text-xs leading-none">
-                  {user?.email || ""}
+                  {user?.email ?? ""}
                 </p>
               </div>
             </DropdownMenuLabel>

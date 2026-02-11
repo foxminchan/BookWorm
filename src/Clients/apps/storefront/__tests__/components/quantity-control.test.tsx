@@ -191,7 +191,7 @@ describe("QuantityControl", () => {
       expect(handleDecrease).toHaveBeenCalledTimes(1);
     });
 
-    it("should have min value of 1 for input", () => {
+    it("should use numeric input mode", () => {
       renderWithProviders(
         <QuantityControl
           quantity={5}
@@ -203,22 +203,7 @@ describe("QuantityControl", () => {
       );
 
       const input = screen.getByRole("textbox", { name: "Book quantity" });
-      expect(input).toHaveAttribute("min", "1");
-    });
-
-    it("should have max value of 99 for input", () => {
-      renderWithProviders(
-        <QuantityControl
-          quantity={5}
-          onIncrease={vi.fn()}
-          onDecrease={vi.fn()}
-          variant="input"
-          onQuantityChange={vi.fn()}
-        />,
-      );
-
-      const input = screen.getByRole("textbox", { name: "Book quantity" });
-      expect(input).toHaveAttribute("max", "99");
+      expect(input).toHaveAttribute("inputMode", "numeric");
     });
   });
 

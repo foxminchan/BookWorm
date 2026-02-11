@@ -1,19 +1,10 @@
+import * as NextNavigation from "next/navigation";
+
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createWrapper } from "@/__tests__/utils/test-utils";
 import { useLogout } from "@/hooks/use-logout";
-
-// Mock Next.js navigation
-const mockPush = vi.fn();
-const mockRefresh = vi.fn();
-
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({
-    push: mockPush,
-    refresh: mockRefresh,
-  }),
-}));
 
 // Mock auth client
 vi.mock("@/lib/auth-client", () => ({
@@ -21,8 +12,19 @@ vi.mock("@/lib/auth-client", () => ({
 }));
 
 describe("useLogout", () => {
+  const mockPush = vi.fn();
+  const mockRefresh = vi.fn();
+
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(NextNavigation, "useRouter").mockReturnValue({
+      push: mockPush,
+      refresh: mockRefresh,
+      replace: vi.fn(),
+      prefetch: vi.fn(),
+      back: vi.fn(),
+      forward: vi.fn(),
+    } as any);
   });
 
   it("should return logout function", () => {

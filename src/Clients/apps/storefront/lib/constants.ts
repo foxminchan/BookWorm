@@ -1,7 +1,3 @@
-import { DEFAULT_BOOK_IMAGE, PRICE_RANGE } from "@workspace/utils/constants";
-
-export { DEFAULT_BOOK_IMAGE, PRICE_RANGE };
-
 export const APP_CONFIG = {
   name: "BookWorm",
   email: {
