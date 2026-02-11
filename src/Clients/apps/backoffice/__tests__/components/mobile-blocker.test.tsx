@@ -20,7 +20,7 @@ function mockMatchMedia(matches: boolean) {
     }),
   };
 
-  vi.spyOn(window, "matchMedia").mockReturnValue(
+  vi.spyOn(globalThis, "matchMedia").mockReturnValue(
     mql as unknown as MediaQueryList,
   );
 

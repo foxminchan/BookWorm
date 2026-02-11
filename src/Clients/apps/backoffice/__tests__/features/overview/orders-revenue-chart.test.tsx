@@ -10,7 +10,7 @@ const mockOrders: Order[] = [
   createMockOrder({ total: 100.5, status: "Completed" }),
   createMockOrder({ total: 250.75, status: "Completed" }),
   createMockOrder({ total: 75.25, status: "New" }),
-  createMockOrder({ total: 150.0, status: "Completed" }),
+  createMockOrder({ total: 150, status: "Completed" }),
 ];
 
 describe("OrdersRevenueChart", () => {
@@ -99,7 +99,7 @@ describe("OrdersRevenueChart", () => {
     );
 
     // Check for lg:col-span-2 class on the Card
-    const card = container.querySelector(".lg\\:col-span-2");
+    const card = container.querySelector(String.raw`.lg\:col-span-2`);
     expect(card).toBeInTheDocument();
   });
 
@@ -121,7 +121,7 @@ describe("OrdersRevenueChart", () => {
     );
 
     // Check for lg:col-span-2 class on the Card
-    const card = container.querySelector(".lg\\:col-span-2");
+    const card = container.querySelector(String.raw`.lg\:col-span-2`);
     expect(card).toBeInTheDocument();
   });
 });

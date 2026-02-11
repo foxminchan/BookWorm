@@ -12,6 +12,12 @@ vi.mock("@workspace/api-hooks/ordering/buyers/useDeleteBuyer", () => ({
   default: mockUseDeleteBuyer,
 }));
 
+function getDeleteButton(container: HTMLElement): Element {
+  const button = container.querySelector('button[class*="destructive"]');
+  expect(button).toBeInTheDocument();
+  return button as Element;
+}
+
 describe("Customers CellAction", () => {
   const mockCustomer = createMockCustomer();
 
@@ -25,9 +31,7 @@ describe("Customers CellAction", () => {
       <CellAction customer={mockCustomer} />,
     );
 
-    const deleteButton = container.querySelector(
-      'button[class*="destructive"]',
-    );
+    const deleteButton = getDeleteButton(container);
     expect(deleteButton).toBeInTheDocument();
   });
 
@@ -42,10 +46,8 @@ describe("Customers CellAction", () => {
       <CellAction customer={mockCustomer} />,
     );
 
-    const deleteButton = container.querySelector(
-      'button[class*="destructive"]',
-    );
-    await user.click(deleteButton!);
+    const deleteButton = getDeleteButton(container);
+    await user.click(deleteButton);
 
     await waitFor(() => {
       expect(screen.getByText("Delete Customer")).toBeInTheDocument();
@@ -67,9 +69,7 @@ describe("Customers CellAction", () => {
       <CellAction customer={mockCustomer} />,
     );
 
-    const deleteButton = container.querySelector(
-      'button[class*="destructive"]',
-    );
+    const deleteButton = getDeleteButton(container);
     expect(deleteButton).toBeDisabled();
   });
 
@@ -80,15 +80,13 @@ describe("Customers CellAction", () => {
       isPending: false,
     });
 
-    const customerWithoutName = { ...mockCustomer, name: null as any };
+    const customerWithoutName = { ...mockCustomer, name: null };
     const { container } = renderWithProviders(
       <CellAction customer={customerWithoutName} />,
     );
 
-    const deleteButton = container.querySelector(
-      'button[class*="destructive"]',
-    );
-    await user.click(deleteButton!);
+    const deleteButton = getDeleteButton(container);
+    await user.click(deleteButton);
 
     await waitFor(() => {
       expect(
@@ -109,10 +107,8 @@ describe("Customers CellAction", () => {
       <CellAction customer={mockCustomer} />,
     );
 
-    const deleteButton = container.querySelector(
-      'button[class*="destructive"]',
-    );
-    await user.click(deleteButton!);
+    const deleteButton = getDeleteButton(container);
+    await user.click(deleteButton);
 
     await waitFor(() => {
       expect(screen.getByText("Delete Customer")).toBeInTheDocument();
@@ -143,10 +139,8 @@ describe("Customers CellAction", () => {
       <CellAction customer={mockCustomer} />,
     );
 
-    const deleteButton = container.querySelector(
-      'button[class*="destructive"]',
-    );
-    await user.click(deleteButton!);
+    const deleteButton = getDeleteButton(container);
+    await user.click(deleteButton);
 
     const confirmButton = screen.getByRole("button", { name: /delete/i });
     await user.click(confirmButton);
