@@ -20,7 +20,7 @@ if (!process.env.MSW_COOKIE_STORE_PATH) {
 
 // Set a consistent seed for faker to ensure deterministic test data
 const fakerSeed = process.env.FAKER_SEED
-  ? parseInt(process.env.FAKER_SEED, 10)
+  ? Number.parseInt(process.env.FAKER_SEED, 10)
   : 12345;
 faker.seed(fakerSeed);
 

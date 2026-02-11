@@ -1,3 +1,8 @@
+type DeliveryInfo = {
+  readonly title: string;
+  readonly description: string;
+};
+
 const deliveryInfo = [
   {
     title: "Order Processing",
@@ -19,7 +24,7 @@ const deliveryInfo = [
     description:
       "For orders over $100, signature may be required upon delivery. You'll be notified if this applies to your order.",
   },
-];
+] as const satisfies readonly DeliveryInfo[];
 
 export default function DeliveryInformation() {
   return (
@@ -29,9 +34,9 @@ export default function DeliveryInformation() {
           Delivery Information
         </h2>
         <div className="mx-auto max-w-3xl space-y-8">
-          {deliveryInfo.map((item, idx) => (
+          {deliveryInfo.map((item) => (
             <div
-              key={idx}
+              key={item.title}
               className="border-primary/20 border-b pb-8 last:border-b-0"
             >
               <h3 className="mb-3 font-serif text-xl font-medium">

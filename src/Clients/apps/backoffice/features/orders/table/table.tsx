@@ -11,9 +11,9 @@ import { usePaginatedTable } from "@/hooks/use-paginated-table";
 
 import { columns } from "./columns";
 
-type OrdersTableProps = {
+type OrdersTableProps = Readonly<{
   statusFilter?: OrderStatus;
-};
+}>;
 
 export function OrdersTable({ statusFilter }: OrdersTableProps) {
   const {
@@ -32,10 +32,10 @@ export function OrdersTable({ statusFilter }: OrdersTableProps) {
     ...sortingQuery,
   };
 
-  const { data, isLoading, error } = useOrders(query);
+  const { data, isLoading } = useOrders(query);
 
-  const orders = data?.items || [];
-  const totalCount = data?.totalCount || 0;
+  const orders = data?.items ?? [];
+  const totalCount = data?.totalCount ?? 0;
 
   return (
     <FilterTable
@@ -47,7 +47,6 @@ export function OrdersTable({ statusFilter }: OrdersTableProps) {
       pageIndex={pageIndex}
       pageSize={pageSize}
       isLoading={isLoading}
-      error={error}
       onPaginationChange={handlePaginationChange}
       onSortingChange={handleSortingChange}
     />

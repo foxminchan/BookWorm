@@ -11,10 +11,10 @@ import {
 } from "@workspace/ui/components/select";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 
-type CategorySelectProps = {
+type CategorySelectProps = Readonly<{
   value: string | undefined;
   onChange: (value: string | undefined) => void;
-};
+}>;
 
 export function CategorySelect({ value, onChange }: CategorySelectProps) {
   const { data: categories, isLoading } = useCategories();

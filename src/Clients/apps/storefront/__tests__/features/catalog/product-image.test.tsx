@@ -11,7 +11,7 @@ vi.mock("next/image", () => ({
     // Filter out Next.js-specific props that shouldn't be passed to img element
     const { fill, priority, quality, sizes, loader, ...imgProps } = props;
     // eslint-disable-next-line @next/next/no-img-element
-    return <img {...imgProps} />;
+    return <img alt="" {...imgProps} />;
   },
 }));
 

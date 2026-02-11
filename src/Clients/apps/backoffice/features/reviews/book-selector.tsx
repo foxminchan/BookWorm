@@ -1,5 +1,7 @@
 "use client";
 
+import { useMemo } from "react";
+
 import useBooks from "@workspace/api-hooks/catalog/books/useBooks";
 import {
   Select,
@@ -11,10 +13,10 @@ import {
 
 import { DEFAULT_BOOKS_PAGE_SIZE } from "@/lib/constants";
 
-type BookSelectorProps = {
+type BookSelectorProps = Readonly<{
   onBookSelect: (bookId: string) => void;
   selectedBookId?: string;
-};
+}>;
 
 export function BookSelector({
   onBookSelect,
@@ -24,14 +26,16 @@ export function BookSelector({
     pageSize: DEFAULT_BOOKS_PAGE_SIZE,
   });
 
-  const items = booksData?.items || [];
-  const uniqueBooks = items.reduce((acc, book) => {
-    if (!acc.has(book.id)) {
-      acc.set(book.id, book);
+  const books = useMemo(() => {
+    const items = booksData?.items ?? [];
+    const uniqueBooks = new Map<string, (typeof items)[0]>();
+    for (const book of items) {
+      if (!uniqueBooks.has(book.id)) {
+        uniqueBooks.set(book.id, book);
+      }
     }
-    return acc;
-  }, new Map<string, (typeof items)[0]>());
-  const books = Array.from(uniqueBooks.values());
+    return Array.from(uniqueBooks.values());
+  }, [booksData?.items]);
 
   return (
     <div className="space-y-3">

@@ -1,6 +1,7 @@
 "use client";
 
 import type React from "react";
+import { useCallback } from "react";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -10,11 +11,15 @@ import {
   LayoutDashboard,
   Package,
   PenTool,
+  ShoppingCart,
+  Star,
   Tag,
   UsersIcon,
 } from "lucide-react";
 
 import { Button } from "@workspace/ui/components/button";
+
+import { useLogout } from "@/hooks/use-logout";
 
 const navigations = [
   {
@@ -34,24 +39,28 @@ const navigations = [
     title: "Ordering",
     items: [
       { href: "/customers", icon: UsersIcon, label: "Customers" },
-      { href: "/orders", icon: BookOpen, label: "Orders" },
+      { href: "/orders", icon: ShoppingCart, label: "Orders" },
     ],
   },
   {
     title: "Ratings & Reviews",
-    items: [{ href: "/reviews", icon: UsersIcon, label: "Reviews" }],
+    items: [{ href: "/reviews", icon: Star, label: "Reviews" }],
   },
 ] as const;
 
 export function DashboardNav() {
   const pathname = usePathname();
+  const { logout } = useLogout();
 
-  const isActive = (href: string) => {
-    if (href === "/") {
-      return pathname === "/" || pathname === "/(admin)";
-    }
-    return pathname.includes(href);
-  };
+  const isActive = useCallback(
+    (href: string) => {
+      if (href === "/") {
+        return pathname === "/";
+      }
+      return pathname === href || pathname.startsWith(`${href}/`);
+    },
+    [pathname],
+  );
 
   return (
     <nav
@@ -63,8 +72,11 @@ export function DashboardNav() {
       </div>
 
       <ul className="flex-1 space-y-2">
-        {navigations.map((section, sectionIndex) => (
-          <li key={sectionIndex} className={section.title ? "mt-6" : ""}>
+        {navigations.map((section) => (
+          <li
+            key={section.title ?? "root"}
+            className={section.title ? "mt-6" : ""}
+          >
             {section.title && (
               <p className="text-muted-foreground px-3 py-2 text-xs font-semibold tracking-wider uppercase">
                 {section.title}
@@ -90,6 +102,7 @@ export function DashboardNav() {
         <Button
           variant="outline"
           className="w-full bg-transparent text-xs"
+          onClick={logout}
           aria-label="Logout from admin portal"
         >
           Logout
@@ -99,24 +112,21 @@ export function DashboardNav() {
   );
 }
 
-function NavLink({
-  href,
-  icon,
-  label,
-  active,
-}: {
+type NavLinkProps = Readonly<{
   href: string;
   icon: React.ReactNode;
   label: string;
   active: boolean;
-}) {
+}>;
+
+function NavLink({ href, icon, label, active }: NavLinkProps) {
   return (
     <Button
       variant={active ? "default" : "ghost"}
       className="w-full justify-start gap-3"
       asChild
     >
-      <Link href={href}>
+      <Link href={href} aria-current={active ? "page" : undefined}>
         {icon}
         <span>{label}</span>
       </Link>

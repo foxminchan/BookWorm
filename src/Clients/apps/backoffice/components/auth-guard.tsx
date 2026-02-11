@@ -2,8 +2,6 @@
 
 import { useEffect } from "react";
 
-import { useRouter } from "next/navigation";
-
 import { Card, CardContent } from "@workspace/ui/components/card";
 import { Spinner } from "@workspace/ui/components/spinner";
 
@@ -11,15 +9,12 @@ import { useUserContext } from "@/hooks/use-user-context";
 import { signIn } from "@/lib/auth-client";
 import { AUTH } from "@/lib/constants";
 
-function AuthStatusCard({
-  title,
-  description,
-  srLabel,
-}: {
+type AuthStatusCardProps = Readonly<{
   title: string;
   description: string;
-  srLabel: string;
-}) {
+}>;
+
+function AuthStatusCard({ title, description }: AuthStatusCardProps) {
   return (
     <div className="from-background to-muted/20 flex h-screen items-center justify-center bg-linear-to-br">
       <Card
@@ -36,16 +31,16 @@ function AuthStatusCard({
             <h1 className="text-foreground text-xl font-semibold">{title}</h1>
             <p className="text-muted-foreground text-sm">{description}</p>
           </div>
-          <span className="sr-only">{srLabel}</span>
         </CardContent>
       </Card>
     </div>
   );
 }
 
-export function AuthGuard({ children }: { children: React.ReactNode }) {
+export function AuthGuard({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   const { isAuthenticated, isLoading } = useUserContext();
-  const router = useRouter();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -54,14 +49,13 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         callbackURL: AUTH.CALLBACK_URL,
       });
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading]);
 
   if (isLoading) {
     return (
       <AuthStatusCard
         title="Loading Dashboard"
         description="Please wait while we verify your credentials..."
-        srLabel="Loading dashboard, please wait"
       />
     );
   }
@@ -71,10 +65,9 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       <AuthStatusCard
         title="Authentication Required"
         description="Redirecting to secure login..."
-        srLabel="Redirecting to login page"
       />
     );
   }
 
-  return <>{children}</>;
+  return children;
 }

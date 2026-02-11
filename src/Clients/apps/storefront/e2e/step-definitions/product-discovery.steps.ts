@@ -1,6 +1,5 @@
 import { Given, Then, When } from "@cucumber/cucumber";
-import { expect } from "@playwright/test";
-import { Page } from "@playwright/test";
+import { Page, expect } from "@playwright/test";
 
 import { HomePage, ShopPage } from "../pages";
 
@@ -49,7 +48,7 @@ When(
 When(
   "I set price range to {string}",
   async function (this: { page: Page }, priceRange: string) {
-    const match = priceRange.match(/\$(\d+)-\$(\d+)/);
+    const match = new RegExp(/\$(\d+)-\$(\d+)/).exec(priceRange);
 
     // Validate regex match and capture groups exist
     if (!match) {
@@ -67,11 +66,11 @@ When(
       );
     }
 
-    const min = parseInt(minStr, 10);
-    const max = parseInt(maxStr, 10);
+    const min = Number.parseInt(minStr, 10);
+    const max = Number.parseInt(maxStr, 10);
 
-    if (isNaN(min) || isNaN(max)) {
-      throw new Error(
+    if (Number.isNaN(min) || Number.isNaN(max)) {
+      throw new TypeError(
         `Invalid numeric values in price range: "${priceRange}". Min: ${minStr}, Max: ${maxStr}`,
       );
     }
@@ -101,8 +100,8 @@ Then(
     const url = this.page.url();
     const filterSlug = filterValue
       .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/&/g, "");
+      .replaceAll(/\s+/g, "-")
+      .replaceAll("&", "");
     expect(url.toLowerCase()).toContain(filterSlug);
   },
 );
@@ -330,7 +329,7 @@ Then(
 
     // Verify URL contains publisher filter
     const url = this.page.url();
-    const publisherSlug = publisherName.toLowerCase().replace(/\s+/g, "-");
+    const publisherSlug = publisherName.toLowerCase().replaceAll(/\s+/g, "-");
     expect(url.toLowerCase()).toContain(publisherSlug);
   },
 );

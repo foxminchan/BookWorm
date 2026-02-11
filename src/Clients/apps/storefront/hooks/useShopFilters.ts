@@ -43,7 +43,7 @@ export function useShopFilters() {
       setSearchQuery("");
     }
     if (pageParam) {
-      setCurrentPage(parseInt(pageParam, 10));
+      setCurrentPage(Number.parseInt(pageParam, 10));
     } else {
       setCurrentPage(1);
     }

@@ -1,5 +1,4 @@
-import { Locator, Page } from "@playwright/test";
-import { expect } from "@playwright/test";
+import { Locator, Page, expect } from "@playwright/test";
 
 import { BasePage } from "./BasePage";
 
@@ -112,8 +111,8 @@ export class BasketPage extends BasePage {
     const priceText = await item
       .locator('[data-testid="item-price"], .price')
       .textContent();
-    const cleaned = priceText?.replace(/[$,]/g, "") || "0";
-    return parseFloat(cleaned);
+    const cleaned = priceText?.replaceAll(/[$,]/g, "") || "0";
+    return Number.parseFloat(cleaned);
   }
 
   async getItemQuantity(index: number): Promise<number> {
@@ -122,7 +121,7 @@ export class BasketPage extends BasePage {
       'input[type="number"], [data-testid="quantity-input"]',
     );
     const value = await input.inputValue();
-    return parseInt(value) || 0;
+    return Number.parseInt(value) || 0;
   }
 
   async setItemQuantity(index: number, quantity: number): Promise<void> {
@@ -197,19 +196,19 @@ export class BasketPage extends BasePage {
   async getSubtotal(): Promise<number> {
     const text = await this.subtotalAmount.textContent();
     const match = text?.match(/\$?([\d,]+\.?\d*)/);
-    return match ? parseFloat(match[1]!.replace(/,/g, "")) : 0;
+    return match ? Number.parseFloat(match[1]!.replaceAll(",", "")) : 0;
   }
 
   async getShipping(): Promise<number> {
     const text = await this.shippingAmount.textContent();
     const match = text?.match(/\$?([\d,]+\.?\d*)/);
-    return match ? parseFloat(match[1]!.replace(/,/g, "")) : 0;
+    return match ? Number.parseFloat(match[1]!.replaceAll(",", "")) : 0;
   }
 
   async getTotal(): Promise<number> {
     const text = await this.totalAmount.textContent();
     const match = text?.match(/\$?([\d,]+\.?\d*)/);
-    return match ? parseFloat(match[1]!.replace(/,/g, "")) : 0;
+    return match ? Number.parseFloat(match[1]!.replaceAll(",", "")) : 0;
   }
 
   async calculateExpectedTotal(): Promise<number> {

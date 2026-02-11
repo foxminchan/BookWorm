@@ -5,8 +5,7 @@ import { useState } from "react";
 import Image from "next/image";
 
 import { Badge } from "@workspace/ui/components/badge";
-
-import { DEFAULT_BOOK_IMAGE } from "@/lib/constants";
+import { DEFAULT_BOOK_IMAGE } from "@workspace/utils/constants";
 
 type ProductImageProps = {
   imageUrl?: string;
@@ -18,7 +17,7 @@ export default function ProductImage({
   imageUrl,
   name,
   hasSale,
-}: ProductImageProps) {
+}: Readonly<ProductImageProps>) {
   const [imgError, setImgError] = useState(false);
 
   return (

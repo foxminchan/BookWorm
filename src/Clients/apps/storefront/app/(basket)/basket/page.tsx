@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { useRouter } from "next/navigation";
 
@@ -15,11 +15,20 @@ import type { BasketItem } from "@workspace/types/basket";
 
 import { basketAtom, basketItemsAtom } from "@/atoms/basket-atom";
 import { EmptyState } from "@/components/empty-state";
+import BasketLoadingSkeleton from "@/components/loading-skeleton";
 import { RemoveItemDialog } from "@/components/remove-item-dialog";
 import BasketHeader from "@/features/basket/basket-header";
 import BasketItemsList from "@/features/basket/basket-items-list";
-import BasketLoadingSkeleton from "@/features/basket/basket-loading-skeleton";
 import BasketSummary from "@/features/basket/basket-summary";
+
+const SHIPPING_COST = 5;
+
+function getDisplayQuantity(
+  item: BasketItem,
+  modifiedItems: Record<string, number>,
+): number {
+  return item.quantity + (modifiedItems[item.id] || 0);
+}
 
 export default function BasketPage() {
   useBasket();
@@ -28,7 +37,6 @@ export default function BasketPage() {
   const [modifiedItems, setModifiedItems] = useState<Record<string, number>>(
     {},
   );
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
   const [itemsToRemove, setItemsToRemove] = useState<BasketItem[]>([]);
   const router = useRouter();
@@ -40,7 +48,7 @@ export default function BasketPage() {
     const item = items.find((i: BasketItem) => i.id === id);
     if (!item) return;
 
-    const newQuantity = item.quantity + (modifiedItems[id] || 0) + delta;
+    const newQuantity = getDisplayQuantity(item, modifiedItems) + delta;
     if (newQuantity < 0) return;
 
     const diff = newQuantity - item.quantity;
@@ -56,46 +64,15 @@ export default function BasketPage() {
     });
   };
 
-  const saveAllQuantities = () => {
-    const zeroItems = items.filter((item) => {
-      const displayQty = item.quantity + (modifiedItems[item.id] || 0);
-      return displayQty <= 0;
-    });
-
-    if (zeroItems.length > 0) {
-      setItemsToRemove(zeroItems);
-      setShowRemoveDialog(true);
-    } else {
-      applyChanges();
-    }
-  };
-
-  const applyChanges = () => {
-    const updatedItems = items.map((item) => ({
-      id: item.id,
-      quantity: item.quantity + (modifiedItems[item.id] || 0),
-    }));
-
-    updateBasket.mutate(
-      { request: { items: updatedItems } },
-      {
-        onSuccess: () => {
-          setModifiedItems({});
-          setShowRemoveDialog(false);
-        },
-      },
-    );
-  };
-
-  const confirmRemoveZeroItems = () => {
+  const applyChanges = (filterZeroQuantity: boolean) => {
     const updatedItems = items
-      .filter((item) => {
-        const displayQty = item.quantity + (modifiedItems[item.id] || 0);
-        return displayQty > 0;
-      })
+      .filter(
+        (item) =>
+          !filterZeroQuantity || getDisplayQuantity(item, modifiedItems) > 0,
+      )
       .map((item) => ({
         id: item.id,
-        quantity: item.quantity + (modifiedItems[item.id] || 0),
+        quantity: getDisplayQuantity(item, modifiedItems),
       }));
 
     updateBasket.mutate(
@@ -108,6 +85,19 @@ export default function BasketPage() {
         },
       },
     );
+  };
+
+  const saveAllQuantities = () => {
+    const zeroItems = items.filter(
+      (item) => getDisplayQuantity(item, modifiedItems) <= 0,
+    );
+
+    if (zeroItems.length > 0) {
+      setItemsToRemove(zeroItems);
+      setShowRemoveDialog(true);
+    } else {
+      applyChanges(false);
+    }
   };
 
   const removeItem = (id: string) => {
@@ -133,35 +123,45 @@ export default function BasketPage() {
   };
 
   const clearBasket = () => {
-    deleteBasket.mutate("", {
+    deleteBasket.mutate(undefined, {
       onSuccess: () => {
         setModifiedItems({});
       },
     });
   };
 
-  const subtotal = items.reduce((acc, item) => {
-    const displayQty = item.quantity + (modifiedItems[item.id] || 0);
-    return acc + (item.priceSale ?? item.price) * displayQty;
-  }, 0);
-  const shipping = 5.0;
-  const total = subtotal + shipping;
+  const subtotal = useMemo(
+    () =>
+      items.reduce((acc, item) => {
+        const displayQty = getDisplayQuantity(item, modifiedItems);
+        return acc + (item.priceSale ?? item.price) * displayQty;
+      }, 0),
+    [items, modifiedItems],
+  );
+  const total = subtotal + SHIPPING_COST;
 
-  const hasChanges = Object.values(modifiedItems).some((diff) => diff !== 0);
+  const hasChanges = useMemo(
+    () => Object.values(modifiedItems).some((diff) => diff !== 0),
+    [modifiedItems],
+  );
 
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
     if (!basket?.id) return;
 
-    setIsCheckingOut(true);
     createOrder.mutate(basket.id, {
       onSuccess: (orderId) => {
         router.push(`/checkout/confirmation?orderId=${orderId}`);
       },
-      onError: () => {
-        setIsCheckingOut(false);
-      },
     });
   };
+
+  if (isLoadingBasket) {
+    return (
+      <main className="container mx-auto grow px-4 py-12">
+        <BasketLoadingSkeleton />
+      </main>
+    );
+  }
 
   return (
     <>
@@ -173,9 +173,7 @@ export default function BasketPage() {
           onClearBasket={clearBasket}
         />
 
-        {isLoadingBasket ? (
-          <BasketLoadingSkeleton />
-        ) : items.length > 0 ? (
+        {items.length > 0 ? (
           <div className="mx-auto grid max-w-5xl grid-cols-1 gap-12 lg:grid-cols-12">
             <BasketItemsList
               items={items}
@@ -185,9 +183,9 @@ export default function BasketPage() {
             />
             <BasketSummary
               subtotal={subtotal}
-              shipping={shipping}
+              shipping={SHIPPING_COST}
               total={total}
-              isCheckingOut={isCheckingOut}
+              isCheckingOut={createOrder.isPending}
               onCheckout={handleCheckout}
             />
           </div>
@@ -208,7 +206,7 @@ export default function BasketPage() {
           id: item.id,
           name: item.name || "Unknown Item",
         }))}
-        onConfirm={confirmRemoveZeroItems}
+        onConfirm={() => applyChanges(true)}
         title="Remove items with zero quantity?"
         cancelLabel="Keep in Basket"
         confirmLabel="Remove Items"

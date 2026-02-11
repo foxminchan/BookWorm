@@ -11,7 +11,7 @@ type OrdersEmptyStateProps = {
 export default function OrdersEmptyState({
   selectedStatus,
   onClearFilter,
-}: OrdersEmptyStateProps) {
+}: Readonly<OrdersEmptyStateProps>) {
   return (
     <div className="bg-background border-border border p-16 text-center">
       <div className="bg-secondary mx-auto mb-6 flex size-20 items-center justify-center rounded-full">

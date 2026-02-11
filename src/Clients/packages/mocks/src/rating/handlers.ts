@@ -8,7 +8,8 @@ import {
   listFeedbacksSchema,
 } from "@workspace/validations/rating";
 
-import { RATING_API_BASE_URL } from "../rating/constants";
+import { createValidationErrorResponse } from "../helpers/index";
+import { RATING_API_BASE_URL } from "./constants";
 import { feedbacksStoreManager } from "./data";
 
 export const feedbacksHandlers = [
@@ -21,15 +22,9 @@ export const feedbacksHandlers = [
     const isDescending = url.searchParams.get("isDescending") === "true";
 
     if (!bookId) {
-      return HttpResponse.json(
-        {
-          type: "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-          title: "One or more validation errors occurred.",
-          status: 400,
-          errors: { BookId: ["Book ID is required"] },
-        },
-        { status: 400 },
-      );
+      return createValidationErrorResponse({
+        BookId: ["Book ID is required"],
+      });
     }
 
     const validation = listFeedbacksSchema.safeParse({
@@ -122,15 +117,9 @@ export const feedbacksHandlers = [
       const { bookId } = params;
 
       if (!bookId || typeof bookId !== "string") {
-        return HttpResponse.json(
-          {
-            type: "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-            title: "One or more validation errors occurred.",
-            status: 400,
-            errors: { BookId: ["Book ID is required"] },
-          },
-          { status: 400 },
-        );
+        return createValidationErrorResponse({
+          BookId: ["Book ID is required"],
+        });
       }
 
       const feedbacks = feedbacksStoreManager.get(bookId);

@@ -39,6 +39,9 @@ runs:
     - name: Test
       shell: bash
       if: success()
+      env:
+        TEST_HANG_TIMEOUT: ${{ inputs.testHangTimeout }}
+        TEST_SESSION_TIMEOUT: ${{ inputs.testSessionTimeout }}
       run: >
         dotnet test
         --configuration Release
@@ -47,9 +50,9 @@ runs:
         --coverage-settings Coverage.runsettings
         --results-directory ./test-results
         --github-reporter-style full
-        --hangdump --hangdump-timeout ${{ inputs.testHangTimeout }}
+        --hangdump --hangdump-timeout "$TEST_HANG_TIMEOUT"
         --crashdump
-        --timeout ${{ inputs.testSessionTimeout }}
+        --timeout "$TEST_SESSION_TIMEOUT"
 
     - name: Upload Test Results
       if: always()

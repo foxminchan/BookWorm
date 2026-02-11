@@ -1,5 +1,4 @@
 import { Page } from "@playwright/test";
-import { expect } from "@playwright/test";
 
 /**
  * World context for Cucumber scenarios
@@ -107,8 +106,8 @@ export async function typeText(
  * Parse currency string to number (e.g., "$25.99" -> 25.99)
  */
 export function parseCurrency(currencyString: string): number {
-  const cleaned = currencyString.replace(/[$,]/g, "");
-  return parseFloat(cleaned);
+  const cleaned = currencyString.replaceAll(/[$,]/g, "");
+  return Number.parseFloat(cleaned);
 }
 
 /**

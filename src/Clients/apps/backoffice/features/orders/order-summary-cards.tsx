@@ -5,15 +5,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
+import { formatPrice } from "@workspace/utils/format";
 
-import { currencyFormatter } from "@/lib/constants";
 import { type OrderStatus, getOrderStatusStyle } from "@/lib/pattern";
 
-type OrderSummaryCardsProps = {
+type OrderSummaryCardsProps = Readonly<{
   status: OrderStatus;
   total: number;
   itemCount: number;
-};
+}>;
 
 export function OrderSummaryCards({
   status,
@@ -35,9 +35,7 @@ export function OrderSummaryCards({
           <CardTitle className="text-sm">Order Total</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">
-            {currencyFormatter.format(total)}
-          </div>
+          <div className="text-2xl font-bold">{formatPrice(total)}</div>
         </CardContent>
       </Card>
       <Card>

@@ -5,7 +5,7 @@ import { Button } from "@workspace/ui/components/button";
 const content = [
   "While we take every precaution to ensure your books arrive safely, accidents do happen. If your package arrives damaged or goes missing, contact our customer support team immediately.",
   "We'll work quickly to resolve the issue—whether that means reshipping your order, issuing a refund, or finding a solution that works for you.",
-];
+] as const;
 
 export default function DamagedPackages() {
   return (
@@ -15,16 +15,14 @@ export default function DamagedPackages() {
           Damaged or Lost Packages?
         </h2>
         <div className="bg-secondary space-y-4 rounded-lg p-8">
-          {content.map((text, idx) => (
-            <p key={idx} className="text-muted-foreground leading-relaxed">
+          {content.map((text) => (
+            <p key={text} className="text-muted-foreground leading-relaxed">
               {text}
             </p>
           ))}
-          <Link href="mailto:support@bookworm.com">
-            <Button size="lg" className="mt-4 rounded-full px-8">
-              Contact Support
-            </Button>
-          </Link>
+          <Button size="lg" className="mt-4 rounded-full px-8" asChild>
+            <Link href="mailto:support@bookworm.com">Contact Support</Link>
+          </Button>
         </div>
       </div>
     </section>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import type {
   ColumnDef,
@@ -42,7 +42,7 @@ import { PAGE_SIZES } from "@/lib/constants";
 
 import { FilterTableSkeleton } from "./loading-skeleton";
 
-type FilterTableProps<TData> = {
+type FilterTableProps<TData> = Readonly<{
   columns: ColumnDef<TData>[];
   data: TData[];
   title: string;
@@ -51,12 +51,11 @@ type FilterTableProps<TData> = {
   pageIndex: number;
   pageSize: number;
   isLoading: boolean;
-  error?: Error | null;
   onPaginationChange: (pageIndex: number, pageSize: number) => void;
   onSortingChange?: (sorting: SortingState) => void;
   highlightedId?: string | null;
   getRowId?: (row: TData) => string;
-};
+}>;
 
 export function FilterTable<TData>({
   columns,
@@ -75,16 +74,19 @@ export function FilterTable<TData>({
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
-  const handleSortingChange = (
-    updaterOrValue: SortingState | ((old: SortingState) => SortingState),
-  ) => {
-    const newSorting =
-      typeof updaterOrValue === "function"
-        ? updaterOrValue(sorting)
-        : updaterOrValue;
-    setSorting(newSorting);
-    onSortingChange?.(newSorting);
-  };
+  const handleSortingChange = useCallback(
+    (updaterOrValue: SortingState | ((old: SortingState) => SortingState)) => {
+      setSorting((prev) => {
+        const newSorting =
+          typeof updaterOrValue === "function"
+            ? updaterOrValue(prev)
+            : updaterOrValue;
+        onSortingChange?.(newSorting);
+        return newSorting;
+      });
+    },
+    [onSortingChange],
+  );
 
   const table = useReactTable({
     data,
@@ -100,26 +102,31 @@ export function FilterTable<TData>({
     manualSorting: true,
   });
 
-  const totalPages = Math.ceil(totalCount / pageSize);
+  const totalPages = useMemo(
+    () => Math.ceil(totalCount / pageSize),
+    [totalCount, pageSize],
+  );
 
-  const handlePreviousPage = () => {
+  const handlePreviousPage = useCallback(() => {
     onPaginationChange(Math.max(0, pageIndex - 1), pageSize);
-  };
+  }, [onPaginationChange, pageIndex, pageSize]);
 
-  const handleNextPage = () => {
+  const handleNextPage = useCallback(() => {
     if (pageIndex < totalPages - 1) {
       onPaginationChange(pageIndex + 1, pageSize);
     }
-  };
+  }, [onPaginationChange, pageIndex, pageSize, totalPages]);
 
-  const handlePageSizeChange = (newSize: number) => {
-    onPaginationChange(0, newSize);
-  };
+  const handlePageSizeChange = useCallback(
+    (newSize: number) => {
+      onPaginationChange(0, newSize);
+    },
+    [onPaginationChange],
+  );
 
   if (isLoading) {
     return (
       <FilterTableSkeleton
-        title={title}
         description={description}
         rows={pageSize}
         columns={columns.length}
@@ -137,6 +144,7 @@ export function FilterTable<TData>({
         <div className="space-y-4">
           <div className="rounded-md border">
             <Table>
+              <caption className="sr-only">{description ?? title}</caption>
               <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
@@ -154,11 +162,11 @@ export function FilterTable<TData>({
                 ))}
               </TableHeader>
               <TableBody>
-                {table.getRowModel().rows?.length ? (
+                {table.getRowModel().rows.length > 0 ? (
                   table.getRowModel().rows.map((row) => {
                     const rowId = getRowId?.(row.original);
                     const isHighlighted =
-                      highlightedId && rowId === highlightedId;
+                      highlightedId != null && rowId === highlightedId;
                     return (
                       <TableRow
                         key={row.id}
@@ -194,8 +202,11 @@ export function FilterTable<TData>({
             </Table>
           </div>
 
-          {data.length > 0 && (
-            <div className="flex items-center justify-between px-2 py-4">
+          {totalCount > 0 && (
+            <nav
+              className="flex items-center justify-between px-2 py-4"
+              aria-label="Table pagination"
+            >
               <div className="text-muted-foreground flex-1 text-sm">
                 {data.length} of {totalCount} row(s) total.
               </div>
@@ -207,7 +218,7 @@ export function FilterTable<TData>({
                   <Select
                     value={pageSize.toString()}
                     onValueChange={(value) =>
-                      handlePageSizeChange(Number.parseInt(value))
+                      handlePageSizeChange(Number.parseInt(value, 10))
                     }
                   >
                     <SelectTrigger
@@ -225,7 +236,10 @@ export function FilterTable<TData>({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex w-25 items-center justify-center text-sm font-medium">
+                <div
+                  className="flex w-25 items-center justify-center text-sm font-medium"
+                  aria-live="polite"
+                >
                   Page {pageIndex + 1} of {Math.max(1, totalPages)}
                 </div>
                 <div className="flex items-center space-x-2">
@@ -234,7 +248,7 @@ export function FilterTable<TData>({
                     size="sm"
                     onClick={handlePreviousPage}
                     disabled={pageIndex === 0}
-                    aria-label={`Go to previous page, currently on page ${pageIndex + 1}`}
+                    aria-label="Go to previous page"
                   >
                     <ChevronLeft className="mr-2 h-4 w-4" aria-hidden="true" />
                     Previous
@@ -244,14 +258,14 @@ export function FilterTable<TData>({
                     size="sm"
                     onClick={handleNextPage}
                     disabled={pageIndex >= totalPages - 1}
-                    aria-label={`Go to next page, currently on page ${pageIndex + 1}`}
+                    aria-label="Go to next page"
                   >
                     Next
                     <ChevronRight className="ml-2 h-4 w-4" aria-hidden="true" />
                   </Button>
                 </div>
               </div>
-            </div>
+            </nav>
           )}
         </div>
       </CardContent>

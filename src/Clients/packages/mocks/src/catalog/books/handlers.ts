@@ -7,14 +7,17 @@ import type {
 } from "@workspace/types/catalog/books";
 import { PagedResult } from "@workspace/types/shared";
 import { buildPaginationLinks } from "@workspace/utils/link";
-import { generateTraceId } from "@workspace/utils/trace";
 import { formatValidationErrors } from "@workspace/utils/validation";
 import {
   createBookSchema,
   updateBookSchema,
 } from "@workspace/validations/catalog/books";
 
-import { CATALOG_API_BASE_URL } from "../../catalog/constants";
+import {
+  createNotFoundResponse,
+  createValidationErrorResponse,
+} from "../../helpers/index";
+import { CATALOG_API_BASE_URL } from "../constants";
 import { booksStore } from "./data";
 
 export const booksHandlers = [
@@ -66,24 +69,15 @@ export const booksHandlers = [
       const { id } = params;
 
       if (!id) {
-        return HttpResponse.json(
-          {
-            type: "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-            title: "One or more validation errors occurred.",
-            status: 400,
-            errors: {
-              Id: ["'Id' must not be empty."],
-            },
-            traceId: generateTraceId(),
-          },
-          { status: 400 },
-        );
+        return createValidationErrorResponse({
+          Id: ["'Id' must not be empty."],
+        });
       }
 
       const book = booksStore.get(id);
 
       if (!book) {
-        return new HttpResponse("Book not found", { status: 404 });
+        return createNotFoundResponse("Book");
       }
 
       return HttpResponse.json(book, { status: 200 });
@@ -95,20 +89,11 @@ export const booksHandlers = [
     async ({ request }) => {
       const contentType = request.headers.get("Content-Type");
       if (!contentType?.includes("multipart/form-data")) {
-        return HttpResponse.json(
-          {
-            type: "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-            title: "One or more validation errors occurred.",
-            status: 400,
-            errors: {
-              ContentType: [
-                "Content-Type must be multipart/form-data for this endpoint.",
-              ],
-            },
-            traceId: generateTraceId(),
-          },
-          { status: 400 },
-        );
+        return createValidationErrorResponse({
+          ContentType: [
+            "Content-Type must be multipart/form-data for this endpoint.",
+          ],
+        });
       }
 
       const formData = await request.formData();
@@ -148,20 +133,11 @@ export const booksHandlers = [
     async ({ request }) => {
       const contentType = request.headers.get("Content-Type");
       if (!contentType?.includes("multipart/form-data")) {
-        return HttpResponse.json(
-          {
-            type: "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-            title: "One or more validation errors occurred.",
-            status: 400,
-            errors: {
-              ContentType: [
-                "Content-Type must be multipart/form-data for this endpoint.",
-              ],
-            },
-            traceId: generateTraceId(),
-          },
-          { status: 400 },
-        );
+        return createValidationErrorResponse({
+          ContentType: [
+            "Content-Type must be multipart/form-data for this endpoint.",
+          ],
+        });
       }
 
       const formData = await request.formData();
@@ -191,7 +167,7 @@ export const booksHandlers = [
       const updated = booksStore.update(result.data);
 
       if (!updated) {
-        return new HttpResponse("Book not found", { status: 404 });
+        return createNotFoundResponse("Book");
       }
 
       return new HttpResponse(null, { status: 204 });
@@ -204,24 +180,15 @@ export const booksHandlers = [
       const { id } = params;
 
       if (!id) {
-        return HttpResponse.json(
-          {
-            type: "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-            title: "One or more validation errors occurred.",
-            status: 400,
-            errors: {
-              Id: ["'Id' must not be empty."],
-            },
-            traceId: generateTraceId(),
-          },
-          { status: 400 },
-        );
+        return createValidationErrorResponse({
+          Id: ["'Id' must not be empty."],
+        });
       }
 
       const deleted = booksStore.delete(id);
 
       if (!deleted) {
-        return new HttpResponse("Book not found", { status: 404 });
+        return createNotFoundResponse("Book");
       }
 
       return new HttpResponse(null, { status: 204 });

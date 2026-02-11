@@ -21,12 +21,28 @@ const QUEUE_STORAGE_KEY = "copilot-message-queue";
 
 export function useOfflineQueue() {
   const [state, setState] = useState<OfflineQueueState>({
-    isOnline: typeof navigator !== "undefined" ? navigator.onLine : true,
+    isOnline: typeof navigator === "undefined" ? true : navigator.onLine,
     queue: [],
     isSyncing: false,
   });
   const syncTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const syncQueueRef = useRef<(() => Promise<void>) | null>(null);
+
+  const removeFromQueue = useCallback((messageId: string) => {
+    setState((prev) => ({
+      ...prev,
+      queue: prev.queue.filter((msg) => msg.id !== messageId),
+    }));
+  }, []);
+
+  const incrementRetryCount = useCallback((messageId: string) => {
+    setState((prev) => ({
+      ...prev,
+      queue: prev.queue.map((msg) =>
+        msg.id === messageId ? { ...msg, retryCount: msg.retryCount + 1 } : msg,
+      ),
+    }));
+  }, []);
 
   const syncQueue = useCallback(async () => {
     if (state.isSyncing || !state.isOnline || state.queue.length === 0) {
@@ -48,7 +64,7 @@ export function useOfflineQueue() {
       const event = new CustomEvent("copilot-queued-message", {
         detail: { id: message.id, content: message.content },
       });
-      window.dispatchEvent(event);
+      globalThis.dispatchEvent(event);
 
       // Wait for confirmation or timeout
       const confirmed = await new Promise<boolean>((resolve) => {
@@ -58,63 +74,36 @@ export function useOfflineQueue() {
           const customEvent = e as CustomEvent;
           if (customEvent.detail.id === message.id) {
             clearTimeout(timeout);
-            window.removeEventListener("copilot-message-sent", handler);
+            globalThis.removeEventListener("copilot-message-sent", handler);
             resolve(customEvent.detail.success);
           }
         };
 
-        window.addEventListener("copilot-message-sent", handler);
+        globalThis.addEventListener("copilot-message-sent", handler);
       });
 
       if (confirmed) {
-        setState((prev) => ({
-          ...prev,
-          queue: prev.queue.filter((msg) => msg.id !== message.id),
-        }));
+        removeFromQueue(message.id);
+      } else if (message.retryCount < MAX_RETRIES) {
+        incrementRetryCount(message.id);
+        // Schedule next sync attempt
+        syncTimeoutRef.current = setTimeout(
+          () => {
+            setState((prev) => ({ ...prev, isSyncing: false }));
+            syncQueueRef.current?.();
+          },
+          RETRY_DELAY * (message.retryCount + 1),
+        );
+        return;
       } else {
-        // Retry logic
-        if (message.retryCount < MAX_RETRIES) {
-          setState((prev) => ({
-            ...prev,
-            queue: prev.queue.map((msg) =>
-              msg.id === message.id
-                ? { ...msg, retryCount: msg.retryCount + 1 }
-                : msg,
-            ),
-          }));
-          // Schedule next sync attempt
-          syncTimeoutRef.current = setTimeout(
-            () => {
-              setState((prev) => ({ ...prev, isSyncing: false }));
-              syncQueueRef.current?.();
-            },
-            RETRY_DELAY * (message.retryCount + 1),
-          );
-          return;
-        } else {
-          // Max retries reached, remove from queue
-          setState((prev) => ({
-            ...prev,
-            queue: prev.queue.filter((msg) => msg.id !== message.id),
-          }));
-        }
+        removeFromQueue(message.id);
       }
     } catch {
       console.error("Failed to sync message");
       if (message.retryCount < MAX_RETRIES) {
-        setState((prev) => ({
-          ...prev,
-          queue: prev.queue.map((msg) =>
-            msg.id === message.id
-              ? { ...msg, retryCount: msg.retryCount + 1 }
-              : msg,
-          ),
-        }));
+        incrementRetryCount(message.id);
       } else {
-        setState((prev) => ({
-          ...prev,
-          queue: prev.queue.filter((msg) => msg.id !== message.id),
-        }));
+        removeFromQueue(message.id);
       }
     }
 
@@ -124,7 +113,13 @@ export function useOfflineQueue() {
     if (state.queue.length > 1) {
       syncTimeoutRef.current = setTimeout(() => syncQueueRef.current?.(), 500);
     }
-  }, [state.isSyncing, state.isOnline, state.queue]);
+  }, [
+    state.isSyncing,
+    state.isOnline,
+    state.queue,
+    removeFromQueue,
+    incrementRetryCount,
+  ]);
 
   // Keep ref updated
   useEffect(() => {
@@ -167,12 +162,12 @@ export function useOfflineQueue() {
       setState((prev) => ({ ...prev, isOnline: false }));
     };
 
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
+    globalThis.addEventListener("online", handleOnline);
+    globalThis.addEventListener("offline", handleOffline);
 
     return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
+      globalThis.removeEventListener("online", handleOnline);
+      globalThis.removeEventListener("offline", handleOffline);
       if (syncTimeoutRef.current) {
         clearTimeout(syncTimeoutRef.current);
       }
@@ -185,7 +180,7 @@ export function useOfflineQueue() {
   ): Promise<{ success: boolean; queued: boolean }> => {
     if (!state.isOnline) {
       const message: QueuedMessage = {
-        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: crypto.randomUUID(),
         content,
         timestamp: Date.now(),
         retryCount: 0,
@@ -203,7 +198,7 @@ export function useOfflineQueue() {
     } catch {
       // If send fails, add to queue for retry
       const message: QueuedMessage = {
-        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: crypto.randomUUID(),
         content,
         timestamp: Date.now(),
         retryCount: 0,

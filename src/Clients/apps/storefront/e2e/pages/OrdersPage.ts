@@ -1,5 +1,4 @@
-import { Locator, Page } from "@playwright/test";
-import { expect } from "@playwright/test";
+import { Locator, Page, expect } from "@playwright/test";
 
 import { BasePage } from "./BasePage.js";
 
@@ -96,7 +95,7 @@ export class OrdersPage extends BasePage {
     const match = text?.match(
       /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i,
     );
-    return match ? match[0]! : "";
+    return match ? match[0] : "";
   }
 
   async getOrderDate(index: number): Promise<string> {
@@ -121,7 +120,7 @@ export class OrdersPage extends BasePage {
       .locator('[data-testid="order-total"], .total, :has-text("Total")')
       .textContent();
     const match = text?.match(/\$?([\d,]+\.?\d*)/);
-    return match ? parseFloat(match[1]!.replace(/,/g, "")) : 0;
+    return match ? Number.parseFloat(match[1]!.replaceAll(",", "")) : 0;
   }
 
   async getOrderItemCount(index: number): Promise<number> {
@@ -130,7 +129,7 @@ export class OrdersPage extends BasePage {
       .locator('[data-testid="item-count"], :has-text("item")')
       .textContent();
     const match = text?.match(/(\d+)/);
-    return match ? parseInt(match[1]!) : 0;
+    return match ? Number.parseInt(match[1]!) : 0;
   }
 
   async clickOrder(index: number): Promise<void> {

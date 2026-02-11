@@ -1,6 +1,5 @@
 import { Given, Then, When } from "@cucumber/cucumber";
-import { expect } from "@playwright/test";
-import { Page } from "@playwright/test";
+import { Page, expect } from "@playwright/test";
 
 import {
   BasketPage,
@@ -193,7 +192,7 @@ Then(
   async function (this: { page: Page }, shippingAmount: string) {
     const basketPage = new BasketPage(this.page);
     const shipping = await basketPage.getShipping();
-    const expectedShipping = parseFloat(shippingAmount.replace("$", ""));
+    const expectedShipping = Number.parseFloat(shippingAmount.replace("$", ""));
     expect(shipping).toBe(expectedShipping);
   },
 );
@@ -203,7 +202,7 @@ Then(
   async function (this: { page: Page }, expectedSubtotal: string) {
     const basketPage = new BasketPage(this.page);
     const subtotal = await basketPage.getSubtotal();
-    const expected = parseFloat(expectedSubtotal.replace("$", ""));
+    const expected = Number.parseFloat(expectedSubtotal.replace("$", ""));
     expect(Math.abs(subtotal - expected)).toBeLessThan(0.01);
   },
 );
@@ -213,7 +212,7 @@ Then(
   async function (this: { page: Page }, expectedShipping: string) {
     const basketPage = new BasketPage(this.page);
     const shipping = await basketPage.getShipping();
-    const expected = parseFloat(expectedShipping.replace("$", ""));
+    const expected = Number.parseFloat(expectedShipping.replace("$", ""));
     expect(shipping).toBe(expected);
   },
 );
@@ -223,7 +222,7 @@ Then(
   async function (this: { page: Page }, expectedTotal: string) {
     const basketPage = new BasketPage(this.page);
     const total = await basketPage.getTotal();
-    const expected = parseFloat(expectedTotal.replace("$", ""));
+    const expected = Number.parseFloat(expectedTotal.replace("$", ""));
     expect(Math.abs(total - expected)).toBeLessThan(0.01);
   },
 );

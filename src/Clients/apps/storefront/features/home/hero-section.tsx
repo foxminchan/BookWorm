@@ -1,12 +1,8 @@
-"use client";
-
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 import { Button } from "@workspace/ui/components/button";
 
 export default function HeroSection() {
-  const router = useRouter();
-
   return (
     <section
       className="container mx-auto border-b px-4 py-20 text-center md:py-32"
@@ -24,13 +20,12 @@ export default function HeroSection() {
       </p>
       <div className="flex flex-col justify-center gap-4 sm:flex-row">
         <Button
-          type="button"
           size="lg"
           className="rounded-full px-8"
-          onClick={() => router.push("/shop")}
           aria-label="Browse book collection"
+          asChild
         >
-          Browse Collection
+          <Link href="/shop">Browse Collection</Link>
         </Button>
       </div>
     </section>

@@ -8,6 +8,7 @@ description: Design .NET types for performance. Seal classes, use readonly struc
 ## When to Use This Skill
 
 Use this skill when:
+
 - Designing new types and APIs
 - Reviewing code for performance issues
 - Choosing between class, struct, and record
@@ -47,6 +48,7 @@ public class OrderProcessor  // Can be subclassed - intentional?
 ```
 
 **Benefits:**
+
 - JIT can devirtualize method calls
 - Communicates "this is not an extension point"
 - Prevents accidental breaking changes
@@ -88,13 +90,13 @@ public struct Point  // Not readonly!
 
 ### When to Use Structs
 
-| Use Struct When | Use Class When |
-|-----------------|----------------|
-| Small (≤16 bytes typically) | Larger objects |
-| Short-lived | Long-lived |
-| Frequently allocated | Shared references needed |
-| Value semantics required | Identity semantics required |
-| Immutable | Mutable state |
+| Use Struct When             | Use Class When              |
+| --------------------------- | --------------------------- |
+| Small (≤16 bytes typically) | Larger objects              |
+| Short-lived                 | Long-lived                  |
+| Frequently allocated        | Shared references needed    |
+| Value semantics required    | Identity semantics required |
+| Immutable                   | Mutable state               |
 
 ---
 
@@ -118,6 +120,7 @@ var total = OrderCalculator.CalculateTotal(items);
 ```
 
 **Benefits:**
+
 - No vtable lookup (faster)
 - No hidden state
 - Easier to test (pure input → output)
@@ -243,6 +246,7 @@ public Task<Order> CreateOrderAsync(CreateOrderCommand cmd)
 ```
 
 **ValueTask rules:**
+
 - Never await a ValueTask more than once
 - Never use `.Result` or `.GetAwaiter().GetResult()` before completion
 - If in doubt, use Task
@@ -341,28 +345,28 @@ public IReadOnlyList<OrderItem> BuildOrderItems(Cart cart)
 
 ### Collection Guidelines
 
-| Scenario | Return Type |
-|----------|-------------|
-| API boundary | `IReadOnlyList<T>`, `IReadOnlyCollection<T>` |
-| Static lookup data | `FrozenDictionary<K,V>`, `FrozenSet<T>` |
-| Internal building | `List<T>`, then return as readonly |
-| Single item or none | `T?` (nullable) |
-| Zero or more, lazy | `IEnumerable<T>` |
+| Scenario            | Return Type                                  |
+| ------------------- | -------------------------------------------- |
+| API boundary        | `IReadOnlyList<T>`, `IReadOnlyCollection<T>` |
+| Static lookup data  | `FrozenDictionary<K,V>`, `FrozenSet<T>`      |
+| Internal building   | `List<T>`, then return as readonly           |
+| Single item or none | `T?` (nullable)                              |
+| Zero or more, lazy  | `IEnumerable<T>`                             |
 
 ---
 
 ## Quick Reference
 
-| Pattern | Benefit |
-|---------|---------|
-| `sealed class` | Devirtualization, clear API |
-| `readonly record struct` | No defensive copies, value semantics |
-| Static pure functions | No vtable, testable, thread-safe |
-| Defer `.ToList()` | Single materialization |
-| `ValueTask` for hot paths | Avoid Task allocation |
-| `Span<T>` for bytes | Stack allocation, no copying |
-| `IReadOnlyList<T>` return | Immutable API contract |
-| `FrozenDictionary` | Fastest lookup for static data |
+| Pattern                   | Benefit                              |
+| ------------------------- | ------------------------------------ |
+| `sealed class`            | Devirtualization, clear API          |
+| `readonly record struct`  | No defensive copies, value semantics |
+| Static pure functions     | No vtable, testable, thread-safe     |
+| Defer `.ToList()`         | Single materialization               |
+| `ValueTask` for hot paths | Avoid Task allocation                |
+| `Span<T>` for bytes       | Stack allocation, no copying         |
+| `IReadOnlyList<T>` return | Immutable API contract               |
+| `FrozenDictionary`        | Fastest lookup for static data       |
 
 ---
 

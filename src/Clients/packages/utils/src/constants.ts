@@ -16,3 +16,11 @@ export const PRICE_RANGE = {
   max: 100,
   step: 1,
 } as const;
+
+/**
+ * Currency formatter for displaying prices in USD
+ */
+export const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+});

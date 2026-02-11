@@ -5,14 +5,17 @@ import type {
   CreateCategoryRequest,
   UpdateCategoryRequest,
 } from "@workspace/types/catalog/categories";
-import { generateTraceId } from "@workspace/utils/trace";
 import { formatValidationErrors } from "@workspace/utils/validation";
 import {
   createCategorySchema,
   updateCategorySchema,
 } from "@workspace/validations/catalog/categories";
 
-import { CATALOG_API_BASE_URL } from "../../catalog/constants";
+import {
+  createNotFoundResponse,
+  createValidationErrorResponse,
+} from "../../helpers/index";
+import { CATALOG_API_BASE_URL } from "../constants";
 import { categoriesStore } from "./data";
 
 export const categoriesHandlers = [
@@ -56,7 +59,7 @@ export const categoriesHandlers = [
       const updated = categoriesStore.update(result.data.id, result.data.name);
 
       if (!updated) {
-        return new HttpResponse("Category not found", { status: 404 });
+        return createNotFoundResponse("Category");
       }
 
       return new HttpResponse(null, { status: 204 });
@@ -69,24 +72,15 @@ export const categoriesHandlers = [
       const { id } = params;
 
       if (!id) {
-        return HttpResponse.json(
-          {
-            type: "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-            title: "One or more validation errors occurred.",
-            status: 400,
-            errors: {
-              Id: ["'Id' must not be empty."],
-            },
-            traceId: generateTraceId(),
-          },
-          { status: 400 },
-        );
+        return createValidationErrorResponse({
+          Id: ["'Id' must not be empty."],
+        });
       }
 
       const deleted = categoriesStore.delete(id);
 
       if (!deleted) {
-        return new HttpResponse("Category not found", { status: 404 });
+        return createNotFoundResponse("Category");
       }
 
       return new HttpResponse(null, { status: 204 });

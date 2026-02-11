@@ -22,9 +22,6 @@ export default function useDeleteFeedback(
       queryClient.invalidateQueries({
         queryKey: ratingKeys.feedbacks.lists(),
       });
-      queryClient.invalidateQueries({
-        queryKey: ratingKeys.feedbacks.all,
-      });
     },
     ...options,
   });

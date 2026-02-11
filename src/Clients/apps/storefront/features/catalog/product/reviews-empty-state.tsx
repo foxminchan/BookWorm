@@ -10,7 +10,7 @@ type ReviewsEmptyStateProps = {
 
 export default function ReviewsEmptyState({
   onWriteReview,
-}: ReviewsEmptyStateProps) {
+}: Readonly<ReviewsEmptyStateProps>) {
   return (
     <div className="space-y-4 py-16 text-center">
       <MessageSquare className="text-muted-foreground/50 mx-auto size-12" />

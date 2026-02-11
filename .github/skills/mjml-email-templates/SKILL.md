@@ -8,11 +8,13 @@ description: Build responsive email templates using MJML markup language. Compil
 ## When to Use This Skill
 
 Use this skill when:
+
 - Building transactional emails (signup, password reset, invoices, notifications)
 - Creating responsive email templates that work across clients
 - Setting up MJML template rendering in .NET
 
 **Related skills:**
+
 - `aspire/mailpit-integration` - Test emails locally with Mailpit
 - `testing/verify-email-snapshots` - Snapshot test rendered HTML
 
@@ -28,7 +30,7 @@ Use this skill when:
 <!-- MJML - simple and readable -->
 <mj-section>
   <mj-column>
-    <mj-text>Hello {{UserName}}</mj-text>
+    <mj-text>Hello {{ UserName }}</mj-text>
     <mj-button href="{{ActionUrl}}">Click Here</mj-button>
   </mj-column>
 </mj-section>
@@ -86,21 +88,26 @@ src/
 
 ---
 
-## Layout Template (_Layout.mjml)
+## Layout Template (\_Layout.mjml)
 
 ```mjml
 <mjml>
   <mj-head>
     <mj-title>MyApp</mj-title>
-    <mj-preview>{{PreviewText}}</mj-preview>
+    <mj-preview>{{ PreviewText }}</mj-preview>
     <mj-attributes>
       <mj-all font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" />
       <mj-text font-size="14px" color="#555555" line-height="20px" />
       <mj-section padding="20px" />
     </mj-attributes>
     <mj-style inline="inline">
-      a { color: #2563eb; text-decoration: none; }
-      a:hover { text-decoration: underline; }
+      a {
+        color: #2563eb;
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
     </mj-style>
   </mj-head>
   <mj-body background-color="#f3f4f6">
@@ -112,14 +119,19 @@ src/
           alt="MyApp"
           width="150px"
           href="{{SiteUrl}}"
-          padding="30px 25px 20px 25px" />
+          padding="30px 25px 20px 25px"
+        />
       </mj-column>
     </mj-section>
 
     <!-- Content injected here -->
-    <mj-section background-color="#ffffff" padding-top="20px" padding-bottom="40px">
+    <mj-section
+      background-color="#ffffff"
+      padding-top="20px"
+      padding-bottom="40px"
+    >
       <mj-column>
-        {{Content}}
+        {{ Content }}
       </mj-column>
     </mj-section>
 
@@ -143,28 +155,38 @@ src/
 <!-- UserInvitations/UserSignupInvitation.mjml -->
 <!-- Wrapped in _Layout.mjml automatically -->
 
-<mj-text font-size="16px" color="#111827" font-weight="600" padding-bottom="20px">
-  You've been invited to join {{OrganizationName}}
+<mj-text
+  font-size="16px"
+  color="#111827"
+  font-weight="600"
+  padding-bottom="20px"
+>
+  You've been invited to join {{ OrganizationName }}
 </mj-text>
 
-<mj-text padding-bottom="15px">
-  Hi {{InviteeName}},
-</mj-text>
+<mj-text padding-bottom="15px"> Hi {{ InviteeName }}, </mj-text>
 
 <mj-text padding-bottom="15px">
-  {{InviterName}} has invited you to join <strong>{{OrganizationName}}</strong>.
+  {{ InviterName }} has invited you to join
+  <strong>{{ OrganizationName }}</strong
+  >.
 </mj-text>
 
 <mj-text padding-bottom="25px">
   Click the button below to accept your invitation:
 </mj-text>
 
-<mj-button background-color="#2563eb" color="#ffffff" font-size="16px" href="{{InvitationLink}}">
+<mj-button
+  background-color="#2563eb"
+  color="#ffffff"
+  font-size="16px"
+  href="{{InvitationLink}}"
+>
   Accept Invitation
 </mj-button>
 
 <mj-text padding-top="25px" font-size="13px" color="#6b7280">
-  This invitation expires on {{ExpirationDate}}.
+  This invitation expires on {{ ExpirationDate }}.
 </mj-text>
 ```
 
@@ -345,7 +367,11 @@ app.MapGet("/admin/emails/preview/{template}", async (
 </mj-section>
 
 <!-- DON'T: Use raw HTML tables -->
-<table><tr><td>Content</td></tr></table>
+<table>
+  <tr>
+    <td>Content</td>
+  </tr>
+</table>
 
 <!-- DO: Use production URLs for images -->
 <mj-image src="https://myapp.com/logo.png" />
@@ -374,17 +400,17 @@ Task<EmailMessage> ComposeAsync(
 
 ## MJML Components Reference
 
-| Component | Purpose |
-|-----------|---------|
+| Component      | Purpose                           |
+| -------------- | --------------------------------- |
 | `<mj-section>` | Horizontal container (like a row) |
-| `<mj-column>` | Vertical container within section |
-| `<mj-text>` | Text content with styling |
-| `<mj-button>` | Call-to-action button |
-| `<mj-image>` | Responsive image |
-| `<mj-divider>` | Horizontal line |
-| `<mj-spacer>` | Vertical spacing |
-| `<mj-table>` | Data tables |
-| `<mj-social>` | Social media icons |
+| `<mj-column>`  | Vertical container within section |
+| `<mj-text>`    | Text content with styling         |
+| `<mj-button>`  | Call-to-action button             |
+| `<mj-image>`   | Responsive image                  |
+| `<mj-divider>` | Horizontal line                   |
+| `<mj-spacer>`  | Vertical spacing                  |
+| `<mj-table>`   | Data tables                       |
+| `<mj-social>`  | Social media icons                |
 
 ---
 

@@ -4,10 +4,10 @@ import { Search } from "lucide-react";
 
 import { Input } from "@workspace/ui/components/input";
 
-type SearchInputProps = {
+type SearchInputProps = Readonly<{
   value: string;
   onChange: (value: string) => void;
-};
+}>;
 
 export function SearchInput({ value, onChange }: SearchInputProps) {
   return (

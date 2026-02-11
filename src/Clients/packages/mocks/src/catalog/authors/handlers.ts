@@ -5,14 +5,17 @@ import type {
   CreateAuthorRequest,
   UpdateAuthorRequest,
 } from "@workspace/types/catalog/authors";
-import { generateTraceId } from "@workspace/utils/trace";
 import { formatValidationErrors } from "@workspace/utils/validation";
 import {
   createAuthorSchema,
   updateAuthorSchema,
 } from "@workspace/validations/catalog/authors";
 
-import { CATALOG_API_BASE_URL } from "../../catalog/constants";
+import {
+  createNotFoundResponse,
+  createValidationErrorResponse,
+} from "../../helpers/index";
+import { CATALOG_API_BASE_URL } from "../constants";
 import { authorsStore } from "./data";
 
 export const authorsHandlers = [
@@ -56,7 +59,7 @@ export const authorsHandlers = [
       const updated = authorsStore.update(result.data.id, result.data.name);
 
       if (!updated) {
-        return new HttpResponse("Author not found", { status: 404 });
+        return createNotFoundResponse("Author");
       }
 
       return new HttpResponse(null, { status: 204 });
@@ -69,24 +72,15 @@ export const authorsHandlers = [
       const { id } = params;
 
       if (!id) {
-        return HttpResponse.json(
-          {
-            type: "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-            title: "One or more validation errors occurred.",
-            status: 400,
-            errors: {
-              Id: ["'Id' must not be empty."],
-            },
-            traceId: generateTraceId(),
-          },
-          { status: 400 },
-        );
+        return createValidationErrorResponse({
+          Id: ["'Id' must not be empty."],
+        });
       }
 
       const deleted = authorsStore.delete(id);
 
       if (!deleted) {
-        return new HttpResponse("Author not found", { status: 404 });
+        return createNotFoundResponse("Author");
       }
 
       return new HttpResponse(null, { status: 204 });

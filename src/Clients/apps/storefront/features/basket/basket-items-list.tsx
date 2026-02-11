@@ -14,11 +14,11 @@ export default function BasketItemsList({
   modifiedItems,
   onUpdateQuantity,
   onRemoveItem,
-}: BasketItemsListProps) {
+}: Readonly<BasketItemsListProps>) {
   return (
     <div className="space-y-6 lg:col-span-8">
       {items.map((item) => {
-        const displayQuantity = item.quantity + (modifiedItems[item.id] || 0);
+        const displayQuantity = item.quantity + (modifiedItems[item.id] ?? 0);
         return (
           <BasketItem
             key={item.id}

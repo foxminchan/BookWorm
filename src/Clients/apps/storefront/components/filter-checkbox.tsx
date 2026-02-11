@@ -13,8 +13,8 @@ export function FilterCheckbox({
   label,
   checked,
   onChange,
-}: FilterCheckboxProps) {
-  const id = `filter-${label.toLowerCase().replace(/\s+/g, "-")}`;
+}: Readonly<FilterCheckboxProps>) {
+  const id = `filter-${label.toLowerCase().replaceAll(/\s+/g, "-")}`;
 
   return (
     <div className="flex items-center gap-2">

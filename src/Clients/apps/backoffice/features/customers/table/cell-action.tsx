@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -11,13 +11,22 @@ import { Button } from "@workspace/ui/components/button";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
 
-type CellActionProps = {
+type CellActionProps = Readonly<{
   customer: Buyer;
-};
+}>;
 
 export function CellAction({ customer }: CellActionProps) {
   const [openDelete, setOpenDelete] = useState(false);
   const deleteCustomerMutation = useDeleteBuyer();
+
+  const handleDelete = useCallback(async () => {
+    deleteCustomerMutation.mutate(customer.id, {
+      onSuccess: () => {
+        setOpenDelete(false);
+        toast.success("Customer has been deleted");
+      },
+    });
+  }, [customer.id, deleteCustomerMutation]);
 
   return (
     <>
@@ -28,8 +37,9 @@ export function CellAction({ customer }: CellActionProps) {
           className="text-destructive hover:text-destructive"
           onClick={() => setOpenDelete(true)}
           disabled={deleteCustomerMutation.isPending}
+          aria-label={`Delete ${customer.name ?? "customer"}`}
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="h-4 w-4" aria-hidden="true" />
         </Button>
       </div>
 
@@ -37,18 +47,11 @@ export function CellAction({ customer }: CellActionProps) {
         open={openDelete}
         onOpenChange={setOpenDelete}
         title="Delete Customer"
-        description={`Are you sure you want to delete "${customer.name || "this customer"}"? This action cannot be undone.`}
+        description={`Are you sure you want to delete "${customer.name ?? "this customer"}"? This action cannot be undone.`}
         actionLabel="Delete"
         actionType="delete"
         isLoading={deleteCustomerMutation.isPending}
-        onConfirm={async () => {
-          deleteCustomerMutation.mutate(customer.id, {
-            onSuccess: () => {
-              setOpenDelete(false);
-              toast.success("Customer has been deleted");
-            },
-          });
-        }}
+        onConfirm={handleDelete}
       />
     </>
   );

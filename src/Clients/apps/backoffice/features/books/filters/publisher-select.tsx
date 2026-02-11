@@ -11,10 +11,10 @@ import {
 } from "@workspace/ui/components/select";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 
-type PublisherSelectProps = {
+type PublisherSelectProps = Readonly<{
   value: string | undefined;
   onChange: (value: string | undefined) => void;
-};
+}>;
 
 export function PublisherSelect({ value, onChange }: PublisherSelectProps) {
   const { data: publishers, isLoading } = usePublishers();

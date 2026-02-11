@@ -1,6 +1,5 @@
 export const basketKeys = {
   all: ["basket"] as const,
-  details: () => [...basketKeys.all, "detail"] as const,
   detail: () => [...basketKeys.all, "detail"] as const,
 };
 

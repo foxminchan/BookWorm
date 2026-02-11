@@ -8,6 +8,27 @@ export const size = {
 };
 export const contentType = "image/png";
 
+const colors = {
+  primary: "#2c1810",
+  secondary: "#5c4033",
+} as const;
+
+const features = [
+  { emoji: "✨", label: "Curated\nSelection" },
+  { emoji: "🚚", label: "Fast\nShipping" },
+  { emoji: "⭐", label: "Expert\nReviews" },
+] as const;
+
+const featureCardStyle = {
+  display: "flex" as const,
+  flexDirection: "column" as const,
+  alignItems: "center" as const,
+  padding: 25,
+  background: "rgba(255, 255, 255, 0.7)",
+  borderRadius: 15,
+  minWidth: 180,
+};
+
 export default async function Image() {
   return new ImageResponse(
     <div
@@ -28,7 +49,7 @@ export default async function Image() {
         style={{
           fontSize: 90,
           fontWeight: "bold",
-          color: "#2c1810",
+          color: colors.primary,
           marginBottom: 30,
           display: "flex",
           alignItems: "center",
@@ -41,7 +62,7 @@ export default async function Image() {
       <div
         style={{
           fontSize: 48,
-          color: "#5c4033",
+          color: colors.secondary,
           marginBottom: 60,
           textAlign: "center",
           maxWidth: "80%",
@@ -58,81 +79,21 @@ export default async function Image() {
           marginTop: 20,
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            padding: 25,
-            background: "rgba(255, 255, 255, 0.7)",
-            borderRadius: 15,
-            minWidth: 180,
-          }}
-        >
-          <div style={{ fontSize: 48 }}>✨</div>
-          <div
-            style={{
-              fontSize: 24,
-              color: "#5c4033",
-              marginTop: 12,
-              textAlign: "center",
-            }}
-          >
-            Curated
-            <br />
-            Selection
+        {features.map((feature) => (
+          <div key={feature.label} style={featureCardStyle}>
+            <div style={{ fontSize: 48 }}>{feature.emoji}</div>
+            <div
+              style={{
+                fontSize: 24,
+                color: colors.secondary,
+                marginTop: 12,
+                textAlign: "center",
+              }}
+            >
+              {feature.label}
+            </div>
           </div>
-        </div>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            padding: 25,
-            background: "rgba(255, 255, 255, 0.7)",
-            borderRadius: 15,
-            minWidth: 180,
-          }}
-        >
-          <div style={{ fontSize: 48 }}>🚚</div>
-          <div
-            style={{
-              fontSize: 24,
-              color: "#5c4033",
-              marginTop: 12,
-              textAlign: "center",
-            }}
-          >
-            Fast
-            <br />
-            Shipping
-          </div>
-        </div>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            padding: 25,
-            background: "rgba(255, 255, 255, 0.7)",
-            borderRadius: 15,
-            minWidth: 180,
-          }}
-        >
-          <div style={{ fontSize: 48 }}>⭐</div>
-          <div
-            style={{
-              fontSize: 24,
-              color: "#5c4033",
-              marginTop: 12,
-              textAlign: "center",
-            }}
-          >
-            Expert
-            <br />
-            Reviews
-          </div>
-        </div>
+        ))}
       </div>
     </div>,
     {

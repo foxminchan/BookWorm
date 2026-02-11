@@ -49,7 +49,7 @@ export default function ReviewForm({
   isSubmitting,
   onChange,
   onSubmit,
-}: ReviewFormProps) {
+}: Readonly<ReviewFormProps>) {
   const form = useForm<ReviewFormValues>({
     resolver: zodResolver(reviewFormSchema),
     values: {
@@ -183,12 +183,12 @@ export default function ReviewForm({
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="size-4 animate-spin" />
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                 Submitting...
               </>
             ) : (
               <>
-                <Send className="size-4" /> Submit Review
+                <Send className="size-4" aria-hidden="true" /> Submit Review
               </>
             )}
           </Button>

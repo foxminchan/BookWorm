@@ -1,10 +1,12 @@
 import { Given, Then, When } from "@cucumber/cucumber";
-import { expect } from "@playwright/test";
-import { Page } from "@playwright/test";
+import { Page, expect } from "@playwright/test";
 
 /**
  * AI Chatbot step definitions
  */
+
+/** Deterministic counter to cycle through close actions across invocations */
+let closeActionCounter = 0;
 
 // Feature flag checks
 Given("AI features are enabled", async function (this: { page: Page }) {
@@ -397,7 +399,7 @@ Then(
 When(
   "I press Escape or click the close button or click outside",
   async function (this: { page: Page }) {
-    const action = Math.floor(Math.random() * 3);
+    const action = closeActionCounter++ % 3;
     if (action === 0) {
       await this.page.keyboard.press("Escape");
     } else if (action === 1) {
@@ -543,8 +545,8 @@ Given(
   async function (this: { page: Page }) {
     // Remove or clear gateway configuration
     await this.page.evaluate(() => {
-      delete (window as any).NEXT_PUBLIC_GATEWAY_HTTPS;
-      delete (window as any).NEXT_PUBLIC_GATEWAY_HTTP;
+      delete (globalThis as any).NEXT_PUBLIC_GATEWAY_HTTPS;
+      delete (globalThis as any).NEXT_PUBLIC_GATEWAY_HTTP;
     });
   },
 );

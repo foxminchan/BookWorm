@@ -1,5 +1,3 @@
-"use client";
-
 import ContactSection from "@/features/content/about/contact-section";
 import HeroSection from "@/features/content/about/hero-section";
 import MissionSection from "@/features/content/about/mission-section";

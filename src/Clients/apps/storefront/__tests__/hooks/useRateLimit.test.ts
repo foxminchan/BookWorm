@@ -3,6 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useRateLimit } from "@/hooks/useRateLimit";
 
+type RateLimitResult =
+  | { success: true; data: string }
+  | { success: false; error: string; resetIn?: number };
+
 describe("useRateLimit", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -19,10 +23,7 @@ describe("useRateLimit", () => {
     );
 
     const fn = vi.fn().mockResolvedValue("ok");
-    let response:
-      | { success: true; data: string }
-      | { success: false; error: string; resetIn?: number }
-      | undefined;
+    let response: RateLimitResult | undefined;
 
     await act(async () => {
       response = await result.current.attemptRequest(fn);
@@ -43,17 +44,14 @@ describe("useRateLimit", () => {
       await result.current.attemptRequest(fn);
     });
 
-    let blocked:
-      | { success: true; data: string }
-      | { success: false; error: string; resetIn?: number }
-      | undefined;
+    let blocked: RateLimitResult | undefined;
 
     await act(async () => {
       blocked = await result.current.attemptRequest(fn);
     });
 
     expect(blocked?.success).toBe(false);
-    if (blocked && blocked.success === false) {
+    if (blocked?.success === false) {
       expect(blocked.error).toContain("Please wait");
     }
 
@@ -61,10 +59,7 @@ describe("useRateLimit", () => {
       vi.advanceTimersByTime(600);
     });
 
-    let allowed:
-      | { success: true; data: string }
-      | { success: false; error: string; resetIn?: number }
-      | undefined;
+    let allowed: RateLimitResult | undefined;
 
     await act(async () => {
       allowed = await result.current.attemptRequest(fn);
@@ -84,17 +79,14 @@ describe("useRateLimit", () => {
       await result.current.attemptRequest(fn);
     });
 
-    let blocked:
-      | { success: true; data: string }
-      | { success: false; error: string; resetIn?: number }
-      | undefined;
+    let blocked: RateLimitResult | undefined;
 
     await act(async () => {
       blocked = await result.current.attemptRequest(fn);
     });
 
     expect(blocked?.success).toBe(false);
-    if (blocked && blocked.success === false) {
+    if (blocked?.success === false) {
       expect(blocked.error).toContain("Rate limit exceeded");
     }
     expect(result.current.isRateLimited).toBe(true);

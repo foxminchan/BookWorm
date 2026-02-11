@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { useRouter } from "next/navigation";
 
@@ -13,7 +13,7 @@ export function useLogout(): UseLogoutReturn {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     setIsLoggingOut(true);
 
     try {
@@ -29,7 +29,7 @@ export function useLogout(): UseLogoutReturn {
     } finally {
       setIsLoggingOut(false);
     }
-  };
+  }, [router]);
 
   return { logout, isLoggingOut };
 }

@@ -1,4 +1,4 @@
-import { UseQueryOptions, useQuery } from "@tanstack/react-query";
+import { type UseQueryOptions, useQuery } from "@tanstack/react-query";
 
 import ratingApiClient from "@workspace/api-client/rating/feedbacks";
 import type { FeedbackSummary } from "@workspace/types/rating";

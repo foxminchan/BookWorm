@@ -8,6 +8,21 @@ export const size = {
 };
 export const contentType = "image/png";
 
+const brandColor = "#6d5a54";
+
+const decorativeBooks = [
+  { color: "#9fb89f" },
+  { color: brandColor },
+  { color: "#e8dcc8" },
+] as const;
+
+const bookSpineStyle = {
+  width: "80px",
+  height: "100px",
+  borderRadius: "4px",
+  display: "flex" as const,
+};
+
 export default async function Image() {
   return new ImageResponse(
     <div
@@ -28,7 +43,7 @@ export default async function Image() {
         style={{
           fontSize: 80,
           fontWeight: "bold",
-          color: "#6d5a54",
+          color: brandColor,
           marginBottom: "30px",
           display: "flex",
         }}
@@ -40,7 +55,7 @@ export default async function Image() {
       <div
         style={{
           fontSize: 36,
-          color: "#6d5a54",
+          color: brandColor,
           textAlign: "center",
           maxWidth: "900px",
           lineHeight: 1.4,
@@ -58,33 +73,12 @@ export default async function Image() {
           gap: "20px",
         }}
       >
-        <div
-          style={{
-            width: "80px",
-            height: "100px",
-            background: "#9fb89f",
-            borderRadius: "4px",
-            display: "flex",
-          }}
-        />
-        <div
-          style={{
-            width: "80px",
-            height: "100px",
-            background: "#6d5a54",
-            borderRadius: "4px",
-            display: "flex",
-          }}
-        />
-        <div
-          style={{
-            width: "80px",
-            height: "100px",
-            background: "#e8dcc8",
-            borderRadius: "4px",
-            display: "flex",
-          }}
-        />
+        {decorativeBooks.map((book) => (
+          <div
+            key={book.color}
+            style={{ ...bookSpineStyle, background: book.color }}
+          />
+        ))}
       </div>
     </div>,
     { ...size },

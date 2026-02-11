@@ -9,7 +9,7 @@ import { OrderItemsTable } from "@/features/orders/order-items-table";
 const mockOrderItems: OrderItem[] = [
   createMockOrderItem({ quantity: 2, price: 25.5 }),
   createMockOrderItem({ quantity: 1, price: 15.99 }),
-  createMockOrderItem({ quantity: 3, price: 10.0 }),
+  createMockOrderItem({ quantity: 3, price: 10 }),
 ];
 
 const total = mockOrderItems.reduce(

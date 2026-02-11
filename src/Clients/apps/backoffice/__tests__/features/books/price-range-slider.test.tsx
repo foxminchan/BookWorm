@@ -11,7 +11,7 @@ vi.mock("@workspace/ui/components/slider", () => ({
     mockOnValueChange = onValueChange;
     return (
       <div data-testid="mock-slider" data-value={JSON.stringify(value)}>
-        <div role="slider" {...props} />
+        <input type="range" {...props} />
       </div>
     );
   },
@@ -31,7 +31,7 @@ describe("PriceRangeSlider", () => {
   it("renders slider with correct values", () => {
     const { container } = render(<PriceRangeSlider {...defaultProps} />);
 
-    const slider = container.querySelector('[role="slider"]');
+    const slider = container.querySelector('input[type="range"]');
     expect(slider).toBeInTheDocument();
   });
 
@@ -69,7 +69,7 @@ describe("PriceRangeSlider", () => {
     const slider = container.querySelector("[data-radix-collection-item]");
     if (slider) {
       // Trigger the value change callback directly since user interaction with Radix sliders is complex
-      const sliderComponent = container.querySelector('[role="slider"]');
+      const sliderComponent = container.querySelector('input[type="range"]');
       expect(sliderComponent).toBeInTheDocument();
     }
 
@@ -143,7 +143,7 @@ describe("PriceRangeSlider", () => {
 
     const { container } = render(<PriceRangeSlider {...props} />);
 
-    const slider = container.querySelector('[role="slider"]');
+    const slider = container.querySelector('input[type="range"]');
     expect(slider).toBeInTheDocument();
   });
 
@@ -160,7 +160,7 @@ describe("PriceRangeSlider", () => {
 
     // Simulate slider value change
     const { container } = render(<PriceRangeSlider {...props} />);
-    const slider = container.querySelector('[role="slider"]');
+    const slider = container.querySelector('input[type="range"]');
 
     // The slider component should trigger onMinChange when values change
     if (slider) {

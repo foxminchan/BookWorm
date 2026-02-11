@@ -96,7 +96,7 @@ describe("ReviewsEmptyState", () => {
   });
 
   it("should display button with icon", () => {
-    const { container } = renderWithProviders(
+    renderWithProviders(
       <ReviewsEmptyState onWriteReview={mockOnWriteReview} />,
     );
 

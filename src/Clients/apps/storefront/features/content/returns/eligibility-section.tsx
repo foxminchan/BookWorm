@@ -6,7 +6,7 @@ const eligibleItems = [
   "Unopened or like-new condition",
   "With original packaging",
   "Not damaged by customer",
-];
+] as const;
 
 const nonReturnableItems = [
   "Books with visible wear or damage",
@@ -14,7 +14,7 @@ const nonReturnableItems = [
   "Returns after 30 days",
   "Books purchased on final sale",
   "Digital or e-book purchases",
-];
+] as const;
 
 export default function EligibilitySection() {
   return (
@@ -30,8 +30,8 @@ export default function EligibilitySection() {
               Eligible for Return
             </h3>
             <ul className="text-muted-foreground space-y-2 text-sm">
-              {eligibleItems.map((item, idx) => (
-                <li key={idx}>✓ {item}</li>
+              {eligibleItems.map((item) => (
+                <li key={item}>✓ {item}</li>
               ))}
             </ul>
           </div>
@@ -41,8 +41,8 @@ export default function EligibilitySection() {
               Non-Returnable Items
             </h3>
             <ul className="text-muted-foreground space-y-2 text-sm">
-              {nonReturnableItems.map((item, idx) => (
-                <li key={idx}>✗ {item}</li>
+              {nonReturnableItems.map((item) => (
+                <li key={item}>✗ {item}</li>
               ))}
             </ul>
           </div>

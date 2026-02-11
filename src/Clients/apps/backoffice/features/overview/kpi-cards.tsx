@@ -1,5 +1,7 @@
 "use client";
 
+import { useMemo } from "react";
+
 import type { Order } from "@workspace/types/ordering/orders";
 import {
   Card,
@@ -11,12 +13,12 @@ import {
 import { KPICardsSkeleton } from "@/components/loading-skeleton";
 import { currencyFormatter } from "@/lib/constants";
 
-type KPICardsProps = {
+type KPICardsProps = Readonly<{
   orders: Order[];
   totalCustomers: number;
   totalBooks: number;
   isLoading: boolean;
-};
+}>;
 
 export function KPICards({
   orders,
@@ -24,38 +26,40 @@ export function KPICards({
   totalBooks,
   isLoading,
 }: KPICardsProps) {
+  const kpiData = useMemo(() => {
+    const totalRevenue = orders.reduce(
+      (sum, order) => sum + (order.total ?? 0),
+      0,
+    );
+    const totalOrders = orders.length;
+
+    return [
+      {
+        title: "Total Revenue",
+        value: currencyFormatter.format(totalRevenue),
+        change: `${totalOrders} orders`,
+      },
+      {
+        title: "Total Orders",
+        value: totalOrders.toString(),
+        change: `${totalCustomers} customers`,
+      },
+      {
+        title: "Active Customers",
+        value: totalCustomers.toString(),
+        change: "Total registered",
+      },
+      {
+        title: "Books in Catalog",
+        value: totalBooks.toString(),
+        change: "Available titles",
+      },
+    ];
+  }, [orders, totalCustomers, totalBooks]);
+
   if (isLoading) {
     return <KPICardsSkeleton />;
   }
-
-  const totalRevenue = orders.reduce(
-    (sum: number, order: Order) => sum + (order.total || 0),
-    0,
-  );
-  const totalOrders = orders.length;
-
-  const kpiData = [
-    {
-      title: "Total Revenue",
-      value: currencyFormatter.format(totalRevenue),
-      change: `${orders.length} orders`,
-    },
-    {
-      title: "Total Orders",
-      value: totalOrders.toString(),
-      change: `${totalCustomers} customers`,
-    },
-    {
-      title: "Active Customers",
-      value: totalCustomers.toString(),
-      change: "Total registered",
-    },
-    {
-      title: "Books in Catalog",
-      value: totalBooks.toString(),
-      change: "Available titles",
-    },
-  ];
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -71,15 +75,13 @@ export function KPICards({
   );
 }
 
-function KPICard({
-  title,
-  value,
-  change,
-}: {
+type KPICardProps = Readonly<{
   title: string;
   value: string;
   change: string;
-}) {
+}>;
+
+function KPICard({ title, value, change }: KPICardProps) {
   return (
     <Card>
       <CardHeader className="pb-2">

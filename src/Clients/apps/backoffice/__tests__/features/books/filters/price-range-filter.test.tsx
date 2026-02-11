@@ -11,7 +11,7 @@ vi.mock("@workspace/ui/components/slider", () => ({
     mockOnValueChange = onValueChange;
     return (
       <div data-testid="mock-slider" data-value={JSON.stringify(value)}>
-        <div role="slider" {...props} />
+        <input type="range" {...props} />
       </div>
     );
   },
@@ -61,7 +61,7 @@ describe("PriceRangeFilter", () => {
       />,
     );
 
-    const slider = container.querySelector('[role="slider"]');
+    const slider = container.querySelector('input[type="range"]');
     expect(slider).toBeInTheDocument();
   });
 

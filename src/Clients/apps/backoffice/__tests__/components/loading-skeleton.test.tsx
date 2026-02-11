@@ -53,12 +53,7 @@ describe("Loading Skeletons", () => {
 
   describe("FilterTableSkeleton", () => {
     it("should render loading state with accessibility attributes", () => {
-      render(
-        <FilterTableSkeleton
-          title="Test Table"
-          description="Test Description"
-        />,
-      );
+      render(<FilterTableSkeleton description="Test Description" />);
 
       const status = screen.getByRole("status");
       expect(status).toHaveAttribute("aria-live", "polite");
@@ -70,7 +65,7 @@ describe("Loading Skeletons", () => {
     });
 
     it("should render skeleton elements", () => {
-      const { container } = render(<FilterTableSkeleton title="Test Table" />);
+      const { container } = render(<FilterTableSkeleton />);
 
       // Should have skeleton elements
       const skeletons = container.querySelectorAll('[data-slot="skeleton"]');
@@ -80,9 +75,7 @@ describe("Loading Skeletons", () => {
 
   describe("SimpleTableSkeleton", () => {
     it("should render loading state with accessibility attributes", () => {
-      render(
-        <SimpleTableSkeleton title="Simple Table" description="Description" />,
-      );
+      render(<SimpleTableSkeleton />);
 
       const status = screen.getByRole("status");
       expect(status).toHaveAttribute("aria-live", "polite");
@@ -92,9 +85,7 @@ describe("Loading Skeletons", () => {
     });
 
     it("should render skeleton elements", () => {
-      const { container } = render(
-        <SimpleTableSkeleton title="Simple Table" description="Description" />,
-      );
+      const { container } = render(<SimpleTableSkeleton />);
 
       // Should have skeleton elements
       const skeletons = container.querySelectorAll('[role="status"]');

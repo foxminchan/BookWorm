@@ -1,6 +1,6 @@
 import * as reporter from "cucumber-html-reporter";
 import { format } from "date-fns";
-import { resolve } from "path";
+import { resolve } from "node:path";
 
 const options = {
   theme: "bootstrap" as const,

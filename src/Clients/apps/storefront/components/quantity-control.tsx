@@ -1,49 +1,51 @@
 "use client";
 
-import type React from "react";
+import type { ChangeEvent } from "react";
 
 import { Minus, Plus } from "lucide-react";
 
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
 
-type QuantityControlProps = {
+const SIZE_CLASSES = {
+  sm: "h-8 px-2",
+  md: "h-10 px-2",
+  lg: "h-12 px-3",
+} as const;
+
+const ICON_SIZES = {
+  sm: "size-3",
+  md: "size-4",
+  lg: "size-5",
+} as const;
+
+type BaseProps = {
   quantity: number;
   onIncrease: () => void;
   onDecrease: () => void;
   size?: "sm" | "md" | "lg";
-  showBorder?: boolean;
   className?: string;
-  variant?: "simple" | "input";
-  onQuantityChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 };
 
-export function QuantityControl({
-  quantity,
-  onIncrease,
-  onDecrease,
-  size = "md",
-  showBorder = true,
-  className = "",
-  variant = "simple",
-  onQuantityChange,
-}: QuantityControlProps) {
-  const sizeClasses = {
-    sm: "h-8 px-2",
-    md: "h-10 px-2",
-    lg: "h-12 px-3",
-  };
+type SimpleVariantProps = BaseProps & {
+  variant?: "simple";
+  showBorder?: boolean;
+};
 
-  const iconSizes = {
-    sm: "size-3",
-    md: "size-4",
-    lg: "size-5",
-  };
+type InputVariantProps = BaseProps & {
+  variant: "input";
+  onQuantityChange: (e: ChangeEvent<HTMLInputElement>) => void;
+};
 
-  if (variant === "input") {
+type QuantityControlProps = SimpleVariantProps | InputVariantProps;
+
+export function QuantityControl(props: Readonly<QuantityControlProps>) {
+  const { quantity, onIncrease, onDecrease, size = "md", className } = props;
+
+  if (props.variant === "input") {
     return (
       <div
-        className={`bg-secondary/50 flex items-center rounded-full dark:bg-gray-800/50 ${sizeClasses[size]} w-fit p-1 shadow-inner ${className}`}
+        className={`bg-secondary/50 flex w-fit items-center rounded-full p-1 shadow-inner dark:bg-gray-800/50 ${SIZE_CLASSES[size]} ${className ?? ""}`}
       >
         <Button
           variant="ghost"
@@ -52,15 +54,13 @@ export function QuantityControl({
           onClick={onDecrease}
           aria-label="Decrease quantity"
         >
-          <Minus className={iconSizes[size]} />
+          <Minus className={ICON_SIZES[size]} aria-hidden="true" />
         </Button>
         <Input
           type="text"
           inputMode="numeric"
-          min="1"
-          max="99"
           value={quantity}
-          onChange={onQuantityChange}
+          onChange={props.onQuantityChange}
           className="h-auto w-12 border-0 bg-transparent text-center font-serif text-lg font-bold shadow-none focus-visible:ring-0"
           aria-label="Book quantity"
         />
@@ -71,15 +71,17 @@ export function QuantityControl({
           onClick={onIncrease}
           aria-label="Increase quantity"
         >
-          <Plus className={iconSizes[size]} />
+          <Plus className={ICON_SIZES[size]} aria-hidden="true" />
         </Button>
       </div>
     );
   }
 
+  const showBorder = props.showBorder ?? true;
+
   return (
     <div
-      className={`flex items-center ${showBorder ? "rounded-full border bg-white dark:border-gray-700 dark:bg-gray-900" : ""} ${sizeClasses[size]} ${className}`}
+      className={`flex items-center ${showBorder ? "rounded-full border bg-white dark:border-gray-700 dark:bg-gray-900" : ""} ${SIZE_CLASSES[size]} ${className ?? ""}`}
     >
       <Button
         variant="ghost"
@@ -89,17 +91,16 @@ export function QuantityControl({
         aria-label="Decrease quantity"
         disabled={quantity <= 0}
       >
-        <Minus className={iconSizes[size]} aria-hidden="true" />
+        <Minus className={ICON_SIZES[size]} aria-hidden="true" />
       </Button>
-      <span
+      <output
         className={`w-8 text-center font-medium ${quantity <= 0 ? "text-destructive" : ""}`}
-        role="status"
         aria-live="polite"
         aria-atomic="true"
         aria-label={`Quantity: ${quantity}`}
       >
         {quantity}
-      </span>
+      </output>
       <Button
         variant="ghost"
         size="icon"
@@ -107,7 +108,7 @@ export function QuantityControl({
         className="hover:text-primary h-auto w-auto p-1 transition-colors"
         aria-label="Increase quantity"
       >
-        <Plus className={iconSizes[size]} aria-hidden="true" />
+        <Plus className={ICON_SIZES[size]} aria-hidden="true" />
       </Button>
     </div>
   );

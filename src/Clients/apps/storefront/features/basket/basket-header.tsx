@@ -25,7 +25,7 @@ export default function BasketHeader({
   hasItems,
   onSaveChanges,
   onClearBasket,
-}: BasketHeaderProps) {
+}: Readonly<BasketHeaderProps>) {
   return (
     <div className="mx-auto mb-12 max-w-5xl">
       <div className="flex items-center justify-between gap-4">
@@ -37,7 +37,7 @@ export default function BasketHeader({
               className="border-primary text-primary hover:bg-primary/5 animate-in fade-in slide-in-from-right-4 gap-2 rounded-full bg-transparent text-sm duration-300 md:text-base"
               onClick={onSaveChanges}
             >
-              <Check className="size-4" />{" "}
+              <Check className="size-4" aria-hidden="true" />{" "}
               <span className="hidden sm:inline">Save Changes</span>
               <span className="sm:hidden">Save</span>
             </Button>
@@ -49,7 +49,7 @@ export default function BasketHeader({
                   variant="ghost"
                   className="text-muted-foreground hover:text-destructive gap-2 text-sm md:text-base"
                 >
-                  <Trash2 className="size-4" />{" "}
+                  <Trash2 className="size-4" aria-hidden="true" />{" "}
                   <span className="hidden sm:inline">Clear Basket</span>
                   <span className="sm:hidden">Clear</span>
                 </Button>

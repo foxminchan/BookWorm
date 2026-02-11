@@ -1,8 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import type { Order } from "@workspace/types/ordering/orders";
-
 import { createMockOrder } from "@/__tests__/factories";
 import { columns } from "@/features/orders/table/columns";
 

@@ -1,6 +1,5 @@
 import { Given, Then, When } from "@cucumber/cucumber";
-import { expect } from "@playwright/test";
-import { Page } from "@playwright/test";
+import { Page, expect } from "@playwright/test";
 
 import { BasketPage, HomePage, ShopPage } from "../pages";
 
@@ -133,7 +132,7 @@ Then(
     );
     const text = await basketCountElement.textContent();
     const numberMatch = text?.match(/\d+/);
-    const actualCount = numberMatch ? parseInt(numberMatch[0]) : 0;
+    const actualCount = numberMatch ? Number.parseInt(numberMatch[0]) : 0;
     expect(actualCount).toBe(expectedCount);
   },
 );

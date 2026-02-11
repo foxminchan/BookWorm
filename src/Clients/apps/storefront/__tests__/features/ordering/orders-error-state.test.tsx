@@ -8,7 +8,7 @@ import { renderWithProviders } from "../../utils/test-utils";
 
 // Mock window.location.reload
 const mockReload = vi.fn();
-Object.defineProperty(window, "location", {
+Object.defineProperty(globalThis, "location", {
   value: { reload: mockReload },
   writable: true,
 });

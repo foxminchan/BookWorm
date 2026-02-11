@@ -2,14 +2,17 @@
 
 import Link from "next/link";
 
+import type { Book } from "@workspace/types/catalog/books";
 import { Button } from "@workspace/ui/components/button";
 
 import { BookCard } from "@/components/book-card";
 import { BookCardSkeleton } from "@/components/loading-skeleton";
 import { Pagination } from "@/components/pagination";
 
+const SKELETON_KEYS = Array.from({ length: 8 }, (_, i) => `skeleton-${i}`);
+
 type BookGridProps = {
-  books: any[];
+  books: Book[];
   isLoading: boolean;
   totalPages: number;
   currentPage: number;
@@ -24,26 +27,24 @@ export default function BookGrid({
   currentPage,
   onPageChange,
   onClearFilters,
-}: BookGridProps) {
+}: Readonly<BookGridProps>) {
   if (isLoading) {
     return (
-      <div
+      <output
         className="mb-12 grid grid-cols-2 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-        role="status"
         aria-label="Loading books"
       >
-        {Array.from({ length: 8 }).map((_: any, i: number) => (
-          <BookCardSkeleton key={i} />
+        {SKELETON_KEYS.map((key) => (
+          <BookCardSkeleton key={key} />
         ))}
-      </div>
+      </output>
     );
   }
 
   if (books.length === 0) {
     return (
-      <div
+      <section
         className="flex flex-col items-center justify-center py-24 text-center"
-        role="region"
         aria-labelledby="no-results"
       >
         <h2 id="no-results" className="mb-4 font-serif text-3xl font-medium">
@@ -62,25 +63,24 @@ export default function BookGrid({
         >
           Clear Filters
         </Button>
-      </div>
+      </section>
     );
   }
 
   return (
     <>
-      <div
+      <ul
         className="mb-12 grid grid-cols-2 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-        role="list"
         aria-label="Book catalog"
       >
-        {books.map((book: any) => (
-          <div key={book.id} role="listitem">
+        {books.map((book) => (
+          <li key={book.id}>
             <Link href={`/shop/${book.id}`}>
               <BookCard book={book} />
             </Link>
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
 
       {totalPages > 1 && (
         <Pagination

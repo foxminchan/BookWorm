@@ -1,12 +1,13 @@
+import * as NextNavigation from "next/navigation";
+
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DashboardNav } from "@/components/dashboard-nav";
 
-// Mock Next.js navigation
-const mockPathname = vi.fn();
-vi.mock("next/navigation", () => ({
-  usePathname: () => mockPathname(),
+// Mock useLogout to avoid useRouter dependency
+vi.mock("@/hooks/use-logout", () => ({
+  useLogout: () => ({ logout: vi.fn() }),
 }));
 
 describe("DashboardNav", () => {
@@ -15,7 +16,7 @@ describe("DashboardNav", () => {
   });
 
   it("should render navigation with all menu items", () => {
-    mockPathname.mockReturnValue("/");
+    vi.spyOn(NextNavigation, "usePathname").mockReturnValue("/");
 
     render(<DashboardNav />);
 
@@ -46,7 +47,7 @@ describe("DashboardNav", () => {
   });
 
   it("should mark overview as active when on home page", () => {
-    mockPathname.mockReturnValue("/");
+    vi.spyOn(NextNavigation, "usePathname").mockReturnValue("/");
 
     render(<DashboardNav />);
 
@@ -55,7 +56,9 @@ describe("DashboardNav", () => {
   });
 
   it("should mark overview as active when on (admin) route", () => {
-    mockPathname.mockReturnValue("/(admin)");
+    // Next.js route groups like (admin) are transparent to usePathname()
+    // usePathname() returns "/" for the root of an (admin) group
+    vi.spyOn(NextNavigation, "usePathname").mockReturnValue("/");
 
     render(<DashboardNav />);
 
@@ -64,7 +67,7 @@ describe("DashboardNav", () => {
   });
 
   it("should mark books as active when on books page", () => {
-    mockPathname.mockReturnValue("/books");
+    vi.spyOn(NextNavigation, "usePathname").mockReturnValue("/books");
 
     render(<DashboardNav />);
 
@@ -73,7 +76,7 @@ describe("DashboardNav", () => {
   });
 
   it("should mark categories as active when on categories page", () => {
-    mockPathname.mockReturnValue("/categories");
+    vi.spyOn(NextNavigation, "usePathname").mockReturnValue("/categories");
 
     render(<DashboardNav />);
 
@@ -82,7 +85,7 @@ describe("DashboardNav", () => {
   });
 
   it("should have correct navigation structure with proper links", () => {
-    mockPathname.mockReturnValue("/");
+    vi.spyOn(NextNavigation, "usePathname").mockReturnValue("/");
 
     render(<DashboardNav />);
 
@@ -109,7 +112,7 @@ describe("DashboardNav", () => {
   });
 
   it("should have proper accessibility attributes", () => {
-    mockPathname.mockReturnValue("/");
+    vi.spyOn(NextNavigation, "usePathname").mockReturnValue("/");
 
     render(<DashboardNav />);
 
@@ -118,7 +121,7 @@ describe("DashboardNav", () => {
   });
 
   it("should not mark overview as active on other pages", () => {
-    mockPathname.mockReturnValue("/books");
+    vi.spyOn(NextNavigation, "usePathname").mockReturnValue("/books");
 
     render(<DashboardNav />);
 

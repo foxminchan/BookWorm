@@ -4,13 +4,14 @@ import type {
   UpdateAuthorRequest,
 } from "@workspace/types/catalog/authors";
 
-import ApiClient from "../client";
+import { apiClient } from "../client";
+import type ApiClient from "../client";
 
 class AuthorsApiClient {
   private readonly client: ApiClient;
 
   constructor() {
-    this.client = new ApiClient();
+    this.client = apiClient;
   }
 
   public async list(): Promise<Author[]> {

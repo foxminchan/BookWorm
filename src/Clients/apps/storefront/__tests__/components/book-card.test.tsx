@@ -99,8 +99,8 @@ describe("BookCard", () => {
 
     renderWithProviders(<BookCard book={mockBook} onClick={handleClick} />);
 
-    const article = screen.getByRole("article");
-    await user.click(article);
+    const card = screen.getByRole("button");
+    await user.click(card);
 
     expect(handleClick).toHaveBeenCalledTimes(1);
   });
@@ -111,8 +111,8 @@ describe("BookCard", () => {
 
     renderWithProviders(<BookCard book={mockBook} onClick={handleClick} />);
 
-    const article = screen.getByRole("article");
-    article.focus();
+    const card = screen.getByRole("button");
+    card.focus();
     await user.keyboard("{Enter}");
 
     expect(handleClick).toHaveBeenCalledTimes(1);
@@ -162,7 +162,7 @@ describe("BookCard", () => {
   it("should have proper accessibility attributes", () => {
     renderWithProviders(<BookCard book={mockBook} onClick={vi.fn()} />);
 
-    const article = screen.getByRole("article");
+    const article = screen.getByRole("button");
     expect(article).toHaveAttribute("itemScope");
     expect(article).toHaveAttribute("itemType", "https://schema.org/Book");
     expect(article).toHaveAttribute("tabIndex", "0");

@@ -1,6 +1,5 @@
 import { Given, Then, When } from "@cucumber/cucumber";
-import { expect } from "@playwright/test";
-import { Page } from "@playwright/test";
+import { Page, expect } from "@playwright/test";
 
 import {
   BasketPage,
@@ -366,7 +365,6 @@ Then(
 Then(
   'I should see a "Start Shopping" button',
   async function (this: { page: Page }) {
-    const ordersPage = new OrdersPage(this.page);
     const button = this.page.locator(
       'a:has-text("Start Shopping"), a[href="/shop"]',
     );

@@ -1,5 +1,5 @@
-import path from "path";
-import url from "url";
+import path from "node:path";
+import url from "node:url";
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const generateMarkdownForService = ({ service, markdown, document }) => {

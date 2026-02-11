@@ -1,9 +1,8 @@
 import type { ImageResponse } from "next/og";
-import { NextRequest } from "next/server";
 
 import booksApiClient from "@workspace/api-client/catalog/books";
-
-import { DEFAULT_BOOK_IMAGE } from "@/lib/constants";
+import { DEFAULT_BOOK_IMAGE } from "@workspace/utils/constants";
+import { formatPrice } from "@workspace/utils/format";
 
 export const runtime = "edge";
 export const size = {
@@ -16,6 +15,28 @@ type OpengraphImageProps = {
   params: Promise<{ id: string }>;
 };
 
+const colors = {
+  primary: "#2c1810",
+  secondary: "#5c4033",
+  muted: "#999",
+  badgeBg: "rgba(255, 255, 255, 0.7)",
+} as const;
+
+const badgeStyle = {
+  padding: "10px 20px",
+  background: colors.badgeBg,
+  borderRadius: 8,
+  fontSize: 24,
+  color: colors.secondary,
+} as const;
+
+function formatAuthorNames(authors: { name: string | null }[]): string {
+  return authors
+    .map((a) => a.name)
+    .filter((name): name is string => name !== null)
+    .join(", ");
+}
+
 export async function generateAlt({ params }: OpengraphImageProps) {
   const { id } = await params;
   const book = await booksApiClient.get(id);
@@ -23,7 +44,7 @@ export async function generateAlt({ params }: OpengraphImageProps) {
 }
 
 export default async function Image(
-  _: NextRequest,
+  _request: Request,
   { params }: OpengraphImageProps,
 ): Promise<ImageResponse> {
   const { ImageResponse } = await import("next/og");
@@ -31,15 +52,12 @@ export default async function Image(
   const book = await booksApiClient.get(id);
 
   const bookName = book.name ?? "Book";
-  const authorNames = book.authors
-    .map((a) => a.name)
-    .filter((name): name is string => name !== null)
-    .join(", ");
+  const authorNames = formatAuthorNames(book.authors);
   const price = book.priceSale ?? book.price;
-  const formatter = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  });
+  const hasSaleDiscount =
+    book.priceSale !== null &&
+    book.priceSale !== undefined &&
+    book.priceSale < book.price;
 
   return new ImageResponse(
     <div
@@ -89,7 +107,7 @@ export default async function Image(
           style={{
             fontSize: 56,
             fontWeight: "bold",
-            color: "#2c1810",
+            color: colors.primary,
             marginBottom: 20,
             lineHeight: 1.2,
             display: "-webkit-box",
@@ -105,7 +123,7 @@ export default async function Image(
           <div
             style={{
               fontSize: 32,
-              color: "#5c4033",
+              color: colors.secondary,
               marginBottom: 30,
             }}
           >
@@ -122,30 +140,10 @@ export default async function Image(
           }}
         >
           {book.category?.name && (
-            <div
-              style={{
-                padding: "10px 20px",
-                background: "rgba(255, 255, 255, 0.7)",
-                borderRadius: 8,
-                fontSize: 24,
-                color: "#5c4033",
-              }}
-            >
-              {book.category.name}
-            </div>
+            <div style={badgeStyle}>{book.category.name}</div>
           )}
           {book.publisher?.name && (
-            <div
-              style={{
-                padding: "10px 20px",
-                background: "rgba(255, 255, 255, 0.7)",
-                borderRadius: 8,
-                fontSize: 24,
-                color: "#5c4033",
-              }}
-            >
-              {book.publisher.name}
-            </div>
+            <div style={badgeStyle}>{book.publisher.name}</div>
           )}
         </div>
 
@@ -154,22 +152,22 @@ export default async function Image(
           style={{
             fontSize: 48,
             fontWeight: "bold",
-            color: "#2c1810",
+            color: colors.primary,
             display: "flex",
             alignItems: "center",
             gap: 15,
           }}
         >
-          <div>{price ? formatter.format(price) : "N/A"}</div>
-          {book.priceSale && book.priceSale < book.price && (
+          <div>{price ? formatPrice(price) : "N/A"}</div>
+          {hasSaleDiscount && (
             <div
               style={{
                 fontSize: 32,
-                color: "#999",
+                color: colors.muted,
                 textDecoration: "line-through",
               }}
             >
-              {formatter.format(book.price)}
+              {formatPrice(book.price)}
             </div>
           )}
         </div>
@@ -178,7 +176,7 @@ export default async function Image(
         <div
           style={{
             fontSize: 28,
-            color: "#5c4033",
+            color: colors.secondary,
             marginTop: 40,
             display: "flex",
             alignItems: "center",

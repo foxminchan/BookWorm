@@ -6,13 +6,15 @@ import { Monitor } from "lucide-react";
 
 const MOBILE_BREAKPOINT = 1024;
 
-export function MobileBlocker({ children }: { children: React.ReactNode }) {
+export function MobileBlocker({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    // Use matchMedia for efficient, threshold-based detection instead of
-    // listening to every resize pixel change
-    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
+    const mql = globalThis.matchMedia(
+      `(max-width: ${MOBILE_BREAKPOINT - 1}px)`,
+    );
 
     const handleChange = (e: MediaQueryListEvent | MediaQueryList) => {
       setIsMobile(e.matches);
@@ -26,27 +28,27 @@ export function MobileBlocker({ children }: { children: React.ReactNode }) {
 
   if (isMobile) {
     return (
-      <div className="flex h-screen items-center justify-center bg-linear-to-br from-gray-50 to-gray-100 p-6 dark:from-gray-900 dark:to-gray-950">
+      <div className="from-background to-muted/20 flex h-screen items-center justify-center bg-linear-to-br p-6">
         <div className="max-w-md text-center">
           <div className="mb-6 flex justify-center">
-            <div className="rounded-full bg-blue-100 p-4 dark:bg-blue-900">
-              <Monitor className="h-12 w-12 text-blue-600 dark:text-blue-400" />
+            <div className="bg-primary/10 rounded-full p-4">
+              <Monitor className="text-primary h-12 w-12" />
             </div>
           </div>
-          <h1 className="mb-3 text-2xl font-bold text-gray-900 dark:text-gray-100">
+          <h1 className="text-foreground mb-3 text-2xl font-bold">
             Desktop Only
           </h1>
-          <p className="mb-2 text-gray-600 dark:text-gray-400">
+          <p className="text-muted-foreground mb-2">
             The Admin Portal is only available on desktop devices.
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-500">
+          <p className="text-muted-foreground/70 text-sm">
             Please access this portal from a device with a screen width of at
-            least 1024px for the best experience.
+            least {MOBILE_BREAKPOINT}px for the best experience.
           </p>
         </div>
       </div>
     );
   }
 
-  return <>{children}</>;
+  return children;
 }

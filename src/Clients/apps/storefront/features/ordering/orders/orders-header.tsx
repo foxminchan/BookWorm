@@ -13,12 +13,12 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select";
 
-const STATUS_OPTIONS: (OrderStatus | "All")[] = [
+const STATUS_OPTIONS: readonly (OrderStatus | "All")[] = [
   "All",
   "New",
   "Completed",
   "Cancelled",
-];
+] as const;
 
 type OrdersHeaderProps = {
   selectedStatus: OrderStatus | "All";
@@ -28,19 +28,20 @@ type OrdersHeaderProps = {
 export default function OrdersHeader({
   selectedStatus,
   onStatusChange,
-}: OrdersHeaderProps) {
+}: Readonly<OrdersHeaderProps>) {
   return (
     <div className="mb-12 flex flex-col justify-between gap-8 md:flex-row md:items-end">
       <div className="flex-1">
-        <Link href="/account">
-          <Button
-            variant="ghost"
-            className="text-muted-foreground hover:text-foreground mb-6 -ml-2 gap-2"
-          >
-            <ArrowLeft className="size-4" />
+        <Button
+          asChild
+          variant="ghost"
+          className="text-muted-foreground hover:text-foreground mb-6 -ml-2 gap-2"
+        >
+          <Link href="/account">
+            <ArrowLeft className="size-4" aria-hidden="true" />
             Back to Account
-          </Button>
-        </Link>
+          </Link>
+        </Button>
         <div className="space-y-2">
           <h1 className="font-serif text-5xl font-medium text-balance">
             Order History
@@ -52,11 +53,17 @@ export default function OrdersHeader({
       </div>
 
       <div className="w-full md:w-56">
-        <Label className="text-muted-foreground mb-3 block text-xs font-semibold tracking-widest uppercase">
+        <Label
+          htmlFor="order-status-filter"
+          className="text-muted-foreground mb-3 block text-xs font-semibold tracking-widest uppercase"
+        >
           Filter Orders
         </Label>
         <Select value={selectedStatus} onValueChange={onStatusChange}>
-          <SelectTrigger className="hover:border-primary/50 border-2 transition-colors">
+          <SelectTrigger
+            id="order-status-filter"
+            className="hover:border-primary/50 border-2 transition-colors"
+          >
             <SelectValue placeholder="Select status" />
           </SelectTrigger>
           <SelectContent>

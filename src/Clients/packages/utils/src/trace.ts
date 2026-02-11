@@ -4,7 +4,7 @@
  * @see https://www.w3.org/TR/trace-context/
  */
 export const generateTraceId = (): string => {
-  const traceId = crypto.randomUUID().replace(/-/g, "");
-  const parentId = crypto.randomUUID().substring(0, 16).replace(/-/g, "");
+  const traceId = crypto.randomUUID().replaceAll("-", "");
+  const parentId = crypto.randomUUID().substring(0, 16).replaceAll("-", "");
   return `00-${traceId}-${parentId}-01`;
 };

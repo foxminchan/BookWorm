@@ -4,13 +4,14 @@ import type {
   UpdateCategoryRequest,
 } from "@workspace/types/catalog/categories";
 
-import ApiClient from "../client";
+import { apiClient } from "../client";
+import type ApiClient from "../client";
 
 class CategoriesApiClient {
   private readonly client: ApiClient;
 
   constructor() {
-    this.client = new ApiClient();
+    this.client = apiClient;
   }
 
   public async list(): Promise<Category[]> {
@@ -43,7 +44,7 @@ class CategoriesApiClient {
     return response.data;
   }
 
-  public async deleteCategory(id: string): Promise<void> {
+  public async delete(id: string): Promise<void> {
     await this.client.delete<void>(`/catalog/api/v1/categories/${id}`);
   }
 }

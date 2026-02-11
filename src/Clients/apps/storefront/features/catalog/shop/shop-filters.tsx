@@ -1,5 +1,8 @@
 "use client";
 
+import type { Author } from "@workspace/types/catalog/authors";
+import type { Category } from "@workspace/types/catalog/categories";
+import type { Publisher } from "@workspace/types/catalog/publishers";
 import {
   Sheet,
   SheetContent,
@@ -7,39 +10,47 @@ import {
   SheetTitle,
 } from "@workspace/ui/components/sheet";
 import { Slider } from "@workspace/ui/components/slider";
+import { formatPrice } from "@workspace/utils/format";
 
 import { FilterSection } from "@/components/filter-section";
+
+type FilterItem = { id: string; name: string };
 
 type ShopFiltersProps = {
   priceRange: number[];
   setPriceRange: (range: number[]) => void;
-  categories: any[] | undefined;
+  categories: Category[] | undefined;
   selectedCategories: string[];
   onToggleCategory: (id: string) => void;
-  publishers: any[] | undefined;
+  publishers: Publisher[] | undefined;
   selectedPublishers: string[];
   onTogglePublisher: (id: string) => void;
-  authors: any[] | undefined;
+  authors: Author[] | undefined;
   selectedAuthors: string[];
   onToggleAuthor: (id: string) => void;
   isFilterOpen: boolean;
   setIsFilterOpen: (value: boolean) => void;
 };
 
+function toFilterItems(
+  items: Array<{ id: string; name: string | null }> | undefined,
+): FilterItem[] {
+  return (items ?? []).map((item) => ({
+    id: item.id,
+    name: item.name ?? "",
+  }));
+}
+
 function PriceRangeFilter({
   priceRange,
   setPriceRange,
-}: {
+}: Readonly<{
   priceRange: number[];
   setPriceRange: (range: number[]) => void;
-}) {
-  const formatter = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  });
+}>) {
   return (
     <div>
-      <h3 className="mb-4 font-serif font-medium">Price Range</h3>
+      <h3 className="mb-2 font-serif font-semibold">Price Range</h3>
       <Slider
         value={priceRange}
         onValueChange={(value) =>
@@ -50,8 +61,8 @@ function PriceRangeFilter({
         className="mb-2"
       />
       <div className="text-muted-foreground flex items-center justify-between text-sm">
-        <span>{formatter.format(priceRange[0] ?? 0)}</span>
-        <span>{formatter.format(priceRange[1] ?? 100)}+</span>
+        <span>{formatPrice(priceRange[0] ?? 0)}</span>
+        <span>{formatPrice(priceRange[1] ?? 100)}+</span>
       </div>
     </div>
   );
@@ -71,12 +82,16 @@ export default function ShopFilters({
   onToggleAuthor,
   isFilterOpen,
   setIsFilterOpen,
-}: ShopFiltersProps) {
+}: Readonly<ShopFiltersProps>) {
+  const categoryItems = toFilterItems(categories);
+  const publisherItems = toFilterItems(publishers);
+  const authorItems = toFilterItems(authors);
+
   return (
     <>
       {/* Desktop Sidebar Filters */}
       <aside
-        className="hidden w-64 shrink-0 space-y-8 md:block"
+        className="hidden w-64 shrink-0 space-y-6 md:block"
         aria-label="Filters"
       >
         <PriceRangeFilter
@@ -86,27 +101,21 @@ export default function ShopFilters({
 
         <FilterSection
           title="Category"
-          items={(categories || []).map((c: any) => ({
-            id: c.id,
-            name: c.name,
-          }))}
+          items={categoryItems}
           selectedItems={selectedCategories}
           onToggle={onToggleCategory}
         />
 
         <FilterSection
           title="Publisher"
-          items={(publishers || []).map((p: any) => ({
-            id: p.id,
-            name: p.name,
-          }))}
+          items={publisherItems}
           selectedItems={selectedPublishers}
           onToggle={onTogglePublisher}
         />
 
         <FilterSection
           title="Author"
-          items={(authors || []).map((a: any) => ({ id: a.id, name: a.name }))}
+          items={authorItems}
           selectedItems={selectedAuthors}
           onToggle={onToggleAuthor}
         />
@@ -119,7 +128,7 @@ export default function ShopFilters({
             <SheetTitle>Filters</SheetTitle>
           </SheetHeader>
 
-          <div className="mt-8 space-y-8 px-4">
+          <div className="mt-8 space-y-6 px-4">
             <PriceRangeFilter
               priceRange={priceRange}
               setPriceRange={setPriceRange}
@@ -127,30 +136,21 @@ export default function ShopFilters({
 
             <FilterSection
               title="Category"
-              items={(categories || []).map((c: any) => ({
-                id: c.id,
-                name: c.name,
-              }))}
+              items={categoryItems}
               selectedItems={selectedCategories}
               onToggle={onToggleCategory}
             />
 
             <FilterSection
               title="Publisher"
-              items={(publishers || []).map((p: any) => ({
-                id: p.id,
-                name: p.name,
-              }))}
+              items={publisherItems}
               selectedItems={selectedPublishers}
               onToggle={onTogglePublisher}
             />
 
             <FilterSection
               title="Author"
-              items={(authors || []).map((a: any) => ({
-                id: a.id,
-                name: a.name,
-              }))}
+              items={authorItems}
               selectedItems={selectedAuthors}
               onToggle={onToggleAuthor}
             />

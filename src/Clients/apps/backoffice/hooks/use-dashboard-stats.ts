@@ -1,23 +1,41 @@
 "use client";
 
+import { useMemo } from "react";
+
 import useBooks from "@workspace/api-hooks/catalog/books/useBooks";
 import useBuyers from "@workspace/api-hooks/ordering/buyers/useBuyers";
 import useOrders from "@workspace/api-hooks/ordering/orders/useOrders";
-import type { Book } from "@workspace/types/catalog/books";
-import type { Buyer } from "@workspace/types/ordering/buyers";
-import type { Order } from "@workspace/types/ordering/orders";
+
+const REFETCH_INTERVAL = 30_000;
 
 export function useDashboardStats() {
-  const booksQuery = useBooks(undefined, { refetchInterval: 30000 });
-  const ordersQuery = useOrders(undefined, { refetchInterval: 30000 });
-  const buyersQuery = useBuyers(undefined, { refetchInterval: 30000 });
+  const booksQuery = useBooks(undefined, { refetchInterval: REFETCH_INTERVAL });
+  const ordersQuery = useOrders(undefined, {
+    refetchInterval: REFETCH_INTERVAL,
+  });
+  const buyersQuery = useBuyers(undefined, {
+    refetchInterval: REFETCH_INTERVAL,
+  });
 
-  return {
-    books: booksQuery.data?.items || ([] as Book[]),
-    orders: ordersQuery.data?.items || ([] as Order[]),
-    customers: buyersQuery.data?.items || ([] as Buyer[]),
-    isLoading:
-      booksQuery.isLoading || ordersQuery.isLoading || buyersQuery.isLoading,
-    error: booksQuery.error || ordersQuery.error || buyersQuery.error,
-  };
+  return useMemo(
+    () => ({
+      books: booksQuery.data?.items ?? [],
+      orders: ordersQuery.data?.items ?? [],
+      customers: buyersQuery.data?.items ?? [],
+      isLoading:
+        booksQuery.isLoading || ordersQuery.isLoading || buyersQuery.isLoading,
+      error: booksQuery.error ?? ordersQuery.error ?? buyersQuery.error,
+    }),
+    [
+      booksQuery.data?.items,
+      booksQuery.isLoading,
+      booksQuery.error,
+      ordersQuery.data?.items,
+      ordersQuery.isLoading,
+      ordersQuery.error,
+      buyersQuery.data?.items,
+      buyersQuery.isLoading,
+      buyersQuery.error,
+    ],
+  );
 }

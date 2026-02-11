@@ -1,7 +1,7 @@
 ---
 name: CSharp-Expert
 description: An agent designed to assist with software development tasks for .NET projects.
-model: Claude Opus 4.5 (copilot)
+model: Claude Opus 4.6 (fast mode) (Preview) (copilot)
 handoffs:
   - label: Request Code Review
     agent: Code-Reviewer

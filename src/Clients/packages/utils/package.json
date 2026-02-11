@@ -30,8 +30,11 @@
     "lint": "eslint .",
     "check-types": "tsc --noEmit"
   },
+  "dependencies": {
+    "date-fns": "^4.1.0"
+  },
   "devDependencies": {
-    "@types/node": "^25.2.2",
+    "@types/node": "^25.2.3",
     "@workspace/eslint-config": "workspace:*",
     "eslint": "^10.0.0",
     "typescript": "^5.9.3"

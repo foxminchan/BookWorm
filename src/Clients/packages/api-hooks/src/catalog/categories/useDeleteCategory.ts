@@ -14,7 +14,7 @@ export default function useDeleteCategory(
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id) => categoriesApiClient.deleteCategory(id),
+    mutationFn: (id) => categoriesApiClient.delete(id),
     onSuccess: (_, id) => {
       queryClient.removeQueries({
         queryKey: catalogKeys.categories.detail(id),

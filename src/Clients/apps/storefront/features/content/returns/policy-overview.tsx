@@ -2,6 +2,11 @@ import { CheckCircle, RotateCcw } from "lucide-react";
 
 import { Card, CardContent } from "@workspace/ui/components/card";
 
+type Benefit = {
+  readonly title: string;
+  readonly description: string;
+};
+
 const benefits = [
   {
     title: "Full Refunds",
@@ -15,14 +20,14 @@ const benefits = [
     title: "Easy Exchange",
     description: "Swap for a different title at no cost",
   },
-];
+] as const satisfies readonly Benefit[];
 
 const processSteps = [
   "Start a return from your account or contact support",
   "Receive a prepaid return shipping label",
   "Ship your books back in original condition",
   "Receive your refund or exchange within 5-7 business days",
-];
+] as const;
 
 export default function PolicyOverview() {
   return (
@@ -40,8 +45,8 @@ export default function PolicyOverview() {
             </p>
           </div>
           <div className="space-y-4">
-            {benefits.map((benefit, idx) => (
-              <div key={idx} className="flex gap-4">
+            {benefits.map((benefit) => (
+              <div key={benefit.title} className="flex gap-4">
                 <CheckCircle className="text-primary mt-1 size-6 shrink-0" />
                 <div>
                   <h3 className="mb-1 font-medium">{benefit.title}</h3>
@@ -62,7 +67,7 @@ export default function PolicyOverview() {
               </h3>
               <ol className="text-muted-foreground space-y-3 text-sm">
                 {processSteps.map((step, idx) => (
-                  <li key={idx} className="flex gap-3">
+                  <li key={step} className="flex gap-3">
                     <span className="text-primary shrink-0 font-medium">
                       {idx + 1}.
                     </span>

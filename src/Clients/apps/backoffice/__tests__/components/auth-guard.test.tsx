@@ -3,16 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AuthGuard } from "@/components/auth-guard";
 
-// Mock Next.js navigation
-const mockRouterPush = vi.fn();
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({
-    push: mockRouterPush,
-  }),
-}));
-
 // Mock useUserContext hook
-const mockUseUserContext = vi.fn();
+const mockUseUserContext = vi.hoisted(() => vi.fn());
 vi.mock("@/hooks/use-user-context", () => ({
   useUserContext: () => mockUseUserContext(),
 }));
@@ -102,9 +94,7 @@ describe("AuthGuard", () => {
     const statusCard = screen.getByRole("status");
     expect(statusCard).toHaveAttribute("aria-live", "polite");
     expect(statusCard).toHaveAttribute("aria-busy", "true");
-    expect(screen.getByText("Loading dashboard, please wait")).toHaveClass(
-      "sr-only",
-    );
+    expect(screen.getByText("Loading Dashboard")).toBeInTheDocument();
   });
 
   it("should not call signIn when already loading", async () => {

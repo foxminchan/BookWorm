@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import Link from "next/link";
 
@@ -13,13 +13,22 @@ import { Button } from "@workspace/ui/components/button";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
 
-type CellActionProps = {
+type CellActionProps = Readonly<{
   book: Book;
-};
+}>;
 
 export function CellAction({ book }: CellActionProps) {
   const [openDelete, setOpenDelete] = useState(false);
   const deleteBookMutation = useDeleteBook();
+
+  const handleDelete = useCallback(async () => {
+    deleteBookMutation.mutate(book.id, {
+      onSuccess: () => {
+        setOpenDelete(false);
+        toast.success("Book has been deleted");
+      },
+    });
+  }, [book.id, deleteBookMutation]);
 
   return (
     <>
@@ -27,7 +36,7 @@ export function CellAction({ book }: CellActionProps) {
         <Button variant="ghost" size="sm" asChild>
           <Link
             href={`/books/${book.id}`}
-            aria-label={`Edit ${book.name || "book"}`}
+            aria-label={`Edit ${book.name ?? "book"}`}
           >
             <Edit className="h-4 w-4" aria-hidden="true" />
           </Link>
@@ -38,7 +47,7 @@ export function CellAction({ book }: CellActionProps) {
           className="text-destructive hover:text-destructive"
           onClick={() => setOpenDelete(true)}
           disabled={deleteBookMutation.isPending}
-          aria-label={`Delete ${book.name || "book"}`}
+          aria-label={`Delete ${book.name ?? "book"}`}
         >
           {deleteBookMutation.isPending ? (
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -56,14 +65,7 @@ export function CellAction({ book }: CellActionProps) {
         actionLabel="Delete"
         actionType="delete"
         isLoading={deleteBookMutation.isPending}
-        onConfirm={async () => {
-          deleteBookMutation.mutate(book.id, {
-            onSuccess: () => {
-              setOpenDelete(false);
-              toast.success("Book has been deleted");
-            },
-          });
-        }}
+        onConfirm={handleDelete}
       />
     </>
   );

@@ -7,11 +7,16 @@ import { Button } from "@workspace/ui/components/button";
 import { Label } from "@workspace/ui/components/label";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 
-type AuthorsFilterProps = {
+type AuthorsFilterProps = Readonly<{
   selectedAuthors: string[];
   onToggle: (authorId: string) => void;
   onClear: () => void;
-};
+}>;
+
+const SKELETON_KEYS = Array.from(
+  { length: 6 },
+  (_, i) => `author-skeleton-${i}`,
+);
 
 export function AuthorsFilter({
   selectedAuthors,
@@ -25,8 +30,8 @@ export function AuthorsFilter({
       <div className="space-y-2">
         <Skeleton className="h-4 w-16" />
         <div className="flex flex-wrap gap-2">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-6 w-20" />
+          {SKELETON_KEYS.map((key) => (
+            <Skeleton key={key} className="h-6 w-20" />
           ))}
         </div>
       </div>
@@ -36,27 +41,25 @@ export function AuthorsFilter({
   return (
     <div className="space-y-2">
       <Label className="text-xs">Authors</Label>
-      <div
-        className="flex flex-wrap gap-2"
-        role="group"
-        aria-label="Filter by authors"
-      >
-        {authors?.map((author) => (
-          <Button
-            key={author.id}
-            variant={
-              selectedAuthors.includes(author.id) ? "default" : "outline"
-            }
-            size="sm"
-            className="h-6 rounded-full px-3 text-xs"
-            onClick={() => onToggle(author.id)}
-            aria-pressed={selectedAuthors.includes(author.id)}
-            aria-label={`${selectedAuthors.includes(author.id) ? "Remove" : "Add"} ${author.name} filter`}
-          >
-            {author.name}
-          </Button>
-        ))}
-      </div>
+      <fieldset className="flex flex-wrap gap-2" aria-label="Filter by authors">
+        <legend className="sr-only">Filter by authors</legend>
+        {authors?.map((author) => {
+          const isSelected = selectedAuthors.includes(author.id);
+          return (
+            <Button
+              key={author.id}
+              variant={isSelected ? "default" : "outline"}
+              size="sm"
+              className="h-6 rounded-full px-3 text-xs"
+              onClick={() => onToggle(author.id)}
+              aria-pressed={isSelected}
+              aria-label={`${isSelected ? "Remove" : "Add"} ${author.name} filter`}
+            >
+              {author.name}
+            </Button>
+          );
+        })}
+      </fieldset>
       {selectedAuthors.length > 0 && (
         <Button
           variant="link"

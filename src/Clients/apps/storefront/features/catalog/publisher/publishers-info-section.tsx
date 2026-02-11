@@ -1,5 +1,3 @@
-"use client";
-
 const INFO_SECTIONS = [
   {
     title: "Why Publishers Matter",

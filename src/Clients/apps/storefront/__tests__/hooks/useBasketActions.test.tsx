@@ -183,7 +183,7 @@ describe("useBasketActions", () => {
     expect(getByText(/Total:/)).toBeInTheDocument();
   });
 
-  it("exposes LiveRegion with latest announcement", async () => {
+  it("exposes liveRegion with latest announcement", async () => {
     mockRequestConfirmation.mockResolvedValue(true);
     mockUpdate.mockResolvedValue({});
 
@@ -199,7 +199,7 @@ describe("useBasketActions", () => {
       });
     });
 
-    const { getByRole } = render(<hook.current.LiveRegion />);
+    const { getByRole } = render(<>{hook.current.liveRegion}</>);
 
     expect(getByRole("status").textContent).toContain("Basket Book");
   });

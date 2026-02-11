@@ -6,6 +6,8 @@ import { useCopilotAction } from "@copilotkit/react-core";
 import { Check } from "lucide-react";
 
 import basketApiClient from "@workspace/api-client/basket/baskets";
+import type { BasketItem } from "@workspace/types/basket";
+import { formatPrice } from "@workspace/utils/format";
 
 import { useBasketConfirmation } from "./useBasketConfirmation";
 
@@ -72,7 +74,8 @@ export function useBasketActions() {
         items: [{ id: bookId, quantity }],
       });
 
-      const message = `Added ${quantity} ${quantity === 1 ? "copy" : "copies"}${bookTitle ? ` of ${bookTitle}` : ""} to basket`;
+      const bookSuffix = bookTitle ? ` of ${bookTitle}` : "";
+      const message = `Added ${quantity} ${quantity === 1 ? "copy" : "copies"}${bookSuffix} to basket`;
       setAnnouncement(message);
 
       return {
@@ -86,7 +89,7 @@ export function useBasketActions() {
       if (status === "executing") {
         return (
           <div className="flex items-center gap-2 rounded-lg border bg-blue-50 p-3 dark:bg-blue-950">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+            <div className="size-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
             <span className="text-sm">Adding to basket...</span>
           </div>
         );
@@ -96,7 +99,7 @@ export function useBasketActions() {
         return (
           <div className="rounded-lg border bg-green-50 p-3 dark:bg-green-950">
             <div className="flex items-center gap-2">
-              <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <Check className="size-5 text-green-600 dark:text-green-400" />
               <span className="text-sm font-medium">{result.message}</span>
             </div>
           </div>
@@ -127,15 +130,10 @@ export function useBasketActions() {
       };
     },
     render: ({ status, result }) => {
-      const formatter = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      });
-
       if (status === "executing") {
         return (
           <div className="flex items-center gap-2 rounded-lg border p-4">
-            <div className="border-primary h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
+            <div className="border-primary size-4 animate-spin rounded-full border-2 border-t-transparent" />
             <span className="text-sm">Loading basket...</span>
           </div>
         );
@@ -146,7 +144,7 @@ export function useBasketActions() {
           <div className="space-y-3 rounded-lg border p-4">
             <h3 className="font-semibold">
               Your Basket ({result.itemCount} item
-              {result.itemCount !== 1 ? "s" : ""})
+              {result.itemCount === 1 ? "" : "s"})
             </h3>
             {result.items.length === 0 ? (
               <p className="text-muted-foreground text-sm">
@@ -155,7 +153,7 @@ export function useBasketActions() {
             ) : (
               <>
                 <div className="space-y-2">
-                  {result.items.map((item: any) => (
+                  {result.items.map((item: BasketItem) => (
                     <div
                       key={item.id}
                       className="flex items-center gap-3 rounded border p-2"
@@ -164,12 +162,12 @@ export function useBasketActions() {
                         <div className="font-medium">{item.name}</div>
                         <div className="text-muted-foreground text-xs">
                           Qty: {item.quantity} ×{" "}
-                          {formatter.format(item.priceSale || item.price)}
+                          {formatPrice(item.priceSale ?? item.price)}
                         </div>
                       </div>
                       <div className="font-semibold">
-                        {formatter.format(
-                          item.quantity * (item.priceSale || item.price),
+                        {formatPrice(
+                          item.quantity * (item.priceSale ?? item.price),
                         )}
                       </div>
                     </div>
@@ -178,7 +176,7 @@ export function useBasketActions() {
                 <div className="border-t pt-3">
                   <div className="flex justify-between font-bold">
                     <span>Total:</span>
-                    <span>{formatter.format(result.totalPrice)}</span>
+                    <span>{formatPrice(result.totalPrice)}</span>
                   </div>
                 </div>
               </>
@@ -191,17 +189,13 @@ export function useBasketActions() {
     },
   });
 
-  // Live region component for screen reader announcements
-  const LiveRegion = () => (
-    <div
-      role="status"
-      aria-live="polite"
-      aria-atomic="true"
-      className="sr-only"
-    >
+  // Live region for screen reader announcements — rendered as JSX element
+  // to avoid component identity changing and causing remounts on every render.
+  const liveRegion = (
+    <output aria-live="polite" aria-atomic="true" className="sr-only">
       {announcement}
-    </div>
+    </output>
   );
 
-  return { ConfirmationDialog, LiveRegion };
+  return { ConfirmationDialog, liveRegion };
 }

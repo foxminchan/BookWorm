@@ -20,7 +20,7 @@ export const testData = {
     title: () => faker.lorem.words(3),
     author: () => faker.person.fullName(),
     isbn: () => faker.string.numeric(13),
-    price: () => parseFloat(faker.commerce.price({ min: 10, max: 100 })),
+    price: () => Number.parseFloat(faker.commerce.price({ min: 10, max: 100 })),
     description: () => faker.lorem.paragraph(),
     category: () =>
       faker.helpers.arrayElement([
@@ -62,7 +62,7 @@ export const testData = {
         "Delivered",
         "Cancelled",
       ]),
-    total: () => parseFloat(faker.commerce.price({ min: 20, max: 500 })),
+    total: () => Number.parseFloat(faker.commerce.price({ min: 20, max: 500 })),
     date: () => faker.date.recent({ days: 30 }),
   },
 

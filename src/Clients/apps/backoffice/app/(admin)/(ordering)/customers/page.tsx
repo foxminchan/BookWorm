@@ -1,5 +1,3 @@
-"use client";
-
 import { PageHeader } from "@/components/page-header";
 import { CustomersTable } from "@/features/customers/table/table";
 

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Search } from "lucide-react";
 
 import { Button } from "@workspace/ui/components/button";
+import { FieldLegend, FieldSet } from "@workspace/ui/components/field";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 
@@ -33,11 +34,11 @@ export function FilterSection({
   searchable = true,
   collapsible = true,
   maxVisibleItems = 5,
-}: FilterSectionProps) {
+}: Readonly<FilterSectionProps>) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const sectionId = title.toLowerCase().replace(/\s+/g, "-");
+  const sectionId = title.toLowerCase().replaceAll(/\s+/g, "-");
 
   const filteredItems = items.filter((item) =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -52,8 +53,8 @@ export function FilterSection({
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between gap-2">
-        <h3 className="font-serif font-medium">{title}</h3>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <h3 className="font-serif font-semibold">{title}</h3>
         {searchable && (
           <Button
             type="button"
@@ -70,7 +71,7 @@ export function FilterSection({
       </div>
 
       {isSearchOpen && (
-        <div className="relative mb-4">
+        <div className="relative mb-2">
           <Label htmlFor={`filter-search-${sectionId}`} className="sr-only">
             Search {title.toLowerCase()}
           </Label>
@@ -93,14 +94,13 @@ export function FilterSection({
         </div>
       )}
 
-      <div
+      <FieldSet
         id={`${sectionId}-filter-list`}
-        className={`space-y-2 overflow-hidden transition-all duration-300 ease-in-out ${
+        className={`gap-1 overflow-hidden border-none p-0 transition-all duration-300 ease-in-out ${
           isExpanded ? "max-h-96" : "max-h-56"
         }`}
-        role="group"
-        aria-label={`${title} filters`}
       >
+        <FieldLegend className="sr-only">{title} filters</FieldLegend>
         {displayedItems.map((item) => (
           <FilterCheckbox
             key={item.id}
@@ -109,7 +109,7 @@ export function FilterSection({
             onChange={() => onToggle(item.id)}
           />
         ))}
-      </div>
+      </FieldSet>
 
       {showToggle && (
         <>
