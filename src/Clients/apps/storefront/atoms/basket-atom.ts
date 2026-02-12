@@ -5,9 +5,12 @@ import { atomWithQuery } from "jotai-tanstack-query";
 
 import basketApiClient from "@workspace/api-client/basket/baskets";
 
-export const basketAtom = atomWithQuery(() => ({
+export const isAuthenticatedAtom = atom<boolean>(false);
+
+export const basketAtom = atomWithQuery((get) => ({
   queryKey: ["basket", "detail"],
   queryFn: () => basketApiClient.get(),
+  enabled: get(isAuthenticatedAtom),
 }));
 
 export const basketItemCountAtom = atom((get) => {

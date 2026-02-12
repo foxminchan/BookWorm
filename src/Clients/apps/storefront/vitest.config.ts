@@ -1,7 +1,7 @@
 import react from "@vitejs/plugin-react";
+import crypto from "node:crypto";
 import os from "node:os";
 import path from "node:path";
-import process from "node:process";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -9,10 +9,6 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "happy-dom",
-    execArgv: [
-      "--localstorage-file",
-      path.resolve(os.tmpdir(), `vitest-${process.pid}.localstorage`),
-    ],
     setupFiles: ["./__tests__/setup.ts"],
     include: ["**/__tests__/**/*.test.{ts,tsx}", "**/*.test.{ts,tsx}"],
     exclude: ["node_modules", ".next", "e2e"],
@@ -70,7 +66,11 @@ export default defineConfig({
         "features/home/**",
       ],
     },
-    pool: "threads",
+    pool: "forks",
+    execArgv: [
+      "--localstorage-file",
+      path.resolve(os.tmpdir(), `vitest-${crypto.randomUUID()}.localstorage`),
+    ],
     isolate: false,
   },
   resolve: {
