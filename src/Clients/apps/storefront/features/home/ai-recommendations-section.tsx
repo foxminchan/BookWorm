@@ -68,6 +68,7 @@ export default function AiRecommendationsSection({
             src="/aesthetic-book-journal-photography.jpg"
             alt="AI Book Recommendations - person writing in a journal surrounded by books"
             fill
+            sizes="(max-width: 768px) 100vw, 50vw"
             className="object-cover transition-transform duration-700 group-hover:scale-105"
             priority
           />

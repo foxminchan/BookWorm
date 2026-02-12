@@ -37,12 +37,14 @@ const getRuntime = async () => {
     agentHeaders["cookie"] = cookieHeader;
   }
 
-  return new CopilotRuntime({
+  const agents = {
     [agentName]: new HttpAgent({
       url: agUiUrl,
       headers: agentHeaders,
     }),
-  });
+  };
+
+  return new CopilotRuntime({ agents } as any);
 };
 
 export const POST = async (req: NextRequest) => {

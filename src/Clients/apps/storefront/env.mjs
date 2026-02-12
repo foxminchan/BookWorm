@@ -8,12 +8,12 @@ export const env = createEnv({
     KEYCLOAK_REALM: z.string().optional(),
     KEYCLOAK_CLIENT_ID: z.string().optional(),
     NEXT_PUBLIC_APP_URL: z.url().optional(),
-    NEXT_PUBLIC_COPILOT_AGENT_NAME: z.string().default("chat-workflow"),
   },
 
   client: {
     NEXT_PUBLIC_GATEWAY_HTTPS: z.url().optional(),
     NEXT_PUBLIC_GATEWAY_HTTP: z.url().optional(),
+    NEXT_PUBLIC_COPILOT_AGENT_NAME: z.string().default("chat-workflow"),
     NEXT_PUBLIC_COPILOT_ENABLED: z
       .string()
       .transform((val) => val === "true")
