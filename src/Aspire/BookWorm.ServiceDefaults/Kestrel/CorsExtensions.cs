@@ -19,9 +19,13 @@ public static class CorsExtensions
                     AllowAllCorsPolicy,
                     policyBuilder =>
                     {
-                        policyBuilder.SetIsOriginAllowed(origin =>
-                            new Uri(origin).Host == Network.Localhost
-                        );
+                        policyBuilder
+                            .SetIsOriginAllowed(origin =>
+                                new Uri(origin).Host == Network.Localhost
+                            )
+                            .AllowAnyHeader()
+                            .AllowAnyMethod()
+                            .AllowCredentials();
                     }
                 );
             });
