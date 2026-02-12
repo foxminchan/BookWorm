@@ -1,20 +1,28 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { useAtomValue } from "jotai";
+import { useAtomValue, useSetAtom } from "jotai";
 import { describe, expect, it } from "vitest";
 
 import {
   basketAtom,
   basketItemCountAtom,
   basketItemsAtom,
+  isAuthenticatedAtom,
 } from "@/atoms/basket-atom";
 
 import { createWrapper } from "../utils/test-utils";
 
 describe("basket atoms", () => {
   it("should return basket data from basketAtom", async () => {
-    const { result } = renderHook(() => useAtomValue(basketAtom), {
-      wrapper: createWrapper(),
-    });
+    const { result } = renderHook(
+      () => {
+        const setAuth = useSetAtom(isAuthenticatedAtom);
+        setAuth(true);
+        return useAtomValue(basketAtom);
+      },
+      {
+        wrapper: createWrapper(),
+      },
+    );
 
     await waitFor(() => {
       expect(result.current.data).toBeDefined();
