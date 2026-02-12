@@ -20,9 +20,7 @@ public static class CorsExtensions
                     policyBuilder =>
                     {
                         policyBuilder
-                            .SetIsOriginAllowed(origin =>
-                                new Uri(origin).Host == Network.Localhost
-                            )
+                            .SetIsOriginAllowed(origin => new Uri(origin).Host == Network.Localhost)
                             .AllowAnyHeader()
                             .AllowAnyMethod()
                             .AllowCredentials();
