@@ -29,6 +29,7 @@ Analyze newly opened or edited issues and apply appropriate labels to help organ
 ## Repository Context
 
 BookWorm is a microservices architecture with the following services:
+
 - **Catalog**: Book catalog management and storage
 - **Basket**: Shopping cart functionality
 - **Ordering**: Order processing and management
@@ -39,6 +40,7 @@ BookWorm is a microservices architecture with the following services:
 - **Scheduler**: Background job scheduling
 
 Additional components:
+
 - **Frontend**: Next.js applications (Backoffice admin and Storefront customer-facing)
 - **Infrastructure**: .NET Aspire orchestration, Docker, deployment
 - **Documentation**: Architecture docs and API documentation
@@ -47,27 +49,27 @@ Additional components:
 
 Apply these area labels based on issue content:
 
-| Label | Use when issue relates to |
-|-------|--------------------------|
-| `area:catalog` | Catalog service, book management, storage |
-| `area:basket` | Shopping cart, basket service |
-| `area:ordering` | Order processing, checkout flow |
-| `area:rating` | Ratings, reviews |
-| `area:chat` | Chat functionality, AI agents |
-| `area:finance` | Payments, financial transactions |
-| `area:notification` | Emails, notifications |
-| `area:scheduler` | Background jobs, scheduling |
-| `area:frontend` | UI, React/Next.js, Backoffice, Storefront |
-| `area:infrastructure` | Aspire, Docker, deployment, CI/CD |
-| `area:documentation` | Docs, README, architecture documentation |
+| Label                 | Use when issue relates to                 |
+| --------------------- | ----------------------------------------- |
+| `area:catalog`        | Catalog service, book management, storage |
+| `area:basket`         | Shopping cart, basket service             |
+| `area:ordering`       | Order processing, checkout flow           |
+| `area:rating`         | Ratings, reviews                          |
+| `area:chat`           | Chat functionality, AI agents             |
+| `area:finance`        | Payments, financial transactions          |
+| `area:notification`   | Emails, notifications                     |
+| `area:scheduler`      | Background jobs, scheduling               |
+| `area:frontend`       | UI, React/Next.js, Backoffice, Storefront |
+| `area:infrastructure` | Aspire, Docker, deployment, CI/CD         |
+| `area:documentation`  | Docs, README, architecture documentation  |
 
 Apply these priority labels when clearly indicated:
 
-| Label | Use when |
-|-------|----------|
-| `priority:high` | Security issues, data loss, critical functionality broken |
-| `priority:medium` | Important features, significant bugs affecting users |
-| `priority:low` | Minor improvements, cosmetic issues |
+| Label             | Use when                                                  |
+| ----------------- | --------------------------------------------------------- |
+| `priority:high`   | Security issues, data loss, critical functionality broken |
+| `priority:medium` | Important features, significant bugs affecting users      |
+| `priority:low`    | Minor improvements, cosmetic issues                       |
 
 ## Guidelines
 
@@ -94,13 +96,16 @@ Apply these priority labels when clearly indicated:
 ## Example Triage
 
 **Issue**: "[BUG] Shopping cart doesn't update quantity"
+
 - **Analysis**: Relates to shopping cart functionality
 - **Labels to add**: `area:basket`
 
 **Issue**: "[FEATURE] Add email confirmation for orders"
+
 - **Analysis**: Involves both ordering and notification services
 - **Labels to add**: `area:ordering`, `area:notification`
 
 **Issue**: "[BUG] Critical security vulnerability in payment processing"
+
 - **Analysis**: Security issue in finance service
 - **Labels to add**: `area:finance`, `priority:high`
