@@ -87,7 +87,7 @@ Apply these priority labels when clearly indicated:
 
 ## Safe Outputs
 
-- **If labels should be added**: Use `add-label` to apply the appropriate labels
+- **If labels should be added**: Use `add-labels` to apply the appropriate labels
 - **If you want to explain your triage decision**: Use `add-comment` to leave a brief, helpful comment
 - **If the issue is already well-labeled or unclear**: Use `noop` to indicate you've analyzed the issue but no additional labels are needed
 
