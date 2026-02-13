@@ -66,7 +66,7 @@ Whether you're a first-time contributor or an experienced developer, this guide 
    - `test:` for test additions or modifications
    - `chore:` for maintenance tasks
 4. **Push to Your Fork**: `git push origin feature/your-feature-name`
-5. **Create a Pull Request**: Submit your changes for review
+5. **Create a Pull Request**: Submit your changes for review. Use a Conventional Commits-style title (e.g., `feat: add book search endpoint`) and fill out the [PR template](./pull_request_template.md) completely
 
 For the branching strategy, please refer to the [Git Flow](https://nvie.com/posts/a-successful-git-branching-model/) model.
 
@@ -260,7 +260,7 @@ When modifying Protocol Buffers schema files (`.proto` files), you must run the 
 ### Core Testing Principles
 
 - **100% Business Logic Coverage**: Write unit tests for all domain and business logic components
-- **Descriptive Test Names**: Use the `Given_When_Then` pattern for test naming (e.g., `Given_ValidBook_When_AddingToLibrary_Then_SuccessReturned`)
+- **Descriptive Test Names**: Use the `GivenCondition_WhenAction_ThenExpectedResult` pattern for test naming (e.g., `GivenValidBook_WhenAddingToLibrary_ThenSuccessReturned`)
 - **Isolation**: Mock all external dependencies including repositories, services, and infrastructure components
 - **Comprehensive Scenarios**: Test both happy paths and edge cases, including validation failures and exception handling
 
@@ -293,27 +293,37 @@ When modifying Protocol Buffers schema files (`.proto` files), you must run the 
 
 ## Pull Request Process
 
-1. **Code Quality**:
+1. **PR Title**:
+   - Use [Conventional Commits](https://www.conventionalcommits.org/) format: `<type>: <description>` (e.g., `feat: add book search endpoint`)
+   - Valid types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
+   - Keep the description clear and concise
+
+2. **PR Description**:
+   - Fill out the [PR template](./pull_request_template.md) completely
+   - Summarize proposed changes and their purpose
+   - Select the appropriate type of change
+   - Complete all checklist items (check off or explain why not applicable)
+   - Link related issues using keywords (e.g., `Fixes #123`)
+
+3. **Code Quality**:
    - Follow BookWorm's coding standards and conventions
    - Include comprehensive unit tests for new features and changes
    - Ensure all existing and new tests pass locally before submitting
 
-2. **Documentation**:
+4. **Documentation**:
    - Update relevant documentation when changing functionality
    - Add code comments for complex logic where necessary
    - Include clear examples for API changes
 
-3. **Submission Requirements**:
-   - Link related issues in your PR description using keywords (Fixes #123)
-   - Provide a concise description of changes and their purpose
+5. **CI/CD**:
    - Ensure your PR passes all CI/CD pipeline checks, SonarQube analysis, and Snyk security scans
 
-4. **Review Process**:
+6. **Review Process**:
    - Request reviews from project maintainers
    - Address reviewer feedback promptly
    - Be prepared to make additional changes if requested
 
-5. **Merge Criteria**:
+7. **Merge Criteria**:
    - PRs require approval from at least one maintainer
    - All automated checks must pass
    - No merge conflicts with the target branch
@@ -322,18 +332,20 @@ Here is flowchart of the PR process:
 
 ```mermaid
 flowchart TD
-    A[Create Pull Request] --> B{Code Quality Checks}
-    B -->|Pass| C{Documentation Updated?}
-    C -->|Pass| D{Submission Requirements}
-    D -->|Pass| E{Code Review}
-    E -->|Approved| F{Merge Criteria}
-    F -->|Pass| G[Merge PR]
+    A[Create Pull Request] --> B{PR Title & Description}
+    B -->|Valid| C{Code Quality Checks}
+    C -->|Pass| D{Documentation Updated?}
+    D -->|Pass| E{CI/CD Checks}
+    E -->|Pass| F{Code Review}
+    F -->|Approved| G{Merge Criteria}
+    G -->|Pass| H[Merge PR]
 
-    B -->|Fail| H[Fix Issues]
-    C -->|Fail| H
-    D -->|Fail| H
-    E -->|Changes Requested| H
-    H --> B
+    B -->|Invalid| I[Fix Issues]
+    C -->|Fail| I
+    D -->|Fail| I
+    E -->|Fail| I
+    F -->|Changes Requested| I
+    I --> B
 ```
 
 ## Need Help?
