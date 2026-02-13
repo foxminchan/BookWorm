@@ -35,6 +35,10 @@
       "type": "stdio",
       "command": "bunx",
       "args": ["-y", "@playwright/mcp@latest"]
+    },
+    "drawio": {
+      "command": "bunx",
+      "args": ["@drawio/mcp"]
     }
   }
 }
