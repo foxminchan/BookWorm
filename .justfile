@@ -68,11 +68,6 @@ format: format-cs format-fe format-eventcatalog format-docusaurus format-k6 form
 clean:
     dotnet clean {{ solution }}
 
-# Trust the development certificate
-
-trust:
-    dotnet dev-certs https --trust
-
 # Setup pre-commit hooks
 
 hook:
@@ -81,7 +76,7 @@ hook:
 
 # First-time setup after cloning
 
-prepare: restore trust hook
+prepare: restore hook
     echo "Setup complete! Run 'just run' to start the application."
 
 # Run the application

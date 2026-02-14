@@ -26,8 +26,66 @@ env:
   SESSION_TIMEOUT: "15m"
 
 jobs:
-  build:
+  frontend-test:
+    name: Frontend tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: ${{ env.BUN_VERSION_FILE }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          package_json_file: src/Clients/package.json
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: "src/Clients/.nvmrc"
+          cache: "pnpm"
+          cache-dependency-path: "src/Clients/pnpm-lock.yaml"
+
+      - name: Install frontend dependencies
+        working-directory: src/Clients
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Frontend test with coverage
+        working-directory: src/Clients
+        run: pnpm turbo run test:coverage
+
+      - name: Upload frontend coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: |
+            src/Clients/apps/storefront/coverage/lcov.info
+            src/Clients/apps/backoffice/coverage/lcov.info
+          retention-days: 1
+          if-no-files-found: warn
+
+  security-scan:
+    name: Security scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Security Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
+
+  analyze:
     name: Build and analyze
+    needs: [frontend-test, security-scan]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -46,10 +104,11 @@ jobs:
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Download frontend coverage
+        uses: actions/download-artifact@v4
         with:
-          bun-version-file: ${{ env.BUN_VERSION_FILE }}
+          name: frontend-coverage
+          path: src/Clients/apps
 
       - name: Cache SonarQube Cloud packages
         uses: actions/cache@v5
@@ -74,18 +133,14 @@ jobs:
           dotnet tool update dotnet-sonarscanner --tool-path .sonar/scanner
 
       - name: Sonarqube Begin
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: >
           .sonar/scanner/dotnet-sonarscanner begin
           /k:"foxminchan_BookWorm"
           /o:"foxminchan"
-          /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+          /d:sonar.token="$SONAR_TOKEN"
           /s:$GITHUB_WORKSPACE/SonarQube.Analysis.xml
-
-      - name: Security Scan
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          GITLEAKS_CONFIG: .gitleaks.toml
 
       - name: Build
         run: >
@@ -109,6 +164,8 @@ jobs:
           --timeout ${{ env.SESSION_TIMEOUT }}
 
       - name: Sonarqube End
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: >
           .sonar/scanner/dotnet-sonarscanner end
-          /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+          /d:sonar.token="$SONAR_TOKEN"

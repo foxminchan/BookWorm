@@ -21,13 +21,11 @@ function makeQueryClient() {
 let browserQueryClient: QueryClient | undefined = undefined;
 
 export function getQueryClient() {
-  if (typeof window === "undefined") {
+  if (globalThis.window === undefined) {
     return makeQueryClient();
   }
 
-  if (!browserQueryClient) {
-    browserQueryClient = makeQueryClient();
-  }
+  browserQueryClient ??= makeQueryClient();
 
   return browserQueryClient;
 }

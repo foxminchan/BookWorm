@@ -5,7 +5,9 @@
     "ghcr.io/devcontainers/features/docker-in-docker:2": {},
     "ghcr.io/devcontainers/features/azure-cli:latest": {},
     "ghcr.io/devcontainers/features/github-cli:latest": {},
-    "ghcr.io/devcontainers/features/node:latest": {},
+    "ghcr.io/devcontainers/features/node:latest": {
+      "version": "25"
+    },
     "ghcr.io/devcontainers/features/java:1": {
       "installMaven": true,
       "version": "25"
