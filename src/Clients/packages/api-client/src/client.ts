@@ -1,4 +1,8 @@
-import axios, { type AxiosInstance, type AxiosResponse } from "axios";
+import axios, {
+  type AxiosInstance,
+  type AxiosResponse,
+  HttpStatusCode,
+} from "axios";
 import axiosRetry, { exponentialDelay } from "axios-retry";
 
 import axiosConfig from "./config";
@@ -6,8 +10,15 @@ import type { AxiosRequestConfig } from "./global";
 
 const DEFAULT_MAX_RETRIES = Number(process.env.NEXT_PUBLIC_MAX_RETRIES) || 5;
 
+/**
+ * A function that resolves the current access token, or `null` if unavailable.
+ * Used by the request interceptor to attach `Authorization: Bearer <token>`.
+ */
+export type AccessTokenProvider = () => string | null;
+
 export default class ApiClient {
   private readonly client: AxiosInstance;
+  private tokenProvider: AccessTokenProvider | null = null;
 
   constructor(config = axiosConfig, maxRetries = DEFAULT_MAX_RETRIES) {
     const axiosConfigs = "baseURL" in config ? config : axiosConfig;
@@ -19,13 +30,29 @@ export default class ApiClient {
       },
     });
 
+    this.client.interceptors.request.use((requestConfig) => {
+      const token = this.tokenProvider?.();
+      if (token) {
+        requestConfig.headers.Authorization = `Bearer ${token}`;
+      }
+      return requestConfig;
+    });
+
     axiosRetry(this.client, {
       retries: maxRetries,
       retryDelay: exponentialDelay,
       retryCondition: (error) =>
         axiosRetry.isNetworkOrIdempotentRequestError(error) ||
-        error.response?.status === 429,
+        error.response?.status === HttpStatusCode.TooManyRequests,
     });
+  }
+
+  /**
+   * Register a provider function that returns the current access token.
+   * The interceptor calls this on every request to attach the Bearer header.
+   */
+  public setTokenProvider(provider: AccessTokenProvider): void {
+    this.tokenProvider = provider;
   }
 
   public async get<T>(

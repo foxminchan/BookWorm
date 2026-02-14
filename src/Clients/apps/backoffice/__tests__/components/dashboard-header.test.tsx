@@ -15,14 +15,14 @@ vi.mock("next-themes", () => ({
 }));
 
 // Mock useUserContext
-const mockUseUserContext = vi.fn();
-vi.mock("@/hooks/use-user-context", () => ({
+const mockUseUserContext = vi.hoisted(() => vi.fn());
+vi.mock("@/hooks/useUserContext", () => ({
   useUserContext: () => mockUseUserContext(),
 }));
 
 // Mock useLogout
-const mockLogout = vi.fn();
-vi.mock("@/hooks/use-logout", () => ({
+const mockLogout = vi.hoisted(() => vi.fn());
+vi.mock("@/hooks/useLogout", () => ({
   useLogout: () => ({
     logout: mockLogout,
   }),

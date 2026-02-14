@@ -9,6 +9,7 @@ import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { Toaster } from "@workspace/ui/components/sonner";
 
 import { env } from "@/env.mjs";
+import { useAccessToken } from "@/hooks/useAccessToken";
 import { initMocks } from "@/lib/msw";
 import { getQueryClient } from "@/lib/query-client";
 
@@ -25,6 +26,8 @@ export function Providers({
       initMocks();
     }
   }, [gatewayUrl]);
+
+  useAccessToken();
 
   return (
     <QueryClientProvider client={queryClient}>

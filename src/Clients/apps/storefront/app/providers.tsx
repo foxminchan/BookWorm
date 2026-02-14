@@ -13,6 +13,7 @@ import { isCopilotEnabledAtom } from "@/atoms/feature-flags-atom";
 import { BackToTop } from "@/components/back-to-top";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { env } from "@/env.mjs";
+import { useAccessToken } from "@/hooks/useAccessToken";
 import { useSession } from "@/lib/auth-client";
 import { initMocks } from "@/lib/msw";
 import { getQueryClient } from "@/lib/query-client";
@@ -41,6 +42,8 @@ export function Providers({
   useEffect(() => {
     setIsAuthenticated(!!session?.user);
   }, [session, setIsAuthenticated]);
+
+  useAccessToken();
 
   const shouldShowCopilot = !!isCopilotEnabled && !!gatewayUrl;
 

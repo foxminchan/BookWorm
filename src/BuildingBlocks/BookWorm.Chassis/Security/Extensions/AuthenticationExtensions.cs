@@ -20,9 +20,15 @@ public static class AuthenticationExtensions
         services.Configure<IdentityOptions>(IdentityOptions.ConfigurationSection);
 
         var realm = services.BuildServiceProvider().GetRequiredService<IdentityOptions>().Realm;
+        // Use HTTP in development to match the frontend's Keycloak URL scheme,
+        // avoiding token issuer mismatch during introspection.
+        var scheme = builder.Environment.IsDevelopment()
+            ? Http.Schemes.Http
+            : Http.Schemes.HttpOrHttps;
+
         var keycloakUrl = HttpUtilities
             .AsUrlBuilder()
-            .WithScheme(Http.Schemes.HttpOrHttps)
+            .WithScheme(scheme)
             .WithHost(Components.KeyCloak)
             .Build();
 
@@ -42,8 +48,10 @@ public static class AuthenticationExtensions
                 realm,
                 options =>
                 {
-                    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
                     options.Audience = "account";
+                    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+                    options.TokenValidationParameters.ValidateAudience = !builder.Environment.IsDevelopment();
+                    options.TokenValidationParameters.ValidateIssuer = !builder.Environment.IsDevelopment();
                 }
             );
 

@@ -4,11 +4,12 @@ import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createWrapper } from "@/__tests__/utils/test-utils";
-import { useLogout } from "@/hooks/use-logout";
+import { useLogout } from "@/hooks/useLogout";
 
 // Mock auth client
+const mockSignOut = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/auth-client", () => ({
-  signOut: vi.fn(),
+  signOut: mockSignOut,
 }));
 
 describe("useLogout", () => {
@@ -37,26 +38,23 @@ describe("useLogout", () => {
   });
 
   it("should call signOut and navigate to home on logout", async () => {
-    const { signOut } = await import("@/lib/auth-client");
-
     const { result } = renderHook(() => useLogout(), {
       wrapper: createWrapper(),
     });
 
     await result.current.logout();
 
-    expect(signOut).toHaveBeenCalled();
+    expect(mockSignOut).toHaveBeenCalled();
     expect(mockPush).toHaveBeenCalledWith("/");
     expect(mockRefresh).toHaveBeenCalled();
   });
 
   it("should handle logout errors gracefully", async () => {
-    const { signOut } = await import("@/lib/auth-client");
     const consoleErrorSpy = vi
       .spyOn(console, "error")
       .mockImplementation(() => {});
 
-    vi.mocked(signOut).mockRejectedValueOnce(new Error("Logout failed"));
+    mockSignOut.mockRejectedValueOnce(new Error("Logout failed"));
 
     const { result } = renderHook(() => useLogout(), {
       wrapper: createWrapper(),

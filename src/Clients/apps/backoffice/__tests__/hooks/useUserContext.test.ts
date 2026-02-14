@@ -2,10 +2,10 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createWrapper } from "@/__tests__/utils/test-utils";
-import { useUserContext } from "@/hooks/use-user-context";
+import { useUserContext } from "@/hooks/useUserContext";
 
 // Mock useSession from auth-client
-const mockUseSession = vi.fn();
+const mockUseSession = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/auth-client", () => ({
   useSession: () => mockUseSession(),
 }));

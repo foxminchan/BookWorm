@@ -19,7 +19,7 @@ import {
 
 import { Button } from "@workspace/ui/components/button";
 
-import { useLogout } from "@/hooks/use-logout";
+import { useLogout } from "@/hooks/useLogout";
 
 const navigations = [
   {
