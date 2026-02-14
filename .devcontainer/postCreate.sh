@@ -10,7 +10,7 @@ echo Install Aspire
 curl -sSL https://aspire.dev/install.sh | bash
 
 echo Installing Bun
-curl -fsSL https://bun.sh/install | bash
+curl -fsSL --proto '=https' --tlsv1.2 -o /tmp/bun-install.sh https://bun.sh/install && bash /tmp/bun-install.sh && rm /tmp/bun-install.sh
 
 echo "Installing just-cli globally using bun"
 bun install -g rust-just

@@ -129,7 +129,7 @@ export class OrdersPage extends BasePage {
       .locator('[data-testid="item-count"], :has-text("item")')
       .textContent();
     const match = text?.match(/(\d+)/);
-    return match ? Number.parseInt(match[1]!) : 0;
+    return match ? Number.parseInt(match[1] ?? "") : 0;
   }
 
   async clickOrder(index: number): Promise<void> {

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   getOrderStatusColor,
+  getOrderStatusColorBordered,
   getReviewSortParams,
   getShopSortParams,
 } from "@/lib/pattern";
@@ -74,6 +75,36 @@ describe("pattern utils", () => {
 
     it("should include dark mode classes", () => {
       const result = getOrderStatusColor("Completed");
+      expect(result).toContain("dark:");
+    });
+  });
+
+  describe("getOrderStatusColorBordered", () => {
+    it("should return green bordered classes for Completed", () => {
+      const result = getOrderStatusColorBordered("Completed");
+      expect(result).toContain("green");
+      expect(result).toContain("border");
+    });
+
+    it("should return red bordered classes for Cancelled", () => {
+      const result = getOrderStatusColorBordered("Cancelled");
+      expect(result).toContain("red");
+      expect(result).toContain("border");
+    });
+
+    it("should return blue bordered classes for New", () => {
+      const result = getOrderStatusColorBordered("New");
+      expect(result).toContain("blue");
+      expect(result).toContain("border");
+    });
+
+    it("should return gray classes for unknown status", () => {
+      const result = getOrderStatusColorBordered("Unknown" as any);
+      expect(result).toContain("gray");
+    });
+
+    it("should include dark mode classes", () => {
+      const result = getOrderStatusColorBordered("Completed");
       expect(result).toContain("dark:");
     });
   });

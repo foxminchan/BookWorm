@@ -1,0 +1,57 @@
+# Dependencies
+**/node_modules
+
+# Local env files
+**/.env
+**/.env.local
+**/.env.development.local
+**/.env.test.local
+**/.env.production.local
+
+# Build outputs
+**/.next
+**/out
+**/build
+**/dist
+**/coverage
+
+# Testing
+**/e2e
+**/__tests__
+**/*.test.*
+**/*.spec.*
+
+# Turbo
+**/.turbo
+
+# Vercel
+**/.vercel
+
+# Debug logs
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/.pnpm-debug.log*
+
+# Version control
+**/.git
+**/.gitignore
+
+# IDE / Editor
+**/.vscode
+**/.idea
+**/*.swp
+**/*.swo
+
+# Secrets and certificates
+**/*.pem
+**/*.key
+**/*.cert
+
+# Misc
+**/.DS_Store
+**/Thumbs.db
+**/obj
+**/*.tsbuildinfo
+**/Dockerfile
+**/.dockerignore

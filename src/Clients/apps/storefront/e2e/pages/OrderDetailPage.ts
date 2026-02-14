@@ -156,7 +156,7 @@ export class OrderDetailPage extends BasePage {
       .locator('[data-testid="quantity"], :has-text("Qty")')
       .textContent();
     const match = text?.match(/(\d+)/);
-    return match ? Number.parseInt(match[1]!) : 0;
+    return match ? Number.parseInt(match[1] ?? "") : 0;
   }
 
   async getItemPrice(index: number): Promise<number> {

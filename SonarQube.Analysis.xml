@@ -4,22 +4,25 @@
   xmlns:xsd="http://www.w3.org/2001/XMLSchema"
   xmlns="http://www.sonarsource.com/msbuild/integration/2015/1">
   <Property Name="sonar.host.url">https://sonarcloud.io</Property>
-  <Property Name="sonar.scanner.scanAll">false</Property>
+  <Property Name="sonar.scanner.scanAll">true</Property>
   <Property Name="sonar.sourceEncoding">UTF-8</Property>
   <Property Name="sonar.exclusions">
-    docs/**,src/Services/**/**/Infrastructure/Migrations/**
+    docs/**,src/Services/**/**/Infrastructure/Migrations/**,**/node_modules/**,**/.next/**,**/.turbo/**,**/dist/**,**/out/**,src/Clients/packages/ui/src/components/**,**/mockServiceWorker.js,.github/workflows/*.lock.yml,src/Clients/packages/ui/src/styles/globals.css
   </Property>
   <Property Name="sonar.cpd.exclusions">
     **/Program.cs,src/Aspire/BookWorm.AppHost/Container/**,**/*Agent.cs,**/*Extensions.cs
   </Property>
   <Property Name="sonar.coverage.exclusions">
-    src/Services/**/**/Infrastructure/**,**/*Extensions.cs,**/Program.cs,src/BuildingBlocks/**,src/Integrations/**,src/Aspire/**
+    src/Services/**/**/Infrastructure/**,**/*Extensions.cs,**/Program.cs,src/BuildingBlocks/**,src/Integrations/**,src/Aspire/**,src/Clients/packages/**,src/Clients/apps/**/app/**,src/Clients/apps/**/e2e/**,src/Clients/apps/**/__tests__/setup*,src/Clients/apps/**/__tests__/utils/**,src/Clients/apps/**/__tests__/factories/**,src/Clients/apps/**/*.config.*,src/Clients/apps/**/*.mjs,src/Clients/apps/**/instrumentation*,src/Clients/apps/**/lib/auth.ts,src/Clients/apps/**/lib/auth-client.ts,src/Clients/apps/**/lib/msw.ts,src/Clients/apps/**/lib/query-client.ts,src/Clients/apps/**/lib/constants.ts,src/Clients/apps/**/lib/policy-content.ts,src/Clients/apps/**/lib/seo.ts,src/Clients/apps/**/proxy.ts,src/Clients/apps/**/flags.ts,src/Clients/apps/**/hooks/useUserContext.ts,src/Clients/apps/**/features/content/**,src/Clients/apps/**/features/home/**,src/Clients/apps/**/components/loading-skeleton.tsx,src/Clients/apps/**/components/back-to-top.tsx,src/Clients/apps/**/components/footer-policies.tsx,src/Clients/apps/**/components/header.tsx,src/Clients/apps/**/components/footer.tsx,src/Clients/apps/**/components/mobile-bottom-nav.tsx,src/Clients/apps/**/components/chat-bot.tsx,src/Clients/apps/**/components/policy-dialog.tsx,src/Clients/apps/**/components/dashboard-header.tsx,src/Clients/apps/**/components/dashboard-nav.tsx,src/Clients/apps/**/components/auth-guard.tsx,src/Clients/apps/**/components/mobile-blocker.tsx,src/Clients/apps/**/components/providers.tsx
   </Property>
   <Property Name="sonar.cs.vstest.reportsPaths">
    test-results/*.trx
   </Property>
   <Property Name="sonar.cs.vscoveragexml.reportsPaths">
     test-results/*.xml
+  </Property>
+  <Property Name="sonar.javascript.lcov.reportPaths">
+    src/Clients/apps/storefront/coverage/lcov.info,src/Clients/apps/backoffice/coverage/lcov.info
   </Property>
   <Property Name="sonar.sarifReportPaths">
     results.sarif

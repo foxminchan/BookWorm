@@ -148,7 +148,7 @@ public sealed class DependenciesTests : ArchUnitBaseTest
     }
 
     [Test]
-    public void GivenExtensions_WhenChecking_ThenShouldBePublic()
+    public void GivenExtensions_WhenChecking_ThenShouldBeInternal()
     {
         Classes()
             .That()
@@ -158,7 +158,25 @@ public sealed class DependenciesTests : ArchUnitBaseTest
             .Should()
             .BeInternal()
             .Because(
-                "Extensions should not be abstract or sealed to ensure they can be extended and used as intended."
+                "Extension classes should be internal to prevent exposure outside the service boundary."
+            )
+            .Check(Architecture);
+    }
+
+    [Test]
+    public void GivenExtensions_WhenChecking_ThenShouldBeStatic()
+    {
+        Classes()
+            .That()
+            .ResideInNamespaceMatching(ExtensionNamespace)
+            .And()
+            .HaveName("Extensions")
+            .Should()
+            .BeAbstract()
+            .AndShould()
+            .BeSealed()
+            .Because(
+                "Extension classes should be static (abstract sealed in IL) to enforce they only contain extension methods."
             )
             .Check(Architecture);
     }

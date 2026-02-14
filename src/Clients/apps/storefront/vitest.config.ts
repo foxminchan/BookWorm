@@ -4,6 +4,16 @@ import os from "node:os";
 import path from "node:path";
 import { defineConfig } from "vitest/config";
 
+// Set unique MSW cookie store path BEFORE any test file imports MSW.
+// This must live here (not in setup.ts) because JS import hoisting causes
+// MSW's CookieStore to initialise before module-level statements in setup
+// files run, leading to a shared SQLite file and "database is locked" errors
+// when Turbo executes both app test suites in parallel.
+process.env.MSW_COOKIE_STORE_PATH ??= path.resolve(
+  os.tmpdir(),
+  `msw-cookies-storefront-${process.pid}-${crypto.randomUUID()}.db`,
+);
+
 export default defineConfig({
   plugins: [react()],
   test: {
@@ -37,8 +47,14 @@ export default defineConfig({
         "**/*.mjs",
         "**/env.mjs",
         "**/instrumentation.ts",
+        "**/instrumentation.node.ts",
         "**/proxy.ts",
         "**/middleware.ts",
+        // Feature Flags & Constants
+        "flags.ts",
+        "lib/constants.ts",
+        "lib/policy-content.ts",
+        "lib/query-client.ts",
         // SEO & Metadata
         "**/robots.ts",
         "**/sitemap.ts",
@@ -52,6 +68,10 @@ export default defineConfig({
         // MSW & Mocking
         "lib/msw.ts",
         "public/mockServiceWorker.js",
+        // Thin Wrappers (declarative, no logic)
+        "hooks/useUserContext.ts",
+        "components/back-to-top.tsx",
+        "components/footer-policies.tsx",
         // Complex UI Components (e2e tested)
         "components/header.tsx",
         "components/footer.tsx",

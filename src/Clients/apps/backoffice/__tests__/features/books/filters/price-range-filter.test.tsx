@@ -51,7 +51,7 @@ describe("PriceRangeFilter", () => {
 
   it("renders slider component", () => {
     const onChange = vi.fn();
-    const { container } = render(
+    render(
       <PriceRangeFilter
         min={0}
         max={100}
@@ -61,8 +61,7 @@ describe("PriceRangeFilter", () => {
       />,
     );
 
-    const slider = container.querySelector('input[type="range"]');
-    expect(slider).toBeInTheDocument();
+    expect(screen.getAllByRole("slider").length).toBeGreaterThan(0);
   });
 
   it("handles zero prices", () => {

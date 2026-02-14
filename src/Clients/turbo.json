@@ -62,6 +62,17 @@
       ],
       "passThroughEnv": ["FAKER_SEED", "MSW_COOKIE_STORE_PATH"]
     },
+    "test:coverage": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"],
+      "inputs": [
+        "**/*.{ts,tsx}",
+        "**/*.test.{ts,tsx}",
+        "vitest.config.ts",
+        "**/__tests__/**"
+      ],
+      "passThroughEnv": ["FAKER_SEED", "MSW_COOKIE_STORE_PATH"]
+    },
     "test:watch": {
       "cache": false,
       "persistent": true

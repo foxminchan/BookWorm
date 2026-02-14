@@ -17,7 +17,6 @@ The project uses a `.justfile` for common tasks. Run these commands:
 - **Run tests**: `just test` (or `dotnet test`)
 - **Format code**: `just format`
 - **Clean build**: `just clean`
-- **Trust dev certificate**: `just trust`
 - **Update packages**: `just update`
 
 If there is already an instance of the application running it will prompt to stop the existing instance. You only need to restart the application if code in `apphost.cs` is changed, but if you experience problems it can be useful to reset everything to the starting state.

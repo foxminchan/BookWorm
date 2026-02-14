@@ -168,4 +168,141 @@ describe("useOfflineQueue", () => {
     expect(result.current.isOnline).toBe(true);
     vi.useRealTimers();
   });
+
+  it("sends message successfully when online", async () => {
+    setNavigatorOnline(true);
+    const sendFn = vi.fn().mockResolvedValue(undefined);
+    const { result } = renderHook(() => useOfflineQueue());
+
+    let response: { success: boolean; queued: boolean } | undefined;
+    await act(async () => {
+      response = await result.current.sendMessage("hello", sendFn);
+    });
+
+    expect(response).toEqual({ success: true, queued: false });
+    expect(sendFn).toHaveBeenCalledWith("hello");
+    expect(result.current.queueSize).toBe(0);
+  });
+
+  it("skips sync when already syncing", async () => {
+    // Pre-load a message so the queue is non-empty on mount
+    const stored = [
+      { id: "sync-msg", content: "hi", timestamp: 1, retryCount: 0 },
+    ];
+    localStorage.setItem("copilot-message-queue", JSON.stringify(stored));
+
+    setNavigatorOnline(true);
+    const { result } = renderHook(() => useOfflineQueue());
+
+    // Wait for localStorage load
+    await act(async () => {});
+
+    // Start syncing — don't await so that isSyncing remains true
+    act(() => {
+      result.current.syncQueue();
+    });
+
+    expect(result.current.isSyncing).toBe(true);
+
+    // Second call should be a no-op because isSyncing is true
+    await act(async () => {
+      await result.current.syncQueue();
+    });
+
+    // Queue should still contain the message (second sync was skipped)
+    expect(result.current.queueSize).toBe(1);
+  });
+
+  it("skips sync when queue is empty", async () => {
+    setNavigatorOnline(true);
+    const { result } = renderHook(() => useOfflineQueue());
+
+    await act(async () => {
+      await result.current.syncQueue();
+    });
+
+    // No errors, just a no-op
+    expect(result.current.isSyncing).toBe(false);
+  });
+
+  it("skips sync when offline", async () => {
+    setNavigatorOnline(false);
+    const { result } = renderHook(() => useOfflineQueue());
+
+    await act(async () => {
+      await result.current.sendMessage("msg", vi.fn());
+    });
+
+    // Don't go online — sync while offline
+    await act(async () => {
+      await result.current.syncQueue();
+    });
+
+    // Message should remain in queue
+    expect(result.current.queueSize).toBe(1);
+  });
+
+  it("removes message from queue after max retries on failed sync", async () => {
+    // Pre-load a message with retryCount at MAX_RETRIES
+    const stored = [
+      { id: "retry-msg", content: "hi", timestamp: 1, retryCount: 3 },
+    ];
+    localStorage.setItem("copilot-message-queue", JSON.stringify(stored));
+
+    setNavigatorOnline(true);
+    const { result } = renderHook(() => useOfflineQueue());
+
+    // Wait for localStorage load
+    await act(async () => {});
+
+    await act(async () => {
+      const pending = result.current.syncQueue();
+
+      // Dispatch a failure confirmation
+      globalThis.dispatchEvent(
+        new CustomEvent("copilot-message-sent", {
+          detail: { id: "retry-msg", success: false },
+        }),
+      );
+
+      await pending;
+    });
+
+    expect(result.current.queueSize).toBe(0);
+  });
+
+  it("queues multiple messages offline", async () => {
+    setNavigatorOnline(false);
+    const { result } = renderHook(() => useOfflineQueue());
+
+    await act(async () => {
+      await result.current.sendMessage("msg1", vi.fn());
+    });
+    await act(async () => {
+      await result.current.sendMessage("msg2", vi.fn());
+    });
+
+    expect(result.current.queueSize).toBe(2);
+    expect(result.current.queue[0]!.content).toBe("msg1");
+    expect(result.current.queue[1]!.content).toBe("msg2");
+  });
+
+  it("cleans up event listeners on unmount", () => {
+    const removeEventListenerSpy = vi.spyOn(globalThis, "removeEventListener");
+
+    const { unmount } = renderHook(() => useOfflineQueue());
+
+    unmount();
+
+    expect(removeEventListenerSpy).toHaveBeenCalledWith(
+      "online",
+      expect.any(Function),
+    );
+    expect(removeEventListenerSpy).toHaveBeenCalledWith(
+      "offline",
+      expect.any(Function),
+    );
+
+    removeEventListenerSpy.mockRestore();
+  });
 });

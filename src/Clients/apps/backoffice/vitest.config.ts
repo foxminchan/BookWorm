@@ -1,8 +1,19 @@
 import react from "@vitejs/plugin-react";
+import crypto from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { defineConfig } from "vitest/config";
+
+// Set unique MSW cookie store path BEFORE any test file imports MSW.
+// This must live here (not in setup.ts) because JS import hoisting causes
+// MSW's CookieStore to initialise before module-level statements in setup
+// files run, leading to a shared SQLite file and "database is locked" errors
+// when Turbo executes both app test suites in parallel.
+process.env.MSW_COOKIE_STORE_PATH ??= path.resolve(
+  os.tmpdir(),
+  `msw-cookies-backoffice-${process.pid}-${crypto.randomUUID()}.db`,
+);
 
 export default defineConfig({
   plugins: [react()],
@@ -15,7 +26,7 @@ export default defineConfig({
     ],
     setupFiles: ["./__tests__/setup.ts"],
     include: ["**/__tests__/**/*.test.{ts,tsx}", "**/*.test.{ts,tsx}"],
-    exclude: ["node_modules", ".next"],
+    exclude: ["node_modules", ".next", "e2e"],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "json-summary", "html", "lcov"],
@@ -24,6 +35,7 @@ export default defineConfig({
         "node_modules/",
         ".next/",
         "__tests__/",
+        "e2e/",
         "**/*.config.*",
         "**/*.d.ts",
         "**/types.ts",
@@ -40,7 +52,11 @@ export default defineConfig({
         "**/*.mjs",
         "**/env.mjs",
         "**/instrumentation.ts",
+        "**/instrumentation.node.ts",
         "**/middleware.ts",
+        // Query Client (config wrapper)
+        "lib/query-client.ts",
+        "lib/constants.ts",
         // Auth & Providers (integration concerns)
         "lib/auth.ts",
         "lib/auth-client.ts",

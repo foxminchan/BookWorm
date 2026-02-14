@@ -1,21 +1,9 @@
 import { faker } from "@faker-js/faker";
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
-import { randomUUID } from "node:crypto";
-import os from "node:os";
-import path from "node:path";
-import process from "node:process";
 import { afterAll, afterEach, beforeAll, vi } from "vitest";
 
 import { server } from "@workspace/mocks/node";
-
-// Set unique MSW cookie database per worker BEFORE importing MSW
-if (!process.env.MSW_COOKIE_STORE_PATH) {
-  process.env.MSW_COOKIE_STORE_PATH = path.resolve(
-    os.tmpdir(),
-    `msw-cookies-${process.pid}-${Date.now()}-${randomUUID()}.db`,
-  );
-}
 
 // Set a consistent seed for faker to ensure deterministic test data
 const fakerSeed = process.env.FAKER_SEED

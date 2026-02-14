@@ -8,7 +8,7 @@ WORKDIR /app
 # ---
 FROM base AS prepare
 RUN pnpm install -g turbo@^2
-COPY . .
+COPY --chmod=555 . .
 # Generate a partial monorepo with a pruned lockfile for a target workspace
 # Assuming "@bookworm/storefront" is the name in the project's package.json
 RUN turbo prune @bookworm/storefront --docker
@@ -17,11 +17,11 @@ RUN turbo prune @bookworm/storefront --docker
 FROM base AS builder
 
 # First install the dependencies (as they change less often)
-COPY --from=prepare /app/out/json/ .
-RUN pnpm install --frozen-lockfile
+COPY --from=prepare --chmod=555 /app/out/json/ .
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # Build the project
-COPY --from=prepare /app/out/full/ .
+COPY --from=prepare --chmod=555 /app/out/full/ .
 
 # Use build args to enable remote caching
 ARG TURBO_TEAM
@@ -48,9 +48,9 @@ USER nextjs
 
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
-COPY --from=builder --chown=nextjs:nodejs /app/apps/storefront/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/storefront/.next/static ./apps/storefront/.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/apps/storefront/public ./apps/storefront/public
+COPY --from=builder --chown=nextjs:nodejs --chmod=555 /app/apps/storefront/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs --chmod=555 /app/apps/storefront/.next/static ./apps/storefront/.next/static
+COPY --from=builder --chown=nextjs:nodejs --chmod=555 /app/apps/storefront/public ./apps/storefront/public
 
 EXPOSE 3000
 
