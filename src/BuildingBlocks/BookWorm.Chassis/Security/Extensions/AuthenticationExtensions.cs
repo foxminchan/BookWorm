@@ -50,8 +50,10 @@ public static class AuthenticationExtensions
                 {
                     options.Audience = "account";
                     options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
-                    options.TokenValidationParameters.ValidateAudience = !builder.Environment.IsDevelopment();
-                    options.TokenValidationParameters.ValidateIssuer = !builder.Environment.IsDevelopment();
+                    options.TokenValidationParameters.ValidateAudience =
+                        !builder.Environment.IsDevelopment();
+                    options.TokenValidationParameters.ValidateIssuer =
+                        !builder.Environment.IsDevelopment();
                 }
             );
 
