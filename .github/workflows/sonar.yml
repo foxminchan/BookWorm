@@ -74,11 +74,13 @@ jobs:
           dotnet tool update dotnet-sonarscanner --tool-path .sonar/scanner
 
       - name: Sonarqube Begin
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: >
           .sonar/scanner/dotnet-sonarscanner begin
           /k:"foxminchan_BookWorm"
           /o:"foxminchan"
-          /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+          /d:sonar.token="$SONAR_TOKEN"
           /s:$GITHUB_WORKSPACE/SonarQube.Analysis.xml
 
       - name: Security Scan
@@ -109,6 +111,8 @@ jobs:
           --timeout ${{ env.SESSION_TIMEOUT }}
 
       - name: Sonarqube End
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: >
           .sonar/scanner/dotnet-sonarscanner end
-          /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+          /d:sonar.token="$SONAR_TOKEN"

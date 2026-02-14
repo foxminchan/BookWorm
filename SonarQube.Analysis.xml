@@ -4,10 +4,10 @@
   xmlns:xsd="http://www.w3.org/2001/XMLSchema"
   xmlns="http://www.sonarsource.com/msbuild/integration/2015/1">
   <Property Name="sonar.host.url">https://sonarcloud.io</Property>
-  <Property Name="sonar.scanner.scanAll">false</Property>
+  <Property Name="sonar.scanner.scanAll">true</Property>
   <Property Name="sonar.sourceEncoding">UTF-8</Property>
   <Property Name="sonar.exclusions">
-    docs/**,src/Services/**/**/Infrastructure/Migrations/**
+    docs/**,src/Services/**/**/Infrastructure/Migrations/**,**/node_modules/**,**/.next/**,**/.turbo/**,**/dist/**,**/out/**
   </Property>
   <Property Name="sonar.cpd.exclusions">
     **/Program.cs,src/Aspire/BookWorm.AppHost/Container/**,**/*Agent.cs,**/*Extensions.cs
