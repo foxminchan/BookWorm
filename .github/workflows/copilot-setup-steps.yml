@@ -45,6 +45,21 @@ jobs:
         with:
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          package_json_file: src/Clients/package.json
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: "src/Clients/.nvmrc"
+          cache: "pnpm"
+          cache-dependency-path: "src/Clients/pnpm-lock.yaml"
+
+      - name: Setup Just
+        uses: extractions/setup-just@v3
+
       - name: Install Tools
         run: dotnet tool restore
 
@@ -58,3 +73,7 @@ jobs:
       - name: Install eventcatalog dependencies
         run: bun install
         working-directory: docs/eventcatalog
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: src/Clients

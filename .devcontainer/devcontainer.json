@@ -1,10 +1,11 @@
 {
-  "name": "BookWorm",
+  "name": "BookWorm - Contribute",
   "image": "mcr.microsoft.com/devcontainers/dotnet:dev-10.0-noble",
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {},
     "ghcr.io/devcontainers/features/azure-cli:latest": {},
     "ghcr.io/devcontainers/features/github-cli:latest": {},
+    "ghcr.io/devcontainers/features/copilot-cli:1": {},
     "ghcr.io/devcontainers/features/node:latest": {
       "version": "25"
     },
@@ -18,15 +19,28 @@
     "memory": "32gb",
     "storage": "64gb"
   },
-  "postCreateCommand": "./.devcontainer/postCreate.sh  > ~/postCreate.log",
-  "postStartCommand": "dotnet dev-certs https --trust",
   "customizations": {
     "vscode": {
       "extensions": [
         "ms-dotnettools.csdevkit",
+        "ms-azuretools.vscode-bicep",
         "GitHub.copilot-chat",
-        "GitHub.copilot"
-      ]
+        "GitHub.copilot",
+        "GitHub.vscode-github-actions",
+        "editorconfig.editorconfig",
+        "sonarsource.sonarlint-vscode",
+        "Vercel.turbo-vsc"
+      ],
+      "settings": {
+        "remote.autoForwardPorts": true,
+        "remote.autoForwardPortsSource": "hybrid",
+        "remote.otherPortsAttributes": {
+          "onAutoForward": "ignore"
+        }
+      }
     }
-  }
+  },
+  "postCreateCommand": "./.devcontainer/postCreate.sh  > ~/postCreate.log",
+  "postStartCommand": "dotnet dev-certs https --trust",
+  "onCreateCommand": "dotnet restore"
 }
