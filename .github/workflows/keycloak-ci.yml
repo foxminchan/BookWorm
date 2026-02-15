@@ -62,7 +62,7 @@ jobs:
         working-directory: src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify
         run: bun install --frozen-lockfile
 
-      - name: Run Biome CI checks
+      - name: Run CI checks
         working-directory: src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify
         run: bun run ci
 
