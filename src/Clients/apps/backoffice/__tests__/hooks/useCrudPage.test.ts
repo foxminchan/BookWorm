@@ -2,7 +2,7 @@ import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useCrudPage } from "@/hooks/use-crud-page";
+import { useCrudPage } from "@/hooks/useCrudPage";
 
 // Mock sonner toast
 vi.mock("sonner", () => ({

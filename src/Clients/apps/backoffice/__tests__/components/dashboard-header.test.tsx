@@ -15,14 +15,25 @@ vi.mock("next-themes", () => ({
 }));
 
 // Mock useUserContext
-const mockUseUserContext = vi.fn();
-vi.mock("@/hooks/use-user-context", () => ({
+const mockUseUserContext = vi.hoisted(() => vi.fn());
+vi.mock("@/hooks/useUserContext", () => ({
   useUserContext: () => mockUseUserContext(),
 }));
 
+// Mock auth-client to prevent real module from loading (isolate: false)
+vi.mock("@/lib/auth-client", () => ({
+  signOut: vi.fn(),
+  signIn: vi.fn(),
+  useSession: vi.fn().mockReturnValue({ data: null }),
+  authClient: {
+    signOut: vi.fn(),
+    getAccessToken: vi.fn().mockResolvedValue({ data: null }),
+  },
+}));
+
 // Mock useLogout
-const mockLogout = vi.fn();
-vi.mock("@/hooks/use-logout", () => ({
+const mockLogout = vi.hoisted(() => vi.fn());
+vi.mock("@/hooks/useLogout", () => ({
   useLogout: () => ({
     logout: mockLogout,
   }),

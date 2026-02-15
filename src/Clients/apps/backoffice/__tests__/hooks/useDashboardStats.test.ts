@@ -2,7 +2,7 @@ import { renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { createWrapper } from "@/__tests__/utils/test-utils";
-import { useDashboardStats } from "@/hooks/use-dashboard-stats";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
 
 describe("useDashboardStats", () => {
   it("should initialize with loading state", () => {

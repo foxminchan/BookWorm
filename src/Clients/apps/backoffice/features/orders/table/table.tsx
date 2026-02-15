@@ -7,7 +7,7 @@ import type {
 } from "@workspace/types/ordering/orders";
 
 import { FilterTable } from "@/components/filter-table";
-import { usePaginatedTable } from "@/hooks/use-paginated-table";
+import { usePaginatedTable } from "@/hooks/usePaginatedTable";
 
 import { columns } from "./columns";
 

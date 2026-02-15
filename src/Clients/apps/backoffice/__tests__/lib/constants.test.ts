@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import {
   API,
-  AUTH,
   CHART_COLORS,
   CHART_THEME,
   DEFAULT_BOOKS_PAGE_SIZE,
@@ -10,16 +9,6 @@ import {
   PAGE_SIZES,
   currencyFormatter,
 } from "@/lib/constants";
-
-describe("AUTH constants", () => {
-  it("should have keycloak provider", () => {
-    expect(AUTH.PROVIDER).toBe("keycloak");
-  });
-
-  it("should have root callback URL", () => {
-    expect(AUTH.CALLBACK_URL).toBe("/");
-  });
-});
 
 describe("API constants", () => {
   it("should have default retry count of 3", () => {

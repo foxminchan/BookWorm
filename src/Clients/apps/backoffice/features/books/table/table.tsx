@@ -4,7 +4,7 @@ import useBooks from "@workspace/api-hooks/catalog/books/useBooks";
 import type { Book, ListBooksQuery } from "@workspace/types/catalog/books";
 
 import { FilterTable } from "@/components/filter-table";
-import { usePaginatedTable } from "@/hooks/use-paginated-table";
+import { usePaginatedTable } from "@/hooks/usePaginatedTable";
 
 import { columns } from "./columns";
 

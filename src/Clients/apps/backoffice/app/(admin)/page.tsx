@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 
 import { KPICards } from "@/features/overview/kpi-cards";
 import { RecentOrdersTable } from "@/features/overview/recent-orders-table";
-import { useDashboardStats } from "@/hooks/use-dashboard-stats";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
 
 // Dynamic imports for heavy recharts-based components (~300KB)
 const OrdersRevenueChart = dynamic(

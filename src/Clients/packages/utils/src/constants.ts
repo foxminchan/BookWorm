@@ -24,3 +24,9 @@ export const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
 });
+
+// Authentication
+export const AUTH = {
+  PROVIDER: "keycloak",
+  CALLBACK_URL: "/",
+} as const;

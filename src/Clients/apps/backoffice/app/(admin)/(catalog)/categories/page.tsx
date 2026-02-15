@@ -9,7 +9,7 @@ import { Button } from "@workspace/ui/components/button";
 import { PageHeader } from "@/components/page-header";
 import { SimpleDialog } from "@/components/simple-dialog";
 import { SimpleTable } from "@/components/simple-table";
-import { useCrudPage } from "@/hooks/use-crud-page";
+import { useCrudPage } from "@/hooks/useCrudPage";
 
 const breadcrumbs = [
   { label: "Admin", href: "/" },

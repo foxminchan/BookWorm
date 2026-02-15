@@ -4,10 +4,10 @@ import { useEffect } from "react";
 
 import { Card, CardContent } from "@workspace/ui/components/card";
 import { Spinner } from "@workspace/ui/components/spinner";
+import { AUTH } from "@workspace/utils/constants";
 
-import { useUserContext } from "@/hooks/use-user-context";
+import { useUserContext } from "@/hooks/useUserContext";
 import { signIn } from "@/lib/auth-client";
-import { AUTH } from "@/lib/constants";
 
 type AuthStatusCardProps = Readonly<{
   title: string;

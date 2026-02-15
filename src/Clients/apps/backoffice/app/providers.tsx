@@ -7,8 +7,10 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 
 import { Toaster } from "@workspace/ui/components/sonner";
+import { useAccessToken } from "@workspace/ui/hooks/useAccessToken";
 
 import { env } from "@/env.mjs";
+import { authClient, useSession } from "@/lib/auth-client";
 import { initMocks } from "@/lib/msw";
 import { getQueryClient } from "@/lib/query-client";
 
@@ -25,6 +27,8 @@ export function Providers({
       initMocks();
     }
   }, [gatewayUrl]);
+
+  useAccessToken(authClient, useSession);
 
   return (
     <QueryClientProvider client={queryClient}>
