@@ -4,7 +4,7 @@ import useBuyers from "@workspace/api-hooks/ordering/buyers/useBuyers";
 import type { ListBuyersQuery } from "@workspace/types/ordering/buyers";
 
 import { FilterTable } from "@/components/filter-table";
-import { usePaginatedTable } from "@/hooks/use-paginated-table";
+import { usePaginatedTable } from "@/hooks/usePaginatedTable";
 
 import { columns } from "./columns";
 

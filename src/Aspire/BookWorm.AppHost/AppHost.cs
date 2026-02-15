@@ -196,6 +196,7 @@ var storefront = turbo
     .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTPS", gateway.GetEndpoint(Http.Schemes.Https))
     .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTP", gateway.GetEndpoint(Http.Schemes.Http))
     .WithEnvironment("NEXT_PUBLIC_COPILOT_ENABLED", "true")
+    .WaitFor(gateway)
     .WithKeycloak(keycloak);
 
 storefront.WithEnvironment("NEXT_PUBLIC_APP_URL", storefront.GetEndpoint(Http.Schemes.Http));
@@ -209,6 +210,7 @@ var backoffice = turbo
     .WithExternalHttpEndpoints()
     .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTPS", gateway.GetEndpoint(Http.Schemes.Https))
     .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTP", gateway.GetEndpoint(Http.Schemes.Http))
+    .WaitFor(gateway)
     .WithKeycloak(keycloak);
 
 backoffice.WithEnvironment("NEXT_PUBLIC_APP_URL", backoffice.GetEndpoint(Http.Schemes.Http));

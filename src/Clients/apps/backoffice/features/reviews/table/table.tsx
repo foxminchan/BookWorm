@@ -4,7 +4,7 @@ import useFeedbacks from "@workspace/api-hooks/rating/useFeedbacks";
 import type { ListFeedbacksQuery } from "@workspace/types/rating";
 
 import { FilterTable } from "@/components/filter-table";
-import { usePaginatedTable } from "@/hooks/use-paginated-table";
+import { usePaginatedTable } from "@/hooks/usePaginatedTable";
 
 import { reviewsColumns } from "./columns";
 

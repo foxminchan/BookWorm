@@ -5,7 +5,7 @@ import { AuthGuard } from "@/components/auth-guard";
 
 // Mock useUserContext hook
 const mockUseUserContext = vi.hoisted(() => vi.fn());
-vi.mock("@/hooks/use-user-context", () => ({
+vi.mock("@/hooks/useUserContext", () => ({
   useUserContext: () => mockUseUserContext(),
 }));
 
@@ -13,6 +13,12 @@ vi.mock("@/hooks/use-user-context", () => ({
 vi.mock("@/lib/auth-client", () => ({
   signIn: {
     social: vi.fn(),
+  },
+  signOut: vi.fn().mockResolvedValue(undefined),
+  useSession: vi.fn().mockReturnValue({ data: null }),
+  authClient: {
+    getAccessToken: vi.fn().mockResolvedValue({ data: null }),
+    signOut: vi.fn().mockResolvedValue(undefined),
   },
 }));
 

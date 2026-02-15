@@ -15,8 +15,8 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu";
 
-import { useLogout } from "@/hooks/use-logout";
-import { useUserContext } from "@/hooks/use-user-context";
+import { useLogout } from "@/hooks/useLogout";
+import { useUserContext } from "@/hooks/useUserContext";
 
 export function DashboardHeader() {
   const { theme, setTheme } = useTheme();

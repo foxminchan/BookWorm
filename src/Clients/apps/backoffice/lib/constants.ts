@@ -1,9 +1,3 @@
-// Authentication
-export const AUTH = {
-  PROVIDER: "keycloak",
-  CALLBACK_URL: "/",
-} as const;
-
 // API
 export const API = {
   DEFAULT_RETRY: 3,

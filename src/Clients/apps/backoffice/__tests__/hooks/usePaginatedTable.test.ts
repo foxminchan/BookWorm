@@ -2,7 +2,7 @@ import type { SortingState } from "@tanstack/react-table";
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { usePaginatedTable } from "@/hooks/use-paginated-table";
+import { usePaginatedTable } from "@/hooks/usePaginatedTable";
 
 describe("usePaginatedTable", () => {
   it("should initialize with default page size of 10", () => {
