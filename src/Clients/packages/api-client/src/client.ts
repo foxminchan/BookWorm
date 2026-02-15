@@ -42,9 +42,29 @@ export default class ApiClient {
     axiosRetry(this.client, {
       retries: maxRetries,
       retryDelay: exponentialDelay,
-      retryCondition: (error) =>
-        axiosRetry.isNetworkOrIdempotentRequestError(error) ||
-        error.response?.status === HttpStatusCode.TooManyRequests,
+      retryCondition: (error) => {
+        if (!error.response) {
+          return axiosRetry.isNetworkError(error);
+        }
+
+        const status = error.response.status;
+
+        // Never retry permanent client errors (4xx except 408 and 429)
+        if (
+          status >= HttpStatusCode.BadRequest &&
+          status < HttpStatusCode.InternalServerError &&
+          status !== HttpStatusCode.RequestTimeout &&
+          status !== HttpStatusCode.TooManyRequests
+        ) {
+          return false;
+        }
+
+        return (
+          axiosRetry.isNetworkOrIdempotentRequestError(error) ||
+          status === HttpStatusCode.RequestTimeout ||
+          status === HttpStatusCode.TooManyRequests
+        );
+      },
     });
   }
 
