@@ -14,6 +14,12 @@ vi.mock("@/lib/auth-client", () => ({
   signIn: {
     social: vi.fn(),
   },
+  signOut: vi.fn().mockResolvedValue(undefined),
+  useSession: vi.fn().mockReturnValue({ data: null }),
+  authClient: {
+    getAccessToken: vi.fn().mockResolvedValue({ data: null }),
+    signOut: vi.fn().mockResolvedValue(undefined),
+  },
 }));
 
 describe("AuthGuard", () => {

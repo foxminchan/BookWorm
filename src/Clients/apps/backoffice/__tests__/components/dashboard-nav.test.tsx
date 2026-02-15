@@ -5,8 +5,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DashboardNav } from "@/components/dashboard-nav";
 
+// Mock auth-client to prevent real module from loading (isolate: false)
+vi.mock("@/lib/auth-client", () => ({
+  signOut: vi.fn(),
+  signIn: vi.fn(),
+  useSession: vi.fn().mockReturnValue({ data: null }),
+  authClient: {
+    signOut: vi.fn(),
+    getAccessToken: vi.fn().mockResolvedValue({ data: null }),
+  },
+}));
+
 // Mock useLogout to avoid useRouter dependency
-vi.mock("@/hooks/use-logout", () => ({
+vi.mock("@/hooks/useLogout", () => ({
   useLogout: () => ({ logout: vi.fn() }),
 }));
 

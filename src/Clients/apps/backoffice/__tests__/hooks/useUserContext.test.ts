@@ -8,6 +8,12 @@ import { useUserContext } from "@/hooks/useUserContext";
 const mockUseSession = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/auth-client", () => ({
   useSession: () => mockUseSession(),
+  signOut: vi.fn().mockResolvedValue(undefined),
+  signIn: { social: vi.fn() },
+  authClient: {
+    getAccessToken: vi.fn().mockResolvedValue({ data: null }),
+    signOut: vi.fn().mockResolvedValue(undefined),
+  },
 }));
 
 describe("useUserContext", () => {

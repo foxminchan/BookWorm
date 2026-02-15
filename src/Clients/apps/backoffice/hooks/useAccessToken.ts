@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect } from "react";
 
 import { apiClient } from "@workspace/api-client/client";
 import { AUTH } from "@workspace/utils/constants";
@@ -8,18 +8,19 @@ import { AUTH } from "@workspace/utils/constants";
 import { authClient, useSession } from "@/lib/auth-client";
 
 /**
- * Fetches the Keycloak access token via Better Auth and registers it
- * with the shared API client so all outgoing requests include the
- * `Authorization: Bearer <token>` header.
+ * Registers an async token provider with the shared API client so every
+ * outgoing request includes an `Authorization: Bearer <token>` header.
+ *
+ * Leverages Better Auth's built-in token refresh — `getAccessToken` will
+ * automatically refresh an expired token before returning, so no custom
+ * expiration tracking or timer logic is required.
  */
 export function useAccessToken(): void {
   const { data: session } = useSession();
-  const tokenRef = useRef<string | null>(null);
 
-  const fetchToken = useCallback(async () => {
+  const getToken = useCallback(async (): Promise<string | null> => {
     if (!session?.user) {
-      tokenRef.current = null;
-      return;
+      return null;
     }
 
     try {
@@ -27,17 +28,13 @@ export function useAccessToken(): void {
         providerId: AUTH.PROVIDER,
       });
 
-      tokenRef.current = data?.accessToken ?? null;
+      return data?.accessToken ?? null;
     } catch {
-      tokenRef.current = null;
+      return null;
     }
   }, [session?.user]);
 
   useEffect(() => {
-    apiClient.setTokenProvider(() => tokenRef.current);
-  }, []);
-
-  useEffect(() => {
-    void fetchToken();
-  }, [fetchToken]);
+    apiClient.setTokenProvider(getToken);
+  }, [getToken]);
 }

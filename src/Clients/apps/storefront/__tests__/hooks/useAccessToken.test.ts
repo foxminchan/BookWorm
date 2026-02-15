@@ -1,4 +1,4 @@
-import { act, renderHook } from "@testing-library/react";
+import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createWrapper } from "@/__tests__/utils/test-utils";
@@ -39,11 +39,18 @@ describe("useAccessToken", () => {
     expect(mockSetTokenProvider).toHaveBeenCalledWith(expect.any(Function));
   });
 
-  it("should not fetch token when there is no session user", () => {
+  it("should return null from provider when there is no session user", async () => {
     mockUseSession.mockReturnValue({ data: null });
 
     renderHook(() => useAccessToken(), { wrapper: createWrapper() });
 
+    const tokenProvider = mockSetTokenProvider.mock.calls[0]![0] as () =>
+      | Promise<string | null>
+      | string
+      | null;
+    const token = await tokenProvider();
+
+    expect(token).toBeNull();
     expect(mockGetAccessToken).not.toHaveBeenCalled();
   });
 
@@ -57,33 +64,17 @@ describe("useAccessToken", () => {
 
     renderHook(() => useAccessToken(), { wrapper: createWrapper() });
 
-    await vi.waitFor(() => {
-      expect(mockGetAccessToken).toHaveBeenCalledWith({
-        providerId: "keycloak",
-      });
+    const tokenProvider = mockSetTokenProvider.mock
+      .calls[0]![0] as () => Promise<string | null>;
+    const token = await tokenProvider();
+
+    expect(token).toBe("tok_abc");
+    expect(mockGetAccessToken).toHaveBeenCalledWith({
+      providerId: "keycloak",
     });
   });
 
-  it("should expose the fetched token through the provider callback", async () => {
-    mockUseSession.mockReturnValue({
-      data: { user: { id: "u1", name: "Test" } },
-    });
-    mockGetAccessToken.mockResolvedValue({
-      data: { accessToken: "tok_xyz" },
-    });
-
-    renderHook(() => useAccessToken(), { wrapper: createWrapper() });
-
-    const tokenProvider = mockSetTokenProvider.mock.calls[0]![0] as () =>
-      | string
-      | null;
-
-    await vi.waitFor(() => {
-      expect(tokenProvider()).toBe("tok_xyz");
-    });
-  });
-
-  it("should set token to null when getAccessToken returns no data", async () => {
+  it("should return null when getAccessToken returns no data", async () => {
     mockUseSession.mockReturnValue({
       data: { user: { id: "u1", name: "Test" } },
     });
@@ -91,18 +82,14 @@ describe("useAccessToken", () => {
 
     renderHook(() => useAccessToken(), { wrapper: createWrapper() });
 
-    const tokenProvider = mockSetTokenProvider.mock.calls[0]![0] as () =>
-      | string
-      | null;
+    const tokenProvider = mockSetTokenProvider.mock
+      .calls[0]![0] as () => Promise<string | null>;
+    const token = await tokenProvider();
 
-    await vi.waitFor(() => {
-      expect(mockGetAccessToken).toHaveBeenCalled();
-    });
-
-    expect(tokenProvider()).toBeNull();
+    expect(token).toBeNull();
   });
 
-  it("should set token to null when getAccessToken throws", async () => {
+  it("should return null when getAccessToken throws", async () => {
     mockUseSession.mockReturnValue({
       data: { user: { id: "u1", name: "Test" } },
     });
@@ -110,55 +97,52 @@ describe("useAccessToken", () => {
 
     renderHook(() => useAccessToken(), { wrapper: createWrapper() });
 
-    const tokenProvider = mockSetTokenProvider.mock.calls[0]![0] as () =>
-      | string
-      | null;
+    const tokenProvider = mockSetTokenProvider.mock
+      .calls[0]![0] as () => Promise<string | null>;
+    const token = await tokenProvider();
 
-    await vi.waitFor(() => {
-      expect(mockGetAccessToken).toHaveBeenCalled();
-    });
-
-    expect(tokenProvider()).toBeNull();
+    expect(token).toBeNull();
   });
 
-  it("should refetch token when session user changes", async () => {
+  it("should re-register provider when session user changes", () => {
     mockUseSession.mockReturnValue({
       data: { user: { id: "u1", name: "Alice" } },
-    });
-    mockGetAccessToken.mockResolvedValue({
-      data: { accessToken: "tok_alice" },
     });
 
     const { rerender } = renderHook(() => useAccessToken(), {
       wrapper: createWrapper(),
     });
 
-    await vi.waitFor(() => {
-      expect(mockGetAccessToken).toHaveBeenCalledTimes(1);
-    });
+    expect(mockSetTokenProvider).toHaveBeenCalledTimes(1);
 
     mockUseSession.mockReturnValue({
       data: { user: { id: "u2", name: "Bob" } },
     });
-    mockGetAccessToken.mockResolvedValue({
-      data: { accessToken: "tok_bob" },
-    });
 
-    act(() => {
-      rerender();
-    });
+    rerender();
 
-    await vi.waitFor(() => {
-      expect(mockGetAccessToken).toHaveBeenCalledTimes(2);
-    });
-
-    const tokenProvider = mockSetTokenProvider.mock.calls[0]![0] as () =>
-      | string
-      | null;
-    expect(tokenProvider()).toBe("tok_bob");
+    expect(mockSetTokenProvider).toHaveBeenCalledTimes(2);
   });
 
-  it("should clear token when user logs out", async () => {
+  it("should return fresh token on each provider call (auto-refresh)", async () => {
+    mockUseSession.mockReturnValue({
+      data: { user: { id: "u1", name: "Test" } },
+    });
+    mockGetAccessToken
+      .mockResolvedValueOnce({ data: { accessToken: "tok_first" } })
+      .mockResolvedValueOnce({ data: { accessToken: "tok_refreshed" } });
+
+    renderHook(() => useAccessToken(), { wrapper: createWrapper() });
+
+    const tokenProvider = mockSetTokenProvider.mock
+      .calls[0]![0] as () => Promise<string | null>;
+
+    expect(await tokenProvider()).toBe("tok_first");
+    expect(await tokenProvider()).toBe("tok_refreshed");
+    expect(mockGetAccessToken).toHaveBeenCalledTimes(2);
+  });
+
+  it("should return null after user logs out", async () => {
     mockUseSession.mockReturnValue({
       data: { user: { id: "u1", name: "Alice" } },
     });
@@ -170,22 +154,20 @@ describe("useAccessToken", () => {
       wrapper: createWrapper(),
     });
 
-    const tokenProvider = mockSetTokenProvider.mock.calls[0]![0] as () =>
-      | string
-      | null;
+    // First provider resolves with token
+    const provider1 = mockSetTokenProvider.mock.calls[0]![0] as () => Promise<
+      string | null
+    >;
+    expect(await provider1()).toBe("tok_alice");
 
-    await vi.waitFor(() => {
-      expect(tokenProvider()).toBe("tok_alice");
-    });
-
+    // User logs out
     mockUseSession.mockReturnValue({ data: null });
+    rerender();
 
-    act(() => {
-      rerender();
-    });
-
-    await vi.waitFor(() => {
-      expect(tokenProvider()).toBeNull();
-    });
+    // New provider registered after logout
+    const provider2 = mockSetTokenProvider.mock.calls.at(
+      -1,
+    )![0] as () => Promise<string | null>;
+    expect(await provider2()).toBeNull();
   });
 });

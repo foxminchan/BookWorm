@@ -7,9 +7,17 @@ import { createWrapper } from "@/__tests__/utils/test-utils";
 import { useLogout } from "@/hooks/useLogout";
 
 // Mock auth client
-const mockSignOut = vi.hoisted(() => vi.fn());
+const mockSignOut = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({ success: true }),
+);
 vi.mock("@/lib/auth-client", () => ({
   signOut: mockSignOut,
+  signIn: vi.fn(),
+  useSession: vi.fn().mockReturnValue({ data: null }),
+  authClient: {
+    signOut: mockSignOut,
+    getAccessToken: vi.fn().mockResolvedValue({ data: null }),
+  },
 }));
 
 describe("useLogout", () => {
