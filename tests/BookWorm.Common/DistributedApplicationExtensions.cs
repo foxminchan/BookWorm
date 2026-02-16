@@ -1,9 +1,6 @@
 ﻿using System.Security.Cryptography;
-using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Common;
 
@@ -135,129 +132,6 @@ public static class DistributedApplicationExtensions
             }
 
             return builder;
-        }
-    }
-
-    extension(DistributedApplication app)
-    {
-        public Task WaitForResource(
-            string resourceName,
-            string? targetState = null,
-            CancellationToken cancellationToken = default
-        )
-        {
-            targetState ??= KnownResourceStates.Running;
-            var resourceNotificationService =
-                app.Services.GetRequiredService<ResourceNotificationService>();
-
-            return resourceNotificationService.WaitForResourceAsync(
-                resourceName,
-                targetState,
-                cancellationToken
-            );
-        }
-
-        public async Task WaitForResourcesAsync(
-            IEnumerable<string>? targetStates = null,
-            CancellationToken cancellationToken = default
-        )
-        {
-            var services = app.Services;
-            var logger = services
-                .GetRequiredService<ILoggerFactory>()
-                .CreateLogger($"{nameof(BookWorm)}.{nameof(WaitForResourcesAsync)}");
-
-            targetStates ??= [KnownResourceStates.Running, .. KnownResourceStates.TerminalStates];
-
-            var applicationModel = services.GetRequiredService<DistributedApplicationModel>();
-
-            var resourceTasks = new Dictionary<string, Task<(string Name, string State)>>();
-
-            var states = targetStates as string[] ?? [.. targetStates];
-
-            foreach (var resource in applicationModel.Resources)
-            {
-                if (resource is IResourceWithoutLifetime)
-                {
-                    continue;
-                }
-                resourceTasks[resource.Name] = GetResourceWaitTask(
-                    resource.Name,
-                    states,
-                    cancellationToken
-                );
-            }
-
-            logger.LogInformation(
-                "Waiting for resources [{Resources}] to reach one of target states [{TargetStates}].",
-                string.Join(',', resourceTasks.Keys),
-                string.Join(',', states)
-            );
-
-            while (resourceTasks.Count > 0)
-            {
-                var completedTask = await Task.WhenAny(resourceTasks.Values);
-                var (completedResourceName, targetStateReached) = await completedTask;
-
-                if (targetStateReached == KnownResourceStates.FailedToStart)
-                {
-                    throw new DistributedApplicationException(
-                        $"Resource '{completedResourceName}' failed to start."
-                    );
-                }
-
-                resourceTasks.Remove(completedResourceName);
-
-                logger.LogInformation(
-                    "Wait for resource '{ResourceName}' completed with state '{ResourceState}'",
-                    completedResourceName,
-                    targetStateReached
-                );
-
-                // Ensure resources being waited on still exist
-                var remainingResources = resourceTasks.Keys.ToList();
-                for (var i = remainingResources.Count - 1; i > 0; i--)
-                {
-                    var name = remainingResources[i];
-                    if (applicationModel.Resources.Any(r => r.Name == name))
-                    {
-                        continue;
-                    }
-
-                    logger.LogInformation(
-                        "Resource '{ResourceName}' was deleted while waiting for it.",
-                        name
-                    );
-                    resourceTasks.Remove(name);
-                    remainingResources.RemoveAt(i);
-                }
-
-                if (resourceTasks.Count > 0)
-                {
-                    logger.LogInformation(
-                        "Still waiting for resources [{Resources}] to reach one of target states [{TargetStates}].",
-                        string.Join(',', remainingResources),
-                        string.Join(',', states)
-                    );
-                }
-            }
-
-            logger.LogInformation("Wait for all resources completed successfully!");
-            return;
-
-            async Task<(string Name, string State)> GetResourceWaitTask(
-                string resourceName,
-                IEnumerable<string> resourceStates,
-                CancellationToken ctx
-            )
-            {
-                var state = await app.ResourceNotifications.WaitForResourceAsync(
-                    resourceName,
-                    resourceStates,
-                    ctx
-                );
-                return (resourceName, state);
-            }
         }
     }
 }

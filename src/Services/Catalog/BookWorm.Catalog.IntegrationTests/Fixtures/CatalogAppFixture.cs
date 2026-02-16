@@ -23,6 +23,7 @@ public sealed class CatalogAppFixture : AspireFixture<BookWorm_AppHost>
                 Components.Redis,
                 Components.VectorDb,
                 Components.Azure.Storage.Resource,
+                Components.Azure.Storage.BlobContainer(Services.Catalog),
             ]);
     }
 }
