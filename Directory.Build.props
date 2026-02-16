@@ -22,7 +22,7 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
   <ItemGroup Condition="$(MSBuildProjectFullPath.Contains('IntegrationTests'))">
-    <PackageReference Include="Aspire.Hosting.Testing" />
+    <PackageReference Include="TUnit.Aspire" />
     <Compile
       Include="$(SolutionDir)\tests\BookWorm.Common\DistributedApplicationExtensions.cs"
       Link="Extensions\DistributedApplicationExtensions.cs"
