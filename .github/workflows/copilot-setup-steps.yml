@@ -75,5 +75,5 @@ jobs:
         working-directory: docs/eventcatalog
 
       - name: Install frontend dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --ignore-scripts
         working-directory: src/Clients
