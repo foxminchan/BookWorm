@@ -24,6 +24,7 @@ public sealed class OrderMimeMessageBuilder
     /// </summary>
     public OrderMimeMessageBuilder WithTo(string? fullName, string? email)
     {
+        ArgumentException.ThrowIfNullOrEmpty(email);
         To = new(fullName, email);
         return this;
     }
@@ -69,7 +70,7 @@ public sealed class OrderMimeMessageBuilder
     {
         var message = new MimeMessage();
         message.To.Add(To);
-        message.Subject = Subject;
+        message.Subject = Subject ?? "No Subject";
         message.Body = Body;
         message.Date = DateTimeOffset.UtcNow;
         return message;

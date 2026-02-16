@@ -20,8 +20,8 @@ internal sealed class EmailOutboxService(IOutboxRepository repository, ISender a
         var outbox = new Domain.Models.Outbox(
             mailbox.Name ?? "Unknown",
             mailbox.Address,
-            mailMessage.Subject,
-            mailMessage.HtmlBody
+            mailMessage.Subject ?? "No Subject",
+            mailMessage.HtmlBody ?? mailMessage.TextBody ?? string.Empty
         );
 
         await repository.AddAsync(outbox, cancellationToken);

@@ -1,260 +1,132 @@
 ﻿using System.Security.Cryptography;
-using Aspire.Hosting;
-using Microsoft.Extensions.Logging;
+using Aspire.Hosting.ApplicationModel;
+using Aspire.Hosting.Testing;
 
 namespace BookWorm.Common;
 
 public static class DistributedApplicationExtensions
 {
-    public static TBuilder WithRandomParameterValues<TBuilder>(this TBuilder builder)
+    extension<TBuilder>(TBuilder builder)
         where TBuilder : IDistributedApplicationTestingBuilder
     {
-        var parameters = builder
-            .Resources.OfType<ParameterResource>()
-            .Where(p => !p.IsConnectionString)
-            .ToList();
-
-        foreach (var parameter in parameters)
+        public TBuilder WithRandomParameterValues()
         {
-            builder.Configuration[$"Parameters:{parameter.Name}"] = parameter.Secret
-                ? PasswordGenerator.Generate(16, true, true, true, false, 1, 1, 1, 0)
-                : Convert.ToHexString(RandomNumberGenerator.GetBytes(4));
-        }
+            var parameters = builder
+                .Resources.OfType<ParameterResource>()
+                .Where(p => !p.IsConnectionString)
+                .ToList();
 
-        return builder;
-    }
-
-    public static TBuilder WithContainersLifetime<TBuilder>(
-        this TBuilder builder,
-        ContainerLifetime containerLifetime
-    )
-        where TBuilder : IDistributedApplicationTestingBuilder
-    {
-        var containerLifetimeAnnotations = builder
-            .Resources.SelectMany(r =>
-                r.Annotations.OfType<ContainerLifetimeAnnotation>()
-                    .Where(c => c.Lifetime != containerLifetime)
-            )
-            .ToList();
-
-        foreach (var annotation in containerLifetimeAnnotations)
-        {
-            annotation.Lifetime = containerLifetime;
-        }
-
-        return builder;
-    }
-
-    public static TBuilder WithRandomVolumeNames<TBuilder>(this TBuilder builder)
-        where TBuilder : IDistributedApplicationTestingBuilder
-    {
-        var allResourceNamedVolumes = builder
-            .Resources.SelectMany(r =>
-                r.Annotations.OfType<ContainerMountAnnotation>()
-                    .Where(m =>
-                        m.Type == ContainerMountType.Volume && !string.IsNullOrEmpty(m.Source)
-                    )
-                    .Select(m => (Resource: r, Volume: m))
-            )
-            .ToList();
-
-        var seenVolumes = new HashSet<string>();
-
-        var renamedVolumes = new Dictionary<string, string>();
-
-        foreach (
-            var name in allResourceNamedVolumes
-                .Select(resourceVolume => resourceVolume.Volume.Source!)
-                .Where(name => !seenVolumes.Add(name) && !renamedVolumes.ContainsKey(name))
-        )
-        {
-            renamedVolumes[name] =
-                $"{name}-{Convert.ToHexString(RandomNumberGenerator.GetBytes(4))}";
-        }
-
-        // Replace all named volumes with randomly named or anonymous volumes
-        foreach (var (resource, volume) in allResourceNamedVolumes)
-        {
-            var newName = renamedVolumes.GetValueOrDefault(volume.Source!);
-            var newMount = new ContainerMountAnnotation(
-                newName,
-                volume.Target,
-                ContainerMountType.Volume,
-                volume.IsReadOnly
-            );
-            resource.Annotations.Remove(volume);
-            resource.Annotations.Add(newMount);
-        }
-
-        return builder;
-    }
-
-    public static Task WaitForResource(
-        this DistributedApplication app,
-        string resourceName,
-        string? targetState = null,
-        CancellationToken cancellationToken = default
-    )
-    {
-        targetState ??= KnownResourceStates.Running;
-        var resourceNotificationService =
-            app.Services.GetRequiredService<ResourceNotificationService>();
-
-        return resourceNotificationService.WaitForResourceAsync(
-            resourceName,
-            targetState,
-            cancellationToken
-        );
-    }
-
-    public static async Task WaitForResourcesAsync(
-        this DistributedApplication app,
-        IEnumerable<string>? targetStates = null,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var services = app.Services;
-        var logger = services
-            .GetRequiredService<ILoggerFactory>()
-            .CreateLogger($"{nameof(BookWorm)}.{nameof(WaitForResourcesAsync)}");
-
-        targetStates ??= [KnownResourceStates.Running, .. KnownResourceStates.TerminalStates];
-
-        var applicationModel = services.GetRequiredService<DistributedApplicationModel>();
-
-        var resourceTasks = new Dictionary<string, Task<(string Name, string State)>>();
-
-        var states = targetStates as string[] ?? [.. targetStates];
-
-        foreach (var resource in applicationModel.Resources)
-        {
-            if (resource is IResourceWithoutLifetime)
+            foreach (var parameter in parameters)
             {
-                continue;
-            }
-            resourceTasks[resource.Name] = GetResourceWaitTask(
-                resource.Name,
-                states,
-                cancellationToken
-            );
-        }
-
-        logger.LogInformation(
-            "Waiting for resources [{Resources}] to reach one of target states [{TargetStates}].",
-            string.Join(',', resourceTasks.Keys),
-            string.Join(',', states)
-        );
-
-        while (resourceTasks.Count > 0)
-        {
-            var completedTask = await Task.WhenAny(resourceTasks.Values);
-            var (completedResourceName, targetStateReached) = await completedTask;
-
-            if (targetStateReached == KnownResourceStates.FailedToStart)
-            {
-                throw new DistributedApplicationException(
-                    $"Resource '{completedResourceName}' failed to start."
-                );
+                builder.Configuration[$"Parameters:{parameter.Name}"] = parameter.Secret
+                    ? PasswordGenerator.Generate(16, true, true, true, false, 1, 1, 1, 0)
+                    : Convert.ToHexString(RandomNumberGenerator.GetBytes(4));
             }
 
-            resourceTasks.Remove(completedResourceName);
-
-            logger.LogInformation(
-                "Wait for resource '{ResourceName}' completed with state '{ResourceState}'",
-                completedResourceName,
-                targetStateReached
-            );
-
-            // Ensure resources being waited on still exist
-            var remainingResources = resourceTasks.Keys.ToList();
-            for (var i = remainingResources.Count - 1; i > 0; i--)
-            {
-                var name = remainingResources[i];
-                if (applicationModel.Resources.Any(r => r.Name == name))
-                {
-                    continue;
-                }
-
-                logger.LogInformation(
-                    "Resource '{ResourceName}' was deleted while waiting for it.",
-                    name
-                );
-                resourceTasks.Remove(name);
-                remainingResources.RemoveAt(i);
-            }
-
-            if (resourceTasks.Count > 0)
-            {
-                logger.LogInformation(
-                    "Still waiting for resources [{Resources}] to reach one of target states [{TargetStates}].",
-                    string.Join(',', remainingResources),
-                    string.Join(',', states)
-                );
-            }
-        }
-
-        logger.LogInformation("Wait for all resources completed successfully!");
-        return;
-
-        async Task<(string Name, string State)> GetResourceWaitTask(
-            string resourceName,
-            IEnumerable<string> resourceStates,
-            CancellationToken ctx
-        )
-        {
-            var state = await app.ResourceNotifications.WaitForResourceAsync(
-                resourceName,
-                resourceStates,
-                ctx
-            );
-            return (resourceName, state);
-        }
-    }
-
-    public static TBuilder WithIncludeResources<TBuilder>(
-        this TBuilder builder,
-        params List<string> resourceNames
-    )
-        where TBuilder : IDistributedApplicationTestingBuilder
-    {
-        if (resourceNames.Count == 0)
-        {
             return builder;
         }
 
-        int added;
-        do
+        public TBuilder WithContainersLifetime(ContainerLifetime containerLifetime)
         {
-            var annotations = builder
-                .Resources.Where(r =>
-                    r.Annotations.OfType<ResourceRelationshipAnnotation>()
-                        .Any(p =>
-                            resourceNames.Contains(p.Resource.Name)
-                            && p.Type == "Parent"
-                            && !resourceNames.Contains(p.Resource.Name)
-                        )
+            var containerLifetimeAnnotations = builder
+                .Resources.SelectMany(r =>
+                    r.Annotations.OfType<ContainerLifetimeAnnotation>()
+                        .Where(c => c.Lifetime != containerLifetime)
                 )
-                .Select(r => r.Name);
+                .ToList();
 
-            var parents = builder
-                .Resources.Where(r => r is IResourceWithParent && !resourceNames.Contains(r.Name))
-                .Select(r => r.Name);
+            foreach (var annotation in containerLifetimeAnnotations)
+            {
+                annotation.Lifetime = containerLifetime;
+            }
 
-            List<string> adds = [.. annotations, .. parents];
-            resourceNames.AddRange(adds);
-
-            added = adds.Count;
-        } while (added > 0);
-
-        foreach (
-            var resource in builder
-                .Resources.Where(r => !resourceNames.Distinct().Contains(r.Name))
-                .ToArray()
-        )
-        {
-            builder.Resources.Remove(resource);
+            return builder;
         }
 
-        return builder;
+        public TBuilder WithRandomVolumeNames()
+        {
+            var allResourceNamedVolumes = builder
+                .Resources.SelectMany(r =>
+                    r.Annotations.OfType<ContainerMountAnnotation>()
+                        .Where(m =>
+                            m.Type == ContainerMountType.Volume && !string.IsNullOrEmpty(m.Source)
+                        )
+                        .Select(m => (Resource: r, Volume: m))
+                )
+                .ToList();
+
+            var seenVolumes = new HashSet<string>();
+
+            var renamedVolumes = new Dictionary<string, string>();
+
+            foreach (
+                var name in allResourceNamedVolumes
+                    .Select(resourceVolume => resourceVolume.Volume.Source!)
+                    .Where(name => !seenVolumes.Add(name) && !renamedVolumes.ContainsKey(name))
+            )
+            {
+                renamedVolumes[name] =
+                    $"{name}-{Convert.ToHexString(RandomNumberGenerator.GetBytes(4))}";
+            }
+
+            // Replace all named volumes with randomly named or anonymous volumes
+            foreach (var (resource, volume) in allResourceNamedVolumes)
+            {
+                var newName = renamedVolumes.GetValueOrDefault(volume.Source!);
+                var newMount = new ContainerMountAnnotation(
+                    newName,
+                    volume.Target,
+                    ContainerMountType.Volume,
+                    volume.IsReadOnly
+                );
+                resource.Annotations.Remove(volume);
+                resource.Annotations.Add(newMount);
+            }
+
+            return builder;
+        }
+
+        public TBuilder WithIncludeResources(params List<string> resourceNames)
+        {
+            if (resourceNames.Count == 0)
+            {
+                return builder;
+            }
+
+            int added;
+            do
+            {
+                var annotations = builder
+                    .Resources.Where(r =>
+                        !resourceNames.Contains(r.Name)
+                        && r.Annotations.OfType<ResourceRelationshipAnnotation>()
+                            .Any(p => resourceNames.Contains(p.Resource.Name) && p.Type == "Parent")
+                    )
+                    .Select(r => r.Name);
+
+                var parents = builder
+                    .Resources.OfType<IResourceWithParent>()
+                    .Where(r =>
+                        resourceNames.Contains(r.Name) && !resourceNames.Contains(r.Parent.Name)
+                    )
+                    .Select(r => r.Parent.Name);
+
+                List<string> adds = [.. annotations, .. parents];
+                resourceNames.AddRange(adds);
+
+                added = adds.Count;
+            } while (added > 0);
+
+            foreach (
+                var resource in builder
+                    .Resources.Where(r => !resourceNames.Distinct().Contains(r.Name))
+                    .ToArray()
+            )
+            {
+                builder.Resources.Remove(resource);
+            }
+
+            return builder;
+        }
     }
 }
