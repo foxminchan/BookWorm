@@ -93,6 +93,9 @@ public static class DistributedApplicationExtensions
                 return builder;
             }
 
+            // Track explicitly requested resources before auto-discovery.
+            var explicitResourceNames = new HashSet<string>(resourceNames);
+
             int added;
             do
             {
@@ -136,11 +139,18 @@ public static class DistributedApplicationExtensions
             // Remove orphaned WaitAnnotations and ResourceRelationshipAnnotations
             // that reference resources no longer in the model, otherwise resources
             // will be stuck in "Waiting" state forever.
+            //
+            // WaitAnnotations: only keep waits for explicitly requested resources.
+            // Auto-discovered parents/children may be Azure provisioning artifacts
+            // (e.g., Key Vault resources from WithPasswordAuthentication) that have
+            // no runnable lifecycle. Aspire's WaitForCore also recursively adds
+            // WaitAnnotations for parent chains, which would reference these
+            // non-runnable resources and cause indefinite blocking.
             foreach (var resource in builder.Resources)
             {
                 var orphanedWaits = resource
                     .Annotations.OfType<WaitAnnotation>()
-                    .Where(w => !includedNames.Contains(w.Resource.Name))
+                    .Where(w => !explicitResourceNames.Contains(w.Resource.Name))
                     .ToList();
 
                 foreach (var wait in orphanedWaits)
@@ -156,6 +166,28 @@ public static class DistributedApplicationExtensions
                 foreach (var relationship in orphanedRelationships)
                 {
                     resource.Annotations.Remove(relationship);
+                }
+            }
+
+            // Remove auto-discovered resources that have no runnable lifecycle.
+            // These are Azure provisioning artifacts (e.g., Key Vault resources)
+            // that were auto-included for model integrity but cannot start or
+            // become healthy, causing the test framework to time out.
+            foreach (
+                var resource in builder
+                    .Resources.Where(r => !explicitResourceNames.Contains(r.Name))
+                    .ToArray()
+            )
+            {
+                var hasLifecycle =
+                    resource is ProjectResource or ExecutableResource
+                    || resource.Annotations.OfType<ContainerImageAnnotation>().Any()
+                    || resource.Annotations.OfType<EndpointAnnotation>().Any()
+                    || resource.Annotations.OfType<ContainerLifetimeAnnotation>().Any();
+
+                if (!hasLifecycle)
+                {
+                    builder.Resources.Remove(resource);
                 }
             }
 
