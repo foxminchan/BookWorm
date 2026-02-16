@@ -15,14 +15,14 @@ public sealed class CatalogAppFixture : AspireFixture<BookWorm_AppHost>
             .WithRandomParameterValues()
             .WithContainersLifetime(ContainerLifetime.Session)
             .WithRandomVolumeNames()
-            .WithIncludeResources(
+            .WithIncludeResources([
                 Services.Catalog,
                 Components.Postgres,
                 Components.Database.Catalog,
                 Components.Queue,
                 Components.Redis,
                 Components.VectorDb,
-                Components.Azure.Storage.Resource
-            );
+                Components.Azure.Storage.Resource,
+            ]);
     }
 }
