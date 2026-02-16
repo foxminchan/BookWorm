@@ -104,6 +104,7 @@ public sealed class OrderMimeMessageBuilderTests
             .Build();
 
         // Assert
+        message.HtmlBody.ShouldNotBeEmpty();
         message.HtmlBody.ShouldContain("<h1>Order Confirmation</h1>");
     }
 

@@ -15,7 +15,6 @@
     <PackageVersion Include="Aspire.Hosting.Qdrant" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Yarp" Version="$(AspireVersion)" />
-    <PackageVersion Include="Aspire.Hosting.Testing" Version="$(AspireVersion)" />
     <!-- Client -->
     <PackageVersion Include="Aspire.Azure.Npgsql" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" Version="$(AspireVersion)" />
@@ -30,7 +29,9 @@
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.McpInspector" Version="$(ToolKitVersion)" />
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.JavaScript.Extensions" Version="$(ToolKitVersion)" />
     <!-- Extra -->
-    <PackageVersion Include="Scalar.Aspire" Version="0.8.49" />
+    <PackageVersion Include="TUnit.Aspire" Version="1.15.0" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.8.50" />
+    <PackageVersion Include="WireMock.Net.Aspire" Version="1.25.0" />
   </ItemGroup>
   <ItemGroup Label="Core Packages">
     <!-- Microsoft Extensions -->
@@ -82,7 +83,7 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Quartz" Version="1.15.0-beta.1" />
     <!-- Email & Messaging -->
     <PackageVersion Include="AspNetCore.HealthChecks.SendGrid" Version="$(HealthChecksVersion)" />
-    <PackageVersion Include="MailKit" Version="4.14.1" />
+    <PackageVersion Include="MailKit" Version="4.15.0" />
     <PackageVersion Include="Mjml.Net" Version="4.11.0" />
     <PackageVersion Include="SendGrid" Version="9.29.3" />
     <!-- Other Integrations -->
@@ -93,9 +94,9 @@
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="TngTech.ArchUnitNET.TUnit" Version="0.13.2" />
-    <PackageVersion Include="TUnit" Version="1.13.60" />
+    <PackageVersion Include="TUnit" Version="1.15.0" />
     <!-- Contract Testing -->
-    <PackageVersion Include="Verify.TUnit" Version="31.12.5" />
+    <PackageVersion Include="Verify.TUnit" Version="31.13.0" />
     <PackageVersion Include="Verify.SendGrid" Version="1.0.0" />
     <PackageVersion Include="Verify.MassTransit" Version="2.1.0" />
     <!-- Microsoft Testing Platform -->

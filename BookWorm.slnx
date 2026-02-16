@@ -30,6 +30,7 @@
   </Folder>
   <Folder Name="/src/Services/Catalog/">
     <Project Path="src/Services/Catalog/BookWorm.Catalog.ContractTests/BookWorm.Catalog.ContractTests.csproj" />
+    <Project Path="src/Services/Catalog/BookWorm.Catalog.IntegrationTests/BookWorm.Catalog.IntegrationTests.csproj" />
     <Project Path="src/Services/Catalog/BookWorm.Catalog.UnitTests/BookWorm.Catalog.UnitTests.csproj" />
     <Project Path="src/Services/Catalog/BookWorm.Catalog/BookWorm.Catalog.csproj" />
   </Folder>
@@ -63,5 +64,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/BookWorm.ArchTests/BookWorm.ArchTests.csproj" />
+    <Project Path="tests/BookWorm.ModelEval/BookWorm.ModelEval.csproj" />
   </Folder>
 </Solution>

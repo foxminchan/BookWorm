@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <ExcludeFromCodeCoverage>true</ExcludeFromCodeCoverage>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Include="Shouldly" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Aspire\BookWorm.AppHost\BookWorm.AppHost.csproj" />
+    <ProjectReference Include="..\BookWorm.Catalog\BookWorm.Catalog.csproj" />
+  </ItemGroup>
+</Project>
