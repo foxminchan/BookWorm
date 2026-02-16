@@ -99,22 +99,25 @@ public static class DistributedApplicationExtensions
             int added;
             do
             {
+                // Find resources that have a "Parent" relationship annotation
+                // pointing to a resource already in the include list,
+                // but are not yet in the list themselves.
                 var annotations = builder
                     .Resources.Where(r =>
-                        r.Annotations.OfType<ResourceRelationshipAnnotation>()
-                            .Any(p =>
-                                resourceNames.Contains(p.Resource.Name)
-                                && p.Type == "Parent"
-                                && !resourceNames.Contains(p.Resource.Name)
-                            )
+                        !resourceNames.Contains(r.Name)
+                        && r.Annotations.OfType<ResourceRelationshipAnnotation>()
+                            .Any(p => resourceNames.Contains(p.Resource.Name) && p.Type == "Parent")
                     )
                     .Select(r => r.Name);
 
+                // Find the parents of resources already in the include list
+                // that are not yet in the list themselves.
                 var parents = builder
-                    .Resources.Where(r =>
-                        r is IResourceWithParent && !resourceNames.Contains(r.Name)
+                    .Resources.OfType<IResourceWithParent>()
+                    .Where(r =>
+                        resourceNames.Contains(r.Name) && !resourceNames.Contains(r.Parent.Name)
                     )
-                    .Select(r => r.Name);
+                    .Select(r => r.Parent.Name);
 
                 List<string> adds = [.. annotations, .. parents];
                 resourceNames.AddRange(adds);
