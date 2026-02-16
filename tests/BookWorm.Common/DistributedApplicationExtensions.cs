@@ -122,13 +122,41 @@ public static class DistributedApplicationExtensions
                 added = adds.Count;
             } while (added > 0);
 
+            var includedNames = resourceNames.Distinct().ToHashSet();
+
             foreach (
                 var resource in builder
-                    .Resources.Where(r => !resourceNames.Distinct().Contains(r.Name))
+                    .Resources.Where(r => !includedNames.Contains(r.Name))
                     .ToArray()
             )
             {
                 builder.Resources.Remove(resource);
+            }
+
+            // Remove orphaned WaitAnnotations and ResourceRelationshipAnnotations
+            // that reference resources no longer in the model, otherwise resources
+            // will be stuck in "Waiting" state forever.
+            foreach (var resource in builder.Resources)
+            {
+                var orphanedWaits = resource
+                    .Annotations.OfType<WaitAnnotation>()
+                    .Where(w => !includedNames.Contains(w.Resource.Name))
+                    .ToList();
+
+                foreach (var wait in orphanedWaits)
+                {
+                    resource.Annotations.Remove(wait);
+                }
+
+                var orphanedRelationships = resource
+                    .Annotations.OfType<ResourceRelationshipAnnotation>()
+                    .Where(r => !includedNames.Contains(r.Resource.Name))
+                    .ToList();
+
+                foreach (var relationship in orphanedRelationships)
+                {
+                    resource.Annotations.Remove(relationship);
+                }
             }
 
             return builder;
