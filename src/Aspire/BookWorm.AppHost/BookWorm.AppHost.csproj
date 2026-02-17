@@ -6,6 +6,9 @@
     <UserSecretsId>78a33324-5add-4731-b2fc-e0fc06ef0564</UserSecretsId>
     <NoWarn>ASPIREINTERACTION001;ASPIREPIPELINES001;ASPIRECOMPUTE003;ASPIRECERTIFICATES001</NoWarn>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="**/node_modules/**/*.cs" />
+  </ItemGroup>
   <ItemGroup Label="Aspire">
     <PackageReference Include="Scalar.Aspire" />
     <PackageReference Include="Aspire.Hosting.Yarp" />

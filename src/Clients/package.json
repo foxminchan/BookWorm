@@ -20,6 +20,7 @@
   },
   "homepage": "https://foxminchan.github.io/BookWorm/",
   "scripts": {
+    "prepare": "allow-scripts",
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
@@ -29,7 +30,11 @@
     "boundaries": "turbo boundaries",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
+  "lavamoat": {
+    "allowScripts": {}
+  },
   "devDependencies": {
+    "@lavamoat/allow-scripts": "^3.4.3",
     "@trivago/prettier-plugin-sort-imports": "^6.0.2",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
@@ -38,7 +43,7 @@
     "turbo": "^2.8.9",
     "typescript": "5.9.3"
   },
-  "packageManager": "pnpm@10.29.2",
+  "packageManager": "pnpm@10.29.3",
   "engines": {
     "node": ">=25.0.0"
   },

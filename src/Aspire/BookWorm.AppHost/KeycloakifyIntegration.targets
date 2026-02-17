@@ -1,6 +1,9 @@
 <Project>
   <PropertyGroup>
     <KeycloakifyContainerPath>$(MSBuildProjectDirectory)\Container\keycloak\keycloakify</KeycloakifyContainerPath>
+    <BunIgnoreScriptsFlag Condition="'$(GITHUB_ACTIONS)' == 'true'"
+      >--ignore-scripts</BunIgnoreScriptsFlag
+    >
   </PropertyGroup>
   <Target
     Name="BuildKeycloakifyContainer"
@@ -11,7 +14,7 @@
   >
     <Message Text="Installing node packages for Keycloakify" Importance="high" />
     <Exec
-      Command="bun install --frozen-lockfile"
+      Command="bun install --frozen-lockfile $(BunIgnoreScriptsFlag)"
       WorkingDirectory="$(KeycloakifyContainerPath)"
       IgnoreExitCode="false"
     />

@@ -26,7 +26,6 @@ const config: Config = {
   projectName: "BookWorm", // Usually your repo name.
 
   onBrokenLinks: "throw",
-  onBrokenMarkdownLinks: "warn",
 
   // Even if you don't use internationalization, you can use this field to set
   // useful metadata like html lang. For example, if your site is Chinese, you
@@ -328,20 +327,11 @@ const config: Config = {
       additionalLanguages: ["csharp"],
     },
   } satisfies Preset.ThemeConfig,
-  plugins: [
-    [
-      "@docusaurus/plugin-ideal-image",
-      {
-        quality: 70,
-        max: 1030,
-        min: 640,
-        steps: 2,
-        disableInDev: false,
-      },
-    ],
-  ],
   markdown: {
     mermaid: true,
+    hooks: {
+      onBrokenMarkdownLinks: "warn",
+    },
   },
   themes: [
     "@docusaurus/theme-mermaid",
