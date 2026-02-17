@@ -1,6 +1,9 @@
 <Project>
   <PropertyGroup>
     <K6ContainerPath>$(MSBuildProjectDirectory)\Container\k6</K6ContainerPath>
+    <BunIgnoreScriptsFlag Condition="'$(GITHUB_ACTIONS)' == 'true'"
+      >--ignore-scripts</BunIgnoreScriptsFlag
+    >
   </PropertyGroup>
   <Target
     Name="BuildK6Container"
@@ -11,7 +14,7 @@
   >
     <Message Text="Installing node packages" Importance="high" />
     <Exec
-      Command="bun install --frozen-lockfile"
+      Command="bun install --frozen-lockfile $(BunIgnoreScriptsFlag)"
       WorkingDirectory="$(K6ContainerPath)"
       IgnoreExitCode="false"
     />

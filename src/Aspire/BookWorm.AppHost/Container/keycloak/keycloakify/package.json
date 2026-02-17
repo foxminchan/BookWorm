@@ -20,6 +20,7 @@
   "homepage": "https://github.com/foxminchan/BookWorm#readme",
   "type": "module",
   "scripts": {
+    "prepare": "allow-scripts",
     "postinstall": "keycloakify sync-extensions",
     "dev": "vite",
     "build": "tsc && vite build",
@@ -29,6 +30,13 @@
     "check": "eslint . && prettier --check .",
     "lint": "eslint --fix .",
     "ci": "eslint . && prettier --check ."
+  },
+  "lavamoat": {
+    "allowScripts": {
+      "keycloakify": true,
+      "$root$": false,
+      "vite>esbuild": false
+    }
   },
   "dependencies": {
     "keycloakify": "^11.15.1",
@@ -41,6 +49,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@lavamoat/allow-scripts": "^3.4.3",
     "@storybook/react-vite": "^10.2.8",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
