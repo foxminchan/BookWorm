@@ -19,7 +19,7 @@ echo "  Time:   $(date -d @$((TIMESTAMP / 1000)) 2>/dev/null || date)" >> "$SESS
 echo "  CWD:    $CWD" >> "$SESSION_LOG"
 
 # Validate .NET SDK
-if command -v dotnet &>/dev/null; then
+if [[ -x "$(command -v dotnet)" ]]; then
   SDK_VERSION=$(dotnet --version 2>/dev/null || echo "unknown")
   echo "  .NET SDK: $SDK_VERSION" >> "$SESSION_LOG"
 else
@@ -27,14 +27,14 @@ else
 fi
 
 # Validate dotnet tools
-if dotnet tool list 2>/dev/null | grep -q "csharpier"; then
+if [[ -n "$(dotnet tool list 2>/dev/null | grep -o 'csharpier')" ]]; then
   echo "  CSharpier: installed" >> "$SESSION_LOG"
 else
   echo "  WARNING: CSharpier not found — run 'dotnet tool restore'" >> "$SESSION_LOG"
 fi
 
 # Check if solution builds are cached
-if [ -d "${CWD}/artifacts" ]; then
+if [[ -d "${CWD}/artifacts" ]]; then
   echo "  Build artifacts: present" >> "$SESSION_LOG"
 else
   echo "  Build artifacts: not found (initial build may be required)" >> "$SESSION_LOG"

@@ -8,7 +8,7 @@ TOOL_NAME=$(echo "$INPUT" | jq -r '.toolName')
 TOOL_ARGS=$(echo "$INPUT" | jq -r '.toolArgs')
 
 # Only check file creation/edits in service directories
-if [ "$TOOL_NAME" != "edit" ] && [ "$TOOL_NAME" != "create" ]; then
+if [[ "$TOOL_NAME" != "edit" ]] && [[ "$TOOL_NAME" != "create" ]]; then
   exit 0
 fi
 
@@ -28,13 +28,13 @@ for svc in "${SERVICES[@]}"; do
 done
 
 # If not in a service directory, allow
-if [ -z "$CURRENT_SERVICE" ]; then
+if [[ -z "$CURRENT_SERVICE" ]]; then
   exit 0
 fi
 
 # Check for direct references to other services' internal namespaces
 for svc in "${SERVICES[@]}"; do
-  if [ "$svc" = "$CURRENT_SERVICE" ]; then
+  if [[ "$svc" = "$CURRENT_SERVICE" ]]; then
     continue
   fi
 

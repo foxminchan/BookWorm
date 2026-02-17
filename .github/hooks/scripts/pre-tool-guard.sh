@@ -21,7 +21,7 @@ PROTECTED_FILES=(
   ".github/workflows/copilot-setup-steps.yml"
 )
 
-if [ "$TOOL_NAME" = "edit" ] || [ "$TOOL_NAME" = "create" ]; then
+if [[ "$TOOL_NAME" = "edit" ]] || [[ "$TOOL_NAME" = "create" ]]; then
   FILE_PATH=$(echo "$TOOL_ARGS" | jq -r '.path // .filePath // empty')
 
   for protected in "${PROTECTED_FILES[@]}"; do
@@ -34,7 +34,7 @@ if [ "$TOOL_NAME" = "edit" ] || [ "$TOOL_NAME" = "create" ]; then
 fi
 
 # --- Dangerous bash commands ---
-if [ "$TOOL_NAME" = "bash" ]; then
+if [[ "$TOOL_NAME" = "bash" ]]; then
   COMMAND=$(echo "$TOOL_ARGS" | jq -r '.command // empty')
 
   # Block destructive system-level commands

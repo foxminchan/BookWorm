@@ -19,7 +19,7 @@ echo "  Reason: $REASON" >> "$SESSION_LOG"
 echo "  Time:   $(date -d @$((TIMESTAMP / 1000)) 2>/dev/null || date)" >> "$SESSION_LOG"
 
 # Summarize tool usage from audit log
-if [ -f "$AUDIT_LOG" ]; then
+if [[ -f "$AUDIT_LOG" ]]; then
   TOTAL=$(wc -l < "$AUDIT_LOG" 2>/dev/null || echo "0")
   FAILURES=$(grep -c '"result":"failure"' "$AUDIT_LOG" 2>/dev/null || echo "0")
   echo "  Tools invoked: $TOTAL (failures: $FAILURES)" >> "$SESSION_LOG"

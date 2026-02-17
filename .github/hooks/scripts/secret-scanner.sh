@@ -36,16 +36,18 @@ check_for_secrets() {
       exit 0
     fi
   done
+
+  return 0
 }
 
 # Check bash commands for secrets
-if [ "$TOOL_NAME" = "bash" ]; then
+if [[ "$TOOL_NAME" = "bash" ]]; then
   COMMAND=$(echo "$TOOL_ARGS" | jq -r '.command // empty')
   check_for_secrets "$COMMAND" "bash command"
 fi
 
 # Check file edits/creates for embedded secrets
-if [ "$TOOL_NAME" = "edit" ] || [ "$TOOL_NAME" = "create" ]; then
+if [[ "$TOOL_NAME" = "edit" ]] || [[ "$TOOL_NAME" = "create" ]]; then
   CONTENT=$(echo "$TOOL_ARGS" | jq -r '.content // .newText // .new_string // empty')
   check_for_secrets "$CONTENT" "file content"
 fi
