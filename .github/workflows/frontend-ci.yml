@@ -93,14 +93,12 @@ jobs:
           retention-days: ${{ env.RETENTION_DAYS }}
 
       - name: Post Allure Summary (Backoffice)
-        if: github.event_name == 'pull_request'
         uses: allure-framework/allure-action@v0
         with:
           report-directory: src/Clients/apps/backoffice/allure-report
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Post Allure Summary (Storefront)
-        if: github.event_name == 'pull_request'
         uses: allure-framework/allure-action@v0
         with:
           report-directory: src/Clients/apps/storefront/allure-report
