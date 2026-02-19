@@ -94,11 +94,11 @@ jobs:
         uses: allure-framework/allure-action@v0
         with:
           report-directory: src/Clients/apps/backoffice/allure-report
-          github-token: ${{ secrets.GH_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Post Allure Summary (Storefront)
         if: github.event_name == 'pull_request'
         uses: allure-framework/allure-action@v0
         with:
           report-directory: src/Clients/apps/storefront/allure-report
-          github-token: ${{ secrets.GH_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
