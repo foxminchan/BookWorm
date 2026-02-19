@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - "src/**"
+      - "!src/Clients/**"
       - "tests/**"
       - ".github/workflows/dotnet-ci.yml"
       - ".github/actions/**"

@@ -77,9 +77,25 @@
       "cache": false,
       "persistent": true
     },
+    "bddgen": {
+      "inputs": [
+        "e2e/features/**/*.feature",
+        "e2e/steps/**/*.ts",
+        "playwright.config.ts"
+      ],
+      "outputs": [".features-gen/**"]
+    },
+    "bddgen:export": {
+      "dependsOn": ["bddgen"],
+      "outputs": []
+    },
+    "bddgen:watch": {
+      "cache": false,
+      "persistent": true
+    },
     "test:e2e": {
       "dependsOn": ["^build"],
-      "outputs": ["playwright-report/**", "test-results/**", "e2e/reports/**"],
+      "outputs": ["test-results/**", ".features-gen/**", "allure-results/**"],
       "inputs": ["e2e/**", "playwright.config.ts"],
       "passThroughEnv": [
         "PLAYWRIGHT_*",
@@ -95,6 +111,7 @@
     "test:e2e:headed": {
       "dependsOn": ["^build"],
       "cache": false,
+      "outputs": ["test-results/**", "allure-results/**"],
       "passThroughEnv": [
         "PLAYWRIGHT_*",
         "BASE_URL",
@@ -105,9 +122,19 @@
         "TEST_ADMIN_PASSWORD"
       ]
     },
+    "test:e2e:ui": {
+      "cache": false,
+      "persistent": true,
+      "passThroughEnv": [
+        "PLAYWRIGHT_*",
+        "BASE_URL",
+        "TEST_ADMIN_EMAIL",
+        "TEST_ADMIN_PASSWORD"
+      ]
+    },
     "test:e2e:ci": {
       "dependsOn": ["^build"],
-      "outputs": ["playwright-report/**", "test-results/**", "e2e/reports/**"],
+      "outputs": ["test-results/**", ".features-gen/**", "allure-results/**"],
       "inputs": ["e2e/**", "playwright.config.ts"],
       "passThroughEnv": [
         "PLAYWRIGHT_*",
@@ -118,6 +145,18 @@
         "TEST_ADMIN_EMAIL",
         "TEST_ADMIN_PASSWORD"
       ]
+    },
+    "allure:generate": {
+      "dependsOn": ["test:e2e", "test:e2e:ci"],
+      "inputs": ["allure-results/**"],
+      "outputs": ["allure-report/**"]
+    },
+    "allure:serve": {
+      "cache": false,
+      "persistent": true
+    },
+    "allure:open": {
+      "cache": false
     },
     "playwright:install": {
       "cache": false,

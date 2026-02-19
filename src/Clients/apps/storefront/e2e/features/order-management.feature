@@ -1,4 +1,5 @@
-@high-priority @orders
+@high-priority
+@orders
 Feature: Order Management
   As a customer
   I want to view and manage my orders

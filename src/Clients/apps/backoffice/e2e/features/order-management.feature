@@ -1,4 +1,6 @@
-@ordering @orders @p1
+@ordering
+@orders
+@p1
 Feature: Order Management
   As an admin
   I want to manage customer orders
@@ -9,7 +11,8 @@ Feature: Order Management
     And I am logged in as an admin
     And I am on the orders page
 
-  @smoke @view-orders
+  @smoke
+  @view-orders
   Scenario: View list of orders
     When the orders page loads
     Then I should see the orders table
@@ -23,25 +26,29 @@ Feature: Order Management
     And I should see customer information
     And I should see ordered items
 
-  @search @orders
+  @search
+  @orders
   Scenario: Search for orders by order number
     Given there are multiple orders
     When I search for an order by order number
     Then I should see only matching orders
 
-  @filter @orders
+  @filter
+  @orders
   Scenario: Filter orders by status
     Given there are orders with different statuses
     When I filter orders by "Pending" status
     Then I should see only pending orders
 
-  @filter @orders
+  @filter
+  @orders
   Scenario: Filter orders by status - Processing
     Given there are orders with different statuses
     When I filter orders by "Processing" status
     Then I should see only processing orders
 
-  @filter @orders
+  @filter
+  @orders
   Scenario: Filter orders by status - Completed
     Given there are orders with different statuses
     When I filter orders by "Completed" status
@@ -61,7 +68,8 @@ Feature: Order Management
     Then the order status should be updated
     And I should see a success message
 
-  @pagination @orders
+  @pagination
+  @orders
   Scenario: Navigate through order pages
     Given there are more than 10 orders
     When I navigate to page 2

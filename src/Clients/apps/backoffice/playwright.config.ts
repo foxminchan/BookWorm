@@ -19,7 +19,7 @@ export default defineConfig({
     ["allure-playwright", { outputFolder: "allure-results", suiteTitle: true }],
   ],
   use: {
-    baseURL: process.env.BASE_URL || "http://localhost:3000",
+    baseURL: process.env.BASE_URL || "http://localhost:3001",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     viewport: { width: 1920, height: 1080 },

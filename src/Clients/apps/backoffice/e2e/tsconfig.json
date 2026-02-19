@@ -2,16 +2,16 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "target": "ES2022",
-    "module": "CommonJS",
+    "module": "ESNext",
     "lib": ["ES2022", "DOM"],
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "types": ["node", "@cucumber/cucumber", "@playwright/test"]
+    "types": ["node", "@playwright/test"]
   },
   "include": ["**/*.ts", "**/*.js"],
-  "exclude": ["node_modules", "reports"]
+  "exclude": ["node_modules", "reports", ".features-gen"]
 }

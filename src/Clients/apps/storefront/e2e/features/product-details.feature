@@ -1,4 +1,7 @@
-@high-priority @product-details @reviews @p1
+@high-priority
+@product-details
+@reviews
+@p1
 Feature: Product Detail Page and Reviews
   As a customer
   I want to view detailed book information and reviews
@@ -40,7 +43,8 @@ Feature: Product Detail Page and Reviews
     And I should see the sale price
     And I should see a "Sale" badge
 
-  @reviews @smoke
+  @reviews
+  @smoke
   Scenario: Submit a product review
     Given I am on a product detail page
     When I scroll to the reviews section
@@ -63,28 +67,32 @@ Feature: Product Detail Page and Reviews
     When I click page 2 of reviews
     Then I should see the next 5 reviews
 
-  @reviews @sort
+  @reviews
+  @sort
   Scenario: Sort reviews by highest rating
     Given I am on a product detail page with multiple reviews
     When I scroll to the reviews section
     And I select "Highest Rating" sort
     Then reviews should be ordered by rating from highest to lowest
 
-  @reviews @sort
+  @reviews
+  @sort
   Scenario: Sort reviews by lowest rating
     Given I am on a product detail page with multiple reviews
     When I scroll to the reviews section
     And I select "Lowest Rating" sort
     Then reviews should be ordered by rating from lowest to highest
 
-  @reviews @sort
+  @reviews
+  @sort
   Scenario: Sort reviews by newest first
     Given I am on a product detail page with multiple reviews
     When I scroll to the reviews section
     And I select "Newest" sort
     Then reviews should be ordered by date from newest to oldest
 
-  @reviews @ai
+  @reviews
+  @ai
   Scenario: Generate AI summary of reviews
     Given I am on a product detail page with multiple reviews
     When I scroll to the reviews section
@@ -97,7 +105,8 @@ Feature: Product Detail Page and Reviews
     Then I should see "In Stock" status
     And the "Add to Basket" button should be enabled
 
-  @stock @edge-case
+  @stock
+  @edge-case
   Scenario: Out-of-stock product disables add to basket
     Given I am on a product detail page for an out-of-stock book
     Then I should see "Out of Stock" status
@@ -110,7 +119,8 @@ Feature: Product Detail Page and Reviews
     And I click "Submit Review" without filling the form
     Then I should see validation errors
 
-  @reviews @empty-state
+  @reviews
+  @empty-state
   Scenario: Product with no reviews shows empty state
     Given I am on a product detail page with no reviews
     When I scroll to the reviews section

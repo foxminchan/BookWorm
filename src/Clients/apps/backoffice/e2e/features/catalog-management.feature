@@ -1,4 +1,6 @@
-@catalog @books @p1
+@catalog
+@books
+@p1
 Feature: Book Catalog Management
   As an admin
   I want to manage the book catalog
@@ -9,7 +11,8 @@ Feature: Book Catalog Management
     And I am logged in as an admin
     And I am on the books page
 
-  @smoke @view-books
+  @smoke
+  @view-books
   Scenario: View list of books
     When the books page loads
     Then I should see the books table
@@ -24,14 +27,16 @@ Feature: Book Catalog Management
     Then the book should be added successfully
     And I should see the new book in the list
 
-  @search @books
+  @search
+  @books
   Scenario: Search for books by title
     Given the catalog has multiple books
     When I search for a book by title
     Then I should see only matching books
     And the results should be filtered
 
-  @search @books
+  @search
+  @books
   Scenario: Search with no results shows empty state
     When I search for "NonExistentBook12345"
     Then I should see "No books found" message
@@ -54,14 +59,16 @@ Feature: Book Catalog Management
     When I confirm the deletion
     Then the book should be removed from the list
 
-  @delete-book @cancel
+  @delete-book
+  @cancel
   Scenario: Cancel book deletion
     Given the catalog has at least one book
     When I click the delete button for the first book
     And I cancel the deletion
     Then the book should remain in the list
 
-  @validation @create-book
+  @validation
+  @create-book
   Scenario: Create book with missing required fields shows validation errors
     When I click the "Add Book" button
     And I leave required fields empty
