@@ -68,3 +68,41 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+      - name: Generate Allure Report (Backoffice)
+        if: always()
+        run: pnpm --filter @bookworm/backoffice run allure:generate
+
+      - name: Generate Allure Report (Storefront)
+        if: always()
+        run: pnpm --filter @bookworm/storefront run allure:generate
+
+      - name: Upload Allure Report (Backoffice)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report-backoffice
+          path: src/Clients/apps/backoffice/allure-report/
+          retention-days: 7
+
+      - name: Upload Allure Report (Storefront)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report-storefront
+          path: src/Clients/apps/storefront/allure-report/
+          retention-days: 7
+
+      - name: Post Allure Summary (Backoffice)
+        if: github.event_name == 'pull_request'
+        uses: allure-framework/allure-action@v0
+        with:
+          report-directory: src/Clients/apps/backoffice/allure-report
+          github-token: ${{ secrets.GH_TOKEN }}
+
+      - name: Post Allure Summary (Storefront)
+        if: github.event_name == 'pull_request'
+        uses: allure-framework/allure-action@v0
+        with:
+          report-directory: src/Clients/apps/storefront/allure-report
+          github-token: ${{ secrets.GH_TOKEN }}
