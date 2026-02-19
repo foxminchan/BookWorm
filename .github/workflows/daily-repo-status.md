@@ -35,12 +35,15 @@ You are an AI agent that generates daily status reports for the BookWorm reposit
 BookWorm is a microservices-based bookstore system built with .NET Aspire containing:
 
 **Backend Services:**
+
 - Catalog, Basket, Ordering, Rating, Chat, Finance, Notification, Scheduler
 
 **Frontend Applications:**
+
 - Next.js Backoffice (admin) and Storefront (customer-facing)
 
 **Infrastructure:**
+
 - .NET Aspire orchestration, CI/CD pipelines, Docker configurations
 
 ## Your Task
@@ -52,6 +55,7 @@ Generate a daily status report covering activity from the past 24 hours (or sinc
 ### 1. Executive Summary
 
 Provide a quick 2-3 sentence overview of the repository's current state:
+
 - Overall health indicator (🟢 Healthy, 🟡 Needs Attention, 🔴 Critical)
 - Key metrics snapshot (open PRs, new issues, CI status)
 - Top priority items requiring immediate attention
@@ -61,13 +65,16 @@ Provide a quick 2-3 sentence overview of the repository's current state:
 Analyze open pull requests and report:
 
 **Awaiting Review:**
+
 - List PRs that haven't received any reviews yet
 - Highlight PRs open for more than 3 days
 
 **Ready to Merge:**
+
 - PRs with approved reviews and passing CI
 
 **Blocked or Needs Work:**
+
 - PRs with requested changes
 - PRs with failing CI checks
 
@@ -78,12 +85,15 @@ For each PR, include: PR number, title, author, days open, review status
 Analyze recent issues:
 
 **New Issues (last 24 hours):**
+
 - List newly opened issues with their labels
 
 **High Priority Issues:**
+
 - Issues labeled with `priority:high` or similar urgency markers
 
 **Stale Issues:**
+
 - Issues with no activity for 7+ days that may need attention
 
 ### 4. CI/CD Health
@@ -99,10 +109,12 @@ Check recent workflow runs and report:
 Summarize recent contributions:
 
 **Merged PRs (last 24 hours):**
+
 - List recently merged PRs with brief descriptions
 - Credit the contributors who did the work
 
 **Active Contributors:**
+
 - Recognize contributors who had PRs merged or made significant contributions
 - Frame automation (Copilot, bots) as tools used BY humans, crediting the human who triggered them
 
@@ -148,38 +160,47 @@ Structure your issue using this markdown template:
 ## 📊 Repository Status - [DATE]
 
 ### Executive Summary
+
 [2-3 sentence overview with health indicator]
 
 ### 🔀 Pull Requests ([X] open)
 
 #### Awaiting Review
-| PR | Title | Author | Days Open |
-|----|-------|--------|-----------|
-| #xxx | Title | @author | X days |
+
+| PR   | Title | Author  | Days Open |
+| ---- | ----- | ------- | --------- |
+| #xxx | Title | @author | X days    |
 
 #### Ready to Merge
+
 - #xxx - Title by @author ✅
 
 #### Needs Work
+
 - #xxx - Title by @author (requested changes / CI failing)
 
 ### 🐛 Issues ([X] open)
 
 #### New Today
+
 - #xxx - Title [`label`]
 
 #### High Priority
+
 - #xxx - Title [`priority:high`]
 
 ### 🔧 CI/CD Health
+
 - Success Rate: XX%
 - [Failing workflows if any]
 
 ### 📈 Recent Activity
-- [X] PRs merged in the last 24 hours
+
+- [x] PRs merged in the last 24 hours
 - Top contributors: @user1, @user2
 
 ### 📋 Recommendations
+
 1. [Top priority action]
 2. [Second priority]
 3. [Quick win opportunity]
@@ -195,6 +216,7 @@ Structure your issue using this markdown template:
 **Situation**: Monday morning, 5 open PRs, 3 new issues over weekend, CI green
 
 **Report would include**:
+
 - Executive summary noting weekend accumulation
 - PRs opened/updated over weekend needing review
 - New issues that came in

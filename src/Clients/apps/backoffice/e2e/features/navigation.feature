@@ -1,4 +1,5 @@
-@navigation @p2
+@navigation
+@p2
 Feature: Dashboard Navigation
   As an admin
   I want to navigate between different sections
@@ -8,7 +9,8 @@ Feature: Dashboard Navigation
     Given the backoffice application is running
     And I am logged in as an admin
 
-  @smoke @dashboard
+  @smoke
+  @dashboard
   Scenario: View dashboard overview
     Given I am on the dashboard
     Then I should see the dashboard statistics
@@ -38,13 +40,15 @@ Feature: Dashboard Navigation
     When I click on "Reviews" in the navigation
     Then I should be on the reviews page
 
-  @navigation @breadcrumb
+  @navigation
+  @breadcrumb
   Scenario: Navigate back to dashboard from books page
     Given I am on the books page
     When I click on "Dashboard" in the breadcrumb
     Then I should be on the dashboard
 
-  @mobile @responsive
+  @mobile
+  @responsive
   Scenario: Mobile devices should show mobile blocker
     Given I am using a mobile device
     When I access the backoffice

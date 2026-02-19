@@ -13,6 +13,7 @@ export default [
   {
     ignores: [
       ".next/**",
+      ".features-gen/**",
       "public/mockServiceWorker.js",
       "coverage/**",
       "**/coverage/**",
@@ -32,6 +33,13 @@ export default [
     files: ["**/__tests__/**/*.test.tsx", "**/__tests__/**/*.test.ts"],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
+  {
+    files: ["e2e/**/*.ts", "e2e/**/*.js"],
+    rules: {
+      "react-hooks/rules-of-hooks": "off",
+      "no-empty-pattern": "off",
     },
   },
 ];

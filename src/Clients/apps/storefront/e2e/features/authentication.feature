@@ -1,4 +1,6 @@
-@critical @authentication @p0
+@critical
+@authentication
+@p0
 Feature: User Authentication
   As a user
   I want to securely log in and register
@@ -7,7 +9,8 @@ Feature: User Authentication
   Background:
     Given the storefront application is running
 
-  @smoke @login
+  @smoke
+  @login
   Scenario: Successful login redirects to Keycloak
     Given I am on the homepage
     When I click "Login"
@@ -15,7 +18,8 @@ Feature: User Authentication
     And I should see "Redirecting to login" message
     And I should be redirected to Keycloak OAuth provider
 
-  @smoke @register
+  @smoke
+  @register
   Scenario: Successful registration redirects to Keycloak
     Given I am on the homepage
     When I click "Register"

@@ -1,4 +1,6 @@
-@critical @authentication @p0
+@critical
+@authentication
+@p0
 Feature: Admin Authentication
   As an admin user
   I want to securely log in to the backoffice
@@ -7,7 +9,8 @@ Feature: Admin Authentication
   Background:
     Given the backoffice application is running
 
-  @smoke @login
+  @smoke
+  @login
   Scenario: Successful login redirects to dashboard
     Given I am on the login page
     When I enter valid admin credentials
@@ -15,13 +18,15 @@ Feature: Admin Authentication
     Then I should be redirected to the dashboard
     And I should see the navigation menu
 
-  @smoke @login-redirect
+  @smoke
+  @login-redirect
   Scenario: Login redirects to Keycloak OAuth provider
     Given I am on the homepage
     When I navigate to the login page
     Then I should be redirected to Keycloak OAuth provider
 
-  @validation @login-error
+  @validation
+  @login-error
   Scenario: Login with invalid credentials shows error
     Given I am on the login page
     When I enter invalid admin credentials

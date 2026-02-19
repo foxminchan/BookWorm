@@ -1,4 +1,6 @@
-@high-priority @ai-features @chatbot
+@high-priority
+@ai-features
+@chatbot
 Feature: AI-Powered Book Recommendations
   As a customer
   I want to interact with an AI chatbot
@@ -8,7 +10,8 @@ Feature: AI-Powered Book Recommendations
     Given the storefront application is running
     And AI features are enabled
 
-  @smoke @chat
+  @smoke
+  @chat
   Scenario: Open AI chatbot from homepage
     Given I am on the homepage
     When I click "Try AI Recommendations" button
@@ -16,7 +19,8 @@ Feature: AI-Powered Book Recommendations
     And the chatbot should be focused
     And I should see the welcome message "Hi! I'm your literary assistant. I can help you find books, manage your basket, and answer questions about our collection. What would you like to explore today?"
 
-  @smoke @chat
+  @smoke
+  @chat
   Scenario: Open AI chatbot from floating button
     Given I am on any page
     When I click the floating chat button with label "Open BookWorm Literary Guide chat"
@@ -74,7 +78,8 @@ Feature: AI-Powered Book Recommendations
     Then the chat history should be cleared
     And I should see a fresh welcome message
 
-  @accessibility @keyboard-nav
+  @accessibility
+  @keyboard-nav
   Scenario: Navigate chatbot with keyboard
     Given I am on the homepage
     When I press Tab until the chat button is focused
@@ -85,14 +90,16 @@ Feature: AI-Powered Book Recommendations
     And I press Enter
     Then the message should be sent
 
-  @accessibility @focus-trap
+  @accessibility
+  @focus-trap
   Scenario: Chatbot dialog traps focus
     Given the AI chatbot is open
     When I press Tab repeatedly
     Then focus should cycle within the dialog
     And focus should not escape to the page behind
 
-  @accessibility @focus-management
+  @accessibility
+  @focus-management
   Scenario: Focus returns to trigger button after closing dialog
     Given I am on the homepage
     When I click the floating chat button
@@ -108,7 +115,8 @@ Feature: AI-Powered Book Recommendations
     Then the chatbot should close
     And the floating chat button should be visible
 
-  @error-handling @feature-disabled
+  @error-handling
+  @feature-disabled
   Scenario: Show unavailable message when feature is disabled
     Given AI features are disabled
     When I click the floating chat button
@@ -117,7 +125,8 @@ Feature: AI-Powered Book Recommendations
     And I should see message "Our AI chat assistant is currently under development and will be available soon. Stay tuned!"
     And I can close the dialog by clicking outside or the close button
 
-  @error-handling @gateway-unavailable
+  @error-handling
+  @gateway-unavailable
   Scenario: Show unavailable message when gateway is not configured
     Given the API gateway is not configured
     When I click the floating chat button

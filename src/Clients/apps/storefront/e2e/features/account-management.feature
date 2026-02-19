@@ -1,4 +1,6 @@
-@high-priority @account @user-profile
+@high-priority
+@account
+@user-profile
 Feature: User Account Management
   As a customer
   I want to manage my account settings and profile
@@ -8,7 +10,8 @@ Feature: User Account Management
     Given the storefront application is running
     And I am logged in as a customer
 
-  @smoke @profile
+  @smoke
+  @profile
   Scenario: View account dashboard
     Given I am on the homepage
     When I navigate to my account page
@@ -44,12 +47,12 @@ Feature: User Account Management
     When I go to "Addresses" section
     And I click "Add New Address"
     And I fill in the address form:
-      | Field          | Value              |
-      | Street Address | 123 Main St        |
-      | City           | New York           |
-      | State          | NY                 |
-      | Postal Code    | 10001              |
-      | Country        | United States      |
+      | Field          | Value         |
+      | Street Address | 123 Main St   |
+      | City           | New York      |
+      | State          | NY            |
+      | Postal Code    | 10001         |
+      | Country        | United States |
     And I click "Save Address"
     Then I should see the new address in my addresses list
 

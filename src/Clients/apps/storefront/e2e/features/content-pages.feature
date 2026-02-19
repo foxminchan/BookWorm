@@ -1,4 +1,6 @@
-@medium-priority @content-pages @informational
+@medium-priority
+@content-pages
+@informational
 Feature: Content and Information Pages
   As a customer
   I want to access company information and policies
@@ -7,7 +9,8 @@ Feature: Content and Information Pages
   Background:
     Given the storefront application is running
 
-  @smoke @about
+  @smoke
+  @about
   Scenario: View About Us page
     Given I am on the homepage
     When I click "About" in the footer
@@ -17,7 +20,8 @@ Feature: Content and Information Pages
     And I should see the company timeline
     And I should see contact information
 
-  @about @sections
+  @about
+  @sections
   Scenario: Navigate through About page sections
     Given I am on the about page
     When I scroll through the page
@@ -27,14 +31,16 @@ Feature: Content and Information Pages
     And I should see the timeline section
     And I should see the contact section
 
-  @about @accessibility
+  @about
+  @accessibility
   Scenario: About page is keyboard navigable
     Given I am on the about page
     When I navigate using Tab key
     Then all interactive elements should be focusable
     And section headings should be properly structured
 
-  @shipping @smoke
+  @shipping
+  @smoke
   Scenario: View Shipping Information page
     Given I am on the homepage
     When I click "Shipping" in the footer
@@ -52,7 +58,8 @@ Feature: Content and Information Pages
     Then I should be redirected to the shipping page
     And I should be able to return to basket
 
-  @returns @smoke
+  @returns
+  @smoke
   Scenario: View Returns & Refunds policy
     Given I am on the homepage
     When I click "Returns" in the footer
@@ -108,7 +115,8 @@ Feature: Content and Information Pages
     Then I should see a success message
     And I should receive a confirmation email
 
-  @contact @validation
+  @contact
+  @validation
   Scenario: Contact form validates required fields
     Given I am on the about page
     When I scroll to the contact section
@@ -124,7 +132,8 @@ Feature: Content and Information Pages
     When I click "Home" in breadcrumbs
     Then I should return to the homepage
 
-  @seo @metadata
+  @seo
+  @metadata
   Scenario: Content pages have proper SEO metadata
     Given I am on the about page
     Then the page should have a descriptive title

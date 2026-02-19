@@ -10,8 +10,8 @@
     "strict": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "types": ["node", "@cucumber/cucumber", "@playwright/test"]
+    "types": ["node", "@playwright/test"]
   },
   "include": ["**/*.ts", "**/*.js"],
-  "exclude": ["node_modules", "reports"]
+  "exclude": ["node_modules", "reports", ".features-gen"]
 }

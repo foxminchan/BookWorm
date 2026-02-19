@@ -28,7 +28,7 @@
     "test": "turbo run test",
     "e2e": "turbo run test:e2e",
     "boundaries": "turbo boundaries",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md,feature}\""
   },
   "lavamoat": {
     "allowScripts": {}
@@ -39,6 +39,7 @@
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "prettier": "^3.8.1",
+    "prettier-plugin-gherkin": "^3.1.3",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "turbo": "^2.8.9",
     "typescript": "5.9.3"

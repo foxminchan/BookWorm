@@ -1,4 +1,6 @@
-@rating @reviews @p2
+@rating
+@reviews
+@p2
 Feature: Review Management
   As an admin
   I want to manage customer reviews
@@ -9,13 +11,15 @@ Feature: Review Management
     And I am logged in as an admin
     And I am on the reviews page
 
-  @smoke @view-reviews
+  @smoke
+  @view-reviews
   Scenario: View list of reviews
     When the reviews page loads
     Then I should see the reviews table
     And I should see review information including rating and status
 
-  @search @reviews
+  @search
+  @reviews
   Scenario: Search for reviews by book title
     Given there are multiple reviews
     When I search for reviews by book title
@@ -35,19 +39,22 @@ Feature: Review Management
     Then the review should be rejected
     And I should see a success message
 
-  @filter @reviews
+  @filter
+  @reviews
   Scenario: Filter reviews by status
     Given there are reviews with different statuses
     When I filter reviews by "Pending" status
     Then I should see only pending reviews
 
-  @filter @reviews
+  @filter
+  @reviews
   Scenario: Filter reviews by rating
     Given there are reviews with different ratings
     When I filter reviews by 5-star rating
     Then I should see only 5-star reviews
 
-  @pagination @reviews
+  @pagination
+  @reviews
   Scenario: Navigate through review pages
     Given there are more than 10 reviews
     When I navigate to page 2

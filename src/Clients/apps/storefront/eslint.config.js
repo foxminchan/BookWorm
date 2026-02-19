@@ -52,6 +52,7 @@ export default [
     ignores: [
       ".next/**",
       ".turbo/**",
+      ".features-gen/**",
       "node_modules/**",
       "coverage/**",
       "playwright-report/**",
@@ -59,5 +60,12 @@ export default [
       "e2e/reports/**",
       "public/mockServiceWorker.js",
     ],
+  },
+  {
+    files: ["e2e/**/*.ts", "e2e/**/*.js"],
+    rules: {
+      "react-hooks/rules-of-hooks": "off",
+      "no-empty-pattern": "off",
+    },
   },
 ];

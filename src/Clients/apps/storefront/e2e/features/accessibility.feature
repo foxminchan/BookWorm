@@ -1,4 +1,5 @@
-@accessibility @a11y
+@accessibility
+@a11y
 Feature: Accessibility and Keyboard Navigation
   As a user who relies on assistive technology
   I want the site to be fully accessible
@@ -8,7 +9,8 @@ Feature: Accessibility and Keyboard Navigation
     Given the storefront application is running
     And the catalog has available books
 
-  @critical @keyboard-nav
+  @critical
+  @keyboard-nav
   Scenario: Skip to main content link is accessible
     Given I am on the homepage
     When I press Tab key once
@@ -17,7 +19,8 @@ Feature: Accessibility and Keyboard Navigation
     When I press Enter
     Then focus should move to main content area
 
-  @critical @keyboard-nav
+  @critical
+  @keyboard-nav
   Scenario: Complete checkout using keyboard only
     Given I am on the homepage
     When I navigate to shop using keyboard
@@ -95,10 +98,10 @@ Feature: Accessibility and Keyboard Navigation
   Scenario: Page has proper landmark regions
     Given I am on any page
     Then the page should have:
-      | landmark | count |
-      | main     | 1     |
-      | navigation | 1-2 |
-      | contentinfo | 1  |
+      | landmark    | count |
+      | main        | 1     |
+      | navigation  | 1-2   |
+      | contentinfo | 1     |
     And each landmark should have proper aria-label if multiple of same type
 
   @color-contrast

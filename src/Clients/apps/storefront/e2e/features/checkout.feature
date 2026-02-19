@@ -1,4 +1,6 @@
-@critical @checkout @p0
+@critical
+@checkout
+@p0
 Feature: Complete Purchase Journey
   As a customer
   I want to browse, add items to basket, and complete checkout

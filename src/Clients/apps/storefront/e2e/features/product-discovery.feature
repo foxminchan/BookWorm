@@ -1,4 +1,6 @@
-@high-priority @catalog @p1
+@high-priority
+@catalog
+@p1
 Feature: Product Search and Filtering
   As a customer
   I want to search and filter books
@@ -8,7 +10,8 @@ Feature: Product Search and Filtering
     Given the storefront application is running
     And the catalog has at least 25 books available
 
-  @search @smoke
+  @search
+  @smoke
   Scenario: Search by keyword
     Given I am on the shop page
     When I enter "design" in the search bar
@@ -37,7 +40,8 @@ Feature: Product Search and Filtering
     When I sort by "Price: High to Low"
     Then books should be displayed in descending price order
 
-  @pagination @smoke
+  @pagination
+  @smoke
   Scenario: Navigate through multiple pages of results
     Given I am on the shop page with 25 books available
     Then I should see 8 books on page 1
