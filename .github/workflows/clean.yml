@@ -15,7 +15,7 @@ jobs:
       - uses: snok/container-retention-policy@v3.0.1
         with:
           account: user
-          token: ${{ secrets.GH_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           image-names: "bookworm/*"
           tag-selection: untagged
           cut-off: 1h

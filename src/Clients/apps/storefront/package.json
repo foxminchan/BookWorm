@@ -40,7 +40,7 @@
     "test:e2e:ci": "npx bddgen && npx playwright test --workers=4",
     "playwright:install": "playwright install --with-deps chromium",
     "playwright:install:all": "playwright install --with-deps",
-    "allure:generate": "allure generate allure-results --clean -o allure-report",
+    "allure:generate": "allure generate --output allure-report allure-results",
     "allure:open": "allure open allure-report",
     "allure:serve": "allure serve allure-results"
   },
@@ -99,7 +99,9 @@
     "@vitest/ui": "^4.0.18",
     "@workspace/eslint-config": "workspace:^",
     "@workspace/typescript-config": "workspace:*",
+    "allure": "^3.1.0",
     "allure-playwright": "^3.4.5",
+    "allure-vitest": "^3.4.5",
     "eslint": "^10.0.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "happy-dom": "^20.6.1",

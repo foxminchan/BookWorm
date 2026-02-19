@@ -20,11 +20,15 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "happy-dom",
+    reporters: [
+      "default",
+      ["allure-vitest/reporter", { resultsDir: "./allure-results" }],
+    ],
     execArgv: [
       "--localstorage-file",
       path.resolve(os.tmpdir(), `vitest-${process.pid}.localstorage`),
     ],
-    setupFiles: ["./__tests__/setup.ts"],
+    setupFiles: ["allure-vitest/setup", "./__tests__/setup.ts"],
     include: ["**/__tests__/**/*.test.{ts,tsx}", "**/*.test.{ts,tsx}"],
     exclude: ["node_modules", ".next", "e2e"],
     coverage: {
