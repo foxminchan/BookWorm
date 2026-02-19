@@ -1,7 +1,7 @@
 import { defineConfig } from "allure";
 
 export default defineConfig({
-  name: "Unit Tests",
+  name: "Backoffice Unit Tests",
   output: "allure-report",
   qualityGate: {
     rules: [

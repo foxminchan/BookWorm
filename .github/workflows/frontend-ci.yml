@@ -16,6 +16,9 @@ on:
       - "!**.md"
   workflow_dispatch:
 
+env:
+  RETENTION_DAYS: ${{ github.event_name == 'pull_request' && 1 || 3 }}
+
 permissions:
   checks: write
   pull-requests: write
@@ -79,7 +82,7 @@ jobs:
         with:
           name: allure-report-backoffice
           path: src/Clients/apps/backoffice/allure-report/
-          retention-days: 7
+          retention-days: ${{ env.RETENTION_DAYS }}
 
       - name: Upload Allure Report (Storefront)
         if: always()
@@ -87,7 +90,7 @@ jobs:
         with:
           name: allure-report-storefront
           path: src/Clients/apps/storefront/allure-report/
-          retention-days: 7
+          retention-days: ${{ env.RETENTION_DAYS }}
 
       - name: Post Allure Summary (Backoffice)
         if: github.event_name == 'pull_request'
