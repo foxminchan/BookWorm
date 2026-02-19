@@ -147,7 +147,7 @@
       ]
     },
     "allure:generate": {
-      "dependsOn": ["test", "test:e2e", "test:e2e:ci"],
+      "dependsOn": ["test"],
       "inputs": ["allure-results/**"],
       "outputs": ["allure-report/**"]
     },
