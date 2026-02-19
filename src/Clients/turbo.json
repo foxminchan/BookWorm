@@ -53,7 +53,7 @@
     },
     "test": {
       "dependsOn": ["^build"],
-      "outputs": [],
+      "outputs": ["allure-results/**"],
       "inputs": [
         "**/*.{ts,tsx}",
         "**/*.test.{ts,tsx}",
@@ -147,7 +147,7 @@
       ]
     },
     "allure:generate": {
-      "dependsOn": ["test:e2e", "test:e2e:ci"],
+      "dependsOn": ["test", "test:e2e", "test:e2e:ci"],
       "inputs": ["allure-results/**"],
       "outputs": ["allure-report/**"]
     },

@@ -69,13 +69,9 @@ jobs:
       - name: Test
         run: pnpm test
 
-      - name: Generate Allure Report (Backoffice)
+      - name: Generate Allure Reports
         if: always()
-        run: pnpm --filter @bookworm/backoffice run allure:generate
-
-      - name: Generate Allure Report (Storefront)
-        if: always()
-        run: pnpm --filter @bookworm/storefront run allure:generate
+        run: pnpm turbo allure:generate --continue
 
       - name: Upload Allure Report (Backoffice)
         if: always()
