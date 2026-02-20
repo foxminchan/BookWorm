@@ -30,7 +30,7 @@
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.JavaScript.Extensions" Version="$(ToolKitVersion)" />
     <!-- Extra -->
     <PackageVersion Include="TUnit.Aspire" Version="1.15.0" />
-    <PackageVersion Include="Scalar.Aspire" Version="0.8.50" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.8.55" />
   </ItemGroup>
   <ItemGroup Label="Core Packages">
     <!-- Microsoft Extensions -->
@@ -53,12 +53,12 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.0" />
     <!-- AI -->
-    <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="$(AgentFrameworkVersion)" />
+    <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="1.0.0-rc1" />
     <PackageVersion Include="Microsoft.Agents.AI.A2A" Version="$(AgentFrameworkVersion)" />
     <PackageVersion Include="Microsoft.Agents.AI.Hosting.A2A.AspNetCore" Version="$(AgentFrameworkVersion)" />
     <PackageVersion Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore" Version="$(AgentFrameworkVersion)" />
     <PackageVersion Include="Microsoft.Agents.AI.DevUI" Version="$(AgentFrameworkVersion)" />
-    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.70.0-preview" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.72.0-preview" />
     <!-- Miscellaneous -->
     <PackageVersion Include="AspNetCore.HealthChecks.Uris" Version="$(HealthChecksVersion)" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
@@ -86,16 +86,16 @@
     <PackageVersion Include="Mjml.Net" Version="4.11.0" />
     <PackageVersion Include="SendGrid" Version="9.29.3" />
     <!-- Other Integrations -->
-    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.8.0-preview.1" />
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.9.0-preview.1" />
   </ItemGroup>
   <ItemGroup Label="Testing">
     <PackageVersion Include="Bogus" Version="35.6.5" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="TngTech.ArchUnitNET.TUnit" Version="0.13.2" />
-    <PackageVersion Include="TUnit" Version="1.15.0" />
+    <PackageVersion Include="TUnit" Version="1.16.4" />
     <!-- Contract Testing -->
-    <PackageVersion Include="Verify.TUnit" Version="31.13.0" />
+    <PackageVersion Include="Verify.TUnit" Version="31.13.1" />
     <PackageVersion Include="Verify.SendGrid" Version="1.0.0" />
     <PackageVersion Include="Verify.MassTransit" Version="2.1.0" />
     <!-- Microsoft Testing Platform -->
