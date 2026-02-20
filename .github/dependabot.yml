@@ -234,3 +234,5 @@ updates:
     commit-message:
       prefix: "GitHub Actions"
       include: scope
+    ignore:
+      - dependency-name: "github/gh-aw/*"
