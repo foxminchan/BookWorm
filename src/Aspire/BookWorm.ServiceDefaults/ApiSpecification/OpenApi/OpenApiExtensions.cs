@@ -6,20 +6,13 @@ public static class OpenApiExtensions
 {
     extension(IServiceCollection services)
     {
-        public void AddDefaultOpenApi()
-        {
-            services.AddSimpleOpenApi(options =>
-            {
-                options.ApplyAuthorizationChecks();
-                options.ApplySecuritySchemeDefinitions();
-            });
-        }
-
-        public void AddSimpleOpenApi(Action<OpenApiOptions>? configure = null)
+        public void AddDefaultOpenApi(Action<OpenApiOptions>? configure = null)
         {
             services.AddOpenApi(options =>
             {
                 options.ApplyApiInfo();
+                options.ApplyAuthorizationChecks();
+                options.ApplySecuritySchemeDefinitions();
                 configure?.Invoke(options);
             });
         }

@@ -9,6 +9,10 @@
       Value="BookWorm MCP Tools Image"
     />
     <ContainerLabel Include="org.opencontainers.image.authors" Value="Nhan Nguyen" />
+    <ContainerLabel
+      Include="io.modelcontextprotocol.server.name"
+      Value="ghcr.io/foxminchan/bookworm/mcptools"
+    />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="ModelContextProtocol.AspNetCore" />

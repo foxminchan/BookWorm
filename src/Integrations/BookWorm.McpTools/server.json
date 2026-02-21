@@ -1,0 +1,57 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.foxminchan/bookworm-mcptools",
+  "title": "BookWorm MCP Tools",
+  "description": "An MCP server that provides tools for BookWorm, such as catalog and registry services.",
+  "repository": {
+    "url": "https://github.com/foxminchan/BookWorm",
+    "source": "github",
+    "subfolder": "src/Integrations/BookWorm.McpTools"
+  },
+  "version": "1.0.0",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://bookworm.com/mcp"
+    }
+  ],
+  "packages": [
+    {
+      "registryType": "oci",
+      "identifier": "ghcr.io/foxminchan/bookworm/mcptools:1.0.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "description": "Your catalog HTTP endpoint",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false,
+          "name": "CATALOG_HTTP"
+        },
+        {
+          "description": "Your catalog HTTP endpoint",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false,
+          "name": "CATALOG_HTTPS"
+        },
+        {
+          "description": "Your catalog HTTP endpoint",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false,
+          "name": "services__catalog__http__0"
+        },
+        {
+          "description": "Your catalog HTTP endpoint",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false,
+          "name": "services__catalog__https__0"
+        }
+      ]
+    }
+  ]
+}
