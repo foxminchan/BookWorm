@@ -37,8 +37,6 @@ internal static class Extensions
                 }
             );
 
-        builder.AddDefaultOpenApi();
-
         // Add exception handlers
         services.AddExceptionHandler<ValidationExceptionHandler>();
         services.AddExceptionHandler<NotFoundExceptionHandler>();
@@ -104,6 +102,7 @@ internal static class Extensions
         // Configure endpoints
         services.AddVersioning();
         services.AddEndpoints(typeof(IRatingApiMarker));
+        services.AddDefaultOpenApi();
 
         builder.AddAgents();
         services.AddSingleton<ISummarizer, RatingSummarizer>();

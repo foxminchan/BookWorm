@@ -1,4 +1,5 @@
-﻿using BookWorm.Chassis.Security.Extensions;
+﻿using System.Security.Claims;
+using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
 using Microsoft.AspNetCore.Authorization;
 
@@ -40,8 +41,6 @@ internal static class Extensions
                     .Build()
             );
 
-        builder.AddDefaultOpenApi();
-
         // Add exception handlers
         services.AddExceptionHandler<NotFoundExceptionHandler>();
         services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -51,9 +50,12 @@ internal static class Extensions
 
         services.AddVersioning();
         services.AddEndpoints(typeof(IChatApiMarker));
+        services.AddDefaultOpenApi();
 
         // Configure ClaimsPrincipal
-        services.AddTransient(s => s.GetRequiredService<IHttpContextAccessor>().HttpContext!.User);
+        services.AddTransient(s =>
+            s.GetRequiredService<IHttpContextAccessor>().HttpContext?.User ?? new ClaimsPrincipal()
+        );
 
         builder.AddAIAgentsServices();
 

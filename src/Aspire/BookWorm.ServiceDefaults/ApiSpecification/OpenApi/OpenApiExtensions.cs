@@ -1,45 +1,47 @@
 ﻿using BookWorm.Chassis.Security.Settings;
+using Microsoft.AspNetCore.OpenApi;
 
 namespace BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
 
 public static class OpenApiExtensions
 {
-    public static void AddDefaultOpenApi(this IHostApplicationBuilder builder)
+    extension(IServiceCollection services)
     {
-        var services = builder.Services;
-
-        var sp = services.BuildServiceProvider();
-        var document = sp.GetRequiredService<DocumentOptions>();
-        var identity = sp.GetService<IdentityOptions>();
-
-        foreach (var version in sp.GetApiVersionDescription())
+        public void AddDefaultOpenApi()
         {
-            services.AddOpenApi(
-                version.GroupName,
-                options =>
+            var sp = services.BuildServiceProvider();
+            var identity = sp.GetService<IdentityOptions>();
+
+            services.AddSimpleOpenApi(options =>
+            {
+                if (identity is not null)
                 {
-                    options.ApplyApiVersionInfo(document, version);
-
-                    if (identity is null)
-                    {
-                        return;
-                    }
-
                     options.ApplySecuritySchemeDefinitions();
                     options.ApplyAuthorizationChecks([.. identity.Scopes.Keys]);
                 }
-            );
+            });
+        }
+
+        public void AddSimpleOpenApi(Action<OpenApiOptions>? configure = null)
+        {
+            var sp = services.BuildServiceProvider();
+            var document = sp.GetRequiredService<DocumentOptions>();
+
+            services.AddOpenApi(options =>
+            {
+                options.ApplyApiInfo(document);
+                configure?.Invoke(options);
+            });
         }
     }
 
     public static void UseDefaultOpenApi(this WebApplication app)
     {
-        if (!app.Environment.IsDevelopment())
+        if (app.Environment.IsDevelopment())
         {
-            return;
+            app.MapOpenApi();
+            app.MapGet("/", () => TypedResults.Redirect("openapi/v1.json"))
+                .ExcludeFromDescription();
         }
-
-        app.MapOpenApi();
-        app.MapGet("/", () => TypedResults.Redirect("openapi/v1.json")).ExcludeFromDescription();
     }
 }

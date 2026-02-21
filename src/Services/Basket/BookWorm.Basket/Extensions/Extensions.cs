@@ -35,8 +35,6 @@ internal static class Extensions
                     .Build()
             );
 
-        builder.AddDefaultOpenApi();
-
         // Add exception handlers
         services.AddExceptionHandler<ValidationExceptionHandler>();
         services.AddExceptionHandler<NotFoundExceptionHandler>();
@@ -72,6 +70,7 @@ internal static class Extensions
         // Configure endpoints
         services.AddVersioning();
         services.AddEndpoints(typeof(IBasketApiMarker));
+        services.AddDefaultOpenApi();
 
         // Configure gRPC
         builder.AddGrpcServices();

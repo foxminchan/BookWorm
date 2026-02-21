@@ -4,10 +4,8 @@ using Microsoft.OpenApi;
 
 namespace BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 
-internal sealed class OpenApiInfoDefinitionsTransformer(
-    DocumentOptions? openApiDocument,
-    ApiVersionDescription apiDescription
-) : IOpenApiDocumentTransformer
+internal sealed class OpenApiInfoDefinitionsTransformer(DocumentOptions? openApiDocument)
+    : IOpenApiDocumentTransformer
 {
     public Task TransformAsync(
         OpenApiDocument document,
@@ -30,17 +28,12 @@ internal sealed class OpenApiInfoDefinitionsTransformer(
 
         if (!string.IsNullOrWhiteSpace(openApiDocument?.Title))
         {
-            document.Info.Title = $"{openApiDocument.Title} {apiDescription.ApiVersion}";
+            document.Info.Title = $"{openApiDocument.Title}";
         }
-
-        document.Info.Version = apiDescription.ApiVersion.ToString();
 
         if (!string.IsNullOrWhiteSpace(openApiDocument?.Description))
         {
-            document.Info.Description = ApiVersionDescriptionBuilder.BuildDescription(
-                apiDescription,
-                openApiDocument.Description
-            );
+            document.Info.Description = openApiDocument.Description;
         }
 
         return Task.CompletedTask;
