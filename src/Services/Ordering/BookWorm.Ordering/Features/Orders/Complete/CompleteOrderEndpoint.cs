@@ -24,7 +24,7 @@ public sealed class CompleteOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, 
             .WithName(nameof(CompleteOrderEndpoint))
             .WithSummary("Complete Order")
             .WithDescription("Complete an order")
-            .MapToApiVersion(new(1, 0))
+            .MapToApiVersion(ApiVersions.V1)
             .RequireAuthorization()
             .RequirePerUserRateLimit();
     }

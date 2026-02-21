@@ -16,7 +16,7 @@ public sealed class UpdateAddressEndpoint : IEndpoint<Ok<BuyerDto>, UpdateAddres
             .WithName(nameof(UpdateAddressEndpoint))
             .WithSummary("Update Buyer Address")
             .WithDescription("Update the current buyer's address")
-            .MapToApiVersion(new(1, 0))
+            .MapToApiVersion(ApiVersions.V1)
             .RequireAuthorization(Authorization.Policies.User)
             .RequirePerUserRateLimit();
     }

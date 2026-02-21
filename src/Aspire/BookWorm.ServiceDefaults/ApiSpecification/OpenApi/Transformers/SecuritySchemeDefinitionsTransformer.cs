@@ -6,8 +6,7 @@ using Microsoft.OpenApi;
 
 namespace BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 
-internal sealed class SecuritySchemeDefinitionsTransformer(IdentityOptions identityOptions)
-    : IOpenApiDocumentTransformer
+internal sealed class SecuritySchemeDefinitionsTransformer : IOpenApiDocumentTransformer
 {
     public Task TransformAsync(
         OpenApiDocument document,
@@ -15,6 +14,13 @@ internal sealed class SecuritySchemeDefinitionsTransformer(IdentityOptions ident
         CancellationToken cancellationToken
     )
     {
+        var identityOptions = context.ApplicationServices.GetService<IdentityOptions>();
+
+        if (identityOptions is null)
+        {
+            return Task.CompletedTask;
+        }
+
         var keycloakUrl = ServiceDiscoveryUtilities.GetServiceEndpoint(Components.KeyCloak);
 
         if (string.IsNullOrWhiteSpace(keycloakUrl))

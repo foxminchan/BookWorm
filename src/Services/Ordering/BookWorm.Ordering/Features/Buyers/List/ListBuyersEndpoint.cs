@@ -19,7 +19,7 @@ public sealed class ListBuyersEndpoint
             .WithName(nameof(ListBuyersEndpoint))
             .WithSummary("List Buyers")
             .WithDescription("List all buyers with pagination options")
-            .MapToApiVersion(new(1, 0))
+            .MapToApiVersion(ApiVersions.V1)
             .RequireAuthorization(Authorization.Policies.Admin)
             .RequirePerUserRateLimit();
     }

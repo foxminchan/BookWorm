@@ -46,8 +46,6 @@ internal static class Extensions
                     .Build()
             );
 
-        builder.AddDefaultOpenApi();
-
         // Add exception handlers
         services.AddExceptionHandler<ValidationExceptionHandler>();
         services.AddExceptionHandler<NotFoundExceptionHandler>();
@@ -106,6 +104,7 @@ internal static class Extensions
         // Configure endpoints
         services.AddVersioning();
         services.AddEndpoints(typeof(ICatalogApiMarker));
+        services.AddDefaultOpenApi();
 
         // Configure Mapper
         services.AddMapper(typeof(ICatalogApiMarker));

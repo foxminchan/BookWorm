@@ -1,4 +1,5 @@
-﻿using Mediator;
+﻿using BookWorm.Constants.Core;
+using Mediator;
 
 namespace BookWorm.Catalog.Features.Authors.List;
 
@@ -12,7 +13,7 @@ public sealed class ListAuthorsEndpoint : IEndpoint<Ok<IReadOnlyList<AuthorDto>>
             .WithName(nameof(ListAuthorsEndpoint))
             .WithSummary("List Authors")
             .WithDescription("List all authors")
-            .MapToApiVersion(new(1, 0));
+            .MapToApiVersion(ApiVersions.V1);
     }
 
     public async Task<Ok<IReadOnlyList<AuthorDto>>> HandleAsync(

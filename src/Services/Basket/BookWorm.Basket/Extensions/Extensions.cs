@@ -35,8 +35,6 @@ internal static class Extensions
                     .Build()
             );
 
-        builder.AddDefaultOpenApi();
-
         // Add exception handlers
         services.AddExceptionHandler<ValidationExceptionHandler>();
         services.AddExceptionHandler<NotFoundExceptionHandler>();
@@ -72,12 +70,15 @@ internal static class Extensions
         // Configure endpoints
         services.AddVersioning();
         services.AddEndpoints(typeof(IBasketApiMarker));
+        services.AddDefaultOpenApi();
 
         // Configure gRPC
         builder.AddGrpcServices();
 
         // Configure ClaimsPrincipal
-        services.AddTransient(s => s.GetRequiredService<IHttpContextAccessor>().HttpContext!.User);
+        services.AddTransient(s =>
+            s.GetRequiredService<IHttpContextAccessor>().HttpContext?.User ?? new ClaimsPrincipal()
+        );
 
         // Configure EventBus
         builder.AddEventBus(typeof(IBasketApiMarker), cfg => cfg.AddInMemoryInboxOutbox());

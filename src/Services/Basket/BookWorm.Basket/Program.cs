@@ -1,6 +1,7 @@
 using BookWorm.Basket.Extensions;
 using BookWorm.Basket.Grpc.Services.Basket;
 using BookWorm.Chassis.Security.Keycloak;
+using BookWorm.Constants.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,7 +28,10 @@ app.UseMiddleware<KeycloakTokenIntrospectionMiddleware>();
 
 app.UseRateLimiter();
 
-var apiVersionSet = app.NewApiVersionSet().HasApiVersion(new(1, 0)).ReportApiVersions().Build();
+var apiVersionSet = app.NewApiVersionSet()
+    .HasApiVersion(ApiVersions.V1)
+    .ReportApiVersions()
+    .Build();
 
 app.MapEndpoints(apiVersionSet, "baskets");
 

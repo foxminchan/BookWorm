@@ -20,7 +20,7 @@ public sealed class UpdateBookEndpoint : IEndpoint<NoContent, UpdateBookCommand,
             .WithSummary("Update Book")
             .WithDescription("Update a book if it exists")
             .WithFormOptions(true)
-            .MapToApiVersion(new(1, 0))
+            .MapToApiVersion(ApiVersions.V1)
             .RequireAuthorization(Authorization.Policies.Admin)
             .RequirePerUserRateLimit();
     }

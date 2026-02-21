@@ -17,7 +17,7 @@ public sealed class UpdateCategoryEndpoint : IEndpoint<NoContent, UpdateCategory
             .WithName(nameof(UpdateCategoryEndpoint))
             .WithSummary("Update Category")
             .WithDescription("Update a category if it exists")
-            .MapToApiVersion(new(1, 0))
+            .MapToApiVersion(ApiVersions.V1)
             .RequireAuthorization(Authorization.Policies.Admin)
             .RequirePerUserRateLimit();
     }

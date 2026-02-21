@@ -1,4 +1,5 @@
-﻿using Mediator;
+﻿using BookWorm.Constants.Core;
+using Mediator;
 
 namespace BookWorm.Basket.Features.Update;
 
@@ -16,7 +17,7 @@ public sealed class UpdateBasketEndpoint : IEndpoint<NoContent, UpdateBasketComm
             .WithName(nameof(UpdateBasketEndpoint))
             .WithSummary("Update Basket")
             .WithDescription("Update a basket by its unique identifier")
-            .MapToApiVersion(new(1, 0))
+            .MapToApiVersion(ApiVersions.V1)
             .RequireAuthorization()
             .RequirePerUserRateLimit();
     }
