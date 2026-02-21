@@ -1,4 +1,5 @@
 ﻿using BookWorm.Basket.Features.Get;
+using BookWorm.Constants.Core;
 using Mediator;
 
 namespace BookWorm.Basket.Features.Create;
@@ -18,7 +19,7 @@ public sealed class CreateBasketEndpoint
             .WithName(nameof(CreateBasketEndpoint))
             .WithSummary("Create Basket")
             .WithDescription("Create a new basket for a user")
-            .MapToApiVersion(new(1, 0))
+            .MapToApiVersion(ApiVersions.V1)
             .RequireAuthorization()
             .RequirePerUserRateLimit();
     }

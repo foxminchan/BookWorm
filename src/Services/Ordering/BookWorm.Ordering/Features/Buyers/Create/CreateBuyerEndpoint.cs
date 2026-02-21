@@ -18,7 +18,7 @@ public sealed class CreateBuyerEndpoint
             .WithName(nameof(CreateBuyerEndpoint))
             .WithSummary("Create Buyer")
             .WithDescription("Create a new buyer in the system")
-            .MapToApiVersion(new(1, 0))
+            .MapToApiVersion(ApiVersions.V1)
             .RequireAuthorization()
             .RequirePerUserRateLimit();
     }

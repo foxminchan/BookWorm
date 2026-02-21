@@ -77,6 +77,6 @@ public static class ApiVersionDescriptionBuilder
         ArgumentNullException.ThrowIfNull(provider);
 
         return provider.GetService<IApiVersionDescriptionProvider>()?.ApiVersionDescriptions
-            ?? [new(new(1, 0), "v1")];
+            ?? [new(ApiVersions.V1, "v1")];
     }
 }

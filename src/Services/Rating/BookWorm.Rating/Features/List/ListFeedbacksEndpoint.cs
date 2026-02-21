@@ -1,4 +1,5 @@
-﻿using BookWorm.SharedKernel.Results;
+﻿using BookWorm.Constants.Core;
+using BookWorm.SharedKernel.Results;
 using Mediator;
 
 namespace BookWorm.Rating.Features.List;
@@ -19,7 +20,7 @@ public sealed class ListFeedbacksEndpoint
             .WithName(nameof(ListFeedbacksEndpoint))
             .WithSummary("List Feedbacks")
             .WithDescription("List feedbacks for a book with pagination and filtering")
-            .MapToApiVersion(new(1, 0));
+            .MapToApiVersion(ApiVersions.V1);
     }
 
     public async Task<Ok<PagedResult<FeedbackDto>>> HandleAsync(

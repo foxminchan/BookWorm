@@ -18,7 +18,7 @@ public sealed class DeleteBuyerEndpoint : IEndpoint<NoContent, Guid, ISender>
             .WithName(nameof(DeleteBuyerEndpoint))
             .WithSummary("Delete Buyer")
             .WithDescription("Delete a buyer by ID if it exists")
-            .MapToApiVersion(new(1, 0))
+            .MapToApiVersion(ApiVersions.V1)
             .RequireAuthorization(Authorization.Policies.Admin)
             .RequirePerUserRateLimit();
     }

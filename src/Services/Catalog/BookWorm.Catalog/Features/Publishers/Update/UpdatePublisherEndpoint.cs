@@ -17,7 +17,7 @@ public sealed class UpdatePublisherEndpoint : IEndpoint<NoContent, UpdatePublish
             .WithName(nameof(UpdatePublisherEndpoint))
             .WithSummary("Update Publisher")
             .WithDescription("Updates publisher if it exists")
-            .MapToApiVersion(new(1, 0))
+            .MapToApiVersion(ApiVersions.V1)
             .RequireAuthorization(Authorization.Policies.Admin)
             .RequirePerUserRateLimit();
     }

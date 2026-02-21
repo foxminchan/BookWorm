@@ -19,7 +19,7 @@ public sealed class DeleteCategoryEndpoint : IEndpoint<NoContent, Guid, ISender>
             .WithName(nameof(DeleteCategoryEndpoint))
             .WithSummary("Delete Category")
             .WithDescription("Delete a category from the catalog system")
-            .MapToApiVersion(new(1, 0))
+            .MapToApiVersion(ApiVersions.V1)
             .RequireAuthorization(Authorization.Policies.Admin)
             .RequirePerUserRateLimit();
     }

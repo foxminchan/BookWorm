@@ -19,7 +19,7 @@ public sealed class DeleteFeedbackEndpoint : IEndpoint<NoContent, Guid, ISender>
             .WithName(nameof(DeleteFeedbackEndpoint))
             .WithSummary("Delete Feedback")
             .WithDescription("Delete a feedback if it exists")
-            .MapToApiVersion(new(1, 0))
+            .MapToApiVersion(ApiVersions.V1)
             .RequireAuthorization(Authorization.Policies.Admin)
             .RequirePerUserRateLimit();
     }

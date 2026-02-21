@@ -1,4 +1,5 @@
 ﻿using Asp.Versioning;
+using BookWorm.Constants.Core;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Chassis.Endpoints;
@@ -10,7 +11,7 @@ public static class Extension
         service
             .AddApiVersioning(options =>
             {
-                options.DefaultApiVersion = new(1, 0);
+                options.DefaultApiVersion = ApiVersions.V1;
                 options.ApiVersionReader = new UrlSegmentApiVersionReader();
             })
             .AddApiExplorer(options =>

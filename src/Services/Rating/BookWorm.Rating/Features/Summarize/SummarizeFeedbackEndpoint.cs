@@ -1,4 +1,5 @@
-﻿using Mediator;
+﻿using BookWorm.Constants.Core;
+using Mediator;
 
 namespace BookWorm.Rating.Features.Summarize;
 
@@ -18,7 +19,7 @@ public sealed class SummarizeFeedbackEndpoint : IEndpoint<Ok<SummarizeResult>, G
             .WithName(nameof(SummarizeFeedbackEndpoint))
             .WithSummary("Summarize Feedback")
             .WithDescription("Summarize the feedback for a book by its ID")
-            .MapToApiVersion(new(1, 0))
+            .MapToApiVersion(ApiVersions.V1)
             .RequireAuthorization()
             .RequirePerUserRateLimit();
     }

@@ -19,7 +19,7 @@ public sealed class DeleteBookEndpoint : IEndpoint<NoContent, Guid, ISender>
             .WithName(nameof(DeleteBookEndpoint))
             .WithSummary("Delete Book")
             .WithDescription("Delete a book if it exists")
-            .MapToApiVersion(new(1, 0))
+            .MapToApiVersion(ApiVersions.V1)
             .RequireAuthorization(Authorization.Policies.Admin)
             .RequirePerUserRateLimit();
     }

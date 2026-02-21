@@ -20,13 +20,13 @@ public static class OpenApiExtensions
                 {
                     options.ApplyApiVersionInfo(document, version);
 
-                    if (identity is not null)
+                    if (identity is null)
                     {
-                        options.ApplySecuritySchemeDefinitions();
-                        options.ApplyAuthorizationChecks([.. identity.Scopes.Keys]);
+                        return;
                     }
 
-                    options.ApplyOperationDeprecatedStatus();
+                    options.ApplySecuritySchemeDefinitions();
+                    options.ApplyAuthorizationChecks([.. identity.Scopes.Keys]);
                 }
             );
         }

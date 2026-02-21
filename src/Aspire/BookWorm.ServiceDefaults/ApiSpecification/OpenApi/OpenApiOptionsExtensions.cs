@@ -23,11 +23,6 @@ public static class OpenApiOptionsExtensions
             options.AddDocumentTransformer<SecuritySchemeDefinitionsTransformer>();
         }
 
-        public void ApplyOperationDeprecatedStatus()
-        {
-            options.AddOperationTransformer<OperationDeprecatedStatusTransformer>();
-        }
-
         public void ApplyAuthorizationChecks(string[] scopes)
         {
             options.AddOperationTransformer(new AuthorizationChecksTransformer(scopes));
