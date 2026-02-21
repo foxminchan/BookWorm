@@ -105,7 +105,7 @@ jobs:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
 
       - name: Download frontend coverage
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: frontend-coverage
           path: src/Clients/apps

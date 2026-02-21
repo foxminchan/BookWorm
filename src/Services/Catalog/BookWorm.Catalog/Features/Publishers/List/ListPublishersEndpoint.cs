@@ -1,4 +1,5 @@
-﻿using Mediator;
+﻿using BookWorm.Constants.Core;
+using Mediator;
 
 namespace BookWorm.Catalog.Features.Publishers.List;
 
@@ -12,7 +13,7 @@ public sealed class ListPublishersEndpoint : IEndpoint<Ok<IReadOnlyList<Publishe
             .WithName(nameof(ListPublishersEndpoint))
             .WithSummary("List Publishers")
             .WithDescription("Lists all publishers")
-            .MapToApiVersion(new(1, 0));
+            .MapToApiVersion(ApiVersions.V1);
     }
 
     public async Task<Ok<IReadOnlyList<PublisherDto>>> HandleAsync(

@@ -17,7 +17,7 @@ public sealed class CreateCategoryEndpoint : IEndpoint<Ok<Guid>, CreateCategoryC
             .WithName(nameof(CreateCategoryEndpoint))
             .WithSummary("Create Category")
             .WithDescription("Create a new category in the catalog system")
-            .MapToApiVersion(new(1, 0))
+            .MapToApiVersion(ApiVersions.V1)
             .RequireAuthorization(Authorization.Policies.Admin)
             .RequirePerUserRateLimit();
     }

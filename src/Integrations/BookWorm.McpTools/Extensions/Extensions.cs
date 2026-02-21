@@ -69,25 +69,8 @@ internal static class Extensions
             .WithMetrics(m => m.AddMeter(ActivitySourceName))
             .WithTracing(t => t.AddSource(ActivitySourceName));
 
-        services.AddHttpContextAccessor().AddMcpOpenApi();
-    }
-
-    private static void AddMcpOpenApi(this IServiceCollection services)
-    {
-        var sp = services.BuildServiceProvider();
-
-        var document = sp.GetRequiredService<DocumentOptions>();
-
-        foreach (var version in sp.GetApiVersionDescription())
-        {
-            services.AddOpenApi(
-                version.GroupName,
-                options =>
-                {
-                    options.ApplyApiVersionInfo(document, version);
-                    options.AddDocumentTransformer<McpDocumentTransformer>();
-                }
-            );
-        }
+        services
+            .AddHttpContextAccessor()
+            .AddSimpleOpenApi(options => options.AddDocumentTransformer<McpDocumentTransformer>());
     }
 }

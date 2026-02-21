@@ -1,4 +1,5 @@
-﻿using Mediator;
+﻿using BookWorm.Constants.Core;
+using Mediator;
 
 namespace BookWorm.Catalog.Features.Books.Get;
 
@@ -18,7 +19,7 @@ public sealed class GetBookEndpoint : IEndpoint<Ok<BookDto>, Guid, ISender>
             .WithName(nameof(GetBookEndpoint))
             .WithSummary("Get Book")
             .WithDescription("Get a book by identifier")
-            .MapToApiVersion(new(1, 0));
+            .MapToApiVersion(ApiVersions.V1);
     }
 
     public async Task<Ok<BookDto>> HandleAsync(

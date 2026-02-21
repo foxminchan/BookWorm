@@ -18,7 +18,7 @@ public sealed class DeleteOrderEndpoint : IEndpoint<NoContent, Guid, ISender>
             .WithName(nameof(DeleteOrderEndpoint))
             .WithSummary("Delete Order")
             .WithDescription("Delete an order if it exists")
-            .MapToApiVersion(new(1, 0))
+            .MapToApiVersion(ApiVersions.V1)
             .RequireAuthorization(Authorization.Policies.Admin)
             .RequirePerUserRateLimit();
     }

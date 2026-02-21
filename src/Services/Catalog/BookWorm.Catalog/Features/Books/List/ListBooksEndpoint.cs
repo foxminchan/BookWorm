@@ -1,4 +1,5 @@
-﻿using BookWorm.SharedKernel.Results;
+﻿using BookWorm.Constants.Core;
+using BookWorm.SharedKernel.Results;
 using Mediator;
 
 namespace BookWorm.Catalog.Features.Books.List;
@@ -18,7 +19,7 @@ public sealed class ListBooksEndpoint : IEndpoint<Ok<PagedResult<BookDto>>, List
             .WithName(nameof(ListBooksEndpoint))
             .WithSummary("List Books")
             .WithDescription("List all books with advanced filtering and pagination")
-            .MapToApiVersion(new(1, 0));
+            .MapToApiVersion(ApiVersions.V1);
     }
 
     public async Task<Ok<PagedResult<BookDto>>> HandleAsync(

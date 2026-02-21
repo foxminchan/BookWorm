@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.OpenApi;
+﻿using BookWorm.Chassis.Security.Settings;
+using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 
 namespace BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 
-internal sealed class AuthorizationChecksTransformer(string[] scopes) : IOpenApiOperationTransformer
+internal sealed class AuthorizationChecksTransformer : IOpenApiOperationTransformer
 {
     public Task TransformAsync(
         OpenApiOperation operation,
@@ -11,6 +12,13 @@ internal sealed class AuthorizationChecksTransformer(string[] scopes) : IOpenApi
         CancellationToken cancellationToken
     )
     {
+        var identityOptions = context.ApplicationServices.GetService<IdentityOptions>();
+
+        if (identityOptions is null)
+        {
+            return Task.CompletedTask;
+        }
+
         var metadata = context.Description.ActionDescriptor.EndpointMetadata;
 
         if (!metadata.OfType<IAuthorizeData>().Any())
@@ -30,7 +38,7 @@ internal sealed class AuthorizationChecksTransformer(string[] scopes) : IOpenApi
 
         var oAuthScheme = new OpenApiSecuritySchemeReference(OAuthDefaults.DisplayName);
 
-        operation.Security = [new() { [oAuthScheme] = [.. scopes] }];
+        operation.Security = [new() { [oAuthScheme] = [.. identityOptions.Scopes.Keys] }];
 
         return Task.CompletedTask;
     }

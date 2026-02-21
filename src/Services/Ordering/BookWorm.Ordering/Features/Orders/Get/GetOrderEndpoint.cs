@@ -18,7 +18,7 @@ public sealed class GetOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, ISend
             .WithName(nameof(GetOrderEndpoint))
             .WithSummary("Get Order")
             .WithDescription("Get an order if it exists")
-            .MapToApiVersion(new(1, 0))
+            .MapToApiVersion(ApiVersions.V1)
             .RequireAuthorization()
             .RequirePerUserRateLimit();
     }

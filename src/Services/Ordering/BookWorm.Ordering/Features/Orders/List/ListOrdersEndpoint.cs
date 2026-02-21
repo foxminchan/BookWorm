@@ -19,7 +19,7 @@ public sealed class ListOrdersEndpoint
             .WithName(nameof(ListOrdersEndpoint))
             .WithSummary("List Orders")
             .WithDescription("List orders with pagination and filtering")
-            .MapToApiVersion(new(1, 0))
+            .MapToApiVersion(ApiVersions.V1)
             .RequireAuthorization()
             .RequirePerUserRateLimit();
     }

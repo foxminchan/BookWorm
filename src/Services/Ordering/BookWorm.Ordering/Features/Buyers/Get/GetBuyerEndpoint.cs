@@ -16,7 +16,7 @@ public sealed class GetBuyerEndpoint : IEndpoint<Ok<BuyerDto>, GetBuyerQuery, IS
             .WithName(nameof(GetBuyerEndpoint))
             .WithSummary("Get Buyer")
             .WithDescription("Get the current buyer's information")
-            .MapToApiVersion(new(1, 0))
+            .MapToApiVersion(ApiVersions.V1)
             .RequireAuthorization()
             .RequirePerUserRateLimit();
     }

@@ -17,7 +17,7 @@ public sealed class CreateAuthorEndpoint : IEndpoint<Ok<Guid>, CreateAuthorComma
             .WithName(nameof(CreateAuthorEndpoint))
             .WithSummary("Create Author")
             .WithDescription("Create a new author in the catalog system")
-            .MapToApiVersion(new(1, 0))
+            .MapToApiVersion(ApiVersions.V1)
             .RequireAuthorization(Authorization.Policies.Admin)
             .RequirePerUserRateLimit();
     }

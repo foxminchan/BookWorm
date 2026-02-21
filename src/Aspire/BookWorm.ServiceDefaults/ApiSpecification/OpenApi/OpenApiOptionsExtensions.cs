@@ -1,5 +1,4 @@
-﻿using Asp.Versioning.ApiExplorer;
-using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
+﻿using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using Microsoft.AspNetCore.OpenApi;
 
 namespace BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
@@ -8,14 +7,9 @@ public static class OpenApiOptionsExtensions
 {
     extension(OpenApiOptions options)
     {
-        public void ApplyApiVersionInfo(
-            DocumentOptions? openApiDocument,
-            ApiVersionDescription apiDescription
-        )
+        public void ApplyApiInfo()
         {
-            options.AddDocumentTransformer(
-                new OpenApiInfoDefinitionsTransformer(openApiDocument, apiDescription)
-            );
+            options.AddDocumentTransformer<OpenApiInfoDefinitionsTransformer>();
         }
 
         public void ApplySecuritySchemeDefinitions()
@@ -23,14 +17,9 @@ public static class OpenApiOptionsExtensions
             options.AddDocumentTransformer<SecuritySchemeDefinitionsTransformer>();
         }
 
-        public void ApplyOperationDeprecatedStatus()
+        public void ApplyAuthorizationChecks()
         {
-            options.AddOperationTransformer<OperationDeprecatedStatusTransformer>();
-        }
-
-        public void ApplyAuthorizationChecks(string[] scopes)
-        {
-            options.AddOperationTransformer(new AuthorizationChecksTransformer(scopes));
+            options.AddOperationTransformer<AuthorizationChecksTransformer>();
         }
     }
 }

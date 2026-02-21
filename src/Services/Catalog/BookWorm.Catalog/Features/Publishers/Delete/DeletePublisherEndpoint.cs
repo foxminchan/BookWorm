@@ -19,7 +19,7 @@ public sealed class DeletePublisherEndpoint : IEndpoint<NoContent, Guid, ISender
             .WithName(nameof(DeletePublisherEndpoint))
             .WithSummary("Delete Publisher")
             .WithDescription("Delete a publisher from the catalog system")
-            .MapToApiVersion(new(1, 0))
+            .MapToApiVersion(ApiVersions.V1)
             .RequireAuthorization(Authorization.Policies.Admin)
             .RequirePerUserRateLimit();
     }

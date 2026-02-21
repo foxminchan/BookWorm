@@ -1,4 +1,5 @@
-﻿using Mediator;
+﻿using BookWorm.Constants.Core;
+using Mediator;
 
 namespace BookWorm.Basket.Features.Get;
 
@@ -16,7 +17,7 @@ public sealed class GetBasketEndpoint : IEndpoint<Ok<CustomerBasketDto>, ISender
             .WithName(nameof(GetBasketEndpoint))
             .WithSummary("Get Basket")
             .WithDescription("Get a basket by user")
-            .MapToApiVersion(new(1, 0))
+            .MapToApiVersion(ApiVersions.V1)
             .RequireAuthorization()
             .RequirePerUserRateLimit();
     }

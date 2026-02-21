@@ -17,7 +17,7 @@ public sealed class CreatePublisherEndpoint : IEndpoint<Ok<Guid>, CreatePublishe
             .WithName(nameof(CreatePublisherEndpoint))
             .WithSummary("Create Publisher")
             .WithDescription("Creates a new publisher")
-            .MapToApiVersion(new(1, 0))
+            .MapToApiVersion(ApiVersions.V1)
             .RequireAuthorization(Authorization.Policies.Admin)
             .RequirePerUserRateLimit();
     }

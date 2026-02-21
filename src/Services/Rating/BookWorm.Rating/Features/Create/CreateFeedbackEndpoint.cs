@@ -1,4 +1,5 @@
-﻿using Mediator;
+﻿using BookWorm.Constants.Core;
+using Mediator;
 
 namespace BookWorm.Rating.Features.Create;
 
@@ -16,7 +17,7 @@ public sealed class CreateFeedbackEndpoint : IEndpoint<Ok<Guid>, CreateFeedbackC
             .WithName(nameof(CreateFeedbackEndpoint))
             .WithSummary("Create Feedback")
             .WithDescription("Create a new feedback")
-            .MapToApiVersion(new(1, 0));
+            .MapToApiVersion(ApiVersions.V1);
     }
 
     public async Task<Ok<Guid>> HandleAsync(
