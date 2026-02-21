@@ -14,6 +14,7 @@ public static partial class AzureExtensions
         builder.RunAsEmulator(config =>
             config
                 .WithDataVolume()
+                .WithArgs("--disableProductStyleUrl")
                 .WithImagePullPolicy(ImagePullPolicy.Always)
                 .WithLifetime(ContainerLifetime.Persistent)
         );
@@ -65,6 +66,28 @@ public static partial class AzureExtensions
                 .WithImagePullPolicy(ImagePullPolicy.Always)
                 .WithLifetime(ContainerLifetime.Persistent)
         );
+
+        return builder;
+    }
+
+    /// <summary>
+    ///     Adds Azure Storage Explorer to the parent Azure Storage resource of the specified blob container.
+    /// </summary>
+    /// <param name="builder">The resource builder for Azure Blob Storage Container.</param>
+    /// <returns>The updated resource builder with Azure Storage Explorer configured on the parent resource.</returns>
+    /// <remarks>
+    ///     This method retrieves the parent Azure Storage resource and applies the Azure Storage Explorer
+    ///     configuration to it, enabling visual inspection and management of storage resources during development.
+    /// </remarks>
+    public static IResourceBuilder<AzureBlobStorageContainerResource> WithAzureStorageExplorer(
+        this IResourceBuilder<AzureBlobStorageContainerResource> builder
+    )
+    {
+        var storageContainerResource = builder.ApplicationBuilder.CreateResourceBuilder(
+            builder.Resource.Parent
+        );
+
+        storageContainerResource.WithAzureStorageExplorer();
 
         return builder;
     }

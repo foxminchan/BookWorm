@@ -40,9 +40,9 @@ var storage = builder
     .RunAsLocalContainer()
     .ProvisionAsService();
 
-var catalogContainer = storage.AddBlobContainer(
-    Components.Azure.Storage.BlobContainer(Services.Catalog)
-);
+var catalogContainer = storage
+    .AddBlobContainer(Components.Azure.Storage.BlobContainer(Services.Catalog))
+    .WithAzureStorageExplorer();
 
 var ratingDb = postgres.AddDatabase(Components.Database.Rating);
 var catalogDb = postgres.AddDatabase(Components.Database.Catalog);
