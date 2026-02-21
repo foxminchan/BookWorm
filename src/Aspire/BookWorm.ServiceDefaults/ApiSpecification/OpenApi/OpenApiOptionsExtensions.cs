@@ -7,9 +7,9 @@ public static class OpenApiOptionsExtensions
 {
     extension(OpenApiOptions options)
     {
-        public void ApplyApiInfo(DocumentOptions? openApiDocument)
+        public void ApplyApiInfo()
         {
-            options.AddDocumentTransformer(new OpenApiInfoDefinitionsTransformer(openApiDocument));
+            options.AddDocumentTransformer<OpenApiInfoDefinitionsTransformer>();
         }
 
         public void ApplySecuritySchemeDefinitions()
@@ -17,9 +17,9 @@ public static class OpenApiOptionsExtensions
             options.AddDocumentTransformer<SecuritySchemeDefinitionsTransformer>();
         }
 
-        public void ApplyAuthorizationChecks(string[] scopes)
+        public void ApplyAuthorizationChecks()
         {
-            options.AddOperationTransformer(new AuthorizationChecksTransformer(scopes));
+            options.AddOperationTransformer<AuthorizationChecksTransformer>();
         }
     }
 }

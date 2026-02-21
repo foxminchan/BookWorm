@@ -1,11 +1,9 @@
-﻿using Asp.Versioning.ApiExplorer;
-using Microsoft.AspNetCore.OpenApi;
+﻿using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 
 namespace BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 
-internal sealed class OpenApiInfoDefinitionsTransformer(DocumentOptions? openApiDocument)
-    : IOpenApiDocumentTransformer
+internal sealed class OpenApiInfoDefinitionsTransformer : IOpenApiDocumentTransformer
 {
     public Task TransformAsync(
         OpenApiDocument document,
@@ -13,6 +11,8 @@ internal sealed class OpenApiInfoDefinitionsTransformer(DocumentOptions? openApi
         CancellationToken cancellationToken
     )
     {
+        var openApiDocument = context.ApplicationServices.GetService<DocumentOptions>();
+
         document.Info.License = new()
         {
             Name = openApiDocument?.LicenseName,
@@ -28,7 +28,7 @@ internal sealed class OpenApiInfoDefinitionsTransformer(DocumentOptions? openApi
 
         if (!string.IsNullOrWhiteSpace(openApiDocument?.Title))
         {
-            document.Info.Title = $"{openApiDocument.Title}";
+            document.Info.Title = openApiDocument.Title;
         }
 
         if (!string.IsNullOrWhiteSpace(openApiDocument?.Description))

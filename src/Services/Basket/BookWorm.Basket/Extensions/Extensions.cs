@@ -76,7 +76,9 @@ internal static class Extensions
         builder.AddGrpcServices();
 
         // Configure ClaimsPrincipal
-        services.AddTransient(s => s.GetRequiredService<IHttpContextAccessor>().HttpContext!.User);
+        services.AddTransient(s =>
+            s.GetRequiredService<IHttpContextAccessor>().HttpContext?.User ?? new ClaimsPrincipal()
+        );
 
         // Configure EventBus
         builder.AddEventBus(typeof(IBasketApiMarker), cfg => cfg.AddInMemoryInboxOutbox());

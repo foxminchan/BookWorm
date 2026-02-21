@@ -1,5 +1,4 @@
-﻿using BookWorm.Chassis.Security.Settings;
-using Microsoft.AspNetCore.OpenApi;
+﻿using Microsoft.AspNetCore.OpenApi;
 
 namespace BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
 
@@ -9,27 +8,18 @@ public static class OpenApiExtensions
     {
         public void AddDefaultOpenApi()
         {
-            var sp = services.BuildServiceProvider();
-            var identity = sp.GetService<IdentityOptions>();
-
             services.AddSimpleOpenApi(options =>
             {
-                if (identity is not null)
-                {
-                    options.ApplySecuritySchemeDefinitions();
-                    options.ApplyAuthorizationChecks([.. identity.Scopes.Keys]);
-                }
+                options.ApplyAuthorizationChecks();
+                options.ApplySecuritySchemeDefinitions();
             });
         }
 
         public void AddSimpleOpenApi(Action<OpenApiOptions>? configure = null)
         {
-            var sp = services.BuildServiceProvider();
-            var document = sp.GetRequiredService<DocumentOptions>();
-
             services.AddOpenApi(options =>
             {
-                options.ApplyApiInfo(document);
+                options.ApplyApiInfo();
                 configure?.Invoke(options);
             });
         }
