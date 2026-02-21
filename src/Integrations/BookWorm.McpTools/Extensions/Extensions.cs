@@ -71,6 +71,6 @@ internal static class Extensions
 
         services
             .AddHttpContextAccessor()
-            .AddSimpleOpenApi(options => options.AddDocumentTransformer<McpDocumentTransformer>());
+            .AddDefaultOpenApi(options => options.AddDocumentTransformer<McpDocumentTransformer>());
     }
 }
