@@ -194,6 +194,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
 
     steps:
       - name: Checkout code
@@ -215,15 +216,3 @@ jobs:
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
           repository-owner: ${{ github.repository_owner }}
           repository-name: ${{ github.event.repository.name }}
-          operations-environment: ${{ runner.os }}
-          openai-apikey: ${{ secrets.OPENAI_APIKEY }}
-          kc-url: ${{ secrets.KC_URL }}
-          kc-realm: ${{ secrets.KC_REALM }}
-          catalog-secret: ${{ secrets.CATALOG_SECRET }}
-          basket-secret: ${{ secrets.BASKET_SECRET }}
-          ordering-secret: ${{ secrets.ORDERING_SECRET }}
-          chatting-secret: ${{ secrets.CHATTING_SECRET }}
-          rating-secret: ${{ secrets.RATING_SECRET }}
-          sendgrid-api-key: ${{ secrets.SENDGRID_API_KEY }}
-          sendgrid-email: ${{ secrets.SENDGRID_EMAIL }}
-          sendgrid-sender-name: ${{ secrets.SENDGRID_SENDER_NAME }}
