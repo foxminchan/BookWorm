@@ -56,7 +56,7 @@ env:
 When remote cache isn't available:
 
 ```yaml
-- uses: actions/cache@v4
+- uses: actions/cache@v5
   with:
     path: .turbo
     key: turbo-${{ runner.os }}-${{ github.sha }}
@@ -120,7 +120,7 @@ When parallelizing:
 - With actions/cache, use unique keys per job to avoid conflicts
 
 ```yaml
-- uses: actions/cache@v4
+- uses: actions/cache@v5
   with:
     path: .turbo
     key: turbo-${{ runner.os }}-${{ github.job }}-${{ github.sha }}

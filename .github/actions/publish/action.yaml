@@ -12,49 +12,16 @@ inputs:
     default: ".bun-version"
   repository-owner:
     description: "The owner of the repository"
-    required: true
+    required: false
     default: "${{ github.repository_owner }}"
   repository-name:
     description: "The name of the repository"
-    required: true
+    required: false
     default: "${{ github.event.repository.name }}"
   operations-environment:
     description: "The operations environment to use for Aspire commands"
     required: false
     default: ${{ runner.os }}
-  openai-apikey:
-    description: "OpenAI API Key"
-    required: false
-  kc-url:
-    description: "Keycloak URL"
-    required: false
-  kc-realm:
-    description: "Keycloak Realm"
-    required: false
-  catalog-secret:
-    description: "Catalog Service Client Secret"
-    required: false
-  basket-secret:
-    description: "Basket Service Client Secret"
-    required: false
-  ordering-secret:
-    description: "Ordering Service Client Secret"
-    required: false
-  chatting-secret:
-    description: "Chatting Service Client Secret"
-    required: false
-  rating-secret:
-    description: "Rating Service Client Secret"
-    required: false
-  sendgrid-api-key:
-    description: "SendGrid API Key"
-    required: false
-  sendgrid-email:
-    description: "SendGrid Email"
-    required: false
-  sendgrid-sender-name:
-    description: "SendGrid Sender Name"
-    required: false
 
 runs:
   using: "composite"
@@ -71,7 +38,7 @@ runs:
 
     - name: Cache Aspire CLI
       id: cache-aspire
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ~/.aspire
         key: ${{ inputs.operations-environment }}-aspire-cli
@@ -81,7 +48,7 @@ runs:
     - name: Install Aspire CLI
       if: steps.cache-aspire.outputs.cache-hit != 'true'
       shell: bash
-      run: curl -sSL https://aspire.dev/install.sh | bash -s -- -q dev
+      run: curl -sSf https://aspire.dev/install.sh | bash -s -- -q dev
 
     - name: Add Aspire CLI to PATH
       shell: bash
@@ -97,14 +64,31 @@ runs:
       env:
         Parameters__container_endpoint: ghcr.io
         Parameters__container_repository: ${{ inputs.repository-owner }}/${{ inputs.repository-name }}
-        Parameters__openai_openai_apikey: ${{ inputs.openai-apikey }}
-        Parameters__kc_url: ${{ inputs.kc-url }}
-        Parameters__kc_realm: ${{ inputs.kc-realm }}
-        Parameters__catalog_secret: ${{ inputs.catalog-secret }}
-        Parameters__basket_secret: ${{ inputs.basket-secret }}
-        Parameters__ordering_secret: ${{ inputs.ordering-secret }}
-        Parameters__chatting_secret: ${{ inputs.chatting-secret }}
-        Parameters__rating_secret: ${{ inputs.rating-secret }}
-        Parameters__sendgrid_api_key: ${{ inputs.sendgrid-api-key }}
-        Parameters__sendgrid_email: ${{ inputs.sendgrid-email }}
-        Parameters__sendgrid_sender_name: ${{ inputs.sendgrid-sender-name }}
+
+    - name: Install mcp-publisher
+      shell: bash
+      run: |
+        curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+      working-directory: ${{ github.workspace }}/src/Integrations/BookWorm.McpTools
+
+    - name: Authenticate to MCP Registry
+      shell: bash
+      run: ./mcp-publisher login github-oidc
+      working-directory: ${{ github.workspace }}/src/Integrations/BookWorm.McpTools
+
+    - name: Set version in server.json
+      if: github.ref_type == 'tag'
+      shell: bash
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        jq --arg v "$VERSION" '
+          .version = $v |
+          .packages[0].identifier |= gsub(":[^:]+$"; ":" + $v)
+        ' server.json > server.tmp && mv server.tmp server.json
+      working-directory: ${{ github.workspace }}/src/Integrations/BookWorm.McpTools
+
+    - name: Publish server to MCP Registry
+      if: github.ref_type == 'tag'
+      shell: bash
+      run: ./mcp-publisher publish
+      working-directory: ${{ github.workspace }}/src/Integrations/BookWorm.McpTools

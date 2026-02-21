@@ -44,7 +44,7 @@ jobs:
 - uses: actions/setup-node@v4
   with:
     node-version: 20
-    cache: 'pnpm'
+    cache: "pnpm"
 
 - run: pnpm install --frozen-lockfile
 ```
@@ -55,7 +55,7 @@ jobs:
 - uses: actions/setup-node@v4
   with:
     node-version: 20
-    cache: 'yarn'
+    cache: "yarn"
 
 - run: yarn install --frozen-lockfile
 ```
@@ -106,7 +106,7 @@ jobs:
 If you can't use remote cache, cache Turborepo's local cache directory:
 
 ```yaml
-- uses: actions/cache@v4
+- uses: actions/cache@v5
   with:
     path: .turbo
     key: turbo-${{ runner.os }}-${{ hashFiles('**/turbo.json', '**/package-lock.json') }}
@@ -146,7 +146,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
