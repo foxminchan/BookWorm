@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+
 import { useRouter } from "next/navigation";
 
 import { Search } from "lucide-react";
@@ -25,9 +27,16 @@ export function HeaderSearch() {
   const router = useRouter();
   const { isOpen, close, toggle, handleMouseEnter, handleMouseLeave } =
     useDelayedToggle({ closeDelay: 150 });
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const form = useForm<SearchFormValues>({
     defaultValues: { search: "" },
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      searchInputRef.current?.focus();
+    }
+  }, [isOpen]);
 
   const handleSearch = (data: SearchFormValues) => {
     if (data.search.trim()) {
@@ -71,23 +80,34 @@ export function HeaderSearch() {
               <FormField
                 control={form.control}
                 name="search"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Label htmlFor="header-search-input" className="sr-only">
-                        Search books
-                      </Label>
-                      <Input
-                        id="header-search-input"
-                        placeholder="Search books..."
-                        autoFocus
-                        aria-label="Search books"
-                        className="border-foreground/20 focus:border-primary placeholder:text-foreground/40 border-x-0 border-t-0 border-b bg-transparent px-3 py-2 text-sm"
-                        {...field}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const { ref: fieldRef, ...fieldRest } = field;
+                  return (
+                    <FormItem>
+                      <FormControl>
+                        <Label
+                          htmlFor="header-search-input"
+                          className="sr-only"
+                        >
+                          Search books
+                        </Label>
+                        <Input
+                          id="header-search-input"
+                          ref={(node) => {
+                            fieldRef(node);
+                            (
+                              searchInputRef as React.MutableRefObject<HTMLInputElement | null>
+                            ).current = node;
+                          }}
+                          placeholder="Search books..."
+                          aria-label="Search books"
+                          className="border-foreground/20 focus:border-primary placeholder:text-foreground/40 border-x-0 border-t-0 border-b bg-transparent px-3 py-2 text-sm"
+                          {...fieldRest}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  );
+                }}
               />
             </form>
           </Form>

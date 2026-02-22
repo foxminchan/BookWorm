@@ -47,9 +47,11 @@ export default async function Image(
   _request: Request,
   { params }: OpengraphImageProps,
 ): Promise<ImageResponse> {
-  const { ImageResponse } = await import("next/og");
-  const { id } = await params;
-  const book = await booksApiClient.get(id);
+  const [{ ImageResponse }, { id: resolvedId }] = await Promise.all([
+    import("next/og"),
+    params,
+  ]);
+  const book = await booksApiClient.get(resolvedId);
 
   const bookName = book.name ?? "Book";
   const authorNames = formatAuthorNames(book.authors);

@@ -1,10 +1,9 @@
 export function JsonLd({ data }: Readonly<{ data: object }>) {
+  const jsonString = JSON.stringify(data);
+
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{
-        __html: JSON.stringify(data),
-      }}
-    />
+    <script type="application/ld+json" suppressHydrationWarning>
+      {jsonString}
+    </script>
   );
 }

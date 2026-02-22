@@ -14,6 +14,61 @@ import OrdersList from "@/features/ordering/orders/orders-list";
 
 const ORDERS_PER_PAGE = 5;
 
+type OrdersContentProps = Readonly<{
+  isLoading: boolean;
+  error: Error | null;
+  orders: NonNullable<ReturnType<typeof useOrders>["data"]>["items"];
+  selectedStatus: OrderStatus | "All";
+  currentPage: number;
+  totalPages: number;
+  onClearFilter: () => void;
+  onPageChange: (page: number) => void;
+}>;
+
+function OrdersContent({
+  isLoading,
+  error,
+  orders,
+  selectedStatus,
+  currentPage,
+  totalPages,
+  onClearFilter,
+  onPageChange,
+}: OrdersContentProps) {
+  if (isLoading) {
+    return <OrdersSkeleton />;
+  }
+
+  if (error) {
+    return <OrdersErrorState />;
+  }
+
+  if (orders.length === 0) {
+    return (
+      <OrdersEmptyState
+        selectedStatus={selectedStatus}
+        onClearFilter={onClearFilter}
+      />
+    );
+  }
+
+  return (
+    <>
+      <OrdersList orders={orders} />
+
+      {totalPages > 1 && (
+        <div className="border-border mt-16 border-t pt-8">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={onPageChange}
+          />
+        </div>
+      )}
+    </>
+  );
+}
+
 export default function OrdersPage() {
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | "All">(
     "All",
@@ -39,40 +94,9 @@ export default function OrdersPage() {
     setCurrentPage(1);
   }, []);
 
-  function renderContent() {
-    if (isLoading) {
-      return <OrdersSkeleton />;
-    }
-
-    if (error) {
-      return <OrdersErrorState />;
-    }
-
-    if (orders.length === 0) {
-      return (
-        <OrdersEmptyState
-          selectedStatus={selectedStatus}
-          onClearFilter={() => setSelectedStatus("All")}
-        />
-      );
-    }
-
-    return (
-      <>
-        <OrdersList orders={orders} />
-
-        {totalPages > 1 && (
-          <div className="border-border mt-16 border-t pt-8">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-            />
-          </div>
-        )}
-      </>
-    );
-  }
+  const handleClearFilter = useCallback(() => {
+    setSelectedStatus("All");
+  }, []);
 
   return (
     <main className="container mx-auto max-w-5xl flex-1 px-4 py-16">
@@ -81,7 +105,16 @@ export default function OrdersPage() {
         onStatusChange={handleStatusChange}
       />
 
-      {renderContent()}
+      <OrdersContent
+        isLoading={isLoading}
+        error={error}
+        orders={orders}
+        selectedStatus={selectedStatus}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onClearFilter={handleClearFilter}
+        onPageChange={setCurrentPage}
+      />
     </main>
   );
 }

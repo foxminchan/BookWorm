@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useReducer,
   useRef,
   useState,
 } from "react";
@@ -20,6 +21,7 @@ import {
   WifiOff,
   X,
 } from "lucide-react";
+import { match } from "ts-pattern";
 
 import { Button } from "@workspace/ui/components/button";
 import { Card, CardContent, CardHeader } from "@workspace/ui/components/card";
@@ -37,11 +39,6 @@ import "@/styles/copilot.css";
 
 export type ChatBotRef = {
   openChat: () => void;
-};
-
-type ErrorBoundaryState = {
-  hasError: boolean;
-  error?: Error;
 };
 
 const ChatBotErrorFallback = ({ onReset }: { onReset: () => void }) => (
@@ -63,11 +60,68 @@ const ChatBotErrorFallback = ({ onReset }: { onReset: () => void }) => (
 );
 
 const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [errorState, setErrorState] = useState<ErrorBoundaryState>({
+  type ChatUIState = {
+    isOpen: boolean;
+    hasError: boolean;
+    error?: Error;
+    rateLimitWarning: string | null;
+  };
+
+  type ChatUIAction =
+    | { type: "OPEN" }
+    | { type: "CLOSE" }
+    | { type: "SET_OPEN"; open: boolean }
+    | { type: "SET_ERROR"; error: Error }
+    | { type: "CLEAR_ERROR" }
+    | { type: "RESET" }
+    | { type: "SET_RATE_LIMIT_WARNING"; warning: string }
+    | { type: "CLEAR_RATE_LIMIT_WARNING" };
+
+  const chatUIReducer = useCallback(
+    (state: ChatUIState, action: ChatUIAction): ChatUIState => {
+      return match(action)
+        .with({ type: "OPEN" }, () => ({
+          ...state,
+          isOpen: true,
+          hasError: false,
+        }))
+        .with({ type: "CLOSE" }, () => ({ ...state, isOpen: false }))
+        .with({ type: "SET_OPEN" }, ({ open }) => ({ ...state, isOpen: open }))
+        .with({ type: "SET_ERROR" }, ({ error }) => ({
+          ...state,
+          hasError: true,
+          error,
+        }))
+        .with({ type: "CLEAR_ERROR" }, () => ({
+          ...state,
+          hasError: false,
+          error: undefined,
+        }))
+        .with({ type: "RESET" }, () => ({
+          ...state,
+          hasError: false,
+          error: undefined,
+          isOpen: false,
+        }))
+        .with({ type: "SET_RATE_LIMIT_WARNING" }, ({ warning }) => ({
+          ...state,
+          rateLimitWarning: warning,
+        }))
+        .with({ type: "CLEAR_RATE_LIMIT_WARNING" }, () => ({
+          ...state,
+          rateLimitWarning: null,
+        }))
+        .exhaustive();
+    },
+    [],
+  );
+
+  const [uiState, dispatch] = useReducer(chatUIReducer, {
+    isOpen: false,
     hasError: false,
+    rateLimitWarning: null,
   });
-  const [rateLimitWarning, setRateLimitWarning] = useState<string | null>(null);
+
   const triggerButtonRef = useRef<HTMLButtonElement>(null);
 
   // Enable copilot tools and bidirectional agent state
@@ -87,21 +141,20 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
 
   useImperativeHandle(ref, () => ({
     openChat: () => {
-      setIsOpen(true);
-      setErrorState({ hasError: false }); // Reset error when opening
+      dispatch({ type: "OPEN" });
     },
   }));
 
   // Focus management: return focus to trigger button when dialog closes
   useEffect(() => {
-    if (!isOpen && triggerButtonRef.current) {
+    if (!uiState.isOpen && triggerButtonRef.current) {
       triggerButtonRef.current.focus();
     }
-  }, [isOpen]);
+  }, [uiState.isOpen]);
 
   // Focus trap: keep focus within dialog when open
   useEffect(() => {
-    if (!isOpen) return;
+    if (!uiState.isOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Tab") {
@@ -130,7 +183,7 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen]);
+  }, [uiState.isOpen]);
 
   useEffect(() => {
     const handleError = (event: ErrorEvent) => {
@@ -138,7 +191,7 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
         event.message.includes("copilot") ||
         event.message.includes("agent")
       ) {
-        setErrorState({ hasError: true, error: event.error });
+        dispatch({ type: "SET_ERROR", error: event.error });
         event.preventDefault();
       }
     };
@@ -150,28 +203,37 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
   // Show rate limit warning
   useEffect(() => {
     if (isRateLimited && resetIn) {
-      setRateLimitWarning(
-        `Rate limit reached. Please wait ${Math.ceil(resetIn / 1000)}s`,
+      dispatch({
+        type: "SET_RATE_LIMIT_WARNING",
+        warning: `Rate limit reached. Please wait ${Math.ceil(resetIn / 1000)}s`,
+      });
+      const timer = setTimeout(
+        () => dispatch({ type: "CLEAR_RATE_LIMIT_WARNING" }),
+        resetIn,
       );
-      const timer = setTimeout(() => setRateLimitWarning(null), resetIn);
       return () => clearTimeout(timer);
     } else if (isThrottling) {
-      setRateLimitWarning("Please wait before sending another message");
-      const timer = setTimeout(() => setRateLimitWarning(null), 2000);
+      dispatch({
+        type: "SET_RATE_LIMIT_WARNING",
+        warning: "Please wait before sending another message",
+      });
+      const timer = setTimeout(
+        () => dispatch({ type: "CLEAR_RATE_LIMIT_WARNING" }),
+        2000,
+      );
       return () => clearTimeout(timer);
     }
   }, [isRateLimited, isThrottling, resetIn]);
 
   const handleReset = useCallback(() => {
-    setErrorState({ hasError: false });
-    setIsOpen(false);
+    dispatch({ type: "RESET" });
   }, []);
 
-  if (!isOpen) {
+  if (!uiState.isOpen) {
     return (
       <Button
         ref={triggerButtonRef}
-        onClick={() => setIsOpen(true)}
+        onClick={() => dispatch({ type: "OPEN" })}
         size="icon"
         className="fixed right-6 bottom-6 z-50 hidden h-12 w-12 rounded-full shadow-lg transition-transform hover:scale-110 md:flex"
         aria-label="Open BookWorm Literary Guide chat"
@@ -212,14 +274,14 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
       )}
 
       {/* Rate limit warning */}
-      {rateLimitWarning && (
+      {uiState.rateLimitWarning && (
         <div
           className="copilot-rate-limit-warning fixed top-20 right-6 z-50"
           role="alert"
           aria-live="assertive"
         >
           <Clock className="h-4 w-4" aria-hidden="true" />
-          <span>{rateLimitWarning}</span>
+          <span>{uiState.rateLimitWarning}</span>
         </div>
       )}
 
@@ -238,7 +300,7 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
         </output>
       )}
 
-      {errorState.hasError ? (
+      {uiState.hasError ? (
         <div className="fixed inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm">
           <Card className="m-6 w-full max-w-md">
             <CardContent className="p-6">
@@ -255,8 +317,8 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
             placeholder:
               "Ask about books, search for titles, or manage your basket...",
           }}
-          defaultOpen={isOpen}
-          onSetOpen={setIsOpen}
+          defaultOpen={uiState.isOpen}
+          onSetOpen={(open) => dispatch({ type: "SET_OPEN", open })}
           clickOutsideToClose={true}
         />
       )}

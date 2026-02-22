@@ -1,6 +1,6 @@
 "use client";
 
-import { type ChangeEvent, useState } from "react";
+import { type ChangeEvent, useCallback, useReducer } from "react";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -36,6 +36,65 @@ const INITIAL_REVIEW: Omit<CreateFeedbackRequest, "bookId"> = {
   rating: 0,
 };
 
+type BookDetailState = {
+  showReviewForm: boolean;
+  currentPage: number;
+  showRemoveDialog: boolean;
+  sortBy: "newest" | "highest" | "lowest";
+  newReview: Omit<CreateFeedbackRequest, "bookId">;
+};
+
+type BookDetailAction =
+  | { type: "TOGGLE_REVIEW_FORM" }
+  | { type: "HIDE_REVIEW_FORM" }
+  | { type: "SET_PAGE"; page: number }
+  | { type: "SHOW_REMOVE_DIALOG" }
+  | { type: "HIDE_REMOVE_DIALOG" }
+  | { type: "SET_SORT"; sortBy: "newest" | "highest" | "lowest" }
+  | { type: "UPDATE_REVIEW"; field: string; value: string | number }
+  | { type: "RESET_REVIEW" };
+
+const initialState: BookDetailState = {
+  showReviewForm: false,
+  currentPage: 1,
+  showRemoveDialog: false,
+  sortBy: "newest",
+  newReview: INITIAL_REVIEW,
+};
+
+function bookDetailReducer(
+  state: BookDetailState,
+  action: BookDetailAction,
+): BookDetailState {
+  switch (action.type) {
+    case "TOGGLE_REVIEW_FORM":
+      return { ...state, showReviewForm: !state.showReviewForm };
+    case "HIDE_REVIEW_FORM":
+      return { ...state, showReviewForm: false };
+    case "SET_PAGE":
+      return { ...state, currentPage: action.page };
+    case "SHOW_REMOVE_DIALOG":
+      return { ...state, showRemoveDialog: true };
+    case "HIDE_REMOVE_DIALOG":
+      return { ...state, showRemoveDialog: false };
+    case "SET_SORT":
+      return { ...state, sortBy: action.sortBy, currentPage: 1 };
+    case "UPDATE_REVIEW":
+      return {
+        ...state,
+        newReview: { ...state.newReview, [action.field]: action.value },
+      };
+    case "RESET_REVIEW":
+      return {
+        ...state,
+        newReview: INITIAL_REVIEW,
+        showReviewForm: false,
+      };
+    default:
+      return state;
+  }
+}
+
 type BookDetailPageClientProps = {
   id: string;
 };
@@ -43,23 +102,17 @@ type BookDetailPageClientProps = {
 export default function BookDetailPageClient({
   id,
 }: Readonly<BookDetailPageClientProps>) {
-  const [showReviewForm, setShowReviewForm] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [showRemoveDialog, setShowRemoveDialog] = useState(false);
-  const [sortBy, setSortBy] = useState<"newest" | "highest" | "lowest">(
-    "newest",
-  );
-  const [newReview, setNewReview] = useState(INITIAL_REVIEW);
+  const [state, dispatch] = useReducer(bookDetailReducer, initialState);
 
   // Convert sortBy to API parameters
-  const sortParams = getReviewSortParams(sortBy);
+  const sortParams = getReviewSortParams(state.sortBy);
 
   // API hooks - these will use the hydrated data from the server
   const { data: book, isLoading: isLoadingBook, isError } = useBook(id);
   const { data: feedbacksData, isLoading: isLoadingFeedbacks } = useFeedbacks({
     bookId: id,
     pageSize: REVIEWS_PER_PAGE,
-    pageIndex: currentPage,
+    pageIndex: state.currentPage,
     orderBy: sortParams.orderBy,
     isDescending: sortParams.isDescending,
   });
@@ -89,7 +142,7 @@ export default function BookDetailPageClient({
   const handleQuantityDecreaseDebounced = useDebounceCallback(
     () => {
       if (quantity === 1) {
-        setShowRemoveDialog(true);
+        dispatch({ type: "SHOW_REMOVE_DIALOG" });
       } else {
         const newQuantity = Math.max(0, quantity - 1);
         updateBasketMutation.mutate({
@@ -116,6 +169,28 @@ export default function BookDetailPageClient({
     { leading: true, trailing: false },
   );
 
+  const handleSortChange = useCallback(
+    (newSort: "newest" | "highest" | "lowest") => {
+      dispatch({ type: "SET_SORT", sortBy: newSort });
+    },
+    [],
+  );
+
+  const handlePageChange = useCallback((page: number) => {
+    dispatch({ type: "SET_PAGE", page });
+  }, []);
+
+  const handleToggleReviewForm = useCallback(() => {
+    dispatch({ type: "TOGGLE_REVIEW_FORM" });
+  }, []);
+
+  const handleReviewFieldChange = useCallback(
+    (field: string, value: string | number) => {
+      dispatch({ type: "UPDATE_REVIEW", field, value });
+    },
+    [],
+  );
+
   if (isLoading) {
     return (
       <main className="container mx-auto grow px-4 py-8">
@@ -136,13 +211,12 @@ export default function BookDetailPageClient({
   const handleSubmitReview = () => {
     createFeedbackMutation.mutate(
       {
-        ...newReview,
+        ...state.newReview,
         bookId: id,
       },
       {
         onSuccess: () => {
-          setNewReview(INITIAL_REVIEW);
-          setShowReviewForm(false);
+          dispatch({ type: "RESET_REVIEW" });
         },
       },
     );
@@ -168,7 +242,7 @@ export default function BookDetailPageClient({
     const value = e.target.value;
 
     if (value === "") {
-      setShowRemoveDialog(true);
+      dispatch({ type: "SHOW_REMOVE_DIALOG" });
       return;
     }
 
@@ -181,7 +255,7 @@ export default function BookDetailPageClient({
         },
       });
     } else if (numValue <= 0) {
-      setShowRemoveDialog(true);
+      dispatch({ type: "SHOW_REMOVE_DIALOG" });
     }
   };
 
@@ -204,7 +278,7 @@ export default function BookDetailPageClient({
         },
       });
     }
-    setShowRemoveDialog(false);
+    dispatch({ type: "HIDE_REMOVE_DIALOG" });
   };
 
   const totalCount = feedbacksData?.totalCount ?? 0;
@@ -268,35 +342,33 @@ export default function BookDetailPageClient({
             reviews={feedbacks}
             averageRating={book.averageRating || 0}
             totalReviews={book.totalReviews || 0}
-            sortBy={sortBy}
-            onSortChange={(newSort) => {
-              setSortBy(newSort);
-              setCurrentPage(1);
-            }}
+            sortBy={state.sortBy}
+            onSortChange={handleSortChange}
             isSummarizing={isSummarizing}
             onSummarize={handleSummarize}
-            showReviewForm={showReviewForm}
-            onToggleReviewForm={() => setShowReviewForm(!showReviewForm)}
+            showReviewForm={state.showReviewForm}
+            onToggleReviewForm={handleToggleReviewForm}
             summary={summaryData?.summary}
             reviewForm={{
-              firstName: newReview.firstName || "",
-              lastName: newReview.lastName || "",
-              comment: newReview.comment || "",
-              rating: newReview.rating,
+              firstName: state.newReview.firstName || "",
+              lastName: state.newReview.lastName || "",
+              comment: state.newReview.comment || "",
+              rating: state.newReview.rating,
               isSubmitting: createFeedbackMutation.isPending,
-              onChange: (field, value) =>
-                setNewReview({ ...newReview, [field]: value }),
+              onChange: handleReviewFieldChange,
               onSubmit: handleSubmitReview,
             }}
-            currentPage={currentPage}
+            currentPage={state.currentPage}
             totalPages={totalPages}
-            onPageChange={setCurrentPage}
+            onPageChange={handlePageChange}
           />
         </section>
 
         <RemoveItemDialog
-          open={showRemoveDialog}
-          onOpenChange={setShowRemoveDialog}
+          open={state.showRemoveDialog}
+          onOpenChange={(open) =>
+            !open && dispatch({ type: "HIDE_REMOVE_DIALOG" })
+          }
           onConfirm={handleConfirmRemove}
         />
       </main>

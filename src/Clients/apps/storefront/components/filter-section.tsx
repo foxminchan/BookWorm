@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Search } from "lucide-react";
 
@@ -39,6 +39,13 @@ export function FilterSection({
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const sectionId = title.toLowerCase().replaceAll(/\s+/g, "-");
+  const filterInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isSearchOpen) {
+      filterInputRef.current?.focus();
+    }
+  }, [isSearchOpen]);
 
   const filteredItems = items.filter((item) =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -81,11 +88,11 @@ export function FilterSection({
           />
           <Input
             id={`filter-search-${sectionId}`}
+            ref={filterInputRef}
             placeholder={`Search ${title.toLowerCase()}...`}
             className="h-8 pl-8 text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            autoFocus
             aria-describedby={`${sectionId}-filter-description`}
           />
           <span id={`${sectionId}-filter-description`} className="sr-only">

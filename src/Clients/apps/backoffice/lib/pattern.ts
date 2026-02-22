@@ -16,6 +16,14 @@ export function isOrderNew(status: OrderStatus): boolean {
     .otherwise(() => false);
 }
 
-export const canCompleteOrder = isOrderNew;
-export const canCancelOrder = isOrderNew;
-export const isOrderEditable = isOrderNew;
+export function canCompleteOrder(status: OrderStatus): boolean {
+  return isOrderNew(status);
+}
+
+export function canCancelOrder(status: OrderStatus): boolean {
+  return isOrderNew(status);
+}
+
+export function isOrderEditable(status: OrderStatus): boolean {
+  return isOrderNew(status);
+}

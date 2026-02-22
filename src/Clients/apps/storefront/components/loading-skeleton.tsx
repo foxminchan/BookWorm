@@ -76,8 +76,8 @@ export default function BasketLoadingSkeleton() {
   return (
     <div className="mx-auto grid max-w-5xl grid-cols-1 gap-12 lg:grid-cols-12">
       <div className="space-y-6 lg:col-span-8">
-        {[1, 2].map((i) => (
-          <BasketItemSkeleton key={i} />
+        {["basket-skeleton-1", "basket-skeleton-2"].map((key) => (
+          <BasketItemSkeleton key={key} />
         ))}
       </div>
 

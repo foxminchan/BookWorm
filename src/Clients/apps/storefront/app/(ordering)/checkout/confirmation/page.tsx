@@ -1,5 +1,7 @@
 "use client";
 
+import { Suspense } from "react";
+
 import { useSearchParams } from "next/navigation";
 
 import { AlertCircle } from "lucide-react";
@@ -13,7 +15,7 @@ import ConfirmationActions from "@/features/ordering/checkout/confirmation-actio
 import ConfirmationHeader from "@/features/ordering/checkout/confirmation-header";
 import OrderDetailsSection from "@/features/ordering/checkout/order-details-section";
 
-export default function ConfirmationPage() {
+function ConfirmationPageContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
 
@@ -66,5 +68,19 @@ export default function ConfirmationPage() {
         <ConfirmationActions orderId={order.id} />
       </div>
     </main>
+  );
+}
+
+export default function ConfirmationPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="container mx-auto grow px-4 py-24">
+          <ConfirmationPageSkeleton />
+        </main>
+      }
+    >
+      <ConfirmationPageContent />
+    </Suspense>
   );
 }
