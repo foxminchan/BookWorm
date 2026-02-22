@@ -1,6 +1,4 @@
-"use client";
-
-import { useEffect, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import { useCopilotAction } from "@copilotkit/react-core";
 import { Check } from "lucide-react";
@@ -14,14 +12,15 @@ import { useBasketConfirmation } from "./useBasketConfirmation";
 export function useBasketActions() {
   const { requestConfirmation, ConfirmationDialog } = useBasketConfirmation();
   const [announcement, setAnnouncement] = useState<string>("");
+  const clearTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
-  // Clear announcement after it's been read
-  useEffect(() => {
-    if (announcement) {
-      const timer = setTimeout(() => setAnnouncement(""), 3000);
-      return () => clearTimeout(timer);
+  const announce = useCallback((message: string) => {
+    if (clearTimerRef.current) {
+      clearTimeout(clearTimerRef.current);
     }
-  }, [announcement]);
+    setAnnouncement(message);
+    clearTimerRef.current = setTimeout(() => setAnnouncement(""), 3000);
+  }, []);
 
   useCopilotAction({
     name: "addToBasket",
@@ -76,7 +75,7 @@ export function useBasketActions() {
 
       const bookSuffix = bookTitle ? ` of ${bookTitle}` : "";
       const message = `Added ${quantity} ${quantity === 1 ? "copy" : "copies"}${bookSuffix} to basket`;
-      setAnnouncement(message);
+      announce(message);
 
       return {
         success: true,

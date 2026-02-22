@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef } from "react";
 
 import type { CellContext, ColumnDef } from "@tanstack/react-table";
 import {
@@ -75,10 +75,19 @@ function NameCell(context: Readonly<CellContext<BaseItem, unknown>>) {
   const { editingId, editValue, setEditValue, handleEditSave, cancelEditing } =
     getTableMeta(context);
   const item = context.row.original;
+  const inputRef = useRef<HTMLInputElement>(null);
+  const isEditing = editingId === item.id;
 
-  if (editingId === item.id) {
+  useEffect(() => {
+    if (isEditing) {
+      inputRef.current?.focus();
+    }
+  }, [isEditing]);
+
+  if (isEditing) {
     return (
       <Input
+        ref={inputRef}
         value={editValue}
         onChange={(e) => setEditValue(e.target.value)}
         onKeyDown={(e) => {
@@ -90,7 +99,6 @@ function NameCell(context: Readonly<CellContext<BaseItem, unknown>>) {
             cancelEditing();
           }
         }}
-        autoFocus
       />
     );
   }
@@ -160,6 +168,55 @@ const TABLE_COLUMNS: ColumnDef<BaseItem>[] = [
   { id: "actions", header: ActionsHeader, cell: ActionsCell },
 ];
 
+type TableState = {
+  editingId: string | null;
+  editValue: string;
+  deleteConfirmId: string | null;
+  deleteConfirmName: string;
+  deletingId: string | null;
+};
+
+type TableAction =
+  | { type: "START_EDIT"; id: string; name: string }
+  | { type: "SET_EDIT_VALUE"; value: string }
+  | { type: "CANCEL_EDIT" }
+  | { type: "FINISH_EDIT" }
+  | { type: "REQUEST_DELETE"; id: string; name: string }
+  | { type: "START_DELETING" }
+  | { type: "FINISH_DELETE" };
+
+const initialTableState: TableState = {
+  editingId: null,
+  editValue: "",
+  deleteConfirmId: null,
+  deleteConfirmName: "",
+  deletingId: null,
+};
+
+function tableReducer(state: TableState, action: TableAction): TableState {
+  switch (action.type) {
+    case "START_EDIT":
+      return { ...state, editingId: action.id, editValue: action.name };
+    case "SET_EDIT_VALUE":
+      return { ...state, editValue: action.value };
+    case "CANCEL_EDIT":
+    case "FINISH_EDIT":
+      return { ...state, editingId: null };
+    case "REQUEST_DELETE":
+      return {
+        ...state,
+        deleteConfirmId: action.id,
+        deleteConfirmName: action.name,
+      };
+    case "START_DELETING":
+      return { ...state, deletingId: state.deleteConfirmId };
+    case "FINISH_DELETE":
+      return { ...state, deletingId: null, deleteConfirmId: null };
+    default:
+      return state;
+  }
+}
+
 export function SimpleTable<T extends BaseItem>({
   title,
   description,
@@ -169,56 +226,63 @@ export function SimpleTable<T extends BaseItem>({
   onDelete,
   isSubmitting = false,
 }: BaseTableProps<T>) {
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState("");
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [deleteConfirmName, setDeleteConfirmName] = useState("");
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(tableReducer, initialTableState);
+
+  const setEditValue = useCallback(
+    (value: string) => dispatch({ type: "SET_EDIT_VALUE", value }),
+    [],
+  );
 
   const handleEditSave = useCallback(
     async (id: string) => {
-      const trimmed = editValue.trim();
+      const trimmed = state.editValue.trim();
       if (trimmed) {
         await onUpdate(id, trimmed);
-        setEditingId(null);
+        dispatch({ type: "FINISH_EDIT" });
       }
     },
-    [editValue, onUpdate],
+    [state.editValue, onUpdate],
   );
 
   const handleDeleteConfirm = useCallback(async () => {
-    if (!deleteConfirmId) return;
+    if (!state.deleteConfirmId) return;
 
-    setDeletingId(deleteConfirmId);
+    dispatch({ type: "START_DELETING" });
     try {
-      await onDelete(deleteConfirmId);
+      await onDelete(state.deleteConfirmId);
     } finally {
-      setDeletingId(null);
-      setDeleteConfirmId(null);
+      dispatch({ type: "FINISH_DELETE" });
     }
-  }, [deleteConfirmId, onDelete]);
+  }, [state.deleteConfirmId, onDelete]);
 
-  const startEditing = useCallback((id: string, name: string | null) => {
-    setEditingId(id);
-    setEditValue(name ?? "");
-  }, []);
+  const startEditing = useCallback(
+    (id: string, name: string | null) =>
+      dispatch({ type: "START_EDIT", id, name: name ?? "" }),
+    [],
+  );
 
-  const cancelEditing = useCallback(() => {
-    setEditingId(null);
-  }, []);
+  const cancelEditing = useCallback(
+    () => dispatch({ type: "CANCEL_EDIT" }),
+    [],
+  );
 
-  const requestDelete = useCallback((id: string, name: string | null) => {
-    setDeleteConfirmId(id);
-    setDeleteConfirmName(name ?? "this item");
-  }, []);
+  const requestDelete = useCallback(
+    (id: string, name: string | null) =>
+      dispatch({
+        type: "REQUEST_DELETE",
+        id,
+        name: name ?? "this item",
+      }),
+    [],
+  );
 
   const table = useReactTable({
     data: items,
     columns: TABLE_COLUMNS as ColumnDef<T>[],
     getCoreRowModel: getCoreRowModel(),
     meta: {
-      editingId,
-      editValue,
+      editingId: state.editingId,
+      editValue: state.editValue,
       isSubmitting,
       setEditValue,
       handleEditSave,
@@ -297,13 +361,13 @@ export function SimpleTable<T extends BaseItem>({
       </Card>
 
       <ConfirmDialog
-        open={deleteConfirmId !== null}
-        onOpenChange={(open) => !open && setDeleteConfirmId(null)}
+        open={state.deleteConfirmId !== null}
+        onOpenChange={(open) => !open && dispatch({ type: "FINISH_DELETE" })}
         title="Delete Item"
-        description={`Are you sure you want to delete "${deleteConfirmName}"? This action cannot be undone.`}
+        description={`Are you sure you want to delete "${state.deleteConfirmName}"? This action cannot be undone.`}
         actionLabel="Delete"
         actionType="delete"
-        isLoading={deletingId !== null}
+        isLoading={state.deletingId !== null}
         onConfirm={handleDeleteConfirm}
       />
     </>

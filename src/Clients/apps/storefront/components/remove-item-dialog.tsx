@@ -21,13 +21,15 @@ type RemoveItemDialogProps = {
   confirmLabel?: string;
 };
 
+const EMPTY_ITEMS: Array<{ id: string; name: string }> = [];
+
 export function RemoveItemDialog({
   open,
   onOpenChange,
   onConfirm,
   title = "Remove from Basket?",
   description,
-  items = [],
+  items = EMPTY_ITEMS,
   cancelLabel = "Keep Item",
   confirmLabel = "Remove",
 }: Readonly<RemoveItemDialogProps>) {

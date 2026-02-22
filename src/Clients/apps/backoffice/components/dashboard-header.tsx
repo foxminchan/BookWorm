@@ -1,7 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
 import { LogOut, Moon, Sun, User } from "lucide-react";
 import { useTheme } from "next-themes";
 
@@ -20,18 +18,13 @@ import { useUserContext } from "@/hooks/useUserContext";
 
 export function DashboardHeader() {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
   const { user } = useUserContext();
   const { logout } = useLogout();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
 
   const targetMode = theme === "dark" ? "light" : "dark";
-  const themeLabel = mounted ? `Switch to ${targetMode} mode` : "Toggle theme";
+  const themeLabel = `Switch to ${targetMode} mode`;
 
   return (
     <header className="border-border bg-background flex items-center justify-between border-b px-6 py-4">

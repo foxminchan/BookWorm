@@ -61,13 +61,15 @@
       "protobufjs",
       "sharp",
       "unrs-resolver"
-    ]
-  },
-  "overrides": {
-    "semver@>=7.0.0 <7.5.2": ">=7.5.2",
-    "prismjs@<1.30.0": ">=1.30.0",
-    "js-yaml@>=4.0.0 <4.1.1": ">=4.1.1",
-    "lodash-es@>=4.0.0 <=4.17.22": ">=4.17.23",
-    "tmp@<=0.2.3": ">=0.2.4"
+    ],
+    "overrides": {
+      "semver": ">=7.5.2",
+      "prismjs": ">=1.30.0",
+      "js-yaml": ">=4.1.1",
+      "lodash-es": ">=4.17.23",
+      "tmp": ">=0.2.4",
+      "minimatch": ">=10.2.1",
+      "langsmith": ">=0.4.6"
+    }
   }
 }

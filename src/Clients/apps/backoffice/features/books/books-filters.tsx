@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useReducer, useState } from "react";
 
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useDebounceCallback } from "usehooks-ts";
@@ -32,61 +32,111 @@ type BooksFiltersProps = Readonly<{
   ) => void;
 }>;
 
+type FilterState = {
+  searchTerm: string;
+  debouncedSearch: string;
+  priceRange: [number, number];
+  debouncedPriceRange: [number, number];
+  orderBy: string;
+  isDescending: boolean;
+  selectedCategory: string | undefined;
+  selectedAuthors: string[];
+  debouncedAuthors: string[];
+  selectedPublisher: string | undefined;
+};
+
+type FilterAction =
+  | { type: "SET_SEARCH_TERM"; payload: string }
+  | { type: "SET_DEBOUNCED_SEARCH"; payload: string }
+  | { type: "SET_PRICE_RANGE"; payload: [number, number] }
+  | { type: "SET_DEBOUNCED_PRICE_RANGE"; payload: [number, number] }
+  | { type: "SET_CATEGORY"; payload: string | undefined }
+  | { type: "SET_AUTHORS"; payload: string[] }
+  | { type: "SET_DEBOUNCED_AUTHORS"; payload: string[] }
+  | { type: "SET_PUBLISHER"; payload: string | undefined }
+  | { type: "CLEAR_AUTHORS" }
+  | { type: "RESET" };
+
+const initialFilterState: FilterState = {
+  searchTerm: "",
+  debouncedSearch: "",
+  priceRange: [PRICE_RANGE.min, PRICE_RANGE.max],
+  debouncedPriceRange: [PRICE_RANGE.min, PRICE_RANGE.max],
+  orderBy: "name",
+  isDescending: false,
+  selectedCategory: undefined,
+  selectedAuthors: [],
+  debouncedAuthors: [],
+  selectedPublisher: undefined,
+};
+
+function filterReducer(state: FilterState, action: FilterAction): FilterState {
+  switch (action.type) {
+    case "SET_SEARCH_TERM":
+      return { ...state, searchTerm: action.payload };
+    case "SET_DEBOUNCED_SEARCH":
+      return { ...state, debouncedSearch: action.payload };
+    case "SET_PRICE_RANGE":
+      return { ...state, priceRange: action.payload };
+    case "SET_DEBOUNCED_PRICE_RANGE":
+      return { ...state, debouncedPriceRange: action.payload };
+    case "SET_CATEGORY":
+      return { ...state, selectedCategory: action.payload };
+    case "SET_AUTHORS":
+      return { ...state, selectedAuthors: action.payload };
+    case "SET_DEBOUNCED_AUTHORS":
+      return { ...state, debouncedAuthors: action.payload };
+    case "SET_PUBLISHER":
+      return { ...state, selectedPublisher: action.payload };
+    case "CLEAR_AUTHORS":
+      return { ...state, selectedAuthors: [], debouncedAuthors: [] };
+    case "RESET":
+      return initialFilterState;
+    default:
+      return state;
+  }
+}
+
 export function BooksFilters({ onFiltersChange }: BooksFiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [priceRange, setPriceRange] = useState<[number, number]>([
-    PRICE_RANGE.min,
-    PRICE_RANGE.max,
-  ]);
-  const [debouncedPriceRange, setDebouncedPriceRange] = useState<
-    [number, number]
-  >([PRICE_RANGE.min, PRICE_RANGE.max]);
-  const [orderBy] = useState<string>("name");
-  const [isDescending] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(
-    undefined,
-  );
-  const [selectedAuthors, setSelectedAuthors] = useState<string[]>([]);
-  const [debouncedAuthors, setDebouncedAuthors] = useState<string[]>([]);
-  const [selectedPublisher, setSelectedPublisher] = useState<
-    string | undefined
-  >(undefined);
+  const [state, dispatch] = useReducer(filterReducer, initialFilterState);
 
   // Sync query whenever any debounced/immediate filter value changes
   useEffect(() => {
     const query: Omit<ListBooksQuery, "pageIndex" | "pageSize"> = {
-      search: debouncedSearch || undefined,
+      search: state.debouncedSearch || undefined,
       minPrice:
-        debouncedPriceRange[0] === PRICE_RANGE.min
+        state.debouncedPriceRange[0] === PRICE_RANGE.min
           ? undefined
-          : debouncedPriceRange[0],
+          : state.debouncedPriceRange[0],
       maxPrice:
-        debouncedPriceRange[1] === PRICE_RANGE.max
+        state.debouncedPriceRange[1] === PRICE_RANGE.max
           ? undefined
-          : debouncedPriceRange[1],
-      orderBy,
-      isDescending,
-      categoryId: selectedCategory,
-      authorId: debouncedAuthors.length > 0 ? debouncedAuthors[0] : undefined,
-      publisherId: selectedPublisher ?? undefined,
+          : state.debouncedPriceRange[1],
+      orderBy: state.orderBy,
+      isDescending: state.isDescending,
+      categoryId: state.selectedCategory,
+      authorId:
+        state.debouncedAuthors.length > 0
+          ? state.debouncedAuthors[0]
+          : undefined,
+      publisherId: state.selectedPublisher ?? undefined,
     };
     onFiltersChange(query);
   }, [
-    debouncedSearch,
-    debouncedPriceRange,
-    orderBy,
-    isDescending,
-    selectedCategory,
-    debouncedAuthors,
-    selectedPublisher,
+    state.debouncedSearch,
+    state.debouncedPriceRange,
+    state.orderBy,
+    state.isDescending,
+    state.selectedCategory,
+    state.debouncedAuthors,
+    state.selectedPublisher,
     onFiltersChange,
   ]);
 
   const handleSearchChange = useDebounceCallback(
     (term: string) => {
-      setDebouncedSearch(term);
+      dispatch({ type: "SET_DEBOUNCED_SEARCH", payload: term });
     },
     500,
     { leading: false, trailing: true },
@@ -94,7 +144,7 @@ export function BooksFilters({ onFiltersChange }: BooksFiltersProps) {
 
   const handleDebouncedPriceChange = useDebounceCallback(
     (min: number, max: number) => {
-      setDebouncedPriceRange([min, max]);
+      dispatch({ type: "SET_DEBOUNCED_PRICE_RANGE", payload: [min, max] });
     },
     500,
     { leading: false, trailing: true },
@@ -102,7 +152,7 @@ export function BooksFilters({ onFiltersChange }: BooksFiltersProps) {
 
   const handleDebouncedAuthorChange = useDebounceCallback(
     (authors: string[]) => {
-      setDebouncedAuthors(authors);
+      dispatch({ type: "SET_DEBOUNCED_AUTHORS", payload: authors });
     },
     500,
     { leading: false, trailing: true },
@@ -110,37 +160,29 @@ export function BooksFilters({ onFiltersChange }: BooksFiltersProps) {
 
   const handleAuthorToggle = useCallback(
     (authorId: string) => {
-      const newAuthors = selectedAuthors.includes(authorId)
-        ? selectedAuthors.filter((id) => id !== authorId)
-        : [...selectedAuthors, authorId];
-      setSelectedAuthors(newAuthors);
+      const newAuthors = state.selectedAuthors.includes(authorId)
+        ? state.selectedAuthors.filter((id) => id !== authorId)
+        : [...state.selectedAuthors, authorId];
+      dispatch({ type: "SET_AUTHORS", payload: newAuthors });
       handleDebouncedAuthorChange(newAuthors);
     },
-    [selectedAuthors, handleDebouncedAuthorChange],
+    [state.selectedAuthors, handleDebouncedAuthorChange],
   );
 
   const handlePriceRangeChange = useCallback(
     (newMin: number, newMax: number) => {
-      setPriceRange([newMin, newMax]);
+      dispatch({ type: "SET_PRICE_RANGE", payload: [newMin, newMax] });
       handleDebouncedPriceChange(newMin, newMax);
     },
     [handleDebouncedPriceChange],
   );
 
   const handleResetFilters = useCallback(() => {
-    setSearchTerm("");
-    setDebouncedSearch("");
-    setPriceRange([PRICE_RANGE.min, PRICE_RANGE.max]);
-    setDebouncedPriceRange([PRICE_RANGE.min, PRICE_RANGE.max]);
-    setSelectedCategory(undefined);
-    setSelectedAuthors([]);
-    setDebouncedAuthors([]);
-    setSelectedPublisher("");
+    dispatch({ type: "RESET" });
   }, []);
 
   const handleAuthorClear = useCallback(() => {
-    setSelectedAuthors([]);
-    setDebouncedAuthors([]);
+    dispatch({ type: "CLEAR_AUTHORS" });
   }, []);
 
   return (
@@ -167,26 +209,30 @@ export function BooksFilters({ onFiltersChange }: BooksFiltersProps) {
           <CardContent>
             <div className="space-y-4">
               <SearchInput
-                value={searchTerm}
+                value={state.searchTerm}
                 onChange={(value) => {
-                  setSearchTerm(value);
+                  dispatch({ type: "SET_SEARCH_TERM", payload: value });
                   handleSearchChange(value);
                 }}
               />
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <CategorySelect
-                  value={selectedCategory}
-                  onChange={setSelectedCategory}
+                  value={state.selectedCategory}
+                  onChange={(value) =>
+                    dispatch({ type: "SET_CATEGORY", payload: value })
+                  }
                 />
                 <PublisherSelect
-                  value={selectedPublisher}
-                  onChange={setSelectedPublisher}
+                  value={state.selectedPublisher}
+                  onChange={(value) =>
+                    dispatch({ type: "SET_PUBLISHER", payload: value })
+                  }
                 />
               </div>
 
               <AuthorsFilter
-                selectedAuthors={selectedAuthors}
+                selectedAuthors={state.selectedAuthors}
                 onToggle={handleAuthorToggle}
                 onClear={handleAuthorClear}
               />
@@ -194,8 +240,8 @@ export function BooksFilters({ onFiltersChange }: BooksFiltersProps) {
               <PriceRangeFilter
                 min={PRICE_RANGE.min}
                 max={PRICE_RANGE.max}
-                minPrice={priceRange[0]}
-                maxPrice={priceRange[1]}
+                minPrice={state.priceRange[0]}
+                maxPrice={state.priceRange[1]}
                 onChange={handlePriceRangeChange}
               />
 

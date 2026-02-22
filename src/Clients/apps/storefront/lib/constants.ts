@@ -8,24 +8,3 @@ export const APP_CONFIG = {
     facebook: "https://facebook.com/bookworm",
   },
 } as const;
-
-export const FILTER_SECTIONS = {
-  category: "category",
-  publisher: "publisher",
-  author: "author",
-} as const;
-
-export const ITEMS_PER_PAGE = 12;
-
-export const SORT_OPTIONS = [
-  { value: "default", label: "Featured" },
-  { value: "price-low", label: "Price: Low to High" },
-  { value: "price-high", label: "Price: High to Low" },
-  { value: "title", label: "Title: A-Z" },
-] as const;
-
-export const DEBOUNCE_DELAY = {
-  search: 300,
-  quantity: 300,
-  priceRange: 500,
-} as const;

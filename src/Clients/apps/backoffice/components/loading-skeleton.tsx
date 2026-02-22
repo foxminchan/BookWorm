@@ -124,28 +124,6 @@ export function BookFormSkeleton() {
     </SkeletonWrapper>
   );
 }
-
-export function TableSkeleton({ rows = 5 }: Readonly<{ rows?: number }>) {
-  return (
-    <SkeletonWrapper label="Loading table data..." className="space-y-4">
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-10 w-64" />
-        <Skeleton className="h-10 w-32" />
-      </div>
-      <div className="space-y-2">
-        <Skeleton className="h-12 w-full" />
-        {keys(rows, "table-row").map((key) => (
-          <Skeleton key={key} className="h-16 w-full" />
-        ))}
-      </div>
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-10 w-64" />
-      </div>
-    </SkeletonWrapper>
-  );
-}
-
 export function CardSkeleton() {
   return (
     <Card>

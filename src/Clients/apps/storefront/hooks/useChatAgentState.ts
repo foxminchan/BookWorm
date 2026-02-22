@@ -7,7 +7,7 @@ import { env } from "@/env.mjs";
 /**
  * Agent state type matching the backend chat workflow state
  */
-export type ChatAgentState = {
+type ChatAgentState = {
   searchQuery?: string;
   searchResults?: Array<{
     id: string;
