@@ -42,9 +42,9 @@ public sealed class CatalogDbContextSeed(
             var categoryIds = await context.Categories.Select(c => c.Id).ToListAsync();
 
             var random = Random.Shared;
-            var booksList = new List<Book>([]);
+            var books = new List<Book>();
 
-            foreach (var book in booksList)
+            foreach (var book in new BookData())
             {
                 var instructions = $"""
                     You are a professional book metadata writer.
@@ -75,7 +75,7 @@ public sealed class CatalogDbContextSeed(
                     message.Role == ChatRole.Assistant
                 );
 
-                if (assistantMessage is null || string.IsNullOrWhiteSpace(assistantMessage.Text))
+                if (string.IsNullOrWhiteSpace(assistantMessage?.Text))
                 {
                     logger.LogWarning(
                         "No assistant description generated for book {Name}",
@@ -98,9 +98,11 @@ public sealed class CatalogDbContextSeed(
                     publisherIds[random.Next(0, publisherIds.Count)],
                     [authorIds[random.Next(0, authorIds.Count)]]
                 );
+
+                books.Add(book);
             }
 
-            context.Books.AddRange(booksList);
+            context.Books.AddRange(books);
             await context.SaveChangesAsync();
         }
     }

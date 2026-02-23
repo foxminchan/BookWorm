@@ -29,7 +29,7 @@
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.Azure.Extensions" Version="$(ToolKitVersion)" />
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.JavaScript.Extensions" Version="$(ToolKitVersion)" />
     <!-- Extra -->
-    <PackageVersion Include="TUnit.Aspire" Version="1.15.0" />
+    <PackageVersion Include="TUnit.Aspire" Version="$(TUnitVersion)" />
     <PackageVersion Include="Scalar.Aspire" Version="0.8.55" />
   </ItemGroup>
   <ItemGroup Label="Core Packages">
@@ -85,14 +85,14 @@
     <PackageVersion Include="Mjml.Net" Version="4.11.0" />
     <PackageVersion Include="SendGrid" Version="9.29.3" />
     <!-- Other Integrations -->
-    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.9.0-preview.1" />
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.9.0-preview.2" />
   </ItemGroup>
   <ItemGroup Label="Testing">
     <PackageVersion Include="Bogus" Version="35.6.5" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="TngTech.ArchUnitNET.TUnit" Version="0.13.2" />
-    <PackageVersion Include="TUnit" Version="1.16.4" />
+    <PackageVersion Include="TUnit" Version="$(TUnitVersion)" />
     <!-- Contract Testing -->
     <PackageVersion Include="Verify.TUnit" Version="31.13.2" />
     <PackageVersion Include="Verify.SendGrid" Version="1.0.0" />
