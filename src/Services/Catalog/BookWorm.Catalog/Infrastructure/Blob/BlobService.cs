@@ -52,10 +52,7 @@ public sealed partial class BlobService(BlobContainerClient client, AppSettings 
 
     private string GetBlobNameFromUrn(string urn)
     {
-        if (string.IsNullOrWhiteSpace(urn))
-        {
-            throw new ArgumentException("URN cannot be null or empty.", nameof(urn));
-        }
+        ArgumentException.ThrowIfNullOrWhiteSpace(urn);
 
         var parts = urn.Split(':').AsSpan();
         if (parts.Length != 4)
