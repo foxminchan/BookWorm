@@ -5,7 +5,6 @@
       {
         "type": "command",
         "bash": "./.github/hooks/scripts/session-setup.sh",
-        "powershell": "./.github/hooks/scripts/session-setup.ps1",
         "cwd": ".",
         "timeoutSec": 15
       }
@@ -14,21 +13,18 @@
       {
         "type": "command",
         "bash": "./.github/hooks/scripts/pre-tool-guard.sh",
-        "powershell": "./.github/hooks/scripts/pre-tool-guard.ps1",
         "cwd": ".",
         "timeoutSec": 10
       },
       {
         "type": "command",
         "bash": "./.github/hooks/scripts/secret-scanner.sh",
-        "powershell": "./.github/hooks/scripts/secret-scanner.ps1",
         "cwd": ".",
         "timeoutSec": 10
       },
       {
         "type": "command",
         "bash": "./.github/hooks/scripts/architecture-guard.sh",
-        "powershell": "./.github/hooks/scripts/architecture-guard.ps1",
         "cwd": ".",
         "timeoutSec": 10
       }
@@ -37,7 +33,6 @@
       {
         "type": "command",
         "bash": "./.github/hooks/scripts/post-tool-audit.sh",
-        "powershell": "./.github/hooks/scripts/post-tool-audit.ps1",
         "cwd": ".",
         "timeoutSec": 10
       }
@@ -46,7 +41,6 @@
       {
         "type": "command",
         "bash": "./.github/hooks/scripts/session-cleanup.sh",
-        "powershell": "./.github/hooks/scripts/session-cleanup.ps1",
         "cwd": ".",
         "timeoutSec": 15
       }
