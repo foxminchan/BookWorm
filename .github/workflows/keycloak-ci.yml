@@ -98,7 +98,7 @@ jobs:
 
       - name: Upload JAR artifacts
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.0
         with:
           name: bookworm-keycloak-theme-v${{ steps.theme-version.outputs.version || 'latest' }}
           path: src/Aspire/BookWorm.AppHost/Container/keycloak/jar-artifacts/*.jar

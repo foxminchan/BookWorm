@@ -59,7 +59,7 @@ jobs:
         run: pnpm turbo run test:coverage
 
       - name: Upload frontend coverage
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.0
         with:
           name: frontend-coverage
           path: |
