@@ -211,14 +211,14 @@ importers:
         specifier: ^0.0.45
         version: 0.0.45
       '@copilotkit/react-core':
-        specifier: 1.51.4
-        version: 1.51.4(e533826fddb72b5462f8254935c71055)
+        specifier: 1.52.0
+        version: 1.52.0(89386fc677b005128d09f6525acc9cf0)
       '@copilotkit/react-ui':
         specifier: 1.51.4
-        version: 1.51.4(e533826fddb72b5462f8254935c71055)
+        version: 1.51.4(c50c4d8fde504132d376b341d5a14062)
       '@copilotkit/runtime':
         specifier: ^1.51.4
-        version: 1.51.4(14f3948816ca104ec4a67d5cd0897977)
+        version: 1.51.4(211e138ec792f49cbd129c29cc9a7318)
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.71.2(react@19.2.4))
@@ -749,20 +749,20 @@ packages:
   '@ag-ui/proto@0.0.45':
     resolution: {integrity: sha512-gj+XdbTOyNV1i5my77OaVZa7E2T/XTkoHlzpbd/O9C+BX6wxqMWORATKDJG1KZoanNsWr0Z7mtpwVuehs0GbBA==}
 
-  '@ai-sdk/anthropic@2.0.66':
-    resolution: {integrity: sha512-8xte/61emegt5Zr7lAXeGz50DiA2GJOV2VSTj8hc4jSbjEXQ/gl3LviOp2IRyb2sVcBpnHcRJTdeUJNyzFTawg==}
+  '@ai-sdk/anthropic@2.0.67':
+    resolution: {integrity: sha512-hGtsfU1Dh1r9oBfctZy9+Wb8nSPiD8hBYIVYLGbFSPRrfliyBysJFaenHOGYR0Rd2R8O9ow2dxi05Qk5awerBw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/gateway@2.0.43':
-    resolution: {integrity: sha512-wVrXKw0ldcU04Y8EY3vR+qPdogZCZEj8pnkpRNRF552jqYPPVY88atPiC9s6XOyE+k6Y1YnusYXqwp6KKaBGAA==}
+  '@ai-sdk/gateway@2.0.47':
+    resolution: {integrity: sha512-QzpiMq7dVXsIv/thXJEyDeP8+irqF3LSJX+ZbVKOqbX8WdrcHSig2nhHQLK6cwe9s+0tyNKYQQ89h2X62OVdsg==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/google@2.0.54':
-    resolution: {integrity: sha512-VKguP0x/PUYpdQyuA/uy5pDGJy6reL0X/yDKxHfL207aCUXpFIBmyMhVs4US39dkEVhtmIFSwXauY0Pt170JRw==}
+  '@ai-sdk/google@2.0.56':
+    resolution: {integrity: sha512-YPCpnrVF6gGrBemZTaKRTDccnByt8i9HVWwiC2gTzgxj0IkTpy9anw/gh3eFe8LaaNNdYzY1Op5Z8uadIqOYFA==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -773,8 +773,8 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/openai@2.0.92':
-    resolution: {integrity: sha512-JRNnHVMp3Camj5hjYwnQqCSaUf5GTB0I6LuKEs8RsjuZvKaX5DTa6QN8by1HjgyZMPI6VCQ1s2uIPPlCRpTCPg==}
+  '@ai-sdk/openai@2.0.95':
+    resolution: {integrity: sha512-2CABPaa1UNh7dPyZUIB/Dc4AbvJioFnmryRx45sx7ezBSOdR0zxG6gbrSd/fZ0GVbptSZeLmF9omu10d/GxmJA==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -1055,6 +1055,13 @@ packages:
       react-dom: ^18 || ^19 || ^19.0.0-rc
       zod: '>=3.0.0'
 
+  '@copilotkit/react-core@1.52.0':
+    resolution: {integrity: sha512-a7plS+s2hD5nztb3wyEC7XhSoVWG1JisLZCN4K0dSG0EnSzP90G35uZPodRbfDOtKXqJ8DlPwuZbtflXSnNIyA==}
+    peerDependencies:
+      react: ^18 || ^19 || ^19.0.0-rc
+      react-dom: ^18 || ^19 || ^19.0.0-rc
+      zod: '>=3.0.0'
+
   '@copilotkit/react-ui@1.51.4':
     resolution: {integrity: sha512-WbXslO08E5GJtrWICA7BapXpSaUc9W1Bxj3JrnimSeB+ouertXWrPc1gK9ty5VYpP76EV3sc+zZyw1Sx5ZHnuw==}
     peerDependencies:
@@ -1062,6 +1069,11 @@ packages:
 
   '@copilotkit/runtime-client-gql@1.51.4':
     resolution: {integrity: sha512-M7U+/t/ofdrmDxBwul6DznP/yO46CMHyv/Dc4jKOqds+Ug/7aEXB/rlChs/sA+zcEGzcKoKutHXWAT/aScMh4w==}
+    peerDependencies:
+      react: ^18 || ^19 || ^19.0.0-rc
+
+  '@copilotkit/runtime-client-gql@1.52.0':
+    resolution: {integrity: sha512-8hcj9ltcbkU/K7ShBIDYAd8LYQYm0D2QLmMrcPO4Tu9pFNVR2v1Uv725gBGdVan9RDc5JPoN4ZseoywFKHjcdw==}
     peerDependencies:
       react: ^18 || ^19 || ^19.0.0-rc
 
@@ -1101,17 +1113,59 @@ packages:
       openai:
         optional: true
 
+  '@copilotkit/runtime@1.52.0':
+    resolution: {integrity: sha512-X1eq8lo89+O/uOllbxzCqnhFpwNUpL79FWGK2lxMvTIAVEviz8o83SeCXrX727tpkaYOXYVtqjl/IQD7vbyUkQ==}
+    peerDependencies:
+      '@anthropic-ai/sdk': ^0.57.0
+      '@langchain/aws': '>=0.1.9'
+      '@langchain/community': '>=0.3.58'
+      '@langchain/core': '>=0.3.66'
+      '@langchain/google-gauth': '>=0.1.0'
+      '@langchain/langgraph-sdk': '>=0.1.2'
+      '@langchain/openai': '>=0.4.2'
+      groq-sdk: '>=0.3.0 <1.0.0'
+      langchain: '>=0.3.3'
+      openai: ^4.85.1
+    peerDependenciesMeta:
+      '@anthropic-ai/sdk':
+        optional: true
+      '@langchain/aws':
+        optional: true
+      '@langchain/community':
+        optional: true
+      '@langchain/google-gauth':
+        optional: true
+      '@langchain/langgraph-sdk':
+        optional: true
+      '@langchain/openai':
+        optional: true
+      groq-sdk:
+        optional: true
+      langchain:
+        optional: true
+      openai:
+        optional: true
+
   '@copilotkit/shared@1.51.4':
     resolution: {integrity: sha512-njIHsNGeH1AtrLBnqTup3GwGyBosg3VQEmAnxEs6JVNkvVfWxJO9OfVziPBnwZT5cXnMFkpo8zhfT5WSKllXLQ==}
     peerDependencies:
       '@ag-ui/core': ^0.0.43
 
-  '@copilotkitnext/agent@1.51.4':
-    resolution: {integrity: sha512-/+4uy7E5aHsLpiaZYKFqvNgU2OOCM83JRgKJy9gPZ87fyR2Hwu3Wj/EFiHWSzZBo/DOeFxE1u/3u5MPjlukntg==}
+  '@copilotkit/shared@1.52.0':
+    resolution: {integrity: sha512-u0UcfOaCoaGqzh2qpMbvOZkVO7C86/bX0GSqJSYFvNtSaTkYa41FiN/6p1WS40pRcPowBIPufniO0y/RXGupMw==}
+    peerDependencies:
+      '@ag-ui/core': ^0.0.45
+
+  '@copilotkitnext/agent@1.52.0':
+    resolution: {integrity: sha512-+lqQXdn4qirJhwCf7XicNRKEHcrqi7pfgcstaEX4Dq8PufFHhDc/VXIvFAkTJlNdIu6ING6cdBW/9K3i2uM9kw==}
     engines: {node: '>=18'}
 
   '@copilotkitnext/core@1.51.4':
     resolution: {integrity: sha512-mCjtcrQEeNm+SM6EHKWA04OKPNmm/gt+ITOlKA3uam/jnNU4YnVJoJHlbN+PX2XVzq9zhATr34GIlgGExOuZHw==}
+    engines: {node: '>=18'}
+
+  '@copilotkitnext/core@1.52.0':
+    resolution: {integrity: sha512-qyU8ycq9P9pWGONsIe5EKqQeYME6B0myrI5UllRQ2DAOvkUSoHSBvrzWa9pZytHMsHOQe2903NP5tdPrgRySQw==}
     engines: {node: '>=18'}
 
   '@copilotkitnext/react@1.51.4':
@@ -1121,21 +1175,36 @@ packages:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
 
-  '@copilotkitnext/runtime@1.51.4':
-    resolution: {integrity: sha512-XBkNxrVlyu7/dQunKEw5RX/NOrVEss36up/jVvGI6X31ayC0pjeMnyPcvmKbbbg5irdLUMgBeYgC3k93ke+dhg==}
+  '@copilotkitnext/react@1.52.0':
+    resolution: {integrity: sha512-xvk3f2SGU3skIeeL5i/AfSnYyL95m//bJggWhJdr7XGXI93BaKqGpm8exXXt/1DBxor3YWeC9cBOeRyoxBNJFg==}
     engines: {node: '>=18'}
     peerDependencies:
-      '@ag-ui/client': 0.0.42
-      '@ag-ui/core': 0.0.42
-      '@ag-ui/encoder': 0.0.42
-      '@copilotkitnext/shared': 1.51.4
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+
+  '@copilotkitnext/runtime@1.52.0':
+    resolution: {integrity: sha512-92/5BtuI+8MHJ8+TFnm4KyzW+ZIw5Ptgtzmlakvn0eoncmDyxTKGercxeRBwc5GWTX27o8ajEw22j2Is5qjmxQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@ag-ui/client': 0.0.45
+      '@ag-ui/core': 0.0.45
+      '@ag-ui/encoder': 0.0.45
+      '@copilotkitnext/shared': 1.52.0
 
   '@copilotkitnext/shared@1.51.4':
     resolution: {integrity: sha512-3C68dzGwuUShAHHnJVLSMOZ89QZrx8oXrGNx8VbFl3BrOw6Q+sG53hgx/QZ23TAwqKq3Gt7JVrbUp6iQE7DGsw==}
     engines: {node: '>=18'}
 
+  '@copilotkitnext/shared@1.52.0':
+    resolution: {integrity: sha512-5bPqo13Ixey+ZcXAY431bzww15RBtvsuZdVCSdFU5gwjOgvJzxAiw7lgO+h9ohHuuOYrGAyjoEPOgOgcZuxviA==}
+    engines: {node: '>=18'}
+
   '@copilotkitnext/web-inspector@1.51.4':
     resolution: {integrity: sha512-zXJWbIgVkJUSsEedgQhbKg84bAod1lxdfR78rCaHrGO2XfSnZInphMOa3boQkbUdzKr1bhxWmgJd/fi5+/5AVQ==}
+    engines: {node: '>=18'}
+
+  '@copilotkitnext/web-inspector@1.52.0':
+    resolution: {integrity: sha512-aMaeMfxliHlayH2jAPZff1JI9b6CgCKT7cMAb4b7qaSkEDk9dsfu44wrY9JowxD4YIRDMOJSvjAjtmGALSBa/A==}
     engines: {node: '>=18'}
 
   '@cucumber/cucumber-expressions@18.0.1':
@@ -1887,8 +1956,8 @@ packages:
   '@mermaid-js/parser@1.0.0':
     resolution: {integrity: sha512-vvK0Hi/VWndxoh03Mmz6wa1KDriSPjS2XMZL/1l19HFwygiObEEoEwSDxOqyLzzAI6J2PU3261JjTMTO7x+BPw==}
 
-  '@modelcontextprotocol/sdk@1.26.0':
-    resolution: {integrity: sha512-Y5RmPncpiDtTXDbLKswIJzTqu2hyBKxTNsgKqKclDbhIgg1wgtf1fRuvxgTnRfcnxtvvgbIEcqUOzZrJ6iSReg==}
+  '@modelcontextprotocol/sdk@1.27.1':
+    resolution: {integrity: sha512-sr6GbP+4edBwFndLbM60gf07z0FQ79gaExpnsjMGePXqFcSSb7t6iscpjk9DhFhwd+mTEQrzNafGP8/iGGFYaA==}
     engines: {node: '>=18'}
     peerDependencies:
       '@cfworker/json-schema': ^4.1.1
@@ -2283,6 +2352,11 @@ packages:
 
   '@preact/compat@18.3.1':
     resolution: {integrity: sha512-Kog4PSRxtT4COtOXjsuQPV1vMXpUzREQfv+6Dmcy9/rMk0HOPK0HTE9fspFjAmY8R80T/T8gtgmZ68u5bOSngw==}
+    peerDependencies:
+      preact: '*'
+
+  '@preact/compat@18.3.2':
+    resolution: {integrity: sha512-5vSl55K5yLMvocT7PBKxDOHGgYPjMrKQqqr6roSNjIXcJOtSgDDMjpiCAF3s7klRdmGrN75b/Przmjw8gmlg/w==}
     peerDependencies:
       preact: '*'
 
@@ -3717,8 +3791,8 @@ packages:
     resolution: {integrity: sha512-4I7Td01quW/RpocfNayFdFVk1qSuoh0E7JrbRJ16nH01HhKFQ88INq9Sd+nd72zqRySlr9BmDA8xlEJ6vJMrYA==}
     engines: {node: '>=8'}
 
-  ai@5.0.137:
-    resolution: {integrity: sha512-ZPqvIG5HlTEaTsf91p5CvOMWYoTxsGpHckgc8qk7FNVM9O375A1A5cvLq6CpkCdTWrdyNZMMs3brnfUIlJP20g==}
+  ai@5.0.141:
+    resolution: {integrity: sha512-Lo0amDzMsaFDSXCop++Bnu99sivngL+u03SHzFfkNKdB6/lIehL7EvKMlb/Epkn2W85aUjjJunaNo9YJM/USWw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -4112,6 +4186,9 @@ packages:
 
   class-validator@0.14.3:
     resolution: {integrity: sha512-rXXekcjofVN1LTOSw+u4u9WXVEUvNBVjORW154q/IdmYWy1nMbOU9aNtZB0t8m+FJQ9q91jlr2f9CwwUFdFMRA==}
+
+  class-validator@0.14.4:
+    resolution: {integrity: sha512-AwNusCCam51q703dW82x95tOqQp6oC9HNUl724KxJJOfnKscI8dOloXFgyez7LbTTKWuRBA37FScqVbJEoq8Yw==}
 
   class-variance-authority@0.7.1:
     resolution: {integrity: sha512-Ka+9Trutv7G8M6WT6SeiRWz792K5qEqIGEGzXKhAE6xOWAY6pPH8U+9IY3oCMv6kqTmLsv7Xh/2w2RigkePMsg==}
@@ -5122,6 +5199,10 @@ packages:
     resolution: {integrity: sha512-DKKrynuQRne0PNpEbzuEdHlYOMksHSUI8Zc9Unei5gTsMNA2/vMpoMz/yKba50pejK56qj98qM0SjYxAKi13gQ==}
     engines: {node: ^12.22.0 || ^14.16.0 || ^16.0.0 || >=17.0.0}
 
+  graphql@16.13.0:
+    resolution: {integrity: sha512-uSisMYERbaB9bkA9M4/4dnqyktaEkf1kMHNKq/7DHyxVeWqHQ2mBmVqm5u6/FVHwF3iCNalKcg82Zfl+tffWoA==}
+    engines: {node: ^12.22.0 || ^14.16.0 || ^16.0.0 || >=17.0.0}
+
   hachure-fill@0.5.2:
     resolution: {integrity: sha512-3GKBOn+m2LX9iq+JC1064cSFprJY4jL1jCXTcpnfER5HYE2l/4EfWSGzkPa/ZDBmYI0ZOEj5VHV/eKnPGkHuOg==}
 
@@ -5239,6 +5320,10 @@ packages:
 
   hono@4.12.1:
     resolution: {integrity: sha512-hi9afu8g0lfJVLolxElAZGANCTTl6bewIdsRNhaywfP9K8BPf++F2z6OLrYGIinUwpRKzbZHMhPwvc0ZEpAwGw==}
+    engines: {node: '>=16.9.0'}
+
+  hono@4.12.3:
+    resolution: {integrity: sha512-SFsVSjp8sj5UumXOOFlkZOG6XS9SJDKw0TbwFeV+AJ8xlST8kxK5Z/5EYa111UY8732lK2S/xB653ceuaoGwpg==}
     engines: {node: '>=16.9.0'}
 
   hosted-git-info@9.0.2:
@@ -5675,8 +5760,8 @@ packages:
     resolution: {integrity: sha512-ZZow9HBI5O6EPgSJLUb8n2NKgmVWTwCvHGwFuJlMjvLFqlGG6pjirPhtdsseaLZjSibD8eegzmYpUZwoIlj2cQ==}
     engines: {node: '>=4.0'}
 
-  katex@0.16.28:
-    resolution: {integrity: sha512-YHzO7721WbmAL6Ov1uzN/l5mY5WWWhJBSW+jq4tkfZfsxmo1hu6frS0EOswvjBUnWE6NtjEs48SFn5CQESRLZg==}
+  katex@0.16.33:
+    resolution: {integrity: sha512-q3N5u+1sY9Bu7T4nlXoiRBXWfwSefNGoKeOwekV+gw0cAXQlz2Ww6BLcmBxVDeXBMUDQv6fK5bcNaJLxob3ZQA==}
     hasBin: true
 
   keyv@4.5.4:
@@ -5737,6 +5822,9 @@ packages:
 
   libphonenumber-js@1.12.37:
     resolution: {integrity: sha512-rDU6bkpuMs8YRt/UpkuYEAsYSoNuDEbrE41I3KNvmXREGH6DGBJ8Wbak4by29wNOQ27zk4g4HL82zf0OGhwRuw==}
+
+  libphonenumber-js@1.12.38:
+    resolution: {integrity: sha512-vwzxmasAy9hZigxtqTbFEwp8ZdZ975TiqVDwj5bKx5sR+zi5ucUQy9mbVTkKM9GzqdLdxux/hTw2nmN5J7POMA==}
 
   lightningcss-android-arm64@1.31.1:
     resolution: {integrity: sha512-HXJF3x8w9nQ4jbXRiNppBCqeZPIAfUo8zE/kOEGbW5NZvGc/K7nMxbhIr+YlFlHW5mpbg/YFPdbnCh1wAXCKFg==}
@@ -8254,6 +8342,22 @@ snapshots:
       - react
       - react-dom
 
+  '@ag-ui/langgraph@0.0.24(@ag-ui/client@0.0.45)(@ag-ui/core@0.0.45)(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.212.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.5.1(@opentelemetry/api@1.9.0))(openai@6.22.0(ws@8.19.0)(zod@4.3.6))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+    dependencies:
+      '@ag-ui/client': 0.0.45
+      '@ag-ui/core': 0.0.45
+      '@langchain/core': 0.3.80(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.212.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.5.1(@opentelemetry/api@1.9.0))(openai@6.22.0(ws@8.19.0)(zod@4.3.6))
+      '@langchain/langgraph-sdk': 0.1.10(@langchain/core@0.3.80(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.212.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.5.1(@opentelemetry/api@1.9.0))(openai@6.22.0(ws@8.19.0)(zod@4.3.6)))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      partial-json: 0.1.7
+      rxjs: 7.8.1
+    transitivePeerDependencies:
+      - '@opentelemetry/api'
+      - '@opentelemetry/exporter-trace-otlp-proto'
+      - '@opentelemetry/sdk-trace-base'
+      - openai
+      - react
+      - react-dom
+
   '@ag-ui/proto@0.0.42':
     dependencies:
       '@ag-ui/core': 0.0.42
@@ -8272,20 +8376,20 @@ snapshots:
       '@bufbuild/protobuf': 2.11.0
       '@protobuf-ts/protoc': 2.11.1
 
-  '@ai-sdk/anthropic@2.0.66(zod@3.25.76)':
+  '@ai-sdk/anthropic@2.0.67(zod@3.25.76)':
     dependencies:
       '@ai-sdk/provider': 2.0.1
       '@ai-sdk/provider-utils': 3.0.21(zod@3.25.76)
       zod: 3.25.76
 
-  '@ai-sdk/gateway@2.0.43(zod@3.25.76)':
+  '@ai-sdk/gateway@2.0.47(zod@3.25.76)':
     dependencies:
       '@ai-sdk/provider': 2.0.1
       '@ai-sdk/provider-utils': 3.0.21(zod@3.25.76)
       '@vercel/oidc': 3.1.0
       zod: 3.25.76
 
-  '@ai-sdk/google@2.0.54(zod@3.25.76)':
+  '@ai-sdk/google@2.0.56(zod@3.25.76)':
     dependencies:
       '@ai-sdk/provider': 2.0.1
       '@ai-sdk/provider-utils': 3.0.21(zod@3.25.76)
@@ -8298,7 +8402,7 @@ snapshots:
       pkce-challenge: 5.0.1
       zod: 3.25.76
 
-  '@ai-sdk/openai@2.0.92(zod@3.25.76)':
+  '@ai-sdk/openai@2.0.95(zod@3.25.76)':
     dependencies:
       '@ai-sdk/provider': 2.0.1
       '@ai-sdk/provider-utils': 3.0.21(zod@3.25.76)
@@ -8608,19 +8712,19 @@ snapshots:
       '@allurereport/charts-api': 3.2.0
       '@allurereport/web-commons': 3.2.0(preact@10.28.4)
       '@floating-ui/dom': 1.7.5
-      '@nivo/bar': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/funnel': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/heatmap': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/line': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/pie': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/text': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/treemap': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/bar': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/funnel': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/heatmap': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/line': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/pie': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/text': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/treemap': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@preact/compat': 18.3.1(preact@10.28.4)
       '@preact/signals': 2.8.1(preact@10.28.4)
-      '@react-spring/web': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@react-spring/web': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       clsx: 2.1.1
       d3-array: 3.2.4
       d3-axis: 3.0.0
@@ -8636,10 +8740,10 @@ snapshots:
       lodash: 4.17.23
       preact: 10.28.4
       prismjs: 1.30.0
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
-      react-dom: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
+      react-dom: '@preact/compat@18.3.2(preact@10.28.4)'
       sortablejs: 1.15.7
-      use-debounce: 10.1.0(@preact/compat@18.3.1(preact@10.28.4))
+      use-debounce: 10.1.0(@preact/compat@18.3.2(preact@10.28.4))
 
   '@allurereport/web-dashboard@3.2.0(typescript@5.9.3)':
     dependencies:
@@ -8843,11 +8947,11 @@ snapshots:
   '@colors/colors@1.5.0':
     optional: true
 
-  '@copilotkit/react-core@1.51.4(e533826fddb72b5462f8254935c71055)':
+  '@copilotkit/react-core@1.51.4(c50c4d8fde504132d376b341d5a14062)':
     dependencies:
       '@ag-ui/client': 0.0.43
-      '@copilotkit/runtime-client-gql': 1.51.4(35976ee50c023de1755a54456bde7ee1)
-      '@copilotkit/shared': 1.51.4(@ag-ui/core@0.0.45)(encoding@0.1.13)
+      '@copilotkit/runtime-client-gql': 1.51.4(da9ba335e4becf14cb7b96918d07ac81)
+      '@copilotkit/shared': 1.51.4(@ag-ui/core@0.0.43)(encoding@0.1.13)
       '@copilotkitnext/core': 1.51.4
       '@copilotkitnext/react': 1.51.4(@types/mdast@4.0.4)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(micromark-util-types@2.0.2)(micromark@4.0.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@scarf/scarf': 1.4.0
@@ -8882,11 +8986,51 @@ snapshots:
       - openai
       - supports-color
 
-  '@copilotkit/react-ui@1.51.4(e533826fddb72b5462f8254935c71055)':
+  '@copilotkit/react-core@1.52.0(89386fc677b005128d09f6525acc9cf0)':
     dependencies:
-      '@copilotkit/react-core': 1.51.4(e533826fddb72b5462f8254935c71055)
-      '@copilotkit/runtime-client-gql': 1.51.4(35976ee50c023de1755a54456bde7ee1)
-      '@copilotkit/shared': 1.51.4(@ag-ui/core@0.0.45)(encoding@0.1.13)
+      '@ag-ui/client': 0.0.45
+      '@copilotkit/runtime-client-gql': 1.52.0(@ag-ui/core@0.0.43)(@ag-ui/encoder@0.0.45)(@cfworker/json-schema@4.1.1)(@copilotkitnext/shared@1.52.0)(@langchain/core@0.3.80(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.212.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.5.1(@opentelemetry/api@1.9.0))(openai@6.22.0(ws@8.19.0)(zod@4.3.6)))(@langchain/langgraph-sdk@0.1.10(@langchain/core@0.3.80(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.212.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.5.1(@opentelemetry/api@1.9.0))(openai@6.22.0(ws@8.19.0)(zod@4.3.6)))(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.212.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.5.1(@opentelemetry/api@1.9.0))(encoding@0.1.13)(graphql@16.12.0)(openai@6.22.0(ws@8.19.0)(zod@4.3.6))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@copilotkit/shared': 1.52.0(@ag-ui/core@0.0.43)(encoding@0.1.13)
+      '@copilotkitnext/core': 1.52.0
+      '@copilotkitnext/react': 1.52.0(@types/mdast@4.0.4)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(micromark-util-types@2.0.2)(micromark@4.0.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@scarf/scarf': 1.4.0
+      react: 19.2.4
+      react-dom: 19.2.4(react@19.2.4)
+      react-markdown: 8.0.7(@types/react@19.2.14)(react@19.2.4)
+      untruncate-json: 0.0.1
+      zod: 4.3.6
+    transitivePeerDependencies:
+      - '@ag-ui/core'
+      - '@ag-ui/encoder'
+      - '@anthropic-ai/sdk'
+      - '@cfworker/json-schema'
+      - '@copilotkitnext/shared'
+      - '@langchain/aws'
+      - '@langchain/community'
+      - '@langchain/core'
+      - '@langchain/google-gauth'
+      - '@langchain/langgraph-sdk'
+      - '@langchain/openai'
+      - '@opentelemetry/api'
+      - '@opentelemetry/exporter-trace-otlp-proto'
+      - '@opentelemetry/sdk-trace-base'
+      - '@types/mdast'
+      - '@types/react'
+      - '@types/react-dom'
+      - encoding
+      - graphql
+      - groq-sdk
+      - langchain
+      - micromark
+      - micromark-util-types
+      - openai
+      - supports-color
+
+  '@copilotkit/react-ui@1.51.4(c50c4d8fde504132d376b341d5a14062)':
+    dependencies:
+      '@copilotkit/react-core': 1.51.4(c50c4d8fde504132d376b341d5a14062)
+      '@copilotkit/runtime-client-gql': 1.51.4(da9ba335e4becf14cb7b96918d07ac81)
+      '@copilotkit/shared': 1.51.4(@ag-ui/core@0.0.43)(encoding@0.1.13)
       '@headlessui/react': 2.2.9(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       react: 19.2.4
       react-markdown: 10.1.0(@types/react@19.2.14)(react@19.2.4)
@@ -8922,10 +9066,10 @@ snapshots:
       - supports-color
       - zod
 
-  '@copilotkit/runtime-client-gql@1.51.4(35976ee50c023de1755a54456bde7ee1)':
+  '@copilotkit/runtime-client-gql@1.51.4(da9ba335e4becf14cb7b96918d07ac81)':
     dependencies:
-      '@copilotkit/runtime': 1.51.4(14f3948816ca104ec4a67d5cd0897977)
-      '@copilotkit/shared': 1.51.4(@ag-ui/core@0.0.45)(encoding@0.1.13)
+      '@copilotkit/runtime': 1.51.4(04d3ba5a22c9bb5c9113b303c4e1b0fa)
+      '@copilotkit/shared': 1.51.4(@ag-ui/core@0.0.43)(encoding@0.1.13)
       '@urql/core': 5.2.0(graphql@16.12.0)
       react: 19.2.4
       untruncate-json: 0.0.1
@@ -8951,14 +9095,45 @@ snapshots:
       - openai
       - react-dom
 
-  '@copilotkit/runtime@1.51.4(14f3948816ca104ec4a67d5cd0897977)':
+  '@copilotkit/runtime-client-gql@1.52.0(@ag-ui/core@0.0.43)(@ag-ui/encoder@0.0.45)(@cfworker/json-schema@4.1.1)(@copilotkitnext/shared@1.52.0)(@langchain/core@0.3.80(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.212.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.5.1(@opentelemetry/api@1.9.0))(openai@6.22.0(ws@8.19.0)(zod@4.3.6)))(@langchain/langgraph-sdk@0.1.10(@langchain/core@0.3.80(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.212.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.5.1(@opentelemetry/api@1.9.0))(openai@6.22.0(ws@8.19.0)(zod@4.3.6)))(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.212.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.5.1(@opentelemetry/api@1.9.0))(encoding@0.1.13)(graphql@16.12.0)(openai@6.22.0(ws@8.19.0)(zod@4.3.6))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+    dependencies:
+      '@copilotkit/runtime': 1.52.0(@ag-ui/encoder@0.0.45)(@cfworker/json-schema@4.1.1)(@copilotkitnext/shared@1.52.0)(@langchain/core@0.3.80(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.212.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.5.1(@opentelemetry/api@1.9.0))(openai@6.22.0(ws@8.19.0)(zod@4.3.6)))(@langchain/langgraph-sdk@0.1.10(@langchain/core@0.3.80(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.212.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.5.1(@opentelemetry/api@1.9.0))(openai@6.22.0(ws@8.19.0)(zod@4.3.6)))(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.212.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.5.1(@opentelemetry/api@1.9.0))(encoding@0.1.13)(openai@6.22.0(ws@8.19.0)(zod@4.3.6))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@copilotkit/shared': 1.52.0(@ag-ui/core@0.0.43)(encoding@0.1.13)
+      '@urql/core': 5.2.0(graphql@16.12.0)
+      react: 19.2.4
+      untruncate-json: 0.0.1
+      urql: 4.2.2(@urql/core@5.2.0(graphql@16.12.0))(react@19.2.4)
+    transitivePeerDependencies:
+      - '@ag-ui/core'
+      - '@ag-ui/encoder'
+      - '@anthropic-ai/sdk'
+      - '@cfworker/json-schema'
+      - '@copilotkitnext/shared'
+      - '@langchain/aws'
+      - '@langchain/community'
+      - '@langchain/core'
+      - '@langchain/google-gauth'
+      - '@langchain/langgraph-sdk'
+      - '@langchain/openai'
+      - '@opentelemetry/api'
+      - '@opentelemetry/exporter-trace-otlp-proto'
+      - '@opentelemetry/sdk-trace-base'
+      - encoding
+      - graphql
+      - groq-sdk
+      - langchain
+      - openai
+      - react-dom
+      - supports-color
+
+  '@copilotkit/runtime@1.51.4(04d3ba5a22c9bb5c9113b303c4e1b0fa)':
     dependencies:
       '@ag-ui/client': 0.0.43
       '@ag-ui/core': 0.0.43
       '@ag-ui/langgraph': 0.0.24(@ag-ui/client@0.0.43)(@ag-ui/core@0.0.43)(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.212.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.5.1(@opentelemetry/api@1.9.0))(openai@6.22.0(ws@8.19.0)(zod@4.3.6))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@copilotkit/shared': 1.51.4(@ag-ui/core@0.0.45)(encoding@0.1.13)
-      '@copilotkitnext/agent': 1.51.4(@cfworker/json-schema@4.1.1)
-      '@copilotkitnext/runtime': 1.51.4(@ag-ui/client@0.0.45)(@ag-ui/core@0.0.45)(@ag-ui/encoder@0.0.45)(@copilotkitnext/shared@1.51.4)
+      '@copilotkit/shared': 1.51.4(@ag-ui/core@0.0.43)(encoding@0.1.13)
+      '@copilotkitnext/agent': 1.52.0(@cfworker/json-schema@4.1.1)
+      '@copilotkitnext/runtime': 1.52.0(@ag-ui/client@0.0.45)(@ag-ui/core@0.0.43)(@ag-ui/encoder@0.0.45)(@copilotkitnext/shared@1.52.0)
       '@graphql-yoga/plugin-defer-stream': 3.18.0(graphql-yoga@5.18.0(graphql@16.12.0))(graphql@16.12.0)
       '@hono/node-server': 1.19.9(hono@4.12.1)
       '@langchain/core': 0.3.80(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.212.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.5.1(@opentelemetry/api@1.9.0))(openai@6.22.0(ws@8.19.0)(zod@4.3.6))
@@ -8986,9 +9161,84 @@ snapshots:
       - react
       - react-dom
 
-  '@copilotkit/shared@1.51.4(@ag-ui/core@0.0.45)(encoding@0.1.13)':
+  '@copilotkit/runtime@1.51.4(211e138ec792f49cbd129c29cc9a7318)':
     dependencies:
+      '@ag-ui/client': 0.0.43
+      '@ag-ui/core': 0.0.43
+      '@ag-ui/langgraph': 0.0.24(@ag-ui/client@0.0.43)(@ag-ui/core@0.0.43)(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.212.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.5.1(@opentelemetry/api@1.9.0))(openai@6.22.0(ws@8.19.0)(zod@4.3.6))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@copilotkit/shared': 1.52.0(@ag-ui/core@0.0.43)(encoding@0.1.13)
+      '@copilotkitnext/agent': 1.52.0(@cfworker/json-schema@4.1.1)
+      '@copilotkitnext/runtime': 1.52.0(@ag-ui/client@0.0.45)(@ag-ui/core@0.0.43)(@ag-ui/encoder@0.0.45)(@copilotkitnext/shared@1.52.0)
+      '@graphql-yoga/plugin-defer-stream': 3.18.0(graphql-yoga@5.18.0(graphql@16.12.0))(graphql@16.12.0)
+      '@hono/node-server': 1.19.9(hono@4.12.1)
+      '@langchain/core': 0.3.80(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.212.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.5.1(@opentelemetry/api@1.9.0))(openai@6.22.0(ws@8.19.0)(zod@4.3.6))
+      '@scarf/scarf': 1.4.0
+      class-transformer: 0.5.1
+      class-validator: 0.14.3
+      graphql: 16.12.0
+      graphql-scalars: 1.25.0(graphql@16.12.0)
+      graphql-yoga: 5.18.0(graphql@16.12.0)
+      hono: 4.12.1
+      partial-json: 0.1.7
+      pino: 9.14.0
+      pino-pretty: 11.3.0
+      reflect-metadata: 0.2.2
+      rxjs: 7.8.1
+      type-graphql: 2.0.0-rc.1(class-validator@0.14.3)(graphql-scalars@1.25.0(graphql@16.12.0))(graphql@16.12.0)
+      zod: 3.25.76
+    optionalDependencies:
+      '@langchain/langgraph-sdk': 0.1.10(@langchain/core@0.3.80(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.212.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.5.1(@opentelemetry/api@1.9.0))(openai@6.22.0(ws@8.19.0)(zod@4.3.6)))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      openai: 6.22.0(ws@8.19.0)(zod@4.3.6)
+    transitivePeerDependencies:
+      - '@opentelemetry/api'
+      - '@opentelemetry/exporter-trace-otlp-proto'
+      - '@opentelemetry/sdk-trace-base'
+      - react
+      - react-dom
+
+  '@copilotkit/runtime@1.52.0(@ag-ui/encoder@0.0.45)(@cfworker/json-schema@4.1.1)(@copilotkitnext/shared@1.52.0)(@langchain/core@0.3.80(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.212.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.5.1(@opentelemetry/api@1.9.0))(openai@6.22.0(ws@8.19.0)(zod@4.3.6)))(@langchain/langgraph-sdk@0.1.10(@langchain/core@0.3.80(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.212.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.5.1(@opentelemetry/api@1.9.0))(openai@6.22.0(ws@8.19.0)(zod@4.3.6)))(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.212.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.5.1(@opentelemetry/api@1.9.0))(encoding@0.1.13)(openai@6.22.0(ws@8.19.0)(zod@4.3.6))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+    dependencies:
+      '@ag-ui/client': 0.0.45
       '@ag-ui/core': 0.0.45
+      '@ag-ui/langgraph': 0.0.24(@ag-ui/client@0.0.45)(@ag-ui/core@0.0.45)(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.212.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.5.1(@opentelemetry/api@1.9.0))(openai@6.22.0(ws@8.19.0)(zod@4.3.6))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@copilotkit/shared': 1.52.0(@ag-ui/core@0.0.45)(encoding@0.1.13)
+      '@copilotkitnext/agent': 1.52.0(@cfworker/json-schema@4.1.1)
+      '@copilotkitnext/runtime': 1.52.0(@ag-ui/client@0.0.45)(@ag-ui/core@0.0.45)(@ag-ui/encoder@0.0.45)(@copilotkitnext/shared@1.52.0)
+      '@graphql-yoga/plugin-defer-stream': 3.18.0(graphql-yoga@5.18.0(graphql@16.12.0))(graphql@16.13.0)
+      '@hono/node-server': 1.19.9(hono@4.12.3)
+      '@langchain/core': 0.3.80(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.212.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.5.1(@opentelemetry/api@1.9.0))(openai@6.22.0(ws@8.19.0)(zod@4.3.6))
+      '@scarf/scarf': 1.4.0
+      class-transformer: 0.5.1
+      class-validator: 0.14.4
+      graphql: 16.13.0
+      graphql-scalars: 1.25.0(graphql@16.13.0)
+      graphql-yoga: 5.18.0(graphql@16.13.0)
+      hono: 4.12.3
+      partial-json: 0.1.7
+      pino: 9.14.0
+      pino-pretty: 11.3.0
+      reflect-metadata: 0.2.2
+      rxjs: 7.8.1
+      type-graphql: 2.0.0-rc.1(class-validator@0.14.4)(graphql-scalars@1.25.0(graphql@16.12.0))(graphql@16.13.0)
+      zod: 3.25.76
+    optionalDependencies:
+      '@langchain/langgraph-sdk': 0.1.10(@langchain/core@0.3.80(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.212.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.5.1(@opentelemetry/api@1.9.0))(openai@6.22.0(ws@8.19.0)(zod@4.3.6)))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      openai: 6.22.0(ws@8.19.0)(zod@4.3.6)
+    transitivePeerDependencies:
+      - '@ag-ui/encoder'
+      - '@cfworker/json-schema'
+      - '@copilotkitnext/shared'
+      - '@opentelemetry/api'
+      - '@opentelemetry/exporter-trace-otlp-proto'
+      - '@opentelemetry/sdk-trace-base'
+      - encoding
+      - react
+      - react-dom
+      - supports-color
+
+  '@copilotkit/shared@1.51.4(@ag-ui/core@0.0.43)(encoding@0.1.13)':
+    dependencies:
+      '@ag-ui/core': 0.0.43
       '@segment/analytics-node': 2.3.0(encoding@0.1.13)
       chalk: 4.1.2
       graphql: 16.12.0
@@ -8997,15 +9247,37 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  '@copilotkitnext/agent@1.51.4(@cfworker/json-schema@4.1.1)':
+  '@copilotkit/shared@1.52.0(@ag-ui/core@0.0.43)(encoding@0.1.13)':
     dependencies:
-      '@ag-ui/client': 0.0.42
-      '@ai-sdk/anthropic': 2.0.66(zod@3.25.76)
-      '@ai-sdk/google': 2.0.54(zod@3.25.76)
+      '@ag-ui/core': 0.0.43
+      '@segment/analytics-node': 2.3.0(encoding@0.1.13)
+      chalk: 4.1.2
+      graphql: 16.13.0
+      uuid: 10.0.0
+      zod: 3.25.76
+    transitivePeerDependencies:
+      - encoding
+
+  '@copilotkit/shared@1.52.0(@ag-ui/core@0.0.45)(encoding@0.1.13)':
+    dependencies:
+      '@ag-ui/core': 0.0.45
+      '@segment/analytics-node': 2.3.0(encoding@0.1.13)
+      chalk: 4.1.2
+      graphql: 16.13.0
+      uuid: 10.0.0
+      zod: 3.25.76
+    transitivePeerDependencies:
+      - encoding
+
+  '@copilotkitnext/agent@1.52.0(@cfworker/json-schema@4.1.1)':
+    dependencies:
+      '@ag-ui/client': 0.0.45
+      '@ai-sdk/anthropic': 2.0.67(zod@3.25.76)
+      '@ai-sdk/google': 2.0.56(zod@3.25.76)
       '@ai-sdk/mcp': 0.0.8(zod@3.25.76)
-      '@ai-sdk/openai': 2.0.92(zod@3.25.76)
-      '@modelcontextprotocol/sdk': 1.26.0(@cfworker/json-schema@4.1.1)(zod@3.25.76)
-      ai: 5.0.137(zod@3.25.76)
+      '@ai-sdk/openai': 2.0.95(zod@3.25.76)
+      '@modelcontextprotocol/sdk': 1.27.1(@cfworker/json-schema@4.1.1)(zod@3.25.76)
+      ai: 5.0.141(zod@3.25.76)
       rxjs: 7.8.1
       zod: 3.25.76
     transitivePeerDependencies:
@@ -9016,6 +9288,14 @@ snapshots:
     dependencies:
       '@ag-ui/client': 0.0.42
       '@copilotkitnext/shared': 1.51.4
+      rxjs: 7.8.1
+      zod: 3.25.76
+      zod-to-json-schema: 3.25.1(zod@3.25.76)
+
+  '@copilotkitnext/core@1.52.0':
+    dependencies:
+      '@ag-ui/client': 0.0.45
+      '@copilotkitnext/shared': 1.52.0
       rxjs: 7.8.1
       zod: 3.25.76
       zod-to-json-schema: 3.25.1(zod@3.25.76)
@@ -9033,7 +9313,7 @@ snapshots:
       '@radix-ui/react-tooltip': 1.2.8(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       class-variance-authority: 0.7.1
       clsx: 2.1.1
-      katex: 0.16.28
+      katex: 0.16.33
       lucide-react: 0.525.0(react@19.2.4)
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
@@ -9051,15 +9331,59 @@ snapshots:
       - micromark-util-types
       - supports-color
 
-  '@copilotkitnext/runtime@1.51.4(@ag-ui/client@0.0.45)(@ag-ui/core@0.0.45)(@ag-ui/encoder@0.0.45)(@copilotkitnext/shared@1.51.4)':
+  '@copilotkitnext/react@1.52.0(@types/mdast@4.0.4)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(micromark-util-types@2.0.2)(micromark@4.0.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+    dependencies:
+      '@ag-ui/client': 0.0.45
+      '@ag-ui/core': 0.0.45
+      '@copilotkitnext/core': 1.52.0
+      '@copilotkitnext/shared': 1.52.0
+      '@copilotkitnext/web-inspector': 1.52.0
+      '@lit-labs/react': 2.1.3(@types/react@19.2.14)
+      '@radix-ui/react-dropdown-menu': 2.1.16(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@radix-ui/react-slot': 1.2.4(@types/react@19.2.14)(react@19.2.4)
+      '@radix-ui/react-tooltip': 1.2.8(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      class-variance-authority: 0.7.1
+      clsx: 2.1.1
+      katex: 0.16.33
+      lucide-react: 0.525.0(react@19.2.4)
+      react: 19.2.4
+      react-dom: 19.2.4(react@19.2.4)
+      streamdown: 1.6.11(@types/mdast@4.0.4)(micromark-util-types@2.0.2)(micromark@4.0.2)(react@19.2.4)
+      tailwind-merge: 3.5.0
+      ts-deepmerge: 7.0.3
+      tw-animate-css: 1.4.0
+      use-stick-to-bottom: 1.1.3(react@19.2.4)
+      zod: 3.25.76
+    transitivePeerDependencies:
+      - '@types/mdast'
+      - '@types/react'
+      - '@types/react-dom'
+      - micromark
+      - micromark-util-types
+      - supports-color
+
+  '@copilotkitnext/runtime@1.52.0(@ag-ui/client@0.0.45)(@ag-ui/core@0.0.43)(@ag-ui/encoder@0.0.45)(@copilotkitnext/shared@1.52.0)':
+    dependencies:
+      '@ag-ui/client': 0.0.45
+      '@ag-ui/core': 0.0.43
+      '@ag-ui/encoder': 0.0.45
+      '@copilotkitnext/shared': 1.52.0
+      cors: 2.8.6
+      express: 4.22.1
+      hono: 4.12.3
+      rxjs: 7.8.1
+    transitivePeerDependencies:
+      - supports-color
+
+  '@copilotkitnext/runtime@1.52.0(@ag-ui/client@0.0.45)(@ag-ui/core@0.0.45)(@ag-ui/encoder@0.0.45)(@copilotkitnext/shared@1.52.0)':
     dependencies:
       '@ag-ui/client': 0.0.45
       '@ag-ui/core': 0.0.45
       '@ag-ui/encoder': 0.0.45
-      '@copilotkitnext/shared': 1.51.4
+      '@copilotkitnext/shared': 1.52.0
       cors: 2.8.6
       express: 4.22.1
-      hono: 4.12.1
+      hono: 4.12.3
       rxjs: 7.8.1
     transitivePeerDependencies:
       - supports-color
@@ -9070,10 +9394,24 @@ snapshots:
       partial-json: 0.1.7
       uuid: 11.1.0
 
+  '@copilotkitnext/shared@1.52.0':
+    dependencies:
+      '@ag-ui/client': 0.0.45
+      partial-json: 0.1.7
+      uuid: 11.1.0
+
   '@copilotkitnext/web-inspector@1.51.4':
     dependencies:
       '@ag-ui/client': 0.0.42
       '@copilotkitnext/core': 1.51.4
+      lit: 3.3.2
+      lucide: 0.525.0
+      marked: 12.0.2
+
+  '@copilotkitnext/web-inspector@1.52.0':
+    dependencies:
+      '@ag-ui/client': 0.0.45
+      '@copilotkitnext/core': 1.52.0
       lit: 3.3.2
       lucide: 0.525.0
       marked: 12.0.2
@@ -9307,10 +9645,26 @@ snapshots:
       graphql: 16.12.0
       tslib: 2.8.1
 
+  '@graphql-tools/executor@1.5.1(graphql@16.13.0)':
+    dependencies:
+      '@graphql-tools/utils': 11.0.0(graphql@16.13.0)
+      '@graphql-typed-document-node/core': 3.2.0(graphql@16.13.0)
+      '@repeaterjs/repeater': 3.0.6
+      '@whatwg-node/disposablestack': 0.0.6
+      '@whatwg-node/promise-helpers': 1.3.2
+      graphql: 16.13.0
+      tslib: 2.8.1
+
   '@graphql-tools/merge@9.1.7(graphql@16.12.0)':
     dependencies:
       '@graphql-tools/utils': 11.0.0(graphql@16.12.0)
       graphql: 16.12.0
+      tslib: 2.8.1
+
+  '@graphql-tools/merge@9.1.7(graphql@16.13.0)':
+    dependencies:
+      '@graphql-tools/utils': 11.0.0(graphql@16.13.0)
+      graphql: 16.13.0
       tslib: 2.8.1
 
   '@graphql-tools/schema@10.0.31(graphql@16.12.0)':
@@ -9318,6 +9672,13 @@ snapshots:
       '@graphql-tools/merge': 9.1.7(graphql@16.12.0)
       '@graphql-tools/utils': 11.0.0(graphql@16.12.0)
       graphql: 16.12.0
+      tslib: 2.8.1
+
+  '@graphql-tools/schema@10.0.31(graphql@16.13.0)':
+    dependencies:
+      '@graphql-tools/merge': 9.1.7(graphql@16.13.0)
+      '@graphql-tools/utils': 11.0.0(graphql@16.13.0)
+      graphql: 16.13.0
       tslib: 2.8.1
 
   '@graphql-tools/utils@10.11.0(graphql@16.12.0)':
@@ -9328,6 +9689,14 @@ snapshots:
       graphql: 16.12.0
       tslib: 2.8.1
 
+  '@graphql-tools/utils@10.11.0(graphql@16.13.0)':
+    dependencies:
+      '@graphql-typed-document-node/core': 3.2.0(graphql@16.13.0)
+      '@whatwg-node/promise-helpers': 1.3.2
+      cross-inspect: 1.0.1
+      graphql: 16.13.0
+      tslib: 2.8.1
+
   '@graphql-tools/utils@11.0.0(graphql@16.12.0)':
     dependencies:
       '@graphql-typed-document-node/core': 3.2.0(graphql@16.12.0)
@@ -9336,9 +9705,21 @@ snapshots:
       graphql: 16.12.0
       tslib: 2.8.1
 
+  '@graphql-tools/utils@11.0.0(graphql@16.13.0)':
+    dependencies:
+      '@graphql-typed-document-node/core': 3.2.0(graphql@16.13.0)
+      '@whatwg-node/promise-helpers': 1.3.2
+      cross-inspect: 1.0.1
+      graphql: 16.13.0
+      tslib: 2.8.1
+
   '@graphql-typed-document-node/core@3.2.0(graphql@16.12.0)':
     dependencies:
       graphql: 16.12.0
+
+  '@graphql-typed-document-node/core@3.2.0(graphql@16.13.0)':
+    dependencies:
+      graphql: 16.13.0
 
   '@graphql-yoga/logger@2.0.1':
     dependencies:
@@ -9348,6 +9729,12 @@ snapshots:
     dependencies:
       '@graphql-tools/utils': 10.11.0(graphql@16.12.0)
       graphql: 16.12.0
+      graphql-yoga: 5.18.0(graphql@16.12.0)
+
+  '@graphql-yoga/plugin-defer-stream@3.18.0(graphql-yoga@5.18.0(graphql@16.12.0))(graphql@16.13.0)':
+    dependencies:
+      '@graphql-tools/utils': 10.11.0(graphql@16.13.0)
+      graphql: 16.13.0
       graphql-yoga: 5.18.0(graphql@16.12.0)
 
   '@graphql-yoga/subscription@5.0.5':
@@ -9387,6 +9774,10 @@ snapshots:
   '@hono/node-server@1.19.9(hono@4.12.1)':
     dependencies:
       hono: 4.12.1
+
+  '@hono/node-server@1.19.9(hono@4.12.3)':
+    dependencies:
+      hono: 4.12.3
 
   '@hookform/resolvers@5.2.2(react-hook-form@7.71.2(react@19.2.4))':
     dependencies:
@@ -9733,9 +10124,9 @@ snapshots:
     dependencies:
       langium: 4.2.1
 
-  '@modelcontextprotocol/sdk@1.26.0(@cfworker/json-schema@4.1.1)(zod@3.25.76)':
+  '@modelcontextprotocol/sdk@1.27.1(@cfworker/json-schema@4.1.1)(zod@3.25.76)':
     dependencies:
-      '@hono/node-server': 1.19.9(hono@4.12.1)
+      '@hono/node-server': 1.19.9(hono@4.12.3)
       ajv: 8.18.0
       ajv-formats: 3.0.1(ajv@8.18.0)
       content-type: 1.0.5
@@ -9745,7 +10136,7 @@ snapshots:
       eventsource-parser: 3.0.6
       express: 5.2.1
       express-rate-limit: 8.2.1(express@5.2.1)
-      hono: 4.12.1
+      hono: 4.12.3
       jose: 6.1.3
       json-schema-typed: 8.0.2
       pkce-challenge: 5.0.1
@@ -9796,74 +10187,74 @@ snapshots:
   '@next/swc-win32-x64-msvc@16.1.6':
     optional: true
 
-  '@nivo/annotations@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/annotations@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/colors': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/web': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/colors': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/web': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       lodash: 4.17.23
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
-  '@nivo/arcs@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/arcs@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/colors': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/text': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/core': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/web': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/colors': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/text': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/core': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/web': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@types/d3-shape': 3.1.8
       d3-shape: 3.2.0
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
-  '@nivo/axes@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/axes@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@nivo/scales': 0.99.0
-      '@nivo/text': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/web': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/text': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/web': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@types/d3-format': 1.4.5
       '@types/d3-time-format': 2.3.4
       d3-format: 1.4.5
       d3-time-format: 3.0.0
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
-  '@nivo/bar@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/bar@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/annotations': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/axes': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/annotations': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/axes': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@nivo/canvas': 0.99.0
-      '@nivo/colors': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/legends': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/colors': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/legends': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@nivo/scales': 0.99.0
-      '@nivo/text': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/web': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/text': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/web': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@types/d3-scale': 4.0.9
       '@types/d3-shape': 3.1.8
       d3-scale: 4.0.2
       d3-shape: 3.2.0
       lodash: 4.17.23
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
   '@nivo/canvas@0.99.0': {}
 
-  '@nivo/colors@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/colors@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
       '@types/d3-color': 3.1.3
       '@types/d3-scale': 4.0.9
       '@types/d3-scale-chromatic': 3.1.0
@@ -9871,15 +10262,15 @@ snapshots:
       d3-scale: 4.0.2
       d3-scale-chromatic: 3.1.0
       lodash: 4.17.23
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
-  '@nivo/core@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/core@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/web': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/web': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@types/d3-shape': 3.1.8
       d3-color: 3.1.0
       d3-format: 1.4.5
@@ -9889,89 +10280,89 @@ snapshots:
       d3-shape: 3.2.0
       d3-time-format: 3.0.0
       lodash: 4.17.23
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
-      react-virtualized-auto-sizer: 1.0.26(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      use-debounce: 10.1.0(@preact/compat@18.3.1(preact@10.28.4))
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
+      react-virtualized-auto-sizer: 1.0.26(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      use-debounce: 10.1.0(@preact/compat@18.3.2(preact@10.28.4))
     transitivePeerDependencies:
       - react-dom
 
-  '@nivo/funnel@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/funnel@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/annotations': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/colors': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/text': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/web': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/annotations': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/colors': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/text': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/web': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@types/d3-scale': 4.0.9
       '@types/d3-shape': 3.1.8
       d3-scale: 4.0.2
       d3-shape: 3.2.0
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
-  '@nivo/heatmap@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/heatmap@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/annotations': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/axes': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/colors': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/legends': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/annotations': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/axes': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/colors': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/legends': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@nivo/scales': 0.99.0
-      '@nivo/text': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/core': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/web': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/text': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/core': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/web': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@types/d3-scale': 4.0.9
       d3-scale: 4.0.2
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
-  '@nivo/legends@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/legends@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/colors': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/text': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/colors': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/text': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
       '@types/d3-scale': 4.0.9
       d3-scale: 4.0.2
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
-  '@nivo/line@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/line@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/annotations': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/axes': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/colors': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/legends': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/annotations': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/axes': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/colors': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/legends': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@nivo/scales': 0.99.0
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/voronoi': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/web': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/voronoi': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/web': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@types/d3-shape': 3.1.8
       d3-shape: 3.2.0
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
-  '@nivo/pie@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/pie@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/arcs': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/colors': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/legends': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/arcs': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/colors': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/legends': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@types/d3-shape': 3.1.8
       d3-shape: 3.2.0
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
@@ -9987,55 +10378,55 @@ snapshots:
       d3-time-format: 3.0.0
       lodash: 4.17.23
 
-  '@nivo/text@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/text@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/web': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/web': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
-  '@nivo/theming@0.99.0(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/theming@0.99.0(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
       lodash: 4.17.23
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
 
-  '@nivo/tooltip@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/tooltip@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/web': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/web': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
-  '@nivo/treemap@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/treemap@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/colors': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/text': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/core': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/web': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/colors': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/text': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/core': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/web': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@types/d3-hierarchy': 3.1.7
       d3-hierarchy: 3.1.2
       lodash: 4.17.23
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
-  '@nivo/voronoi@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/voronoi@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@types/d3-delaunay': 6.0.4
       '@types/d3-scale': 4.0.9
       d3-delaunay: 6.0.4
       d3-scale: 4.0.2
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
@@ -10361,6 +10752,10 @@ snapshots:
   '@polka/url@1.0.0-next.29': {}
 
   '@preact/compat@18.3.1(preact@10.28.4)':
+    dependencies:
+      preact: 10.28.4
+
+  '@preact/compat@18.3.2(preact@10.28.4)':
     dependencies:
       preact: 10.28.4
 
@@ -10932,37 +11327,37 @@ snapshots:
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
 
-  '@react-spring/animated@10.0.3(@preact/compat@18.3.1(preact@10.28.4))':
+  '@react-spring/animated@10.0.3(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@react-spring/shared': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))
+      '@react-spring/shared': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))
       '@react-spring/types': 10.0.3
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
 
-  '@react-spring/core@10.0.3(@preact/compat@18.3.1(preact@10.28.4))':
+  '@react-spring/core@10.0.3(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@react-spring/animated': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/shared': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))
+      '@react-spring/animated': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/shared': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))
       '@react-spring/types': 10.0.3
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
 
   '@react-spring/rafz@10.0.3': {}
 
-  '@react-spring/shared@10.0.3(@preact/compat@18.3.1(preact@10.28.4))':
+  '@react-spring/shared@10.0.3(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
       '@react-spring/rafz': 10.0.3
       '@react-spring/types': 10.0.3
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
 
   '@react-spring/types@10.0.3': {}
 
-  '@react-spring/web@10.0.3(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@react-spring/web@10.0.3(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@react-spring/animated': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/core': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/shared': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))
+      '@react-spring/animated': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/core': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/shared': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))
       '@react-spring/types': 10.0.3
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
-      react-dom: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
+      react-dom: '@preact/compat@18.3.2(preact@10.28.4)'
 
   '@react-stately/flags@3.1.2':
     dependencies:
@@ -11814,9 +12209,9 @@ snapshots:
       clean-stack: 2.2.0
       indent-string: 4.0.0
 
-  ai@5.0.137(zod@3.25.76):
+  ai@5.0.141(zod@3.25.76):
     dependencies:
-      '@ai-sdk/gateway': 2.0.43(zod@3.25.76)
+      '@ai-sdk/gateway': 2.0.47(zod@3.25.76)
       '@ai-sdk/provider': 2.0.1
       '@ai-sdk/provider-utils': 3.0.21(zod@3.25.76)
       '@opentelemetry/api': 1.9.0
@@ -12259,6 +12654,12 @@ snapshots:
     dependencies:
       '@types/validator': 13.15.10
       libphonenumber-js: 1.12.37
+      validator: 13.15.26
+
+  class-validator@0.14.4:
+    dependencies:
+      '@types/validator': 13.15.10
+      libphonenumber-js: 1.12.38
       validator: 13.15.26
 
   class-variance-authority@0.7.1:
@@ -13422,9 +13823,19 @@ snapshots:
       graphql: 16.12.0
       lodash.get: 4.4.2
 
+  graphql-query-complexity@0.12.0(graphql@16.13.0):
+    dependencies:
+      graphql: 16.13.0
+      lodash.get: 4.4.2
+
   graphql-scalars@1.25.0(graphql@16.12.0):
     dependencies:
       graphql: 16.12.0
+      tslib: 2.8.1
+
+  graphql-scalars@1.25.0(graphql@16.13.0):
+    dependencies:
+      graphql: 16.13.0
       tslib: 2.8.1
 
   graphql-yoga@5.18.0(graphql@16.12.0):
@@ -13443,7 +13854,25 @@ snapshots:
       lru-cache: 10.4.3
       tslib: 2.8.1
 
+  graphql-yoga@5.18.0(graphql@16.13.0):
+    dependencies:
+      '@envelop/core': 5.5.1
+      '@envelop/instrumentation': 1.0.0
+      '@graphql-tools/executor': 1.5.1(graphql@16.13.0)
+      '@graphql-tools/schema': 10.0.31(graphql@16.13.0)
+      '@graphql-tools/utils': 10.11.0(graphql@16.13.0)
+      '@graphql-yoga/logger': 2.0.1
+      '@graphql-yoga/subscription': 5.0.5
+      '@whatwg-node/fetch': 0.10.13
+      '@whatwg-node/promise-helpers': 1.3.2
+      '@whatwg-node/server': 0.10.18
+      graphql: 16.13.0
+      lru-cache: 10.4.3
+      tslib: 2.8.1
+
   graphql@16.12.0: {}
+
+  graphql@16.13.0: {}
 
   hachure-fill@0.5.2: {}
 
@@ -13650,6 +14079,8 @@ snapshots:
   highlightjs-vue@1.0.0: {}
 
   hono@4.12.1: {}
+
+  hono@4.12.3: {}
 
   hosted-git-info@9.0.2:
     dependencies:
@@ -14033,7 +14464,7 @@ snapshots:
       object.assign: 4.1.7
       object.values: 1.2.1
 
-  katex@0.16.28:
+  katex@0.16.33:
     dependencies:
       commander: 8.3.0
 
@@ -14087,6 +14518,8 @@ snapshots:
       type-check: 0.4.0
 
   libphonenumber-js@1.12.37: {}
+
+  libphonenumber-js@1.12.38: {}
 
   lightningcss-android-arm64@1.31.1:
     optional: true
@@ -14504,7 +14937,7 @@ snapshots:
       dagre-d3-es: 7.0.13
       dayjs: 1.11.19
       dompurify: 3.3.1
-      katex: 0.16.28
+      katex: 0.16.33
       khroma: 2.1.0
       lodash-es: 4.17.23
       marked: 16.4.2
@@ -14647,7 +15080,7 @@ snapshots:
     dependencies:
       '@types/katex': 0.16.8
       devlop: 1.1.0
-      katex: 0.16.28
+      katex: 0.16.33
       micromark-factory-space: 2.0.1
       micromark-util-character: 2.1.1
       micromark-util-symbol: 2.0.1
@@ -15650,10 +16083,10 @@ snapshots:
       react: 19.2.4
       refractor: 3.6.0
 
-  react-virtualized-auto-sizer@1.0.26(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4)):
+  react-virtualized-auto-sizer@1.0.26(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4)):
     dependencies:
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
-      react-dom: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
+      react-dom: '@preact/compat@18.3.2(preact@10.28.4)'
 
   react@19.2.4: {}
 
@@ -15756,7 +16189,7 @@ snapshots:
       '@types/katex': 0.16.8
       hast-util-from-html-isomorphic: 2.0.0
       hast-util-to-text: 4.0.2
-      katex: 0.16.28
+      katex: 0.16.33
       unist-util-visit-parents: 6.0.2
       vfile: 6.0.3
 
@@ -16265,7 +16698,7 @@ snapshots:
       hast: 1.0.0
       hast-util-to-jsx-runtime: 2.3.6
       html-url-attributes: 3.0.1
-      katex: 0.16.28
+      katex: 0.16.33
       lucide-react: 0.542.0(react@19.2.4)
       marked: 16.4.2
       mermaid: 11.12.3
@@ -16548,6 +16981,19 @@ snapshots:
     optionalDependencies:
       class-validator: 0.14.3
 
+  type-graphql@2.0.0-rc.1(class-validator@0.14.4)(graphql-scalars@1.25.0(graphql@16.12.0))(graphql@16.13.0):
+    dependencies:
+      '@graphql-yoga/subscription': 5.0.5
+      '@types/node': 25.3.0
+      '@types/semver': 7.7.1
+      graphql: 16.13.0
+      graphql-query-complexity: 0.12.0(graphql@16.13.0)
+      graphql-scalars: 1.25.0(graphql@16.12.0)
+      semver: 7.7.4
+      tslib: 2.8.1
+    optionalDependencies:
+      class-validator: 0.14.4
+
   type-is@1.6.18:
     dependencies:
       media-typer: 0.3.0
@@ -16751,9 +17197,9 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.2.14
 
-  use-debounce@10.1.0(@preact/compat@18.3.1(preact@10.28.4)):
+  use-debounce@10.1.0(@preact/compat@18.3.2(preact@10.28.4)):
     dependencies:
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
 
   use-sidecar@1.1.3(@types/react@19.2.14)(react@19.2.4):
     dependencies:
