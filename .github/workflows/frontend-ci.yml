@@ -78,7 +78,7 @@ jobs:
 
       - name: Upload Allure Report (Backoffice)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: allure-report-backoffice
           path: src/Clients/apps/backoffice/allure-report/
@@ -86,7 +86,7 @@ jobs:
 
       - name: Upload Allure Report (Storefront)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: allure-report-storefront
           path: src/Clients/apps/storefront/allure-report/

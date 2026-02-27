@@ -1,4 +1,5 @@
 ﻿using System.Net.Mime;
+using System.Text.Json.Nodes;
 using BookWorm.Chassis.Utilities;
 using BookWorm.Constants.Core;
 using Microsoft.AspNetCore.OpenApi;
@@ -67,7 +68,9 @@ public sealed class McpDocumentTransformer(IHttpContextAccessor accessor)
                 Summary = "Get MCP Components",
                 Extensions = new Dictionary<string, IOpenApiExtension>
                 {
-                    ["x-ms-agentic-protocol"] = new JsonNodeExtension("mcp-streamable-1.0"),
+                    ["x-ms-agentic-protocol"] = new JsonNodeExtension(
+                        JsonValue.Create("mcp-streamable-1.0")
+                    ),
                 },
                 OperationId = "InvokeMCP",
                 Responses = new()
