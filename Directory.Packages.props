@@ -30,7 +30,7 @@
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.JavaScript.Extensions" Version="$(ToolKitVersion)" />
     <!-- Extra -->
     <PackageVersion Include="TUnit.Aspire" Version="$(TUnitVersion)" />
-    <PackageVersion Include="Scalar.Aspire" Version="0.8.55" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.8.57" />
   </ItemGroup>
   <ItemGroup Label="Core Packages">
     <!-- Microsoft Extensions -->
@@ -52,7 +52,7 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.0" />
     <!-- AI -->
-    <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="1.0.0-rc1" />
+    <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="1.0.0-rc2" />
     <PackageVersion Include="Microsoft.Agents.AI.A2A" Version="$(AgentFrameworkVersion)" />
     <PackageVersion Include="Microsoft.Agents.AI.Hosting.A2A.AspNetCore" Version="$(AgentFrameworkVersion)" />
     <PackageVersion Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore" Version="$(AgentFrameworkVersion)" />
@@ -64,7 +64,7 @@
     <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.1" PrivateAssets="All" />
     <PackageVersion Include="Refit.HttpClientFactory" Version="10.0.1" />
     <PackageVersion Include="Mediator.Abstractions" Version="3.0.1" />
-    <PackageVersion Include="Marten.AspNetCore" Version="8.22.0" />
+    <PackageVersion Include="Marten.AspNetCore" Version="8.22.2" />
     <PackageVersion Include="Scrutor" Version="7.0.0" />
     <PackageVersion Include="DistributedLock.Redis" Version="1.1.1" />
   </ItemGroup>
@@ -85,7 +85,7 @@
     <PackageVersion Include="Mjml.Net" Version="4.11.0" />
     <PackageVersion Include="SendGrid" Version="9.29.3" />
     <!-- Other Integrations -->
-    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.9.0-preview.2" />
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="1.0.0" />
   </ItemGroup>
   <ItemGroup Label="Testing">
     <PackageVersion Include="Bogus" Version="35.6.5" />
@@ -98,7 +98,7 @@
     <PackageVersion Include="Verify.SendGrid" Version="1.0.0" />
     <PackageVersion Include="Verify.MassTransit" Version="2.1.0" />
     <!-- Microsoft Testing Platform -->
-    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.4.1" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.5.1" />
     <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="$(MsTestVersion)" />
     <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="$(MsTestVersion)" />
     <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="$(MsTestVersion)" />

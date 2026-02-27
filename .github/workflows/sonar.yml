@@ -59,7 +59,7 @@ jobs:
         run: pnpm turbo run test:coverage
 
       - name: Upload frontend coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: frontend-coverage
           path: |
@@ -105,7 +105,7 @@ jobs:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
 
       - name: Download frontend coverage
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: frontend-coverage
           path: src/Clients/apps
