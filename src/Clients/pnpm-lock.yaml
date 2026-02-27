@@ -653,8 +653,8 @@ importers:
         specifier: ^10.0.1
         version: 10.0.1(jiti@2.6.1)
       tailwindcss:
-        specifier: ^4.2.0
-        version: 4.2.0
+        specifier: ^4.2.1
+        version: 4.2.1
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -749,20 +749,20 @@ packages:
   '@ag-ui/proto@0.0.45':
     resolution: {integrity: sha512-gj+XdbTOyNV1i5my77OaVZa7E2T/XTkoHlzpbd/O9C+BX6wxqMWORATKDJG1KZoanNsWr0Z7mtpwVuehs0GbBA==}
 
-  '@ai-sdk/anthropic@2.0.66':
-    resolution: {integrity: sha512-8xte/61emegt5Zr7lAXeGz50DiA2GJOV2VSTj8hc4jSbjEXQ/gl3LviOp2IRyb2sVcBpnHcRJTdeUJNyzFTawg==}
+  '@ai-sdk/anthropic@2.0.67':
+    resolution: {integrity: sha512-hGtsfU1Dh1r9oBfctZy9+Wb8nSPiD8hBYIVYLGbFSPRrfliyBysJFaenHOGYR0Rd2R8O9ow2dxi05Qk5awerBw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/gateway@2.0.43':
-    resolution: {integrity: sha512-wVrXKw0ldcU04Y8EY3vR+qPdogZCZEj8pnkpRNRF552jqYPPVY88atPiC9s6XOyE+k6Y1YnusYXqwp6KKaBGAA==}
+  '@ai-sdk/gateway@2.0.47':
+    resolution: {integrity: sha512-QzpiMq7dVXsIv/thXJEyDeP8+irqF3LSJX+ZbVKOqbX8WdrcHSig2nhHQLK6cwe9s+0tyNKYQQ89h2X62OVdsg==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/google@2.0.54':
-    resolution: {integrity: sha512-VKguP0x/PUYpdQyuA/uy5pDGJy6reL0X/yDKxHfL207aCUXpFIBmyMhVs4US39dkEVhtmIFSwXauY0Pt170JRw==}
+  '@ai-sdk/google@2.0.56':
+    resolution: {integrity: sha512-YPCpnrVF6gGrBemZTaKRTDccnByt8i9HVWwiC2gTzgxj0IkTpy9anw/gh3eFe8LaaNNdYzY1Op5Z8uadIqOYFA==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -773,8 +773,8 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/openai@2.0.92':
-    resolution: {integrity: sha512-JRNnHVMp3Camj5hjYwnQqCSaUf5GTB0I6LuKEs8RsjuZvKaX5DTa6QN8by1HjgyZMPI6VCQ1s2uIPPlCRpTCPg==}
+  '@ai-sdk/openai@2.0.95':
+    resolution: {integrity: sha512-2CABPaa1UNh7dPyZUIB/Dc4AbvJioFnmryRx45sx7ezBSOdR0zxG6gbrSd/fZ0GVbptSZeLmF9omu10d/GxmJA==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -1887,8 +1887,8 @@ packages:
   '@mermaid-js/parser@1.0.0':
     resolution: {integrity: sha512-vvK0Hi/VWndxoh03Mmz6wa1KDriSPjS2XMZL/1l19HFwygiObEEoEwSDxOqyLzzAI6J2PU3261JjTMTO7x+BPw==}
 
-  '@modelcontextprotocol/sdk@1.26.0':
-    resolution: {integrity: sha512-Y5RmPncpiDtTXDbLKswIJzTqu2hyBKxTNsgKqKclDbhIgg1wgtf1fRuvxgTnRfcnxtvvgbIEcqUOzZrJ6iSReg==}
+  '@modelcontextprotocol/sdk@1.27.1':
+    resolution: {integrity: sha512-sr6GbP+4edBwFndLbM60gf07z0FQ79gaExpnsjMGePXqFcSSb7t6iscpjk9DhFhwd+mTEQrzNafGP8/iGGFYaA==}
     engines: {node: '>=18'}
     peerDependencies:
       '@cfworker/json-schema': ^4.1.1
@@ -2283,6 +2283,11 @@ packages:
 
   '@preact/compat@18.3.1':
     resolution: {integrity: sha512-Kog4PSRxtT4COtOXjsuQPV1vMXpUzREQfv+6Dmcy9/rMk0HOPK0HTE9fspFjAmY8R80T/T8gtgmZ68u5bOSngw==}
+    peerDependencies:
+      preact: '*'
+
+  '@preact/compat@18.3.2':
+    resolution: {integrity: sha512-5vSl55K5yLMvocT7PBKxDOHGgYPjMrKQqqr6roSNjIXcJOtSgDDMjpiCAF3s7klRdmGrN75b/Przmjw8gmlg/w==}
     peerDependencies:
       preact: '*'
 
@@ -3717,8 +3722,8 @@ packages:
     resolution: {integrity: sha512-4I7Td01quW/RpocfNayFdFVk1qSuoh0E7JrbRJ16nH01HhKFQ88INq9Sd+nd72zqRySlr9BmDA8xlEJ6vJMrYA==}
     engines: {node: '>=8'}
 
-  ai@5.0.137:
-    resolution: {integrity: sha512-ZPqvIG5HlTEaTsf91p5CvOMWYoTxsGpHckgc8qk7FNVM9O375A1A5cvLq6CpkCdTWrdyNZMMs3brnfUIlJP20g==}
+  ai@5.0.141:
+    resolution: {integrity: sha512-Lo0amDzMsaFDSXCop++Bnu99sivngL+u03SHzFfkNKdB6/lIehL7EvKMlb/Epkn2W85aUjjJunaNo9YJM/USWw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -5239,6 +5244,10 @@ packages:
 
   hono@4.12.1:
     resolution: {integrity: sha512-hi9afu8g0lfJVLolxElAZGANCTTl6bewIdsRNhaywfP9K8BPf++F2z6OLrYGIinUwpRKzbZHMhPwvc0ZEpAwGw==}
+    engines: {node: '>=16.9.0'}
+
+  hono@4.12.3:
+    resolution: {integrity: sha512-SFsVSjp8sj5UumXOOFlkZOG6XS9SJDKw0TbwFeV+AJ8xlST8kxK5Z/5EYa111UY8732lK2S/xB653ceuaoGwpg==}
     engines: {node: '>=16.9.0'}
 
   hosted-git-info@9.0.2:
@@ -7496,6 +7505,9 @@ packages:
   tailwindcss@4.2.0:
     resolution: {integrity: sha512-yYzTZ4++b7fNYxFfpnberEEKu43w44aqDMNM9MHMmcKuCH7lL8jJ4yJ7LGHv7rSwiqM0nkiobF9I6cLlpS2P7Q==}
 
+  tailwindcss@4.2.1:
+    resolution: {integrity: sha512-/tBrSQ36vCleJkAOsy9kbNTgaxvGbyOamC30PRePTQe/o1MFwEKHQk4Cn7BNGaPtjp+PuUrByJehM1hgxfq4sw==}
+
   tapable@2.3.0:
     resolution: {integrity: sha512-g9ljZiwki/LfxmQADO3dEY1CbpmXT5Hm2fJ+QaGKwSXUylMybePR7/67YW7jOrrvjEgL1Fmz5kzyAjWVWLlucg==}
     engines: {node: '>=6'}
@@ -8272,20 +8284,20 @@ snapshots:
       '@bufbuild/protobuf': 2.11.0
       '@protobuf-ts/protoc': 2.11.1
 
-  '@ai-sdk/anthropic@2.0.66(zod@3.25.76)':
+  '@ai-sdk/anthropic@2.0.67(zod@3.25.76)':
     dependencies:
       '@ai-sdk/provider': 2.0.1
       '@ai-sdk/provider-utils': 3.0.21(zod@3.25.76)
       zod: 3.25.76
 
-  '@ai-sdk/gateway@2.0.43(zod@3.25.76)':
+  '@ai-sdk/gateway@2.0.47(zod@3.25.76)':
     dependencies:
       '@ai-sdk/provider': 2.0.1
       '@ai-sdk/provider-utils': 3.0.21(zod@3.25.76)
       '@vercel/oidc': 3.1.0
       zod: 3.25.76
 
-  '@ai-sdk/google@2.0.54(zod@3.25.76)':
+  '@ai-sdk/google@2.0.56(zod@3.25.76)':
     dependencies:
       '@ai-sdk/provider': 2.0.1
       '@ai-sdk/provider-utils': 3.0.21(zod@3.25.76)
@@ -8298,7 +8310,7 @@ snapshots:
       pkce-challenge: 5.0.1
       zod: 3.25.76
 
-  '@ai-sdk/openai@2.0.92(zod@3.25.76)':
+  '@ai-sdk/openai@2.0.95(zod@3.25.76)':
     dependencies:
       '@ai-sdk/provider': 2.0.1
       '@ai-sdk/provider-utils': 3.0.21(zod@3.25.76)
@@ -8608,19 +8620,19 @@ snapshots:
       '@allurereport/charts-api': 3.2.0
       '@allurereport/web-commons': 3.2.0(preact@10.28.4)
       '@floating-ui/dom': 1.7.5
-      '@nivo/bar': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/funnel': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/heatmap': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/line': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/pie': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/text': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/treemap': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/bar': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/funnel': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/heatmap': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/line': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/pie': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/text': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/treemap': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@preact/compat': 18.3.1(preact@10.28.4)
       '@preact/signals': 2.8.1(preact@10.28.4)
-      '@react-spring/web': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@react-spring/web': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       clsx: 2.1.1
       d3-array: 3.2.4
       d3-axis: 3.0.0
@@ -8636,10 +8648,10 @@ snapshots:
       lodash: 4.17.23
       preact: 10.28.4
       prismjs: 1.30.0
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
-      react-dom: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
+      react-dom: '@preact/compat@18.3.2(preact@10.28.4)'
       sortablejs: 1.15.7
-      use-debounce: 10.1.0(@preact/compat@18.3.1(preact@10.28.4))
+      use-debounce: 10.1.0(@preact/compat@18.3.2(preact@10.28.4))
 
   '@allurereport/web-dashboard@3.2.0(typescript@5.9.3)':
     dependencies:
@@ -9000,12 +9012,12 @@ snapshots:
   '@copilotkitnext/agent@1.51.4(@cfworker/json-schema@4.1.1)':
     dependencies:
       '@ag-ui/client': 0.0.42
-      '@ai-sdk/anthropic': 2.0.66(zod@3.25.76)
-      '@ai-sdk/google': 2.0.54(zod@3.25.76)
+      '@ai-sdk/anthropic': 2.0.67(zod@3.25.76)
+      '@ai-sdk/google': 2.0.56(zod@3.25.76)
       '@ai-sdk/mcp': 0.0.8(zod@3.25.76)
-      '@ai-sdk/openai': 2.0.92(zod@3.25.76)
-      '@modelcontextprotocol/sdk': 1.26.0(@cfworker/json-schema@4.1.1)(zod@3.25.76)
-      ai: 5.0.137(zod@3.25.76)
+      '@ai-sdk/openai': 2.0.95(zod@3.25.76)
+      '@modelcontextprotocol/sdk': 1.27.1(@cfworker/json-schema@4.1.1)(zod@3.25.76)
+      ai: 5.0.141(zod@3.25.76)
       rxjs: 7.8.1
       zod: 3.25.76
     transitivePeerDependencies:
@@ -9059,7 +9071,7 @@ snapshots:
       '@copilotkitnext/shared': 1.51.4
       cors: 2.8.6
       express: 4.22.1
-      hono: 4.12.1
+      hono: 4.12.3
       rxjs: 7.8.1
     transitivePeerDependencies:
       - supports-color
@@ -9387,6 +9399,10 @@ snapshots:
   '@hono/node-server@1.19.9(hono@4.12.1)':
     dependencies:
       hono: 4.12.1
+
+  '@hono/node-server@1.19.9(hono@4.12.3)':
+    dependencies:
+      hono: 4.12.3
 
   '@hookform/resolvers@5.2.2(react-hook-form@7.71.2(react@19.2.4))':
     dependencies:
@@ -9733,9 +9749,9 @@ snapshots:
     dependencies:
       langium: 4.2.1
 
-  '@modelcontextprotocol/sdk@1.26.0(@cfworker/json-schema@4.1.1)(zod@3.25.76)':
+  '@modelcontextprotocol/sdk@1.27.1(@cfworker/json-schema@4.1.1)(zod@3.25.76)':
     dependencies:
-      '@hono/node-server': 1.19.9(hono@4.12.1)
+      '@hono/node-server': 1.19.9(hono@4.12.3)
       ajv: 8.18.0
       ajv-formats: 3.0.1(ajv@8.18.0)
       content-type: 1.0.5
@@ -9745,7 +9761,7 @@ snapshots:
       eventsource-parser: 3.0.6
       express: 5.2.1
       express-rate-limit: 8.2.1(express@5.2.1)
-      hono: 4.12.1
+      hono: 4.12.3
       jose: 6.1.3
       json-schema-typed: 8.0.2
       pkce-challenge: 5.0.1
@@ -9796,74 +9812,74 @@ snapshots:
   '@next/swc-win32-x64-msvc@16.1.6':
     optional: true
 
-  '@nivo/annotations@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/annotations@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/colors': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/web': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/colors': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/web': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       lodash: 4.17.23
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
-  '@nivo/arcs@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/arcs@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/colors': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/text': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/core': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/web': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/colors': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/text': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/core': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/web': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@types/d3-shape': 3.1.8
       d3-shape: 3.2.0
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
-  '@nivo/axes@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/axes@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@nivo/scales': 0.99.0
-      '@nivo/text': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/web': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/text': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/web': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@types/d3-format': 1.4.5
       '@types/d3-time-format': 2.3.4
       d3-format: 1.4.5
       d3-time-format: 3.0.0
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
-  '@nivo/bar@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/bar@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/annotations': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/axes': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/annotations': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/axes': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@nivo/canvas': 0.99.0
-      '@nivo/colors': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/legends': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/colors': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/legends': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@nivo/scales': 0.99.0
-      '@nivo/text': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/web': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/text': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/web': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@types/d3-scale': 4.0.9
       '@types/d3-shape': 3.1.8
       d3-scale: 4.0.2
       d3-shape: 3.2.0
       lodash: 4.17.23
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
   '@nivo/canvas@0.99.0': {}
 
-  '@nivo/colors@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/colors@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
       '@types/d3-color': 3.1.3
       '@types/d3-scale': 4.0.9
       '@types/d3-scale-chromatic': 3.1.0
@@ -9871,15 +9887,15 @@ snapshots:
       d3-scale: 4.0.2
       d3-scale-chromatic: 3.1.0
       lodash: 4.17.23
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
-  '@nivo/core@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/core@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/web': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/web': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@types/d3-shape': 3.1.8
       d3-color: 3.1.0
       d3-format: 1.4.5
@@ -9889,89 +9905,89 @@ snapshots:
       d3-shape: 3.2.0
       d3-time-format: 3.0.0
       lodash: 4.17.23
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
-      react-virtualized-auto-sizer: 1.0.26(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      use-debounce: 10.1.0(@preact/compat@18.3.1(preact@10.28.4))
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
+      react-virtualized-auto-sizer: 1.0.26(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      use-debounce: 10.1.0(@preact/compat@18.3.2(preact@10.28.4))
     transitivePeerDependencies:
       - react-dom
 
-  '@nivo/funnel@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/funnel@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/annotations': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/colors': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/text': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/web': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/annotations': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/colors': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/text': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/web': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@types/d3-scale': 4.0.9
       '@types/d3-shape': 3.1.8
       d3-scale: 4.0.2
       d3-shape: 3.2.0
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
-  '@nivo/heatmap@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/heatmap@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/annotations': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/axes': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/colors': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/legends': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/annotations': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/axes': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/colors': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/legends': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@nivo/scales': 0.99.0
-      '@nivo/text': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/core': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/web': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/text': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/core': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/web': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@types/d3-scale': 4.0.9
       d3-scale: 4.0.2
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
-  '@nivo/legends@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/legends@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/colors': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/text': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/colors': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/text': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
       '@types/d3-scale': 4.0.9
       d3-scale: 4.0.2
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
-  '@nivo/line@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/line@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/annotations': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/axes': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/colors': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/legends': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/annotations': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/axes': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/colors': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/legends': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@nivo/scales': 0.99.0
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/voronoi': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/web': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/voronoi': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/web': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@types/d3-shape': 3.1.8
       d3-shape: 3.2.0
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
-  '@nivo/pie@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/pie@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/arcs': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/colors': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/legends': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/arcs': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/colors': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/legends': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@types/d3-shape': 3.1.8
       d3-shape: 3.2.0
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
@@ -9987,55 +10003,55 @@ snapshots:
       d3-time-format: 3.0.0
       lodash: 4.17.23
 
-  '@nivo/text@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/text@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/web': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/web': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
-  '@nivo/theming@0.99.0(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/theming@0.99.0(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
       lodash: 4.17.23
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
 
-  '@nivo/tooltip@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/tooltip@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/web': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/web': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
-  '@nivo/treemap@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/treemap@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/colors': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/text': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/core': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/web': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/colors': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/text': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/core': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/web': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@types/d3-hierarchy': 3.1.7
       d3-hierarchy: 3.1.2
       lodash: 4.17.23
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
-  '@nivo/voronoi@0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@nivo/voronoi@0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@nivo/core': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/theming': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))
-      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))
+      '@nivo/core': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/theming': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))
+      '@nivo/tooltip': 0.99.0(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))
       '@types/d3-delaunay': 6.0.4
       '@types/d3-scale': 4.0.9
       d3-delaunay: 6.0.4
       d3-scale: 4.0.2
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
     transitivePeerDependencies:
       - react-dom
 
@@ -10361,6 +10377,10 @@ snapshots:
   '@polka/url@1.0.0-next.29': {}
 
   '@preact/compat@18.3.1(preact@10.28.4)':
+    dependencies:
+      preact: 10.28.4
+
+  '@preact/compat@18.3.2(preact@10.28.4)':
     dependencies:
       preact: 10.28.4
 
@@ -10932,37 +10952,37 @@ snapshots:
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
 
-  '@react-spring/animated@10.0.3(@preact/compat@18.3.1(preact@10.28.4))':
+  '@react-spring/animated@10.0.3(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@react-spring/shared': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))
+      '@react-spring/shared': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))
       '@react-spring/types': 10.0.3
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
 
-  '@react-spring/core@10.0.3(@preact/compat@18.3.1(preact@10.28.4))':
+  '@react-spring/core@10.0.3(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@react-spring/animated': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/shared': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))
+      '@react-spring/animated': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/shared': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))
       '@react-spring/types': 10.0.3
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
 
   '@react-spring/rafz@10.0.3': {}
 
-  '@react-spring/shared@10.0.3(@preact/compat@18.3.1(preact@10.28.4))':
+  '@react-spring/shared@10.0.3(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
       '@react-spring/rafz': 10.0.3
       '@react-spring/types': 10.0.3
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
 
   '@react-spring/types@10.0.3': {}
 
-  '@react-spring/web@10.0.3(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4))':
+  '@react-spring/web@10.0.3(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4))':
     dependencies:
-      '@react-spring/animated': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/core': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))
-      '@react-spring/shared': 10.0.3(@preact/compat@18.3.1(preact@10.28.4))
+      '@react-spring/animated': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/core': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))
+      '@react-spring/shared': 10.0.3(@preact/compat@18.3.2(preact@10.28.4))
       '@react-spring/types': 10.0.3
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
-      react-dom: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
+      react-dom: '@preact/compat@18.3.2(preact@10.28.4)'
 
   '@react-stately/flags@3.1.2':
     dependencies:
@@ -11814,9 +11834,9 @@ snapshots:
       clean-stack: 2.2.0
       indent-string: 4.0.0
 
-  ai@5.0.137(zod@3.25.76):
+  ai@5.0.141(zod@3.25.76):
     dependencies:
-      '@ai-sdk/gateway': 2.0.43(zod@3.25.76)
+      '@ai-sdk/gateway': 2.0.47(zod@3.25.76)
       '@ai-sdk/provider': 2.0.1
       '@ai-sdk/provider-utils': 3.0.21(zod@3.25.76)
       '@opentelemetry/api': 1.9.0
@@ -13650,6 +13670,8 @@ snapshots:
   highlightjs-vue@1.0.0: {}
 
   hono@4.12.1: {}
+
+  hono@4.12.3: {}
 
   hosted-git-info@9.0.2:
     dependencies:
@@ -15650,10 +15672,10 @@ snapshots:
       react: 19.2.4
       refractor: 3.6.0
 
-  react-virtualized-auto-sizer@1.0.26(@preact/compat@18.3.1(preact@10.28.4))(@preact/compat@18.3.1(preact@10.28.4)):
+  react-virtualized-auto-sizer@1.0.26(@preact/compat@18.3.2(preact@10.28.4))(@preact/compat@18.3.2(preact@10.28.4)):
     dependencies:
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
-      react-dom: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
+      react-dom: '@preact/compat@18.3.2(preact@10.28.4)'
 
   react@19.2.4: {}
 
@@ -16410,6 +16432,8 @@ snapshots:
 
   tailwindcss@4.2.0: {}
 
+  tailwindcss@4.2.1: {}
+
   tapable@2.3.0: {}
 
   tar@7.5.9:
@@ -16751,9 +16775,9 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.2.14
 
-  use-debounce@10.1.0(@preact/compat@18.3.1(preact@10.28.4)):
+  use-debounce@10.1.0(@preact/compat@18.3.2(preact@10.28.4)):
     dependencies:
-      react: '@preact/compat@18.3.1(preact@10.28.4)'
+      react: '@preact/compat@18.3.2(preact@10.28.4)'
 
   use-sidecar@1.1.3(@types/react@19.2.14)(react@19.2.4):
     dependencies:
