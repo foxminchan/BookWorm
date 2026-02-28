@@ -1,4 +1,5 @@
-﻿using BookWorm.Catalog.Features.Books.Create;
+﻿using BookWorm.Catalog.Configurations;
+using BookWorm.Catalog.Features.Books.Create;
 using BookWorm.Catalog.Features.Books.Update;
 using BookWorm.Chassis.CQRS.Command;
 using BookWorm.Chassis.CQRS.Pipelines;
@@ -6,9 +7,11 @@ using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
+using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Chassis.Utilities.Converters;
 using BookWorm.Constants.Aspire;
 using BookWorm.Constants.Core;
+using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
 
@@ -21,6 +24,8 @@ internal static class Extensions
         var services = builder.Services;
 
         builder.AddDefaultCors();
+
+        builder.AddAppSettings<CatalogAppSettings>();
 
         builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
 
@@ -64,13 +69,7 @@ internal static class Extensions
             .AddScoped<UpdateBookPreProcessor>()
             .AddScoped<UpdateBookPostProcessor>();
 
-        var appSettings = new AppSettings();
-
-        builder.Configuration.Bind(appSettings);
-
-        services.AddSingleton(appSettings);
-
-        services.AddRateLimiting();
+        builder.AddRateLimiting();
 
         services.AddGrpc(options =>
         {
@@ -104,7 +103,9 @@ internal static class Extensions
         // Configure endpoints
         services.AddVersioning();
         services.AddEndpoints(typeof(ICatalogApiMarker));
-        services.AddDefaultOpenApi();
+        services.AddDefaultOpenApi(options =>
+            options.AddDocumentTransformer<OpenApiInfoDefinitionsTransformer<CatalogAppSettings>>()
+        );
 
         // Configure Mapper
         services.AddMapper(typeof(ICatalogApiMarker));

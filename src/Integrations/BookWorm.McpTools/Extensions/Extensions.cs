@@ -1,7 +1,9 @@
 ﻿using BookWorm.Chassis.Utilities;
-using BookWorm.Chassis.Utilities.Configuration;
+using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Constants.Core;
+using BookWorm.McpTools.Configurations;
 using BookWorm.McpTools.Options;
+using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using Microsoft.Extensions.Options;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
@@ -17,6 +19,8 @@ internal static class Extensions
         var services = builder.Services;
 
         builder.AddDefaultCors();
+
+        builder.AddAppSettings<McpToolsAppSettings>();
 
         // Add exception handlers
         services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -38,7 +42,7 @@ internal static class Extensions
             .WithToolsFromAssembly()
             .WithPromptsFromAssembly();
 
-        services.Configure<ServerInfoOptions>(ServerInfoOptions.ConfigurationSection);
+        builder.Configure<ServerInfoOptions>(ServerInfoOptions.ConfigurationSection);
 
         services
             .AddOptions<McpServerOptions>()
@@ -71,6 +75,12 @@ internal static class Extensions
 
         services
             .AddHttpContextAccessor()
-            .AddDefaultOpenApi(options => options.AddDocumentTransformer<McpDocumentTransformer>());
+            .AddDefaultOpenApi(options =>
+            {
+                options.AddDocumentTransformer<
+                    OpenApiInfoDefinitionsTransformer<McpToolsAppSettings>
+                >();
+                options.AddDocumentTransformer<McpDocumentTransformer>();
+            });
     }
 }

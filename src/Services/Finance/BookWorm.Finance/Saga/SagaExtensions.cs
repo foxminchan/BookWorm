@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.Utilities.Configuration;
+﻿using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Constants.Aspire;
 
 namespace BookWorm.Finance.Saga;
@@ -10,7 +10,7 @@ public static class SagaExtensions
     {
         var services = builder.Services;
 
-        services.Configure<OrderStateMachineSettings>(
+        builder.Configure<OrderStateMachineSettings>(
             OrderStateMachineSettings.ConfigurationSection
         );
 

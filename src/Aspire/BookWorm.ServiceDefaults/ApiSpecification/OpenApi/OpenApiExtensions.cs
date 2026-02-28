@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.OpenApi;
+﻿using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
+using Microsoft.AspNetCore.OpenApi;
 
 namespace BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
 
@@ -10,9 +11,8 @@ public static class OpenApiExtensions
         {
             services.AddOpenApi(options =>
             {
-                options.ApplyApiInfo();
-                options.ApplyAuthorizationChecks();
-                options.ApplySecuritySchemeDefinitions();
+                options.AddOperationTransformer<AuthorizationChecksTransformer>();
+                options.AddDocumentTransformer<SecuritySchemeDefinitionsTransformer>();
                 configure?.Invoke(options);
             });
         }

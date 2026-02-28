@@ -5,10 +5,13 @@ using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
+using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Chassis.Utilities.Converters;
+using BookWorm.Ordering.Configurations;
 using BookWorm.Ordering.Features.Orders.Create;
 using BookWorm.Ordering.Features.Orders.Get;
 using BookWorm.Ordering.Infrastructure.DistributedLock;
+using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
 
@@ -21,6 +24,8 @@ internal static class Extensions
         var services = builder.Services;
 
         builder.AddDefaultCors();
+
+        builder.AddAppSettings<OrderingAppSettings>();
 
         builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
 
@@ -81,7 +86,7 @@ internal static class Extensions
             new JsonSerializerOptions { Converters = { DecimalJsonConverter.Instance } }
         );
 
-        services.AddRateLimiting();
+        builder.AddRateLimiting();
 
         builder.AddRedaction();
 
@@ -103,7 +108,9 @@ internal static class Extensions
         // Configure endpoints
         services.AddVersioning();
         services.AddEndpoints(typeof(IOrderingApiMarker));
-        services.AddDefaultOpenApi();
+        services.AddDefaultOpenApi(options =>
+            options.AddDocumentTransformer<OpenApiInfoDefinitionsTransformer<OrderingAppSettings>>()
+        );
 
         // Add event bus configuration
         builder.AddEventBus(

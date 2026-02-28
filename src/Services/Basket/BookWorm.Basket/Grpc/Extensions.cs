@@ -1,6 +1,6 @@
 ﻿using BookWorm.Catalog.Grpc.Services;
 using BookWorm.Chassis.Utilities;
-using BookWorm.Chassis.Utilities.Configuration;
+using BookWorm.Chassis.Utilities.Configurations;
 
 namespace BookWorm.Basket.Grpc;
 
