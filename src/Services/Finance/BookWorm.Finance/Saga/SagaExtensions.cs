@@ -8,8 +8,6 @@ public static class SagaExtensions
 {
     public static void AddSagaStateMachineServices(this IHostApplicationBuilder builder)
     {
-        var services = builder.Services;
-
         builder.Configure<OrderStateMachineSettings>(
             OrderStateMachineSettings.ConfigurationSection
         );
