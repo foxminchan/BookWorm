@@ -1,7 +1,7 @@
 ﻿using BookWorm.Catalog.Grpc.Services;
 using BookWorm.Chassis.Security.TokenExchange;
 using BookWorm.Chassis.Utilities;
-using BookWorm.Chassis.Utilities.Configuration;
+using BookWorm.Chassis.Utilities.Configurations;
 
 namespace BookWorm.Ordering.Grpc;
 

@@ -1,5 +1,5 @@
 ﻿using BookWorm.Chassis.Caching;
-using BookWorm.Chassis.Utilities.Configuration;
+using BookWorm.Chassis.Utilities.Configurations;
 
 namespace BookWorm.Ordering.Infrastructure;
 
@@ -40,7 +40,7 @@ internal static class Extensions
             .AddRedisClientBuilder(Components.Redis, o => o.DisableAutoActivation = false)
             .WithAzureAuthentication();
 
-        services.Configure<CachingOptions>(CachingOptions.ConfigurationSection);
+        builder.Configure<CachingOptions>(CachingOptions.ConfigurationSection);
 
         var cachingOptions = services.BuildServiceProvider().GetRequiredService<CachingOptions>();
 

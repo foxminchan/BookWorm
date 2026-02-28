@@ -4,7 +4,7 @@ using Microsoft.OpenApi;
 
 namespace BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 
-internal sealed class AuthorizationChecksTransformer : IOpenApiOperationTransformer
+public sealed class AuthorizationChecksTransformer : IOpenApiOperationTransformer
 {
     public Task TransformAsync(
         OpenApiOperation operation,

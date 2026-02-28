@@ -4,9 +4,12 @@ using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
+using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Constants.Core;
+using BookWorm.Rating.Configurations;
 using BookWorm.Rating.Infrastructure.Agents;
 using BookWorm.Rating.Infrastructure.Summarizer;
+using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using Mediator;
 
 namespace BookWorm.Rating.Extensions;
@@ -18,6 +21,8 @@ internal static class Extensions
         var services = builder.Services;
 
         builder.AddDefaultCors();
+
+        builder.AddAppSettings<RatingAppSettings>();
 
         builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
 
@@ -52,7 +57,7 @@ internal static class Extensions
             .AddScoped(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>))
             .AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
-        services.AddRateLimiting();
+        builder.AddRateLimiting();
 
         // Add database configuration
         builder.AddAzurePostgresDbContext<RatingDbContext>(
@@ -102,7 +107,9 @@ internal static class Extensions
         // Configure endpoints
         services.AddVersioning();
         services.AddEndpoints(typeof(IRatingApiMarker));
-        services.AddDefaultOpenApi();
+        services.AddDefaultOpenApi(options =>
+            options.AddDocumentTransformer<OpenApiInfoDefinitionsTransformer<RatingAppSettings>>()
+        );
 
         builder.AddAgents();
         services.AddSingleton<ISummarizer, RatingSummarizer>();

@@ -1,6 +1,9 @@
 ﻿using System.Security.Claims;
 using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
+using BookWorm.Chassis.Utilities.Configurations;
+using BookWorm.Chat.Configurations;
+using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using Microsoft.AspNetCore.Authorization;
 
 namespace BookWorm.Chat.Extensions;
@@ -12,6 +15,8 @@ internal static class Extensions
         var services = builder.Services;
 
         builder.AddDefaultCors();
+
+        builder.AddAppSettings<ChatAppSettings>();
 
         builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
 
@@ -46,11 +51,13 @@ internal static class Extensions
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails();
 
-        services.AddRateLimiting();
+        builder.AddRateLimiting();
 
         services.AddVersioning();
         services.AddEndpoints(typeof(IChatApiMarker));
-        services.AddDefaultOpenApi();
+        services.AddDefaultOpenApi(options =>
+            options.AddDocumentTransformer<OpenApiInfoDefinitionsTransformer<ChatAppSettings>>()
+        );
 
         // Configure ClaimsPrincipal
         services.AddTransient(s =>

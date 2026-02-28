@@ -1,11 +1,14 @@
-﻿using BookWorm.Basket.Features.Get;
+﻿using BookWorm.Basket.Configurations;
+using BookWorm.Basket.Features.Get;
 using BookWorm.Chassis.CQRS.Command;
 using BookWorm.Chassis.CQRS.Pipelines;
 using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
+using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Constants.Core;
+using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using MassTransit;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
@@ -19,6 +22,8 @@ internal static class Extensions
         var services = builder.Services;
 
         builder.AddDefaultCors();
+
+        builder.AddAppSettings<BasketAppSettings>();
 
         builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
 
@@ -51,7 +56,7 @@ internal static class Extensions
             .AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>))
             .AddScoped<GetBasketPostProcessor>();
 
-        services.AddRateLimiting();
+        builder.AddRateLimiting();
 
         // Add database configuration
         builder
@@ -70,7 +75,9 @@ internal static class Extensions
         // Configure endpoints
         services.AddVersioning();
         services.AddEndpoints(typeof(IBasketApiMarker));
-        services.AddDefaultOpenApi();
+        services.AddDefaultOpenApi(options =>
+            options.AddDocumentTransformer<OpenApiInfoDefinitionsTransformer<BasketAppSettings>>()
+        );
 
         // Configure gRPC
         builder.AddGrpcServices();

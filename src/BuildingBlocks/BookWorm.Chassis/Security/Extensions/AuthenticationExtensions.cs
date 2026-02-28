@@ -1,6 +1,6 @@
 ﻿using BookWorm.Chassis.Security.Settings;
 using BookWorm.Chassis.Utilities;
-using BookWorm.Chassis.Utilities.Configuration;
+using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Constants.Aspire;
 using BookWorm.Constants.Core;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -17,11 +17,10 @@ public static class AuthenticationExtensions
     {
         var services = builder.Services;
 
-        services.Configure<IdentityOptions>(IdentityOptions.ConfigurationSection);
+        builder.Configure<IdentityOptions>(IdentityOptions.ConfigurationSection);
 
         var realm = services.BuildServiceProvider().GetRequiredService<IdentityOptions>().Realm;
-        // Use HTTP in development to match the frontend's Keycloak URL scheme,
-        // avoiding token issuer mismatch during introspection.
+
         var scheme = builder.Environment.IsDevelopment()
             ? Http.Schemes.Http
             : Http.Schemes.HttpOrHttps;
