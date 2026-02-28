@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.Utilities.Configuration;
+﻿using BookWorm.Chassis.Utilities.Configurations;
 
 namespace BookWorm.ServiceDefaults.Kestrel;
 
@@ -30,7 +30,7 @@ public static class CorsExtensions
         }
         else
         {
-            services.Configure<CorsSettings>(CorsSettings.ConfigurationSection);
+            builder.Configure<CorsSettings>(CorsSettings.ConfigurationSection);
 
             services.AddCors(options =>
             {

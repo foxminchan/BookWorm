@@ -2,10 +2,11 @@
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
+using BookWorm.Catalog.Configurations;
 
 namespace BookWorm.Catalog.Infrastructure.Blob;
 
-public sealed partial class BlobService(BlobContainerClient client, AppSettings appSettings)
+public sealed partial class BlobService(BlobContainerClient client, CatalogAppSettings appSettings)
     : IBlobService
 {
     public async Task<string> UploadFileAsync(

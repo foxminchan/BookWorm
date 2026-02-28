@@ -1,7 +1,7 @@
 ﻿using BookWorm.Constants.Core;
 using Microsoft.Extensions.Hosting;
 
-namespace BookWorm.Chassis.Utilities.Configuration;
+namespace BookWorm.Chassis.Utilities.Configurations;
 
 public static class LaunchProfileExtensions
 {

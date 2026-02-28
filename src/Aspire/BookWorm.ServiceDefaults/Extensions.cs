@@ -2,8 +2,6 @@ using System.Diagnostics;
 using BookWorm.Chassis.Logging;
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
-using BookWorm.Chassis.Utilities.Configuration;
-using BookWorm.ServiceDefaults.ApiSpecification;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -116,8 +114,6 @@ public static class Extensions
             builder.ConfigureOpenTelemetry();
 
             builder.AddDefaultHealthChecks();
-
-            builder.Services.Configure<DocumentOptions>(DocumentOptions.ConfigurationSection);
 
             builder.Services.AddServiceDiscovery();
 
