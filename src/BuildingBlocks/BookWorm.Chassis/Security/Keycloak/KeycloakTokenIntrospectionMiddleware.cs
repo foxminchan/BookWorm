@@ -3,81 +3,111 @@ using System.Text.Json;
 using BookWorm.Chassis.Security.Settings;
 using BookWorm.Constants.Aspire;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Chassis.Security.Keycloak;
 
 public sealed class KeycloakTokenIntrospectionMiddleware(
     IHttpClientFactory httpClientFactory,
-    IdentityOptions identityOptions
+    IdentityOptions identityOptions,
+    ILogger<KeycloakTokenIntrospectionMiddleware> logger
 ) : IMiddleware
 {
+    private const string BearerPrefix = $"{JwtBearerDefaults.AuthenticationScheme} ";
+
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
+        var endpoint = context.GetEndpoint();
+
+        var requiresAuth = endpoint?.Metadata.GetMetadata<IAuthorizeData>() is not null;
+        var allowsAnonymous = endpoint?.Metadata.GetMetadata<IAllowAnonymous>() is not null;
+
+        if (!requiresAuth || allowsAnonymous)
+        {
+            await next(context);
+            return;
+        }
+
         var traceId = Activity.Current?.Id ?? context.TraceIdentifier;
         var authHeader = context.Request.Headers.Authorization.FirstOrDefault();
         var cancellationToken = context.RequestAborted;
 
-        var token = authHeader?.StartsWith(
-            $"{JwtBearerDefaults.AuthenticationScheme} ",
-            StringComparison.OrdinalIgnoreCase
-        )
-            is true
-            ? authHeader[$"{JwtBearerDefaults.AuthenticationScheme} ".Length..].Trim()
+        var token = authHeader?.StartsWith(BearerPrefix, StringComparison.OrdinalIgnoreCase) is true
+            ? authHeader[BearerPrefix.Length..].Trim()
             : null;
 
-        if (!string.IsNullOrWhiteSpace(token))
+        if (string.IsNullOrWhiteSpace(token))
         {
-            var introspectionEndpoint = KeycloakEndpoints
-                .Introspect(identityOptions.Realm)
-                .TrimStart('/');
-
-            using var httpClient = httpClientFactory.CreateClient(Components.KeyCloak);
-
-            var requestContent = new FormUrlEncodedContent([
-                new("token", token),
-                new("client_id", identityOptions.ClientId),
-                new("client_secret", identityOptions.ClientSecret),
-            ]);
-
-            var response = await httpClient.PostAsync(
-                introspectionEndpoint,
-                requestContent,
-                cancellationToken
+            logger.LogWarning(
+                "Missing or invalid Authorization header for {Path}",
+                context.Request.Path
             );
 
-            if (!response.IsSuccessStatusCode)
-            {
-                await TypedResults
-                    .Problem(
-                        statusCode: StatusCodes.Status401Unauthorized,
-                        title: "Token introspection failed",
-                        extensions: new Dictionary<string, object?> { { nameof(traceId), traceId } }
-                    )
-                    .ExecuteAsync(context);
-                return;
-            }
+            await WriteProblemAsync(context, "Authorization header missing or invalid", traceId);
+            return;
+        }
 
-            var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            using var tokenResponse = JsonDocument.Parse(content);
+        var introspectionEndpoint = KeycloakEndpoints
+            .Introspect(identityOptions.Realm)
+            .TrimStart('/');
 
-            var isActive =
-                tokenResponse.RootElement.TryGetProperty("active", out var activeElement)
-                && activeElement.GetBoolean();
+        using var httpClient = httpClientFactory.CreateClient(Components.KeyCloak);
 
-            if (!isActive)
-            {
-                await TypedResults
-                    .Problem(
-                        statusCode: StatusCodes.Status401Unauthorized,
-                        title: "Token is not active",
-                        extensions: new Dictionary<string, object?> { { nameof(traceId), traceId } }
-                    )
-                    .ExecuteAsync(context);
-                return;
-            }
+        using var requestContent = new FormUrlEncodedContent([
+            new("token", token),
+            new("client_id", identityOptions.ClientId),
+            new("client_secret", identityOptions.ClientSecret),
+        ]);
+
+        using var response = await httpClient.PostAsync(
+            introspectionEndpoint,
+            requestContent,
+            cancellationToken
+        );
+
+        if (!response.IsSuccessStatusCode)
+        {
+            logger.LogWarning(
+                "Token introspection returned {StatusCode} for {Path}",
+                response.StatusCode,
+                context.Request.Path
+            );
+
+            await WriteProblemAsync(context, "Token introspection failed", traceId);
+            return;
+        }
+
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var tokenResponse = await JsonDocument.ParseAsync(
+            stream,
+            cancellationToken: cancellationToken
+        );
+
+        var isActive =
+            tokenResponse.RootElement.TryGetProperty("active", out var activeElement)
+            && activeElement.GetBoolean();
+
+        if (!isActive)
+        {
+            logger.LogInformation("Inactive token presented for {Path}", context.Request.Path);
+
+            await WriteProblemAsync(context, "Token is not active", traceId);
+            return;
         }
 
         await next(context);
+    }
+
+    private static Task WriteProblemAsync(HttpContext context, string title, string traceId)
+    {
+        return TypedResults
+            .Problem(
+                statusCode: StatusCodes.Status401Unauthorized,
+                title: title,
+                extensions: new Dictionary<string, object?> { { nameof(traceId), traceId } }
+            )
+            .ExecuteAsync(context);
     }
 }
