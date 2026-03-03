@@ -36,7 +36,8 @@ public sealed class SecuritySchemeDefinitionsTransformer : IOpenApiDocumentTrans
 
         var tokenUrl = HttpUtilities
             .AsUrlBuilder()
-            .WithBase(keycloakUrl)
+            .WithScheme(Http.Schemes.Http)
+            .WithHost(Components.KeyCloak)
             .WithPath(KeycloakEndpoints.Token(identityOptions.Realm))
             .Build();
 

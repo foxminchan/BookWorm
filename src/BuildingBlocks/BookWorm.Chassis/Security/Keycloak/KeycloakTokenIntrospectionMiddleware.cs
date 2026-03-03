@@ -3,6 +3,7 @@ using System.Text.Json;
 using BookWorm.Chassis.Security.Settings;
 using BookWorm.Constants.Aspire;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 
 namespace BookWorm.Chassis.Security.Keycloak;
@@ -14,6 +15,17 @@ public sealed class KeycloakTokenIntrospectionMiddleware(
 {
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
+        var endpoint = context.GetEndpoint();
+
+        var requiresAuth = endpoint?.Metadata.GetMetadata<IAuthorizeData>() is not null;
+        var allowsAnonymous = endpoint?.Metadata.GetMetadata<IAllowAnonymous>() is not null;
+
+        if (!requiresAuth || allowsAnonymous)
+        {
+            await next(context);
+            return;
+        }
+
         var traceId = Activity.Current?.Id ?? context.TraceIdentifier;
         var authHeader = context.Request.Headers.Authorization.FirstOrDefault();
         var cancellationToken = context.RequestAborted;
