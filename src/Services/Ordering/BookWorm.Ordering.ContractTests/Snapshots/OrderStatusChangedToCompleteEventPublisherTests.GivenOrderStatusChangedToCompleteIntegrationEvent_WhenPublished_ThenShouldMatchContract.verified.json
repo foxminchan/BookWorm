@@ -13,7 +13,13 @@
         "TotalMoney": 149.99,
         "Id": "Guid_5",
         "CreationDate": "DateTime_1"
-      }
+      },
+      "Headers": [
+        {
+          "Key": "MT-Activity-Id",
+          "Value": "TraceId_Scrubbed"
+        }
+      ]
     }
   ]
 }
