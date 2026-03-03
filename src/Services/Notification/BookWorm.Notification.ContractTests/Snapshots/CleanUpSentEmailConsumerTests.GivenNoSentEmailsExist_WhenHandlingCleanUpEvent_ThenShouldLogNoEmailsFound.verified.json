@@ -1,0 +1,58 @@
+﻿{
+  "harness": {
+    "Messages": [
+      {
+        "Published": "CleanUpSentEmailIntegrationEvent",
+        "MessageId": "Guid_1",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:CleanUpSentEmailIntegrationEvent",
+        "Message": {
+          "Id": "Guid_3",
+          "CreationDate": "DateTime_1"
+        },
+        "Headers": [
+          {
+            "Key": "MT-Activity-Id",
+            "Value": "TraceId_Scrubbed"
+          }
+        ]
+      },
+      {
+        "Received": "CleanUpSentEmailIntegrationEvent",
+        "MessageId": "Guid_1",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:CleanUpSentEmailIntegrationEvent",
+        "Message": {
+          "Id": "Guid_4",
+          "CreationDate": "DateTime_2"
+        },
+        "Headers": [
+          {
+            "Key": "MT-Activity-Id",
+            "Value": "TraceId_Scrubbed"
+          }
+        ]
+      }
+    ]
+  },
+  "consumer": {
+    "Consumed": [
+      {
+        "Received": "CleanUpSentEmailIntegrationEvent",
+        "MessageId": "Guid_1",
+        "ConversationId": "Guid_2",
+        "DestinationAddress": "BookWorm.Contracts:CleanUpSentEmailIntegrationEvent",
+        "Message": {
+          "Id": "Guid_4",
+          "CreationDate": "DateTime_2"
+        },
+        "Headers": [
+          {
+            "Key": "MT-Activity-Id",
+            "Value": "TraceId_Scrubbed"
+          }
+        ]
+      }
+    ]
+  }
+}
