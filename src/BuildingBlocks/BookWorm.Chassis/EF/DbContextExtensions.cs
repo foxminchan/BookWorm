@@ -21,8 +21,8 @@ public static class DbContextExtensions
 
         if (!excludeDefaultInterceptors)
         {
-            services.AddScoped<DbCommandInterceptor, QueryPerformanceInterceptor>();
-            services.AddScoped<ISaveChangesInterceptor, EventDispatchInterceptor>();
+            services.AddScoped<IInterceptor, QueryPerformanceInterceptor>();
+            services.AddScoped<IInterceptor, EventDispatchInterceptor>();
             services.AddScoped<IDomainEventDispatcher, MediatorDomainEventDispatcher>();
         }
 
