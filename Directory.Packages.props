@@ -30,7 +30,7 @@
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.JavaScript.Extensions" Version="$(ToolKitVersion)" />
     <!-- Extra -->
     <PackageVersion Include="TUnit.Aspire" Version="$(TUnitVersion)" />
-    <PackageVersion Include="Scalar.Aspire" Version="0.8.59" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.8.62" />
   </ItemGroup>
   <ItemGroup Label="Core Packages">
     <!-- Microsoft Extensions -->
@@ -77,7 +77,7 @@
     <PackageVersion Include="MassTransit.EntityFrameworkCore" Version="$(MassTransitVersion)" />
     <PackageVersion Include="MassTransit.RabbitMQ" Version="$(MassTransitVersion)" />
     <!-- Quartz -->
-    <PackageVersion Include="Quartz.AspNetCore" Version="3.15.1" />
+    <PackageVersion Include="Quartz.AspNetCore" Version="3.16.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Quartz" Version="1.15.0-beta.1" />
     <!-- Email & Messaging -->
     <PackageVersion Include="AspNetCore.HealthChecks.SendGrid" Version="$(HealthChecksVersion)" />
@@ -98,7 +98,7 @@
     <PackageVersion Include="Verify.SendGrid" Version="1.0.0" />
     <PackageVersion Include="Verify.MassTransit" Version="2.1.0" />
     <!-- Microsoft Testing Platform -->
-    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.5.1" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.5.2" />
     <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="$(MsTestVersion)" />
     <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="$(MsTestVersion)" />
     <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="$(MsTestVersion)" />

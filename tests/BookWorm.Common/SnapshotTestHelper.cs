@@ -20,6 +20,9 @@ public static partial class SnapshotTestHelper
                 // Scrub DateTime values to make snapshots deterministic
                 scrubbedContent = DateTimeRegex().Replace(scrubbedContent, "DateTime_Scrubbed");
 
+                // Scrub W3C Trace Context IDs (e.g., 00-<trace-id>-<span-id>-<flags>)
+                scrubbedContent = TraceIdRegex().Replace(scrubbedContent, "TraceId_Scrubbed");
+
                 builder.Clear();
                 builder.Append(scrubbedContent);
             })
@@ -77,4 +80,7 @@ public static partial class SnapshotTestHelper
 
     [GeneratedRegex(@"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,7})?(?:Z|[+-]\d{2}:\d{2})")]
     private static partial Regex DateTimeRegex();
+
+    [GeneratedRegex(@"\b[0-9a-fA-F]{2}-[0-9a-fA-F]{32}-[0-9a-fA-F]{16}-[0-9a-fA-F]{2}\b")]
+    private static partial Regex TraceIdRegex();
 }
