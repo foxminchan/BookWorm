@@ -11,7 +11,13 @@
         "FeedbackId": "Guid_4",
         "Id": "Guid_5",
         "CreationDate": "DateTime_1"
-      }
+      },
+      "Headers": [
+        {
+          "Key": "MT-Activity-Id",
+          "Value": "TraceId_Scrubbed"
+        }
+      ]
     },
     {
       "Received": "FeedbackCreatedIntegrationEvent",
@@ -24,7 +30,13 @@
         "FeedbackId": "Guid_4",
         "Id": "Guid_6",
         "CreationDate": "DateTime_2"
-      }
+      },
+      "Headers": [
+        {
+          "Key": "MT-Activity-Id",
+          "Value": "TraceId_Scrubbed"
+        }
+      ]
     },
     {
       "Published": "BookUpdatedRatingFailedIntegrationEvent",
@@ -35,7 +47,13 @@
         "FeedbackId": "Guid_4",
         "Id": "Guid_8",
         "CreationDate": "DateTime_3"
-      }
+      },
+      "Headers": [
+        {
+          "Key": "MT-Activity-Id",
+          "Value": "TraceId_Scrubbed"
+        }
+      ]
     }
   ]
 }

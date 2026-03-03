@@ -36,6 +36,13 @@ runs:
       shell: bash
       run: dotnet tool restore
 
+    - name: Expose GitHub Actions Runtime
+      uses: actions/github-script@v8
+      with:
+        script: |
+          core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env['ACTIONS_RUNTIME_TOKEN']);
+          core.exportVariable('ACTIONS_RESULTS_URL', process.env['ACTIONS_RESULTS_URL']);
+
     - name: Test
       shell: bash
       if: success()
@@ -53,10 +60,3 @@ runs:
         --hangdump --hangdump-timeout "$TEST_HANG_TIMEOUT"
         --crashdump
         --timeout "$TEST_SESSION_TIMEOUT"
-
-    - name: Upload Test Results
-      if: always()
-      uses: actions/upload-artifact@v6
-      with:
-        name: test-results
-        path: ./test-results

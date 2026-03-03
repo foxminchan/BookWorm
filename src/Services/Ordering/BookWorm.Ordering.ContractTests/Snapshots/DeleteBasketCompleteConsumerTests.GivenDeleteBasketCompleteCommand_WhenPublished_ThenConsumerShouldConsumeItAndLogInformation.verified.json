@@ -11,7 +11,13 @@
           "TotalMoney": 125.99,
           "Id": "Guid_4",
           "CreationDate": "DateTime_1"
-        }
+        },
+        "Headers": [
+          {
+            "Key": "MT-Activity-Id",
+            "Value": "TraceId_Scrubbed"
+          }
+        ]
       },
       {
         "Received": "DeleteBasketCompleteCommand",
@@ -23,7 +29,13 @@
           "TotalMoney": 125.99,
           "Id": "Guid_5",
           "CreationDate": "DateTime_2"
-        }
+        },
+        "Headers": [
+          {
+            "Key": "MT-Activity-Id",
+            "Value": "TraceId_Scrubbed"
+          }
+        ]
       }
     ]
   },
@@ -39,7 +51,13 @@
           "TotalMoney": 125.99,
           "Id": "Guid_5",
           "CreationDate": "DateTime_2"
-        }
+        },
+        "Headers": [
+          {
+            "Key": "MT-Activity-Id",
+            "Value": "TraceId_Scrubbed"
+          }
+        ]
       }
     ]
   }

@@ -8,7 +8,13 @@
       "Message": {
         "Id": "Guid_3",
         "CreationDate": "DateTime_1"
-      }
+      },
+      "Headers": [
+        {
+          "Key": "MT-Activity-Id",
+          "Value": "TraceId_Scrubbed"
+        }
+      ]
     }
   ]
 }

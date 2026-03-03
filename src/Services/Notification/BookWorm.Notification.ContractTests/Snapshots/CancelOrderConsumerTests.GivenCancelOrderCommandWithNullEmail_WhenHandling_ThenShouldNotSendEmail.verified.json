@@ -12,7 +12,13 @@
           "TotalMoney": 99.99,
           "Id": "Guid_4",
           "CreationDate": "DateTime_1"
-        }
+        },
+        "Headers": [
+          {
+            "Key": "MT-Activity-Id",
+            "Value": "TraceId_Scrubbed"
+          }
+        ]
       },
       {
         "Received": "CancelOrderCommand",
@@ -25,7 +31,13 @@
           "TotalMoney": 99.99,
           "Id": "Guid_5",
           "CreationDate": "DateTime_2"
-        }
+        },
+        "Headers": [
+          {
+            "Key": "MT-Activity-Id",
+            "Value": "TraceId_Scrubbed"
+          }
+        ]
       }
     ]
   },
@@ -42,7 +54,13 @@
           "TotalMoney": 99.99,
           "Id": "Guid_5",
           "CreationDate": "DateTime_2"
-        }
+        },
+        "Headers": [
+          {
+            "Key": "MT-Activity-Id",
+            "Value": "TraceId_Scrubbed"
+          }
+        ]
       }
     ]
   }

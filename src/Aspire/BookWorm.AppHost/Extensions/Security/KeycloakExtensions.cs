@@ -238,6 +238,7 @@ public static class KeycloakExtensions
         {
             var keycloak = builder
                 .AddKeycloak(name)
+                .WithDataVolume()
                 .WithOtlpExporter()
                 .WithIconName("LockClosedRibbon")
                 .WithCustomTheme(_defaultLocalKeycloakName)
