@@ -5,14 +5,12 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Moq" />
-    <PackageReference Include="Bogus" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BookWorm.Scheduler\BookWorm.Scheduler.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Moq" />
-    <Using Include="Bogus" />
     <Using Include="Shouldly" />
   </ItemGroup>
 </Project>

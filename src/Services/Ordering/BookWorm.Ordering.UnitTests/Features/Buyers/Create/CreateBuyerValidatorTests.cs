@@ -22,23 +22,12 @@ public sealed class CreateBuyerValidatorTests
     }
 
     [Test]
-    public void GivenEmptyStreet_WhenValidating_ThenShouldHaveValidationError()
+    [Arguments("")]
+    [Arguments(null)]
+    public void GivenBlankStreet_WhenValidating_ThenShouldHaveValidationError(string? street)
     {
         // Arrange
-        var command = new CreateBuyerCommand("", "New York", "NY");
-
-        // Act
-        var result = _validator.TestValidate(command);
-
-        // Assert
-        result.ShouldHaveValidationErrorFor(x => x.Street);
-    }
-
-    [Test]
-    public void GivenNullStreet_WhenValidating_ThenShouldHaveValidationError()
-    {
-        // Arrange
-        var command = new CreateBuyerCommand(null!, "New York", "NY");
+        var command = new CreateBuyerCommand(street!, "New York", "NY");
 
         // Act
         var result = _validator.TestValidate(command);
@@ -65,23 +54,12 @@ public sealed class CreateBuyerValidatorTests
     }
 
     [Test]
-    public void GivenEmptyCity_WhenValidating_ThenShouldHaveValidationError()
+    [Arguments("")]
+    [Arguments(null)]
+    public void GivenBlankCity_WhenValidating_ThenShouldHaveValidationError(string? city)
     {
         // Arrange
-        var command = new CreateBuyerCommand("123 Main St", "", "NY");
-
-        // Act
-        var result = _validator.TestValidate(command);
-
-        // Assert
-        result.ShouldHaveValidationErrorFor(x => x.City);
-    }
-
-    [Test]
-    public void GivenNullCity_WhenValidating_ThenShouldHaveValidationError()
-    {
-        // Arrange
-        var command = new CreateBuyerCommand("123 Main St", null!, "NY");
+        var command = new CreateBuyerCommand("123 Main St", city!, "NY");
 
         // Act
         var result = _validator.TestValidate(command);
@@ -108,23 +86,12 @@ public sealed class CreateBuyerValidatorTests
     }
 
     [Test]
-    public void GivenEmptyProvince_WhenValidating_ThenShouldHaveValidationError()
+    [Arguments("")]
+    [Arguments(null)]
+    public void GivenBlankProvince_WhenValidating_ThenShouldHaveValidationError(string? province)
     {
         // Arrange
-        var command = new CreateBuyerCommand("123 Main St", "New York", "");
-
-        // Act
-        var result = _validator.TestValidate(command);
-
-        // Assert
-        result.ShouldHaveValidationErrorFor(x => x.Province);
-    }
-
-    [Test]
-    public void GivenNullProvince_WhenValidating_ThenShouldHaveValidationError()
-    {
-        // Arrange
-        var command = new CreateBuyerCommand("123 Main St", "New York", null!);
+        var command = new CreateBuyerCommand("123 Main St", "New York", province!);
 
         // Act
         var result = _validator.TestValidate(command);

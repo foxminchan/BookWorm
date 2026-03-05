@@ -109,4 +109,21 @@ public abstract class ArchUnitBaseTest : BaseTest
         .And()
         .DoNotResideInNamespaceMatching("Microsoft.CodeCoverage.*")
         .As(nameof(SharedKernel));
+
+    protected static IObjectProvider<IType> GetServiceTypes(string serviceName) =>
+        serviceName switch
+        {
+            nameof(Basket) => BasketServiceTypes,
+            nameof(Catalog) => CatalogServiceTypes,
+            nameof(Chat) => ChatServiceTypes,
+            nameof(Finance) => FinanceServiceTypes,
+            nameof(Notification) => NotificationServiceTypes,
+            nameof(Ordering) => OrderingServiceTypes,
+            nameof(Rating) => RatingServiceTypes,
+            nameof(Scheduler) => SchedulerServiceTypes,
+            nameof(Chassis) => ChassisServiceTypes,
+            nameof(Constants) => ConstantsServiceTypes,
+            nameof(SharedKernel) => SharedKernelServiceTypes,
+            _ => throw new ArgumentException($"Unknown service: {serviceName}"),
+        };
 }

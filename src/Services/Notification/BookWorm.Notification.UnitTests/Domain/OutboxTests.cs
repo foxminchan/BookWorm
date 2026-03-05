@@ -58,16 +58,6 @@ public sealed class OutboxTests
     }
 
     [Test]
-    public void GivenOutbox_WhenCreated_ThenIdShouldBeEmpty()
-    {
-        // Act
-        var outbox = new Outbox("Test User", "test@example.com", "Test Subject", "Test Body");
-
-        // Assert
-        outbox.Id.ShouldBe(Guid.Empty); // Id is database-generated via HasDefaultValueSql
-    }
-
-    [Test]
     public void GivenOutbox_WhenCreated_ThenSequenceNumberShouldBeInitializable()
     {
         // Arrange

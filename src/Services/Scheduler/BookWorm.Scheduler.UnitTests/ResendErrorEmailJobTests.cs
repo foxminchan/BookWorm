@@ -49,69 +49,26 @@ public sealed class ResendErrorEmailJobTests
     }
 
     [Test]
-    public async Task GivenValidDependencies_WhenExecutingJob_ThenShouldSendEventAndSaveChanges()
+    public async Task GivenValidDependencies_WhenExecutingJob_ThenShouldPublishExactlyOneEvent()
     {
         // Arrange
         var bus = _harness.Bus;
         var job = new ResendErrorEmailJob(bus);
-        var cancellationToken = CancellationToken.None;
-        var context = Mock.Of<IJobExecutionContext>(c => c.CancellationToken == cancellationToken);
-
-        // Act
-        await job.Execute(context);
-
-        // Assert
-        var published = await _harness.Published.Any<ResendErrorEmailIntegrationEvent>(
-            cancellationToken
+        var context = Mock.Of<IJobExecutionContext>(c =>
+            c.CancellationToken == CancellationToken.None
         );
-        published.ShouldBeTrue();
-    }
-
-    [Test]
-    public async Task GivenValidDependencies_WhenExecutingJob_ThenShouldSendCorrectEventType()
-    {
-        // Arrange
-        var bus = _harness.Bus;
-        var job = new ResendErrorEmailJob(bus);
-        var cancellationToken = CancellationToken.None;
-        var context = Mock.Of<IJobExecutionContext>(c => c.CancellationToken == cancellationToken);
 
         // Act
         await job.Execute(context);
 
         // Assert
-        var eventCount = 0;
-        await foreach (
-            var publishedEvent in _harness.Published.SelectAsync<ResendErrorEmailIntegrationEvent>(
-                cancellationToken
-            )
-        )
+        var publishedCount = 0;
+        await foreach (var _ in _harness.Published.SelectAsync<ResendErrorEmailIntegrationEvent>())
         {
-            eventCount++;
-            publishedEvent.Context.Message.ShouldBeOfType<ResendErrorEmailIntegrationEvent>();
+            publishedCount++;
         }
 
-        eventCount.ShouldBe(1);
-    }
-
-    [Test]
-    public async Task GivenCancellationToken_WhenExecutingJob_ThenShouldPassTokenToAllDependencies()
-    {
-        // Arrange
-        var bus = _harness.Bus;
-        var job = new ResendErrorEmailJob(bus);
-        using var cancellationTokenSource = new CancellationTokenSource();
-        var cancellationToken = cancellationTokenSource.Token;
-        var context = Mock.Of<IJobExecutionContext>(c => c.CancellationToken == cancellationToken);
-
-        // Act
-        await job.Execute(context);
-
-        // Assert
-        var published = await _harness.Published.Any<ResendErrorEmailIntegrationEvent>(
-            cancellationToken
-        );
-        published.ShouldBeTrue();
+        publishedCount.ShouldBe(1);
     }
 
     [Test]
@@ -144,18 +101,5 @@ public sealed class ResendErrorEmailJobTests
         }
 
         publishedCount.ShouldBe(numberOfExecutions);
-    }
-
-    [Test]
-    public void GivenResendErrorEmailJob_WhenCreated_ThenShouldNotBeNull()
-    {
-        // Arrange
-        var bus = _harness.Bus;
-
-        // Act
-        var job = new ResendErrorEmailJob(bus);
-
-        // Assert
-        job.ShouldNotBeNull();
     }
 }

@@ -162,7 +162,7 @@ public sealed class BookAggregatorTests
     }
 
     [Test]
-    public void GivenNewRating_WhenAddingRating_ThenShouldUpdateAverageRating()
+    public void GivenFirstRating_WhenAddingRating_ThenShouldSetAverageAndIncrementReviewCount()
     {
         // Arrange
         var book = new Book(
@@ -182,9 +182,28 @@ public sealed class BookAggregatorTests
         // Assert
         book.AverageRating.ShouldBe(5);
         book.TotalReviews.ShouldBe(1);
+    }
 
-        // Add another rating and check the average
+    [Test]
+    public void GivenExistingRating_WhenAddingSecondRating_ThenShouldRecalculateAverage()
+    {
+        // Arrange
+        var book = new Book(
+            "Test Book",
+            "Test Description",
+            "test.jpg",
+            19.99m,
+            15.99m,
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            [Guid.CreateVersion7()]
+        );
+        book.AddRating(5);
+
+        // Act
         book.AddRating(3);
+
+        // Assert
         book.AverageRating.ShouldBe(4); // (5 + 3) / 2 = 4
         book.TotalReviews.ShouldBe(2);
     }

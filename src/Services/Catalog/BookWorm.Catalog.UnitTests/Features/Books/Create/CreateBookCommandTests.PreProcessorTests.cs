@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace BookWorm.Catalog.UnitTests.Features.Books.Create;
 
-public class CreateBookPreProcessorTests
+public sealed class CreateBookPreProcessorTests
 {
     [Test]
     public async Task GivenValidImageFile_WhenProcessing_ThenShouldUploadFileAndSetImageName()

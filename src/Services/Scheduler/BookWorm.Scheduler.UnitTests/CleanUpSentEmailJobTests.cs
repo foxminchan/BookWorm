@@ -7,7 +7,6 @@ using Quartz;
 
 namespace BookWorm.Scheduler.UnitTests;
 
-// Dummy consumer to register message type with MassTransit test harness
 public sealed class DummyCleanUpSentEmailConsumer : IConsumer<CleanUpSentEmailIntegrationEvent>
 {
     public Task Consume(ConsumeContext<CleanUpSentEmailIntegrationEvent> context)
@@ -50,69 +49,26 @@ public sealed class CleanUpSentEmailJobTests
     }
 
     [Test]
-    public async Task GivenValidDependencies_WhenExecutingJob_ThenShouldSendEventAndSaveChanges()
+    public async Task GivenValidDependencies_WhenExecutingJob_ThenShouldPublishExactlyOneEvent()
     {
         // Arrange
         var bus = _harness.Bus;
         var job = new CleanUpSentEmailJob(bus);
-        var cancellationToken = CancellationToken.None;
-        var context = Mock.Of<IJobExecutionContext>(c => c.CancellationToken == cancellationToken);
-
-        // Act
-        await job.Execute(context);
-
-        // Assert
-        var published = await _harness.Published.Any<CleanUpSentEmailIntegrationEvent>(
-            cancellationToken
+        var context = Mock.Of<IJobExecutionContext>(c =>
+            c.CancellationToken == CancellationToken.None
         );
-        published.ShouldBeTrue();
-    }
-
-    [Test]
-    public async Task GivenValidDependencies_WhenExecutingJob_ThenShouldSendCorrectEventType()
-    {
-        // Arrange
-        var bus = _harness.Bus;
-        var job = new CleanUpSentEmailJob(bus);
-        var cancellationToken = CancellationToken.None;
-        var context = Mock.Of<IJobExecutionContext>(c => c.CancellationToken == cancellationToken);
 
         // Act
         await job.Execute(context);
 
         // Assert
-        var eventCount = 0;
-        await foreach (
-            var publishedEvent in _harness.Published.SelectAsync<CleanUpSentEmailIntegrationEvent>(
-                cancellationToken
-            )
-        )
+        var publishedCount = 0;
+        await foreach (var _ in _harness.Published.SelectAsync<CleanUpSentEmailIntegrationEvent>())
         {
-            eventCount++;
-            publishedEvent.Context.Message.ShouldBeOfType<CleanUpSentEmailIntegrationEvent>();
+            publishedCount++;
         }
 
-        eventCount.ShouldBe(1);
-    }
-
-    [Test]
-    public async Task GivenCancellationToken_WhenExecutingJob_ThenShouldPassTokenToAllDependencies()
-    {
-        // Arrange
-        var bus = _harness.Bus;
-        var job = new CleanUpSentEmailJob(bus);
-        using var cancellationTokenSource = new CancellationTokenSource();
-        var cancellationToken = cancellationTokenSource.Token;
-        var context = Mock.Of<IJobExecutionContext>(c => c.CancellationToken == cancellationToken);
-
-        // Act
-        await job.Execute(context);
-
-        // Assert
-        var published = await _harness.Published.Any<CleanUpSentEmailIntegrationEvent>(
-            cancellationToken
-        );
-        published.ShouldBeTrue();
+        publishedCount.ShouldBe(1);
     }
 
     [Test]

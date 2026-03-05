@@ -7,8 +7,15 @@ namespace BookWorm.Basket.UnitTests.Features.Update;
 
 public sealed class UpdateBasketEndpointTests
 {
-    private readonly UpdateBasketEndpoint _endpoint = new();
-    private readonly Mock<ISender> _senderMock = new();
+    private UpdateBasketEndpoint _endpoint = null!;
+    private Mock<ISender> _senderMock = null!;
+
+    [Before(Test)]
+    public void Setup()
+    {
+        _endpoint = new();
+        _senderMock = new();
+    }
 
     [Test]
     public async Task GivenValidCommand_WhenHandlingRequest_ThenShouldCallSenderAndReturnNoContent()

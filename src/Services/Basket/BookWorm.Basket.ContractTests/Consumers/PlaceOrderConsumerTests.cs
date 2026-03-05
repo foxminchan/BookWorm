@@ -10,19 +10,34 @@ namespace BookWorm.Basket.ContractTests.Consumers;
 
 public sealed class PlaceOrderConsumerTests
 {
-    private readonly Guid _basketId;
-    private readonly PlaceOrderCommand _command;
-    private readonly Mock<IBasketRepository> _repositoryMock;
+    private Guid _basketId;
+    private PlaceOrderCommand _command = null!;
+    private ITestHarness _harness = null!;
+    private ServiceProvider _provider = null!;
+    private Mock<IBasketRepository> _repositoryMock = null!;
 
-    public PlaceOrderConsumerTests()
+    [Before(Test)]
+    public async Task SetUpAsync()
     {
         var orderId = Guid.CreateVersion7();
         _basketId = Guid.CreateVersion7();
-        const string email = "test@example.com";
-        const string fullName = "Test User";
-        const decimal totalMoney = 99.99m;
         _repositoryMock = new();
-        _command = new(_basketId, fullName, email, orderId, totalMoney);
+        _command = new(_basketId, "Test User", "test@example.com", orderId, 99.99m);
+
+        _provider = new ServiceCollection()
+            .AddTelemetryListener()
+            .AddMassTransitTestHarness(x => x.AddConsumer<PlaceOrderCommandHandler>())
+            .AddScoped(_ => _repositoryMock.Object)
+            .BuildServiceProvider(true);
+
+        _harness = await _provider.StartTestHarness();
+    }
+
+    [After(Test)]
+    public async Task TearDownAsync()
+    {
+        await _harness.Stop();
+        await _provider.DisposeAsync();
     }
 
     [Test]
@@ -31,32 +46,15 @@ public sealed class PlaceOrderConsumerTests
         // Arrange
         _repositoryMock.Setup(x => x.DeleteBasketAsync(_basketId.ToString())).ReturnsAsync(true);
 
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness(x => x.AddConsumer<PlaceOrderCommandHandler>())
-            .AddScoped(_ => _repositoryMock.Object)
-            .BuildServiceProvider(true);
+        // Act
+        await _harness.Bus.Publish(_command);
 
-        var harness = provider.GetRequiredService<ITestHarness>();
-        await harness.Start();
+        // Assert
+        var consumer = _harness.GetConsumerHarness<PlaceOrderCommandHandler>();
+        await consumer.Consumed.Any<PlaceOrderCommand>();
 
-        try
-        {
-            // Act
-            await harness.Bus.Publish(_command);
+        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
 
-            // Assert
-            var consumer = harness.GetConsumerHarness<PlaceOrderCommandHandler>();
-
-            // Wait for the consumer to consume the message
-            await consumer.Consumed.Any<PlaceOrderCommand>();
-
-            await SnapshotTestHelper.Verify(new { harness, consumer });
-
-            _repositoryMock.Verify(x => x.DeleteBasketAsync(_basketId.ToString()), Times.Once);
-        }
-        finally
-        {
-            await harness.Stop();
-        }
+        _repositoryMock.Verify(x => x.DeleteBasketAsync(_basketId.ToString()), Times.Once);
     }
 }

@@ -4,8 +4,6 @@
     <ExcludeFromCodeCoverage>true</ExcludeFromCodeCoverage>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Moq" />
-    <PackageReference Include="Bogus" />
     <PackageReference Include="Verify.TUnit" />
     <PackageReference Include="Verify.SendGrid" />
   </ItemGroup>
@@ -17,8 +15,6 @@
     />
   </ItemGroup>
   <ItemGroup>
-    <Using Include="Moq" />
-    <Using Include="Bogus" />
     <Using Include="Shouldly" />
   </ItemGroup>
 </Project>

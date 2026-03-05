@@ -13,19 +13,9 @@ public sealed class NonDddServiceGuardrailTests : ArchUnitBaseTest
     [Arguments(nameof(Scheduler))]
     public void GivenNonDddService_WhenCheckingTypes_ThenShouldNotExtendEntity(string serviceName)
     {
-        Classes()
+        Types()
             .That()
-            .ResideInAssembly(
-                serviceName switch
-                {
-                    nameof(Chat) => ChatAssembly,
-                    nameof(Finance) => FinanceAssembly,
-                    nameof(Scheduler) => SchedulerAssembly,
-                    _ => throw new ArgumentException($"Unknown service: {serviceName}"),
-                }
-            )
-            .And()
-            .DoNotResideInNamespaceMatching("Microsoft.CodeCoverage.*")
+            .Are(GetServiceTypes(serviceName))
             .Should()
             .NotBeAssignableTo(typeof(Entity))
             .Because(
@@ -42,19 +32,9 @@ public sealed class NonDddServiceGuardrailTests : ArchUnitBaseTest
         string serviceName
     )
     {
-        Classes()
+        Types()
             .That()
-            .ResideInAssembly(
-                serviceName switch
-                {
-                    nameof(Chat) => ChatAssembly,
-                    nameof(Finance) => FinanceAssembly,
-                    nameof(Scheduler) => SchedulerAssembly,
-                    _ => throw new ArgumentException($"Unknown service: {serviceName}"),
-                }
-            )
-            .And()
-            .DoNotResideInNamespaceMatching("Microsoft.CodeCoverage.*")
+            .Are(GetServiceTypes(serviceName))
             .Should()
             .NotBeAssignableTo(typeof(ValueObject))
             .Because(
@@ -71,19 +51,9 @@ public sealed class NonDddServiceGuardrailTests : ArchUnitBaseTest
         string serviceName
     )
     {
-        Classes()
+        Types()
             .That()
-            .ResideInAssembly(
-                serviceName switch
-                {
-                    nameof(Chat) => ChatAssembly,
-                    nameof(Finance) => FinanceAssembly,
-                    nameof(Scheduler) => SchedulerAssembly,
-                    _ => throw new ArgumentException($"Unknown service: {serviceName}"),
-                }
-            )
-            .And()
-            .DoNotResideInNamespaceMatching("Microsoft.CodeCoverage.*")
+            .Are(GetServiceTypes(serviceName))
             .Should()
             .NotBeAssignableTo(typeof(DomainEvent))
             .Because(
@@ -99,18 +69,9 @@ public sealed class NonDddServiceGuardrailTests : ArchUnitBaseTest
         string serviceName
     )
     {
-        Classes()
+        Types()
             .That()
-            .ResideInAssembly(
-                serviceName switch
-                {
-                    nameof(Chat) => ChatAssembly,
-                    nameof(Scheduler) => SchedulerAssembly,
-                    _ => throw new ArgumentException($"Unknown service: {serviceName}"),
-                }
-            )
-            .And()
-            .DoNotResideInNamespaceMatching("Microsoft.CodeCoverage.*")
+            .Are(GetServiceTypes(serviceName))
             .Should()
             .NotImplementInterface(typeof(IAggregateRoot))
             .Because(

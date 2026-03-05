@@ -6,353 +6,77 @@ namespace BookWorm.ArchTests.Dependencies;
 
 public sealed class CyclicDependencyTests : ArchUnitBaseTest
 {
+    private static readonly string[] ServiceNames =
+    [
+        nameof(Basket),
+        nameof(Catalog),
+        nameof(Chat),
+        nameof(Finance),
+        nameof(Notification),
+        nameof(Ordering),
+        nameof(Rating),
+        nameof(Scheduler),
+    ];
+
     [Test]
-    public void GivenBasketService_WhenCheckingDependencies_ThenShouldNotDependOnOtherServices()
+    [Arguments(nameof(Basket))]
+    [Arguments(nameof(Catalog))]
+    [Arguments(nameof(Chat))]
+    [Arguments(nameof(Finance))]
+    [Arguments(nameof(Notification))]
+    [Arguments(nameof(Ordering))]
+    [Arguments(nameof(Rating))]
+    [Arguments(nameof(Scheduler))]
+    public void GivenService_WhenCheckingDependencies_ThenShouldNotDependOnOtherServices(
+        string serviceName
+    )
     {
-        Types()
+        var serviceTypes = GetServiceTypes(serviceName);
+        var otherServices = ServiceNames.Where(s => s != serviceName).ToArray();
+
+        var rule = Types()
             .That()
-            .Are(BasketServiceTypes)
+            .Are(serviceTypes)
             .Should()
             .NotDependOnAnyTypesThat()
-            .Are(CatalogServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(ChatServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(FinanceServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(NotificationServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(OrderingServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(RatingServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(SchedulerServiceTypes)
-            .Because("Services should be independent and not directly depend on each other.")
+            .Are(GetServiceTypes(otherServices[0]));
+
+        for (var i = 1; i < otherServices.Length; i++)
+        {
+            rule = rule.OrShould().NotDependOnAnyTypesThat().Are(GetServiceTypes(otherServices[i]));
+        }
+
+        rule.Because(
+                $"{serviceName} service should be independent and not directly depend on other services."
+            )
             .Check(Architecture);
     }
 
     [Test]
-    public void GivenCatalogService_WhenCheckingDependencies_ThenShouldNotDependOnOtherServices()
+    [Arguments(nameof(Chassis))]
+    [Arguments(nameof(Constants))]
+    [Arguments(nameof(SharedKernel))]
+    public void GivenBuildingBlock_WhenCheckingDependencies_ThenShouldNotDependOnServices(
+        string buildingBlockName
+    )
     {
-        Types()
-            .That()
-            .Are(CatalogServiceTypes)
-            .Should()
-            .NotDependOnAnyTypesThat()
-            .Are(BasketServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(ChatServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(FinanceServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(NotificationServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(OrderingServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(RatingServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(SchedulerServiceTypes)
-            .Because("Services should be independent and not directly depend on each other.")
-            .Check(Architecture);
-    }
+        var buildingBlockTypes = GetServiceTypes(buildingBlockName);
 
-    [Test]
-    public void GivenChatService_WhenCheckingDependencies_ThenShouldNotDependOnOtherServices()
-    {
-        Types()
+        var rule = Types()
             .That()
-            .Are(ChatServiceTypes)
+            .Are(buildingBlockTypes)
             .Should()
             .NotDependOnAnyTypesThat()
-            .Are(BasketServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(CatalogServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(FinanceServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(NotificationServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(OrderingServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(RatingServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(SchedulerServiceTypes)
-            .Because("Services should be independent and not directly depend on each other.")
-            .Check(Architecture);
-    }
+            .Are(GetServiceTypes(ServiceNames[0]));
 
-    [Test]
-    public void GivenFinanceService_WhenCheckingDependencies_ThenShouldNotDependOnOtherServices()
-    {
-        Types()
-            .That()
-            .Are(FinanceServiceTypes)
-            .Should()
-            .NotDependOnAnyTypesThat()
-            .Are(BasketServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(CatalogServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(ChatServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(NotificationServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(OrderingServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(RatingServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(SchedulerServiceTypes)
-            .Because("Services should be independent and not directly depend on each other.")
-            .Check(Architecture);
-    }
+        for (var i = 1; i < ServiceNames.Length; i++)
+        {
+            rule = rule.OrShould().NotDependOnAnyTypesThat().Are(GetServiceTypes(ServiceNames[i]));
+        }
 
-    [Test]
-    public void GivenNotificationService_WhenCheckingDependencies_ThenShouldNotDependOnOtherServices()
-    {
-        Types()
-            .That()
-            .Are(NotificationServiceTypes)
-            .Should()
-            .NotDependOnAnyTypesThat()
-            .Are(BasketServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(CatalogServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(ChatServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(FinanceServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(OrderingServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(RatingServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(SchedulerServiceTypes)
-            .Because("Services should be independent and not directly depend on each other.")
-            .Check(Architecture);
-    }
-
-    [Test]
-    public void GivenOrderingService_WhenCheckingDependencies_ThenShouldNotDependOnOtherServices()
-    {
-        Types()
-            .That()
-            .Are(OrderingServiceTypes)
-            .Should()
-            .NotDependOnAnyTypesThat()
-            .Are(BasketServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(CatalogServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(ChatServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(FinanceServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(NotificationServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(RatingServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(SchedulerServiceTypes)
-            .Because("Services should be independent and not directly depend on each other.")
-            .Check(Architecture);
-    }
-
-    [Test]
-    public void GivenRatingService_WhenCheckingDependencies_ThenShouldNotDependOnOtherServices()
-    {
-        Types()
-            .That()
-            .Are(RatingServiceTypes)
-            .Should()
-            .NotDependOnAnyTypesThat()
-            .Are(BasketServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(CatalogServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(ChatServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(FinanceServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(NotificationServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(OrderingServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(SchedulerServiceTypes)
-            .Because("Services should be independent and not directly depend on each other.")
-            .Check(Architecture);
-    }
-
-    [Test]
-    public void GivenSchedulerService_WhenCheckingDependencies_ThenShouldNotDependOnOtherServices()
-    {
-        Types()
-            .That()
-            .Are(SchedulerServiceTypes)
-            .Should()
-            .NotDependOnAnyTypesThat()
-            .Are(BasketServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(CatalogServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(ChatServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(FinanceServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(NotificationServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(OrderingServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(RatingServiceTypes)
-            .Because("Services should be independent and not directly depend on each other.")
-            .Check(Architecture);
-    }
-
-    [Test]
-    public void GivenBuildingBlocks_WhenCheckingDependencies_ThenShouldNotDependOnServices()
-    {
-        Types()
-            .That()
-            .Are(ChassisServiceTypes)
-            .Should()
-            .NotDependOnAnyTypesThat()
-            .Are(BasketServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(CatalogServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(ChatServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(FinanceServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(NotificationServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(OrderingServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(RatingServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(SchedulerServiceTypes)
-            .Because("Building blocks should be independent and not depend on specific services.")
-            .Check(Architecture);
-    }
-
-    [Test]
-    public void GivenConstants_WhenCheckingDependencies_ThenShouldNotDependOnServices()
-    {
-        Types()
-            .That()
-            .Are(ConstantsServiceTypes)
-            .Should()
-            .NotDependOnAnyTypesThat()
-            .Are(BasketServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(CatalogServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(ChatServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(FinanceServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(NotificationServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(OrderingServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(RatingServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(SchedulerServiceTypes)
-            .Because("Constants should be independent and not depend on specific services.")
-            .Check(Architecture);
-    }
-
-    [Test]
-    public void GivenSharedKernel_WhenCheckingDependencies_ThenShouldNotDependOnServices()
-    {
-        Types()
-            .That()
-            .Are(SharedKernelServiceTypes)
-            .Should()
-            .NotDependOnAnyTypesThat()
-            .Are(BasketServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(CatalogServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(ChatServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(FinanceServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(NotificationServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(OrderingServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(RatingServiceTypes)
-            .OrShould()
-            .NotDependOnAnyTypesThat()
-            .Are(SchedulerServiceTypes)
-            .Because("Shared kernel should be independent and not depend on specific services.")
+        rule.Because(
+                $"{buildingBlockName} should be independent and not depend on specific services."
+            )
             .Check(Architecture);
     }
 }

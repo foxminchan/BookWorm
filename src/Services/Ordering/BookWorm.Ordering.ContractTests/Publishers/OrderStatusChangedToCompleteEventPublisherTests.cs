@@ -8,6 +8,27 @@ namespace BookWorm.Ordering.ContractTests.Publishers;
 
 public sealed class OrderStatusChangedToCompleteEventPublisherTests
 {
+    private ITestHarness _harness = null!;
+    private ServiceProvider _provider = null!;
+
+    [Before(Test)]
+    public async Task SetUpAsync()
+    {
+        _provider = new ServiceCollection()
+            .AddTelemetryListener()
+            .AddMassTransitTestHarness()
+            .BuildServiceProvider(true);
+
+        _harness = await _provider.StartTestHarness();
+    }
+
+    [After(Test)]
+    public async Task TearDownAsync()
+    {
+        await _harness.Stop();
+        await _provider.DisposeAsync();
+    }
+
     [Test]
     public async Task GivenOrderStatusChangedToCompleteIntegrationEvent_WhenPublished_ThenShouldMatchContract()
     {
@@ -26,24 +47,10 @@ public sealed class OrderStatusChangedToCompleteEventPublisherTests
             totalMoney
         );
 
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness()
-            .BuildServiceProvider(true);
+        // Act
+        await _harness.Bus.Publish(@event);
 
-        var harness = provider.GetRequiredService<ITestHarness>();
-        await harness.Start();
-
-        try
-        {
-            // Act
-            await harness.Bus.Publish(@event);
-
-            // Assert
-            await SnapshotTestHelper.Verify(harness);
-        }
-        finally
-        {
-            await harness.Stop();
-        }
+        // Assert
+        await SnapshotTestHelper.Verify(_harness);
     }
 }

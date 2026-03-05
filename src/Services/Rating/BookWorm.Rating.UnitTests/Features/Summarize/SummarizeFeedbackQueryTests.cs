@@ -252,18 +252,6 @@ public sealed class SummarizeFeedbackQueryTests
 
         // Assert
         query.BookId.ShouldBe(_validBookId);
-        query.ShouldBeOfType<SummarizeFeedbackQuery>();
-    }
-
-    [Test]
-    public void GivenHandler_WhenCreatingInstance_ThenShouldInitializeCorrectly()
-    {
-        // Arrange & Act
-        var handler = new SummarizeFeedbackHandler(_summarizerMock.Object);
-
-        // Assert
-        handler.ShouldNotBeNull();
-        handler.ShouldBeOfType<SummarizeFeedbackHandler>();
     }
 
     [Test]

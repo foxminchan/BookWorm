@@ -11,10 +11,11 @@ namespace BookWorm.Basket.UnitTests.Grpc.Services;
 
 public sealed class BasketServiceTests
 {
-    private readonly Mock<IBasketRepository> _basketRepositoryMock;
-    private readonly BasketService _basketService;
+    private Mock<IBasketRepository> _basketRepositoryMock = null!;
+    private BasketService _basketService = null!;
 
-    public BasketServiceTests()
+    [Before(Test)]
+    public void Setup()
     {
         _basketRepositoryMock = new();
         var loggerMock = new Mock<ILogger<BasketService>>();

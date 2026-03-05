@@ -10,21 +10,20 @@ namespace BookWorm.Basket.UnitTests.Features.Get;
 
 public sealed class GetBasketQueryTests
 {
-    private readonly CustomerBasket _basket;
-    private readonly Mock<ClaimsPrincipal> _claimsPrincipalMock;
-    private readonly GetBasketHandler _handler;
-    private readonly Mock<IBasketRepository> _repositoryMock;
-    private readonly string _userId;
+    private CustomerBasket _basket = null!;
+    private Mock<ClaimsPrincipal> _claimsPrincipalMock = null!;
+    private GetBasketHandler _handler = null!;
+    private Mock<IBasketRepository> _repositoryMock = null!;
+    private string _userId = null!;
 
-    public GetBasketQueryTests()
+    [Before(Test)]
+    public void Setup()
     {
         _userId = Guid.CreateVersion7().ToString();
         _basket = new CustomerBasketFaker().Generate()[0];
         _claimsPrincipalMock = new();
         _repositoryMock = new();
 
-        // Set up the claim using the ClaimTypes.NameIdentifier
-        // and ensure the GetClaimValue extension method will work
         var claim = new Claim(ClaimTypes.NameIdentifier, _userId);
         _claimsPrincipalMock.Setup(x => x.FindFirst(ClaimTypes.NameIdentifier)).Returns(claim);
 
@@ -38,8 +37,6 @@ public sealed class GetBasketQueryTests
         var query = new GetBasketQuery();
 
         // Assert
-        query.ShouldNotBeNull();
-        query.ShouldBeOfType<GetBasketQuery>();
         query.ShouldBeAssignableTo<IQuery<CustomerBasketDto>>();
     }
 

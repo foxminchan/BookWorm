@@ -221,17 +221,6 @@ public sealed class SummarizeFeedbackEndpointTests
     }
 
     [Test]
-    public void GivenEndpoint_WhenCreating_ThenShouldInitializeCorrectly()
-    {
-        // Arrange & Act
-        var endpoint = new SummarizeFeedbackEndpoint();
-
-        // Assert
-        endpoint.ShouldNotBeNull();
-        endpoint.ShouldBeOfType<SummarizeFeedbackEndpoint>();
-    }
-
-    [Test]
     public async Task GivenValidBookId_WhenSenderThrowsException_ThenShouldPropagateException()
     {
         // Arrange

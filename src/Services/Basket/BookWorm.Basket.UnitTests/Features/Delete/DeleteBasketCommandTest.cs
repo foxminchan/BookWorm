@@ -9,13 +9,14 @@ namespace BookWorm.Basket.UnitTests.Features.Delete;
 
 public sealed class DeleteBasketCommandTest
 {
-    private readonly Mock<ClaimsPrincipal> _claimsPrincipalMock;
-    private readonly CustomerBasket _customerBasket;
-    private readonly DeleteBasketHandler _handler;
-    private readonly Mock<IBasketRepository> _repositoryMock;
-    private readonly string _userId;
+    private Mock<ClaimsPrincipal> _claimsPrincipalMock = null!;
+    private CustomerBasket _customerBasket = null!;
+    private DeleteBasketHandler _handler = null!;
+    private Mock<IBasketRepository> _repositoryMock = null!;
+    private string _userId = null!;
 
-    public DeleteBasketCommandTest()
+    [Before(Test)]
+    public void Setup()
     {
         _userId = Guid.CreateVersion7().ToString();
         _customerBasket = new CustomerBasketFaker().Generate()[0];
@@ -23,8 +24,6 @@ public sealed class DeleteBasketCommandTest
         _repositoryMock = new();
         _claimsPrincipalMock = new();
 
-        // Set up the claim using the ClaimTypes.NameIdentifier
-        // and ensure the GetClaimValue extension method will work
         var claim = new Claim(ClaimTypes.NameIdentifier, _userId);
         _claimsPrincipalMock.Setup(x => x.FindFirst(ClaimTypes.NameIdentifier)).Returns(claim);
 
@@ -38,8 +37,6 @@ public sealed class DeleteBasketCommandTest
         var command = new DeleteBasketCommand();
 
         // Assert
-        command.ShouldNotBeNull();
-        command.ShouldBeOfType<DeleteBasketCommand>();
         command.ShouldBeAssignableTo<ICommand<Unit>>();
     }
 
@@ -96,11 +93,10 @@ public sealed class DeleteBasketCommandTest
 
         _repositoryMock.Setup(x => x.GetBasketAsync(_userId)).ReturnsAsync((CustomerBasket)null!);
 
-        // Act
-        var act = async () => await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        var exception = await act.ShouldThrowAsync<NotFoundException>();
+        // Act & Assert
+        var exception = await Should.ThrowAsync<NotFoundException>(async () =>
+            await _handler.Handle(command, CancellationToken.None)
+        );
         exception.Message.ShouldBe($"CustomerBasket with id {_userId} not found.");
         _repositoryMock.Verify(x => x.DeleteBasketAsync(_userId), Times.Never);
     }
@@ -115,11 +111,10 @@ public sealed class DeleteBasketCommandTest
             .Setup(x => x.FindFirst(ClaimTypes.NameIdentifier))
             .Returns((Claim?)null);
 
-        // Act
-        var act = async () => await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        var exception = await act.ShouldThrowAsync<UnauthorizedAccessException>();
+        // Act & Assert
+        var exception = await Should.ThrowAsync<UnauthorizedAccessException>(async () =>
+            await _handler.Handle(command, CancellationToken.None)
+        );
         exception.Message.ShouldBe("User is not authenticated.");
         _repositoryMock.Verify(x => x.DeleteBasketAsync(It.IsAny<string>()), Times.Never);
     }
