@@ -6,9 +6,18 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out this bug report!
+        Thanks for taking the time to fill out this bug report! 🐛
 
-        Please provide as much detail as possible to help us understand and reproduce the issue.
+        Before submitting, please search [existing issues](https://github.com/foxminchan/BookWorm/issues) to avoid duplicates.
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Pre-submission Checklist
+      options:
+        - label: I have searched for existing issues and this is not a duplicate.
+          required: true
+        - label: I have read the [Contributing Guide](https://github.com/foxminchan/BookWorm/blob/main/.github/CONTRIBUTING.md).
+          required: true
   - type: textarea
     id: description
     attributes:
@@ -21,7 +30,7 @@ body:
     id: steps
     attributes:
       label: Steps to Reproduce
-      description: Steps to reproduce the behavior
+      description: Steps to reproduce the behavior.
       placeholder: |
         1. Go to '...'
         2. Click on '....'
@@ -46,25 +55,30 @@ body:
     validations:
       required: true
   - type: textarea
-    id: screenshots
-    attributes:
-      label: Screenshots
-      description: If applicable, add screenshots to help explain your problem.
-      placeholder: Add screenshots here
-  - type: textarea
     id: environment
     attributes:
       label: Environment
-      description: Please complete the following information
+      description: Please complete the following information.
       placeholder: |
-        - OS: [e.g. Windows 10]
-        - Browser: [e.g. Chrome, Firefox]
-        - Version: [e.g. 1.0.0]
+        - OS: [e.g. Windows 11, macOS 14, Ubuntu 22.04]
+        - Browser / Runtime: [e.g. Chrome 123, .NET 10]
+        - BookWorm version / commit: [e.g. v1.2.0 or abc1234]
     validations:
       required: true
   - type: textarea
     id: additional
     attributes:
       label: Additional Context
-      description: Add any other context about the problem here.
-      placeholder: Any additional information that might help us understand the issue better
+      description: Add any other context, logs, or screenshots that may help us understand the problem.
+      placeholder: Paste logs, attach screenshots, or describe anything else relevant here.
+  - type: dropdown
+    id: contribute
+    attributes:
+      label: Would you like to contribute a fix?
+      description: Let us know if you'd like to submit a pull request to address this bug.
+      options:
+        - "Yes, I'd like to submit a PR"
+        - "I need guidance before contributing"
+        - "No, just reporting"
+    validations:
+      required: true
