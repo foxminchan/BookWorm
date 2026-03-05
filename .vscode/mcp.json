@@ -12,10 +12,6 @@
       "command": "bunx",
       "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
     },
-    "memory": {
-      "command": "bunx",
-      "args": ["-y", "@modelcontextprotocol/server-memory"]
-    },
     "context7": {
       "type": "stdio",
       "command": "bunx",
@@ -26,15 +22,14 @@
         "${input:context7-api-key}"
       ]
     },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/"
+    },
     "aspire": {
       "type": "stdio",
       "command": "aspire",
       "args": ["mcp", "start"]
-    },
-    "playwright": {
-      "type": "stdio",
-      "command": "bunx",
-      "args": ["-y", "@playwright/mcp@latest"]
     },
     "drawio": {
       "command": "bunx",

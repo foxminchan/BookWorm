@@ -9,12 +9,16 @@ tools:
   - "search/usages"
 model: GPT-5.2-Codex (copilot)
 handoffs:
-  - label: Start Implementation
-    agent: CSharp-Expert
+  - label: Implement (.NET)
+    agent: .NET Expert
     prompt: Now implement the plan outlined above following C# best practices.
     send: false
+  - label: Implement (Next.js)
+    agent: Next.js Expert
+    prompt: Now implement the frontend plan outlined above following Next.js best practices.
+    send: false
   - label: Review Plan
-    agent: Code-Reviewer
+    agent: Code Reviewer
     prompt: Please review this implementation plan for potential issues or improvements.
     send: false
 ---

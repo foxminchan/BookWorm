@@ -9,7 +9,7 @@ Mirrors the behavior of scripts/bash/update-agent-context.sh:
  2. Plan Data Extraction
  3. Agent File Management (create from template or update existing)
  4. Content Generation (technology stack, recent changes, timestamp)
- 5. Multi-Agent Support (claude, gemini, copilot, cursor, qwen, opencode, codex, windsurf)
+ 5. Multi-Agent Support (claude, gemini, copilot, cursor-agent, qwen, opencode, codex, windsurf, kilocode, auggie, roo, codebuddy, amp, shai, kiro-cli, agy, bob, qodercli)
 
 .PARAMETER AgentType
 Optional agent key to update a single agent. If omitted, updates all existing agent files (creating a default Claude file if none exist).
@@ -25,7 +25,7 @@ Relies on common helper functions in common.ps1
 #>
 param(
     [Parameter(Position=0)]
-    [ValidateSet('claude','gemini','copilot','cursor','qwen','opencode','codex','windsurf','kilocode','auggie','roo')]
+    [ValidateSet('claude','gemini','copilot','cursor-agent','qwen','opencode','codex','windsurf','kilocode','auggie','roo','codebuddy','amp','shai','kiro-cli','agy','bob','qodercli','generic')]
     [string]$AgentType
 )
 
@@ -46,7 +46,7 @@ $NEW_PLAN = $IMPL_PLAN
 # Agent file paths
 $CLAUDE_FILE   = Join-Path $REPO_ROOT 'CLAUDE.md'
 $GEMINI_FILE   = Join-Path $REPO_ROOT 'GEMINI.md'
-$COPILOT_FILE  = Join-Path $REPO_ROOT '.github/copilot-instructions.md'
+$COPILOT_FILE  = Join-Path $REPO_ROOT '.github/agents/copilot-instructions.md'
 $CURSOR_FILE   = Join-Path $REPO_ROOT '.cursor/rules/specify-rules.mdc'
 $QWEN_FILE     = Join-Path $REPO_ROOT 'QWEN.md'
 $AGENTS_FILE   = Join-Path $REPO_ROOT 'AGENTS.md'
@@ -54,6 +54,13 @@ $WINDSURF_FILE = Join-Path $REPO_ROOT '.windsurf/rules/specify-rules.md'
 $KILOCODE_FILE = Join-Path $REPO_ROOT '.kilocode/rules/specify-rules.md'
 $AUGGIE_FILE   = Join-Path $REPO_ROOT '.augment/rules/specify-rules.md'
 $ROO_FILE      = Join-Path $REPO_ROOT '.roo/rules/specify-rules.md'
+$CODEBUDDY_FILE = Join-Path $REPO_ROOT 'CODEBUDDY.md'
+$QODER_FILE    = Join-Path $REPO_ROOT 'QODER.md'
+$AMP_FILE      = Join-Path $REPO_ROOT 'AGENTS.md'
+$SHAI_FILE     = Join-Path $REPO_ROOT 'SHAI.md'
+$KIRO_FILE     = Join-Path $REPO_ROOT 'AGENTS.md'
+$AGY_FILE      = Join-Path $REPO_ROOT '.agent/rules/specify-rules.md'
+$BOB_FILE      = Join-Path $REPO_ROOT 'AGENTS.md'
 
 $TEMPLATE_FILE = Join-Path $REPO_ROOT '.specify/templates/agent-file-template.md'
 
@@ -63,36 +70,36 @@ $script:NEW_FRAMEWORK = ''
 $script:NEW_DB = ''
 $script:NEW_PROJECT_TYPE = ''
 
-function Write-Info { 
+function Write-Info {
     param(
         [Parameter(Mandatory=$true)]
         [string]$Message
     )
-    Write-Host "INFO: $Message" 
+    Write-Host "INFO: $Message"
 }
 
-function Write-Success { 
+function Write-Success {
     param(
         [Parameter(Mandatory=$true)]
         [string]$Message
     )
-    Write-Host "$([char]0x2713) $Message" 
+    Write-Host "$([char]0x2713) $Message"
 }
 
-function Write-WarningMsg { 
+function Write-WarningMsg {
     param(
         [Parameter(Mandatory=$true)]
         [string]$Message
     )
-    Write-Warning $Message 
+    Write-Warning $Message
 }
 
-function Write-Err { 
+function Write-Err {
     param(
         [Parameter(Mandatory=$true)]
         [string]$Message
     )
-    Write-Host "ERROR: $Message" -ForegroundColor Red 
+    Write-Host "ERROR: $Message" -ForegroundColor Red
 }
 
 function Validate-Environment {
@@ -124,8 +131,8 @@ function Extract-PlanField {
     if (-not (Test-Path $PlanFile)) { return '' }
     # Lines like **Language/Version**: Python 3.12
     $regex = "^\*\*$([Regex]::Escape($FieldPattern))\*\*: (.+)$"
-    Get-Content -LiteralPath $PlanFile | ForEach-Object {
-        if ($_ -match $regex) { 
+    Get-Content -LiteralPath $PlanFile -Encoding utf8 | ForEach-Object {
+        if ($_ -match $regex) {
             $val = $Matches[1].Trim()
             if ($val -notin @('NEEDS CLARIFICATION','N/A')) { return $val }
         }
@@ -165,15 +172,15 @@ function Format-TechnologyStack {
     return ($parts -join ' + ')
 }
 
-function Get-ProjectStructure { 
+function Get-ProjectStructure {
     param(
         [Parameter(Mandatory=$false)]
         [string]$ProjectType
     )
-    if ($ProjectType -match 'web') { return "backend/`nfrontend/`ntests/" } else { return "src/`ntests/" } 
+    if ($ProjectType -match 'web') { return "backend/`nfrontend/`ntests/" } else { return "src/`ntests/" }
 }
 
-function Get-CommandsForLanguage { 
+function Get-CommandsForLanguage {
     param(
         [Parameter(Mandatory=$false)]
         [string]$Lang
@@ -186,12 +193,12 @@ function Get-CommandsForLanguage {
     }
 }
 
-function Get-LanguageConventions { 
+function Get-LanguageConventions {
     param(
         [Parameter(Mandatory=$false)]
         [string]$Lang
     )
-    if ($Lang) { "${Lang}: Follow standard conventions" } else { 'General: Follow standard conventions' } 
+    if ($Lang) { "${Lang}: Follow standard conventions" } else { 'General: Follow standard conventions' }
 }
 
 function New-AgentFile {
@@ -215,10 +222,10 @@ function New-AgentFile {
     $escaped_framework = $NEW_FRAMEWORK
     $escaped_branch = $CURRENT_BRANCH
 
-    $content = Get-Content -LiteralPath $temp -Raw
+    $content = Get-Content -LiteralPath $temp -Raw -Encoding utf8
     $content = $content -replace '\[PROJECT NAME\]',$ProjectName
     $content = $content -replace '\[DATE\]',$Date.ToString('yyyy-MM-dd')
-    
+
     # Build the technology stack string safely
     $techStackForTemplate = ""
     if ($escaped_lang -and $escaped_framework) {
@@ -228,7 +235,7 @@ function New-AgentFile {
     } elseif ($escaped_framework) {
         $techStackForTemplate = "- $escaped_framework ($escaped_branch)"
     }
-    
+
     $content = $content -replace '\[EXTRACTED FROM ALL PLAN.MD FILES\]',$techStackForTemplate
     # For project structure we manually embed (keep newlines)
     $escapedStructure = [Regex]::Escape($projectStructure)
@@ -236,7 +243,7 @@ function New-AgentFile {
     # Replace escaped newlines placeholder after all replacements
     $content = $content -replace '\[ONLY COMMANDS FOR ACTIVE TECHNOLOGIES\]',$commands
     $content = $content -replace '\[LANGUAGE-SPECIFIC, ONLY FOR LANGUAGES IN USE\]',$languageConventions
-    
+
     # Build the recent changes string safely
     $recentChangesForTemplate = ""
     if ($escaped_lang -and $escaped_framework) {
@@ -246,14 +253,20 @@ function New-AgentFile {
     } elseif ($escaped_framework) {
         $recentChangesForTemplate = "- ${escaped_branch}: Added ${escaped_framework}"
     }
-    
+
     $content = $content -replace '\[LAST 3 FEATURES AND WHAT THEY ADDED\]',$recentChangesForTemplate
     # Convert literal \n sequences introduced by Escape to real newlines
     $content = $content -replace '\\n',[Environment]::NewLine
 
+    # Prepend Cursor frontmatter for .mdc files so rules are auto-included
+    if ($TargetFile -match '\.mdc$') {
+        $frontmatter = @('---','description: Project Development Guidelines','globs: ["**/*"]','alwaysApply: true','---','') -join [Environment]::NewLine
+        $content = $frontmatter + $content
+    }
+
     $parent = Split-Path -Parent $TargetFile
     if (-not (Test-Path $parent)) { New-Item -ItemType Directory -Path $parent | Out-Null }
-    Set-Content -LiteralPath $TargetFile -Value $content -NoNewline
+    Set-Content -LiteralPath $TargetFile -Value $content -NoNewline -Encoding utf8
     Remove-Item $temp -Force
     return $true
 }
@@ -271,21 +284,21 @@ function Update-ExistingAgentFile {
     $newTechEntries = @()
     if ($techStack) {
         $escapedTechStack = [Regex]::Escape($techStack)
-        if (-not (Select-String -Pattern $escapedTechStack -Path $TargetFile -Quiet)) { 
-            $newTechEntries += "- $techStack ($CURRENT_BRANCH)" 
+        if (-not (Select-String -Pattern $escapedTechStack -Path $TargetFile -Quiet)) {
+            $newTechEntries += "- $techStack ($CURRENT_BRANCH)"
         }
     }
     if ($NEW_DB -and $NEW_DB -notin @('N/A','NEEDS CLARIFICATION')) {
         $escapedDB = [Regex]::Escape($NEW_DB)
-        if (-not (Select-String -Pattern $escapedDB -Path $TargetFile -Quiet)) { 
-            $newTechEntries += "- $NEW_DB ($CURRENT_BRANCH)" 
+        if (-not (Select-String -Pattern $escapedDB -Path $TargetFile -Quiet)) {
+            $newTechEntries += "- $NEW_DB ($CURRENT_BRANCH)"
         }
     }
     $newChangeEntry = ''
     if ($techStack) { $newChangeEntry = "- ${CURRENT_BRANCH}: Added ${techStack}" }
     elseif ($NEW_DB -and $NEW_DB -notin @('N/A','NEEDS CLARIFICATION')) { $newChangeEntry = "- ${CURRENT_BRANCH}: Added ${NEW_DB}" }
 
-    $lines = Get-Content -LiteralPath $TargetFile
+    $lines = Get-Content -LiteralPath $TargetFile -Encoding utf8
     $output = New-Object System.Collections.Generic.List[string]
     $inTech = $false; $inChanges = $false; $techAdded = $false; $changeAdded = $false; $existingChanges = 0
 
@@ -327,7 +340,13 @@ function Update-ExistingAgentFile {
         $newTechEntries | ForEach-Object { $output.Add($_) }
     }
 
-    Set-Content -LiteralPath $TargetFile -Value ($output -join [Environment]::NewLine)
+    # Ensure Cursor .mdc files have YAML frontmatter for auto-inclusion
+    if ($TargetFile -match '\.mdc$' -and $output.Count -gt 0 -and $output[0] -ne '---') {
+        $frontmatter = @('---','description: Project Development Guidelines','globs: ["**/*"]','alwaysApply: true','---','')
+        $output.InsertRange(0, $frontmatter)
+    }
+
+    Set-Content -LiteralPath $TargetFile -Value ($output -join [Environment]::NewLine) -Encoding utf8
     return $true
 }
 
@@ -368,7 +387,7 @@ function Update-SpecificAgent {
         'claude'   { Update-AgentFile -TargetFile $CLAUDE_FILE   -AgentName 'Claude Code' }
         'gemini'   { Update-AgentFile -TargetFile $GEMINI_FILE   -AgentName 'Gemini CLI' }
         'copilot'  { Update-AgentFile -TargetFile $COPILOT_FILE  -AgentName 'GitHub Copilot' }
-        'cursor'   { Update-AgentFile -TargetFile $CURSOR_FILE   -AgentName 'Cursor IDE' }
+        'cursor-agent' { Update-AgentFile -TargetFile $CURSOR_FILE   -AgentName 'Cursor IDE' }
         'qwen'     { Update-AgentFile -TargetFile $QWEN_FILE     -AgentName 'Qwen Code' }
         'opencode' { Update-AgentFile -TargetFile $AGENTS_FILE   -AgentName 'opencode' }
         'codex'    { Update-AgentFile -TargetFile $AGENTS_FILE   -AgentName 'Codex CLI' }
@@ -376,7 +395,15 @@ function Update-SpecificAgent {
         'kilocode' { Update-AgentFile -TargetFile $KILOCODE_FILE -AgentName 'Kilo Code' }
         'auggie'   { Update-AgentFile -TargetFile $AUGGIE_FILE   -AgentName 'Auggie CLI' }
         'roo'      { Update-AgentFile -TargetFile $ROO_FILE      -AgentName 'Roo Code' }
-        default { Write-Err "Unknown agent type '$Type'"; Write-Err 'Expected: claude|gemini|copilot|cursor|qwen|opencode|codex|windsurf|kilocode|auggie|roo'; return $false }
+        'codebuddy' { Update-AgentFile -TargetFile $CODEBUDDY_FILE -AgentName 'CodeBuddy CLI' }
+        'qodercli' { Update-AgentFile -TargetFile $QODER_FILE    -AgentName 'Qoder CLI' }
+        'amp'      { Update-AgentFile -TargetFile $AMP_FILE      -AgentName 'Amp' }
+        'shai'     { Update-AgentFile -TargetFile $SHAI_FILE     -AgentName 'SHAI' }
+        'kiro-cli' { Update-AgentFile -TargetFile $KIRO_FILE     -AgentName 'Kiro CLI' }
+        'agy'      { Update-AgentFile -TargetFile $AGY_FILE      -AgentName 'Antigravity' }
+        'bob'      { Update-AgentFile -TargetFile $BOB_FILE      -AgentName 'IBM Bob' }
+        'generic'  { Write-Info 'Generic agent: no predefined context file. Use the agent-specific update script for your agent.' }
+        default { Write-Err "Unknown agent type '$Type'"; Write-Err 'Expected: claude|gemini|copilot|cursor-agent|qwen|opencode|codex|windsurf|kilocode|auggie|roo|codebuddy|amp|shai|kiro-cli|agy|bob|qodercli|generic'; return $false }
     }
 }
 
@@ -393,6 +420,12 @@ function Update-AllExistingAgents {
     if (Test-Path $KILOCODE_FILE) { if (-not (Update-AgentFile -TargetFile $KILOCODE_FILE -AgentName 'Kilo Code')) { $ok = $false }; $found = $true }
     if (Test-Path $AUGGIE_FILE)   { if (-not (Update-AgentFile -TargetFile $AUGGIE_FILE   -AgentName 'Auggie CLI')) { $ok = $false }; $found = $true }
     if (Test-Path $ROO_FILE)      { if (-not (Update-AgentFile -TargetFile $ROO_FILE      -AgentName 'Roo Code')) { $ok = $false }; $found = $true }
+    if (Test-Path $CODEBUDDY_FILE) { if (-not (Update-AgentFile -TargetFile $CODEBUDDY_FILE -AgentName 'CodeBuddy CLI')) { $ok = $false }; $found = $true }
+    if (Test-Path $QODER_FILE)    { if (-not (Update-AgentFile -TargetFile $QODER_FILE    -AgentName 'Qoder CLI')) { $ok = $false }; $found = $true }
+    if (Test-Path $SHAI_FILE)     { if (-not (Update-AgentFile -TargetFile $SHAI_FILE     -AgentName 'SHAI')) { $ok = $false }; $found = $true }
+    if (Test-Path $KIRO_FILE)     { if (-not (Update-AgentFile -TargetFile $KIRO_FILE     -AgentName 'Kiro CLI')) { $ok = $false }; $found = $true }
+    if (Test-Path $AGY_FILE)      { if (-not (Update-AgentFile -TargetFile $AGY_FILE      -AgentName 'Antigravity')) { $ok = $false }; $found = $true }
+    if (Test-Path $BOB_FILE)      { if (-not (Update-AgentFile -TargetFile $BOB_FILE      -AgentName 'IBM Bob')) { $ok = $false }; $found = $true }
     if (-not $found) {
         Write-Info 'No existing agent files found, creating default Claude file...'
         if (-not (Update-AgentFile -TargetFile $CLAUDE_FILE -AgentName 'Claude Code')) { $ok = $false }
@@ -407,7 +440,7 @@ function Print-Summary {
     if ($NEW_FRAMEWORK) { Write-Host "  - Added framework: $NEW_FRAMEWORK" }
     if ($NEW_DB -and $NEW_DB -ne 'N/A') { Write-Host "  - Added database: $NEW_DB" }
     Write-Host ''
-    Write-Info 'Usage: ./update-agent-context.ps1 [-AgentType claude|gemini|copilot|cursor|qwen|opencode|codex|windsurf|kilocode|auggie|roo]'
+    Write-Info 'Usage: ./update-agent-context.ps1 [-AgentType claude|gemini|copilot|cursor-agent|qwen|opencode|codex|windsurf|kilocode|auggie|roo|codebuddy|amp|shai|kiro-cli|agy|bob|qodercli|generic]'
 }
 
 function Main {

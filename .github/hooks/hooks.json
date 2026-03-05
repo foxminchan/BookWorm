@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "type": "command",
+        "bash": "./.github/hooks/scripts/bash/session-setup.sh",
+        "powershell": "./.github/hooks/scripts/powershell/session-setup.ps1",
+        "cwd": ".",
+        "timeoutSec": 15
+      }
+    ],
+    "preToolUse": [
+      {
+        "type": "command",
+        "bash": "./.github/hooks/scripts/bash/pre-tool-guard.sh",
+        "powershell": "./.github/hooks/scripts/powershell/pre-tool-guard.ps1",
+        "cwd": ".",
+        "timeoutSec": 10
+      },
+      {
+        "type": "command",
+        "bash": "./.github/hooks/scripts/bash/secret-scanner.sh",
+        "powershell": "./.github/hooks/scripts/powershell/secret-scanner.ps1",
+        "cwd": ".",
+        "timeoutSec": 10
+      },
+      {
+        "type": "command",
+        "bash": "./.github/hooks/scripts/bash/architecture-guard.sh",
+        "powershell": "./.github/hooks/scripts/powershell/architecture-guard.ps1",
+        "cwd": ".",
+        "timeoutSec": 10
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "bash": "./.github/hooks/scripts/bash/post-tool-audit.sh",
+        "powershell": "./.github/hooks/scripts/powershell/post-tool-audit.ps1",
+        "cwd": ".",
+        "timeoutSec": 10
+      }
+    ],
+    "sessionEnd": [
+      {
+        "type": "command",
+        "bash": "./.github/hooks/scripts/bash/session-cleanup.sh",
+        "powershell": "./.github/hooks/scripts/powershell/session-cleanup.ps1",
+        "cwd": ".",
+        "timeoutSec": 15
+      }
+    ]
+  }
+}
