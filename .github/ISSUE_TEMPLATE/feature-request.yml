@@ -6,9 +6,18 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to suggest a new feature!
+        Thanks for taking the time to suggest a new feature! 💡
 
-        Please provide as much detail as possible to help us understand your request.
+        Before submitting, please search [existing issues](https://github.com/foxminchan/BookWorm/issues) to avoid duplicates.
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Pre-submission Checklist
+      options:
+        - label: I have searched for existing issues and this is not a duplicate.
+          required: true
+        - label: I have read the [Contributing Guide](https://github.com/foxminchan/BookWorm/blob/main/.github/CONTRIBUTING.md).
+          required: true
   - type: textarea
     id: description
     attributes:
@@ -20,34 +29,33 @@ body:
   - type: textarea
     id: problem
     attributes:
-      label: Problem or Need
-      description: What problem would this feature solve or what need would it fulfill?
-      placeholder: What problem are you trying to solve?
+      label: Problem or Motivation
+      description: What problem does this feature solve, or what need does it fulfill?
+      placeholder: Describe the problem or motivation behind this feature request.
     validations:
       required: true
   - type: textarea
     id: solution
     attributes:
       label: Proposed Solution
-      description: Describe your proposed solution or feature implementation.
+      description: Describe your proposed solution or how you envision the feature working.
       placeholder: How would you like this feature to work?
     validations:
       required: true
   - type: textarea
-    id: alternatives
-    attributes:
-      label: Alternatives Considered
-      description: What alternatives have you considered?
-      placeholder: Have you considered any alternative solutions?
-  - type: textarea
-    id: mockups
-    attributes:
-      label: Mockups or Screenshots
-      description: If applicable, add mockups or screenshots to help explain your feature request.
-      placeholder: Add mockups or screenshots here
-  - type: textarea
     id: additional
     attributes:
       label: Additional Context
-      description: Add any other context about the feature request here.
-      placeholder: Any additional information that might help us understand your request better
+      description: Add any other context, mockups, screenshots, or alternatives you've considered.
+      placeholder: Include mockups, screenshots, or any additional information that might help.
+  - type: dropdown
+    id: contribute
+    attributes:
+      label: Would you like to implement this feature?
+      description: Let us know if you'd like to submit a pull request to implement this feature.
+      options:
+        - "Yes, I'd like to submit a PR"
+        - "I need guidance before contributing"
+        - "No, just suggesting"
+    validations:
+      required: true
