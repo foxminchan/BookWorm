@@ -52,12 +52,18 @@ internal static class Extensions
                     ApprovalMode = HostedMcpServerToolApprovalMode.NeverRequire,
                 };
 
+                var skillsProvider = new FileAgentSkillsProvider(
+                    Path.Combine(AppContext.BaseDirectory, "skills", "book-catalog"),
+                    loggerFactory: sp.GetService<ILoggerFactory>()
+                );
+
                 var agent = new ChatClientAgent(
                     chatClient,
                     options: new()
                     {
                         Name = key,
                         Description = BookAgent.Description,
+                        AIContextProviders = [skillsProvider],
                         ChatOptions = new()
                         {
                             Instructions = BookAgent.Instructions,
@@ -168,12 +174,18 @@ internal static class Extensions
                     .Use(GuardrailMiddleware.InvokeAsync, null)
                     .Build(sp);
 
+                var skillsProvider = new FileAgentSkillsProvider(
+                    Path.Combine(AppContext.BaseDirectory, "skills", "store-policies"),
+                    loggerFactory: sp.GetService<ILoggerFactory>()
+                );
+
                 var agent = new ChatClientAgent(
                     chatClient,
                     options: new()
                     {
                         Name = key,
                         Description = QAAgent.Description,
+                        AIContextProviders = [skillsProvider],
                         ChatOptions = new()
                         {
                             Instructions = QAAgent.Instructions,

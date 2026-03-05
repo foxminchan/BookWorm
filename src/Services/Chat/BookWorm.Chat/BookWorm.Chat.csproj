@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
-    <NoWarn>MEAI001</NoWarn>
+    <NoWarn>MEAI001;MAAI001</NoWarn>
   </PropertyGroup>
   <ItemGroup Label="OCI Labels">
     <ContainerLabel
@@ -11,6 +11,11 @@
   </ItemGroup>
   <ItemGroup Label="Core Dependencies">
     <PackageReference Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore" />
+  </ItemGroup>
+  <ItemGroup Label="Agent Skills">
+    <None Include="skills\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="$(AssemblyName).UnitTests" />
