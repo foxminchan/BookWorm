@@ -6,8 +6,15 @@ namespace BookWorm.Basket.UnitTests.Features.Delete;
 
 public sealed class DeleteBasketEndpointTests
 {
-    private readonly DeleteBasketEndpoint _endpoint = new();
-    private readonly Mock<ISender> _senderMock = new();
+    private DeleteBasketEndpoint _endpoint = null!;
+    private Mock<ISender> _senderMock = null!;
+
+    [Before(Test)]
+    public void Setup()
+    {
+        _endpoint = new();
+        _senderMock = new();
+    }
 
     [Test]
     public async Task GivenValidRequest_WhenHandlingDeleteBasket_ThenShouldSendDeleteBasketCommand()

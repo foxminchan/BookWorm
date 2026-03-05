@@ -50,7 +50,7 @@ public sealed class DeleteBookCommandTests
     }
 
     [Test]
-    public void GivenNonExistingBookId_WhenHandlingDeleteBookCommand_ThenShouldThrowNotFoundException()
+    public async Task GivenNonExistingBookId_WhenHandlingDeleteBookCommand_ThenShouldThrowNotFoundException()
     {
         // Arrange
         var bookId = Guid.CreateVersion7();
@@ -61,7 +61,7 @@ public sealed class DeleteBookCommandTests
             .ReturnsAsync((Book)null!);
 
         // Act & Assert
-        var exception = Should.Throw<NotFoundException>(async () =>
+        var exception = await Should.ThrowAsync<NotFoundException>(async () =>
             await _handler.Handle(command, CancellationToken.None)
         );
 

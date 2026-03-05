@@ -54,7 +54,7 @@ public sealed class UpdateBookCommandTests
     }
 
     [Test]
-    public void GivenNonExistentBook_WhenHandling_ThenShouldThrowNotFoundException()
+    public async Task GivenNonExistentBook_WhenHandling_ThenShouldThrowNotFoundException()
     {
         // Arrange
         var repository = new Mock<IBookRepository>();
@@ -77,7 +77,7 @@ public sealed class UpdateBookCommandTests
         var handler = new UpdateBookHandler(repository.Object);
 
         // Act & Assert
-        Should.Throw<NotFoundException>(async () =>
+        await Should.ThrowAsync<NotFoundException>(async () =>
             await handler.Handle(command, CancellationToken.None)
         );
 

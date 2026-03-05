@@ -39,18 +39,6 @@ public sealed class CreateOrderCommandTests
     }
 
     [Test]
-    public void GivenCreateOrderCommand_WhenCreating_ThenShouldBeOfCorrectType()
-    {
-        // Act
-        var command = new CreateOrderCommand();
-
-        // Assert
-        command.ShouldNotBeNull();
-        command.ShouldBeOfType<CreateOrderCommand>();
-        command.ShouldBeAssignableTo<ICommand<Guid>>();
-    }
-
-    [Test]
     public async Task GivenUnauthenticatedUser_WhenHandlingCreateOrder_ThenShouldThrowUnauthorizedException()
     {
         // Arrange

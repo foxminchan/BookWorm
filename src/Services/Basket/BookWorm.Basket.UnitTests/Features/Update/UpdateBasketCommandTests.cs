@@ -9,20 +9,19 @@ namespace BookWorm.Basket.UnitTests.Features.Update;
 
 public sealed class UpdateBasketCommandTests
 {
-    private readonly CustomerBasket _customerBasket;
-    private readonly UpdateBasketHandler _handler;
-    private readonly Mock<IBasketRepository> _repositoryMock;
-    private readonly string _userId;
+    private CustomerBasket _customerBasket = null!;
+    private UpdateBasketHandler _handler = null!;
+    private Mock<IBasketRepository> _repositoryMock = null!;
+    private string _userId = null!;
 
-    public UpdateBasketCommandTests()
+    [Before(Test)]
+    public void Setup()
     {
         _userId = Guid.CreateVersion7().ToString();
         _customerBasket = new CustomerBasketFaker().Generate()[0];
         _repositoryMock = new();
         Mock<ClaimsPrincipal> claimsPrincipalMock = new();
 
-        // Set up the claim using the ClaimTypes.NameIdentifier
-        // and ensure GetClaimValue extension method will work
         var claim = new Claim(ClaimTypes.NameIdentifier, _userId);
         claimsPrincipalMock.Setup(x => x.FindFirst(ClaimTypes.NameIdentifier)).Returns(claim);
 
@@ -51,11 +50,10 @@ public sealed class UpdateBasketCommandTests
         // Arrange
         var command = new UpdateBasketCommandFaker().Generate();
 
-        // Act
-        var act = async () => await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        var exception = await act.ShouldThrowAsync<NotFoundException>();
+        // Act & Assert
+        var exception = await Should.ThrowAsync<NotFoundException>(async () =>
+            await _handler.Handle(command, CancellationToken.None)
+        );
         exception.Message.ShouldBe($"CustomerBasket with id {_userId} not found.");
         _repositoryMock.Verify(
             x => x.CreateOrUpdateBasketAsync(It.IsAny<CustomerBasket>()),
@@ -78,11 +76,10 @@ public sealed class UpdateBasketCommandTests
 
         var handler = new UpdateBasketHandler(_repositoryMock.Object, claimsPrincipalMock.Object);
 
-        // Act
-        var act = async () => await handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        var exception = await act.ShouldThrowAsync<UnauthorizedAccessException>();
+        // Act & Assert
+        var exception = await Should.ThrowAsync<UnauthorizedAccessException>(async () =>
+            await handler.Handle(command, CancellationToken.None)
+        );
         exception.Message.ShouldBe("User is not authenticated.");
         _repositoryMock.Verify(
             x => x.CreateOrUpdateBasketAsync(It.IsAny<CustomerBasket>()),

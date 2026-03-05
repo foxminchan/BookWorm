@@ -1,6 +1,7 @@
 ﻿using BookWorm.Common;
 using BookWorm.Contracts;
 using BookWorm.Notification.Domain.Models;
+using BookWorm.Notification.Infrastructure.Migrations;
 using BookWorm.Notification.Infrastructure.Render;
 using BookWorm.Notification.Infrastructure.Senders;
 using BookWorm.Notification.Infrastructure.Senders.MailKit;
@@ -14,11 +15,14 @@ namespace BookWorm.Notification.ContractTests.Consumers;
 
 public sealed class PlaceOrderConsumerTests
 {
-    private readonly MailKitSettings _mailKitSettings;
-    private readonly Mock<IRenderer> _rendererMock;
-    private readonly Mock<ISender> _senderMock;
+    private ITestHarness _harness = null!;
+    private ServiceProvider _provider = null!;
+    private MailKitSettings _mailKitSettings = null!;
+    private Mock<IRenderer> _rendererMock = null!;
+    private Mock<ISender> _senderMock = null!;
 
-    public PlaceOrderConsumerTests()
+    [Before(Test)]
+    public async Task SetUpAsync()
     {
         _senderMock = new();
         _senderMock
@@ -33,23 +37,23 @@ public sealed class PlaceOrderConsumerTests
             .ReturnsAsync("Rendered order content");
 
         _mailKitSettings = new() { From = "bookworm@example.com" };
+
+        _provider = new ServiceCollection()
+            .AddTelemetryListener()
+            .AddMassTransitTestHarness(cfg => cfg.AddConsumer<PlaceOrderCommandHandler>())
+            .AddScoped(_ => _senderMock.Object)
+            .AddSingleton(_rendererMock.Object)
+            .AddSingleton(_mailKitSettings)
+            .BuildServiceProvider(true);
+
+        _harness = await _provider.StartTestHarness();
     }
 
-    private async Task<ITestHarness> CreateTestHarnessAsync()
+    [After(Test)]
+    public async Task TearDownAsync()
     {
-        var services = new ServiceCollection();
-
-        services.AddMassTransitTestHarness(cfg => cfg.AddConsumer<PlaceOrderCommandHandler>());
-
-        services.AddScoped(_ => _senderMock.Object);
-        services.AddSingleton(_rendererMock.Object);
-        services.AddSingleton(_mailKitSettings);
-
-        var provider = services.BuildServiceProvider(true);
-        var harness = provider.GetRequiredService<ITestHarness>();
-
-        await harness.Start();
-        return harness;
+        await _harness.Stop();
+        await _provider.DisposeAsync();
     }
 
     [Test]
@@ -63,30 +67,20 @@ public sealed class PlaceOrderConsumerTests
             Guid.CreateVersion7(),
             99.99m
         );
-        var harness = await CreateTestHarnessAsync();
 
-        try
-        {
-            // Act
-            await harness.Bus.Publish(command);
+        // Act
+        await _harness.Bus.Publish(command);
 
-            // Assert
-            var consumer = harness.GetConsumerHarness<PlaceOrderCommandHandler>();
+        // Assert
+        var consumer = _harness.GetConsumerHarness<PlaceOrderCommandHandler>();
+        await consumer.Consumed.Any<PlaceOrderCommand>();
 
-            // Wait for the consumer to consume the message
-            await consumer.Consumed.Any<PlaceOrderCommand>();
+        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
 
-            await SnapshotTestHelper.Verify(new { harness, consumer });
-
-            _senderMock.Verify(
-                x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
-                Times.Once
-            );
-        }
-        finally
-        {
-            await harness.Stop();
-        }
+        _senderMock.Verify(
+            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
+            Times.Once
+        );
     }
 
     [Test]
@@ -100,30 +94,20 @@ public sealed class PlaceOrderConsumerTests
             Guid.CreateVersion7(),
             99.99m
         );
-        var harness = await CreateTestHarnessAsync();
 
-        try
-        {
-            // Act
-            await harness.Bus.Publish(command);
+        // Act
+        await _harness.Bus.Publish(command);
 
-            // Assert
-            var consumer = harness.GetConsumerHarness<PlaceOrderCommandHandler>();
+        // Assert
+        var consumer = _harness.GetConsumerHarness<PlaceOrderCommandHandler>();
+        await consumer.Consumed.Any<PlaceOrderCommand>();
 
-            // Wait for the consumer to consume the message
-            await consumer.Consumed.Any<PlaceOrderCommand>();
+        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
 
-            await SnapshotTestHelper.Verify(new { harness, consumer });
-
-            _senderMock.Verify(
-                x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
-                Times.Never
-            );
-        }
-        finally
-        {
-            await harness.Stop();
-        }
+        _senderMock.Verify(
+            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
+            Times.Never
+        );
     }
 
     [Test]
@@ -137,29 +121,19 @@ public sealed class PlaceOrderConsumerTests
             Guid.CreateVersion7(),
             99.99m
         );
-        var harness = await CreateTestHarnessAsync();
 
-        try
-        {
-            // Act
-            await harness.Bus.Publish(command);
+        // Act
+        await _harness.Bus.Publish(command);
 
-            // Assert
-            var consumer = harness.GetConsumerHarness<PlaceOrderCommandHandler>();
+        // Assert
+        var consumer = _harness.GetConsumerHarness<PlaceOrderCommandHandler>();
+        await consumer.Consumed.Any<PlaceOrderCommand>();
 
-            // Wait for the consumer to consume the message
-            await consumer.Consumed.Any<PlaceOrderCommand>();
+        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
 
-            await SnapshotTestHelper.Verify(new { harness, consumer });
-
-            _senderMock.Verify(
-                x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
-                Times.Never
-            );
-        }
-        finally
-        {
-            await harness.Stop();
-        }
+        _senderMock.Verify(
+            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
+            Times.Never
+        );
     }
 }

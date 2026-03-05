@@ -64,7 +64,7 @@ public sealed class ListBuyersValidatorTests
     }
 
     [Test]
-    public void GivenInvalidPageIndexAndPageSize_WhenValidatingListBuyersQuery_ThenShouldHaveBothValidationErrors()
+    public void GivenInvalidPageIndexAndPageSize_WhenValidatingListBuyersQuery_ThenShouldHavePageIndexValidationError()
     {
         // Arrange
         var query = new ListBuyersQuery(-1, -1);
@@ -75,7 +75,19 @@ public sealed class ListBuyersValidatorTests
         // Assert
         result.IsValid.ShouldBeFalse();
         result.ShouldHaveValidationErrorFor(x => x.PageIndex);
+    }
+
+    [Test]
+    public void GivenInvalidPageIndexAndPageSize_WhenValidatingListBuyersQuery_ThenShouldHavePageSizeValidationError()
+    {
+        // Arrange
+        var query = new ListBuyersQuery(-1, -1);
+
+        // Act
+        var result = _validator.TestValidate(query);
+
+        // Assert
+        result.IsValid.ShouldBeFalse();
         result.ShouldHaveValidationErrorFor(x => x.PageSize);
-        result.Errors.Count.ShouldBe(2);
     }
 }

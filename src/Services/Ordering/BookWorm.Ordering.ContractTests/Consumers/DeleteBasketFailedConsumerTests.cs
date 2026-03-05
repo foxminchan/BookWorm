@@ -11,19 +11,20 @@ namespace BookWorm.Ordering.ContractTests.Consumers;
 
 public sealed class DeleteBasketFailedConsumerTests
 {
-    private readonly Guid _basketId;
-    private readonly string _email;
-    private readonly Guid _orderId;
-    private readonly Mock<IOrderRepository> _repositoryMock;
-    private readonly decimal _totalMoney;
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private const string Email = "test@example.com";
+    private const decimal TotalMoney = 100.00m;
+    private Guid _basketId;
+    private Guid _orderId;
+    private ITestHarness _harness = null!;
+    private ServiceProvider _provider = null!;
+    private Mock<IOrderRepository> _repositoryMock = null!;
+    private Mock<IUnitOfWork> _unitOfWorkMock = null!;
 
-    public DeleteBasketFailedConsumerTests()
+    [Before(Test)]
+    public async Task SetUpAsync()
     {
         _orderId = Guid.CreateVersion7();
         _basketId = Guid.CreateVersion7();
-        _email = "test@example.com";
-        _totalMoney = 100.00m;
 
         _unitOfWorkMock = new();
         _unitOfWorkMock
@@ -32,6 +33,21 @@ public sealed class DeleteBasketFailedConsumerTests
 
         _repositoryMock = new();
         _repositoryMock.Setup(x => x.UnitOfWork).Returns(_unitOfWorkMock.Object);
+
+        _provider = new ServiceCollection()
+            .AddTelemetryListener()
+            .AddMassTransitTestHarness(x => x.AddConsumer<DeleteBasketFailedCommandHandler>())
+            .AddScoped(_ => _repositoryMock.Object)
+            .BuildServiceProvider(true);
+
+        _harness = await _provider.StartTestHarness();
+    }
+
+    [After(Test)]
+    public async Task TearDownAsync()
+    {
+        await _harness.Stop();
+        await _provider.DisposeAsync();
     }
 
     [Test]
@@ -44,45 +60,25 @@ public sealed class DeleteBasketFailedConsumerTests
             .Setup(x => x.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(order);
 
-        var command = new DeleteBasketFailedCommand(_basketId, _email, _orderId, _totalMoney);
+        var command = new DeleteBasketFailedCommand(_basketId, Email, _orderId, TotalMoney);
 
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness(x => x.AddConsumer<DeleteBasketFailedCommandHandler>())
-            .AddScoped(_ => _repositoryMock.Object)
-            .BuildServiceProvider(true);
+        // Act
+        await _harness.Bus.Publish(command);
 
-        var harness = provider.GetRequiredService<ITestHarness>();
-        await harness.Start();
+        // Assert
+        var consumer = _harness.GetConsumerHarness<DeleteBasketFailedCommandHandler>();
+        await consumer.Consumed.Any<DeleteBasketFailedCommand>();
 
-        try
-        {
-            // Act
-            await harness.Bus.Publish(command);
+        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
 
-            // Assert
-            var consumer = harness.GetConsumerHarness<DeleteBasketFailedCommandHandler>();
+        _repositoryMock.Verify(
+            x => x.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()),
+            Times.Once
+        );
 
-            // Wait for the consumer to consume the message
-            await consumer.Consumed.Any<DeleteBasketFailedCommand>();
+        _repositoryMock.Verify(x => x.Delete(order), Times.Once);
 
-            await SnapshotTestHelper.Verify(new { harness, consumer });
-
-            _repositoryMock.Verify(
-                x => x.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()),
-                Times.Once
-            );
-
-            _repositoryMock.Verify(x => x.Delete(order), Times.Once);
-
-            _unitOfWorkMock.Verify(
-                x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
-                Times.Once
-            );
-        }
-        finally
-        {
-            await harness.Stop();
-        }
+        _unitOfWorkMock.Verify(x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -93,44 +89,27 @@ public sealed class DeleteBasketFailedConsumerTests
             .Setup(x => x.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Order?)null);
 
-        var command = new DeleteBasketFailedCommand(_basketId, _email, _orderId, _totalMoney);
+        var command = new DeleteBasketFailedCommand(_basketId, Email, _orderId, TotalMoney);
 
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness(x => x.AddConsumer<DeleteBasketFailedCommandHandler>())
-            .AddScoped(_ => _repositoryMock.Object)
-            .BuildServiceProvider(true);
+        // Act
+        await _harness.Bus.Publish(command);
 
-        var harness = provider.GetRequiredService<ITestHarness>();
-        await harness.Start();
+        // Assert
+        var consumer = _harness.GetConsumerHarness<DeleteBasketFailedCommandHandler>();
+        await consumer.Consumed.Any<DeleteBasketFailedCommand>();
 
-        try
-        {
-            // Act
-            await harness.Bus.Publish(command);
+        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
 
-            // Assert
-            var consumer = harness.GetConsumerHarness<DeleteBasketFailedCommandHandler>();
+        _repositoryMock.Verify(
+            x => x.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()),
+            Times.Once
+        );
 
-            // Wait for the consumer to consume the message
-            await consumer.Consumed.Any<DeleteBasketFailedCommand>();
+        _repositoryMock.Verify(x => x.Delete(It.IsAny<Order>()), Times.Never);
 
-            await SnapshotTestHelper.Verify(new { harness, consumer });
-
-            _repositoryMock.Verify(
-                x => x.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()),
-                Times.Once
-            );
-
-            _repositoryMock.Verify(x => x.Delete(It.IsAny<Order>()), Times.Never);
-
-            _unitOfWorkMock.Verify(
-                x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
-                Times.Never
-            );
-        }
-        finally
-        {
-            await harness.Stop();
-        }
+        _unitOfWorkMock.Verify(
+            x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
+            Times.Never
+        );
     }
 }

@@ -14,7 +14,7 @@ public sealed class OrderStateMachineContractTests
     private ISagaStateMachineTestHarness<OrderStateMachine, OrderState> _sagaHarness = null!;
 
     [Before(Test)]
-    public async Task Setup()
+    public async Task SetUpAsync()
     {
         var settings = new OrderStateMachineSettings
         {
@@ -24,6 +24,7 @@ public sealed class OrderStateMachineContractTests
 
         _provider = new ServiceCollection()
             .AddSingleton(settings)
+            .AddTelemetryListener()
             .AddMassTransitTestHarness(cfg =>
             {
                 cfg.AddSagaStateMachine<OrderStateMachine, OrderState>();
@@ -31,18 +32,37 @@ public sealed class OrderStateMachineContractTests
             })
             .BuildServiceProvider(true);
 
-        _harness = _provider.GetRequiredService<ITestHarness>();
+        _harness = await _provider.StartTestHarness();
         _harness.TestInactivityTimeout = TimeSpan.FromSeconds(60);
 
-        await _harness.Start();
         _sagaHarness = _harness.GetSagaStateMachineHarness<OrderStateMachine, OrderState>();
     }
 
     [After(Test)]
-    public async Task TearDown()
+    public async Task TearDownAsync()
     {
         await _harness.Stop();
         await _provider.DisposeAsync();
+    }
+
+    private const string TestFullName = "John Doe";
+    private const string TestEmail = "john.doe@example.com";
+    private const decimal TestTotalMoney = 99.99m;
+
+    private async Task<(Guid OrderId, Guid BasketId)> InitializeSagaAsync()
+    {
+        var orderId = Guid.CreateVersion7();
+        var basketId = Guid.CreateVersion7();
+        var initialEvent = new UserCheckedOutIntegrationEvent(
+            orderId,
+            basketId,
+            TestFullName,
+            TestEmail,
+            TestTotalMoney
+        );
+        await _harness.Bus.Publish(initialEvent);
+        await _sagaHarness.Consumed.Any<UserCheckedOutIntegrationEvent>();
+        return (orderId, basketId);
     }
 
     [Test]
@@ -51,16 +71,13 @@ public sealed class OrderStateMachineContractTests
         // Arrange
         var orderId = Guid.CreateVersion7();
         var basketId = Guid.CreateVersion7();
-        const string fullName = "John Doe";
-        const string email = "john.doe@example.com";
-        const decimal totalMoney = 99.99m;
 
         var @event = new UserCheckedOutIntegrationEvent(
             orderId,
             basketId,
-            fullName,
-            email,
-            totalMoney
+            TestFullName,
+            TestEmail,
+            TestTotalMoney
         );
 
         // Act
@@ -76,28 +93,13 @@ public sealed class OrderStateMachineContractTests
     [Test]
     public async Task GivenBasketDeletedCompleteEvent_WhenPublished_ThenSagaShouldPublishDeleteBasketCompleteCommand()
     {
-        // Arrange - Initialize saga to Placed state first
-        var orderId = Guid.CreateVersion7();
-        var basketId = Guid.CreateVersion7();
-        const string fullName = "John Doe";
-        const string email = "john.doe@example.com";
-        const decimal totalMoney = 99.99m;
-
-        var initialEvent = new UserCheckedOutIntegrationEvent(
-            orderId,
-            basketId,
-            fullName,
-            email,
-            totalMoney
-        );
-
-        await _harness.Bus.Publish(initialEvent);
-        await _sagaHarness.Consumed.Any<UserCheckedOutIntegrationEvent>();
+        // Arrange - Initialize saga to Placed state
+        var (orderId, basketId) = await InitializeSagaAsync();
 
         var basketDeletedEvent = new BasketDeletedCompleteIntegrationEvent(
             orderId,
             basketId,
-            totalMoney
+            TestTotalMoney
         );
 
         // Act
@@ -113,29 +115,14 @@ public sealed class OrderStateMachineContractTests
     [Test]
     public async Task GivenBasketDeletedFailedEvent_WhenPublished_ThenSagaShouldTransitionToFailedStateAndPublishFailedCommand()
     {
-        // Arrange - Initialize saga to Placed state first
-        var orderId = Guid.CreateVersion7();
-        var basketId = Guid.CreateVersion7();
-        const string fullName = "John Doe";
-        const string email = "john.doe@example.com";
-        const decimal totalMoney = 99.99m;
-
-        var initialEvent = new UserCheckedOutIntegrationEvent(
-            orderId,
-            basketId,
-            fullName,
-            email,
-            totalMoney
-        );
-
-        await _harness.Bus.Publish(initialEvent);
-        await _sagaHarness.Consumed.Any<UserCheckedOutIntegrationEvent>();
+        // Arrange - Initialize saga to Placed state
+        var (orderId, basketId) = await InitializeSagaAsync();
 
         var basketDeletedFailedEvent = new BasketDeletedFailedIntegrationEvent(
             orderId,
             basketId,
-            email,
-            totalMoney
+            TestEmail,
+            TestTotalMoney
         );
 
         // Act
@@ -151,30 +138,15 @@ public sealed class OrderStateMachineContractTests
     [Test]
     public async Task GivenOrderCompletedEvent_WhenPublished_ThenSagaShouldTransitionToCompletedStateAndFinalize()
     {
-        // Arrange - Initialize saga to Placed state first
-        var orderId = Guid.CreateVersion7();
-        var basketId = Guid.CreateVersion7();
-        const string fullName = "John Doe";
-        const string email = "john.doe@example.com";
-        const decimal totalMoney = 99.99m;
-
-        var initialEvent = new UserCheckedOutIntegrationEvent(
-            orderId,
-            basketId,
-            fullName,
-            email,
-            totalMoney
-        );
-
-        await _harness.Bus.Publish(initialEvent);
-        await _sagaHarness.Consumed.Any<UserCheckedOutIntegrationEvent>();
+        // Arrange - Initialize saga to Placed state
+        var (orderId, basketId) = await InitializeSagaAsync();
 
         var orderCompletedEvent = new OrderStatusChangedToCompleteIntegrationEvent(
             orderId,
             basketId,
-            fullName,
-            email,
-            totalMoney
+            TestFullName,
+            TestEmail,
+            TestTotalMoney
         );
 
         // Act
@@ -190,30 +162,15 @@ public sealed class OrderStateMachineContractTests
     [Test]
     public async Task GivenOrderCancelledEvent_WhenPublished_ThenSagaShouldTransitionToCancelledStateAndFinalize()
     {
-        // Arrange - Initialize saga to Placed state first
-        var orderId = Guid.CreateVersion7();
-        var basketId = Guid.CreateVersion7();
-        const string fullName = "John Doe";
-        const string email = "john.doe@example.com";
-        const decimal totalMoney = 99.99m;
-
-        var initialEvent = new UserCheckedOutIntegrationEvent(
-            orderId,
-            basketId,
-            fullName,
-            email,
-            totalMoney
-        );
-
-        await _harness.Bus.Publish(initialEvent);
-        await _sagaHarness.Consumed.Any<UserCheckedOutIntegrationEvent>();
+        // Arrange - Initialize saga to Placed state
+        var (orderId, basketId) = await InitializeSagaAsync();
 
         var orderCancelledEvent = new OrderStatusChangedToCancelIntegrationEvent(
             orderId,
             basketId,
-            fullName,
-            email,
-            totalMoney
+            TestFullName,
+            TestEmail,
+            TestTotalMoney
         );
 
         // Act

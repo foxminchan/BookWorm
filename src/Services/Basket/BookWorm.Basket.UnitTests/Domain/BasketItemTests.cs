@@ -46,26 +46,14 @@ public sealed class BasketItemTests
     }
 
     [Test]
-    public void GivenZeroQuantity_WhenValidatingBasketItem_ThenValidationErrorShouldBeReturned()
+    [Arguments(0)]
+    [Arguments(-5)]
+    public void GivenInvalidQuantity_WhenValidatingBasketItem_ThenValidationErrorShouldBeReturned(
+        int invalidQuantity
+    )
     {
         // Arrange
-        var basketItem = new BasketItem("book-1", 0);
-        var validationContext = new ValidationContext(basketItem);
-
-        // Act
-        var validationResults = basketItem.Validate(validationContext).ToList();
-
-        // Assert
-        validationResults.Count.ShouldBe(1);
-        validationResults[0].ErrorMessage.ShouldBe("Quantity must be greater than zero.");
-        validationResults[0].MemberNames.ShouldContain("Quantity");
-    }
-
-    [Test]
-    public void GivenNegativeQuantity_WhenValidatingBasketItem_ThenValidationErrorShouldBeReturned()
-    {
-        // Arrange
-        var basketItem = new BasketItem("book-1", -5);
+        var basketItem = new BasketItem("book-1", invalidQuantity);
         var validationContext = new ValidationContext(basketItem);
 
         // Act

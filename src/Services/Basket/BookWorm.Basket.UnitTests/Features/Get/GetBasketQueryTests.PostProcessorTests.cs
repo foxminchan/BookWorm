@@ -7,13 +7,14 @@ namespace BookWorm.Basket.UnitTests.Features.Get;
 
 public sealed class GetBasketPostProcessorTests
 {
-    private readonly CustomerBasketDto _basketDto;
-    private readonly List<string> _bookIds;
-    private readonly List<GetBookResponse> _bookResponses;
-    private readonly Mock<IBookService> _bookServiceMock;
-    private readonly GetBasketPostProcessor _handler;
+    private CustomerBasketDto _basketDto = null!;
+    private List<string> _bookIds = null!;
+    private List<GetBookResponse> _bookResponses = null!;
+    private Mock<IBookService> _bookServiceMock = null!;
+    private GetBasketPostProcessor _handler = null!;
 
-    public GetBasketPostProcessorTests()
+    [Before(Test)]
+    public void Setup()
     {
         _bookIds = [Guid.CreateVersion7().ToString(), Guid.CreateVersion7().ToString()];
 

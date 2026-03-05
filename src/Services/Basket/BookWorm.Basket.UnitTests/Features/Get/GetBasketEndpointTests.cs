@@ -7,20 +7,27 @@ namespace BookWorm.Basket.UnitTests.Features.Get;
 
 public sealed class GetBasketEndpointTests
 {
-    private readonly CustomerBasketDto _customerBasketDto = new(
-        Guid.CreateVersion7().ToString(),
-        [
-            new("book-1", 2)
-            {
-                Name = "Test Book",
-                Price = 19.99m,
-                PriceSale = 15.99m,
-            },
-        ]
-    );
+    private CustomerBasketDto _customerBasketDto = null!;
+    private GetBasketEndpoint _endpoint = null!;
+    private Mock<ISender> _senderMock = null!;
 
-    private readonly GetBasketEndpoint _endpoint = new();
-    private readonly Mock<ISender> _senderMock = new();
+    [Before(Test)]
+    public void Setup()
+    {
+        _customerBasketDto = new(
+            Guid.CreateVersion7().ToString(),
+            [
+                new("book-1", 2)
+                {
+                    Name = "Test Book",
+                    Price = 19.99m,
+                    PriceSale = 15.99m,
+                },
+            ]
+        );
+        _endpoint = new();
+        _senderMock = new();
+    }
 
     [Test]
     public async Task GivenValidRequest_WhenHandlingGetBasket_ThenShouldReturnOkWithBasket()

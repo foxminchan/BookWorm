@@ -16,7 +16,7 @@ public sealed class OrderStateMachineTests
     private ISagaStateMachineTestHarness<OrderStateMachine, OrderState> _sagaHarness = null!;
 
     [Before(Test)]
-    public async Task Setup()
+    public async Task SetUpAsync()
     {
         var settings = new OrderStateMachineSettings
         {
@@ -26,6 +26,7 @@ public sealed class OrderStateMachineTests
 
         _provider = new ServiceCollection()
             .AddSingleton(settings)
+            .AddTelemetryListener()
             .AddMassTransitTestHarness(cfg =>
             {
                 cfg.AddSagaStateMachine<OrderStateMachine, OrderState>();
@@ -33,15 +34,14 @@ public sealed class OrderStateMachineTests
             })
             .BuildServiceProvider(true);
 
-        _harness = _provider.GetRequiredService<ITestHarness>();
+        _harness = await _provider.StartTestHarness();
         _harness.TestInactivityTimeout = TimeSpan.FromSeconds(60);
 
-        await _harness.Start();
         _sagaHarness = _harness.GetSagaStateMachineHarness<OrderStateMachine, OrderState>();
     }
 
     [After(Test)]
-    public async Task TearDown()
+    public async Task TearDownAsync()
     {
         await _harness.Stop();
         await _provider.DisposeAsync();
@@ -588,13 +588,7 @@ public sealed class OrderStateMachineTests
         await _harness.Bus.Publish(@event);
 
         // Assert
-        await Task.Delay(1000); // Give extra time for CI environments
-        using var eventCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-        (
-            await _harness.Consumed.Any<OrderStatusChangedToCompleteIntegrationEvent>(
-                eventCts.Token
-            )
-        ).ShouldBeTrue();
+        await _harness.AssertEventConsumed<OrderStatusChangedToCompleteIntegrationEvent>();
 
         // Should not publish CompleteOrderCommand when FullName is null/empty
         await _harness.AssertCommandNotPublished<CompleteOrderCommand>();
@@ -625,11 +619,7 @@ public sealed class OrderStateMachineTests
         await _harness.Bus.Publish(@event);
 
         // Assert
-        await Task.Delay(1000); // Give extra time for CI environments
-        using var eventCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-        (
-            await _harness.Consumed.Any<OrderStatusChangedToCancelIntegrationEvent>(eventCts.Token)
-        ).ShouldBeTrue();
+        await _harness.AssertEventConsumed<OrderStatusChangedToCancelIntegrationEvent>();
 
         // Should not publish CancelOrderCommand when FullName is null/empty
         await _harness.AssertCommandNotPublished<CancelOrderCommand>();
@@ -660,11 +650,7 @@ public sealed class OrderStateMachineTests
         await _harness.Bus.Publish(@event);
 
         // Assert
-        await Task.Delay(1000); // Give extra time for CI environments
-        using var eventCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-        (
-            await _harness.Consumed.Any<OrderStatusChangedToCancelIntegrationEvent>(eventCts.Token)
-        ).ShouldBeTrue();
+        await _harness.AssertEventConsumed<OrderStatusChangedToCancelIntegrationEvent>();
 
         // Should not publish CancelOrderCommand when FullName is null/empty
         await _harness.AssertCommandNotPublished<CancelOrderCommand>();

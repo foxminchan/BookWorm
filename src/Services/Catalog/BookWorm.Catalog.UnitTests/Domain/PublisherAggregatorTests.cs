@@ -6,7 +6,7 @@ namespace BookWorm.Catalog.UnitTests.Domain;
 public sealed class PublisherAggregatorTests
 {
     [Test]
-    public void GivenValidName_WhenCreatingPublisher_ShouldInitializeCorrectly()
+    public void GivenValidName_WhenCreatingPublisher_ThenShouldInitializeCorrectly()
     {
         // Arrange
         const string name = "Test Publisher";
@@ -22,7 +22,7 @@ public sealed class PublisherAggregatorTests
     [Arguments(null)]
     [Arguments("")]
     [Arguments("  ")]
-    public void GivenEmptyOrNullName_WhenCreatingPublisher_ShouldThrowException(string? name)
+    public void GivenEmptyOrNullName_WhenCreatingPublisher_ThenShouldThrowException(string? name)
     {
         // Act
         Func<Publisher> act = () => new(name!);
@@ -32,7 +32,7 @@ public sealed class PublisherAggregatorTests
     }
 
     [Test]
-    public void GivenValidName_WhenUpdatingPublisherName_ShouldUpdateCorrectly()
+    public void GivenValidName_WhenUpdatingPublisherName_ThenShouldUpdateCorrectly()
     {
         // Arrange
         var publisher = new Publisher("Original Name");
@@ -49,7 +49,9 @@ public sealed class PublisherAggregatorTests
     [Arguments(null)]
     [Arguments("")]
     [Arguments("  ")]
-    public void GivenEmptyOrNullName_WhenUpdatingPublisherName_ShouldThrowException(string? newName)
+    public void GivenEmptyOrNullName_WhenUpdatingPublisherName_ThenShouldThrowException(
+        string? newName
+    )
     {
         // Arrange
         var publisher = new Publisher("Original Name");
@@ -62,7 +64,7 @@ public sealed class PublisherAggregatorTests
     }
 
     [Test]
-    public void GivenValidName_WhenUpdatingPublisherName_ShouldReturnSameInstance()
+    public void GivenValidName_WhenUpdatingPublisherName_ThenShouldReturnSameInstance()
     {
         // Arrange
         var publisher = new Publisher("Original Name");

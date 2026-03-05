@@ -3,7 +3,7 @@ using BookWorm.Catalog.Domain.Exceptions;
 
 namespace BookWorm.Catalog.UnitTests.Domain;
 
-public class CategoryAggregatorTests
+public sealed class CategoryAggregatorTests
 {
     [Test]
     public void GivenValidName_WhenCreatingCategory_ThenShouldInitializeCorrectly()

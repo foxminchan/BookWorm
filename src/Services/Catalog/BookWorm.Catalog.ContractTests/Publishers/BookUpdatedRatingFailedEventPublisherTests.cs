@@ -11,17 +11,19 @@ namespace BookWorm.Catalog.ContractTests.Publishers;
 
 public sealed class BookUpdatedRatingFailedEventPublisherTests
 {
-    private readonly Guid _bookId;
-    private readonly Guid _feedbackId;
-    private readonly int _rating;
-    private readonly Mock<IBookRepository> _repositoryMock;
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private readonly int _rating = 4;
+    private Guid _bookId;
+    private Guid _feedbackId;
+    private ITestHarness _harness = null!;
+    private ServiceProvider _provider = null!;
+    private Mock<IBookRepository> _repositoryMock = null!;
+    private Mock<IUnitOfWork> _unitOfWorkMock = null!;
 
-    public BookUpdatedRatingFailedEventPublisherTests()
+    [Before(Test)]
+    public async Task SetUpAsync()
     {
         _bookId = Guid.CreateVersion7();
         _feedbackId = Guid.CreateVersion7();
-        _rating = 4;
 
         _unitOfWorkMock = new();
         _unitOfWorkMock
@@ -30,6 +32,21 @@ public sealed class BookUpdatedRatingFailedEventPublisherTests
 
         _repositoryMock = new();
         _repositoryMock.Setup(x => x.UnitOfWork).Returns(_unitOfWorkMock.Object);
+
+        _provider = new ServiceCollection()
+            .AddTelemetryListener()
+            .AddMassTransitTestHarness(x => x.AddConsumer<FeedbackCreatedIntegrationEventHandler>())
+            .AddScoped(_ => _repositoryMock.Object)
+            .BuildServiceProvider(true);
+
+        _harness = await _provider.StartTestHarness();
+    }
+
+    [After(Test)]
+    public async Task TearDownAsync()
+    {
+        await _harness.Stop();
+        await _provider.DisposeAsync();
     }
 
     [Test]
@@ -42,37 +59,18 @@ public sealed class BookUpdatedRatingFailedEventPublisherTests
 
         var integrationEvent = new FeedbackCreatedIntegrationEvent(_bookId, _rating, _feedbackId);
 
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness(x => x.AddConsumer<FeedbackCreatedIntegrationEventHandler>())
-            .AddScoped(_ => _repositoryMock.Object)
-            .BuildServiceProvider(true);
+        // Act
+        await _harness.Bus.Publish(integrationEvent);
 
-        var harness = provider.GetRequiredService<ITestHarness>();
-        await harness.Start();
+        // Assert
+        await _harness.Consumed.Any<FeedbackCreatedIntegrationEvent>();
 
-        try
-        {
-            // Act
-            await harness.Bus.Publish(integrationEvent);
+        await SnapshotTestHelper.Verify(_harness);
 
-            // Assert
-            // Wait for the consumer to consume the message
-            await harness.Consumed.Any<FeedbackCreatedIntegrationEvent>();
-
-            await SnapshotTestHelper.Verify(harness);
-
-            _repositoryMock.Verify(
-                x => x.GetByIdAsync(_bookId, It.IsAny<CancellationToken>()),
-                Times.Once
-            );
-            _unitOfWorkMock.Verify(
-                x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
-                Times.Once
-            );
-        }
-        finally
-        {
-            await harness.Stop();
-        }
+        _repositoryMock.Verify(
+            x => x.GetByIdAsync(_bookId, It.IsAny<CancellationToken>()),
+            Times.Once
+        );
+        _unitOfWorkMock.Verify(x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

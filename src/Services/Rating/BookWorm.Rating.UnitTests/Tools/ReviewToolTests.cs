@@ -370,16 +370,6 @@ public sealed class ReviewToolTests
     }
 
     [Test]
-    public void GivenReviewTool_WhenAsAITools_ThenShouldReturnNonNullEnumerable()
-    {
-        // Act
-        var result = _reviewTool.AsAITools();
-
-        // Assert
-        result.ShouldNotBeNull();
-    }
-
-    [Test]
     public void GivenReviewTool_WhenAsAITools_ThenShouldReturnExactlyOneAITool()
     {
         // Act
@@ -388,17 +378,6 @@ public sealed class ReviewToolTests
 
         // Assert
         tools.Count.ShouldBe(1);
-    }
-
-    [Test]
-    public void GivenReviewTool_WhenAsAITools_ThenShouldReturnNonNullAITool()
-    {
-        // Act
-        var result = _reviewTool.AsAITools();
-        var tool = result.FirstOrDefault();
-
-        // Assert
-        tool.ShouldNotBeNull();
     }
 
     [Test]
@@ -434,17 +413,6 @@ public sealed class ReviewToolTests
         tool.Description.ShouldNotBeNullOrWhiteSpace();
         tool.Description.ShouldContain("reviews");
         tool.Description.ShouldContain("book");
-    }
-
-    [Test]
-    public void GivenReviewTool_WhenAsAIToolsEnumeratedMultipleTimes_ThenShouldReturnSameToolsEachTime()
-    {
-        // Act
-        var result = _reviewTool.AsAITools().ToList();
-
-        // Assert
-        result.Count.ShouldBe(result.Count);
-        result.Count.ShouldBe(1);
     }
 
     private static List<FeedbackDto> DeserializeFeedbackList(string json)

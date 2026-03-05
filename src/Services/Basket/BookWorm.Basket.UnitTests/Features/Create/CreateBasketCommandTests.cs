@@ -8,12 +8,13 @@ namespace BookWorm.Basket.UnitTests.Features.Create;
 
 public sealed class CreateBasketCommandTests
 {
-    private readonly CreateBasketCommandFaker _faker;
-    private readonly CreateBasketHandler _handler;
-    private readonly Mock<IBasketRepository> _mockBasketRepository;
-    private readonly string _userId;
+    private CreateBasketCommandFaker _faker = null!;
+    private CreateBasketHandler _handler = null!;
+    private Mock<IBasketRepository> _mockBasketRepository = null!;
+    private string _userId = null!;
 
-    public CreateBasketCommandTests()
+    [Before(Test)]
+    public void Setup()
     {
         _mockBasketRepository = new();
         var mockClaimsPrincipal = new Mock<ClaimsPrincipal>();
@@ -37,11 +38,10 @@ public sealed class CreateBasketCommandTests
             .Setup(x => x.CreateOrUpdateBasketAsync(It.IsAny<CustomerBasket>()))
             .ReturnsAsync((CustomerBasket)null!);
 
-        // Act
-        Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        var exception = await act.ShouldThrowAsync<BasketCreatedException>();
+        // Act & Assert
+        var exception = await Should.ThrowAsync<BasketCreatedException>(async () =>
+            await _handler.Handle(command, CancellationToken.None)
+        );
         exception.Message.ShouldBe("An error occurred while creating the basket.");
         _mockBasketRepository.Verify(
             x =>
@@ -71,11 +71,10 @@ public sealed class CreateBasketCommandTests
             mockEmptyClaimsPrincipal.Object
         );
 
-        // Act
-        Func<Task> act = async () => await handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        var exception = await act.ShouldThrowAsync<UnauthorizedAccessException>();
+        // Act & Assert
+        var exception = await Should.ThrowAsync<UnauthorizedAccessException>(async () =>
+            await handler.Handle(command, CancellationToken.None)
+        );
         exception.Message.ShouldBe("User is not authenticated.");
         _mockBasketRepository.Verify(
             x => x.CreateOrUpdateBasketAsync(It.IsAny<CustomerBasket>()),

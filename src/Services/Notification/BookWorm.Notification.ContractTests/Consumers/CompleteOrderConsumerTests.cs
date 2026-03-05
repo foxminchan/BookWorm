@@ -19,13 +19,21 @@ public sealed class CompleteOrderConsumerTests
     private const decimal TotalMoney = 150.99m;
     private const string FullName = "John Doe";
     private const string ValidEmail = "customer@example.com";
-    private readonly MailKitSettings _mailKitSettings = new() { From = "store@bookworm.com" };
-    private readonly Guid _orderId = Guid.CreateVersion7();
-    private readonly Mock<IRenderer> _rendererMock = new();
-    private readonly Mock<ISender> _senderMock = new();
+    private Guid _orderId;
+    private ITestHarness _harness = null!;
+    private ServiceProvider _provider = null!;
+    private MailKitSettings _mailKitSettings = null!;
+    private Mock<IRenderer> _rendererMock = null!;
+    private Mock<ISender> _senderMock = null!;
 
-    public CompleteOrderConsumerTests()
+    [Before(Test)]
+    public async Task SetUpAsync()
     {
+        _orderId = Guid.CreateVersion7();
+        _mailKitSettings = new() { From = "store@bookworm.com" };
+        _senderMock = new();
+        _rendererMock = new();
+
         _senderMock
             .Setup(x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
@@ -35,6 +43,23 @@ public sealed class CompleteOrderConsumerTests
                 x.RenderAsync(It.IsAny<Order>(), It.IsAny<string>(), It.IsAny<CancellationToken>())
             )
             .ReturnsAsync("Rendered order content");
+
+        _provider = new ServiceCollection()
+            .AddTelemetryListener()
+            .AddMassTransitTestHarness(x => x.AddConsumer<CompleteOrderCommandHandler>())
+            .AddScoped(_ => _senderMock.Object)
+            .AddScoped(_ => _rendererMock.Object)
+            .AddSingleton(_ => _mailKitSettings)
+            .BuildServiceProvider(true);
+
+        _harness = await _provider.StartTestHarness();
+    }
+
+    [After(Test)]
+    public async Task TearDownAsync()
+    {
+        await _harness.Stop();
+        await _provider.DisposeAsync();
     }
 
     [Test]
@@ -43,38 +68,19 @@ public sealed class CompleteOrderConsumerTests
         // Arrange
         var command = new CompleteOrderCommand(_orderId, FullName, ValidEmail, TotalMoney);
 
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness(x => x.AddConsumer<CompleteOrderCommandHandler>())
-            .AddScoped(_ => _senderMock.Object)
-            .AddScoped(_ => _rendererMock.Object)
-            .AddSingleton(_ => _mailKitSettings)
-            .BuildServiceProvider(true);
+        // Act
+        await _harness.Bus.Publish(command);
 
-        var harness = provider.GetRequiredService<ITestHarness>();
-        await harness.Start();
+        // Assert
+        var consumer = _harness.GetConsumerHarness<CompleteOrderCommandHandler>();
+        await consumer.Consumed.Any<CompleteOrderCommand>();
 
-        try
-        {
-            // Act
-            await harness.Bus.Publish(command);
+        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
 
-            // Assert
-            var consumer = harness.GetConsumerHarness<CompleteOrderCommandHandler>();
-
-            // Wait for the consumer to consume the message
-            await consumer.Consumed.Any<CompleteOrderCommand>();
-
-            await SnapshotTestHelper.Verify(new { harness, consumer });
-
-            _senderMock.Verify(
-                x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
-                Times.Once
-            );
-        }
-        finally
-        {
-            await harness.Stop();
-        }
+        _senderMock.Verify(
+            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
+            Times.Once
+        );
     }
 
     [Test]
@@ -83,38 +89,19 @@ public sealed class CompleteOrderConsumerTests
         // Arrange
         var command = new CompleteOrderCommand(_orderId, FullName, string.Empty, TotalMoney);
 
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness(x => x.AddConsumer<CompleteOrderCommandHandler>())
-            .AddScoped(_ => _senderMock.Object)
-            .AddScoped(_ => _rendererMock.Object)
-            .AddSingleton(_ => _mailKitSettings)
-            .BuildServiceProvider(true);
+        // Act
+        await _harness.Bus.Publish(command);
 
-        var harness = provider.GetRequiredService<ITestHarness>();
-        await harness.Start();
+        // Assert
+        var consumer = _harness.GetConsumerHarness<CompleteOrderCommandHandler>();
+        await consumer.Consumed.Any<CompleteOrderCommand>();
 
-        try
-        {
-            // Act
-            await harness.Bus.Publish(command);
+        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
 
-            // Assert
-            var consumer = harness.GetConsumerHarness<CompleteOrderCommandHandler>();
-
-            // Wait for the consumer to consume the message
-            await consumer.Consumed.Any<CompleteOrderCommand>();
-
-            await SnapshotTestHelper.Verify(new { harness, consumer });
-
-            _senderMock.Verify(
-                x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
-                Times.Never
-            );
-        }
-        finally
-        {
-            await harness.Stop();
-        }
+        _senderMock.Verify(
+            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
+            Times.Never
+        );
     }
 
     [Test]
@@ -123,38 +110,19 @@ public sealed class CompleteOrderConsumerTests
         // Arrange
         var command = new CompleteOrderCommand(_orderId, FullName, null, TotalMoney);
 
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness(x => x.AddConsumer<CompleteOrderCommandHandler>())
-            .AddScoped(_ => _senderMock.Object)
-            .AddScoped(_ => _rendererMock.Object)
-            .AddSingleton(_ => _mailKitSettings)
-            .BuildServiceProvider(true);
+        // Act
+        await _harness.Bus.Publish(command);
 
-        var harness = provider.GetRequiredService<ITestHarness>();
-        await harness.Start();
+        // Assert
+        var consumer = _harness.GetConsumerHarness<CompleteOrderCommandHandler>();
+        await consumer.Consumed.Any<CompleteOrderCommand>();
 
-        try
-        {
-            // Act
-            await harness.Bus.Publish(command);
+        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
 
-            // Assert
-            var consumer = harness.GetConsumerHarness<CompleteOrderCommandHandler>();
-
-            // Wait for the consumer to consume the message
-            await consumer.Consumed.Any<CompleteOrderCommand>();
-
-            await SnapshotTestHelper.Verify(new { harness, consumer });
-
-            _senderMock.Verify(
-                x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
-                Times.Never
-            );
-        }
-        finally
-        {
-            await harness.Stop();
-        }
+        _senderMock.Verify(
+            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
+            Times.Never
+        );
     }
 
     [Test]
@@ -162,32 +130,21 @@ public sealed class CompleteOrderConsumerTests
     {
         // Arrange
         var command = new CompleteOrderCommand(_orderId, FullName, ValidEmail, TotalMoney);
-        var expectedException = new Exception("Failed to send email");
 
         _senderMock
             .Setup(x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(expectedException);
+            .ThrowsAsync(new Exception("Failed to send email"));
 
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness(x => x.AddConsumer<CompleteOrderCommandHandler>())
-            .AddScoped(_ => _senderMock.Object)
-            .AddScoped(_ => _rendererMock.Object)
-            .AddSingleton(_ => _mailKitSettings)
-            .BuildServiceProvider(true);
+        // Act
+        await _harness.Bus.Publish(command);
 
-        var harness = provider.GetRequiredService<ITestHarness>();
-        await harness.Start();
-
-        // Act & Assert
-        await harness.Bus.Publish(command);
-
-        var consumerHarness = harness.GetConsumerHarness<CompleteOrderCommandHandler>();
+        // Assert
+        var consumerHarness = _harness.GetConsumerHarness<CompleteOrderCommandHandler>();
         (await consumerHarness.Consumed.Any<CompleteOrderCommand>()).ShouldBeTrue();
 
-        // Verify the exception was thrown
-        var consumeContext = harness.Consumed.Select<CompleteOrderCommand>().First();
+        var consumeContext = _harness.Consumed.Select<CompleteOrderCommand>().First();
         (
-            await harness.Consumed.Any<CompleteOrderCommand>(x =>
+            await _harness.Consumed.Any<CompleteOrderCommand>(x =>
                 x.Context.MessageId == consumeContext.Context.MessageId
             )
         ).ShouldBeTrue();
@@ -196,8 +153,6 @@ public sealed class CompleteOrderConsumerTests
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
             Times.Once
         );
-
-        await harness.Stop();
     }
 
     [Test]
@@ -217,16 +172,6 @@ public sealed class CompleteOrderConsumerTests
             )
             .ReturnsAsync("Rendered order content");
 
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness(x => x.AddConsumer<CompleteOrderCommandHandler>())
-            .AddScoped(_ => _senderMock.Object)
-            .AddScoped(_ => _rendererMock.Object)
-            .AddSingleton(_ => _mailKitSettings)
-            .BuildServiceProvider(true);
-
-        var harness = provider.GetRequiredService<ITestHarness>();
-        await harness.Start();
-
         // Create a message builder and test it directly
         var builder = OrderMimeMessageBuilder.Initialize();
 
@@ -243,7 +188,5 @@ public sealed class CompleteOrderConsumerTests
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
             Times.Never
         );
-
-        await harness.Stop();
     }
 }

@@ -14,12 +14,15 @@ namespace BookWorm.Notification.ContractTests.Consumers;
 
 public sealed class CleanUpSentEmailConsumerTests
 {
-    private readonly Mock<GlobalLogBuffer> _logBufferMock;
-    private readonly Mock<ILogger<CleanUpSentEmailIntegrationEventHandler>> _loggerMock;
-    private readonly Mock<IOutboxRepository> _repositoryMock;
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private ITestHarness _harness = null!;
+    private ServiceProvider _provider = null!;
+    private Mock<GlobalLogBuffer> _logBufferMock = null!;
+    private Mock<ILogger<CleanUpSentEmailIntegrationEventHandler>> _loggerMock = null!;
+    private Mock<IOutboxRepository> _repositoryMock = null!;
+    private Mock<IUnitOfWork> _unitOfWorkMock = null!;
 
-    public CleanUpSentEmailConsumerTests()
+    [Before(Test)]
+    public async Task SetUpAsync()
     {
         _loggerMock = new();
         _logBufferMock = new();
@@ -27,6 +30,25 @@ public sealed class CleanUpSentEmailConsumerTests
         _unitOfWorkMock = new();
 
         _repositoryMock.Setup(x => x.UnitOfWork).Returns(_unitOfWorkMock.Object);
+
+        _provider = new ServiceCollection()
+            .AddTelemetryListener()
+            .AddMassTransitTestHarness(x =>
+                x.AddConsumer<CleanUpSentEmailIntegrationEventHandler>()
+            )
+            .AddScoped(_ => _loggerMock.Object)
+            .AddScoped(_ => _logBufferMock.Object)
+            .AddScoped(_ => _repositoryMock.Object)
+            .BuildServiceProvider(true);
+
+        _harness = await _provider.StartTestHarness();
+    }
+
+    [After(Test)]
+    public async Task TearDownAsync()
+    {
+        await _harness.Stop();
+        await _provider.DisposeAsync();
     }
 
     [Test]
@@ -46,58 +68,30 @@ public sealed class CleanUpSentEmailConsumerTests
 
         var command = new CleanUpSentEmailIntegrationEvent();
 
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness(x =>
-                x.AddConsumer<CleanUpSentEmailIntegrationEventHandler>()
-            )
-            .AddScoped(_ => _loggerMock.Object)
-            .AddScoped(_ => _logBufferMock.Object)
-            .AddScoped(_ => _repositoryMock.Object)
-            .BuildServiceProvider(true);
+        // Act
+        await _harness.Bus.Publish(command);
 
-        var harness = provider.GetRequiredService<ITestHarness>();
-        await harness.Start();
+        // Assert
+        var consumer = _harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
+        await consumer.Consumed.Any<CleanUpSentEmailIntegrationEvent>();
 
-        try
-        {
-            // Act
-            await harness.Bus.Publish(command);
+        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
 
-            // Assert
-            var consumer = harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
+        _repositoryMock.Verify(
+            x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()),
+            Times.Once
+        );
 
-            // Wait for the consumer to consume the message
-            await consumer.Consumed.Any<CleanUpSentEmailIntegrationEvent>();
+        _repositoryMock.Verify(
+            x => x.BulkDelete(It.Is<IEnumerable<Outbox>>(emails => emails.Count() == 3)),
+            Times.Once
+        );
 
-            await SnapshotTestHelper.Verify(new { harness, consumer });
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 
-            _repositoryMock.Verify(
-                x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()),
-                Times.Once
-            );
-
-            _repositoryMock.Verify(
-                x => x.BulkDelete(It.Is<IEnumerable<Outbox>>(emails => emails.Count() == 3)),
-                Times.Once
-            );
-
-            _unitOfWorkMock.Verify(
-                x => x.SaveChangesAsync(It.IsAny<CancellationToken>()),
-                Times.Once
-            );
-
-            VerifyLogMessage(LogLevel.Debug, "Starting cleanup of sent emails", Times.Once());
-            VerifyLogMessage(LogLevel.Debug, "Found 3 sent emails to delete", Times.Once());
-            VerifyLogMessage(
-                LogLevel.Information,
-                "Successfully cleaned up sent emails",
-                Times.Once()
-            );
-        }
-        finally
-        {
-            await harness.Stop();
-        }
+        VerifyLogMessage(LogLevel.Debug, "Starting cleanup of sent emails", Times.Once());
+        VerifyLogMessage(LogLevel.Debug, "Found 3 sent emails to delete", Times.Once());
+        VerifyLogMessage(LogLevel.Information, "Successfully cleaned up sent emails", Times.Once());
     }
 
     [Test]
@@ -110,50 +104,26 @@ public sealed class CleanUpSentEmailConsumerTests
 
         var command = new CleanUpSentEmailIntegrationEvent();
 
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness(x =>
-                x.AddConsumer<CleanUpSentEmailIntegrationEventHandler>()
-            )
-            .AddScoped(_ => _loggerMock.Object)
-            .AddScoped(_ => _logBufferMock.Object)
-            .AddScoped(_ => _repositoryMock.Object)
-            .BuildServiceProvider(true);
+        // Act
+        await _harness.Bus.Publish(command);
 
-        var harness = provider.GetRequiredService<ITestHarness>();
-        await harness.Start();
+        // Assert
+        var consumer = _harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
+        await consumer.Consumed.Any<CleanUpSentEmailIntegrationEvent>();
 
-        try
-        {
-            // Act
-            await harness.Bus.Publish(command);
+        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
 
-            // Assert
-            var consumer = harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
+        _repositoryMock.Verify(
+            x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()),
+            Times.Once
+        );
 
-            // Wait for the consumer to consume the message
-            await consumer.Consumed.Any<CleanUpSentEmailIntegrationEvent>();
+        _repositoryMock.Verify(x => x.BulkDelete(It.IsAny<IEnumerable<Outbox>>()), Times.Never);
 
-            await SnapshotTestHelper.Verify(new { harness, consumer });
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
 
-            _repositoryMock.Verify(
-                x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()),
-                Times.Once
-            );
-
-            _repositoryMock.Verify(x => x.BulkDelete(It.IsAny<IEnumerable<Outbox>>()), Times.Never);
-
-            _unitOfWorkMock.Verify(
-                x => x.SaveChangesAsync(It.IsAny<CancellationToken>()),
-                Times.Never
-            );
-
-            VerifyLogMessage(LogLevel.Debug, "Starting cleanup of sent emails", Times.Once());
-            VerifyLogMessage(LogLevel.Debug, "No sent emails found for cleanup", Times.Once());
-        }
-        finally
-        {
-            await harness.Stop();
-        }
+        VerifyLogMessage(LogLevel.Debug, "Starting cleanup of sent emails", Times.Once());
+        VerifyLogMessage(LogLevel.Debug, "No sent emails found for cleanup", Times.Once());
     }
 
     [Test]
@@ -168,23 +138,12 @@ public sealed class CleanUpSentEmailConsumerTests
 
         var command = new CleanUpSentEmailIntegrationEvent();
 
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness(x =>
-                x.AddConsumer<CleanUpSentEmailIntegrationEventHandler>()
-            )
-            .AddScoped(_ => _loggerMock.Object)
-            .AddScoped(_ => _logBufferMock.Object)
-            .AddScoped(_ => _repositoryMock.Object)
-            .BuildServiceProvider(true);
-
-        var harness = provider.GetRequiredService<ITestHarness>();
-        await harness.Start();
-
         // Act
-        await harness.Bus.Publish(command);
+        await _harness.Bus.Publish(command);
 
         // Assert
-        var consumerHarness = harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
+        var consumerHarness =
+            _harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
         (await consumerHarness.Consumed.Any<CleanUpSentEmailIntegrationEvent>()).ShouldBeTrue();
 
         // Verify that the consumer faulted
@@ -207,8 +166,6 @@ public sealed class CleanUpSentEmailConsumerTests
             exception,
             Times.Once()
         );
-
-        await harness.Stop();
     }
 
     [Test]
@@ -229,23 +186,12 @@ public sealed class CleanUpSentEmailConsumerTests
 
         var command = new CleanUpSentEmailIntegrationEvent();
 
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness(x =>
-                x.AddConsumer<CleanUpSentEmailIntegrationEventHandler>()
-            )
-            .AddScoped(_ => _loggerMock.Object)
-            .AddScoped(_ => _logBufferMock.Object)
-            .AddScoped(_ => _repositoryMock.Object)
-            .BuildServiceProvider(true);
-
-        var harness = provider.GetRequiredService<ITestHarness>();
-        await harness.Start();
-
         // Act
-        await harness.Bus.Publish(command);
+        await _harness.Bus.Publish(command);
 
         // Assert
-        var consumerHarness = harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
+        var consumerHarness =
+            _harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
         (await consumerHarness.Consumed.Any<CleanUpSentEmailIntegrationEvent>()).ShouldBeTrue();
 
         // Verify that the consumer faulted
@@ -270,8 +216,6 @@ public sealed class CleanUpSentEmailConsumerTests
             exception,
             Times.Once()
         );
-
-        await harness.Stop();
     }
 
     [Test]
@@ -295,28 +239,15 @@ public sealed class CleanUpSentEmailConsumerTests
 
         var command = new CleanUpSentEmailIntegrationEvent();
 
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness(x =>
-                x.AddConsumer<CleanUpSentEmailIntegrationEventHandler>()
-            )
-            .AddScoped(_ => _loggerMock.Object)
-            .AddScoped(_ => _logBufferMock.Object)
-            .AddScoped(_ => _repositoryMock.Object)
-            .BuildServiceProvider(true);
-
-        var harness = provider.GetRequiredService<ITestHarness>();
-        await harness.Start();
-
         // Act
-        await harness.Bus.Publish(command);
+        await _harness.Bus.Publish(command);
 
         // Assert
-        var consumerHarness = harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
+        var consumerHarness =
+            _harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
         (await consumerHarness.Consumed.Any<CleanUpSentEmailIntegrationEvent>()).ShouldBeTrue();
 
         capturedSpec.ShouldNotBeNull();
-
-        await harness.Stop();
     }
 
     [Test]
@@ -335,23 +266,12 @@ public sealed class CleanUpSentEmailConsumerTests
 
         var command = new CleanUpSentEmailIntegrationEvent();
 
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness(x =>
-                x.AddConsumer<CleanUpSentEmailIntegrationEventHandler>()
-            )
-            .AddScoped(_ => _loggerMock.Object)
-            .AddScoped(_ => _logBufferMock.Object)
-            .AddScoped(_ => _repositoryMock.Object)
-            .BuildServiceProvider(true);
-
-        var harness = provider.GetRequiredService<ITestHarness>();
-        await harness.Start();
-
         // Act
-        await harness.Bus.Publish(command);
+        await _harness.Bus.Publish(command);
 
         // Assert
-        var consumerHarness = harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
+        var consumerHarness =
+            _harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
         (await consumerHarness.Consumed.Any<CleanUpSentEmailIntegrationEvent>()).ShouldBeTrue();
 
         _repositoryMock.Verify(
@@ -369,8 +289,6 @@ public sealed class CleanUpSentEmailConsumerTests
         VerifyLogMessage(LogLevel.Debug, "Starting cleanup of sent emails", Times.Once());
         VerifyLogMessage(LogLevel.Debug, "Found 10 sent emails to delete", Times.Once());
         VerifyLogMessage(LogLevel.Information, "Successfully cleaned up sent emails", Times.Once());
-
-        await harness.Stop();
     }
 
     [Test]
@@ -389,23 +307,12 @@ public sealed class CleanUpSentEmailConsumerTests
 
         var command = new CleanUpSentEmailIntegrationEvent();
 
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness(x =>
-                x.AddConsumer<CleanUpSentEmailIntegrationEventHandler>()
-            )
-            .AddScoped(_ => _loggerMock.Object)
-            .AddScoped(_ => _logBufferMock.Object)
-            .AddScoped(_ => _repositoryMock.Object)
-            .BuildServiceProvider(true);
-
-        var harness = provider.GetRequiredService<ITestHarness>();
-        await harness.Start();
-
         // Act
-        await harness.Bus.Publish(command, cancellationToken);
+        await _harness.Bus.Publish(command, cancellationToken);
 
         // Assert
-        var consumerHarness = harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
+        var consumerHarness =
+            _harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
         (
             await consumerHarness.Consumed.Any<CleanUpSentEmailIntegrationEvent>(cancellationToken)
         ).ShouldBeTrue();
@@ -418,8 +325,6 @@ public sealed class CleanUpSentEmailConsumerTests
         _repositoryMock.Verify(x => x.BulkDelete(It.IsAny<IEnumerable<Outbox>>()), Times.Once);
 
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-
-        await harness.Stop(cancellationToken);
     }
 
     [Test]
@@ -438,23 +343,12 @@ public sealed class CleanUpSentEmailConsumerTests
 
         var command = new CleanUpSentEmailIntegrationEvent();
 
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness(x =>
-                x.AddConsumer<CleanUpSentEmailIntegrationEventHandler>()
-            )
-            .AddScoped(_ => _loggerMock.Object)
-            .AddScoped(_ => _logBufferMock.Object)
-            .AddScoped(_ => _repositoryMock.Object)
-            .BuildServiceProvider(true);
-
-        var harness = provider.GetRequiredService<ITestHarness>();
-        await harness.Start();
-
         // Act
-        await harness.Bus.Publish(command);
+        await _harness.Bus.Publish(command);
 
         // Assert
-        var consumerHarness = harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
+        var consumerHarness =
+            _harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
         (await consumerHarness.Consumed.Any<CleanUpSentEmailIntegrationEvent>()).ShouldBeTrue();
 
         // Verify that the consumer faulted
@@ -487,8 +381,6 @@ public sealed class CleanUpSentEmailConsumerTests
             exception,
             Times.Once()
         );
-
-        await harness.Stop();
     }
 
     private void VerifyLogMessage(LogLevel level, string expectedMessage, Times times)

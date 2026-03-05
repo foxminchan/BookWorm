@@ -1,7 +1,6 @@
 using ArchUnitNET.TUnit;
 using BookWorm.ArchTests.Abstractions;
 using BookWorm.SharedKernel.SeedWork;
-using Shouldly;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
 namespace BookWorm.ArchTests.Domain;
@@ -9,7 +8,7 @@ namespace BookWorm.ArchTests.Domain;
 public sealed class ValueObjectTests : ArchUnitBaseTest
 {
     [Test]
-    public void GivenArchitecture_WhenSearchingForValueObjects_ThenShouldFindConcreteImplementations()
+    public async Task GivenArchitecture_WhenSearchingForValueObjects_ThenShouldFindConcreteImplementations()
     {
         var valueObjectClasses = Classes()
             .That()
@@ -18,10 +17,10 @@ public sealed class ValueObjectTests : ArchUnitBaseTest
             .DoNotHaveName(nameof(ValueObject))
             .GetObjects(Architecture);
 
-        valueObjectClasses
-            .Count()
-            .ShouldBeGreaterThan(
-                0,
+        await Assert
+            .That(valueObjectClasses.Count())
+            .IsGreaterThan(0)
+            .Because(
                 "Should find at least one concrete ValueObject implementation in the architecture"
             );
     }
@@ -29,28 +28,17 @@ public sealed class ValueObjectTests : ArchUnitBaseTest
     [Test]
     public void GivenValueObjects_WhenCheckingStructure_ThenShouldBeImmutable()
     {
-        var valueObjectClasses = Classes()
+        Classes()
             .That()
             .AreAssignableTo(typeof(ValueObject))
             .And()
             .DoNotHaveName(nameof(ValueObject))
-            .GetObjects(Architecture);
-
-        // Only run the rule if there are value objects to check
-        if (valueObjectClasses.Any())
-        {
-            Classes()
-                .That()
-                .AreAssignableTo(typeof(ValueObject))
-                .And()
-                .DoNotHaveName(nameof(ValueObject))
-                .Should()
-                .BeSealed()
-                .Because(
-                    "Concrete value objects should be immutable to ensure their value equality semantics are preserved."
-                )
-                .Check(Architecture);
-        }
+            .Should()
+            .BeSealed()
+            .Because(
+                "Concrete value objects should be immutable to ensure their value equality semantics are preserved."
+            )
+            .Check(Architecture);
     }
 
     [Test]
@@ -88,27 +76,16 @@ public sealed class ValueObjectTests : ArchUnitBaseTest
     [Test]
     public void GivenValueObjects_WhenCheckingDependencies_ThenShouldNotDependOnEntities()
     {
-        var valueObjectClasses = Classes()
+        Classes()
             .That()
             .AreAssignableTo(typeof(ValueObject))
             .And()
             .DoNotHaveName(nameof(ValueObject))
-            .GetObjects(Architecture);
-
-        // Only run the rule if there are value objects to check
-        if (valueObjectClasses.Any())
-        {
-            Classes()
-                .That()
-                .AreAssignableTo(typeof(ValueObject))
-                .And()
-                .DoNotHaveName(nameof(ValueObject))
-                .Should()
-                .NotDependOnAny(Classes().That().AreAssignableTo(typeof(Entity)))
-                .Because(
-                    "Value objects should not depend on entities to maintain proper domain boundaries."
-                )
-                .Check(Architecture);
-        }
+            .Should()
+            .NotDependOnAny(Classes().That().AreAssignableTo(typeof(Entity)))
+            .Because(
+                "Value objects should not depend on entities to maintain proper domain boundaries."
+            )
+            .Check(Architecture);
     }
 }

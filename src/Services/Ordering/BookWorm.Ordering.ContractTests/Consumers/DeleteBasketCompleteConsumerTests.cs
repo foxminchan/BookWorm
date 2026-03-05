@@ -11,8 +11,32 @@ namespace BookWorm.Ordering.ContractTests.Consumers;
 public sealed class DeleteBasketCompleteConsumerTests
 {
     private const decimal TotalMoney = 125.99m;
-    private readonly Mock<ILogger<DeleteBasketCompleteCommandHandler>> _loggerMock = new();
-    private readonly Guid _orderId = Guid.CreateVersion7();
+    private Guid _orderId;
+    private ITestHarness _harness = null!;
+    private ServiceProvider _provider = null!;
+    private Mock<ILogger<DeleteBasketCompleteCommandHandler>> _loggerMock = null!;
+
+    [Before(Test)]
+    public async Task SetUpAsync()
+    {
+        _orderId = Guid.CreateVersion7();
+        _loggerMock = new();
+
+        _provider = new ServiceCollection()
+            .AddTelemetryListener()
+            .AddMassTransitTestHarness(x => x.AddConsumer<DeleteBasketCompleteCommandHandler>())
+            .AddScoped(_ => _loggerMock.Object)
+            .BuildServiceProvider(true);
+
+        _harness = await _provider.StartTestHarness();
+    }
+
+    [After(Test)]
+    public async Task TearDownAsync()
+    {
+        await _harness.Stop();
+        await _provider.DisposeAsync();
+    }
 
     [Test]
     public async Task GivenDeleteBasketCompleteCommand_WhenPublished_ThenConsumerShouldConsumeItAndLogInformation()
@@ -20,45 +44,28 @@ public sealed class DeleteBasketCompleteConsumerTests
         // Arrange
         var command = new DeleteBasketCompleteCommand(_orderId, TotalMoney);
 
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness(x => x.AddConsumer<DeleteBasketCompleteCommandHandler>())
-            .AddScoped(_ => _loggerMock.Object)
-            .BuildServiceProvider(true);
+        // Act
+        await _harness.Bus.Publish(command);
 
-        var harness = provider.GetRequiredService<ITestHarness>();
-        await harness.Start();
+        // Assert
+        var consumer = _harness.GetConsumerHarness<DeleteBasketCompleteCommandHandler>();
+        await consumer.Consumed.Any<DeleteBasketCompleteCommand>();
 
-        try
-        {
-            // Act
-            await harness.Bus.Publish(command);
+        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
 
-            // Assert
-            var consumer = harness.GetConsumerHarness<DeleteBasketCompleteCommandHandler>();
-
-            // Wait for the consumer to consume the message
-            await consumer.Consumed.Any<DeleteBasketCompleteCommand>();
-
-            await SnapshotTestHelper.Verify(new { harness, consumer });
-
-            // Verify that information was logged
-            _loggerMock.Verify(
-                x =>
-                    x.Log(
-                        LogLevel.Information,
-                        It.IsAny<EventId>(),
-                        It.Is<It.IsAnyType>(
-                            (v, t) => v.ToString()!.Contains("Basket deletion completed")
-                        ),
-                        It.IsAny<Exception>(),
-                        It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+        // Verify that information was logged
+        _loggerMock.Verify(
+            x =>
+                x.Log(
+                    LogLevel.Information,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>(
+                        (v, t) => v.ToString()!.Contains("Basket deletion completed")
                     ),
-                Times.Once
-            );
-        }
-        finally
-        {
-            await harness.Stop();
-        }
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+                ),
+            Times.Once
+        );
     }
 }

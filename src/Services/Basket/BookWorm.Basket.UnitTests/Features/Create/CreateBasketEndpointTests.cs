@@ -7,13 +7,21 @@ namespace BookWorm.Basket.UnitTests.Features.Create;
 
 public sealed class CreateBasketEndpointTests
 {
-    private readonly CreateBasketCommand _command = new([new("book1", 1), new("book2", 2)]);
+    private CreateBasketCommand _command = null!;
+    private CreateBasketEndpoint _endpoint = null!;
+    private string _expectedBasketId = null!;
+    private LinkGenerator _linkGenerator = null!;
+    private Mock<ISender> _senderMock = null!;
 
-    private readonly CreateBasketEndpoint _endpoint = new();
-
-    private readonly string _expectedBasketId = Guid.CreateVersion7().ToString();
-    private readonly LinkGenerator _linkGenerator = Mock.Of<LinkGenerator>();
-    private readonly Mock<ISender> _senderMock = new();
+    [Before(Test)]
+    public void Setup()
+    {
+        _command = new([new("book1", 1), new("book2", 2)]);
+        _endpoint = new();
+        _expectedBasketId = Guid.CreateVersion7().ToString();
+        _linkGenerator = Mock.Of<LinkGenerator>();
+        _senderMock = new();
+    }
 
     [Test]
     public async Task GivenValidCommand_WhenHandlingRequest_ThenShouldCallMediator()
