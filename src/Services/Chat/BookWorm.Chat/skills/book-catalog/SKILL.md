@@ -2,8 +2,9 @@
 name: book-catalog
 description: Search and recommend books from BookWorm's catalog. Use when customers ask about finding books, getting personalized recommendations, exploring genres, discovering authors, or comparing titles.
 metadata:
-  author: bookworm-catalog
+  author: Nhan Nguyen
   version: "1.0"
+license: MIT
 ---
 
 # Book Catalog
@@ -17,7 +18,6 @@ Use the `search_catalog` tool to find books. The catalog supports:
 | Title keyword    | "clean code", "dune"                      |
 | Author name      | "Martin Fowler", "Frank Herbert"          |
 | Genre / category | "science fiction", "software engineering" |
-| ISBN             | "978-0-13-468599-1"                       |
 | Price range      | min/max price filters                     |
 | Rating           | minimum star rating                       |
 | Availability     | in-stock only                             |
