@@ -42,10 +42,10 @@ OPTIONS:
 EXAMPLES:
   # Check task prerequisites (plan.md required)
   .\check-prerequisites.ps1 -Json
-  
+
   # Check implementation prerequisites (plan.md + tasks.md required)
   .\check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks
-  
+
   # Get feature paths only (no validation)
   .\check-prerequisites.ps1 -PathsOnly
 
@@ -59,8 +59,8 @@ EXAMPLES:
 # Get feature paths and validate branch
 $paths = Get-FeaturePathsEnv
 
-if (-not (Test-FeatureBranch -Branch $paths.CURRENT_BRANCH -HasGit:$paths.HAS_GIT)) { 
-    exit 1 
+if (-not (Test-FeatureBranch -Branch $paths.CURRENT_BRANCH -HasGit:$paths.HAS_GIT)) {
+    exit 1
 }
 
 # If paths-only mode, output paths and exit (support combined -Json -PathsOnly)
@@ -88,20 +88,20 @@ if ($PathsOnly) {
 # Validate required directories and files
 if (-not (Test-Path $paths.FEATURE_DIR -PathType Container)) {
     Write-Output "ERROR: Feature directory not found: $($paths.FEATURE_DIR)"
-    Write-Output "Run /specify first to create the feature structure."
+    Write-Output "Run /speckit.specify first to create the feature structure."
     exit 1
 }
 
 if (-not (Test-Path $paths.IMPL_PLAN -PathType Leaf)) {
     Write-Output "ERROR: plan.md not found in $($paths.FEATURE_DIR)"
-    Write-Output "Run /plan first to create the implementation plan."
+    Write-Output "Run /speckit.plan first to create the implementation plan."
     exit 1
 }
 
 # Check for tasks.md if required
 if ($RequireTasks -and -not (Test-Path $paths.TASKS -PathType Leaf)) {
     Write-Output "ERROR: tasks.md not found in $($paths.FEATURE_DIR)"
-    Write-Output "Run /tasks first to create the task list."
+    Write-Output "Run /speckit.tasks first to create the task list."
     exit 1
 }
 
@@ -113,35 +113,35 @@ if (Test-Path $paths.RESEARCH) { $docs += 'research.md' }
 if (Test-Path $paths.DATA_MODEL) { $docs += 'data-model.md' }
 
 # Check contracts directory (only if it exists and has files)
-if ((Test-Path $paths.CONTRACTS_DIR) -and (Get-ChildItem -Path $paths.CONTRACTS_DIR -ErrorAction SilentlyContinue | Select-Object -First 1)) { 
-    $docs += 'contracts/' 
+if ((Test-Path $paths.CONTRACTS_DIR) -and (Get-ChildItem -Path $paths.CONTRACTS_DIR -ErrorAction SilentlyContinue | Select-Object -First 1)) {
+    $docs += 'contracts/'
 }
 
 if (Test-Path $paths.QUICKSTART) { $docs += 'quickstart.md' }
 
 # Include tasks.md if requested and it exists
-if ($IncludeTasks -and (Test-Path $paths.TASKS)) { 
-    $docs += 'tasks.md' 
+if ($IncludeTasks -and (Test-Path $paths.TASKS)) {
+    $docs += 'tasks.md'
 }
 
 # Output results
 if ($Json) {
     # JSON output
-    [PSCustomObject]@{ 
+    [PSCustomObject]@{
         FEATURE_DIR = $paths.FEATURE_DIR
-        AVAILABLE_DOCS = $docs 
+        AVAILABLE_DOCS = $docs
     } | ConvertTo-Json -Compress
 } else {
     # Text output
     Write-Output "FEATURE_DIR:$($paths.FEATURE_DIR)"
     Write-Output "AVAILABLE_DOCS:"
-    
+
     # Show status of each potential document
     Test-FileExists -Path $paths.RESEARCH -Description 'research.md' | Out-Null
     Test-FileExists -Path $paths.DATA_MODEL -Description 'data-model.md' | Out-Null
     Test-DirHasFiles -Path $paths.CONTRACTS_DIR -Description 'contracts/' | Out-Null
     Test-FileExists -Path $paths.QUICKSTART -Description 'quickstart.md' | Out-Null
-    
+
     if ($IncludeTasks) {
         Test-FileExists -Path $paths.TASKS -Description 'tasks.md' | Out-Null
     }

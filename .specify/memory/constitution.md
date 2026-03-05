@@ -2,80 +2,273 @@
 
 ## Core Principles
 
-### I. Domain-Driven Design (NON-NEGOTIABLE)
+### I. Code Quality
 
-Every service follows Domain-Driven Design principles with clear domain boundaries. Services must maintain their own domain models, use ubiquitous language, and implement proper aggregates. Domain logic must be isolated from infrastructure concerns and remain testable independently. Cross-service communication occurs only through well-defined integration events using the `BookWorm.Contracts` namespace.
+All source code MUST adhere to the following non-negotiable
+standards:
 
-### II. Microservices Architecture & Service Independence
+- **C# 14 & latest language features**: Use file-scoped
+  namespaces, primary constructors, pattern matching, switch
+  expressions, and expression-bodied members. Never modify
+  `global.json` or `NuGet.config` without explicit approval.
+- **TypeScript 5.7+ strict mode**: All frontend code MUST
+  compile under strict TypeScript with no `any` escape hatches
+  unless justified and documented inline.
+- **Formatting enforcement**: `.editorconfig` rules are
+  authoritative for C#; ESLint and Prettier configurations are
+  authoritative for TypeScript. Code that violates formatting
+  MUST NOT be merged.
+- **Nullable reference types**: Variables MUST be declared
+  non-nullable by default. Use `is null` / `is not null` for
+  null checks. Redundant null guards after annotation are
+  prohibited.
+- **Error handling**: Use precise exception types
+  (`ArgumentException`, `InvalidOperationException`). Never
+  throw or catch base `Exception`. Never swallow errors
+  silently. Use `ArgumentNullException.ThrowIfNull()` for null
+  guards.
+- **Async discipline**: All async methods MUST end with
+  `Async`, propagate `CancellationToken` end-to-end, and
+  `await` every asynchronous call — no fire-and-forget.
+  Use `ConfigureAwait(false)` in library code.
+- **XML documentation**: All public APIs MUST have XML doc
+  comments including `<summary>`, `<param>`, and `<returns>`.
+  Include `<example>` blocks where the usage is non-obvious.
+- **SOLID compliance**: Every class MUST have a single reason
+  to change. Depend on abstractions, not concretions. No
+  client is forced to depend on methods it does not use.
 
-Each service is independently deployable and owns its data. Services communicate through gRPC for synchronous operations and MassTransit/RabbitMQ for asynchronous event-driven communication. No direct database access between services. Service boundaries align with domain boundaries and business capabilities. Services include: Catalog, Basket, Ordering, Rating, Chat, Finance, Notification, and Scheduler. Frontend applications (Next.js Backoffice and Storefront) consume backend services through an API Gateway proxy and maintain clear separation of concerns.
+**Rationale**: Consistent, high-quality code reduces cognitive
+load across the microservices boundary, minimizes defect rates,
+and ensures the codebase remains maintainable as the team and
+service count grow.
 
-### III. Test-First Development (NON-NEGOTIABLE)
+### II. Domain-Driven Design
 
-100% business logic coverage is mandatory. Tests use **TUnit** framework with Microsoft Testing Platform (defined in `global.json`), not xUnit/NUnit/MSTest. Test projects follow naming: `*.UnitTests`, `*.ContractTests`, `*.IntegrationTests`. Unit tests use Moq for mocking, Bogus for test data generation, and Shouldly for assertions. Tests written using `Given_When_Then` naming pattern before implementation. Contract tests use Verify.TUnit for snapshot testing with MassTransit integration events. All domain and application logic must have comprehensive unit tests. Test projects include crash dumps, hang dumps, and TRX reporting via Microsoft.Testing.Extensions. Architecture tests use TngTech.ArchUnitNET.TUnit to validate architectural boundaries. Tests must be fast, independent, and deterministic.
+All services MUST follow DDD and Clean Architecture principles:
 
-### IV. Clean Architecture & Vertical Slice
+- **Ubiquitous Language**: Business terminology MUST be
+  consistent across code, documentation, API contracts, and
+  event schemas. Renaming a domain concept requires updating
+  all references.
+- **Bounded Contexts**: Each microservice represents a single
+  bounded context with well-defined responsibilities. Cross-
+  context communication MUST occur through domain events via
+  MassTransit/RabbitMQ, never through shared databases.
+- **Aggregate boundaries**: Aggregates enforce transactional
+  consistency. Business logic MUST reside in the domain layer
+  (entities, value objects, domain services) — not in
+  application services, controllers, or infrastructure.
+- **Rich Domain Models**: Anemic domain models are prohibited.
+  Entities MUST encapsulate behavior and enforce invariants.
+  Use domain events to capture business-significant state
+  changes.
+- **Layer separation**: Domain → Application → Infrastructure.
+  The domain layer MUST NOT reference application or
+  infrastructure concerns. Infrastructure adapters (EF Core,
+  MassTransit, gRPC) MUST be isolated behind abstractions.
+- **CQRS**: Commands and queries MUST be separated using the
+  Mediator library (source-generator-based). Each command/
+  query handler is a single-purpose unit.
+- **Event-driven integration**: Outbox and inbox patterns are
+  REQUIRED for reliable cross-service messaging. Saga patterns
+  MUST be used for multi-step distributed workflows.
 
-Services follow Clean Architecture with clear separation between Domain (aggregates, entities, events, exceptions, value objects), Features (vertical slices with commands/queries), Infrastructure (persistence, integrations), and API layers. Implement Vertical Slice Architecture for feature organization under `/Features` folder. Use CQRS with `Mediator` library (source generator-based, not Mediator) for command/query separation. Custom `IEndpoint<TResult, TRequest>` interfaces from `BookWorm.Chassis` provide structured endpoint mapping via ASP.NET Core Minimal APIs. Domain events (inheriting from `IDomainEvent` in SharedKernel) handle side effects and cross-cutting concerns, dispatched via `IDomainEventDispatcher`.
+**Rationale**: DDD aligns the software model with business
+reality, making the system easier to reason about, extend, and
+operate at scale. Clean Architecture ensures testability and
+independence from infrastructure choices.
 
-### V. .NET 10 & Modern C# Standards
+### III. Testing Standards
 
-Use .NET 10 SDK with C# preview language features (`LangVersion=preview` in Directory.Build.props). Follow `.editorconfig` formatting rules with `TreatWarningsAsErrors=true`. Use file-scoped namespaces, primary constructors for immutable properties, expression-bodied members, pattern matching, and `is null`/`is not null` checks. Trust nullable reference type annotations and avoid unnecessary null checks. All projects use `ImplicitUsings` and target `net10.0`.
+Every feature MUST be accompanied by appropriate tests:
 
-## Technology & Architecture Standards
+- **Unit tests**: REQUIRED for all domain logic and application
+  layer handlers. Use TUnit as the test framework, Moq for
+  mocking, Bogus for test data generation, and Shouldly for
+  assertions. Verify.TUnit MUST be used for snapshot testing.
+- **Contract tests**: REQUIRED for every service exposing or
+  consuming an API. Contract test projects MUST exist for each
+  service (`BookWorm.{Service}.ContractTests`).
+- **Architecture tests**: The `BookWorm.ArchTests` project MUST
+  validate layer dependency rules, naming conventions, and
+  structural constraints. New services MUST be covered.
+- **Integration tests**: REQUIRED for aggregate boundaries,
+  repository implementations, and cross-service communication
+  paths.
+- **Frontend tests**: Component tests and unit tests MUST cover
+  all React components and hooks. End-to-end tests use
+  Playwright BDD for critical user journeys.
+- **Coverage threshold**: Domain and application layers MUST
+  maintain a minimum of 85% line coverage. Coverage regressions
+  MUST NOT be merged.
+- **Naming convention**: Test methods MUST follow the pattern
+  `GivenCondition_WhenAction_ThenExpectedResult()`.
+- **Test independence**: Each test MUST be independently
+  executable. Tests MUST NOT depend on execution order or
+  shared mutable state.
 
-### Cloud-Native with Aspire
+**Rationale**: A comprehensive, layered testing strategy catches
+defects early, validates contract compatibility across services,
+and provides confidence for continuous deployment in a
+microservices architecture.
 
-All services orchestrated via `.NET Aspire` AppHost (`BookWorm.AppHost`) with service discovery, health checks, and observability built-in. Services reference `BookWorm.ServiceDefaults` for consistent telemetry, OpenTelemetry, API specifications (OpenAPI/AsyncAPI), and Kestrel configuration. Infrastructure includes Azure PostgreSQL Flexible Server (local containers for dev), Azure Managed Redis, Qdrant vector database, RabbitMQ (with MassTransit), Azure Storage (blob containers), and OpenAI models. Support containerization with OCI labels and Azure Container Apps provisioning. Implement health checks via gRPC health service and HTTP endpoints. Services use `Microsoft.Extensions.Caching.Hybrid` (via Chassis) for distributed caching with Redis backing. Keycloak provides authentication/authorization.
+### IV. User Experience Consistency
 
-### Frontend Architecture & Technology Stack
+All user-facing surfaces MUST deliver a cohesive, accessible
+experience:
 
-**Monorepo Structure**: Frontend applications are organized as a Turbo-powered pnpm workspace monorepo located in `src/Clients`. Uses shared packages for code reuse including `api-client`, `api-hooks`, `ui`, `types`, `utils`, `validations`, `mocks`, and centralized `eslint-config` and `typescript-config`. All applications use TypeScript 5.7+, Node.js 25+, and follow consistent build/dev workflows via Turbo.
+- **WCAG 2.1 AA compliance**: All frontends (StoreFront and
+  BackOffice) MUST meet WCAG 2.1 Level AA. Semantic HTML, ARIA
+  attributes, keyboard navigation, and sufficient color
+  contrast are mandatory.
+- **Design system adherence**: UI components MUST be sourced
+  from or consistent with the shared component library in
+  `BookWorm.StoreFront.Components`. Ad-hoc styling that
+  diverges from the design system is prohibited.
+- **Responsive design**: All pages MUST render correctly on
+  viewports from 320px to 2560px wide. Mobile-first layout
+  strategies are preferred.
+- **Loading & error states**: Every data-fetching operation
+  MUST display appropriate loading indicators and user-friendly
+  error messages. Empty states MUST provide guidance or calls
+  to action.
+- **API consistency**: All REST endpoints MUST follow the
+  `IEndpoint<TResult, TRequest>` pattern from
+  `BookWorm.Chassis`. OpenAPI documentation is REQUIRED for
+  every public endpoint. Error responses MUST use RFC 9457
+  Problem Details format.
+- **Internationalization readiness**: User-facing strings MUST
+  NOT be hardcoded. Text content MUST be externalizable even
+  if only one locale is currently supported.
+- **Performance perception**: Initial page load MUST display
+  meaningful content within 1.5 seconds on a 4G connection.
+  Optimistic UI updates are preferred for mutation operations.
 
-**Admin Backoffice** (`apps/backoffice`): Built with Next.js 16 and React 19 for administrative operations. Implements role-based access control, comprehensive data management interfaces, and real-time dashboards. Uses Tailwind CSS v4 with PostCSS, next-themes for theming, and Lucide React for icons. Must follow component-based architecture with proper state management and validation. Leverages shared UI components from `@workspace/ui` package.
+**Rationale**: Users interact with multiple BookWorm surfaces
+(storefront, backoffice, chatbot). A consistent, accessible,
+and responsive experience builds trust and reduces support
+burden.
 
-**Storefront Website** (`apps/storefront`): Built with Next.js 16 and React 19 for optimal user experience and SEO. Implements server-side rendering, static generation where appropriate, and progressive web app capabilities. Uses Radix UI primitives for accessible components, TanStack Query for data fetching, TanStack Table for data grids, TanStack Form for form management, and Better Auth for authentication. Integrates with shared workspace packages for consistent API consumption and type safety. Must maintain responsive design using Tailwind CSS v4, accessibility standards (WCAG 2.1), and performance optimization (Core Web Vitals).
+### V. Performance Requirements
 
-### Event-Driven Architecture
+All services MUST meet measurable performance targets:
 
-Use **MassTransit** with RabbitMQ transport for reliable message delivery. Implement outbox/inbox patterns via MassTransit.EntityFrameworkCore integration for transactional messaging. Integration events live in `/IntegrationEvents` folders within each service and use `BookWorm.Contracts` namespaces. All integration events must follow naming convention `[Action][Entity]IntegrationEvent` (e.g., `BookCreatedIntegrationEvent`) and include minimal necessary data. Domain events (within aggregates) are distinct from integration events and follow `[Entity][Action]Event` pattern (e.g., `FeedbackCreatedEvent`). Contract tests verify integration event schemas using Verify.MassTransit snapshot testing.
+- **API response times**: P95 latency for read endpoints MUST
+  be ≤ 200ms. P95 latency for write endpoints MUST be ≤ 500ms.
+  Endpoints exceeding these thresholds MUST be documented with
+  justification.
+- **Database efficiency**: N+1 query patterns are prohibited.
+  All EF Core queries MUST use explicit loading strategies
+  (eager or split queries). PostgreSQL indexes MUST be defined
+  for all frequently filtered columns.
+- **Caching strategy**: HybridCache MUST be used for
+  frequently-read, infrequently-mutated data. Cache
+  invalidation strategies MUST be explicit and documented.
+  Cache-aside patterns MUST NOT introduce stale-read windows
+  exceeding 5 seconds for user-facing data.
+- **Async I/O**: All I/O operations (database, HTTP, message
+  bus, file system) MUST use `async`/`await`. Blocking calls
+  (`Task.Result`, `Task.Wait()`, `.GetAwaiter().GetResult()`)
+  are prohibited in request-handling paths.
+- **Memory allocation**: Avoid unnecessary allocations in hot
+  paths. Use `Span<T>`, `ReadOnlySpan<T>`, and array pooling
+  where measured to help. Seal classes that are not designed
+  for inheritance. Prefer `readonly struct` for small value
+  types.
+- **Load testing**: Critical user journeys MUST be validated
+  with k6 load tests. Services MUST handle their documented
+  throughput targets without degradation.
+- **Frontend performance**: Core Web Vitals targets: LCP
+  ≤ 2.5s, INP ≤ 200ms, CLS ≤ 0.1. Bundle sizes MUST be
+  monitored; regressions exceeding 10% MUST be justified.
 
-### AI & Modern Tooling Integration
+**Rationale**: A bookstore handling concurrent users across
+catalog browsing, ordering, and AI-powered chat must deliver
+consistent low-latency responses. Explicit targets make
+performance a first-class, measurable concern rather than an
+afterthought.
 
-Integrate AI components using **Microsoft Agents AI Framework** for multi-agent workflows. Chat and Rating services implement agent-based features with Dev UI enabled (`/dev/agent` endpoints). Model Context Protocol (MCP) server implemented in `BookWorm.McpTools` project with ASP.NET Core hosting (`ModelContextProtocol.AspNetCore`). Enable agent-to-agent communication via A2A Protocol (`Microsoft.Agents.AI.A2A`, `Microsoft.Agents.AI.Workflows`). Use Azure OpenAI (GPT-4o-mini for chat, text-embedding-3-large for embeddings) via Semantic Kernel with Qdrant vector store for RAG patterns. MCP server exposes catalog and other service capabilities as tools. Frontend applications integrate AI features through service endpoints.
+## Security & Observability Standards
 
-### API Gateway & Frontend Integration
+These cross-cutting concerns apply to all services and
+frontends:
 
-API Gateway implemented via custom proxy in AppHost (`.AddApiGatewayProxy()`) routing to backend services (Catalog, Basket, Ordering, Rating, Chat). Services expose REST APIs with ASP.NET Core Minimal APIs mapped through custom `IEndpoint` interfaces. Support Keycloak-based authentication/authorization with `KeycloakTokenIntrospectionMiddleware`. Maintain consistent API versioning via `Asp.Versioning.Mvc.ApiExplorer` with `HasApiVersion(new(1, 0))`. Services include OpenAPI specifications. gRPC used for inter-service synchronous communication (e.g., `BookService`). Frontend applications consume services through gateway with typed API clients in `@workspace/api-client` and React hooks in `@workspace/api-hooks`.
+- **Authentication & Authorization**: Keycloak with
+  Authorization Code Flow + PKCE for user auth, Token Exchange
+  for service-to-service auth. Authorization MUST be enforced
+  at the aggregate level. No endpoint may be publicly
+  accessible without explicit opt-in.
+- **Secrets management**: Secrets MUST NOT appear in source
+  code, logs, or configuration files. Use User Secrets for
+  local development and environment variables for deployed
+  environments.
+- **Input validation**: All inputs MUST be validated at service
+  boundaries. Use FluentValidation or equivalent. PII MUST be
+  scrubbed from all log output.
+- **Structured logging**: All services MUST emit structured
+  logs compatible with the Aspire dashboard. Log levels MUST
+  follow: `Trace` for diagnostics, `Information` for business
+  events, `Warning` for recoverable issues, `Error` for
+  failures requiring attention.
+- **Health checks**: Every service MUST expose health check
+  endpoints compatible with the Aspire orchestrator. Dependency
+  health (database, message bus, external APIs) MUST be
+  included.
+- **Distributed tracing**: OpenTelemetry traces and metrics
+  MUST propagate across service boundaries. Trace context MUST
+  be preserved through MassTransit message headers.
 
-## Development Workflow & Quality Gates
+## Development Workflow
 
-### Code Quality & Standards
+All contributors MUST follow this workflow:
 
-Follow DDD principles strictly. Domain models live in `/Domain` with aggregates implementing `IAggregateRoot`, entities inheriting from `Entity` or `AuditableEntity`, and value objects as records/classes. Use explicit type declarations when type isn't obvious. Implement proper error handling with domain-specific exceptions (e.g., `RatingDomainException`) inheriting from base exception classes. Use Repository pattern (interfaces in Domain, implementations in Infrastructure with EF Core) for data access. Specification pattern (from Chassis) for complex queries. Validation via FluentValidation integrated with endpoint pipeline. Services use `Scrutor` for assembly scanning and convention-based DI registration. PostgreSQL databases use snake_case naming via `EFCore.NamingConventions`. Rate limiting, CORS, HSTS, and security middleware configured in `Program.cs`.
-
-**Frontend Code Standards**: All frontend code must use TypeScript with strict type checking. Follow React 19 best practices including proper hooks usage, component composition, and performance optimization with React Compiler. Next.js applications must use App Router, implement proper error boundaries, leverage Server Components where appropriate, and maintain consistent folder structure (`app/`, `components/`, `hooks/`, `lib/`). Shared packages must export properly typed APIs. Use TanStack Query for server state, React Context for client state when needed, and Zod (via validations package) for runtime validation. Both applications must include comprehensive unit tests (Vitest/Jest) and integration tests (Playwright/Testing Library).
-
-### Pull Request Requirements
-
-All PRs require maintainer approval and passing CI/CD checks including SonarQube analysis and Snyk security scans. Include comprehensive unit tests for new features. Update documentation for functionality changes. Link related issues using keywords (Fixes #123). Address reviewer feedback promptly.
-
-### Documentation & API Standards
-
-**Documentation Infrastructure**: Project documentation maintained in `docs/` folder with two primary systems:
-
-- **EventCatalog** (`docs/eventcatalog/`): Living documentation for event-driven architecture including all integration events, domain events, services, and message flows. OpenAPI specifications stored in `openapi-files/` subdirectory. EventCatalog visualizes service interactions, event schemas, and AsyncAPI specifications. All integration events must be documented here with examples and versioning.
-
-- **Docusaurus** (`docs/docusaurus/`): Comprehensive project documentation including architecture decisions, development guides, deployment procedures, and API references. Docusaurus provides versioned documentation with search capabilities and structured navigation. Technical documentation, tutorials, and ADRs (Architecture Decision Records) live here.
-
-**API Standards**: Use OpenAPI for REST APIs and AsyncAPI for event-driven endpoints. All services must generate OpenAPI specs via Swashbuckle/NSwag. AsyncAPI documents for MassTransit consumers/producers must be maintained in EventCatalog. Include code comments for complex logic using XML documentation. Provide clear examples for API changes. API contracts (request/response DTOs) must include validation attributes and descriptive properties.
-
-**Frontend Documentation**: Document component APIs in shared `@workspace/ui` package using JSDoc/TSDoc. Maintain component documentation for both Next.js applications with usage examples. Document state management patterns (TanStack Query, React Context), form handling (TanStack Form), and integration patterns with backend services via `@workspace/api-client` and `@workspace/api-hooks`. Include deployment guides for both admin and storefront applications (Vercel/Azure/Docker). Document authentication flows (Better Auth integration), API consumption patterns, monorepo workspace conventions, and shared package development. Maintain up-to-date README files in each workspace package explaining purpose, API surface, and usage examples.
+- **Branching**: Feature branches MUST follow the naming
+  convention `###-feature-name`. All work MUST be done on
+  feature branches; direct commits to `main` are prohibited.
+- **Pull requests**: Every PR MUST pass CI (build, test, lint,
+  format) before merge. PRs MUST include a description of
+  changes and link to the relevant spec if one exists.
+- **Code review**: At least one approving review is REQUIRED
+  before merge. Reviewers MUST verify constitution compliance
+  for architectural changes.
+- **CI/CD gates**: GitHub Actions CI MUST pass: `dotnet build`,
+  `dotnet test`, SonarQube analysis, and frontend lint/test.
+  Coverage regressions block merge.
+- **Aspire validation**: Changes to `AppHost.cs` or service
+  registration MUST be validated by running `aspire run` and
+  inspecting the dashboard before PR submission.
+- **Documentation**: New services, endpoints, and events MUST
+  be documented in EventCatalog. OpenAPI specs MUST be kept in
+  sync with implementations.
+- **Incremental delivery**: Changes MUST be small, focused, and
+  independently deployable. Avoid large PRs that span multiple
+  bounded contexts.
 
 ## Governance
 
-This constitution supersedes all other development practices and guidelines. All PRs and code reviews must verify compliance with these principles. Complexity must be justified and aligned with business value. Architecture violations detected by tests must be resolved before merging.
+This constitution is the authoritative source of engineering
+standards for the BookWorm project. It supersedes conflicting
+guidance in other documents.
 
-For detailed development guidance, refer to `AGENTS.md` and `.github/CONTRIBUTING.md`. Integration event namespaces must never be modified as it disrupts the messaging system routing.
+- **Compliance**: All PRs and code reviews MUST verify
+  adherence to the principles defined herein. Violations MUST
+  be resolved before merge unless an explicit, time-bound
+  exception is documented.
+- **Amendments**: Changes to this constitution require:
+  (1) a written proposal describing the change and rationale,
+  (2) review and approval, and (3) a migration plan for any
+  existing code that would violate the amended principle.
+- **Versioning**: This constitution follows semantic versioning.
+  MAJOR: principle removal or incompatible redefinition.
+  MINOR: new principle or material expansion of guidance.
+  PATCH: clarifications, wording fixes, non-semantic
+  refinements.
+- **Review cadence**: The constitution MUST be reviewed
+  quarterly or when a new service is added, whichever comes
+  first.
+- **Runtime guidance**: Refer to `.github/copilot-instructions.md`
+  and `.github/instructions/` for day-to-day development
+  conventions that complement these principles.
 
-**Version**: 1.0.0 | **Ratified**: 2025-09-27 | **Last Amended**: 2025-12-28
+**Version**: 1.0.0 | **Ratified**: 2026-03-05 | **Last Amended**: 2026-03-05

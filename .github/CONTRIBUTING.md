@@ -76,25 +76,17 @@ BookWorm includes AI agents to assist with development tasks. These agents work 
 
 ### Available Agents
 
-1. **CSharp-Expert** - Assists with C#/.NET development tasks
-   - Provides clean, well-designed code following .NET conventions
-   - Covers security, design patterns, SOLID principles
-   - Helps with async programming, performance optimization
+1. **.NET Expert** — Implements, refactors, and optimizes C#/.NET code following project conventions, SOLID principles, and modern C# 14 patterns.
 
-2. **Debug** - Systematic debugging and bug resolution
-   - Identifies and analyzes bugs methodically
-   - Implements targeted fixes with verification
-   - Ensures no regressions through comprehensive testing
+2. **Next.js Expert** — Implements, debugs, and optimizes Next.js 16 App Router code with TypeScript, Server/Client Components, Cache Components, and Turbopack.
 
-3. **Planner** - Creates implementation plans for features/refactoring
-   - Generates detailed implementation plans
-   - Breaks down complex tasks into actionable steps
-   - Documents requirements and testing strategies
+3. **Debug** — Systematically identifies, analyzes, and resolves bugs through structured investigation and verification.
 
-4. **Code-Reviewer** - Reviews code for quality and security
-   - Performs systematic code quality reviews
-   - Checks security vulnerabilities and best practices
-   - Validates architecture and Aspire-specific patterns
+4. **Planner** — Generates implementation plans for new features or refactoring existing code.
+
+5. **Code Reviewer** — Reviews code changes for quality, security, and best practices compliance.
+
+6. **GitHub Actions Expert** — Builds secure CI/CD workflows with action pinning, OIDC authentication, and supply-chain security.
 
 ### Agent Collaboration Workflow
 
@@ -102,44 +94,67 @@ The agents collaborate through handoffs to provide comprehensive development sup
 
 ```mermaid
 graph TD
-    P[Planner] -->|Implementation Plan| CE[CSharp-Expert]
-    P -->|Review Plan| CR[Code-Reviewer]
-    CE -->|Request Review| CR
-    CE -->|Debug Issues| D[Debug]
-    CE -->|Plan Complex Changes| P
-    D -->|Get Expert Help| CE
+    P[Planner] -->|Implement .NET| NE[.NET Expert]
+    P -->|Implement Frontend| NX[Next.js Expert]
+    P -->|Review Plan| CR[Code Reviewer]
+    NE -->|Request Review| CR
+    NE -->|Debug Issues| D[Debug]
+    NE -->|Plan Complex Changes| P
+    NX -->|Request Review| CR
+    NX -->|Debug Issues| D
+    NX -->|Plan Complex Changes| P
+    D -->|Get Expert Help| NE
     D -->|Review Fix| CR
     D -->|Plan Refactoring| P
-    CR -->|Fix Issues| CE
+    CR -->|Fix .NET Issues| NE
+    CR -->|Fix Frontend Issues| NX
+    CR -->|Debug a Problem| D
     CR -->|Create Refactoring Plan| P
+    GA[GitHub Actions Expert] -->|Review Workflows| CR
+    GA -->|Plan Complex CI/CD| P
 
-    style P fill:#e1f5ff
-    style CE fill:#fff4e1
-    style D fill:#ffe1e1
-    style CR fill:#e1ffe1
+    style P fill:#1f4e79,color:#ffffff
+    style NE fill:#7a4f01,color:#ffffff
+    style NX fill:#5a2d82,color:#ffffff
+    style D fill:#7a1f1f,color:#ffffff
+    style CR fill:#1f6f3e,color:#ffffff
+    style GA fill:#7a3e00,color:#ffffff
 ```
 
 ### Typical Workflows
 
-**Feature Development:**
+**Backend Feature Development:**
 
 1. Start with **Planner** to create implementation plan
-2. Hand off to **CSharp-Expert** for implementation
-3. Use **Code-Reviewer** to validate changes
+2. Hand off to **.NET Expert** for implementation
+3. Use **Code Reviewer** to validate changes
 4. Use **Debug** if issues arise
+
+**Frontend Feature Development:**
+
+1. Start with **Planner** to create implementation plan
+2. Hand off to **Next.js Expert** for implementation
+3. Use **Code Reviewer** to validate changes
+4. Use **Debug** for hydration mismatches or runtime bugs
 
 **Bug Fixing:**
 
 1. Start with **Debug** to identify and fix bugs
-2. Hand off to **CSharp-Expert** for complex solutions
-3. Use **Code-Reviewer** to review the fix
+2. Hand off to **.NET Expert** or **Next.js Expert** for complex solutions
+3. Use **Code Reviewer** to review the fix
 4. Use **Planner** if architectural changes needed
 
 **Code Review:**
 
-1. Start with **Code-Reviewer** for systematic review
-2. Hand off to **CSharp-Expert** to address issues
+1. Start with **Code Reviewer** for systematic review
+2. Hand off to **.NET Expert** or **Next.js Expert** to address issues
 3. Use **Planner** for major refactoring recommendations
+
+**CI/CD Changes:**
+
+1. Start with **GitHub Actions Expert** for workflow changes
+2. Hand off to **Code Reviewer** for review
+3. Use **Planner** for complex pipeline restructuring
 
 ### Using Agents in Your Workflow
 
@@ -165,7 +180,7 @@ graph TD
 Example:
 
 ```csharp
-public sealed class Book
+public sealed class Book : IAggregateRoot
 {
    public string Title { get; private set; }
    public string Author { get; private set; }
