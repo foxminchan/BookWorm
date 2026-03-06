@@ -1,6 +1,5 @@
 ﻿using System.Net.Mime;
 using BookWorm.Catalog.Features.Books.Create;
-using BookWorm.Catalog.Features.Books.Shared;
 using BookWorm.Constants.Core;
 using FluentValidation.TestHelper;
 using Microsoft.AspNetCore.Http;
@@ -14,7 +13,7 @@ public sealed class CreateBookValidatorTests
     [Before(Test)]
     public void SetUp()
     {
-        _validator = new(new ImageValidator());
+        _validator = new();
     }
 
     [Test]
@@ -161,7 +160,7 @@ public sealed class CreateBookValidatorTests
         var result = _validator.TestValidate(command);
 
         // Assert
-        result.ShouldHaveValidationErrorFor(x => x.Image!.Length);
+        result.ShouldHaveValidationErrorFor(x => x.Image);
     }
 
     [Test]
@@ -180,7 +179,7 @@ public sealed class CreateBookValidatorTests
         var result = _validator.TestValidate(command);
 
         // Assert
-        result.ShouldHaveValidationErrorFor(x => x.Image!.ContentType);
+        result.ShouldHaveValidationErrorFor(x => x.Image);
     }
 
     [Test]

@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.Security.Extensions;
+﻿using BookWorm.Basket.Extensions;
 using BookWorm.Chassis.Utilities.Guards;
 using Mediator;
 
@@ -14,9 +14,7 @@ public sealed class GetBasketHandler(IBasketRepository repository, ClaimsPrincip
         CancellationToken cancellationToken
     )
     {
-        var sub = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier);
-
-        var userId = Guard.Against.NotAuthenticated(sub);
+        var userId = claimsPrincipal.GetAuthenticatedUserId();
 
         var basket = await repository.GetBasketAsync(userId);
 

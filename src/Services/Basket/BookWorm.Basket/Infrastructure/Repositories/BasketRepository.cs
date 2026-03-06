@@ -7,16 +7,12 @@ namespace BookWorm.Basket.Infrastructure.Repositories;
 public sealed class BasketRepository(ILogger<BasketRepository> logger, IConnectionMultiplexer redis)
     : IBasketRepository
 {
-    private readonly SemaphoreSlim _connectionLock = new(1, 1);
-
-    private static RedisKey BasketKey => "/basket"u8.ToArray();
-
     public async Task<CustomerBasket?> GetBasketAsync(
         [StringSyntax(StringSyntaxAttribute.GuidFormat)] string id
     )
     {
-        var database = await GetDatabaseAsync();
-        var data = await database.HashGetAsync(BasketKey, id);
+        var database = redis.GetDatabase();
+        var data = await database.StringGetAsync(GetBasketKey(id));
 
         return data.IsNullOrEmpty
             ? null
@@ -28,14 +24,13 @@ public sealed class BasketRepository(ILogger<BasketRepository> logger, IConnecti
 
     public async Task<CustomerBasket?> CreateOrUpdateBasketAsync(CustomerBasket basket)
     {
-        var database = await GetDatabaseAsync();
-        var id = basket.Id;
+        var database = redis.GetDatabase();
         var json = JsonSerializer.Serialize(
             basket,
             BasketSerializationContext.Default.CustomerBasket
         );
 
-        var created = await database.HashSetAsync(BasketKey, id, json);
+        var created = await database.StringSetAsync(GetBasketKey(basket.Id), json);
 
         if (created)
         {
@@ -50,21 +45,13 @@ public sealed class BasketRepository(ILogger<BasketRepository> logger, IConnecti
         [StringSyntax(StringSyntaxAttribute.GuidFormat)] string id
     )
     {
-        var database = await GetDatabaseAsync();
-        return await database.HashDeleteAsync(BasketKey, id);
+        var database = redis.GetDatabase();
+        return await database.KeyDeleteAsync(GetBasketKey(id));
     }
 
-    private async Task<IDatabase> GetDatabaseAsync()
+    private static RedisKey GetBasketKey(string userId)
     {
-        await _connectionLock.WaitAsync();
-        try
-        {
-            return redis.GetDatabase();
-        }
-        finally
-        {
-            _connectionLock.Release();
-        }
+        return $"basket:{userId}";
     }
 }
 

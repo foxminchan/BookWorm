@@ -4,7 +4,7 @@ namespace BookWorm.Catalog.Features.Books.Update;
 
 public sealed class UpdateBookValidator : AbstractValidator<UpdateBookCommand>
 {
-    public UpdateBookValidator(IValidator<IFormFile> validator)
+    public UpdateBookValidator()
     {
         RuleFor(x => x.Id).NotEmpty();
 
@@ -22,7 +22,7 @@ public sealed class UpdateBookValidator : AbstractValidator<UpdateBookCommand>
 
         RuleFor(x => x.AuthorIds).NotEmpty();
 
-        When(IsHasFiles, () => RuleFor(x => x.Image!).SetValidator(validator));
+        When(IsHasFiles, () => RuleFor(x => x.Image).ApplyImageRules());
     }
 
     private static bool IsHasFiles(UpdateBookCommand command)

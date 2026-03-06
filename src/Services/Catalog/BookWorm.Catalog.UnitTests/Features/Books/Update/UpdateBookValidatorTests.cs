@@ -1,5 +1,4 @@
 ﻿using System.Net.Mime;
-using BookWorm.Catalog.Features.Books.Shared;
 using BookWorm.Catalog.Features.Books.Update;
 using BookWorm.Constants.Core;
 using FluentValidation.TestHelper;
@@ -22,7 +21,7 @@ public sealed class UpdateBookValidatorTests
     [Before(Test)]
     public void Setup()
     {
-        _validator = new(new ImageValidator());
+        _validator = new();
     }
 
     [Test]
@@ -327,7 +326,7 @@ public sealed class UpdateBookValidatorTests
         var result = _validator.TestValidate(command);
 
         // Assert
-        result.ShouldHaveValidationErrorFor(x => x.Image!.Length);
+        result.ShouldHaveValidationErrorFor(x => x.Image);
     }
 
     [Test]
@@ -336,7 +335,7 @@ public sealed class UpdateBookValidatorTests
         // Arrange
         var mockFile = new Mock<IFormFile>();
         mockFile.Setup(f => f.Length).Returns(1000); // Valid size
-        mockFile.Setup(f => f.ContentType).Returns("application/pdf"); // Invalid content type
+        mockFile.Setup(f => f.ContentType).Returns(MediaTypeNames.Application.Pdf); // Invalid content type
 
         var command = new UpdateBookCommand(
             _validId,
@@ -354,7 +353,7 @@ public sealed class UpdateBookValidatorTests
         var result = _validator.TestValidate(command);
 
         // Assert
-        result.ShouldHaveValidationErrorFor(x => x.Image!.ContentType);
+        result.ShouldHaveValidationErrorFor(x => x.Image);
     }
 
     [Test]
