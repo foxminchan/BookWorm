@@ -33,14 +33,9 @@ internal static class ImageRules
             .WithMessage("File type is not allowed. Allowed file types are JPEG, PNG, and WebP.")
             .Must(x =>
             {
-                if (x?.ContentType is null)
-                {
-                    return false;
-                }
+                var ext = Path.GetExtension(x!.FileName);
 
-                var ext = Path.GetExtension(x.FileName);
-
-                return AllowedTypes.TryGetValue(x.ContentType, out var extensions)
+                return AllowedTypes.TryGetValue(x.ContentType!, out var extensions)
                     && extensions.Contains(ext);
             })
             .WithMessage("The file extension does not match its content type.");
