@@ -34,8 +34,6 @@ public sealed class CatalogDomainTests : ArchUnitBaseTest
         Classes()
             .That()
             .ResideInNamespaceMatching(DomainNamespace)
-            .And()
-            .DoNotHaveNameEndingWith(nameof(Exception))
             .Should()
             .BePublic()
             .Because(
@@ -71,13 +69,13 @@ public sealed class CatalogDomainTests : ArchUnitBaseTest
             .And()
             .HaveNameEndingWith(nameof(Exception))
             .Should()
-            .NotBePublic()
+            .BePublic()
             .AndShould()
             .BeSealed()
             .AndShould()
             .BeAssignableTo(typeof(Exception))
             .Because(
-                "Domain exceptions should be internal, sealed, and derive from System.Exception to keep exception details encapsulated within the service boundary."
+                "Domain exceptions should be public, sealed, and derive from System.Exception."
             )
             .Check(Architecture);
     }

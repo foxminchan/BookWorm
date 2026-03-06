@@ -1,3 +1,3 @@
 namespace BookWorm.Basket.Domain;
 
-internal sealed class BasketCreatedException(string message) : Exception(message);
+public sealed class BasketCreatedException(string message) : Exception(message);
