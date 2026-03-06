@@ -20,7 +20,7 @@ public sealed class CreateBookValidatorTests
     public void GivenEmptyName_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = CreateValidCommand(name: string.Empty);
+        var command = CreateValidCommand(string.Empty);
 
         // Act
         var result = _validator.TestValidate(command);
@@ -33,7 +33,7 @@ public sealed class CreateBookValidatorTests
     public void GivenNameExceedsMaxLength_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = CreateValidCommand(name: new('a', DataSchemaLength.Medium + 1));
+        var command = CreateValidCommand(new('a', DataSchemaLength.Medium + 1));
 
         // Act
         var result = _validator.TestValidate(command);
