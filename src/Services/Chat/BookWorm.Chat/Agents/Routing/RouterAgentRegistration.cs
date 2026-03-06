@@ -2,19 +2,18 @@ using BookWorm.Chassis.AI.Middlewares;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
 
-namespace BookWorm.Chat.Features.Summarization;
+namespace BookWorm.Chat.Agents.Routing;
 
-internal static class SummarizeAgentRegistration
+internal static class RouterAgentRegistration
 {
-    public static void AddSummarizeAgent(this IHostApplicationBuilder builder)
+    public static void AddRouterAgent(this IHostApplicationBuilder builder)
     {
         builder.AddAIAgent(
-            SummarizeAgentDefinition.Name,
+            RouterAgentDefinition.Name,
             (sp, key) =>
             {
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
-                    .Use(PIIMiddleware.InvokeAsync, null)
                     .Use(GuardrailMiddleware.InvokeAsync, null)
                     .Build(sp);
 
@@ -23,12 +22,12 @@ internal static class SummarizeAgentRegistration
                     options: new()
                     {
                         Name = key,
-                        Description = SummarizeAgentDefinition.Description,
+                        Description = RouterAgentDefinition.Description,
                         ChatOptions = new()
                         {
-                            Instructions = SummarizeAgentDefinition.Instructions,
-                            Temperature = 0.4f,
-                            MaxOutputTokens = 800,
+                            Instructions = RouterAgentDefinition.Instructions,
+                            Temperature = 0.1f,
+                            MaxOutputTokens = 200,
                         },
                     }
                 );

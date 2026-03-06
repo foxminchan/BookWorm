@@ -1,10 +1,8 @@
-using BookWorm.Constants.Other;
-
-namespace BookWorm.Chat.Features.SentimentAnalysis;
+namespace BookWorm.Chat.Agents.SentimentAnalysis;
 
 internal static class SentimentAgentDefinition
 {
-    public const string Name = Agents.SentimentAgent;
+    public const string Name = Constants.Other.Agents.SentimentAgent;
 
     public const string Description =
         "An agent that evaluates the sentiment of translated English text as negative, positive, or neutral.";

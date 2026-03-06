@@ -1,10 +1,8 @@
-using BookWorm.Constants.Other;
-
-namespace BookWorm.Chat.Features.BookSearch;
+namespace BookWorm.Chat.Agents.BookSearch;
 
 internal static class BookAgentDefinition
 {
-    public const string Name = Agents.BookAgent;
+    public const string Name = Constants.Other.Agents.BookAgent;
 
     public const string Description =
         "An agent that searches for books, provides relevant information, and offers personalized recommendations based on user preferences and behavior.";

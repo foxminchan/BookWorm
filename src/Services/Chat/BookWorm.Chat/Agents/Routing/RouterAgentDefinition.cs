@@ -1,10 +1,8 @@
-using BookWorm.Constants.Other;
-
-namespace BookWorm.Chat.Features.Routing;
+namespace BookWorm.Chat.Agents.Routing;
 
 internal static class RouterAgentDefinition
 {
-    public const string Name = Agents.RouterAgent;
+    public const string Name = Constants.Other.Agents.RouterAgent;
 
     public const string Description =
         "A routing agent that analyzes user requests and intelligently directs them to the appropriate specialized agent for optimal processing.";

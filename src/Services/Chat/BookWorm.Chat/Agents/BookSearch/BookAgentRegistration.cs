@@ -3,7 +3,7 @@ using BookWorm.Chassis.AI.Middlewares;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
 
-namespace BookWorm.Chat.Features.BookSearch;
+namespace BookWorm.Chat.Agents.BookSearch;
 
 internal static class BookAgentRegistration
 {

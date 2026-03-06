@@ -2,18 +2,19 @@ using BookWorm.Chassis.AI.Middlewares;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
 
-namespace BookWorm.Chat.Features.LanguageTranslation;
+namespace BookWorm.Chat.Agents.Summarization;
 
-internal static class LanguageAgentRegistration
+internal static class SummarizeAgentRegistration
 {
-    public static void AddLanguageAgent(this IHostApplicationBuilder builder)
+    public static void AddSummarizeAgent(this IHostApplicationBuilder builder)
     {
         builder.AddAIAgent(
-            LanguageAgentDefinition.Name,
+            SummarizeAgentDefinition.Name,
             (sp, key) =>
             {
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
+                    .Use(PIIMiddleware.InvokeAsync, null)
                     .Use(GuardrailMiddleware.InvokeAsync, null)
                     .Build(sp);
 
@@ -22,12 +23,12 @@ internal static class LanguageAgentRegistration
                     options: new()
                     {
                         Name = key,
-                        Description = LanguageAgentDefinition.Description,
+                        Description = SummarizeAgentDefinition.Description,
                         ChatOptions = new()
                         {
-                            Instructions = LanguageAgentDefinition.Instructions,
-                            Temperature = 0.3f,
-                            MaxOutputTokens = 500,
+                            Instructions = SummarizeAgentDefinition.Instructions,
+                            Temperature = 0.4f,
+                            MaxOutputTokens = 800,
                         },
                     }
                 );

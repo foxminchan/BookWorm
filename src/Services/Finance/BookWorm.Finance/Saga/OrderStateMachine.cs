@@ -1,14 +1,12 @@
 ﻿using BookWorm.Contracts;
-using BookWorm.SharedKernel.Helpers;
+using BookWorm.Finance.Saga.Activities;
 
 namespace BookWorm.Finance.Saga;
 
 public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
 {
-    public OrderStateMachine(ILoggerFactory loggerFactory, OrderStateMachineSettings settings)
+    public OrderStateMachine(OrderStateMachineSettings settings)
     {
-        var logger = loggerFactory.CreateLogger(nameof(OrderStateMachine));
-
         InstanceState(x => x.CurrentState);
 
         Event(() => OrderPlaced, x => x.CorrelateById(context => context.Message.OrderId));
@@ -29,22 +27,7 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
 
         Initially(
             When(OrderPlaced)
-                .Then(context =>
-                {
-                    context.Saga.OrderId = context.Message.OrderId;
-                    context.Saga.BasketId = context.Message.BasketId;
-                    context.Saga.Email = context.Message.Email;
-                    context.Saga.TotalMoney = context.Message.TotalMoney;
-                    context.Saga.FullName = context.Message.FullName;
-                    context.Saga.OrderPlacedDate = DateTimeHelper.UtcNow();
-                })
-                .Then(context =>
-                    logger.LogInformation(
-                        "[{Event}] Order state machine started for {OrderId}",
-                        nameof(OrderPlaced),
-                        context.Message.OrderId
-                    )
-                )
+                .Activity(x => x.OfType<PlaceOrderActivity>())
                 .TransitionTo(Placed)
                 .Schedule(PlaceOrderTimeoutSchedule, context => new(context.Saga.OrderId))
                 .Publish(context => new PlaceOrderCommand(
@@ -52,7 +35,7 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
                     context.Saga.FullName,
                     context.Saga.Email,
                     context.Saga.OrderId,
-                    context.Saga.TotalMoney.GetValueOrDefault(0.0M)
+                    context.Saga.EffectiveTotalMoney
                 ))
         );
 
@@ -60,19 +43,11 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
             Placed,
             Ignore(OrderPlaced),
             When(PlaceOrderTimeoutSchedule.Received)
-                .Then(context => context.Saga.TimeoutRetryCount++)
+                .Then(context => context.Saga.IncrementRetry())
                 .If(
-                    context => context.Saga.TimeoutRetryCount < settings.MaxAttempts,
+                    context => !context.Saga.HasExceededMaxRetries(settings.MaxAttempts),
                     retry =>
                         retry
-                            .Then(context =>
-                                logger.LogInformation(
-                                    "[{Event}] Retrying order processing for {OrderId} - Attempt {RetryCount}",
-                                    nameof(PlaceOrderTimeoutSchedule.Received),
-                                    context.Message.OrderId,
-                                    context.Saga.TimeoutRetryCount
-                                )
-                            )
                             .Schedule(
                                 PlaceOrderTimeoutSchedule,
                                 context => new(context.Saga.OrderId)
@@ -82,140 +57,98 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
                                 context.Saga.FullName,
                                 context.Saga.Email,
                                 context.Saga.OrderId,
-                                context.Saga.TotalMoney.GetValueOrDefault(0.0M)
+                                context.Saga.EffectiveTotalMoney
                             ))
                 )
                 .If(
-                    context => context.Saga.TimeoutRetryCount >= settings.MaxAttempts,
+                    context => context.Saga.HasExceededMaxRetries(settings.MaxAttempts),
                     finalFailure =>
                         finalFailure
-                            .Then(context =>
-                                logger.LogError(
-                                    "[{Event}] Order processing failed after {MaxRetryAttempts} timeout retries for {OrderId}",
-                                    nameof(PlaceOrderTimeoutSchedule.Received),
-                                    settings.MaxAttempts,
-                                    context.Message.OrderId
-                                )
-                            )
                             .TransitionTo(Failed)
                             .If(
-                                context =>
-                                    !string.IsNullOrWhiteSpace(context.Saga.Email)
-                                    && !string.IsNullOrWhiteSpace(context.Saga.FullName),
+                                context => context.Saga.CanSendNotification,
                                 x =>
                                     x.Publish(context => new CancelOrderCommand(
                                         context.Saga.OrderId,
                                         context.Saga.FullName!,
                                         context.Saga.Email!,
-                                        context.Saga.TotalMoney.GetValueOrDefault(0.0M)
+                                        context.Saga.EffectiveTotalMoney
                                     ))
                             )
                             .Finalize()
                 ),
             When(BasketDeletedFailed)
-                .Then(context =>
-                {
-                    context.Saga.OrderId = context.Message.OrderId;
-                    context.Saga.BasketId = context.Message.BasketId;
-                    context.Saga.Email = context.Message.Email;
-                    context.Saga.TotalMoney = context.Message.TotalMoney;
-                })
-                .Then(context =>
-                    logger.LogError(
-                        "[{Event}] Basket deletion failed for {OrderId}",
-                        nameof(BasketDeletedFailed),
-                        context.Message.OrderId
-                    )
-                )
+                .Activity(x => x.OfType<HandleBasketDeleteFailedActivity>())
                 .TransitionTo(Failed)
                 .Unschedule(PlaceOrderTimeoutSchedule)
                 .Publish(context => new DeleteBasketFailedCommand(
                     context.Saga.BasketId,
                     context.Saga.Email,
                     context.Saga.OrderId,
-                    context.Saga.TotalMoney.GetValueOrDefault(0.0M)
+                    context.Saga.EffectiveTotalMoney
                 )),
             When(BasketDeleted)
-                .Then(context =>
-                {
-                    context.Saga.BasketId = context.Message.BasketId;
-                    context.Saga.OrderId = context.Message.OrderId;
-                    context.Saga.TotalMoney = context.Message.TotalMoney;
-                })
-                .Then(context =>
-                    logger.LogInformation(
-                        "[{Event}] Basket deletion completed for {OrderId}",
-                        nameof(BasketDeleted),
-                        context.Message.OrderId
-                    )
-                )
+                .Activity(x => x.OfType<HandleBasketDeletedActivity>())
                 .Unschedule(PlaceOrderTimeoutSchedule)
                 .Publish(context => new DeleteBasketCompleteCommand(
                     context.Saga.OrderId,
-                    context.Saga.TotalMoney.GetValueOrDefault(0.0M)
+                    context.Saga.EffectiveTotalMoney
                 )),
             When(OrderCompleted)
-                .Then(context =>
-                {
-                    context.Saga.OrderId = context.Message.OrderId;
-                    context.Saga.BasketId = context.Message.BasketId;
-                    context.Saga.Email = context.Message.Email;
-                    context.Saga.FullName = context.Message.FullName;
-                    context.Saga.TotalMoney = context.Message.TotalMoney;
-                })
-                .Then(context =>
-                    logger.LogInformation(
-                        "[{Event}] Order state machine completed for {OrderId}",
-                        nameof(OrderCompleted),
-                        context.Message.OrderId
-                    )
-                )
+                .Activity(x => x.OfType<CompleteOrderActivity>())
                 .TransitionTo(Completed)
                 .Unschedule(PlaceOrderTimeoutSchedule)
                 .If(
-                    context =>
-                        !string.IsNullOrWhiteSpace(context.Saga.Email)
-                        && !string.IsNullOrWhiteSpace(context.Saga.FullName),
+                    context => context.Saga.CanSendNotification,
                     x =>
                         x.Publish(context => new CompleteOrderCommand(
                             context.Saga.OrderId,
                             context.Saga.FullName!,
                             context.Saga.Email!,
-                            context.Saga.TotalMoney.GetValueOrDefault(0.0M)
+                            context.Saga.EffectiveTotalMoney
                         ))
                 )
                 .Finalize(),
             When(OrderCancelled)
-                .Then(context =>
-                {
-                    context.Saga.OrderId = context.Message.OrderId;
-                    context.Saga.BasketId = context.Message.BasketId;
-                    context.Saga.Email = context.Message.Email;
-                    context.Saga.FullName = context.Message.FullName;
-                    context.Saga.TotalMoney = context.Message.TotalMoney;
-                })
-                .Then(context =>
-                    logger.LogInformation(
-                        "[{Event}] Order state machine cancelled for {OrderId}",
-                        nameof(OrderCancelled),
-                        context.Message.OrderId
-                    )
-                )
+                .Activity(x => x.OfType<CancelOrderActivity>())
                 .TransitionTo(Cancelled)
                 .Unschedule(PlaceOrderTimeoutSchedule)
                 .If(
-                    context =>
-                        !string.IsNullOrWhiteSpace(context.Saga.Email)
-                        && !string.IsNullOrWhiteSpace(context.Saga.FullName),
+                    context => context.Saga.CanSendNotification,
                     x =>
                         x.Publish(context => new CancelOrderCommand(
                             context.Saga.OrderId,
                             context.Saga.FullName!,
                             context.Saga.Email!,
-                            context.Saga.TotalMoney.GetValueOrDefault(0.0M)
+                            context.Saga.EffectiveTotalMoney
                         ))
                 )
                 .Finalize()
+        );
+
+        During(
+            Failed,
+            Ignore(OrderPlaced),
+            Ignore(OrderCompleted),
+            Ignore(OrderCancelled),
+            Ignore(BasketDeleted),
+            Ignore(BasketDeletedFailed)
+        );
+
+        During(
+            Completed,
+            Ignore(OrderPlaced),
+            Ignore(OrderCancelled),
+            Ignore(BasketDeleted),
+            Ignore(BasketDeletedFailed)
+        );
+
+        During(
+            Cancelled,
+            Ignore(OrderPlaced),
+            Ignore(OrderCompleted),
+            Ignore(BasketDeleted),
+            Ignore(BasketDeletedFailed)
         );
 
         SetCompletedWhenFinalized();

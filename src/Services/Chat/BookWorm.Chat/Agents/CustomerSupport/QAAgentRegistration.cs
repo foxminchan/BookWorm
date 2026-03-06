@@ -2,14 +2,14 @@ using BookWorm.Chassis.AI.Middlewares;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
 
-namespace BookWorm.Chat.Features.SentimentAnalysis;
+namespace BookWorm.Chat.Agents.CustomerSupport;
 
-internal static class SentimentAgentRegistration
+internal static class QAAgentRegistration
 {
-    public static void AddSentimentAgent(this IHostApplicationBuilder builder)
+    public static void AddQAAgent(this IHostApplicationBuilder builder)
     {
         builder.AddAIAgent(
-            SentimentAgentDefinition.Name,
+            QAAgentDefinition.Name,
             (sp, key) =>
             {
                 var chatClient = sp.GetRequiredService<IChatClient>()
@@ -17,17 +17,23 @@ internal static class SentimentAgentRegistration
                     .Use(GuardrailMiddleware.InvokeAsync, null)
                     .Build(sp);
 
+                var skillsProvider = new FileAgentSkillsProvider(
+                    Path.Combine(AppContext.BaseDirectory, "skills", "store-policies"),
+                    loggerFactory: sp.GetService<ILoggerFactory>()
+                );
+
                 var agent = new ChatClientAgent(
                     chatClient,
                     options: new()
                     {
                         Name = key,
-                        Description = SentimentAgentDefinition.Description,
+                        Description = QAAgentDefinition.Description,
+                        AIContextProviders = [skillsProvider],
                         ChatOptions = new()
                         {
-                            Instructions = SentimentAgentDefinition.Instructions,
-                            Temperature = 0.2f,
-                            MaxOutputTokens = 300,
+                            Instructions = QAAgentDefinition.Instructions,
+                            Temperature = 0.5f,
+                            MaxOutputTokens = 1000,
                         },
                     }
                 );

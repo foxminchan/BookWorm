@@ -1,10 +1,8 @@
-using BookWorm.Constants.Other;
-
-namespace BookWorm.Chat.Features.LanguageTranslation;
+namespace BookWorm.Chat.Agents.LanguageTranslation;
 
 internal static class LanguageAgentDefinition
 {
-    public const string Name = Agents.LanguageAgent;
+    public const string Name = Constants.Other.Agents.LanguageAgent;
 
     public const string Description =
         "An agent that detects user input language and translates it to English for better context understanding.";

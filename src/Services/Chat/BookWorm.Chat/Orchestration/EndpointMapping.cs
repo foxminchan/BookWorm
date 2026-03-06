@@ -1,9 +1,9 @@
 using BookWorm.Chassis.AI.Extensions;
-using BookWorm.Chat.Features.CustomerSupport;
-using BookWorm.Chat.Features.LanguageTranslation;
-using BookWorm.Chat.Features.Routing;
-using BookWorm.Chat.Features.SentimentAnalysis;
-using BookWorm.Chat.Features.Summarization;
+using BookWorm.Chat.Agents.CustomerSupport;
+using BookWorm.Chat.Agents.LanguageTranslation;
+using BookWorm.Chat.Agents.Routing;
+using BookWorm.Chat.Agents.SentimentAnalysis;
+using BookWorm.Chat.Agents.Summarization;
 using BookWorm.Constants.Other;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;

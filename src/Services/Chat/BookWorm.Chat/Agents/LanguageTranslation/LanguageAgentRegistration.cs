@@ -2,14 +2,14 @@ using BookWorm.Chassis.AI.Middlewares;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
 
-namespace BookWorm.Chat.Features.CustomerSupport;
+namespace BookWorm.Chat.Agents.LanguageTranslation;
 
-internal static class QAAgentRegistration
+internal static class LanguageAgentRegistration
 {
-    public static void AddQAAgent(this IHostApplicationBuilder builder)
+    public static void AddLanguageAgent(this IHostApplicationBuilder builder)
     {
         builder.AddAIAgent(
-            QAAgentDefinition.Name,
+            LanguageAgentDefinition.Name,
             (sp, key) =>
             {
                 var chatClient = sp.GetRequiredService<IChatClient>()
@@ -17,23 +17,17 @@ internal static class QAAgentRegistration
                     .Use(GuardrailMiddleware.InvokeAsync, null)
                     .Build(sp);
 
-                var skillsProvider = new FileAgentSkillsProvider(
-                    Path.Combine(AppContext.BaseDirectory, "skills", "store-policies"),
-                    loggerFactory: sp.GetService<ILoggerFactory>()
-                );
-
                 var agent = new ChatClientAgent(
                     chatClient,
                     options: new()
                     {
                         Name = key,
-                        Description = QAAgentDefinition.Description,
-                        AIContextProviders = [skillsProvider],
+                        Description = LanguageAgentDefinition.Description,
                         ChatOptions = new()
                         {
-                            Instructions = QAAgentDefinition.Instructions,
-                            Temperature = 0.5f,
-                            MaxOutputTokens = 1000,
+                            Instructions = LanguageAgentDefinition.Instructions,
+                            Temperature = 0.3f,
+                            MaxOutputTokens = 500,
                         },
                     }
                 );

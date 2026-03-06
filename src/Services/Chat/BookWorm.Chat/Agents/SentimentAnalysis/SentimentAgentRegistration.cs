@@ -2,14 +2,14 @@ using BookWorm.Chassis.AI.Middlewares;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
 
-namespace BookWorm.Chat.Features.Routing;
+namespace BookWorm.Chat.Agents.SentimentAnalysis;
 
-internal static class RouterAgentRegistration
+internal static class SentimentAgentRegistration
 {
-    public static void AddRouterAgent(this IHostApplicationBuilder builder)
+    public static void AddSentimentAgent(this IHostApplicationBuilder builder)
     {
         builder.AddAIAgent(
-            RouterAgentDefinition.Name,
+            SentimentAgentDefinition.Name,
             (sp, key) =>
             {
                 var chatClient = sp.GetRequiredService<IChatClient>()
@@ -22,12 +22,12 @@ internal static class RouterAgentRegistration
                     options: new()
                     {
                         Name = key,
-                        Description = RouterAgentDefinition.Description,
+                        Description = SentimentAgentDefinition.Description,
                         ChatOptions = new()
                         {
-                            Instructions = RouterAgentDefinition.Instructions,
-                            Temperature = 0.1f,
-                            MaxOutputTokens = 200,
+                            Instructions = SentimentAgentDefinition.Instructions,
+                            Temperature = 0.2f,
+                            MaxOutputTokens = 300,
                         },
                     }
                 );

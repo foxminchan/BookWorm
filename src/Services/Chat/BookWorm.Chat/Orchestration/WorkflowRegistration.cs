@@ -1,9 +1,9 @@
-using BookWorm.Chat.Features.BookSearch;
-using BookWorm.Chat.Features.CustomerSupport;
-using BookWorm.Chat.Features.LanguageTranslation;
-using BookWorm.Chat.Features.Routing;
-using BookWorm.Chat.Features.SentimentAnalysis;
-using BookWorm.Chat.Features.Summarization;
+using BookWorm.Chat.Agents.BookSearch;
+using BookWorm.Chat.Agents.CustomerSupport;
+using BookWorm.Chat.Agents.LanguageTranslation;
+using BookWorm.Chat.Agents.Routing;
+using BookWorm.Chat.Agents.SentimentAnalysis;
+using BookWorm.Chat.Agents.Summarization;
 using BookWorm.Chat.Orchestration.Conditions;
 using BookWorm.Chat.Orchestration.Executors;
 using BookWorm.Constants.Other;

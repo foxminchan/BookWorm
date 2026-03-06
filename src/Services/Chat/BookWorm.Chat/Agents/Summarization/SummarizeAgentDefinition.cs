@@ -1,10 +1,8 @@
-using BookWorm.Constants.Other;
-
-namespace BookWorm.Chat.Features.Summarization;
+namespace BookWorm.Chat.Agents.Summarization;
 
 internal static class SummarizeAgentDefinition
 {
-    public const string Name = Agents.SummarizeAgent;
+    public const string Name = Constants.Other.Agents.SummarizeAgent;
 
     public const string Description =
         "An agent that summarizes and condenses translated English text while preserving key information and context.";
