@@ -9,7 +9,7 @@ Your goal is to help me write effective unit tests with TUnit, covering both sta
 
 ## Project Setup
 
-- Use a separate test project with naming convention `[ProjectName].Tests`
+- Use a separate test project with naming convention `[ProjectName].[TestType]` (e.g., `MyApp.UnitTests`)
 - Reference TUnit package and TUnit.Assertions for fluent assertions
 - Create test classes that match the classes being tested (e.g., `CalculatorTests` for `Calculator`)
 - Use .NET SDK test commands: `dotnet test` for running tests
@@ -20,7 +20,7 @@ Your goal is to help me write effective unit tests with TUnit, covering both sta
 - No test class attributes required (like xUnit/NUnit)
 - Use `[Test]` attribute for test methods (not `[Fact]` like xUnit)
 - Follow the Arrange-Act-Assert (AAA) pattern
-- Name tests using the pattern `MethodName_Scenario_ExpectedBehavior`
+- Name tests using the pattern `Given[Condition]_When[Action]_Then[ExpectedResult]` for clarity
 - Use lifecycle hooks: `[Before(Test)]` for setup and `[After(Test)]` for teardown
 - Use `[Before(Class)]` and `[After(Class)]` for shared context between tests in a class
 - Use `[Before(Assembly)]` and `[After(Assembly)]` for shared context across test classes
