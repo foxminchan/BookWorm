@@ -3,29 +3,18 @@ using Mediator;
 
 namespace BookWorm.Catalog.Features.Books.Update;
 
-public sealed class UpdateBookCommand(
-    Guid Id,
-    string Name,
-    string Description,
-    IFormFile? Image,
-    decimal Price,
-    decimal? PriceSale,
-    Guid CategoryId,
-    Guid PublisherId,
-    Guid[] AuthorIds,
-    bool IsRemoveImage = false
-) : ICommand
+public sealed class UpdateBookCommand : ICommand
 {
-    public Guid Id { get; } = Id;
-    public string Name { get; } = Name;
-    public string Description { get; } = Description;
-    public IFormFile? Image { get; } = Image;
-    public decimal Price { get; } = Price;
-    public decimal? PriceSale { get; } = PriceSale;
-    public Guid CategoryId { get; } = CategoryId;
-    public Guid PublisherId { get; } = PublisherId;
-    public Guid[] AuthorIds { get; } = AuthorIds;
-    public bool IsRemoveImage { get; } = IsRemoveImage;
+    public Guid Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string Description { get; init; } = string.Empty;
+    public IFormFile? Image { get; init; }
+    public decimal Price { get; init; }
+    public decimal? PriceSale { get; init; }
+    public Guid CategoryId { get; init; }
+    public Guid PublisherId { get; init; }
+    public Guid[] AuthorIds { get; init; } = [];
+    public bool IsRemoveImage { get; init; }
 
     [JsonIgnore]
     public string? ImageUrn { get; set; }

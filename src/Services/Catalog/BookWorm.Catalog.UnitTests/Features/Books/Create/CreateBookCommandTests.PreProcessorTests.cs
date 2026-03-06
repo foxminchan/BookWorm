@@ -17,16 +17,17 @@ public sealed class CreateBookPreProcessorTests
             .ReturnsAsync(imageName);
 
         var mockFile = new Mock<IFormFile>();
-        var command = new CreateBookCommand(
-            "Test Book",
-            "Test Description",
-            mockFile.Object,
-            29.99m,
-            19.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
-        );
+        var command = new CreateBookCommand
+        {
+            Name = "Test Book",
+            Description = "Test Description",
+            Image = mockFile.Object,
+            Price = 29.99m,
+            PriceSale = 19.99m,
+            CategoryId = Guid.CreateVersion7(),
+            PublisherId = Guid.CreateVersion7(),
+            AuthorIds = [Guid.CreateVersion7()],
+        };
 
         var handler = new CreateBookPreProcessor(mockBlobService.Object);
 
@@ -46,16 +47,16 @@ public sealed class CreateBookPreProcessorTests
     {
         // Arrange
         var mockBlobService = new Mock<IBlobService>();
-        var command = new CreateBookCommand(
-            "Test Book",
-            "Test Description",
-            null,
-            29.99m,
-            19.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
-        );
+        var command = new CreateBookCommand
+        {
+            Name = "Test Book",
+            Description = "Test Description",
+            Price = 29.99m,
+            PriceSale = 19.99m,
+            CategoryId = Guid.CreateVersion7(),
+            PublisherId = Guid.CreateVersion7(),
+            AuthorIds = [Guid.CreateVersion7()],
+        };
 
         var handler = new CreateBookPreProcessor(mockBlobService.Object);
 

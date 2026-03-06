@@ -17,17 +17,17 @@ public sealed class UpdateBookEndpointTests
         _endpoint = new();
 
         // Create a sample command with required properties
-        _command = new(
-            bookId,
-            "Updated Book Title",
-            "Updated book description",
-            null,
-            29.99m,
-            24.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7(), Guid.CreateVersion7()]
-        );
+        _command = new()
+        {
+            Id = bookId,
+            Name = "Updated Book Title",
+            Description = "Updated book description",
+            Price = 29.99m,
+            PriceSale = 24.99m,
+            CategoryId = Guid.CreateVersion7(),
+            PublisherId = Guid.CreateVersion7(),
+            AuthorIds = [Guid.CreateVersion7(), Guid.CreateVersion7()],
+        };
     }
 
     [Test]

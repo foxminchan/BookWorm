@@ -231,16 +231,17 @@ public sealed class CreateBookValidatorTests
         Guid[]? authorIds = null
     )
     {
-        return new(
-            name,
-            description,
-            image,
-            price,
-            priceSale,
-            categoryId ?? Guid.CreateVersion7(),
-            publisherId ?? Guid.CreateVersion7(),
-            authorIds ?? [Guid.CreateVersion7(), Guid.CreateVersion7()]
-        );
+        return new()
+        {
+            Name = name,
+            Description = description,
+            Image = image,
+            Price = price,
+            PriceSale = priceSale,
+            CategoryId = categoryId ?? Guid.CreateVersion7(),
+            PublisherId = publisherId ?? Guid.CreateVersion7(),
+            AuthorIds = authorIds ?? [Guid.CreateVersion7(), Guid.CreateVersion7()],
+        };
     }
 
     private static Mock<IFormFile> CreateMockFile(

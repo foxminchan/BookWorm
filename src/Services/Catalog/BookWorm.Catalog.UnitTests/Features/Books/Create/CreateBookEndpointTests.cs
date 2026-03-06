@@ -25,16 +25,16 @@ public sealed class CreateBookEndpointTests
         var imageMock = new Mock<IFormFile>();
 
         // Create a valid command with test data
-        _command = new(
-            "Test Book",
-            "Test Description",
-            imageMock.Object,
-            19.99m,
-            null,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
-        );
+        _command = new()
+        {
+            Name = "Test Book",
+            Description = "Test Description",
+            Image = imageMock.Object,
+            Price = 19.99m,
+            CategoryId = Guid.CreateVersion7(),
+            PublisherId = Guid.CreateVersion7(),
+            AuthorIds = [Guid.CreateVersion7()],
+        };
     }
 
     [Test]
