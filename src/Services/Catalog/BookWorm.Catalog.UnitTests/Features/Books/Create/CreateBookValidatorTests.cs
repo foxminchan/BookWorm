@@ -154,6 +154,20 @@ public sealed class CreateBookValidatorTests
     }
 
     [Test]
+    public void GivenEmptyImageFile_WhenValidating_ThenShouldHaveValidationError()
+    {
+        // Arrange
+        var mockFile = CreateMockFile(0, MediaTypeNames.Image.Jpeg);
+        var command = CreateValidCommand(image: mockFile.Object);
+
+        // Act
+        var result = _validator.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.Image);
+    }
+
+    [Test]
     [Arguments(MediaTypeNames.Application.Pdf)]
     [Arguments(MediaTypeNames.Text.Plain)]
     public void GivenInvalidImageContentType_WhenValidating_ThenShouldHaveValidationError(
@@ -172,10 +186,31 @@ public sealed class CreateBookValidatorTests
     }
 
     [Test]
-    public void GivenValidCommand_WhenValidating_ThenShouldNotHaveValidationErrors()
+    public void GivenExtensionMismatchingContentType_WhenValidating_ThenShouldHaveValidationError()
+    {
+        // Arrange - JPEG content type but .png extension
+        var mockFile = CreateMockFile(1000, MediaTypeNames.Image.Jpeg, "test.png");
+        var command = CreateValidCommand(image: mockFile.Object);
+
+        // Act
+        var result = _validator.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.Image);
+    }
+
+    [Test]
+    [Arguments(MediaTypeNames.Image.Jpeg, "test.jpg")]
+    [Arguments(MediaTypeNames.Image.Jpeg, "test.jpeg")]
+    [Arguments(MediaTypeNames.Image.Png, "test.png")]
+    [Arguments(MediaTypeNames.Image.Webp, "test.webp")]
+    public void GivenValidImageFile_WhenValidating_ThenShouldNotHaveValidationErrors(
+        string contentType,
+        string fileName
+    )
     {
         // Arrange
-        var mockFile = CreateMockFile(1000, MediaTypeNames.Image.Jpeg);
+        var mockFile = CreateMockFile(1000, contentType, fileName);
         var command = CreateValidCommand(image: mockFile.Object);
 
         // Act
@@ -208,13 +243,17 @@ public sealed class CreateBookValidatorTests
         );
     }
 
-    private static Mock<IFormFile> CreateMockFile(long length, string contentType)
+    private static Mock<IFormFile> CreateMockFile(
+        long length,
+        string contentType,
+        string fileName = "test.jpg"
+    )
     {
         var mockFile = new Mock<IFormFile>();
         mockFile.Setup(f => f.Length).Returns(length);
         mockFile.Setup(f => f.ContentType).Returns(contentType);
         mockFile.Setup(f => f.OpenReadStream()).Returns(new MemoryStream());
-        mockFile.Setup(f => f.FileName).Returns("test.jpg");
+        mockFile.Setup(f => f.FileName).Returns(fileName);
         return mockFile;
     }
 }

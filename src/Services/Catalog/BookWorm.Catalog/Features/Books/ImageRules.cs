@@ -1,16 +1,48 @@
-﻿namespace BookWorm.Catalog.Features.Books;
+﻿using System.Collections.Frozen;
+
+namespace BookWorm.Catalog.Features.Books;
 
 internal static class ImageRules
 {
     private const int MaxFileSize = 1048576;
 
-    public static void ApplyImageRules<T>(this IRuleBuilder<T, IFormFile?> ruleBuilder)
+    private static readonly FrozenDictionary<string, FrozenSet<string>> AllowedTypes =
+        new Dictionary<string, FrozenSet<string>>
+        {
+            [MediaTypeNames.Image.Jpeg] = new[] { ".jpg", ".jpeg" }.ToFrozenSet(
+                StringComparer.OrdinalIgnoreCase
+            ),
+            [MediaTypeNames.Image.Png] = new[] { ".png" }.ToFrozenSet(
+                StringComparer.OrdinalIgnoreCase
+            ),
+            [MediaTypeNames.Image.Webp] = new[] { ".webp" }.ToFrozenSet(
+                StringComparer.OrdinalIgnoreCase
+            ),
+        }.ToFrozenDictionary();
+
+    public static void ApplyImageRules<T>(this IRuleBuilderInitial<T, IFormFile?> ruleBuilder)
     {
         ruleBuilder
+            .Cascade(CascadeMode.Stop)
             .NotNull()
-            .Must(x => x!.Length <= MaxFileSize)
+            .Must(x => x?.Length > 0)
+            .WithMessage("The file must not be empty.")
+            .Must(x => x?.Length <= MaxFileSize)
             .WithMessage($"The file size should not exceed {MaxFileSize / 1024} KB.")
-            .Must(x => x!.ContentType is MediaTypeNames.Image.Jpeg or MediaTypeNames.Image.Png)
-            .WithMessage("File type is not allowed. Allowed file types are JPEG and PNG.");
+            .Must(x => x?.ContentType is not null && AllowedTypes.ContainsKey(x.ContentType))
+            .WithMessage("File type is not allowed. Allowed file types are JPEG, PNG, and WebP.")
+            .Must(x =>
+            {
+                if (x?.ContentType is null)
+                {
+                    return false;
+                }
+
+                var ext = Path.GetExtension(x.FileName);
+
+                return AllowedTypes.TryGetValue(x.ContentType, out var extensions)
+                    && extensions.Contains(ext);
+            })
+            .WithMessage("The file extension does not match its content type.");
     }
 }

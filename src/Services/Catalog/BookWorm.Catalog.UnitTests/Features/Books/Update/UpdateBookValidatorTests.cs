@@ -309,6 +309,7 @@ public sealed class UpdateBookValidatorTests
         var mockFile = new Mock<IFormFile>();
         mockFile.Setup(f => f.Length).Returns(1048577); // 1 byte over limit
         mockFile.Setup(f => f.ContentType).Returns(MediaTypeNames.Image.Jpeg);
+        mockFile.Setup(f => f.FileName).Returns("test.jpg");
 
         var command = new UpdateBookCommand(
             _validId,
@@ -336,6 +337,7 @@ public sealed class UpdateBookValidatorTests
         var mockFile = new Mock<IFormFile>();
         mockFile.Setup(f => f.Length).Returns(1000); // Valid size
         mockFile.Setup(f => f.ContentType).Returns(MediaTypeNames.Application.Pdf); // Invalid content type
+        mockFile.Setup(f => f.FileName).Returns("test.pdf");
 
         var command = new UpdateBookCommand(
             _validId,
@@ -357,12 +359,67 @@ public sealed class UpdateBookValidatorTests
     }
 
     [Test]
-    public void GivenValidJpegImage_WhenValidating_ThenShouldNotHaveValidationErrors()
+    public void GivenEmptyImageFile_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var mockFile = new Mock<IFormFile>();
-        mockFile.Setup(f => f.Length).Returns(1000); // Valid size
-        mockFile.Setup(f => f.ContentType).Returns(MediaTypeNames.Image.Jpeg);
+        var mockFile = CreateMockFile(0, MediaTypeNames.Image.Jpeg, "test.jpg");
+
+        var command = new UpdateBookCommand(
+            _validId,
+            ValidName,
+            ValidDescription,
+            mockFile.Object,
+            ValidPrice,
+            ValidPriceSale,
+            _validCategoryId,
+            _validPublisherId,
+            _validAuthorIds
+        );
+
+        // Act
+        var result = _validator.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.Image);
+    }
+
+    [Test]
+    public void GivenExtensionMismatchingContentType_WhenValidating_ThenShouldHaveValidationError()
+    {
+        // Arrange - JPEG content type but .png extension
+        var mockFile = CreateMockFile(1000, MediaTypeNames.Image.Jpeg, "test.png");
+
+        var command = new UpdateBookCommand(
+            _validId,
+            ValidName,
+            ValidDescription,
+            mockFile.Object,
+            ValidPrice,
+            ValidPriceSale,
+            _validCategoryId,
+            _validPublisherId,
+            _validAuthorIds
+        );
+
+        // Act
+        var result = _validator.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.Image);
+    }
+
+    [Test]
+    [Arguments(MediaTypeNames.Image.Jpeg, "test.jpg")]
+    [Arguments(MediaTypeNames.Image.Jpeg, "test.jpeg")]
+    [Arguments(MediaTypeNames.Image.Png, "test.png")]
+    [Arguments(MediaTypeNames.Image.Webp, "test.webp")]
+    public void GivenValidImageFile_WhenValidating_ThenShouldNotHaveValidationErrors(
+        string contentType,
+        string fileName
+    )
+    {
+        // Arrange
+        var mockFile = CreateMockFile(1000, contentType, fileName);
 
         var command = new UpdateBookCommand(
             _validId,
@@ -383,30 +440,13 @@ public sealed class UpdateBookValidatorTests
         result.ShouldNotHaveValidationErrorFor(x => x.Image);
     }
 
-    [Test]
-    public void GivenValidPngImage_WhenValidating_ThenShouldNotHaveValidationErrors()
+    private static Mock<IFormFile> CreateMockFile(long length, string contentType, string fileName)
     {
-        // Arrange
         var mockFile = new Mock<IFormFile>();
-        mockFile.Setup(f => f.Length).Returns(1000); // Valid size
-        mockFile.Setup(f => f.ContentType).Returns(MediaTypeNames.Image.Png);
-
-        var command = new UpdateBookCommand(
-            _validId,
-            ValidName,
-            ValidDescription,
-            mockFile.Object,
-            ValidPrice,
-            ValidPriceSale,
-            _validCategoryId,
-            _validPublisherId,
-            _validAuthorIds
-        );
-
-        // Act
-        var result = _validator.TestValidate(command);
-
-        // Assert
-        result.ShouldNotHaveValidationErrorFor(x => x.Image);
+        mockFile.Setup(f => f.Length).Returns(length);
+        mockFile.Setup(f => f.ContentType).Returns(contentType);
+        mockFile.Setup(f => f.FileName).Returns(fileName);
+        mockFile.Setup(f => f.OpenReadStream()).Returns(new MemoryStream());
+        return mockFile;
     }
 }
