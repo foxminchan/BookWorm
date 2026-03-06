@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using Microsoft.Agents.AI.Workflows;
 
-namespace BookWorm.Chat.Infrastructure.AgentOrchestration.Executors;
+namespace BookWorm.Chat.Orchestration.Executors;
 
 internal sealed partial class InputValidationExecutor()
     : Executor<ChatMessage, ChatMessage>("InputValidationExecutor")
@@ -37,19 +37,21 @@ internal sealed partial class InputValidationExecutor()
             );
         }
 
-        // Detect suspicious patterns (prompt injection attempts)
-        var hasSuspiciousPattern = SuspiciousPatternRegex().IsMatch(content);
+        // Block prompt injection attempts instead of forwarding with a warning
+        if (SuspiciousPatternRegex().IsMatch(content))
+        {
+            return ValueTask.FromResult(
+                new ChatMessage(
+                    ChatRole.Assistant,
+                    "I'm sorry, but I can't process that request. Please rephrase your question about books or our bookstore services."
+                )
+            );
+        }
 
         // Check maximum length and truncate if needed
         if (content.Length > MaxLength)
         {
             content = content[..TruncateLength] + "... [Message truncated due to length]";
-        }
-
-        // Add warning prefix if suspicious pattern detected
-        if (hasSuspiciousPattern)
-        {
-            content = "[⚠️ Unusual pattern detected] " + content;
         }
 
         return ValueTask.FromResult(new ChatMessage(ChatRole.User, content));

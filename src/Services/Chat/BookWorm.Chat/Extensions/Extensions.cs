@@ -3,6 +3,13 @@ using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Chat.Configurations;
+using BookWorm.Chat.Features.BookSearch;
+using BookWorm.Chat.Features.CustomerSupport;
+using BookWorm.Chat.Features.LanguageTranslation;
+using BookWorm.Chat.Features.Routing;
+using BookWorm.Chat.Features.SentimentAnalysis;
+using BookWorm.Chat.Features.Summarization;
+using BookWorm.Chat.Orchestration;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using Microsoft.AspNetCore.Authorization;
 
@@ -64,7 +71,19 @@ internal static class Extensions
             s.GetRequiredService<IHttpContextAccessor>().HttpContext?.User ?? new ClaimsPrincipal()
         );
 
-        builder.AddAIAgentsServices();
+        // AI infrastructure (chat client, telemetry, protocols)
+        builder.AddAIInfrastructure();
+
+        // Register each agent as a self-contained vertical slice
+        builder.AddBookAgent();
+        builder.AddLanguageAgent();
+        builder.AddSentimentAgent();
+        builder.AddSummarizeAgent();
+        builder.AddQAAgent();
+        builder.AddRouterAgent();
+
+        // Compose the multi-agent workflow
+        builder.AddChatWorkflow();
 
         services.AddScoped<KeycloakTokenIntrospectionMiddleware>();
     }

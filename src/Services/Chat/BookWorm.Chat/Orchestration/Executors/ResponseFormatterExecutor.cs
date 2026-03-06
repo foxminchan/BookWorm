@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using Microsoft.Agents.AI.Workflows;
 
-namespace BookWorm.Chat.Infrastructure.AgentOrchestration.Executors;
+namespace BookWorm.Chat.Orchestration.Executors;
 
 internal sealed partial class ResponseFormatterExecutor()
     : Executor<List<ChatMessage>, string>("ResponseFormatterExecutor")
@@ -44,9 +44,6 @@ internal sealed partial class ResponseFormatterExecutor()
         // Remove excessive newlines (more than 2 consecutive)
         content = ExcessiveNewlinesRegex().Replace(content, "\n\n");
 
-        // Trim any leading/trailing whitespace
-        content = content.Trim();
-
-        return ValueTask.FromResult(content);
+        return ValueTask.FromResult(content.Trim());
     }
 }

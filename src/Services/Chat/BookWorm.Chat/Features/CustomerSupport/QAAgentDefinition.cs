@@ -1,8 +1,10 @@
-namespace BookWorm.Chat.Infrastructure.AgentOrchestration.Agents;
+using BookWorm.Constants.Other;
 
-internal static class QAAgent
+namespace BookWorm.Chat.Features.CustomerSupport;
+
+internal static class QAAgentDefinition
 {
-    public const string Name = Constants.Other.Agents.QAAgent;
+    public const string Name = Agents.QAAgent;
 
     public const string Description =
         "An agent that answers general questions about BookWorm bookstore policies, services, shipping, returns, and other non-book-specific inquiries.";
