@@ -75,16 +75,17 @@ public sealed class CatalogDbContextSeed(
                     message.Role == ChatRole.Assistant
                 );
 
-                if (string.IsNullOrWhiteSpace(assistantMessage?.Text))
+                var description = assistantMessage?.Text;
+
+                if (string.IsNullOrWhiteSpace(description))
                 {
                     logger.LogWarning(
-                        "No assistant description generated for book {Name}",
+                        "No assistant description generated for book {Name}, using fallback",
                         book.Name
                     );
-                    continue;
+                    description =
+                        $"A captivating book titled '{book.Name}' that offers readers an engaging literary experience.";
                 }
-
-                var description = assistantMessage.Text;
 
                 logger.LogDebug(
                     "Generated description for book {Name}: {Description}",

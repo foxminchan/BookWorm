@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Notification.Domain.Exceptions;
 
-public sealed class NotificationException : Exception
+internal sealed class NotificationException : Exception
 {
     public NotificationException(string message)
         : base(message) { }

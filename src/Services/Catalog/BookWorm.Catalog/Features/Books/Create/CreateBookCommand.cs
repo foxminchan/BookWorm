@@ -2,7 +2,7 @@
 
 namespace BookWorm.Catalog.Features.Books.Create;
 
-public sealed record CreateBookCommand(
+public sealed class CreateBookCommand(
     string Name,
     string Description,
     IFormFile? Image,
@@ -13,6 +13,15 @@ public sealed record CreateBookCommand(
     Guid[] AuthorIds
 ) : ICommand<Guid>
 {
+    public string Name { get; } = Name;
+    public string Description { get; } = Description;
+    public IFormFile? Image { get; } = Image;
+    public decimal Price { get; } = Price;
+    public decimal? PriceSale { get; } = PriceSale;
+    public Guid CategoryId { get; } = CategoryId;
+    public Guid PublisherId { get; } = PublisherId;
+    public Guid[] AuthorIds { get; } = AuthorIds;
+
     [JsonIgnore]
     public string? ImageName { get; set; }
 }

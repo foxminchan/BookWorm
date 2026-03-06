@@ -3,7 +3,7 @@ using Mediator;
 
 namespace BookWorm.Catalog.Features.Books.Update;
 
-public sealed record UpdateBookCommand(
+public sealed class UpdateBookCommand(
     Guid Id,
     string Name,
     string Description,
@@ -16,6 +16,17 @@ public sealed record UpdateBookCommand(
     bool IsRemoveImage = false
 ) : ICommand
 {
+    public Guid Id { get; } = Id;
+    public string Name { get; } = Name;
+    public string Description { get; } = Description;
+    public IFormFile? Image { get; } = Image;
+    public decimal Price { get; } = Price;
+    public decimal? PriceSale { get; } = PriceSale;
+    public Guid CategoryId { get; } = CategoryId;
+    public Guid PublisherId { get; } = PublisherId;
+    public Guid[] AuthorIds { get; } = AuthorIds;
+    public bool IsRemoveImage { get; } = IsRemoveImage;
+
     [JsonIgnore]
     public string? ImageUrn { get; set; }
 }

@@ -32,6 +32,8 @@ public sealed class OrderingDomainTests : ArchUnitBaseTest
         Classes()
             .That()
             .ResideInNamespaceMatching(DomainNamespace)
+            .And()
+            .DoNotHaveNameEndingWith(nameof(Exception))
             .Should()
             .BePublic()
             .Because(
@@ -67,13 +69,13 @@ public sealed class OrderingDomainTests : ArchUnitBaseTest
             .And()
             .HaveNameEndingWith(nameof(Exception))
             .Should()
-            .BePublic()
+            .NotBePublic()
             .AndShould()
             .BeSealed()
             .AndShould()
             .BeAssignableTo(typeof(Exception))
             .Because(
-                "Domain exceptions should be public, sealed, and derive from System.Exception to ensure proper error handling and reporting."
+                "Domain exceptions should be internal, sealed, and derive from System.Exception to keep exception details encapsulated within the service boundary."
             )
             .Check(Architecture);
     }

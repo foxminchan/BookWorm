@@ -56,13 +56,13 @@ public sealed class DomainConventionTests : ArchUnitBaseTest
             .And()
             .DoNotResideInNamespaceMatching($"{nameof(BookWorm)}.*.Infrastructure.*")
             .Should()
-            .BePublic()
+            .BeInternal()
             .AndShould()
             .BeSealed()
             .AndShould()
             .BeAssignableTo(typeof(Exception))
             .Because(
-                "Domain exceptions should be public, sealed, and derive from System.Exception."
+                "Domain exceptions should be internal, sealed, and derive from System.Exception."
             )
             .Check(Architecture);
     }

@@ -1,3 +1,3 @@
 ﻿namespace BookWorm.Catalog.Domain.Exceptions;
 
-public sealed class CatalogDomainException(string message) : Exception(message);
+internal sealed class CatalogDomainException(string message) : Exception(message);
