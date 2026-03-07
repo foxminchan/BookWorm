@@ -1,8 +1,8 @@
 ﻿using BookWorm.Common;
 using BookWorm.Contracts;
-using BookWorm.Notification.Domain.Builders;
 using BookWorm.Notification.Domain.Exceptions;
 using BookWorm.Notification.Domain.Models;
+using BookWorm.Notification.Infrastructure.Builders;
 using BookWorm.Notification.Infrastructure.Render;
 using BookWorm.Notification.Infrastructure.Senders;
 using BookWorm.Notification.Infrastructure.Senders.MailKit;

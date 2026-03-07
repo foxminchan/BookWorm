@@ -1,8 +1,13 @@
-﻿using BookWorm.Notification.Domain.Models;
+using BookWorm.Notification.Domain.Exceptions;
+using BookWorm.Notification.Domain.Models;
 using MimeKit.Text;
 
-namespace BookWorm.Notification.Domain.Builders;
+namespace BookWorm.Notification.Infrastructure.Builders;
 
+/// <summary>
+///     Fluent builder that constructs a <see cref="MimeMessage" /> from order domain data.
+///     Placed in the infrastructure layer because it depends on the MimeKit library.
+/// </summary>
 public sealed class OrderMimeMessageBuilder
 {
     private OrderMimeMessageBuilder() { }
@@ -14,10 +19,7 @@ public sealed class OrderMimeMessageBuilder
     /// <summary>
     ///     Creates a new builder instance.
     /// </summary>
-    public static OrderMimeMessageBuilder Initialize()
-    {
-        return new();
-    }
+    public static OrderMimeMessageBuilder Initialize() => new();
 
     /// <summary>
     ///     Sets the recipient of the email.

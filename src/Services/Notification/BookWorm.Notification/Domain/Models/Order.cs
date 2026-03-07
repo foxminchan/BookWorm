@@ -1,4 +1,4 @@
-﻿using BookWorm.Notification.Infrastructure.Attributes;
+﻿using BookWorm.Notification.Domain.Attributes;
 using BookWorm.SharedKernel.Helpers;
 
 namespace BookWorm.Notification.Domain.Models;
