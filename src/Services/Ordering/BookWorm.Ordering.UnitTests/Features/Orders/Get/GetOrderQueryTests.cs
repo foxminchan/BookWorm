@@ -133,6 +133,103 @@ public sealed class GetOrderQueryTests
         );
     }
 
+    [Test]
+    public async Task GivenOrderWithItems_WhenBookServiceReturnsBooks_ThenShouldEnrichItemsWithBookNames()
+    {
+        // Arrange
+        SetupAdminUser();
+
+        var orderItems = _order.OrderItems.ToList();
+        for (var i = 0; i < orderItems.Count; i++)
+        {
+            orderItems[i].Id = Guid.CreateVersion7();
+        }
+
+        _orderRepositoryMock
+            .Setup(r => r.GetByIdAsync(_id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(_order);
+
+        var booksResponse = new GetBooksResponse();
+        foreach (var item in orderItems)
+        {
+            booksResponse.Books.Add(
+                new GetBookResponse
+                {
+                    Id = item.Id.ToString(),
+                    Name = $"Book for {item.Id}",
+                    Price = item.Price,
+                }
+            );
+        }
+
+        _bookServiceMock
+            .Setup(x =>
+                x.GetBooksByIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>())
+            )
+            .ReturnsAsync(booksResponse);
+
+        // Act
+        var result = await _handler.Handle(new(_id), CancellationToken.None);
+
+        // Assert
+        result.Items.Count.ShouldBe(orderItems.Count);
+        foreach (var item in result.Items)
+        {
+            item.Name.ShouldBe($"Book for {item.Id}");
+        }
+    }
+
+    [Test]
+    public async Task GivenOrderWithItems_WhenBookServiceReturnsPartialMatch_ThenShouldEnrichOnlyMatchedItems()
+    {
+        // Arrange
+        SetupAdminUser();
+
+        var orderItems = _order.OrderItems.ToList();
+        for (var i = 0; i < orderItems.Count; i++)
+        {
+            orderItems[i].Id = Guid.CreateVersion7();
+        }
+
+        _orderRepositoryMock
+            .Setup(r => r.GetByIdAsync(_id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(_order);
+
+        var firstItem = orderItems[0];
+
+        var booksResponse = new GetBooksResponse
+        {
+            Books =
+            {
+                new GetBookResponse
+                {
+                    Id = firstItem.Id.ToString(),
+                    Name = "Matched Book",
+                    Price = firstItem.Price,
+                },
+            },
+        };
+
+        _bookServiceMock
+            .Setup(x =>
+                x.GetBooksByIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>())
+            )
+            .ReturnsAsync(booksResponse);
+
+        // Act
+        var result = await _handler.Handle(new(_id), CancellationToken.None);
+
+        // Assert
+        var matchedItem = result.Items.First(i => i.Id == firstItem.Id);
+        matchedItem.Name.ShouldBe("Matched Book");
+
+        var unmatchedItems = result.Items.Where(i => i.Id != firstItem.Id);
+        foreach (var item in unmatchedItems)
+        {
+            item.Name.ShouldBeNull();
+        }
+    }
+
     private void SetupAdminUser()
     {
         var roles = new[] { Authorization.Roles.Admin };

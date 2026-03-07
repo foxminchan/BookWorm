@@ -2,10 +2,6 @@
 
 namespace BookWorm.Scheduler.Jobs;
 
-/// <summary>
-/// Publishes a <see cref="ResendErrorEmailIntegrationEvent"/> to trigger
-/// retry of previously failed email deliveries in the Notification service.
-/// </summary>
 [DisallowConcurrentExecution]
 public sealed class ResendErrorEmailJob(IBus bus, ILogger<ResendErrorEmailJob> logger) : IJob
 {

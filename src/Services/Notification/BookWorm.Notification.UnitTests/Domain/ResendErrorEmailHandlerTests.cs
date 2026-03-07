@@ -1,0 +1,174 @@
+using BookWorm.Chassis.Repository;
+using BookWorm.Contracts;
+using BookWorm.Notification.Domain.Models;
+using BookWorm.Notification.Infrastructure.Senders;
+using BookWorm.Notification.IntegrationEvents.EventHandlers;
+using MassTransit;
+using Microsoft.Extensions.Diagnostics.Buffering;
+using Microsoft.Extensions.Logging;
+using MimeKit;
+
+namespace BookWorm.Notification.UnitTests.Domain;
+
+public sealed class ResendErrorEmailHandlerTests
+{
+    private readonly Mock<ILogger<ResendErrorEmailIntegrationEventHandler>> _loggerMock = new();
+    private readonly Mock<GlobalLogBuffer> _logBufferMock = new();
+    private readonly Mock<IOutboxRepository> _repositoryMock = new();
+    private readonly Mock<ISender> _senderMock = new();
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
+    private readonly Mock<ConsumeContext<ResendErrorEmailIntegrationEvent>> _contextMock = new();
+    private readonly ResendErrorEmailIntegrationEventHandler _handler;
+
+    public ResendErrorEmailHandlerTests()
+    {
+        _repositoryMock.Setup(x => x.UnitOfWork).Returns(_unitOfWorkMock.Object);
+        _contextMock.Setup(x => x.CancellationToken).Returns(CancellationToken.None);
+
+        _handler = new(
+            _loggerMock.Object,
+            _logBufferMock.Object,
+            _repositoryMock.Object,
+            _senderMock.Object
+        );
+    }
+
+    [Test]
+    public async Task GivenUnsentEmails_WhenConsuming_ThenShouldResendAndMarkAsSent()
+    {
+        // Arrange
+        var email1 = new Outbox("User1", "user1@test.com", "Sub1", "Body1");
+        var email2 = new Outbox("User2", "user2@test.com", "Sub2", "Body2");
+
+        _repositoryMock
+            .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Outbox> { email1, email2 });
+
+        // Act
+        await _handler.Consume(_contextMock.Object);
+
+        // Assert
+        email1.IsSent.ShouldBeTrue();
+        email2.IsSent.ShouldBeTrue();
+        _senderMock.Verify(
+            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
+            Times.Exactly(2)
+        );
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Test]
+    public async Task GivenNoUnsentEmails_WhenConsuming_ThenShouldReturnEarlyWithoutSending()
+    {
+        // Arrange
+        _repositoryMock
+            .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        // Act
+        await _handler.Consume(_contextMock.Object);
+
+        // Assert
+        _senderMock.Verify(
+            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
+            Times.Never
+        );
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
+    public async Task GivenSendFailure_WhenConsuming_ThenShouldContinueWithRemainingEmails()
+    {
+        // Arrange
+        var email1 = new Outbox("User1", "user1@test.com", "Sub1", "Body1");
+        var email2 = new Outbox("User2", "user2@test.com", "Sub2", "Body2");
+
+        _repositoryMock
+            .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Outbox> { email1, email2 });
+
+        _senderMock
+            .SetupSequence(x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Send failed"))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        await _handler.Consume(_contextMock.Object);
+
+        // Assert
+        email1.IsSent.ShouldBeFalse();
+        email2.IsSent.ShouldBeTrue();
+        _senderMock.Verify(
+            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
+            Times.Exactly(2)
+        );
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _logBufferMock.Verify(x => x.Flush(), Times.Once);
+    }
+
+    [Test]
+    public async Task GivenAllSendsFail_WhenConsuming_ThenShouldNotSaveChanges()
+    {
+        // Arrange
+        var email1 = new Outbox("User1", "user1@test.com", "Sub1", "Body1");
+
+        _repositoryMock
+            .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Outbox> { email1 });
+
+        _senderMock
+            .Setup(x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Send failed"));
+
+        // Act
+        await _handler.Consume(_contextMock.Object);
+
+        // Assert
+        email1.IsSent.ShouldBeFalse();
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _logBufferMock.Verify(x => x.Flush(), Times.Once);
+    }
+
+    [Test]
+    public async Task GivenCancellationRequested_WhenConsuming_ThenShouldThrowOperationCancelled()
+    {
+        // Arrange
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        _contextMock.Setup(x => x.CancellationToken).Returns(cts.Token);
+
+        var email = new Outbox("User1", "user1@test.com", "Sub1", "Body1");
+
+        _repositoryMock
+            .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Outbox> { email });
+
+        _senderMock
+            .Setup(x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new OperationCanceledException(cts.Token));
+
+        // Act & Assert
+        await Should.ThrowAsync<OperationCanceledException>(() =>
+            _handler.Consume(_contextMock.Object)
+        );
+    }
+
+    [Test]
+    public async Task GivenUnsentEmails_WhenConsuming_ThenShouldQueryWithUnsentOutboxSpec()
+    {
+        // Arrange
+        _repositoryMock
+            .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        // Act
+        await _handler.Consume(_contextMock.Object);
+
+        // Assert
+        _repositoryMock.Verify(
+            x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()),
+            Times.Once
+        );
+    }
+}

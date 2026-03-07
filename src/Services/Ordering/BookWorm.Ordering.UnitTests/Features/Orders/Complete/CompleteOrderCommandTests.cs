@@ -140,4 +140,90 @@ public sealed class CompleteOrderCommandTests
             Times.Never
         );
     }
+
+    [Test]
+    public async Task GivenNonAdminUser_WhenCompletingOrder_ThenShouldQueryByBuyerId()
+    {
+        // Arrange
+        var userId = Guid.CreateVersion7().ToString();
+        var claimsPrincipalMock = new Mock<ClaimsPrincipal>();
+
+        claimsPrincipalMock
+            .Setup(c => c.FindAll(ClaimTypes.Role))
+            .Returns([new Claim(ClaimTypes.Role, "User")]);
+
+        claimsPrincipalMock
+            .Setup(c => c.FindFirst(ClaimTypes.NameIdentifier))
+            .Returns(new Claim(ClaimTypes.NameIdentifier, userId));
+
+        var handler = new CompleteOrderHandler(
+            _orderRepositoryMock.Object,
+            claimsPrincipalMock.Object
+        );
+        var command = new CompleteOrderCommand(_orderId);
+
+        _orderRepositoryMock
+            .Setup(r =>
+                r.FirstOrDefaultAsync(It.IsAny<OrderFilterSpec>(), It.IsAny<CancellationToken>())
+            )
+            .ReturnsAsync(_order);
+
+        _orderRepositoryMock
+            .Setup(r => r.UnitOfWork.SaveEntitiesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        _order.Status.ShouldBe(Status.Completed);
+        _orderRepositoryMock.Verify(
+            r => r.FirstOrDefaultAsync(It.IsAny<OrderFilterSpec>(), It.IsAny<CancellationToken>()),
+            Times.Once
+        );
+        _orderRepositoryMock.Verify(
+            r => r.UnitOfWork.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task GivenNonAdminUser_WhenOrderNotFound_ThenShouldThrowNotFoundException()
+    {
+        // Arrange
+        var userId = Guid.CreateVersion7().ToString();
+        var claimsPrincipalMock = new Mock<ClaimsPrincipal>();
+
+        claimsPrincipalMock
+            .Setup(c => c.FindAll(ClaimTypes.Role))
+            .Returns([new Claim(ClaimTypes.Role, "User")]);
+
+        claimsPrincipalMock
+            .Setup(c => c.FindFirst(ClaimTypes.NameIdentifier))
+            .Returns(new Claim(ClaimTypes.NameIdentifier, userId));
+
+        var handler = new CompleteOrderHandler(
+            _orderRepositoryMock.Object,
+            claimsPrincipalMock.Object
+        );
+        var command = new CompleteOrderCommand(_orderId);
+
+        _orderRepositoryMock
+            .Setup(r =>
+                r.FirstOrDefaultAsync(It.IsAny<OrderFilterSpec>(), It.IsAny<CancellationToken>())
+            )
+            .ReturnsAsync((Order)null!);
+
+        // Act
+        var exception = await Should.ThrowAsync<NotFoundException>(async () =>
+            await handler.Handle(command, CancellationToken.None)
+        );
+
+        // Assert
+        exception.Message.ShouldBe($"Order with id {_orderId} not found.");
+        _orderRepositoryMock.Verify(
+            r => r.UnitOfWork.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
+            Times.Never
+        );
+    }
 }

@@ -105,4 +105,32 @@ public sealed class ResendErrorEmailJobTests
 
         publishedCount.ShouldBe(numberOfExecutions);
     }
+
+    [Test]
+    public async Task GivenPublishThrows_WhenExecutingJob_ThenShouldWrapInJobExecutionException()
+    {
+        // Arrange
+        var busMock = new Mock<IBus>();
+        var loggerMock = new Mock<ILogger<ResendErrorEmailJob>>();
+        var job = new ResendErrorEmailJob(busMock.Object, loggerMock.Object);
+        var context = Mock.Of<IJobExecutionContext>(c =>
+            c.CancellationToken == CancellationToken.None
+        );
+
+        busMock
+            .Setup(x =>
+                x.Publish(
+                    It.IsAny<ResendErrorEmailIntegrationEvent>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ThrowsAsync(new InvalidOperationException("Bus failure"));
+
+        // Act
+        var exception = await Should.ThrowAsync<JobExecutionException>(() => job.Execute(context));
+
+        // Assert
+        exception.InnerException.ShouldBeOfType<InvalidOperationException>();
+        exception.InnerException!.Message.ShouldBe("Bus failure");
+    }
 }

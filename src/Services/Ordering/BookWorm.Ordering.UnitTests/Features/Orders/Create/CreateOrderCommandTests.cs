@@ -141,6 +141,15 @@ public sealed class CreateOrderCommandTests
             Times.Once
         );
         mockLock.Verify(x => x.DisposeAsync(), Times.Once);
+
+        _bookServiceMock.Verify(
+            x =>
+                x.GetBooksByIdsAsync(
+                    It.Is<IEnumerable<string>>(ids => ids.Count() == 2),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
     }
 
     private void SetupDefaultBasketAndBookServices()

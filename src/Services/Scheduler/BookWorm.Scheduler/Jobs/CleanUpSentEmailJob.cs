@@ -2,10 +2,6 @@
 
 namespace BookWorm.Scheduler.Jobs;
 
-/// <summary>
-/// Publishes a <see cref="CleanUpSentEmailIntegrationEvent"/> to trigger
-/// cleanup of successfully sent emails in the Notification service.
-/// </summary>
 [DisallowConcurrentExecution]
 public sealed class CleanUpSentEmailJob(IBus bus, ILogger<CleanUpSentEmailJob> logger) : IJob
 {
