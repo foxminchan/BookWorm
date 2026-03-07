@@ -1,5 +1,4 @@
 ﻿global using BookWorm.Chassis.EventBus;
-global using BookWorm.Scheduler.Configuration;
 global using BookWorm.Scheduler.Jobs;
 global using BookWorm.Scheduler.Jobs.Listeners;
 global using BookWorm.ServiceDefaults;

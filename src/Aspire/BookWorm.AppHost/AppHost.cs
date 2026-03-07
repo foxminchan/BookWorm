@@ -166,7 +166,7 @@ builder
     .WithReference(queue)
     .WaitFor(queue)
     .WithContainerRegistry(registry)
-    .WithFriendlyUrls(path: Http.Endpoints.AlivenessEndpointPath)
+    .WithFriendlyUrls("Quartz Dashboard", path: Http.Endpoints.QuartzDashboardEndpointPath)
     .WithExplicitStart();
 
 var gateway = builder

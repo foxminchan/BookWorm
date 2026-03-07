@@ -1,19 +1,22 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using Quartz.Listener;
 
 namespace BookWorm.Scheduler.Jobs.Listeners;
 
-/// <summary>
-/// Centralized Quartz job listener that provides structured logging
-/// for all job executions, including duration, success, and failure telemetry.
-/// </summary>
-internal sealed class JobTelemetryListener(ILogger<JobTelemetryListener> logger) : IJobListener
+[ExcludeFromCodeCoverage]
+internal sealed class JobTelemetryListener(ILogger<JobTelemetryListener> logger)
+    : JobListenerSupport
 {
     private static readonly ConcurrentDictionary<string, long> _jobStartTimestamps = new();
 
-    public string Name => nameof(JobTelemetryListener);
+    public override string Name => nameof(JobTelemetryListener);
 
-    public Task JobToBeExecuted(IJobExecutionContext context, CancellationToken cancellationToken)
+    public override Task JobToBeExecuted(
+        IJobExecutionContext context,
+        CancellationToken cancellationToken = default
+    )
     {
         _jobStartTimestamps[context.FireInstanceId] = Stopwatch.GetTimestamp();
 
@@ -28,9 +31,9 @@ internal sealed class JobTelemetryListener(ILogger<JobTelemetryListener> logger)
         return Task.CompletedTask;
     }
 
-    public Task JobExecutionVetoed(
+    public override Task JobExecutionVetoed(
         IJobExecutionContext context,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken = default
     )
     {
         _jobStartTimestamps.TryRemove(context.FireInstanceId, out _);
@@ -45,10 +48,10 @@ internal sealed class JobTelemetryListener(ILogger<JobTelemetryListener> logger)
         return Task.CompletedTask;
     }
 
-    public Task JobWasExecuted(
+    public override Task JobWasExecuted(
         IJobExecutionContext context,
         JobExecutionException? jobException,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken = default
     )
     {
         var elapsed = _jobStartTimestamps.TryRemove(context.FireInstanceId, out var start)
