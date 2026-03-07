@@ -7,10 +7,8 @@ public sealed record CustomerBasketDto(
 
 public sealed record BasketItemDto(
     [StringSyntax(StringSyntaxAttribute.GuidFormat)] string? Id,
-    int Quantity
-)
-{
-    public string? Name { get; set; }
-    public decimal Price { get; set; }
-    public decimal? PriceSale { get; set; }
-}
+    int Quantity,
+    string? Name = null,
+    decimal Price = 0,
+    decimal? PriceSale = null
+);

@@ -21,5 +21,14 @@ internal sealed class FeedbackConfiguration : IEntityTypeConfiguration<Feedback>
         builder.Property(e => e.Comment).HasMaxLength(DataSchemaLength.Max);
 
         builder.Property(e => e.RowVersion).IsRowVersion();
+
+        builder
+            .HasIndex(e => new
+            {
+                e.BookId,
+                e.FirstName,
+                e.LastName,
+            })
+            .IsUnique();
     }
 }

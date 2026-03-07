@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Basket.Features;
 
-public static class ContractToDomainMapper
+internal static class ContractToDomainMapper
 {
     public static List<BasketItem> ToBasketItem(this List<BasketItemRequest> items)
     {

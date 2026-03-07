@@ -1,4 +1,5 @@
-﻿using BookWorm.Common;
+using BookWorm.Chassis.Repository;
+using BookWorm.Common;
 using BookWorm.Contracts;
 using BookWorm.Notification.Domain.Models;
 using BookWorm.Notification.Infrastructure.Senders;
@@ -20,6 +21,7 @@ public sealed class ResendErrorEmailConsumerTests
     private Mock<ILogger<ResendErrorEmailIntegrationEventHandler>> _loggerMock = null!;
     private Mock<IOutboxRepository> _repositoryMock = null!;
     private Mock<ISender> _senderMock = null!;
+    private Mock<IUnitOfWork> _unitOfWorkMock = null!;
 
     [Before(Test)]
     public async Task SetUpAsync()
@@ -28,6 +30,9 @@ public sealed class ResendErrorEmailConsumerTests
         _loggerMock = new();
         _repositoryMock = new();
         _senderMock = new();
+        _unitOfWorkMock = new();
+
+        _repositoryMock.Setup(x => x.UnitOfWork).Returns(_unitOfWorkMock.Object);
 
         _provider = new ServiceCollection()
             .AddTelemetryListener()
@@ -62,7 +67,7 @@ public sealed class ResendErrorEmailConsumerTests
         ];
 
         _repositoryMock
-            .Setup(x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(failedEmails);
 
         var command = new ResendErrorEmailIntegrationEvent();
@@ -77,7 +82,7 @@ public sealed class ResendErrorEmailConsumerTests
         await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
 
         _repositoryMock.Verify(
-            x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()),
+            x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()),
             Times.Once
         );
 
@@ -118,7 +123,7 @@ public sealed class ResendErrorEmailConsumerTests
     {
         // Arrange
         _repositoryMock
-            .Setup(x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
         var command = new ResendErrorEmailIntegrationEvent();
@@ -133,7 +138,7 @@ public sealed class ResendErrorEmailConsumerTests
         await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
 
         _repositoryMock.Verify(
-            x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()),
+            x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()),
             Times.Once
         );
 
@@ -142,14 +147,9 @@ public sealed class ResendErrorEmailConsumerTests
             Times.Never
         );
 
-        // Verify summary log
-        VerifyLogMessage(
-            LogLevel.Information,
-            "Email resend completed. Success: 0, Failed: 0, Total: 0",
-            Times.Once()
-        );
+        // Handler returns early via the debug log; summary log is never emitted
+        VerifyLogMessage(LogLevel.Debug, "No unsent emails found for resend", Times.Once());
 
-        // No flush should be called when no successes
         _logBufferMock.Verify(x => x.Flush(), Times.Never);
     }
 
@@ -164,7 +164,7 @@ public sealed class ResendErrorEmailConsumerTests
         ];
 
         _repositoryMock
-            .Setup(x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(failedEmails);
 
         _senderMock
@@ -221,7 +221,7 @@ public sealed class ResendErrorEmailConsumerTests
         ];
 
         _repositoryMock
-            .Setup(x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(failedEmails);
 
         // Setup partial failure - first email succeeds, second fails, third succeeds
@@ -271,7 +271,7 @@ public sealed class ResendErrorEmailConsumerTests
         List<Outbox> failedEmails = [testEmail];
 
         _repositoryMock
-            .Setup(x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(failedEmails);
 
         MimeMessage? capturedMessage = null;
@@ -312,7 +312,7 @@ public sealed class ResendErrorEmailConsumerTests
         List<Outbox> failedEmails = [new("User One", "user1@example.com", "Subject 1", "Body 1")];
 
         _repositoryMock
-            .Setup(x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(failedEmails);
 
         _senderMock
@@ -350,7 +350,7 @@ public sealed class ResendErrorEmailConsumerTests
         List<Outbox> failedEmails = [new("User One", "user1@example.com", "Subject 1", "Body 1")];
 
         _repositoryMock
-            .Setup(x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(failedEmails);
 
         var capturedToken = CancellationToken.None;

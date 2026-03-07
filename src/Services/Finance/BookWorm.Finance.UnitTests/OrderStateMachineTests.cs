@@ -1,5 +1,6 @@
 ﻿using BookWorm.Contracts;
 using BookWorm.Finance.Saga;
+using BookWorm.Finance.Saga.Activities;
 using BookWorm.Finance.UnitTests.Extensions;
 using BookWorm.SharedKernel.Helpers;
 using MassTransit;
@@ -26,6 +27,11 @@ public sealed class OrderStateMachineTests
 
         _provider = new ServiceCollection()
             .AddSingleton(settings)
+            .AddScoped<PlaceOrderActivity>()
+            .AddScoped<CancelOrderActivity>()
+            .AddScoped<CompleteOrderActivity>()
+            .AddScoped<HandleBasketDeletedActivity>()
+            .AddScoped<HandleBasketDeleteFailedActivity>()
             .AddTelemetryListener()
             .AddMassTransitTestHarness(cfg =>
             {

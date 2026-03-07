@@ -122,6 +122,8 @@
           "TotalMoney": 99.99,
           "OrderPlacedDate": "DateTime_5",
           "PlaceOrderTimeoutTokenId": "Guid_9",
+          "CanSendNotification": true,
+          "EffectiveTotalMoney": 99.99,
           "CorrelationId": "Guid_3"
         },
         "ElementId": "Guid_3"
@@ -138,6 +140,8 @@
           "TotalMoney": 99.99,
           "OrderPlacedDate": "DateTime_5",
           "PlaceOrderTimeoutTokenId": "Guid_9",
+          "CanSendNotification": true,
+          "EffectiveTotalMoney": 99.99,
           "CorrelationId": "Guid_3"
         },
         "ElementId": "Guid_3"
@@ -199,6 +203,18 @@
         "Events": [
           {
             "Name": "PlaceOrderTimeoutSchedule.AnyReceived"
+          },
+          {
+            "Name": "OrderPlaced"
+          },
+          {
+            "Name": "OrderCancelled"
+          },
+          {
+            "Name": "BasketDeleted"
+          },
+          {
+            "Name": "BasketDeletedFailed"
           }
         ]
       },
@@ -219,6 +235,18 @@
         "Events": [
           {
             "Name": "PlaceOrderTimeoutSchedule.AnyReceived"
+          },
+          {
+            "Name": "OrderPlaced"
+          },
+          {
+            "Name": "OrderCompleted"
+          },
+          {
+            "Name": "BasketDeleted"
+          },
+          {
+            "Name": "BasketDeletedFailed"
           }
         ]
       },
@@ -239,6 +267,21 @@
         "Events": [
           {
             "Name": "PlaceOrderTimeoutSchedule.AnyReceived"
+          },
+          {
+            "Name": "OrderPlaced"
+          },
+          {
+            "Name": "OrderCompleted"
+          },
+          {
+            "Name": "OrderCancelled"
+          },
+          {
+            "Name": "BasketDeleted"
+          },
+          {
+            "Name": "BasketDeletedFailed"
           }
         ]
       },
@@ -492,6 +535,18 @@
           "Events": [
             {
               "Name": "PlaceOrderTimeoutSchedule.AnyReceived"
+            },
+            {
+              "Name": "OrderPlaced"
+            },
+            {
+              "Name": "OrderCancelled"
+            },
+            {
+              "Name": "BasketDeleted"
+            },
+            {
+              "Name": "BasketDeletedFailed"
             }
           ]
         },
@@ -512,6 +567,18 @@
           "Events": [
             {
               "Name": "PlaceOrderTimeoutSchedule.AnyReceived"
+            },
+            {
+              "Name": "OrderPlaced"
+            },
+            {
+              "Name": "OrderCompleted"
+            },
+            {
+              "Name": "BasketDeleted"
+            },
+            {
+              "Name": "BasketDeletedFailed"
             }
           ]
         },
@@ -532,6 +599,21 @@
           "Events": [
             {
               "Name": "PlaceOrderTimeoutSchedule.AnyReceived"
+            },
+            {
+              "Name": "OrderPlaced"
+            },
+            {
+              "Name": "OrderCompleted"
+            },
+            {
+              "Name": "OrderCancelled"
+            },
+            {
+              "Name": "BasketDeleted"
+            },
+            {
+              "Name": "BasketDeletedFailed"
             }
           ]
         }

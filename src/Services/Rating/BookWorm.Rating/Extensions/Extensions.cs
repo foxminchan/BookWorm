@@ -7,6 +7,7 @@ using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Constants.Core;
 using BookWorm.Rating.Configurations;
+using BookWorm.Rating.Features.Summarize;
 using BookWorm.Rating.Infrastructure.Agents;
 using BookWorm.Rating.Infrastructure.Summarizer;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
@@ -112,7 +113,7 @@ internal static class Extensions
         );
 
         builder.AddAgents();
-        services.AddSingleton<ISummarizer, RatingSummarizer>();
+        services.AddScoped<ISummarizer, RatingSummarizer>();
 
         services.AddScoped<KeycloakTokenIntrospectionMiddleware>();
     }

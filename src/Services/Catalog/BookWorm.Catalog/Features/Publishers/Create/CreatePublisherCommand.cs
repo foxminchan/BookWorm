@@ -14,6 +14,8 @@ public sealed class CreatePublisherHandler(IPublisherRepository repository)
     {
         var result = await repository.AddAsync(new(request.Name), cancellationToken);
 
+        await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
+
         return result.Id;
     }
 }

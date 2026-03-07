@@ -3,7 +3,7 @@ namespace BookWorm.Chassis.Security.Settings;
 public sealed class IdentityOptions : IEquatable<IdentityOptions>
 {
     public const string ConfigurationSection = "Identity";
-    public string Realm { get; init; } = string.Empty;
+    public string Realm { get; init; } = nameof(BookWorm).ToLowerInvariant();
     public string ClientId { get; init; } = string.Empty;
     public string ClientSecret { get; init; } = string.Empty;
     public Dictionary<string, string?> Scopes { get; init; } = [];

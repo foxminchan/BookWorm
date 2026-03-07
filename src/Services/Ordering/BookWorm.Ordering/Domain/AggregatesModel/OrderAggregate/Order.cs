@@ -40,21 +40,21 @@ public sealed class Order() : AuditableEntity, IAggregateRoot, ISoftDelete
     /// <summary>
     ///     Marks the order as completed if it is currently in a new state.
     /// </summary>
-    /// <returns>
-    ///     The current order instance. If the order status was successfully changed to completed,
-    ///     the returned instance will have its status updated and an OrderCompletedEvent registered.
-    ///     If the order was not in a new state, returns the unchanged order instance.
-    /// </returns>
+    /// <returns>The current order instance with its status updated to completed.</returns>
+    /// <exception cref="OrderingDomainException">
+    ///     Thrown when the order is not in <see cref="Status.New" /> status.
+    /// </exception>
     /// <remarks>
     ///     This method only transitions orders from New status to Completed status.
-    ///     Orders in any other state will remain unchanged.
     ///     When successful, this method raises an OrderCompletedEvent domain event.
     /// </remarks>
     public Order MarkAsCompleted()
     {
         if (Status != Status.New)
         {
-            return this;
+            throw new OrderingDomainException(
+                $"Cannot complete order in '{Status}' status; only '{Status.New}' orders can be completed."
+            );
         }
 
         Status = Status.Completed;
@@ -65,17 +65,20 @@ public sealed class Order() : AuditableEntity, IAggregateRoot, ISoftDelete
     /// <summary>
     ///     Marks the order as cancelled if it is in the New status.
     /// </summary>
-    /// <returns>The current order instance.</returns>
+    /// <returns>The current order instance with its status updated to cancelled.</returns>
+    /// <exception cref="OrderingDomainException">
+    ///     Thrown when the order is not in <see cref="Status.New" /> status.
+    /// </exception>
     /// <remarks>
-    ///     This method will only cancel the order if the current status is New.
     ///     When successfully cancelled, it updates the status to Cancelled and raises an OrderCancelledEvent.
-    ///     If the order is not in the New status, no changes are made.
     /// </remarks>
     public Order MarkAsCanceled()
     {
         if (Status != Status.New)
         {
-            return this;
+            throw new OrderingDomainException(
+                $"Cannot cancel order in '{Status}' status; only '{Status.New}' orders can be cancelled."
+            );
         }
 
         Status = Status.Cancelled;

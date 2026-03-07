@@ -1,7 +1,7 @@
 using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Utilities.Guards;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
-using BookWorm.Ordering.Infrastructure.Helpers;
+using BookWorm.Ordering.Extensions;
 using Mediator;
 
 namespace BookWorm.Ordering.Features.Orders.Get;
@@ -10,8 +10,11 @@ public sealed record GetOrderQuery(
     [property: Description("Only 'ADMIN' role can retrieve other users' data")] Guid Id
 ) : IQuery<OrderDetailDto>;
 
-public sealed class GetOrderHandler(IOrderRepository repository, ClaimsPrincipal claimsPrincipal)
-    : IQueryHandler<GetOrderQuery, OrderDetailDto>
+public sealed class GetOrderHandler(
+    IOrderRepository repository,
+    ClaimsPrincipal claimsPrincipal,
+    IBookService bookService
+) : IQueryHandler<GetOrderQuery, OrderDetailDto>
 {
     public async ValueTask<OrderDetailDto> Handle(
         GetOrderQuery request,
@@ -35,6 +38,34 @@ public sealed class GetOrderHandler(IOrderRepository repository, ClaimsPrincipal
 
         Guard.Against.NotFound(order, request.Id);
 
-        return order.ToOrderDetailDto();
+        var dto = order.ToOrderDetailDto();
+
+        if (dto.Items.Count > 0)
+        {
+            var bookIds = dto.Items.Select(item => item.Id.ToString()).Distinct();
+            var bookResponses = await bookService.GetBooksByIdsAsync(bookIds, cancellationToken);
+
+            if (bookResponses?.Books.Count is not null and not 0)
+            {
+                var bookLookup = bookResponses.Books.ToDictionary(b => b.Id);
+
+                dto = dto with
+                {
+                    Items =
+                    [
+                        .. dto.Items.Select(item =>
+                            bookLookup.TryGetValue(item.Id.ToString(), out var book)
+                                ? item with
+                                {
+                                    Name = book.Name,
+                                }
+                                : item
+                        ),
+                    ],
+                };
+            }
+        }
+
+        return dto;
     }
 }

@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 using System.Text.RegularExpressions;
-using BookWorm.Notification.Infrastructure.Attributes;
+using BookWorm.Notification.Domain.Attributes;
 using BookWorm.SharedKernel.Helpers;
 using Mjml.Net;
 

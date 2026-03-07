@@ -1,5 +1,5 @@
-﻿using BookWorm.Rating.Features;
-using BookWorm.Rating.Features.Summarize;
+﻿using BookWorm.Rating.Features.Summarize;
+using BookWorm.Rating.Infrastructure.Summarizer;
 using Mediator;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;

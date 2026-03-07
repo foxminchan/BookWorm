@@ -13,19 +13,16 @@ public sealed class UpdateBookPostProcessorTests
         var blobService = new Mock<IBlobService>();
         const string imageName = "image-to-delete.jpg";
 
-        var command = new UpdateBookCommand(
-            Guid.CreateVersion7(),
-            "Test Book",
-            "Description",
-            null,
-            10.99m,
-            null,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()],
-            true // IsRemoveImage = true
-        )
+        var command = new UpdateBookCommand
         {
+            Id = Guid.CreateVersion7(),
+            Name = "Test Book",
+            Description = "Description",
+            Price = 10.99m,
+            CategoryId = Guid.CreateVersion7(),
+            PublisherId = Guid.CreateVersion7(),
+            AuthorIds = [Guid.CreateVersion7()],
+            IsRemoveImage = true,
             ImageUrn = imageName,
         };
 
@@ -48,18 +45,15 @@ public sealed class UpdateBookPostProcessorTests
         var blobService = new Mock<IBlobService>();
         const string imageName = "image.jpg";
 
-        var command = new UpdateBookCommand(
-            Guid.CreateVersion7(),
-            "Test Book",
-            "Description",
-            null,
-            10.99m,
-            null,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()] // IsRemoveImage = false
-        )
+        var command = new UpdateBookCommand
         {
+            Id = Guid.CreateVersion7(),
+            Name = "Test Book",
+            Description = "Description",
+            Price = 10.99m,
+            CategoryId = Guid.CreateVersion7(),
+            PublisherId = Guid.CreateVersion7(),
+            AuthorIds = [Guid.CreateVersion7()],
             ImageUrn = imageName,
         };
 
@@ -81,18 +75,17 @@ public sealed class UpdateBookPostProcessorTests
         // Arrange
         var blobService = new Mock<IBlobService>();
 
-        var command = new UpdateBookCommand(
-            Guid.CreateVersion7(),
-            "Test Book",
-            "Description",
-            null,
-            10.99m,
-            null,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()],
-            true // IsRemoveImage = true
-        );
+        var command = new UpdateBookCommand
+        {
+            Id = Guid.CreateVersion7(),
+            Name = "Test Book",
+            Description = "Description",
+            Price = 10.99m,
+            CategoryId = Guid.CreateVersion7(),
+            PublisherId = Guid.CreateVersion7(),
+            AuthorIds = [Guid.CreateVersion7()],
+            IsRemoveImage = true,
+        };
 
         var handler = new UpdateBookPostProcessor(blobService.Object);
 

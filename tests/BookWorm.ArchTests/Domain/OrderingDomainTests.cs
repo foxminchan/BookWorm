@@ -73,7 +73,7 @@ public sealed class OrderingDomainTests : ArchUnitBaseTest
             .AndShould()
             .BeAssignableTo(typeof(Exception))
             .Because(
-                "Domain exceptions should be public, sealed, and derive from System.Exception to ensure proper error handling and reporting."
+                "Domain exceptions should be public, sealed, and derive from System.Exception."
             )
             .Check(Architecture);
     }

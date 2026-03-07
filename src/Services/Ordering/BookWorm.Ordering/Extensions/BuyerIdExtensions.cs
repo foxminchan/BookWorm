@@ -1,6 +1,6 @@
 ﻿using BookWorm.Chassis.Utilities.Guards;
 
-namespace BookWorm.Ordering.Infrastructure.Helpers;
+namespace BookWorm.Ordering.Extensions;
 
 public static class BuyerIdExtensions
 {

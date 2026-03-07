@@ -1,6 +1,6 @@
 ﻿using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Domain.Events;
-using BookWorm.Ordering.Domain.Projections;
+using BookWorm.Ordering.Infrastructure.EventStore.Projections;
 using BookWorm.Ordering.UnitTests.Fakers;
 
 namespace BookWorm.Ordering.UnitTests.Domain;

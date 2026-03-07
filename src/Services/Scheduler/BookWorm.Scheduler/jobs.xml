@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<job-scheduling-data
+  xmlns="http://quartznet.sourceforge.net/JobSchedulingData"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  version="2.0"
+>
+  <processing-directives>
+    <overwrite-existing-data>true</overwrite-existing-data>
+  </processing-directives>
+
+  <schedule>
+    <job>
+      <name>CleanUpSentEmailJob</name>
+      <group>Scheduler</group>
+      <description>Publishes an event to clean up successfully sent emails</description>
+      <job-type>BookWorm.Scheduler.Jobs.CleanUpSentEmailJob, BookWorm.Scheduler</job-type>
+      <durable>true</durable>
+      <recover>false</recover>
+    </job>
+
+    <trigger>
+      <cron>
+        <name>CleanUpSentEmailTrigger</name>
+        <group>Scheduler</group>
+        <description>Fires every hour to clean up sent emails</description>
+        <job-name>CleanUpSentEmailJob</job-name>
+        <job-group>Scheduler</job-group>
+        <misfire-instruction>FireOnceNow</misfire-instruction>
+        <cron-expression>0 0 * * * ?</cron-expression>
+        <time-zone>UTC</time-zone>
+      </cron>
+    </trigger>
+
+    <job>
+      <name>ResendErrorEmailJob</name>
+      <group>Scheduler</group>
+      <description>Publishes an event to retry previously failed email deliveries</description>
+      <job-type>BookWorm.Scheduler.Jobs.ResendErrorEmailJob, BookWorm.Scheduler</job-type>
+      <durable>true</durable>
+      <recover>false</recover>
+    </job>
+
+    <trigger>
+      <cron>
+        <name>ResendErrorEmailTrigger</name>
+        <group>Scheduler</group>
+        <description>Fires every hour to resend failed emails</description>
+        <job-name>ResendErrorEmailJob</job-name>
+        <job-group>Scheduler</job-group>
+        <misfire-instruction>FireOnceNow</misfire-instruction>
+        <cron-expression>0 0 * * * ?</cron-expression>
+        <time-zone>UTC</time-zone>
+      </cron>
+    </trigger>
+  </schedule>
+</job-scheduling-data>

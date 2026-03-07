@@ -27,16 +27,21 @@ public sealed class GetBasketPostProcessor(IBookService bookService)
 
         var bookLookup = bookResponses.Books.ToDictionary(b => b.Id);
 
-        foreach (var item in response.Items)
+        for (var i = 0; i < response.Items.Count; i++)
         {
+            var item = response.Items[i];
+
             if (!bookLookup.TryGetValue(item.Id!, out var bookResponse))
             {
                 continue;
             }
 
-            item.Name = bookResponse.Name;
-            item.PriceSale = bookResponse.PriceSale;
-            item.Price = (decimal)bookResponse.Price!;
+            response.Items[i] = item with
+            {
+                Name = bookResponse.Name,
+                PriceSale = bookResponse.PriceSale,
+                Price = (decimal)bookResponse.Price!,
+            };
         }
     }
 }

@@ -7,16 +7,16 @@ public sealed class CreateBookCommandFaker : Faker<CreateBookCommand>
     public CreateBookCommandFaker()
     {
         CustomInstantiator(f =>
-            new(
-                f.Commerce.ProductName(),
-                f.Lorem.Paragraph(),
-                null,
-                f.Finance.Amount(100),
-                f.Finance.Amount(1, 99),
-                Guid.CreateVersion7(),
-                Guid.CreateVersion7(),
-                [Guid.CreateVersion7()]
-            )
+            new()
+            {
+                Name = f.Commerce.ProductName(),
+                Description = f.Lorem.Paragraph(),
+                Price = f.Finance.Amount(100),
+                PriceSale = f.Finance.Amount(1, 99),
+                CategoryId = Guid.CreateVersion7(),
+                PublisherId = Guid.CreateVersion7(),
+                AuthorIds = [Guid.CreateVersion7()],
+            }
         );
     }
 

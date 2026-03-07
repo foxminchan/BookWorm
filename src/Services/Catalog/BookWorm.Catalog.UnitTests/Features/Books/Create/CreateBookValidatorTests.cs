@@ -1,6 +1,5 @@
 ﻿using System.Net.Mime;
 using BookWorm.Catalog.Features.Books.Create;
-using BookWorm.Catalog.Features.Books.Shared;
 using BookWorm.Constants.Core;
 using FluentValidation.TestHelper;
 using Microsoft.AspNetCore.Http;
@@ -14,15 +13,14 @@ public sealed class CreateBookValidatorTests
     [Before(Test)]
     public void SetUp()
     {
-        _validator = new(new ImageValidator());
+        _validator = new();
     }
 
     [Test]
     public void GivenEmptyName_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = CreateValidCommand();
-        command = command with { Name = string.Empty };
+        var command = CreateValidCommand(string.Empty);
 
         // Act
         var result = _validator.TestValidate(command);
@@ -35,8 +33,7 @@ public sealed class CreateBookValidatorTests
     public void GivenNameExceedsMaxLength_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = CreateValidCommand();
-        command = command with { Name = new('a', DataSchemaLength.Medium + 1) };
+        var command = CreateValidCommand(new('a', DataSchemaLength.Medium + 1));
 
         // Act
         var result = _validator.TestValidate(command);
@@ -49,8 +46,7 @@ public sealed class CreateBookValidatorTests
     public void GivenDescriptionExceedsMaxLength_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = CreateValidCommand();
-        command = command with { Description = new('a', DataSchemaLength.SuperLarge + 1) };
+        var command = CreateValidCommand(description: new('a', DataSchemaLength.SuperLarge + 1));
 
         // Act
         var result = _validator.TestValidate(command);
@@ -65,8 +61,7 @@ public sealed class CreateBookValidatorTests
     public void GivenInvalidPrice_WhenValidating_ThenShouldHaveValidationError(decimal price)
     {
         // Arrange
-        var command = CreateValidCommand();
-        command = command with { Price = price };
+        var command = CreateValidCommand(price: price);
 
         // Act
         var result = _validator.TestValidate(command);
@@ -83,8 +78,7 @@ public sealed class CreateBookValidatorTests
     )
     {
         // Arrange
-        var command = CreateValidCommand();
-        command = command with { PriceSale = priceSale };
+        var command = CreateValidCommand(priceSale: priceSale);
 
         // Act
         var result = _validator.TestValidate(command);
@@ -97,8 +91,7 @@ public sealed class CreateBookValidatorTests
     public void GivenPriceSaleGreaterThanPrice_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = CreateValidCommand();
-        command = command with { Price = 10, PriceSale = 15 };
+        var command = CreateValidCommand(price: 10, priceSale: 15);
 
         // Act
         var result = _validator.TestValidate(command);
@@ -111,8 +104,7 @@ public sealed class CreateBookValidatorTests
     public void GivenEmptyCategoryId_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = CreateValidCommand();
-        command = command with { CategoryId = Guid.Empty };
+        var command = CreateValidCommand(categoryId: Guid.Empty);
 
         // Act
         var result = _validator.TestValidate(command);
@@ -125,8 +117,7 @@ public sealed class CreateBookValidatorTests
     public void GivenEmptyPublisherId_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = CreateValidCommand();
-        command = command with { PublisherId = Guid.Empty };
+        var command = CreateValidCommand(publisherId: Guid.Empty);
 
         // Act
         var result = _validator.TestValidate(command);
@@ -139,8 +130,7 @@ public sealed class CreateBookValidatorTests
     public void GivenEmptyAuthorIds_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = CreateValidCommand();
-        command = command with { AuthorIds = [] };
+        var command = CreateValidCommand(authorIds: []);
 
         // Act
         var result = _validator.TestValidate(command);
@@ -153,15 +143,28 @@ public sealed class CreateBookValidatorTests
     public void GivenImageSizeExceedsMaximum_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = CreateValidCommand();
         var mockFile = CreateMockFile(2 * 1048576, MediaTypeNames.Image.Jpeg);
-        command = command with { Image = mockFile.Object };
+        var command = CreateValidCommand(image: mockFile.Object);
 
         // Act
         var result = _validator.TestValidate(command);
 
         // Assert
-        result.ShouldHaveValidationErrorFor(x => x.Image!.Length);
+        result.ShouldHaveValidationErrorFor(x => x.Image);
+    }
+
+    [Test]
+    public void GivenEmptyImageFile_WhenValidating_ThenShouldHaveValidationError()
+    {
+        // Arrange
+        var mockFile = CreateMockFile(0, MediaTypeNames.Image.Jpeg);
+        var command = CreateValidCommand(image: mockFile.Object);
+
+        // Act
+        var result = _validator.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.Image);
     }
 
     [Test]
@@ -172,24 +175,43 @@ public sealed class CreateBookValidatorTests
     )
     {
         // Arrange
-        var command = CreateValidCommand();
         var mockFile = CreateMockFile(1000, contentType);
-        command = command with { Image = mockFile.Object };
+        var command = CreateValidCommand(image: mockFile.Object);
 
         // Act
         var result = _validator.TestValidate(command);
 
         // Assert
-        result.ShouldHaveValidationErrorFor(x => x.Image!.ContentType);
+        result.ShouldHaveValidationErrorFor(x => x.Image);
     }
 
     [Test]
-    public void GivenValidCommand_WhenValidating_ThenShouldNotHaveValidationErrors()
+    public void GivenExtensionMismatchingContentType_WhenValidating_ThenShouldHaveValidationError()
+    {
+        // Arrange - JPEG content type but .png extension
+        var mockFile = CreateMockFile(1000, MediaTypeNames.Image.Jpeg, "test.png");
+        var command = CreateValidCommand(image: mockFile.Object);
+
+        // Act
+        var result = _validator.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.Image);
+    }
+
+    [Test]
+    [Arguments(MediaTypeNames.Image.Jpeg, "test.jpg")]
+    [Arguments(MediaTypeNames.Image.Jpeg, "test.jpeg")]
+    [Arguments(MediaTypeNames.Image.Png, "test.png")]
+    [Arguments(MediaTypeNames.Image.Webp, "test.webp")]
+    public void GivenValidImageFile_WhenValidating_ThenShouldNotHaveValidationErrors(
+        string contentType,
+        string fileName
+    )
     {
         // Arrange
-        var command = CreateValidCommand();
-        var mockFile = CreateMockFile(1000, MediaTypeNames.Image.Jpeg);
-        command = command with { Image = mockFile.Object };
+        var mockFile = CreateMockFile(1000, contentType, fileName);
+        var command = CreateValidCommand(image: mockFile.Object);
 
         // Act
         var result = _validator.TestValidate(command);
@@ -198,27 +220,41 @@ public sealed class CreateBookValidatorTests
         result.ShouldNotHaveAnyValidationErrors();
     }
 
-    private static CreateBookCommand CreateValidCommand()
+    private static CreateBookCommand CreateValidCommand(
+        string name = "Test Book",
+        string description = "Test Description",
+        IFormFile? image = null,
+        decimal price = 29.99m,
+        decimal? priceSale = 19.99m,
+        Guid? categoryId = null,
+        Guid? publisherId = null,
+        Guid[]? authorIds = null
+    )
     {
-        return new(
-            "Test Book",
-            "Test Description",
-            null,
-            29.99m,
-            19.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7(), Guid.CreateVersion7()]
-        );
+        return new()
+        {
+            Name = name,
+            Description = description,
+            Image = image,
+            Price = price,
+            PriceSale = priceSale,
+            CategoryId = categoryId ?? Guid.CreateVersion7(),
+            PublisherId = publisherId ?? Guid.CreateVersion7(),
+            AuthorIds = authorIds ?? [Guid.CreateVersion7(), Guid.CreateVersion7()],
+        };
     }
 
-    private static Mock<IFormFile> CreateMockFile(long length, string contentType)
+    private static Mock<IFormFile> CreateMockFile(
+        long length,
+        string contentType,
+        string fileName = "test.jpg"
+    )
     {
         var mockFile = new Mock<IFormFile>();
         mockFile.Setup(f => f.Length).Returns(length);
         mockFile.Setup(f => f.ContentType).Returns(contentType);
         mockFile.Setup(f => f.OpenReadStream()).Returns(new MemoryStream());
-        mockFile.Setup(f => f.FileName).Returns("test.jpg");
+        mockFile.Setup(f => f.FileName).Returns(fileName);
         return mockFile;
     }
 }

@@ -4,14 +4,6 @@ public sealed class CreateBasketValidator : AbstractValidator<CreateBasketComman
 {
     public CreateBasketValidator()
     {
-        RuleFor(x => x.Items)
-            .NotEmpty()
-            .ForEach(itemRule =>
-                itemRule.ChildRules(basketItem =>
-                {
-                    basketItem.RuleFor(a => a.Id).NotEmpty();
-                    basketItem.RuleFor(a => a.Quantity).GreaterThan(0);
-                })
-            );
+        RuleFor(x => x.Items).ApplyItemRules();
     }
 }

@@ -3,6 +3,7 @@ using BookWorm.Scheduler.Jobs;
 using MassTransit;
 using MassTransit.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Quartz;
 
 namespace BookWorm.Scheduler.UnitTests;
@@ -53,7 +54,8 @@ public sealed class ResendErrorEmailJobTests
     {
         // Arrange
         var bus = _harness.Bus;
-        var job = new ResendErrorEmailJob(bus);
+        var logger = Mock.Of<ILogger<ResendErrorEmailJob>>();
+        var job = new ResendErrorEmailJob(bus, logger);
         var context = Mock.Of<IJobExecutionContext>(c =>
             c.CancellationToken == CancellationToken.None
         );
@@ -76,7 +78,8 @@ public sealed class ResendErrorEmailJobTests
     {
         // Arrange
         var bus = _harness.Bus;
-        var job = new ResendErrorEmailJob(bus);
+        var logger = Mock.Of<ILogger<ResendErrorEmailJob>>();
+        var job = new ResendErrorEmailJob(bus, logger);
         var cancellationToken = CancellationToken.None;
         var context = Mock.Of<IJobExecutionContext>(c => c.CancellationToken == cancellationToken);
         const int numberOfExecutions = 3;
@@ -101,5 +104,33 @@ public sealed class ResendErrorEmailJobTests
         }
 
         publishedCount.ShouldBe(numberOfExecutions);
+    }
+
+    [Test]
+    public async Task GivenPublishThrows_WhenExecutingJob_ThenShouldWrapInJobExecutionException()
+    {
+        // Arrange
+        var busMock = new Mock<IBus>();
+        var loggerMock = new Mock<ILogger<ResendErrorEmailJob>>();
+        var job = new ResendErrorEmailJob(busMock.Object, loggerMock.Object);
+        var context = Mock.Of<IJobExecutionContext>(c =>
+            c.CancellationToken == CancellationToken.None
+        );
+
+        busMock
+            .Setup(x =>
+                x.Publish(
+                    It.IsAny<ResendErrorEmailIntegrationEvent>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ThrowsAsync(new InvalidOperationException("Bus failure"));
+
+        // Act
+        var exception = await Should.ThrowAsync<JobExecutionException>(() => job.Execute(context));
+
+        // Assert
+        exception.InnerException.ShouldBeOfType<InvalidOperationException>();
+        exception.InnerException!.Message.ShouldBe("Bus failure");
     }
 }

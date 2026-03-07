@@ -19,7 +19,7 @@ public sealed class AuthorRepository(CatalogDbContext context) : IAuthorReposito
 
     public async Task<IReadOnlyList<Author>> ListAsync(CancellationToken cancellationToken)
     {
-        return await _context.Authors.ToListAsync(cancellationToken);
+        return await _context.Authors.AsNoTracking().ToListAsync(cancellationToken);
     }
 
     public void Delete(Author author)

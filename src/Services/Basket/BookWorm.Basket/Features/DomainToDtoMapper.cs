@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Basket.Features;
 
-public static class DomainToDtoMapper
+internal static class DomainToDtoMapper
 {
     public static CustomerBasketDto ToCustomerBasketDto(this CustomerBasket model)
     {

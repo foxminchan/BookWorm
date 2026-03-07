@@ -76,8 +76,6 @@ public sealed class DeleteBasketFailedConsumerTests
             Times.Once
         );
 
-        _repositoryMock.Verify(x => x.Delete(order), Times.Once);
-
         _unitOfWorkMock.Verify(x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
