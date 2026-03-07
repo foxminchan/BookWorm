@@ -8,7 +8,7 @@ using Microsoft.Extensions.Diagnostics.Buffering;
 using Microsoft.Extensions.Logging;
 using MimeKit;
 
-namespace BookWorm.Notification.UnitTests.Domain;
+namespace BookWorm.Notification.UnitTests.Handlers;
 
 public sealed class ResendErrorEmailHandlerTests
 {
@@ -42,7 +42,7 @@ public sealed class ResendErrorEmailHandlerTests
 
         _repositoryMock
             .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Outbox> { email1, email2 });
+            .ReturnsAsync([email1, email2]);
 
         // Act
         await _handler.Consume(_contextMock.Object);
@@ -85,7 +85,7 @@ public sealed class ResendErrorEmailHandlerTests
 
         _repositoryMock
             .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Outbox> { email1, email2 });
+            .ReturnsAsync([email1, email2]);
 
         _senderMock
             .SetupSequence(x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()))
@@ -114,7 +114,7 @@ public sealed class ResendErrorEmailHandlerTests
 
         _repositoryMock
             .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Outbox> { email1 });
+            .ReturnsAsync([email1]);
 
         _senderMock
             .Setup(x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()))
@@ -142,7 +142,7 @@ public sealed class ResendErrorEmailHandlerTests
 
         _repositoryMock
             .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Outbox> { email });
+            .ReturnsAsync([email]);
 
         _senderMock
             .Setup(x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()))
@@ -170,5 +170,87 @@ public sealed class ResendErrorEmailHandlerTests
             x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()),
             Times.Once
         );
+    }
+
+    [Test]
+    public async Task GivenOnlyUnsentEmails_WhenConsuming_ThenShouldProcessAllReturnedEmails()
+    {
+        // Arrange
+        var unsent1 = new Outbox("User1", "u1@test.com", "Sub1", "Body1");
+        var unsent2 = new Outbox("User2", "u2@test.com", "Sub2", "Body2");
+        var unsent3 = new Outbox("User3", "u3@test.com", "Sub3", "Body3");
+
+        _repositoryMock
+            .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([unsent1, unsent2, unsent3]);
+
+        // Act
+        await _handler.Consume(_contextMock.Object);
+
+        // Assert
+        unsent1.IsSent.ShouldBeTrue();
+        unsent2.IsSent.ShouldBeTrue();
+        unsent3.IsSent.ShouldBeTrue();
+        _senderMock.Verify(
+            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
+            Times.Exactly(3)
+        );
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Test]
+    public async Task GivenAlreadySentEmailsExcludedBySpec_WhenConsuming_ThenShouldNotReprocessThem()
+    {
+        // Arrange - simulate that the spec already filtered out sent emails,
+        // so the repository returns only unsent ones
+        var unsent = new Outbox("Unsent", "unsent@test.com", "Sub", "Body");
+
+        _repositoryMock
+            .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([unsent]);
+
+        // Act
+        await _handler.Consume(_contextMock.Object);
+
+        // Assert
+        unsent.IsSent.ShouldBeTrue();
+        _senderMock.Verify(
+            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
+            Times.Once
+        );
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Test]
+    public async Task GivenSpecReturnsEmailsInOrder_WhenConsuming_ThenShouldProcessInSequence()
+    {
+        // Arrange - emails ordered by SequenceNumber as the spec dictates
+        var first = new Outbox("First", "first@test.com", "Sub1", "Body1") { SequenceNumber = 1 };
+        var second = new Outbox("Second", "second@test.com", "Sub2", "Body2")
+        {
+            SequenceNumber = 2,
+        };
+        var third = new Outbox("Third", "third@test.com", "Sub3", "Body3") { SequenceNumber = 3 };
+
+        _repositoryMock
+            .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([first, second, third]);
+
+        var sendOrder = new List<string>();
+        _senderMock
+            .Setup(x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()))
+            .Callback<MimeMessage, CancellationToken>(
+                (msg, _) => sendOrder.Add(msg.To.Mailboxes.First().Address)
+            )
+            .Returns(Task.CompletedTask);
+
+        // Act
+        await _handler.Consume(_contextMock.Object);
+
+        // Assert - processed in the order the spec returned them
+        sendOrder.Count.ShouldBe(3);
+        sendOrder[0].ShouldBe("first@test.com");
+        sendOrder[1].ShouldBe("second@test.com");
+        sendOrder[2].ShouldBe("third@test.com");
     }
 }

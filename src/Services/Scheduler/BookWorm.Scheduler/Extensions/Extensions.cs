@@ -11,6 +11,8 @@ internal static class Extensions
 
         builder.AddEventBus(typeof(ISchedulerApiMarker));
 
+        services.AddAntiforgery();
+
         services.Configure<QuartzOptions>(options =>
         {
             options["quartz.plugin.jobHistory.type"] =
