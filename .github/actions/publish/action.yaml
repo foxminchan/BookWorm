@@ -10,18 +10,19 @@ inputs:
     description: "The path to the .bun-version file"
     required: false
     default: ".bun-version"
-  repository-owner:
+  repository:
     description: "The owner of the repository"
     required: false
-    default: "${{ github.repository_owner }}"
-  repository-name:
-    description: "The name of the repository"
-    required: false
-    default: "${{ github.event.repository.name }}"
   operations-environment:
     description: "The operations environment to use for Aspire commands"
     required: false
     default: ${{ runner.os }}
+  azure-subscription-id:
+    description: "Azure Subscription ID for authentication"
+    required: true
+  azure-location:
+    description: "Azure Location for deployment"
+    required: true
 
 runs:
   using: "composite"
@@ -36,23 +37,11 @@ runs:
       with:
         bun-version-file: ${{ inputs.bun-version-file }}
 
-    - name: Cache Aspire CLI
-      id: cache-aspire
-      uses: actions/cache@v5
-      with:
-        path: ~/.aspire
-        key: ${{ inputs.operations-environment }}-aspire-cli
-        restore-keys: |
-          ${{ inputs.operations-environment }}-aspire-
-
     - name: Install Aspire CLI
-      if: steps.cache-aspire.outputs.cache-hit != 'true'
       shell: bash
-      run: curl -sSf https://aspire.dev/install.sh | bash -s -- -q dev
-
-    - name: Add Aspire CLI to PATH
-      shell: bash
-      run: echo "$HOME/.aspire/bin" >> $GITHUB_PATH
+      run: |
+        curl -sSL https://aspire.dev/install.sh | bash
+        echo "$HOME/.aspire/bin" >> $GITHUB_PATH
 
     - name: Verify Aspire Installation
       shell: bash
@@ -62,8 +51,10 @@ runs:
       shell: bash
       run: aspire do push
       env:
+        Azure__SubscriptionId: ${{ inputs.azure-subscription-id }}
+        Azure__Location: ${{ inputs.azure-location }}
         Parameters__container_endpoint: ghcr.io
-        Parameters__container_repository: ${{ inputs.repository-owner }}/${{ inputs.repository-name }}
+        Parameters__container_repository: ${{ inputs.repository }}
 
     - name: Install mcp-publisher
       shell: bash
