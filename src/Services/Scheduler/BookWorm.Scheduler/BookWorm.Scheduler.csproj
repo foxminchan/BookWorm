@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <RequiresAspNetWebAssets>true</RequiresAspNetWebAssets>
+  </PropertyGroup>
   <ItemGroup Label="OCI Labels">
     <ContainerLabel
       Include="org.opencontainers.image.description"
@@ -7,8 +10,14 @@
     <ContainerLabel Include="org.opencontainers.image.authors" Value="Nhan Nguyen" />
   </ItemGroup>
   <ItemGroup Label="Quartz">
+    <PackageReference Include="Quartz.Plugins" />
+    <PackageReference Include="Quartz.Dashboard" />
     <PackageReference Include="Quartz.AspNetCore" />
+    <PackageReference Include="Quartz.Plugins.TimeZoneConverter" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Quartz" />
+  </ItemGroup>
+  <ItemGroup Label="Quartz XML Config">
+    <None Update="jobs.xml" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="$(AssemblyName).UnitTests" />

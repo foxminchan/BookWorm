@@ -22,17 +22,17 @@ public sealed class UpdateBookCommandTests
             .Setup(x => x.UnitOfWork.SaveEntitiesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var command = new UpdateBookCommand(
-            book.Id,
-            "Updated Name",
-            "Updated Description",
-            null,
-            19.99m,
-            9.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7(), Guid.CreateVersion7()]
-        );
+        var command = new UpdateBookCommand
+        {
+            Id = book.Id,
+            Name = "Updated Name",
+            Description = "Updated Description",
+            Price = 19.99m,
+            PriceSale = 9.99m,
+            CategoryId = Guid.CreateVersion7(),
+            PublisherId = Guid.CreateVersion7(),
+            AuthorIds = [Guid.CreateVersion7(), Guid.CreateVersion7()],
+        };
 
         var handler = new UpdateBookHandler(repository.Object);
 
@@ -62,17 +62,16 @@ public sealed class UpdateBookCommandTests
             .Setup(x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Book?)null);
 
-        var command = new UpdateBookCommand(
-            Guid.CreateVersion7(),
-            "Test Book",
-            "Description",
-            null,
-            10.99m,
-            null,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
-        );
+        var command = new UpdateBookCommand
+        {
+            Id = Guid.CreateVersion7(),
+            Name = "Test Book",
+            Description = "Description",
+            Price = 10.99m,
+            CategoryId = Guid.CreateVersion7(),
+            PublisherId = Guid.CreateVersion7(),
+            AuthorIds = [Guid.CreateVersion7()],
+        };
 
         var handler = new UpdateBookHandler(repository.Object);
 
@@ -113,18 +112,18 @@ public sealed class UpdateBookCommandTests
             .Setup(x => x.UnitOfWork.SaveEntitiesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var command = new UpdateBookCommand(
-            book.Id,
-            book.Name!,
-            book.Description!,
-            null,
-            book.Price!.OriginalPrice,
-            book.Price.DiscountPrice,
-            (Guid)book.CategoryId,
-            (Guid)book.PublisherId,
-            [.. book.BookAuthors.Select(x => x.AuthorId)],
-            true // IsRemoveImage = true
-        );
+        var command = new UpdateBookCommand
+        {
+            Id = book.Id,
+            Name = book.Name!,
+            Description = book.Description!,
+            Price = book.Price!.OriginalPrice,
+            PriceSale = book.Price.DiscountPrice,
+            CategoryId = (Guid)book.CategoryId,
+            PublisherId = (Guid)book.PublisherId,
+            AuthorIds = [.. book.BookAuthors.Select(x => x.AuthorId)],
+            IsRemoveImage = true,
+        };
 
         var handler = new UpdateBookHandler(repository.Object);
 
@@ -161,18 +160,16 @@ public sealed class UpdateBookCommandTests
             .Setup(x => x.UnitOfWork.SaveEntitiesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var command = new UpdateBookCommand(
-            book.Id,
-            book.Name!,
-            book.Description!,
-            null,
-            book.Price!.OriginalPrice,
-            book.Price.DiscountPrice,
-            (Guid)book.CategoryId!,
-            (Guid)book.PublisherId!,
-            [.. book.BookAuthors.Select(x => x.AuthorId)]
-        )
+        var command = new UpdateBookCommand
         {
+            Id = book.Id,
+            Name = book.Name!,
+            Description = book.Description!,
+            Price = book.Price!.OriginalPrice,
+            PriceSale = book.Price.DiscountPrice,
+            CategoryId = (Guid)book.CategoryId!,
+            PublisherId = (Guid)book.PublisherId!,
+            AuthorIds = [.. book.BookAuthors.Select(x => x.AuthorId)],
             ImageUrn = "new-image.jpg",
         }; // Simulating a new image upload
 
@@ -211,17 +208,17 @@ public sealed class UpdateBookCommandTests
             .Setup(x => x.UnitOfWork.SaveEntitiesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var command = new UpdateBookCommand(
-            book.Id,
-            book.Name!,
-            book.Description!,
-            null,
-            book.Price!.OriginalPrice,
-            book.Price.DiscountPrice,
-            (Guid)book.CategoryId,
-            (Guid)book.PublisherId,
-            [.. book.BookAuthors.Select(x => x.AuthorId)]
-        );
+        var command = new UpdateBookCommand
+        {
+            Id = book.Id,
+            Name = book.Name!,
+            Description = book.Description!,
+            Price = book.Price!.OriginalPrice,
+            PriceSale = book.Price.DiscountPrice,
+            CategoryId = (Guid)book.CategoryId,
+            PublisherId = (Guid)book.PublisherId,
+            AuthorIds = [.. book.BookAuthors.Select(x => x.AuthorId)],
+        };
 
         var handler = new UpdateBookHandler(repository.Object);
 

@@ -17,7 +17,6 @@ public sealed class GetOrderQueryTests
     private readonly Mock<IBookService> _bookServiceMock;
     private readonly Guid _buyerId;
     private readonly Mock<ClaimsPrincipal> _claimsPrincipalMock;
-    private readonly GetOrderPostProcessor _getOrderPostHandler;
     private readonly GetOrderHandler _handler;
     private readonly Guid _id;
     private readonly Order _order;
@@ -40,8 +39,11 @@ public sealed class GetOrderQueryTests
         _order.GetType().GetProperty("Id")?.SetValue(_order, _id);
         _order.GetType().GetProperty("BuyerId")?.SetValue(_order, _buyerId);
 
-        _handler = new(_orderRepositoryMock.Object, _claimsPrincipalMock.Object);
-        _getOrderPostHandler = new(_bookServiceMock.Object);
+        _handler = new(
+            _orderRepositoryMock.Object,
+            _claimsPrincipalMock.Object,
+            _bookServiceMock.Object
+        );
     }
 
     [Test]
@@ -132,187 +134,100 @@ public sealed class GetOrderQueryTests
     }
 
     [Test]
-    public async Task GivenOrderWithItems_WhenPostProcessing_ThenShouldFillInBookNames()
+    public async Task GivenOrderWithItems_WhenBookServiceReturnsBooks_ThenShouldEnrichItemsWithBookNames()
     {
         // Arrange
-        var bookId1 = Guid.CreateVersion7();
-        var bookId2 = Guid.CreateVersion7();
+        SetupAdminUser();
 
-        var orderDetailDto = new OrderDetailDto(
-            _id,
-            DateTimeHelper.UtcNow(),
-            150.00m,
-            Status.New,
-            [new(bookId1, 2, 50.00m), new(bookId2, 1, 50.00m)]
-        );
+        var orderItems = _order.OrderItems.ToList();
+        for (var i = 0; i < orderItems.Count; i++)
+        {
+            orderItems[i].Id = Guid.CreateVersion7();
+        }
+
+        _orderRepositoryMock
+            .Setup(r => r.GetByIdAsync(_id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(_order);
 
         var booksResponse = new GetBooksResponse();
-        booksResponse.Books.Add(new GetBookResponse { Id = bookId1.ToString(), Name = "Book 1" });
-        booksResponse.Books.Add(new GetBookResponse { Id = bookId2.ToString(), Name = "Book 2" });
+        foreach (var item in orderItems)
+        {
+            booksResponse.Books.Add(
+                new GetBookResponse
+                {
+                    Id = item.Id.ToString(),
+                    Name = $"Book for {item.Id}",
+                    Price = item.Price,
+                }
+            );
+        }
+
         _bookServiceMock
-            .Setup(b =>
-                b.GetBooksByIdsAsync(
-                    It.Is<IReadOnlyList<string>>(ids =>
-                        ids.Contains(bookId1.ToString()) && ids.Contains(bookId2.ToString())
-                    ),
-                    It.IsAny<CancellationToken>()
-                )
+            .Setup(x =>
+                x.GetBooksByIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>())
             )
             .ReturnsAsync(booksResponse);
 
         // Act
-        await _getOrderPostHandler.Handle(
-            new(_id),
-            (_, _) => new(orderDetailDto),
-            CancellationToken.None
-        );
+        var result = await _handler.Handle(new(_id), CancellationToken.None);
 
         // Assert
-        orderDetailDto.Items.ShouldNotBeEmpty();
-        orderDetailDto.Items.Count.ShouldBe(2);
-        orderDetailDto.Items[0].Name.ShouldBe("Book 1");
-        orderDetailDto.Items[1].Name.ShouldBe("Book 2");
+        result.Items.Count.ShouldBe(orderItems.Count);
+        foreach (var item in result.Items)
+        {
+            item.Name.ShouldBe($"Book for {item.Id}");
+        }
     }
 
     [Test]
-    public async Task GivenOrderWithItemsAndMissingBook_WhenPostProcessing_ThenShouldHandleGracefully()
+    public async Task GivenOrderWithItems_WhenBookServiceReturnsPartialMatch_ThenShouldEnrichOnlyMatchedItems()
     {
         // Arrange
-        var bookId1 = Guid.CreateVersion7();
-        var bookId2 = Guid.CreateVersion7();
+        SetupAdminUser();
 
-        var orderDetailDto = new OrderDetailDto(
-            _id,
-            DateTimeHelper.UtcNow(),
-            150.00m,
-            Status.Cancelled,
-            [new(bookId1, 2, 50.00m), new(bookId2, 1, 50.00m)]
-        );
+        var orderItems = _order.OrderItems.ToList();
+        for (var i = 0; i < orderItems.Count; i++)
+        {
+            orderItems[i].Id = Guid.CreateVersion7();
+        }
 
-        var booksResponse = new GetBooksResponse();
-        booksResponse.Books.Add(new GetBookResponse { Id = bookId1.ToString(), Name = "Book 1" }); // bookId2 missing
+        _orderRepositoryMock
+            .Setup(r => r.GetByIdAsync(_id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(_order);
+
+        var firstItem = orderItems[0];
+
+        var booksResponse = new GetBooksResponse
+        {
+            Books =
+            {
+                new GetBookResponse
+                {
+                    Id = firstItem.Id.ToString(),
+                    Name = "Matched Book",
+                    Price = firstItem.Price,
+                },
+            },
+        };
+
         _bookServiceMock
-            .Setup(b =>
-                b.GetBooksByIdsAsync(
-                    It.Is<IReadOnlyList<string>>(ids =>
-                        ids.Contains(bookId1.ToString()) && ids.Contains(bookId2.ToString())
-                    ),
-                    It.IsAny<CancellationToken>()
-                )
+            .Setup(x =>
+                x.GetBooksByIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>())
             )
             .ReturnsAsync(booksResponse);
 
         // Act
-        await _getOrderPostHandler.Handle(
-            new(_id),
-            (_, _) => new(orderDetailDto),
-            CancellationToken.None
-        );
+        var result = await _handler.Handle(new(_id), CancellationToken.None);
 
         // Assert
-        orderDetailDto.Items.ShouldNotBeEmpty();
-        orderDetailDto.Items.Count.ShouldBe(2);
-        orderDetailDto.Items[0].Name.ShouldBe("Book 1"); // Found book has a name
-        orderDetailDto.Items[1].Name.ShouldBeNull(); // Missing book has no name
-    }
+        var matchedItem = result.Items.First(i => i.Id == firstItem.Id);
+        matchedItem.Name.ShouldBe("Matched Book");
 
-    [Test]
-    public async Task GivenOrderWithNoItems_WhenPostProcessing_ThenShouldReturnEarly()
-    {
-        // Arrange
-        var orderDetailDto = new OrderDetailDto(
-            _id,
-            DateTimeHelper.UtcNow(),
-            0.00m,
-            Status.New,
-            [] // Empty items list
-        );
-
-        // Act
-        await _getOrderPostHandler.Handle(
-            new(_id),
-            (_, _) => new(orderDetailDto),
-            CancellationToken.None
-        );
-
-        // Assert
-        _bookServiceMock.Verify(
-            b =>
-                b.GetBooksByIdsAsync(
-                    It.IsAny<IReadOnlyList<string>>(),
-                    It.IsAny<CancellationToken>()
-                ),
-            Times.Never
-        );
-    }
-
-    [Test]
-    public async Task GivenOrderWithItems_WhenBookServiceReturnsNull_ThenShouldReturnEarly()
-    {
-        // Arrange
-        var bookId = Guid.CreateVersion7();
-        var orderDetailDto = new OrderDetailDto(
-            _id,
-            DateTimeHelper.UtcNow(),
-            50.00m,
-            Status.New,
-            [new(bookId, 1, 50.00m)]
-        );
-
-        _bookServiceMock
-            .Setup(b =>
-                b.GetBooksByIdsAsync(
-                    It.IsAny<IReadOnlyList<string>>(),
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .ReturnsAsync((GetBooksResponse?)null);
-
-        // Act
-        await _getOrderPostHandler.Handle(
-            new(_id),
-            (_, _) => new(orderDetailDto),
-            CancellationToken.None
-        );
-
-        // Assert
-        orderDetailDto.Items.ShouldNotBeEmpty();
-        orderDetailDto.Items[0].Name.ShouldBeNull(); // Name should remain unchanged (null)
-    }
-
-    [Test]
-    public async Task GivenOrderWithItems_WhenBookServiceReturnsEmptyBooks_ThenShouldReturnEarly()
-    {
-        // Arrange
-        var bookId = Guid.CreateVersion7();
-        var orderDetailDto = new OrderDetailDto(
-            _id,
-            DateTimeHelper.UtcNow(),
-            50.00m,
-            Status.New,
-            [new(bookId, 1, 50.00m)]
-        );
-
-        var emptyBooksResponse = new GetBooksResponse(); // Empty books collection
-        _bookServiceMock
-            .Setup(b =>
-                b.GetBooksByIdsAsync(
-                    It.IsAny<IReadOnlyList<string>>(),
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .ReturnsAsync(emptyBooksResponse);
-
-        // Act
-        await _getOrderPostHandler.Handle(
-            new(_id),
-            (_, _) => new(orderDetailDto),
-            CancellationToken.None
-        );
-
-        // Assert
-        orderDetailDto.Items.ShouldNotBeEmpty();
-        orderDetailDto.Items[0].Name.ShouldBeNull(); // Name should remain unchanged (null)
+        var unmatchedItems = result.Items.Where(i => i.Id != firstItem.Id);
+        foreach (var item in unmatchedItems)
+        {
+            item.Name.ShouldBeNull();
+        }
     }
 
     private void SetupAdminUser()

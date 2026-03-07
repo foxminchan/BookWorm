@@ -1,7 +1,6 @@
 ﻿using System.Security.Claims;
 using BookWorm.Basket.Domain;
 using BookWorm.Basket.Features.Create;
-using BookWorm.Basket.Infrastructure.Exceptions;
 using BookWorm.Basket.UnitTests.Fakers;
 
 namespace BookWorm.Basket.UnitTests.Features.Create;

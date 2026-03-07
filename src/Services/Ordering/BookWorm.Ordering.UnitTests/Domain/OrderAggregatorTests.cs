@@ -96,16 +96,14 @@ public sealed class OrderAggregatorTests
     }
 
     [Test]
-    public void GivenCompletedOrder_WhenCancelling_ThenShouldRemainCompleted()
+    public void GivenCompletedOrder_WhenCancelling_ThenShouldThrowDomainException()
     {
         // Arrange
         var order = new Order(Guid.CreateVersion7(), null, []);
         order.MarkAsCompleted();
 
-        // Act
-        order.MarkAsCanceled();
-
-        // Assert
+        // Act & Assert
+        Should.Throw<OrderingDomainException>(() => order.MarkAsCanceled());
         order.Status.ShouldBe(Status.Completed);
     }
 
@@ -171,16 +169,14 @@ public sealed class OrderAggregatorTests
     }
 
     [Test]
-    public void GivenCancelledOrder_WhenCompleting_ThenShouldRemainCancelled()
+    public void GivenCancelledOrder_WhenCompleting_ThenShouldThrowDomainException()
     {
         // Arrange
         var order = new Order(Guid.CreateVersion7(), null, []);
         order.MarkAsCanceled();
 
-        // Act
-        order.MarkAsCompleted();
-
-        // Assert
+        // Act & Assert
+        Should.Throw<OrderingDomainException>(() => order.MarkAsCompleted());
         order.Status.ShouldBe(Status.Cancelled);
     }
 
@@ -235,17 +231,14 @@ public sealed class OrderAggregatorTests
     }
 
     [Test]
-    public void GivenCompletedOrder_WhenMarkingAsCompleted_ThenShouldReturnSameInstance()
+    public void GivenCompletedOrder_WhenMarkingAsCompleted_ThenShouldThrowDomainException()
     {
         // Arrange
         var order = new Order(Guid.CreateVersion7(), null, []);
         order.MarkAsCompleted(); // Make it completed first
 
-        // Act
-        var result = order.MarkAsCompleted(); // Try to complete again
-
-        // Assert
-        result.ShouldBeSameAs(order);
+        // Act & Assert
+        Should.Throw<OrderingDomainException>(() => order.MarkAsCompleted());
     }
 
     [Test]
@@ -262,16 +255,13 @@ public sealed class OrderAggregatorTests
     }
 
     [Test]
-    public void GivenCompletedOrder_WhenMarkingAsCanceled_ThenShouldReturnSameInstance()
+    public void GivenCompletedOrder_WhenMarkingAsCanceled_ThenShouldThrowDomainException()
     {
         // Arrange
         var order = new Order(Guid.CreateVersion7(), null, []);
         order.MarkAsCompleted(); // Make it completed first
 
-        // Act
-        var result = order.MarkAsCanceled(); // Try to cancel
-
-        // Assert
-        result.ShouldBeSameAs(order);
+        // Act & Assert
+        Should.Throw<OrderingDomainException>(() => order.MarkAsCanceled());
     }
 }

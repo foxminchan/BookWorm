@@ -1,6 +1,6 @@
 using BookWorm.Common;
-using BookWorm.Notification.Domain.Builders;
 using BookWorm.Notification.Domain.Models;
+using BookWorm.Notification.Infrastructure.Builders;
 using BookWorm.Notification.Infrastructure.Senders.SendGrid;
 using MimeKit;
 using SendGrid.Helpers.Mail;

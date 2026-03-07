@@ -1,6 +1,4 @@
-﻿using BookWorm.Basket.Infrastructure.Exceptions;
-using BookWorm.Chassis.Security.Extensions;
-using BookWorm.Chassis.Utilities.Guards;
+﻿using BookWorm.Basket.Extensions;
 using Mediator;
 
 namespace BookWorm.Basket.Features.Create;
@@ -17,9 +15,7 @@ public sealed class CreateBasketHandler(
         CancellationToken cancellationToken
     )
     {
-        var sub = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier);
-
-        var userId = Guard.Against.NotAuthenticated(sub);
+        var userId = claimsPrincipal.GetAuthenticatedUserId();
 
         var basket = new CustomerBasket(userId, request.Items.ToBasketItem());
 

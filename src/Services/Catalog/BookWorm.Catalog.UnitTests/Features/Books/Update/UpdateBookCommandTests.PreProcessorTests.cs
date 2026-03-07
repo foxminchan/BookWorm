@@ -19,17 +19,17 @@ public sealed class UpdateBookPreProcessorTests
             .Setup(x => x.UploadFileAsync(formFile.Object, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedImageUrl);
 
-        var command = new UpdateBookCommand(
-            Guid.CreateVersion7(),
-            "Test Book",
-            "Description",
-            formFile.Object,
-            10.99m,
-            null,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
-        );
+        var command = new UpdateBookCommand
+        {
+            Id = Guid.CreateVersion7(),
+            Name = "Test Book",
+            Description = "Description",
+            Image = formFile.Object,
+            Price = 10.99m,
+            CategoryId = Guid.CreateVersion7(),
+            PublisherId = Guid.CreateVersion7(),
+            AuthorIds = [Guid.CreateVersion7()],
+        };
 
         var handler = new UpdateBookPreProcessor(blobService.Object);
 
@@ -50,17 +50,16 @@ public sealed class UpdateBookPreProcessorTests
         // Arrange
         var blobService = new Mock<IBlobService>();
 
-        var command = new UpdateBookCommand(
-            Guid.CreateVersion7(),
-            "Test Book",
-            "Description",
-            null,
-            10.99m,
-            null,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
-        );
+        var command = new UpdateBookCommand
+        {
+            Id = Guid.CreateVersion7(),
+            Name = "Test Book",
+            Description = "Description",
+            Price = 10.99m,
+            CategoryId = Guid.CreateVersion7(),
+            PublisherId = Guid.CreateVersion7(),
+            AuthorIds = [Guid.CreateVersion7()],
+        };
 
         var handler = new UpdateBookPreProcessor(blobService.Object);
 

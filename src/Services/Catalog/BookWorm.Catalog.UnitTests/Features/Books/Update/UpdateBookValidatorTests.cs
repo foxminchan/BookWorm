@@ -1,5 +1,4 @@
 ﻿using System.Net.Mime;
-using BookWorm.Catalog.Features.Books.Shared;
 using BookWorm.Catalog.Features.Books.Update;
 using BookWorm.Constants.Core;
 using FluentValidation.TestHelper;
@@ -22,70 +21,58 @@ public sealed class UpdateBookValidatorTests
     [Before(Test)]
     public void Setup()
     {
-        _validator = new(new ImageValidator());
+        _validator = new();
     }
 
     [Test]
     public void GivenValidCommand_WhenValidating_ThenShouldNotHaveAnyValidationErrors()
     {
         // Arrange
-        var command = new UpdateBookCommand(
-            _validId,
-            ValidName,
-            ValidDescription,
-            null,
-            ValidPrice,
-            ValidPriceSale,
-            _validCategoryId,
-            _validPublisherId,
-            _validAuthorIds
-        );
-
-        // Act
-        var result = _validator.TestValidate(command);
-
-        // Assert
-        result.ShouldNotHaveAnyValidationErrors();
+        var command = new UpdateBookCommand
+        {
+            Id = _validId,
+            Name = ValidName,
+            Description = ValidDescription,
+            Price = ValidPrice,
+            PriceSale = ValidPriceSale,
+            CategoryId = _validCategoryId,
+            PublisherId = _validPublisherId,
+            AuthorIds = _validAuthorIds,
+        };
     }
 
     [Test]
     public void GivenEmptyId_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = new UpdateBookCommand(
-            Guid.Empty,
-            ValidName,
-            ValidDescription,
-            null,
-            ValidPrice,
-            ValidPriceSale,
-            _validCategoryId,
-            _validPublisherId,
-            _validAuthorIds
-        );
-
-        // Act
-        var result = _validator.TestValidate(command);
-
-        // Assert
-        result.ShouldHaveValidationErrorFor(x => x.Id);
+        var command = new UpdateBookCommand
+        {
+            Id = Guid.Empty,
+            Name = ValidName,
+            Description = ValidDescription,
+            Price = ValidPrice,
+            PriceSale = ValidPriceSale,
+            CategoryId = _validCategoryId,
+            PublisherId = _validPublisherId,
+            AuthorIds = _validAuthorIds,
+        };
     }
 
     [Test]
     public void GivenEmptyName_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = new UpdateBookCommand(
-            _validId,
-            string.Empty,
-            ValidDescription,
-            null,
-            ValidPrice,
-            ValidPriceSale,
-            _validCategoryId,
-            _validPublisherId,
-            _validAuthorIds
-        );
+        var command = new UpdateBookCommand
+        {
+            Id = _validId,
+            Name = string.Empty,
+            Description = ValidDescription,
+            Price = ValidPrice,
+            PriceSale = ValidPriceSale,
+            CategoryId = _validCategoryId,
+            PublisherId = _validPublisherId,
+            AuthorIds = _validAuthorIds,
+        };
 
         // Act
         var result = _validator.TestValidate(command);
@@ -99,17 +86,17 @@ public sealed class UpdateBookValidatorTests
     {
         // Arrange
         var longName = new string('A', DataSchemaLength.Medium + 1);
-        var command = new UpdateBookCommand(
-            _validId,
-            longName,
-            ValidDescription,
-            null,
-            ValidPrice,
-            ValidPriceSale,
-            _validCategoryId,
-            _validPublisherId,
-            _validAuthorIds
-        );
+        var command = new UpdateBookCommand
+        {
+            Id = _validId,
+            Name = longName,
+            Description = ValidDescription,
+            Price = ValidPrice,
+            PriceSale = ValidPriceSale,
+            CategoryId = _validCategoryId,
+            PublisherId = _validPublisherId,
+            AuthorIds = _validAuthorIds,
+        };
 
         // Act
         var result = _validator.TestValidate(command);
@@ -123,17 +110,17 @@ public sealed class UpdateBookValidatorTests
     {
         // Arrange
         var longDescription = new string('A', DataSchemaLength.SuperLarge + 1);
-        var command = new UpdateBookCommand(
-            _validId,
-            ValidName,
-            longDescription,
-            null,
-            ValidPrice,
-            ValidPriceSale,
-            _validCategoryId,
-            _validPublisherId,
-            _validAuthorIds
-        );
+        var command = new UpdateBookCommand
+        {
+            Id = _validId,
+            Name = ValidName,
+            Description = longDescription,
+            Price = ValidPrice,
+            PriceSale = ValidPriceSale,
+            CategoryId = _validCategoryId,
+            PublisherId = _validPublisherId,
+            AuthorIds = _validAuthorIds,
+        };
 
         // Act
         var result = _validator.TestValidate(command);
@@ -146,17 +133,17 @@ public sealed class UpdateBookValidatorTests
     public void GivenZeroPrice_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = new UpdateBookCommand(
-            _validId,
-            ValidName,
-            ValidDescription,
-            null,
-            0m,
-            ValidPriceSale,
-            _validCategoryId,
-            _validPublisherId,
-            _validAuthorIds
-        );
+        var command = new UpdateBookCommand
+        {
+            Id = _validId,
+            Name = ValidName,
+            Description = ValidDescription,
+            Price = 0m,
+            PriceSale = ValidPriceSale,
+            CategoryId = _validCategoryId,
+            PublisherId = _validPublisherId,
+            AuthorIds = _validAuthorIds,
+        };
 
         // Act
         var result = _validator.TestValidate(command);
@@ -169,17 +156,17 @@ public sealed class UpdateBookValidatorTests
     public void GivenNegativePrice_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = new UpdateBookCommand(
-            _validId,
-            ValidName,
-            ValidDescription,
-            null,
-            -10m,
-            ValidPriceSale,
-            _validCategoryId,
-            _validPublisherId,
-            _validAuthorIds
-        );
+        var command = new UpdateBookCommand
+        {
+            Id = _validId,
+            Name = ValidName,
+            Description = ValidDescription,
+            Price = -10m,
+            PriceSale = ValidPriceSale,
+            CategoryId = _validCategoryId,
+            PublisherId = _validPublisherId,
+            AuthorIds = _validAuthorIds,
+        };
 
         // Act
         var result = _validator.TestValidate(command);
@@ -192,17 +179,17 @@ public sealed class UpdateBookValidatorTests
     public void GivenZeroPriceSale_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = new UpdateBookCommand(
-            _validId,
-            ValidName,
-            ValidDescription,
-            null,
-            ValidPrice,
-            0m,
-            _validCategoryId,
-            _validPublisherId,
-            _validAuthorIds
-        );
+        var command = new UpdateBookCommand
+        {
+            Id = _validId,
+            Name = ValidName,
+            Description = ValidDescription,
+            Price = ValidPrice,
+            PriceSale = 0m,
+            CategoryId = _validCategoryId,
+            PublisherId = _validPublisherId,
+            AuthorIds = _validAuthorIds,
+        };
 
         // Act
         var result = _validator.TestValidate(command);
@@ -215,17 +202,17 @@ public sealed class UpdateBookValidatorTests
     public void GivenPriceSaleGreaterThanPrice_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = new UpdateBookCommand(
-            _validId,
-            ValidName,
-            ValidDescription,
-            null,
-            10m,
-            15m,
-            _validCategoryId,
-            _validPublisherId,
-            _validAuthorIds
-        );
+        var command = new UpdateBookCommand
+        {
+            Id = _validId,
+            Name = ValidName,
+            Description = ValidDescription,
+            Price = 10m,
+            PriceSale = 15m,
+            CategoryId = _validCategoryId,
+            PublisherId = _validPublisherId,
+            AuthorIds = _validAuthorIds,
+        };
 
         // Act
         var result = _validator.TestValidate(command);
@@ -238,17 +225,17 @@ public sealed class UpdateBookValidatorTests
     public void GivenEmptyCategoryId_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = new UpdateBookCommand(
-            _validId,
-            ValidName,
-            ValidDescription,
-            null,
-            ValidPrice,
-            ValidPriceSale,
-            Guid.Empty,
-            _validPublisherId,
-            _validAuthorIds
-        );
+        var command = new UpdateBookCommand
+        {
+            Id = _validId,
+            Name = ValidName,
+            Description = ValidDescription,
+            Price = ValidPrice,
+            PriceSale = ValidPriceSale,
+            CategoryId = Guid.Empty,
+            PublisherId = _validPublisherId,
+            AuthorIds = _validAuthorIds,
+        };
 
         // Act
         var result = _validator.TestValidate(command);
@@ -261,17 +248,17 @@ public sealed class UpdateBookValidatorTests
     public void GivenEmptyPublisherId_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = new UpdateBookCommand(
-            _validId,
-            ValidName,
-            ValidDescription,
-            null,
-            ValidPrice,
-            ValidPriceSale,
-            _validCategoryId,
-            Guid.Empty,
-            _validAuthorIds
-        );
+        var command = new UpdateBookCommand
+        {
+            Id = _validId,
+            Name = ValidName,
+            Description = ValidDescription,
+            Price = ValidPrice,
+            PriceSale = ValidPriceSale,
+            CategoryId = _validCategoryId,
+            PublisherId = Guid.Empty,
+            AuthorIds = _validAuthorIds,
+        };
 
         // Act
         var result = _validator.TestValidate(command);
@@ -284,17 +271,17 @@ public sealed class UpdateBookValidatorTests
     public void GivenEmptyAuthorIds_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = new UpdateBookCommand(
-            _validId,
-            ValidName,
-            ValidDescription,
-            null,
-            ValidPrice,
-            ValidPriceSale,
-            _validCategoryId,
-            _validPublisherId,
-            []
-        );
+        var command = new UpdateBookCommand
+        {
+            Id = _validId,
+            Name = ValidName,
+            Description = ValidDescription,
+            Price = ValidPrice,
+            PriceSale = ValidPriceSale,
+            CategoryId = _validCategoryId,
+            PublisherId = _validPublisherId,
+            AuthorIds = [],
+        };
 
         // Act
         var result = _validator.TestValidate(command);
@@ -310,24 +297,26 @@ public sealed class UpdateBookValidatorTests
         var mockFile = new Mock<IFormFile>();
         mockFile.Setup(f => f.Length).Returns(1048577); // 1 byte over limit
         mockFile.Setup(f => f.ContentType).Returns(MediaTypeNames.Image.Jpeg);
+        mockFile.Setup(f => f.FileName).Returns("test.jpg");
 
-        var command = new UpdateBookCommand(
-            _validId,
-            ValidName,
-            ValidDescription,
-            mockFile.Object,
-            ValidPrice,
-            ValidPriceSale,
-            _validCategoryId,
-            _validPublisherId,
-            _validAuthorIds
-        );
+        var command = new UpdateBookCommand
+        {
+            Id = _validId,
+            Name = ValidName,
+            Description = ValidDescription,
+            Image = mockFile.Object,
+            Price = ValidPrice,
+            PriceSale = ValidPriceSale,
+            CategoryId = _validCategoryId,
+            PublisherId = _validPublisherId,
+            AuthorIds = _validAuthorIds,
+        };
 
         // Act
         var result = _validator.TestValidate(command);
 
         // Assert
-        result.ShouldHaveValidationErrorFor(x => x.Image!.Length);
+        result.ShouldHaveValidationErrorFor(x => x.Image);
     }
 
     [Test]
@@ -336,78 +325,115 @@ public sealed class UpdateBookValidatorTests
         // Arrange
         var mockFile = new Mock<IFormFile>();
         mockFile.Setup(f => f.Length).Returns(1000); // Valid size
-        mockFile.Setup(f => f.ContentType).Returns("application/pdf"); // Invalid content type
+        mockFile.Setup(f => f.ContentType).Returns(MediaTypeNames.Application.Pdf); // Invalid content type
+        mockFile.Setup(f => f.FileName).Returns("test.pdf");
 
-        var command = new UpdateBookCommand(
-            _validId,
-            ValidName,
-            ValidDescription,
-            mockFile.Object,
-            ValidPrice,
-            ValidPriceSale,
-            _validCategoryId,
-            _validPublisherId,
-            _validAuthorIds
-        );
+        var command = new UpdateBookCommand
+        {
+            Id = _validId,
+            Name = ValidName,
+            Description = ValidDescription,
+            Image = mockFile.Object,
+            Price = ValidPrice,
+            PriceSale = ValidPriceSale,
+            CategoryId = _validCategoryId,
+            PublisherId = _validPublisherId,
+            AuthorIds = _validAuthorIds,
+        };
 
         // Act
         var result = _validator.TestValidate(command);
 
         // Assert
-        result.ShouldHaveValidationErrorFor(x => x.Image!.ContentType);
+        result.ShouldHaveValidationErrorFor(x => x.Image);
     }
 
     [Test]
-    public void GivenValidJpegImage_WhenValidating_ThenShouldNotHaveValidationErrors()
+    public void GivenEmptyImageFile_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var mockFile = new Mock<IFormFile>();
-        mockFile.Setup(f => f.Length).Returns(1000); // Valid size
-        mockFile.Setup(f => f.ContentType).Returns(MediaTypeNames.Image.Jpeg);
+        var mockFile = CreateMockFile(0, MediaTypeNames.Image.Jpeg, "test.jpg");
 
-        var command = new UpdateBookCommand(
-            _validId,
-            ValidName,
-            ValidDescription,
-            mockFile.Object,
-            ValidPrice,
-            ValidPriceSale,
-            _validCategoryId,
-            _validPublisherId,
-            _validAuthorIds
-        );
+        var command = new UpdateBookCommand
+        {
+            Id = _validId,
+            Name = ValidName,
+            Description = ValidDescription,
+            Image = mockFile.Object,
+            Price = ValidPrice,
+            PriceSale = ValidPriceSale,
+            CategoryId = _validCategoryId,
+            PublisherId = _validPublisherId,
+            AuthorIds = _validAuthorIds,
+        };
 
         // Act
         var result = _validator.TestValidate(command);
 
         // Assert
-        result.ShouldNotHaveValidationErrorFor(x => x.Image);
+        result.ShouldHaveValidationErrorFor(x => x.Image);
     }
 
     [Test]
-    public void GivenValidPngImage_WhenValidating_ThenShouldNotHaveValidationErrors()
+    public void GivenExtensionMismatchingContentType_WhenValidating_ThenShouldHaveValidationError()
     {
-        // Arrange
-        var mockFile = new Mock<IFormFile>();
-        mockFile.Setup(f => f.Length).Returns(1000); // Valid size
-        mockFile.Setup(f => f.ContentType).Returns(MediaTypeNames.Image.Png);
+        // Arrange - JPEG content type but .png extension
+        var mockFile = CreateMockFile(1000, MediaTypeNames.Image.Jpeg, "test.png");
 
-        var command = new UpdateBookCommand(
-            _validId,
-            ValidName,
-            ValidDescription,
-            mockFile.Object,
-            ValidPrice,
-            ValidPriceSale,
-            _validCategoryId,
-            _validPublisherId,
-            _validAuthorIds
-        );
+        var command = new UpdateBookCommand
+        {
+            Id = _validId,
+            Name = ValidName,
+            Description = ValidDescription,
+            Image = mockFile.Object,
+            Price = ValidPrice,
+            PriceSale = ValidPriceSale,
+            CategoryId = _validCategoryId,
+            PublisherId = _validPublisherId,
+            AuthorIds = _validAuthorIds,
+        };
 
         // Act
         var result = _validator.TestValidate(command);
 
         // Assert
-        result.ShouldNotHaveValidationErrorFor(x => x.Image);
+        result.ShouldHaveValidationErrorFor(x => x.Image);
+    }
+
+    [Test]
+    [Arguments(MediaTypeNames.Image.Jpeg, "test.jpg")]
+    [Arguments(MediaTypeNames.Image.Jpeg, "test.jpeg")]
+    [Arguments(MediaTypeNames.Image.Png, "test.png")]
+    [Arguments(MediaTypeNames.Image.Webp, "test.webp")]
+    public void GivenValidImageFile_WhenValidating_ThenShouldNotHaveValidationErrors(
+        string contentType,
+        string fileName
+    )
+    {
+        // Arrange
+        var mockFile = CreateMockFile(1000, contentType, fileName);
+
+        var command = new UpdateBookCommand
+        {
+            Id = _validId,
+            Name = ValidName,
+            Description = ValidDescription,
+            Image = mockFile.Object,
+            Price = ValidPrice,
+            PriceSale = ValidPriceSale,
+            CategoryId = _validCategoryId,
+            PublisherId = _validPublisherId,
+            AuthorIds = _validAuthorIds,
+        };
+    }
+
+    private static Mock<IFormFile> CreateMockFile(long length, string contentType, string fileName)
+    {
+        var mockFile = new Mock<IFormFile>();
+        mockFile.Setup(f => f.Length).Returns(length);
+        mockFile.Setup(f => f.ContentType).Returns(contentType);
+        mockFile.Setup(f => f.FileName).Returns(fileName);
+        mockFile.Setup(f => f.OpenReadStream()).Returns(new MemoryStream());
+        return mockFile;
     }
 }

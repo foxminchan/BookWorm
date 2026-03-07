@@ -1,5 +1,7 @@
 ﻿using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Constants.Aspire;
+using BookWorm.Finance.Saga.Activities;
+using BookWorm.Finance.Saga.Observers;
 
 namespace BookWorm.Finance.Saga;
 
@@ -11,6 +13,16 @@ public static class SagaExtensions
         builder.Configure<OrderStateMachineSettings>(
             OrderStateMachineSettings.ConfigurationSection
         );
+
+        var services = builder.Services;
+
+        services.AddScoped<PlaceOrderActivity>();
+        services.AddScoped<CancelOrderActivity>();
+        services.AddScoped<CompleteOrderActivity>();
+        services.AddScoped<HandleBasketDeletedActivity>();
+        services.AddScoped<HandleBasketDeleteFailedActivity>();
+
+        services.AddStateObserver<OrderState, OrderStateObserver>();
 
         builder.AddEventBus(
             typeof(IFinanceApiMarker),

@@ -1,12 +1,14 @@
-﻿using BookWorm.Chassis.Utilities.Guards;
+﻿using BookWorm.Chassis.Security.Extensions;
+using BookWorm.Chassis.Utilities.Guards;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
+using BookWorm.Ordering.Extensions;
 using Mediator;
 
 namespace BookWorm.Ordering.Features.Orders.Cancel;
 
 public sealed record CancelOrderCommand(Guid OrderId) : ICommand<OrderDetailDto>;
 
-public sealed class CancelOrderHandler(IOrderRepository repository)
+public sealed class CancelOrderHandler(IOrderRepository repository, ClaimsPrincipal claimsPrincipal)
     : ICommandHandler<CancelOrderCommand, OrderDetailDto>
 {
     public async ValueTask<OrderDetailDto> Handle(
@@ -14,10 +16,24 @@ public sealed class CancelOrderHandler(IOrderRepository repository)
         CancellationToken cancellationToken
     )
     {
-        var order = await repository.FirstOrDefaultAsync(
-            new OrderFilterSpec(request.OrderId, Status.New),
-            cancellationToken
-        );
+        Order? order;
+
+        if (claimsPrincipal.GetRoles().Contains(Authorization.Roles.Admin))
+        {
+            order = await repository.FirstOrDefaultAsync(
+                new OrderFilterSpec(request.OrderId, Status.New),
+                cancellationToken
+            );
+        }
+        else
+        {
+            var buyerId = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId();
+
+            order = await repository.FirstOrDefaultAsync(
+                new OrderFilterSpec(request.OrderId, buyerId),
+                cancellationToken
+            );
+        }
 
         Guard.Against.NotFound(order, request.OrderId);
 

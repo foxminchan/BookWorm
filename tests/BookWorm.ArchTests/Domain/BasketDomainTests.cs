@@ -72,9 +72,7 @@ public sealed class BasketDomainTests : ArchUnitBaseTest
     {
         Classes()
             .That()
-            .ResideInNamespaceMatching(
-                $"{nameof(BookWorm)}.{nameof(Basket)}.Infrastructure.Exceptions"
-            )
+            .ResideInNamespaceMatching($"{nameof(BookWorm)}.{nameof(Basket)}.Domain")
             .And()
             .HaveNameEndingWith(nameof(Exception))
             .Should()
@@ -84,7 +82,7 @@ public sealed class BasketDomainTests : ArchUnitBaseTest
             .AndShould()
             .BeAssignableTo(typeof(Exception))
             .Because(
-                "Domain exceptions should be public, sealed, and derive from System.Exception to ensure proper error handling and reporting."
+                "Domain exceptions should be public, sealed, and derive from System.Exception."
             )
             .Check(Architecture);
     }

@@ -1,4 +1,5 @@
 ﻿using BookWorm.Constants.Core;
+using BookWorm.Rating.Infrastructure.Summarizer;
 using Mediator;
 
 namespace BookWorm.Rating.Features.Summarize;

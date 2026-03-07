@@ -1,20 +1,19 @@
 ﻿using BookWorm.Chassis.Security.Extensions;
+using BookWorm.Chassis.Utilities.Guards;
+using BookWorm.Ordering.Extensions;
 using BookWorm.Ordering.Infrastructure.DistributedLock;
-using BookWorm.Ordering.Infrastructure.Helpers;
 using Mediator;
 
 namespace BookWorm.Ordering.Features.Orders.Create;
 
-public sealed class CreateOrderCommand : ICommand<Guid>
-{
-    [JsonIgnore]
-    public List<OrderItem> Items { get; set; } = [];
-}
+public sealed record CreateOrderCommand : ICommand<Guid>;
 
 public sealed class CreateOrderHandler(
     IOrderRepository repository,
     ClaimsPrincipal claimsPrincipal,
-    IDistributedAccessLockProvider lockProvider
+    IDistributedAccessLockProvider lockProvider,
+    IBasketService basketService,
+    IBookService bookService
 ) : ICommandHandler<CreateOrderCommand, Guid>
 {
     public async ValueTask<Guid> Handle(
@@ -24,7 +23,30 @@ public sealed class CreateOrderHandler(
     {
         var userId = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId();
 
-        var order = new Order(userId, null, request.Items);
+        var basketItems = await basketService.GetBasket(cancellationToken);
+
+        var response = await bookService.GetBooksByIdsAsync(
+            basketItems.Items.Select(item => item.Id),
+            cancellationToken
+        );
+
+        var booksById = response?.Books.ToDictionary(b => b.Id) ?? [];
+
+        List<OrderItem> orderItems =
+        [
+            .. basketItems.Items.Select(item =>
+            {
+                booksById.TryGetValue(item.Id, out var book);
+
+                Guard.Against.NotFound(book, item.Id);
+
+                var bookPrice = book.PriceSale ?? book.Price;
+
+                return new OrderItem(Guid.Parse(book.Id), item.Quantity, (decimal)bookPrice!);
+            }),
+        ];
+
+        var order = new Order(userId, null, orderItems);
 
         Order result;
         await using (
@@ -38,6 +60,7 @@ public sealed class CreateOrderHandler(
             if (handle.IsAcquired)
             {
                 result = await repository.AddAsync(order, cancellationToken);
+                await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
             }
             else
             {

@@ -9,7 +9,7 @@ Your goal is to help me write effective unit tests with TUnit, covering both sta
 
 ## Project Setup
 
-- Use a separate test project with naming convention `[ProjectName].Tests`
+- Use a separate test project with naming convention `[ProjectName].[TestType]` (e.g., `MyApp.UnitTests`)
 - Reference TUnit package and TUnit.Assertions for fluent assertions
 - Create test classes that match the classes being tested (e.g., `CalculatorTests` for `Calculator`)
 - Use .NET SDK test commands: `dotnet test` for running tests
@@ -20,7 +20,7 @@ Your goal is to help me write effective unit tests with TUnit, covering both sta
 - No test class attributes required (like xUnit/NUnit)
 - Use `[Test]` attribute for test methods (not `[Fact]` like xUnit)
 - Follow the Arrange-Act-Assert (AAA) pattern
-- Name tests using the pattern `MethodName_Scenario_ExpectedBehavior`
+- Name tests using the pattern `Given[Condition]_When[Action]_Then[ExpectedResult]` for clarity
 - Use lifecycle hooks: `[Before(Test)]` for setup and `[After(Test)]` for teardown
 - Use `[Before(Class)]` and `[After(Class)]` for shared context between tests in a class
 - Use `[Before(Assembly)]` and `[After(Assembly)]` for shared context across test classes
@@ -30,7 +30,7 @@ Your goal is to help me write effective unit tests with TUnit, covering both sta
 
 - Keep tests focused on a single behavior
 - Avoid testing multiple behaviors in one test method
-- Use TUnit's fluent assertion syntax with `await Assert.That()`
+- Use Shouldly's fluent assertion syntax (e.g., `actual.ShouldBe(expected)`)
 - Include only the assertions needed to verify the test case
 - Make tests independent and idempotent (can run in any order)
 - Avoid test interdependencies (use `[DependsOn]` attribute if needed)
@@ -44,18 +44,22 @@ Your goal is to help me write effective unit tests with TUnit, covering both sta
 - Use meaningful parameter names in data-driven tests
 - Multiple `[Arguments]` attributes can be applied to the same test method
 
-## Assertions
+## Assertions (Shouldly)
 
-- Use `await Assert.That(value).IsEqualTo(expected)` for value equality
-- Use `await Assert.That(value).IsSameReferenceAs(expected)` for reference equality
-- Use `await Assert.That(value).IsTrue()` or `await Assert.That(value).IsFalse()` for boolean conditions
-- Use `await Assert.That(collection).Contains(item)` or `await Assert.That(collection).DoesNotContain(item)` for collections
-- Use `await Assert.That(value).Matches(pattern)` for regex pattern matching
-- Use `await Assert.That(action).Throws<TException>()` or `await Assert.That(asyncAction).ThrowsAsync<TException>()` to test exceptions
-- Chain assertions with `.And` operator: `await Assert.That(value).IsNotNull().And.IsEqualTo(expected)`
-- Use `.Or` operator for alternative conditions: `await Assert.That(value).IsEqualTo(1).Or.IsEqualTo(2)`
-- Use `.Within(tolerance)` for DateTime and numeric comparisons with tolerance
-- All assertions are asynchronous and must be awaited
+- Use `actual.ShouldBe(expected)` for value equality
+- Use `actual.ShouldBeSameAs(expected)` for reference equality
+- Use `actual.ShouldBeTrue()` or `actual.ShouldBeFalse()` for boolean conditions
+- Use `actual.ShouldBeNull()` or `actual.ShouldNotBeNull()` for null checks
+- Use `actual.ShouldContain(item)` or `actual.ShouldNotContain(item)` for collections
+- Use `actual.ShouldContain("substring")` for string containment
+- Use `actual.ShouldMatch(pattern)` for regex pattern matching
+- Use `actual.ShouldBeGreaterThan(value)`, `actual.ShouldBeLessThan(value)` for comparisons
+- Use `actual.ShouldBeOfType<T>()` for type assertions
+- Use `actual.ShouldBeEmpty()` or `actual.ShouldNotBeEmpty()` for collections and strings
+- Use `Should.Throw<TException>(() => action)` for sync exception testing
+- Use `Should.Throw<TException>(async () => await asyncAction)` for async exception testing
+- Use `Should.NotThrow(() => action)` to verify no exception is thrown
+- All Shouldly assertions are synchronous (no `await` needed except for async exception testing)
 
 ## Advanced Features
 
@@ -89,9 +93,9 @@ Your goal is to help me write effective unit tests with TUnit, covering both sta
 - Replace `[Theory]` with `[Test]` and use `[Arguments]` for data
 - Replace `[InlineData]` with `[Arguments]`
 - Replace `[MemberData]` with `[MethodData]`
-- Replace `Assert.Equal` with `await Assert.That(actual).IsEqualTo(expected)`
-- Replace `Assert.True` with `await Assert.That(condition).IsTrue()`
-- Replace `Assert.Throws<T>` with `await Assert.That(action).Throws<T>()`
+- Replace `Assert.Equal` with `actual.ShouldBe(expected)`
+- Replace `Assert.True` with `condition.ShouldBeTrue()`
+- Replace `Assert.Throws<T>` with `Should.Throw<T>(() => action)`
 - Replace constructor/IDisposable with `[Before(Test)]`/`[After(Test)]`
 - Replace `IClassFixture<T>` with `[Before(Class)]`/`[After(Class)]`
 
