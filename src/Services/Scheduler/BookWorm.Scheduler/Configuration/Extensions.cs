@@ -2,9 +2,8 @@
 using Microsoft.Extensions.Options;
 using OpenTelemetry.Trace;
 using Quartz.AspNetCore;
-using QuartzOptions = BookWorm.Scheduler.Configuration.QuartzOptions;
 
-namespace BookWorm.Scheduler.Extensions;
+namespace BookWorm.Scheduler.Configuration;
 
 internal static class Extensions
 {
@@ -69,7 +68,7 @@ internal static class Extensions
 
             var key = new JobKey(jobTypeName, nameof(Scheduler));
 
-            quartz.AddJob(jobType, key, (Action<IJobConfigurator>?)null);
+            quartz.AddJob(jobType, key, opts => opts.WithIdentity(key));
 
             quartz.AddTrigger(opts =>
                 opts.ForJob(key)

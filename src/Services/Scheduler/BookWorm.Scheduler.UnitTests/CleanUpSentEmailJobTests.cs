@@ -3,6 +3,7 @@ using BookWorm.Scheduler.Jobs;
 using MassTransit;
 using MassTransit.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Quartz;
 
 namespace BookWorm.Scheduler.UnitTests;
@@ -53,7 +54,8 @@ public sealed class CleanUpSentEmailJobTests
     {
         // Arrange
         var bus = _harness.Bus;
-        var job = new CleanUpSentEmailJob(bus);
+        var logger = Mock.Of<ILogger<CleanUpSentEmailJob>>();
+        var job = new CleanUpSentEmailJob(bus, logger);
         var context = Mock.Of<IJobExecutionContext>(c =>
             c.CancellationToken == CancellationToken.None
         );
@@ -76,7 +78,8 @@ public sealed class CleanUpSentEmailJobTests
     {
         // Arrange
         var bus = _harness.Bus;
-        var job = new CleanUpSentEmailJob(bus);
+        var logger = Mock.Of<ILogger<CleanUpSentEmailJob>>();
+        var job = new CleanUpSentEmailJob(bus, logger);
         var cancellationToken = CancellationToken.None;
         var context = Mock.Of<IJobExecutionContext>(c => c.CancellationToken == cancellationToken);
         const int numberOfExecutions = 3;
