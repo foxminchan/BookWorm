@@ -37,21 +37,10 @@ jobs:
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
 
-      - name: Cache Aspire CLI
-        id: cache-aspire
-        uses: actions/cache@v5
-        with:
-          path: ~/.aspire
-          key: ${{ runner.os }}-aspire-cli
-          restore-keys: |
-            ${{ runner.os }}-aspire-
-
       - name: Install Aspire CLI
-        if: steps.cache-aspire.outputs.cache-hit != 'true'
-        run: curl -sSf https://aspire.dev/install.sh | bash -s -- -q dev
-
-      - name: Add Aspire CLI to PATH
-        run: echo "$HOME/.aspire/bin" >> $GITHUB_PATH
+        run: |
+          curl -sSL https://aspire.dev/install.sh | bash
+          echo "$HOME/.aspire/bin" >> $GITHUB_PATH
 
       - name: Verify Aspire Installation
         run: aspire --version
@@ -77,8 +66,7 @@ jobs:
           DOTNET_MULTILEVEL_LOOKUP: 0
           DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION: true
           Azure__SubscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          Azure__Location: ${{ secrets.AZURE_LOCATION || 'eastus' }}
-          Azure__ResourceGroup: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          Azure__Location: ${{ secrets.AZURE_LOCATION || 'southeastasia' }}
           Parameters__container_endpoint: ghcr.io
           Parameters__container_repository: ${{ github.repository_owner }}/${{ github.repository }}
           Parameters__openai_openai_apikey: ${{ secrets.OPENAI_APIKEY }}
