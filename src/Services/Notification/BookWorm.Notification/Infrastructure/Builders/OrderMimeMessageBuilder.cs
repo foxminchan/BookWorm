@@ -4,10 +4,6 @@ using MimeKit.Text;
 
 namespace BookWorm.Notification.Infrastructure.Builders;
 
-/// <summary>
-///     Fluent builder that constructs a <see cref="MimeMessage" /> from order domain data.
-///     Placed in the infrastructure layer because it depends on the MimeKit library.
-/// </summary>
 public sealed class OrderMimeMessageBuilder
 {
     private OrderMimeMessageBuilder() { }
@@ -16,14 +12,8 @@ public sealed class OrderMimeMessageBuilder
     private MimeEntity Body { get; set; } = new TextPart(TextFormat.Html) { Text = string.Empty };
     private MailboxAddress To { get; set; } = new(string.Empty, string.Empty);
 
-    /// <summary>
-    ///     Creates a new builder instance.
-    /// </summary>
     public static OrderMimeMessageBuilder Initialize() => new();
 
-    /// <summary>
-    ///     Sets the recipient of the email.
-    /// </summary>
     public OrderMimeMessageBuilder WithTo(string? fullName, string? email)
     {
         ArgumentException.ThrowIfNullOrEmpty(email);
@@ -31,9 +21,6 @@ public sealed class OrderMimeMessageBuilder
         return this;
     }
 
-    /// <summary>
-    ///     Derives the email subject from the order status.
-    /// </summary>
     public OrderMimeMessageBuilder WithSubject(Order order)
     {
         Subject = order.Status switch
@@ -46,18 +33,12 @@ public sealed class OrderMimeMessageBuilder
         return this;
     }
 
-    /// <summary>
-    ///     Sets the email subject explicitly.
-    /// </summary>
     public OrderMimeMessageBuilder WithSubject(string? subject)
     {
         Subject = subject;
         return this;
     }
 
-    /// <summary>
-    ///     Sets the email body from pre-rendered HTML content.
-    /// </summary>
     public OrderMimeMessageBuilder WithBody(string? htmlBody)
     {
         var bb = new BodyBuilder { HtmlBody = htmlBody };
@@ -65,9 +46,6 @@ public sealed class OrderMimeMessageBuilder
         return this;
     }
 
-    /// <summary>
-    ///     Builds the final <see cref="MimeMessage" />.
-    /// </summary>
     public MimeMessage Build()
     {
         var message = new MimeMessage();
