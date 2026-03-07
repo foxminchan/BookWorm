@@ -3,7 +3,6 @@ using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.AI.Ingestion;
 using BookWorm.Chassis.AI.Search;
 using BookWorm.Chassis.Caching;
-using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Constants.Aspire;
 
 namespace BookWorm.Catalog.Infrastructure;
@@ -43,22 +42,7 @@ internal static class Extensions
                 .AddRedisClientBuilder(Components.Redis, o => o.DisableAutoActivation = false)
                 .WithAzureAuthentication();
 
-            builder.Configure<CachingOptions>(CachingOptions.ConfigurationSection);
-
-            var cachingOptions = services
-                .BuildServiceProvider()
-                .GetRequiredService<CachingOptions>();
-
-            services.AddHybridCache(options =>
-            {
-                options.MaximumPayloadBytes = cachingOptions.MaximumPayloadBytes;
-
-                options.DefaultEntryOptions = new()
-                {
-                    Expiration = cachingOptions.Expiration,
-                    LocalCacheExpiration = cachingOptions.Expiration,
-                };
-            });
+            builder.AddCaching();
 
             // Add Blob services
             builder.AddAzureBlobStorage();

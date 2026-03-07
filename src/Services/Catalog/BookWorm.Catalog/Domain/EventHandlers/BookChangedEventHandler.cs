@@ -1,10 +1,10 @@
 ﻿using BookWorm.Catalog.Domain.Events;
+using BookWorm.Chassis.Caching;
 using Mediator;
-using Microsoft.Extensions.Caching.Hybrid;
 
 namespace BookWorm.Catalog.Domain.EventHandlers;
 
-public sealed class BookChangedEventHandler(HybridCache cache)
+public sealed class BookChangedEventHandler(IHybridCache cache)
     : INotificationHandler<BookChangedEvent>
 {
     public async ValueTask Handle(

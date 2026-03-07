@@ -1,8 +1,8 @@
 ﻿using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Utilities.Guards;
 using BookWorm.Ordering.Extensions;
-using BookWorm.Ordering.Infrastructure.DistributedLock;
 using Mediator;
+using ZiggyCreatures.Caching.Fusion.Locking.Distributed;
 
 namespace BookWorm.Ordering.Features.Orders.Create;
 
@@ -11,11 +11,14 @@ public sealed record CreateOrderCommand : ICommand<Guid>;
 public sealed class CreateOrderHandler(
     IOrderRepository repository,
     ClaimsPrincipal claimsPrincipal,
-    IDistributedAccessLockProvider lockProvider,
+    IFusionCacheDistributedLocker distributedLocker,
+    ILogger<CreateOrderHandler> logger,
     IBasketService basketService,
     IBookService bookService
 ) : ICommandHandler<CreateOrderCommand, Guid>
 {
+    private const string CacheName = "ordering";
+
     public async ValueTask<Guid> Handle(
         CreateOrderCommand request,
         CancellationToken cancellationToken
@@ -48,26 +51,43 @@ public sealed class CreateOrderHandler(
 
         var order = new Order(userId, null, orderItems);
 
-        Order result;
-        await using (
-            var handle = await lockProvider.TryAcquireAsync(
-                userId.ToString(),
-                TimeSpan.FromMinutes(1),
-                cancellationToken
-            )
-        )
+        var userIdStr = userId.ToString();
+        var lockName = $"order-create:{userIdStr}";
+
+        var locker = await distributedLocker.AcquireLockAsync(
+            CacheName,
+            string.Empty,
+            string.Empty,
+            userIdStr,
+            lockName,
+            TimeSpan.FromMinutes(1),
+            logger,
+            cancellationToken
+        );
+
+        try
         {
-            if (handle.IsAcquired)
-            {
-                result = await repository.AddAsync(order, cancellationToken);
-                await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
-            }
-            else
+            if (locker is null)
             {
                 throw new InvalidOperationException("Other process is already creating an order");
             }
-        }
 
-        return result.Id;
+            var result = await repository.AddAsync(order, cancellationToken);
+            await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
+            return result.Id;
+        }
+        finally
+        {
+            await distributedLocker.ReleaseLockAsync(
+                CacheName,
+                string.Empty,
+                string.Empty,
+                userIdStr,
+                lockName,
+                locker,
+                logger,
+                cancellationToken
+            );
+        }
     }
 }

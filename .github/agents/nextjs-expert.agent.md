@@ -14,6 +14,7 @@ tools:
   - "execute/runTests"
   - "search"
   - "search/usages"
+  - "context7/*"
 handoffs:
   - label: Request Code Review
     agent: Code Reviewer

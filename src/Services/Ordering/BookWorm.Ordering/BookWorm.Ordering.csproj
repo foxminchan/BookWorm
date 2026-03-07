@@ -11,10 +11,9 @@
   </ItemGroup>
   <ItemGroup Label="Core Dependencies">
     <PackageReference Include="Marten.AspNetCore" />
-    <PackageReference Include="DistributedLock.Redis" />
+    <PackageReference Include="ZiggyCreatures.FusionCache.Locking.Distributed.Redis" />
     <PackageReference Include="Mediator.SourceGenerator" PrivateAssets="all" />
     <PackageReference Include="Aspire.Microsoft.Azure.StackExchangeRedis" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
   </ItemGroup>
   <ItemGroup Label="Grpc">
     <PackageReference Include="Grpc.Tools" PrivateAssets="All" />

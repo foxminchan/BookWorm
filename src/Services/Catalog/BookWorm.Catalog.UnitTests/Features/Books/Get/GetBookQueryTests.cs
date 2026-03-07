@@ -2,7 +2,7 @@
 using BookWorm.Catalog.Features.Books;
 using BookWorm.Catalog.Features.Books.Get;
 using BookWorm.Catalog.UnitTests.Fakers;
-using BookWorm.Catalog.UnitTests.Mocks;
+using BookWorm.Chassis.Caching;
 using BookWorm.Chassis.Exceptions;
 using BookWorm.Chassis.Mapper;
 
@@ -18,8 +18,27 @@ public sealed class GetBookQueryTests
     {
         _repositoryMock = new();
         _mapperMock = new();
-        HybridCacheMock cacheMock = new();
-        _handler = new(_repositoryMock.Object, cacheMock, _mapperMock.Object);
+        Mock<IHybridCache> cacheMock = new();
+
+        cacheMock
+            .Setup(c =>
+                c.GetOrCreateAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<Func<CancellationToken, ValueTask<Book>>>(),
+                    It.IsAny<IEnumerable<string>?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .Returns(
+                (
+                    string _,
+                    Func<CancellationToken, ValueTask<Book>> factory,
+                    IEnumerable<string>? _,
+                    CancellationToken ct
+                ) => factory(ct)
+            );
+
+        _handler = new(_repositoryMock.Object, cacheMock.Object, _mapperMock.Object);
     }
 
     [Test]
