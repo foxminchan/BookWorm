@@ -1,5 +1,4 @@
 ﻿using BookWorm.Chassis.Exceptions;
-using BookWorm.Rating.Features;
 using BookWorm.Rating.Features.Summarize;
 using BookWorm.Rating.Infrastructure.Summarizer;
 
@@ -294,11 +293,11 @@ public sealed class SummarizeFeedbackQueryTests
     }
 
     [Test]
-    public async Task GivenSummarizerReturnsResultWithImplicitConversion_WhenHandlingQuery_ThenShouldConvertCorrectly()
+    public async Task GivenSummarizerReturnsResult_WhenHandlingQuery_ThenShouldWrapInSummarizeResult()
     {
         // Arrange
         var query = new SummarizeFeedbackQuery(_validBookId);
-        const string summaryText = "Book rating summary via implicit conversion.";
+        const string summaryText = "Book rating summary.";
 
         _summarizerMock
             .Setup(s => s.SummarizeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -309,14 +308,7 @@ public sealed class SummarizeFeedbackQueryTests
 
         // Assert
         result.ShouldNotBeNull();
+        result.ShouldBeOfType<SummarizeResult>();
         result.Summary.ShouldBe(summaryText);
-
-        // Test implicit conversion to string
-        string implicitString = result;
-        implicitString.ShouldBe(summaryText);
-
-        // Test implicit conversion from string
-        SummarizeResult implicitResult = summaryText;
-        implicitResult.Summary.ShouldBe(summaryText);
     }
 }

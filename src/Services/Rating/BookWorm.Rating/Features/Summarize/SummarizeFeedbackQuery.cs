@@ -13,12 +13,12 @@ public sealed class SummarizeFeedbackHandler(ISummarizer summarizer)
         CancellationToken cancellationToken
     )
     {
-        var result =
+        var summary =
             await summarizer.SummarizeAsync(
                 $"Get an overview of the ratings for book with ID  {request.BookId}",
                 cancellationToken
             ) ?? throw new NotFoundException($"No ratings found for book with ID {request.BookId}");
 
-        return result;
+        return new(summary);
     }
 }
