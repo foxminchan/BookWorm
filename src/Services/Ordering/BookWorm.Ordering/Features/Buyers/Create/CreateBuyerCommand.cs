@@ -1,6 +1,6 @@
 ﻿using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
-using BookWorm.Ordering.Infrastructure.Helpers;
+using BookWorm.Ordering.Extensions;
 using Mediator;
 
 namespace BookWorm.Ordering.Features.Buyers.Create;

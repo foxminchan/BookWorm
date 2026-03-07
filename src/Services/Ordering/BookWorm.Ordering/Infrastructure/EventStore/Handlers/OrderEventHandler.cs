@@ -1,7 +1,7 @@
 ﻿using BookWorm.Ordering.Extensions;
 using Mediator;
 
-namespace BookWorm.Ordering.Domain.EventHandlers;
+namespace BookWorm.Ordering.Infrastructure.EventStore.Handlers;
 
 public sealed class OrderEventHandler(
     IDocumentSession documentSession,

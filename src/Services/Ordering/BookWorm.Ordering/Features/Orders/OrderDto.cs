@@ -10,7 +10,4 @@ public sealed record OrderDetailDto(
     IReadOnlyList<OrderItemDto> Items
 );
 
-public sealed record OrderItemDto(Guid Id, int Quantity, decimal Price)
-{
-    public string? Name { get; set; }
-}
+public sealed record OrderItemDto(Guid Id, int Quantity, decimal Price, string? Name = null);

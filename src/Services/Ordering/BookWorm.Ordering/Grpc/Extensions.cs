@@ -40,7 +40,5 @@ internal static class Extensions
             .AddAuthTokenExchange(Constants.Aspire.Services.Basket);
 
         services.AddSingleton<IBasketService, BasketService>();
-
-        services.AddScoped<BasketMetadata>();
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
+﻿namespace BookWorm.Ordering.Infrastructure.EventStore.Projections;
 
 public sealed record OrderSummary(Guid Id, Status Status, decimal TotalPrice)
 {

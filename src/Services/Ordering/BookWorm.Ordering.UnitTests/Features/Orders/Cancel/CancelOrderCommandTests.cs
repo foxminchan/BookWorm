@@ -1,4 +1,6 @@
-﻿using BookWorm.Chassis.Exceptions;
+﻿using System.Security.Claims;
+using BookWorm.Chassis.Exceptions;
+using BookWorm.Constants.Core;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
 using BookWorm.Ordering.Features.Orders.Cancel;
@@ -12,11 +14,21 @@ public sealed class CancelOrderCommandTests
     private readonly Order _order;
     private readonly Guid _orderId;
     private readonly Mock<IOrderRepository> _orderRepositoryMock;
+    private readonly Mock<ClaimsPrincipal> _claimsPrincipalMock;
 
     public CancelOrderCommandTests()
     {
         _orderRepositoryMock = new();
-        _handler = new(_orderRepositoryMock.Object);
+        _claimsPrincipalMock = new();
+
+        // Setup as admin by default so existing spec-based tests work unchanged
+        _claimsPrincipalMock
+            .Setup(c => c.FindAll(ClaimTypes.Role))
+            .Returns(
+                new[] { Authorization.Roles.Admin }.Select(r => new Claim(ClaimTypes.Role, r))
+            );
+
+        _handler = new(_orderRepositoryMock.Object, _claimsPrincipalMock.Object);
 
         // Create a test order using the OrderFaker
         _order = new OrderFaker().Generate(1)[0];
