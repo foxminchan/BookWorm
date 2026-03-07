@@ -1,4 +1,3 @@
-using BookWorm.Notification.Domain.Exceptions;
 using BookWorm.Notification.Domain.Models;
 using MimeKit.Text;
 
