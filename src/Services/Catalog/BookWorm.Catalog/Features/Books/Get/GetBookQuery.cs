@@ -1,6 +1,6 @@
-﻿using BookWorm.Chassis.Utilities.Guards;
+﻿using BookWorm.Chassis.Caching;
+using BookWorm.Chassis.Utilities.Guards;
 using Mediator;
-using Microsoft.Extensions.Caching.Hybrid;
 
 namespace BookWorm.Catalog.Features.Books.Get;
 
@@ -8,7 +8,7 @@ public sealed record GetBookQuery(Guid Id) : IQuery<BookDto>;
 
 public sealed class GetBookHandler(
     IBookRepository repository,
-    HybridCache cache,
+    IHybridCache cache,
     IMapper<Book, BookDto> mapper
 ) : IQueryHandler<GetBookQuery, BookDto>
 {

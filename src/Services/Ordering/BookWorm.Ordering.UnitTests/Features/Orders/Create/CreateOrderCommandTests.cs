@@ -6,7 +6,8 @@ using BookWorm.Ordering.Extensions;
 using BookWorm.Ordering.Features.Orders.Create;
 using BookWorm.Ordering.Grpc.Services.Basket;
 using BookWorm.Ordering.Grpc.Services.Book;
-using BookWorm.Ordering.Infrastructure.DistributedLock;
+using Microsoft.Extensions.Logging;
+using ZiggyCreatures.Caching.Fusion.Locking.Distributed;
 
 namespace BookWorm.Ordering.UnitTests.Features.Orders.Create;
 
@@ -17,7 +18,7 @@ public sealed class CreateOrderCommandTests
     private readonly Mock<ClaimsPrincipal> _claimsPrincipalMock;
     private readonly CreateOrderCommand _command;
     private readonly CreateOrderHandler _handler;
-    private readonly Mock<IDistributedAccessLockProvider> _lockProviderMock;
+    private readonly Mock<IFusionCacheDistributedLocker> _distributedLockerMock;
     private readonly Mock<IOrderRepository> _repositoryMock;
     private readonly string _userId;
 
@@ -26,7 +27,7 @@ public sealed class CreateOrderCommandTests
         _userId = Guid.CreateVersion7().ToString();
         _repositoryMock = new();
         _claimsPrincipalMock = new();
-        _lockProviderMock = new();
+        _distributedLockerMock = new();
         _basketServiceMock = new();
         _bookServiceMock = new();
 
@@ -38,7 +39,8 @@ public sealed class CreateOrderCommandTests
         _handler = new(
             _repositoryMock.Object,
             _claimsPrincipalMock.Object,
-            _lockProviderMock.Object,
+            _distributedLockerMock.Object,
+            Mock.Of<ILogger<CreateOrderHandler>>(),
             _basketServiceMock.Object,
             _bookServiceMock.Object
         );
@@ -71,18 +73,20 @@ public sealed class CreateOrderCommandTests
     public async Task GivenValidCommand_WhenOrderIsAlreadyLocked_ThenShouldThrowConcurrencyException()
     {
         // Arrange
-        var mockLock = new Mock<IDistributedAccessLock>();
-        mockLock.Setup(x => x.IsAcquired).Returns(false);
-
-        _lockProviderMock
+        _distributedLockerMock
             .Setup(x =>
-                x.TryAcquireAsync(
+                x.AcquireLockAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<TimeSpan>(),
+                    It.IsAny<ILogger>(),
                     It.IsAny<CancellationToken>()
                 )
             )
-            .ReturnsAsync(mockLock.Object);
+            .ReturnsAsync((object?)null);
 
         // Act
         var act = async () => await _handler.Handle(_command, CancellationToken.None);
@@ -101,19 +105,22 @@ public sealed class CreateOrderCommandTests
             null,
             [new(Guid.CreateVersion7(), 2, 10.99m)]
         );
-        var mockLock = new Mock<IDistributedAccessLock>();
-        mockLock.Setup(x => x.IsAcquired).Returns(true);
-        mockLock.Setup(x => x.DisposeAsync()).Returns(ValueTask.CompletedTask).Verifiable();
+        var lockHandle = new object();
 
-        _lockProviderMock
+        _distributedLockerMock
             .Setup(x =>
-                x.TryAcquireAsync(
+                x.AcquireLockAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<TimeSpan>(),
+                    It.IsAny<ILogger>(),
                     It.IsAny<CancellationToken>()
                 )
             )
-            .ReturnsAsync(mockLock.Object);
+            .ReturnsAsync(lockHandle);
 
         _repositoryMock
             .Setup(x => x.AddAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
@@ -140,7 +147,20 @@ public sealed class CreateOrderCommandTests
             x => x.UnitOfWork.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
             Times.Once
         );
-        mockLock.Verify(x => x.DisposeAsync(), Times.Once);
+        _distributedLockerMock.Verify(
+            x =>
+                x.ReleaseLockAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    lockHandle,
+                    It.IsAny<ILogger>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
 
         _bookServiceMock.Verify(
             x =>

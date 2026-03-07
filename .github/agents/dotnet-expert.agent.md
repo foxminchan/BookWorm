@@ -10,6 +10,7 @@ tools:
   - "web/fetch"
   - "search"
   - "search/usages"
+  - "context7/*"
 model: Claude Opus 4.6 (copilot)
 handoffs:
   - label: Request Code Review

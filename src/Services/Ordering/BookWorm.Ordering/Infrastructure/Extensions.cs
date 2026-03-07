@@ -1,5 +1,4 @@
 ﻿using BookWorm.Chassis.Caching;
-using BookWorm.Chassis.Utilities.Configurations;
 
 namespace BookWorm.Ordering.Infrastructure;
 
@@ -40,20 +39,7 @@ internal static class Extensions
             .AddRedisClientBuilder(Components.Redis, o => o.DisableAutoActivation = false)
             .WithAzureAuthentication();
 
-        builder.Configure<CachingOptions>(CachingOptions.ConfigurationSection);
-
-        var cachingOptions = services.BuildServiceProvider().GetRequiredService<CachingOptions>();
-
-        services.AddHybridCache(options =>
-        {
-            options.MaximumPayloadBytes = cachingOptions.MaximumPayloadBytes;
-
-            options.DefaultEntryOptions = new()
-            {
-                Expiration = cachingOptions.Expiration,
-                LocalCacheExpiration = cachingOptions.Expiration,
-            };
-        });
+        builder.AddCaching();
     }
 
     private static void ConfigureOrders(this StoreOptions options)
