@@ -46,7 +46,7 @@ internal static class BookAgentRegistration
                 };
 
                 var skillsProvider = new FileAgentSkillsProvider(
-                    Path.Combine(AppContext.BaseDirectory, "skills", "book-catalog"),
+                    Path.Combine(AppContext.BaseDirectory, "Skills", "book-catalog"),
                     loggerFactory: sp.GetService<ILoggerFactory>()
                 );
 

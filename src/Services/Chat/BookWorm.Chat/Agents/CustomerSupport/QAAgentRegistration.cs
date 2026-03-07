@@ -18,7 +18,7 @@ internal static class QAAgentRegistration
                     .Build(sp);
 
                 var skillsProvider = new FileAgentSkillsProvider(
-                    Path.Combine(AppContext.BaseDirectory, "skills", "store-policies"),
+                    Path.Combine(AppContext.BaseDirectory, "Skills", "store-policies"),
                     loggerFactory: sp.GetService<ILoggerFactory>()
                 );
 

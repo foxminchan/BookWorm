@@ -30,11 +30,13 @@ public sealed class CreateOrderHandler(
             cancellationToken
         );
 
+        var booksById = response?.Books.ToDictionary(b => b.Id) ?? [];
+
         List<OrderItem> orderItems =
         [
             .. basketItems.Items.Select(item =>
             {
-                var book = response?.Books.FirstOrDefault(b => b.Id == item.Id);
+                booksById.TryGetValue(item.Id, out var book);
 
                 Guard.Against.NotFound(book, item.Id);
 

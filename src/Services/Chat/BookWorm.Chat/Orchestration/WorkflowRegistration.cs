@@ -71,16 +71,29 @@ internal static class WorkflowRegistration
 
                     // Create custom executors for input validation and response formatting
                     InputValidationExecutor inputValidator = new();
+                    RejectionBridgeExecutor rejectionBridge = new();
                     ResponseFormatterExecutor responseFormatter = new();
 
                     // Build workflow with 4-layer architecture:
                     // 1. Input Validation - Validates and preprocesses user input
                     // 2. Agent Handoff - Routes to appropriate specialized agent
+                    //    (rejected input short-circuits to response formatter)
                     // 3. Conditional Post-Processing - Intelligent routing based on output analysis
                     // 4. Response Formatting - Ensures consistent, well-formatted responses
                     var workflow = new WorkflowBuilder(inputValidator)
-                        // Layer 1→2: Connect input validator to handoff workflow
-                        .AddEdge(inputValidator, handoffWorkflowExecutor)
+                        // Layer 1→2: Forward only accepted input to the agent handoff
+                        .AddEdge<ChatMessage>(
+                            inputValidator,
+                            handoffWorkflowExecutor,
+                            condition: InputValidationCondition.IsAccepted
+                        )
+                        // Layer 1→4: Short-circuit rejected input (prompt-injection, empty)
+                        .AddEdge<ChatMessage>(
+                            inputValidator,
+                            rejectionBridge,
+                            condition: InputValidationCondition.IsRejected
+                        )
+                        .AddEdge(rejectionBridge, responseFormatter)
                         // Layer 2→3: Route to QAAgent if output contains policy/service-related content
                         .AddEdge<List<ChatMessage>>(
                             handoffWorkflowExecutor,

@@ -41,6 +41,10 @@ public sealed class ResendErrorEmailIntegrationEventHandler(
                 successCount++;
                 logger.LogDebug("Successfully resent email to {Email}", email.ToEmail);
             }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 failureCount++;
