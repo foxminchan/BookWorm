@@ -45,5 +45,9 @@
       Include="..\..\BuildingBlocks\BookWorm.Constants\BookWorm.Constants.csproj"
       IsAspireProjectResource="false"
     />
+    <ProjectReference
+      Include="..\..\Integrations\BookWorm.Hosting.Presidio\BookWorm.Hosting.Presidio.csproj"
+      IsAspireProjectResource="false"
+    />
   </ItemGroup>
 </Project>

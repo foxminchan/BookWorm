@@ -1,4 +1,5 @@
 ﻿using BookWorm.Chassis.AI.Extensions;
+using BookWorm.Chassis.AI.Presidio;
 
 namespace BookWorm.Chat.Infrastructure;
 
@@ -9,6 +10,7 @@ internal static class Extensions
         var services = builder.Services;
 
         builder.AddAIServices().WithAITelemetry();
+        builder.AddPresidio();
 
         services.AddAGUI();
         services.AddOpenAIResponses();

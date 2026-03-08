@@ -1,6 +1,7 @@
 ﻿using BookWorm.Chassis.AI.Agents;
 using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.AI.Middlewares;
+using BookWorm.Chassis.AI.Presidio;
 using BookWorm.Chassis.Utilities;
 using BookWorm.Constants.Core;
 using BookWorm.Constants.Other;
@@ -20,6 +21,7 @@ internal static class Extensions
         var services = builder.Services;
 
         builder.AddAIServices().WithAITelemetry();
+        builder.AddPresidio();
 
         builder.AddMcpClient(Constants.Aspire.Services.McpTools);
 
@@ -40,9 +42,10 @@ internal static class Extensions
             RatingAgent.Name,
             (sp, key) =>
             {
+                var presidioService = sp.GetRequiredService<IPresidioService>();
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
-                    .Use(PIIMiddleware.InvokeAsync, null)
+                    .Use(PIIMiddleware.Create(presidioService), null)
                     .Use(GuardrailMiddleware.InvokeAsync, null)
                     .Build(sp);
 

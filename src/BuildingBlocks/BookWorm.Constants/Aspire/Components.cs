@@ -31,6 +31,12 @@ public static class Components
         public const string Embedding = "embedding";
     }
 
+    public static class Presidio
+    {
+        public const string Analyzer = "presidio-analyzer";
+        public const string Anonymizer = "presidio-anonymizer";
+    }
+
     public static class Azure
     {
         public const string ContainerApp = "aca";

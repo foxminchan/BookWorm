@@ -63,6 +63,13 @@ IResourceBuilder<IResource> keycloak = builder.ExecutionContext.IsRunMode
     ? builder.AddLocalKeycloak(Components.KeyCloak)
     : builder.AddHostedKeycloak(Components.KeyCloak);
 
+var presidioAnalyzer = builder
+    .AddPresidioAnalyzer(Components.Presidio.Analyzer)
+    .WithLifetime(ContainerLifetime.Persistent);
+var presidioAnonymizer = builder
+    .AddPresidioAnonymizer(Components.Presidio.Anonymizer)
+    .WithLifetime(ContainerLifetime.Persistent);
+
 var catalogApi = builder
     .AddProject<BookWorm_Catalog>(Services.Catalog)
     .WithReference(queue)
@@ -124,6 +131,10 @@ var chatApi = builder
     .WithReference(embedding)
     .WithReference(mcp)
     .WithKeycloak(keycloak)
+    .WithReference(presidioAnalyzer)
+    .WaitFor(presidioAnalyzer)
+    .WithReference(presidioAnonymizer)
+    .WaitFor(presidioAnonymizer)
     .WithContainerRegistry(registry)
     .WithFriendlyUrls("Dev UI", path: Http.Endpoints.DevUIEndpointPath);
 
@@ -139,6 +150,10 @@ var ratingApi = builder
     .WithKeycloak(keycloak)
     .WithReference(chatApi)
     .WaitFor(chatApi)
+    .WithReference(presidioAnalyzer)
+    .WaitFor(presidioAnalyzer)
+    .WithReference(presidioAnonymizer)
+    .WaitFor(presidioAnonymizer)
     .WithContainerRegistry(registry)
     .WithFriendlyUrls("Dev UI", path: Http.Endpoints.DevUIEndpointPath);
 
