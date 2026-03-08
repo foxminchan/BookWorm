@@ -1,4 +1,5 @@
-﻿using System.Net.Mime;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Net.Mime;
 using System.Text.Json.Nodes;
 using BookWorm.Chassis.Utilities;
 using BookWorm.Constants.Core;
@@ -8,6 +9,7 @@ using ModelContextProtocol.Protocol;
 
 namespace BookWorm.McpTools.OpenApi;
 
+[ExcludeFromCodeCoverage]
 internal sealed class McpDocumentTransformer(IHttpContextAccessor accessor)
     : IOpenApiDocumentTransformer
 {

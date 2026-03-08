@@ -32,4 +32,3 @@ BookWorm is a .NET 10 microservices bookstore using Aspire orchestration, DDD wi
 - Services: `src/Services/{Name}/BookWorm.{Name}/`
 - Frontend: `src/Clients/` (Turbo monorepo)
 - Shared: `src/BuildingBlocks/` (Chassis, Constants, SharedKernel)
-- MCP Tools: `src/Integrations/BookWorm.McpTools/`

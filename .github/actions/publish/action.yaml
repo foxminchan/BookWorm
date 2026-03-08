@@ -60,12 +60,12 @@ runs:
       shell: bash
       run: |
         curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
-      working-directory: ${{ github.workspace }}/src/Integrations/BookWorm.McpTools
+      working-directory: ${{ github.workspace }}/src/Services/McpTools/BookWorm.McpTools
 
     - name: Authenticate to MCP Registry
       shell: bash
       run: ./mcp-publisher login github-oidc
-      working-directory: ${{ github.workspace }}/src/Integrations/BookWorm.McpTools
+      working-directory: ${{ github.workspace }}/src/Services/McpTools/BookWorm.McpTools
 
     - name: Set version in server.json
       if: github.ref_type == 'tag'
@@ -76,10 +76,10 @@ runs:
           .version = $v |
           .packages[0].identifier |= gsub(":[^:]+$"; ":" + $v)
         ' server.json > server.tmp && mv server.tmp server.json
-      working-directory: ${{ github.workspace }}/src/Integrations/BookWorm.McpTools
+      working-directory: ${{ github.workspace }}/src/Services/McpTools/BookWorm.McpTools
 
     - name: Publish server to MCP Registry
       if: github.ref_type == 'tag'
       shell: bash
       run: ./mcp-publisher publish
-      working-directory: ${{ github.workspace }}/src/Integrations/BookWorm.McpTools
+      working-directory: ${{ github.workspace }}/src/Services/McpTools/BookWorm.McpTools
