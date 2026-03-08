@@ -13,7 +13,7 @@ public sealed record ListBuyersQuery(
         int PageSize = Pagination.DefaultPageSize
 ) : IQuery<PagedResult<BuyerDto>>;
 
-public sealed class ListBuyersQueryHandler(IBuyerRepository repository)
+internal sealed class ListBuyersQueryHandler(IBuyerRepository repository)
     : IQueryHandler<ListBuyersQuery, PagedResult<BuyerDto>>
 {
     public async ValueTask<PagedResult<BuyerDto>> Handle(

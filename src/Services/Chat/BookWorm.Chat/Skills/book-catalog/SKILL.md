@@ -14,7 +14,7 @@ license: MIT
 Use the `search_catalog` tool to find books. The catalog supports:
 
 | Filter           | Examples                                  |
-| ---------------- | ----------------------------------------- |
+|------------------|-------------------------------------------|
 | Title keyword    | "clean code", "dune"                      |
 | Author name      | "Martin Fowler", "Frank Herbert"          |
 | Genre / category | "science fiction", "software engineering" |
@@ -24,7 +24,8 @@ Use the `search_catalog` tool to find books. The catalog supports:
 
 ## Recommendation Strategy
 
-1. **Clarify preferences** — Ask about genre, favorite authors, reading level, or purpose (gift, self-learning, leisure).
+1. **Clarify preferences** — Ask about genre, favorite authors, reading level, or purpose (gift, self-learning,
+   leisure).
 2. **Search first** — Always use `search_catalog` before recommending; never invent titles.
 3. **Rank results** — Prefer higher ratings, then popularity, then price.
 4. **Provide context** — Include author, genre, a one-sentence description, and price.

@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Rating.Infrastructure;
 
-public sealed class RatingDbContext(DbContextOptions<RatingDbContext> options)
+internal sealed class RatingDbContext(DbContextOptions<RatingDbContext> options)
     : DbContext(options),
         IUnitOfWork
 {

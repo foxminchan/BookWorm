@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Ordering.Features.Orders.List;
 
-public sealed class ListOrdersValidator : AbstractValidator<ListOrdersQuery>
+internal sealed class ListOrdersValidator : AbstractValidator<ListOrdersQuery>
 {
     public ListOrdersValidator()
     {

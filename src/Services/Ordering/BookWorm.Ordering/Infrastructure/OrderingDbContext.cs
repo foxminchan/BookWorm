@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Ordering.Infrastructure;
 
-public sealed class OrderingDbContext(DbContextOptions<OrderingDbContext> options)
+internal sealed class OrderingDbContext(DbContextOptions<OrderingDbContext> options)
     : DbContext(options),
         IUnitOfWork
 {

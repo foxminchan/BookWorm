@@ -2,7 +2,7 @@
 
 namespace BookWorm.Catalog.Features.Books.Create;
 
-public sealed class CreateBookValidator : AbstractValidator<CreateBookCommand>
+internal sealed class CreateBookValidator : AbstractValidator<CreateBookCommand>
 {
     public CreateBookValidator()
     {

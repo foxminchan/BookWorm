@@ -3,7 +3,7 @@ using BookWorm.SharedKernel.Helpers;
 
 namespace BookWorm.Ordering.Infrastructure.Idempotency;
 
-public sealed class ClientRequest
+internal sealed class ClientRequest
 {
     public string Id { get; set; } = string.Empty;
 

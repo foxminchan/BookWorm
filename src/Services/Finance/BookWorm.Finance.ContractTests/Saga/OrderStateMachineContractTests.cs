@@ -10,6 +10,9 @@ namespace BookWorm.Finance.ContractTests.Saga;
 
 public sealed class OrderStateMachineContractTests
 {
+    private const string TestFullName = "John Doe";
+    private const string TestEmail = "john.doe@example.com";
+    private const decimal TestTotalMoney = 99.99m;
     private ITestHarness _harness = null!;
     private ServiceProvider _provider = null!;
     private ISagaStateMachineTestHarness<OrderStateMachine, OrderState> _sagaHarness = null!;
@@ -50,10 +53,6 @@ public sealed class OrderStateMachineContractTests
         await _harness.Stop();
         await _provider.DisposeAsync();
     }
-
-    private const string TestFullName = "John Doe";
-    private const string TestEmail = "john.doe@example.com";
-    private const decimal TestTotalMoney = 99.99m;
 
     private async Task<(Guid OrderId, Guid BasketId)> InitializeSagaAsync()
     {

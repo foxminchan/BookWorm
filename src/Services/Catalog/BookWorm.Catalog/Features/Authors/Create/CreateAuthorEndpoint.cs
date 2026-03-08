@@ -3,7 +3,7 @@ using Mediator;
 
 namespace BookWorm.Catalog.Features.Authors.Create;
 
-public sealed class CreateAuthorEndpoint : IEndpoint<Ok<Guid>, CreateAuthorCommand, ISender>
+internal sealed class CreateAuthorEndpoint : IEndpoint<Ok<Guid>, CreateAuthorCommand, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {

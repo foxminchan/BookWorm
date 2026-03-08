@@ -1,7 +1,7 @@
 using ArchUnitNET.TUnit;
 using BookWorm.ArchTests.Abstractions;
-using BookWorm.Notification.Domain.Models;
 using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
+using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.SharedKernel.SeedWork;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 

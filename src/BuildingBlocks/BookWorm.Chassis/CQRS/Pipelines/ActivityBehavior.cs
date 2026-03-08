@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Chassis.CQRS.Pipelines;
 
-public sealed class ActivityBehavior<TMessage, TResponse>(
+internal sealed class ActivityBehavior<TMessage, TResponse>(
     IActivityScope activityScope,
     CommandHandlerMetrics commandMetrics,
     QueryHandlerMetrics queryMetrics,

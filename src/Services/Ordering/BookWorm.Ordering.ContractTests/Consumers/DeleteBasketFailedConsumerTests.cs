@@ -14,8 +14,8 @@ public sealed class DeleteBasketFailedConsumerTests
     private const string Email = "test@example.com";
     private const decimal TotalMoney = 100.00m;
     private Guid _basketId;
-    private Guid _orderId;
     private ITestHarness _harness = null!;
+    private Guid _orderId;
     private ServiceProvider _provider = null!;
     private Mock<IOrderRepository> _repositoryMock = null!;
     private Mock<IUnitOfWork> _unitOfWorkMock = null!;

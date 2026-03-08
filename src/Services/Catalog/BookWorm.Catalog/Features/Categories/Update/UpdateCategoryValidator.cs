@@ -2,7 +2,7 @@
 
 namespace BookWorm.Catalog.Features.Categories.Update;
 
-public sealed class UpdateCategoryValidator : AbstractValidator<UpdateCategoryCommand>
+internal sealed class UpdateCategoryValidator : AbstractValidator<UpdateCategoryCommand>
 {
     public UpdateCategoryValidator()
     {

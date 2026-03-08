@@ -5,7 +5,7 @@ namespace BookWorm.Rating.Features.Delete;
 
 public sealed record DeleteFeedbackCommand(Guid Id) : ICommand;
 
-public sealed class DeleteFeedbackHandler(IFeedbackRepository repository)
+internal sealed class DeleteFeedbackHandler(IFeedbackRepository repository)
     : ICommandHandler<DeleteFeedbackCommand>
 {
     public async ValueTask<Unit> Handle(

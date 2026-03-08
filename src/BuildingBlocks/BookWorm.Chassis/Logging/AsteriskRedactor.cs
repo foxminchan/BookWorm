@@ -2,7 +2,7 @@
 
 namespace BookWorm.Chassis.Logging;
 
-public sealed class AsteriskRedactor : Redactor
+internal sealed class AsteriskRedactor : Redactor
 {
     public override int Redact(ReadOnlySpan<char> source, Span<char> destination)
     {

@@ -1,7 +1,7 @@
 ﻿namespace BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 
 [ExcludeFromCodeCoverage]
-public sealed class BookData : List<Book>
+internal sealed class BookData : List<Book>
 {
     public BookData()
     {

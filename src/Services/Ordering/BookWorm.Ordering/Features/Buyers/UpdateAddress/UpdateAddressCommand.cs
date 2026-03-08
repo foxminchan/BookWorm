@@ -8,7 +8,7 @@ namespace BookWorm.Ordering.Features.Buyers.UpdateAddress;
 public sealed record UpdateAddressCommand(string Street, string City, string Province)
     : ICommand<BuyerDto>;
 
-public sealed class UpdateAddressHandler(
+internal sealed class UpdateAddressHandler(
     IBuyerRepository buyerRepository,
     ClaimsPrincipal claimsPrincipal
 ) : ICommandHandler<UpdateAddressCommand, BuyerDto>

@@ -6,8 +6,10 @@ using BookWorm.Catalog.Configurations;
 
 namespace BookWorm.Catalog.Infrastructure.Blob;
 
-public sealed partial class BlobService(BlobContainerClient client, CatalogAppSettings appSettings)
-    : IBlobService
+internal sealed partial class BlobService(
+    BlobContainerClient client,
+    CatalogAppSettings appSettings
+) : IBlobService
 {
     public async Task<string> UploadFileAsync(
         IFormFile file,

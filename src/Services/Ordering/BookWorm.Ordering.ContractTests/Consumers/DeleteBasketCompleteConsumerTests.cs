@@ -11,10 +11,10 @@ namespace BookWorm.Ordering.ContractTests.Consumers;
 public sealed class DeleteBasketCompleteConsumerTests
 {
     private const decimal TotalMoney = 125.99m;
-    private Guid _orderId;
     private ITestHarness _harness = null!;
-    private ServiceProvider _provider = null!;
     private Mock<ILogger<DeleteBasketCompleteCommandHandler>> _loggerMock = null!;
+    private Guid _orderId;
+    private ServiceProvider _provider = null!;
 
     [Before(Test)]
     public async Task SetUpAsync()

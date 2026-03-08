@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace BookWorm.Chassis.EF;
 
-public sealed class EventDispatchInterceptor(IDomainEventDispatcher dispatcher)
+internal sealed class EventDispatchInterceptor(IDomainEventDispatcher dispatcher)
     : SaveChangesInterceptor
 {
     public override async ValueTask<int> SavedChangesAsync(

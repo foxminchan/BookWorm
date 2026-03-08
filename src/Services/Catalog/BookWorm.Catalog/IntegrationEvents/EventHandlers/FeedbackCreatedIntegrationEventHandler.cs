@@ -2,7 +2,7 @@
 
 namespace BookWorm.Catalog.IntegrationEvents.EventHandlers;
 
-public sealed class FeedbackCreatedIntegrationEventHandler(IBookRepository repository)
+internal sealed class FeedbackCreatedIntegrationEventHandler(IBookRepository repository)
     : IConsumer<FeedbackCreatedIntegrationEvent>
 {
     public async Task Consume(ConsumeContext<FeedbackCreatedIntegrationEvent> context)
@@ -27,7 +27,7 @@ public sealed class FeedbackCreatedIntegrationEventHandler(IBookRepository repos
 }
 
 [ExcludeFromCodeCoverage]
-public sealed class FeedbackCreatedIntegrationEventHandlerDefinition
+internal sealed class FeedbackCreatedIntegrationEventHandlerDefinition
     : ConsumerDefinition<FeedbackCreatedIntegrationEventHandler>
 {
     public FeedbackCreatedIntegrationEventHandlerDefinition()

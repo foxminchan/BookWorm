@@ -2,7 +2,7 @@
 
 namespace BookWorm.Ordering.Infrastructure.EventStore.Diagnostic;
 
-public static class DocumentSessionOpenTelemetryExtensions
+internal static class DocumentSessionOpenTelemetryExtensions
 {
     extension(IDocumentSession documentSession)
     {

@@ -5,7 +5,7 @@ using Status = BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Status;
 
 namespace BookWorm.Catalog.Grpc.Services;
 
-public sealed class BookService(IBookRepository repository, ILogger<BookService> logger)
+internal sealed class BookService(IBookRepository repository, ILogger<BookService> logger)
     : BookGrpcService.BookGrpcServiceBase
 {
     [AllowAnonymous]

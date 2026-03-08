@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 namespace BookWorm.Notification.Domain.Models;
 
 [JsonConverter(typeof(JsonStringEnumConverter<Status>))]
-public enum Status : byte
+internal enum Status : byte
 {
     [Description("New")]
     New = 0,

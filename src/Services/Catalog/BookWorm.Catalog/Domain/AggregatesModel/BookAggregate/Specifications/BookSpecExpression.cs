@@ -2,7 +2,7 @@
 
 namespace BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
 
-public static class BookSpecExpression
+internal static class BookSpecExpression
 {
     public static ISpecificationBuilder<Book> ApplyOrdering(
         this ISpecificationBuilder<Book> builder,

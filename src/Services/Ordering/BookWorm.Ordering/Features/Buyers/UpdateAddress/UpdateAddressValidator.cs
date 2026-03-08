@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Ordering.Features.Buyers.UpdateAddress;
 
-public sealed class UpdateAddressValidator : AbstractValidator<UpdateAddressCommand>
+internal sealed class UpdateAddressValidator : AbstractValidator<UpdateAddressCommand>
 {
     public UpdateAddressValidator()
     {

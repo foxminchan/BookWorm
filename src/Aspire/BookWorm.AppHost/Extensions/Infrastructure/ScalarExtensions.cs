@@ -3,7 +3,7 @@ using Scalar.Aspire;
 
 namespace BookWorm.AppHost.Extensions.Infrastructure;
 
-public static class ScalarExtensions
+internal static class ScalarExtensions
 {
     /// <summary>
     ///     Adds a Scalar API reference to the distributed application builder with predefined theme and font settings.

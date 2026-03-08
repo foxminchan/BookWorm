@@ -39,7 +39,7 @@ public sealed record ListBooksQuery(
         Guid[]? AuthorIds = null
 ) : IQuery<PagedResult<BookDto>>;
 
-public sealed class ListBooksHandler(
+internal sealed class ListBooksHandler(
     ISearch search,
     IBookRepository repository,
     IMapper<Book, BookDto> mapper

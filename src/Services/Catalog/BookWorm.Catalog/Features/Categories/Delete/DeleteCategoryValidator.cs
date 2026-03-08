@@ -2,7 +2,7 @@
 
 namespace BookWorm.Catalog.Features.Categories.Delete;
 
-public sealed class DeleteCategoryValidator : AbstractValidator<DeleteCategoryCommand>
+internal sealed class DeleteCategoryValidator : AbstractValidator<DeleteCategoryCommand>
 {
     public DeleteCategoryValidator(CategoryValidator categoryValidator)
     {
@@ -10,7 +10,7 @@ public sealed class DeleteCategoryValidator : AbstractValidator<DeleteCategoryCo
     }
 }
 
-public sealed class CategoryValidator : AbstractValidator<Guid>
+internal sealed class CategoryValidator : AbstractValidator<Guid>
 {
     private readonly IBookRepository _repository;
 

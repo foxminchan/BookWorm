@@ -4,11 +4,9 @@ using BookWorm.Chassis.Exceptions;
 using BookWorm.Constants.Core;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
-using BookWorm.Ordering.Features.Orders;
 using BookWorm.Ordering.Features.Orders.Get;
 using BookWorm.Ordering.Grpc.Services.Book;
 using BookWorm.Ordering.UnitTests.Fakers;
-using BookWorm.SharedKernel.Helpers;
 
 namespace BookWorm.Ordering.UnitTests.Features.Orders.Get;
 

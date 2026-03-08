@@ -3,7 +3,7 @@ using System.Diagnostics.Metrics;
 
 namespace BookWorm.Finance.Saga.Observers;
 
-public sealed class OrderStateObserver : IStateObserver<OrderState>
+internal sealed class OrderStateObserver : IStateObserver<OrderState>
 {
     private static readonly ActivitySource _activitySource = new(nameof(OrderStateObserver));
     private static readonly Meter _meter = new(nameof(OrderStateObserver));

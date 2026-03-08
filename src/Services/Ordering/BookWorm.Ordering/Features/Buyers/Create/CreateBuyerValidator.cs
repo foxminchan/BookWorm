@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Ordering.Features.Buyers.Create;
 
-public sealed class CreateBuyerValidator : AbstractValidator<CreateBuyerCommand>
+internal sealed class CreateBuyerValidator : AbstractValidator<CreateBuyerCommand>
 {
     public CreateBuyerValidator()
     {

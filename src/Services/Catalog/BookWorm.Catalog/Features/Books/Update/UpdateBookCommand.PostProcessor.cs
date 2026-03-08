@@ -2,7 +2,7 @@
 
 namespace BookWorm.Catalog.Features.Books.Update;
 
-public sealed class UpdateBookPostProcessor(IBlobService blobService)
+internal sealed class UpdateBookPostProcessor(IBlobService blobService)
     : MessagePostProcessor<UpdateBookCommand, Unit>
 {
     protected override async ValueTask Handle(

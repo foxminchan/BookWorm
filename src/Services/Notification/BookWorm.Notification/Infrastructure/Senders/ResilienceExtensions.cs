@@ -4,7 +4,7 @@ using Polly.Timeout;
 
 namespace BookWorm.Notification.Infrastructure.Senders;
 
-public static class ResilienceExtensions
+internal static class ResilienceExtensions
 {
     public static void AddMailResiliencePipeline(this IHostApplicationBuilder builder)
     {

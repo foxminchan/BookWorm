@@ -6,7 +6,7 @@ using MassTransit.Testing;
 
 namespace BookWorm.Finance.UnitTests.Extensions;
 
-public static class TestHarnessExtensions
+internal static class TestHarnessExtensions
 {
     public static async Task InitializeSagaToPlacedState(
         this (

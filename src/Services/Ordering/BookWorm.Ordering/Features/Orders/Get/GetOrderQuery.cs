@@ -10,7 +10,7 @@ public sealed record GetOrderQuery(
     [property: Description("Only 'ADMIN' role can retrieve other users' data")] Guid Id
 ) : IQuery<OrderDetailDto>;
 
-public sealed class GetOrderHandler(
+internal sealed class GetOrderHandler(
     IOrderRepository repository,
     ClaimsPrincipal claimsPrincipal,
     IBookService bookService

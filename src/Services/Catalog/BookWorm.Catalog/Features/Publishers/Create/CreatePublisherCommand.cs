@@ -4,7 +4,7 @@ namespace BookWorm.Catalog.Features.Publishers.Create;
 
 public sealed record CreatePublisherCommand(string Name) : ICommand<Guid>;
 
-public sealed class CreatePublisherHandler(IPublisherRepository repository)
+internal sealed class CreatePublisherHandler(IPublisherRepository repository)
     : ICommandHandler<CreatePublisherCommand, Guid>
 {
     public async ValueTask<Guid> Handle(

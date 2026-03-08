@@ -1,13 +1,10 @@
-﻿using BookWorm.Chassis.CQRS.Command;
-using BookWorm.Chassis.CQRS.Pipelines;
-using BookWorm.Chassis.CQRS.Query;
-using BookWorm.Chassis.OpenTelemetry.ActivityScope;
+﻿using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Constants.Core;
 using BookWorm.Rating.Configurations;
-using BookWorm.Rating.Features.Summarize;
 using BookWorm.Rating.Infrastructure.Agents;
 using BookWorm.Rating.Infrastructure.Summarizer;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
@@ -54,9 +51,9 @@ internal static class Extensions
             .AddMediator(
                 (MediatorOptions options) => options.ServiceLifetime = ServiceLifetime.Scoped
             )
-            .AddScoped(typeof(IPipelineBehavior<,>), typeof(ActivityBehavior<,>))
-            .AddScoped(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>))
-            .AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+            .ApplyLoggingBehavior()
+            .ApplyActivityBehavior()
+            .ApplyValidationBehavior();
 
         builder.AddRateLimiting();
 
@@ -74,9 +71,7 @@ internal static class Extensions
         // Configure FluentValidation
         services.AddValidatorsFromAssemblyContaining<IRatingApiMarker>(includeInternalTypes: true);
 
-        services.AddSingleton<IActivityScope, ActivityScope>();
-        services.AddSingleton<CommandHandlerMetrics>();
-        services.AddSingleton<QueryHandlerMetrics>();
+        services.AddActivityScope().AddCommandHandlerMetrics().AddQueryHandlerMetrics();
 
         // Configure EventBus first
         builder.AddEventBus(
@@ -102,8 +97,8 @@ internal static class Extensions
         );
 
         // Then register event-related services
+        services.AddEventDispatcher();
         services.AddScoped<IEventMapper, EventMapper>();
-        services.AddScoped<IEventDispatcher, EventDispatcher>();
 
         // Configure endpoints
         services.AddVersioning();
@@ -115,6 +110,6 @@ internal static class Extensions
         builder.AddAgents();
         services.AddScoped<ISummarizer, RatingSummarizer>();
 
-        services.AddScoped<KeycloakTokenIntrospectionMiddleware>();
+        services.AddKeycloakTokenIntrospection();
     }
 }

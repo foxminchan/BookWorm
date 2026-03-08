@@ -15,11 +15,7 @@ public sealed class DomainConventionTests : ArchUnitBaseTest
             .HaveNameEndingWith("Repository")
             .Should()
             .HaveNameStartingWith("I")
-            .AndShould()
-            .BePublic()
-            .Because(
-                "Repository interfaces should follow naming conventions with 'I' prefix and be public."
-            )
+            .Because("Repository interfaces should follow naming conventions with 'I' prefix.")
             .Check(Architecture);
     }
 
@@ -56,14 +52,10 @@ public sealed class DomainConventionTests : ArchUnitBaseTest
             .And()
             .DoNotResideInNamespaceMatching($"{nameof(BookWorm)}.*.Infrastructure.*")
             .Should()
-            .BePublic()
-            .AndShould()
             .BeSealed()
             .AndShould()
             .BeAssignableTo(typeof(Exception))
-            .Because(
-                "Domain exceptions should be public, sealed, and derive from System.Exception."
-            )
+            .Because("Domain exceptions should be sealed and derive from System.Exception.")
             .Check(Architecture);
     }
 

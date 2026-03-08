@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Rating.Features.List;
 
-public sealed class ListFeedbacksValidator : AbstractValidator<ListFeedbacksQuery>
+internal sealed class ListFeedbacksValidator : AbstractValidator<ListFeedbacksQuery>
 {
     public ListFeedbacksValidator()
     {

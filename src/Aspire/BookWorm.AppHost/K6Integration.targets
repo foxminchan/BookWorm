@@ -2,8 +2,8 @@
   <PropertyGroup>
     <K6ContainerPath>$(MSBuildProjectDirectory)\Container\k6</K6ContainerPath>
     <BunIgnoreScriptsFlag Condition="'$(GITHUB_ACTIONS)' == 'true'"
-      >--ignore-scripts</BunIgnoreScriptsFlag
-    >
+      >--ignore-scripts
+    </BunIgnoreScriptsFlag>
   </PropertyGroup>
   <Target
     Name="BuildK6Container"

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BookWorm.Notification.Infrastructure.Repositories;
 
-public sealed class OutboxRepository(NotificationDbContext context) : IOutboxRepository
+internal sealed class OutboxRepository(NotificationDbContext context) : IOutboxRepository
 {
     private readonly NotificationDbContext _context =
         context ?? throw new ArgumentNullException(nameof(context));

@@ -6,7 +6,7 @@ using static BookWorm.Constants.Core.Http.Methods;
 
 namespace BookWorm.Ordering.Infrastructure.Filters;
 
-public sealed class IdempotencyEndpointFilter : IEndpointFilter
+internal sealed class IdempotencyEndpointFilter : IEndpointFilter
 {
     public async ValueTask<object?> InvokeAsync(
         EndpointFilterInvocationContext context,
@@ -62,7 +62,7 @@ public sealed class IdempotencyEndpointFilter : IEndpointFilter
     }
 }
 
-public static class IdempotencyEndpointFilterExtensions
+internal static class IdempotencyEndpointFilterExtensions
 {
     public static TBuilder WithIdempotency<TBuilder>(this TBuilder builder)
         where TBuilder : IEndpointConventionBuilder

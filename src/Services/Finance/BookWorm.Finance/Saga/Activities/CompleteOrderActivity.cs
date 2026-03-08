@@ -2,7 +2,7 @@ using BookWorm.Contracts;
 
 namespace BookWorm.Finance.Saga.Activities;
 
-public sealed class CompleteOrderActivity(ILoggerFactory loggerFactory)
+internal sealed class CompleteOrderActivity(ILoggerFactory loggerFactory)
     : IStateMachineActivity<OrderState, OrderStatusChangedToCompleteIntegrationEvent>
 {
     private readonly ILogger _logger = loggerFactory.CreateLogger(nameof(CompleteOrderActivity));

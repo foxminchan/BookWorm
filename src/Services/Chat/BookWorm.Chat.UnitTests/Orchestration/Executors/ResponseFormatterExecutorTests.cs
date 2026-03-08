@@ -6,8 +6,8 @@ namespace BookWorm.Chat.UnitTests.Orchestration.Executors;
 
 public sealed class ResponseFormatterExecutorTests
 {
-    private readonly ResponseFormatterExecutor _sut = new();
     private readonly IWorkflowContext _context = Mock.Of<IWorkflowContext>();
+    private readonly ResponseFormatterExecutor _sut = new();
 
     [Test]
     public void GivenNullMessages_WhenHandling_ThenShouldThrowArgumentNullException()

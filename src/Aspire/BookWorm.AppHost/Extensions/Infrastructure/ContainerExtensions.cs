@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.AppHost.Extensions.Infrastructure;
 
-public static class ContainerExtensions
+internal static class ContainerExtensions
 {
     /// <summary>
     ///     Adds a container registry resource to the distributed application builder.

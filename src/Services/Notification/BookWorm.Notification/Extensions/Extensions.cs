@@ -1,5 +1,5 @@
 ﻿using BookWorm.Chassis.EF;
-using BookWorm.Chassis.OpenTelemetry.ActivityScope;
+using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.Repository;
 using BookWorm.Chassis.Utilities.Converters;
 using BookWorm.Notification.Infrastructure;
@@ -25,7 +25,7 @@ internal static class Extensions
             new JsonSerializerOptions { Converters = { DateOnlyJsonConverter.Instance } }
         );
 
-        services.AddSingleton<IActivityScope, ActivityScope>();
+        services.AddActivityScope();
 
         builder.AddAzurePostgresDbContext<NotificationDbContext>(
             Components.Database.Notification,

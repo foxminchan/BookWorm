@@ -2,7 +2,7 @@
 
 namespace BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
 
-public sealed class BookFilterSpec : Specification<Book>
+internal sealed class BookFilterSpec : Specification<Book>
 {
     public BookFilterSpec(Guid[]? categoryIds, Guid[]? publisherIds)
     {

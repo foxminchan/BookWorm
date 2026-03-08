@@ -4,7 +4,7 @@ using Microsoft.OpenApi;
 namespace BookWorm.Basket.Configurations;
 
 [ExcludeFromCodeCoverage]
-public sealed class BasketAppSettings : AppSettings
+internal sealed class BasketAppSettings : AppSettings
 {
     public override OpenApiInfo? OpenApi { get; set; } =
         new()

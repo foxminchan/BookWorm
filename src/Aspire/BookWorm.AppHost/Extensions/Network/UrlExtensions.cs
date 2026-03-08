@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.AppHost.Extensions.Network;
 
-public static class UrlExtensions
+internal static class UrlExtensions
 {
     extension<T>(IResourceBuilder<T> builder)
         where T : IResource

@@ -5,7 +5,7 @@ namespace BookWorm.Catalog.Features.Authors.Update;
 
 public sealed record UpdateAuthorCommand(Guid Id, string Name) : ICommand;
 
-public sealed class UpdateAuthorHandler(IAuthorRepository repository)
+internal sealed class UpdateAuthorHandler(IAuthorRepository repository)
     : ICommandHandler<UpdateAuthorCommand>
 {
     public async ValueTask<Unit> Handle(

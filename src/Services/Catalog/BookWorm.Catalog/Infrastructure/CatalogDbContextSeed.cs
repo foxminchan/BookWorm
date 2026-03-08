@@ -3,7 +3,7 @@ using Npgsql;
 
 namespace BookWorm.Catalog.Infrastructure;
 
-public sealed class CatalogDbContextSeed(
+internal sealed class CatalogDbContextSeed(
     IChatClient chatClient,
     ILogger<CatalogDbContextSeed> logger
 ) : IDbSeeder<CatalogDbContext>

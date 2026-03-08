@@ -8,7 +8,7 @@ public static class Extensions
     {
         services.Scan(scan =>
             scan.FromAssembliesOf(type)
-                .AddClasses(classes => classes.AssignableTo(typeof(IRepository<>)))
+                .AddClasses(classes => classes.AssignableTo(typeof(IRepository<>)), false)
                 .AsImplementedInterfaces()
                 .WithScopedLifetime()
         );

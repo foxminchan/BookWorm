@@ -21,8 +21,10 @@ public sealed record ListOrdersQuery(
         Guid? BuyerId = null
 ) : IQuery<PagedResult<OrderDto>>;
 
-public sealed class ListOrdersHandler(IOrderRepository repository, ClaimsPrincipal claimsPrincipal)
-    : IQueryHandler<ListOrdersQuery, PagedResult<OrderDto>>
+internal sealed class ListOrdersHandler(
+    IOrderRepository repository,
+    ClaimsPrincipal claimsPrincipal
+) : IQueryHandler<ListOrdersQuery, PagedResult<OrderDto>>
 {
     public async ValueTask<PagedResult<OrderDto>> Handle(
         ListOrdersQuery request,

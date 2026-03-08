@@ -9,7 +9,7 @@ public sealed record GetBuyerQuery(
     [property: Description("Only 'ADMIN' role can retrieve other users' data")] Guid Id
 ) : IQuery<BuyerDto>;
 
-public sealed class GetBuyerHandler(
+internal sealed class GetBuyerHandler(
     IBuyerRepository buyerRepository,
     ClaimsPrincipal claimsPrincipal
 ) : IQueryHandler<GetBuyerQuery, BuyerDto>

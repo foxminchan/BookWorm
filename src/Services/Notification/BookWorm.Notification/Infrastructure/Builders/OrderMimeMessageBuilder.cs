@@ -3,7 +3,7 @@ using MimeKit.Text;
 
 namespace BookWorm.Notification.Infrastructure.Builders;
 
-public sealed class OrderMimeMessageBuilder
+internal sealed class OrderMimeMessageBuilder
 {
     private OrderMimeMessageBuilder() { }
 
@@ -11,7 +11,10 @@ public sealed class OrderMimeMessageBuilder
     private MimeEntity Body { get; set; } = new TextPart(TextFormat.Html) { Text = string.Empty };
     private MailboxAddress To { get; set; } = new(string.Empty, string.Empty);
 
-    public static OrderMimeMessageBuilder Initialize() => new();
+    public static OrderMimeMessageBuilder Initialize()
+    {
+        return new();
+    }
 
     public OrderMimeMessageBuilder WithTo(string? fullName, string? email)
     {

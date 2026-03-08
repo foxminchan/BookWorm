@@ -4,7 +4,7 @@ using Mediator;
 
 namespace BookWorm.Catalog.Domain.EventHandlers;
 
-public sealed class BookChangedEventHandler(IHybridCache cache)
+internal sealed class BookChangedEventHandler(IHybridCache cache)
     : INotificationHandler<BookChangedEvent>
 {
     public async ValueTask Handle(

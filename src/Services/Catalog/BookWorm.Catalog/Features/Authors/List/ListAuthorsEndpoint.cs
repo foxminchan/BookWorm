@@ -3,7 +3,7 @@ using Mediator;
 
 namespace BookWorm.Catalog.Features.Authors.List;
 
-public sealed class ListAuthorsEndpoint : IEndpoint<Ok<IReadOnlyList<AuthorDto>>, ISender>
+internal sealed class ListAuthorsEndpoint : IEndpoint<Ok<IReadOnlyList<AuthorDto>>, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {

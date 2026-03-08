@@ -5,7 +5,7 @@ namespace BookWorm.Catalog.Features.Categories.Update;
 
 public sealed record UpdateCategoryCommand(Guid Id, string Name) : ICommand;
 
-public sealed class UpdateCategoryHandler(ICategoryRepository repository)
+internal sealed class UpdateCategoryHandler(ICategoryRepository repository)
     : ICommandHandler<UpdateCategoryCommand>
 {
     public async ValueTask<Unit> Handle(

@@ -10,11 +10,11 @@ namespace BookWorm.Ordering.UnitTests.Features.Orders.Cancel;
 
 public sealed class CancelOrderCommandTests
 {
+    private readonly Mock<ClaimsPrincipal> _claimsPrincipalMock;
     private readonly CancelOrderHandler _handler;
     private readonly Order _order;
     private readonly Guid _orderId;
     private readonly Mock<IOrderRepository> _orderRepositoryMock;
-    private readonly Mock<ClaimsPrincipal> _claimsPrincipalMock;
 
     public CancelOrderCommandTests()
     {
@@ -149,7 +149,7 @@ public sealed class CancelOrderCommandTests
 
         claimsPrincipalMock
             .Setup(c => c.FindAll(ClaimTypes.Role))
-            .Returns([new Claim(ClaimTypes.Role, "User")]);
+            .Returns([new(ClaimTypes.Role, "User")]);
 
         claimsPrincipalMock
             .Setup(c => c.FindFirst(ClaimTypes.NameIdentifier))
@@ -195,7 +195,7 @@ public sealed class CancelOrderCommandTests
 
         claimsPrincipalMock
             .Setup(c => c.FindAll(ClaimTypes.Role))
-            .Returns([new Claim(ClaimTypes.Role, "User")]);
+            .Returns([new(ClaimTypes.Role, "User")]);
 
         claimsPrincipalMock
             .Setup(c => c.FindFirst(ClaimTypes.NameIdentifier))

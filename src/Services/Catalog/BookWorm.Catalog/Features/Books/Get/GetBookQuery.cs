@@ -6,7 +6,7 @@ namespace BookWorm.Catalog.Features.Books.Get;
 
 public sealed record GetBookQuery(Guid Id) : IQuery<BookDto>;
 
-public sealed class GetBookHandler(
+internal sealed class GetBookHandler(
     IBookRepository repository,
     IHybridCache cache,
     IMapper<Book, BookDto> mapper
@@ -29,8 +29,8 @@ public sealed class GetBookHandler(
 
                 return book;
             },
-            tags: [tag],
-            cancellationToken: cancellationToken
+            [tag],
+            cancellationToken
         );
 
         return mapper.Map(book);

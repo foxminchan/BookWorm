@@ -12,13 +12,13 @@ namespace BookWorm.Notification.UnitTests.Handlers;
 
 public sealed class ResendErrorEmailHandlerTests
 {
-    private readonly Mock<ILogger<ResendErrorEmailIntegrationEventHandler>> _loggerMock = new();
+    private readonly Mock<ConsumeContext<ResendErrorEmailIntegrationEvent>> _contextMock = new();
+    private readonly ResendErrorEmailIntegrationEventHandler _handler;
     private readonly Mock<GlobalLogBuffer> _logBufferMock = new();
+    private readonly Mock<ILogger<ResendErrorEmailIntegrationEventHandler>> _loggerMock = new();
     private readonly Mock<IOutboxRepository> _repositoryMock = new();
     private readonly Mock<ISender> _senderMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
-    private readonly Mock<ConsumeContext<ResendErrorEmailIntegrationEvent>> _contextMock = new();
-    private readonly ResendErrorEmailIntegrationEventHandler _handler;
 
     public ResendErrorEmailHandlerTests()
     {

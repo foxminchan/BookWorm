@@ -3,7 +3,7 @@ using Aspire.Hosting.Yarp.Transforms;
 
 namespace BookWorm.AppHost.Extensions.Network;
 
-public static class ProxyExtensions
+internal static class ProxyExtensions
 {
     extension(IDistributedApplicationBuilder builder)
     {
@@ -53,14 +53,14 @@ public static class ProxyExtensions
     }
 }
 
-public sealed class Service
+internal sealed class Service
 {
     public required string Name { get; init; }
     public required IResourceBuilder<ProjectResource> Resource { get; init; }
     public bool UseProtobuf { get; init; }
 }
 
-public sealed class ApiGatewayProxyBuilder
+internal sealed class ApiGatewayProxyBuilder
 {
     private readonly List<Service> _services = [];
 

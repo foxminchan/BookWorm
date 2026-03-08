@@ -8,6 +8,20 @@ namespace BookWorm.Chassis.Utilities.Configurations;
 
 public static class ConfigurationExtensions
 {
+    public static string GetRequiredConnectionString(this IConfiguration configuration, string name)
+    {
+        var connectionString = configuration.GetConnectionString(name);
+
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            throw new InvalidOperationException(
+                $"Configuration missing value for: {(configuration is IConfigurationSection s ? s.Path + ":" + name : name)}"
+            );
+        }
+
+        return connectionString;
+    }
+
     extension(IHostApplicationBuilder builder)
     {
         public void Configure<TSetting>(
@@ -46,19 +60,5 @@ public static class ConfigurationExtensions
 
             return services;
         }
-    }
-
-    public static string GetRequiredConnectionString(this IConfiguration configuration, string name)
-    {
-        var connectionString = configuration.GetConnectionString(name);
-
-        if (string.IsNullOrEmpty(connectionString))
-        {
-            throw new InvalidOperationException(
-                $"Configuration missing value for: {(configuration is IConfigurationSection s ? s.Path + ":" + name : name)}"
-            );
-        }
-
-        return connectionString;
     }
 }

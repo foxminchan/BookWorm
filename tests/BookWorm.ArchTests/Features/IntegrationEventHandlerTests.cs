@@ -1,7 +1,6 @@
 using ArchUnitNET.TUnit;
 using BookWorm.ArchTests.Abstractions;
 using BookWorm.Chassis.EventBus;
-using MassTransit;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
 namespace BookWorm.ArchTests.Features;

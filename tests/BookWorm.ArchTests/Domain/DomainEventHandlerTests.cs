@@ -1,6 +1,5 @@
 using ArchUnitNET.TUnit;
 using BookWorm.ArchTests.Abstractions;
-using BookWorm.SharedKernel.SeedWork;
 using Mediator;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 

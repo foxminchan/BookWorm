@@ -4,7 +4,7 @@ using Weasel.Core;
 
 namespace BookWorm.Ordering.Infrastructure.EventStore.Configs;
 
-public static class StoreConfigs
+internal static class StoreConfigs
 {
     public static StoreOptions SetStoreOptions(
         MartenConfigs martenConfig,

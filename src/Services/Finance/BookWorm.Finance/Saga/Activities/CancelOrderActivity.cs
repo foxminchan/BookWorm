@@ -2,7 +2,7 @@ using BookWorm.Contracts;
 
 namespace BookWorm.Finance.Saga.Activities;
 
-public sealed class CancelOrderActivity(ILoggerFactory loggerFactory)
+internal sealed class CancelOrderActivity(ILoggerFactory loggerFactory)
     : IStateMachineActivity<OrderState, OrderStatusChangedToCancelIntegrationEvent>
 {
     private readonly ILogger _logger = loggerFactory.CreateLogger(nameof(CancelOrderActivity));

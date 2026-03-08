@@ -5,7 +5,7 @@ using BookWorm.Catalog.Features.Publishers;
 namespace BookWorm.Catalog.Features.Books;
 
 [ExcludeFromCodeCoverage]
-public sealed class DomainToDtoMapper(IBlobService blobService) : IMapper<Book, BookDto>
+internal sealed class DomainToDtoMapper(IBlobService blobService) : IMapper<Book, BookDto>
 {
     public BookDto Map(Book book)
     {

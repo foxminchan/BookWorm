@@ -15,9 +15,9 @@ namespace BookWorm.Notification.ContractTests.Consumers;
 public sealed class CleanUpSentEmailConsumerTests
 {
     private ITestHarness _harness = null!;
-    private ServiceProvider _provider = null!;
     private Mock<GlobalLogBuffer> _logBufferMock = null!;
     private Mock<ILogger<CleanUpSentEmailIntegrationEventHandler>> _loggerMock = null!;
+    private ServiceProvider _provider = null!;
     private Mock<IOutboxRepository> _repositoryMock = null!;
     private Mock<IUnitOfWork> _unitOfWorkMock = null!;
 

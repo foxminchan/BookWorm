@@ -4,7 +4,8 @@ using Mediator;
 
 namespace BookWorm.Catalog.Features.Books.List;
 
-public sealed class ListBooksEndpoint : IEndpoint<Ok<PagedResult<BookDto>>, ListBooksQuery, ISender>
+internal sealed class ListBooksEndpoint
+    : IEndpoint<Ok<PagedResult<BookDto>>, ListBooksQuery, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {

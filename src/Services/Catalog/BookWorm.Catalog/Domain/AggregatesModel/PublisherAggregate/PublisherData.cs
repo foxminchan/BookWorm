@@ -1,7 +1,7 @@
 ﻿namespace BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
 
 [ExcludeFromCodeCoverage]
-public sealed class PublisherData : List<Publisher>
+internal sealed class PublisherData : List<Publisher>
 {
     public PublisherData()
     {

@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Chassis.CQRS.Pipelines;
 
-public class ValidationBehavior<TMessage, TResponse>(
+internal class ValidationBehavior<TMessage, TResponse>(
     IActivityScope activityScope,
     IEnumerable<IValidator<TMessage>> validators,
     ILogger<ValidationBehavior<TMessage, TResponse>> logger

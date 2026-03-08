@@ -3,7 +3,7 @@ using Mediator;
 
 namespace BookWorm.Catalog.Features.Categories.Update;
 
-public sealed class UpdateCategoryEndpoint : IEndpoint<NoContent, UpdateCategoryCommand, ISender>
+internal sealed class UpdateCategoryEndpoint : IEndpoint<NoContent, UpdateCategoryCommand, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {

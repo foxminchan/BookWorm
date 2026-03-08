@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BookWorm.Catalog.Features.Books.Create;
 
-public sealed class CreateBookEndpoint
+internal sealed class CreateBookEndpoint
     : IEndpoint<Created<Guid>, CreateBookCommand, ISender, LinkGenerator>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)

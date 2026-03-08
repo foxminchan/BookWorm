@@ -2,7 +2,7 @@
 
 namespace BookWorm.Catalog.Features.Authors.Delete;
 
-public sealed class DeleteAuthorValidator : AbstractValidator<DeleteAuthorCommand>
+internal sealed class DeleteAuthorValidator : AbstractValidator<DeleteAuthorCommand>
 {
     public DeleteAuthorValidator(AuthorValidator authorValidator)
     {
@@ -10,7 +10,7 @@ public sealed class DeleteAuthorValidator : AbstractValidator<DeleteAuthorComman
     }
 }
 
-public sealed class AuthorValidator : AbstractValidator<Guid>
+internal sealed class AuthorValidator : AbstractValidator<Guid>
 {
     private readonly IAuthorRepository _repository;
 

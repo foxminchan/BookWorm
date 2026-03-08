@@ -3,7 +3,7 @@ using BookWorm.SharedKernel.Helpers;
 
 namespace BookWorm.Notification.Domain.Models;
 
-public sealed record Order(
+internal sealed record Order(
     Guid Id,
     string FullName,
     [property: Format("C", "en-US")] decimal TotalMoney,

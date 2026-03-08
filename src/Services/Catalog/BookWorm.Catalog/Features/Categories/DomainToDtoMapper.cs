@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Catalog.Features.Categories;
 
-public static class DomainToDtoMapper
+internal static class DomainToDtoMapper
 {
     public static CategoryDto ToCategoryDto(this Category category)
     {

@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Catalog.Features.Publishers;
 
-public static class DomainToDtoMapper
+internal static class DomainToDtoMapper
 {
     public static PublisherDto ToPublisherDto(this Publisher publisher)
     {

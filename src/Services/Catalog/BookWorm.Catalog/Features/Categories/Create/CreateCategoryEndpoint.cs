@@ -3,7 +3,7 @@ using Mediator;
 
 namespace BookWorm.Catalog.Features.Categories.Create;
 
-public sealed class CreateCategoryEndpoint : IEndpoint<Ok<Guid>, CreateCategoryCommand, ISender>
+internal sealed class CreateCategoryEndpoint : IEndpoint<Ok<Guid>, CreateCategoryCommand, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {

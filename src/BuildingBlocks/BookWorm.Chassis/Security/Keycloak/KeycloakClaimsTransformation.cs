@@ -7,17 +7,7 @@ using Microsoft.Extensions.Options;
 
 namespace BookWorm.Chassis.Security.Keycloak;
 
-/// <summary>
-///     Transforms Keycloak resource roles claims into regular role claims.
-/// </summary>
-/// <remarks>
-///     Learn more about claims transformation in ASP.NET Core at
-///     <see
-///         href="https://learn.microsoft.com/aspnet/core/security/authentication/claims#extend-or-add-custom-claims-using-iclaimstransformation">
-///         https://learn.microsoft.com/aspnet/core/security/authentication/claims#extend-or-add-custom-claims-using-iclaimstransformation
-///     </see>
-/// </remarks>
-public sealed class KeycloakRolesClaimsTransformation(
+internal sealed class KeycloakRolesClaimsTransformation(
     IOptionsSnapshot<JwtBearerOptions> jwtBearerOptions
 ) : IClaimsTransformation
 {

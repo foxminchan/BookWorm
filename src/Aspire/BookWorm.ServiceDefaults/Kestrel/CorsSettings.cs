@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace BookWorm.ServiceDefaults.Kestrel;
 
 [OptionsValidator]
-public sealed partial class CorsSettings : IValidateOptions<CorsSettings>
+internal sealed partial class CorsSettings : IValidateOptions<CorsSettings>
 {
     public const string ConfigurationSection = "Cors";
 

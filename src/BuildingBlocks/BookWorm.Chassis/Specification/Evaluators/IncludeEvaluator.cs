@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Query;
 
 namespace BookWorm.Chassis.Specification.Evaluators;
 
-public sealed class IncludeEvaluator : IEvaluator
+internal sealed class IncludeEvaluator : IEvaluator
 {
     private static readonly MethodInfo _includeMethodInfo =
         typeof(EntityFrameworkQueryableExtensions)

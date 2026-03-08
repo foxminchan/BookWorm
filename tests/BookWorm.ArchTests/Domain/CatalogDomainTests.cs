@@ -29,15 +29,17 @@ public sealed class CatalogDomainTests : ArchUnitBaseTest
     }
 
     [Test]
-    public void GivenCatalogDomain_WhenCheckingClasses_ThenShouldBePublic()
+    public void GivenCatalogDomain_WhenCheckingClasses_ThenShouldBePublicOrInternal()
     {
         Classes()
             .That()
             .ResideInNamespaceMatching(DomainNamespace)
             .Should()
             .BePublic()
+            .OrShould()
+            .BeInternal()
             .Because(
-                "Classes in the domain layer should be public to allow access from other layers, such as application and infrastructure."
+                "Classes in the domain layer should be public or internal to control access from other layers."
             )
             .Check(Architecture);
     }
@@ -69,14 +71,10 @@ public sealed class CatalogDomainTests : ArchUnitBaseTest
             .And()
             .HaveNameEndingWith(nameof(Exception))
             .Should()
-            .BePublic()
-            .AndShould()
             .BeSealed()
             .AndShould()
             .BeAssignableTo(typeof(Exception))
-            .Because(
-                "Domain exceptions should be public, sealed, and derive from System.Exception."
-            )
+            .Because("Domain exceptions should be sealed and derive from System.Exception.")
             .Check(Architecture);
     }
 
@@ -152,14 +150,12 @@ public sealed class CatalogDomainTests : ArchUnitBaseTest
         Classes()
             .That()
             .ResideInNamespaceMatching($"{DomainNamespace}.Specifications")
+            .And()
+            .AreNotAbstract()
             .Should()
-            .BePublic()
-            .AndShould()
             .BeSealed()
-            .OrShould()
-            .BeAbstract()
             .Because(
-                "Specifications should be public, sealed, and concrete to ensure they can be instantiated and used in the domain layer."
+                "Concrete specifications should be sealed to ensure they are used correctly in the domain layer."
             )
             .Check(Architecture);
     }

@@ -2,7 +2,7 @@
 
 namespace BookWorm.Ordering.Infrastructure.EventStore.Configs;
 
-public sealed class MartenConfigs
+internal sealed class MartenConfigs
 {
     public const string DefaultSchema = "public";
     public bool UseMetadata = true;

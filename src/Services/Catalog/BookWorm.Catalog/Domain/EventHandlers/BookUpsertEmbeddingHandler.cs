@@ -5,7 +5,7 @@ using Mediator;
 
 namespace BookWorm.Catalog.Domain.EventHandlers;
 
-public sealed class BookUpsertEmbeddingHandler(
+internal sealed class BookUpsertEmbeddingHandler(
     ILogger<BookUpsertEmbeddingHandler> logger,
     IIngestionSource<Book> ingestion
 ) : INotificationHandler<BookCreatedEvent>, INotificationHandler<BookUpdatedEvent>

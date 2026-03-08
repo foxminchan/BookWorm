@@ -32,11 +32,9 @@ public sealed class DomainEventTests : ArchUnitBaseTest
             .And()
             .DoNotHaveName(nameof(DomainEvent))
             .Should()
-            .BePublic()
-            .AndShould()
             .NotBeAbstract()
             .Because(
-                "Domain events should have public constructors to allow them to be created when domain actions occur."
+                "Domain events should not be abstract to allow them to be created when domain actions occur."
             )
             .Check(Architecture);
     }

@@ -4,7 +4,7 @@ using Microsoft.Extensions.VectorData;
 
 namespace BookWorm.Catalog.Infrastructure.Ingestion;
 
-public sealed class BookDataIngestor(
+internal sealed class BookDataIngestor(
     IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
     VectorStoreCollection<Guid, TextSnippet> vectorCollection
 ) : IIngestionSource<Book>

@@ -8,7 +8,7 @@ namespace BookWorm.Ordering.Features.Orders.Create;
 
 public sealed record CreateOrderCommand : ICommand<Guid>;
 
-public sealed class CreateOrderHandler(
+internal sealed class CreateOrderHandler(
     IOrderRepository repository,
     ClaimsPrincipal claimsPrincipal,
     IFusionCacheDistributedLocker distributedLocker,

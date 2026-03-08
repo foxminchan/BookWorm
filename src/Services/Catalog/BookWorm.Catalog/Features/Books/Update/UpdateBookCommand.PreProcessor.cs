@@ -2,7 +2,7 @@
 
 namespace BookWorm.Catalog.Features.Books.Update;
 
-public sealed class UpdateBookPreProcessor(IBlobService blobService)
+internal sealed class UpdateBookPreProcessor(IBlobService blobService)
     : MessagePreProcessor<UpdateBookCommand, Unit>
 {
     protected override async ValueTask Handle(

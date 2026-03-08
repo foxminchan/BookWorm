@@ -7,7 +7,7 @@ using RedisResource = Azure.Provisioning.Redis.RedisResource;
 
 namespace BookWorm.AppHost.Extensions.Infrastructure;
 
-public static partial class AzureExtensions
+internal static partial class AzureExtensions
 {
     /// <summary>
     ///     Provisions an Azure Storage resource with BookWorm-specific configuration.

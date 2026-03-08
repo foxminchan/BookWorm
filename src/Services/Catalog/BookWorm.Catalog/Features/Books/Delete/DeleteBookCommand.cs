@@ -5,7 +5,7 @@ namespace BookWorm.Catalog.Features.Books.Delete;
 
 public sealed record DeleteBookCommand(Guid Id) : ICommand;
 
-public sealed class DeleteBookHandler(IBookRepository repository)
+internal sealed class DeleteBookHandler(IBookRepository repository)
     : ICommandHandler<DeleteBookCommand>
 {
     public async ValueTask<Unit> Handle(

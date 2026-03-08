@@ -10,11 +10,11 @@ namespace BookWorm.Ordering.UnitTests.Features.Orders.Complete;
 
 public sealed class CompleteOrderCommandTests
 {
+    private readonly Mock<ClaimsPrincipal> _claimsPrincipalMock;
     private readonly CompleteOrderHandler _handler;
     private readonly Order _order;
     private readonly Guid _orderId;
     private readonly Mock<IOrderRepository> _orderRepositoryMock;
-    private readonly Mock<ClaimsPrincipal> _claimsPrincipalMock;
 
     public CompleteOrderCommandTests()
     {
@@ -150,7 +150,7 @@ public sealed class CompleteOrderCommandTests
 
         claimsPrincipalMock
             .Setup(c => c.FindAll(ClaimTypes.Role))
-            .Returns([new Claim(ClaimTypes.Role, "User")]);
+            .Returns([new(ClaimTypes.Role, "User")]);
 
         claimsPrincipalMock
             .Setup(c => c.FindFirst(ClaimTypes.NameIdentifier))
@@ -196,7 +196,7 @@ public sealed class CompleteOrderCommandTests
 
         claimsPrincipalMock
             .Setup(c => c.FindAll(ClaimTypes.Role))
-            .Returns([new Claim(ClaimTypes.Role, "User")]);
+            .Returns([new(ClaimTypes.Role, "User")]);
 
         claimsPrincipalMock
             .Setup(c => c.FindFirst(ClaimTypes.NameIdentifier))

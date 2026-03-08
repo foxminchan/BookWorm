@@ -1,10 +1,8 @@
 ﻿using BookWorm.Catalog.Configurations;
 using BookWorm.Catalog.Features.Books.Create;
 using BookWorm.Catalog.Features.Books.Update;
-using BookWorm.Chassis.CQRS.Command;
-using BookWorm.Chassis.CQRS.Pipelines;
-using BookWorm.Chassis.CQRS.Query;
-using BookWorm.Chassis.OpenTelemetry.ActivityScope;
+using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Utilities.Configurations;
@@ -62,9 +60,9 @@ internal static class Extensions
             .AddMediator(
                 (MediatorOptions options) => options.ServiceLifetime = ServiceLifetime.Scoped
             )
-            .AddScoped(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>))
-            .AddScoped(typeof(IPipelineBehavior<,>), typeof(ActivityBehavior<,>))
-            .AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>))
+            .ApplyLoggingBehavior()
+            .ApplyActivityBehavior()
+            .ApplyValidationBehavior()
             .AddScoped<CreateBookPreProcessor>()
             .AddScoped<UpdateBookPreProcessor>()
             .AddScoped<UpdateBookPostProcessor>();
@@ -93,9 +91,7 @@ internal static class Extensions
         // Configure FluentValidation
         services.AddValidatorsFromAssemblyContaining<ICatalogApiMarker>(includeInternalTypes: true);
 
-        services.AddSingleton<IActivityScope, ActivityScope>();
-        services.AddSingleton<CommandHandlerMetrics>();
-        services.AddSingleton<QueryHandlerMetrics>();
+        services.AddActivityScope().AddCommandHandlerMetrics().AddQueryHandlerMetrics();
 
         // Configure AI
         builder.AddAI();
@@ -133,6 +129,6 @@ internal static class Extensions
             }
         );
 
-        services.AddScoped<KeycloakTokenIntrospectionMiddleware>();
+        services.AddKeycloakTokenIntrospection();
     }
 }

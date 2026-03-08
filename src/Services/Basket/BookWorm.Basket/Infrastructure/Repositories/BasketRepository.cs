@@ -4,8 +4,10 @@ using StackExchange.Redis;
 
 namespace BookWorm.Basket.Infrastructure.Repositories;
 
-public sealed class BasketRepository(ILogger<BasketRepository> logger, IConnectionMultiplexer redis)
-    : IBasketRepository
+internal sealed class BasketRepository(
+    ILogger<BasketRepository> logger,
+    IConnectionMultiplexer redis
+) : IBasketRepository
 {
     public async Task<CustomerBasket?> GetBasketAsync(
         [StringSyntax(StringSyntaxAttribute.GuidFormat)] string id

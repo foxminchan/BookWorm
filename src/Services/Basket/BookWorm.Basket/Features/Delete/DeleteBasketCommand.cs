@@ -6,7 +6,7 @@ namespace BookWorm.Basket.Features.Delete;
 
 public sealed record DeleteBasketCommand : ICommand;
 
-public sealed class DeleteBasketHandler(
+internal sealed class DeleteBasketHandler(
     IBasketRepository basketRepository,
     ClaimsPrincipal claimsPrincipal
 ) : ICommandHandler<DeleteBasketCommand>

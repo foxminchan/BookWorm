@@ -3,7 +3,7 @@
 ## Genre Descriptions
 
 | Genre                | Description                    | Popular with               |
-| -------------------- | ------------------------------ | -------------------------- |
+|----------------------|--------------------------------|----------------------------|
 | Fiction              | Narrative prose stories        | General readers            |
 | Science Fiction      | Speculative future/technology  | Tech & sci enthusiasts     |
 | Fantasy              | Magic and mythical worlds      | Adventure seekers          |
@@ -32,7 +32,7 @@
 ## Price Ranges (Approximate)
 
 | Format    | Range     |
-| --------- | --------- |
+|-----------|-----------|
 | Paperback | $9 – $20  |
 | Hardcover | $20 – $45 |
 | eBook     | $5 – $15  |

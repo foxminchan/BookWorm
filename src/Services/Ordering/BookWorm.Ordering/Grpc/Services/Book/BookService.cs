@@ -37,8 +37,8 @@ internal sealed class BookService(BookGrpcService.BookGrpcServiceClient service,
                 );
                 return response;
             },
-            tags: ["books", nameof(Catalog).ToLowerInvariant()],
-            cancellationToken: cancellationToken
+            ["books", nameof(Catalog).ToLowerInvariant()],
+            cancellationToken
         );
 
         return result;

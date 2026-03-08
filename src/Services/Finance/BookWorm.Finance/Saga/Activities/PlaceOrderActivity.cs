@@ -3,7 +3,7 @@ using BookWorm.SharedKernel.Helpers;
 
 namespace BookWorm.Finance.Saga.Activities;
 
-public sealed class PlaceOrderActivity(ILoggerFactory loggerFactory)
+internal sealed class PlaceOrderActivity(ILoggerFactory loggerFactory)
     : IStateMachineActivity<OrderState, UserCheckedOutIntegrationEvent>
 {
     private readonly ILogger _logger = loggerFactory.CreateLogger(nameof(PlaceOrderActivity));

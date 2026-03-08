@@ -2,7 +2,7 @@ using BookWorm.Contracts;
 
 namespace BookWorm.Finance.Saga.Activities;
 
-public sealed class HandleBasketDeleteFailedActivity(ILoggerFactory loggerFactory)
+internal sealed class HandleBasketDeleteFailedActivity(ILoggerFactory loggerFactory)
     : IStateMachineActivity<OrderState, BasketDeletedFailedIntegrationEvent>
 {
     private readonly ILogger _logger = loggerFactory.CreateLogger(

@@ -2,7 +2,7 @@
 
 namespace BookWorm.Finance.Saga;
 
-public sealed class OrderState : SagaStateMachineInstance, ISagaVersion
+internal sealed class OrderState : SagaStateMachineInstance, ISagaVersion
 {
     public Guid OrderId { get; set; }
     public Guid BasketId { get; set; }

@@ -2,7 +2,7 @@
 
 namespace BookWorm.Chassis.Logging;
 
-public static class DataTaxonomy
+internal static class DataTaxonomy
 {
     private static string TaxonomyName { get; } = typeof(DataTaxonomy).FullName!;
 

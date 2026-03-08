@@ -5,7 +5,7 @@ namespace BookWorm.Rating.Features.Summarize;
 
 public sealed record SummarizeFeedbackQuery(Guid BookId) : IQuery<SummarizeResult>;
 
-public sealed class SummarizeFeedbackHandler(ISummarizer summarizer)
+internal sealed class SummarizeFeedbackHandler(ISummarizer summarizer)
     : IQueryHandler<SummarizeFeedbackQuery, SummarizeResult>
 {
     public async ValueTask<SummarizeResult> Handle(

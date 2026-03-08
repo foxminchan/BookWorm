@@ -3,7 +3,7 @@ using BookWorm.Chassis.Specification;
 
 namespace BookWorm.Notification.Domain.Models;
 
-public interface IOutboxRepository : IRepository<Outbox>
+internal interface IOutboxRepository : IRepository<Outbox>
 {
     Task AddAsync(Outbox outbox, CancellationToken cancellationToken = default);
 

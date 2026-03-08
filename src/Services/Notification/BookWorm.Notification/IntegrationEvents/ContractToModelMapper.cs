@@ -2,7 +2,7 @@
 
 namespace BookWorm.Notification.IntegrationEvents;
 
-public static class ContractToModelMapper
+internal static class ContractToModelMapper
 {
     private const string Customer = nameof(Customer);
 
