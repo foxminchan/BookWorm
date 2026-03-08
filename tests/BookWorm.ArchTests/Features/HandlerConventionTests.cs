@@ -86,14 +86,19 @@ public sealed class HandlerConventionTests : ArchUnitBaseTest
             .And()
             .HaveNameEndingWith("Handler")
             .Should()
-            .NotDependOnAny(
-                Classes()
-                    .That()
-                    .HaveNameEndingWith("Handler")
-                    .And()
-                    .ResideInNamespaceMatching(FeatureNamespace)
-            )
-            .Because(
+            .FollowCustomCondition(
+                cls =>
+                {
+                    var otherHandlerDeps = cls
+                        .Dependencies.Select(d => d.Target)
+                        .Where(t =>
+                            t.Name.EndsWith("Handler")
+                            && t.FullName != cls.FullName
+                            && t.FullName.Contains(".Features.")
+                        );
+                    return !otherHandlerDeps.Any();
+                },
+                "should not depend on other handlers",
                 "Handlers should not depend on other handlers to maintain independence and single responsibility."
             )
             .Check(Architecture);

@@ -2,7 +2,7 @@
 
 namespace BookWorm.Chassis.Specification.Evaluators;
 
-public sealed class IncludeStringEvaluator : IEvaluator
+internal sealed class IncludeStringEvaluator : IEvaluator
 {
     private IncludeStringEvaluator() { }
 

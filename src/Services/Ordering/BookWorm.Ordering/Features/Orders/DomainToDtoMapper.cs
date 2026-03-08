@@ -1,6 +1,6 @@
 namespace BookWorm.Ordering.Features.Orders;
 
-public static class DomainToDtoMapper
+internal static class DomainToDtoMapper
 {
     public static OrderDetailDto ToOrderDetailDto(this Order model)
     {

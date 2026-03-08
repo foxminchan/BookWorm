@@ -10,7 +10,7 @@ public sealed record CreateFeedbackCommand(
     int Rating
 ) : ICommand<Guid>;
 
-public sealed class CreateFeedbackHandler(IFeedbackRepository repository)
+internal sealed class CreateFeedbackHandler(IFeedbackRepository repository)
     : ICommandHandler<CreateFeedbackCommand, Guid>
 {
     public async ValueTask<Guid> Handle(

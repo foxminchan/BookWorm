@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace BookWorm.Basket.Grpc.Services.Basket;
 
-public sealed class BasketService(IBasketRepository repository, ILogger<BasketService> logger)
+internal sealed class BasketService(IBasketRepository repository, ILogger<BasketService> logger)
     : BasketGrpcService.BasketGrpcServiceBase
 {
     [Authorize]

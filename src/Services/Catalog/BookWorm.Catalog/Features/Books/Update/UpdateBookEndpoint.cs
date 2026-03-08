@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BookWorm.Catalog.Features.Books.Update;
 
-public sealed class UpdateBookEndpoint : IEndpoint<NoContent, UpdateBookCommand, ISender>
+internal sealed class UpdateBookEndpoint : IEndpoint<NoContent, UpdateBookCommand, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {

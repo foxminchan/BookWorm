@@ -2,7 +2,7 @@ using BookWorm.Finance.Saga;
 
 namespace BookWorm.Finance.UnitTests.Helpers;
 
-public static class OrderStateMachineTestHelper
+internal static class OrderStateMachineTestHelper
 {
     public const string DefaultTestEmail = "example@email.com";
     public const string DefaultTestFullName = "John Doe";

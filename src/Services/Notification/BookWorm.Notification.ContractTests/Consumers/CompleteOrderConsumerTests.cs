@@ -19,10 +19,10 @@ public sealed class CompleteOrderConsumerTests
     private const decimal TotalMoney = 150.99m;
     private const string FullName = "John Doe";
     private const string ValidEmail = "customer@example.com";
-    private Guid _orderId;
     private ITestHarness _harness = null!;
-    private ServiceProvider _provider = null!;
     private MailKitSettings _mailKitSettings = null!;
+    private Guid _orderId;
+    private ServiceProvider _provider = null!;
     private Mock<IRenderer> _rendererMock = null!;
     private Mock<ISender> _senderMock = null!;
 
@@ -133,7 +133,7 @@ public sealed class CompleteOrderConsumerTests
 
         _senderMock
             .Setup(x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new Exception("Failed to send email"));
+            .ThrowsAsync(new("Failed to send email"));
 
         // Act
         await _harness.Bus.Publish(command);

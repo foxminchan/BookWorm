@@ -8,7 +8,7 @@ namespace BookWorm.Ordering.Features.Orders.Complete;
 
 public sealed record CompleteOrderCommand(Guid OrderId) : ICommand<OrderDetailDto>;
 
-public sealed class CompleteOrderHandler(
+internal sealed class CompleteOrderHandler(
     IOrderRepository repository,
     ClaimsPrincipal claimsPrincipal
 ) : ICommandHandler<CompleteOrderCommand, OrderDetailDto>

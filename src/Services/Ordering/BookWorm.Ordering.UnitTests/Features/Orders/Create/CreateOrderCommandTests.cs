@@ -17,8 +17,8 @@ public sealed class CreateOrderCommandTests
     private readonly Mock<IBookService> _bookServiceMock;
     private readonly Mock<ClaimsPrincipal> _claimsPrincipalMock;
     private readonly CreateOrderCommand _command;
-    private readonly CreateOrderHandler _handler;
     private readonly Mock<IFusionCacheDistributedLocker> _distributedLockerMock;
+    private readonly CreateOrderHandler _handler;
     private readonly Mock<IOrderRepository> _repositoryMock;
     private readonly string _userId;
 

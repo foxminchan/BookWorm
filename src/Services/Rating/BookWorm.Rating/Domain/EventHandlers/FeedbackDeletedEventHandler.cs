@@ -3,7 +3,7 @@ using Mediator;
 
 namespace BookWorm.Rating.Domain.EventHandlers;
 
-public sealed class FeedbackDeletedEventHandler(
+internal sealed class FeedbackDeletedEventHandler(
     IEventDispatcher eventDispatcher,
     RatingDbContext dbContext
 ) : INotificationHandler<FeedbackDeletedEvent>

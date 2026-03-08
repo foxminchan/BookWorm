@@ -6,7 +6,7 @@ namespace BookWorm.Basket.Features.Update;
 
 public sealed record UpdateBasketCommand(List<BasketItemRequest> Items) : ICommand;
 
-public sealed class UpdateBasketHandler(
+internal sealed class UpdateBasketHandler(
     IBasketRepository basketRepository,
     ClaimsPrincipal claimsPrincipal
 ) : ICommandHandler<UpdateBasketCommand>

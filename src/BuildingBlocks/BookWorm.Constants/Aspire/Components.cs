@@ -39,7 +39,10 @@ public static class Components
         {
             public const string Resource = "storage";
 
-            public static string BlobContainer(string containerName) => $"{containerName}-blob";
+            public static string BlobContainer(string containerName)
+            {
+                return $"{containerName}-blob";
+            }
         }
     }
 }

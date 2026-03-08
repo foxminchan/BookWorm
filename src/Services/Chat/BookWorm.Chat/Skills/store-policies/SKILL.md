@@ -12,7 +12,7 @@ license: MIT
 ## Shipping & Delivery
 
 | Method        | Estimated Time      | Cost              |
-| ------------- | ------------------- | ----------------- |
+|---------------|---------------------|-------------------|
 | Standard      | 5–7 business days   | Free over $35     |
 | Express       | 2–3 business days   | $7.99             |
 | Overnight     | Next business day   | $19.99            |

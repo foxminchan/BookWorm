@@ -5,7 +5,7 @@ using Microsoft.OpenApi;
 namespace BookWorm.Chat.Configurations;
 
 [ExcludeFromCodeCoverage]
-public sealed class ChatAppSettings : AppSettings
+internal sealed class ChatAppSettings : AppSettings
 {
     public override OpenApiInfo? OpenApi { get; set; } =
         new()

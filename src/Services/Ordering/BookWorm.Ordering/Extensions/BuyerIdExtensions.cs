@@ -2,7 +2,7 @@
 
 namespace BookWorm.Ordering.Extensions;
 
-public static class BuyerIdExtensions
+internal static class BuyerIdExtensions
 {
     public static Guid ToBuyerId(this string? userId)
     {

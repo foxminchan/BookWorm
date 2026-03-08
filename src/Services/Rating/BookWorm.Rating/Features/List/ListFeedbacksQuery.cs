@@ -21,7 +21,7 @@ public sealed record ListFeedbacksQuery(
         bool IsDescending = false
 ) : IQuery<PagedResult<FeedbackDto>>;
 
-public sealed class ListFeedbacksHandler(IFeedbackRepository repository)
+internal sealed class ListFeedbacksHandler(IFeedbackRepository repository)
     : IQueryHandler<ListFeedbacksQuery, PagedResult<FeedbackDto>>
 {
     public async ValueTask<PagedResult<FeedbackDto>> Handle(

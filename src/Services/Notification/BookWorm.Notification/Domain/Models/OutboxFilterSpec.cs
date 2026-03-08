@@ -3,7 +3,7 @@ using BookWorm.Chassis.Specification.Builders;
 
 namespace BookWorm.Notification.Domain.Models;
 
-public sealed class OutboxFilterSpec : Specification<Outbox>
+internal sealed class OutboxFilterSpec : Specification<Outbox>
 {
     public OutboxFilterSpec()
     {

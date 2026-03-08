@@ -2,7 +2,7 @@
 
 namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
 
-public sealed class CleanUpSentEmailIntegrationEventHandler(
+internal sealed class CleanUpSentEmailIntegrationEventHandler(
     ILogger<CleanUpSentEmailIntegrationEventHandler> logger,
     GlobalLogBuffer logBuffer,
     IOutboxRepository repository
@@ -41,7 +41,7 @@ public sealed class CleanUpSentEmailIntegrationEventHandler(
 }
 
 [ExcludeFromCodeCoverage]
-public sealed class CleanUpSentEmailIntegrationEventHandlerDefinition
+internal sealed class CleanUpSentEmailIntegrationEventHandlerDefinition
     : ConsumerDefinition<CleanUpSentEmailIntegrationEventHandler>
 {
     public CleanUpSentEmailIntegrationEventHandlerDefinition()

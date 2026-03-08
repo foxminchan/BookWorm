@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.AppHost.Extensions.Security;
 
-public static class KeycloakExtensions
+internal static class KeycloakExtensions
 {
     private const string ThemeName = "THEME_NAME";
     private const string RealmName = "REALM_NAME";
@@ -35,9 +35,9 @@ public static class KeycloakExtensions
                     keycloakContainer,
                     builder,
                     clientId,
-                    clientType: "APP",
-                    clientSecret: null,
-                    includeContainerHostUrl: false
+                    "APP",
+                    null,
+                    false
                 );
 
                 builder
@@ -90,9 +90,9 @@ public static class KeycloakExtensions
                     keycloakContainer,
                     builder,
                     clientId,
-                    clientType: "API",
+                    "API",
                     clientSecret,
-                    includeContainerHostUrl: true
+                    true
                 );
 
                 builder

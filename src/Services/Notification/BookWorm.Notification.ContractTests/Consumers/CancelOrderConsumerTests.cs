@@ -17,12 +17,12 @@ public sealed class CancelOrderConsumerTests
     private const string Email = "test@example.com";
     private const string FullName = "Test User";
     private const decimal TotalMoney = 99.99m;
-    private Guid _orderId;
     private ITestHarness _harness = null!;
+    private MailKitSettings _mailKitSettings = null!;
+    private Guid _orderId;
     private ServiceProvider _provider = null!;
     private Mock<IRenderer> _rendererMock = null!;
     private Mock<ISender> _senderMock = null!;
-    private MailKitSettings _mailKitSettings = null!;
 
     [Before(Test)]
     public async Task SetUpAsync()

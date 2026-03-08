@@ -4,7 +4,7 @@ using Microsoft.OpenApi;
 namespace BookWorm.Catalog.Configurations;
 
 [ExcludeFromCodeCoverage]
-public sealed class CatalogAppSettings : AppSettings
+internal sealed class CatalogAppSettings : AppSettings
 {
     public override OpenApiInfo? OpenApi { get; set; } =
         new()

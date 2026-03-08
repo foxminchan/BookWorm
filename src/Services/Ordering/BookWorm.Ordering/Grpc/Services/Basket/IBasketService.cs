@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Ordering.Grpc.Services.Basket;
 
-public interface IBasketService
+internal interface IBasketService
 {
     Task<GetBasketResponse> GetBasket(CancellationToken cancellationToken = default);
 }

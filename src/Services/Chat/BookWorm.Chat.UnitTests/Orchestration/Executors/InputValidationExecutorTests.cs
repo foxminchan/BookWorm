@@ -6,8 +6,8 @@ namespace BookWorm.Chat.UnitTests.Orchestration.Executors;
 
 public sealed class InputValidationExecutorTests
 {
-    private readonly InputValidationExecutor _sut = new();
     private readonly IWorkflowContext _context = Mock.Of<IWorkflowContext>();
+    private readonly InputValidationExecutor _sut = new();
 
     [Test]
     public void GivenNullMessage_WhenHandling_ThenShouldThrowArgumentNullException()

@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.AppHost.Extensions.Infrastructure;
 
-public static partial class AzureExtensions
+internal static partial class AzureExtensions
 {
     /// <summary>
     ///     Configures the Azure Storage resource to run as a container in the execution context.

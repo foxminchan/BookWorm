@@ -5,7 +5,7 @@ using Microsoft.OpenApi;
 namespace BookWorm.McpTools.Configurations;
 
 [ExcludeFromCodeCoverage]
-public sealed class McpToolsAppSettings : AppSettings
+internal sealed class McpToolsAppSettings : AppSettings
 {
     public override OpenApiInfo? OpenApi { get; set; } =
         new()

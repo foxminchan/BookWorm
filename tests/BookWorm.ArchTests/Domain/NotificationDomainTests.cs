@@ -24,15 +24,17 @@ public sealed class NotificationDomainTests : ArchUnitBaseTest
     }
 
     [Test]
-    public void GivenNotificationDomain_WhenCheckingClasses_ThenShouldBePublic()
+    public void GivenNotificationDomain_WhenCheckingClasses_ThenShouldBePublicOrInternal()
     {
         Classes()
             .That()
             .ResideInNamespaceMatching(DomainNamespace)
             .Should()
             .BePublic()
+            .OrShould()
+            .BeInternal()
             .Because(
-                "Classes in the domain layer should be public to allow access from other layers, such as application and infrastructure."
+                "Classes in the domain layer should be public or internal to control access from other layers."
             )
             .Check(Architecture);
     }
@@ -46,14 +48,10 @@ public sealed class NotificationDomainTests : ArchUnitBaseTest
             .And()
             .HaveNameEndingWith(nameof(Exception))
             .Should()
-            .BePublic()
-            .AndShould()
             .BeSealed()
             .AndShould()
             .BeAssignableTo(typeof(Exception))
-            .Because(
-                "Domain exceptions should be public, sealed, and derive from System.Exception."
-            )
+            .Because("Domain exceptions should be sealed and derive from System.Exception.")
             .Check(Architecture);
     }
 }

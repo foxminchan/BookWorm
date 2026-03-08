@@ -8,7 +8,7 @@ using ModelContextProtocol.Protocol;
 
 namespace BookWorm.McpTools.OpenApi;
 
-public sealed class McpDocumentTransformer(IHttpContextAccessor accessor)
+internal sealed class McpDocumentTransformer(IHttpContextAccessor accessor)
     : IOpenApiDocumentTransformer
 {
     public async Task TransformAsync(

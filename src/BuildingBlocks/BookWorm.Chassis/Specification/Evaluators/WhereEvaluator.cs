@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Chassis.Specification.Evaluators;
 
-public sealed class WhereEvaluator : IEvaluator
+internal sealed class WhereEvaluator : IEvaluator
 {
     private WhereEvaluator() { }
 

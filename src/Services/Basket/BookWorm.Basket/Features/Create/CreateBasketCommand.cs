@@ -5,7 +5,7 @@ namespace BookWorm.Basket.Features.Create;
 
 public sealed record CreateBasketCommand(List<BasketItemRequest> Items) : ICommand<string>;
 
-public sealed class CreateBasketHandler(
+internal sealed class CreateBasketHandler(
     IBasketRepository basketRepository,
     ClaimsPrincipal claimsPrincipal
 ) : ICommandHandler<CreateBasketCommand, string>

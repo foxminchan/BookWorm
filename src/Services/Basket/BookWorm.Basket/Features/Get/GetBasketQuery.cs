@@ -6,8 +6,10 @@ namespace BookWorm.Basket.Features.Get;
 
 public sealed record GetBasketQuery : IQuery<CustomerBasketDto>;
 
-public sealed class GetBasketHandler(IBasketRepository repository, ClaimsPrincipal claimsPrincipal)
-    : IQueryHandler<GetBasketQuery, CustomerBasketDto>
+internal sealed class GetBasketHandler(
+    IBasketRepository repository,
+    ClaimsPrincipal claimsPrincipal
+) : IQueryHandler<GetBasketQuery, CustomerBasketDto>
 {
     public async ValueTask<CustomerBasketDto> Handle(
         GetBasketQuery request,

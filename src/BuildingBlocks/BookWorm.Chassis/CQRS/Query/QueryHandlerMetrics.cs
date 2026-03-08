@@ -5,7 +5,7 @@ using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 
 namespace BookWorm.Chassis.CQRS.Query;
 
-public sealed class QueryHandlerMetrics : IDisposable
+internal sealed class QueryHandlerMetrics : IDisposable
 {
     private readonly UpDownCounter<long> _activeEventHandlingCounter;
     private readonly Histogram<double> _eventHandlingDuration;

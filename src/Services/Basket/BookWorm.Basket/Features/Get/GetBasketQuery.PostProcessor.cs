@@ -2,7 +2,7 @@
 
 namespace BookWorm.Basket.Features.Get;
 
-public sealed class GetBasketPostProcessor(IBookService bookService)
+internal sealed class GetBasketPostProcessor(IBookService bookService)
     : MessagePostProcessor<GetBasketQuery, CustomerBasketDto>
 {
     protected override async ValueTask Handle(

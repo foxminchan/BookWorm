@@ -17,11 +17,11 @@ Use this template when presenting book search results to customers.
 
 ## Multiple Books (Comparison)
 
-| #   | Title   | Author   | Genre   | Rating   | Price    |
-| --- | ------- | -------- | ------- | -------- | -------- |
-| 1   | [Title] | [Author] | [Genre] | ⭐ [X.X] | $[XX.XX] |
-| 2   | [Title] | [Author] | [Genre] | ⭐ [X.X] | $[XX.XX] |
-| 3   | [Title] | [Author] | [Genre] | ⭐ [X.X] | $[XX.XX] |
+| # | Title   | Author   | Genre   | Rating  | Price    |
+|---|---------|----------|---------|---------|----------|
+| 1 | [Title] | [Author] | [Genre] | ⭐ [X.X] | $[XX.XX] |
+| 2 | [Title] | [Author] | [Genre] | ⭐ [X.X] | $[XX.XX] |
+| 3 | [Title] | [Author] | [Genre] | ⭐ [X.X] | $[XX.XX] |
 
 _Would you like more details on any of these?_
 

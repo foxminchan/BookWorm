@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BookWorm.Chassis.Specification.Extensions;
 
-public static class SearchExtension
+internal static class SearchExtension
 {
     private static readonly MethodInfo _likeMethodInfo = typeof(DbFunctionsExtensions).GetMethod(
         nameof(DbFunctionsExtensions.Like),

@@ -56,7 +56,7 @@ internal static class Extensions
 
             services.AddScoped<IIngestionSource<Book>, BookDataIngestor>();
 
-            services.AddScoped<ISearch, HybridSearch>();
+            services.AddHybridSearch();
         }
     }
 }

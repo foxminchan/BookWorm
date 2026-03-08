@@ -6,7 +6,7 @@ using BookWorm.Constants.Aspire;
 
 namespace BookWorm.Chassis.Security.TokenExchange;
 
-public sealed class TokenExchange(
+internal sealed class TokenExchange(
     IHttpClientFactory httpClientFactory,
     IdentityOptions identityOptions
 ) : ITokenExchange

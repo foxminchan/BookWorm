@@ -2,7 +2,7 @@
 
 namespace BookWorm.Chassis.Specification.Extensions;
 
-public sealed class ParameterReplacerVisitor(
+internal sealed class ParameterReplacerVisitor(
     ParameterExpression oldParameter,
     Expression newExpression
 ) : ExpressionVisitor

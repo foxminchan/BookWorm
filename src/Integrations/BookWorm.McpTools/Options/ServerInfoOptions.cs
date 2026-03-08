@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 
 namespace BookWorm.McpTools.Options;
 
-public sealed partial class ServerInfoOptions : IValidateOptions<ServerInfoOptions>
+internal sealed partial class ServerInfoOptions : IValidateOptions<ServerInfoOptions>
 {
     public const string ConfigurationSection = "ServerInfo";
 

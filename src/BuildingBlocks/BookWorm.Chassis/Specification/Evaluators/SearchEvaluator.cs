@@ -4,7 +4,7 @@ using BookWorm.Chassis.Specification.Extensions;
 
 namespace BookWorm.Chassis.Specification.Evaluators;
 
-public sealed class SearchEvaluator : IEvaluator
+internal sealed class SearchEvaluator : IEvaluator
 {
     private SearchEvaluator() { }
 

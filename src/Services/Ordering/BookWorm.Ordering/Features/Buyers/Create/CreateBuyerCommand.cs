@@ -8,7 +8,7 @@ namespace BookWorm.Ordering.Features.Buyers.Create;
 public sealed record CreateBuyerCommand([PIIData] string Street, string City, string Province)
     : ICommand<Guid>;
 
-public sealed class CreateBuyerHandler(
+internal sealed class CreateBuyerHandler(
     IBuyerRepository buyerRepository,
     ClaimsPrincipal claimsPrincipal
 ) : ICommandHandler<CreateBuyerCommand, Guid>

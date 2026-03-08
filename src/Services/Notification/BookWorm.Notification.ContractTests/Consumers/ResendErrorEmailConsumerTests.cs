@@ -16,9 +16,9 @@ namespace BookWorm.Notification.ContractTests.Consumers;
 public sealed class ResendErrorEmailConsumerTests
 {
     private ITestHarness _harness = null!;
-    private ServiceProvider _provider = null!;
     private Mock<GlobalLogBuffer> _logBufferMock = null!;
     private Mock<ILogger<ResendErrorEmailIntegrationEventHandler>> _loggerMock = null!;
+    private ServiceProvider _provider = null!;
     private Mock<IOutboxRepository> _repositoryMock = null!;
     private Mock<ISender> _senderMock = null!;
     private Mock<IUnitOfWork> _unitOfWorkMock = null!;

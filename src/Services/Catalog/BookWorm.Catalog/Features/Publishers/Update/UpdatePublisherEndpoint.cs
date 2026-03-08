@@ -3,7 +3,8 @@ using Mediator;
 
 namespace BookWorm.Catalog.Features.Publishers.Update;
 
-public sealed class UpdatePublisherEndpoint : IEndpoint<NoContent, UpdatePublisherCommand, ISender>
+internal sealed class UpdatePublisherEndpoint
+    : IEndpoint<NoContent, UpdatePublisherCommand, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {

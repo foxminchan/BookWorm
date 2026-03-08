@@ -1,9 +1,7 @@
 ﻿using BookWorm.Basket.Configurations;
 using BookWorm.Basket.Features.Get;
-using BookWorm.Chassis.CQRS.Command;
-using BookWorm.Chassis.CQRS.Pipelines;
-using BookWorm.Chassis.CQRS.Query;
-using BookWorm.Chassis.OpenTelemetry.ActivityScope;
+using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Utilities.Configurations;
@@ -51,9 +49,9 @@ internal static class Extensions
             .AddMediator(
                 (MediatorOptions options) => options.ServiceLifetime = ServiceLifetime.Scoped
             )
-            .AddScoped(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>))
-            .AddScoped(typeof(IPipelineBehavior<,>), typeof(ActivityBehavior<,>))
-            .AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>))
+            .ApplyLoggingBehavior()
+            .ApplyActivityBehavior()
+            .ApplyValidationBehavior()
             .AddScoped<GetBasketPostProcessor>();
 
         builder.AddRateLimiting();
@@ -68,9 +66,7 @@ internal static class Extensions
         // Configure FluentValidation
         services.AddValidatorsFromAssemblyContaining<IBasketApiMarker>(includeInternalTypes: true);
 
-        services.AddSingleton<IActivityScope, ActivityScope>();
-        services.AddSingleton<CommandHandlerMetrics>();
-        services.AddSingleton<QueryHandlerMetrics>();
+        services.AddActivityScope().AddCommandHandlerMetrics().AddQueryHandlerMetrics();
 
         // Configure endpoints
         services.AddVersioning();
@@ -90,6 +86,6 @@ internal static class Extensions
         // Configure EventBus
         builder.AddEventBus(typeof(IBasketApiMarker), cfg => cfg.AddInMemoryInboxOutbox());
 
-        services.AddScoped<KeycloakTokenIntrospectionMiddleware>();
+        services.AddKeycloakTokenIntrospection();
     }
 }

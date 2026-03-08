@@ -2,7 +2,7 @@
 
 namespace BookWorm.Chassis.Specification.Evaluators;
 
-public sealed class AsNoTrackingEvaluator : IEvaluator
+internal sealed class AsNoTrackingEvaluator : IEvaluator
 {
     private AsNoTrackingEvaluator() { }
 

@@ -2,7 +2,7 @@
 
 namespace BookWorm.Chassis.Specification.Evaluators;
 
-public sealed class AsSplitQueryEvaluator : IEvaluator
+internal sealed class AsSplitQueryEvaluator : IEvaluator
 {
     private AsSplitQueryEvaluator() { }
 

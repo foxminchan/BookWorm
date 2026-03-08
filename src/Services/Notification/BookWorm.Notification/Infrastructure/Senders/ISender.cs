@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Notification.Infrastructure.Senders;
 
-public interface ISender
+internal interface ISender
 {
     Task SendAsync(MimeMessage mailMessage, CancellationToken cancellationToken = default);
 }

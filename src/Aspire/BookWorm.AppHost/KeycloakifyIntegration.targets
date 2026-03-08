@@ -2,8 +2,8 @@
   <PropertyGroup>
     <KeycloakifyContainerPath>$(MSBuildProjectDirectory)\Container\keycloak\keycloakify</KeycloakifyContainerPath>
     <BunIgnoreScriptsFlag Condition="'$(GITHUB_ACTIONS)' == 'true'"
-      >--ignore-scripts</BunIgnoreScriptsFlag
-    >
+      >--ignore-scripts
+    </BunIgnoreScriptsFlag>
   </PropertyGroup>
   <Target
     Name="BuildKeycloakifyContainer"

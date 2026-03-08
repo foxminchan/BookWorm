@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Chassis.Security.Keycloak;
 
-public sealed class KeycloakTokenIntrospectionMiddleware(
+internal sealed class KeycloakTokenIntrospectionMiddleware(
     IHttpClientFactory httpClientFactory,
     IdentityOptions identityOptions,
     ILogger<KeycloakTokenIntrospectionMiddleware> logger

@@ -3,7 +3,7 @@ using Mediator;
 
 namespace BookWorm.Catalog.Features.Books.Get;
 
-public sealed class GetBookEndpoint : IEndpoint<Ok<BookDto>, Guid, ISender>
+internal sealed class GetBookEndpoint : IEndpoint<Ok<BookDto>, Guid, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {

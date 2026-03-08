@@ -7,7 +7,7 @@ using Microsoft.Extensions.Primitives;
 
 namespace BookWorm.Chassis.Endpoints;
 
-public sealed class PaginationHeaderFilter : IEndpointFilter
+internal sealed class PaginationHeaderFilter : IEndpointFilter
 {
     public async ValueTask<object?> InvokeAsync(
         EndpointFilterInvocationContext context,
@@ -59,23 +59,21 @@ public sealed class PaginationHeaderFilter : IEndpointFilter
         var type = pagedResult.GetType();
 
         return new(
-            PageIndex: Convert.ToInt32(
+            Convert.ToInt32(
                 type.GetProperty(nameof(PagedResult<>.PageIndex))?.GetValue(pagedResult)
             ),
-            PageSize: Convert.ToInt32(
+            Convert.ToInt32(
                 type.GetProperty(nameof(PagedResult<>.PageSize))?.GetValue(pagedResult)
             ),
-            TotalItems: Convert.ToInt32(
+            Convert.ToInt32(
                 type.GetProperty(nameof(PagedResult<>.TotalItems))?.GetValue(pagedResult)
             ),
-            TotalPages: Convert.ToInt32(
+            Convert.ToInt32(
                 type.GetProperty(nameof(PagedResult<>.TotalPages))?.GetValue(pagedResult)
             ),
-            HasPreviousPage: (bool?)
-                type.GetProperty(nameof(PagedResult<>.HasPreviousPage))?.GetValue(pagedResult)
+            (bool?)type.GetProperty(nameof(PagedResult<>.HasPreviousPage))?.GetValue(pagedResult)
                 ?? false,
-            HasNextPage: (bool?)
-                type.GetProperty(nameof(PagedResult<>.HasNextPage))?.GetValue(pagedResult)
+            (bool?)type.GetProperty(nameof(PagedResult<>.HasNextPage))?.GetValue(pagedResult)
                 ?? false
         );
     }

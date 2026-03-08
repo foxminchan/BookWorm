@@ -3,7 +3,7 @@ using Microsoft.Extensions.VectorData;
 
 namespace BookWorm.Chassis.AI.Search;
 
-public sealed class HybridSearch(
+internal sealed class HybridSearch(
     IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
     VectorStoreCollection<Guid, TextSnippet> collection
 ) : ISearch

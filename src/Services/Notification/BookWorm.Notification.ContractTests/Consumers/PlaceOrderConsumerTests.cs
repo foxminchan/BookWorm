@@ -1,7 +1,6 @@
 ﻿using BookWorm.Common;
 using BookWorm.Contracts;
 using BookWorm.Notification.Domain.Models;
-using BookWorm.Notification.Infrastructure.Migrations;
 using BookWorm.Notification.Infrastructure.Render;
 using BookWorm.Notification.Infrastructure.Senders;
 using BookWorm.Notification.Infrastructure.Senders.MailKit;
@@ -16,8 +15,8 @@ namespace BookWorm.Notification.ContractTests.Consumers;
 public sealed class PlaceOrderConsumerTests
 {
     private ITestHarness _harness = null!;
-    private ServiceProvider _provider = null!;
     private MailKitSettings _mailKitSettings = null!;
+    private ServiceProvider _provider = null!;
     private Mock<IRenderer> _rendererMock = null!;
     private Mock<ISender> _senderMock = null!;
 

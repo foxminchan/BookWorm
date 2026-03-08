@@ -5,7 +5,7 @@ namespace BookWorm.Ordering.Features.Buyers.Delete;
 
 public sealed record DeleteBuyerCommand(Guid Id) : ICommand;
 
-public sealed class DeleteBuyerHandler(IBuyerRepository repository)
+internal sealed class DeleteBuyerHandler(IBuyerRepository repository)
     : ICommandHandler<DeleteBuyerCommand>
 {
     public async ValueTask<Unit> Handle(

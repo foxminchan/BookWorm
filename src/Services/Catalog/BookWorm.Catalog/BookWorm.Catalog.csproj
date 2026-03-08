@@ -18,8 +18,10 @@
     <PackageReference Include="Aspire.Microsoft.Azure.StackExchangeRedis" />
   </ItemGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
     <InternalsVisibleTo Include="$(AssemblyName).UnitTests" />
     <InternalsVisibleTo Include="$(AssemblyName).IntegrationTests" />
+    <InternalsVisibleTo Include="$(AssemblyName).ContractTests" />
   </ItemGroup>
   <ItemGroup>
     <Protobuf Include="Grpc\Protos\book\v1\book.proto" GrpcServices="Server" />

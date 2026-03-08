@@ -6,8 +6,8 @@ namespace BookWorm.Chat.UnitTests.Orchestration.Executors;
 
 public sealed class RejectionBridgeExecutorTests
 {
-    private readonly RejectionBridgeExecutor _sut = new();
     private readonly IWorkflowContext _context = Mock.Of<IWorkflowContext>();
+    private readonly RejectionBridgeExecutor _sut = new();
 
     [Test]
     public void GivenNullMessage_WhenHandling_ThenShouldThrowArgumentNullException()

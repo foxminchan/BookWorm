@@ -3,7 +3,7 @@ using MassTransit;
 
 namespace BookWorm.Basket.IntegrationEvents.EventHandlers;
 
-public sealed class PlaceOrderCommandHandler(IBasketRepository repository)
+internal sealed class PlaceOrderCommandHandler(IBasketRepository repository)
     : IConsumer<PlaceOrderCommand>
 {
     public async Task Consume(ConsumeContext<PlaceOrderCommand> context)
@@ -39,7 +39,7 @@ public sealed class PlaceOrderCommandHandler(IBasketRepository repository)
 }
 
 [ExcludeFromCodeCoverage]
-public sealed class PlaceOrderCommandHandlerDefinition
+internal sealed class PlaceOrderCommandHandlerDefinition
     : ConsumerDefinition<PlaceOrderCommandHandler>
 {
     public PlaceOrderCommandHandlerDefinition()

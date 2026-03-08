@@ -2,7 +2,7 @@
 
 namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
 
-public sealed class ResendErrorEmailIntegrationEventHandler(
+internal sealed class ResendErrorEmailIntegrationEventHandler(
     ILogger<ResendErrorEmailIntegrationEventHandler> logger,
     GlobalLogBuffer logBuffer,
     IOutboxRepository repository,
@@ -72,7 +72,7 @@ public sealed class ResendErrorEmailIntegrationEventHandler(
 }
 
 [ExcludeFromCodeCoverage]
-public sealed class ResendErrorEmailIntegrationEventHandlerDefinition
+internal sealed class ResendErrorEmailIntegrationEventHandlerDefinition
     : ConsumerDefinition<ResendErrorEmailIntegrationEventHandler>
 {
     public ResendErrorEmailIntegrationEventHandlerDefinition()

@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.AppHost.Extensions.Network;
 
-public static class EmailExtensions
+internal static class EmailExtensions
 {
     /// <summary>
     ///     Configures the email provider for the application based on the execution context.

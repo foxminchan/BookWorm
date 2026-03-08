@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
 
-public sealed class CompleteOrderCommandHandler(ISender sender, IRenderer renderer)
+internal sealed class CompleteOrderCommandHandler(ISender sender, IRenderer renderer)
     : IConsumer<CompleteOrderCommand>
 {
     public async Task Consume(ConsumeContext<CompleteOrderCommand> context)
@@ -32,7 +32,7 @@ public sealed class CompleteOrderCommandHandler(ISender sender, IRenderer render
 }
 
 [ExcludeFromCodeCoverage]
-public sealed class CompleteOrderCommandHandlerDefinition
+internal sealed class CompleteOrderCommandHandlerDefinition
     : ConsumerDefinition<CompleteOrderCommandHandler>
 {
     public CompleteOrderCommandHandlerDefinition()

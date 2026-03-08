@@ -13,7 +13,7 @@ using Microsoft.Extensions.AI;
 
 namespace BookWorm.Rating.Infrastructure.Agents;
 
-public static class Extensions
+internal static class Extensions
 {
     public static void AddAgents(this IHostApplicationBuilder builder)
     {

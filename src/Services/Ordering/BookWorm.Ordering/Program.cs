@@ -22,7 +22,7 @@ app.UseStatusCodePages();
 
 app.UseDefaultCors();
 
-app.UseMiddleware<KeycloakTokenIntrospectionMiddleware>();
+app.UseKeycloakTokenIntrospection();
 
 app.UseRateLimiter();
 

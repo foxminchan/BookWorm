@@ -2,7 +2,7 @@
 
 namespace BookWorm.Catalog.Features.Books.Create;
 
-public sealed class CreateBookPreProcessor(IBlobService blobService)
+internal sealed class CreateBookPreProcessor(IBlobService blobService)
     : MessagePreProcessor<CreateBookCommand, Guid>
 {
     protected override async ValueTask Handle(

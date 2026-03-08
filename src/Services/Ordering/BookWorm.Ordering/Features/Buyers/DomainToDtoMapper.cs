@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Ordering.Features.Buyers;
 
-public static class DomainToDtoMapper
+internal static class DomainToDtoMapper
 {
     public static BuyerDto ToBuyerDto(this Buyer buyer)
     {

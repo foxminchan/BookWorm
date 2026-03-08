@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.AppHost.Extensions.Security;
 
-public static class SecretExtensions
+internal static class SecretExtensions
 {
     /// <summary>
     ///     Configures the resource builder to create a generated secret parameter and expose it as an environment variable.

@@ -3,7 +3,7 @@ using Mediator;
 
 namespace BookWorm.Catalog.Features.Publishers.Delete;
 
-public sealed class DeletePublisherEndpoint : IEndpoint<NoContent, Guid, ISender>
+internal sealed class DeletePublisherEndpoint : IEndpoint<NoContent, Guid, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {

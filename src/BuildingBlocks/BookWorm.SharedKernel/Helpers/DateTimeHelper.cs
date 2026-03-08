@@ -9,7 +9,7 @@ public static class DateTimeHelper
     [DebuggerStepThrough]
     public static DateTime UtcNow()
     {
-        return ToDateTime(DateTimeOffset.Now.UtcDateTime, DateTimeKind.Utc);
+        return DateTimeOffset.Now.UtcDateTime.ToDateTime(DateTimeKind.Utc);
     }
 
     private static DateTime ToDateTime(this DateTime dateTime, DateTimeKind kind)

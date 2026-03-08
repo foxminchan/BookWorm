@@ -20,7 +20,8 @@ A: Yes, to over 50 countries. Import duties and taxes are the customer's respons
 A: Physical books in resalable condition (no markings, intact spine) qualify for return within 30 days.
 
 **Q: What if I received the wrong book?**
-A: Contact support within 7 days with your order number and a photo. We'll send the correct item and cover return shipping.
+A: Contact support within 7 days with your order number and a photo. We'll send the correct item and cover return
+shipping.
 
 **Q: How do exchanges work?**
 A: Initiate a return and place a new order. We do not do direct exchanges.

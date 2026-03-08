@@ -4,7 +4,7 @@ namespace BookWorm.Notification.Domain.Attributes;
 
 [ExcludeFromCodeCoverage]
 [AttributeUsage(AttributeTargets.Property)]
-public sealed class FormatAttribute(
+internal sealed class FormatAttribute(
     [StringSyntax(StringSyntaxAttribute.CompositeFormat)] string format,
     string? cultureName = null
 ) : Attribute

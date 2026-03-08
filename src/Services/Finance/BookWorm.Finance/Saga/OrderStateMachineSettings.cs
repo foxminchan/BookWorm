@@ -5,7 +5,8 @@ namespace BookWorm.Finance.Saga;
 
 [OptionsValidator]
 [ExcludeFromCodeCoverage]
-public sealed partial class OrderStateMachineSettings : IValidateOptions<OrderStateMachineSettings>
+internal sealed partial class OrderStateMachineSettings
+    : IValidateOptions<OrderStateMachineSettings>
 {
     internal const string ConfigurationSection = "OrderStateMachine";
 

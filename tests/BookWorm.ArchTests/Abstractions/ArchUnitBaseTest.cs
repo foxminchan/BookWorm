@@ -110,8 +110,9 @@ public abstract class ArchUnitBaseTest : BaseTest
         .DoNotResideInNamespaceMatching("Microsoft.CodeCoverage.*")
         .As(nameof(SharedKernel));
 
-    protected static IObjectProvider<IType> GetServiceTypes(string serviceName) =>
-        serviceName switch
+    protected static IObjectProvider<IType> GetServiceTypes(string serviceName)
+    {
+        return serviceName switch
         {
             nameof(Basket) => BasketServiceTypes,
             nameof(Catalog) => CatalogServiceTypes,
@@ -126,4 +127,5 @@ public abstract class ArchUnitBaseTest : BaseTest
             nameof(SharedKernel) => SharedKernelServiceTypes,
             _ => throw new ArgumentException($"Unknown service: {serviceName}"),
         };
+    }
 }

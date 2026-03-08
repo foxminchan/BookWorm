@@ -3,7 +3,7 @@ using Mediator;
 
 namespace BookWorm.Catalog.Features.Books.Delete;
 
-public sealed class DeleteBookEndpoint : IEndpoint<NoContent, Guid, ISender>
+internal sealed class DeleteBookEndpoint : IEndpoint<NoContent, Guid, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {

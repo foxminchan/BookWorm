@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Chassis.AI.Agents;
 
-public sealed class A2AAgentClient(Uri baseUri, string? path)
+internal sealed class A2AAgentClient(Uri baseUri, string? path)
 {
     public async Task<AIAgent> GetAIAgent(
         IServiceProvider serviceProvider,

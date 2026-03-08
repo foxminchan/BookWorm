@@ -85,6 +85,6 @@ internal static class Extensions
         // Compose the multi-agent workflow
         builder.AddChatWorkflow();
 
-        services.AddScoped<KeycloakTokenIntrospectionMiddleware>();
+        services.AddKeycloakTokenIntrospection();
     }
 }

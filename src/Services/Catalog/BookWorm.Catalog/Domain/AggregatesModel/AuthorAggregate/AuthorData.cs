@@ -1,7 +1,7 @@
 ﻿namespace BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
 
 [ExcludeFromCodeCoverage]
-public sealed class AuthorData : List<Author>
+internal sealed class AuthorData : List<Author>
 {
     public AuthorData()
     {

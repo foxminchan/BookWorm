@@ -3,7 +3,7 @@ using BookWorm.Finance.Saga.Activities;
 
 namespace BookWorm.Finance.Saga;
 
-public sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
+internal sealed class OrderStateMachine : MassTransitStateMachine<OrderState>
 {
     public OrderStateMachine(OrderStateMachineSettings settings)
     {

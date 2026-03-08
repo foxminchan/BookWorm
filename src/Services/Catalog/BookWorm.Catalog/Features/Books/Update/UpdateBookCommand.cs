@@ -20,7 +20,7 @@ public sealed class UpdateBookCommand : ICommand
     public string? ImageUrn { get; set; }
 }
 
-public sealed class UpdateBookHandler(IBookRepository repository)
+internal sealed class UpdateBookHandler(IBookRepository repository)
     : ICommandHandler<UpdateBookCommand>
 {
     public async ValueTask<Unit> Handle(

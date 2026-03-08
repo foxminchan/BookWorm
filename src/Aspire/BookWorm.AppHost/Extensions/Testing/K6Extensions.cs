@@ -2,7 +2,7 @@
 
 namespace BookWorm.AppHost.Extensions.Testing;
 
-public static class K6Extensions
+internal static class K6Extensions
 {
     private const string BaseContainerPath = "Container/k6";
     private const string K6WebDashboard = "K6_WEB_DASHBOARD";

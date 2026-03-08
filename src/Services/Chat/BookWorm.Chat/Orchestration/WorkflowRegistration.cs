@@ -85,26 +85,26 @@ internal static class WorkflowRegistration
                         .AddEdge<ChatMessage>(
                             inputValidator,
                             handoffWorkflowExecutor,
-                            condition: InputValidationCondition.IsAccepted
+                            InputValidationCondition.IsAccepted
                         )
                         // Layer 1→4: Short-circuit rejected input (prompt-injection, empty)
                         .AddEdge<ChatMessage>(
                             inputValidator,
                             rejectionBridge,
-                            condition: InputValidationCondition.IsRejected
+                            InputValidationCondition.IsRejected
                         )
                         .AddEdge(rejectionBridge, responseFormatter)
                         // Layer 2→3: Route to QAAgent if output contains policy/service-related content
                         .AddEdge<List<ChatMessage>>(
                             handoffWorkflowExecutor,
                             qaAgent,
-                            condition: PolicyKeywordCondition.Evaluate
+                            PolicyKeywordCondition.Evaluate
                         )
                         // Layer 2→3: Route to SentimentAgent if negative sentiment is detected
                         .AddEdge<List<ChatMessage>>(
                             handoffWorkflowExecutor,
                             sentimentAgent,
-                            condition: NegativeSentimentCondition.Evaluate
+                            NegativeSentimentCondition.Evaluate
                         )
                         // Layer 3→4: Connect all paths to response formatter
                         .AddEdge(handoffWorkflowExecutor, responseFormatter)

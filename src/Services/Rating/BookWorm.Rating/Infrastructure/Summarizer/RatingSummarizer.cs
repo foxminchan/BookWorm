@@ -5,7 +5,7 @@ using ModelContextProtocol.Client;
 
 namespace BookWorm.Rating.Infrastructure.Summarizer;
 
-public sealed class RatingSummarizer(
+internal sealed class RatingSummarizer(
     [FromKeyedServices(Workflows.RatingSummarizer)] AIAgent ratingSummarizerAgent,
     McpClient mcpClient
 ) : ISummarizer

@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Rating.Features;
 
-public static class DomainToDtoMapper
+internal static class DomainToDtoMapper
 {
     private static FeedbackDto ToFeedbackDto(this Feedback feedback)
     {

@@ -2,7 +2,7 @@
 
 namespace BookWorm.Catalog.Features.Publishers.Create;
 
-public sealed class CreatePublisherValidator : AbstractValidator<CreatePublisherCommand>
+internal sealed class CreatePublisherValidator : AbstractValidator<CreatePublisherCommand>
 {
     public CreatePublisherValidator()
     {

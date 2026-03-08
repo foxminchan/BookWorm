@@ -17,7 +17,7 @@ public sealed class CreateBookCommand : ICommand<Guid>
     public string? ImageName { get; set; }
 }
 
-public sealed class CreateBookHandler(IBookRepository repository)
+internal sealed class CreateBookHandler(IBookRepository repository)
     : ICommandHandler<CreateBookCommand, Guid>
 {
     public async ValueTask<Guid> Handle(

@@ -6,7 +6,7 @@ using BookWorm.Finance.Saga.Observers;
 namespace BookWorm.Finance.Saga;
 
 [ExcludeFromCodeCoverage]
-public static class SagaExtensions
+internal static class SagaExtensions
 {
     public static void AddSagaStateMachineServices(this IHostApplicationBuilder builder)
     {
