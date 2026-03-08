@@ -19,9 +19,6 @@
     <Project Path="src/BuildingBlocks/BookWorm.Constants/BookWorm.Constants.csproj" />
     <Project Path="src/BuildingBlocks/BookWorm.SharedKernel/BookWorm.SharedKernel.csproj" />
   </Folder>
-  <Folder Name="/src/Integrations/">
-    <Project Path="src/Integrations/BookWorm.McpTools/BookWorm.McpTools.csproj" />
-  </Folder>
   <Folder Name="/src/Services/" />
   <Folder Name="/src/Services/Basket/">
     <Project Path="src/Services/Basket/BookWorm.Basket.ContractTests/BookWorm.Basket.ContractTests.csproj" />
@@ -41,6 +38,10 @@
     <Project Path="src/Services/Finance/BookWorm.Finance.ContractTests/BookWorm.Finance.ContractTests.csproj" />
     <Project Path="src/Services/Finance/BookWorm.Finance.UnitTests/BookWorm.Finance.UnitTests.csproj" />
     <Project Path="src/Services/Finance/BookWorm.Finance/BookWorm.Finance.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/McpTools/">
+    <Project Path="src/Services/McpTools/BookWorm.McpTools.UnitTests/BookWorm.McpTools.UnitTests.csproj" />
+    <Project Path="src/Services/McpTools/BookWorm.McpTools/BookWorm.McpTools.csproj" />
   </Folder>
   <Folder Name="/src/Services/Notification/">
     <Project Path="src/Services/Notification/BookWorm.Notification.ContractTests/BookWorm.Notification.ContractTests.csproj" />

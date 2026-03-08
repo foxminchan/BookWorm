@@ -36,7 +36,7 @@ If there is already an instance of the application running it will prompt to sto
 - `src/BuildingBlocks/`: Shared libraries (Chassis, Constants, SharedKernel)
 - `src/Clients/`: Frontend applications (Next.js 16 monorepo)
 - `src/Services/`: Individual microservices
-- `src/Integrations/`: Integration components (HealthChecks, MCP Tools)
+- `src/Integrations/`: Integration components (HealthChecksUI, Presidio, ...)
 - `tests/`: Test projects including architecture tests
 - `docs/`: Documentation including EventCatalog and Docusaurus
 
