@@ -1,69 +1,58 @@
-﻿using System.Text.RegularExpressions;
+﻿using BookWorm.Chassis.AI.Presidio;
 using Microsoft.Extensions.AI;
 
 namespace BookWorm.Chassis.AI.Middlewares;
 
-public static partial class PIIMiddleware
+public static class PIIMiddleware
 {
-    public static async Task<ChatResponse> InvokeAsync(
+    /// <summary>
+    ///     Creates a PII filtering delegate that uses the given <see cref="IPresidioService" />
+    ///     to anonymize messages before they reach the inner chat client.
+    /// </summary>
+    /// <param name="presidioService">The Presidio service for PII anonymization.</param>
+    /// <returns>A delegate compatible with <c>ChatClientBuilder.Use()</c>.</returns>
+    public static Func<
+        IEnumerable<ChatMessage>,
+        ChatOptions?,
+        IChatClient,
+        CancellationToken,
+        Task<ChatResponse>
+    > Create(IPresidioService presidioService)
+    {
+        return async (messages, options, innerChatClient, cancellationToken) =>
+        {
+            var filteredMessages = await FilterMessagesAsync(
+                presidioService,
+                messages,
+                cancellationToken
+            );
+
+            return await innerChatClient.GetResponseAsync(
+                filteredMessages,
+                options,
+                cancellationToken
+            );
+        };
+    }
+
+    private static async Task<IList<ChatMessage>> FilterMessagesAsync(
+        IPresidioService presidioService,
         IEnumerable<ChatMessage> messages,
-        ChatOptions? options,
-        IChatClient innerChatClient,
         CancellationToken cancellationToken
     )
     {
-        var filteredMessages = FilterMessages(messages);
+        var result = new List<ChatMessage>();
 
-        var response = await innerChatClient.GetResponseAsync(
-            filteredMessages,
-            options,
-            cancellationToken
-        );
-
-        return response;
-
-        static IList<ChatMessage> FilterMessages(IEnumerable<ChatMessage> messages) =>
-            [.. messages.Select(m => new ChatMessage(m.Role, FilterPii(m.Text)))];
-
-        static string FilterPii(string content)
+        foreach (var message in messages)
         {
-            Regex[] piiPatterns =
-            [
-                PhoneNumberRegex(),
-                EmailRegex(),
-                CreditCardRegex(),
-                SsnRegex(),
-                IpAddressRegex(),
-            ];
-
-            return piiPatterns.Aggregate(
-                content,
-                (current, pattern) => pattern.Replace(current, "[REDACTED: PII]")
+            var anonymizedText = await presidioService.AnonymizeAsync(
+                message.Text,
+                cancellationToken
             );
+
+            result.Add(new(message.Role, anonymizedText));
         }
+
+        return result;
     }
-
-    [GeneratedRegex(
-        @"\b(?:\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})\b",
-        RegexOptions.Compiled
-    )]
-    private static partial Regex PhoneNumberRegex();
-
-    [GeneratedRegex(@"\b[\w\.-]+@[\w\.-]+\.\w{2,}\b", RegexOptions.Compiled)]
-    private static partial Regex EmailRegex();
-
-    [GeneratedRegex(
-        @"\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|6(?:011|5[0-9]{2})[0-9]{12})\b",
-        RegexOptions.Compiled
-    )]
-    private static partial Regex CreditCardRegex();
-
-    [GeneratedRegex(@"\b\d{3}[-\s]?\d{2}[-\s]?\d{4}\b", RegexOptions.Compiled)]
-    private static partial Regex SsnRegex();
-
-    [GeneratedRegex(
-        @"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b|(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b",
-        RegexOptions.Compiled
-    )]
-    private static partial Regex IpAddressRegex();
 }
