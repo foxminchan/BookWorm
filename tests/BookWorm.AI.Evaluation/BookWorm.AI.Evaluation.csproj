@@ -5,6 +5,10 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
     <IsTestProject>false</IsTestProject>
+    <IsTestingPlatformApplication>false</IsTestingPlatformApplication>
+    <TestingPlatformDotnetTestSupport>false</TestingPlatformDotnetTestSupport>
+    <OutputType>Library</OutputType>
+    <GenerateProgramFile>false</GenerateProgramFile>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="TUnit" />
