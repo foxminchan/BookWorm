@@ -8,6 +8,10 @@ on:
     paths:
       - "docs/docusaurus/**"
       - ".github/workflows/docs.yaml"
+  workflow_run:
+    workflows: ["BookWorm CI (Frontend)"]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -20,6 +24,9 @@ env:
 jobs:
   build:
     name: Build Documentation
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -46,6 +53,30 @@ jobs:
       - name: Build documentation
         run: bun run build
         working-directory: docs/docusaurus
+
+      - name: Download Allure Report (Backoffice)
+        uses: dawidd6/action-download-artifact@v16
+        with:
+          name: allure-report-backoffice
+          path: docs/docusaurus/build/reports/backoffice
+          workflow: frontend-ci.yml
+          workflow_search: true
+          branch: main
+          event: push
+          search_artifacts: true
+          if_no_artifact_found: warn
+
+      - name: Download Allure Report (Storefront)
+        uses: dawidd6/action-download-artifact@v16
+        with:
+          name: allure-report-storefront
+          path: docs/docusaurus/build/reports/storefront
+          workflow: frontend-ci.yml
+          workflow_search: true
+          branch: main
+          event: push
+          search_artifacts: true
+          if_no_artifact_found: warn
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4

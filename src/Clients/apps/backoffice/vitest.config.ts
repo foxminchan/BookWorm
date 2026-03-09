@@ -22,7 +22,22 @@ export default defineConfig({
     environment: "happy-dom",
     reporters: [
       "default",
-      ["allure-vitest/reporter", { resultsDir: "./allure-results" }],
+      [
+        "allure-vitest/reporter",
+        {
+          resultsDir: "./allure-results",
+          links: {
+            issue: {
+              nameTemplate: "Issue #%s",
+              urlTemplate: "https://github.com/foxminchan/BookWorm/issues/%s",
+            },
+            tms: {
+              nameTemplate: "TMS #%s",
+              urlTemplate: "https://github.com/foxminchan/BookWorm/issues/%s",
+            },
+          },
+        },
+      ],
     ],
     execArgv: [
       "--localstorage-file",

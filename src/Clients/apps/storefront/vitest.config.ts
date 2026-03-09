@@ -21,7 +21,22 @@ export default defineConfig({
     environment: "happy-dom",
     reporters: [
       "default",
-      ["allure-vitest/reporter", { resultsDir: "./allure-results" }],
+      [
+        "allure-vitest/reporter",
+        {
+          resultsDir: "./allure-results",
+          links: {
+            issue: {
+              nameTemplate: "Issue #%s",
+              urlTemplate: "https://github.com/foxminchan/BookWorm/issues/%s",
+            },
+            tms: {
+              nameTemplate: "TMS #%s",
+              urlTemplate: "https://github.com/foxminchan/BookWorm/issues/%s",
+            },
+          },
+        },
+      ],
     ],
     setupFiles: ["allure-vitest/setup", "./__tests__/setup.ts"],
     include: ["**/__tests__/**/*.test.{ts,tsx}", "**/*.test.{ts,tsx}"],
