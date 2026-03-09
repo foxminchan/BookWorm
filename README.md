@@ -53,6 +53,7 @@
   - [x] Standardized AI tooling with Model Context Protocol (MCP)
   - [x] Enabled agent-to-agent communication via A2A Protocol
   - [x] Supported Agent interactions via AG-UI Protocol
+  - [x] Evaluate generative AI models and applications
 - [x] Configured CI/CD with GitHub Actions
 - [x] Created comprehensive documentation:
   - [x] Used OpenAPI for REST API & AsyncAPI for event-driven endpoints
