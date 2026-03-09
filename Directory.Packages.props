@@ -31,7 +31,7 @@
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.JavaScript.Extensions" Version="$(ToolKitVersion)" />
     <!-- Extra -->
     <PackageVersion Include="TUnit.Aspire" Version="$(TUnitVersion)" />
-    <PackageVersion Include="Scalar.Aspire" Version="0.9.1" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.9.2" />
   </ItemGroup>
   <ItemGroup Label="Core Packages">
     <!-- Microsoft Extensions -->
@@ -39,6 +39,8 @@
     <PackageVersion Include="Microsoft.Extensions.Compliance.Redaction" Version="$(MsExtVersion)" />
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="$(MsExtVersion)" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="$(MsExtVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.AI.Evaluation.Quality" Version="$(MsExtVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.AI.Evaluation.Reporting.Azure" Version="$(MsExtVersion)" />
     <!-- ASP.NET Core -->
     <PackageVersion Include="Asp.Versioning.OpenApi" Version="10.0.0-preview.1" />
     <PackageVersion Include="Microsoft.AspNetCore.Diagnostics.Middleware" Version="$(MsExtVersion)" />
@@ -65,7 +67,7 @@
     <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.1" PrivateAssets="All" />
     <PackageVersion Include="Refit.HttpClientFactory" Version="10.0.1" />
     <PackageVersion Include="Mediator.Abstractions" Version="3.0.1" />
-    <PackageVersion Include="Marten.AspNetCore" Version="8.22.2" />
+    <PackageVersion Include="Marten.AspNetCore" Version="8.23.0" />
     <PackageVersion Include="Scrutor" Version="7.0.0" />
   </ItemGroup>
   <ItemGroup Label="Integration Packages">
