@@ -19,7 +19,7 @@ public sealed class InputValidationExecutorTests
     [Test]
     [Arguments("")]
     [Arguments("   ")]
-    public async Task GivenEmptyOrWhitespaceMessage_WhenHandling_ThenShouldReturnAssistantRejection(
+    public async Task GivenEmptyOrWhitespaceMessage_WhenHandling_ThenShouldReturnRejection(
         string content
     )
     {
@@ -30,8 +30,9 @@ public sealed class InputValidationExecutorTests
         var result = await _sut.HandleAsync(message, _context);
 
         // Assert
-        result.Role.ShouldBe(ChatRole.Assistant);
-        result.Text.ShouldContain("provide more details");
+        result.IsAccepted.ShouldBeFalse();
+        result.Message.Role.ShouldBe(ChatRole.Assistant);
+        result.Message.Text.ShouldContain("provide more details");
     }
 
     [Test]
@@ -54,12 +55,13 @@ public sealed class InputValidationExecutorTests
         var result = await _sut.HandleAsync(message, _context);
 
         // Assert
-        result.Role.ShouldBe(ChatRole.Assistant);
-        result.Text.ShouldContain("can't process that request");
+        result.IsAccepted.ShouldBeFalse();
+        result.Message.Role.ShouldBe(ChatRole.Assistant);
+        result.Message.Text.ShouldContain("can't process that request");
     }
 
     [Test]
-    public async Task GivenValidMessage_WhenHandling_ThenShouldReturnUserMessage()
+    public async Task GivenValidMessage_WhenHandling_ThenShouldReturnAcceptedResult()
     {
         // Arrange
         var message = new ChatMessage(ChatRole.User, "Can you recommend a good book?");
@@ -68,8 +70,9 @@ public sealed class InputValidationExecutorTests
         var result = await _sut.HandleAsync(message, _context);
 
         // Assert
-        result.Role.ShouldBe(ChatRole.User);
-        result.Text.ShouldBe("Can you recommend a good book?");
+        result.IsAccepted.ShouldBeTrue();
+        result.Message.Role.ShouldBe(ChatRole.User);
+        result.Message.Text.ShouldBe("Can you recommend a good book?");
     }
 
     [Test]
@@ -83,9 +86,10 @@ public sealed class InputValidationExecutorTests
         var result = await _sut.HandleAsync(message, _context);
 
         // Assert
-        result.Role.ShouldBe(ChatRole.User);
-        result.Text.ShouldContain("... [Message truncated due to length]");
-        result.Text!.Length.ShouldBeLessThan(2500);
+        result.IsAccepted.ShouldBeTrue();
+        result.Message.Role.ShouldBe(ChatRole.User);
+        result.Message.Text.ShouldContain("... [Message truncated due to length]");
+        result.Message.Text!.Length.ShouldBeLessThan(2500);
     }
 
     [Test]
@@ -99,8 +103,9 @@ public sealed class InputValidationExecutorTests
         var result = await _sut.HandleAsync(message, _context);
 
         // Assert
-        result.Role.ShouldBe(ChatRole.User);
-        result.Text.ShouldBe(content);
+        result.IsAccepted.ShouldBeTrue();
+        result.Message.Role.ShouldBe(ChatRole.User);
+        result.Message.Text.ShouldBe(content);
     }
 
     [Test]
@@ -113,7 +118,8 @@ public sealed class InputValidationExecutorTests
         var result = await _sut.HandleAsync(message, _context);
 
         // Assert
-        result.Text.ShouldBe("Hello, can you help me?");
+        result.IsAccepted.ShouldBeTrue();
+        result.Message.Text.ShouldBe("Hello, can you help me?");
     }
 
     [Test]
@@ -126,8 +132,9 @@ public sealed class InputValidationExecutorTests
         var result = await _sut.HandleAsync(message, _context);
 
         // Assert
-        result.Role.ShouldBe(ChatRole.User);
-        result.Text.ShouldBe("x");
+        result.IsAccepted.ShouldBeTrue();
+        result.Message.Role.ShouldBe(ChatRole.User);
+        result.Message.Text.ShouldBe("x");
     }
 
     [Test]
@@ -143,6 +150,6 @@ public sealed class InputValidationExecutorTests
         var result = await _sut.HandleAsync(message, _context);
 
         // Assert
-        result.Role.ShouldBe(ChatRole.User);
+        result.IsAccepted.ShouldBeTrue();
     }
 }

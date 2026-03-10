@@ -1,12 +1,9 @@
 using System.Text.RegularExpressions;
 using Microsoft.Agents.AI.Workflows;
+using Microsoft.Extensions.AI;
 
-namespace BookWorm.Chat.Orchestration.Executors;
+namespace BookWorm.Rating.Infrastructure.Agents.Executors;
 
-/// <summary>
-///     The outcome of input validation — either accepted with a sanitized message
-///     or rejected with an explanation.
-/// </summary>
 internal sealed record InputValidationResult(bool IsAccepted, ChatMessage Message);
 
 internal sealed partial class InputValidationExecutor()
@@ -58,27 +55,29 @@ internal sealed partial class InputValidationExecutor()
             );
         }
 
-        // Block prompt injection attempts instead of forwarding with a warning
+        // Prompt injection detection
         if (SuspiciousPatternRegex().IsMatch(content))
         {
             return Rejected(
-                "I'm sorry, but I can't process that request. Please rephrase your question about books or our bookstore services."
+                "I'm sorry, but I can only help with book rating inquiries. Could you please rephrase your question?"
             );
         }
 
-        // Check maximum length and truncate if needed
+        // Truncate overly long input
         if (content.Length > MaxLength)
         {
-            content = content[..TruncateLength] + "... [Message truncated due to length]";
+            content = content[..TruncateLength];
         }
 
-        return ValueTask.FromResult(new InputValidationResult(true, new(ChatRole.User, content)));
+        return ValueTask.FromResult(
+            new InputValidationResult(true, new ChatMessage(ChatRole.User, content))
+        );
     }
 
     private static ValueTask<InputValidationResult> Rejected(string reason)
     {
         return ValueTask.FromResult(
-            new InputValidationResult(false, new(ChatRole.Assistant, reason))
+            new InputValidationResult(false, new ChatMessage(ChatRole.Assistant, reason))
         );
     }
 }

@@ -31,7 +31,7 @@ public sealed class PolicyKeywordConditionTests
     [Arguments("How does shipping work?")]
     [Arguments("What are the delivery options?")]
     [Arguments("Can I update my payment method?")]
-    [Arguments("How do I access my account?")]
+    [Arguments("I have an account issue with my login")]
     [Arguments("I have a billing question")]
     [Arguments("Does this book have a warranty?")]
     [Arguments("Is there a guarantee on this?")]

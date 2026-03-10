@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.AI;
 
-namespace BookWorm.Chat.Orchestration.Conditions;
+namespace BookWorm.Rating.Infrastructure.Agents.Conditions;
 
 internal static partial class PolicyKeywordCondition
 {
