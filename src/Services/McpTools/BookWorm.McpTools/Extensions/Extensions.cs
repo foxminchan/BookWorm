@@ -5,6 +5,7 @@ using BookWorm.McpTools.Configurations;
 using BookWorm.McpTools.Options;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using Microsoft.Extensions.Options;
+using ModelContextProtocol;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 
@@ -26,7 +27,7 @@ internal static class Extensions
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails();
 
-        // Configure HTTP client
+        // Configure HTTP clients
         services.AddHttpServiceReference<ICatalogApi>(
             HttpUtilities
                 .AsUrlBuilder()
@@ -36,11 +37,46 @@ internal static class Extensions
             HealthStatus.Degraded
         );
 
+        services.AddHttpServiceReference<IRatingApi>(
+            HttpUtilities
+                .AsUrlBuilder()
+                .WithScheme(Http.Schemes.HttpOrHttps)
+                .WithHost(Constants.Aspire.Services.Rating)
+                .Build(),
+            HealthStatus.Degraded
+        );
+
         services
             .AddMcpServer()
             .WithHttpTransport(o => o.Stateless = true)
             .WithToolsFromAssembly()
-            .WithPromptsFromAssembly();
+            .WithPromptsFromAssembly()
+            .WithResourcesFromAssembly()
+            .WithSetLoggingLevelHandler(
+                async (ctx, ct) =>
+                {
+                    if (ctx.Params?.Level is null)
+                    {
+                        throw new McpProtocolException(
+                            "Missing required argument 'level'",
+                            McpErrorCode.InvalidParams
+                        );
+                    }
+
+                    await ctx.Server.SendNotificationAsync(
+                        "notifications/message",
+                        new
+                        {
+                            Level = nameof(LogLevel.Debug).ToLowerInvariant(),
+                            Logger = ServerInfoOptions.Name,
+                            Data = $"Logging level set to {ctx.Params.Level}",
+                        },
+                        cancellationToken: ct
+                    );
+
+                    return new();
+                }
+            );
 
         builder.Configure<ServerInfoOptions>(ServerInfoOptions.ConfigurationSection);
 
@@ -65,6 +101,30 @@ internal static class Extensions
                             })
                             .ToList(),
                     };
+
+                    options.ServerInstructions = """
+                    This is the BookWorm MCP server. It exposes tools and resources for
+                    interacting with the BookWorm bookstore platform.
+
+                    Available capabilities:
+                    - search_catalog: Search books by description or keyword
+                    - get_book: Retrieve full details for a specific book by ID
+                    - list_categories: List all book categories
+                    - list_authors: List all authors in the catalog
+                    - get_book_reviews: Retrieve customer reviews for a specific book
+
+                    Resources (stable URIs for ambient context):
+                    - bookworm://catalog/categories — all book categories
+                    - bookworm://catalog/authors — all authors
+                    - bookworm://catalog/books/{id} — single book details
+                    - bookworm://ratings/{bookId}/reviews — reviews for a book
+
+                    Prompts:
+                    - recommend_books: Generate a structured recommendation request
+                    - analyze_book_quality: Classify a book as Best Seller / Good / Bad / No Data
+                    """;
+
+                    options.Capabilities = new() { Logging = new() };
                 }
             );
 

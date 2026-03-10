@@ -157,6 +157,8 @@ var ratingApi = builder
     .WithContainerRegistry(registry)
     .WithFriendlyUrls("Dev UI", path: Http.Endpoints.DevUIEndpointPath);
 
+mcp.WithReference(ratingApi);
+
 builder
     .AddProject<BookWorm_Notification>(Services.Notification)
     .WithEmailProvider()
