@@ -5,6 +5,8 @@ using BookWorm.Chassis.AI.Presidio;
 using BookWorm.Chassis.Utilities;
 using BookWorm.Constants.Core;
 using BookWorm.Constants.Other;
+using BookWorm.Rating.Infrastructure.Agents.Conditions;
+using BookWorm.Rating.Infrastructure.Agents.Executors;
 using BookWorm.Rating.Tools;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
@@ -141,18 +143,68 @@ internal static class Extensions
                         "RatingSummarizerWorkflowExecutor"
                     );
 
-                    var workflow = new WorkflowBuilder(handoffWorkflowExecutor)
-                        .AddEdge(handoffWorkflowExecutor, qaAgent)
+                    // Bind lambda executors for type extraction from validation result
+                    Func<InputValidationResult, ChatMessage> extractAccepted = r => r.Message;
+                    var acceptedExtractor = extractAccepted.BindAsExecutor(
+                        "AcceptedInputExtractor"
+                    );
+                    Func<InputValidationResult, string> extractRejected = r => r.Message.Text;
+                    var rejectedExtractor = extractRejected.BindAsExecutor(
+                        "RejectedOutputExtractor"
+                    );
+
+                    // Create custom executors
+                    InputValidationExecutor inputValidator = new();
+                    ResponseFormatterExecutor responseFormatter = new();
+
+                    // Build workflow with 4-layer architecture:
+                    // 1. Input Validation — validates and preprocesses user input
+                    // 2. Agent Handoff — routes to appropriate specialized agent
+                    //    (rejected input short-circuits to output)
+                    // 3. Conditional Post-Processing — QA routing for policy-related content
+                    // 4. Response Formatting — ensures consistent, sanitized output
+                    var workflow = new WorkflowBuilder(inputValidator)
+                        // Layer 1: Switch-case on validation result
+                        .AddSwitch(
+                            inputValidator,
+                            switchBuilder =>
+                                switchBuilder
+                                    .AddCase<InputValidationResult>(
+                                        result => result is { IsAccepted: true },
+                                        acceptedExtractor
+                                    )
+                                    .WithDefault(rejectedExtractor)
+                        )
+                        // Layer 1→2: Forward accepted input to the agent handoff
+                        .AddEdge(acceptedExtractor, handoffWorkflowExecutor)
+                        // Layer 2→3/4: Switch-case on post-processing conditions
+                        .AddSwitch(
+                            handoffWorkflowExecutor,
+                            switchBuilder =>
+                                switchBuilder
+                                    .AddCase<List<ChatMessage>>(
+                                        output =>
+                                            output is not null
+                                            && PolicyKeywordCondition.Evaluate(output),
+                                        qaAgent
+                                    )
+                                    .WithDefault(responseFormatter)
+                        )
+                        // Layer 3→4: Connect QA post-processing to response formatter
+                        .AddEdge(qaAgent, responseFormatter)
+                        // Set terminal output nodes
+                        .WithOutputFrom(responseFormatter, rejectedExtractor)
                         .WithName(key)
                         .WithDescription(
-                            "Orchestrates multiple AI agents to summarize and evaluate book ratings"
+                            "Production-grade workflow with input validation, intelligent agent routing, conditional post-processing, and response formatting"
                         )
                         .Build();
 
                     return workflow;
                 }
             )
-            .AddAsAIAgent();
+            .AddAsAIAgent()
+            .WithInMemorySessionStore();
     }
 
     public static void MapAgentsDiscovery(this WebApplication app)

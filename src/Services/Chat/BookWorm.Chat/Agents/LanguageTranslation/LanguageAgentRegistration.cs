@@ -1,4 +1,5 @@
 using BookWorm.Chassis.AI.Middlewares;
+using BookWorm.Chassis.AI.Presidio;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
 
@@ -12,8 +13,10 @@ internal static class LanguageAgentRegistration
             LanguageAgentDefinition.Name,
             (sp, key) =>
             {
+                var presidioService = sp.GetRequiredService<IPresidioService>();
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
+                    .Use(PIIMiddleware.Create(presidioService), null)
                     .Use(GuardrailMiddleware.InvokeAsync, null)
                     .Build(sp);
 

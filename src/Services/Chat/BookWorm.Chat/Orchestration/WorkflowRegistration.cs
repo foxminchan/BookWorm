@@ -69,49 +69,64 @@ internal static class WorkflowRegistration
                         "AgentHandoffWorkflowExecutor"
                     );
 
-                    // Create custom executors for input validation and response formatting
+                    // Bind lambda executors for type extraction from validation result
+                    Func<InputValidationResult, ChatMessage> extractAccepted = r => r.Message;
+                    var acceptedExtractor = extractAccepted.BindAsExecutor(
+                        "AcceptedInputExtractor"
+                    );
+                    Func<InputValidationResult, string> extractRejected = r => r.Message.Text;
+                    var rejectedExtractor = extractRejected.BindAsExecutor(
+                        "RejectedOutputExtractor"
+                    );
+
+                    // Create custom executors
                     InputValidationExecutor inputValidator = new();
-                    RejectionBridgeExecutor rejectionBridge = new();
                     ResponseFormatterExecutor responseFormatter = new();
 
                     // Build workflow with 4-layer architecture:
                     // 1. Input Validation - Validates and preprocesses user input
                     // 2. Agent Handoff - Routes to appropriate specialized agent
-                    //    (rejected input short-circuits to response formatter)
+                    //    (rejected input short-circuits to output)
                     // 3. Conditional Post-Processing - Intelligent routing based on output analysis
                     // 4. Response Formatting - Ensures consistent, well-formatted responses
                     var workflow = new WorkflowBuilder(inputValidator)
-                        // Layer 1→2: Forward only accepted input to the agent handoff
-                        .AddEdge<ChatMessage>(
+                        // Layer 1: Switch-case on validation result
+                        .AddSwitch(
                             inputValidator,
+                            switchBuilder =>
+                                switchBuilder
+                                    .AddCase<InputValidationResult>(
+                                        result => result is { IsAccepted: true },
+                                        acceptedExtractor
+                                    )
+                                    .WithDefault(rejectedExtractor)
+                        )
+                        // Layer 1→2: Forward accepted input to the agent handoff
+                        .AddEdge(acceptedExtractor, handoffWorkflowExecutor)
+                        // Layer 2→3/4: Switch-case on post-processing conditions
+                        .AddSwitch(
                             handoffWorkflowExecutor,
-                            InputValidationCondition.IsAccepted
+                            switchBuilder =>
+                                switchBuilder
+                                    .AddCase<List<ChatMessage>>(
+                                        output =>
+                                            output is not null
+                                            && PolicyKeywordCondition.Evaluate(output),
+                                        qaAgent
+                                    )
+                                    .AddCase<List<ChatMessage>>(
+                                        output =>
+                                            output is not null
+                                            && NegativeSentimentCondition.Evaluate(output),
+                                        sentimentAgent
+                                    )
+                                    .WithDefault(responseFormatter)
                         )
-                        // Layer 1→4: Short-circuit rejected input (prompt-injection, empty)
-                        .AddEdge<ChatMessage>(
-                            inputValidator,
-                            rejectionBridge,
-                            InputValidationCondition.IsRejected
-                        )
-                        .AddEdge(rejectionBridge, responseFormatter)
-                        // Layer 2→3: Route to QAAgent if output contains policy/service-related content
-                        .AddEdge<List<ChatMessage>>(
-                            handoffWorkflowExecutor,
-                            qaAgent,
-                            PolicyKeywordCondition.Evaluate
-                        )
-                        // Layer 2→3: Route to SentimentAgent if negative sentiment is detected
-                        .AddEdge<List<ChatMessage>>(
-                            handoffWorkflowExecutor,
-                            sentimentAgent,
-                            NegativeSentimentCondition.Evaluate
-                        )
-                        // Layer 3→4: Connect all paths to response formatter
-                        .AddEdge(handoffWorkflowExecutor, responseFormatter)
+                        // Layer 3→4: Connect post-processing paths to response formatter
                         .AddEdge(qaAgent, responseFormatter)
                         .AddEdge(sentimentAgent, responseFormatter)
-                        // Set response formatter as the final output
-                        .WithOutputFrom(responseFormatter)
+                        // Set terminal output nodes
+                        .WithOutputFrom(responseFormatter, rejectedExtractor)
                         .WithName(key)
                         .WithDescription(
                             "Production-grade workflow with input validation, intelligent agent routing, conditional post-processing, and response formatting"

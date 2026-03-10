@@ -1,7 +1,8 @@
 using System.Text.RegularExpressions;
 using Microsoft.Agents.AI.Workflows;
+using Microsoft.Extensions.AI;
 
-namespace BookWorm.Chat.Orchestration.Executors;
+namespace BookWorm.Rating.Infrastructure.Agents.Executors;
 
 internal sealed partial class ResponseFormatterExecutor()
     : Executor<List<ChatMessage>, string>("ResponseFormatterExecutor")
@@ -29,7 +30,7 @@ internal sealed partial class ResponseFormatterExecutor()
         if (lastMessage is null || string.IsNullOrWhiteSpace(lastMessage.Text))
         {
             return ValueTask.FromResult(
-                "I apologize, but I couldn't generate a proper response. Could you please try rephrasing your question?"
+                "I apologize, but I couldn't generate a rating summary. Please try again or provide a valid book ID."
             );
         }
 
@@ -41,7 +42,7 @@ internal sealed partial class ResponseFormatterExecutor()
         if (string.IsNullOrWhiteSpace(content))
         {
             return ValueTask.FromResult(
-                "I apologize, but I couldn't generate a proper response. Could you please try rephrasing your question?"
+                "I apologize, but I couldn't generate a rating summary. Please try again or provide a valid book ID."
             );
         }
 
