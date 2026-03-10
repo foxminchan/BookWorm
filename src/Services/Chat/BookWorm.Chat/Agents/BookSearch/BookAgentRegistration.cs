@@ -8,6 +8,14 @@ namespace BookWorm.Chat.Agents.BookSearch;
 
 internal static class BookAgentRegistration
 {
+    private static readonly string[] _catalogToolNames =
+    [
+        "search_catalog",
+        "get_book",
+        "list_categories",
+        "list_authors",
+    ];
+
     public static void AddBookAgent(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;
@@ -33,19 +41,15 @@ internal static class BookAgentRegistration
                     .Use(GuardrailMiddleware.InvokeAsync, null)
                     .Build(sp);
 
-                var mcpUrl = HttpUtilities
-                    .AsUrlBuilder()
-                    .WithBase(
-                        ServiceDiscoveryUtilities.GetRequiredServiceEndpoint(Services.McpTools)
-                    )
-                    .WithPath("mcp")
-                    .Build();
-
-                var mcpTool = new HostedMcpServerTool(Services.McpTools, mcpUrl)
-                {
-                    AllowedTools = ["search_catalog"],
-                    ApprovalMode = HostedMcpServerToolApprovalMode.NeverRequire,
-                };
+                var mcpClient = sp.GetRequiredService<McpClient>();
+                var mcpTools = mcpClient
+                    .ListToolsAsync()
+                    .Preserve()
+                    .GetAwaiter()
+                    .GetResult()
+                    .Where(t => _catalogToolNames.Contains(t.Name))
+                    .Cast<AITool>()
+                    .ToArray();
 
                 var skillsProvider = new FileAgentSkillsProvider(
                     Path.Combine(AppContext.BaseDirectory, "Skills", "book-catalog"),
@@ -66,7 +70,7 @@ internal static class BookAgentRegistration
                             MaxOutputTokens = 2000,
                             TopP = 0.95f,
                             AllowMultipleToolCalls = true,
-                            Tools = [mcpTool],
+                            Tools = mcpTools,
                         },
                     }
                 );

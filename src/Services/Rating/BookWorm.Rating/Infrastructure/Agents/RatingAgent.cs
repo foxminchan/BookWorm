@@ -17,9 +17,11 @@ internal static class RatingAgent
         4. Provide sentiment analysis and summarization
 
         Available Functions:
-        - GetCustomerReviews: Retrieve customer feedback data
+        - GetCustomerReviews: Retrieve customer feedback data (all raw reviews for a book)
+        - get_book: Retrieve book metadata from the catalog (title, authors, category, price, catalog-computed AverageRating and TotalReviews)
         - SummarizeAgent: Text processing, sentiment analysis, summarization
         Select and combine functions based on analysis needs.
+        Always call get_book first to obtain book metadata, then call GetCustomerReviews for the raw review data.
 
         Classification Rules:
         - Best Seller: Avg ≥4.5 + 50+ reviews, OR ≥4.0 + 200+ reviews

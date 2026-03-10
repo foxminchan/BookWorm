@@ -11,6 +11,7 @@ internal static class Extensions
 
         builder.AddAIServices().WithAITelemetry();
         builder.AddPresidio();
+        builder.AddMcpClient(Services.McpTools);
 
         services.AddAGUI();
         services.AddOpenAIResponses();

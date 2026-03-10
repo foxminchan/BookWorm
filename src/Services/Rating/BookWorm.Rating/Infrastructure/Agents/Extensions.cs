@@ -13,6 +13,7 @@ using Microsoft.Agents.AI.Hosting;
 using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
+using ModelContextProtocol.Client;
 
 namespace BookWorm.Rating.Infrastructure.Agents;
 
@@ -53,6 +54,14 @@ internal static class Extensions
 
                 using var spScope = sp.CreateScope();
                 var reviewPlugin = spScope.ServiceProvider.GetRequiredService<ReviewTool>();
+                var mcpClient = sp.GetRequiredService<McpClient>();
+
+                var mcpTools = mcpClient
+                    .ListToolsAsync()
+                    .Preserve()
+                    .GetAwaiter()
+                    .GetResult()
+                    .Where(t => t.Name == "get_book");
 
                 var agent = new ChatClientAgent(
                     chatClient,
@@ -65,7 +74,8 @@ internal static class Extensions
                             Instructions = RatingAgent.Instructions,
                             Temperature = 0.4f,
                             MaxOutputTokens = 1500,
-                            Tools = [.. reviewPlugin.AsAITools()],
+                            AllowMultipleToolCalls = true,
+                            Tools = [.. reviewPlugin.AsAITools(), .. mcpTools],
                         },
                     }
                 );
