@@ -1,64 +1,6 @@
 ﻿{
-  "harness": {
-    "Messages": [
-      {
-        "Published": "DeleteBasketCompleteCommand",
-        "MessageId": "Guid_1",
-        "ConversationId": "Guid_2",
-        "DestinationAddress": "BookWorm.Contracts:DeleteBasketCompleteCommand",
-        "Message": {
-          "OrderId": "Guid_3",
-          "TotalMoney": 125.99,
-          "Id": "Guid_4",
-          "CreationDate": "DateTime_1"
-        },
-        "Headers": [
-          {
-            "Key": "MT-Activity-Id",
-            "Value": "TraceId_Scrubbed"
-          }
-        ]
-      },
-      {
-        "Received": "DeleteBasketCompleteCommand",
-        "MessageId": "Guid_1",
-        "ConversationId": "Guid_2",
-        "DestinationAddress": "BookWorm.Contracts:DeleteBasketCompleteCommand",
-        "Message": {
-          "OrderId": "Guid_3",
-          "TotalMoney": 125.99,
-          "Id": "Guid_5",
-          "CreationDate": "DateTime_2"
-        },
-        "Headers": [
-          {
-            "Key": "MT-Activity-Id",
-            "Value": "TraceId_Scrubbed"
-          }
-        ]
-      }
-    ]
-  },
-  "consumer": {
-    "Consumed": [
-      {
-        "Received": "DeleteBasketCompleteCommand",
-        "MessageId": "Guid_1",
-        "ConversationId": "Guid_2",
-        "DestinationAddress": "BookWorm.Contracts:DeleteBasketCompleteCommand",
-        "Message": {
-          "OrderId": "Guid_3",
-          "TotalMoney": 125.99,
-          "Id": "Guid_5",
-          "CreationDate": "DateTime_2"
-        },
-        "Headers": [
-          {
-            "Key": "MT-Activity-Id",
-            "Value": "TraceId_Scrubbed"
-          }
-        ]
-      }
-    ]
-  }
+  "OrderId": "Guid_1",
+  "TotalMoney": 125.99,
+  "Id": "Guid_2",
+  "CreationDate": "DateTime_1"
 }

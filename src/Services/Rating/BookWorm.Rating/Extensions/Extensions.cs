@@ -8,7 +8,9 @@ using BookWorm.Rating.Configurations;
 using BookWorm.Rating.Infrastructure.Agents;
 using BookWorm.Rating.Infrastructure.Summarizer;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
-using Mediator;
+using Wolverine.EntityFrameworkCore;
+using Wolverine.Persistence;
+using Wolverine.Postgresql;
 
 namespace BookWorm.Rating.Extensions;
 
@@ -48,9 +50,7 @@ internal static class Extensions
 
         // Configure Mediator
         services
-            .AddMediator(
-                (MediatorOptions options) => options.ServiceLifetime = ServiceLifetime.Scoped
-            )
+            .AddMediator(options => options.ServiceLifetime = ServiceLifetime.Scoped)
             .ApplyLoggingBehavior()
             .ApplyActivityBehavior()
             .ApplyValidationBehavior();
@@ -76,23 +76,17 @@ internal static class Extensions
         // Configure EventBus first
         builder.AddEventBus(
             typeof(IRatingApiMarker),
-            cfg =>
+            options =>
             {
-                cfg.AddEntityFrameworkOutbox<RatingDbContext>(o =>
-                {
-                    o.QueryDelay = TimeSpan.FromSeconds(1);
-
-                    o.DuplicateDetectionWindow = TimeSpan.FromMinutes(5);
-
-                    o.UsePostgres();
-
-                    o.UseBusOutbox();
-                });
-
-                cfg.AddConfigureEndpointsCallback(
-                    (context, _, configurator) =>
-                        configurator.UseEntityFrameworkOutbox<RatingDbContext>(context)
+                var connectionString = builder.Configuration.GetRequiredConnectionString(
+                    Components.Database.Rating
                 );
+
+                options.PersistMessagesWithPostgresql(connectionString);
+
+                options.UseEntityFrameworkCoreTransactions(TransactionMiddlewareMode.Lightweight);
+
+                options.Policies.AutoApplyTransactions();
             }
         );
 

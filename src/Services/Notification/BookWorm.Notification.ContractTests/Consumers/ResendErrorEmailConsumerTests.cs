@@ -4,9 +4,6 @@ using BookWorm.Contracts;
 using BookWorm.Notification.Domain.Models;
 using BookWorm.Notification.Infrastructure.Senders;
 using BookWorm.Notification.IntegrationEvents.EventHandlers;
-using MassTransit;
-using MassTransit.Testing;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.Buffering;
 using Microsoft.Extensions.Logging;
 using MimeKit;
@@ -15,16 +12,15 @@ namespace BookWorm.Notification.ContractTests.Consumers;
 
 public sealed class ResendErrorEmailConsumerTests
 {
-    private ITestHarness _harness = null!;
     private Mock<GlobalLogBuffer> _logBufferMock = null!;
     private Mock<ILogger<ResendErrorEmailIntegrationEventHandler>> _loggerMock = null!;
-    private ServiceProvider _provider = null!;
     private Mock<IOutboxRepository> _repositoryMock = null!;
     private Mock<ISender> _senderMock = null!;
     private Mock<IUnitOfWork> _unitOfWorkMock = null!;
+    private ResendErrorEmailIntegrationEventHandler _handler = null!;
 
     [Before(Test)]
-    public async Task SetUpAsync()
+    public void SetUp()
     {
         _logBufferMock = new();
         _loggerMock = new();
@@ -34,25 +30,12 @@ public sealed class ResendErrorEmailConsumerTests
 
         _repositoryMock.Setup(x => x.UnitOfWork).Returns(_unitOfWorkMock.Object);
 
-        _provider = new ServiceCollection()
-            .AddTelemetryListener()
-            .AddMassTransitTestHarness(x =>
-                x.AddConsumer<ResendErrorEmailIntegrationEventHandler>()
-            )
-            .AddScoped(_ => _loggerMock.Object)
-            .AddScoped(_ => _logBufferMock.Object)
-            .AddScoped(_ => _repositoryMock.Object)
-            .AddScoped(_ => _senderMock.Object)
-            .BuildServiceProvider(true);
-
-        _harness = await _provider.StartTestHarness();
-    }
-
-    [After(Test)]
-    public async Task TearDownAsync()
-    {
-        await _harness.Stop();
-        await _provider.DisposeAsync();
+        _handler = new(
+            _loggerMock.Object,
+            _logBufferMock.Object,
+            _repositoryMock.Object,
+            _senderMock.Object
+        );
     }
 
     [Test]
@@ -73,13 +56,10 @@ public sealed class ResendErrorEmailConsumerTests
         var command = new ResendErrorEmailIntegrationEvent();
 
         // Act
-        await _harness.Bus.Publish(command);
+        await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        var consumer = _harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
-        await consumer.Consumed.Any<ResendErrorEmailIntegrationEvent>();
-
-        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
+        await SnapshotTestHelper.Verify(command);
 
         _repositoryMock.Verify(
             x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()),
@@ -129,13 +109,10 @@ public sealed class ResendErrorEmailConsumerTests
         var command = new ResendErrorEmailIntegrationEvent();
 
         // Act
-        await _harness.Bus.Publish(command);
+        await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        var consumer = _harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
-        await consumer.Consumed.Any<ResendErrorEmailIntegrationEvent>();
-
-        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
+        await SnapshotTestHelper.Verify(command);
 
         _repositoryMock.Verify(
             x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()),
@@ -174,13 +151,10 @@ public sealed class ResendErrorEmailConsumerTests
         var command = new ResendErrorEmailIntegrationEvent();
 
         // Act
-        await _harness.Bus.Publish(command);
+        await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        var consumer = _harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
-        await consumer.Consumed.Any<ResendErrorEmailIntegrationEvent>();
-
-        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
+        await SnapshotTestHelper.Verify(command);
 
         _senderMock.Verify(
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
@@ -234,13 +208,10 @@ public sealed class ResendErrorEmailConsumerTests
         var command = new ResendErrorEmailIntegrationEvent();
 
         // Act
-        await _harness.Bus.Publish(command);
+        await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        var consumer = _harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
-        await consumer.Consumed.Any<ResendErrorEmailIntegrationEvent>();
-
-        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
+        await SnapshotTestHelper.Verify(command);
 
         _senderMock.Verify(
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
@@ -283,13 +254,10 @@ public sealed class ResendErrorEmailConsumerTests
         var command = new ResendErrorEmailIntegrationEvent();
 
         // Act
-        await _harness.Bus.Publish(command);
+        await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        var consumer = _harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
-        await consumer.Consumed.Any<ResendErrorEmailIntegrationEvent>();
-
-        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
+        await SnapshotTestHelper.Verify(command);
 
         capturedMessage.ShouldNotBeNull();
         capturedMessage.To.Mailboxes.First().Name.ShouldBe("John Doe");
@@ -322,13 +290,10 @@ public sealed class ResendErrorEmailConsumerTests
         var command = new ResendErrorEmailIntegrationEvent();
 
         // Act
-        await _harness.Bus.Publish(command);
+        await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        var consumer = _harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
-        await consumer.Consumed.Any<ResendErrorEmailIntegrationEvent>();
-
-        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
+        await SnapshotTestHelper.Verify(command);
 
         VerifyLogMessage(LogLevel.Error, "Failed to resend email", Times.Once());
 
@@ -353,24 +318,24 @@ public sealed class ResendErrorEmailConsumerTests
             .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(failedEmails);
 
-        var capturedToken = CancellationToken.None;
+        using var cts = new CancellationTokenSource();
+        var token = cts.Token;
+
+        CancellationToken capturedToken = default;
         _senderMock
             .Setup(x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()))
-            .Callback<MimeMessage, CancellationToken>((_, token) => capturedToken = token)
+            .Callback<MimeMessage, CancellationToken>((_, ct) => capturedToken = ct)
             .Returns(Task.CompletedTask);
 
         var command = new ResendErrorEmailIntegrationEvent();
 
         // Act
-        await _harness.Bus.Publish(command, capturedToken);
+        await _handler.Handle(command, token);
 
         // Assert
-        var consumer = _harness.GetConsumerHarness<ResendErrorEmailIntegrationEventHandler>();
-        await consumer.Consumed.Any<ResendErrorEmailIntegrationEvent>(capturedToken);
+        await SnapshotTestHelper.Verify(command);
 
-        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
-
-        capturedToken.ShouldNotBe(CancellationToken.None);
+        capturedToken.ShouldBe(token);
         capturedToken.CanBeCanceled.ShouldBeTrue();
 
         // Verify summary log

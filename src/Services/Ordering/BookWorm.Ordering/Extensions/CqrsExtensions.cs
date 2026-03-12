@@ -1,6 +1,5 @@
 using BookWorm.Chassis.CQRS;
 using BookWorm.Chassis.OpenTelemetry;
-using Mediator;
 
 namespace BookWorm.Ordering.Extensions;
 
@@ -10,9 +9,7 @@ internal static class CqrsExtensions
     {
         // Configure Mediator
         services
-            .AddMediator(
-                (MediatorOptions options) => options.ServiceLifetime = ServiceLifetime.Scoped
-            )
+            .AddMediator(options => options.ServiceLifetime = ServiceLifetime.Scoped)
             .ApplyLoggingBehavior()
             .ApplyActivityBehavior()
             .ApplyValidationBehavior();

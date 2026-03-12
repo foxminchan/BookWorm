@@ -7,8 +7,6 @@ using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Constants.Core;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
-using MassTransit;
-using Mediator;
 using Microsoft.AspNetCore.Authorization;
 
 namespace BookWorm.Basket.Extensions;
@@ -46,9 +44,7 @@ internal static class Extensions
 
         // Configure Mediator
         services
-            .AddMediator(
-                (MediatorOptions options) => options.ServiceLifetime = ServiceLifetime.Scoped
-            )
+            .AddMediator(options => options.ServiceLifetime = ServiceLifetime.Scoped)
             .ApplyLoggingBehavior()
             .ApplyActivityBehavior()
             .ApplyValidationBehavior()
@@ -84,7 +80,10 @@ internal static class Extensions
         );
 
         // Configure EventBus
-        builder.AddEventBus(typeof(IBasketApiMarker), cfg => cfg.AddInMemoryInboxOutbox());
+        builder.AddEventBus(
+            typeof(IBasketApiMarker),
+            options => options.Policies.UseDurableLocalQueues()
+        );
 
         services.AddKeycloakTokenIntrospection();
     }

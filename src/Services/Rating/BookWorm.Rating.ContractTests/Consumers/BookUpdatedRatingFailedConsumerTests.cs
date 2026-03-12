@@ -3,22 +3,18 @@ using BookWorm.Common;
 using BookWorm.Contracts;
 using BookWorm.Rating.Domain.FeedbackAggregator;
 using BookWorm.Rating.IntegrationEvents.EventHandlers;
-using MassTransit;
-using MassTransit.Testing;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Rating.ContractTests.Consumers;
 
 public sealed class BookUpdatedRatingFailedConsumerTests
 {
     private Guid _feedbackId;
-    private ITestHarness _harness = null!;
-    private ServiceProvider _provider = null!;
     private Mock<IFeedbackRepository> _repositoryMock = null!;
     private Mock<IUnitOfWork> _unitOfWorkMock = null!;
+    private BookUpdatedRatingFailedIntegrationEventHandler _handler = null!;
 
     [Before(Test)]
-    public async Task SetUpAsync()
+    public void SetUp()
     {
         _feedbackId = Guid.CreateVersion7();
 
@@ -30,22 +26,7 @@ public sealed class BookUpdatedRatingFailedConsumerTests
         _repositoryMock = new();
         _repositoryMock.Setup(x => x.UnitOfWork).Returns(_unitOfWorkMock.Object);
 
-        _provider = new ServiceCollection()
-            .AddTelemetryListener()
-            .AddMassTransitTestHarness(x =>
-                x.AddConsumer<BookUpdatedRatingFailedIntegrationEventHandler>()
-            )
-            .AddScoped(_ => _repositoryMock.Object)
-            .BuildServiceProvider(true);
-
-        _harness = await _provider.StartTestHarness();
-    }
-
-    [After(Test)]
-    public async Task TearDownAsync()
-    {
-        await _harness.Stop();
-        await _provider.DisposeAsync();
+        _handler = new(_repositoryMock.Object);
     }
 
     [Test]
@@ -61,14 +42,10 @@ public sealed class BookUpdatedRatingFailedConsumerTests
         var integrationEvent = new BookUpdatedRatingFailedIntegrationEvent(_feedbackId);
 
         // Act
-        await _harness.Bus.Publish(integrationEvent);
+        await _handler.Handle(integrationEvent, CancellationToken.None);
 
         // Assert
-        var consumer =
-            _harness.GetConsumerHarness<BookUpdatedRatingFailedIntegrationEventHandler>();
-        await consumer.Consumed.Any<BookUpdatedRatingFailedIntegrationEvent>();
-
-        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
+        await SnapshotTestHelper.Verify(integrationEvent);
 
         _repositoryMock.Verify(
             x => x.GetByIdAsync(_feedbackId, It.IsAny<CancellationToken>()),
@@ -91,14 +68,10 @@ public sealed class BookUpdatedRatingFailedConsumerTests
         var integrationEvent = new BookUpdatedRatingFailedIntegrationEvent(_feedbackId);
 
         // Act
-        await _harness.Bus.Publish(integrationEvent);
+        await _handler.Handle(integrationEvent, CancellationToken.None);
 
         // Assert
-        var consumer =
-            _harness.GetConsumerHarness<BookUpdatedRatingFailedIntegrationEventHandler>();
-        await consumer.Consumed.Any<BookUpdatedRatingFailedIntegrationEvent>();
-
-        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
+        await SnapshotTestHelper.Verify(integrationEvent);
 
         _repositoryMock.Verify(
             x => x.GetByIdAsync(_feedbackId, It.IsAny<CancellationToken>()),

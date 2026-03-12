@@ -3,9 +3,6 @@ using BookWorm.Common;
 using BookWorm.Contracts;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.IntegrationEvents.EventHandlers;
-using MassTransit;
-using MassTransit.Testing;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Ordering.ContractTests.Consumers;
 
@@ -14,14 +11,13 @@ public sealed class DeleteBasketFailedConsumerTests
     private const string Email = "test@example.com";
     private const decimal TotalMoney = 100.00m;
     private Guid _basketId;
-    private ITestHarness _harness = null!;
     private Guid _orderId;
-    private ServiceProvider _provider = null!;
     private Mock<IOrderRepository> _repositoryMock = null!;
     private Mock<IUnitOfWork> _unitOfWorkMock = null!;
+    private DeleteBasketFailedCommandHandler _handler = null!;
 
     [Before(Test)]
-    public async Task SetUpAsync()
+    public void SetUp()
     {
         _orderId = Guid.CreateVersion7();
         _basketId = Guid.CreateVersion7();
@@ -34,20 +30,7 @@ public sealed class DeleteBasketFailedConsumerTests
         _repositoryMock = new();
         _repositoryMock.Setup(x => x.UnitOfWork).Returns(_unitOfWorkMock.Object);
 
-        _provider = new ServiceCollection()
-            .AddTelemetryListener()
-            .AddMassTransitTestHarness(x => x.AddConsumer<DeleteBasketFailedCommandHandler>())
-            .AddScoped(_ => _repositoryMock.Object)
-            .BuildServiceProvider(true);
-
-        _harness = await _provider.StartTestHarness();
-    }
-
-    [After(Test)]
-    public async Task TearDownAsync()
-    {
-        await _harness.Stop();
-        await _provider.DisposeAsync();
+        _handler = new(_repositoryMock.Object);
     }
 
     [Test]
@@ -63,13 +46,10 @@ public sealed class DeleteBasketFailedConsumerTests
         var command = new DeleteBasketFailedCommand(_basketId, Email, _orderId, TotalMoney);
 
         // Act
-        await _harness.Bus.Publish(command);
+        await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        var consumer = _harness.GetConsumerHarness<DeleteBasketFailedCommandHandler>();
-        await consumer.Consumed.Any<DeleteBasketFailedCommand>();
-
-        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
+        await SnapshotTestHelper.Verify(command);
 
         _repositoryMock.Verify(
             x => x.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()),
@@ -90,13 +70,10 @@ public sealed class DeleteBasketFailedConsumerTests
         var command = new DeleteBasketFailedCommand(_basketId, Email, _orderId, TotalMoney);
 
         // Act
-        await _harness.Bus.Publish(command);
+        await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        var consumer = _harness.GetConsumerHarness<DeleteBasketFailedCommandHandler>();
-        await consumer.Consumed.Any<DeleteBasketFailedCommand>();
-
-        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
+        await SnapshotTestHelper.Verify(command);
 
         _repositoryMock.Verify(
             x => x.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()),

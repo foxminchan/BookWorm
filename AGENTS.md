@@ -81,7 +81,7 @@ public sealed class MyEndpoint : IEndpoint<Ok<MyResult>, MyRequest, ISender>
 ### Infrastructure
 
 - **Database**: Each service has its own PostgreSQL database, configured with snake_case naming and UUID v7 keys
-- **Events**: MassTransit with RabbitMQ; use Outbox/Inbox for transactional consistency
+- **Events**: Wolverine with RabbitMQ; durable messaging with PostgreSQL persistence
 - **Caching**: HybridCache (distributed + local tiers)
 - **Auth**: Keycloak with token introspection; use `.RequireAuthorization()` on endpoints
 - **API Versioning**: Asp.Versioning with `ApiVersions.V1`

@@ -3,36 +3,25 @@
 namespace BookWorm.Catalog.IntegrationEvents.EventHandlers;
 
 internal sealed class FeedbackCreatedIntegrationEventHandler(IBookRepository repository)
-    : IConsumer<FeedbackCreatedIntegrationEvent>
 {
-    public async Task Consume(ConsumeContext<FeedbackCreatedIntegrationEvent> context)
+    public async Task Handle(
+        FeedbackCreatedIntegrationEvent @event,
+        IMessageContext context,
+        CancellationToken cancellationToken
+    )
     {
-        var @event = context.Message;
-
-        var book = await repository.GetByIdAsync(@event.BookId, context.CancellationToken);
+        var book = await repository.GetByIdAsync(@event.BookId, cancellationToken);
 
         if (book is null)
         {
-            await context.Publish(
-                new BookUpdatedRatingFailedIntegrationEvent(@event.FeedbackId),
-                context.CancellationToken
+            await context.PublishAsync(
+                new BookUpdatedRatingFailedIntegrationEvent(@event.FeedbackId)
             );
-            await repository.UnitOfWork.SaveEntitiesAsync(context.CancellationToken);
+            await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
             return;
         }
 
         book.AddRating(@event.Rating);
-        await repository.UnitOfWork.SaveEntitiesAsync(context.CancellationToken);
-    }
-}
-
-[ExcludeFromCodeCoverage]
-internal sealed class FeedbackCreatedIntegrationEventHandlerDefinition
-    : ConsumerDefinition<FeedbackCreatedIntegrationEventHandler>
-{
-    public FeedbackCreatedIntegrationEventHandlerDefinition()
-    {
-        Endpoint(x => x.Name = "catalog-feedback-created");
-        ConcurrentMessageLimit = 1;
+        await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
     }
 }

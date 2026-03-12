@@ -22,7 +22,7 @@ global using BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
 global using BookWorm.ServiceDefaults.Kestrel;
 global using BookWorm.SharedKernel.SeedWork;
 global using FluentValidation;
-global using MassTransit;
 global using Microsoft.AspNetCore.Http.HttpResults;
 global using Microsoft.EntityFrameworkCore;
 global using Microsoft.Extensions.AI;
+global using Wolverine;

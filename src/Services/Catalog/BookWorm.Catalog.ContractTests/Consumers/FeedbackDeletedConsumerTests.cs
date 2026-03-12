@@ -4,9 +4,6 @@ using BookWorm.Catalog.UnitTests.Fakers;
 using BookWorm.Chassis.Repository;
 using BookWorm.Common;
 using BookWorm.Contracts;
-using MassTransit;
-using MassTransit.Testing;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Catalog.ContractTests.Consumers;
 
@@ -16,13 +13,12 @@ public sealed class FeedbackDeletedConsumerTests
     private Book _book = null!;
     private Guid _bookId;
     private Guid _feedbackId;
-    private ITestHarness _harness = null!;
-    private ServiceProvider _provider = null!;
     private Mock<IBookRepository> _repositoryMock = null!;
     private Mock<IUnitOfWork> _unitOfWorkMock = null!;
+    private FeedbackDeletedIntegrationEventHandler _handler = null!;
 
     [Before(Test)]
-    public async Task SetUpAsync()
+    public void SetUp()
     {
         _bookId = Guid.CreateVersion7();
         _feedbackId = Guid.CreateVersion7();
@@ -36,20 +32,7 @@ public sealed class FeedbackDeletedConsumerTests
         _repositoryMock = new();
         _repositoryMock.Setup(x => x.UnitOfWork).Returns(_unitOfWorkMock.Object);
 
-        _provider = new ServiceCollection()
-            .AddTelemetryListener()
-            .AddMassTransitTestHarness(x => x.AddConsumer<FeedbackDeletedIntegrationEventHandler>())
-            .AddScoped(_ => _repositoryMock.Object)
-            .BuildServiceProvider(true);
-
-        _harness = await _provider.StartTestHarness();
-    }
-
-    [After(Test)]
-    public async Task TearDownAsync()
-    {
-        await _harness.Stop();
-        await _provider.DisposeAsync();
+        _handler = new(_repositoryMock.Object);
     }
 
     [Test]
@@ -63,13 +46,10 @@ public sealed class FeedbackDeletedConsumerTests
         var integrationEvent = new FeedbackDeletedIntegrationEvent(_book.Id, _rating, _feedbackId);
 
         // Act
-        await _harness.Bus.Publish(integrationEvent);
+        await _handler.Handle(integrationEvent, CancellationToken.None);
 
         // Assert
-        var consumer = _harness.GetConsumerHarness<FeedbackDeletedIntegrationEventHandler>();
-        await consumer.Consumed.Any<FeedbackDeletedIntegrationEvent>();
-
-        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
+        await SnapshotTestHelper.Verify(integrationEvent);
 
         _repositoryMock.Verify(
             x => x.GetByIdAsync(_book.Id, It.IsAny<CancellationToken>()),
@@ -89,13 +69,10 @@ public sealed class FeedbackDeletedConsumerTests
         var integrationEvent = new FeedbackDeletedIntegrationEvent(_bookId, _rating, _feedbackId);
 
         // Act
-        await _harness.Bus.Publish(integrationEvent);
+        await _handler.Handle(integrationEvent, CancellationToken.None);
 
         // Assert
-        var consumer = _harness.GetConsumerHarness<FeedbackDeletedIntegrationEventHandler>();
-        await consumer.Consumed.Any<FeedbackDeletedIntegrationEvent>();
-
-        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
+        await SnapshotTestHelper.Verify(integrationEvent);
 
         _repositoryMock.Verify(
             x => x.GetByIdAsync(_bookId, It.IsAny<CancellationToken>()),

@@ -3,13 +3,13 @@
 namespace BookWorm.Catalog.IntegrationEvents.EventHandlers;
 
 internal sealed class FeedbackDeletedIntegrationEventHandler(IBookRepository repository)
-    : IConsumer<FeedbackDeletedIntegrationEvent>
 {
-    public async Task Consume(ConsumeContext<FeedbackDeletedIntegrationEvent> context)
+    public async Task Handle(
+        FeedbackDeletedIntegrationEvent @event,
+        CancellationToken cancellationToken
+    )
     {
-        var @event = context.Message;
-
-        var book = await repository.GetByIdAsync(@event.BookId, context.CancellationToken);
+        var book = await repository.GetByIdAsync(@event.BookId, cancellationToken);
 
         if (book is null)
         {
@@ -18,17 +18,6 @@ internal sealed class FeedbackDeletedIntegrationEventHandler(IBookRepository rep
 
         book.RemoveRating(@event.Rating);
 
-        await repository.UnitOfWork.SaveEntitiesAsync(context.CancellationToken);
-    }
-}
-
-[ExcludeFromCodeCoverage]
-internal sealed class FeedbackDeletedIntegrationEventHandlerDefinition
-    : ConsumerDefinition<FeedbackDeletedIntegrationEventHandler>
-{
-    public FeedbackDeletedIntegrationEventHandlerDefinition()
-    {
-        Endpoint(x => x.Name = "catalog-feedback-deleted");
-        ConcurrentMessageLimit = 1;
+        await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
     }
 }

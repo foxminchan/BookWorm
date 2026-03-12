@@ -5,5 +5,5 @@ global using BookWorm.Chassis.Exceptions;
 global using BookWorm.Finance.Infrastructure;
 global using BookWorm.Finance.Saga;
 global using BookWorm.ServiceDefaults;
-global using MassTransit;
 global using Microsoft.EntityFrameworkCore;
+global using Wolverine;

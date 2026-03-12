@@ -3,13 +3,10 @@
 namespace BookWorm.Ordering.IntegrationEvents.EventHandlers;
 
 public sealed class DeleteBasketFailedCommandHandler(IOrderRepository repository)
-    : IConsumer<DeleteBasketFailedCommand>
 {
-    public async Task Consume(ConsumeContext<DeleteBasketFailedCommand> context)
+    public async Task Handle(DeleteBasketFailedCommand message, CancellationToken cancellationToken)
     {
-        var message = context.Message;
-
-        var order = await repository.GetByIdAsync(message.OrderId, context.CancellationToken);
+        var order = await repository.GetByIdAsync(message.OrderId, cancellationToken);
 
         if (order is null)
         {
@@ -18,17 +15,6 @@ public sealed class DeleteBasketFailedCommandHandler(IOrderRepository repository
 
         order.Delete();
 
-        await repository.UnitOfWork.SaveEntitiesAsync(context.CancellationToken);
-    }
-}
-
-[ExcludeFromCodeCoverage]
-public sealed class DeleteBasketFailedCommandHandlerDefinition
-    : ConsumerDefinition<DeleteBasketFailedCommandHandler>
-{
-    public DeleteBasketFailedCommandHandlerDefinition()
-    {
-        Endpoint(x => x.Name = "basket-checkout-failed");
-        ConcurrentMessageLimit = 1;
+        await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
     }
 }

@@ -1,7 +1,7 @@
 ﻿using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Constants.Aspire;
-using BookWorm.Finance.Saga.Activities;
-using BookWorm.Finance.Saga.Observers;
+using Wolverine.EntityFrameworkCore;
+using Wolverine.Postgresql;
 
 namespace BookWorm.Finance.Saga;
 
@@ -14,83 +14,18 @@ internal static class SagaExtensions
             OrderStateMachineSettings.ConfigurationSection
         );
 
-        var services = builder.Services;
-
-        services.AddScoped<PlaceOrderActivity>();
-        services.AddScoped<CancelOrderActivity>();
-        services.AddScoped<CompleteOrderActivity>();
-        services.AddScoped<HandleBasketDeletedActivity>();
-        services.AddScoped<HandleBasketDeleteFailedActivity>();
-
-        services.AddStateObserver<OrderState, OrderStateObserver>();
-
         builder.AddEventBus(
             typeof(IFinanceApiMarker),
-            configurator =>
+            options =>
             {
-                configurator.AddDelayedMessageScheduler();
+                var connectionString = builder.Configuration.GetRequiredConnectionString(
+                    Components.Database.Finance
+                );
 
-                configurator
-                    .AddSagaStateMachine<
-                        OrderStateMachine,
-                        OrderState,
-                        OrderStateMachineDefinition
-                    >()
-                    .AddSagaRepository(builder);
+                options.UseEntityFrameworkCoreTransactions();
 
-                configurator.SetEntityFrameworkSagaRepositoryProvider(o =>
-                {
-                    o.ExistingDbContext<FinanceDbContext>();
-                    o.UsePostgres();
-                });
-
-                configurator.AddEntityFrameworkOutbox();
-            },
-            (_, configure) => configure.UseDelayedMessageScheduler()
+                options.PersistMessagesWithPostgresql(connectionString);
+            }
         );
-    }
-
-    private static void AddEntityFrameworkOutbox(this IBusRegistrationConfigurator configurator)
-    {
-        configurator.AddEntityFrameworkOutbox<FinanceDbContext>(o =>
-        {
-            o.QueryDelay = TimeSpan.FromSeconds(1);
-
-            o.DuplicateDetectionWindow = TimeSpan.FromMinutes(5);
-
-            o.UsePostgres();
-
-            o.UseBusOutbox();
-        });
-
-        configurator.AddConfigureEndpointsCallback(
-            (context, _, cfg) => cfg.UseEntityFrameworkOutbox<FinanceDbContext>(context)
-        );
-    }
-
-    private static void AddSagaRepository(
-        this ISagaRegistrationConfigurator<OrderState> configurator,
-        IHostApplicationBuilder builder
-    )
-    {
-        configurator.EntityFrameworkRepository(config =>
-        {
-            config.ConcurrencyMode = ConcurrencyMode.Optimistic;
-
-            config.AddDbContext<DbContext, FinanceDbContext>(
-                (_, optionsBuilder) =>
-                {
-                    optionsBuilder
-                        .UseNpgsql(
-                            builder.Configuration.GetRequiredConnectionString(
-                                Components.Database.Finance
-                            )
-                        )
-                        .UseSnakeCaseNamingConvention();
-                }
-            );
-
-            config.UsePostgres();
-        });
     }
 }

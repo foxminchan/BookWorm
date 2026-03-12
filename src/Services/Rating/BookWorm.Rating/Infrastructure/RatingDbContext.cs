@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Rating.Infrastructure;
+﻿using Wolverine.EntityFrameworkCore;
+
+namespace BookWorm.Rating.Infrastructure;
 
 internal sealed class RatingDbContext(DbContextOptions<RatingDbContext> options)
     : DbContext(options),
@@ -15,9 +17,7 @@ internal sealed class RatingDbContext(DbContextOptions<RatingDbContext> options)
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        modelBuilder.AddInboxStateEntity();
-        modelBuilder.AddOutboxMessageEntity();
-        modelBuilder.AddOutboxStateEntity();
+        modelBuilder.MapWolverineEnvelopeStorage();
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(RatingDbContext).Assembly);
     }
 }

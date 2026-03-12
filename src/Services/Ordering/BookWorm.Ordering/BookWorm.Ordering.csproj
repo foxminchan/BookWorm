@@ -20,7 +20,8 @@
   </ItemGroup>
   <ItemGroup Label="EF Core">
     <PackageReference Include="Aspire.Azure.Npgsql" />
-    <PackageReference Include="MassTransit.EntityFrameworkCore" />
+    <PackageReference Include="WolverineFx.EntityFrameworkCore" />
+    <PackageReference Include="WolverineFx.Postgresql" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
   </ItemGroup>
   <ItemGroup>

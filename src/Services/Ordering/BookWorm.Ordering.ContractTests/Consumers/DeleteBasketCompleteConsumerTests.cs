@@ -1,9 +1,6 @@
 ﻿using BookWorm.Common;
 using BookWorm.Contracts;
 using BookWorm.Ordering.IntegrationEvents.EventHandlers;
-using MassTransit;
-using MassTransit.Testing;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Ordering.ContractTests.Consumers;
@@ -11,31 +8,16 @@ namespace BookWorm.Ordering.ContractTests.Consumers;
 public sealed class DeleteBasketCompleteConsumerTests
 {
     private const decimal TotalMoney = 125.99m;
-    private ITestHarness _harness = null!;
     private Mock<ILogger<DeleteBasketCompleteCommandHandler>> _loggerMock = null!;
     private Guid _orderId;
-    private ServiceProvider _provider = null!;
+    private DeleteBasketCompleteCommandHandler _handler = null!;
 
     [Before(Test)]
-    public async Task SetUpAsync()
+    public void SetUp()
     {
         _orderId = Guid.CreateVersion7();
         _loggerMock = new();
-
-        _provider = new ServiceCollection()
-            .AddTelemetryListener()
-            .AddMassTransitTestHarness(x => x.AddConsumer<DeleteBasketCompleteCommandHandler>())
-            .AddScoped(_ => _loggerMock.Object)
-            .BuildServiceProvider(true);
-
-        _harness = await _provider.StartTestHarness();
-    }
-
-    [After(Test)]
-    public async Task TearDownAsync()
-    {
-        await _harness.Stop();
-        await _provider.DisposeAsync();
+        _handler = new(_loggerMock.Object);
     }
 
     [Test]
@@ -45,13 +27,10 @@ public sealed class DeleteBasketCompleteConsumerTests
         var command = new DeleteBasketCompleteCommand(_orderId, TotalMoney);
 
         // Act
-        await _harness.Bus.Publish(command);
+        await _handler.Handle(command);
 
         // Assert
-        var consumer = _harness.GetConsumerHarness<DeleteBasketCompleteCommandHandler>();
-        await consumer.Consumed.Any<DeleteBasketCompleteCommand>();
-
-        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
+        await SnapshotTestHelper.Verify(command);
 
         // Verify that information was logged
         _loggerMock.Verify(

@@ -10,8 +10,10 @@ using BookWorm.Chassis.Utilities.Converters;
 using BookWorm.Constants.Aspire;
 using BookWorm.Constants.Core;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
-using Mediator;
 using Microsoft.AspNetCore.Authorization;
+using Wolverine.EntityFrameworkCore;
+using Wolverine.Persistence;
+using Wolverine.Postgresql;
 
 namespace BookWorm.Catalog.Extensions;
 
@@ -57,9 +59,7 @@ internal static class Extensions
 
         // Configure Mediator
         services
-            .AddMediator(
-                (MediatorOptions options) => options.ServiceLifetime = ServiceLifetime.Scoped
-            )
+            .AddMediator(options => options.ServiceLifetime = ServiceLifetime.Scoped)
             .ApplyLoggingBehavior()
             .ApplyActivityBehavior()
             .ApplyValidationBehavior()
@@ -109,23 +109,17 @@ internal static class Extensions
         // Configure EventBus
         builder.AddEventBus(
             typeof(ICatalogApiMarker),
-            cfg =>
+            options =>
             {
-                cfg.AddEntityFrameworkOutbox<CatalogDbContext>(o =>
-                {
-                    o.QueryDelay = TimeSpan.FromSeconds(1);
-
-                    o.DuplicateDetectionWindow = TimeSpan.FromMinutes(5);
-
-                    o.UsePostgres();
-
-                    o.UseBusOutbox();
-                });
-
-                cfg.AddConfigureEndpointsCallback(
-                    (context, _, configurator) =>
-                        configurator.UseEntityFrameworkOutbox<CatalogDbContext>(context)
+                var connectionString = builder.Configuration.GetRequiredConnectionString(
+                    Components.Database.Catalog
                 );
+
+                options.PersistMessagesWithPostgresql(connectionString);
+
+                options.UseEntityFrameworkCoreTransactions(TransactionMiddlewareMode.Lightweight);
+
+                options.Policies.AutoApplyTransactions();
             }
         );
 

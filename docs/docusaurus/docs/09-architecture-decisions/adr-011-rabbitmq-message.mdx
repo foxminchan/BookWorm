@@ -3,7 +3,7 @@ sidebar_position: 12
 title: ADR-011 - RabbitMQ for Message Broker
 description: Selection of RabbitMQ as message broker for reliable asynchronous communication
 keywords:
-  [ADR-011, RabbitMQ, message broker, asynchronous messaging, MassTransit, event bus, messaging]
+  [ADR-011, RabbitMQ, message broker, asynchronous messaging, Wolverine, event bus, messaging]
 last_update:
   author: Nhan Nguyen
 ---
@@ -36,7 +36,7 @@ complexity across the entire distributed architecture.
 
 ## Decision
 
-Adopt **RabbitMQ** as the primary message broker, integrated with **MassTransit** for .NET-based
+Adopt **RabbitMQ** as the primary message broker, integrated with **Wolverine** for .NET-based
 message handling, to provide reliable, scalable, and feature-rich asynchronous communication between
 BookWorm's microservices.
 
@@ -49,11 +49,11 @@ BookWorm's microservices.
 - **Queue Strategy**: Durable queues with appropriate TTL and dead letter configuration
 - **Message Persistence**: Persistent messages for critical business events
 
-#### MassTransit Integration Pattern
+#### Wolverine Integration Pattern
 
-- **Consumer Configuration**: Strongly-typed message consumers with error handling
-- **Sagas**: State machine implementation for complex workflows
-- **Outbox Pattern**: Ensure reliable message publishing with database transactions
+- **Convention-Based Handlers**: Static `Handle` methods discovered automatically by Wolverine
+- **Sagas**: `Saga` base class for complex workflow orchestration
+- **Durable Messaging**: PostgreSQL-backed message persistence for reliable delivery
 - **Retry Policies**: Configurable retry strategies with exponential backoff
 
 ### Service Messaging Integration
@@ -89,11 +89,11 @@ RabbitMQ. Each service can both produce and consume events as needed.
 4. **Connection Multiplexing**: Efficient connection and channel management
 5. **Horizontal Scaling**: Scale consumers independently for different message types
 
-### Why MassTransit Integration?
+### Why Wolverine Integration?
 
 #### .NET Ecosystem Integration
 
-1. **Strongly-Typed Messages**: Type-safe message definition and handling
+1. **Convention-Based Handlers**: Zero-ceremony message handling via static methods
 2. **Dependency Injection**: Seamless integration with ASP.NET Core DI container
 3. **Configuration**: Fluent configuration API with convention-based setup
 4. **Testing Support**: Comprehensive testing framework for message-driven applications
@@ -101,15 +101,15 @@ RabbitMQ. Each service can both produce and consume events as needed.
 
 #### Enterprise Patterns
 
-1. **Saga State Machines**: Built-in support for complex workflow orchestration
-2. **Request/Response**: Synchronous-like patterns over asynchronous messaging
-3. **Routing Slip**: Choreography pattern for multi-step business processes
-4. **Outbox/Inbox**: Reliable messaging patterns with database integration
-5. **Circuit Breaker**: Fault tolerance patterns for message processing
+1. **Saga Orchestration**: Built-in `Saga` base class for complex workflow orchestration
+2. **Durable Messaging**: PostgreSQL-backed message persistence for reliable delivery
+3. **Scheduled Messages**: Built-in message scheduling via `ScheduleAsync`
+4. **Error Handling**: Configurable retry and dead letter policies
+5. **EF Core Integration**: Transactional messaging with Entity Framework Core
 
 ### Messaging Architecture Overview
 
-BookWorm uses a simplified event-driven architecture with RabbitMQ and MassTransit:
+BookWorm uses a simplified event-driven architecture with RabbitMQ and Wolverine:
 
 - **Domain Events** are raised within services and mapped to **Integration Events**
 - **Integration Events** are published to RabbitMQ exchanges
@@ -138,28 +138,36 @@ public abstract record IntegrationEvent
 public static void AddEventBus(
     this IHostApplicationBuilder builder,
     Type type,
-    Action<IBusRegistrationConfigurator>? busConfigure = null,
-    Action<IBusRegistrationContext, IRabbitMqBusFactoryConfigurator>? rabbitMqConfigure = null)
+    Action<WolverineOptions>? configure = null)
 {
-    var connectionString = builder.Configuration.GetConnectionString(Components.Queue);
-
-    builder.Services.AddMassTransit(config =>
+    builder.UseWolverine(opts =>
     {
-        config.SetKebabCaseEndpointNameFormatter();
-        config.AddConsumers(type.Assembly);
-        config.AddActivities(type.Assembly);
-        config.AddRequestClient(type);
+        opts.Discovery.IncludeAssembly(type.Assembly);
 
-        config.UsingRabbitMq((context, configurator) =>
+        opts.UseRabbitMq(rabbit =>
         {
-            configurator.Host(new Uri(connectionString));
-            configurator.ConfigureEndpoints(context);
-            configurator.UseMessageRetry(retryConfigurator =>
-                retryConfigurator
-                    .Exponential(3, TimeSpan.FromMilliseconds(200),
-                               TimeSpan.FromMinutes(120), TimeSpan.FromMilliseconds(200))
-                    .Ignore<ValidationException>());
-        });
+            rabbit.AutoProvision();
+        }).AutoPurgeOnStartup();
+
+        opts.Policies.OnException<ValidationException>()
+            .MoveToErrorQueue();
+
+        opts.OnException<Exception>()
+            .RetryWithCooldown(
+                TimeSpan.FromMilliseconds(200),
+                TimeSpan.FromSeconds(1),
+                TimeSpan.FromSeconds(5));
+
+        var connectionString = builder.Configuration
+            .GetConnectionString(Components.Database);
+
+        if (!string.IsNullOrEmpty(connectionString))
+        {
+            opts.PersistMessagesWithPostgresql(connectionString);
+            opts.UseEntityFrameworkCoreTransactions();
+        }
+
+        configure?.Invoke(opts);
     });
 }
 ```
@@ -167,57 +175,42 @@ public static void AddEventBus(
 #### Event Dispatcher
 
 ```csharp
-public sealed class EventDispatcher(IBus bus, IEventMapper eventMapper) : IEventDispatcher
+public sealed class EventDispatcher(IMessageBus messageBus, IEventMapper eventMapper) : IEventDispatcher
 {
     public async Task DispatchAsync(DomainEvent @event, CancellationToken cancellationToken = default)
     {
         var integrationEvent = eventMapper.MapToIntegrationEvent(@event)
             ?? throw new InvalidOperationException($"No integration event mapping found for '{@event.GetType().Name}'.");
 
-        await bus.Publish(integrationEvent, cancellationToken);
+        await messageBus.PublishAsync(integrationEvent);
     }
 }
 ```
 
 ## Advanced Features
 
-#### Exchange and Queue Topology
+#### RabbitMQ Transport Configuration
 
 ```csharp
-public class RabbitMQTopologyConfiguration
+builder.UseWolverine(opts =>
 {
-    public static void ConfigureTopology(IBusRegistrationConfigurator configurator)
+    opts.UseRabbitMq(rabbit =>
     {
-        // Configure main topic exchange for domain events
-        configurator.UsingRabbitMq((context, cfg) =>
-        {
-            cfg.Host("rabbitmq-cluster", "/bookworm", h =>
-            {
-                h.Username("bookworm");
-                h.Password("secure-password");
-                h.Heartbeat(TimeSpan.FromSeconds(30));
-                h.RequestedConnectionTimeout(TimeSpan.FromSeconds(30));
-            });
+        // Auto-provision exchanges, queues, and bindings
+        rabbit.AutoProvision();
+    });
 
-            // Configure exchanges
-            cfg.Publish<BookCreatedIntegrationEvent>(p => p.ExchangeType = ExchangeType.Topic);
-            cfg.Publish<OrderPlacedIntegrationEvent>(p => p.ExchangeType = ExchangeType.Topic);
-            cfg.Publish<PaymentProcessedIntegrationEvent>(p => p.ExchangeType = ExchangeType.Topic);
+    // Durable messaging with PostgreSQL persistence
+    var connectionString = builder.Configuration
+        .GetConnectionString(Components.Database);
 
-            // Configure dead letter handling
-            cfg.ReceiveEndpoint("bookworm.failed", e =>
-            {
-                e.ConfigureDeadLetterExchange("bookworm.events.failed");
-                e.Consumer<DeadLetterConsumer>();
-            });
-
-            cfg.ConfigureEndpoints(context);
-        });
+    if (!string.IsNullOrEmpty(connectionString))
+    {
+        opts.PersistMessagesWithPostgresql(connectionString);
+        opts.UseEntityFrameworkCoreTransactions();
     }
-}
+});
 ```
-
-## Advanced Features
 
 ### Message Routing and Filtering
 
@@ -225,9 +218,9 @@ public class RabbitMQTopologyConfiguration
 
 #### Message Retry and Error Handling
 
-- **Exponential Backoff**: 3 retries with increasing delays (200ms to 120 minutes)
-- **Exception Filtering**: Validation exceptions are not retried
-- **Dead Letter Queues**: Failed messages are routed to dead letter exchanges
+- **Exponential Backoff**: 3 retries with increasing delays (200ms to 5 seconds)
+- **Exception Filtering**: Validation exceptions are moved to error queue
+- **Dead Letter Queues**: Failed messages are routed to error queues after retries
 
 #### Observability Integration
 
@@ -266,16 +259,16 @@ public class RabbitMQTopologyConfiguration
 
 ### Current Implementation
 
-- ✅ RabbitMQ integration with MassTransit
+- ✅ RabbitMQ integration with Wolverine
 - ✅ Basic event bus configuration and retry policies
 - ✅ Integration event base class with Version 7 GUIDs
 - ✅ Event dispatcher for domain-to-integration event mapping
 - ✅ OpenTelemetry integration for observability
+- ✅ Saga implementation for complex workflows
+- ✅ Durable messaging with PostgreSQL persistence
 
 ### Future Enhancements
 
-- Saga implementation for complex workflows
-- Outbox pattern for transactional messaging
 - Advanced routing and filtering capabilities
 - Performance optimization and connection pooling
 

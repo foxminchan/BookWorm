@@ -1,61 +1,20 @@
 ﻿using BookWorm.Contracts;
 using BookWorm.Scheduler.Jobs;
-using MassTransit;
-using MassTransit.Testing;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Quartz;
+using Wolverine;
 
 namespace BookWorm.Scheduler.UnitTests;
 
-public sealed class DummyCleanUpSentEmailConsumer : IConsumer<CleanUpSentEmailIntegrationEvent>
-{
-    public Task Consume(ConsumeContext<CleanUpSentEmailIntegrationEvent> context)
-    {
-        return Task.CompletedTask;
-    }
-}
-
 public sealed class CleanUpSentEmailJobTests
 {
-    private ITestHarness _harness = null!;
-    private ServiceProvider _provider = null!;
-
-    [Before(Test)]
-    public async Task Setup()
-    {
-        _provider = new ServiceCollection()
-            .AddMassTransitTestHarness(cfg =>
-            {
-                cfg.SetKebabCaseEndpointNameFormatter();
-                cfg.AddConsumer<DummyCleanUpSentEmailConsumer>();
-                cfg.UsingInMemory(
-                    (context, configurator) =>
-                    {
-                        configurator.ConfigureEndpoints(context);
-                    }
-                );
-            })
-            .BuildServiceProvider(true);
-
-        _harness = _provider.GetRequiredService<ITestHarness>();
-        await _harness.Start();
-    }
-
-    [After(Test)]
-    public async Task TearDown()
-    {
-        await _harness.Stop();
-        await _provider.DisposeAsync();
-    }
-
     [Test]
     public async Task GivenValidDependencies_WhenExecutingJob_ThenShouldPublishExactlyOneEvent()
     {
         // Arrange
-        var bus = _harness.Bus;
+        var messageBusMock = new Mock<IMessageBus>();
         var logger = Mock.Of<ILogger<CleanUpSentEmailJob>>();
-        var job = new CleanUpSentEmailJob(bus, logger);
+        var job = new CleanUpSentEmailJob(messageBusMock.Object, logger);
         var context = Mock.Of<IJobExecutionContext>(c =>
             c.CancellationToken == CancellationToken.None
         );
@@ -64,24 +23,22 @@ public sealed class CleanUpSentEmailJobTests
         await job.Execute(context);
 
         // Assert
-        var publishedCount = 0;
-        await foreach (var _ in _harness.Published.SelectAsync<CleanUpSentEmailIntegrationEvent>())
-        {
-            publishedCount++;
-        }
-
-        publishedCount.ShouldBe(1);
+        messageBusMock.Verify(
+            x => x.PublishAsync(It.IsAny<CleanUpSentEmailIntegrationEvent>(), null),
+            Times.Once
+        );
     }
 
     [Test]
     public async Task GivenMultipleExecutions_WhenExecutingJobConcurrently_ThenShouldHandleEachExecutionIndependently()
     {
         // Arrange
-        var bus = _harness.Bus;
+        var messageBusMock = new Mock<IMessageBus>();
         var logger = Mock.Of<ILogger<CleanUpSentEmailJob>>();
-        var job = new CleanUpSentEmailJob(bus, logger);
-        var cancellationToken = CancellationToken.None;
-        var context = Mock.Of<IJobExecutionContext>(c => c.CancellationToken == cancellationToken);
+        var job = new CleanUpSentEmailJob(messageBusMock.Object, logger);
+        var context = Mock.Of<IJobExecutionContext>(c =>
+            c.CancellationToken == CancellationToken.None
+        );
         const int numberOfExecutions = 3;
 
         // Act
@@ -93,37 +50,25 @@ public sealed class CleanUpSentEmailJobTests
         await Task.WhenAll(tasks);
 
         // Assert
-        var publishedCount = 0;
-        await foreach (
-            var _ in _harness.Published.SelectAsync<CleanUpSentEmailIntegrationEvent>(
-                cancellationToken
-            )
-        )
-        {
-            publishedCount++;
-        }
-
-        publishedCount.ShouldBe(numberOfExecutions);
+        messageBusMock.Verify(
+            x => x.PublishAsync(It.IsAny<CleanUpSentEmailIntegrationEvent>(), null),
+            Times.Exactly(numberOfExecutions)
+        );
     }
 
     [Test]
     public async Task GivenPublishThrows_WhenExecutingJob_ThenShouldWrapInJobExecutionException()
     {
         // Arrange
-        var busMock = new Mock<IBus>();
+        var messageBusMock = new Mock<IMessageBus>();
         var loggerMock = new Mock<ILogger<CleanUpSentEmailJob>>();
-        var job = new CleanUpSentEmailJob(busMock.Object, loggerMock.Object);
+        var job = new CleanUpSentEmailJob(messageBusMock.Object, loggerMock.Object);
         var context = Mock.Of<IJobExecutionContext>(c =>
             c.CancellationToken == CancellationToken.None
         );
 
-        busMock
-            .Setup(x =>
-                x.Publish(
-                    It.IsAny<CleanUpSentEmailIntegrationEvent>(),
-                    It.IsAny<CancellationToken>()
-                )
-            )
+        messageBusMock
+            .Setup(x => x.PublishAsync(It.IsAny<CleanUpSentEmailIntegrationEvent>(), null))
             .ThrowsAsync(new InvalidOperationException("Bus failure"));
 
         // Act

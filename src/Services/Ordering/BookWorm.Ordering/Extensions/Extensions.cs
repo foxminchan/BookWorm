@@ -4,6 +4,9 @@ using BookWorm.Chassis.Utilities.Converters;
 using BookWorm.Ordering.Configurations;
 using BookWorm.Ordering.Infrastructure.DistributedLock;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
+using Wolverine.EntityFrameworkCore;
+using Wolverine.Persistence;
+using Wolverine.Postgresql;
 
 namespace BookWorm.Ordering.Extensions;
 
@@ -47,23 +50,17 @@ internal static class Extensions
         // Add event bus configuration
         builder.AddEventBus(
             typeof(IOrderingApiMarker),
-            cfg =>
+            options =>
             {
-                cfg.AddEntityFrameworkOutbox<OrderingDbContext>(o =>
-                {
-                    o.QueryDelay = TimeSpan.FromSeconds(1);
-
-                    o.DuplicateDetectionWindow = TimeSpan.FromMinutes(5);
-
-                    o.UsePostgres();
-
-                    o.UseBusOutbox();
-                });
-
-                cfg.AddConfigureEndpointsCallback(
-                    (context, _, configurator) =>
-                        configurator.UseEntityFrameworkOutbox<OrderingDbContext>(context)
+                var connectionString = builder.Configuration.GetRequiredConnectionString(
+                    Components.Database.Ordering
                 );
+
+                options.PersistMessagesWithPostgresql(connectionString);
+
+                options.UseEntityFrameworkCoreTransactions(TransactionMiddlewareMode.Lightweight);
+
+                options.Policies.AutoApplyTransactions();
             }
         );
 

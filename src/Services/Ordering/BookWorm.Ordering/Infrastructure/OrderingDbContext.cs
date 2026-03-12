@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Ordering.Infrastructure;
+﻿using Wolverine.EntityFrameworkCore;
+
+namespace BookWorm.Ordering.Infrastructure;
 
 internal sealed class OrderingDbContext(DbContextOptions<OrderingDbContext> options)
     : DbContext(options),
@@ -17,9 +19,7 @@ internal sealed class OrderingDbContext(DbContextOptions<OrderingDbContext> opti
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        modelBuilder.AddInboxStateEntity();
-        modelBuilder.AddOutboxMessageEntity();
-        modelBuilder.AddOutboxStateEntity();
+        modelBuilder.MapWolverineEnvelopeStorage();
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(OrderingDbContext).Assembly);
     }
 }

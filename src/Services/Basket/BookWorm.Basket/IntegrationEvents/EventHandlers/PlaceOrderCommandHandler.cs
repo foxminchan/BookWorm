@@ -1,50 +1,37 @@
 ﻿using BookWorm.Contracts;
-using MassTransit;
 
 namespace BookWorm.Basket.IntegrationEvents.EventHandlers;
 
 internal sealed class PlaceOrderCommandHandler(IBasketRepository repository)
-    : IConsumer<PlaceOrderCommand>
 {
-    public async Task Consume(ConsumeContext<PlaceOrderCommand> context)
+    public async Task Handle(
+        PlaceOrderCommand command,
+        IMessageContext context,
+        CancellationToken cancellationToken
+    )
     {
-        var command = context.Message;
-
         var basketDeleted = await repository.DeleteBasketAsync(command.BasketId.ToString());
 
         if (!basketDeleted)
         {
-            await context.Publish(
+            await context.PublishAsync(
                 new BasketDeletedFailedIntegrationEvent(
                     command.OrderId,
                     command.BasketId,
                     command.Email,
                     command.TotalMoney
-                ),
-                context.CancellationToken
+                )
             );
         }
         else
         {
-            await context.Publish(
+            await context.PublishAsync(
                 new BasketDeletedCompleteIntegrationEvent(
                     command.OrderId,
                     command.BasketId,
                     command.TotalMoney
-                ),
-                context.CancellationToken
+                )
             );
         }
-    }
-}
-
-[ExcludeFromCodeCoverage]
-internal sealed class PlaceOrderCommandHandlerDefinition
-    : ConsumerDefinition<PlaceOrderCommandHandler>
-{
-    public PlaceOrderCommandHandlerDefinition()
-    {
-        Endpoint(x => x.Name = "basket-place-order");
-        ConcurrentMessageLimit = 8;
     }
 }

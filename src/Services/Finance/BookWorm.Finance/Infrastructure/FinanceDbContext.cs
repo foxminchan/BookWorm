@@ -1,24 +1,16 @@
-﻿using BookWorm.Finance.Infrastructure.EntityConfigurations;
-using MassTransit.EntityFrameworkCoreIntegration;
+﻿using Wolverine.EntityFrameworkCore;
 
 namespace BookWorm.Finance.Infrastructure;
 
-public sealed class FinanceDbContext(DbContextOptions options) : SagaDbContext(options)
+public sealed class FinanceDbContext(DbContextOptions<FinanceDbContext> options)
+    : DbContext(options)
 {
-    protected override IEnumerable<ISagaClassMap> Configurations
-    {
-        get { yield return new OrderStateConfiguration(); }
-    }
+    public DbSet<OrderSaga> OrderSagas => Set<OrderSaga>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        modelBuilder.AddInboxStateEntity();
-        modelBuilder.AddOutboxMessageEntity();
-        modelBuilder.AddOutboxStateEntity();
-        foreach (var configuration in Configurations)
-        {
-            configuration.Configure(modelBuilder);
-        }
+        modelBuilder.MapWolverineEnvelopeStorage();
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(FinanceDbContext).Assembly);
     }
 }

@@ -1,9 +1,10 @@
 ﻿using BookWorm.SharedKernel.SeedWork;
-using MassTransit;
+using Wolverine;
 
 namespace BookWorm.Chassis.EventBus.Dispatcher;
 
-internal sealed class EventDispatcher(IBus bus, IEventMapper eventMapper) : IEventDispatcher
+internal sealed class EventDispatcher(IMessageBus messageBus, IEventMapper eventMapper)
+    : IEventDispatcher
 {
     public async Task DispatchAsync(
         DomainEvent @event,
@@ -17,6 +18,6 @@ internal sealed class EventDispatcher(IBus bus, IEventMapper eventMapper) : IEve
             ?? throw new InvalidOperationException(
                 $"No integration event mapping found for '{@event.GetType().Name}'."
             );
-        await bus.Publish(integrationEvent, cancellationToken);
+        await messageBus.PublishAsync(integrationEvent);
     }
 }

@@ -3,7 +3,6 @@ using BookWorm.Contracts;
 using BookWorm.Notification.Domain.Models;
 using BookWorm.Notification.Infrastructure.Senders;
 using BookWorm.Notification.IntegrationEvents.EventHandlers;
-using MassTransit;
 using Microsoft.Extensions.Diagnostics.Buffering;
 using Microsoft.Extensions.Logging;
 using MimeKit;
@@ -12,7 +11,6 @@ namespace BookWorm.Notification.UnitTests.Handlers;
 
 public sealed class ResendErrorEmailHandlerTests
 {
-    private readonly Mock<ConsumeContext<ResendErrorEmailIntegrationEvent>> _contextMock = new();
     private readonly ResendErrorEmailIntegrationEventHandler _handler;
     private readonly Mock<GlobalLogBuffer> _logBufferMock = new();
     private readonly Mock<ILogger<ResendErrorEmailIntegrationEventHandler>> _loggerMock = new();
@@ -23,7 +21,6 @@ public sealed class ResendErrorEmailHandlerTests
     public ResendErrorEmailHandlerTests()
     {
         _repositoryMock.Setup(x => x.UnitOfWork).Returns(_unitOfWorkMock.Object);
-        _contextMock.Setup(x => x.CancellationToken).Returns(CancellationToken.None);
 
         _handler = new(
             _loggerMock.Object,
@@ -45,7 +42,7 @@ public sealed class ResendErrorEmailHandlerTests
             .ReturnsAsync([email1, email2]);
 
         // Act
-        await _handler.Consume(_contextMock.Object);
+        await _handler.Handle(new ResendErrorEmailIntegrationEvent(), CancellationToken.None);
 
         // Assert
         email1.IsSent.ShouldBeTrue();
@@ -66,7 +63,7 @@ public sealed class ResendErrorEmailHandlerTests
             .ReturnsAsync([]);
 
         // Act
-        await _handler.Consume(_contextMock.Object);
+        await _handler.Handle(new ResendErrorEmailIntegrationEvent(), CancellationToken.None);
 
         // Assert
         _senderMock.Verify(
@@ -93,7 +90,7 @@ public sealed class ResendErrorEmailHandlerTests
             .Returns(Task.CompletedTask);
 
         // Act
-        await _handler.Consume(_contextMock.Object);
+        await _handler.Handle(new ResendErrorEmailIntegrationEvent(), CancellationToken.None);
 
         // Assert
         email1.IsSent.ShouldBeFalse();
@@ -121,7 +118,7 @@ public sealed class ResendErrorEmailHandlerTests
             .ThrowsAsync(new InvalidOperationException("Send failed"));
 
         // Act
-        await _handler.Consume(_contextMock.Object);
+        await _handler.Handle(new ResendErrorEmailIntegrationEvent(), CancellationToken.None);
 
         // Assert
         email1.IsSent.ShouldBeFalse();
@@ -136,8 +133,6 @@ public sealed class ResendErrorEmailHandlerTests
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
-        _contextMock.Setup(x => x.CancellationToken).Returns(cts.Token);
-
         var email = new Outbox("User1", "user1@test.com", "Sub1", "Body1");
 
         _repositoryMock
@@ -150,7 +145,7 @@ public sealed class ResendErrorEmailHandlerTests
 
         // Act & Assert
         await Should.ThrowAsync<OperationCanceledException>(() =>
-            _handler.Consume(_contextMock.Object)
+            _handler.Handle(new ResendErrorEmailIntegrationEvent(), cts.Token)
         );
     }
 
@@ -163,7 +158,7 @@ public sealed class ResendErrorEmailHandlerTests
             .ReturnsAsync([]);
 
         // Act
-        await _handler.Consume(_contextMock.Object);
+        await _handler.Handle(new ResendErrorEmailIntegrationEvent(), CancellationToken.None);
 
         // Assert
         _repositoryMock.Verify(
@@ -185,7 +180,7 @@ public sealed class ResendErrorEmailHandlerTests
             .ReturnsAsync([unsent1, unsent2, unsent3]);
 
         // Act
-        await _handler.Consume(_contextMock.Object);
+        await _handler.Handle(new ResendErrorEmailIntegrationEvent(), CancellationToken.None);
 
         // Assert
         unsent1.IsSent.ShouldBeTrue();
@@ -210,7 +205,7 @@ public sealed class ResendErrorEmailHandlerTests
             .ReturnsAsync([unsent]);
 
         // Act
-        await _handler.Consume(_contextMock.Object);
+        await _handler.Handle(new ResendErrorEmailIntegrationEvent(), CancellationToken.None);
 
         // Assert
         unsent.IsSent.ShouldBeTrue();
@@ -245,7 +240,7 @@ public sealed class ResendErrorEmailHandlerTests
             .Returns(Task.CompletedTask);
 
         // Act
-        await _handler.Consume(_contextMock.Object);
+        await _handler.Handle(new ResendErrorEmailIntegrationEvent(), CancellationToken.None);
 
         // Assert - processed in the order the spec returned them
         sendOrder.Count.ShouldBe(3);

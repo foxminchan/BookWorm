@@ -1,7 +1,9 @@
-﻿namespace BookWorm.Contracts;
+﻿using Wolverine.Persistence.Sagas;
+
+namespace BookWorm.Contracts;
 
 public sealed record UserCheckedOutIntegrationEvent(
-    Guid OrderId,
+    [property: SagaIdentity] Guid OrderId,
     Guid BasketId,
     string? FullName,
     string? Email,

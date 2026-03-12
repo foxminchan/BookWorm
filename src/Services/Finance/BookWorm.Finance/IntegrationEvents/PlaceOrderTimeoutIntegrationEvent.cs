@@ -1,3 +1,6 @@
-﻿namespace BookWorm.Contracts;
+﻿using Wolverine.Persistence.Sagas;
 
-public sealed record PlaceOrderTimeoutIntegrationEvent(Guid OrderId) : IntegrationEvent;
+namespace BookWorm.Contracts;
+
+public sealed record PlaceOrderTimeoutIntegrationEvent([property: SagaIdentity] Guid OrderId)
+    : IntegrationEvent;

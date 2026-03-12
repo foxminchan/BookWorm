@@ -1,11 +1,12 @@
 ﻿using BookWorm.Chassis.EventBus.Dispatcher;
 using BookWorm.Constants.Aspire;
 using FluentValidation;
-using MassTransit;
-using MassTransit.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Wolverine;
+using Wolverine.ErrorHandling;
+using Wolverine.RabbitMQ;
 
 namespace BookWorm.Chassis.EventBus;
 
@@ -14,8 +15,7 @@ public static class Extensions
     public static void AddEventBus(
         this IHostApplicationBuilder builder,
         Type type,
-        Action<IBusRegistrationConfigurator>? busConfigure = null,
-        Action<IBusRegistrationContext, IRabbitMqBusFactoryConfigurator>? rabbitMqConfigure = null
+        Action<WolverineOptions>? configure = null
     )
     {
         var connectionString = builder.Configuration.GetConnectionString(Components.Queue);
@@ -25,49 +25,26 @@ public static class Extensions
             return;
         }
 
-        builder.Services.AddMassTransit(config =>
+        builder.UseWolverine(opts =>
         {
-            config.SetKebabCaseEndpointNameFormatter();
+            opts.Discovery.IncludeAssembly(type.Assembly);
 
-            config.AddConsumers(type.Assembly);
+            opts.UseRabbitMq(new Uri(connectionString)).AutoProvision().UseConventionalRouting();
 
-            config.AddActivities(type.Assembly);
+            opts.Policies.OnException<ValidationException>().Discard();
+            opts.Policies.OnException<Exception>()
+                .RetryWithCooldown(
+                    TimeSpan.FromMilliseconds(200),
+                    TimeSpan.FromSeconds(1),
+                    TimeSpan.FromSeconds(5)
+                );
 
-            config.AddRequestClient(type);
-
-            config.UsingRabbitMq(
-                (context, configurator) =>
-                {
-                    configurator.Host(new Uri(connectionString));
-                    configurator.ConfigureEndpoints(context);
-                    configurator.UseMessageRetry(AddRetryConfiguration);
-                    rabbitMqConfigure?.Invoke(context, configurator);
-                }
-            );
-
-            busConfigure?.Invoke(config);
+            configure?.Invoke(opts);
         });
-
-        builder
-            .Services.AddOpenTelemetry()
-            .WithMetrics(b => b.AddMeter(DiagnosticHeaders.DefaultListenerName))
-            .WithTracing(p => p.AddSource(DiagnosticHeaders.DefaultListenerName));
     }
 
     public static void AddEventDispatcher(this IServiceCollection services)
     {
         services.AddScoped<IEventDispatcher, EventDispatcher>();
-    }
-
-    private static void AddRetryConfiguration(IRetryConfigurator retryConfigurator)
-    {
-        retryConfigurator
-            .Exponential(
-                3,
-                TimeSpan.FromMilliseconds(200),
-                TimeSpan.FromMinutes(120),
-                TimeSpan.FromMilliseconds(200)
-            )
-            .Ignore<ValidationException>();
     }
 }

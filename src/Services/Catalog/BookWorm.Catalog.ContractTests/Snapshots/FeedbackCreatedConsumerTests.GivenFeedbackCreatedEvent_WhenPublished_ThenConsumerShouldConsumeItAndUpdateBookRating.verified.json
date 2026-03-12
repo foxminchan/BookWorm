@@ -1,64 +1,8 @@
 ﻿{
-  "harness": {
-    "Messages": [
-      {
-        "Published": "FeedbackCreatedIntegrationEvent",
-        "MessageId": "Guid_1",
-        "ConversationId": "Guid_2",
-        "DestinationAddress": "BookWorm.Contracts:FeedbackCreatedIntegrationEvent",
-        "Message": {
-          "Rating": 4,
-          "FeedbackId": "Guid_3",
-          "Id": "Guid_4",
-          "CreationDate": "DateTime_1"
-        },
-        "Headers": [
-          {
-            "Key": "MT-Activity-Id",
-            "Value": "TraceId_Scrubbed"
-          }
-        ]
-      },
-      {
-        "Received": "FeedbackCreatedIntegrationEvent",
-        "MessageId": "Guid_1",
-        "ConversationId": "Guid_2",
-        "DestinationAddress": "BookWorm.Contracts:FeedbackCreatedIntegrationEvent",
-        "Message": {
-          "Rating": 4,
-          "FeedbackId": "Guid_3",
-          "Id": "Guid_5",
-          "CreationDate": "DateTime_2"
-        },
-        "Headers": [
-          {
-            "Key": "MT-Activity-Id",
-            "Value": "TraceId_Scrubbed"
-          }
-        ]
-      }
-    ]
-  },
-  "consumer": {
-    "Consumed": [
-      {
-        "Received": "FeedbackCreatedIntegrationEvent",
-        "MessageId": "Guid_1",
-        "ConversationId": "Guid_2",
-        "DestinationAddress": "BookWorm.Contracts:FeedbackCreatedIntegrationEvent",
-        "Message": {
-          "Rating": 4,
-          "FeedbackId": "Guid_3",
-          "Id": "Guid_5",
-          "CreationDate": "DateTime_2"
-        },
-        "Headers": [
-          {
-            "Key": "MT-Activity-Id",
-            "Value": "TraceId_Scrubbed"
-          }
-        ]
-      }
-    ]
+  "event": {
+    "Rating": 4,
+    "FeedbackId": "Guid_1",
+    "Id": "Guid_2",
+    "CreationDate": "DateTime_1"
   }
 }

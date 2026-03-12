@@ -7,13 +7,14 @@ internal sealed class ResendErrorEmailIntegrationEventHandler(
     GlobalLogBuffer logBuffer,
     IOutboxRepository repository,
     ISender sender
-) : IConsumer<ResendErrorEmailIntegrationEvent>
+)
 {
-    public async Task Consume(ConsumeContext<ResendErrorEmailIntegrationEvent> context)
+    public async Task Handle(
+        ResendErrorEmailIntegrationEvent @event,
+        CancellationToken cancellationToken
+    )
     {
-        var ct = context.CancellationToken;
-
-        var unsentEmails = await repository.ListAsync(new UnsentOutboxSpec(), ct);
+        var unsentEmails = await repository.ListAsync(new UnsentOutboxSpec(), cancellationToken);
 
         if (unsentEmails.Count == 0)
         {
@@ -35,13 +36,13 @@ internal sealed class ResendErrorEmailIntegrationEventHandler(
                     .WithBody(email.Body)
                     .Build();
 
-                await sender.SendAsync(message, ct);
+                await sender.SendAsync(message, cancellationToken);
 
                 email.MarkAsSent();
                 successCount++;
                 logger.LogDebug("Successfully resent email to {Email}", email.ToEmail);
             }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 throw;
             }
@@ -54,7 +55,7 @@ internal sealed class ResendErrorEmailIntegrationEventHandler(
 
         if (successCount > 0)
         {
-            await repository.UnitOfWork.SaveChangesAsync(ct);
+            await repository.UnitOfWork.SaveChangesAsync(cancellationToken);
         }
 
         logger.LogInformation(
@@ -68,16 +69,5 @@ internal sealed class ResendErrorEmailIntegrationEventHandler(
         {
             logBuffer.Flush();
         }
-    }
-}
-
-[ExcludeFromCodeCoverage]
-internal sealed class ResendErrorEmailIntegrationEventHandlerDefinition
-    : ConsumerDefinition<ResendErrorEmailIntegrationEventHandler>
-{
-    public ResendErrorEmailIntegrationEventHandlerDefinition()
-    {
-        Endpoint(x => x.Name = "notification-resend-error-email");
-        ConcurrentMessageLimit = 1;
     }
 }

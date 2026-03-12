@@ -1,7 +1,9 @@
-﻿namespace BookWorm.Contracts;
+﻿using Wolverine.Persistence.Sagas;
+
+namespace BookWorm.Contracts;
 
 public sealed record BasketDeletedCompleteIntegrationEvent(
-    Guid OrderId,
+    [property: SagaIdentity] Guid OrderId,
     Guid BasketId,
     decimal TotalMoney
 ) : IntegrationEvent;

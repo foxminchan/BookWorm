@@ -1,0 +1,37 @@
+﻿{
+  "saga": {
+    "Id": "Guid_1",
+    "BasketId": "Guid_2",
+    "FullName": "John Doe",
+    "Email": "john.doe@example.com",
+    "CurrentState": "Placed",
+    "TotalMoney": 99.99,
+    "OrderPlacedDate": "DateTime_1",
+    "IsTimeoutCancelled": false
+  },
+  "event": {
+    "OrderId": "Guid_1",
+    "BasketId": "Guid_2",
+    "FullName": "John Doe",
+    "Email": "john.doe@example.com",
+    "TotalMoney": 99.99,
+    "Id": "Guid_3",
+    "CreationDate": "DateTime_2"
+  },
+  "published": [
+    {
+      "OrderId": "Guid_1",
+      "Id": "Guid_4",
+      "CreationDate": "DateTime_3"
+    },
+    {
+      "BasketId": "Guid_2",
+      "FullName": "John Doe",
+      "Email": "john.doe@example.com",
+      "OrderId": "Guid_1",
+      "TotalMoney": 99.99,
+      "Id": "Guid_5",
+      "CreationDate": "DateTime_4"
+    }
+  ]
+}

@@ -15,3 +15,4 @@ global using BookWorm.ServiceDefaults.Kestrel;
 global using FluentValidation;
 global using Microsoft.AspNetCore.Http.HttpResults;
 global using Microsoft.Extensions.Diagnostics.HealthChecks;
+global using Wolverine;
