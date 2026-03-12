@@ -35,10 +35,14 @@ internal static class BookAgentRegistration
             (sp, key) =>
             {
                 var presidioService = sp.GetRequiredService<IPresidioService>();
+                var compactionProvider = CompactionPipelineFactory.CreateFull(
+                    sp.GetRequiredService<IChatClient>()
+                );
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
                     .Use(PIIMiddleware.Create(presidioService), null)
                     .Use(GuardrailMiddleware.InvokeAsync, null)
+                    .UseAIContextProviders(compactionProvider)
                     .Build(sp);
 
                 var mcpClient = sp.GetRequiredService<McpClient>();
