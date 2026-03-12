@@ -14,10 +14,12 @@ internal static class QAAgentRegistration
             (sp, key) =>
             {
                 var presidioService = sp.GetRequiredService<IPresidioService>();
+                var compactionProvider = CompactionPipelineFactory.CreateLight();
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
                     .Use(PIIMiddleware.Create(presidioService), null)
                     .Use(GuardrailMiddleware.InvokeAsync, null)
+                    .UseAIContextProviders(compactionProvider)
                     .Build(sp);
 
                 var skillsProvider = new FileAgentSkillsProvider(
