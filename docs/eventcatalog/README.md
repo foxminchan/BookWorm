@@ -11,12 +11,12 @@ automatically on every push to `main`.
 
 ## Tech Stack
 
-| Tool | Version | Purpose |
-|---|---|---|
-| [EventCatalog](https://www.eventcatalog.dev/) | latest | Catalog generator |
-| [EventCatalog Linter](https://www.eventcatalog.dev/docs/development/linter) | ^1.0 | Schema validation |
-| [Prettier](https://prettier.io/) | ^3.8 | Markdown formatting |
-| [Bun](https://bun.sh/) | latest | Package manager & script runner |
+| Tool                                                                        | Version | Purpose                         |
+| --------------------------------------------------------------------------- | ------- | ------------------------------- |
+| [EventCatalog](https://www.eventcatalog.dev/)                               | latest  | Catalog generator               |
+| [EventCatalog Linter](https://www.eventcatalog.dev/docs/development/linter) | ^1.0    | Schema validation               |
+| [Prettier](https://prettier.io/)                                            | ^3.8    | Markdown formatting             |
+| [Bun](https://bun.sh/)                                                      | latest  | Package manager & script runner |
 
 ## Prerequisites
 
@@ -37,16 +37,16 @@ The dev server opens at <http://localhost:3001> by default.
 
 ## Available Scripts
 
-| Script | Description |
-|---|---|
-| `bun run dev` | Start the development server with live reload |
-| `bun run build` | Build the production static site |
-| `bun run start` | Serve the built production site locally |
-| `bun run preview` | Preview the production build |
-| `bun run generate` | Run generators to produce catalog artifacts |
-| `bun run lint` | Validate catalog files with the EventCatalog linter |
-| `bun run format` | Format all files with Prettier |
-| `bun run check` | Run both linter and Prettier check in one step |
+| Script             | Description                                         |
+| ------------------ | --------------------------------------------------- |
+| `bun run dev`      | Start the development server with live reload       |
+| `bun run build`    | Build the production static site                    |
+| `bun run start`    | Serve the built production site locally             |
+| `bun run preview`  | Preview the production build                        |
+| `bun run generate` | Run generators to produce catalog artifacts         |
+| `bun run lint`     | Validate catalog files with the EventCatalog linter |
+| `bun run format`   | Format all files with Prettier                      |
+| `bun run check`    | Run both linter and Prettier check in one step      |
 
 ## Catalog Structure
 

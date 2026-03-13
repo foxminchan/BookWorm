@@ -3,22 +3,21 @@
 # BookWorm Docusaurus
 
 Comprehensive arc42 architecture documentation, Architecture Decision Records (ADRs), and a
-technical blog for [BookWorm](https://github.com/foxminchan/BookWorm) — a modern e-commerce
-platform built with .NET 10 microservices, Azure OpenAI, and Next.js 16.
+technical blog for [BookWorm](https://github.com/foxminchan/BookWorm) — a modern e-commerce platform
+built with .NET 10 microservices, Azure OpenAI, and Next.js 16.
 
-The site is published to GitHub Pages at
-**<https://foxminchan.github.io/BookWorm>** and is automatically rebuilt on every push to
-`main` via the CI workflow.
+The site is published to GitHub Pages at **<https://foxminchan.github.io/BookWorm>** and is
+automatically rebuilt on every push to `main` via the CI workflow.
 
 ## Tech Stack
 
-| Tool | Version | Purpose |
-|---|---|---|
-| [Docusaurus](https://docusaurus.io/) | 3.9.2 | Static site generator |
-| [React](https://react.dev/) | 19 | UI rendering |
-| [TypeScript](https://www.typescriptlang.org/) | ~5.9 | Type-safe configuration |
-| [Mermaid](https://mermaid.js.org/) | — | Architecture diagrams |
-| [Bun](https://bun.sh/) | latest | Package manager & script runner |
+| Tool                                          | Version | Purpose                         |
+| --------------------------------------------- | ------- | ------------------------------- |
+| [Docusaurus](https://docusaurus.io/)          | 3.9.2   | Static site generator           |
+| [React](https://react.dev/)                   | 19      | UI rendering                    |
+| [TypeScript](https://www.typescriptlang.org/) | ~5.9    | Type-safe configuration         |
+| [Mermaid](https://mermaid.js.org/)            | —       | Architecture diagrams           |
+| [Bun](https://bun.sh/)                        | latest  | Package manager & script runner |
 
 ## Prerequisites
 
@@ -39,17 +38,17 @@ The dev server opens at <http://localhost:3000/BookWorm> by default.
 
 ## Available Scripts
 
-| Script | Description |
-|---|---|
-| `bun run start` | Start the development server with live reload |
-| `bun run build` | Build the production static site into `build/` |
-| `bun run serve` | Serve the production build locally |
-| `bun run clear` | Clear the generated cache and build directories |
-| `bun run format` | Format all source files with Prettier |
-| `bun run format:check` | Check formatting without writing changes |
-| `bun run lint` | Lint and auto-fix with ESLint |
-| `bun run lint:check` | Lint without auto-fixing |
-| `bun run typecheck` | Run TypeScript type checking |
+| Script                 | Description                                     |
+| ---------------------- | ----------------------------------------------- |
+| `bun run start`        | Start the development server with live reload   |
+| `bun run build`        | Build the production static site into `build/`  |
+| `bun run serve`        | Serve the production build locally              |
+| `bun run clear`        | Clear the generated cache and build directories |
+| `bun run format`       | Format all source files with Prettier           |
+| `bun run format:check` | Check formatting without writing changes        |
+| `bun run lint`         | Lint and auto-fix with ESLint                   |
+| `bun run lint:check`   | Lint without auto-fixing                        |
+| `bun run typecheck`    | Run TypeScript type checking                    |
 
 ## Project Structure
 
@@ -111,9 +110,8 @@ directly on GitHub.
 
 ## Deployment
 
-The site is deployed automatically to [GitHub Pages](https://foxminchan.github.io/BookWorm)
-by the `docs.yaml` workflow whenever changes are pushed to `main` inside the `docs/docusaurus/`
-directory.
+The site is deployed automatically to [GitHub Pages](https://foxminchan.github.io/BookWorm) by the
+`docs.yaml` workflow whenever changes are pushed to `main` inside the `docs/docusaurus/` directory.
 
 To deploy manually:
 
