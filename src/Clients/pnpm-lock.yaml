@@ -276,8 +276,8 @@ importers:
         specifier: ^4.1.0
         version: 4.1.0
       flags:
-        specifier: ^4.0.4
-        version: 4.0.4(@opentelemetry/api@1.9.0)(next@16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+        specifier: ^4.0.5
+        version: 4.0.5(@opentelemetry/api@1.9.0)(next@16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       jotai:
         specifier: ^2.18.1
         version: 2.18.1(@babel/core@7.29.0)(@babel/template@7.28.6)(@types/react@19.2.14)(react@19.2.4)
@@ -5204,8 +5204,8 @@ packages:
     resolution: {integrity: sha512-78/PXT1wlLLDgTzDs7sjq9hzz0vXD+zn+7wypEe4fXQxCmdmqfGsEPQxmiCSQI3ajFV91bVSsvNtrJRiW6nGng==}
     engines: {node: '>=10'}
 
-  flags@4.0.4:
-    resolution: {integrity: sha512-JZtN48U/rxUm+ysvVq/7Iqc37U512XBPbkrbhWt7Jw887x5zd/Plr6wqax2cd3VcPnpBgud2QLlCYkKOU9Yoiw==}
+  flags@4.0.5:
+    resolution: {integrity: sha512-SRah0wf4wMT9TTqt0ac5HikBKl2fM0W8q8xKL+p91UpItWg2C5SiRkzvCrgYJgKhZIuEnCFb6pxeLv+Fg+jT6A==}
     peerDependencies:
       '@opentelemetry/api': ^1.7.0
       '@sveltejs/kit': '*'
@@ -13860,7 +13860,7 @@ snapshots:
       locate-path: 6.0.0
       path-exists: 4.0.0
 
-  flags@4.0.4(@opentelemetry/api@1.9.0)(next@16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
+  flags@4.0.5(@opentelemetry/api@1.9.0)(next@16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
     dependencies:
       '@edge-runtime/cookies': 5.0.2
       jose: 5.10.0
