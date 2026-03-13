@@ -246,6 +246,7 @@ public static class Extensions
                 consumerGroup,
                 e =>
                 {
+                    e.CreateIfMissing();
                     e.ConfigureConsumer<TConsumer>(context);
                 }
             );
