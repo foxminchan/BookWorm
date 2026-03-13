@@ -46,8 +46,9 @@ public static class Extensions
 
             config.AddRider(rider =>
             {
-                rider.AddConsumers(type.Assembly);
+                var consumerEntries = DiscoverConsumerEntries(type.Assembly);
 
+                RegisterKafkaConsumers(rider, consumerEntries);
                 RegisterKafkaProducers(rider, type.Assembly);
 
                 rider.UsingKafka(
@@ -55,7 +56,7 @@ public static class Extensions
                     {
                         k.Host(connectionString);
 
-                        ConfigureKafkaTopicEndpoints(k, context, type);
+                        ConfigureKafkaTopicEndpoints(k, context, type, consumerEntries);
                     }
                 );
             });
@@ -88,6 +89,36 @@ public static class Extensions
 
     private static readonly KebabCaseEndpointNameFormatter _formatter = new(false);
 
+    private static List<ConsumerEntry> DiscoverConsumerEntries(Assembly assembly)
+    {
+        var consumerInterface = typeof(IConsumer<>);
+
+        return assembly
+            .GetTypes()
+            .Where(t => t is { IsAbstract: false, IsInterface: false, IsClass: true })
+            .SelectMany(t =>
+                t.GetInterfaces()
+                    .Where(i =>
+                        i.IsGenericType && i.GetGenericTypeDefinition() == consumerInterface
+                    )
+                    .Select(i => new ConsumerEntry(t, i.GetGenericArguments()[0]))
+            )
+            .ToList();
+    }
+
+    private static void RegisterKafkaConsumers(
+        IRiderRegistrationConfigurator rider,
+        List<ConsumerEntry> consumerEntries
+    )
+    {
+        foreach (var entry in consumerEntries)
+        {
+            var registrarType = typeof(ConsumerRegistrar<>).MakeGenericType(entry.ConsumerType);
+            var registrar = (IConsumerRegistrar)Activator.CreateInstance(registrarType)!;
+            registrar.Register(rider);
+        }
+    }
+
     private static void RegisterKafkaProducers(
         IRiderRegistrationConfigurator rider,
         Assembly assembly
@@ -107,24 +138,11 @@ public static class Extensions
     private static void ConfigureKafkaTopicEndpoints(
         IKafkaFactoryConfigurator kafka,
         IRiderRegistrationContext context,
-        Type assemblyMarker
+        Type assemblyMarker,
+        List<ConsumerEntry> consumerEntries
     )
     {
-        var assembly = assemblyMarker.Assembly;
-        var consumerGroup = _formatter.SanitizeName(assembly.GetName().Name!);
-        var consumerInterface = typeof(IConsumer<>);
-
-        var consumerEntries = assembly
-            .GetTypes()
-            .Where(t => t is { IsAbstract: false, IsInterface: false, IsClass: true })
-            .SelectMany(t =>
-                t.GetInterfaces()
-                    .Where(i =>
-                        i.IsGenericType && i.GetGenericTypeDefinition() == consumerInterface
-                    )
-                    .Select(i => new { ConsumerType = t, MessageType = i.GetGenericArguments()[0] })
-            )
-            .ToList();
+        var consumerGroup = _formatter.SanitizeName(assemblyMarker.Assembly.GetName().Name!);
 
         foreach (var entry in consumerEntries)
         {
@@ -170,6 +188,22 @@ public static class Extensions
         }
 
         return messageTypes;
+    }
+
+    private sealed record ConsumerEntry(Type ConsumerType, Type MessageType);
+
+    private interface IConsumerRegistrar
+    {
+        void Register(IRiderRegistrationConfigurator rider);
+    }
+
+    private sealed class ConsumerRegistrar<TConsumer> : IConsumerRegistrar
+        where TConsumer : class, IConsumer
+    {
+        public void Register(IRiderRegistrationConfigurator rider)
+        {
+            rider.AddConsumer<TConsumer>();
+        }
     }
 
     private interface IProducerRegistrar
