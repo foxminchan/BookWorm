@@ -13,7 +13,7 @@
     <PackageVersion Include="Aspire.Hosting.Keycloak" Version="$(AspireUnstableVersion)" />
     <PackageVersion Include="Aspire.Hosting.OpenAI" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Qdrant" Version="$(AspireVersion)" />
-    <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Hosting.Kafka" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Yarp" Version="$(AspireVersion)" />
     <!-- Client -->
     <PackageVersion Include="Aspire.Azure.Npgsql" Version="$(AspireVersion)" />
@@ -77,7 +77,7 @@
     <PackageVersion Include="Grpc.Tools" Version="2.78.0" PrivateAssets="All" />
     <!-- MassTransit -->
     <PackageVersion Include="MassTransit.EntityFrameworkCore" Version="$(MassTransitVersion)" />
-    <PackageVersion Include="MassTransit.RabbitMQ" Version="$(MassTransitVersion)" />
+    <PackageVersion Include="MassTransit.Kafka" Version="$(MassTransitVersion)" />
     <!-- Quartz -->
     <PackageVersion Include="Quartz.Plugins" Version="$(QuartzVersion)" />
     <PackageVersion Include="Quartz.Dashboard" Version="$(QuartzVersion)" />

@@ -17,6 +17,6 @@ internal sealed class EventDispatcher(IBus bus, IEventMapper eventMapper) : IEve
             ?? throw new InvalidOperationException(
                 $"No integration event mapping found for '{@event.GetType().Name}'."
             );
-        await bus.Publish(integrationEvent, cancellationToken);
+        await bus.Publish((object)integrationEvent, cancellationToken);
     }
 }

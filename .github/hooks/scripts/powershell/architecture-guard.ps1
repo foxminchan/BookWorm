@@ -52,7 +52,7 @@ foreach ($svc in $Services) {
     if ($Content -match "ProjectReference.*BookWorm\.$svc[/\\]") {
         @{
             permissionDecision       = 'deny'
-            permissionDecisionReason = "Cross-service boundary violation: $CurrentService cannot have a direct ProjectReference to $svc. Services communicate via messaging (MassTransit/RabbitMQ) or gRPC."
+            permissionDecisionReason = "Cross-service boundary violation: $CurrentService cannot have a direct ProjectReference to $svc. Services communicate via messaging (MassTransit/Kafka) or gRPC."
         } | ConvertTo-Json -Compress
         exit 0
     }

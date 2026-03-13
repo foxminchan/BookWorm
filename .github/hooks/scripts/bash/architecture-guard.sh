@@ -47,7 +47,7 @@ for svc in "${SERVICES[@]}"; do
 
   # Check for direct project references to other services
   if echo "$CONTENT" | grep -qE "ProjectReference.*BookWorm\.$svc[/\\\\]"; then
-    jq -n --arg reason "Cross-service boundary violation: $CURRENT_SERVICE cannot have a direct ProjectReference to $svc. Services communicate via messaging (MassTransit/RabbitMQ) or gRPC." \
+    jq -n --arg reason "Cross-service boundary violation: $CURRENT_SERVICE cannot have a direct ProjectReference to $svc. Services communicate via messaging (MassTransit/Kafka) or gRPC." \
       '{permissionDecision: "deny", permissionDecisionReason: $reason}'
     exit 0
   fi
