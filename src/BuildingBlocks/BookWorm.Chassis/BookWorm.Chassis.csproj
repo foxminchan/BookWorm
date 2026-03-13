@@ -9,7 +9,7 @@
     <PackageReference Include="EFCore.NamingConventions" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
     <PackageReference Include="CloudNative.CloudEvents.SystemTextJson" />
-    <PackageReference Include="MassTransit.RabbitMQ" />
+    <PackageReference Include="MassTransit.Kafka" />
     <PackageReference Include="Scrutor" />
   </ItemGroup>
   <ItemGroup Label="AI">
