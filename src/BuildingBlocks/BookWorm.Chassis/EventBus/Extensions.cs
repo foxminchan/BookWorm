@@ -14,6 +14,8 @@ namespace BookWorm.Chassis.EventBus;
 
 public static class Extensions
 {
+    private static readonly KebabCaseEndpointNameFormatter _formatter = new(false);
+
     public static void AddEventBus(
         this IHostApplicationBuilder builder,
         Type type,
@@ -87,23 +89,23 @@ public static class Extensions
             .Ignore<ValidationException>();
     }
 
-    private static readonly KebabCaseEndpointNameFormatter _formatter = new(false);
-
     private static List<ConsumerEntry> DiscoverConsumerEntries(Assembly assembly)
     {
         var consumerInterface = typeof(IConsumer<>);
 
-        return assembly
-            .GetTypes()
-            .Where(t => t is { IsAbstract: false, IsInterface: false, IsClass: true })
-            .SelectMany(t =>
-                t.GetInterfaces()
-                    .Where(i =>
-                        i.IsGenericType && i.GetGenericTypeDefinition() == consumerInterface
-                    )
-                    .Select(i => new ConsumerEntry(t, i.GetGenericArguments()[0]))
-            )
-            .ToList();
+        return
+        [
+            .. assembly
+                .GetTypes()
+                .Where(t => t is { IsAbstract: false, IsInterface: false, IsClass: true })
+                .SelectMany(t =>
+                    t.GetInterfaces()
+                        .Where(i =>
+                            i.IsGenericType && i.GetGenericTypeDefinition() == consumerInterface
+                        )
+                        .Select(i => new ConsumerEntry(t, i.GetGenericArguments()[0]))
+                ),
+        ];
     }
 
     private static void RegisterKafkaConsumers(
@@ -111,10 +113,14 @@ public static class Extensions
         List<ConsumerEntry> consumerEntries
     )
     {
-        foreach (var entry in consumerEntries)
+        foreach (
+            var registrar in consumerEntries
+                .Select(entry => typeof(ConsumerRegistrar<>).MakeGenericType(entry.ConsumerType))
+                .Select(registrarType =>
+                    (IConsumerRegistrar)Activator.CreateInstance(registrarType)!
+                )
+        )
         {
-            var registrarType = typeof(ConsumerRegistrar<>).MakeGenericType(entry.ConsumerType);
-            var registrar = (IConsumerRegistrar)Activator.CreateInstance(registrarType)!;
             registrar.Register(rider);
         }
     }

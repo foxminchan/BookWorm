@@ -54,7 +54,7 @@ All services MUST follow DDD and Clean Architecture principles:
 - **Bounded Contexts**: Each microservice represents a single
   bounded context with well-defined responsibilities. Cross-
   context communication MUST occur through domain events via
-  MassTransit/RabbitMQ, never through shared databases.
+  MassTransit/Kafka, never through shared databases.
 - **Aggregate boundaries**: Aggregates enforce transactional
   consistency. Business logic MUST reside in the domain layer
   (entities, value objects, domain services) — not in
