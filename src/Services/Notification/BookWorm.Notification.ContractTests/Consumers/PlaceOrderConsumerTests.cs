@@ -1,4 +1,5 @@
-﻿using BookWorm.Common;
+﻿using BookWorm.Chassis.EventBus.Serialization;
+using BookWorm.Common;
 using BookWorm.Contracts;
 using BookWorm.Notification.Domain.Models;
 using BookWorm.Notification.Infrastructure.Render;
@@ -39,7 +40,17 @@ public sealed class PlaceOrderConsumerTests
 
         _provider = new ServiceCollection()
             .AddTelemetryListener()
-            .AddMassTransitTestHarness(cfg => cfg.AddConsumer<PlaceOrderCommandHandler>())
+            .AddMassTransitTestHarness(cfg =>
+            {
+                cfg.AddConsumer<PlaceOrderCommandHandler>();
+                cfg.UsingInMemory(
+                    (context, busCfg) =>
+                    {
+                        busCfg.UseCloudEvents();
+                        busCfg.ConfigureEndpoints(context);
+                    }
+                );
+            })
             .AddScoped(_ => _senderMock.Object)
             .AddSingleton(_rendererMock.Object)
             .AddSingleton(_mailKitSettings)

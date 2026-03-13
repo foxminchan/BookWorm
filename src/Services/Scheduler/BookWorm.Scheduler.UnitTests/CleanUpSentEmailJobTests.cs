@@ -1,4 +1,5 @@
-﻿using BookWorm.Contracts;
+﻿using BookWorm.Chassis.EventBus.Serialization;
+using BookWorm.Contracts;
 using BookWorm.Scheduler.Jobs;
 using MassTransit;
 using MassTransit.Testing;
@@ -32,6 +33,7 @@ public sealed class CleanUpSentEmailJobTests
                 cfg.UsingInMemory(
                     (context, configurator) =>
                     {
+                        configurator.UseCloudEvents();
                         configurator.ConfigureEndpoints(context);
                     }
                 );

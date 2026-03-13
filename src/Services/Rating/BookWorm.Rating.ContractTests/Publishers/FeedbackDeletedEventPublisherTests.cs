@@ -1,3 +1,4 @@
+using BookWorm.Chassis.EventBus.Serialization;
 using BookWorm.Common;
 using BookWorm.Contracts;
 using MassTransit;
@@ -16,7 +17,15 @@ public sealed class FeedbackDeletedEventPublisherTests
     {
         _provider = new ServiceCollection()
             .AddTelemetryListener()
-            .AddMassTransitTestHarness()
+            .AddMassTransitTestHarness(x =>
+                x.UsingInMemory(
+                    (context, cfg) =>
+                    {
+                        cfg.UseCloudEvents();
+                        cfg.ConfigureEndpoints(context);
+                    }
+                )
+            )
             .BuildServiceProvider(true);
 
         _harness = await _provider.StartTestHarness();

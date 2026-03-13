@@ -1,4 +1,5 @@
-﻿using BookWorm.Common;
+﻿using BookWorm.Chassis.EventBus.Serialization;
+using BookWorm.Common;
 using BookWorm.Contracts;
 using BookWorm.Notification.Domain.Models;
 using BookWorm.Notification.Infrastructure.Render;
@@ -45,7 +46,17 @@ public sealed class CancelOrderConsumerTests
 
         _provider = new ServiceCollection()
             .AddTelemetryListener()
-            .AddMassTransitTestHarness(x => x.AddConsumer<CancelOrderCommandHandler>())
+            .AddMassTransitTestHarness(x =>
+            {
+                x.AddConsumer<CancelOrderCommandHandler>();
+                x.UsingInMemory(
+                    (context, cfg) =>
+                    {
+                        cfg.UseCloudEvents();
+                        cfg.ConfigureEndpoints(context);
+                    }
+                );
+            })
             .AddScoped(_ => _senderMock.Object)
             .AddScoped(_ => _rendererMock.Object)
             .AddSingleton(_ => _mailKitSettings)

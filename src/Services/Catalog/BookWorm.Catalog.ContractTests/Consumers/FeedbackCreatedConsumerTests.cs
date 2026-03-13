@@ -1,6 +1,7 @@
 ﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 using BookWorm.Catalog.IntegrationEvents.EventHandlers;
 using BookWorm.Catalog.UnitTests.Fakers;
+using BookWorm.Chassis.EventBus.Serialization;
 using BookWorm.Chassis.Repository;
 using BookWorm.Common;
 using BookWorm.Contracts;
@@ -36,7 +37,17 @@ public sealed class FeedbackCreatedConsumerTests
 
         _provider = new ServiceCollection()
             .AddTelemetryListener()
-            .AddMassTransitTestHarness(x => x.AddConsumer<FeedbackCreatedIntegrationEventHandler>())
+            .AddMassTransitTestHarness(x =>
+            {
+                x.AddConsumer<FeedbackCreatedIntegrationEventHandler>();
+                x.UsingInMemory(
+                    (context, cfg) =>
+                    {
+                        cfg.UseCloudEvents();
+                        cfg.ConfigureEndpoints(context);
+                    }
+                );
+            })
             .AddScoped(_ => _repositoryMock.Object)
             .BuildServiceProvider(true);
 

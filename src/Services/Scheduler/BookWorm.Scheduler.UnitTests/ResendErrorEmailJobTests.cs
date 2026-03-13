@@ -1,3 +1,4 @@
+using BookWorm.Chassis.EventBus.Serialization;
 using BookWorm.Contracts;
 using BookWorm.Scheduler.Jobs;
 using MassTransit;
@@ -32,6 +33,7 @@ public sealed class ResendErrorEmailJobTests
                 cfg.UsingInMemory(
                     (context, configurator) =>
                     {
+                        configurator.UseCloudEvents();
                         configurator.ConfigureEndpoints(context);
                     }
                 );

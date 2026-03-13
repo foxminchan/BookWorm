@@ -1,4 +1,5 @@
-﻿using BookWorm.Common;
+﻿using BookWorm.Chassis.EventBus.Serialization;
+using BookWorm.Common;
 using BookWorm.Contracts;
 using BookWorm.Ordering.IntegrationEvents.EventHandlers;
 using MassTransit;
@@ -24,7 +25,17 @@ public sealed class DeleteBasketCompleteConsumerTests
 
         _provider = new ServiceCollection()
             .AddTelemetryListener()
-            .AddMassTransitTestHarness(x => x.AddConsumer<DeleteBasketCompleteCommandHandler>())
+            .AddMassTransitTestHarness(x =>
+            {
+                x.AddConsumer<DeleteBasketCompleteCommandHandler>();
+                x.UsingInMemory(
+                    (context, cfg) =>
+                    {
+                        cfg.UseCloudEvents();
+                        cfg.ConfigureEndpoints(context);
+                    }
+                );
+            })
             .AddScoped(_ => _loggerMock.Object)
             .BuildServiceProvider(true);
 
