@@ -1,4 +1,5 @@
 ﻿using BookWorm.Chassis.EventBus.Dispatcher;
+using BookWorm.Chassis.EventBus.Serialization;
 using BookWorm.Constants.Aspire;
 using FluentValidation;
 using MassTransit;
@@ -38,6 +39,7 @@ public static class Extensions
             config.UsingRabbitMq(
                 (context, configurator) =>
                 {
+                    configurator.UseCloudEvents();
                     configurator.Host(new Uri(connectionString));
                     configurator.ConfigureEndpoints(context);
                     configurator.UseMessageRetry(AddRetryConfiguration);

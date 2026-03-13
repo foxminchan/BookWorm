@@ -35,13 +35,7 @@
           "TotalMoney": 99.99,
           "Id": "Guid_6",
           "CreationDate": "DateTime_2"
-        },
-        "Headers": [
-          {
-            "Key": "MT-Activity-Id",
-            "Value": "TraceId_Scrubbed"
-          }
-        ]
+        }
       },
       {
         "Sent": "PlaceOrderTimeoutIntegrationEvent",
@@ -115,13 +109,7 @@
           "TotalMoney": 99.99,
           "Id": "Guid_15",
           "CreationDate": "DateTime_6"
-        },
-        "Headers": [
-          {
-            "Key": "MT-Activity-Id",
-            "Value": "TraceId_Scrubbed"
-          }
-        ]
+        }
       },
       {
         "Published": "DeleteBasketCompleteCommand",
@@ -158,13 +146,7 @@
           "TotalMoney": 99.99,
           "Id": "Guid_6",
           "CreationDate": "DateTime_2"
-        },
-        "Headers": [
-          {
-            "Key": "MT-Activity-Id",
-            "Value": "TraceId_Scrubbed"
-          }
-        ]
+        }
       },
       {
         "Received": "BasketDeletedCompleteIntegrationEvent",
@@ -177,13 +159,7 @@
           "TotalMoney": 99.99,
           "Id": "Guid_15",
           "CreationDate": "DateTime_6"
-        },
-        "Headers": [
-          {
-            "Key": "MT-Activity-Id",
-            "Value": "TraceId_Scrubbed"
-          }
-        ]
+        }
       }
     ],
     "Sagas": [

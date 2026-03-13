@@ -1,4 +1,5 @@
-﻿using BookWorm.Common;
+﻿using BookWorm.Chassis.EventBus.Serialization;
+using BookWorm.Common;
 using BookWorm.Contracts;
 using BookWorm.Notification.Domain.Exceptions;
 using BookWorm.Notification.Domain.Models;
@@ -46,7 +47,17 @@ public sealed class CompleteOrderConsumerTests
 
         _provider = new ServiceCollection()
             .AddTelemetryListener()
-            .AddMassTransitTestHarness(x => x.AddConsumer<CompleteOrderCommandHandler>())
+            .AddMassTransitTestHarness(x =>
+            {
+                x.AddConsumer<CompleteOrderCommandHandler>();
+                x.UsingInMemory(
+                    (context, cfg) =>
+                    {
+                        cfg.UseCloudEvents();
+                        cfg.ConfigureEndpoints(context);
+                    }
+                );
+            })
             .AddScoped(_ => _senderMock.Object)
             .AddScoped(_ => _rendererMock.Object)
             .AddSingleton(_ => _mailKitSettings)

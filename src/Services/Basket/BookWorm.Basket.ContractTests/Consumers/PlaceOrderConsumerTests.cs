@@ -1,5 +1,6 @@
 ﻿using BookWorm.Basket.Domain;
 using BookWorm.Basket.IntegrationEvents.EventHandlers;
+using BookWorm.Chassis.EventBus.Serialization;
 using BookWorm.Common;
 using BookWorm.Contracts;
 using MassTransit;
@@ -26,7 +27,17 @@ public sealed class PlaceOrderConsumerTests
 
         _provider = new ServiceCollection()
             .AddTelemetryListener()
-            .AddMassTransitTestHarness(x => x.AddConsumer<PlaceOrderCommandHandler>())
+            .AddMassTransitTestHarness(x =>
+            {
+                x.AddConsumer<PlaceOrderCommandHandler>();
+                x.UsingInMemory(
+                    (context, cfg) =>
+                    {
+                        cfg.UseCloudEvents();
+                        cfg.ConfigureEndpoints(context);
+                    }
+                );
+            })
             .AddScoped(_ => _repositoryMock.Object)
             .BuildServiceProvider(true);
 

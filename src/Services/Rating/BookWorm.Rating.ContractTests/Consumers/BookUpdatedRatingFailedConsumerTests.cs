@@ -1,4 +1,5 @@
-﻿using BookWorm.Chassis.Repository;
+﻿using BookWorm.Chassis.EventBus.Serialization;
+using BookWorm.Chassis.Repository;
 using BookWorm.Common;
 using BookWorm.Contracts;
 using BookWorm.Rating.Domain.FeedbackAggregator;
@@ -33,8 +34,16 @@ public sealed class BookUpdatedRatingFailedConsumerTests
         _provider = new ServiceCollection()
             .AddTelemetryListener()
             .AddMassTransitTestHarness(x =>
-                x.AddConsumer<BookUpdatedRatingFailedIntegrationEventHandler>()
-            )
+            {
+                x.AddConsumer<BookUpdatedRatingFailedIntegrationEventHandler>();
+                x.UsingInMemory(
+                    (context, cfg) =>
+                    {
+                        cfg.UseCloudEvents();
+                        cfg.ConfigureEndpoints(context);
+                    }
+                );
+            })
             .AddScoped(_ => _repositoryMock.Object)
             .BuildServiceProvider(true);
 

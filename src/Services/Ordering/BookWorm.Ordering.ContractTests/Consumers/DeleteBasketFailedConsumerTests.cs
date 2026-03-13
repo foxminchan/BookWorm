@@ -1,4 +1,5 @@
-﻿using BookWorm.Chassis.Repository;
+﻿using BookWorm.Chassis.EventBus.Serialization;
+using BookWorm.Chassis.Repository;
 using BookWorm.Common;
 using BookWorm.Contracts;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
@@ -36,7 +37,17 @@ public sealed class DeleteBasketFailedConsumerTests
 
         _provider = new ServiceCollection()
             .AddTelemetryListener()
-            .AddMassTransitTestHarness(x => x.AddConsumer<DeleteBasketFailedCommandHandler>())
+            .AddMassTransitTestHarness(x =>
+            {
+                x.AddConsumer<DeleteBasketFailedCommandHandler>();
+                x.UsingInMemory(
+                    (context, cfg) =>
+                    {
+                        cfg.UseCloudEvents();
+                        cfg.ConfigureEndpoints(context);
+                    }
+                );
+            })
             .AddScoped(_ => _repositoryMock.Object)
             .BuildServiceProvider(true);
 

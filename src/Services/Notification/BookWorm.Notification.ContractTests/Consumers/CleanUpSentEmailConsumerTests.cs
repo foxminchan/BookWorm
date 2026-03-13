@@ -1,4 +1,5 @@
-﻿using BookWorm.Chassis.Repository;
+﻿using BookWorm.Chassis.EventBus.Serialization;
+using BookWorm.Chassis.Repository;
 using BookWorm.Chassis.Specification;
 using BookWorm.Common;
 using BookWorm.Contracts;
@@ -34,8 +35,16 @@ public sealed class CleanUpSentEmailConsumerTests
         _provider = new ServiceCollection()
             .AddTelemetryListener()
             .AddMassTransitTestHarness(x =>
-                x.AddConsumer<CleanUpSentEmailIntegrationEventHandler>()
-            )
+            {
+                x.AddConsumer<CleanUpSentEmailIntegrationEventHandler>();
+                x.UsingInMemory(
+                    (context, cfg) =>
+                    {
+                        cfg.UseCloudEvents();
+                        cfg.ConfigureEndpoints(context);
+                    }
+                );
+            })
             .AddScoped(_ => _loggerMock.Object)
             .AddScoped(_ => _logBufferMock.Object)
             .AddScoped(_ => _repositoryMock.Object)

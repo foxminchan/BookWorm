@@ -1,3 +1,4 @@
+using BookWorm.Chassis.EventBus.Serialization;
 using BookWorm.Chassis.Repository;
 using BookWorm.Common;
 using BookWorm.Contracts;
@@ -37,8 +38,16 @@ public sealed class ResendErrorEmailConsumerTests
         _provider = new ServiceCollection()
             .AddTelemetryListener()
             .AddMassTransitTestHarness(x =>
-                x.AddConsumer<ResendErrorEmailIntegrationEventHandler>()
-            )
+            {
+                x.AddConsumer<ResendErrorEmailIntegrationEventHandler>();
+                x.UsingInMemory(
+                    (context, cfg) =>
+                    {
+                        cfg.UseCloudEvents();
+                        cfg.ConfigureEndpoints(context);
+                    }
+                );
+            })
             .AddScoped(_ => _loggerMock.Object)
             .AddScoped(_ => _logBufferMock.Object)
             .AddScoped(_ => _repositoryMock.Object)

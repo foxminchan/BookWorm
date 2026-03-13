@@ -1,4 +1,5 @@
-﻿using BookWorm.Contracts;
+﻿using BookWorm.Chassis.EventBus.Serialization;
+using BookWorm.Contracts;
 using BookWorm.Finance.Saga;
 using BookWorm.Finance.Saga.Activities;
 using BookWorm.Finance.UnitTests.Extensions;
@@ -35,8 +36,17 @@ public sealed class OrderStateMachineTests
             .AddTelemetryListener()
             .AddMassTransitTestHarness(cfg =>
             {
+                cfg.AddDelayedMessageScheduler();
                 cfg.AddSagaStateMachine<OrderStateMachine, OrderState>();
                 cfg.SetTestTimeouts(testInactivityTimeout: TimeSpan.FromSeconds(60));
+                cfg.UsingInMemory(
+                    (context, busCfg) =>
+                    {
+                        busCfg.UseCloudEvents();
+                        busCfg.UseDelayedMessageScheduler();
+                        busCfg.ConfigureEndpoints(context);
+                    }
+                );
             })
             .BuildServiceProvider(true);
 
