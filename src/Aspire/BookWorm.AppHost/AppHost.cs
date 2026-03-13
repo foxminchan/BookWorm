@@ -26,13 +26,11 @@ var qdrant = builder
     .WithLifetime(ContainerLifetime.Persistent);
 
 var queue = builder
-    .AddRabbitMQ(Components.Queue)
+    .AddKafka(Components.Broker)
     .WithIconName("Pipeline")
-    .WithManagementPlugin()
-    .WithDataVolume()
+    .WithKafkaUI()
     .WithImagePullPolicy(ImagePullPolicy.Always)
-    .WithLifetime(ContainerLifetime.Persistent)
-    .WithEndpoint(Network.Tcp, e => e.Port = 5672);
+    .WithLifetime(ContainerLifetime.Persistent);
 
 var storage = builder
     .AddAzureStorage(Components.Azure.Storage.Resource)

@@ -28,8 +28,6 @@ internal static class SagaExtensions
             typeof(IFinanceApiMarker),
             configurator =>
             {
-                configurator.AddDelayedMessageScheduler();
-
                 configurator
                     .AddSagaStateMachine<
                         OrderStateMachine,
@@ -45,8 +43,7 @@ internal static class SagaExtensions
                 });
 
                 configurator.AddEntityFrameworkOutbox();
-            },
-            (_, configure) => configure.UseDelayedMessageScheduler()
+            }
         );
     }
 

@@ -2,7 +2,7 @@
 
 ## Project Identity
 
-BookWorm is a .NET 10 microservices bookstore using Aspire orchestration, DDD with Clean Architecture, and event-driven patterns (MassTransit/RabbitMQ).
+BookWorm is a .NET 10 microservices bookstore using Aspire orchestration, DDD with Clean Architecture, and event-driven patterns (MassTransit/Kafka).
 
 ## Tech Stack
 
@@ -10,7 +10,7 @@ BookWorm is a .NET 10 microservices bookstore using Aspire orchestration, DDD wi
 - **Frontend**: TypeScript 5.7+, Next.js 16, React 19, pnpm + Turbo monorepo
 - **CQRS**: `Mediator.SourceGenerator` (source generator-based, NOT MediatR) — uses `ICommand<T>`/`IQuery<T>` and `ICommandHandler`/`IQueryHandler`
 - **Testing**: TUnit, Moq, Bogus, Shouldly, Verify.TUnit
-- **Messaging**: MassTransit with RabbitMQ (outbox/inbox patterns)
+- **Messaging**: MassTransit with Kafka (outbox/inbox patterns)
 - **AI**: Microsoft Agents AI Framework, Semantic Kernel, MCP server
 - **Auth**: Keycloak with token introspection
 

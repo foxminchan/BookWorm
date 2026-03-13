@@ -15,7 +15,7 @@
     <PackageReference Include="Aspire.Hosting.OpenAI" />
     <PackageReference Include="Aspire.Hosting.Qdrant" />
     <PackageReference Include="Aspire.Hosting.Keycloak" />
-    <PackageReference Include="Aspire.Hosting.RabbitMQ" />
+    <PackageReference Include="Aspire.Hosting.Kafka" />
   </ItemGroup>
   <ItemGroup Label="Azure">
     <PackageReference Include="Aspire.Hosting.Azure.Redis" />
