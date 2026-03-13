@@ -20,7 +20,7 @@ public static class Extensions
         Action<IBusRegistrationConfigurator>? busConfigure = null
     )
     {
-        var connectionString = builder.Configuration.GetConnectionString(Components.Queue);
+        var connectionString = builder.Configuration.GetConnectionString(Components.Broker);
 
         if (string.IsNullOrWhiteSpace(connectionString))
         {
@@ -40,10 +40,7 @@ public static class Extensions
                     configurator.ConfigureEndpoints(context);
                     configurator.UseMessageRetry(AddRetryConfiguration);
                     configurator.UseDelayedMessageScheduler();
-                    configurator.UsePublishFilter(
-                        typeof(KafkaPublishFilter<>),
-                        context
-                    );
+                    configurator.UsePublishFilter(typeof(KafkaPublishFilter<>), context);
                 }
             );
 
@@ -89,8 +86,7 @@ public static class Extensions
             .Ignore<ValidationException>();
     }
 
-    private static readonly IEndpointNameFormatter Formatter =
-        new KebabCaseEndpointNameFormatter(false);
+    private static readonly KebabCaseEndpointNameFormatter _formatter = new(false);
 
     private static void RegisterKafkaProducers(
         IRiderRegistrationConfigurator rider,
@@ -101,7 +97,7 @@ public static class Extensions
 
         foreach (var messageType in messageTypes)
         {
-            var topicName = Formatter.SanitizeName(messageType.Name);
+            var topicName = _formatter.SanitizeName(messageType.Name);
             var registrarType = typeof(ProducerRegistrar<>).MakeGenericType(messageType);
             var registrar = (IProducerRegistrar)Activator.CreateInstance(registrarType)!;
             registrar.Register(rider, topicName);
@@ -115,12 +111,12 @@ public static class Extensions
     )
     {
         var assembly = assemblyMarker.Assembly;
-        var consumerGroup = Formatter.SanitizeName(assembly.GetName().Name!);
+        var consumerGroup = _formatter.SanitizeName(assembly.GetName().Name!);
         var consumerInterface = typeof(IConsumer<>);
 
         var consumerEntries = assembly
             .GetTypes()
-            .Where(t => !t.IsAbstract && !t.IsInterface && t.IsClass)
+            .Where(t => t is { IsAbstract: false, IsInterface: false, IsClass: true })
             .SelectMany(t =>
                 t.GetInterfaces()
                     .Where(i =>
@@ -132,7 +128,7 @@ public static class Extensions
 
         foreach (var entry in consumerEntries)
         {
-            var topicName = Formatter.SanitizeName(entry.MessageType.Name);
+            var topicName = _formatter.SanitizeName(entry.MessageType.Name);
             var configuratorType = typeof(TopicEndpointConfigurator<,>).MakeGenericType(
                 entry.MessageType,
                 entry.ConsumerType
@@ -152,8 +148,7 @@ public static class Extensions
         foreach (var type in assembly.GetTypes())
         {
             if (
-                !type.IsAbstract
-                && !type.IsInterface
+                type is { IsAbstract: false, IsInterface: false }
                 && integrationEventType.IsAssignableFrom(type)
             )
             {
@@ -165,14 +160,11 @@ public static class Extensions
                 continue;
             }
 
-            foreach (var iface in type.GetInterfaces())
+            foreach (var face in type.GetInterfaces())
             {
-                if (
-                    iface.IsGenericType
-                    && iface.GetGenericTypeDefinition() == consumerInterface
-                )
+                if (face.IsGenericType && face.GetGenericTypeDefinition() == consumerInterface)
                 {
-                    messageTypes.Add(iface.GetGenericArguments()[0]);
+                    messageTypes.Add(face.GetGenericArguments()[0]);
                 }
             }
         }
@@ -204,8 +196,7 @@ public static class Extensions
         );
     }
 
-    private sealed class TopicEndpointConfigurator<TMessage, TConsumer>
-        : ITopicEndpointConfigurator
+    private sealed class TopicEndpointConfigurator<TMessage, TConsumer> : ITopicEndpointConfigurator
         where TMessage : class
         where TConsumer : class, IConsumer<TMessage>
     {

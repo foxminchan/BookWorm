@@ -3,8 +3,8 @@
 public static class Components
 {
     public const string K6 = "k6";
-    public const string Queue = "queue";
     public const string Redis = "redis";
+    public const string Broker = "broker";
     public const string MailPit = "mailpit";
     public const string Postgres = "postgres";
     public const string KeyCloak = "keycloak";

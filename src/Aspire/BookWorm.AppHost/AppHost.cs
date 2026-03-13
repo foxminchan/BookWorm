@@ -26,10 +26,9 @@ var qdrant = builder
     .WithLifetime(ContainerLifetime.Persistent);
 
 var queue = builder
-    .AddKafka(Components.Queue)
+    .AddKafka(Components.Broker)
     .WithIconName("Pipeline")
     .WithKafkaUI()
-    .WithDataVolume()
     .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent);
 
