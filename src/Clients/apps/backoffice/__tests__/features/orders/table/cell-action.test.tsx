@@ -8,9 +8,6 @@ import type { Order } from "@workspace/types/ordering/orders";
 import { createMockOrder } from "@/__tests__/factories";
 import { CellAction } from "@/features/orders/table/cell-action";
 
-vi.mock("@workspace/api-hooks/ordering/orders/useCancelOrder");
-vi.mock("@workspace/api-hooks/ordering/orders/useCompleteOrder");
-vi.mock("@workspace/api-hooks/ordering/orders/useDeleteOrder");
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: vi.fn(),

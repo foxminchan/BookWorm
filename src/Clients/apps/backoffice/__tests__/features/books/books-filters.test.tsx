@@ -9,10 +9,6 @@ import {
 } from "@/__tests__/factories";
 import { BooksFilters } from "@/features/books/books-filters";
 
-vi.mock("@workspace/api-hooks/catalog/authors/useAuthors");
-vi.mock("@workspace/api-hooks/catalog/categories/useCategories");
-vi.mock("@workspace/api-hooks/catalog/publishers/usePublishers");
-
 const mockUseAuthors = vi.hoisted(() => vi.fn());
 const mockUseCategories = vi.hoisted(() => vi.fn());
 const mockUsePublishers = vi.hoisted(() => vi.fn());

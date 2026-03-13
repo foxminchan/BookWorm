@@ -4,8 +4,6 @@ import { describe, expect, it, vi } from "vitest";
 import { createMockBook } from "@/__tests__/factories";
 import { BookSelector } from "@/features/reviews/book-selector";
 
-vi.mock("@workspace/api-hooks/catalog/books/useBooks");
-
 const mockUseBooks = vi.hoisted(() => vi.fn());
 
 vi.mock("@workspace/api-hooks/catalog/books/useBooks", () => ({
