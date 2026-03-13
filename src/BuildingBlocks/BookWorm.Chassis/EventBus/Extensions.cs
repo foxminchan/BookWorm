@@ -89,29 +89,8 @@ public static class Extensions
             .Ignore<ValidationException>();
     }
 
-    private static string ToKebabCase(string typeName)
-    {
-        var chars = new List<char>(typeName.Length + 10);
-
-        for (var i = 0; i < typeName.Length; i++)
-        {
-            if (char.IsUpper(typeName[i]))
-            {
-                if (i > 0)
-                {
-                    chars.Add('-');
-                }
-
-                chars.Add(char.ToLowerInvariant(typeName[i]));
-            }
-            else
-            {
-                chars.Add(typeName[i]);
-            }
-        }
-
-        return new(chars.ToArray());
-    }
+    private static readonly IEndpointNameFormatter Formatter =
+        new KebabCaseEndpointNameFormatter(false);
 
     private static void RegisterKafkaProducers(
         IRiderRegistrationConfigurator rider,
@@ -122,7 +101,7 @@ public static class Extensions
 
         foreach (var messageType in messageTypes)
         {
-            var topicName = ToKebabCase(messageType.Name);
+            var topicName = Formatter.SanitizeName(messageType.Name);
             var registrarType = typeof(ProducerRegistrar<>).MakeGenericType(messageType);
             var registrar = (IProducerRegistrar)Activator.CreateInstance(registrarType)!;
             registrar.Register(rider, topicName);
@@ -136,7 +115,7 @@ public static class Extensions
     )
     {
         var assembly = assemblyMarker.Assembly;
-        var consumerGroup = assembly.GetName().Name!.ToLowerInvariant().Replace('.', '-');
+        var consumerGroup = Formatter.SanitizeName(assembly.GetName().Name!);
         var consumerInterface = typeof(IConsumer<>);
 
         var consumerEntries = assembly
@@ -153,7 +132,7 @@ public static class Extensions
 
         foreach (var entry in consumerEntries)
         {
-            var topicName = ToKebabCase(entry.MessageType.Name);
+            var topicName = Formatter.SanitizeName(entry.MessageType.Name);
             var configuratorType = typeof(TopicEndpointConfigurator<,>).MakeGenericType(
                 entry.MessageType,
                 entry.ConsumerType
