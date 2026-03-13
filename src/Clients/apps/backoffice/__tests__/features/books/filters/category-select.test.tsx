@@ -5,8 +5,6 @@ import { describe, expect, it, vi } from "vitest";
 import { createMockCategory } from "@/__tests__/factories";
 import { CategorySelect } from "@/features/books/filters/category-select";
 
-vi.mock("@workspace/api-hooks/catalog/categories/useCategories");
-
 const mockUseCategories = vi.hoisted(() => vi.fn());
 
 vi.mock("@workspace/api-hooks/catalog/categories/useCategories", () => ({

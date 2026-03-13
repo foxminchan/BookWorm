@@ -13,12 +13,6 @@ import {
 import { BookForm } from "@/features/books/book-form";
 
 vi.mock("next/navigation");
-vi.mock("@workspace/api-hooks/catalog/books/useBook");
-vi.mock("@workspace/api-hooks/catalog/books/useCreateBook");
-vi.mock("@workspace/api-hooks/catalog/books/useUpdateBook");
-vi.mock("@workspace/api-hooks/catalog/authors/useAuthors");
-vi.mock("@workspace/api-hooks/catalog/categories/useCategories");
-vi.mock("@workspace/api-hooks/catalog/publishers/usePublishers");
 
 const mockPush = vi.fn();
 const mockUseRouter = vi.mocked(useRouter);

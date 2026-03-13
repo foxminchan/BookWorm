@@ -6,8 +6,6 @@ import { describe, expect, it, vi } from "vitest";
 import { createMockFeedback } from "@/__tests__/factories";
 import { CellAction } from "@/features/reviews/table/cell-action";
 
-vi.mock("@workspace/api-hooks/rating/useDeleteFeedback");
-
 const mockUseDeleteFeedback = vi.hoisted(() => vi.fn());
 
 vi.mock("@workspace/api-hooks/rating/useDeleteFeedback", () => ({
