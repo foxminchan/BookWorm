@@ -21,4 +21,11 @@ public static class CloudEventConfiguratorExtensions
         configurator.AddSerializer(factory);
         configurator.AddDeserializer(factory, true);
     }
+
+    public static void UseCloudEvents(this IReceiveEndpointConfigurator configurator)
+    {
+        var factory = new CloudEventSerializerFactory();
+        configurator.AddSerializer(factory);
+        configurator.AddDeserializer(factory, true);
+    }
 }

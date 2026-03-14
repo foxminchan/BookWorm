@@ -57,6 +57,7 @@ public static class Extensions
                     (context, k) =>
                     {
                         k.Host(connectionString);
+                        k.SetSerializationFactory(new CloudEventKafkaSerializerFactory());
 
                         ConfigureKafkaTopicEndpoints(k, context, type, consumerEntries);
                     }
