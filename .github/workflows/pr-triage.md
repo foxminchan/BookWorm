@@ -92,6 +92,7 @@ Apply these type labels when clearly indicated:
 5. **Identify PR type**: Add type labels if applicable (breaking, refactoring, deps)
 6. **Be conservative**: Only apply labels you're confident about
 7. **Don't duplicate**: Don't add labels that are already present
+8. **Skip bot PRs**: Do not triage pull requests opened by bots (e.g., Dependabot, Copilot, or other automated tools); use `noop` if the PR author is a bot
 
 ## Decision Process
 
