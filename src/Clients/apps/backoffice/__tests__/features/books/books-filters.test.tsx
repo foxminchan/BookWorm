@@ -25,6 +25,68 @@ vi.mock("@workspace/api-hooks/catalog/publishers/usePublishers", () => ({
   default: mockUsePublishers,
 }));
 
+// Mock useDebounceCallback to fire immediately
+vi.mock("usehooks-ts", () => ({
+  useDebounceCallback: (fn: (...args: unknown[]) => void) => fn,
+}));
+
+// Capture callback from PriceRangeFilter
+let capturedPriceRangeOnChange: ((min: number, max: number) => void) | null =
+  null;
+
+vi.mock("@/features/books/filters/price-range-filter", () => ({
+  PriceRangeFilter: ({
+    onChange,
+    minPrice,
+    maxPrice,
+  }: {
+    onChange: (min: number, max: number) => void;
+    minPrice: number;
+    maxPrice: number;
+  }) => {
+    capturedPriceRangeOnChange = onChange;
+    return (
+      <div data-testid="price-range-filter">
+        Price Range: ${minPrice} - ${maxPrice}
+        <button
+          type="button"
+          data-testid="change-price"
+          onClick={() => onChange(10, 50)}
+        >
+          Change Price
+        </button>
+      </div>
+    );
+  },
+}));
+
+// Capture callbacks from AuthorsFilter
+vi.mock("@/features/books/filters/authors-filter", () => ({
+  AuthorsFilter: ({
+    onToggle,
+    onClear,
+    selectedAuthors,
+  }: {
+    onToggle: (id: string) => void;
+    onClear: () => void;
+    selectedAuthors: string[];
+  }) => (
+    <div data-testid="authors-filter">
+      Authors ({selectedAuthors.length})
+      <button
+        type="button"
+        data-testid="toggle-author"
+        onClick={() => onToggle("author-1")}
+      >
+        Toggle Author
+      </button>
+      <button type="button" data-testid="clear-authors" onClick={onClear}>
+        Clear Authors
+      </button>
+    </div>
+  ),
+}));
+
 describe("BooksFilters", () => {
   const mockOnFiltersChange = vi.fn();
   const mockAuthors = [createMockAuthor(), createMockAuthor()];
@@ -119,7 +181,7 @@ describe("BooksFilters", () => {
 
     await user.click(screen.getByRole("button", { name: /expand.*filters/i }));
 
-    expect(screen.getByText(/Authors/)).toBeInTheDocument();
+    expect(screen.getByTestId("authors-filter")).toBeInTheDocument();
   });
 
   it("resets all filters when clicking reset button", async () => {
@@ -170,7 +232,7 @@ describe("BooksFilters", () => {
     await user.click(screen.getByRole("button", { name: /expand.*filters/i }));
 
     // Should display authors section
-    expect(screen.getByText(/Authors/)).toBeInTheDocument();
+    expect(screen.getByTestId("authors-filter")).toBeInTheDocument();
   });
 
   it("calls onFiltersChange with updated filters", async () => {
@@ -195,7 +257,60 @@ describe("BooksFilters", () => {
     // All filter sections should be visible
     expect(screen.getByLabelText(/Category/)).toBeInTheDocument();
     expect(screen.getByLabelText(/Publisher/)).toBeInTheDocument();
-    expect(screen.getByText(/Authors/)).toBeInTheDocument();
+    expect(screen.getByTestId("authors-filter")).toBeInTheDocument();
     expect(screen.getByText(/Price Range:/)).toBeInTheDocument();
+  });
+
+  it("triggers price range change callback", async () => {
+    const user = userEvent.setup();
+    render(<BooksFilters onFiltersChange={mockOnFiltersChange} />);
+
+    await user.click(screen.getByRole("button", { name: /expand.*filters/i }));
+
+    // Click the mock price change button
+    await user.click(screen.getByTestId("change-price"));
+
+    // onFiltersChange should have been called with non-default price values
+    expect(mockOnFiltersChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        minPrice: 10,
+        maxPrice: 50,
+      }),
+    );
+  });
+
+  it("toggles author selection", async () => {
+    const user = userEvent.setup();
+    render(<BooksFilters onFiltersChange={mockOnFiltersChange} />);
+
+    await user.click(screen.getByRole("button", { name: /expand.*filters/i }));
+
+    // Toggle an author
+    await user.click(screen.getByTestId("toggle-author"));
+
+    // onFiltersChange should include the selected author
+    expect(mockOnFiltersChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authorId: "author-1",
+      }),
+    );
+  });
+
+  it("clears all selected authors", async () => {
+    const user = userEvent.setup();
+    render(<BooksFilters onFiltersChange={mockOnFiltersChange} />);
+
+    await user.click(screen.getByRole("button", { name: /expand.*filters/i }));
+
+    // Toggle an author first, then clear
+    await user.click(screen.getByTestId("toggle-author"));
+    await user.click(screen.getByTestId("clear-authors"));
+
+    // Last call should have no authorId
+    const lastCall =
+      mockOnFiltersChange.mock.calls[
+        mockOnFiltersChange.mock.calls.length - 1
+      ][0];
+    expect(lastCall.authorId).toBeUndefined();
   });
 });

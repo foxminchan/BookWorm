@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { PriceRangeFilter } from "@/features/books/filters/price-range-filter";
@@ -219,12 +219,12 @@ describe("PriceRangeFilter", () => {
       />,
     );
 
-    // Trigger the onValueChange callback via the mocked Slider
-    // If the mock captured the callback, invoke it to simulate user interaction
-    if (mockOnValueChange) {
-      mockOnValueChange([30, 70]);
-      expect(onChange).toHaveBeenCalledWith(30, 70);
-    }
+    // The mock Slider captures onValueChange
+    expect(mockOnValueChange).not.toBeNull();
+    act(() => {
+      mockOnValueChange!([30, 70]);
+    });
+    expect(onChange).toHaveBeenCalledWith(30, 70);
   });
 
   it("does not call onChange when min is undefined", () => {
@@ -240,10 +240,9 @@ describe("PriceRangeFilter", () => {
       />,
     );
 
-    // Trigger with undefined min
-    if (mockOnValueChange) {
-      mockOnValueChange([undefined as any, 70]);
-    }
+    act(() => {
+      mockOnValueChange!([undefined as any, 70]);
+    });
 
     expect(onChange).not.toHaveBeenCalled();
   });
@@ -261,10 +260,9 @@ describe("PriceRangeFilter", () => {
       />,
     );
 
-    // Trigger with undefined max
-    if (mockOnValueChange) {
-      mockOnValueChange([30, undefined as any]);
-    }
+    act(() => {
+      mockOnValueChange!([30, undefined as any]);
+    });
 
     expect(onChange).not.toHaveBeenCalled();
   });
@@ -282,10 +280,9 @@ describe("PriceRangeFilter", () => {
       />,
     );
 
-    // Trigger with both undefined
-    if (mockOnValueChange) {
-      mockOnValueChange([undefined as any, undefined as any]);
-    }
+    act(() => {
+      mockOnValueChange!([undefined as any, undefined as any]);
+    });
 
     expect(onChange).not.toHaveBeenCalled();
   });
