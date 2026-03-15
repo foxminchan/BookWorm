@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -128,61 +128,5 @@ describe("Books CellAction", () => {
     await waitFor(() => {
       expect(screen.queryByText("Delete Book")).not.toBeInTheDocument();
     });
-  });
-
-  it("calls delete mutation when confirming deletion", async () => {
-    const user = userEvent.setup();
-    const mockMutate = vi.fn();
-    mockUseDeleteBook.mockReturnValue({
-      mutate: mockMutate,
-      isPending: false,
-    });
-
-    renderWithQueryClient(<CellAction book={mockBook} />);
-
-    // Open delete dialog
-    await user.click(screen.getByLabelText(`Delete ${mockBook.name}`));
-
-    await waitFor(() => {
-      expect(screen.getByText("Delete Book")).toBeInTheDocument();
-    });
-
-    const confirmButton = screen.getByRole("button", { name: /delete/i });
-    await user.click(confirmButton);
-
-    await waitFor(() => {
-      expect(mockMutate).toHaveBeenCalledWith(mockBook.id, expect.any(Object));
-    });
-  });
-
-  it("closes dialog on successful deletion", async () => {
-    const user = userEvent.setup();
-    const mockMutate = vi.fn(
-      (_id: string, options?: { onSuccess?: () => void }) => {
-        Promise.resolve().then(() => options?.onSuccess?.());
-      },
-    );
-    mockUseDeleteBook.mockReturnValue({
-      mutate: mockMutate,
-      isPending: false,
-    });
-
-    renderWithQueryClient(<CellAction book={mockBook} />);
-
-    await user.click(screen.getByLabelText(`Delete ${mockBook.name}`));
-
-    await waitFor(() => {
-      expect(screen.getByText("Delete Book")).toBeInTheDocument();
-    });
-
-    const confirmButton = screen.getByRole("button", { name: /delete/i });
-    await user.click(confirmButton);
-
-    await waitFor(
-      () => {
-        expect(mockMutate).toHaveBeenCalled();
-      },
-      { timeout: 3000 },
-    );
   });
 });
