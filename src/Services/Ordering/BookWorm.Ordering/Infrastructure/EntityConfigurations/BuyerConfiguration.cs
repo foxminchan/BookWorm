@@ -33,7 +33,5 @@ internal sealed class BuyerConfiguration : IEntityTypeConfiguration<Buyer>
             .WithOne(e => e.Buyer)
             .HasForeignKey(e => e.BuyerId)
             .OnDelete(DeleteBehavior.SetNull);
-
-        builder.Navigation(x => x.Orders).AutoInclude();
     }
 }

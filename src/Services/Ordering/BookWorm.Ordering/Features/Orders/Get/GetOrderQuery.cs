@@ -22,7 +22,7 @@ internal sealed class GetOrderHandler(
     )
     {
         Order? order;
-        if (claimsPrincipal.GetRoles().Contains(Authorization.Roles.Admin))
+        if (claimsPrincipal.HasRole(Authorization.Roles.Admin))
         {
             order = await repository.GetByIdAsync(request.Id, cancellationToken);
         }

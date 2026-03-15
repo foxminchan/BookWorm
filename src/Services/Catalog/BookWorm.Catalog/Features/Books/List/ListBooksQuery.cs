@@ -61,6 +61,11 @@ internal sealed class ListBooksHandler(
             );
 
             ids = [.. response.Select(x => x.Id)];
+
+            if (ids.Length == 0)
+            {
+                return new([], request.PageIndex, request.PageSize, 0);
+            }
         }
 
         var filterSpec = new BookFilterSpec(
