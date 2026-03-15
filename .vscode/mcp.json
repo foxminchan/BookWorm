@@ -5,6 +5,12 @@
       "type": "promptString",
       "password": true,
       "description": "Enter your Context7 API Key"
+    },
+    {
+      "id": "sonarqube-token",
+      "type": "promptString",
+      "password": true,
+      "description": "Enter your SonarQube Token"
     }
   ],
   "servers": {
@@ -34,6 +40,25 @@
     "drawio": {
       "command": "bunx",
       "args": ["@drawio/mcp"]
+    },
+    "sonarqube": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--init",
+        "--pull=always",
+        "-i",
+        "--rm",
+        "-e",
+        "SONARQUBE_TOKEN",
+        "-e",
+        "SONARQUBE_ORG",
+        "mcp/sonarqube"
+      ],
+      "env": {
+        "SONARQUBE_TOKEN": "${input:sonarqube-token}",
+        "SONARQUBE_ORG": "foxminchan"
+      }
     }
   }
 }
