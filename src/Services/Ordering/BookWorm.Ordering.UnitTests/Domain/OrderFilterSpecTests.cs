@@ -98,6 +98,7 @@ public sealed class OrderFilterSpecTests
 
         // Assert
         spec.WhereExpressions.ShouldNotBeEmpty();
+        spec.AsTracking.ShouldBeTrue();
     }
 
     [Test]
@@ -112,6 +113,7 @@ public sealed class OrderFilterSpecTests
 
         // Assert
         spec.WhereExpressions.ShouldNotBeEmpty();
+        spec.AsTracking.ShouldBeTrue();
     }
 
     [Test]

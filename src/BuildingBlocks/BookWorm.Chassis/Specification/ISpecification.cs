@@ -21,6 +21,8 @@ public interface ISpecification<T>
 
     bool AsNoTracking { get; }
 
+    bool AsTracking { get; }
+
     bool AsSplitQuery { get; }
 
     bool IgnoreQueryFilters { get; }

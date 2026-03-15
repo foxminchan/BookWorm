@@ -7,6 +7,6 @@ internal sealed class UnsentOutboxSpec : Specification<Outbox>
 {
     public UnsentOutboxSpec()
     {
-        Query.Where(x => !x.IsSent).OrderBy(x => x.SequenceNumber);
+        Query.AsTracking().Where(x => !x.IsSent).OrderBy(x => x.SequenceNumber);
     }
 }
