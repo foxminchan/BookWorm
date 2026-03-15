@@ -9,7 +9,18 @@ public sealed class BookSpecExpressionTests
     public void GivenNameOrderBy_WhenAscending_ThenShouldApplyAscendingOrder()
     {
         // Act
-        var spec = new BookFilterSpec(1, 10, nameof(Book.Name), false, null, null, null, null, null, null);
+        var spec = new BookFilterSpec(
+            1,
+            10,
+            nameof(Book.Name),
+            false,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+        );
 
         // Assert
         spec.OrderExpressions.ShouldNotBeEmpty();
@@ -19,7 +30,18 @@ public sealed class BookSpecExpressionTests
     public void GivenNameOrderBy_WhenDescending_ThenShouldApplyDescendingOrder()
     {
         // Act
-        var spec = new BookFilterSpec(1, 10, nameof(Book.Name), true, null, null, null, null, null, null);
+        var spec = new BookFilterSpec(
+            1,
+            10,
+            nameof(Book.Name),
+            true,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+        );
 
         // Assert
         spec.OrderExpressions.ShouldNotBeEmpty();

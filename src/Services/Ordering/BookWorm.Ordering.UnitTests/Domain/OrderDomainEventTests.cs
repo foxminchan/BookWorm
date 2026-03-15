@@ -105,11 +105,7 @@ public sealed class OrderDomainEventTests
     public void GivenOrderWithSingleItem_WhenCalculatingTotalPrice_ThenShouldReturnItemTotal()
     {
         // Arrange
-        var order = new Order(
-            Guid.CreateVersion7(),
-            null,
-            [new(Guid.CreateVersion7(), 2, 25.00m)]
-        );
+        var order = new Order(Guid.CreateVersion7(), null, [new(Guid.CreateVersion7(), 2, 25.00m)]);
 
         // Act
         var totalPrice = order.TotalPrice;
