@@ -4,6 +4,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
+import { ImageCard } from "@/features/books/image-card";
+
 // Mock next/image to avoid URL validation issues in test environment
 vi.mock("next/image", () => ({
   __esModule: true,
@@ -17,8 +19,6 @@ vi.mock("next/image", () => ({
     });
   },
 }));
-
-import { ImageCard } from "@/features/books/image-card";
 
 describe("ImageCard", () => {
   const defaultProps = {
@@ -48,7 +48,10 @@ describe("ImageCard", () => {
 
   it("renders image preview when imagePreview is set", () => {
     render(
-      <ImageCard {...defaultProps} imagePreview="https://example.com/book.jpg" />,
+      <ImageCard
+        {...defaultProps}
+        imagePreview="https://example.com/book.jpg"
+      />,
     );
 
     const image = screen.getByRole("img");
@@ -67,15 +70,15 @@ describe("ImageCard", () => {
     );
 
     const image = screen.getByRole("img");
-    expect(image).toHaveAttribute(
-      "alt",
-      "Cover image for The Great Gatsby",
-    );
+    expect(image).toHaveAttribute("alt", "Cover image for The Great Gatsby");
   });
 
   it("renders change image input when preview exists", () => {
     render(
-      <ImageCard {...defaultProps} imagePreview="https://example.com/book.jpg" />,
+      <ImageCard
+        {...defaultProps}
+        imagePreview="https://example.com/book.jpg"
+      />,
     );
 
     const fileInput = screen.getByLabelText(/Change book cover/i);
@@ -101,7 +104,10 @@ describe("ImageCard", () => {
 
   it("does not render remove button when no bookId", () => {
     render(
-      <ImageCard {...defaultProps} imagePreview="https://example.com/book.jpg" />,
+      <ImageCard
+        {...defaultProps}
+        imagePreview="https://example.com/book.jpg"
+      />,
     );
 
     expect(

@@ -119,9 +119,7 @@ describe("ClassificationCard", () => {
 
   it("hides validation message when authors are selected", () => {
     render(
-      <ClassificationCardWrapper
-        selectedAuthors={[mockAuthors[0]!.id]}
-      />,
+      <ClassificationCardWrapper selectedAuthors={[mockAuthors[0]!.id]} />,
     );
 
     expect(
@@ -144,9 +142,7 @@ describe("ClassificationCard", () => {
   it("calls onToggleAuthor when clicking an author checkbox", async () => {
     const onToggleAuthor = vi.fn();
     const user = userEvent.setup();
-    render(
-      <ClassificationCardWrapper onToggleAuthor={onToggleAuthor} />,
-    );
+    render(<ClassificationCardWrapper onToggleAuthor={onToggleAuthor} />);
 
     await user.click(screen.getByLabelText("Author One"));
 

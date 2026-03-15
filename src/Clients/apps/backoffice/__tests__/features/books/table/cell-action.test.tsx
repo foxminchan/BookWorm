@@ -129,4 +129,56 @@ describe("Books CellAction", () => {
       expect(screen.queryByText("Delete Book")).not.toBeInTheDocument();
     });
   });
+
+  it("calls delete mutation when confirming deletion", async () => {
+    const user = userEvent.setup();
+    const mockMutate = vi.fn();
+    mockUseDeleteBook.mockReturnValue({
+      mutate: mockMutate,
+      isPending: false,
+    });
+
+    renderWithQueryClient(<CellAction book={mockBook} />);
+
+    // Open delete dialog
+    await user.click(screen.getByLabelText(`Delete ${mockBook.name}`));
+    await screen.findByRole("alertdialog");
+
+    // Click confirm delete
+    const confirmButton = screen.getByRole("button", { name: /delete/i });
+    await user.click(confirmButton);
+
+    expect(mockMutate).toHaveBeenCalledWith(
+      mockBook.id,
+      expect.objectContaining({
+        onSuccess: expect.any(Function),
+      }),
+    );
+  });
+
+  it("closes dialog and shows toast on successful deletion", async () => {
+    const user = userEvent.setup();
+    const mockMutate = vi.fn();
+    mockUseDeleteBook.mockReturnValue({
+      mutate: mockMutate,
+      isPending: false,
+    });
+
+    renderWithQueryClient(<CellAction book={mockBook} />);
+
+    // Open and confirm delete
+    await user.click(screen.getByLabelText(`Delete ${mockBook.name}`));
+    await screen.findByRole("alertdialog");
+
+    const confirmButton = screen.getByRole("button", { name: /delete/i });
+    await user.click(confirmButton);
+
+    // Invoke the onSuccess callback
+    const onSuccess = mockMutate.mock.calls[0][1].onSuccess;
+    onSuccess();
+
+    await waitFor(() => {
+      expect(screen.queryByText("Delete Book")).not.toBeInTheDocument();
+    });
+  });
 });
