@@ -8,6 +8,14 @@ public static partial class SpecificationBuilderExtensions
         public ISpecificationBuilder<T> AsNoTracking()
         {
             builder.Specification.AsNoTracking = true;
+            builder.Specification.AsTracking = false;
+            return builder;
+        }
+
+        public ISpecificationBuilder<T> AsTracking()
+        {
+            builder.Specification.AsTracking = true;
+            builder.Specification.AsNoTracking = false;
             return builder;
         }
 

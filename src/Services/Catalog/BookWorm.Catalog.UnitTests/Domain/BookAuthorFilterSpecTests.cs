@@ -15,5 +15,6 @@ public sealed class BookAuthorFilterSpecTests
 
         // Assert
         spec.WhereExpressions.ShouldNotBeEmpty();
+        spec.AsNoTracking.ShouldBeTrue();
     }
 }

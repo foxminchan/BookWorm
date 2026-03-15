@@ -27,11 +27,11 @@ public sealed class OrderFilterSpec : Specification<Order>
 
     public OrderFilterSpec(Guid orderId, Status orderStatus)
     {
-        Query.Where(x => x.Id == orderId && x.Status == orderStatus);
+        Query.AsTracking().Where(x => x.Id == orderId && x.Status == orderStatus);
     }
 
     public OrderFilterSpec(Guid orderId, Guid buyerId)
     {
-        Query.Where(x => x.Id == orderId && x.BuyerId == buyerId);
+        Query.AsTracking().Where(x => x.Id == orderId && x.BuyerId == buyerId);
     }
 }

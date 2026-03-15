@@ -32,6 +32,7 @@ public static class DbContextExtensions
                 options
                     .UseNpgsql(builder.Configuration.GetConnectionString(name))
                     .UseSnakeCaseNamingConvention()
+                    .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
                     // Issue: https://github.com/dotnet/efcore/issues/35285
                     .ConfigureWarnings(warnings =>
                         warnings.Ignore(RelationalEventId.PendingModelChangesWarning)

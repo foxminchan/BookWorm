@@ -13,6 +13,7 @@ public sealed class UnsentOutboxSpecTests
         // Assert
         spec.WhereExpressions.ShouldNotBeEmpty();
         spec.OrderExpressions.ShouldNotBeEmpty();
+        spec.AsTracking.ShouldBeTrue();
     }
 
     [Test]
