@@ -141,7 +141,7 @@ describe("ImageCard", () => {
     expect(onImageChange).toHaveBeenCalled();
   });
 
-  it("calls onImageError as error handler on image element", () => {
+  it("calls onImageError when image fails to load", () => {
     const onImageError = vi.fn();
 
     render(
@@ -153,6 +153,8 @@ describe("ImageCard", () => {
     );
 
     const image = screen.getByRole("img");
-    expect(image).toBeInTheDocument();
+    image.dispatchEvent(new Event("error"));
+
+    expect(onImageError).toHaveBeenCalled();
   });
 });
