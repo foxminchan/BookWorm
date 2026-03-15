@@ -60,6 +60,9 @@ jobs:
       - name: Setup Just
         uses: extractions/setup-just@v3
 
+      - name: Setup Docker
+        uses: docker/setup-docker-action@v5
+
       - name: Install Tools
         run: dotnet tool restore
 
