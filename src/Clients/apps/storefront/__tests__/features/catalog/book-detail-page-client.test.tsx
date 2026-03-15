@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { renderWithProviders, screen } from "@/__tests__/utils/test-utils";
+import {
+  fireEvent,
+  renderWithProviders,
+  screen,
+  waitFor,
+} from "@/__tests__/utils/test-utils";
 import BookDetailPageClient from "@/features/catalog/product/book-detail-page-client";
 
 // Hoisted mocks
@@ -97,16 +102,83 @@ vi.mock("@/features/catalog/product/product-section", () => ({
   default: (props: Record<string, unknown>) => (
     <div data-testid="product-section" data-quantity={props.quantity}>
       Product Section
+      <button
+        type="button"
+        data-testid="add-to-basket"
+        onClick={props.onAddToBasket as () => void}
+      >
+        Add
+      </button>
+      <button
+        type="button"
+        data-testid="decrease-qty"
+        onClick={props.onDecrease as () => void}
+      >
+        Decrease
+      </button>
+      <button
+        type="button"
+        data-testid="increase-qty"
+        onClick={props.onIncrease as () => void}
+      >
+        Increase
+      </button>
+      <input
+        data-testid="qty-input"
+        onChange={props.onQuantityChange as (e: unknown) => void}
+      />
     </div>
   ),
 }));
 
 vi.mock("@/features/catalog/product/reviews-container", () => ({
-  default: (props: Record<string, unknown>) => (
-    <div data-testid="reviews-container" data-page={props.currentPage}>
-      Reviews
-    </div>
-  ),
+  default: (props: Record<string, unknown>) => {
+    const reviewForm = props.reviewForm as Record<string, unknown> | undefined;
+    return (
+      <div data-testid="reviews-container" data-page={props.currentPage}>
+        Reviews
+        <button
+          type="button"
+          data-testid="toggle-review-form"
+          onClick={props.onToggleReviewForm as () => void}
+        >
+          Toggle Review
+        </button>
+        <button
+          type="button"
+          data-testid="summarize"
+          onClick={props.onSummarize as () => void}
+        >
+          Summarize
+        </button>
+        <button
+          type="button"
+          data-testid="sort-change"
+          onClick={() =>
+            (props.onSortChange as (s: string) => void)?.("highest")
+          }
+        >
+          Sort
+        </button>
+        <button
+          type="button"
+          data-testid="page-change"
+          onClick={() => (props.onPageChange as (p: number) => void)?.(2)}
+        >
+          Page 2
+        </button>
+        {reviewForm && (
+          <button
+            type="button"
+            data-testid="submit-review"
+            onClick={reviewForm.onSubmit as () => void}
+          >
+            Submit
+          </button>
+        )}
+      </div>
+    );
+  },
 }));
 
 vi.mock("@/lib/seo", () => ({
@@ -402,5 +474,190 @@ describe("BookDetailPageClient", () => {
     renderWithProviders(<BookDetailPageClient id="test-id" />);
 
     expect(screen.getByTestId("product-section")).toBeInTheDocument();
+  });
+
+  it("adds new item to basket when quantity is 0", () => {
+    const mockCreateMutate = vi.fn();
+    mockUseCreateBasket.mockReturnValue({
+      mutate: mockCreateMutate,
+      isPending: false,
+    });
+    mockUseBasket.mockReturnValue({
+      data: { items: [] },
+      refetch: vi.fn(),
+    });
+
+    renderWithProviders(<BookDetailPageClient id="test-id" />);
+
+    fireEvent.click(screen.getByTestId("add-to-basket"));
+    expect(mockCreateMutate).toHaveBeenCalledWith({
+      items: [{ id: "test-id", quantity: 1 }],
+    });
+  });
+
+  it("updates basket when item already exists", () => {
+    const mockUpdateMutate = vi.fn();
+    mockUseUpdateBasket.mockReturnValue({
+      mutate: mockUpdateMutate,
+      isPending: false,
+    });
+    mockUseBasket.mockReturnValue({
+      data: { items: [{ id: "test-id", quantity: 2 }] },
+      refetch: vi.fn(),
+    });
+
+    renderWithProviders(<BookDetailPageClient id="test-id" />);
+
+    fireEvent.click(screen.getByTestId("add-to-basket"));
+    expect(mockUpdateMutate).toHaveBeenCalledWith({
+      request: { items: [{ id: "test-id", quantity: 3 }] },
+    });
+  });
+
+  it("shows remove dialog when decreasing from quantity 1", async () => {
+    mockUseBasket.mockReturnValue({
+      data: { items: [{ id: "test-id", quantity: 1 }] },
+      refetch: vi.fn(),
+    });
+
+    renderWithProviders(<BookDetailPageClient id="test-id" />);
+
+    fireEvent.click(screen.getByTestId("decrease-qty"));
+    await waitFor(() => {
+      expect(screen.getByTestId("remove-dialog")).toBeInTheDocument();
+    });
+  });
+
+  it("updates quantity to valid number via input change", () => {
+    const mockUpdateMutate = vi.fn();
+    mockUseUpdateBasket.mockReturnValue({
+      mutate: mockUpdateMutate,
+      isPending: false,
+    });
+    mockUseBasket.mockReturnValue({
+      data: { items: [{ id: "test-id", quantity: 1 }] },
+      refetch: vi.fn(),
+    });
+
+    renderWithProviders(<BookDetailPageClient id="test-id" />);
+
+    fireEvent.change(screen.getByTestId("qty-input"), {
+      target: { value: "5" },
+    });
+    expect(mockUpdateMutate).toHaveBeenCalledWith({
+      request: { items: [{ id: "test-id", quantity: 5 }] },
+    });
+  });
+
+  it("shows remove dialog when quantity input is 0", async () => {
+    mockUseBasket.mockReturnValue({
+      data: { items: [{ id: "test-id", quantity: 1 }] },
+      refetch: vi.fn(),
+    });
+
+    renderWithProviders(<BookDetailPageClient id="test-id" />);
+
+    fireEvent.click(screen.getByTestId("decrease-qty"));
+    await waitFor(() => {
+      expect(screen.getByTestId("remove-dialog")).toBeInTheDocument();
+    });
+  });
+
+  it("confirms removal and deletes basket when no items remain", async () => {
+    const mockDeleteMutate = vi.fn();
+    mockUseDeleteBasket.mockReturnValue({
+      mutate: mockDeleteMutate,
+      isPending: false,
+    });
+    mockUseBasket.mockReturnValue({
+      data: { items: [{ id: "test-id", quantity: 1 }] },
+      refetch: vi.fn(),
+    });
+
+    renderWithProviders(<BookDetailPageClient id="test-id" />);
+
+    // Trigger remove dialog by decreasing when quantity is 1
+    fireEvent.click(screen.getByTestId("decrease-qty"));
+    await waitFor(() => {
+      expect(screen.getByTestId("confirm-remove")).toBeInTheDocument();
+    });
+    // Confirm removal
+    fireEvent.click(screen.getByTestId("confirm-remove"));
+    expect(mockDeleteMutate).toHaveBeenCalledWith(undefined);
+  });
+
+  it("confirms removal and updates basket when other items remain", async () => {
+    const mockUpdateMutate = vi.fn();
+    mockUseUpdateBasket.mockReturnValue({
+      mutate: mockUpdateMutate,
+      isPending: false,
+    });
+    mockUseBasket.mockReturnValue({
+      data: {
+        items: [
+          { id: "test-id", quantity: 1 },
+          { id: "other-id", quantity: 2 },
+        ],
+      },
+      refetch: vi.fn(),
+    });
+
+    renderWithProviders(<BookDetailPageClient id="test-id" />);
+
+    // Trigger remove dialog by decreasing when quantity is 1
+    fireEvent.click(screen.getByTestId("decrease-qty"));
+    await waitFor(() => {
+      expect(screen.getByTestId("confirm-remove")).toBeInTheDocument();
+    });
+    // Confirm removal
+    fireEvent.click(screen.getByTestId("confirm-remove"));
+    expect(mockUpdateMutate).toHaveBeenCalledWith({
+      request: { items: [{ id: "other-id", quantity: 2 }] },
+    });
+  });
+
+  it("submits review and resets form on success", () => {
+    const mockFeedbackMutate = vi.fn();
+    mockUseCreateFeedback.mockReturnValue({
+      mutate: mockFeedbackMutate,
+      isPending: false,
+    });
+
+    renderWithProviders(<BookDetailPageClient id="test-id" />);
+
+    fireEvent.click(screen.getByTestId("submit-review"));
+    expect(mockFeedbackMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ bookId: "test-id" }),
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    );
+
+    // Invoke onSuccess to cover RESET_REVIEW dispatch
+    mockFeedbackMutate.mock.calls[0][1].onSuccess();
+  });
+
+  it("calls refetchSummary when summarize is clicked", () => {
+    const mockRefetch = vi.fn();
+    mockUseSummaryFeedback.mockReturnValue({
+      data: null,
+      isLoading: false,
+      refetch: mockRefetch,
+    });
+
+    renderWithProviders(<BookDetailPageClient id="test-id" />);
+
+    fireEvent.click(screen.getByTestId("summarize"));
+    expect(mockRefetch).toHaveBeenCalled();
+  });
+
+  it("changes sort and resets page", () => {
+    renderWithProviders(<BookDetailPageClient id="test-id" />);
+
+    fireEvent.click(screen.getByTestId("sort-change"));
+
+    // After sorting, feedbacks should be re-fetched with new sort params
+    const lastCall =
+      mockUseFeedbacks.mock.calls[mockUseFeedbacks.mock.calls.length - 1][0];
+    expect(lastCall.orderBy).toBe("rating");
+    expect(lastCall.isDescending).toBe(true);
   });
 });
