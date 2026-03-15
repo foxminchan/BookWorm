@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -142,18 +142,22 @@ describe("Books CellAction", () => {
 
     // Open delete dialog
     await user.click(screen.getByLabelText(`Delete ${mockBook.name}`));
-    await screen.findByRole("alertdialog");
+    const dialog = await screen.findByRole("alertdialog");
 
-    // Click confirm delete
-    const confirmButton = screen.getByRole("button", { name: /delete/i });
+    // Click confirm delete (scoped within dialog to avoid matching the trigger button)
+    const confirmButton = within(dialog).getByRole("button", {
+      name: "Delete",
+    });
     await user.click(confirmButton);
 
-    expect(mockMutate).toHaveBeenCalledWith(
-      mockBook.id,
-      expect.objectContaining({
-        onSuccess: expect.any(Function),
-      }),
-    );
+    await waitFor(() => {
+      expect(mockMutate).toHaveBeenCalledWith(
+        mockBook.id,
+        expect.objectContaining({
+          onSuccess: expect.any(Function),
+        }),
+      );
+    });
   });
 
   it("closes dialog and shows toast on successful deletion", async () => {
@@ -168,14 +172,20 @@ describe("Books CellAction", () => {
 
     // Open and confirm delete
     await user.click(screen.getByLabelText(`Delete ${mockBook.name}`));
-    await screen.findByRole("alertdialog");
+    const dialog = await screen.findByRole("alertdialog");
 
-    const confirmButton = screen.getByRole("button", { name: /delete/i });
+    const confirmButton = within(dialog).getByRole("button", {
+      name: "Delete",
+    });
     await user.click(confirmButton);
 
     // Invoke the onSuccess callback
-    const onSuccess = mockMutate.mock.calls[0][1].onSuccess;
-    onSuccess();
+    await waitFor(() => {
+      expect(mockMutate).toHaveBeenCalled();
+    });
+    const onSuccess = mockMutate.mock.calls[0]?.[1]?.onSuccess;
+    expect(onSuccess).toBeDefined();
+    onSuccess!();
 
     await waitFor(() => {
       expect(screen.queryByText("Delete Book")).not.toBeInTheDocument();
