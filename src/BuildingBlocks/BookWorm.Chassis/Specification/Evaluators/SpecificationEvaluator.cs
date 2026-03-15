@@ -12,6 +12,7 @@ public sealed class SpecificationEvaluator
             OrderEvaluator.Instance,
             PaginationEvaluator.Instance,
             AsNoTrackingEvaluator.Instance,
+            AsTrackingEvaluator.Instance,
             IgnoreQueryFiltersEvaluator.Instance,
             AsSplitQueryEvaluator.Instance,
         ]);

@@ -28,6 +28,7 @@ public class Specification<T> : ISpecification<T>
     public int Take { get; set; }
     public int Skip { get; set; }
     public bool AsNoTracking { get; internal set; }
+    public bool AsTracking { get; internal set; }
     public bool AsSplitQuery { get; internal set; }
     public bool IgnoreQueryFilters { get; internal set; }
 

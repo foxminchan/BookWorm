@@ -6,6 +6,6 @@ internal sealed class BookAuthorFilterSpec : Specification<Author>
 {
     public BookAuthorFilterSpec(Guid id)
     {
-        Query.Where(x => x.BookAuthors.Any(y => y.AuthorId == id));
+        Query.AsNoTracking().Where(x => x.BookAuthors.Any(y => y.AuthorId == id));
     }
 }
