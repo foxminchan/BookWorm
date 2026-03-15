@@ -31,7 +31,7 @@ internal sealed class ListOrdersHandler(
         CancellationToken cancellationToken
     )
     {
-        if (!claimsPrincipal.GetRoles().Contains(Authorization.Roles.Admin))
+        if (!claimsPrincipal.HasRole(Authorization.Roles.Admin))
         {
             request = request with
             {
@@ -48,7 +48,7 @@ internal sealed class ListOrdersHandler(
 
         var orders = await repository.ListAsync(filterSpec, cancellationToken);
 
-        var countSpec = new OrderFilterSpec(request.Status);
+        var countSpec = new OrderFilterSpec(request.Status, request.BuyerId);
 
         var totalItems = await repository.CountAsync(countSpec, cancellationToken);
 

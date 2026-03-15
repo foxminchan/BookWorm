@@ -19,7 +19,7 @@ internal sealed class GetBuyerHandler(
         CancellationToken cancellationToken
     )
     {
-        var buyerId = claimsPrincipal.GetRoles().Contains(Authorization.Roles.Admin)
+        var buyerId = claimsPrincipal.HasRole(Authorization.Roles.Admin)
             ? request.Id
             : claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId();
 

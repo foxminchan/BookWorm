@@ -13,6 +13,11 @@ public static class ClaimsPrincipalExtensions
             return [.. claimsPrincipal.FindAll(ClaimTypes.Role).Select(c => c.Value)];
         }
 
+        public bool HasRole(string role)
+        {
+            return claimsPrincipal.FindAll(ClaimTypes.Role).Any(c => c.Value == role);
+        }
+
         public string? GetClaimValue(string claimType)
         {
             var claim = claimsPrincipal.FindFirst(claimType);

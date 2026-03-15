@@ -67,6 +67,7 @@ internal sealed class BookFilterSpec : Specification<Book>
         Query
             .Include(x => x.BookAuthors)
                 .ThenInclude(x => x.Author)
+            .AsSplitQuery()
             .ApplyOrdering(orderBy, isDescending)
             .ApplyPaging(pageIndex, pageSize);
     }

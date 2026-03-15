@@ -44,7 +44,7 @@ internal sealed class ActivityBehavior<TMessage, TResponse>(
         var handlerName = $"{messageType}Handler";
         var activityName = $"{handlerName}/{messageType}";
 
-        var isCommand = messageType.ToLowerInvariant().EndsWith(nameof(Command).ToLowerInvariant());
+        var isCommand = messageType.EndsWith(nameof(Command), StringComparison.OrdinalIgnoreCase);
         var tagName = isCommand ? TelemetryTags.Commands.Command : TelemetryTags.Queries.Query;
 
         var startingTimestamp = isCommand

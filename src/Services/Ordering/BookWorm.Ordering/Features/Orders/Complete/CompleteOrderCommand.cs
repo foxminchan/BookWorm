@@ -20,7 +20,7 @@ internal sealed class CompleteOrderHandler(
     {
         Order? order;
 
-        if (claimsPrincipal.GetRoles().Contains(Authorization.Roles.Admin))
+        if (claimsPrincipal.HasRole(Authorization.Roles.Admin))
         {
             order = await repository.FirstOrDefaultAsync(
                 new OrderFilterSpec(request.OrderId, Status.New),
