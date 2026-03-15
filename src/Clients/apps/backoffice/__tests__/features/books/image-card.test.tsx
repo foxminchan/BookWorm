@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("next/image", () => ({
   __esModule: true,
   default: (props: Record<string, unknown>) => {
-    const { src, alt, fill, priority, quality, sizes, loader, ...rest } = props;
+    const { src, alt, ...rest } = props;
     const resolvedSrc = typeof src === "string" ? src : "";
     return React.createElement("img", {
       src: resolvedSrc,
