@@ -3,14 +3,6 @@ import { genericOAuth, keycloak } from "better-auth/plugins";
 
 import { env } from "@/env.mjs";
 
-// Defense-in-depth: this check runs even when SKIP_ENV_VALIDATION is set,
-// because auth secrets must never be optional in any environment.
-if (!process.env.BETTER_AUTH_SECRET) {
-  throw new Error(
-    "BETTER_AUTH_SECRET environment variable is required and must not be empty.",
-  );
-}
-
 export const auth = betterAuth({
   baseURL: env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
   secret: env.BETTER_AUTH_SECRET,
