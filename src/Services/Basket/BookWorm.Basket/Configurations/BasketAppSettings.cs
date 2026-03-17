@@ -15,8 +15,8 @@ internal sealed class BasketAppSettings : AppSettings
                 "Manages the lifecycle of customer shopping baskets, including adding and removing items, calculating totals, and handling checkout processes",
             Contact = new()
             {
-                Name = "Nhan Nguyen",
-                Email = "nguyenxuannhan407@gmail.com",
+                Name = "BookWorm Engineering",
+                Email = "engineering@bookworm.com",
                 Url = new("https://github.com/foxminchan"),
             },
             License = new() { Name = "MIT", Url = new("https://opensource.org/licenses/MIT") },

@@ -19,9 +19,6 @@ export default function ProfileSection({
           <h3 className="font-serif text-xl font-semibold">
             {buyer.name || "No Name"}
           </h3>
-          <p className="text-muted-foreground text-sm">
-            Customer ID: <span className="font-mono">{buyer.id}</span>
-          </p>
         </div>
       </div>
     </div>

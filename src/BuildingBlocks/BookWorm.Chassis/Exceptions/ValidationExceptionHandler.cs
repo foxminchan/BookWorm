@@ -22,11 +22,14 @@ public sealed class ValidationExceptionHandler(
             return false;
         }
 
-        logger.LogError(
-            validationException,
-            "[{Handler}] Exception occurred: {Message}",
+        var failedFields = validationException.Errors.Select(e =>
+            $"{e.PropertyName}:{e.ErrorCode}"
+        );
+
+        logger.LogWarning(
+            "[{Handler}] Validation failed for fields: {Fields}",
             nameof(ValidationExceptionHandler),
-            validationException.Message
+            string.Join(", ", failedFields)
         );
 
         logBuffer.Flush();

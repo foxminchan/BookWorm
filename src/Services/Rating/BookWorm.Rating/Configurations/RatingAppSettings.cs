@@ -16,8 +16,8 @@ public sealed class RatingAppSettings : AppSettings
                 "Handles the collection, storage, and aggregation of user feedback and ratings for books on the BookWorm platform",
             Contact = new()
             {
-                Name = "Nhan Nguyen",
-                Email = "nguyenxuannhan407@gmail.com",
+                Name = "BookWorm Engineering",
+                Email = "engineering@bookworm.com",
                 Url = new("https://github.com/foxminchan"),
             },
             License = new() { Name = "MIT", Url = new("https://opensource.org/licenses/MIT") },

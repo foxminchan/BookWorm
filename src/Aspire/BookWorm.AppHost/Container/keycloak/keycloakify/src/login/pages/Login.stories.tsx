@@ -174,7 +174,7 @@ export const WithPresetUsername: Story = {
   render: () => (
     <KcPageStory
       kcContext={{
-        login: { username: "max.mustermann@mail.com" },
+        login: { username: "user@example.invalid" },
       }}
     />
   ),
@@ -185,7 +185,7 @@ export const WithImmutablePresetUsername: Story = {
     <KcPageStory
       kcContext={{
         auth: {
-          attemptedUsername: "max.mustermann@mail.com",
+          attemptedUsername: "user@example.invalid",
           showUsername: true,
         },
         usernameHidden: true,
