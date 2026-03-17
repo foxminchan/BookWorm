@@ -16,8 +16,8 @@ internal sealed class ChatAppSettings : AppSettings
                 "Manages the chat functionality for the BookWorm platform, providing conversational interactions about books and reading recommendations",
             Contact = new()
             {
-                Name = "Nhan Nguyen",
-                Email = "nguyenxuannhan407@gmail.com",
+                Name = "BookWorm Engineering",
+                Email = "engineering@bookworm.com",
                 Url = new("https://github.com/foxminchan"),
             },
             License = new() { Name = "MIT", Url = new("https://opensource.org/licenses/MIT") },

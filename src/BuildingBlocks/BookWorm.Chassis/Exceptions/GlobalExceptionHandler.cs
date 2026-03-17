@@ -48,11 +48,11 @@ public sealed class GlobalExceptionHandler(
         {
             ArgumentOutOfRangeException or ArgumentNullException or ArgumentException => (
                 StatusCodes.Status400BadRequest,
-                exception.Message
+                "The request contains invalid or missing parameters."
             ),
             InvalidOperationException or NotSupportedException => (
                 StatusCodes.Status409Conflict,
-                exception.Message
+                "The request conflicts with the current state of the resource."
             ),
             _ => (StatusCodes.Status500InternalServerError, "We made a mistake but we are on it!"),
         };

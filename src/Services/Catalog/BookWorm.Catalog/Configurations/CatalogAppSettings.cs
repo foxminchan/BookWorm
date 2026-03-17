@@ -16,8 +16,8 @@ internal sealed class CatalogAppSettings : AppSettings
                 "Manages the catalog of products for the BookWorm platform, including books, authors, and categories",
             Contact = new()
             {
-                Name = "Nhan Nguyen",
-                Email = "nguyenxuannhan407@gmail.com",
+                Name = "BookWorm Engineering",
+                Email = "engineering@bookworm.com",
                 Url = new("https://github.com/foxminchan"),
             },
             License = new() { Name = "MIT", Url = new("https://opensource.org/licenses/MIT") },

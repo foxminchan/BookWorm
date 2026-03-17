@@ -16,8 +16,8 @@ public sealed class OrderingAppSettings : AppSettings
                 "Orchestrates the entire order lifecycle, from creation to completion or cancellation, for the BookWorm platform",
             Contact = new()
             {
-                Name = "Nhan Nguyen",
-                Email = "nguyenxuannhan407@gmail.com",
+                Name = "BookWorm Engineering",
+                Email = "engineering@bookworm.com",
                 Url = new("https://github.com/foxminchan"),
             },
             License = new() { Name = "MIT", Url = new("https://opensource.org/licenses/MIT") },

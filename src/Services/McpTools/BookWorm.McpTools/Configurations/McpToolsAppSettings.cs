@@ -16,8 +16,8 @@ internal sealed class McpToolsAppSettings : AppSettings
                 "Provides tools for managing and interacting with BookWorm catalog data, including book search and catalog operations",
             Contact = new()
             {
-                Name = "Nhan Nguyen",
-                Email = "nguyenxuannhan407@gmail.com",
+                Name = "BookWorm Engineering",
+                Email = "engineering@bookworm.com",
                 Url = new("https://github.com/foxminchan"),
             },
             License = new() { Name = "MIT", Url = new("https://opensource.org/licenses/MIT") },

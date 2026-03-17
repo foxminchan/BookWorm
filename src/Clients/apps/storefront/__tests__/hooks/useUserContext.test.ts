@@ -25,12 +25,9 @@ describe("useUserContext", () => {
     renderHook(() => useUserContext());
 
     expect(mockUseCopilotReadable).toHaveBeenCalledWith({
-      description: "Information about the current authenticated user",
+      description: "Whether the user is currently authenticated",
       value: {
         isAuthenticated: false,
-        userId: undefined,
-        name: undefined,
-        email: undefined,
       },
     });
   });
@@ -49,12 +46,9 @@ describe("useUserContext", () => {
     renderHook(() => useUserContext());
 
     expect(mockUseCopilotReadable).toHaveBeenCalledWith({
-      description: "Information about the current authenticated user",
+      description: "Whether the user is currently authenticated",
       value: {
         isAuthenticated: true,
-        userId: "user-1",
-        name: "Alice",
-        email: "alice@example.com",
       },
     });
   });
@@ -82,9 +76,6 @@ describe("useUserContext", () => {
       expect.objectContaining({
         value: expect.objectContaining({
           isAuthenticated: true,
-          userId: "user-2",
-          name: "Bob",
-          email: "bob@example.com",
         }),
       }),
     );

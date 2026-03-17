@@ -49,7 +49,7 @@ The security of Your Personal Data is important to Us, but no method of transmis
 
 ## Contact Us
 
-If you have any questions about this Privacy Policy, you can contact us at: nguyenxuannhan407@gmail.com
+If you have any questions about this Privacy Policy, you can contact us at: support@bookworm.com
 `;
 
 export const TERMS_OF_SERVICE_CONTENT = `
@@ -94,5 +94,5 @@ The laws of Vietnam shall govern this Terms and Your use of the Service.
 
 ## Contact Us
 
-If you have any questions about these Terms and Conditions, you can contact us at: nguyenxuannhan407@gmail.com
+If you have any questions about these Terms and Conditions, you can contact us at: support@bookworm.com
 `;

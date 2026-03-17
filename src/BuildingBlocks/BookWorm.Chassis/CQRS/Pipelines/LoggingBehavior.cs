@@ -1,6 +1,8 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
+using BookWorm.Chassis.Logging;
 using Mediator;
+using Microsoft.Extensions.Compliance.Classification;
 using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Chassis.CQRS.Pipelines;
@@ -27,9 +29,23 @@ internal sealed class LoggingBehavior<TMessage, TResponse>(
                 typeof(TResponse).Name
             );
 
-            var props = new List<PropertyInfo>(message.GetType().GetProperties());
+            var props = message.GetType().GetProperties();
             foreach (var prop in props)
             {
+                var isSensitive = prop.GetCustomAttributes()
+                    .OfType<DataClassificationAttribute>()
+                    .Any();
+
+                if (isSensitive)
+                {
+                    logger.LogInformation(
+                        "[{Behavior}] Property {Property} : [REDACTED]",
+                        behavior,
+                        prop.Name
+                    );
+                    continue;
+                }
+
                 var propValue = prop.GetValue(message, null);
                 logger.LogInformation(
                     "[{Behavior}] Property {Property} : {@Value}",
