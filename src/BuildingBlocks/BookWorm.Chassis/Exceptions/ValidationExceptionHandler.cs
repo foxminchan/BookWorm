@@ -23,8 +23,7 @@ public sealed class ValidationExceptionHandler(
         }
 
         var failedFields = validationException.Errors
-            .Select(e => $"{e.PropertyName}:{e.ErrorCode}")
-            .ToList();
+            .Select(e => $"{e.PropertyName}:{e.ErrorCode}");
 
         logger.LogWarning(
             "[{Handler}] Validation failed for fields: {Fields}",

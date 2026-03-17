@@ -78,7 +78,7 @@ internal sealed class LoggingBehavior<TMessage, TResponse>(
                 "[{Behavior}] The request handled {RequestName} with {Response} in {ElapsedMilliseconds} ms",
                 behavior,
                 message.GetType().Name,
-                response,
+                typeof(TResponse).Name, // Log type name only to prevent PII exposure via response DTOs
                 Stopwatch.GetElapsedTime(start).TotalMilliseconds
             );
         }
