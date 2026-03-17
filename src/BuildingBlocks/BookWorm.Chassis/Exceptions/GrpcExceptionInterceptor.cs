@@ -16,6 +16,10 @@ public sealed class GrpcExceptionInterceptor(ILogger<GrpcExceptionInterceptor> l
         {
             return await continuation(request, context);
         }
+        catch (RpcException)
+        {
+            throw;
+        }
         catch (Exception exception)
         {
             logger.LogError(
