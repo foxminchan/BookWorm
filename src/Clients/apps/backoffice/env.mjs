@@ -3,7 +3,7 @@ import { z } from "zod";
 
 export const env = createEnv({
   server: {
-    BETTER_AUTH_SECRET: z.string().min(1),
+    BETTER_AUTH_SECRET: z.string().optional(),
     KEYCLOAK_URL: z.url().optional(),
     KEYCLOAK_REALM: z.string().optional(),
     KEYCLOAK_CLIENT_ID: z.string().optional(),
