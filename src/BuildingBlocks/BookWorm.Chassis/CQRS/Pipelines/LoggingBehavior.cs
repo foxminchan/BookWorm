@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
-using BookWorm.Chassis.Logging;
 using Mediator;
 using Microsoft.Extensions.Compliance.Classification;
 using Microsoft.Extensions.Logging;

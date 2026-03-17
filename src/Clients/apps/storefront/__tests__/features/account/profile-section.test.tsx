@@ -20,12 +20,12 @@ describe("ProfileSection", () => {
     expect(screen.getByText("John Doe")).toBeInTheDocument();
   });
 
-  it("should display customer ID", () => {
+  it("should not display internal customer ID", () => {
     const buyer = { ...mockBuyer, id: "buyer-123" };
     renderWithProviders(<ProfileSection buyer={buyer} />);
 
-    expect(screen.getByText(/customer id:/i)).toBeInTheDocument();
-    expect(screen.getByText("buyer-123")).toBeInTheDocument();
+    expect(screen.queryByText(/customer id:/i)).not.toBeInTheDocument();
+    expect(screen.queryByText("buyer-123")).not.toBeInTheDocument();
   });
 
   it("should render user icon", () => {
@@ -77,14 +77,6 @@ describe("ProfileSection", () => {
     expect(name).toHaveClass("font-serif");
   });
 
-  it("should display customer ID with monospace font", () => {
-    const buyer = { ...mockBuyer, id: "buyer-123" };
-    renderWithProviders(<ProfileSection buyer={buyer} />);
-
-    const customerId = screen.getByText("buyer-123");
-    expect(customerId).toHaveClass("font-mono");
-  });
-
   it("should have circular user icon container", () => {
     const { container } = renderWithProviders(
       <ProfileSection buyer={mockBuyer} />,
@@ -110,12 +102,5 @@ describe("ProfileSection", () => {
 
     const flexContainer = container.querySelector(".flex.items-center.gap-4");
     expect(flexContainer).toBeInTheDocument();
-  });
-
-  it("should handle different buyer IDs", () => {
-    const buyer = { ...mockBuyer, id: "buyer-999" };
-    renderWithProviders(<ProfileSection buyer={buyer} />);
-
-    expect(screen.getByText("buyer-999")).toBeInTheDocument();
   });
 });
