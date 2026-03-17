@@ -9,13 +9,10 @@ export function useUserContext() {
 
   const userData = {
     isAuthenticated: !!session?.user,
-    userId: session?.user?.id,
-    name: session?.user?.name,
-    email: session?.user?.email,
   };
 
   useCopilotReadable({
-    description: "Information about the current authenticated user",
+    description: "Whether the user is currently authenticated",
     value: userData,
   });
 }

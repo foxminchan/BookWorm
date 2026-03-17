@@ -5,9 +5,7 @@ import { env } from "@/env.mjs";
 
 export const auth = betterAuth({
   baseURL: env.NEXT_PUBLIC_APP_URL || "http://localhost:3001",
-  secret:
-    env.BETTER_AUTH_SECRET ||
-    "replace_with_a_secure_random_secret_in_production",
+  secret: env.BETTER_AUTH_SECRET,
   trustedOrigins: [
     env.KEYCLOAK_URL,
     env.NEXT_PUBLIC_GATEWAY_HTTP || "",

@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
 using Mediator;
+using Microsoft.Extensions.Compliance.Classification;
 using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Chassis.CQRS.Pipelines;
@@ -27,9 +28,23 @@ internal sealed class LoggingBehavior<TMessage, TResponse>(
                 typeof(TResponse).Name
             );
 
-            var props = new List<PropertyInfo>(message.GetType().GetProperties());
+            var props = message.GetType().GetProperties();
             foreach (var prop in props)
             {
+                var isSensitive = prop.GetCustomAttributes()
+                    .OfType<DataClassificationAttribute>()
+                    .Any();
+
+                if (isSensitive)
+                {
+                    logger.LogInformation(
+                        "[{Behavior}] Property {Property} : [REDACTED]",
+                        behavior,
+                        prop.Name
+                    );
+                    continue;
+                }
+
                 var propValue = prop.GetValue(message, null);
                 logger.LogInformation(
                     "[{Behavior}] Property {Property} : {@Value}",
@@ -63,7 +78,7 @@ internal sealed class LoggingBehavior<TMessage, TResponse>(
                 "[{Behavior}] The request handled {RequestName} with {Response} in {ElapsedMilliseconds} ms",
                 behavior,
                 message.GetType().Name,
-                response,
+                typeof(TResponse).Name, // Log type name only to prevent PII exposure via response DTOs
                 Stopwatch.GetElapsedTime(start).TotalMilliseconds
             );
         }
