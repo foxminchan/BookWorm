@@ -20,7 +20,8 @@ public sealed class ListFeedbacksEndpoint
             .WithName(nameof(ListFeedbacksEndpoint))
             .WithSummary("List Feedbacks")
             .WithDescription("List feedbacks for a book with pagination and filtering")
-            .MapToApiVersion(ApiVersions.V1);
+            .MapToApiVersion(ApiVersions.V1)
+            .AllowAnonymous();
     }
 
     public async Task<Ok<PagedResult<FeedbackDto>>> HandleAsync(

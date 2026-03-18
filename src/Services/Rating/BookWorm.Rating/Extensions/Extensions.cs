@@ -9,6 +9,7 @@ using BookWorm.Rating.Infrastructure.Agents;
 using BookWorm.Rating.Infrastructure.Summarizer;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using Mediator;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BookWorm.Rating.Extensions;
 
@@ -38,6 +39,19 @@ internal static class Extensions
                             $"{Services.Rating}_{Authorization.Actions.Write}"
                         );
                 }
+            )
+            .SetDefaultPolicy(
+                new AuthorizationPolicyBuilder()
+                    .RequireAuthenticatedUser()
+                    .RequireRole(Authorization.Roles.User)
+                    .RequireScope(
+                        $"{Services.Rating}_{Authorization.Actions.Read}",
+                        $"{Services.Rating}_{Authorization.Actions.Write}"
+                    )
+                    .Build()
+            )
+            .SetFallbackPolicy(
+                new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build()
             );
 
         // Add exception handlers

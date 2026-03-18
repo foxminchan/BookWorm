@@ -13,7 +13,8 @@ internal sealed class ListAuthorsEndpoint : IEndpoint<Ok<IReadOnlyList<AuthorDto
             .WithName(nameof(ListAuthorsEndpoint))
             .WithSummary("List Authors")
             .WithDescription("List all authors")
-            .MapToApiVersion(ApiVersions.V1);
+            .MapToApiVersion(ApiVersions.V1)
+            .AllowAnonymous();
     }
 
     public async Task<Ok<IReadOnlyList<AuthorDto>>> HandleAsync(

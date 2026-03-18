@@ -9,9 +9,12 @@ public static class OpenApiExtensions
     {
         if (app.Environment.IsDevelopment())
         {
-            app.MapOpenApi();
+            // AllowAnonymous ensures OpenAPI spec and redirect are accessible even when a
+            // FallbackPolicy requires authentication — developer tooling should not be blocked
+            app.MapOpenApi().AllowAnonymous();
             app.MapGet("/", () => TypedResults.Redirect("openapi/v1.json"))
-                .ExcludeFromDescription();
+                .ExcludeFromDescription()
+                .AllowAnonymous();
         }
     }
 

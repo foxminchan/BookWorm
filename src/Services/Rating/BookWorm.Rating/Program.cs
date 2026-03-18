@@ -19,6 +19,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+app.UseSecurityHeaders();
+
 app.UseExceptionHandler();
 
 app.UseStatusCodePages();

@@ -46,6 +46,9 @@ internal static class AuthorizationExtensions
                         $"{Services.Ordering}_{Authorization.Actions.Write}"
                     )
                     .Build()
+            )
+            .SetFallbackPolicy(
+                new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build()
             );
 
         // Configure ClaimsPrincipal

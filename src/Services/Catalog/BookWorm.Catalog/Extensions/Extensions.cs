@@ -47,6 +47,9 @@ internal static class Extensions
                     .RequireAuthenticatedUser()
                     .RequireScope($"{Services.Catalog}_{Authorization.Actions.Read}")
                     .Build()
+            )
+            .SetFallbackPolicy(
+                new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build()
             );
 
         // Add exception handlers

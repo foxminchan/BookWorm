@@ -13,7 +13,8 @@ internal sealed class ListPublishersEndpoint : IEndpoint<Ok<IReadOnlyList<Publis
             .WithName(nameof(ListPublishersEndpoint))
             .WithSummary("List Publishers")
             .WithDescription("Lists all publishers")
-            .MapToApiVersion(ApiVersions.V1);
+            .MapToApiVersion(ApiVersions.V1)
+            .AllowAnonymous();
     }
 
     public async Task<Ok<IReadOnlyList<PublisherDto>>> HandleAsync(

@@ -20,7 +20,8 @@ internal sealed class ListBooksEndpoint
             .WithName(nameof(ListBooksEndpoint))
             .WithSummary("List Books")
             .WithDescription("List all books with advanced filtering and pagination")
-            .MapToApiVersion(ApiVersions.V1);
+            .MapToApiVersion(ApiVersions.V1)
+            .AllowAnonymous();
     }
 
     public async Task<Ok<PagedResult<BookDto>>> HandleAsync(

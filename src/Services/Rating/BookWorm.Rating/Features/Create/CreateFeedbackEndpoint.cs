@@ -17,7 +17,8 @@ public sealed class CreateFeedbackEndpoint : IEndpoint<Ok<Guid>, CreateFeedbackC
             .WithName(nameof(CreateFeedbackEndpoint))
             .WithSummary("Create Feedback")
             .WithDescription("Create a new feedback")
-            .MapToApiVersion(ApiVersions.V1);
+            .MapToApiVersion(ApiVersions.V1)
+            .RequireAuthorization();
     }
 
     public async Task<Ok<Guid>> HandleAsync(

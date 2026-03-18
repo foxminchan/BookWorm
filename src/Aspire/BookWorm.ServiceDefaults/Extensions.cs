@@ -97,13 +97,14 @@ public static class Extensions
         }
 
         // All health checks must pass for app to be considered ready to accept traffic after starting
-        app.MapHealthChecks(Http.Endpoints.HealthEndpointPath);
+        // AllowAnonymous ensures health probes work even when a FallbackPolicy requires authentication
+        app.MapHealthChecks(Http.Endpoints.HealthEndpointPath).AllowAnonymous();
 
         // Only health checks tagged with the "live" tag must pass for app to be considered alive
         app.MapHealthChecks(
             Http.Endpoints.AlivenessEndpointPath,
             new() { Predicate = r => r.Tags.Contains("live") }
-        );
+        ).AllowAnonymous();
     }
 
     extension<TBuilder>(TBuilder builder)

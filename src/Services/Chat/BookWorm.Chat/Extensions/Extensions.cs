@@ -51,6 +51,9 @@ internal static class Extensions
                         $"{Services.Chatting}_{Authorization.Actions.Write}"
                     )
                     .Build()
+            )
+            .SetFallbackPolicy(
+                new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build()
             );
 
         // Add exception handlers

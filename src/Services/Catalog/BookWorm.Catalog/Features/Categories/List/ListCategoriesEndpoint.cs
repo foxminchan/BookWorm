@@ -13,7 +13,8 @@ internal sealed class ListCategoriesEndpoint : IEndpoint<Ok<IReadOnlyList<Catego
             .WithName(nameof(ListCategoriesEndpoint))
             .WithSummary("List Categories")
             .WithDescription("List all categories")
-            .MapToApiVersion(ApiVersions.V1);
+            .MapToApiVersion(ApiVersions.V1)
+            .AllowAnonymous();
     }
 
     public async Task<Ok<IReadOnlyList<CategoryDto>>> HandleAsync(

@@ -36,6 +36,9 @@ internal static class Extensions
                         $"{Services.Basket}_{Authorization.Actions.Write}"
                     )
                     .Build()
+            )
+            .SetFallbackPolicy(
+                new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build()
             );
 
         // Add exception handlers
