@@ -1,4 +1,5 @@
 using BookWorm.Finance.Extensions;
+using BookWorm.ServiceDefaults.Kestrel;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +15,8 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseHsts();
 }
+
+app.UseSecurityHeaders();
 
 app.MapDefaultEndpoints();
 

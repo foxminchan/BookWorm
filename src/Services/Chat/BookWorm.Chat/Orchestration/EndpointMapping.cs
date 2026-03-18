@@ -14,6 +14,9 @@ internal static class EndpointMapping
 {
     public static void MapAgentsDiscovery(this WebApplication app)
     {
+        // Agent endpoints are protected by the authorization FallbackPolicy configured in
+        // Extensions.AddApplicationServices(), which requires an authenticated user by default.
+        // Endpoints that should be publicly accessible must explicitly call .AllowAnonymous().
         app.MapAgentDiscovery("/agents");
 
         // Map A2A

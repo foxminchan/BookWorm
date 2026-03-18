@@ -9,7 +9,7 @@ public static class SecurityHeadersExtensions
     /// <summary>
     ///     Adds security headers middleware to the application pipeline.
     ///     Appends Content-Security-Policy, X-Content-Type-Options, X-Frame-Options,
-    ///     and Referrer-Policy headers to all responses.
+    ///     Referrer-Policy, and Permissions-Policy headers to all responses.
     /// </summary>
     /// <param name="app">The application builder.</param>
     /// <returns>The application builder with security headers middleware registered.</returns>
@@ -33,6 +33,12 @@ public static class SecurityHeadersExtensions
             context.Response.Headers.Append(
                 "Content-Security-Policy",
                 "default-src 'self'; upgrade-insecure-requests;"
+            );
+
+            // Disables browser features that are not needed by API services
+            context.Response.Headers.Append(
+                "Permissions-Policy",
+                "camera=(), microphone=(), geolocation=()"
             );
 
             await next(context);
