@@ -199,8 +199,8 @@ importers:
         specifier: ^20.8.4
         version: 20.8.4
       playwright-bdd:
-        specifier: ^8.4.2
-        version: 8.4.2(@playwright/test@1.58.2)
+        specifier: ^8.5.0
+        version: 8.5.0(@playwright/test@1.58.2)
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -389,8 +389,8 @@ importers:
         specifier: ^20.8.4
         version: 20.8.4
       playwright-bdd:
-        specifier: ^8.4.2
-        version: 8.4.2(@playwright/test@1.58.2)
+        specifier: ^8.5.0
+        version: 8.5.0(@playwright/test@1.58.2)
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -954,6 +954,10 @@ packages:
 
   '@babel/runtime@7.28.6':
     resolution: {integrity: sha512-05WQkdpL9COIMz4LjTxGpPNCdlpyimKppYNoJ5Di5EUObifl8t4tuLuUBBZEpoLYOmfvIWrsp9fCl0HoPRVTdA==}
+    engines: {node: '>=6.9.0'}
+
+  '@babel/runtime@7.29.2':
+    resolution: {integrity: sha512-JiDShH45zKHWyGe4ZNVRrCjBz8Nh9TMmZG1kh4QTK8hCBTWBi8Da+i7s1fJw7/lYpM4ccepSNfqzZ/QvABBi5g==}
     engines: {node: '>=6.9.0'}
 
   '@babel/template@7.28.6':
@@ -5512,6 +5516,10 @@ packages:
     resolution: {integrity: sha512-jq9l1DM0zVIvsm3lv9Nw9nlJnMNPOcAtsbsgiUhWcFzPE99Gvo6yRTlszSLLYacMeQ6quHD6hMfId8crVHvexw==}
     engines: {node: '>=16.9.0'}
 
+  hono@4.12.8:
+    resolution: {integrity: sha512-VJCEvtrezO1IAR+kqEYnxUOoStaQPGrCmX3j4wDTNOcD1uRPFpGlwQUIW8niPuvHXaTUxeOUl5MMDGrl+tmO9A==}
+    engines: {node: '>=16.9.0'}
+
   hosted-git-info@9.0.2:
     resolution: {integrity: sha512-M422h7o/BR3rmCQ8UHi7cyyMqKltdP9Uo+J2fXK+RSAY+wTcKOIRyhTuKv4qn+DJf3g+PL890AzId5KZpX+CBg==}
     engines: {node: ^20.17.0 || >=22.9.0}
@@ -7080,8 +7088,8 @@ packages:
   pkg-types@2.3.0:
     resolution: {integrity: sha512-SIqCzDRg0s9npO5XQ3tNZioRY1uK06lA41ynBC1YmFTmnY6FjUjVt6s4LoADmwoig1qqD0oK8h1p/8mlMx8Oig==}
 
-  playwright-bdd@8.4.2:
-    resolution: {integrity: sha512-ViugP5vj2UdDkXFao/BTVnau+tWFF9ADsuAL1+o+RUuq6sny+b+RM1CS9ekoFY+sQuHoaP1IiUwSoWyANmOE4Q==}
+  playwright-bdd@8.5.0:
+    resolution: {integrity: sha512-w/Bd5C1d6Xe5e1oREsbt2rDN0/Mcp+J2OjQwSl49/mroa2K6UZU33P7v91pLQPl1otDitMwJOaOeJsqaj7WU7w==}
     engines: {node: '>=18'}
     hasBin: true
     peerDependencies:
@@ -7955,6 +7963,10 @@ packages:
 
   tinyexec@1.0.2:
     resolution: {integrity: sha512-W/KYk+NFhkmsYpuHq5JykngiOCnxeVL8v8dFnqxSD8qEEdRfXk1SDM6JzNqcERbcGYj9tMrDQBYV9cjgnunFIg==}
+    engines: {node: '>=18'}
+
+  tinyexec@1.0.4:
+    resolution: {integrity: sha512-u9r3uZC0bdpGOXtlxUIdwf9pkmvhqJdrVCH9fapQtgy/OeTTMZ1nqH7agtvEfmGui6e1XxjcdrlxvxJvc3sMqw==}
     engines: {node: '>=18'}
 
   tinyglobby@0.2.15:
@@ -9183,6 +9195,8 @@ snapshots:
 
   '@babel/runtime@7.28.6': {}
 
+  '@babel/runtime@7.29.2': {}
+
   '@babel/template@7.28.6':
     dependencies:
       '@babel/code-frame': 7.29.0
@@ -9881,6 +9895,11 @@ snapshots:
   '@hono/node-server@1.19.11(hono@4.12.7)':
     dependencies:
       hono: 4.12.7
+
+  '@hono/node-server@1.19.11(hono@4.12.8)':
+    dependencies:
+      hono: 4.12.8
+    optional: true
 
   '@hookform/resolvers@5.2.2(react-hook-form@7.71.2(react@19.2.4))':
     dependencies:
@@ -10950,13 +10969,13 @@ snapshots:
       '@electric-sql/pglite': 0.3.15
       '@electric-sql/pglite-socket': 0.0.20(@electric-sql/pglite@0.3.15)
       '@electric-sql/pglite-tools': 0.2.20(@electric-sql/pglite@0.3.15)
-      '@hono/node-server': 1.19.11(hono@4.12.7)
+      '@hono/node-server': 1.19.11(hono@4.12.8)
       '@mrleebo/prisma-ast': 0.13.1
       '@prisma/get-platform': 7.2.0
       '@prisma/query-plan-executor': 7.2.0
       foreground-child: 3.3.1
       get-port-please: 3.2.0
-      hono: 4.12.7
+      hono: 4.12.8
       http-status-codes: 2.3.0
       pathe: 2.0.3
       proper-lockfile: 4.1.2
@@ -11896,7 +11915,7 @@ snapshots:
   '@testing-library/dom@10.4.1':
     dependencies:
       '@babel/code-frame': 7.29.0
-      '@babel/runtime': 7.28.6
+      '@babel/runtime': 7.29.2
       '@types/aria-query': 5.0.4
       aria-query: 5.3.0
       dom-accessibility-api: 0.5.16
@@ -14351,6 +14370,9 @@ snapshots:
 
   hono@4.12.7: {}
 
+  hono@4.12.8:
+    optional: true
+
   hosted-git-info@9.0.2:
     dependencies:
       lru-cache: 11.2.6
@@ -15921,7 +15943,7 @@ snapshots:
     dependencies:
       citty: 0.2.1
       pathe: 2.0.3
-      tinyexec: 1.0.2
+      tinyexec: 1.0.4
     optional: true
 
   object-assign@4.1.1: {}
@@ -16196,7 +16218,7 @@ snapshots:
       pathe: 2.0.3
     optional: true
 
-  playwright-bdd@8.4.2(@playwright/test@1.58.2):
+  playwright-bdd@8.5.0(@playwright/test@1.58.2):
     dependencies:
       '@cucumber/cucumber-expressions': 18.0.1
       '@cucumber/gherkin': 32.2.0
@@ -17284,6 +17306,9 @@ snapshots:
   tinybench@2.9.0: {}
 
   tinyexec@1.0.2: {}
+
+  tinyexec@1.0.4:
+    optional: true
 
   tinyglobby@0.2.15:
     dependencies:
