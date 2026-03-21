@@ -7,7 +7,7 @@ namespace BookWorm.Basket.Features.Update;
 public sealed record UpdateBasketCommand(List<BasketItemRequest> Items) : ICommand;
 
 internal sealed class UpdateBasketHandler(
-    IBasketRepository basketRepository,
+    IBasketRepository repository,
     ClaimsPrincipal claimsPrincipal
 ) : ICommandHandler<UpdateBasketCommand>
 {
@@ -18,13 +18,13 @@ internal sealed class UpdateBasketHandler(
     {
         var userId = claimsPrincipal.GetAuthenticatedUserId();
 
-        var basket = await basketRepository.GetBasketAsync(userId);
+        var basket = await repository.GetBasketAsync(userId);
 
         Guard.Against.NotFound(basket, userId);
 
         basket.Update(request.Items.ToBasketItem());
 
-        await basketRepository.CreateOrUpdateBasketAsync(basket);
+        await repository.CreateOrUpdateBasketAsync(basket);
 
         return Unit.Value;
     }

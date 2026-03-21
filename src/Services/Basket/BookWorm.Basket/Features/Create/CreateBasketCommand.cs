@@ -6,7 +6,7 @@ namespace BookWorm.Basket.Features.Create;
 public sealed record CreateBasketCommand(List<BasketItemRequest> Items) : ICommand<string>;
 
 internal sealed class CreateBasketHandler(
-    IBasketRepository basketRepository,
+    IBasketRepository repository,
     ClaimsPrincipal claimsPrincipal
 ) : ICommandHandler<CreateBasketCommand, string>
 {
@@ -19,7 +19,7 @@ internal sealed class CreateBasketHandler(
 
         var basket = new CustomerBasket(userId, request.Items.ToBasketItem());
 
-        var result = await basketRepository.CreateOrUpdateBasketAsync(basket);
+        var result = await repository.CreateOrUpdateBasketAsync(basket);
 
         return result?.Id
             ?? throw new BasketCreatedException("An error occurred while creating the basket.");
