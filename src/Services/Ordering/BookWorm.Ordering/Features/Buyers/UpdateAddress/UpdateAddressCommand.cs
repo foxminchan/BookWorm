@@ -9,7 +9,7 @@ public sealed record UpdateAddressCommand(string Street, string City, string Pro
     : ICommand<BuyerDto>;
 
 internal sealed class UpdateAddressHandler(
-    IBuyerRepository buyerRepository,
+    IBuyerRepository repository,
     ClaimsPrincipal claimsPrincipal
 ) : ICommandHandler<UpdateAddressCommand, BuyerDto>
 {
@@ -20,13 +20,13 @@ internal sealed class UpdateAddressHandler(
     {
         var userId = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId();
 
-        var buyer = await buyerRepository.GetByIdAsync(userId, cancellationToken);
+        var buyer = await repository.GetByIdAsync(userId, cancellationToken);
 
         Guard.Against.NotFound(buyer, userId);
 
         buyer.UpdateAddress(request.Street, request.City, request.Province);
 
-        await buyerRepository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
+        await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
 
         return buyer.ToBuyerDto();
     }

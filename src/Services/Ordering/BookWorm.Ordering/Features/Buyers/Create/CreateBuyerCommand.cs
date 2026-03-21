@@ -9,7 +9,7 @@ public sealed record CreateBuyerCommand([PIIData] string Street, string City, st
     : ICommand<Guid>;
 
 internal sealed class CreateBuyerHandler(
-    IBuyerRepository buyerRepository,
+    IBuyerRepository repository,
     ClaimsPrincipal claimsPrincipal
 ) : ICommandHandler<CreateBuyerCommand, Guid>
 {
@@ -24,9 +24,9 @@ internal sealed class CreateBuyerHandler(
 
         var buyer = new Buyer(userId, name, request.Street, request.City, request.Province);
 
-        var result = await buyerRepository.AddAsync(buyer, cancellationToken);
+        var result = await repository.AddAsync(buyer, cancellationToken);
 
-        await buyerRepository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
+        await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
 
         return result.Id;
     }

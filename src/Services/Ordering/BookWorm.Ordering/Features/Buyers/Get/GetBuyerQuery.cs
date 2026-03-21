@@ -9,10 +9,8 @@ public sealed record GetBuyerQuery(
     [property: Description("Only 'ADMIN' role can retrieve other users' data")] Guid Id
 ) : IQuery<BuyerDto>;
 
-internal sealed class GetBuyerHandler(
-    IBuyerRepository buyerRepository,
-    ClaimsPrincipal claimsPrincipal
-) : IQueryHandler<GetBuyerQuery, BuyerDto>
+internal sealed class GetBuyerHandler(IBuyerRepository repository, ClaimsPrincipal claimsPrincipal)
+    : IQueryHandler<GetBuyerQuery, BuyerDto>
 {
     public async ValueTask<BuyerDto> Handle(
         GetBuyerQuery request,
@@ -23,7 +21,7 @@ internal sealed class GetBuyerHandler(
             ? request.Id
             : claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId();
 
-        var result = await buyerRepository.GetByIdAsync(buyerId, cancellationToken);
+        var result = await repository.GetByIdAsync(buyerId, cancellationToken);
 
         Guard.Against.NotFound(result, buyerId);
 

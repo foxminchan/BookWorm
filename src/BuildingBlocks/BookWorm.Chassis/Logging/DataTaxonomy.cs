@@ -9,7 +9,7 @@ internal static class DataTaxonomy
     public static DataClassification SensitiveData { get; } =
         new(TaxonomyName, nameof(SensitiveData));
 
-    public static DataClassification PiiData { get; } = new(TaxonomyName, nameof(PiiData));
+    public static DataClassification PIIData { get; } = new(TaxonomyName, nameof(PIIData));
 }
 
 [AttributeUsage(AttributeTargets.All)]
@@ -17,4 +17,4 @@ public sealed class SensitiveDataAttribute()
     : DataClassificationAttribute(DataTaxonomy.SensitiveData);
 
 [AttributeUsage(AttributeTargets.All)]
-public sealed class PIIDataAttribute() : DataClassificationAttribute(DataTaxonomy.PiiData);
+public sealed class PIIDataAttribute() : DataClassificationAttribute(DataTaxonomy.PIIData);
