@@ -3,6 +3,7 @@ using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chat.Extensions;
 using BookWorm.Chat.Orchestration;
 using BookWorm.ServiceDefaults;
+using BookWorm.ServiceDefaults.Cors;
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -2,6 +2,7 @@ using BookWorm.Basket.Extensions;
 using BookWorm.Basket.Grpc.Services.Basket;
 using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Constants.Core;
+using BookWorm.ServiceDefaults.Cors;
 
 var builder = WebApplication.CreateBuilder(args);
 

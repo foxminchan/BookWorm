@@ -1,4 +1,5 @@
 using BookWorm.Notification.Extensions;
+using BookWorm.ServiceDefaults.Cors;
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -4,6 +4,7 @@ using BookWorm.Chassis.Utilities.Converters;
 using BookWorm.Ordering.Configurations;
 using BookWorm.Ordering.Infrastructure.DistributedLock;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
+using BookWorm.ServiceDefaults.Cors;
 
 namespace BookWorm.Ordering.Extensions;
 

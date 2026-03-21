@@ -8,6 +8,7 @@ using BookWorm.Rating.Configurations;
 using BookWorm.Rating.Infrastructure.Agents;
 using BookWorm.Rating.Infrastructure.Summarizer;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
+using BookWorm.ServiceDefaults.Cors;
 using Mediator;
 
 namespace BookWorm.Rating.Extensions;

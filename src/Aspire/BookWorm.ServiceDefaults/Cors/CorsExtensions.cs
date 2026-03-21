@@ -1,12 +1,9 @@
 ﻿using BookWorm.Chassis.Utilities.Configurations;
 
-namespace BookWorm.ServiceDefaults.Kestrel;
+namespace BookWorm.ServiceDefaults.Cors;
 
 public static class CorsExtensions
 {
-    private const string AllowAllCorsPolicy = "AllowAll";
-    private const string AllowSpecificCorsPolicy = "AllowSpecific";
-
     public static void AddDefaultCors(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;
@@ -16,7 +13,7 @@ public static class CorsExtensions
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy(
-                    AllowAllCorsPolicy,
+                    CorsConstants.AllowAllCorsPolicy,
                     policyBuilder =>
                     {
                         policyBuilder
@@ -35,7 +32,7 @@ public static class CorsExtensions
             services.AddCors(options =>
             {
                 options.AddPolicy(
-                    AllowSpecificCorsPolicy,
+                    CorsConstants.AllowSpecificCorsPolicy,
                     policyBuilder =>
                     {
                         var serviceProvider = services.BuildServiceProvider();
@@ -65,6 +62,10 @@ public static class CorsExtensions
 
     public static void UseDefaultCors(this WebApplication app)
     {
-        app.UseCors(app.Environment.IsDevelopment() ? AllowAllCorsPolicy : AllowSpecificCorsPolicy);
+        app.UseCors(
+            app.Environment.IsDevelopment()
+                ? CorsConstants.AllowAllCorsPolicy
+                : CorsConstants.AllowSpecificCorsPolicy
+        );
     }
 }

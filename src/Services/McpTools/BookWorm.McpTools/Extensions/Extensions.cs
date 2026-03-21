@@ -4,6 +4,7 @@ using BookWorm.Constants.Core;
 using BookWorm.McpTools.Configurations;
 using BookWorm.McpTools.Options;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
+using BookWorm.ServiceDefaults.Cors;
 using Microsoft.Extensions.Options;
 using ModelContextProtocol;
 using ModelContextProtocol.Protocol;
