@@ -1,4 +1,5 @@
-﻿using BookWorm.Constants.Core;
+﻿using System.Net;
+using BookWorm.Constants.Core;
 using BookWorm.SharedKernel.Helpers;
 using Grpc.Core;
 
@@ -18,7 +19,7 @@ public sealed class TestServerCallContext(
 
     protected override string HostCore => Network.Localhost;
 
-    protected override string PeerCore => Network.LoopbackIpV4;
+    protected override string PeerCore => IPAddress.Loopback.ToString();
 
     protected override DateTime DeadlineCore { get; } =
         deadline ?? DateTimeHelper.UtcNow().AddMinutes(5);

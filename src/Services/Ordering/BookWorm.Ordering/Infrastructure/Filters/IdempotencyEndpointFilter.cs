@@ -2,7 +2,6 @@
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Mvc;
 using static BookWorm.Constants.Core.Http;
-using static BookWorm.Constants.Core.Http.Methods;
 
 namespace BookWorm.Ordering.Infrastructure.Filters;
 
@@ -29,7 +28,7 @@ internal sealed class IdempotencyEndpointFilter : IEndpointFilter
         {
             var error = new ValidationFailure(
                 RequestIdHeader,
-                $"{RequestIdHeader} header is required for {Post} and {Patch} requests."
+                $"{RequestIdHeader} header is required for {HttpMethods.Post} and {HttpMethods.Patch} requests."
             );
             throw new ValidationException([error]);
         }
@@ -58,7 +57,11 @@ internal sealed class IdempotencyEndpointFilter : IEndpointFilter
 
     private static bool IsIdempotentMethod(string method)
     {
-        return method.ToUpperInvariant() is Get or Delete or Put or Head or Options;
+        return HttpMethods.IsGet(method)
+            || HttpMethods.IsDelete(method)
+            || HttpMethods.IsPut(method)
+            || HttpMethods.IsHead(method)
+            || HttpMethods.IsOptions(method);
     }
 }
 

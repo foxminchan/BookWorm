@@ -11,6 +11,7 @@ using BookWorm.Chat.Agents.Summarization;
 using BookWorm.Chat.Configurations;
 using BookWorm.Chat.Orchestration;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
+using BookWorm.ServiceDefaults.Cors;
 using Microsoft.AspNetCore.Authorization;
 
 namespace BookWorm.Chat.Extensions;

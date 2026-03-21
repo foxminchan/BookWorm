@@ -7,6 +7,7 @@ using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Constants.Core;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
+using BookWorm.ServiceDefaults.Cors;
 using MassTransit;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;

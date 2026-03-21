@@ -1,5 +1,6 @@
 using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Ordering.Extensions;
+using BookWorm.ServiceDefaults.Cors;
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -6,6 +6,7 @@ using BookWorm.Notification.Infrastructure;
 using BookWorm.Notification.Infrastructure.Senders.MailKit;
 using BookWorm.Notification.Infrastructure.Senders.Outbox;
 using BookWorm.Notification.Infrastructure.Senders.SendGrid;
+using BookWorm.ServiceDefaults.Cors;
 
 namespace BookWorm.Notification.Extensions;
 

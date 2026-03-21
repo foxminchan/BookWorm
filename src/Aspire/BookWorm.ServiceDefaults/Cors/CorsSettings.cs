@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace BookWorm.ServiceDefaults.Kestrel;
+namespace BookWorm.ServiceDefaults.Cors;
 
 [OptionsValidator]
 internal sealed partial class CorsSettings : IValidateOptions<CorsSettings>
