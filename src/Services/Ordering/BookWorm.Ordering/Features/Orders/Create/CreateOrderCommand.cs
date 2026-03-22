@@ -1,4 +1,5 @@
-﻿using BookWorm.Chassis.Security.Extensions;
+﻿using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Utilities.Guards;
 using BookWorm.Ordering.Extensions;
 using Mediator;
@@ -6,6 +7,7 @@ using ZiggyCreatures.Caching.Fusion.Locking.Distributed;
 
 namespace BookWorm.Ordering.Features.Orders.Create;
 
+[Transactional]
 public sealed record CreateOrderCommand : ICommand<Guid>;
 
 internal sealed class CreateOrderHandler(

@@ -1,7 +1,9 @@
-﻿using Mediator;
+﻿using BookWorm.Chassis.CQRS;
+using Mediator;
 
 namespace BookWorm.Catalog.Features.Books.Create;
 
+[Transactional]
 public sealed class CreateBookCommand : ICommand<Guid>
 {
     public string Name { get; init; } = string.Empty;

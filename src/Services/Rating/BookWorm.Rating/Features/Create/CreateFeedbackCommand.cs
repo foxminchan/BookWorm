@@ -1,7 +1,9 @@
-﻿using Mediator;
+﻿using BookWorm.Chassis.CQRS;
+using Mediator;
 
 namespace BookWorm.Rating.Features.Create;
 
+[Transactional]
 public sealed record CreateFeedbackCommand(
     Guid BookId,
     string? FirstName,

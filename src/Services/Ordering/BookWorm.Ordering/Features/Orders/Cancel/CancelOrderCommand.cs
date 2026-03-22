@@ -1,4 +1,5 @@
-﻿using BookWorm.Chassis.Security.Extensions;
+﻿using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Utilities.Guards;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
 using BookWorm.Ordering.Extensions;
@@ -6,6 +7,7 @@ using Mediator;
 
 namespace BookWorm.Ordering.Features.Orders.Cancel;
 
+[Transactional]
 public sealed record CancelOrderCommand(Guid OrderId) : ICommand<OrderDetailDto>;
 
 internal sealed class CancelOrderHandler(

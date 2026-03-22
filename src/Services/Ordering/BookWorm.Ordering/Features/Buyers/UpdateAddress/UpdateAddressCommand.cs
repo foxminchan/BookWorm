@@ -1,10 +1,12 @@
-﻿using BookWorm.Chassis.Security.Extensions;
+﻿using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Utilities.Guards;
 using BookWorm.Ordering.Extensions;
 using Mediator;
 
 namespace BookWorm.Ordering.Features.Buyers.UpdateAddress;
 
+[Transactional]
 public sealed record UpdateAddressCommand(string Street, string City, string Province)
     : ICommand<BuyerDto>;
 

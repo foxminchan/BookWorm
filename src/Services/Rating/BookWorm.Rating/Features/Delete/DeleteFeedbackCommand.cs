@@ -1,8 +1,10 @@
-﻿using BookWorm.Chassis.Utilities.Guards;
+﻿using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.Utilities.Guards;
 using Mediator;
 
 namespace BookWorm.Rating.Features.Delete;
 
+[Transactional]
 public sealed record DeleteFeedbackCommand(Guid Id) : ICommand;
 
 internal sealed class DeleteFeedbackHandler(IFeedbackRepository repository)
