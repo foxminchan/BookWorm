@@ -30,55 +30,58 @@ internal sealed class TransactionBehavior<TMessage, TResponse>(
         var messageName = message.GetType().Name;
         var strategy = dbContext.Database.CreateExecutionStrategy();
 
-        return await strategy.ExecuteAsync(async ct =>
-        {
-            await using var transaction = await dbContext.Database.BeginTransactionAsync(
-                attr.IsolationLevel,
-                ct
-            );
-
-            if (logger.IsEnabled(LogLevel.Information))
+        return await strategy.ExecuteAsync(
+            async ct =>
             {
-                logger.LogInformation(
-                    "[{Behavior}] Begin transaction {TransactionId} for {Request}",
-                    nameof(TransactionBehavior<,>),
-                    transaction.TransactionId,
-                    messageName
+                await using var transaction = await dbContext.Database.BeginTransactionAsync(
+                    attr.IsolationLevel,
+                    ct
                 );
-            }
-
-            try
-            {
-                var response = await next(message, ct);
-
-                await transaction.CommitAsync(ct);
 
                 if (logger.IsEnabled(LogLevel.Information))
                 {
                     logger.LogInformation(
-                        "[{Behavior}] Committed transaction {TransactionId} for {Request}",
+                        "[{Behavior}] Begin transaction {TransactionId} for {Request}",
                         nameof(TransactionBehavior<,>),
                         transaction.TransactionId,
                         messageName
                     );
                 }
 
-                return response;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(
-                    ex,
-                    "[{Behavior}] Transaction {TransactionId} failed for {Request}, rolling back",
-                    nameof(TransactionBehavior<,>),
-                    transaction.TransactionId,
-                    messageName
-                );
+                try
+                {
+                    var response = await next(message, ct);
 
-                await transaction.RollbackAsync(ct);
+                    await transaction.CommitAsync(ct);
 
-                throw;
-            }
-        }, cancellationToken);
+                    if (logger.IsEnabled(LogLevel.Information))
+                    {
+                        logger.LogInformation(
+                            "[{Behavior}] Committed transaction {TransactionId} for {Request}",
+                            nameof(TransactionBehavior<,>),
+                            transaction.TransactionId,
+                            messageName
+                        );
+                    }
+
+                    return response;
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(
+                        ex,
+                        "[{Behavior}] Transaction {TransactionId} failed for {Request}, rolling back",
+                        nameof(TransactionBehavior<,>),
+                        transaction.TransactionId,
+                        messageName
+                    );
+
+                    await transaction.RollbackAsync(ct);
+
+                    throw;
+                }
+            },
+            cancellationToken
+        );
     }
 }
