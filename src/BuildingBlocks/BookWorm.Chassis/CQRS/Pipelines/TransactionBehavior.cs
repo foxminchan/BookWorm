@@ -64,18 +64,9 @@ internal sealed class TransactionBehavior<TMessage, TResponse>(
 
                     return response;
                 }
-                catch (Exception ex)
+                catch
                 {
-                    logger.LogError(
-                        ex,
-                        "[{Behavior}] Transaction {TransactionId} failed for {Request}, rolling back",
-                        nameof(TransactionBehavior<,>),
-                        transaction.TransactionId,
-                        messageName
-                    );
-
                     await transaction.RollbackAsync(ct);
-
                     throw;
                 }
             },
