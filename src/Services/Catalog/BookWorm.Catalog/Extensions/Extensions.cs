@@ -64,6 +64,7 @@ internal static class Extensions
             .ApplyLoggingBehavior()
             .ApplyActivityBehavior()
             .ApplyValidationBehavior()
+            .ApplyTransactionBehavior<CatalogDbContext>()
             .AddScoped<CreateBookPreProcessor>()
             .AddScoped<UpdateBookPreProcessor>()
             .AddScoped<UpdateBookPostProcessor>();

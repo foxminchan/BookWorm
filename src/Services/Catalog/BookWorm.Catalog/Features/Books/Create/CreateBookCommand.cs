@@ -1,8 +1,9 @@
-﻿using Mediator;
+﻿using BookWorm.Chassis.CQRS;
+using Mediator;
 
 namespace BookWorm.Catalog.Features.Books.Create;
 
-public sealed class CreateBookCommand : ICommand<Guid>
+public sealed class CreateBookCommand : ICommand<Guid>, ITxRequest
 {
     public string Name { get; init; } = string.Empty;
     public string Description { get; init; } = string.Empty;

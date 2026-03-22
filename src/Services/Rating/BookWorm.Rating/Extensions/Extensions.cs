@@ -54,7 +54,8 @@ internal static class Extensions
             )
             .ApplyLoggingBehavior()
             .ApplyActivityBehavior()
-            .ApplyValidationBehavior();
+            .ApplyValidationBehavior()
+            .ApplyTransactionBehavior<RatingDbContext>();
 
         builder.AddRateLimiting();
 

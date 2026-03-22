@@ -1,9 +1,10 @@
-﻿using BookWorm.Chassis.Utilities.Guards;
+﻿using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.Utilities.Guards;
 using Mediator;
 
 namespace BookWorm.Catalog.Features.Books.Delete;
 
-public sealed record DeleteBookCommand(Guid Id) : ICommand;
+public sealed record DeleteBookCommand(Guid Id) : ICommand, ITxRequest;
 
 internal sealed class DeleteBookHandler(IBookRepository repository)
     : ICommandHandler<DeleteBookCommand>

@@ -1,4 +1,5 @@
-﻿using BookWorm.Chassis.Security.Extensions;
+﻿using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Utilities.Guards;
 using BookWorm.Ordering.Extensions;
 using Mediator;
@@ -6,7 +7,7 @@ using Mediator;
 namespace BookWorm.Ordering.Features.Buyers.UpdateAddress;
 
 public sealed record UpdateAddressCommand(string Street, string City, string Province)
-    : ICommand<BuyerDto>;
+    : ICommand<BuyerDto>, ITxRequest;
 
 internal sealed class UpdateAddressHandler(
     IBuyerRepository repository,

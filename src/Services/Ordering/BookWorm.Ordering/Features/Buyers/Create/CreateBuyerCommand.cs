@@ -1,4 +1,5 @@
-﻿using BookWorm.Chassis.Security.Extensions;
+﻿using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Ordering.Extensions;
 using Mediator;
@@ -6,7 +7,7 @@ using Mediator;
 namespace BookWorm.Ordering.Features.Buyers.Create;
 
 public sealed record CreateBuyerCommand([PIIData] string Street, string City, string Province)
-    : ICommand<Guid>;
+    : ICommand<Guid>, ITxRequest;
 
 internal sealed class CreateBuyerHandler(
     IBuyerRepository repository,

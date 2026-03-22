@@ -1,4 +1,5 @@
-﻿using Mediator;
+﻿using BookWorm.Chassis.CQRS;
+using Mediator;
 
 namespace BookWorm.Rating.Features.Create;
 
@@ -8,7 +9,7 @@ public sealed record CreateFeedbackCommand(
     string? LastName,
     string? Comment,
     int Rating
-) : ICommand<Guid>;
+) : ICommand<Guid>, ITxRequest;
 
 internal sealed class CreateFeedbackHandler(IFeedbackRepository repository)
     : ICommandHandler<CreateFeedbackCommand, Guid>

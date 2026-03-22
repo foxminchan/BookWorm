@@ -1,9 +1,10 @@
-﻿using BookWorm.Chassis.Utilities.Guards;
+﻿using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.Utilities.Guards;
 using Mediator;
 
 namespace BookWorm.Catalog.Features.Books.Update;
 
-public sealed class UpdateBookCommand : ICommand
+public sealed class UpdateBookCommand : ICommand, ITxRequest
 {
     public Guid Id { get; init; }
     public string Name { get; init; } = string.Empty;
