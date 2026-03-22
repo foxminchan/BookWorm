@@ -17,12 +17,10 @@ internal sealed class TransactionBehavior<TMessage, TResponse>(
         CancellationToken cancellationToken
     )
     {
-        if (message.GetType().GetCustomAttribute<TransactionalAttribute>() is not { } attr)
-        {
-            return await next(message, cancellationToken);
-        }
-
-        if (dbContext.Database.CurrentTransaction is not null)
+        if (
+            message.GetType().GetCustomAttribute<TransactionalAttribute>() is not { } attr
+            || dbContext.Database.CurrentTransaction is not null
+        )
         {
             return await next(message, cancellationToken);
         }
