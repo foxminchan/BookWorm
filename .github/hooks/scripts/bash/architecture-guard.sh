@@ -16,7 +16,7 @@ FILE_PATH=$(echo "$TOOL_ARGS" | jq -r '.path // .filePath // empty')
 CONTENT=$(echo "$TOOL_ARGS" | jq -r '.content // .newText // .new_string // empty')
 
 # Service names in the project
-SERVICES=("Catalog" "Basket" "Ordering" "Rating" "Chat" "Finance" "Notification" "Scheduler")
+SERVICES=("Catalog" "Basket" "Ordering" "Rating" "Chat" "Finance" "Notification" "Scheduler" "McpTools")
 
 # Determine which service this file belongs to
 CURRENT_SERVICE=""

@@ -2,8 +2,8 @@
 # Cleans up temporary resources and logs session summary.
 $ErrorActionPreference = 'Stop'
 
-$Input = $input | Out-String
-$Data = $Input | ConvertFrom-Json
+$RawInput = [Console]::In.ReadToEnd()
+$Data = $RawInput | ConvertFrom-Json
 $Reason = $Data.reason
 $Timestamp = $Data.timestamp
 $Cwd = $Data.cwd
@@ -19,6 +19,19 @@ $Now = Get-Date -Format 'yyyy-MM-ddTHH:mm:ssZ'
 Add-Content -Path $SessionLog -Value "=== Session ended ==="
 Add-Content -Path $SessionLog -Value "  Reason: $Reason"
 Add-Content -Path $SessionLog -Value "  Time:   $Now"
+
+# Run formatting before session ends
+try {
+    if (Get-Command just -ErrorAction SilentlyContinue) {
+        Add-Content -Path $SessionLog -Value "  Running 'just format'..."
+        $FormatOutput = & just format 2>&1 | Out-String
+        Add-Content -Path $SessionLog -Value $FormatOutput
+    } else {
+        Add-Content -Path $SessionLog -Value "  WARNING: 'just' not found - skipping format"
+    }
+} catch {
+    Add-Content -Path $SessionLog -Value "  WARNING: 'just format' failed: $_"
+}
 
 # Summarize tool usage from audit log
 if (Test-Path $AuditLog) {

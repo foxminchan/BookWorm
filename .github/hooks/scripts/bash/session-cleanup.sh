@@ -1,7 +1,7 @@
 #!/bin/bash
 # BookWorm — Session end cleanup hook
 # Cleans up temporary resources and logs session summary.
-set -e
+set -eo pipefail
 
 INPUT=$(cat)
 REASON=$(echo "$INPUT" | jq -r '.reason')
@@ -17,6 +17,19 @@ AUDIT_LOG="${LOG_DIR}/audit.jsonl"
 echo "=== Session ended ===" >> "$SESSION_LOG"
 echo "  Reason: $REASON" >> "$SESSION_LOG"
 echo "  Time:   $(date -d @$((TIMESTAMP / 1000)) 2>/dev/null || date)" >> "$SESSION_LOG"
+
+# Run formatting before session ends (in a subshell so failures don't abort cleanup)
+(
+  set +e
+  if command -v just &> /dev/null; then
+    echo "  Running 'just format'..." >> "$SESSION_LOG"
+    if ! just format >> "$SESSION_LOG" 2>&1; then
+      echo "  WARNING: 'just format' exited with errors" >> "$SESSION_LOG"
+    fi
+  else
+    echo "  WARNING: 'just' not found — skipping format" >> "$SESSION_LOG"
+  fi
+)
 
 # Summarize tool usage from audit log
 if [[ -f "$AUDIT_LOG" ]]; then

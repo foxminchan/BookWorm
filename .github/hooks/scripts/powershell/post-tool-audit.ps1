@@ -2,10 +2,9 @@
 # Logs all tool executions for traceability and debugging.
 $ErrorActionPreference = 'Stop'
 
-$Input = $input | Out-String
-$Data = $Input | ConvertFrom-Json
+$RawInput = [Console]::In.ReadToEnd()
+$Data = $RawInput | ConvertFrom-Json
 $ToolName = $Data.toolName
-$ToolArgs = $Data.toolArgs
 $ResultType = $Data.toolResult.resultType
 $Timestamp = $Data.timestamp
 $Cwd = $Data.cwd

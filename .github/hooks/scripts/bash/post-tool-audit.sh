@@ -5,7 +5,6 @@ set -e
 
 INPUT=$(cat)
 TOOL_NAME=$(echo "$INPUT" | jq -r '.toolName')
-TOOL_ARGS=$(echo "$INPUT" | jq -r '.toolArgs')
 RESULT_TYPE=$(echo "$INPUT" | jq -r '.toolResult.resultType')
 TIMESTAMP=$(echo "$INPUT" | jq -r '.timestamp')
 CWD=$(echo "$INPUT" | jq -r '.cwd')
