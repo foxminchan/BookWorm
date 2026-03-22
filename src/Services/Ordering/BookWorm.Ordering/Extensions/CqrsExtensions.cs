@@ -15,7 +15,8 @@ internal static class CqrsExtensions
             )
             .ApplyLoggingBehavior()
             .ApplyActivityBehavior()
-            .ApplyValidationBehavior();
+            .ApplyValidationBehavior()
+            .ApplyTransactionBehavior<OrderingDbContext>();
 
         // Configure FluentValidation
         services.AddValidatorsFromAssemblyContaining<IOrderingApiMarker>(

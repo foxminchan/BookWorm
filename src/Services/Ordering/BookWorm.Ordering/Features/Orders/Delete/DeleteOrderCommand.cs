@@ -1,8 +1,10 @@
-﻿using BookWorm.Chassis.Utilities.Guards;
+﻿using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.Utilities.Guards;
 using Mediator;
 
 namespace BookWorm.Ordering.Features.Orders.Delete;
 
+[Transactional]
 public sealed record DeleteOrderCommand(Guid Id) : ICommand;
 
 internal sealed class DeleteOrderHandler(IOrderRepository repository)
