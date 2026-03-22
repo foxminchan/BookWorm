@@ -6,8 +6,9 @@ using Mediator;
 
 namespace BookWorm.Ordering.Features.Buyers.Create;
 
+[Transactional]
 public sealed record CreateBuyerCommand([PIIData] string Street, string City, string Province)
-    : ICommand<Guid>, ITxRequest;
+    : ICommand<Guid>;
 
 internal sealed class CreateBuyerHandler(
     IBuyerRepository repository,

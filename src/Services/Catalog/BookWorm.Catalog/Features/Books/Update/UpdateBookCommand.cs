@@ -4,7 +4,8 @@ using Mediator;
 
 namespace BookWorm.Catalog.Features.Books.Update;
 
-public sealed class UpdateBookCommand : ICommand, ITxRequest
+[Transactional]
+public sealed class UpdateBookCommand : ICommand
 {
     public Guid Id { get; init; }
     public string Name { get; init; } = string.Empty;

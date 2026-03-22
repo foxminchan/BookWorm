@@ -7,7 +7,8 @@ using Mediator;
 
 namespace BookWorm.Ordering.Features.Orders.Cancel;
 
-public sealed record CancelOrderCommand(Guid OrderId) : ICommand<OrderDetailDto>, ITxRequest;
+[Transactional]
+public sealed record CancelOrderCommand(Guid OrderId) : ICommand<OrderDetailDto>;
 
 internal sealed class CancelOrderHandler(
     IOrderRepository repository,

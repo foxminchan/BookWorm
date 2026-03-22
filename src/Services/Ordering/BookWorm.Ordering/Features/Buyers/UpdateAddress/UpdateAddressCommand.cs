@@ -6,8 +6,9 @@ using Mediator;
 
 namespace BookWorm.Ordering.Features.Buyers.UpdateAddress;
 
+[Transactional]
 public sealed record UpdateAddressCommand(string Street, string City, string Province)
-    : ICommand<BuyerDto>, ITxRequest;
+    : ICommand<BuyerDto>;
 
 internal sealed class UpdateAddressHandler(
     IBuyerRepository repository,

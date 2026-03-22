@@ -7,7 +7,8 @@ using ZiggyCreatures.Caching.Fusion.Locking.Distributed;
 
 namespace BookWorm.Ordering.Features.Orders.Create;
 
-public sealed record CreateOrderCommand : ICommand<Guid>, ITxRequest;
+[Transactional]
+public sealed record CreateOrderCommand : ICommand<Guid>;
 
 internal sealed class CreateOrderHandler(
     IOrderRepository repository,

@@ -4,7 +4,8 @@ using Mediator;
 
 namespace BookWorm.Rating.Features.Delete;
 
-public sealed record DeleteFeedbackCommand(Guid Id) : ICommand, ITxRequest;
+[Transactional]
+public sealed record DeleteFeedbackCommand(Guid Id) : ICommand;
 
 internal sealed class DeleteFeedbackHandler(IFeedbackRepository repository)
     : ICommandHandler<DeleteFeedbackCommand>

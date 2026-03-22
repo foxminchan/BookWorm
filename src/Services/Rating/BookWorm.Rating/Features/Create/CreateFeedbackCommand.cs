@@ -3,13 +3,14 @@ using Mediator;
 
 namespace BookWorm.Rating.Features.Create;
 
+[Transactional]
 public sealed record CreateFeedbackCommand(
     Guid BookId,
     string? FirstName,
     string? LastName,
     string? Comment,
     int Rating
-) : ICommand<Guid>, ITxRequest;
+) : ICommand<Guid>;
 
 internal sealed class CreateFeedbackHandler(IFeedbackRepository repository)
     : ICommandHandler<CreateFeedbackCommand, Guid>

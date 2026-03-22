@@ -1,3 +1,4 @@
+using System.Reflection;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -16,7 +17,7 @@ internal sealed class TransactionBehavior<TMessage, TResponse>(
         CancellationToken cancellationToken
     )
     {
-        if (message is not ITxRequest)
+        if (message.GetType().GetCustomAttribute<TransactionalAttribute>() is null)
         {
             return await next(message, cancellationToken);
         }

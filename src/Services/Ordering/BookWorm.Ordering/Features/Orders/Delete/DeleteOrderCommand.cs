@@ -4,7 +4,8 @@ using Mediator;
 
 namespace BookWorm.Ordering.Features.Orders.Delete;
 
-public sealed record DeleteOrderCommand(Guid Id) : ICommand, ITxRequest;
+[Transactional]
+public sealed record DeleteOrderCommand(Guid Id) : ICommand;
 
 internal sealed class DeleteOrderHandler(IOrderRepository repository)
     : ICommandHandler<DeleteOrderCommand>
