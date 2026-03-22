@@ -17,7 +17,7 @@ internal sealed class TransactionBehavior<TMessage, TResponse>(
         CancellationToken cancellationToken
     )
     {
-        if (message.GetType().GetCustomAttribute<TransactionalAttribute>() is null)
+        if (message.GetType().GetCustomAttribute<TransactionalAttribute>() is not { } attr)
         {
             return await next(message, cancellationToken);
         }
@@ -32,7 +32,10 @@ internal sealed class TransactionBehavior<TMessage, TResponse>(
 
         return await strategy.ExecuteAsync(async ct =>
         {
-            await using var transaction = await dbContext.Database.BeginTransactionAsync(ct);
+            await using var transaction = await dbContext.Database.BeginTransactionAsync(
+                attr.IsolationLevel,
+                ct
+            );
 
             if (logger.IsEnabled(LogLevel.Information))
             {
