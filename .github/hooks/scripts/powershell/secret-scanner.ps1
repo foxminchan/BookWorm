@@ -2,8 +2,8 @@
 # Detects potential secrets, API keys, and tokens in commands and file content.
 $ErrorActionPreference = 'Stop'
 
-$Input = $input | Out-String
-$Data = $Input | ConvertFrom-Json
+$RawInput = [Console]::In.ReadToEnd()
+$Data = $RawInput | ConvertFrom-Json
 $ToolName = $Data.toolName
 $ToolArgs = $Data.toolArgs
 

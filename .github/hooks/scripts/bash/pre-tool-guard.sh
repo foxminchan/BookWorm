@@ -54,6 +54,12 @@ if [[ "$TOOL_NAME" = "bash" ]]; then
     jq -n '{permissionDecision: "deny", permissionDecisionReason: "Modifying global.json via shell is not permitted."}'
     exit 0
   fi
+
+  # Block force push and bypassing safety checks
+  if echo "$COMMAND" | grep -qE "git\s+push\s+.*--force|git\s+push\s+-f\b|git\s+reset\s+--hard|git\s+.*--no-verify"; then
+    jq -n '{permissionDecision: "deny", permissionDecisionReason: "Force push, hard reset, and --no-verify are blocked by project policy. These operations are destructive or bypass safety checks."}'
+    exit 0
+  fi
 fi
 
 # Allow everything else

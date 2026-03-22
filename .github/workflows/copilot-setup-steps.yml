@@ -66,6 +66,9 @@ jobs:
       - name: Install Tools
         run: dotnet tool restore
 
+      - name: Make agent hook scripts executable
+        run: chmod +x .github/hooks/scripts/bash/*.sh
+
       - name: Build
         run: dotnet build --configuration Debug
 

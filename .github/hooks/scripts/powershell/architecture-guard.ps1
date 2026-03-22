@@ -2,8 +2,8 @@
 # Enforces microservice boundaries by preventing cross-service internal references.
 $ErrorActionPreference = 'Stop'
 
-$Input = $input | Out-String
-$Data = $Input | ConvertFrom-Json
+$RawInput = [Console]::In.ReadToEnd()
+$Data = $RawInput | ConvertFrom-Json
 $ToolName = $Data.toolName
 $ToolArgs = $Data.toolArgs
 
@@ -19,7 +19,7 @@ $Content = if ($ToolArgs.content) { $ToolArgs.content }
            else { '' }
 
 # Service names in the project
-$Services = @('Catalog', 'Basket', 'Ordering', 'Rating', 'Chat', 'Finance', 'Notification', 'Scheduler')
+$Services = @('Catalog', 'Basket', 'Ordering', 'Rating', 'Chat', 'Finance', 'Notification', 'Scheduler', 'McpTools')
 
 # Determine which service this file belongs to
 $CurrentService = ''

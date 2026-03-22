@@ -2,8 +2,8 @@
 # Blocks modifications to protected files and dangerous commands.
 $ErrorActionPreference = 'Stop'
 
-$Input = $input | Out-String
-$Data = $Input | ConvertFrom-Json
+$RawInput = [Console]::In.ReadToEnd()
+$Data = $RawInput | ConvertFrom-Json
 $ToolName = $Data.toolName
 $ToolArgs = $Data.toolArgs
 
@@ -62,6 +62,15 @@ if ($ToolName -eq 'bash') {
         @{
             permissionDecision       = 'deny'
             permissionDecisionReason = 'Modifying global.json via shell is not permitted.'
+        } | ConvertTo-Json -Compress
+        exit 0
+    }
+
+    # Block force push and bypassing safety checks
+    if ($Command -match 'git\s+push\s+.*--force|git\s+push\s+-f\b|git\s+reset\s+--hard|git\s+.*--no-verify') {
+        @{
+            permissionDecision       = 'deny'
+            permissionDecisionReason = 'Force push, hard reset, and --no-verify are blocked by project policy. These operations are destructive or bypass safety checks.'
         } | ConvertTo-Json -Compress
         exit 0
     }

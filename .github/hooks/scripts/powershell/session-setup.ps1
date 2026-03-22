@@ -2,8 +2,8 @@
 # Validates that the development environment is properly configured.
 $ErrorActionPreference = 'Stop'
 
-$Input = $input | Out-String
-$Data = $Input | ConvertFrom-Json
+$RawInput = [Console]::In.ReadToEnd()
+$Data = $RawInput | ConvertFrom-Json
 $Source = $Data.source
 $Cwd = $Data.cwd
 $Timestamp = $Data.timestamp
