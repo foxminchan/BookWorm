@@ -1,7 +1,9 @@
 ---
 name: csharp-type-design-performance
-description: Design .NET types for performance. Seal classes, use readonly structs, prefer static pure functions, avoid premature enumeration, and choose the right collection types.
-user-invocable: false
+description: "Design .NET types for performance. Seal classes, use readonly structs, prefer static pure functions, avoid premature enumeration, and choose the right collection types. Use when designing new C# types, reviewing code for performance issues, choosing between class/struct/record, optimizing collections, or working with Span, ValueTask, and FrozenDictionary."
+metadata:
+  author: foxminchan
+  version: "1.0.0"
 ---
 
 # Type Design for Performance

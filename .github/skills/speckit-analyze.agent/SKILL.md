@@ -1,8 +1,6 @@
 ---
-name: speckit-analyze.agent
-description:
-  Perform a non-destructive cross-artifact consistency and quality analysis
-  across spec.md, plan.md, and tasks.md after task generation.
+name: speckit-analyze-agent
+description: "Perform a read-only cross-artifact consistency and quality analysis across spec.md, plan.md, and tasks.md, producing a structured findings report with severity ratings. Use when the agent needs to analyze specification quality, check cross-artifact consistency, detect coverage gaps, find requirement ambiguities, or validate constitution alignment before implementation. Builds semantic models, runs detection passes for duplication, ambiguity, underspecification, coverage gaps, and inconsistency, then outputs a prioritized findings table with remediation suggestions."
 compatibility: Requires spec-kit project structure with .specify/ directory
 metadata:
   author: github-spec-kit

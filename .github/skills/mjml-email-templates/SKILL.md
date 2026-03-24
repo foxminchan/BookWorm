@@ -1,44 +1,11 @@
 ---
 name: mjml-email-templates
-description: Build responsive email templates using MJML markup language. Compiles to cross-client HTML that works in Outlook, Gmail, and Apple Mail. Includes template renderer, layout patterns, and variable substitution.
+description: "Use when building transactional email templates, setting up MJML rendering in .NET, creating responsive email layouts for Outlook/Gmail/Apple Mail, or implementing variable substitution in email content. Configures Mjml.Net, embeds templates as resources, renders MJML to cross-client HTML, and composes emails with strongly-typed value objects."
 ---
 
 # MJML Email Templates
 
-## When to Use This Skill
-
-Use this skill when:
-
-- Building transactional emails (signup, password reset, invoices, notifications)
-- Creating responsive email templates that work across clients
-- Setting up MJML template rendering in .NET
-
-**Related skills:**
-
-- `aspire/mailpit-integration` - Test emails locally with Mailpit
-- `testing/verify-email-snapshots` - Snapshot test rendered HTML
-
----
-
-## Why MJML?
-
-**Problem**: Email HTML is notoriously difficult. Each email client (Outlook, Gmail, Apple Mail) renders differently, requiring complex table-based layouts and inline styles.
-
-**Solution**: [MJML](https://mjml.io/) is a markup language that compiles to responsive, cross-client HTML:
-
-```mjml
-<!-- MJML - simple and readable -->
-<mj-section>
-  <mj-column>
-    <mj-text>Hello {{ UserName }}</mj-text>
-    <mj-button href="{{ActionUrl}}">Click Here</mj-button>
-  </mj-column>
-</mj-section>
-```
-
-Compiles to ~200 lines of table-based HTML with inline styles that works everywhere.
-
----
+**Related skills:** `aspire/mailpit-integration` (local email testing), `testing/verify-email-snapshots` (snapshot testing)
 
 ## Installation
 
@@ -413,6 +380,23 @@ Task<EmailMessage> ComposeAsync(
 | `<mj-social>`  | Social media icons                |
 
 ---
+
+## Validation Workflow
+
+After creating or modifying an MJML template:
+
+1. Compile the template and verify no MJML errors are returned
+2. Render with sample variables and confirm all `{{ placeholders }}` are substituted
+3. Preview the rendered HTML in a browser to check layout
+4. Test in Mailpit (via `aspire/mailpit-integration`) for cross-client rendering
+5. Run snapshot tests (via `testing/verify-email-snapshots`) to catch regressions
+
+```csharp
+// Validation: ensure no unresolved placeholders remain
+var html = await renderer.RenderTemplateAsync(templateName, variables);
+Debug.Assert(!Regex.IsMatch(html, @"\{\{[^}]+\}\}"),
+    "Unresolved template placeholders detected");
+```
 
 ## Resources
 

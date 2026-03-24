@@ -1,104 +1,117 @@
 ---
 name: csharp-tunit
-description: "Get best practices for TUnit unit testing, including data-driven tests"
+description: "Generates TUnit test classes with data-driven tests, Shouldly assertions, and lifecycle hooks. Use when writing unit tests, creating test fixtures, migrating from xUnit, or adding data-driven test cases in .NET projects using TUnit."
 ---
 
 # TUnit Best Practices
 
-Your goal is to help me write effective unit tests with TUnit, covering both standard and data-driven testing approaches.
-
 ## Project Setup
 
-- Use a separate test project with naming convention `[ProjectName].[TestType]` (e.g., `MyApp.UnitTests`)
+- Use a separate test project named `[ProjectName].[TestType]` (e.g., `MyApp.UnitTests`)
 - Reference TUnit package and TUnit.Assertions for fluent assertions
-- Create test classes that match the classes being tested (e.g., `CalculatorTests` for `Calculator`)
-- Use .NET SDK test commands: `dotnet test` for running tests
 - TUnit requires .NET 8.0 or higher
 
 ## Test Structure
 
-- No test class attributes required (like xUnit/NUnit)
-- Use `[Test]` attribute for test methods (not `[Fact]` like xUnit)
-- Follow the Arrange-Act-Assert (AAA) pattern
-- Name tests using the pattern `Given[Condition]_When[Action]_Then[ExpectedResult]` for clarity
-- Use lifecycle hooks: `[Before(Test)]` for setup and `[After(Test)]` for teardown
-- Use `[Before(Class)]` and `[After(Class)]` for shared context between tests in a class
-- Use `[Before(Assembly)]` and `[After(Assembly)]` for shared context across test classes
-- TUnit supports advanced lifecycle hooks like `[Before(TestSession)]` and `[After(TestSession)]`
+- Use `[Test]` attribute for test methods (no class-level attributes required)
+- Follow Arrange-Act-Assert (AAA) pattern
+- Name tests as `Given[Condition]_When[Action]_Then[ExpectedResult]`
+- Lifecycle hooks: `[Before(Test)]` / `[After(Test)]` for setup/teardown
+- Class-level: `[Before(Class)]` / `[After(Class)]` for shared context
 
-## Standard Tests
+## Example: Standard Test
 
-- Keep tests focused on a single behavior
-- Avoid testing multiple behaviors in one test method
-- Use Shouldly's fluent assertion syntax (e.g., `actual.ShouldBe(expected)`)
-- Include only the assertions needed to verify the test case
-- Make tests independent and idempotent (can run in any order)
-- Avoid test interdependencies (use `[DependsOn]` attribute if needed)
+```csharp
+public class CalculatorTests
+{
+    private Calculator _sut;
 
-## Data-Driven Tests
+    [Before(Test)]
+    public void Setup() => _sut = new Calculator();
 
-- Use `[Arguments]` attribute for inline test data (equivalent to xUnit's `[InlineData]`)
-- Use `[MethodData]` for method-based test data (equivalent to xUnit's `[MemberData]`)
-- Use `[ClassData]` for class-based test data
-- Create custom data sources by implementing `ITestDataSource`
-- Use meaningful parameter names in data-driven tests
-- Multiple `[Arguments]` attributes can be applied to the same test method
+    [Test]
+    public void GivenTwoNumbers_WhenAdding_ThenReturnSum()
+    {
+        var result = _sut.Add(2, 3);
+        result.ShouldBe(5);
+    }
+}
+```
+
+## Example: Data-Driven Test
+
+```csharp
+public class PriceCalculatorTests
+{
+    [Test]
+    [Arguments(100.0, 0.1, 90.0)]
+    [Arguments(50.0, 0.25, 37.5)]
+    [Arguments(200.0, 0.0, 200.0)]
+    public void GivenPriceAndDiscount_WhenCalculating_ThenReturnDiscountedPrice(
+        double price, double discount, double expected)
+    {
+        var result = PriceCalculator.ApplyDiscount(price, discount);
+        result.ShouldBe(expected);
+    }
+
+    [Test]
+    [MethodData(nameof(GetBulkPricingData))]
+    public void GivenBulkOrder_WhenCalculating_ThenApplyTierDiscount(
+        int quantity, double unitPrice, double expectedTotal)
+    {
+        var result = PriceCalculator.CalculateBulk(quantity, unitPrice);
+        result.ShouldBe(expectedTotal);
+    }
+
+    public static IEnumerable<(int, double, double)> GetBulkPricingData()
+    {
+        yield return (10, 5.0, 45.0);
+        yield return (100, 5.0, 400.0);
+    }
+}
+```
 
 ## Assertions (Shouldly)
 
-- Use `actual.ShouldBe(expected)` for value equality
-- Use `actual.ShouldBeSameAs(expected)` for reference equality
-- Use `actual.ShouldBeTrue()` or `actual.ShouldBeFalse()` for boolean conditions
-- Use `actual.ShouldBeNull()` or `actual.ShouldNotBeNull()` for null checks
-- Use `actual.ShouldContain(item)` or `actual.ShouldNotContain(item)` for collections
-- Use `actual.ShouldContain("substring")` for string containment
-- Use `actual.ShouldMatch(pattern)` for regex pattern matching
-- Use `actual.ShouldBeGreaterThan(value)`, `actual.ShouldBeLessThan(value)` for comparisons
-- Use `actual.ShouldBeOfType<T>()` for type assertions
-- Use `actual.ShouldBeEmpty()` or `actual.ShouldNotBeEmpty()` for collections and strings
-- Use `Should.Throw<TException>(() => action)` for sync exception testing
-- Use `Should.Throw<TException>(async () => await asyncAction)` for async exception testing
-- Use `Should.NotThrow(() => action)` to verify no exception is thrown
-- All Shouldly assertions are synchronous (no `await` needed except for async exception testing)
+- `actual.ShouldBe(expected)` for value equality
+- `actual.ShouldBeNull()` / `actual.ShouldNotBeNull()` for null checks
+- `actual.ShouldContain(item)` for collections and strings
+- `actual.ShouldBeOfType<T>()` for type assertions
+- `actual.ShouldBeEmpty()` / `actual.ShouldNotBeEmpty()` for collections
+- `Should.Throw<TException>(() => action)` for exception testing
+- `Should.Throw<TException>(async () => await asyncAction)` for async exceptions
+
+## Data-Driven Tests
+
+- `[Arguments]` for inline test data (replaces xUnit `[InlineData]`)
+- `[MethodData]` for method-based test data (replaces xUnit `[MemberData]`)
+- `[ClassData]` for class-based test data sources
+- Implement `ITestDataSource` for custom data sources
 
 ## Advanced Features
 
-- Use `[Repeat(n)]` to repeat tests multiple times
-- Use `[Retry(n)]` for automatic retry on failure
-- Use `[ParallelLimit<T>]` to control parallel execution limits
-- Use `[Skip("reason")]` to skip tests conditionally
-- Use `[DependsOn(nameof(OtherTest))]` to create test dependencies
-- Use `[Timeout(milliseconds)]` to set test timeouts
-- Create custom attributes by extending TUnit's base attributes
-
-## Test Organization
-
-- Group tests by feature or component
-- Use `[Category("CategoryName")]` for test categorization
-- Use `[DisplayName("Custom Test Name")]` for custom test names
-- Consider using `TestContext` for test diagnostics and information
-- Use conditional attributes like custom `[WindowsOnly]` for platform-specific tests
-
-## Performance and Parallel Execution
-
-- TUnit runs tests in parallel by default (unlike xUnit which requires explicit configuration)
-- Use `[NotInParallel]` to disable parallel execution for specific tests
-- Use `[ParallelLimit<T>]` with custom limit classes to control concurrency
-- Tests within the same class run sequentially by default
-- Use `[Repeat(n)]` with `[ParallelLimit<T>]` for load testing scenarios
+- `[Repeat(n)]` to repeat tests; `[Retry(n)]` for automatic retry
+- `[ParallelLimit<T>]` to control concurrency; `[NotInParallel]` to disable it
+- `[Skip("reason")]` to skip conditionally; `[Timeout(ms)]` for timeouts
+- `[Category("Name")]` and `[DisplayName("Name")]` for organization
 
 ## Migration from xUnit
 
-- Replace `[Fact]` with `[Test]`
-- Replace `[Theory]` with `[Test]` and use `[Arguments]` for data
-- Replace `[InlineData]` with `[Arguments]`
-- Replace `[MemberData]` with `[MethodData]`
-- Replace `Assert.Equal` with `actual.ShouldBe(expected)`
-- Replace `Assert.True` with `condition.ShouldBeTrue()`
-- Replace `Assert.Throws<T>` with `Should.Throw<T>(() => action)`
-- Replace constructor/IDisposable with `[Before(Test)]`/`[After(Test)]`
-- Replace `IClassFixture<T>` with `[Before(Class)]`/`[After(Class)]`
+| xUnit | TUnit |
+|-------|-------|
+| `[Fact]` | `[Test]` |
+| `[Theory]` + `[InlineData]` | `[Test]` + `[Arguments]` |
+| `[MemberData]` | `[MethodData]` |
+| `Assert.Equal` | `actual.ShouldBe(expected)` |
+| `Assert.Throws<T>` | `Should.Throw<T>(() => action)` |
+| Constructor / `IDisposable` | `[Before(Test)]` / `[After(Test)]` |
+| `IClassFixture<T>` | `[Before(Class)]` / `[After(Class)]` |
 
-**Why TUnit over xUnit?**
+## Validation Checkpoint
 
-TUnit offers a modern, fast, and flexible testing experience with advanced features not present in xUnit, such as asynchronous assertions, more refined lifecycle hooks, and improved data-driven testing capabilities. TUnit's fluent assertions provide clearer and more expressive test validation, making it especially suitable for complex .NET projects.
+After generating tests, verify:
+1. Every test method has the `[Test]` attribute
+2. Test names follow `Given_When_Then` convention
+3. Assertions use Shouldly syntax (not `Assert.*`)
+4. Data-driven tests have meaningful parameter names
+5. No test interdependencies unless explicitly using `[DependsOn]`

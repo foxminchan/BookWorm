@@ -1,9 +1,6 @@
 ---
-name: speckit-clarify.agent
-description:
-  Identify underspecified areas in the current feature spec by asking up
-  to 5 highly targeted clarification questions and encoding answers back into the
-  spec.
+name: speckit-clarify-agent
+description: "Use when a feature spec has ambiguities, missing decisions, or vague requirements before planning. Scans the active spec file against a structured taxonomy (functional scope, data model, non-functional attributes, edge cases), generates up to 5 prioritized clarification questions, and encodes accepted answers directly into the spec. Requires a spec-kit project with .specify/ directory."
 compatibility: Requires spec-kit project structure with .specify/ directory
 metadata:
   author: github-spec-kit

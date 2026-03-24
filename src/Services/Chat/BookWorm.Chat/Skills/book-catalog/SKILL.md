@@ -1,6 +1,6 @@
 ---
 name: book-catalog
-description: Search and recommend books from BookWorm's catalog. Use when customers ask about finding books, getting personalized recommendations, exploring genres, discovering authors, or comparing titles.
+description: "Search and recommend books from BookWorm's catalog. Use when customers ask about finding books, getting personalized recommendations, exploring genres, discovering authors, comparing titles, checking book availability, filtering by price or rating, or looking up specific ISBNs."
 metadata:
   author: Nhan Nguyen
   version: "1.0"

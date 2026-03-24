@@ -101,7 +101,8 @@ Configure a task?
 ├─ Handle environment variables → references/environment/RULE.md
 ├─ Set up dev/watch tasks → references/configuration/tasks.md#persistent
 ├─ Package-specific config → references/configuration/RULE.md#package-configurations
-└─ Global settings (cacheDir, daemon) → references/configuration/global-options.md
+├─ Global settings (cacheDir, daemon) → references/configuration/global-options.md
+└─ ✓ Validate: Does the task have correct outputs and env keys? Run --dry to verify hash inputs.
 ```
 
 ### "My cache isn't working"
@@ -113,7 +114,8 @@ Cache problems?
 ├─ Need to debug hash inputs → Use --summarize or --dry
 ├─ Want to skip cache entirely → Use --force or cache: false
 ├─ Remote cache not working → references/caching/remote-cache.md
-└─ Environment causing misses → references/environment/gotchas.md
+├─ Environment causing misses → references/environment/gotchas.md
+└─ ✓ Validate: Run `turbo run build --summarize` and compare task hashes between runs.
 ```
 
 ### "I want to run only changed packages"
@@ -160,7 +162,8 @@ CI setup?
 ├─ Remote cache in CI → references/caching/remote-cache.md
 ├─ Only build changed packages → --affected flag
 ├─ Skip unnecessary builds → turbo-ignore (references/cli/commands.md)
-└─ Skip container setup when no changes → turbo-ignore
+├─ Skip container setup when no changes → turbo-ignore
+└─ ✓ Validate: Confirm remote cache is connected (`turbo run build` should show "Remote caching enabled").
 ```
 
 ### "I want to watch for changes during development"
@@ -210,76 +213,30 @@ Enforce boundaries?
 
 ## Critical Anti-Patterns
 
-### Using `turbo` Shorthand in Code
+### Using `turbo` Shorthand or Bypassing Turbo in Code
 
-**`turbo run` is recommended in package.json scripts and CI pipelines.** The shorthand `turbo <task>` is intended for interactive terminal use.
+**`turbo run` is recommended in package.json scripts and CI pipelines.** The shorthand `turbo <task>` is intended for interactive terminal use only. Root `package.json` scripts MUST delegate to `turbo run`, not run tasks directly or chain them with `&&`.
 
 ```json
-// WRONG - using shorthand in package.json
-{
-  "scripts": {
-    "build": "turbo build",
-    "dev": "turbo dev"
-  }
-}
+// WRONG - shorthand in package.json
+{ "scripts": { "build": "turbo build" } }
 
-// CORRECT
-{
-  "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev"
-  }
-}
+// WRONG - bypasses turbo entirely
+{ "scripts": { "build": "bun build" } }
+
+// WRONG - chaining turbo tasks with &&
+{ "scripts": { "changeset:publish": "bun build && changeset publish" } }
+
+// CORRECT - delegates to turbo run
+{ "scripts": { "build": "turbo run build", "changeset:publish": "turbo run build && changeset publish" } }
 ```
 
 ```yaml
-# WRONG - using shorthand in CI
+# WRONG - shorthand in CI
 - run: turbo build --affected
 
 # CORRECT
 - run: turbo run build --affected
-```
-
-### Root Scripts Bypassing Turbo
-
-Root `package.json` scripts MUST delegate to `turbo run`, not run tasks directly.
-
-```json
-// WRONG - bypasses turbo entirely
-{
-  "scripts": {
-    "build": "bun build",
-    "dev": "bun dev"
-  }
-}
-
-// CORRECT - delegates to turbo
-{
-  "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev"
-  }
-}
-```
-
-### Using `&&` to Chain Turbo Tasks
-
-Don't chain turbo tasks with `&&`. Let turbo orchestrate.
-
-```json
-// WRONG - turbo task not using turbo run
-{
-  "scripts": {
-    "changeset:publish": "bun build && changeset publish"
-  }
-}
-
-// CORRECT
-{
-  "scripts": {
-    "changeset:publish": "turbo run build && changeset publish"
-  }
-}
 ```
 
 ### `prebuild` Scripts That Manually Build Dependencies

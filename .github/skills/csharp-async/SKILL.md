@@ -1,49 +1,87 @@
 ---
 name: csharp-async
-description: "Get best practices for C# async programming"
+description: "Applies C# async/await best practices including proper return types, cancellation tokens, and parallel task execution. Use when writing async methods, fixing deadlocks, optimizing Task.WhenAll usage, or reviewing asynchronous C# code for correctness."
 ---
 
 # C# Async Programming Best Practices
 
-Your goal is to help me follow best practices for asynchronous programming in C#.
+## Naming and Return Types
 
-## Naming Conventions
-
-- Use the 'Async' suffix for all async methods
-- Match method names with their synchronous counterparts when applicable (e.g., `GetDataAsync()` for `GetData()`)
-
-## Return Types
-
-- Return `Task<T>` when the method returns a value
-- Return `Task` when the method doesn't return a value
-- Consider `ValueTask<T>` for high-performance scenarios to reduce allocations
-- Avoid returning `void` for async methods except for event handlers
+- Suffix all async methods with `Async`
+- Return `Task<T>` for values, `Task` for void, `ValueTask<T>` for hot-path performance
+- Never return `async void` except for event handlers
 
 ## Exception Handling
 
-- Use try/catch blocks around await expressions
-- Avoid swallowing exceptions in async methods
-- Use `ConfigureAwait(false)` when appropriate to prevent deadlocks in library code
-- Propagate exceptions with `Task.FromException()` instead of throwing in async Task returning methods
+- Use try/catch around await expressions
+- Use `ConfigureAwait(false)` in library code to prevent deadlocks
+- Propagate exceptions with `Task.FromException()` in non-async Task-returning methods
 
-## Performance
+## Example: Parallel Execution with Cancellation
 
-- Use `Task.WhenAll()` for parallel execution of multiple tasks
-- Use `Task.WhenAny()` for implementing timeouts or taking the first completed task
-- Avoid unnecessary async/await when simply passing through task results
-- Consider cancellation tokens for long-running operations
+```csharp
+public async Task<OrderSummary> GetOrderSummaryAsync(
+    int orderId, CancellationToken cancellationToken = default)
+{
+    var orderTask = _orderRepository.GetByIdAsync(orderId, cancellationToken);
+    var itemsTask = _itemRepository.GetByOrderIdAsync(orderId, cancellationToken);
+    var customerTask = _customerRepository.GetByOrderAsync(orderId, cancellationToken);
+
+    await Task.WhenAll(orderTask, itemsTask, customerTask);
+
+    return new OrderSummary(
+        await orderTask,
+        await itemsTask,
+        await customerTask);
+}
+```
+
+## Example: Async Stream Processing
+
+```csharp
+public async IAsyncEnumerable<Product> GetProductsAsync(
+    [EnumeratorCancellation] CancellationToken cancellationToken = default)
+{
+    await foreach (var product in _dbContext.Products
+        .AsAsyncEnumerable()
+        .WithCancellation(cancellationToken))
+    {
+        yield return product;
+    }
+}
+```
+
+## Example: ValueTask for Cache Hits
+
+```csharp
+public ValueTask<Book> GetBookAsync(int id, CancellationToken cancellationToken = default)
+{
+    if (_cache.TryGetValue(id, out var book))
+        return ValueTask.FromResult(book);
+
+    return new ValueTask<Book>(LoadBookFromDbAsync(id, cancellationToken));
+}
+```
 
 ## Common Pitfalls
 
 - Never use `.Wait()`, `.Result`, or `.GetAwaiter().GetResult()` in async code
-- Avoid mixing blocking and async code
-- Don't create async void methods (except for event handlers)
-- Always await Task-returning methods
+- Never mix blocking and async code — it causes deadlocks
+- Always pass `CancellationToken` through the call chain
+- Always await Task-returning methods; do not fire-and-forget
 
-## Implementation Patterns
+## Performance Patterns
 
-- Implement the async command pattern for long-running operations
-- Use async streams (IAsyncEnumerable<T>) for processing sequences asynchronously
-- Consider the task-based asynchronous pattern (TAP) for public APIs
+- Use `Task.WhenAll()` for independent parallel operations
+- Use `Task.WhenAny()` for timeouts or first-completed semantics
+- Elide async/await when simply returning a single task result
+- Use `CancellationToken` for all long-running or I/O-bound operations
 
-When reviewing my C# code, identify these issues and suggest improvements that follow these best practices.
+## Validation Checkpoint
+
+After writing async code, verify:
+1. All async methods return `Task`, `Task<T>`, or `ValueTask<T>` (not `void`)
+2. `CancellationToken` is accepted and forwarded in I/O-bound methods
+3. Independent operations use `Task.WhenAll()` instead of sequential awaits
+4. Library code uses `ConfigureAwait(false)`
+5. No `.Result` or `.Wait()` calls exist in the async call chain

@@ -1,8 +1,6 @@
 ---
-name: speckit-plan.agent
-description:
-  Execute the implementation planning workflow using the plan template
-  to generate design artifacts.
+name: speckit-plan-agent
+description: "Execute the implementation planning workflow to generate design artifacts including research.md, data-model.md, contracts, and quickstart.md. Use when the agent needs to plan a feature implementation, create technical design documents, generate architecture artifacts, or produce an implementation roadmap. Runs setup scripts, loads feature spec and constitution, fills technical context, evaluates constitution gates, and executes Phase 0 (research) and Phase 1 (design and contracts) sequentially."
 compatibility: Requires spec-kit project structure with .specify/ directory
 metadata:
   author: github-spec-kit

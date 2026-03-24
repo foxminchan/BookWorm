@@ -1,21 +1,9 @@
 ---
 name: serialization
-description: Choose the right serialization format for .NET applications. Prefer schema-based formats (Protobuf, MessagePack) over reflection-based (Newtonsoft.Json). Use System.Text.Json with AOT source generators for JSON scenarios.
+description: "Use when choosing a serialization format, migrating from Newtonsoft.Json to System.Text.Json, implementing AOT-compatible serialization, or designing wire formats for .NET distributed systems. Selects schema-based formats (Protobuf, MessagePack) over reflection-based, configures System.Text.Json source generators, and applies versioning rules for wire compatibility."
 ---
 
 # Serialization in .NET
-
-## When to Use This Skill
-
-Use this skill when:
-
-- Choosing a serialization format for APIs, messaging, or persistence
-- Migrating from Newtonsoft.Json to System.Text.Json
-- Implementing AOT-compatible serialization
-- Designing wire formats for distributed systems
-- Optimizing serialization performance
-
----
 
 ## Schema-Based vs Reflection-Based
 

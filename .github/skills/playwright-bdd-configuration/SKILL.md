@@ -1,15 +1,9 @@
 ---
 name: playwright-bdd-configuration
-description: Use when configuring Playwright BDD projects, setting up defineBddConfig(), configuring feature and step file paths, and integrating with Playwright config.
+description: "Use when setting up Playwright BDD from scratch, configuring defineBddConfig() with feature/step paths, integrating custom fixtures via importTestFrom, splitting feature sets across multiple Playwright projects, running bddgen to generate test files, or troubleshooting step-not-found and import errors."
 ---
 
 # Playwright BDD Configuration
-
-Expert knowledge of Playwright BDD configuration, project setup, and integration with Playwright's testing framework for behavior-driven development.
-
-## Overview
-
-Playwright BDD enables running Gherkin-syntax BDD tests with Playwright Test. Configuration is done through the `playwright.config.ts` file using the `defineBddConfig()` function, which generates Playwright test files from your `.feature` files.
 
 ## Installation
 
@@ -446,25 +440,3 @@ If `bddgen` fails:
 3. Run with `verbose: true` for details
 4. Verify all imports in step files
 
-## Best Practices
-
-1. **Organize by Feature** - Group features and steps by domain
-2. **Use Fixtures** - Share setup logic via Playwright fixtures
-3. **Keep Steps Simple** - One action per step definition
-4. **Reuse Steps** - Write generic steps that work across features
-5. **Version Generated Files** - Optionally commit for debugging
-6. **CI Integration** - Run `bddgen` before tests in CI
-7. **Type Safety** - Use TypeScript for step definitions
-8. **Documentation** - Export steps for team reference
-9. **Parallel Execution** - Let Playwright handle parallelism
-10. **Clean Output** - Gitignore generated directory
-
-## When to Use This Skill
-
-- Setting up a new Playwright BDD project
-- Configuring multiple feature sets
-- Integrating custom fixtures with BDD
-- Troubleshooting configuration issues
-- Optimizing test generation
-- Setting up monorepo testing
-- Configuring language/i18n support

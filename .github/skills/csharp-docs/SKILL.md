@@ -1,62 +1,77 @@
 ---
 name: csharp-docs
-description: "Ensure that C# types are documented with XML comments and follow best practices for documentation."
+description: "Generates XML documentation comments for C# classes, methods, properties, and constructors following .NET documentation standards. Use when adding XML docs to public APIs, documenting method parameters and return values, or writing summary tags for C# types."
 ---
 
 # C# Documentation Best Practices
 
-- Public members should be documented with XML comments.
-- It is encouraged to document internal members as well, especially if they are complex or not self-explanatory.
+## General Rules
 
-## Guidance for all APIs
+- Document all public members with XML comments; document internal members if complex
+- Start `<summary>` with a present-tense, third-person verb
+- Use `<remarks>` for implementation details and usage notes
+- Use `<see langword>` for keywords (`null`, `true`, `false`)
+- Use `<c>` for inline code, `<see cref>` for type/member references
+- Use `<inheritdoc/>` to inherit from base classes or interfaces
 
-- Use `<summary>` to provide a brief, one sentence, description of what the type or member does. Start the summary with a present-tense, third-person verb.
-- Use `<remarks>` for additional information, which can include implementation details, usage notes, or any other relevant context.
-- Use `<see langword>` for language-specific keywords like `null`, `true`, `false`, `int`, `bool`, etc.
-- Use `<c>` for inline code snippets.
-- Use `<example>` for usage examples on how to use the member.
-  - Use `<code>` for code blocks. `<code>` tags should be placed within an `<example>` tag. Add the language of the code example using the `language` attribute, for example, `<code language="csharp">`.
-- Use `<see cref>` to reference other types or members inline (in a sentence).
-- Use `<seealso>` for standalone (not in a sentence) references to other types or members in the "See also" section of the online docs.
-- Use `<inheritdoc/>` to inherit documentation from base classes or interfaces.
-  - Unless there is major behavior change, in which case you should document the differences.
+## Example: Complete XML Documentation
+
+```csharp
+/// <summary>
+/// Retrieves a book by its unique identifier.
+/// </summary>
+/// <param name="bookId">The unique identifier of the book to retrieve.</param>
+/// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+/// <returns>A task that represents the asynchronous operation, containing the matching book.</returns>
+/// <exception cref="BookNotFoundException">
+/// No book with the specified <paramref name="bookId"/> exists.
+/// </exception>
+/// <example>
+/// <code language="csharp">
+/// var book = await repository.GetBookByIdAsync(42, cancellationToken);
+/// Console.WriteLine(book.Title);
+/// </code>
+/// </example>
+public async Task<Book> GetBookByIdAsync(int bookId, CancellationToken cancellationToken = default)
+{
+    return await _dbContext.Books.FindAsync(new object[] { bookId }, cancellationToken)
+        ?? throw new BookNotFoundException(bookId);
+}
+```
 
 ## Methods
 
-- Use `<param>` to describe method parameters.
-  - The description should be a noun phrase that doesn't specify the data type.
-  - Begin with an introductory article.
-  - If the parameter is a flag enum, start the description with "A bitwise combination of the enumeration values that specifies...".
-  - If the parameter is a non-flag enum, start the description with "One of the enumeration values that specifies...".
-  - If the parameter is a Boolean, the wording should be of the form "`<see langword="true" />` to ...; otherwise, `<see langword="false" />`.".
-  - If the parameter is an "out" parameter, the wording should be of the form "When this method returns, contains .... This parameter is treated as uninitialized.".
-- Use `<paramref>` to reference parameter names in documentation.
-- Use `<typeparam>` to describe type parameters in generic types or methods.
-- Use `<typeparamref>` to reference type parameters in documentation.
-- Use `<returns>` to describe what the method returns.
-  - The description should be a noun phrase that doesn't specify the data type.
-  - Begin with an introductory article.
-  - If the return type is Boolean, the wording should be of the form "`<see langword="true" />` if ...; otherwise, `<see langword="false" />`.".
+- `<param>`: Noun phrase without data type, starting with an article
+  - Boolean params: "`<see langword="true" />` to ...; otherwise, `<see langword="false" />`."
+  - Out params: "When this method returns, contains .... This parameter is treated as uninitialized."
+  - Flag enum: "A bitwise combination of the enumeration values that specifies..."
+  - Non-flag enum: "One of the enumeration values that specifies..."
+- `<returns>`: Noun phrase without data type, starting with an article
+  - Boolean returns: "`<see langword="true" />` if ...; otherwise, `<see langword="false" />`."
+- Use `<paramref>` and `<typeparamref>` to reference parameters in text
 
 ## Constructors
 
-- The summary wording should be "Initializes a new instance of the <Class> class [or struct].".
+- Summary: "Initializes a new instance of the `<ClassName>` class."
 
 ## Properties
 
-- The `<summary>` should start with:
-  - "Gets or sets..." for a read-write property.
-  - "Gets..." for a read-only property.
-  - "Gets [or sets] a value that indicates whether..." for properties that return a Boolean value.
-- Use `<value>` to describe the value of the property.
-  - The description should be a noun phrase that doesn't specify the data type.
-  - If the property has a default value, add it in a separate sentence, for example, "The default is `<see langword="false" />`".
-  - If the value type is Boolean, the wording should be of the form "`<see langword="true" />` if ...; otherwise, `<see langword="false" />`. The default is ...".
+- Read-write: "Gets or sets..."
+- Read-only: "Gets..."
+- Boolean: "Gets [or sets] a value that indicates whether..."
+- Use `<value>` for the property value description; include defaults if applicable
 
 ## Exceptions
 
-- Use `<exception cref>` to document exceptions thrown by constructors, properties, indexers, methods, operators, and events.
-- Document all exceptions thrown directly by the member.
-- For exceptions thrown by nested members, document only the exceptions users are most likely to encounter.
-- The description of the exception describes the condition under which it's thrown.
-  - Omit "Thrown if ..." or "If ..." at the beginning of the sentence. Just state the condition directly, for example "An error occurred when accessing a Message Queuing API."
+- Use `<exception cref>` for all directly thrown exceptions
+- State the condition directly (omit "Thrown if..." or "If...")
+- For nested exceptions, document only those users are likely to encounter
+
+## Validation Checkpoint
+
+After writing documentation, verify:
+1. Every public member has a `<summary>` tag
+2. All method parameters have `<param>` tags
+3. Return values have `<returns>` tags
+4. Thrown exceptions have `<exception cref>` tags
+5. Code examples use `<example>` with `<code language="csharp">`

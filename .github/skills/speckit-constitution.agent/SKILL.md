@@ -1,8 +1,6 @@
 ---
-name: speckit-constitution.agent
-description:
-  Create or update the project constitution from interactive or provided
-  principle inputs, ensuring all dependent templates stay in sync.
+name: speckit-constitution-agent
+description: "Create or update the project constitution with governance principles, versioning policy, and compliance rules, then propagate changes across all dependent templates. Use when the agent needs to define project principles, update governance rules, amend the constitution, add or remove guiding constraints, or synchronize constitution changes with plan/spec/tasks templates. Loads existing constitution, collects principle values, applies semantic versioning, validates placeholder resolution, and produces a sync impact report."
 compatibility: Requires spec-kit project structure with .specify/ directory
 metadata:
   author: github-spec-kit

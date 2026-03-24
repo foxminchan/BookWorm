@@ -1,15 +1,9 @@
 ---
 name: receiving-code-review
-description: Use when receiving code review feedback, before implementing suggestions, especially if feedback seems unclear or technically questionable - requires technical rigor and verification, not performative agreement or blind implementation
+description: "Use when processing PR comments, review feedback, or inline code suggestions. Reads review comments, verifies each suggestion against the codebase, triages by severity, pushes back with technical reasoning when feedback is incorrect, and implements fixes one at a time with individual testing. Handles feedback from both human partners and external reviewers."
 ---
 
 # Code Review Reception
-
-## Overview
-
-Code review requires technical evaluation, not emotional performance.
-
-**Core principle:** Verify before implementing. Ask before assuming. Technical correctness over social comfort.
 
 ## The Response Pattern
 

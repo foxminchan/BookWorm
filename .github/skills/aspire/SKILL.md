@@ -207,6 +207,7 @@ Full command reference with flags: [CLI Reference](references/cli-reference.md).
 3. Wire dependencies: `.WithReference()`
 4. Gate on health: `.WaitFor()` if needed
 5. Run: `aspire run`
+6. **Validate:** Open the Aspire Dashboard and confirm the new service appears with a healthy status and correct endpoint bindings.
 
 ### Migrating from Docker Compose
 
@@ -215,6 +216,7 @@ Full command reference with flags: [CLI Reference](references/cli-reference.md).
 3. `depends_on` → `.WithReference()` + `.WaitFor()`
 4. `ports` → `.WithHttpEndpoint()`
 5. `environment` → `.WithEnvironment()` or `.WithReference()`
+6. **Validate:** Run `aspire run` and verify all services start, discover each other, and show healthy in the Dashboard. Compare against the original `docker-compose up` behavior.
 
 ---
 

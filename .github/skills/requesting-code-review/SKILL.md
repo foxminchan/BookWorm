@@ -1,27 +1,20 @@
 ---
 name: requesting-code-review
-description: Use when completing tasks, implementing major features, or before merging to verify work meets requirements
+description: "Use when requesting a code review, dispatching a code-reviewer subagent, validating PR changes before merge, or triggering post-task review in subagent-driven development. Captures git SHAs, fills the code-reviewer template placeholders, dispatches the review, and triages feedback by severity (Critical, Important, Minor)."
 ---
 
 # Requesting Code Review
 
-Dispatch superpowers:code-reviewer subagent to catch issues before they cascade.
-
-**Core principle:** Review early, review often.
+Dispatch the `superpowers:code-reviewer` subagent to catch issues before they cascade.
 
 ## When to Request Review
 
-**Mandatory:**
-
 - After each task in subagent-driven development
-- After completing major feature
+- After completing a major feature
 - Before merge to main
-
-**Optional but valuable:**
-
-- When stuck (fresh perspective)
+- When stuck and needing a fresh perspective
 - Before refactoring (baseline check)
-- After fixing complex bug
+- After fixing a complex bug
 
 ## How to Request
 

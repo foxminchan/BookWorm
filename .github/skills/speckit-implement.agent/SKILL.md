@@ -1,8 +1,6 @@
 ---
-name: speckit-implement.agent
-description:
-  Execute the implementation plan by processing and executing all tasks
-  defined in tasks.md
+name: speckit-implement-agent
+description: "Execute the full implementation plan by processing all tasks from tasks.md phase-by-phase, respecting dependency order and parallel execution markers. Use when the agent needs to implement a feature, execute the task plan, build from a specification, run the implementation workflow, or code the planned design. Verifies checklist completion, loads design artifacts (plan.md, data-model.md, contracts, research.md), sets up project ignore files, then executes tasks in phase order with TDD approach and progress tracking."
 compatibility: Requires spec-kit project structure with .specify/ directory
 metadata:
   author: github-spec-kit

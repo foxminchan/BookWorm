@@ -117,6 +117,56 @@ Reference these guidelines when:
 - `advanced-init-once` - Initialize app once per app load
 - `advanced-use-latest` - useLatest for stable callback refs
 
+## Workflow Prioritization
+
+When reviewing or refactoring code, apply rules in priority order:
+
+1. **CRITICAL first** — Fix waterfall and bundle issues before anything else. These have the largest measurable impact on user experience.
+2. **HIGH next** — Server-side performance improvements.
+3. **MEDIUM last** — Re-render and rendering optimizations. Only address these after critical and high-priority items are resolved.
+
+Skip LOW priority rules unless explicitly requested or during a dedicated performance audit.
+
+## Key Inline Examples
+
+### Eliminate Waterfalls with Promise.all (async-parallel)
+
+```tsx
+// BAD: Sequential fetches — each waits for the previous
+const user = await getUser(id);
+const posts = await getPosts(id);
+const comments = await getComments(id);
+
+// GOOD: Parallel fetches — all start simultaneously
+const [user, posts, comments] = await Promise.all([
+  getUser(id),
+  getPosts(id),
+  getComments(id),
+]);
+```
+
+### Avoid Barrel File Imports (bundle-barrel-imports)
+
+```tsx
+// BAD: Imports entire barrel — pulls in every export
+import { Button } from "@/components";
+
+// GOOD: Import directly from the source module
+import { Button } from "@/components/Button";
+```
+
+### Use Suspense Boundaries for Streaming (async-suspense-boundaries)
+
+```tsx
+// GOOD: Independent data streams in without blocking
+<Suspense fallback={<UserSkeleton />}>
+  <UserProfile id={id} />
+</Suspense>
+<Suspense fallback={<PostsSkeleton />}>
+  <UserPosts id={id} />
+</Suspense>
+```
+
 ## How to Use
 
 Read individual rule files for detailed explanations and code examples:

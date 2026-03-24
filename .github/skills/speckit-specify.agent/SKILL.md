@@ -1,8 +1,6 @@
 ---
-name: speckit-specify.agent
-description:
-  Create or update the feature specification from a natural language feature
-  description.
+name: speckit-specify-agent
+description: "Create or update a feature specification from a natural language description, producing a structured spec.md with functional requirements, user scenarios, and success criteria. Use when the agent needs to write a feature spec, define requirements, create a specification document, start a new feature, or turn a feature idea into structured requirements. Generates branch name, creates feature branch, fills spec template sections, runs quality validation checklist, and resolves ambiguities interactively."
 compatibility: Requires spec-kit project structure with .specify/ directory
 metadata:
   author: github-spec-kit

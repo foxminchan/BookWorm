@@ -1,8 +1,6 @@
 ---
-name: speckit-taskstoissues.agent
-description:
-  Convert existing tasks into actionable, dependency-ordered GitHub issues
-  for the feature based on available design artifacts.
+name: speckit-taskstoissues-agent
+description: "Convert tasks.md entries into dependency-ordered GitHub issues with proper labels and cross-references in the repository matching the git remote. Use when the agent needs to create GitHub issues from tasks, publish task breakdown to GitHub, convert a task list into trackable issues, or sync implementation tasks with GitHub project management. Runs prerequisite checks, extracts task list, validates the remote is a GitHub URL, then creates one issue per task via the GitHub MCP server."
 compatibility: Requires spec-kit project structure with .specify/ directory
 metadata:
   author: github-spec-kit

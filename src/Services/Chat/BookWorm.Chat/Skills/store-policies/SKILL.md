@@ -1,6 +1,6 @@
 ---
 name: store-policies
-description: Answer questions about BookWorm bookstore policies, shipping, returns, account management, loyalty programs, gift cards, and other non-book-specific services. Use when customers ask about store operations or services.
+description: "Answer questions about BookWorm bookstore policies, shipping, returns, account management, loyalty programs, gift cards, and other non-book-specific services. Use when customers ask about refunds, order tracking, delivery times, return process, BookPoints rewards, gift wrapping, pre-orders, password reset, cancellation policy, or store operations."
 metadata:
   author: Nhan Nguyen
   version: "1.0"

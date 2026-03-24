@@ -1,6 +1,6 @@
 ---
-name: speckit-checklist.agent
-description: Generate a custom checklist for the current feature based on user requirements.
+name: speckit-checklist-agent
+description: "Generate a requirements-quality checklist that validates specification completeness, clarity, and consistency for a feature. Use when the agent needs to create a checklist, validate requirements quality, audit spec completeness, review specification clarity, or check edge case coverage. Runs prerequisite checks, asks clarifying questions, loads feature context from spec.md/plan.md/tasks.md, and produces categorized checklist items in checklists/ directory with traceability references."
 compatibility: Requires spec-kit project structure with .specify/ directory
 metadata:
   author: github-spec-kit

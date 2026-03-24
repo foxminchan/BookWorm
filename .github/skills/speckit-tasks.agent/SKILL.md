@@ -1,8 +1,6 @@
 ---
-name: speckit-tasks.agent
-description:
-  Generate an actionable, dependency-ordered tasks.md for the feature based
-  on available design artifacts.
+name: speckit-tasks-agent
+description: "Generate a dependency-ordered tasks.md organized by user story with parallel execution markers, task IDs, and file paths for each action item. Use when the agent needs to break down a feature into tasks, create an implementation task list, generate a work breakdown, or produce an executable task plan from design artifacts. Loads spec.md, plan.md, data-model.md, and contracts, then produces phased tasks (setup, foundational, per-story, polish) with checklist format and coverage validation."
 compatibility: Requires spec-kit project structure with .specify/ directory
 metadata:
   author: github-spec-kit
