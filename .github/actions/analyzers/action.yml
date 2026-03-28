@@ -28,6 +28,10 @@ runs:
       shell: bash
       run: dotnet tool restore
 
+    - name: Restore
+      shell: bash
+      run: dotnet restore BookWorm.slnx
+
     - name: Configure Husky
       shell: bash
       if: success()

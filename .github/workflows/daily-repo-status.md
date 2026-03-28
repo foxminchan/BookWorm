@@ -5,7 +5,7 @@ description: |
   contributor activity. Posts a summary issue to help maintainers stay informed.
 
 on:
-  schedule: daily on weekdays
+  schedule: 0 9 * * 1-5
   workflow_dispatch:
 
 permissions: read-all
@@ -36,7 +36,7 @@ BookWorm is a microservices-based bookstore system built with .NET Aspire contai
 
 **Backend Services:**
 
-- Catalog, Basket, Ordering, Rating, Chat, Finance, Notification, Scheduler
+- Catalog, Basket, Ordering, Rating, Chat, Finance, Notification, Scheduler, McpTools
 
 **Frontend Applications:**
 
