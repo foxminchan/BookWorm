@@ -16,6 +16,7 @@ safe-outputs:
   add-comment:
     max: 1
   noop:
+timeout-minutes: 10
 ---
 
 # Pull Request Triage
@@ -38,6 +39,7 @@ BookWorm is a microservices architecture with the following services:
 - **Finance**: Financial transactions and payment processing
 - **Notification**: Email and notification services
 - **Scheduler**: Background job scheduling
+- **McpTools**: MCP server exposing catalog/rating tools to LLMs
 
 Additional components:
 
@@ -60,6 +62,8 @@ Apply these area labels based on PR content and files changed:
 | `area:finance`        | Payments, financial transactions               |
 | `area:notification`   | Emails, notifications                          |
 | `area:scheduler`      | Background jobs, scheduling                    |
+| `area:mcptools`       | MCP server, LLM tool integration               |
+| `area:shared`         | Shared libraries, BuildingBlocks, Chassis      |
 | `area:frontend`       | UI, React/Next.js, Backoffice, Storefront      |
 | `area:infrastructure` | Aspire, Docker, deployment, CI/CD, AppHost     |
 | `area:documentation`  | Docs, README, architecture documentation       |
@@ -67,21 +71,21 @@ Apply these area labels based on PR content and files changed:
 
 Apply these size labels based on the scope of changes:
 
-| Label   | Use when                                         |
-| ------- | ------------------------------------------------ |
-| `xs`    | Very small changes (1-10 lines)                  |
-| `s`     | Small changes (11-50 lines)                      |
-| `m`     | Medium changes (51-200 lines)                    |
-| `l`     | Large changes (201-500 lines)                    |
-| `xl`    | Extra large changes (500+ lines)                 |
+| Label | Use when                         |
+| ----- | -------------------------------- |
+| `xs`  | Very small changes (1-10 lines)  |
+| `s`   | Small changes (11-50 lines)      |
+| `m`   | Medium changes (51-200 lines)    |
+| `l`   | Large changes (201-500 lines)    |
+| `xl`  | Extra large changes (500+ lines) |
 
 Apply these type labels when clearly indicated:
 
-| Label         | Use when                                      |
-| ------------- | --------------------------------------------- |
-| `breaking`    | Contains breaking changes to public APIs      |
-| `refactoring` | Code refactoring without functional changes   |
-| `deps`        | Dependency updates (NuGet, npm packages)      |
+| Label         | Use when                                    |
+| ------------- | ------------------------------------------- |
+| `breaking`    | Contains breaking changes to public APIs    |
+| `refactoring` | Code refactoring without functional changes |
+| `deps`        | Dependency updates (NuGet, npm packages)    |
 
 ## Guidelines
 
@@ -105,9 +109,12 @@ Apply these type labels when clearly indicated:
    - `src/Services/Finance` → `area:finance`
    - `src/Services/Notification` → `area:notification`
    - `src/Services/Scheduler` → `area:scheduler`
+   - `src/Services/McpTools` → `area:mcptools`
+   - `src/BuildingBlocks/` → `area:shared`
+   - `src/Integrations/` → `area:infrastructure`
    - `src/Clients/` → `area:frontend`
-   - `src/Aspire/`, `.github/workflows/`, `docker-compose` → `area:infrastructure`
-   - `docs/`, `README`, `*.md` → `area:documentation`
+   - `src/Aspire/`, `.github/workflows/`, `docker-compose`, `Directory.Build.props`, `Versions.props` → `area:infrastructure`
+   - `docs/`, `README`, `*.md` (excluding workflow `.md` files) → `area:documentation`
    - `tests/`, `*Tests/`, `*.Tests.csproj` → `area:tests`
 
 2. **Calculate size** from the total additions + deletions
@@ -122,8 +129,9 @@ Apply these type labels when clearly indicated:
    - No functional changes, only code improvements
 
 5. **Identify dependency updates** when:
-   - Changes to `Directory.Packages.props`, `*.csproj` package references
+   - Changes to `Directory.Packages.props`, `Versions.props`, `*.csproj` package references
    - Changes to `package.json`, `pnpm-lock.yaml`
+   - Changes to `global.json`, `NuGet.config`
 
 ## Safe Outputs
 

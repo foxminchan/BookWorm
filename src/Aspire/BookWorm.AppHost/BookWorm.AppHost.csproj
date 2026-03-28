@@ -1,10 +1,10 @@
-﻿<Project Sdk="Aspire.AppHost.Sdk/13.1.3">
+﻿<Project Sdk="Aspire.AppHost.Sdk/13.2.0">
   <Import Project="K6Integration.targets" />
   <Import Project="KeycloakifyIntegration.targets" />
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <UserSecretsId>78a33324-5add-4731-b2fc-e0fc06ef0564</UserSecretsId>
-    <NoWarn>ASPIREINTERACTION001;ASPIREPIPELINES001;ASPIRECOMPUTE003;ASPIRECERTIFICATES001</NoWarn>
+    <NoWarn>ASPIREINTERACTION001;ASPIREPIPELINES001;ASPIRECOMPUTE003;ASPIRECERTIFICATES001;NU1603</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="**/node_modules/**/*.cs" />
@@ -35,10 +35,12 @@
     <ProjectReference Include="..\..\Services\Chat\BookWorm.Chat\BookWorm.Chat.csproj" />
     <ProjectReference Include="..\..\Services\Finance\BookWorm.Finance\BookWorm.Finance.csproj" />
     <ProjectReference Include="..\..\Services\McpTools\BookWorm.McpTools\BookWorm.McpTools.csproj" />
-    <ProjectReference Include="..\..\Services\Notification\BookWorm.Notification\BookWorm.Notification.csproj" />
+    <ProjectReference
+      Include="..\..\Services\Notification\BookWorm.Notification\BookWorm.Notification.csproj" />
     <ProjectReference Include="..\..\Services\Ordering\BookWorm.Ordering\BookWorm.Ordering.csproj" />
     <ProjectReference Include="..\..\Services\Rating\BookWorm.Rating\BookWorm.Rating.csproj" />
-    <ProjectReference Include="..\..\Services\Scheduler\BookWorm.Scheduler\BookWorm.Scheduler.csproj" />
+    <ProjectReference
+      Include="..\..\Services\Scheduler\BookWorm.Scheduler\BookWorm.Scheduler.csproj" />
   </ItemGroup>
   <ItemGroup Label="Integrations">
     <ProjectReference

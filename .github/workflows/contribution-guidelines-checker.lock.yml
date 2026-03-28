@@ -26,7 +26,7 @@
 #
 # Source: githubnext/agentics/workflows/contribution-guidelines-checker.md@69b5e3ae5fa7f35fa555b0a22aee14c36ab57ebb
 #
-# frontmatter-hash: bf116ebbea529a226851f6c2ca40653e1da00607dea8c8308e7aed11895810ef
+# frontmatter-hash: e69307bee89d1ed01fb353f9edb56609b2e259e15e754f0f85de3eba4ae686d8
 
 name: "Contribution Guidelines Checker"
 "on":
@@ -64,7 +64,7 @@ jobs:
       title: ${{ steps.compute-text.outputs.title }}
     steps:
       - name: Setup Scripts
-        uses: github/gh-aw/actions/setup@ffa4a6614bd9a568f2e50ada9eaa4784f32d169a # v0.62.2
+        uses: github/gh-aw/actions/setup@5988e5ce8019318837dfd26303351a4ba704a3c8 # v0.43.18
         with:
           destination: /opt/gh-aw/actions
       - name: Check workflow file timestamps
@@ -121,7 +121,7 @@ jobs:
       secret_verification_result: ${{ steps.validate-secret.outputs.verification_result }}
     steps:
       - name: Setup Scripts
-        uses: github/gh-aw/actions/setup@ffa4a6614bd9a568f2e50ada9eaa4784f32d169a # v0.62.2
+        uses: github/gh-aw/actions/setup@5988e5ce8019318837dfd26303351a4ba704a3c8 # v0.43.18
         with:
           destination: /opt/gh-aw/actions
       - name: Checkout repository
@@ -794,7 +794,7 @@ jobs:
       total_count: ${{ steps.missing_tool.outputs.total_count }}
     steps:
       - name: Setup Scripts
-        uses: github/gh-aw/actions/setup@ffa4a6614bd9a568f2e50ada9eaa4784f32d169a # v0.62.2
+        uses: github/gh-aw/actions/setup@5988e5ce8019318837dfd26303351a4ba704a3c8 # v0.43.18
         with:
           destination: /opt/gh-aw/actions
       - name: Download agent output artifact
@@ -907,7 +907,7 @@ jobs:
       success: ${{ steps.parse_results.outputs.success }}
     steps:
       - name: Setup Scripts
-        uses: github/gh-aw/actions/setup@ffa4a6614bd9a568f2e50ada9eaa4784f32d169a # v0.62.2
+        uses: github/gh-aw/actions/setup@5988e5ce8019318837dfd26303351a4ba704a3c8 # v0.43.18
         with:
           destination: /opt/gh-aw/actions
       - name: Download agent artifacts
@@ -1007,7 +1007,7 @@ jobs:
       activated: ${{ steps.check_membership.outputs.is_team_member == 'true' }}
     steps:
       - name: Setup Scripts
-        uses: github/gh-aw/actions/setup@ffa4a6614bd9a568f2e50ada9eaa4784f32d169a # v0.62.2
+        uses: github/gh-aw/actions/setup@5988e5ce8019318837dfd26303351a4ba704a3c8 # v0.43.18
         with:
           destination: /opt/gh-aw/actions
       - name: Add eyes reaction for immediate feedback
@@ -1049,6 +1049,7 @@ jobs:
       pull-requests: write
     timeout-minutes: 15
     env:
+      GH_AW_ENGINE_ID: "copilot"
       GH_AW_WORKFLOW_ID: "contribution-guidelines-checker"
       GH_AW_WORKFLOW_NAME: "Contribution Guidelines Checker"
       GH_AW_WORKFLOW_SOURCE: "githubnext/agentics/workflows/contribution-guidelines-checker.md@69b5e3ae5fa7f35fa555b0a22aee14c36ab57ebb"
@@ -1060,7 +1061,7 @@ jobs:
       process_safe_outputs_temporary_id_map: ${{ steps.process_safe_outputs.outputs.temporary_id_map }}
     steps:
       - name: Setup Scripts
-        uses: github/gh-aw/actions/setup@ffa4a6614bd9a568f2e50ada9eaa4784f32d169a # v0.62.2
+        uses: github/gh-aw/actions/setup@5988e5ce8019318837dfd26303351a4ba704a3c8 # v0.43.18
         with:
           destination: /opt/gh-aw/actions
       - name: Download agent output artifact
