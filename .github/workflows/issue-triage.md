@@ -16,6 +16,7 @@ safe-outputs:
   add-comment:
     max: 1
   noop:
+timeout-minutes: 10
 ---
 
 # Issue Triage
@@ -38,6 +39,7 @@ BookWorm is a microservices architecture with the following services:
 - **Finance**: Financial transactions and payment processing
 - **Notification**: Email and notification services
 - **Scheduler**: Background job scheduling
+- **McpTools**: MCP server exposing catalog/rating tools to LLMs
 
 Additional components:
 
@@ -59,6 +61,8 @@ Apply these area labels based on issue content:
 | `area:finance`        | Payments, financial transactions          |
 | `area:notification`   | Emails, notifications                     |
 | `area:scheduler`      | Background jobs, scheduling               |
+| `area:mcptools`       | MCP server, LLM tool integration          |
+| `area:shared`         | Shared libraries, cross-cutting concerns  |
 | `area:frontend`       | UI, React/Next.js, Backoffice, Storefront |
 | `area:infrastructure` | Aspire, Docker, deployment, CI/CD         |
 | `area:documentation`  | Docs, README, architecture documentation  |
@@ -84,8 +88,10 @@ Apply these priority labels when clearly indicated:
 
 1. Search for keywords related to each service (e.g., "catalog", "book", "inventory" → `area:catalog`)
 2. Look for file paths mentioned (e.g., `src/Services/Basket` → `area:basket`)
-3. Check for frontend-related terms (e.g., "UI", "React", "page", "component" → `area:frontend`)
-4. Look for infrastructure terms (e.g., "Aspire", "Docker", "deployment", "CI" → `area:infrastructure`)
+3. Check for MCP/tool-related terms (e.g., "MCP", "tool server", "LLM tools" → `area:mcptools`)
+4. Check for shared/cross-cutting terms (e.g., "Chassis", "SharedKernel", "BuildingBlocks" → `area:shared`)
+5. Check for frontend-related terms (e.g., "UI", "React", "page", "component" → `area:frontend`)
+6. Look for infrastructure terms (e.g., "Aspire", "Docker", "deployment", "CI" → `area:infrastructure`)
 
 ## Safe Outputs
 
