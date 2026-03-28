@@ -10,11 +10,18 @@ on:
     types: [opened, edited, synchronize]
   reaction: eyes
 
+concurrency:
+  group: gh-aw-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'copilot[bot]' && github.actor != 'github-actions[bot]' && github.actor != 'renovate[bot]' }}
+
 permissions: read-all
 
 network: defaults
 
 safe-outputs:
+  threat-detection: true
   add-labels:
     allowed: [contribution-ready]
     max: 1
@@ -24,6 +31,7 @@ safe-outputs:
 
 tools:
   github:
+    read-only: true
     toolsets: [default, pull_requests]
     # If in a public repo, setting `lockdown: false` allows
     # reading issues, pull requests and comments from 3rd-parties
@@ -31,6 +39,10 @@ tools:
     #
     # This is important for this workflow to be able to read contribution guidelines
     lockdown: false
+
+rate-limit:
+  max: 5
+  window: 60
 
 timeout-minutes: 10
 source: githubnext/agentics/workflows/contribution-guidelines-checker.md@69b5e3ae5fa7f35fa555b0a22aee14c36ab57ebb
@@ -62,7 +74,7 @@ Use the `get_pull_request` tool to fetch the full PR details including:
 - Changed files list
 - Commit messages
 
-The PR content is: "${{ needs.activation.outputs.text }}"
+The PR content is: "${{ steps.sanitized.outputs.text }}"
 
 ## Step 3: Evaluate Compliance
 

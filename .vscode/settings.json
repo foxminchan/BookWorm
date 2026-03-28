@@ -1,7 +1,8 @@
 {
   "files.eol": "\n",
   "dotnet.defaultSolution": "BookWorm.slnx",
-  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "js/ts.tsdk.path": "src/Clients/node_modules/typescript/lib",
+  "js/ts.tsdk.promptToUseWorkspaceVersion": true,
   "dotnet.automaticallyCreateSolutionInWorkspace": false,
   "dotnet.enableWorkspaceBasedDevelopment": true,
   "sonarlint.connectedMode.project": {

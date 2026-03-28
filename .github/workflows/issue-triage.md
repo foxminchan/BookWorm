@@ -3,19 +3,26 @@ description: Automatically triage incoming issues by analyzing content and apply
 on:
   issues:
     types: [opened, edited]
+concurrency:
+  group: gh-aw-${{ github.workflow }}-${{ github.event.issue.number }}
+  cancel-in-progress: false
+if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'copilot[bot]' && github.actor != 'github-actions[bot]' && github.actor != 'renovate[bot]' }}
 roles: all
 permissions:
   contents: read
   issues: read
+network: defaults
 tools:
   github:
+    read-only: true
+    lockdown: false
     toolsets: [issues]
-safe-outputs:
-  add-labels:
-    max: 5
-  add-comment:
-    max: 1
-  noop:
+rate-limit:
+  max: 5
+  window: 60
+imports:
+  - ../agents/triage-specialist.agent.md
+  - shared/triage-safe-outputs.md
 timeout-minutes: 10
 ---
 
@@ -27,45 +34,13 @@ You are an AI agent that triages incoming issues for the BookWorm repository - a
 
 Analyze newly opened or edited issues and apply appropriate labels to help organize and prioritize work. The repository already applies `bug` or `enhancement` labels through issue templates, but you need to add additional area-specific labels.
 
-## Repository Context
-
-BookWorm is a microservices architecture with the following services:
-
-- **Catalog**: Book catalog management and storage
-- **Basket**: Shopping cart functionality
-- **Ordering**: Order processing and management
-- **Rating**: Book ratings and reviews
-- **Chat**: AI-powered chat functionality
-- **Finance**: Financial transactions and payment processing
-- **Notification**: Email and notification services
-- **Scheduler**: Background job scheduling
-- **McpTools**: MCP server exposing catalog/rating tools to LLMs
-
-Additional components:
-
-- **Frontend**: Next.js applications (Backoffice admin and Storefront customer-facing)
-- **Infrastructure**: .NET Aspire orchestration, Docker, deployment
-- **Documentation**: Architecture docs and API documentation
+{{#import shared/bookworm-context.md}}
 
 ## Available Labels
 
 Apply these area labels based on issue content:
 
-| Label                 | Use when issue relates to                 |
-| --------------------- | ----------------------------------------- |
-| `area:catalog`        | Catalog service, book management, storage |
-| `area:basket`         | Shopping cart, basket service             |
-| `area:ordering`       | Order processing, checkout flow           |
-| `area:rating`         | Ratings, reviews                          |
-| `area:chat`           | Chat functionality, AI agents             |
-| `area:finance`        | Payments, financial transactions          |
-| `area:notification`   | Emails, notifications                     |
-| `area:scheduler`      | Background jobs, scheduling               |
-| `area:mcptools`       | MCP server, LLM tool integration          |
-| `area:shared`         | Shared libraries, cross-cutting concerns  |
-| `area:frontend`       | UI, React/Next.js, Backoffice, Storefront |
-| `area:infrastructure` | Aspire, Docker, deployment, CI/CD         |
-| `area:documentation`  | Docs, README, architecture documentation  |
+{{#import shared/area-labels.md}}
 
 Apply these priority labels when clearly indicated:
 

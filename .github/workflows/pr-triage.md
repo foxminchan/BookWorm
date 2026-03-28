@@ -3,19 +3,26 @@ description: Automatically triage incoming pull requests by analyzing content an
 on:
   pull_request:
     types: [opened, edited, synchronize]
+concurrency:
+  group: gh-aw-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'copilot[bot]' && github.actor != 'github-actions[bot]' && github.actor != 'renovate[bot]' }}
 roles: all
 permissions:
   contents: read
   pull-requests: read
+network: defaults
 tools:
   github:
+    read-only: true
+    lockdown: false
     toolsets: [pull_requests]
-safe-outputs:
-  add-labels:
-    max: 5
-  add-comment:
-    max: 1
-  noop:
+rate-limit:
+  max: 5
+  window: 60
+imports:
+  - ../agents/triage-specialist.agent.md
+  - shared/triage-safe-outputs.md
 timeout-minutes: 10
 ---
 
@@ -27,47 +34,13 @@ You are an AI agent that triages incoming pull requests for the BookWorm reposit
 
 Analyze newly opened, edited, or synchronized pull requests and apply appropriate labels to help organize and prioritize code reviews. You need to add area-specific labels based on the files changed and the PR description.
 
-## Repository Context
-
-BookWorm is a microservices architecture with the following services:
-
-- **Catalog**: Book catalog management and storage
-- **Basket**: Shopping cart functionality
-- **Ordering**: Order processing and management
-- **Rating**: Book ratings and reviews
-- **Chat**: AI-powered chat functionality
-- **Finance**: Financial transactions and payment processing
-- **Notification**: Email and notification services
-- **Scheduler**: Background job scheduling
-- **McpTools**: MCP server exposing catalog/rating tools to LLMs
-
-Additional components:
-
-- **Frontend**: Next.js applications (Backoffice admin and Storefront customer-facing)
-- **Infrastructure**: .NET Aspire orchestration, Docker, deployment
-- **Documentation**: Architecture docs and API documentation
-- **Tests**: Unit tests, integration tests, architecture tests
+{{#import shared/bookworm-context.md}}
 
 ## Available Labels
 
 Apply these area labels based on PR content and files changed:
 
-| Label                 | Use when PR affects                            |
-| --------------------- | ---------------------------------------------- |
-| `area:catalog`        | Catalog service, book management, storage      |
-| `area:basket`         | Shopping cart, basket service                  |
-| `area:ordering`       | Order processing, checkout flow                |
-| `area:rating`         | Ratings, reviews                               |
-| `area:chat`           | Chat functionality, AI agents                  |
-| `area:finance`        | Payments, financial transactions               |
-| `area:notification`   | Emails, notifications                          |
-| `area:scheduler`      | Background jobs, scheduling                    |
-| `area:mcptools`       | MCP server, LLM tool integration               |
-| `area:shared`         | Shared libraries, BuildingBlocks, Chassis      |
-| `area:frontend`       | UI, React/Next.js, Backoffice, Storefront      |
-| `area:infrastructure` | Aspire, Docker, deployment, CI/CD, AppHost     |
-| `area:documentation`  | Docs, README, architecture documentation       |
-| `area:tests`          | Test projects, test utilities, test frameworks |
+{{#import shared/area-labels.md}}
 
 Apply these size labels based on the scope of changes:
 
