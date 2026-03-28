@@ -8,14 +8,23 @@ on:
   schedule: 0 9 * * 1-5
   workflow_dispatch:
 
+concurrency:
+  group: gh-aw-${{ github.workflow }}
+  cancel-in-progress: false
+
 permissions: read-all
+network: defaults
+imports:
+  - shared/mcp/server-memory.md
 
 tools:
   github:
+    read-only: true
+    lockdown: false
     toolsets: [repos, issues, pull_requests, actions]
-  cache-memory: true
 
 safe-outputs:
+  threat-detection: true
   create-issue:
     title-prefix: "📊 Daily Repo Status"
     labels: [automation, status-report]
@@ -30,21 +39,7 @@ timeout-minutes: 10
 
 You are an AI agent that generates daily status reports for the BookWorm repository maintainers. Your goal is to provide a comprehensive overview of repository activity to help maintainers stay informed and prioritize their work.
 
-## Repository Context
-
-BookWorm is a microservices-based bookstore system built with .NET Aspire containing:
-
-**Backend Services:**
-
-- Catalog, Basket, Ordering, Rating, Chat, Finance, Notification, Scheduler, McpTools
-
-**Frontend Applications:**
-
-- Next.js Backoffice (admin) and Storefront (customer-facing)
-
-**Infrastructure:**
-
-- .NET Aspire orchestration, CI/CD pipelines, Docker configurations
+{{#import shared/bookworm-context.md}}
 
 ## Your Task
 
@@ -147,10 +142,11 @@ Based on your analysis, provide actionable recommendations:
    - 🔄 In progress
    - ⏳ Waiting
 
-6. **Check cache-memory** for:
+6. **Check cache-memory and repo-memory** for:
    - Previous report comparisons (trending better/worse)
    - Known issues or patterns to watch
-   - Update cache with current state for next run
+
+- Update memory with current state for next run
 
 ## Report Format
 

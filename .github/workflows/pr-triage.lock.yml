@@ -21,7 +21,15 @@
 #
 # Automatically triage incoming pull requests by analyzing content and applying appropriate labels
 #
-# frontmatter-hash: 8099bf175e1a5faff2fe1d48c9cf237d7e0da6f3df8185c3fe30fdc3d53fea6b
+# Resolved workflow manifest:
+#   Imports:
+#     - ../agents/triage-specialist.agent.md
+#     - shared/triage-safe-outputs.md
+#   Includes:
+#     - shared/area-labels.md
+#     - shared/bookworm-context.md
+#
+# frontmatter-hash: 318624ea5a1464b6efbcfb10c2221a17c84a6efe654e05f71ea2eb3bd11d8b4f
 
 name: "Pull Request Triage"
 "on":
@@ -34,14 +42,16 @@ name: "Pull Request Triage"
 permissions: {}
 
 concurrency:
-  group: "gh-aw-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}"
   cancel-in-progress: true
+  group: gh-aw-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
 
 run-name: "Pull Request Triage"
 
 jobs:
   activation:
-    if: (github.event_name != 'pull_request') || (github.event.pull_request.head.repo.id == github.repository_id)
+    if: >
+      (${{ github.actor != 'dependabot[bot]' && github.actor != 'copilot[bot]' && github.actor != 'github-actions[bot]' &&
+      github.actor != 'renovate[bot]' }}) && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.id == github.repository_id))
     runs-on: ubuntu-slim
     permissions:
       contents: read
@@ -176,13 +186,6 @@ jobs:
         run: /opt/gh-aw/actions/install_copilot_cli.sh 0.0.409
       - name: Install awf binary
         run: bash /opt/gh-aw/actions/install_awf_binary.sh v0.16.4
-      - name: Determine automatic lockdown mode for GitHub MCP server
-        id: determine-automatic-lockdown
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
-        with:
-          script: |
-            const determineAutomaticLockdown = require('/opt/gh-aw/actions/determine_automatic_lockdown.cjs');
-            await determineAutomaticLockdown(github, context, core);
       - name: Download container images
         run: bash /opt/gh-aw/actions/download_docker_images.sh ghcr.io/github/gh-aw-firewall/agent:0.16.4 ghcr.io/github/gh-aw-firewall/squid:0.16.4 ghcr.io/github/gh-aw-mcpg:v0.1.4 ghcr.io/github/github-mcp-server:v0.30.3 node:lts-alpine
       - name: Write Safe Outputs Config
@@ -417,7 +420,6 @@ jobs:
           GH_AW_SAFE_OUTPUTS: ${{ env.GH_AW_SAFE_OUTPUTS }}
           GH_AW_SAFE_OUTPUTS_API_KEY: ${{ steps.safe-outputs-start.outputs.api_key }}
           GH_AW_SAFE_OUTPUTS_PORT: ${{ steps.safe-outputs-start.outputs.port }}
-          GITHUB_MCP_LOCKDOWN: ${{ steps.determine-automatic-lockdown.outputs.lockdown == 'true' && '1' || '0' }}
           GITHUB_MCP_SERVER_TOKEN: ${{ secrets.GH_AW_GITHUB_MCP_SERVER_TOKEN || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           set -eo pipefail
@@ -444,7 +446,6 @@ jobs:
                 "type": "stdio",
                 "container": "ghcr.io/github/github-mcp-server:v0.30.3",
                 "env": {
-                  "GITHUB_LOCKDOWN_MODE": "$GITHUB_MCP_LOCKDOWN",
                   "GITHUB_PERSONAL_ACCESS_TOKEN": "\${GITHUB_MCP_SERVER_TOKEN}",
                   "GITHUB_READ_ONLY": "1",
                   "GITHUB_TOOLSETS": "pull_requests"
@@ -538,6 +539,12 @@ jobs:
           GH_AW_PROMPT_EOF
           cat << 'GH_AW_PROMPT_EOF' >> "$GH_AW_PROMPT"
           </system>
+          GH_AW_PROMPT_EOF
+          cat << 'GH_AW_PROMPT_EOF' >> "$GH_AW_PROMPT"
+          {{#runtime-import ../agents/triage-specialist.agent.md}}
+          GH_AW_PROMPT_EOF
+          cat << 'GH_AW_PROMPT_EOF' >> "$GH_AW_PROMPT"
+          {{#runtime-import shared/triage-safe-outputs.md}}
           GH_AW_PROMPT_EOF
           cat << 'GH_AW_PROMPT_EOF' >> "$GH_AW_PROMPT"
           {{#runtime-import .github/workflows/pr-triage.md}}

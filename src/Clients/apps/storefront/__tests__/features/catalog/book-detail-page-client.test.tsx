@@ -632,7 +632,7 @@ describe("BookDetailPageClient", () => {
     );
 
     // Invoke onSuccess to cover RESET_REVIEW dispatch
-    mockFeedbackMutate.mock.calls[0][1].onSuccess();
+    mockFeedbackMutate.mock.calls[0]![1].onSuccess();
   });
 
   it("calls refetchSummary when summarize is clicked", () => {
@@ -656,7 +656,7 @@ describe("BookDetailPageClient", () => {
 
     // After sorting, feedbacks should be re-fetched with new sort params
     const lastCall =
-      mockUseFeedbacks.mock.calls[mockUseFeedbacks.mock.calls.length - 1][0];
+      mockUseFeedbacks.mock.calls[mockUseFeedbacks.mock.calls.length - 1]![0]!;
     expect(lastCall.orderBy).toBe("rating");
     expect(lastCall.isDescending).toBe(true);
   });
