@@ -14,6 +14,8 @@ concurrency:
 
 permissions: read-all
 network: defaults
+features:
+  disable-xpia-prompt: true
 imports:
   - shared/mcp/server-memory.md
 
