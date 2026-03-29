@@ -1,6 +1,4 @@
-﻿using BookWorm.Constants.Core;
-
-namespace BookWorm.Chassis.Utilities;
+﻿namespace BookWorm.Chassis.Utilities;
 
 public static class ServiceDiscoveryUtilities
 {
@@ -13,8 +11,8 @@ public static class ServiceDiscoveryUtilities
 
     public static string? GetServiceEndpoint(string serviceName, int index = 0)
     {
-        return GetServiceEndpoint(serviceName, Http.Schemes.Https, index)
-            ?? GetServiceEndpoint(serviceName, Http.Schemes.Http, index);
+        return GetServiceEndpoint(serviceName, Uri.UriSchemeHttps, index)
+            ?? GetServiceEndpoint(serviceName, Uri.UriSchemeHttp, index);
     }
 
     public static string GetRequiredServiceEndpoint(string serviceName, int index = 0)

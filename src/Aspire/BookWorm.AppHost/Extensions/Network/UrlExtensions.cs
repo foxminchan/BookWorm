@@ -23,7 +23,7 @@ internal static class UrlExtensions
 
             return builder.WithUrls(c =>
             {
-                List<string?> endpointNames = [endpointName, Http.Schemes.Https, Http.Schemes.Http];
+                List<string?> endpointNames = [endpointName, Uri.UriSchemeHttps, Uri.UriSchemeHttp];
 
                 var endpoint = endpointNames
                     .Where(name => name is not null)
