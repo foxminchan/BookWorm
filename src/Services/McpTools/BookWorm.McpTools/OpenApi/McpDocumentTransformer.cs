@@ -31,7 +31,7 @@ internal sealed class McpDocumentTransformer(IHttpContextAccessor accessor)
                         .Build()
                     : HttpUtilities
                         .AsUrlBuilder()
-                        .WithScheme(Http.Schemes.Https)
+                        .WithScheme(Uri.UriSchemeHttps)
                         .WithHost(Network.Localhost)
                         .WithPort(8080)
                         .Build(),

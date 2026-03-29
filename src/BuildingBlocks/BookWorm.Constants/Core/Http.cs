@@ -14,8 +14,6 @@ public static class Http
 
     public static class Schemes
     {
-        public const string Http = "http";
-        public const string Https = "https";
-        public const string HttpOrHttps = "https+http";
+        public static readonly string HttpOrHttps = $"{Uri.UriSchemeHttps}+{Uri.UriSchemeHttp}";
     }
 }

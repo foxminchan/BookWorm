@@ -9,12 +9,12 @@ public static class LaunchProfileExtensions
     {
         public bool IsHttpsLaunchProfile()
         {
-            return builder.Configuration["DOTNET_LAUNCH_PROFILE"] == Http.Schemes.Https;
+            return builder.Configuration["DOTNET_LAUNCH_PROFILE"] == Uri.UriSchemeHttps;
         }
 
         public string GetScheme()
         {
-            return builder.IsHttpsLaunchProfile() ? Http.Schemes.Https : Http.Schemes.Http;
+            return builder.IsHttpsLaunchProfile() ? Uri.UriSchemeHttps : Uri.UriSchemeHttp;
         }
     }
 }

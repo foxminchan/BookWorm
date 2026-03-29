@@ -30,7 +30,7 @@ internal static class K6Extensions
             .WithBindMount($"{scriptPath}", "/scripts", true)
             .WithBindMount($"{distPath}", "/home/k6")
             .WithScript("/scripts/dist/main.js", vus)
-            .WithReference(entryPoint.Resource.GetEndpoint(Http.Schemes.Http))
+            .WithReference(entryPoint.Resource.GetEndpoint(Uri.UriSchemeHttp))
             .WithEnvironment(K6WebDashboard, "true")
             .WithEnvironment(K6WebDashboardExport, "dashboard-report.html")
             .WithHttpEndpoint(

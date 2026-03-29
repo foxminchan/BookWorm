@@ -44,10 +44,6 @@ internal static class KeycloakExtensions
                     .WithReference(keycloakContainer)
                     .WaitForStart(keycloakContainer)
                     .WithEnvironment("BETTER_AUTH_SECRET", betterAuthSecret)
-                    .WithEnvironment(
-                        "KEYCLOAK_URL",
-                        keycloakContainer.GetEndpoint(Http.Schemes.Http)
-                    )
                     .WithEnvironment("KEYCLOAK_REALM", _defaultLocalKeycloakName)
                     .WithEnvironment("KEYCLOAK_CLIENT_ID", clientId);
                 break;
@@ -185,7 +181,7 @@ internal static class KeycloakExtensions
 
                 resourceBuilder.WithEnvironment(context =>
                 {
-                    var endpoint = clientBuilder.GetEndpoint(Http.Schemes.Http);
+                    var endpoint = clientBuilder.GetEndpoint(Uri.UriSchemeHttp);
 
                     context.EnvironmentVariables.Add($"CLIENT_{clientEnv}_URL", endpoint.Url);
 
@@ -219,7 +215,7 @@ internal static class KeycloakExtensions
             .WithReference(keycloakHosted)
             .WaitFor(keycloakHosted)
             .WithEnvironment("BETTER_AUTH_SECRET", betterAuthSecret)
-            .WithEnvironment("KEYCLOAK_URL", keycloakHosted)
+            .WithEnvironment("KEYCLOAK_HTTPS", keycloakHosted)
             .WithEnvironment("KEYCLOAK_REALM", realmParameter)
             .WithEnvironment("KEYCLOAK_CLIENT_ID", clientId);
     }
@@ -268,7 +264,7 @@ internal static class KeycloakExtensions
                         Label = "Keycloak URL",
                         InputType = InputType.Text,
                         Value = "https://identity.bookworm.com",
-                        Description = "Enter your Keycloak server URL here",
+                        Description = "Enter your Keycloak server URL here (must be https)",
                     }
                 );
 
