@@ -120,8 +120,7 @@ public sealed class UrlBuilder
 
         if (_fragment is not null)
         {
-            inner.Fragment = _fragment;
-            inner.Fragment = _fragment;
+            inner.Fragment = Uri.EscapeDataString(_fragment);
         }
 
         var url = inner.ToString();

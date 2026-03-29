@@ -1,6 +1,4 @@
-﻿using BookWorm.Constants.Core;
-
-namespace BookWorm.Chassis.Utilities;
+﻿namespace BookWorm.Chassis.Utilities;
 
 public static class ServiceDiscoveryUtilities
 {

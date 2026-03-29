@@ -3,14 +3,25 @@ import { genericOAuth, keycloak } from "better-auth/plugins";
 
 import { env } from "@/env.mjs";
 
+const isDev = process.env.NODE_ENV === "development";
+const keycloakUrl = isDev
+  ? env.KEYCLOAK_HTTP || env.KEYCLOAK_HTTPS || ""
+  : env.KEYCLOAK_HTTPS || env.KEYCLOAK_HTTP || "";
+
+if (!keycloakUrl) {
+  console.warn(
+    "No Keycloak URL provided. Authentication will not work without it.",
+  );
+}
+
 export const auth = betterAuth({
   baseURL: env.NEXT_PUBLIC_APP_URL || "http://localhost:3001",
   secret: env.BETTER_AUTH_SECRET,
   trustedOrigins: [
-    env.KEYCLOAK_URL,
+    keycloakUrl,
     env.NEXT_PUBLIC_GATEWAY_HTTP || "",
     env.NEXT_PUBLIC_APP_URL || "",
-    ...(process.env.NODE_ENV === "development" ? ["http://localhost:*"] : []),
+    ...(isDev ? ["http://localhost:*"] : []),
   ].filter((origin): origin is string => Boolean(origin)),
   emailAndPassword: {
     enabled: false,
@@ -21,7 +32,7 @@ export const auth = betterAuth({
         keycloak({
           clientId: env.KEYCLOAK_CLIENT_ID!,
           clientSecret: "",
-          issuer: `${env.KEYCLOAK_URL}/realms/${env.KEYCLOAK_REALM}`,
+          issuer: `${keycloakUrl}/realms/${env.KEYCLOAK_REALM}`,
           pkce: true,
           scopes: [
             "openid",

@@ -4,7 +4,8 @@ import { z } from "zod";
 export const env = createEnv({
   server: {
     BETTER_AUTH_SECRET: z.string().optional(),
-    KEYCLOAK_URL: z.url().optional(),
+    KEYCLOAK_HTTPS: z.url().optional(),
+    KEYCLOAK_HTTP: z.url().optional(),
     KEYCLOAK_REALM: z.string().optional(),
     KEYCLOAK_CLIENT_ID: z.string().optional(),
     NEXT_PUBLIC_APP_URL: z.url().optional(),
@@ -18,7 +19,8 @@ export const env = createEnv({
 
   runtimeEnv: {
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
-    KEYCLOAK_URL: process.env.KEYCLOAK_URL,
+    KEYCLOAK_HTTPS: process.env.KEYCLOAK_HTTPS,
+    KEYCLOAK_HTTP: process.env.KEYCLOAK_HTTP,
     KEYCLOAK_REALM: process.env.KEYCLOAK_REALM,
     KEYCLOAK_CLIENT_ID: process.env.KEYCLOAK_CLIENT_ID,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
