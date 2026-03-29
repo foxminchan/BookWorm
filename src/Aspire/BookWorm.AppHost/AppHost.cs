@@ -1,4 +1,4 @@
-var builder = DistributedApplication.CreateBuilder(args);
+﻿var builder = DistributedApplication.CreateBuilder(args);
 
 builder.AddAzureContainerAppEnvironment(Components.Azure.ContainerApp).ProvisionAsService();
 
@@ -208,13 +208,13 @@ var storefront = turbo
     .WithMappedEndpointPort()
     .WithHttpHealthCheck()
     .WithExternalHttpEndpoints()
-    .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTPS", gateway.GetEndpoint(Http.Schemes.Https))
-    .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTP", gateway.GetEndpoint(Http.Schemes.Http))
+    .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTPS", gateway.GetEndpoint(Uri.UriSchemeHttps))
+    .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTP", gateway.GetEndpoint(Uri.UriSchemeHttp))
     .WithEnvironment("NEXT_PUBLIC_COPILOT_ENABLED", "true")
     .WaitFor(gateway)
     .WithKeycloak(keycloak);
 
-storefront.WithEnvironment("NEXT_PUBLIC_APP_URL", storefront.GetEndpoint(Http.Schemes.Http));
+storefront.WithEnvironment("NEXT_PUBLIC_APP_URL", storefront.GetEndpoint(Uri.UriSchemeHttp));
 
 var backoffice = turbo
     .AddApp(Clients.BackOffice, Clients.BackOfficeTurboApp)
@@ -223,12 +223,12 @@ var backoffice = turbo
     .WithMappedEndpointPort()
     .WithHttpHealthCheck()
     .WithExternalHttpEndpoints()
-    .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTPS", gateway.GetEndpoint(Http.Schemes.Https))
-    .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTP", gateway.GetEndpoint(Http.Schemes.Http))
+    .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTPS", gateway.GetEndpoint(Uri.UriSchemeHttps))
+    .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTP", gateway.GetEndpoint(Uri.UriSchemeHttp))
     .WaitFor(gateway)
     .WithKeycloak(keycloak);
 
-backoffice.WithEnvironment("NEXT_PUBLIC_APP_URL", backoffice.GetEndpoint(Http.Schemes.Http));
+backoffice.WithEnvironment("NEXT_PUBLIC_APP_URL", backoffice.GetEndpoint(Uri.UriSchemeHttp));
 
 if (builder.ExecutionContext.IsRunMode)
 {

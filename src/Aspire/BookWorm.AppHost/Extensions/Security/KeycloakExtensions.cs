@@ -46,7 +46,7 @@ internal static class KeycloakExtensions
                     .WithEnvironment("BETTER_AUTH_SECRET", betterAuthSecret)
                     .WithEnvironment(
                         "KEYCLOAK_URL",
-                        keycloakContainer.GetEndpoint(Http.Schemes.Http)
+                        keycloakContainer.GetEndpoint(Uri.UriSchemeHttp)
                     )
                     .WithEnvironment("KEYCLOAK_REALM", _defaultLocalKeycloakName)
                     .WithEnvironment("KEYCLOAK_CLIENT_ID", clientId);
@@ -185,7 +185,7 @@ internal static class KeycloakExtensions
 
                 resourceBuilder.WithEnvironment(context =>
                 {
-                    var endpoint = clientBuilder.GetEndpoint(Http.Schemes.Http);
+                    var endpoint = clientBuilder.GetEndpoint(Uri.UriSchemeHttp);
 
                     context.EnvironmentVariables.Add($"CLIENT_{clientEnv}_URL", endpoint.Url);
 

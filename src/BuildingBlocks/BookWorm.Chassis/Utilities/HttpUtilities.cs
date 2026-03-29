@@ -1,6 +1,4 @@
-﻿using System.Text;
-using BookWorm.Constants.Core;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 
 namespace BookWorm.Chassis.Utilities;
 
@@ -18,8 +16,7 @@ public sealed class UrlBuilder
     private readonly Dictionary<string, string?> _query = new(StringComparer.OrdinalIgnoreCase);
     private string? _baseUrl;
     private string? _fragment;
-    private string? _host;
-    private int? _port;
+    private HostString _host;
     private string? _scheme;
 
     internal UrlBuilder() { }
@@ -38,28 +35,29 @@ public sealed class UrlBuilder
     public UrlBuilder WithScheme(string scheme)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(scheme);
-        _scheme = scheme.ToLowerInvariant();
+        _scheme = scheme;
         return this;
     }
 
     public UrlBuilder WithHost(string host)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(host);
-        _host = host.Trim();
-        return this;
+        return WithHost(new HostString(host.Trim()));
     }
 
     public UrlBuilder WithHost(HostString host)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(host.Value);
-        _host = host.Value;
+        if (!host.HasValue)
+        {
+            throw new ArgumentException("Host cannot be empty.", nameof(host));
+        }
+
+        _host = host;
         return this;
     }
 
     public UrlBuilder WithPort(int port)
     {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(port);
-        _port = port;
+        _host = new(_host.Host, port);
         return this;
     }
 
@@ -70,14 +68,9 @@ public sealed class UrlBuilder
             return this;
         }
 
-        var segments = path.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
-
-        foreach (var segment in segments)
+        foreach (var segment in path.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries))
         {
-            if (segment.Length > 0)
-            {
-                _pathSegments.Add(segment);
-            }
+            _pathSegments.Add(segment);
         }
 
         return this;
@@ -93,70 +86,53 @@ public sealed class UrlBuilder
     public UrlBuilder WithFragment(string fragment)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(fragment);
-        _fragment = fragment.TrimStart('#');
+        _fragment = fragment.StartsWith('#') ? fragment[1..] : fragment;
+        return this;
+    }
+
+    public UrlBuilder WithFragment(FragmentString fragment)
+    {
+        _fragment = fragment.HasValue ? fragment.Value.TrimStart('#') : null;
         return this;
     }
 
     public string Build()
     {
-        var builder = new StringBuilder();
-
-        if (!string.IsNullOrWhiteSpace(_baseUrl))
-        {
-            builder.Append(_baseUrl);
-        }
-        else
-        {
-            ArgumentException.ThrowIfNullOrWhiteSpace(_scheme);
-            ArgumentException.ThrowIfNullOrWhiteSpace(_host);
-
-            builder.Append(_scheme);
-            builder.Append("://");
-            builder.Append(_host);
-
-            if (_port.HasValue && !IsDefaultPort(_scheme, _port.Value))
-            {
-                builder.Append(':');
-                builder.Append(_port.Value);
-            }
-        }
+        var inner = CreateUriBuilder();
 
         if (_pathSegments.Count > 0)
         {
-            builder.Append('/');
-            builder.Append(string.Join('/', _pathSegments));
+            var basePath = inner.Path.TrimEnd('/');
+            inner.Path = $"{basePath}/{string.Join('/', _pathSegments)}";
         }
 
         if (_query.Count > 0)
         {
-            builder.Append('?');
-            builder.Append(
-                string.Join(
-                    '&',
-                    _query.Select(x =>
-                        string.IsNullOrWhiteSpace(x.Value)
-                            ? Uri.EscapeDataString(x.Key)
-                            : $"{Uri.EscapeDataString(x.Key)}={Uri.EscapeDataString(x.Value)}"
-                    )
+            inner.Query = string.Join(
+                '&',
+                _query.Select(x =>
+                    string.IsNullOrWhiteSpace(x.Value)
+                        ? Uri.EscapeDataString(x.Key)
+                        : $"{Uri.EscapeDataString(x.Key)}={Uri.EscapeDataString(x.Value)}"
                 )
             );
         }
 
-        if (string.IsNullOrWhiteSpace(_fragment))
+        if (_fragment is not null)
         {
-            return builder.ToString();
+            inner.Fragment = _fragment;
+            inner.Fragment = _fragment;
         }
 
-        builder.Append('#');
-        builder.Append(Uri.EscapeDataString(_fragment));
+        var url = inner.ToString();
 
-        return builder.ToString();
-    }
+        // UriBuilder always appends "/" for root path; strip for scheme+host-only URLs
+        if (inner.Path is "/" && _pathSegments.Count == 0)
+        {
+            url = url.TrimEnd('/');
+        }
 
-    private static bool IsDefaultPort(string scheme, int port)
-    {
-        return (scheme == Http.Schemes.Https && port == 443)
-            || (scheme == Http.Schemes.Http && port == 80);
+        return url;
     }
 
     public override string ToString()
@@ -167,5 +143,42 @@ public sealed class UrlBuilder
     public static implicit operator string(UrlBuilder urlBuilder)
     {
         return urlBuilder.Build();
+    }
+
+    private UriBuilder CreateUriBuilder()
+    {
+        if (!string.IsNullOrWhiteSpace(_baseUrl))
+        {
+            var builder = new UriBuilder(_baseUrl);
+
+            if (IsDefaultPort(builder.Scheme, builder.Port))
+            {
+                builder.Port = -1;
+            }
+
+            return builder;
+        }
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(_scheme);
+
+        if (!_host.HasValue)
+        {
+            throw new ArgumentException("Host is required.");
+        }
+
+        var inner = new UriBuilder { Scheme = _scheme, Host = _host.Host };
+
+        if (_host.Port is { } port && !IsDefaultPort(_scheme, port))
+        {
+            inner.Port = port;
+        }
+
+        return inner;
+    }
+
+    private static bool IsDefaultPort(string scheme, int port)
+    {
+        return (scheme == Uri.UriSchemeHttps && port == 443)
+            || (scheme == Uri.UriSchemeHttp && port == 80);
     }
 }
