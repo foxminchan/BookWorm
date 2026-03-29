@@ -12,6 +12,8 @@ permissions:
   contents: read
   pull-requests: read
 network: defaults
+features:
+  disable-xpia-prompt: true
 tools:
   github:
     read-only: true
