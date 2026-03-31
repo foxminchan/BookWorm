@@ -96,10 +96,10 @@ jobs:
         uses: allure-framework/allure-action@v0
         with:
           report-directory: src/Clients/apps/backoffice/allure-report
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ github.token }}
 
       - name: Post Allure Summary (Storefront)
         uses: allure-framework/allure-action@v0
         with:
           report-directory: src/Clients/apps/storefront/allure-report
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ github.token }}
