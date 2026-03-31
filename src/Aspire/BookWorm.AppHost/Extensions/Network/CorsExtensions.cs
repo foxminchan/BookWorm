@@ -1,23 +1,28 @@
-﻿namespace BookWorm.AppHost.Extensions.Network;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.Net.Http.Headers;
+
+namespace BookWorm.AppHost.Extensions.Network;
 
 internal static class CorsExtensions
 {
     private static readonly string[] _defaultHeaders =
     [
-        "Content-Type",
-        "Authorization",
-        "Accept",
-        "X-Requested-With",
+        HeaderNames.ContentType,
+        HeaderNames.Authorization,
+        HeaderNames.Accept,
+        HeaderNames.Origin,
+        HeaderNames.XRequestedWith,
+        HeaderNames.XPoweredBy,
     ];
 
     private static readonly string[] _defaultMethods =
     [
-        "GET",
-        "POST",
-        "PUT",
-        "DELETE",
-        "PATCH",
-        "OPTIONS",
+        HttpMethods.Get,
+        HttpMethods.Post,
+        HttpMethods.Put,
+        HttpMethods.Delete,
+        HttpMethods.Patch,
+        HttpMethods.Options,
     ];
 
     /// <summary>
@@ -49,7 +54,7 @@ internal static class CorsExtensions
                     Label = "Storefront URL",
                     InputType = InputType.Text,
                     Description =
-                        "Enter the Storefront application URL for CORS (e.g., https://storefront.bookworm.com)",
+                        "Enter the Storefront application URL for CORS (e.g., https://bookworm.com)",
                 }
             );
 
@@ -63,7 +68,7 @@ internal static class CorsExtensions
                     Label = "Backoffice URL",
                     InputType = InputType.Text,
                     Description =
-                        "Enter the Backoffice application URL for CORS (e.g., https://backoffice.bookworm.com)",
+                        "Enter the Backoffice application URL for CORS (e.g., https://admin.bookworm.com)",
                 }
             );
 

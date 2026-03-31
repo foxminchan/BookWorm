@@ -184,18 +184,6 @@ builder
     .WithFriendlyUrls("Quartz Dashboard", path: Http.Endpoints.QuartzDashboardEndpointPath)
     .WithExplicitStart();
 
-// Configure CORS origins for production; in development, services use permissive localhost CORS policy
-if (!builder.ExecutionContext.IsRunMode)
-{
-    var (storefrontUrl, backofficeUrl) = builder.AddCorsOriginParameters();
-
-    catalogApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
-    basketApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
-    orderingApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
-    chatApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
-    ratingApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
-}
-
 var gateway = builder
     .AddApiGatewayProxy()
     .WithService(chatApi)
@@ -256,6 +244,16 @@ if (builder.ExecutionContext.IsRunMode)
     builder.AddMcpInspector(Components.Inspector).WithMcpServer(mcp);
 
     builder.AddK6(gateway);
+}
+else
+{
+    var (storefrontUrl, backofficeUrl) = builder.AddCorsOriginParameters();
+
+    catalogApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
+    basketApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
+    orderingApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
+    chatApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
+    ratingApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
 }
 
 await builder.Build().RunAsync();
