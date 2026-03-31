@@ -22,8 +22,9 @@ internal static class QAAgentRegistration
                     .UseAIContextProviders(compactionProvider)
                     .Build(sp);
 
-                var skillsProvider = new FileAgentSkillsProvider(
+                var skillsProvider = new AgentSkillsProvider(
                     Path.Combine(AppContext.BaseDirectory, "Skills", "store-policies"),
+                    scriptRunner: null,
                     loggerFactory: sp.GetService<ILoggerFactory>()
                 );
 

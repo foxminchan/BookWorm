@@ -8,6 +8,14 @@ on:
         description: "The environment to deploy to"
         required: true
         type: environment
+      storefront_url:
+        description: "The Storefront application URL for CORS (e.g., https://storefront.bookworm.com)"
+        required: true
+        type: string
+      backoffice_url:
+        description: "The Backoffice application URL for CORS (e.g., https://backoffice.bookworm.com)"
+        required: true
+        type: string
 
 env:
   GLOBAL_JSON_PATH: ${{ github.workspace }}/global.json
@@ -80,3 +88,5 @@ jobs:
           Parameters__sendgrid_api_key: ${{ secrets.SENDGRID_API_KEY }}
           Parameters__sendgrid_email: ${{ secrets.SENDGRID_EMAIL }}
           Parameters__sendgrid_sender_name: ${{ secrets.SENDGRID_SENDER_NAME }}
+          Parameters__storefront_url: ${{ github.event.inputs.storefront_url }}
+          Parameters__backoffice_url: ${{ github.event.inputs.backoffice_url }}
