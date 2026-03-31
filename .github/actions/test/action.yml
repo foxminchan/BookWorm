@@ -1,22 +1,26 @@
 name: "Test"
-description: "Execute tests and collect coverage"
+description: "Execute the full BookWorm test suite (unit, contract, integration) in Release configuration with TRX reporting, code coverage collection, and hang/crash dump diagnostics"
 author: "BookWorm Team"
+
+branding:
+  icon: "check-circle"
+  color: "green"
 
 inputs:
   global-json-file:
-    description: "The path to the global.json file"
+    description: "Path to the global.json file that specifies the .NET SDK version"
     required: false
     default: "./global.json"
   bun-version-file:
-    description: "The path to the .bun-version file"
+    description: "Path to the .bun-version file that specifies the Bun runtime version"
     required: false
     default: ".bun-version"
   testHangTimeout:
-    description: "The timeout for the test"
+    description: "Maximum duration to wait before generating a hang dump for an unresponsive test (e.g., '7m', '10m')"
     required: false
     default: "7m"
   testSessionTimeout:
-    description: "The timeout for the test session"
+    description: "Maximum total duration for the entire test session before forceful termination (e.g., '15m', '30m')"
     required: false
     default: "15m"
 

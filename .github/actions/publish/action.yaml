@@ -1,28 +1,32 @@
 name: "Publish Artifact"
-description: "Publish the artifact to GitHub Container Registry"
+description: "Build and publish BookWorm container images to GitHub Container Registry using Aspire CLI, and publish the MCP server to the MCP Registry"
 author: "BookWorm Team"
+
+branding:
+  icon: "upload-cloud"
+  color: "green"
 
 inputs:
   global-json-file:
-    description: "The path to the global.json file"
+    description: "Path to the global.json file that specifies the .NET SDK version"
     required: false
     default: "./global.json"
   bun-version-file:
-    description: "The path to the .bun-version file"
+    description: "Path to the .bun-version file that specifies the Bun runtime version"
     required: false
     default: ".bun-version"
   repository:
-    description: "The owner of the repository"
+    description: "Container image repository path (e.g., 'owner/repo') used as the image name prefix in the registry"
     required: false
   operations-environment:
-    description: "The operations environment to use for Aspire commands"
+    description: "Target operations environment for Aspire deployment commands (e.g., 'Linux', 'Windows')"
     required: false
     default: ${{ runner.os }}
   azure-subscription-id:
-    description: "Azure Subscription ID for authentication"
+    description: "Azure Subscription ID used for authenticating Aspire deployment operations"
     required: true
   azure-location:
-    description: "Azure Location for deployment"
+    description: "Azure region for resource deployment (e.g., 'eastus', 'westeurope')"
     required: true
 
 runs:

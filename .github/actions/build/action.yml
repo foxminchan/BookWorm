@@ -1,14 +1,18 @@
 name: "Build"
-description: "Build the project"
+description: "Build the entire BookWorm solution in Release configuration, including .NET services and frontend applications"
 author: "BookWorm Team"
+
+branding:
+  icon: "package"
+  color: "blue"
 
 inputs:
   global-json-file:
-    description: "The path to the global.json file"
+    description: "Path to the global.json file that specifies the .NET SDK version"
     required: false
     default: "./global.json"
   bun-version-file:
-    description: "The path to the .bun-version file"
+    description: "Path to the .bun-version file that specifies the Bun runtime version"
     required: false
     default: ".bun-version"
 
