@@ -184,6 +184,17 @@ builder
     .WithFriendlyUrls("Quartz Dashboard", path: Http.Endpoints.QuartzDashboardEndpointPath)
     .WithExplicitStart();
 
+if (!builder.ExecutionContext.IsRunMode)
+{
+    var (storefrontUrl, backofficeUrl) = builder.AddCorsOriginParameters();
+
+    catalogApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
+    basketApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
+    orderingApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
+    chatApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
+    ratingApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
+}
+
 var gateway = builder
     .AddApiGatewayProxy()
     .WithService(chatApi)
