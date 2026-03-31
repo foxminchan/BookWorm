@@ -184,6 +184,7 @@ builder
     .WithFriendlyUrls("Quartz Dashboard", path: Http.Endpoints.QuartzDashboardEndpointPath)
     .WithExplicitStart();
 
+// Configure CORS origins for production; in development, services use permissive localhost CORS policy
 if (!builder.ExecutionContext.IsRunMode)
 {
     var (storefrontUrl, backofficeUrl) = builder.AddCorsOriginParameters();

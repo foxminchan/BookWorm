@@ -48,7 +48,6 @@ internal static class CorsExtensions
                     Name = "StorefrontUrlParameter",
                     Label = "Storefront URL",
                     InputType = InputType.Text,
-                    Value = "https://storefront.bookworm.com",
                     Description =
                         "Enter the Storefront application URL for CORS (e.g., https://storefront.bookworm.com)",
                 }
@@ -63,7 +62,6 @@ internal static class CorsExtensions
                     Name = "BackofficeUrlParameter",
                     Label = "Backoffice URL",
                     InputType = InputType.Text,
-                    Value = "https://backoffice.bookworm.com",
                     Description =
                         "Enter the Backoffice application URL for CORS (e.g., https://backoffice.bookworm.com)",
                 }
