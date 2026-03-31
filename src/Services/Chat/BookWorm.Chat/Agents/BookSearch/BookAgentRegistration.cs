@@ -55,8 +55,9 @@ internal static class BookAgentRegistration
                     .Cast<AITool>()
                     .ToArray();
 
-                var skillsProvider = new FileAgentSkillsProvider(
+                var skillsProvider = new AgentSkillsProvider(
                     Path.Combine(AppContext.BaseDirectory, "Skills", "book-catalog"),
+                    scriptRunner: null,
                     loggerFactory: sp.GetService<ILoggerFactory>()
                 );
 

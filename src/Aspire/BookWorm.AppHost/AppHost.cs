@@ -245,5 +245,15 @@ if (builder.ExecutionContext.IsRunMode)
 
     builder.AddK6(gateway);
 }
+else
+{
+    var (storefrontUrl, backofficeUrl) = builder.AddCorsOriginParameters();
+
+    catalogApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
+    basketApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
+    orderingApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
+    chatApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
+    ratingApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
+}
 
 await builder.Build().RunAsync();

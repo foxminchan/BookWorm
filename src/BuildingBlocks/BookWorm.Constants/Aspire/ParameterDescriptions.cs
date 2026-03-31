@@ -104,6 +104,33 @@ public static class ParameterDescriptions
             """;
     }
 
+    public static class Cors
+    {
+        public const string StorefrontUrl = """
+            🌐 The URL of the Storefront application for CORS origin configuration.
+            This is the customer-facing frontend URL that needs to be allowed to make cross-origin requests to backend APIs.
+
+            💡 Example: 'https://storefront.bookworm.com'
+            ⚠️  Important: Must include the protocol (https://) and match the exact origin used by the browser
+            📋 Format: Must be a valid URL without trailing slash
+
+            📚 Resources:
+            - CORS documentation: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+            """;
+
+        public const string BackofficeUrl = """
+            🌐 The URL of the Backoffice application for CORS origin configuration.
+            This is the admin-facing frontend URL that needs to be allowed to make cross-origin requests to backend APIs.
+
+            💡 Example: 'https://backoffice.bookworm.com'
+            ⚠️  Important: Must include the protocol (https://) and match the exact origin used by the browser
+            📋 Format: Must be a valid URL without trailing slash
+
+            📚 Resources:
+            - CORS documentation: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+            """;
+    }
+
     public static class ContainerRegistry
     {
         public const string Endpoint = """
