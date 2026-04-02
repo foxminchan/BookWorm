@@ -8,6 +8,10 @@ on:
         description: "Number of days to retain artifacts"
         type: number
         default: 7
+    secrets:
+      TURBO_TOKEN:
+        description: "Turborepo remote cache token"
+        required: false
 
 jobs:
   lint-build-test:

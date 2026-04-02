@@ -52,7 +52,6 @@ jobs:
       security-events: write
       pull-requests: write
       checks: write
-    secrets: inherit
 
   publish:
     name: Publish Artifacts

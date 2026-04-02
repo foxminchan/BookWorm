@@ -20,6 +20,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
     <IsTestProject>true</IsTestProject>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
   </PropertyGroup>
   <ItemGroup Condition="$(MSBuildProjectFullPath.Contains('IntegrationTests'))">
     <PackageReference Include="TUnit.Aspire" />
