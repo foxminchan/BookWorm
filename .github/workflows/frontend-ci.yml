@@ -44,17 +44,17 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 2
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
         with:
           package_json_file: src/Clients/package.json
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
         with:
           node-version-file: "src/Clients/.nvmrc"
           cache: "pnpm"
@@ -78,7 +78,7 @@ jobs:
 
       - name: Upload Allure Report (Backoffice)
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: allure-report-backoffice
           path: src/Clients/apps/backoffice/allure-report/
@@ -86,20 +86,20 @@ jobs:
 
       - name: Upload Allure Report (Storefront)
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: allure-report-storefront
           path: src/Clients/apps/storefront/allure-report/
           retention-days: ${{ env.RETENTION_DAYS }}
 
       - name: Post Allure Summary (Backoffice)
-        uses: allure-framework/allure-action@v0
+        uses: allure-framework/allure-action@c24234151c027cfee99e00eb6ec2dac1eb350414 # v0
         with:
           report-directory: src/Clients/apps/backoffice/allure-report
           github-token: ${{ github.token }}
 
       - name: Post Allure Summary (Storefront)
-        uses: allure-framework/allure-action@v0
+        uses: allure-framework/allure-action@c24234151c027cfee99e00eb6ec2dac1eb350414 # v0
         with:
           report-directory: src/Clients/apps/storefront/allure-report
           github-token: ${{ github.token }}
