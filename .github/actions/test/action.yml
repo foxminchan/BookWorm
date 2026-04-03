@@ -23,26 +23,34 @@ inputs:
     description: "Maximum total duration for the entire test session before forceful termination (e.g., '15m', '30m')"
     required: false
     default: "15m"
+  no-build:
+    description: "Skip building before testing (requires pre-built artifacts in artifacts/bin/)"
+    required: false
+    default: "false"
 
 runs:
   using: "composite"
   steps:
-    - name: Setup .NET Core
-      uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5
+    - name: Cache NuGet Packages
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.0
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Setup Environment
+      uses: ./.github/actions/setup
       with:
         global-json-file: ${{ inputs.global-json-file }}
-
-    - name: Setup Bun
-      uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
-      with:
         bun-version-file: ${{ inputs.bun-version-file }}
 
-    - name: Install Tools
+    - name: Restore dependencies
       shell: bash
-      run: dotnet tool restore
+      run: dotnet restore BookWorm.slnx
 
     - name: Expose GitHub Actions Runtime
-      uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+      uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
       with:
         script: |
           core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env['ACTIONS_RUNTIME_TOKEN']);
@@ -54,9 +62,12 @@ runs:
       env:
         TEST_HANG_TIMEOUT: ${{ inputs.testHangTimeout }}
         TEST_SESSION_TIMEOUT: ${{ inputs.testSessionTimeout }}
+        NO_BUILD: ${{ inputs.no-build }}
       run: >
         dotnet test
         --configuration Release
+        --no-restore
+        $( [[ "$NO_BUILD" == "true" ]] && echo "--no-build" )
         --report-trx
         --coverage
         --coverage-settings Coverage.runsettings
