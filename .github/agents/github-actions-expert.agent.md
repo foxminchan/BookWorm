@@ -2,13 +2,13 @@
 name: "GitHub Actions Expert"
 description: "GitHub Actions specialist focused on secure CI/CD workflows, action pinning, OIDC authentication, permissions least privilege, and supply-chain security"
 tools:
-  [
-    "search/codebase",
-    "edit/editFiles",
-    "read/terminalSelection",
-    "search",
-    "web/githubRepo",
-  ]
+  - "search/codebase"
+  - "edit/editFiles"
+  - "read/terminalSelection"
+  - "execute/runInTerminal"
+  - "execute/getTerminalOutput"
+  - "search"
+  - "web/githubRepo"
 handoffs:
   - label: Review Workflow Changes
     agent: Code Reviewer

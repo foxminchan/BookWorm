@@ -26,6 +26,8 @@ jobs:
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+      TURBO_SCM_BASE: ${{ github.event.pull_request.base.sha || github.event.before || 'HEAD~1' }}
+      TURBO_SCM_HEAD: ${{ github.sha }}
 
     defaults:
       run:
@@ -54,17 +56,17 @@ jobs:
         run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Lint
-        run: pnpm lint
+        run: pnpm turbo run lint --affected
 
       - name: Build
-        run: pnpm build
+        run: pnpm turbo run build --affected
 
       - name: Test
-        run: pnpm test
+        run: pnpm turbo run test --affected
 
       - name: Generate Allure Reports
         if: ${{ !cancelled() }}
-        run: pnpm turbo allure:generate --continue
+        run: pnpm turbo run allure:generate --affected --continue
 
       - name: Upload Allure Report (Backoffice)
         if: ${{ !cancelled() }}
@@ -73,6 +75,7 @@ jobs:
           name: allure-report-backoffice
           path: src/Clients/apps/backoffice/allure-report/
           retention-days: ${{ inputs.retention-days }}
+          if-no-files-found: ignore
 
       - name: Upload Allure Report (Storefront)
         if: ${{ !cancelled() }}
@@ -81,16 +84,17 @@ jobs:
           name: allure-report-storefront
           path: src/Clients/apps/storefront/allure-report/
           retention-days: ${{ inputs.retention-days }}
+          if-no-files-found: ignore
 
       - name: Post Allure Summary (Backoffice)
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && hashFiles('src/Clients/apps/backoffice/allure-report/index.html') != '' }}
         uses: allure-framework/allure-action@c24234151c027cfee99e00eb6ec2dac1eb350414 # v0.3.0
         with:
           report-directory: src/Clients/apps/backoffice/allure-report
           github-token: ${{ github.token }}
 
       - name: Post Allure Summary (Storefront)
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && hashFiles('src/Clients/apps/storefront/allure-report/index.html') != '' }}
         uses: allure-framework/allure-action@c24234151c027cfee99e00eb6ec2dac1eb350414 # v0.3.0
         with:
           report-directory: src/Clients/apps/storefront/allure-report

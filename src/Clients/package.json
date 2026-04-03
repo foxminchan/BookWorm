@@ -25,7 +25,7 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "check-types": "turbo run check-types",
-    "test": "turbo run test --concurrency=1",
+    "test": "turbo run test",
     "e2e": "turbo run test:e2e",
     "boundaries": "turbo boundaries",
     "format": "prettier --write \"**/*.{ts,tsx,md,feature}\""

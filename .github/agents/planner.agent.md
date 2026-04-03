@@ -17,6 +17,10 @@ handoffs:
     agent: Next.js Expert
     prompt: Now implement the frontend plan outlined above following Next.js best practices.
     send: false
+  - label: Implement (GitHub Actions)
+    agent: GitHub Actions Expert
+    prompt: Now implement the CI/CD plan outlined above following GitHub Actions best practices.
+    send: false
   - label: Review Plan
     agent: Code Reviewer
     prompt: Please review this implementation plan for potential issues or improvements.
