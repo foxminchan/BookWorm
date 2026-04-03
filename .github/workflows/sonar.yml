@@ -40,34 +40,8 @@ env:
   SESSION_TIMEOUT: "15m"
 
 jobs:
-  changes:
-    name: Detect changes
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: read
-    outputs:
-      frontend: ${{ steps.filter.outputs.frontend }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          fetch-depth: 2
-
-      - name: Detect frontend changes
-        id: filter
-        shell: bash
-        run: |
-          if git diff --name-only HEAD~1 HEAD | grep -qE '^src/Clients/|^\.github/workflows/sonar\.yml'; then
-            echo "frontend=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "frontend=false" >> "$GITHUB_OUTPUT"
-          fi
-
   frontend-test:
     name: Frontend tests
-    needs: [changes]
-    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -111,7 +85,7 @@ jobs:
 
   analyze:
     name: Build and analyze
-    needs: [changes, frontend-test, security-scan]
+    needs: [frontend-test, security-scan]
     if: ${{ !cancelled() && needs.security-scan.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
@@ -144,7 +118,7 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Download frontend coverage
-        if: needs.changes.outputs.frontend == 'true' && needs.frontend-test.result == 'success'
+        if: needs.frontend-test.result == 'success'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: frontend-coverage
