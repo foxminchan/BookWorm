@@ -17,6 +17,14 @@ on:
       # Exclusions (last-match-wins, must follow includes)
       - "!src/Aspire/BookWorm.AppHost/Container/**"
   pull_request:
+    paths:
+      - "src/**"
+      - "tests/**"
+      - ".github/workflows/sonar.yml"
+      - ".sonarlint/**"
+      - "SonarQube.Analysis.xml"
+      - "!src/Aspire/BookWorm.AppHost/Container/**"
+      - "!**.md"
     types:
       - opened
       - synchronize
