@@ -132,7 +132,7 @@ jobs:
 
       - name: Restore execute permissions
         shell: bash
-        run: find artifacts/bin/ -type f ! -name "*.*" -exec chmod +x {} \;
+        run: find artifacts/bin/ -type f -exec chmod +x {} \;
 
       - name: Test
         uses: ./.github/actions/test
