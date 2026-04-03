@@ -6,24 +6,39 @@ on:
   schedule:
     - cron: "0 0 * * *"
 
-permissions:
-  contents: read
-  packages: write
+permissions: {}
 
 concurrency:
   group: ${{ github.workflow }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   delete-package-versions:
     name: Delete untagged package versions
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      packages: write
+    strategy:
+      matrix:
+        image:
+          - bookworm/basket
+          - bookworm/catalog
+          - bookworm/chatting
+          - bookworm/finance
+          - bookworm/gateway
+          - bookworm/mcptools
+          - bookworm/notification
+          - bookworm/ordering
+          - bookworm/rating
+          - bookworm/scheduler
     steps:
       - uses: snok/container-retention-policy@3b0972b2276b171b212f8c4efbca59ebba26eceb # v3.0.1
         with:
           account: user
           token: ${{ github.token }}
-          image-names: "bookworm/*"
+          image-names: ${{ matrix.image }}
           tag-selection: untagged
-          cut-off: 1h
+          timestamp-to-use: created_at
+          cut-off: 1w
+          keep-n-most-recent: 3

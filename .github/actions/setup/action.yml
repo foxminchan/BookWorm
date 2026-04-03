@@ -20,12 +20,12 @@ runs:
   using: "composite"
   steps:
     - name: Setup .NET Core
-      uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5
+      uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
       with:
         global-json-file: ${{ inputs.global-json-file }}
 
     - name: Setup Bun
-      uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+      uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.0.2
       with:
         bun-version-file: ${{ inputs.bun-version-file }}
 
