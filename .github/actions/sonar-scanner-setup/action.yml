@@ -1,0 +1,40 @@
+name: "SonarQube Scanner Setup"
+description: "Cache and install the SonarQube Cloud scanner for .NET analysis"
+author: "BookWorm Team"
+
+branding:
+  icon: "shield"
+  color: "purple"
+
+inputs:
+  scanner-path:
+    description: "Path to install the SonarQube scanner"
+    required: false
+    default: "./.sonar/scanner"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Cache SonarQube Cloud packages
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      with:
+        path: ~/.sonar/cache
+        key: ${{ runner.os }}-sonar
+        restore-keys: ${{ runner.os }}-sonar
+
+    - name: Cache SonarQube Cloud scanner
+      id: cache-sonar-scanner
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      with:
+        path: ${{ inputs.scanner-path }}
+        key: ${{ runner.os }}-sonar-scanner
+        restore-keys: ${{ runner.os }}-sonar-scanner
+
+    - name: Install SonarCloud scanner
+      if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        SCANNER_PATH: ${{ inputs.scanner-path }}
+      run: |
+        mkdir -p "${SCANNER_PATH}"
+        dotnet tool update dotnet-sonarscanner --tool-path "${SCANNER_PATH}"

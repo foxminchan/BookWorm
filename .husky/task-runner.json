@@ -3,8 +3,8 @@
   "tasks": [
     {
       "name": "scan",
-      "command": "gitleaks",
-      "args": ["detect", "--source", ".", "--exit-code", "1"]
+      "command": "betterleaks",
+      "args": ["git", "--exit-code", "1", "."]
     },
     {
       "name": "format",

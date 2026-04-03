@@ -23,10 +23,7 @@ jobs:
           fetch-depth: 0
 
       - name: Security Scan
-        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          GITLEAKS_CONFIG: .gitleaks.toml
+        uses: ./.github/actions/security-scan
 
   format:
     name: Format

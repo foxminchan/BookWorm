@@ -61,6 +61,14 @@ jobs:
         with:
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
+      - name: Cache Bun dependencies
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.0
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-keycloakify-${{ hashFiles('src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify/bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-keycloakify-
+
       - name: Install dependencies
         working-directory: src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify
         run: bun install --frozen-lockfile

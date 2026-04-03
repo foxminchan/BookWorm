@@ -1,0 +1,54 @@
+name: "Frontend Setup"
+description: "Bootstrap the BookWorm frontend development environment by installing Bun, pnpm, Node.js, and project dependencies"
+author: "BookWorm Team"
+
+branding:
+  icon: "globe"
+  color: "blue"
+
+inputs:
+  bun-version-file:
+    description: "Path to the .bun-version file that specifies the Bun runtime version"
+    required: false
+    default: ".bun-version"
+  package-json-file:
+    description: "Path to the package.json file for pnpm version detection"
+    required: false
+    default: "src/Clients/package.json"
+  node-version-file:
+    description: "Path to the .nvmrc file that specifies the Node.js version"
+    required: false
+    default: "src/Clients/.nvmrc"
+  pnpm-lock-path:
+    description: "Path to the pnpm lock file for dependency caching"
+    required: false
+    default: "src/Clients/pnpm-lock.yaml"
+  working-directory:
+    description: "Working directory for pnpm install"
+    required: false
+    default: "src/Clients"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.0.2
+      with:
+        bun-version-file: ${{ inputs.bun-version-file }}
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+      with:
+        package_json_file: ${{ inputs.package-json-file }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.0.0
+      with:
+        node-version-file: ${{ inputs.node-version-file }}
+        cache: "pnpm"
+        cache-dependency-path: ${{ inputs.pnpm-lock-path }}
+
+    - name: Install dependencies
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: pnpm install --frozen-lockfile --ignore-scripts

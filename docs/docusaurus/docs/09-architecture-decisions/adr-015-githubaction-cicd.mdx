@@ -72,7 +72,7 @@ deployment targets.
 
 1. **Setup Stage**: Environment preparation, .NET SDK setup, tool restoration, caching
 2. **Parallel Quality Checks**:
-   - Security scanning (Snyk, Gitleaks)
+   - Security scanning (Snyk, Betterleaks)
    - Code formatting validation (Husky)
    - Style checking (dotnet format)
    - Static analysis (Roslyn analyzers)
@@ -125,7 +125,7 @@ deployment targets.
 #### Integrated Tool Ecosystem
 
 1. **Code Quality**: SonarQube integration for technical debt and quality metrics
-2. **Security Scanning**: Snyk for vulnerability scanning and dependency analysis, Gitleaks for
+2. **Security Scanning**: Snyk for vulnerability scanning and dependency analysis, Betterleaks for
    secrets detection
 3. **Container Management**: GitHub Container Registry (GHCR) for image storage with automated
    tagging
@@ -158,7 +158,7 @@ deployment targets.
 │   ├── setup/                      # Environment setup (.NET, Bun, tools)
 │   ├── build/                      # .NET build with caching
 │   ├── test/                       # Test execution with multiple loggers
-│   ├── security-scan/              # Gitleaks secrets detection
+│   ├── security-scan/              # Betterleaks secrets detection
 │   ├── format/                     # Code formatting validation
 │   ├── style/                      # Style checking
 │   ├── analyzers/                  # Static code analysis
@@ -194,7 +194,7 @@ services:
 
 #### Security Scan Action
 
-- **Gitleaks secret scanning** with non-blocking warnings for detecting hardcoded secrets
+- **Betterleaks secret scanning** with non-blocking warnings for detecting hardcoded secrets
 - **Snyk integration** (external) for comprehensive vulnerability scanning and dependency analysis
 
 #### Test Action
@@ -237,8 +237,8 @@ paths:
 ```yaml
 # Security Scanning Configuration
 security_scanning:
-  gitleaks:
-    version: "v8.27.2" # Specific version pinning
+  betterleaks:
+    version: "v1.1.1" # Specific version pinning
     exit_code: 0 # Non-blocking for warnings
 
   snyk:

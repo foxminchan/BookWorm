@@ -1,0 +1,34 @@
+name: "Security Scan"
+description: "Scan the repository for secrets using Betterleaks and upload SARIF results to GitHub Security tab"
+author: "BookWorm Team"
+
+branding:
+  icon: "shield"
+  color: "red"
+
+inputs:
+  betterleaks-version:
+    description: "Betterleaks container image tag"
+    required: false
+    default: "v1.1.1"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Security Scan
+      shell: bash
+      env:
+        BETTERLEAKS_VERSION: ${{ inputs.betterleaks-version }}
+      run: |
+        docker run --rm -v "${{ github.workspace }}:/src" \
+          -e GIT_CONFIG_COUNT=1 \
+          -e GIT_CONFIG_KEY_0=safe.directory \
+          -e GIT_CONFIG_VALUE_0=/src \
+          "ghcr.io/betterleaks/betterleaks:${BETTERLEAKS_VERSION}" \
+          git --no-banner --no-color --report-path /src/betterleaks-results.sarif --report-format sarif /src
+
+    - name: Upload SARIF
+      if: always()
+      uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
+      with:
+        sarif_file: betterleaks-results.sarif

@@ -1,0 +1,15 @@
+title = "betterleaks config"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "global allow lists"
+paths = [
+  '''betterleaks\.toml''',
+  '''(.*?)(jpg|gif|doc|docx|zip|xls|pdf|bin|svg|socket|vsidx|v2|suo|wsuo|\.dll|pdb|exe)$''',
+  '''node_modules''',
+  '''package-lock\.json''',
+  '''Database\.refactorlog''',
+  '''vendor''',
+]

@@ -82,7 +82,7 @@
 - [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Node.js](https://nodejs.org/en/download/)
 - [Docker](https://www.docker.com/get-started)
-- [Gitleaks](https://gitleaks.io/)
+- [Betterleaks](https://betterleaks.com/)
 - [Bun](https://bun.sh/)
 - [Pnpm](https://pnpm.io/installation)
 - [Just](https://github.com/casey/just)
