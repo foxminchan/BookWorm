@@ -16,6 +16,14 @@ test-results/
 *.secrets
 .env
 
+# Aspirate generated manifests and state
+aspirate-state.json
+aspirate-output/
+deploys/
+
+# Betterleaks report
+betterleaks-results.*
+
 # Draw.io Backup files
 *.drawio.backup.xml
 *.drawio.bkp
