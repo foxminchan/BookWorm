@@ -47,7 +47,7 @@ runs:
 
     - name: Restore dependencies
       shell: bash
-      run: dotnet restore
+      run: dotnet restore BookWorm.slnx
 
     - name: Expose GitHub Actions Runtime
       uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
@@ -66,6 +66,7 @@ runs:
       run: >
         dotnet test
         --configuration Release
+        --no-restore
         $( [[ "$NO_BUILD" == "true" ]] && echo "--no-build" )
         --report-trx
         --coverage

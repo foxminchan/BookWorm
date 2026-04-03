@@ -1,5 +1,5 @@
 name: BookWorm Pull Request Validation
-run-name: PR #${{ github.event.pull_request.number }} - ${{ github.actor }}
+run-name: "PR #${{ github.event.pull_request.number }} - ${{ github.actor }}"
 
 on:
   pull_request:
