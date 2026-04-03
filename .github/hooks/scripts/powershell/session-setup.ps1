@@ -34,7 +34,7 @@ $ToolList = & dotnet tool list 2>$null
 if ($ToolList -match 'csharpier') {
     Add-Content -Path $SessionLog -Value "  CSharpier: installed"
 } else {
-    Add-Content -Path $SessionLog -Value "  WARNING: CSharpier not found — run 'dotnet tool restore'"
+    Add-Content -Path $SessionLog -Value "  WARNING: CSharpier not found - run 'dotnet tool restore'"
 }
 
 # Check if solution builds are cached

@@ -1,0 +1,97 @@
+name: Frontend Shared CI Pipeline
+run-name: Frontend Shared CI
+
+on:
+  workflow_call:
+    inputs:
+      retention-days:
+        description: "Number of days to retain artifacts"
+        type: number
+        default: 7
+    secrets:
+      TURBO_TOKEN:
+        description: "Turborepo remote cache token"
+        required: false
+
+jobs:
+  lint-build-test:
+    name: Lint, Build & Test
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
+    defaults:
+      run:
+        working-directory: src/Clients
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          # fetch-depth: 2 is needed for Turbo's change detection (compares HEAD~1)
+          fetch-depth: 2
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+        with:
+          package_json_file: src/Clients/package.json
+
+      - name: Setup Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.0.0
+        with:
+          node-version-file: "src/Clients/.nvmrc"
+          cache: "pnpm"
+          cache-dependency-path: "src/Clients/pnpm-lock.yaml"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        run: pnpm test
+
+      - name: Generate Allure Reports
+        if: ${{ !cancelled() }}
+        run: pnpm turbo allure:generate --continue
+
+      - name: Upload Allure Report (Backoffice)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: allure-report-backoffice
+          path: src/Clients/apps/backoffice/allure-report/
+          retention-days: ${{ inputs.retention-days }}
+
+      - name: Upload Allure Report (Storefront)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: allure-report-storefront
+          path: src/Clients/apps/storefront/allure-report/
+          retention-days: ${{ inputs.retention-days }}
+
+      - name: Post Allure Summary (Backoffice)
+        if: ${{ !cancelled() }}
+        uses: allure-framework/allure-action@c24234151c027cfee99e00eb6ec2dac1eb350414 # v0.3.0
+        with:
+          report-directory: src/Clients/apps/backoffice/allure-report
+          github-token: ${{ github.token }}
+
+      - name: Post Allure Summary (Storefront)
+        if: ${{ !cancelled() }}
+        uses: allure-framework/allure-action@c24234151c027cfee99e00eb6ec2dac1eb350414 # v0.3.0
+        with:
+          report-directory: src/Clients/apps/storefront/allure-report
+          github-token: ${{ github.token }}

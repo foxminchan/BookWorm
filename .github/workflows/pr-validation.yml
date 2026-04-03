@@ -1,177 +1,103 @@
-name: BookWorm Pull Request Validation (.NET)
-run-name: PR #${{ github.event.pull_request.number }} - ${{ github.actor }}
+name: BookWorm Pull Request Validation
+run-name: "PR #${{ github.event.pull_request.number }} - ${{ github.actor }}"
 
 on:
   pull_request:
     paths:
+      # Source & test code
       - "src/**"
-      - "!src/Clients/**"
       - "tests/**"
-      - ".github/workflows/pr-validation.yml"
+      # CI/CD configuration
       - ".github/actions/**"
-      - "Directory.Packages.props"
+      - ".github/workflows/**"
+      # Build configuration
+      - ".config/dotnet-tools.json"
+      - "BookWorm.slnx"
       - "Directory.Build.props"
+      - "Directory.Packages.props"
       - "global.json"
       - "Versions.props"
-      - ".config/dotnet-tools.json"
+      # Exclusions (last-match-wins, must follow includes)
       - "!**.md"
       - "!src/Aspire/BookWorm.AppHost/Container/**"
-      - "BookWorm.slnx"
     types:
       - opened
       - synchronize
       - reopened
-
-env:
-  GLOBAL_JSON_PATH: ${{ github.workspace }}/global.json
-  BUN_VERSION_FILE: ${{ github.workspace }}/.bun-version
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:
-  setup:
-    name: Setup
+  changes:
+    name: Detect Changes
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 5
     permissions:
       contents: read
+      pull-requests: read
+    outputs:
+      dotnet: ${{ steps.detect.outputs.dotnet }}
+      frontend: ${{ steps.detect.outputs.frontend }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          fetch-depth: 0
+      - name: Detect changed paths
+        id: detect
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          CHANGED=$(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files --paginate --jq '.[].filename')
+          dotnet=false
+          frontend=false
 
-      - name: Setup Environment
-        uses: ./.github/actions/setup
-        with:
-          global-json-file: ${{ env.GLOBAL_JSON_PATH }}
-          bun-version-file: ${{ env.BUN_VERSION_FILE }}
+          while IFS= read -r file; do
+            case "$file" in
+              src/Clients/*) frontend=true ;;
+              .github/workflows/*|.github/actions/*) dotnet=true; frontend=true ;;
+              src/*|tests/*|Directory.*|global.json|Versions.props|.config/*|BookWorm.slnx) dotnet=true ;;
+            esac
+          done <<< "$CHANGED"
 
-      - name: Cache .NET SDK
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
-        with:
-          path: |
-            ~/.dotnet
-            ~/.nuget/packages
-          key: ${{ runner.os }}-dotnet-${{ hashFiles('**/global.json', '**/*.csproj') }}
-          restore-keys: |
-            ${{ runner.os }}-dotnet-
+          echo "dotnet=$dotnet" >> "$GITHUB_OUTPUT"
+          echo "frontend=$frontend" >> "$GITHUB_OUTPUT"
 
-  security-scan:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: setup
+  dotnet:
+    name: .NET CI
+    needs: changes
+    if: needs.changes.outputs.dotnet == 'true'
+    uses: ./.github/workflows/dotnet-shared.yml
     permissions:
       contents: read
       security-events: write
       pull-requests: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          fetch-depth: 0
+      checks: write
 
-      - name: Security Scan
-        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          GITLEAKS_CONFIG: .gitleaks.toml
-
-  format:
-    name: Format
-    runs-on: ubuntu-latest
-    needs: setup
-    timeout-minutes: 15
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          fetch-depth: 0
-
-      - name: Format
-        uses: ./.github/actions/format
-        with:
-          global-json-file: ${{ env.GLOBAL_JSON_PATH }}
-          bun-version-file: ${{ env.BUN_VERSION_FILE }}
-
-  style:
-    name: Style
-    runs-on: ubuntu-latest
-    needs: setup
-    timeout-minutes: 15
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          fetch-depth: 0
-
-      - name: Style
-        uses: ./.github/actions/style
-        with:
-          global-json-file: ${{ env.GLOBAL_JSON_PATH }}
-          bun-version-file: ${{ env.BUN_VERSION_FILE }}
-
-  analyzers:
-    name: Analyzers
-    runs-on: ubuntu-latest
-    needs: setup
-    timeout-minutes: 15
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          fetch-depth: 0
-
-      - name: Analyzers
-        uses: ./.github/actions/analyzers
-        with:
-          global-json-file: ${{ env.GLOBAL_JSON_PATH }}
-          bun-version-file: ${{ env.BUN_VERSION_FILE }}
-
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    needs: [setup, security-scan, format, style, analyzers]
-    timeout-minutes: 15
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          fetch-depth: 0
-
-      - name: Build
-        uses: ./.github/actions/build
-        with:
-          global-json-file: ${{ env.GLOBAL_JSON_PATH }}
-          bun-version-file: ${{ env.BUN_VERSION_FILE }}
-
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    needs: [setup, security-scan, format, style, analyzers]
-    timeout-minutes: 15
+  frontend:
+    name: Frontend CI
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    uses: ./.github/workflows/frontend-shared.yml
+    with:
+      retention-days: 1
     permissions:
       contents: read
       checks: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          fetch-depth: 0
+      pull-requests: write
+    secrets:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
 
-      - name: Test
-        uses: ./.github/actions/test
-        with:
-          global-json-file: ${{ env.GLOBAL_JSON_PATH }}
-          bun-version-file: ${{ env.BUN_VERSION_FILE }}
+  status:
+    name: PR Status
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [changes, dotnet, frontend]
+    if: ${{ !cancelled() }}
+    permissions: {}
+    steps:
+      - name: Check results
+        run: |
+          if [[ "${{ needs.dotnet.result }}" == "failure" || "${{ needs.frontend.result }}" == "failure" ]]; then
+            echo "::error::One or more CI pipelines failed"
+            exit 1
+          fi
+          echo "All CI pipelines passed or were skipped"

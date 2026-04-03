@@ -1,6 +1,3 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for more information:
 # https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
 # https://containers.dev/guide/dependabot
 
@@ -11,6 +8,22 @@ registries:
     type: nuget-feed
     url: https://api.nuget.org/v3/index.json
 updates:
+  # ── .NET SDK (global.json) ────────────────────────────────────────────
+  - package-ecosystem: dotnet-sdk
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: friday
+      time: "10:00"
+      timezone: "Asia/Ho_Chi_Minh"
+    labels:
+      - "dependencies"
+      - "dotnet"
+    commit-message:
+      prefix: ".NET SDK"
+      include: scope
+
+  # ── Dev Containers ────────────────────────────────────────────────────
   - package-ecosystem: devcontainers
     directory: "/"
     schedule:
@@ -18,10 +31,14 @@ updates:
       day: friday
       time: "10:00"
       timezone: "Asia/Ho_Chi_Minh"
+    labels:
+      - "dependencies"
+      - "devcontainers"
     commit-message:
       prefix: "Devcontainer"
       include: scope
 
+  # ── NuGet (.NET) ──────────────────────────────────────────────────────
   - package-ecosystem: nuget
     directory: "/"
     registries:
@@ -31,10 +48,18 @@ updates:
       day: friday
       time: "10:00"
       timezone: "Asia/Ho_Chi_Minh"
+    labels:
+      - "dependencies"
+      - "dotnet"
     commit-message:
       prefix: "NuGet"
       include: scope
     open-pull-requests-limit: 15
+    cooldown:
+      default-days: 5
+      semver-major-days: 14
+      semver-minor-days: 5
+      semver-patch-days: 3
     ignore:
       - dependency-name: "MassTransit.*"
         update-types: ["version-update:semver-major"]
@@ -42,30 +67,75 @@ updates:
       Aspire:
         patterns:
           - "Aspire.*"
-          - "Microsoft.Extensions.ServiceDiscovery.*"
+        update-types: ["minor", "patch"]
       AspNetCore:
         patterns:
           - "Microsoft.AspNetCore.*"
           - "Microsoft.Extensions.Features"
+        update-types: ["minor", "patch"]
+      MicrosoftExtensions:
+        patterns:
+          - "Microsoft.Extensions.Caching.*"
+          - "Microsoft.Extensions.Compliance.*"
+          - "Microsoft.Extensions.Http.*"
+          - "Microsoft.Extensions.ServiceDiscovery*"
+          - "Microsoft.Extensions.AI.*"
+        update-types: ["minor", "patch"]
       OpenTelemetry:
         patterns:
           - "OpenTelemetry.*"
+        update-types: ["minor", "patch"]
       Grpc:
         patterns:
           - "Grpc.*"
+        update-types: ["minor", "patch"]
       MassTransit:
         patterns:
           - "MassTransit.*"
+        update-types: ["minor", "patch"]
       EntityFrameworkCore:
         patterns:
           - "Microsoft.EntityFrameworkCore.*"
+          - "EFCore.*"
+        update-types: ["minor", "patch"]
       MicrosoftAgents:
         patterns:
           - "Microsoft.Agents.*"
+        update-types: ["minor", "patch"]
+      SemanticKernel:
+        patterns:
+          - "Microsoft.SemanticKernel.*"
       CommunityToolkit:
         patterns:
           - "CommunityToolkit.*"
+        update-types: ["minor", "patch"]
+      Quartz:
+        patterns:
+          - "Quartz.*"
+        update-types: ["minor", "patch"]
+      Testing:
+        patterns:
+          - "TUnit*"
+          - "Bogus"
+          - "Moq"
+          - "Shouldly"
+          - "TngTech.ArchUnitNET.*"
+        update-types: ["minor", "patch"]
+      ContractTesting:
+        patterns:
+          - "Verify.*"
+        update-types: ["minor", "patch"]
+      MicrosoftTesting:
+        patterns:
+          - "Microsoft.Testing.*"
+        update-types: ["minor", "patch"]
+      nuget-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+        update-types: ["patch", "minor"]
 
+  # ── npm: Event Catalog docs ───────────────────────────────────────────
   - package-ecosystem: "npm"
     directory: "/docs/eventcatalog"
     schedule:
@@ -73,6 +143,10 @@ updates:
       day: friday
       time: "10:00"
       timezone: "Asia/Ho_Chi_Minh"
+    labels:
+      - "dependencies"
+      - "javascript"
+      - "documentation"
     commit-message:
       prefix: "Node (Event Catalog)"
       include: scope
@@ -83,6 +157,7 @@ updates:
         patterns:
           - "@eventcatalog/*"
 
+  # ── npm: Docusaurus docs ──────────────────────────────────────────────
   - package-ecosystem: "npm"
     directory: "/docs/docusaurus"
     schedule:
@@ -90,6 +165,10 @@ updates:
       day: friday
       time: "10:00"
       timezone: "Asia/Ho_Chi_Minh"
+    labels:
+      - "dependencies"
+      - "javascript"
+      - "documentation"
     commit-message:
       prefix: "Node (Docusaurus)"
       include: scope
@@ -105,6 +184,7 @@ updates:
           - "react-dom"
           - "@types/react*"
 
+  # ── npm: k6 load tests ───────────────────────────────────────────────
   - package-ecosystem: "npm"
     directory: "/src/Aspire/BookWorm.AppHost/Container/k6"
     schedule:
@@ -112,6 +192,10 @@ updates:
       day: friday
       time: "10:00"
       timezone: "Asia/Ho_Chi_Minh"
+    labels:
+      - "dependencies"
+      - "javascript"
+      - "testing"
     commit-message:
       prefix: "Node (k6)"
       include: scope
@@ -126,6 +210,7 @@ updates:
           - "webpack*"
           - "*-loader"
 
+  # ── npm: Keycloakify ──────────────────────────────────────────────────
   - package-ecosystem: "npm"
     directory: "/src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify"
     schedule:
@@ -133,6 +218,9 @@ updates:
       day: friday
       time: "10:00"
       timezone: "Asia/Ho_Chi_Minh"
+    labels:
+      - "dependencies"
+      - "javascript"
     commit-message:
       prefix: "Node (Keycloakify)"
       include: scope
@@ -155,6 +243,7 @@ updates:
           - "@storybook/*"
           - "storybook"
 
+  # ── npm: Frontend (pnpm monorepo) ────────────────────────────────────
   - package-ecosystem: "npm"
     directory: "/src/Clients"
     schedule:
@@ -162,11 +251,20 @@ updates:
       day: friday
       time: "10:00"
       timezone: "Asia/Ho_Chi_Minh"
+    labels:
+      - "dependencies"
+      - "javascript"
+      - "frontend"
     commit-message:
       prefix: "Node (Frontend)"
       include: scope
     open-pull-requests-limit: 15
     versioning-strategy: increase
+    cooldown:
+      default-days: 3
+      semver-major-days: 14
+      semver-minor-days: 5
+      semver-patch-days: 2
     groups:
       nextjs:
         patterns:
@@ -199,29 +297,30 @@ updates:
         patterns:
           - "eslint*"
           - "@typescript-eslint/*"
+      frontend-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+        update-types: ["patch", "minor"]
 
+  # ── Docker ────────────────────────────────────────────────────────────
   - package-ecosystem: docker
-    directory: "/src/Clients/apps/storefront"
+    directories:
+      - "/src/Clients/apps/storefront"
+      - "/src/Clients/apps/backoffice"
     schedule:
       interval: weekly
       day: friday
       time: "10:00"
       timezone: "Asia/Ho_Chi_Minh"
+    labels:
+      - "dependencies"
+      - "docker"
     commit-message:
-      prefix: "Docker (Storefront)"
+      prefix: "Docker"
       include: scope
 
-  - package-ecosystem: docker
-    directory: "/src/Clients/apps/backoffice"
-    schedule:
-      interval: weekly
-      day: friday
-      time: "10:00"
-      timezone: "Asia/Ho_Chi_Minh"
-    commit-message:
-      prefix: "Docker (Backoffice)"
-      include: scope
-
+  # ── GitHub Actions ────────────────────────────────────────────────────
   - package-ecosystem: github-actions
     directories:
       - "/"
@@ -231,8 +330,16 @@ updates:
       day: friday
       time: "10:00"
       timezone: "Asia/Ho_Chi_Minh"
+    labels:
+      - "dependencies"
+      - "github-actions"
     commit-message:
       prefix: "GitHub Actions"
       include: scope
     ignore:
       - dependency-name: "github/gh-aw-actions"
+    groups:
+      github-actions-minor:
+        patterns:
+          - "*"
+        update-types: ["minor", "patch"]
