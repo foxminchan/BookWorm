@@ -9,9 +9,7 @@ on:
       - "tests/**"
       # CI/CD configuration
       - ".github/actions/**"
-      - ".github/workflows/dotnet-shared.yml"
-      - ".github/workflows/frontend-shared.yml"
-      - ".github/workflows/pr-validation.yml"
+      - ".github/workflows/**"
       # Build configuration
       - ".config/dotnet-tools.json"
       - "BookWorm.slnx"
@@ -54,10 +52,8 @@ jobs:
 
           while IFS= read -r file; do
             case "$file" in
-              src/Clients/*) frontend=true ;;
-              .github/workflows/frontend-shared.yml) frontend=true ;;
-              .github/workflows/dotnet-shared.yml) dotnet=true ;;
-              src/*|tests/*|Directory.*|global.json|Versions.props|.config/*|BookWorm.slnx|.github/actions/*) dotnet=true ;;
+              src/Clients/*|.github/workflows/*.yml) frontend=true ;;
+              src/*|tests/*|Directory.*|global.json|Versions.props|.config/*|BookWorm.slnx|.github/actions/*|.github/workflows/*.yml) dotnet=true ;;
             esac
           done <<< "$CHANGED"
 

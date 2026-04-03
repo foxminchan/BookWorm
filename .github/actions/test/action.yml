@@ -31,11 +31,23 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Cache NuGet Packages
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.0
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
     - name: Setup Environment
       uses: ./.github/actions/setup
       with:
         global-json-file: ${{ inputs.global-json-file }}
         bun-version-file: ${{ inputs.bun-version-file }}
+
+    - name: Restore dependencies
+      shell: bash
+      run: dotnet restore
 
     - name: Expose GitHub Actions Runtime
       uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
