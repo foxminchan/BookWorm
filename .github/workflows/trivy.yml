@@ -1,0 +1,108 @@
+name: Trivy Security Scan
+run-name: Trivy Security Scan - ${{ github.event_name }} by ${{ github.actor }}
+
+on:
+  push:
+    branches: [main]
+    paths:
+      # Source & dependency files
+      - "src/**"
+      - "tests/**"
+      # Build configuration & lock files
+      - "Directory.Packages.props"
+      - "global.json"
+      - "Versions.props"
+      - "**/*lock*"
+      - "**/Dockerfile"
+      # CI/CD configuration
+      - ".github/workflows/trivy.yml"
+      # Exclusions
+      - "!**.md"
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "Directory.Packages.props"
+      - "global.json"
+      - "Versions.props"
+      - "**/*lock*"
+      - "**/Dockerfile"
+      - ".github/workflows/trivy.yml"
+      - "!**.md"
+  schedule:
+    # Weekly scan to catch newly disclosed vulnerabilities in existing dependencies
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      severity:
+        description: "Comma-separated severity levels to report (e.g., CRITICAL,HIGH,MEDIUM,LOW)"
+        required: false
+        default: "CRITICAL,HIGH,MEDIUM"
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  vulnerability-scan:
+    name: Vulnerability Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@57a97c7e7db16c1c8dd8c307fd4eb5e7fc024b9d # v0.35.0
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-fs-results.sarif"
+          severity: ${{ inputs.severity || 'CRITICAL,HIGH,MEDIUM' }}
+
+      - name: Upload vulnerability scan results
+        if: always()
+        uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
+        with:
+          sarif_file: trivy-fs-results.sarif
+          category: trivy-vulnerability-scan
+
+  misconfig-scan:
+    name: Misconfiguration Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+
+      - name: Run Trivy misconfiguration scanner
+        uses: aquasecurity/trivy-action@57a97c7e7db16c1c8dd8c307fd4eb5e7fc024b9d # v0.35.0
+        with:
+          scan-type: "config"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-config-results.sarif"
+          severity: ${{ inputs.severity || 'CRITICAL,HIGH,MEDIUM' }}
+
+      - name: Upload misconfiguration scan results
+        if: always()
+        uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
+        with:
+          sarif_file: trivy-config-results.sarif
+          category: trivy-misconfig-scan
