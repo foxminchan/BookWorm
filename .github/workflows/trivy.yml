@@ -4,32 +4,8 @@ run-name: Trivy Security Scan - ${{ github.event_name }} by ${{ github.actor }}
 on:
   push:
     branches: [main]
-    paths:
-      # Source & dependency files
-      - "src/**"
-      - "tests/**"
-      # Build configuration & lock files
-      - "Directory.Packages.props"
-      - "global.json"
-      - "Versions.props"
-      - "**/*lock*"
-      - "**/Dockerfile"
-      # CI/CD configuration
-      - ".github/workflows/trivy.yml"
-      # Exclusions
-      - "!**.md"
   pull_request:
     branches: [main]
-    paths:
-      - "src/**"
-      - "tests/**"
-      - "Directory.Packages.props"
-      - "global.json"
-      - "Versions.props"
-      - "**/*lock*"
-      - "**/Dockerfile"
-      - ".github/workflows/trivy.yml"
-      - "!**.md"
   schedule:
     # Weekly scan to catch newly disclosed vulnerabilities in existing dependencies
     - cron: "0 6 * * 1"
