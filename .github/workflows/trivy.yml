@@ -38,7 +38,7 @@ jobs:
           fetch-depth: 1
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@57a97c7e7db16c1c8dd8c307fd4eb5e7fc024b9d # v0.35.0
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
           scan-type: "fs"
           scan-ref: "."
@@ -68,7 +68,7 @@ jobs:
           fetch-depth: 1
 
       - name: Run Trivy misconfiguration scanner
-        uses: aquasecurity/trivy-action@57a97c7e7db16c1c8dd8c307fd4eb5e7fc024b9d # v0.35.0
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
           scan-type: "config"
           scan-ref: "."
