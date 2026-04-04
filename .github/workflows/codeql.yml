@@ -67,11 +67,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - language: csharp
-            build-mode: manual
-          - language: javascript-typescript
-            build-mode: none
+        language: ["csharp", "javascript"]
 
     steps:
       - name: Checkout code
@@ -83,7 +79,7 @@ jobs:
         uses: github/codeql-action/init@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
         with:
           languages: ${{ matrix.language }}
-          build-mode: ${{ matrix.build-mode }}
+          build-mode: ${{ matrix.language == 'csharp' && 'manual' || 'none' }}
 
       - name: Setup .NET
         if: matrix.language == 'csharp'
