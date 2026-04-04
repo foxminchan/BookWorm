@@ -1,0 +1,95 @@
+name: CodeQL Analysis
+run-name: CodeQL Analysis - ${{ github.event_name }} by ${{ github.actor }}
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "tests/**"
+      - ".github/workflows/codeql.yml"
+      - "!**.md"
+      - "!src/Aspire/BookWorm.AppHost/Container/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "tests/**"
+      - ".github/workflows/codeql.yml"
+      - "!**.md"
+      - "!src/Aspire/BookWorm.AppHost/Container/**"
+    types:
+      - opened
+      - synchronize
+      - reopened
+  schedule:
+    - cron: "27 5 * * 1"
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  GLOBAL_JSON_PATH: ${{ github.workspace }}/global.json
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: csharp
+            build-mode: manual
+          - language: javascript-typescript
+            build-mode: none
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+
+      - name: Setup .NET
+        if: matrix.language == 'csharp'
+        uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
+        with:
+          global-json-file: ${{ env.GLOBAL_JSON_PATH }}
+
+      - name: Cache NuGet Packages
+        if: matrix.language == 'csharp'
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Build .NET solution
+        if: matrix.language == 'csharp'
+        run: >
+          dotnet build
+          --configuration Release
+          --no-incremental
+          -p:SkipK6Build=true
+          -p:SkipKeycloakifyBuild=true
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
+        with:
+          category: "/language:${{ matrix.language }}"
