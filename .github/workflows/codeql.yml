@@ -2,46 +2,9 @@ name: CodeQL Analysis
 run-name: CodeQL Analysis - ${{ github.event_name }} by ${{ github.actor }}
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
-    paths:
-      # Source & test code
-      - "src/**"
-      - "tests/**"
-      # CI/CD configuration
-      - ".github/workflows/codeql.yml"
-      # Build configuration
-      - ".config/dotnet-tools.json"
-      - "BookWorm.slnx"
-      - "Directory.Build.props"
-      - "Directory.Packages.props"
-      - "global.json"
-      - "Versions.props"
-      # Exclusions (last-match-wins, must follow includes)
-      - "!**.md"
-      - "!src/Aspire/BookWorm.AppHost/Container/**"
-  pull_request:
-    branches: [main]
-    paths:
-      # Source & test code
-      - "src/**"
-      - "tests/**"
-      # CI/CD configuration
-      - ".github/workflows/codeql.yml"
-      # Build configuration
-      - ".config/dotnet-tools.json"
-      - "BookWorm.slnx"
-      - "Directory.Build.props"
-      - "Directory.Packages.props"
-      - "global.json"
-      - "Versions.props"
-      # Exclusions (last-match-wins, must follow includes)
-      - "!**.md"
-      - "!src/Aspire/BookWorm.AppHost/Container/**"
-    types:
-      - opened
-      - synchronize
-      - reopened
   schedule:
     - cron: "27 5 * * 1"
 
