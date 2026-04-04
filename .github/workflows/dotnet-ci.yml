@@ -61,7 +61,7 @@ jobs:
     timeout-minutes: 15
     needs: [ci]
     permissions:
-      contents: read
+      contents: write
       packages: write
       id-token: write
 
@@ -108,3 +108,8 @@ jobs:
           repository: ${{ github.repository }}
           azure-subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           azure-location: ${{ secrets.AZURE_LOCATION || 'southeastasia' }}
+
+      - name: Trigger container security scan
+        uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.1.0
+        with:
+          event-type: backend-container-images-published

@@ -68,25 +68,10 @@ jobs:
           retention-days: 1
           if-no-files-found: warn
 
-  security-scan:
-    name: Security scan
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          fetch-depth: 0
-
-      - name: Security Scan
-        uses: ./.github/actions/security-scan
-
   analyze:
     name: Build and analyze
-    needs: [frontend-test, security-scan]
-    if: ${{ !cancelled() && needs.security-scan.result == 'success' }}
+    needs: [frontend-test]
+    if: ${{ !cancelled() && needs.frontend-test.result != 'failure' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read

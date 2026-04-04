@@ -8,23 +8,28 @@ on:
     branches: [main]
   schedule:
     # Weekly scan to catch newly disclosed vulnerabilities in existing dependencies
-    - cron: "0 6 * * 1"
+    # Runs every Monday at 10:00 AM Asia/Ho_Chi_Minh (UTC+7)
+    - cron: "0 3 * * 1"
   workflow_dispatch:
     inputs:
       severity:
         description: "Comma-separated severity levels to report (e.g., CRITICAL,HIGH,MEDIUM,LOW)"
         required: false
         default: "CRITICAL,HIGH,MEDIUM"
+  repository_dispatch:
+    types:
+      [backend-container-images-published, frontend-container-images-published]
 
 permissions: {}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  group: ${{ github.workflow }}-${{ github.event.action || github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:
   vulnerability-scan:
     name: Vulnerability Scan
+    if: github.event_name != 'repository_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -47,7 +52,7 @@ jobs:
           severity: ${{ inputs.severity || 'CRITICAL,HIGH,MEDIUM' }}
 
       - name: Upload vulnerability scan results
-        if: always()
+        if: ${{ !cancelled() }}
         uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
         with:
           sarif_file: trivy-fs-results.sarif
@@ -55,6 +60,7 @@ jobs:
 
   misconfig-scan:
     name: Misconfiguration Scan
+    if: github.event_name != 'repository_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -77,8 +83,81 @@ jobs:
           severity: ${{ inputs.severity || 'CRITICAL,HIGH,MEDIUM' }}
 
       - name: Upload misconfiguration scan results
-        if: always()
+        if: ${{ !cancelled() }}
         uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
         with:
           sarif_file: trivy-config-results.sarif
           category: trivy-misconfig-scan
+
+  container-scan:
+    name: Container Scan (${{ matrix.image }})
+    if: github.event_name == 'repository_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{ fromJson(github.event.action == 'backend-container-images-published' && '["bookworm/basket","bookworm/catalog","bookworm/chatting","bookworm/finance","bookworm/gateway","bookworm/mcptools","bookworm/notification","bookworm/ordering","bookworm/rating","bookworm/scheduler"]' || '["bookworm/storefront","bookworm/backoffice"]') }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Run Trivy container scanner
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          scan-type: "image"
+          image-ref: "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:latest"
+          format: "sarif"
+          output: "trivy-image-results.sarif"
+          severity: "CRITICAL,HIGH,MEDIUM"
+
+      - name: Upload container scan results
+        if: ${{ !cancelled() }}
+        uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
+        with:
+          sarif_file: trivy-image-results.sarif
+          category: "trivy-container-scan-${{ matrix.image }}"
+
+  sbom:
+    name: SBOM Generation
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+
+      - name: Generate SBOM and submit to Dependency Graph
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "github"
+          output: "dependency-results.sbom.json"
+          github-pat: ${{ github.token }}
+
+      - name: Upload SBOM report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: trivy-sbom-report
+          path: dependency-results.sbom.json
+          retention-days: 7

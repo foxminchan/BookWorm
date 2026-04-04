@@ -2,7 +2,9 @@ ARG NODE_VERSION=25.0.0
 FROM node:${NODE_VERSION}-alpine AS base
 
 # Check https://github.com/nodejs/docker-node/tree/main#nodealpine to understand why libc6-compat might be needed
-RUN corepack enable pnpm && corepack install -g pnpm@10.28.0
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN npm install -g --ignore-scripts pnpm@10.30.3
 WORKDIR /app
 
 # ---
@@ -23,13 +25,13 @@ RUN pnpm install --frozen-lockfile --ignore-scripts
 # Build the project
 COPY --from=prepare --chmod=555 /app/out/full/ .
 
-# Use build args to enable remote caching
+# Use build secrets to enable remote caching
 ARG TURBO_TEAM
 ENV TURBO_TEAM=$TURBO_TEAM
-ARG TURBO_TOKEN
-ENV TURBO_TOKEN=$TURBO_TOKEN
 
-RUN pnpm turbo build --filter=@bookworm/backoffice
+RUN --mount=type=secret,id=TURBO_TOKEN \
+    TURBO_TOKEN=$(cat /run/secrets/TURBO_TOKEN 2>/dev/null) \
+    pnpm turbo build --filter=@bookworm/backoffice
 
 # ---
 FROM node:${NODE_VERSION}-alpine AS runner

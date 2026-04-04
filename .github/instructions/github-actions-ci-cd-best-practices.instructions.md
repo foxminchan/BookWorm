@@ -34,7 +34,7 @@ As GitHub Copilot, you are an expert in designing and optimizing CI/CD pipelines
   - **`runs-on`:** Choose appropriate runners. `ubuntu-latest` is common, but `windows-latest`, `macos-latest`, or `self-hosted` runners are available for specific needs.
   - **`needs`:** Clearly define dependencies. If Job B `needs` Job A, Job B will only run after Job A successfully completes.
   - **`outputs`:** Pass data between jobs using `outputs`. This is crucial for separating concerns (e.g., build job outputs artifact path, deploy job consumes it).
-  - **`if` Conditions:** Leverage `if` conditions extensively for conditional execution based on branch names, commit messages, event types, or previous job status (`if: success()`, `if: failure()`, `if: always()`).
+  - **`if` Conditions:** Leverage `if` conditions extensively for conditional execution based on branch names, commit messages, event types, or previous job status (`if: success()`, `if: failure()`, `if: ${{ !cancelled() }}`). Prefer `!cancelled()` over `always()` — `always()` runs even when a workflow is cancelled, which is rarely desired and can waste resources or produce misleading results.
   - **Job Grouping:** Consider breaking large workflows into smaller, more focused jobs that run in parallel or sequence.
 - **Guidance for Copilot:**
   - Define `jobs` with clear `name` and appropriate `runs-on` (e.g., `ubuntu-latest`, `windows-latest`, `self-hosted`).

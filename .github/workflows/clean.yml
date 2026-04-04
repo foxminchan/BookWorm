@@ -4,7 +4,8 @@ run-name: Delete untagged package versions
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 0 * * *"
+    # Runs bi-weekly on Monday at 10:00 AM Asia/Ho_Chi_Minh (UTC+7)
+    - cron: "0 3 1-7,15-21 * 1"
 
 permissions: {}
 
@@ -32,6 +33,8 @@ jobs:
           - bookworm/ordering
           - bookworm/rating
           - bookworm/scheduler
+          - bookworm/storefront
+          - bookworm/backoffice
     steps:
       - uses: snok/container-retention-policy@3b0972b2276b171b212f8c4efbca59ebba26eceb # v3.0.1
         with:

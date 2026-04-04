@@ -6,7 +6,8 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: "27 5 * * 1"
+    # Runs every Wednesday at 10:00 AM Asia/Ho_Chi_Minh (UTC+7)
+    - cron: "0 3 * * 3"
 
 permissions: {}
 
