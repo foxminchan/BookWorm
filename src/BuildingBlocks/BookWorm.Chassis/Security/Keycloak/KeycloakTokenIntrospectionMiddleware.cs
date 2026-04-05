@@ -40,10 +40,7 @@ internal sealed class KeycloakTokenIntrospectionMiddleware(
 
         if (string.IsNullOrWhiteSpace(token))
         {
-            logger.LogWarning(
-                "Missing or invalid Authorization header for {Path}",
-                context.Request.Path
-            );
+            logger.LogWarning("Missing or invalid Authorization header");
 
             await WriteProblemAsync(context, "Authorization header missing or invalid", traceId);
             return;
@@ -69,11 +66,7 @@ internal sealed class KeycloakTokenIntrospectionMiddleware(
 
         if (!response.IsSuccessStatusCode)
         {
-            logger.LogWarning(
-                "Token introspection returned {StatusCode} for {Path}",
-                response.StatusCode,
-                context.Request.Path
-            );
+            logger.LogWarning("Token introspection returned {StatusCode}", response.StatusCode);
 
             await WriteProblemAsync(context, "Token introspection failed", traceId);
             return;
@@ -91,7 +84,7 @@ internal sealed class KeycloakTokenIntrospectionMiddleware(
 
         if (!isActive)
         {
-            logger.LogInformation("Inactive token presented for {Path}", context.Request.Path);
+            logger.LogInformation("Inactive token presented");
 
             await WriteProblemAsync(context, "Token is not active", traceId);
             return;

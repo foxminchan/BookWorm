@@ -45,12 +45,10 @@ internal sealed class LoggingBehavior<TMessage, TResponse>(
                     continue;
                 }
 
-                var propValue = prop.GetValue(message, null);
                 logger.LogInformation(
-                    "[{Behavior}] Property {Property} : {@Value}",
+                    "[{Behavior}] Property {Property} captured",
                     behavior,
-                    prop.Name,
-                    propValue
+                    prop.Name
                 );
             }
         }
