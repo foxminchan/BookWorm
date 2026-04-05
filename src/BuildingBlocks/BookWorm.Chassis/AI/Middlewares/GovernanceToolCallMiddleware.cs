@@ -7,6 +7,16 @@ namespace BookWorm.Chassis.AI.Middlewares;
 
 public static class GovernanceToolCallMiddleware
 {
+    private sealed record GovernanceContext(
+        GovernanceKernel Kernel,
+        AgentIdentityProvider IdentityProvider,
+        string AgentName,
+        string AgentDid,
+        RogueAgentDetector? RogueDetector,
+        GovernanceAuditTrail? AuditTrail,
+        ILogger? Logger
+    );
+
     /// <summary>
     ///     Creates a governance-aware chat client middleware delegate that enforces policy,
     ///     detects prompt injection, monitors for rogue agent behavior, and logs decisions
@@ -57,25 +67,20 @@ public static class GovernanceToolCallMiddleware
                 ]);
             }
 
-            options = ApplyToolGovernance(
-                options,
+            var ctx = new GovernanceContext(
                 kernel,
-                identity.Did,
                 identityProvider,
                 agentName,
+                identity.Did,
                 rogueDetector,
                 auditTrail,
                 logger
             );
 
+            options = ApplyToolGovernance(options, ctx);
+
             var chatMessages = messages as ChatMessage[] ?? [.. messages];
-            var injectionResponse = DetectPromptInjection(
-                chatMessages,
-                kernel,
-                agentName,
-                auditTrail,
-                logger
-            );
+            var injectionResponse = DetectPromptInjection(chatMessages, ctx);
 
             if (injectionResponse is not null)
             {
@@ -95,16 +100,7 @@ public static class GovernanceToolCallMiddleware
         };
     }
 
-    private static ChatOptions? ApplyToolGovernance(
-        ChatOptions? options,
-        GovernanceKernel kernel,
-        string agentDid,
-        AgentIdentityProvider identityProvider,
-        string agentName,
-        RogueAgentDetector? rogueDetector,
-        GovernanceAuditTrail? auditTrail,
-        ILogger? logger
-    )
+    private static ChatOptions? ApplyToolGovernance(ChatOptions? options, GovernanceContext ctx)
     {
         if (options?.Tools is not { Count: > 0 } tools)
         {
@@ -115,10 +111,10 @@ public static class GovernanceToolCallMiddleware
             .Select(tool =>
                 (
                     Tool: tool,
-                    Result: kernel.EvaluateToolCall(
-                        agentId: agentDid,
+                    Result: ctx.Kernel.EvaluateToolCall(
+                        agentId: ctx.AgentDid,
                         toolName: tool.Name,
-                        args: new() { ["agent_name"] = agentName }
+                        args: new() { ["agent_name"] = ctx.AgentName }
                     )
                 )
             )
@@ -127,29 +123,34 @@ public static class GovernanceToolCallMiddleware
 
         foreach (var (tool, result) in blockedEvaluations)
         {
-            identityProvider.RecordFailure(agentName);
+            ctx.IdentityProvider.RecordFailure(ctx.AgentName);
 
-            logger?.LogWarning(
+            ctx.Logger?.LogWarning(
                 "Governance blocked tool {ToolName} for agent {AgentName}: {Reason}",
                 tool.Name,
-                agentName,
+                ctx.AgentName,
                 result.Reason
             );
 
-            auditTrail?.Log(agentDid, "tool_blocked", "deny", $"{tool.Name}: {result.Reason}");
+            ctx.AuditTrail?.Log(
+                ctx.AgentDid,
+                "tool_blocked",
+                "deny",
+                $"{tool.Name}: {result.Reason}"
+            );
 
             // Record blocked tool call for rogue detection
-            rogueDetector?.RecordCall(agentDid, tool.Name);
+            ctx.RogueDetector?.RecordCall(ctx.AgentDid, tool.Name);
         }
 
         // Record allowed tool calls for rogue detection baseline
         var blockedNames = blockedEvaluations.Select(x => x.Tool.Name).ToHashSet();
         var allowedTools = tools.Where(t => !blockedNames.Contains(t.Name)).ToList();
 
-        foreach (var tool in allowedTools)
+        foreach (var toolName in allowedTools.Select(tool => tool.Name))
         {
-            rogueDetector?.RecordCall(agentDid, tool.Name);
-            auditTrail?.Log(agentDid, "tool_allowed", "allow", tool.Name);
+            ctx.RogueDetector?.RecordCall(ctx.AgentDid, toolName);
+            ctx.AuditTrail?.Log(ctx.AgentDid, "tool_allowed", "allow", toolName);
         }
 
         if (blockedEvaluations.Count == 0)
@@ -170,40 +171,37 @@ public static class GovernanceToolCallMiddleware
 
     private static ChatResponse? DetectPromptInjection(
         IEnumerable<ChatMessage> messages,
-        GovernanceKernel kernel,
-        string agentName,
-        GovernanceAuditTrail? auditTrail,
-        ILogger? logger
+        GovernanceContext ctx
     )
     {
-        if (kernel.InjectionDetector is not { } detector)
+        if (ctx.Kernel.InjectionDetector is not { } detector)
         {
             return null;
         }
 
-        foreach (var message in messages.Where(m => m.Role == ChatRole.User))
+        foreach (
+            var text in messages
+                .Where(m => m.Role == ChatRole.User)
+                .Select(message => message.Text)
+                .Where(text => !string.IsNullOrWhiteSpace(text))
+        )
         {
-            if (string.IsNullOrWhiteSpace(message.Text))
-            {
-                continue;
-            }
-
-            var injectionResult = detector.Detect(message.Text);
+            var injectionResult = detector.Detect(text);
 
             if (!injectionResult.IsInjection)
             {
                 continue;
             }
 
-            logger?.LogWarning(
+            ctx.Logger?.LogWarning(
                 "Governance detected prompt injection from agent {AgentName}: Type={InjectionType}, Threat={ThreatLevel}",
-                agentName,
+                ctx.AgentName,
                 injectionResult.InjectionType,
                 injectionResult.ThreatLevel
             );
 
-            auditTrail?.Log(
-                agentName,
+            ctx.AuditTrail?.Log(
+                ctx.AgentName,
                 "prompt_injection",
                 "deny",
                 $"{injectionResult.InjectionType}: {injectionResult.ThreatLevel}"
