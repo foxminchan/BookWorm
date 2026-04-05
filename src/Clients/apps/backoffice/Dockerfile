@@ -37,14 +37,12 @@ RUN --mount=type=secret,id=TURBO_TOKEN \
 FROM node:${NODE_VERSION}-alpine AS runner
 WORKDIR /app
 
-# Apply latest Alpine security updates and remove npm tooling from runtime image.
-# The app runs via `node`, so npm/npx are unnecessary in production.
+# Apply latest Alpine security updates, remove npm tooling from runtime image,
+# and create a non-root user for production.
 RUN apk upgrade --no-cache && \
     rm -rf /usr/local/lib/node_modules/npm && \
-    rm -f /usr/local/bin/npm /usr/local/bin/npx
-
-# Don't run production as root for security reasons
-RUN addgroup --system --gid 1001 nodejs && \
+    rm -f /usr/local/bin/npm /usr/local/bin/npx && \
+    addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
 ENV NODE_ENV=production

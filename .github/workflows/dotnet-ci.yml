@@ -34,6 +34,11 @@ on:
         type: boolean
         required: true
         default: true
+      enable_debug_logging:
+        description: "Enable debug-level logging for Aspire CLI commands"
+        type: boolean
+        required: false
+        default: false
 
 env:
   GLOBAL_JSON_PATH: ${{ github.workspace }}/global.json
@@ -90,8 +95,8 @@ jobs:
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ github.token }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Azure Login
         uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3.0.0
@@ -108,8 +113,53 @@ jobs:
           repository: ${{ github.repository }}
           azure-subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           azure-location: ${{ secrets.AZURE_LOCATION || 'southeastasia' }}
+          enable-debug-logging: ${{ inputs.enable_debug_logging && 'true' || runner.debug == '1' && 'true' || 'false' }}
 
       - name: Trigger container security scan
         uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.1.0
         with:
           event-type: backend-container-images-published
+
+  attest-backend:
+    name: Attest ${{ matrix.service }}
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true'
+    needs: [publish]
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'development' }}
+    permissions:
+      id-token: write
+      attestations: write
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - catalog
+          - mcptools
+          - basket
+          - ordering
+          - chatting
+          - rating
+          - notification
+          - finance
+          - scheduler
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          sparse-checkout: .github/actions/dotnet-attest
+          fetch-depth: 1
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Attest container image
+        uses: ./.github/actions/dotnet-attest
+        with:
+          service: ${{ matrix.service }}
+          repository: ${{ github.repository }}
+          token: ${{ secrets.GHCR_TOKEN }}

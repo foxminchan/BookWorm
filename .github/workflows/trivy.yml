@@ -101,7 +101,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: ${{ fromJson(github.event.action == 'backend-container-images-published' && '["bookworm/basket","bookworm/catalog","bookworm/chatting","bookworm/finance","bookworm/gateway","bookworm/mcptools","bookworm/notification","bookworm/ordering","bookworm/rating","bookworm/scheduler"]' || '["bookworm/storefront","bookworm/backoffice"]') }}
+        image: ${{ fromJson(github.event.action == 'backend-container-images-published' && '["bookworm/basket","bookworm/catalog","bookworm/chatting","bookworm/finance","bookworm/mcptools","bookworm/notification","bookworm/ordering","bookworm/rating","bookworm/scheduler"]' || '["bookworm/storefront","bookworm/backoffice"]') }}
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
