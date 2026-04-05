@@ -50,5 +50,10 @@
 	"devDependencies": {
 		"@eventcatalog/linter": "^1.0.19",
 		"prettier": "^3.8.1"
+	},
+	"overrides": {
+		"lodash": ">=4.18.0",
+		"lodash-es": ">=4.18.0",
+		"yaml": ">=2.8.3"
 	}
 }
