@@ -51,6 +51,8 @@ internal static class Extensions
                 var presidioService = sp.GetRequiredService<IPresidioService>();
                 var governanceKernel = sp.GetRequiredService<AgentGovernance.GovernanceKernel>();
                 var identityProvider = sp.GetRequiredService<AgentIdentityProvider>();
+                var rogueDetector = sp.GetRequiredService<RogueAgentDetector>();
+                var auditTrail = sp.GetRequiredService<GovernanceAuditTrail>();
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
                     .Use(PIIMiddleware.Create(presidioService), null)
@@ -58,7 +60,9 @@ internal static class Extensions
                         GovernanceToolCallMiddleware.Create(
                             governanceKernel,
                             identityProvider,
-                            RatingAgent.Name
+                            RatingAgent.Name,
+                            rogueDetector,
+                            auditTrail
                         ),
                         null
                     )

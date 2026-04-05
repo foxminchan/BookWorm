@@ -17,23 +17,18 @@
     <PackageVersion Include="Aspire.Hosting.Yarp" Version="$(AspireVersion)" />
     <!-- Client -->
     <PackageVersion Include="Aspire.Azure.Npgsql" Version="$(AspireVersion)" />
-    <PackageVersion Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL"
-      Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Azure.AI.OpenAI" Version="$(AspireUnstableVersion)" />
-    <PackageVersion Include="Aspire.Microsoft.Azure.StackExchangeRedis"
-      Version="$(AspireUnstableVersion)" />
+    <PackageVersion Include="Aspire.Microsoft.Azure.StackExchangeRedis" Version="$(AspireUnstableVersion)" />
     <PackageVersion Include="Aspire.Keycloak.Authentication" Version="$(AspireUnstableVersion)" />
     <PackageVersion Include="Aspire.Qdrant.Client" Version="$(AspireVersion)" />
     <!-- Community Toolkit -->
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.k6" Version="$(ToolKitVersion)" />
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.MailPit" Version="$(ToolKitVersion)" />
-    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.McpInspector"
-      Version="$(ToolKitVersion)" />
-    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.Azure.Extensions"
-      Version="$(ToolKitVersion)" />
-    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.JavaScript.Extensions"
-      Version="$(ToolKitVersion)" />
+    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.McpInspector" Version="$(ToolKitVersion)" />
+    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.Azure.Extensions" Version="$(ToolKitVersion)" />
+    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.JavaScript.Extensions" Version="$(ToolKitVersion)" />
     <!-- Extra -->
     <PackageVersion Include="TUnit.Aspire" Version="$(TUnitVersion)" />
     <PackageVersion Include="Scalar.Aspire" Version="0.9.20" />
@@ -45,8 +40,7 @@
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="$(MsExtVersion)" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="$(MsExtVersion)" />
     <PackageVersion Include="Microsoft.Extensions.AI.Evaluation.Quality" Version="$(MsExtVersion)" />
-    <PackageVersion Include="Microsoft.Extensions.AI.Evaluation.Reporting.Azure"
-      Version="$(MsExtVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.AI.Evaluation.Reporting.Azure" Version="$(MsExtVersion)" />
     <!-- ASP.NET Core -->
     <PackageVersion Include="Asp.Versioning.OpenApi" Version="10.0.0-preview.2" />
     <PackageVersion Include="Microsoft.AspNetCore.Diagnostics.Middleware" Version="$(MsExtVersion)" />
@@ -63,10 +57,8 @@
     <!-- AI -->
     <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="1.0.0" />
     <PackageVersion Include="Microsoft.Agents.AI.A2A" Version="$(AgentFrameworkVersion)" />
-    <PackageVersion Include="Microsoft.Agents.AI.Hosting.A2A.AspNetCore"
-      Version="$(AgentFrameworkVersion)" />
-    <PackageVersion Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore"
-      Version="$(AgentFrameworkVersion)" />
+    <PackageVersion Include="Microsoft.Agents.AI.Hosting.A2A.AspNetCore" Version="$(AgentFrameworkVersion)" />
+    <PackageVersion Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore" Version="$(AgentFrameworkVersion)" />
     <PackageVersion Include="Microsoft.Agents.AI.DevUI" Version="$(AgentFrameworkVersion)" />
     <PackageVersion Include="Microsoft.AgentGovernance" Version="3.0.2" />
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.74.0-preview" />

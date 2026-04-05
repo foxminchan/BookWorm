@@ -15,13 +15,17 @@ internal static class RouterAgentRegistration
             {
                 var governanceKernel = sp.GetRequiredService<AgentGovernance.GovernanceKernel>();
                 var identityProvider = sp.GetRequiredService<AgentIdentityProvider>();
+                var rogueDetector = sp.GetRequiredService<RogueAgentDetector>();
+                var auditTrail = sp.GetRequiredService<GovernanceAuditTrail>();
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
                     .Use(
                         GovernanceToolCallMiddleware.Create(
                             governanceKernel,
                             identityProvider,
-                            RouterAgentDefinition.Name
+                            RouterAgentDefinition.Name,
+                            rogueDetector,
+                            auditTrail
                         ),
                         null
                     )

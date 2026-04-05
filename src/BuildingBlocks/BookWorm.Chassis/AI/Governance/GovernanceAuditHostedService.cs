@@ -7,7 +7,8 @@ namespace BookWorm.Chassis.AI.Governance;
 
 internal sealed class GovernanceAuditHostedService(
     GovernanceKernel kernel,
-    ILogger<GovernanceKernel> logger
+    ILogger<GovernanceKernel> logger,
+    GovernanceAuditTrail auditTrail
 ) : IHostedService
 {
     public Task StartAsync(CancellationToken cancellationToken)
@@ -15,20 +16,50 @@ internal sealed class GovernanceAuditHostedService(
         kernel.OnEvent(
             GovernanceEventType.ToolCallBlocked,
             evt =>
+            {
+                var toolName = evt.Data.GetValueOrDefault("tool_name", "unknown");
+                var reason = evt.Data.GetValueOrDefault("reason", "policy denied");
+
                 logger.LogWarning(
                     "Governance blocked tool call: Agent={AgentId}, Tool={Tool}, Reason={Reason}",
                     evt.AgentId,
-                    evt.Data.GetValueOrDefault("tool_name", "unknown"),
-                    evt.Data.GetValueOrDefault("reason", "policy denied")
-                )
+                    toolName,
+                    reason
+                );
+
+                auditTrail.Log(evt.AgentId, "tool_blocked", "deny", $"{toolName}: {reason}");
+            }
         );
 
         kernel.OnAllEvents(evt =>
-            logger.LogDebug("Governance event: Agent={AgentId}", evt.AgentId)
-        );
+        {
+            logger.LogDebug("Governance event: Agent={AgentId}", evt.AgentId);
+            auditTrail.Log(evt.AgentId, evt.Type.ToString(), "audit", evt.AgentId);
+        });
 
         return Task.CompletedTask;
     }
 
-    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task StopAsync(CancellationToken cancellationToken)
+    {
+        // Verify audit trail integrity on shutdown for compliance logging
+        var (isValid, count) = auditTrail.VerifyIntegrity();
+
+        if (isValid)
+        {
+            logger.LogInformation(
+                "Governance audit trail integrity verified: {Count} entries, chain intact",
+                count
+            );
+        }
+        else
+        {
+            logger.LogCritical(
+                "Governance audit trail INTEGRITY FAILURE at entry {Index} — possible tampering detected",
+                count
+            );
+        }
+
+        return Task.CompletedTask;
+    }
 }

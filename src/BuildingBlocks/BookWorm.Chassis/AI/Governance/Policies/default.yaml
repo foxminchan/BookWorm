@@ -1,25 +1,54 @@
 # Copyright (c) Nhan Nguyen.
 # Licensed under the MIT License.
+#
+# Global default governance policy for all BookWorm AI agents.
+# Adapted from Microsoft Agent Governance Toolkit example policies:
+#   - pii-detection.yaml      (PII regex patterns)
+#   - prompt-injection-safety.yaml (injection detection thresholds)
+#   - semantic-policy.yaml    (weighted signal classification)
+#   - sql-safety.yaml         (destructive SQL blocking)
+#
+# Review and customize for your deployment before production use.
 
 version: "1.0"
 name: "bookworm-default-governance"
 description: >
   Global default governance policy for BookWorm AI agents.
   Blocks dangerous tool execution (shell, file write/delete),
-  data exfiltration attempts, and rate-limits catalog searches.
-  Permits catalog and review read operations.
+  data exfiltration attempts, destructive SQL, PII leakage,
+  and privilege escalation. Permits catalog and review read
+  operations. Rate-limits catalog searches.
 default_action: deny
 rules:
+  # ── Dangerous tool blocking (priority 100) ──────────────────────
   - name: block-dangerous-tools
     condition: "tool_name in blocked_tools"
     action: deny
     priority: 100
 
+  # ── Data exfiltration prevention (priority 95) ──────────────────
   - name: block-data-exfiltration
     condition: "tool_name in blocked_tools"
     action: deny
     priority: 95
 
+  # ── Destructive SQL blocking (priority 90) ──────────────────────
+  # Adapted from AGT sql-safety.yaml — blocks DROP, TRUNCATE, ALTER,
+  # GRANT, and DELETE/UPDATE without WHERE clause.
+  - name: block-destructive-sql
+    condition: "tool_name in blocked_tools"
+    action: deny
+    priority: 90
+
+  # ── Privilege escalation prevention (priority 85) ───────────────
+  # Adapted from AGT semantic-policy.yaml — blocks GRANT ALL,
+  # sudo, chmod 777, ALTER USER SUPERUSER, etc.
+  - name: block-privilege-escalation
+    condition: "tool_name in blocked_tools"
+    action: deny
+    priority: 85
+
+  # ── Read operations (priority 50) ───────────────────────────────
   - name: allow-catalog-read
     condition: "tool_name in allowed_tools"
     action: allow
@@ -30,7 +59,57 @@ rules:
     action: allow
     priority: 50
 
+  # ── Rate limiting (priority 30) ─────────────────────────────────
   - name: rate-limit-search
     condition: "tool_name == 'search_catalog'"
     action: rate_limit
     limit: "60/minute"
+
+# ── PII detection patterns ──────────────────────────────────────────
+# Adapted from AGT pii-detection.yaml — regex patterns for identifying
+# and blocking personally identifiable information in agent output.
+# These complement the Presidio-based PII middleware with policy-level
+# defense-in-depth.
+pii_patterns:
+  email: '[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+'
+  phone: '(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}'
+  credit_card: '\b(?:\d[ -]*?){13,19}\b'
+  api_key: '(?:api[_-]?key|secret[_-]?key|access[_-]?token|bearer)[\s:=]+[''"]?[A-Za-z0-9_\-]{16,}[''"]?'
+
+# ── Prompt injection sensitivity ────────────────────────────────────
+# Adapted from AGT prompt-injection-safety.yaml — thresholds for the
+# GovernanceKernel's built-in injection detector.
+sensitivity_thresholds:
+  strict: 0.3
+  balanced: 0.5
+  permissive: 0.7
+
+# ── Semantic signals for intent classification ──────────────────────
+# Adapted from AGT semantic-policy.yaml — weighted patterns for
+# detecting destructive, exfiltration, and escalation intent.
+semantic_signals:
+  destructive_data:
+    - pattern: '\bDROP\s+(TABLE|DATABASE|INDEX|VIEW|SCHEMA)\b'
+      weight: 0.9
+    - pattern: '\bTRUNCATE\s+TABLE\b'
+      weight: 0.9
+    - pattern: '\bDELETE\s+FROM\b(?!.*\bWHERE\b)'
+      weight: 0.85
+    - pattern: '\b(wipe|purge|destroy|erase|nuke)\b'
+      weight: 0.7
+
+  data_exfiltration:
+    - pattern: '\b(dump|export|backup)\s+(all|entire|full|complete)\b'
+      weight: 0.75
+    - pattern: '\b(upload|send|transmit)\s+.*\b(external|remote|s3|bucket)\b'
+      weight: 0.8
+    - pattern: '\bpg_dump\b'
+      weight: 0.7
+
+  privilege_escalation:
+    - pattern: '\bGRANT\s+(ALL|SUPERUSER|ADMIN)\b'
+      weight: 0.9
+    - pattern: '\b(escalat|elevat)\w*\s*(privilege|permission|access)\b'
+      weight: 0.8
+    - pattern: '\bALTER\s+USER\b.*\bSUPERUSER\b'
+      weight: 0.9

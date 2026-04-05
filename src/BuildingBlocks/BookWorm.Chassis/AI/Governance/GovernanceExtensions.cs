@@ -13,7 +13,8 @@ public static class GovernanceExtensions
     {
         /// <summary>
         ///     Adds agent governance capabilities to the host application builder, enabling policy enforcement,
-        ///     conflict resolution, and audit logging for AI agent operations.
+        ///     conflict resolution, rogue agent detection, Merkle-chained audit logging, and
+        ///     trust-based execution ring enforcement for AI agent operations.
         /// </summary>
         /// <param name="paths">Additional policy file paths to be loaded alongside configured paths.</param>
         /// <returns>The configured host application builder for method chaining.</returns>
@@ -57,12 +58,19 @@ public static class GovernanceExtensions
             });
             services.AddSingleton<AgentIdentityProvider>();
 
-            // Wire audit events to logging
+            // Rogue agent detection — Z-score frequency analysis with auto-quarantine
+            services.AddSingleton<RogueAgentDetector>();
+
+            // Merkle-chained audit trail — tamper-proof compliance logging
+            services.AddSingleton<GovernanceAuditTrail>();
+
+            // Wire audit events to logging and Merkle chain
             services.AddSingleton<IHostedService>(sp =>
             {
                 var logger = sp.GetRequiredService<ILogger<GovernanceKernel>>();
                 var kernel = sp.GetRequiredService<GovernanceKernel>();
-                return new GovernanceAuditHostedService(kernel, logger);
+                var auditTrail = sp.GetRequiredService<GovernanceAuditTrail>();
+                return new GovernanceAuditHostedService(kernel, logger, auditTrail);
             });
 
             // Register OpenTelemetry meters for governance

@@ -17,6 +17,8 @@ internal static class QAAgentRegistration
                 var presidioService = sp.GetRequiredService<IPresidioService>();
                 var governanceKernel = sp.GetRequiredService<AgentGovernance.GovernanceKernel>();
                 var identityProvider = sp.GetRequiredService<AgentIdentityProvider>();
+                var rogueDetector = sp.GetRequiredService<RogueAgentDetector>();
+                var auditTrail = sp.GetRequiredService<GovernanceAuditTrail>();
                 var compactionProvider = CompactionPipelineFactory.CreateLight();
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
@@ -25,7 +27,9 @@ internal static class QAAgentRegistration
                         GovernanceToolCallMiddleware.Create(
                             governanceKernel,
                             identityProvider,
-                            QAAgentDefinition.Name
+                            QAAgentDefinition.Name,
+                            rogueDetector,
+                            auditTrail
                         ),
                         null
                     )

@@ -1,5 +1,12 @@
 # Copyright (c) Nhan Nguyen.
 # Licensed under the MIT License.
+#
+# Governance policy for the BookWorm MCP Tools server.
+# Adapted from Microsoft Agent Governance Toolkit example policies:
+#   - mcp-security.yaml  (tool poisoning & hidden instruction detection)
+#   - pii-detection.yaml (PII blocking in tool descriptions)
+#
+# Review and customize for your deployment before production use.
 
 version: "1.0"
 name: "bookworm-mcp-tools-governance"
@@ -7,15 +14,18 @@ description: >
   Governance policy for the BookWorm MCP Tools server.
   Permits catalog and review tool invocations exposed to
   external LLM clients. Blocks dangerous tools (shell, file
-  write/delete, raw HTTP). Rate-limits all tool calls to
-  100 requests per minute.
+  write/delete, raw HTTP), tool poisoning attempts, and hidden
+  instructions in tool definitions. Rate-limits all tool calls
+  to 100 requests per minute.
 default_action: deny
 rules:
+  # ── Dangerous tool blocking (priority 100) ──────────────────────
   - name: block-dangerous-tools
     condition: "tool_name in blocked_tools"
     action: deny
     priority: 100
 
+  # ── Catalog & review tools (priority 50) ────────────────────────
   - name: allow-catalog-tools
     condition: "tool_name in allowed_tools"
     action: allow
@@ -26,7 +36,87 @@ rules:
     action: allow
     priority: 50
 
+  # ── Rate limiting (priority 30) ─────────────────────────────────
   - name: rate-limit-all
     condition: "tool_name == 'http_request'"
     action: rate_limit
     limit: "100/minute"
+
+# ── MCP security detection patterns ────────────────────────────────
+# Adapted from AGT mcp-security.yaml — patterns for detecting tool
+# poisoning, hidden instructions, and protocol attacks in MCP tool
+# definitions. These protect external LLM clients from malicious
+# tool descriptions injected via supply chain attacks.
+mcp_security:
+  # Invisible Unicode characters that can hide instructions
+  invisible_unicode:
+    - '[\u200b\u200c\u200d\ufeff]'
+    - '[\u202a-\u202e]'
+    - '[\u2066-\u2069]'
+    - '[\u00ad]'
+    - '[\u2060\u180e]'
+
+  # Hidden comments in Markdown tool descriptions
+  hidden_comments:
+    - "<!--.*?-->"
+    - '\[//\]:\s*#\s*\(.*?\)'
+    - '\[comment\]:\s*<>\s*\(.*?\)'
+
+  # Hidden instruction injection in tool definitions
+  hidden_instructions:
+    - 'ignore\s+(all\s+)?previous'
+    - 'override\s+(the\s+)?(previous|above|original)'
+    - 'instead\s+of\s+(the\s+)?(above|previous|described)'
+    - 'actually\s+do'
+    - '\bsystem\s*:'
+    - '\bassistant\s*:'
+    - 'do\s+not\s+follow'
+    - 'disregard\s+(all\s+)?(above|prior|previous)'
+
+  # Encoded payload detection (base64, hex)
+  encoded_payloads:
+    - "[A-Za-z0-9+/]{40,}={0,2}"
+    - '(?:\\x[0-9a-fA-F]{2}){4,}'
+
+  # Data exfiltration via tool definitions
+  exfiltration:
+    - '\bcurl\b'
+    - '\bwget\b'
+    - '\bfetch\s*\('
+    - '\bsend\s+email\b'
+    - '\bsend\s+to\b'
+    - '\bpost\s+to\b'
+    - 'include\s+the\s+contents?\s+of\b'
+
+  # Privilege escalation in tool descriptions
+  privilege_escalation:
+    - '\bsudo\b'
+    - '\badmin\s+access\b'
+    - '\broot\s+access\b'
+    - '\belevate\s+privile'
+    - '\bexec\s*\('
+    - '\beval\s*\('
+
+  # Role override attempts
+  role_override:
+    - 'you\s+are\b'
+    - 'your\s+task\s+is\b'
+    - 'respond\s+with\b'
+    - 'always\s+return\b'
+    - 'you\s+must\b'
+    - 'your\s+role\s+is\b'
+
+  # Suspicious keywords in decoded content
+  suspicious_decoded_keywords:
+    - ignore
+    - override
+    - system
+    - password
+    - secret
+    - admin
+    - root
+    - exec
+    - eval
+    - send
+    - curl
+    - fetch
