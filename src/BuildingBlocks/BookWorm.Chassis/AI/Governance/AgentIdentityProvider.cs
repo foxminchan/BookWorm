@@ -13,10 +13,10 @@ public sealed class AgentIdentityProvider(
     private readonly ConcurrentDictionary<string, AgentIdentity> _identities = new();
 
     /// <summary>
-    ///     Gets or creates a DID-based identity for the specified agent.
+    ///     Gets an existing agent identity or creates a new one if it doesn't exist.
     /// </summary>
-    /// <param name="agentName">The logical agent name (e.g., "BookAgent").</param>
-    /// <returns>The agent's cryptographic identity.</returns>
+    /// <param name="agentName">The name of the agent for which to get or create an identity.</param>
+    /// <returns>An <see cref="AgentIdentity" /> object representing the agent's governance identity.</returns>
     public AgentIdentity GetOrCreateIdentity(string agentName)
     {
         return _identities.GetOrAdd(
@@ -35,30 +35,22 @@ public sealed class AgentIdentityProvider(
     }
 
     /// <summary>
-    ///     Records a positive trust signal for the specified agent (successful tool call).
+    ///     Records a successful governance decision signal for the specified agent.
     /// </summary>
+    /// <param name="agentName">The name of the agent for which to record the success signal.</param>
     public void RecordSuccess(string agentName)
     {
         var identity = GetOrCreateIdentity(agentName);
-        kernel.Metrics?.RecordDecision(
-            allowed: true,
-            identity.Did,
-            "success_signal",
-            evaluationMs: 0
-        );
+        kernel.Metrics?.RecordDecision(true, identity.Did, "success_signal", 0);
     }
 
     /// <summary>
-    ///     Records a negative trust signal for the specified agent (blocked or failed tool call).
+    ///     Records a failed governance decision signal for the specified agent.
     /// </summary>
+    /// <param name="agentName">The name of the agent for which to record the failure signal.</param>
     public void RecordFailure(string agentName)
     {
         var identity = GetOrCreateIdentity(agentName);
-        kernel.Metrics?.RecordDecision(
-            allowed: false,
-            identity.Did,
-            "failure_signal",
-            evaluationMs: 0
-        );
+        kernel.Metrics?.RecordDecision(false, identity.Did, "failure_signal", 0);
     }
 }
