@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using BookWorm.Chassis.AI.Governance;
 using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Utilities.Configurations;
@@ -74,6 +75,9 @@ internal static class Extensions
 
         // AI infrastructure (chat client, telemetry, protocols)
         builder.AddAIInfrastructure();
+
+        // Agent governance (policy enforcement, identity, rings, injection detection)
+        builder.AddAgentGovernance("policies/chat-agents.yaml");
 
         // Register each agent as a self-contained vertical slice
         builder.AddBookAgent();

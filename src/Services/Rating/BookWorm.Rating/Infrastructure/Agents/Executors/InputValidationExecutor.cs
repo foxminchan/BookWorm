@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using AgentGovernance;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
 
@@ -6,7 +7,7 @@ namespace BookWorm.Rating.Infrastructure.Agents.Executors;
 
 internal sealed record InputValidationResult(bool IsAccepted, ChatMessage Message);
 
-internal sealed partial class InputValidationExecutor()
+internal sealed partial class InputValidationExecutor(GovernanceKernel? governanceKernel = null)
     : Executor<ChatMessage, InputValidationResult>("InputValidationExecutor")
 {
     private const int MinLength = 1;
@@ -55,12 +56,25 @@ internal sealed partial class InputValidationExecutor()
             );
         }
 
-        // Prompt injection detection
+        // Fast-path: block obvious prompt injection attempts via regex
         if (SuspiciousPatternRegex().IsMatch(content))
         {
             return Rejected(
                 "I'm sorry, but I can only help with book rating inquiries. Could you please rephrase your question?"
             );
+        }
+
+        // Deep injection analysis via Agent Governance Toolkit (7 attack types)
+        if (governanceKernel?.InjectionDetector is { } detector)
+        {
+            var injectionResult = detector.Detect(content);
+
+            if (injectionResult.IsInjection)
+            {
+                return Rejected(
+                    $"I'm sorry, but I can't process that request due to a security policy ({injectionResult.InjectionType}). Please rephrase your question about book ratings."
+                );
+            }
         }
 
         // Truncate overly long input

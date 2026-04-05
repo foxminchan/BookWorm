@@ -1,0 +1,73 @@
+# Copyright (c) Nhan Nguyen.
+# Licensed under the MIT License.
+
+version: "1.0"
+name: "bookworm-default-governance"
+description: >
+  Global default governance policy for BookWorm AI agents.
+  Blocks dangerous tool execution (shell, file write/delete),
+  data exfiltration attempts, and rate-limits catalog searches.
+  Permits catalog and review read operations. All actions are
+  audit-logged.
+
+rules:
+  - name: "block_dangerous_tools"
+    condition:
+      field: "tool_name"
+      operator: "contains_any"
+      value: "shell_exec,file_write,file_delete,http_request"
+    action: "deny"
+    priority: 100
+    message: "Dangerous tool execution (shell, file write/delete, raw HTTP) is prohibited by security policy"
+
+  - name: "block_data_exfiltration"
+    condition:
+      field: "tool_name"
+      operator: "contains_any"
+      value: "send_email,upload_file,external_api"
+    action: "deny"
+    priority: 95
+    message: "Data exfiltration tools (email, upload, external API) are prohibited — agent cannot transmit data externally"
+
+  - name: "allow_catalog_read"
+    condition:
+      field: "tool_name"
+      operator: "contains_any"
+      value: "search_catalog,get_book,get_book_details,list_categories"
+    action: "allow"
+    priority: 50
+    message: "Catalog read operations are permitted"
+
+  - name: "allow_review_read"
+    condition:
+      field: "tool_name"
+      operator: "contains_any"
+      value: "get_book_reviews,get_review,list_reviews"
+    action: "allow"
+    priority: 50
+    message: "Review read operations are permitted"
+
+  - name: "rate_limit_search"
+    condition:
+      field: "tool_name"
+      operator: "equals"
+      value: "search_catalog"
+    action: "rate_limit"
+    priority: 40
+    limit: "60/minute"
+    message: "Catalog search is rate-limited to 60 requests per minute"
+
+  - name: "audit_all_actions"
+    condition:
+      field: "message_count"
+      operator: "gte"
+      value: 0
+    action: "audit"
+    priority: 10
+    message: "All agent actions are audit-logged for compliance"
+
+defaults:
+  action: "deny"
+  max_tokens: 4096
+  max_tool_calls: 10
+  confidence_threshold: 0.8

@@ -18,6 +18,7 @@
     <PackageReference Include="Microsoft.Agents.AI.Hosting.A2A.AspNetCore" />
     <PackageReference Include="Microsoft.Agents.AI.DevUI" />
     <PackageReference Include="Aspire.Azure.AI.OpenAI" />
+    <PackageReference Include="Microsoft.AgentGovernance" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.Qdrant" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
   </ItemGroup>
@@ -26,6 +27,11 @@
     <PackageReference Include="Microsoft.Extensions.Compliance.Redaction" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+  </ItemGroup>
+  <ItemGroup Label="Governance Policies">
+    <Content Include="AI\Governance\policies\default.yaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BookWorm.Constants\BookWorm.Constants.csproj" />

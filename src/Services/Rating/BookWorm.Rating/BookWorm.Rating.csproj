@@ -15,6 +15,11 @@
     <PackageReference Include="Mediator.SourceGenerator" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore" />
   </ItemGroup>
+  <ItemGroup Label="Governance Policies">
+    <Content Include="policies\*.yaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
     <InternalsVisibleTo Include="$(AssemblyName).UnitTests" />

@@ -1,5 +1,6 @@
 ﻿using BookWorm.Chassis.AI.Agents;
 using BookWorm.Chassis.AI.Extensions;
+using BookWorm.Chassis.AI.Governance;
 using BookWorm.Chassis.AI.Middlewares;
 using BookWorm.Chassis.AI.Presidio;
 using BookWorm.Chassis.Utilities;
@@ -28,6 +29,8 @@ internal static class Extensions
 
         builder.AddMcpClient(Constants.Aspire.Services.McpTools);
 
+        builder.AddAgentGovernance("policies/rating-agent.yaml");
+
         services.AddOpenAIResponses();
         services.AddOpenAIConversations();
         services.AddScoped<ReviewTool>();
@@ -46,9 +49,19 @@ internal static class Extensions
             (sp, key) =>
             {
                 var presidioService = sp.GetRequiredService<IPresidioService>();
+                var governanceKernel = sp.GetRequiredService<AgentGovernance.GovernanceKernel>();
+                var identityProvider = sp.GetRequiredService<AgentIdentityProvider>();
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
                     .Use(PIIMiddleware.Create(presidioService), null)
+                    .Use(
+                        GovernanceToolCallMiddleware.Create(
+                            governanceKernel,
+                            identityProvider,
+                            RatingAgent.Name
+                        ),
+                        null
+                    )
                     .Use(GuardrailMiddleware.InvokeAsync, null)
                     .Build(sp);
 
@@ -164,7 +177,9 @@ internal static class Extensions
                     );
 
                     // Create custom executors
-                    InputValidationExecutor inputValidator = new();
+                    var governanceKernel =
+                        sp.GetRequiredService<AgentGovernance.GovernanceKernel>();
+                    InputValidationExecutor inputValidator = new(governanceKernel);
                     ResponseFormatterExecutor responseFormatter = new();
 
                     // Build workflow with 4-layer architecture:

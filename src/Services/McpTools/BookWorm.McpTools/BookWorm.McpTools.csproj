@@ -20,6 +20,11 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\Aspire\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj" />
   </ItemGroup>
+  <ItemGroup Label="Governance Policies">
+    <Content Include="policies\*.yaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
     <InternalsVisibleTo Include="$(AssemblyName).UnitTests" />
