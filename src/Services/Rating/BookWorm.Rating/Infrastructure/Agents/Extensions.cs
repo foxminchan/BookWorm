@@ -29,7 +29,7 @@ internal static class Extensions
 
         builder.AddMcpClient(Constants.Aspire.Services.McpTools);
 
-        builder.AddAgentGovernance("policies/rating-agent.yaml");
+        builder.AddAgentGovernance("Policies/rating-agent.yaml");
 
         services.AddOpenAIResponses();
         services.AddOpenAIConversations();

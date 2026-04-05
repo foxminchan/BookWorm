@@ -16,7 +16,7 @@ public sealed class AgentGovernanceOptions
     ///     Paths to YAML policy files, relative to the application base directory.
     /// </summary>
     [Required]
-    public List<string> PolicyPaths { get; set; } = ["AI/Governance/policies/default.yaml"];
+    public List<string> PolicyPaths { get; set; } = ["AI/Governance/Policies/default.yaml"];
 
     /// <summary>
     ///     Whether to enable execution ring enforcement based on agent trust scores.

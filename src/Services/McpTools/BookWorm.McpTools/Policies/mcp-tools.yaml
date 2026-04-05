@@ -1,0 +1,32 @@
+# Copyright (c) Nhan Nguyen.
+# Licensed under the MIT License.
+
+version: "1.0"
+name: "bookworm-mcp-tools-governance"
+description: >
+  Governance policy for the BookWorm MCP Tools server.
+  Permits catalog and review tool invocations exposed to
+  external LLM clients. Blocks dangerous tools (shell, file
+  write/delete, raw HTTP). Rate-limits all tool calls to
+  100 requests per minute.
+default_action: deny
+rules:
+  - name: block-dangerous-tools
+    condition: "tool_name in blocked_tools"
+    action: deny
+    priority: 100
+
+  - name: allow-catalog-tools
+    condition: "tool_name in allowed_tools"
+    action: allow
+    priority: 50
+
+  - name: allow-review-tools
+    condition: "tool_name in allowed_tools"
+    action: allow
+    priority: 50
+
+  - name: rate-limit-all
+    condition: "tool_name == 'http_request'"
+    action: rate_limit
+    limit: "100/minute"

@@ -1,0 +1,36 @@
+# Copyright (c) Nhan Nguyen.
+# Licensed under the MIT License.
+
+version: "1.0"
+name: "bookworm-default-governance"
+description: >
+  Global default governance policy for BookWorm AI agents.
+  Blocks dangerous tool execution (shell, file write/delete),
+  data exfiltration attempts, and rate-limits catalog searches.
+  Permits catalog and review read operations.
+default_action: deny
+rules:
+  - name: block-dangerous-tools
+    condition: "tool_name in blocked_tools"
+    action: deny
+    priority: 100
+
+  - name: block-data-exfiltration
+    condition: "tool_name in blocked_tools"
+    action: deny
+    priority: 95
+
+  - name: allow-catalog-read
+    condition: "tool_name in allowed_tools"
+    action: allow
+    priority: 50
+
+  - name: allow-review-read
+    condition: "tool_name in allowed_tools"
+    action: allow
+    priority: 50
+
+  - name: rate-limit-search
+    condition: "tool_name == 'search_catalog'"
+    action: rate_limit
+    limit: "60/minute"

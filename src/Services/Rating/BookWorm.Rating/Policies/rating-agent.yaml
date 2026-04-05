@@ -1,0 +1,21 @@
+# Copyright (c) Nhan Nguyen.
+# Licensed under the MIT License.
+
+version: "1.0"
+name: "bookworm-rating-agent-governance"
+description: >
+  Governance policy for the BookWorm Rating service agent.
+  Permits read-only access to book and review data for
+  LLM-based review summarization. Blocks all write operations
+  (create, update, delete) to prevent unauthorized data mutation.
+default_action: deny
+rules:
+  - name: block-write-operations
+    condition: "tool_name in blocked_tools"
+    action: deny
+    priority: 100
+
+  - name: allow-read-tools
+    condition: "tool_name in allowed_tools"
+    action: allow
+    priority: 50

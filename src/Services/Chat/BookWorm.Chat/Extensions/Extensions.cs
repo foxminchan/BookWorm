@@ -77,7 +77,7 @@ internal static class Extensions
         builder.AddAIInfrastructure();
 
         // Agent governance (policy enforcement, identity, rings, injection detection)
-        builder.AddAgentGovernance("policies/chat-agents.yaml");
+        builder.AddAgentGovernance("Policies/chat-agents.yaml");
 
         // Register each agent as a self-contained vertical slice
         builder.AddBookAgent();

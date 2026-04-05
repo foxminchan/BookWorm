@@ -16,7 +16,7 @@
     <PackageReference Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore" />
   </ItemGroup>
   <ItemGroup Label="Governance Policies">
-    <Content Include="policies\*.yaml">
+    <Content Include="Policies\*.yaml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

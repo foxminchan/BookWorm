@@ -49,7 +49,7 @@ internal static class Extensions
         );
 
         // Agent governance (policy enforcement for MCP tool calls)
-        builder.AddAgentGovernance("policies/mcp-tools.yaml");
+        builder.AddAgentGovernance("Policies/mcp-tools.yaml");
 
         services
             .AddMcpServer()

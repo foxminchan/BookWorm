@@ -29,7 +29,7 @@
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
   </ItemGroup>
   <ItemGroup Label="Governance Policies">
-    <Content Include="AI\Governance\policies\default.yaml">
+    <Content Include="AI\Governance\Policies\default.yaml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

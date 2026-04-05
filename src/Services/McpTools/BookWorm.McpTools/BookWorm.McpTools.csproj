@@ -21,7 +21,7 @@
     <ProjectReference Include="..\..\..\Aspire\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj" />
   </ItemGroup>
   <ItemGroup Label="Governance Policies">
-    <Content Include="policies\*.yaml">
+    <Content Include="Policies\*.yaml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
