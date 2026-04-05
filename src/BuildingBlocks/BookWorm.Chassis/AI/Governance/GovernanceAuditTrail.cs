@@ -114,7 +114,7 @@ public sealed class GovernanceAuditTrail
             ["entry_hash"] = entry.Hash,
             ["previous_hash"] = entry.PreviousHash,
             ["chain_length"] = ordered.Count,
-            ["chain_head"] = ordered.Count > 0 ? ordered[^1].Hash : "",
+            ["chain_head"] = ordered[^1].Hash,
             ["verified"] = VerifyIntegrity().IsValid,
         };
     }

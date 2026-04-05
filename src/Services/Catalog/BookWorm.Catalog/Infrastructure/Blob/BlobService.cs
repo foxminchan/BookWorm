@@ -94,7 +94,7 @@ internal sealed partial class BlobService(
     {
         var name = Path.GetFileNameWithoutExtension(originalFileName);
         var ext = Path.GetExtension(originalFileName);
-        var safeName = InvalidFileNameChars().Replace(name, "");
+        var safeName = InvalidFileNameChars().Replace(name, string.Empty);
         return $"{Guid.CreateVersion7()}-{safeName}{ext}";
     }
 

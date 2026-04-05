@@ -52,7 +52,10 @@ internal class ValidationBehavior<TMessage, TResponse>(
         }
 
         var messageType = message.GetType().Name;
-        var validatorNames = validators.Aggregate("", (c, x) => $"{x.GetType().Name}, {c}");
+        var validatorNames = validators.Aggregate(
+            string.Empty,
+            (c, x) => $"{x.GetType().Name}, {c}"
+        );
         var activityName = $"{messageType}-{validatorNames.Trim().TrimEnd(',')}";
 
         await activityScope.Run(
