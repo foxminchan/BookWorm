@@ -31,7 +31,7 @@
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.JavaScript.Extensions" Version="$(ToolKitVersion)" />
     <!-- Extra -->
     <PackageVersion Include="TUnit.Aspire" Version="$(TUnitVersion)" />
-    <PackageVersion Include="Scalar.Aspire" Version="0.9.18" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.9.20" />
   </ItemGroup>
   <ItemGroup Label="Core Packages">
     <!-- Microsoft Extensions -->
@@ -60,6 +60,7 @@
     <PackageVersion Include="Microsoft.Agents.AI.Hosting.A2A.AspNetCore" Version="$(AgentFrameworkVersion)" />
     <PackageVersion Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore" Version="$(AgentFrameworkVersion)" />
     <PackageVersion Include="Microsoft.Agents.AI.DevUI" Version="$(AgentFrameworkVersion)" />
+    <PackageVersion Include="Microsoft.AgentGovernance" Version="3.0.2" />
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.74.0-preview" />
     <!-- Miscellaneous -->
     <PackageVersion Include="AspNetCore.HealthChecks.Uris" Version="$(HealthChecksVersion)" />

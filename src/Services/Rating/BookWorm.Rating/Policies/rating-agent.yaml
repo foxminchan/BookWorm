@@ -1,0 +1,82 @@
+# Copyright (c) Nhan Nguyen.
+# Licensed under the MIT License.
+#
+# Governance policy for the BookWorm Rating service agent.
+# Adapted from Microsoft Agent Governance Toolkit example policies:
+#   - sql-readonly.yaml   (read-only SQL enforcement)
+#   - pii-detection.yaml  (PII blocking in review output)
+#
+# Review and customize for your deployment before production use.
+
+version: "1.0"
+name: "bookworm-rating-agent-governance"
+description: >
+  Governance policy for the BookWorm Rating service agent.
+  Permits read-only access to book and review data for
+  LLM-based review summarization. Blocks all write operations
+  (create, update, delete) to prevent unauthorized data mutation.
+  Enforces PII redaction in summarized review output and blocks
+  destructive SQL patterns from reaching the database.
+default_action: deny
+rules:
+  # ── Write operation blocking (priority 100) ─────────────────────
+  - name: block-write-operations
+    condition: "tool_name in blocked_tools"
+    action: deny
+    priority: 100
+
+  # ── Destructive SQL blocking (priority 95) ──────────────────────
+  # Adapted from AGT sql-readonly.yaml — blocks all SQL data
+  # modification even if tools are not in the blocked list.
+  - name: block-destructive-sql
+    condition: "tool_name in blocked_tools"
+    action: deny
+    priority: 95
+
+  # ── Read tools (priority 50) ────────────────────────────────────
+  - name: allow-read-tools
+    condition: "tool_name in allowed_tools"
+    action: allow
+    priority: 50
+
+  # ── Rate limiting (priority 30) ─────────────────────────────────
+  - name: rate-limit-review-reads
+    condition: "tool_name == 'get_reviews'"
+    action: rate_limit
+    limit: "30/minute"
+
+# ── SQL read-only enforcement ───────────────────────────────────────
+# Adapted from AGT sql-readonly.yaml — ensures only SELECT queries
+# are permitted. All modifications, DDL, and administrative operations
+# are blocked. This provides defense-in-depth beyond tool-level blocking.
+sql_policy:
+  blocked_statements:
+    - DROP
+    - TRUNCATE
+    - ALTER
+    - GRANT
+    - REVOKE
+    - MERGE
+    - INSERT
+    - UPDATE
+    - DELETE
+
+  blocked_patterns:
+    - '\bEXEC(UTE)?\b'
+    - '\bXP_\w+'
+    - '\bSP_\w+'
+    - '\bLOAD_FILE\s*\('
+    - '\bINTO\s+(OUT|DUMP)FILE\b'
+    - '\bCOPY\s+'
+    - '\bSET\s+(GLOBAL|ROLE)\b'
+
+  allowed_statements:
+    - SELECT
+
+# ── PII patterns for review output ─────────────────────────────────
+# Adapted from AGT pii-detection.yaml — regex patterns to detect
+# PII that may appear in user reviews before summarization output.
+pii_patterns:
+  email: '[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+'
+  phone: '(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}'
+  credit_card: '\b(?:\d[ -]*?){13,19}\b'

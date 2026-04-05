@@ -1,4 +1,6 @@
 using System.Text.RegularExpressions;
+using AgentGovernance;
+using AgentGovernance.Security;
 using Microsoft.Agents.AI.Workflows;
 
 namespace BookWorm.Chat.Orchestration.Executors;
@@ -9,7 +11,7 @@ namespace BookWorm.Chat.Orchestration.Executors;
 /// </summary>
 internal sealed record InputValidationResult(bool IsAccepted, ChatMessage Message);
 
-internal sealed partial class InputValidationExecutor()
+internal sealed partial class InputValidationExecutor(GovernanceKernel? governanceKernel = null)
     : Executor<ChatMessage, InputValidationResult>("InputValidationExecutor")
 {
     private const int MinLength = 1;
@@ -58,12 +60,25 @@ internal sealed partial class InputValidationExecutor()
             );
         }
 
-        // Block prompt injection attempts instead of forwarding with a warning
+        // Fast-path: block obvious prompt injection attempts via regex
         if (SuspiciousPatternRegex().IsMatch(content))
         {
             return Rejected(
                 "I'm sorry, but I can't process that request. Please rephrase your question about books or our bookstore services."
             );
+        }
+
+        // Deep injection analysis via Agent Governance Toolkit (7 attack types)
+        if (governanceKernel?.InjectionDetector is { } detector)
+        {
+            var injectionResult = detector.Detect(content);
+
+            if (injectionResult.IsInjection)
+            {
+                return Rejected(
+                    $"I'm sorry, but I can't process that request due to a security policy ({injectionResult.InjectionType}). Please rephrase your question about books or our bookstore services."
+                );
+            }
         }
 
         // Check maximum length and truncate if needed

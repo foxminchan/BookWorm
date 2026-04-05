@@ -1,3 +1,4 @@
+using AgentGovernance;
 using BookWorm.Chat.Agents.BookSearch;
 using BookWorm.Chat.Agents.CustomerSupport;
 using BookWorm.Chat.Agents.LanguageTranslation;
@@ -80,7 +81,8 @@ internal static class WorkflowRegistration
                     );
 
                     // Create custom executors
-                    InputValidationExecutor inputValidator = new();
+                    var governanceKernel = sp.GetRequiredService<GovernanceKernel>();
+                    InputValidationExecutor inputValidator = new(governanceKernel);
                     ResponseFormatterExecutor responseFormatter = new();
 
                     // Build workflow with 4-layer architecture:

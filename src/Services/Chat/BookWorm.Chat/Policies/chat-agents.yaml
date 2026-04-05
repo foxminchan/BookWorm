@@ -1,0 +1,132 @@
+# Copyright (c) Nhan Nguyen.
+# Licensed under the MIT License.
+#
+# Per-agent governance policy for the BookWorm Chat service.
+# Adapted from Microsoft Agent Governance Toolkit example policies:
+#   - conversation-guardian.yaml  (A2A escalation & offensive detection)
+#   - prompt-injection-safety.yaml (multi-turn injection patterns)
+#
+# Review and customize for your deployment before production use.
+
+version: "1.0"
+name: "bookworm-chat-agents-governance"
+description: >
+  Per-agent governance policy for the BookWorm Chat service.
+  BookAgent is permitted to invoke catalog tools for book search
+  and retrieval. All other agents (Router, Language, Summarize,
+  Sentiment, QA) are denied tool calls. Includes conversation
+  guardian thresholds for detecting escalating rhetoric and
+  offensive content in agent-to-agent communication.
+default_action: deny
+rules:
+  - name: book-agent-catalog-tools
+    condition: "agent_id == 'book-agent' and tool_name in allowed_tools"
+    action: allow
+    priority: 60
+
+  - name: router-agent-no-tools
+    condition: "agent_id == 'router-agent'"
+    action: deny
+    priority: 50
+
+  - name: language-agent-no-tools
+    condition: "agent_id == 'language-agent'"
+    action: deny
+    priority: 50
+
+  - name: summarize-agent-no-tools
+    condition: "agent_id == 'summarize-agent'"
+    action: deny
+    priority: 50
+
+  - name: sentiment-agent-no-tools
+    condition: "agent_id == 'sentiment-agent'"
+    action: deny
+    priority: 50
+
+  - name: qa-agent-no-tools
+    condition: "agent_id == 'qa-agent'"
+    action: deny
+    priority: 50
+
+# ── Conversation guardian ───────────────────────────────────────────
+# Adapted from AGT conversation-guardian.yaml — thresholds for
+# detecting escalating rhetoric, offensive intent, and feedback loops
+# in agent-to-agent conversations (OWASP ASI-8 / ASI-10).
+conversation_guardian:
+  escalation_score_threshold: 0.6
+  escalation_critical_threshold: 0.85
+  max_retry_cycles: 3
+  max_conversation_turns: 30
+  loop_window_seconds: 300.0
+  offensive_score_threshold: 0.5
+  offensive_critical_threshold: 0.8
+  composite_warn_threshold: 0.4
+  composite_pause_threshold: 0.6
+  composite_break_threshold: 0.8
+  max_transcript_entries: 5000
+
+  # Escalation patterns — detect coercive or bypass directives
+  # that agents might use to override governance in handoff chains.
+  escalation_patterns:
+    - weight: 0.15
+      patterns:
+        - '\bemergency\b'
+        - '\burgent\b'
+        - '\bcritical\s+priority\b'
+        - '\bimmediately\b'
+        - '\bnon[- ]?negotiable\b'
+
+    - weight: 0.25
+      patterns:
+        - '\byou\s+must\b'
+        - '\bi\s+(?:demand|insist|order|command)\b'
+        - '\bno\s+excuses\b'
+        - '\bdo\s+whatever\s+it\s+takes\b'
+        - '\bjust\s+(?:do|get)\s+it\s+done\b'
+
+    - weight: 0.35
+      patterns:
+        - '\bbypass\b.*\b(?:control|security|restriction|protection|auth)'
+        - '\bwork\s+around\b.*\b(?:security|access|permission|restriction)'
+        - '\bcircumvent\b'
+        - '\boverride\b.*\b(?:security|permission|access|lock)'
+
+  # Offensive patterns — detect privilege escalation, exfiltration,
+  # and injection attempts between agents in the handoff workflow.
+  offensive_patterns:
+    - weight: 0.3
+      patterns:
+        - '\b(?:CVE|exploit|vulnerability|zero[- ]?day)\b'
+        - '\breverse\s+engineer\w*'
+        - '\bpayload\b.*\b(?:inject|craft|construct)'
+
+    - weight: 0.35
+      patterns:
+        - '\bescalate\s+privilege'
+        - '\bforge\b.*\b(?:cookie|token|session|credential)'
+        - '\badmin\s+access'
+        - '\bimpersonat\w*'
+        - '\bhijack\b.*\b(?:session|token|account)'
+
+    - weight: 0.4
+      patterns:
+        - '\bexfiltrat\w*'
+        - '\bcovert\s+channel'
+        - '\bdns\s+(?:tunnel|exfil)'
+
+    - weight: 0.35
+      patterns:
+        - '\b(?:SQL|command|OS|LDAP)\s+injection\b'
+        - '\bpath\s+traversal\b'
+        - '\bremote\s+code\s+execution\b|\bRCE\b'
+
+# ── Multi-turn injection detection ─────────────────────────────────
+# Adapted from AGT prompt-injection-safety.yaml — patterns for
+# detecting multi-turn prompt injection across conversation turns.
+multi_turn_injection_patterns:
+  - 'as\s+I\s+mentioned\s+before.*you\s+agreed\s+to'
+  - 'you\s+already\s+said\s+yes'
+  - 'continuing\s+from\s+where\s+you\s+unlocked'
+  - 'you\s+previously\s+confirmed'
+  - 'we\s+already\s+established\s+that\s+you\s+can'

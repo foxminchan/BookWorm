@@ -1,3 +1,4 @@
+using BookWorm.Chassis.AI.Governance;
 using BookWorm.Chassis.AI.Middlewares;
 using BookWorm.Chassis.AI.Presidio;
 using Microsoft.Agents.AI;
@@ -14,9 +15,23 @@ internal static class SentimentAgentRegistration
             (sp, key) =>
             {
                 var presidioService = sp.GetRequiredService<IPresidioService>();
+                var governanceKernel = sp.GetRequiredService<AgentGovernance.GovernanceKernel>();
+                var identityProvider = sp.GetRequiredService<AgentIdentityProvider>();
+                var rogueDetector = sp.GetRequiredService<RogueAgentDetector>();
+                var auditTrail = sp.GetRequiredService<GovernanceAuditTrail>();
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
                     .Use(PIIMiddleware.Create(presidioService), null)
+                    .Use(
+                        GovernanceToolCallMiddleware.Create(
+                            governanceKernel,
+                            identityProvider,
+                            SentimentAgentDefinition.Name,
+                            rogueDetector,
+                            auditTrail
+                        ),
+                        null
+                    )
                     .Use(GuardrailMiddleware.InvokeAsync, null)
                     .Build(sp);
 

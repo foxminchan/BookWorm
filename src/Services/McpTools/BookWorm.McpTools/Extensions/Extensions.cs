@@ -1,4 +1,5 @@
-﻿using BookWorm.Chassis.Utilities;
+﻿using BookWorm.Chassis.AI.Governance;
+using BookWorm.Chassis.Utilities;
 using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Constants.Core;
 using BookWorm.McpTools.Configurations;
@@ -46,6 +47,9 @@ internal static class Extensions
                 .Build(),
             HealthStatus.Degraded
         );
+
+        // Agent governance (policy enforcement for MCP tool calls)
+        builder.AddAgentGovernance("Policies/mcp-tools.yaml");
 
         services
             .AddMcpServer()

@@ -58,7 +58,7 @@ public static class ModelExtensions
                             "Microsoft.Agents.AI.Runtime.Abstractions.InMemoryActorStateStorage"
                         )
                 )
-                .WithMetrics(x => x.AddMeter("*Microsoft.Agents.AI"));
+                .WithMetrics(x => x.AddMeter("*Microsoft.Agents.AI").AddMeter("agent_governance"));
         }
     }
 }

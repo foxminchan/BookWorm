@@ -17,6 +17,11 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <ItemGroup Label="Governance Policies">
+    <Content Include="Policies\*.yaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="$(AssemblyName).UnitTests" />
     <InternalsVisibleTo Include="$(AssemblyName).IntegrationTests" />
