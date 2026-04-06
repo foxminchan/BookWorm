@@ -48,6 +48,11 @@ runs:
       shell: bash
       run: aspire --version
 
+    - name: Normalize repository name
+      id: normalize
+      shell: bash
+      run: echo "repository=$(echo '${{ inputs.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
     - name: Push to GitHub Container Registry
       shell: bash
       run: aspire do push
@@ -55,7 +60,7 @@ runs:
         Azure__SubscriptionId: ${{ inputs.azure-subscription-id }}
         Azure__Location: ${{ inputs.azure-location }}
         Parameters__container_endpoint: ghcr.io
-        Parameters__container_repository: ${{ inputs.repository }}
+        Parameters__container_repository: ${{ steps.normalize.outputs.repository }}
 
     - name: Install mcp-publisher
       shell: bash

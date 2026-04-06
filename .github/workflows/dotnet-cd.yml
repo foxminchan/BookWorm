@@ -75,6 +75,10 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Normalize repository name
+        id: normalize
+        run: echo "repository=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
       - name: Deploy with Aspire
         run: |
           aspire deploy \
@@ -90,7 +94,7 @@ jobs:
           Azure__SubscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           Azure__Location: ${{ secrets.AZURE_LOCATION || 'southeastasia' }}
           Parameters__container_endpoint: ghcr.io
-          Parameters__container_repository: ${{ github.repository }}
+          Parameters__container_repository: ${{ steps.normalize.outputs.repository }}
           Parameters__openai_openai_apikey: ${{ secrets.OPENAI_APIKEY }}
           Parameters__kc_url: ${{ secrets.KC_URL }}
           Parameters__kc_realm: ${{ secrets.KC_REALM }}
