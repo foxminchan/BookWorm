@@ -2,10 +2,14 @@
 
 # BookWorm
 
-[![BookWorm CI (Backend)](https://github.com/foxminchan/BookWorm/actions/workflows/backend-ci.yml/badge.svg?event=push)](https://github.com/foxminchan/BookWorm/actions/workflows/backend-ci.yml)
-[![BookWorm CI (Frontend)](https://github.com/foxminchan/BookWorm/actions/workflows/frontend-ci.yml/badge.svg?branch=main&event=push)](https://github.com/foxminchan/BookWorm/actions/workflows/frontend-ci.yml)
+[![SLSA 2](https://slsa.dev/images/gh-badge-level2.svg)](https://slsa.dev)
+
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=coverage)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
 [![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
+
+[![BookWorm CI (Backend)](https://github.com/foxminchan/BookWorm/actions/workflows/backend-ci.yml/badge.svg?event=push)](https://github.com/foxminchan/BookWorm/actions/workflows/backend-ci.yml)
+[![BookWorm CI (Frontend)](https://github.com/foxminchan/BookWorm/actions/workflows/frontend-ci.yml/badge.svg?branch=main&event=push)](https://github.com/foxminchan/BookWorm/actions/workflows/frontend-ci.yml)
+[![BookWorm CI (Keycloakify)](https://github.com/foxminchan/BookWorm/actions/workflows/keycloak-ci.yml/badge.svg?branch=main&event=push)](https://github.com/foxminchan/BookWorm/actions/workflows/keycloak-ci.yml)
 
 <div>
   <a href="https://codespaces.new/foxminchan/BookWorm?quickstart=1" target="_blank">

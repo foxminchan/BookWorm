@@ -96,8 +96,10 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
-      packages: read
+      packages: write
       security-events: write
+      id-token: write
+      attestations: write
     strategy:
       fail-fast: false
       matrix:
@@ -115,11 +117,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ github.token }}
 
+      - name: Resolve image digest for ${{ matrix.image }}
+        id: image-digest
+        env:
+          IMAGE: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:latest
+        run: |
+          docker pull "${IMAGE}"
+          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "${IMAGE}" | cut -d@ -f2)
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+          echo "image_ref=ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}@${DIGEST}" >> "$GITHUB_OUTPUT"
+
       - name: Run Trivy scanner for ${{ matrix.image }}
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
           scan-type: "image"
-          image-ref: "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:latest"
+          image-ref: ${{ steps.image-digest.outputs.image_ref }}
           format: "sarif"
           output: "trivy-image-results.sarif"
           severity: "CRITICAL,HIGH,MEDIUM"
@@ -131,6 +143,30 @@ jobs:
           sarif_file: trivy-image-results.sarif
           category: "trivy-container-scan-${{ matrix.image }}"
 
+      - name: Generate CycloneDX SBOM for ${{ matrix.image }}
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          scan-type: "image"
+          image-ref: ${{ steps.image-digest.outputs.image_ref }}
+          format: "cyclonedx"
+          output: "sbom-${{ matrix.image }}.cyclonedx.json"
+
+      - name: Attest SBOM for ${{ matrix.image }}
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          subject-name: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
+          subject-digest: ${{ steps.image-digest.outputs.digest }}
+          sbom-path: "sbom-${{ matrix.image }}.cyclonedx.json"
+          push-to-registry: true
+
+      - name: Upload SBOM for ${{ matrix.image }}
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: sbom-${{ matrix.image }}
+          path: "sbom-${{ matrix.image }}.cyclonedx.json"
+          retention-days: 7
+
   sbom:
     name: SBOM Generation
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -138,6 +174,8 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
+      id-token: write
+      attestations: write
 
     steps:
       - name: Checkout code
@@ -145,7 +183,15 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Generate SBOM and submit to Dependency Graph
+      - name: Generate CycloneDX SBOM for attestation
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "cyclonedx"
+          output: "sbom.cyclonedx.json"
+
+      - name: Submit dependency snapshot to GitHub Dependency Graph
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
           scan-type: "fs"
@@ -154,10 +200,15 @@ jobs:
           output: "dependency-results.sbom.json"
           github-pat: ${{ github.token }}
 
-      - name: Upload SBOM report
+      - name: Attest SBOM
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          subject-path: sbom.cyclonedx.json
+
+      - name: Upload CycloneDX SBOM
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
-          name: trivy-sbom-report
-          path: dependency-results.sbom.json
+          name: trivy-sbom-cyclonedx
+          path: sbom.cyclonedx.json
           retention-days: 7

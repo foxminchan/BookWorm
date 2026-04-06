@@ -34,13 +34,13 @@ jobs:
 
       - name: Run Betterleaks secret scanner
         env:
-          BETTERLEAKS_VERSION: v1.1.1
+          BETTERLEAKS_DIGEST: "sha256:8c1fdaaeef493bb27dda66051a2bf7874e5c6feeb5fe8eced1359afdbf8c2571"
         run: |
           docker run --rm -v "${{ github.workspace }}:/src" \
             -e GIT_CONFIG_COUNT=1 \
             -e GIT_CONFIG_KEY_0=safe.directory \
             -e GIT_CONFIG_VALUE_0=/src \
-            "ghcr.io/betterleaks/betterleaks:${BETTERLEAKS_VERSION}" \
+            "ghcr.io/betterleaks/betterleaks@${BETTERLEAKS_DIGEST}" \
             git --no-banner --no-color --gitleaks-ignore-path /src/.betterleaksignore --report-path /src/betterleaks-results.sarif --report-format sarif /src
 
       - name: Upload SARIF results

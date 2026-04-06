@@ -122,7 +122,6 @@ jobs:
 
   attest-backend:
     name: Attest
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true'
     needs: [publish]
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'development' }}

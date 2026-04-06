@@ -3,33 +3,50 @@ set -euo pipefail
 
 # Retrieves the latest container image digest from GitHub Packages API.
 # Retries with incremental backoff to handle GHCR propagation delays.
+# Validates the digest was created at or after PUSHED_AFTER to prevent TOCTOU.
 #
 # Required environment variables:
 #   GH_TOKEN       - GitHub token for API authentication
 #   SERVICE        - Service name (e.g., "catalog", "ordering")
 #   REPOSITORY     - Full repository name (e.g., "foxminchan/BookWorm")
 #   GITHUB_OUTPUT  - GitHub Actions output file path
+#
+# Optional environment variables:
+#   PUSHED_AFTER   - ISO 8601 UTC timestamp; digest must be created at or after
+#                    this time. Defaults to 60 minutes ago.
 
 REPO_NAME=$(echo "$REPOSITORY" | cut -d'/' -f2 | tr '[:upper:]' '[:lower:]')
 PACKAGE="${REPO_NAME}/${SERVICE}"
 ENCODED_PACKAGE=$(echo "$PACKAGE" | sed 's|/|%2F|g')
 OWNER=$(echo "$REPOSITORY" | cut -d'/' -f1)
 
+# Freshness bound: reject digests older than this timestamp
+PUSHED_AFTER="${PUSHED_AFTER:-$(date -u -d '60 minutes ago' '+%Y-%m-%dT%H:%M:%SZ')}"
+
 MAX_ATTEMPTS=5
 SLEEP_SECONDS=2
 DIGEST=""
 
 for ATTEMPT in $(seq 1 "$MAX_ATTEMPTS"); do
-  DIGEST=$(gh api "/users/${OWNER}/packages/container/${ENCODED_PACKAGE}/versions?per_page=1" \
-    --jq '.[0].name' 2>/dev/null) || \
-  DIGEST=$(gh api "/orgs/${OWNER}/packages/container/${ENCODED_PACKAGE}/versions?per_page=1" \
-    --jq '.[0].name' 2>/dev/null) || true
+  RESPONSE=$(gh api "/users/${OWNER}/packages/container/${ENCODED_PACKAGE}/versions?per_page=1" \
+    2>/dev/null) || \
+  RESPONSE=$(gh api "/orgs/${OWNER}/packages/container/${ENCODED_PACKAGE}/versions?per_page=1" \
+    2>/dev/null) || true
+
+  DIGEST=$(echo "$RESPONSE" | jq -r '.[0].name // empty' 2>/dev/null) || true
+  CREATED_AT=$(echo "$RESPONSE" | jq -r '.[0].created_at // empty' 2>/dev/null) || true
 
   if [[ -n "$DIGEST" && "$DIGEST" != "null" && "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
-    break
+    # Validate freshness: fail closed — reject if timestamp is absent or predates the expected push window
+    if [[ -z "$CREATED_AT" || "$CREATED_AT" < "$PUSHED_AFTER" ]]; then
+      echo "::warning::Digest for ${SERVICE} was created at ${CREATED_AT:-unknown}, outside the expected push window (${PUSHED_AFTER}); retrying..." >&2
+      DIGEST=""
+    else
+      break
+    fi
+  else
+    DIGEST=""
   fi
-
-  DIGEST=""
 
   if [[ "$ATTEMPT" -lt "$MAX_ATTEMPTS" ]]; then
     echo "Digest for ${SERVICE} not available yet (attempt ${ATTEMPT}/${MAX_ATTEMPTS}); retrying in ${SLEEP_SECONDS}s..."

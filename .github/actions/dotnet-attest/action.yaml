@@ -16,6 +16,9 @@ inputs:
   token:
     description: "GitHub token for Packages API authentication"
     required: true
+  pushed-after:
+    description: "ISO 8601 UTC timestamp; the digest must have been created at or after this time (prevents TOCTOU). Defaults to 60 minutes ago."
+    required: false
 
 runs:
   using: "composite"
@@ -34,6 +37,7 @@ runs:
         GH_TOKEN: ${{ inputs.token }}
         SERVICE: ${{ inputs.service }}
         REPOSITORY: ${{ inputs.repository }}
+        PUSHED_AFTER: ${{ inputs.pushed-after }}
       run: bash "${GITHUB_ACTION_PATH}/scripts/get-digest.sh"
 
     - name: Attest build provenance

@@ -86,17 +86,35 @@ jobs:
     secrets:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
 
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4.9.0
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: always
+          warn-only: false
+
   status:
     name: PR Status
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [changes, backend, frontend]
+    needs: [changes, backend, frontend, dependency-review]
     if: ${{ !cancelled() }}
     permissions: {}
     steps:
       - name: Check results
         run: |
-          if [[ "${{ needs.backend.result }}" == "failure" || "${{ needs.frontend.result }}" == "failure" ]]; then
+          if [[ "${{ needs.backend.result }}" == "failure" || "${{ needs.frontend.result }}" == "failure" || "${{ needs.dependency-review.result }}" == "failure" ]]; then
             echo "::error::One or more CI pipelines failed"
             exit 1
           fi
