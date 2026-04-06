@@ -137,51 +137,15 @@ jobs:
           - finance
           - scheduler
     steps:
-      - name: Normalize repository name
-        id: repo
-        run: echo "repository=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
-
-      - name: Get image digest
-        id: digest
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2 | tr '[:upper:]' '[:lower:]')
-          PACKAGE="${REPO_NAME}/${{ matrix.service }}"
-          ENCODED_PACKAGE=$(echo "$PACKAGE" | sed 's|/|%2F|g')
-          OWNER="${{ github.repository_owner }}"
-
-          MAX_ATTEMPTS=5
-          SLEEP_SECONDS=2
-          DIGEST=""
-
-          for ATTEMPT in $(seq 1 "$MAX_ATTEMPTS"); do
-            DIGEST=$(gh api "/users/${OWNER}/packages/container/${ENCODED_PACKAGE}/versions?per_page=1" \
-              --jq '.[0].name' 2>/dev/null) || \
-            DIGEST=$(gh api "/orgs/${OWNER}/packages/container/${ENCODED_PACKAGE}/versions?per_page=1" \
-              --jq '.[0].name' 2>/dev/null) || true
-
-            if [[ -n "$DIGEST" && "$DIGEST" != "null" ]]; then
-              break
-            fi
-
-            if [[ "$ATTEMPT" -lt "$MAX_ATTEMPTS" ]]; then
-              echo "Digest for ${{ matrix.service }} not available yet (attempt ${ATTEMPT}/${MAX_ATTEMPTS}); retrying in ${SLEEP_SECONDS}s..."
-              sleep "$SLEEP_SECONDS"
-              SLEEP_SECONDS=$((SLEEP_SECONDS + 2))
-            fi
-          done
-
-          if [[ -z "$DIGEST" || "$DIGEST" == "null" ]]; then
-            echo "::error::Failed to get digest for ${{ matrix.service }} after ${MAX_ATTEMPTS} attempts"
-            exit 1
-          fi
-
-          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
-
-      - name: Attest build provenance
-        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          subject-name: ghcr.io/${{ steps.repo.outputs.repository }}/${{ matrix.service }}
-          subject-digest: ${{ steps.digest.outputs.digest }}
-          push-to-registry: true
+          sparse-checkout: .github/actions/dotnet-attest
+          fetch-depth: 1
+
+      - name: Attest container image
+        uses: ./.github/actions/dotnet-attest
+        with:
+          service: ${{ matrix.service }}
+          repository: ${{ github.repository }}
+          token: ${{ github.token }}

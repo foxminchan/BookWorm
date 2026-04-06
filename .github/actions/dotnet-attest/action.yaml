@@ -1,0 +1,42 @@
+name: "Attest .NET Container Image"
+description: "Queries the image digest from GitHub Packages and generates SLSA build provenance attestation for a container image"
+author: "BookWorm Team"
+
+branding:
+  icon: "shield"
+  color: "blue"
+
+inputs:
+  service:
+    description: "Service name to attest (e.g., 'catalog', 'ordering')"
+    required: true
+  repository:
+    description: "Full GitHub repository name (e.g., 'owner/repo')"
+    required: true
+  token:
+    description: "GitHub token for Packages API authentication"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Normalize repository name
+      id: repo
+      shell: bash
+      run: echo "repository=$(echo '${{ inputs.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+    - name: Get image digest
+      id: digest
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        SERVICE: ${{ inputs.service }}
+        REPOSITORY: ${{ inputs.repository }}
+      run: bash "${GITHUB_ACTION_PATH}/scripts/get-digest.sh"
+
+    - name: Attest build provenance
+      uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
+      with:
+        subject-name: ghcr.io/${{ steps.repo.outputs.repository }}/${{ inputs.service }}
+        subject-digest: ${{ steps.digest.outputs.digest }}
+        push-to-registry: true
