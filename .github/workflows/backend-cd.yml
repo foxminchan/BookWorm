@@ -1,5 +1,5 @@
-name: BookWorm CD (.NET)
-run-name: .NET CD - ${{ github.event_name }} by ${{ github.actor }}
+name: BookWorm CD (Backend)
+run-name: Backend CD - ${{ github.event_name }} by ${{ github.actor }}
 
 on:
   workflow_dispatch:

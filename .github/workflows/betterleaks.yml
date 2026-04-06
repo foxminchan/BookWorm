@@ -1,0 +1,51 @@
+name: Betterleaks Secret Scan
+run-name: Betterleaks Secret Scan - ${{ github.event_name }} by ${{ github.actor }}
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly scan to catch newly committed secrets
+    # Runs every Tuesday at 10:00 AM Asia/Ho_Chi_Minh (UTC+7)
+    - cron: "0 3 * * 2"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  secret-scan:
+    name: Secret Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Run Betterleaks secret scanner
+        env:
+          BETTERLEAKS_VERSION: v1.1.1
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/src" \
+            -e GIT_CONFIG_COUNT=1 \
+            -e GIT_CONFIG_KEY_0=safe.directory \
+            -e GIT_CONFIG_VALUE_0=/src \
+            "ghcr.io/betterleaks/betterleaks:${BETTERLEAKS_VERSION}" \
+            git --no-banner --no-color --gitleaks-ignore-path /src/.betterleaksignore --report-path /src/betterleaks-results.sarif --report-format sarif /src
+
+      - name: Upload SARIF results
+        if: ${{ !cancelled() }}
+        uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
+        with:
+          sarif_file: betterleaks-results.sarif
+          category: betterleaks-secret-scan

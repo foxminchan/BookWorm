@@ -38,7 +38,7 @@ jobs:
       contents: read
       pull-requests: read
     outputs:
-      dotnet: ${{ steps.detect.outputs.dotnet }}
+      backend: ${{ steps.detect.outputs.backend }}
       frontend: ${{ steps.detect.outputs.frontend }}
     steps:
       - name: Detect changed paths
@@ -47,25 +47,25 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           CHANGED=$(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files --paginate --jq '.[].filename')
-          dotnet=false
+          backend=false
           frontend=false
 
           while IFS= read -r file; do
             case "$file" in
               src/Clients/*) frontend=true ;;
-              .github/workflows/*|.github/actions/*) dotnet=true; frontend=true ;;
-              src/*|tests/*|Directory.*|global.json|Versions.props|.config/*|BookWorm.slnx) dotnet=true ;;
+              .github/workflows/*|.github/actions/*) backend=true; frontend=true ;;
+              src/*|tests/*|Directory.*|global.json|Versions.props|.config/*|BookWorm.slnx) backend=true ;;
             esac
           done <<< "$CHANGED"
 
-          echo "dotnet=$dotnet" >> "$GITHUB_OUTPUT"
+          echo "backend=$backend" >> "$GITHUB_OUTPUT"
           echo "frontend=$frontend" >> "$GITHUB_OUTPUT"
 
-  dotnet:
-    name: .NET CI
+  backend:
+    name: Backend CI
     needs: changes
-    if: needs.changes.outputs.dotnet == 'true'
-    uses: ./.github/workflows/dotnet-shared.yml
+    if: needs.changes.outputs.backend == 'true'
+    uses: ./.github/workflows/backend-shared.yml
     permissions:
       contents: read
       security-events: write
@@ -90,13 +90,13 @@ jobs:
     name: PR Status
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [changes, dotnet, frontend]
+    needs: [changes, backend, frontend]
     if: ${{ !cancelled() }}
     permissions: {}
     steps:
       - name: Check results
         run: |
-          if [[ "${{ needs.dotnet.result }}" == "failure" || "${{ needs.frontend.result }}" == "failure" ]]; then
+          if [[ "${{ needs.backend.result }}" == "failure" || "${{ needs.frontend.result }}" == "failure" ]]; then
             echo "::error::One or more CI pipelines failed"
             exit 1
           fi

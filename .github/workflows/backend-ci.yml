@@ -1,5 +1,5 @@
-name: BookWorm CI (.NET)
-run-name: .NET CI - ${{ github.event_name }} by ${{ github.actor }}
+name: BookWorm CI (Backend)
+run-name: Backend CI - ${{ github.event_name }} by ${{ github.actor }}
 
 on:
   push:
@@ -10,8 +10,8 @@ on:
       - "tests/**"
       # CI/CD configuration
       - ".github/actions/**"
-      - ".github/workflows/dotnet-ci.yml"
-      - ".github/workflows/dotnet-shared.yml"
+      - ".github/workflows/backend-ci.yml"
+      - ".github/workflows/backend-shared.yml"
       # Build configuration
       - ".config/dotnet-tools.json"
       - "BookWorm.slnx"
@@ -51,7 +51,7 @@ concurrency:
 jobs:
   ci:
     name: CI Pipeline
-    uses: ./.github/workflows/dotnet-shared.yml
+    uses: ./.github/workflows/backend-shared.yml
     permissions:
       contents: read
       security-events: write
