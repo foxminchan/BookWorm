@@ -64,6 +64,7 @@ jobs:
       contents: write
       packages: write
       id-token: write
+      attestations: write
 
     steps:
       - name: Checkout code
@@ -113,3 +114,59 @@ jobs:
         uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.1.0
         with:
           event-type: backend-container-images-published
+
+  attest-backend:
+    name: Attest ${{ matrix.service }}
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true'
+    needs: [publish]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      attestations: write
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - catalog
+          - mcptools
+          - basket
+          - ordering
+          - chatting
+          - rating
+          - notification
+          - finance
+          - scheduler
+    steps:
+      - name: Normalize repository name
+        id: repo
+        run: echo "repository=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      - name: Get image digest
+        id: digest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2 | tr '[:upper:]' '[:lower:]')
+          PACKAGE="${REPO_NAME}/${{ matrix.service }}"
+          ENCODED_PACKAGE=$(echo "$PACKAGE" | sed 's|/|%2F|g')
+          OWNER="${{ github.repository_owner }}"
+
+          DIGEST=$(gh api "/users/${OWNER}/packages/container/${ENCODED_PACKAGE}/versions?per_page=1" \
+            --jq '.[0].name' 2>/dev/null) || \
+          DIGEST=$(gh api "/orgs/${OWNER}/packages/container/${ENCODED_PACKAGE}/versions?per_page=1" \
+            --jq '.[0].name')
+
+          if [[ -z "$DIGEST" || "$DIGEST" == "null" ]]; then
+            echo "::error::Failed to get digest for ${{ matrix.service }}"
+            exit 1
+          fi
+
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
+        with:
+          subject-name: ghcr.io/${{ steps.repo.outputs.repository }}/${{ matrix.service }}
+          subject-digest: ${{ steps.digest.outputs.digest }}
+          push-to-registry: true
