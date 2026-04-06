@@ -64,7 +64,6 @@ jobs:
       contents: write
       packages: write
       id-token: write
-      attestations: write
 
     steps:
       - name: Checkout code
@@ -152,13 +151,29 @@ jobs:
           ENCODED_PACKAGE=$(echo "$PACKAGE" | sed 's|/|%2F|g')
           OWNER="${{ github.repository_owner }}"
 
-          DIGEST=$(gh api "/users/${OWNER}/packages/container/${ENCODED_PACKAGE}/versions?per_page=1" \
-            --jq '.[0].name' 2>/dev/null) || \
-          DIGEST=$(gh api "/orgs/${OWNER}/packages/container/${ENCODED_PACKAGE}/versions?per_page=1" \
-            --jq '.[0].name')
+          MAX_ATTEMPTS=5
+          SLEEP_SECONDS=2
+          DIGEST=""
+
+          for ATTEMPT in $(seq 1 "$MAX_ATTEMPTS"); do
+            DIGEST=$(gh api "/users/${OWNER}/packages/container/${ENCODED_PACKAGE}/versions?per_page=1" \
+              --jq '.[0].name' 2>/dev/null) || \
+            DIGEST=$(gh api "/orgs/${OWNER}/packages/container/${ENCODED_PACKAGE}/versions?per_page=1" \
+              --jq '.[0].name' 2>/dev/null) || true
+
+            if [[ -n "$DIGEST" && "$DIGEST" != "null" ]]; then
+              break
+            fi
+
+            if [[ "$ATTEMPT" -lt "$MAX_ATTEMPTS" ]]; then
+              echo "Digest for ${{ matrix.service }} not available yet (attempt ${ATTEMPT}/${MAX_ATTEMPTS}); retrying in ${SLEEP_SECONDS}s..."
+              sleep "$SLEEP_SECONDS"
+              SLEEP_SECONDS=$((SLEEP_SECONDS + 2))
+            fi
+          done
 
           if [[ -z "$DIGEST" || "$DIGEST" == "null" ]]; then
-            echo "::error::Failed to get digest for ${{ matrix.service }}"
+            echo "::error::Failed to get digest for ${{ matrix.service }} after ${MAX_ATTEMPTS} attempts"
             exit 1
           fi
 
