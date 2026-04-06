@@ -39,7 +39,7 @@ for ATTEMPT in $(seq 1 "$MAX_ATTEMPTS"); do
 done
 
 if [[ -z "$DIGEST" || ! "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
-  echo "::error::Failed to get valid digest for ${SERVICE} after ${MAX_ATTEMPTS} attempts"
+  echo "::error::Failed to get valid digest for ${SERVICE} after ${MAX_ATTEMPTS} attempts" >&2
   exit 1
 fi
 
