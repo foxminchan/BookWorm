@@ -2,10 +2,6 @@ name: BookWorm CD (.NET)
 run-name: .NET CD - ${{ github.event_name }} by ${{ github.actor }}
 
 on:
-  workflow_run:
-    workflows: ["BookWorm CI (.NET)"]
-    types: [completed]
-    branches: [main]
   workflow_dispatch:
     inputs:
       environment:
@@ -31,16 +27,13 @@ permissions:
 
 jobs:
   aspire_deploy:
-    if: >-
-      (github.event_name == 'workflow_dispatch') ||
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     name: Deploy BookWorm to ACA from GHCR
     permissions:
       id-token: write
       contents: read
       packages: read
-    environment: ${{ github.event.inputs.environment || 'development' }}
+    environment: ${{ github.event.inputs.environment }}
     timeout-minutes: 30
     steps:
       - name: Checkout code
@@ -82,7 +75,7 @@ jobs:
       - name: Deploy with Aspire
         run: |
           aspire deploy \
-            --environment ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'development' }}
+            --environment ${{ github.event.inputs.environment }}
         env:
           DOTNET_CLI_TELEMETRY_OPTOUT: 1
           DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
@@ -106,5 +99,5 @@ jobs:
           Parameters__sendgrid_api_key: ${{ secrets.SENDGRID_API_KEY }}
           Parameters__sendgrid_email: ${{ secrets.SENDGRID_EMAIL }}
           Parameters__sendgrid_sender_name: ${{ secrets.SENDGRID_SENDER_NAME }}
-          Parameters__storefront_url: ${{ github.event.inputs.storefront_url || secrets.STOREFRONT_URL || '' }}
-          Parameters__backoffice_url: ${{ github.event.inputs.backoffice_url || secrets.BACKOFFICE_URL || '' }}
+          Parameters__storefront_url: ${{ github.event.inputs.storefront_url || secrets.STOREFRONT_URL }}
+          Parameters__backoffice_url: ${{ github.event.inputs.backoffice_url || secrets.BACKOFFICE_URL }}
