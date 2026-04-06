@@ -5,6 +5,11 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - "**/*.txt"
   schedule:
     # Runs every Wednesday at 10:00 AM Asia/Ho_Chi_Minh (UTC+7)
     - cron: "0 3 * * 3"
@@ -20,7 +25,7 @@ env:
 
 jobs:
   analyze:
-    name: Analyze (${{ matrix.language }})
+    name: Analyze
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -31,7 +36,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: ["csharp", "javascript"]
+        include:
+          - language: csharp
+            build-mode: manual
+          - language: javascript-typescript
+            build-mode: none
 
     steps:
       - name: Checkout code
@@ -43,16 +52,18 @@ jobs:
         uses: github/codeql-action/init@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
         with:
           languages: ${{ matrix.language }}
-          build-mode: ${{ matrix.language == 'csharp' && 'manual' || 'none' }}
+          build-mode: ${{ matrix.build-mode }}
+          queries: security-extended
+          dependency-caching: true
 
       - name: Setup .NET
-        if: matrix.language == 'csharp'
+        if: matrix.build-mode == 'manual'
         uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
 
       - name: Cache NuGet Packages
-        if: matrix.language == 'csharp'
+        if: matrix.build-mode == 'manual'
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: ~/.nuget/packages
@@ -61,7 +72,7 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Build .NET solution
-        if: matrix.language == 'csharp'
+        if: matrix.build-mode == 'manual'
         run: >
           dotnet build
           --configuration Release

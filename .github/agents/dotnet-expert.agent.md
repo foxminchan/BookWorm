@@ -11,7 +11,8 @@ tools:
   - "search"
   - "search/usages"
   - "context7/*"
-model: Claude Opus 4.6 (copilot)
+model:
+  ["Claude Opus 4.6 (copilot)", "GPT-5.3-Codex", "Claude Sonnet 4.6 (copilot)"]
 handoffs:
   - label: Request Code Review
     agent: Code Reviewer

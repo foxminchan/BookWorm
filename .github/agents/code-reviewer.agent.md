@@ -6,7 +6,13 @@ tools:
   - "web/githubRepo"
   - "search"
   - "search/usages"
-model: Claude Opus 4.6 (copilot)
+model:
+  [
+    "GPT-5.3-Codex",
+    "Claude Sonnet 4.6 (copilot)",
+    "Claude Opus 4.6 (copilot)",
+    "Claude Haiku 4.5 (copilot)",
+  ]
 handoffs:
   - label: Fix .NET Issues
     agent: .NET Expert
@@ -15,6 +21,10 @@ handoffs:
   - label: Fix Frontend Issues
     agent: Next.js Expert
     prompt: Please address the frontend issues identified in the code review above.
+    send: false
+  - label: Fix GitHub Actions Issues
+    agent: GitHub Actions Expert
+    prompt: Please address the GitHub Actions issues identified in the code review above.
     send: false
   - label: Debug a Problem
     agent: Debug

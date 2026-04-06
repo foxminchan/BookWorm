@@ -7,7 +7,8 @@ tools:
   - "web/githubRepo"
   - "search"
   - "search/usages"
-model: GPT-5.2-Codex (copilot)
+model:
+  ["GPT-5.3-Codex", "Claude Opus 4.6 (copilot)", "Claude Sonnet 4.6 (copilot)"]
 handoffs:
   - label: Implement (.NET)
     agent: .NET Expert

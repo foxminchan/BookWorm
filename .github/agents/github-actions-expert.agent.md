@@ -9,6 +9,8 @@ tools:
   - "execute/getTerminalOutput"
   - "search"
   - "web/githubRepo"
+model:
+  ["Claude Sonnet 4.6 (copilot)", "Claude Opus 4.6 (copilot)", "GPT-5.3-Codex"]
 handoffs:
   - label: Review Workflow Changes
     agent: Code Reviewer

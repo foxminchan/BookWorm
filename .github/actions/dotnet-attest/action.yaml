@@ -23,7 +23,9 @@ runs:
     - name: Normalize repository name
       id: repo
       shell: bash
-      run: echo "repository=$(echo '${{ inputs.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+      env:
+        REPOSITORY: ${{ inputs.repository }}
+      run: echo "repository=$(echo "$REPOSITORY" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
 
     - name: Get image digest
       id: digest

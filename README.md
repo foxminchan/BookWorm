@@ -2,8 +2,8 @@
 
 # BookWorm
 
-[![BookWorm CI (.NET)](https://github.com/foxminchan/BookWorm/actions/workflows/dotnet-ci.yml/badge.svg?branch=main)](https://github.com/foxminchan/BookWorm/actions/workflows/dotnet-ci.yml)
-[![BookWorm CI (Frontend)](https://github.com/foxminchan/BookWorm/actions/workflows/frontend-ci.yml/badge.svg?branch=main)](https://github.com/foxminchan/BookWorm/actions/workflows/frontend-ci.yml)
+[![BookWorm CI (Backend)](https://github.com/foxminchan/BookWorm/actions/workflows/backend-ci.yml/badge.svg?event=push)](https://github.com/foxminchan/BookWorm/actions/workflows/backend-ci.yml)
+[![BookWorm CI (Frontend)](https://github.com/foxminchan/BookWorm/actions/workflows/frontend-ci.yml/badge.svg?branch=main&event=push)](https://github.com/foxminchan/BookWorm/actions/workflows/frontend-ci.yml)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=coverage)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
 [![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=foxminchan_BookWorm&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=foxminchan_BookWorm)
 

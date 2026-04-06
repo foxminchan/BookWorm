@@ -90,7 +90,7 @@ jobs:
           category: trivy-misconfig-scan
 
   container-scan:
-    name: Container Scan (${{ matrix.image }})
+    name: Container Scan
     if: github.event_name == 'repository_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -115,7 +115,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ github.token }}
 
-      - name: Run Trivy container scanner
+      - name: Run Trivy scanner for ${{ matrix.image }}
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
           scan-type: "image"
