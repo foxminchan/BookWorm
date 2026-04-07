@@ -13,6 +13,7 @@ internal static partial class AzureExtensions
     ///     Provisions an Azure Storage resource with BookWorm-specific configuration.
     /// </summary>
     /// <param name="builder">The resource builder for Azure Storage.</param>
+    /// <param name="origins">The CORS origin URL parameter resource builders. When empty, all origins (<c>*</c>) are allowed.</param>
     /// <returns>The configured resource builder for method chaining.</returns>
     /// <remarks>
     ///     This method configures the Azure Storage resource with:
@@ -26,10 +27,14 @@ internal static partial class AzureExtensions
     ///         <item>
     ///             <description>Cool access tier for cost optimization</description>
     ///         </item>
+    ///         <item>
+    ///             <description>CORS origins from deployment parameters</description>
+    ///         </item>
     ///     </list>
     /// </remarks>
     public static IResourceBuilder<AzureStorageResource> ProvisionAsService(
-        this IResourceBuilder<AzureStorageResource> builder
+        this IResourceBuilder<AzureStorageResource> builder,
+        params IResourceBuilder<ParameterResource>[] origins
     )
     {
         builder.ConfigureInfrastructure(infra =>
@@ -50,27 +55,36 @@ internal static partial class AzureExtensions
 
             resource.AccessTier = StorageAccountAccessTier.Cool;
 
+            var corsRule = new StorageCorsRule
+            {
+                AllowedMethods =
+                [
+                    CorsRuleAllowedMethod.Get,
+                    CorsRuleAllowedMethod.Head,
+                    CorsRuleAllowedMethod.Post,
+                    CorsRuleAllowedMethod.Options,
+                ],
+                AllowedHeaders = ["*"],
+                ExposedHeaders = ["*"],
+                MaxAgeInSeconds = 3600,
+            };
+
+            if (origins.Length > 0)
+            {
+                foreach (var origin in origins)
+                {
+                    corsRule.AllowedOrigins.Add(origin.AsProvisioningParameter(infra));
+                }
+            }
+            else
+            {
+                corsRule.AllowedOrigins = ["*"];
+            }
+
             var blobService = new BlobService(nameof(BlobService).ToLowerInvariant())
             {
                 Parent = resource,
-                CorsRules =
-                [
-                    new StorageCorsRule
-                    {
-                        AllowedMethods =
-                        [
-                            CorsRuleAllowedMethod.Get,
-                            CorsRuleAllowedMethod.Head,
-                            CorsRuleAllowedMethod.Post,
-                            CorsRuleAllowedMethod.Options,
-                        ],
-                        // Allow all origins for simplicity; in real scenarios read from parameters or configuration
-                        AllowedOrigins = ["*"],
-                        AllowedHeaders = ["*"],
-                        ExposedHeaders = ["*"],
-                        MaxAgeInSeconds = 3600,
-                    },
-                ],
+                CorsRules = [corsRule],
             };
 
             infra.Add(blobService);

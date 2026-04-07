@@ -37,10 +37,11 @@ If there is already an instance of the application running it will prompt to sto
 - `src/Clients/`: Frontend applications (Next.js 16 Turbo monorepo)
   - `apps/storefront/`: Customer-facing storefront
   - `apps/backoffice/`: Admin dashboard
-  - `packages/`: Shared packages (api-client, api-hooks, ui, types, validations, utils, mocks, eslint-config, typescript-config)
+  - `packages/`: Shared packages (api-client, api-hooks, eslint-config, mocks, types, typescript-config, ui, utils, validations)
 - `src/Services/`: Individual microservices (Catalog, Ordering, Basket, Rating, Chat, Finance, Notification, Scheduler, McpTools)
-- `src/Integrations/`: Integration components (HealthChecksUI, Presidio)
+- `src/Integrations/`: Integration components (Presidio PII detection/redaction)
 - `tests/`: Cross-cutting test projects (architecture tests)
+- `specs/`: Feature specifications (e.g., migration plans)
 - `docs/`: Documentation (EventCatalog, Docusaurus)
 
 ## Key Code Patterns

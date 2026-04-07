@@ -1,16 +1,8 @@
 name: "Copilot Setup Steps"
 run-name: "Run Copilot Setup Steps"
 
-# Automatically run the setup steps when they are changed to allow for easy validation, and
-# allow manual testing through the repository's "Actions" tab
-on:
-  workflow_dispatch:
-  push:
-    paths:
-      - .github/workflows/copilot-setup-steps.yml
-  pull_request:
-    paths:
-      - .github/workflows/copilot-setup-steps.yml
+# Allow testing of the setup steps from your repository's "Actions" tab.
+on: workflow_dispatch
 
 env:
   GLOBAL_JSON_PATH: ${{ github.workspace }}/global.json
@@ -20,7 +12,6 @@ jobs:
   # The job MUST be called `copilot-setup-steps` or it will not be picked up by Copilot.
   copilot-setup-steps:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
 
     # Set the permissions to the lowest permissions possible needed for your steps.
     # Copilot will be given its own token for its operations.

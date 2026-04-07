@@ -35,8 +35,7 @@ var queue = builder
 var storage = builder
     .AddAzureStorage(Components.Azure.Storage.Resource)
     .WithIconName("DatabasePlugConnected")
-    .RunAsLocalContainer()
-    .ProvisionAsService();
+    .RunAsLocalContainer();
 
 var catalogContainer = storage
     .AddBlobContainer(Components.Azure.Storage.BlobContainer(Services.Catalog))
@@ -248,6 +247,8 @@ if (builder.ExecutionContext.IsRunMode)
 else
 {
     var (storefrontUrl, backofficeUrl) = builder.AddCorsOriginParameters();
+
+    storage.ProvisionAsService(storefrontUrl, backofficeUrl);
 
     catalogApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
     basketApi.WithCorsOrigins(storefrontUrl, backofficeUrl);

@@ -6,13 +6,14 @@ BookWorm is a .NET 10 microservices bookstore using Aspire orchestration, DDD wi
 
 ## Tech Stack
 
-- **Backend**: C# 14 (`LangVersion=preview`), ASP.NET Core Minimal APIs, EF Core + PostgreSQL (snake_case)
-- **Frontend**: TypeScript 5.7+, Next.js 16, React 19, pnpm + Turbo monorepo
+- **Backend**: C# 14 (`LangVersion=preview`), .NET 10, ASP.NET Core Minimal APIs, EF Core 10 + PostgreSQL (snake_case)
+- **Frontend**: TypeScript 6.0, Next.js 16.2, React 19, pnpm 10 + Turbo 2 monorepo (Node >= 25)
 - **CQRS**: `Mediator.SourceGenerator` (source generator-based, NOT MediatR) — uses `ICommand<T>`/`IQuery<T>` and `ICommandHandler`/`IQueryHandler`
 - **Testing**: TUnit, Moq, Bogus, Shouldly, Verify.TUnit
 - **Messaging**: MassTransit with Kafka (outbox/inbox patterns)
-- **AI**: Microsoft Agents AI Framework, Semantic Kernel, MCP server
-- **Auth**: Keycloak with token introspection
+- **AI**: Microsoft Agents AI Framework (incl. A2A), Semantic Kernel, MCP server, CopilotKit (storefront)
+- **Auth**: Keycloak with token introspection + Keycloakify theme
+- **Gateway**: YARP reverse proxy (Aspire-hosted, routes all service traffic)
 
 ## Services
 
@@ -80,5 +81,8 @@ Features live in `Features/{FeatureName}/` per service. Each feature folder cont
 - Services: `src/Services/{Name}/BookWorm.{Name}/`
 - Frontend: `src/Clients/` (Turbo monorepo with `apps/` and `packages/`)
 - Shared: `src/BuildingBlocks/` (Chassis, Constants, SharedKernel)
-- Tests: `tests/` (architecture tests), `src/Services/{Name}/BookWorm.{Name}.UnitTests/`
+- Integrations: `src/Integrations/` (Presidio PII detection/redaction)
+- Gateway: YARP reverse proxy defined in `src/Aspire/BookWorm.AppHost/Extensions/Network/ProxyExtensions.cs`
+- Tests: `tests/` (architecture tests, AI evaluation), `src/Services/{Name}/BookWorm.{Name}.UnitTests/`
+- Specs: `specs/` (feature specifications)
 - Docs: `docs/docusaurus/` (architecture), `docs/eventcatalog/` (event schemas)
