@@ -1,11 +1,11 @@
 name: BookWorm Clean Up
-run-name: Delete untagged package versions
+run-name: Clean up old package versions
 
 on:
   workflow_dispatch:
   schedule:
-    # Runs bi-weekly on Monday at 10:00 AM Asia/Ho_Chi_Minh (UTC+7)
-    - cron: "0 3 1-7,15-21 * 1"
+    # Runs weekly on Monday at 00:00 Asia/Ho_Chi_Minh (Sunday 17:00 UTC)
+    - cron: "0 17 * * 0"
 
 permissions: {}
 
@@ -15,12 +15,13 @@ concurrency:
 
 jobs:
   delete-package-versions:
-    name: Delete untagged package versions
+    name: Delete old package versions
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       packages: write
     strategy:
+      fail-fast: false
       max-parallel: 5
       matrix:
         image:
@@ -36,12 +37,48 @@ jobs:
           - bookworm/storefront
           - bookworm/backoffice
     steps:
-      - uses: snok/container-retention-policy@3b0972b2276b171b212f8c4efbca59ebba26eceb # v3.0.1
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Fetch multi-arch digests
+        id: multi-arch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          IMAGE: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
+          PACKAGE: ${{ matrix.image }}
+          OWNER: ${{ github.repository_owner }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          encoded="${PACKAGE//\//%2F}"
+
+          tags=$(gh api --paginate \
+            -H "Accept: application/vnd.github+json" \
+            "/users/${OWNER}/packages/container/${encoded}/versions" \
+            --jq '.[].metadata.container.tags[]' 2>/dev/null || true)
+
+          all_shas=""
+          for tag in $tags; do
+            shas=$(docker manifest inspect "${IMAGE}:${tag}" 2>/dev/null \
+              | jq -r '.manifests[]?.digest // empty' 2>/dev/null || true)
+            for sha in $shas; do
+              all_shas="${all_shas:+${all_shas},}${sha}"
+            done
+          done
+
+          echo "shas=${all_shas}" >> "$GITHUB_OUTPUT"
+
+      - name: Delete old package versions
+        uses: snok/container-retention-policy@3b0972b2276b171b212f8c4efbca59ebba26eceb # v3.0.1
         with:
           account: user
           token: ${{ github.token }}
           image-names: ${{ matrix.image }}
-          tag-selection: untagged
-          timestamp-to-use: created_at
-          cut-off: 1w
-          keep-n-most-recent: 3
+          tag-selection: both
+          cut-off: 2w
+          keep-n-most-recent: 5
+          skip-shas: ${{ steps.multi-arch.outputs.shas }}
