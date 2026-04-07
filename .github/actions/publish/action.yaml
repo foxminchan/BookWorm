@@ -60,7 +60,6 @@ runs:
         INPUT_REPOSITORY: ${{ inputs.repository }}
 
     - name: Push to GitHub Container Registry
-      if: github.ref_type == 'tag'
       shell: bash
       run: aspire do push ${{ inputs.enable-debug-logging == 'true' && '--log-level debug' || '' }}
       env:
