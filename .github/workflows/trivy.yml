@@ -102,6 +102,7 @@ jobs:
       attestations: write
     strategy:
       fail-fast: false
+      max-parallel: 5
       matrix:
         image: ${{ fromJson(github.event.action == 'backend-container-images-published' && '["bookworm/basket","bookworm/catalog","bookworm/chatting","bookworm/finance","bookworm/mcptools","bookworm/notification","bookworm/ordering","bookworm/rating","bookworm/scheduler"]' || '["bookworm/storefront","bookworm/backoffice"]') }}
     steps:
@@ -136,6 +137,11 @@ jobs:
           output: "trivy-image-results.sarif"
           severity: "CRITICAL,HIGH,MEDIUM"
 
+      - name: Create filesystem-safe image slug
+        id: image-slug
+        run: |
+          echo "value=${{ matrix.image }}" | sed 's|/|-|g' >> "$GITHUB_OUTPUT"
+
       - name: Upload container scan results
         if: ${{ !cancelled() }}
         uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
@@ -149,14 +155,14 @@ jobs:
           scan-type: "image"
           image-ref: ${{ steps.image-digest.outputs.image_ref }}
           format: "cyclonedx"
-          output: "sbom-${{ matrix.image }}.cyclonedx.json"
+          output: "sbom-${{ steps.image-slug.outputs.value }}.cyclonedx.json"
 
       - name: Attest SBOM for ${{ matrix.image }}
         uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
         with:
           subject-name: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
           subject-digest: ${{ steps.image-digest.outputs.digest }}
-          sbom-path: "sbom-${{ matrix.image }}.cyclonedx.json"
+          sbom-path: "sbom-${{ steps.image-slug.outputs.value }}.cyclonedx.json"
           push-to-registry: true
 
       - name: Upload SBOM for ${{ matrix.image }}
@@ -164,7 +170,7 @@ jobs:
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: sbom-${{ matrix.image }}
-          path: "sbom-${{ matrix.image }}.cyclonedx.json"
+          path: "sbom-${{ steps.image-slug.outputs.value }}.cyclonedx.json"
           retention-days: 7
 
   sbom:

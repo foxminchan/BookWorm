@@ -21,6 +21,7 @@ jobs:
     permissions:
       packages: write
     strategy:
+      max-parallel: 5
       matrix:
         image:
           - bookworm/basket
