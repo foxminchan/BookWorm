@@ -7,12 +7,16 @@ BookWorm is a .NET 10 microservices bookstore using Aspire orchestration, DDD wi
 ## Tech Stack
 
 - **Backend**: C# 14 (`LangVersion=preview`), ASP.NET Core Minimal APIs, EF Core + PostgreSQL (snake_case)
-- **Frontend**: TypeScript 5.7+, Next.js 16, React 19, pnpm + Turbo monorepo
+- **Frontend**: TypeScript 6.0, Next.js 16, React 19, pnpm + Turbo monorepo (Node.js ≥25)
 - **CQRS**: `Mediator.SourceGenerator` (source generator-based, NOT MediatR) — uses `ICommand<T>`/`IQuery<T>` and `ICommandHandler`/`IQueryHandler`
-- **Testing**: TUnit, Moq, Bogus, Shouldly, Verify.TUnit
+- **Testing (backend)**: TUnit, Moq, Bogus, Shouldly, Verify.TUnit
+- **Testing (frontend)**: Vitest (unit/coverage), Playwright BDD (E2E), Allure reporting
 - **Messaging**: MassTransit with Kafka (outbox/inbox patterns)
-- **AI**: Microsoft Agents AI Framework, Semantic Kernel, MCP server
+- **AI**: Microsoft Agents AI Framework, Semantic Kernel, MCP server, CopilotKit (storefront)
+- **Vector DB**: Qdrant for embedding-based search (Catalog, Rating)
+- **PII**: Presidio Analyzer + Anonymizer for PII detection/redaction
 - **Auth**: Keycloak with token introspection
+- **Gateway**: YARP reverse proxy
 
 ## Services
 
@@ -31,7 +35,7 @@ BookWorm is a .NET 10 microservices bookstore using Aspire orchestration, DDD wi
 ## Coding Standards
 
 - Use latest C# 14 features; never modify `global.json` or `NuGet.config` unless asked
-- Use `IEndpoint<TResult, TRequest>` pattern from BookWorm.Chassis for Minimal API endpoints
+- Use `IEndpoint` pattern (1–4 type params) from BookWorm.Chassis for Minimal API endpoints
 - Follow DDD aggregate boundaries; business logic belongs in the domain layer
 - Use `async`/`await` end-to-end with `CancellationToken` propagation
 - Prefer `var` when type is obvious; use pattern matching and switch expressions
@@ -46,15 +50,15 @@ BookWorm is a .NET 10 microservices bookstore using Aspire orchestration, DDD wi
 
 ### Endpoint Pattern (Minimal API)
 
-Implement `IEndpoint<TResult, TRequest>` from BookWorm.Chassis. Endpoints are sealed classes with `MapEndpoint()` for route registration and `HandleAsync()` that delegates to CQRS via `ISender`. Chain `.ProducesGet<T>()`, `.MapToApiVersion()`, `.RequireAuthorization()`.
+Implement `IEndpoint` from BookWorm.Chassis (1–4 type params: `IEndpoint<TResult>`, `IEndpoint<TResult, TRequest>`, `IEndpoint<TResult, TRequest, TService>`, etc.). Endpoints are `sealed` classes with `MapEndpoint()` for route registration and `HandleAsync()` that delegates to CQRS via `ISender`. Chain `.ProducesGet<T>()`, `.MapToApiVersion()`, `.RequireAuthorization()`.
 
 ### CQRS (Vertical Slice)
 
 Features live in `Features/{FeatureName}/` per service. Each feature folder contains:
 
-- Command/Query record implementing `ICommand<T>` or `IQuery<T>`
-- Handler class implementing `ICommandHandler` or `IQueryHandler`
-- Endpoint class implementing `IEndpoint`
+- Command/Query as `sealed record` implementing `ICommand<T>` or `IQuery<T>`
+- Handler as `internal sealed` class with primary constructor for DI; returns `ValueTask<T>`
+- Endpoint as `sealed` class implementing `IEndpoint`
 
 ### EF Core
 
@@ -80,5 +84,7 @@ Features live in `Features/{FeatureName}/` per service. Each feature folder cont
 - Services: `src/Services/{Name}/BookWorm.{Name}/`
 - Frontend: `src/Clients/` (Turbo monorepo with `apps/` and `packages/`)
 - Shared: `src/BuildingBlocks/` (Chassis, Constants, SharedKernel)
-- Tests: `tests/` (architecture tests), `src/Services/{Name}/BookWorm.{Name}.UnitTests/`
+- Integrations: `src/Integrations/` (HealthChecksUI, Presidio)
+- Tests: `tests/` (architecture tests, AI evaluation), `src/Services/{Name}/BookWorm.{Name}.UnitTests/`
+- Specs: `specs/` (feature specifications)
 - Docs: `docs/docusaurus/` (architecture), `docs/eventcatalog/` (event schemas)

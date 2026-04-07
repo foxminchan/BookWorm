@@ -23,7 +23,7 @@ If there is already an instance of the application running it will prompt to sto
 
 ## Local Development Flow
 
-1. **Prerequisites**: .NET SDK (per `global.json`), Node.js, Docker for AppHost resources.
+1. **Prerequisites**: .NET SDK (per `global.json`), Node.js ≥25, Docker for AppHost resources.
 2. **Restore & build**: `just restore` then `just build`, or `dotnet restore && dotnet build`.
 3. **Run the system**: Launch Aspire AppHost — inspect the dashboard URL from console output.
 4. **Frontend**: From `src/Clients/`: `pnpm i`, then `pnpm run dev`.
@@ -40,8 +40,9 @@ If there is already an instance of the application running it will prompt to sto
   - `packages/`: Shared packages (api-client, api-hooks, ui, types, validations, utils, mocks, eslint-config, typescript-config)
 - `src/Services/`: Individual microservices (Catalog, Ordering, Basket, Rating, Chat, Finance, Notification, Scheduler, McpTools)
 - `src/Integrations/`: Integration components (HealthChecksUI, Presidio)
-- `tests/`: Cross-cutting test projects (architecture tests)
+- `tests/`: Cross-cutting test projects (architecture tests, AI evaluation)
 - `docs/`: Documentation (EventCatalog, Docusaurus)
+- `specs/`: Feature specifications (e.g., migration plans)
 
 ## Key Code Patterns
 
@@ -50,9 +51,9 @@ If there is already an instance of the application running it will prompt to sto
 Features follow Vertical Slice Architecture. To add a feature to a service:
 
 1. Create `Features/{FeatureName}/` folder in the service project
-2. Add a command/query record implementing `ICommand<T>` or `IQuery<T>`
-3. Add a handler implementing `ICommandHandler<TCommand, TResult>` or `IQueryHandler<TQuery, TResult>`
-4. Add an endpoint class implementing `IEndpoint<TResult, TRequest>` with `MapEndpoint()` and `HandleAsync()`
+2. Add a command/query as `sealed record` implementing `ICommand<T>` or `IQuery<T>`
+3. Add an `internal sealed` handler with primary constructor for DI; returns `ValueTask<T>`
+4. Add an endpoint class implementing `IEndpoint` (1–4 type params) with `MapEndpoint()` and `HandleAsync()`
 5. The endpoint is auto-discovered — no manual route registration needed
 
 ### Adding a New Endpoint
@@ -83,11 +84,15 @@ public sealed class MyEndpoint : IEndpoint<Ok<MyResult>, MyRequest, ISender>
 - **Database**: Each service has its own PostgreSQL database, configured with snake_case naming and UUID v7 keys
 - **Events**: MassTransit with Kafka; use Outbox/Inbox for transactional consistency
 - **Caching**: HybridCache (distributed + local tiers)
+- **Vector DB**: Qdrant for embedding-based search (Catalog, Rating)
+- **PII**: Presidio Analyzer + Anonymizer for PII detection/redaction
 - **Auth**: Keycloak with token introspection; use `.RequireAuthorization()` on endpoints
+- **Gateway**: YARP reverse proxy
 - **API Versioning**: Asp.Versioning with `ApiVersions.V1`
 
 ## Common Pitfalls
 
+- **Handlers**: Must be `internal sealed` with primary constructors; return `ValueTask<T>` (not `Task<T>`).
 - **CQRS library**: Use `Mediator.SourceGenerator` (source-gen based), NOT MediatR. The interface names look similar but the packages differ.
 - **snake_case DB**: PostgreSQL columns/tables are snake_case via `UseSnakeCaseNamingConvention()`. Don't use PascalCase in raw SQL.
 - **Sealed classes**: All endpoints, handlers, tests, and DbContexts should be `sealed`.
