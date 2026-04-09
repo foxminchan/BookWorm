@@ -1,15 +1,14 @@
-ARG NODE_VERSION=25.0.0
-FROM node:${NODE_VERSION}-alpine AS base
+FROM node@sha256:bce79c648e05d584ad9ae2b45ed663ae6f07ebfa9e5fe6f5b7f0165aca06e792 AS base
 
 # Check https://github.com/nodejs/docker-node/tree/main#nodealpine to understand why libc6-compat might be needed
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN npm install -g --ignore-scripts pnpm@10.30.3
+RUN corepack enable && corepack prepare pnpm@10.30.3 --activate
 WORKDIR /app
 
 # ---
 FROM base AS prepare
-RUN pnpm install -g turbo@^2
+RUN pnpm install -g turbo@2.9.4
 COPY --chmod=555 . .
 # Generate a partial monorepo with a pruned lockfile for a target workspace
 # Assuming "@bookworm/storefront" is the name in the project's package.json
@@ -34,7 +33,7 @@ RUN --mount=type=secret,id=TURBO_TOKEN \
     pnpm turbo build --filter=@bookworm/storefront
 
 # ---
-FROM node:${NODE_VERSION}-alpine AS runner
+FROM node@sha256:bce79c648e05d584ad9ae2b45ed663ae6f07ebfa9e5fe6f5b7f0165aca06e792 AS runner
 WORKDIR /app
 
 # Apply latest Alpine security updates, remove npm tooling from runtime image,

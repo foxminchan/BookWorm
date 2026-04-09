@@ -21,6 +21,8 @@ on:
         required: true
         default: true
 
+permissions: {}
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true

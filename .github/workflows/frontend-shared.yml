@@ -13,6 +13,8 @@ on:
         description: "Turborepo remote cache token"
         required: false
 
+permissions: {}
+
 jobs:
   lint-build-test:
     name: Lint, Build & Test

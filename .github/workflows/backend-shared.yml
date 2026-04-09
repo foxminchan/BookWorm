@@ -4,6 +4,8 @@ run-name: Backend Shared CI
 on:
   workflow_call:
 
+permissions: {}
+
 env:
   GLOBAL_JSON_PATH: ${{ github.workspace }}/global.json
   BUN_VERSION_FILE: ${{ github.workspace }}/.bun-version

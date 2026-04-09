@@ -34,7 +34,7 @@ jobs:
 
       - name: Run Betterleaks secret scanner
         env:
-          BETTERLEAKS_DIGEST: "sha256:8c1fdaaeef493bb27dda66051a2bf7874e5c6feeb5fe8eced1359afdbf8c2571"
+          BETTERLEAKS_DIGEST: "sha256:05a6e6cea419b8013cd3c361b6edf307a558615490d3d28f78f46887911f1512"
         run: |
           docker run --rm -v "${{ github.workspace }}:/src" \
             -e GIT_CONFIG_COUNT=1 \
