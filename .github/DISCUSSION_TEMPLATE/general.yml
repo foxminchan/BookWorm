@@ -1,0 +1,32 @@
+labels:
+  - discussion
+body:
+  - type: markdown
+    attributes:
+      value: |
+        👋 **General Discussion**
+
+        Start a conversation about anything related to the BookWorm project — architecture decisions, development workflows, tooling, conventions, or anything else that doesn't fit into the other categories.
+
+        Before posting, please search [existing discussions](https://github.com/foxminchan/BookWorm/discussions) to avoid duplicates.
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Pre-submission Checklist
+      options:
+        - label: I have searched for existing discussions and this is not a duplicate.
+          required: true
+  - type: textarea
+    id: topic
+    attributes:
+      label: Topic
+      description: What would you like to discuss?
+      placeholder: Describe the topic you'd like to discuss.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Add any other context, references, or links that may help others understand the discussion.
+      placeholder: Include links, code snippets, diagrams, or related issues/PRs.

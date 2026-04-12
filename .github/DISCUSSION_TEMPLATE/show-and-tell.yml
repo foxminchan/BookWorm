@@ -1,0 +1,40 @@
+title: "[SHOW] "
+labels:
+  - community
+  - discussion
+  - show-and-tell
+body:
+  - type: markdown
+    attributes:
+      value: |
+        🎉 **Show and Tell**
+
+        Share something you've built with or on top of BookWorm — extensions, integrations, tools, learning projects, blog posts, or anything you're proud of!
+  - type: textarea
+    id: title
+    attributes:
+      label: What did you build?
+      description: A short description of what you're sharing.
+      placeholder: Describe what you built or created.
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Tell us more about it — how it works, what you learned, and how others can try it.
+      placeholder: |
+        - What does it do?
+        - What BookWorm services does it interact with?
+        - Any interesting technical details?
+    validations:
+      required: true
+  - type: textarea
+    id: links
+    attributes:
+      label: Links & Resources
+      description: Share relevant links — repos, demos, blog posts, screenshots, or videos.
+      placeholder: |
+        - GitHub repo: https://github.com/...
+        - Live demo: https://...
+        - Blog post: https://...

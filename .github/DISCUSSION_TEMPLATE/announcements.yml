@@ -1,0 +1,39 @@
+title: "[ANNOUNCEMENT] "
+labels:
+  - announcement
+  - discussion
+body:
+  - type: markdown
+    attributes:
+      value: |
+        📢 **Project Announcement**
+
+        Use this category for official project announcements such as releases, breaking changes, and important updates.
+
+        Only maintainers can create announcements.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: A brief summary of the announcement.
+      placeholder: What is the announcement about?
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Provide the full details of the announcement.
+      placeholder: |
+        Include relevant context, links, migration steps, or timelines.
+    validations:
+      required: true
+  - type: textarea
+    id: action-items
+    attributes:
+      label: Action Items
+      description: What, if anything, do users need to do in response?
+      placeholder: |
+        - Update to version X.Y.Z
+        - Review the migration guide at ...
+        - No action required

@@ -1,0 +1,65 @@
+title: "[Q&A] "
+labels:
+  - question
+  - discussion
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ❓ **Questions & Answers**
+
+        Ask a question about BookWorm — setup, architecture, usage, debugging, or contributing.
+
+        Before asking, please check:
+        - [Architecture documentation](https://bookwormdev.netlify.app/)
+        - [Contributing guide](https://github.com/foxminchan/BookWorm/blob/main/.github/CONTRIBUTING.md)
+        - [Existing discussions](https://github.com/foxminchan/BookWorm/discussions)
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Pre-submission Checklist
+      options:
+        - label: I have searched the documentation and existing discussions first.
+          required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What would you like to know?
+      placeholder: Ask your question here. Be as specific as possible.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of the project does your question relate to?
+      options:
+        - "Getting Started / Setup"
+        - "Aspire / Orchestration"
+        - "Catalog Service"
+        - "Ordering Service"
+        - "Basket Service"
+        - "Rating Service"
+        - "Chat Service"
+        - "Finance Service"
+        - "Notification Service"
+        - "Scheduler Service"
+        - "MCP Tools"
+        - "Frontend (Storefront / BackOffice)"
+        - "Shared Libraries (Chassis / SharedKernel)"
+        - "Testing"
+        - "CI/CD / DevOps"
+        - "Other"
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Add any context that may help answerers — error messages, logs, screenshots, environment details.
+      placeholder: |
+        - OS: [e.g. Windows 11, macOS 14, Ubuntu 22.04]
+        - .NET SDK version
+        - Node.js version
+        - Error messages or logs

@@ -1,0 +1,72 @@
+title: "[IDEA] "
+labels:
+  - enhancement
+  - discussion
+  - idea
+body:
+  - type: markdown
+    attributes:
+      value: |
+        💡 **Ideas & Brainstorming**
+
+        Share ideas for improving BookWorm — new services, architectural changes, developer experience improvements, or integrations.
+
+        This is the place for early-stage thinking before creating a formal [feature request](https://github.com/foxminchan/BookWorm/issues/new?template=feature-request.yml).
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Pre-submission Checklist
+      options:
+        - label: I have searched for existing discussions and this is not a duplicate.
+          required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea
+      description: Describe the idea you'd like to propose.
+      placeholder: What is your idea?
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why is this idea valuable? What problem does it solve or what opportunity does it create?
+      placeholder: Explain the motivation behind this idea.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of the project does this idea relate to?
+      options:
+        - "Catalog Service"
+        - "Ordering Service"
+        - "Basket Service"
+        - "Rating Service"
+        - "Chat Service"
+        - "Finance Service"
+        - "Notification Service"
+        - "Scheduler Service"
+        - "MCP Tools"
+        - "Frontend (Storefront / BackOffice)"
+        - "Aspire / Infrastructure"
+        - "Shared Libraries (Chassis / SharedKernel)"
+        - "CI/CD / DevOps"
+        - "Documentation"
+        - "Other"
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you thought about other approaches?
+      placeholder: Describe any alternative approaches or trade-offs you've considered.
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any references, mockups, diagrams, or links.
+      placeholder: Include any supporting material that helps illustrate the idea.
