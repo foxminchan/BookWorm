@@ -2,30 +2,39 @@ using MassTransit;
 
 namespace BookWorm.Chassis.EventBus.Serialization;
 
-/// <summary>
-///     Extension methods to configure CloudEvents serialization on MassTransit bus
-///     and receive endpoint configurators.
-/// </summary>
-/// <remarks>
-///     Follows the pattern established by
-///     <see href="https://github.com/riezebosch/CloudEventify">CloudEventify</see>:
-///     the deserializer is registered as the default content type handler so incoming
-///     <c>application/cloudevents+json</c> messages are consumed automatically, while
-///     the serializer wraps all outgoing messages in a CloudEvents envelope.
-/// </remarks>
 public static class CloudEventConfiguratorExtensions
 {
-    public static void UseCloudEvents(this IBusFactoryConfigurator configurator)
+    extension(IBusFactoryConfigurator configurator)
     {
-        var factory = new CloudEventSerializerFactory();
-        configurator.AddSerializer(factory);
-        configurator.AddDeserializer(factory, true);
+        /// <summary>
+        ///     Configures this MassTransit configurator to use CloudEvents for message serialization and deserialization.
+        /// </summary>
+        /// <remarks>
+        ///     A single <see cref="CloudEventSerializerFactory" /> instance is registered for both serializer and deserializer
+        ///     to ensure consistent payload handling.
+        /// </remarks>
+        public void UseCloudEvents()
+        {
+            var factory = new CloudEventSerializerFactory();
+            configurator.AddSerializer(factory);
+            configurator.AddDeserializer(factory, true);
+        }
     }
 
-    public static void UseCloudEvents(this IReceiveEndpointConfigurator configurator)
+    extension(IReceiveEndpointConfigurator configurator)
     {
-        var factory = new CloudEventSerializerFactory();
-        configurator.AddSerializer(factory);
-        configurator.AddDeserializer(factory, true);
+        /// <summary>
+        ///     Configures this receive endpoint to use CloudEvents for message serialization and deserialization.
+        /// </summary>
+        /// <remarks>
+        ///     A single <see cref="CloudEventSerializerFactory" /> instance is used for both serializer and deserializer
+        ///     to keep payload handling consistent for this endpoint.
+        /// </remarks>
+        public void UseCloudEvents()
+        {
+            var factory = new CloudEventSerializerFactory();
+            configurator.AddSerializer(factory);
+            configurator.AddDeserializer(factory, true);
+        }
     }
 }

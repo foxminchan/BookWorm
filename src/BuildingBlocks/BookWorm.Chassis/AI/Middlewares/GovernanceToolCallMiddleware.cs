@@ -1,5 +1,7 @@
 using AgentGovernance;
-using BookWorm.Chassis.AI.Governance;
+using BookWorm.Chassis.AI.Governance.AuditTrail;
+using BookWorm.Chassis.AI.Governance.Detectors;
+using BookWorm.Chassis.AI.Governance.IdentityProvider;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 
@@ -20,8 +22,8 @@ internal static class GovernanceToolCallMiddleware
         return async (messages, options, innerChatClient, cancellationToken) =>
         {
             var kernel = innerChatClient.GetRequiredService<GovernanceKernel>();
-            var rogueDetector = innerChatClient.GetRequiredService<RogueAgentDetector>();
-            var auditTrail = innerChatClient.GetRequiredService<GovernanceAuditTrail>();
+            var rogueDetector = innerChatClient.GetRequiredService<IRogueAgentDetector>();
+            var auditTrail = innerChatClient.GetRequiredService<IGovernanceAuditTrail>();
 
             // init logger via factory
             var loggerFactory = innerChatClient.GetService<ILoggerFactory>();
@@ -202,8 +204,8 @@ internal static class GovernanceToolCallMiddleware
         IAgentIdentityProvider IdentityProvider,
         string AgentName,
         string AgentDid,
-        RogueAgentDetector? RogueDetector,
-        GovernanceAuditTrail? AuditTrail,
+        IRogueAgentDetector? RogueDetector,
+        IGovernanceAuditTrail? AuditTrail,
         ILogger? Logger
     );
 }

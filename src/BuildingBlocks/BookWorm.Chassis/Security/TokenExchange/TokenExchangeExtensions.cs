@@ -10,6 +10,16 @@ public static class TokenExchangeExtensions
 {
     extension(IHttpClientBuilder builder)
     {
+        /// <summary>
+        ///     Adds token exchange support to the configured <see cref="IHttpClientBuilder" /> by
+        ///     registering the token exchange service and an authorization delegating handler.
+        /// </summary>
+        /// <param name="serviceKey">
+        ///     Optional target service identifier used to resolve audience and scope for token exchange.
+        /// </param>
+        /// <returns>
+        ///     The same <see cref="IHttpClientBuilder" /> instance for fluent configuration.
+        /// </returns>
         public IHttpClientBuilder AddAuthTokenExchange(string? serviceKey = null)
         {
             var service = builder.Services;

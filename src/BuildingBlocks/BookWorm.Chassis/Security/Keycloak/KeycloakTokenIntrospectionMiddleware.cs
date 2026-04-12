@@ -111,6 +111,12 @@ public static class KeycloakTokenIntrospectionMiddlewareExtensions
 {
     extension(IServiceCollection services)
     {
+        /// <summary>
+        ///     Registers the Keycloak token introspection middleware in the dependency injection container.
+        /// </summary>
+        /// <returns>
+        ///     The updated <see cref="IServiceCollection" /> instance.
+        /// </returns>
         public IServiceCollection AddKeycloakTokenIntrospection()
         {
             return services.AddScoped<KeycloakTokenIntrospectionMiddleware>();
@@ -119,6 +125,12 @@ public static class KeycloakTokenIntrospectionMiddlewareExtensions
 
     extension(IApplicationBuilder app)
     {
+        /// <summary>
+        ///     Adds the Keycloak token introspection middleware to the application request pipeline.
+        /// </summary>
+        /// <returns>
+        ///     The same <see cref="IApplicationBuilder" /> instance so additional middleware can be chained.
+        /// </returns>
         public IApplicationBuilder UseKeycloakTokenIntrospection()
         {
             return app.UseMiddleware<KeycloakTokenIntrospectionMiddleware>();

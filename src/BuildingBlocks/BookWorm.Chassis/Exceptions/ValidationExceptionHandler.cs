@@ -51,6 +51,10 @@ public static class ValidationExceptionHandlerExtensions
 {
     extension(IServiceCollection services)
     {
+        /// <summary>
+        ///     Registers the validation exception handler so FluentValidation failures are returned as standardized validation
+        ///     problem responses.
+        /// </summary>
         public void AddValidationExceptionHandler()
         {
             services.AddExceptionHandler<ValidationExceptionHandler>();

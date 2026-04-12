@@ -52,7 +52,7 @@ public static class Extensions
             var logger = builder.Logging;
 
             logger.EnableEnrichment();
-            builder.Services.AddLogEnricher<ApplicationEnricher>();
+            builder.AddApplicationEnricher();
 
             logger.AddGlobalBuffer(builder.Configuration.GetSection("Logging"));
             logger.AddPerIncomingRequestBuffer(builder.Configuration.GetSection("Logging"));

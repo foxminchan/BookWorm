@@ -1,6 +1,6 @@
 ﻿using AgentGovernance.Trust;
 
-namespace BookWorm.Chassis.AI.Governance;
+namespace BookWorm.Chassis.AI.Governance.IdentityProvider;
 
 public interface IAgentIdentityProvider
 {

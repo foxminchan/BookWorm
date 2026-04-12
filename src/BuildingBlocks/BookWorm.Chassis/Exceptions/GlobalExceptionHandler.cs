@@ -64,6 +64,10 @@ public static class GlobalExceptionHandlerExtensions
 {
     extension(IServiceCollection services)
     {
+        /// <summary>
+        ///     Registers the global exception handler implementation used to map unhandled exceptions to standardized problem
+        ///     responses.
+        /// </summary>
         public void AddGlobalExceptionHandler()
         {
             services.AddExceptionHandler<GlobalExceptionHandler>();

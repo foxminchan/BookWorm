@@ -1,31 +1,12 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 
-namespace BookWorm.Chassis.AI.Governance;
+namespace BookWorm.Chassis.AI.Governance.Detectors;
 
-public sealed record AnomalyScore(
-    double ZScore,
-    double Entropy,
-    double CapabilityDeviation,
-    bool IsAnomalous,
-    bool Quarantine
-);
-
-public sealed class RogueAgentDetector(ILogger<RogueAgentDetector> logger)
+internal sealed class RogueAgentDetector(ILogger<RogueAgentDetector> logger) : IRogueAgentDetector
 {
     private readonly ConcurrentDictionary<string, AgentCallProfile> _profiles = new();
 
-    public IReadOnlySet<string> QuarantinedAgents =>
-        _profiles.Where(kvp => kvp.Value.IsQuarantined).Select(kvp => kvp.Key).ToHashSet();
-
-    /// <summary>
-    ///     Records a tool call for the specified agent and returns the current anomaly score.
-    /// </summary>
-    /// <param name="agentId">The agent identifier (DID or logical name).</param>
-    /// <param name="toolName">The name of the tool being invoked.</param>
-    /// <param name="windowSize">Number of recent calls to consider for Z-score calculation.</param>
-    /// <param name="zThreshold">Z-score threshold above which behavior is flagged as anomalous.</param>
-    /// <returns>An <see cref="AnomalyScore" /> reflecting the current behavioral analysis.</returns>
     public AnomalyScore RecordCall(
         string agentId,
         string toolName,
@@ -61,22 +42,11 @@ public sealed class RogueAgentDetector(ILogger<RogueAgentDetector> logger)
         return score;
     }
 
-    /// <summary>
-    ///     Checks whether the specified agent is currently quarantined.
-    /// </summary>
-    /// <param name="agentId">The agent identifier to check.</param>
-    /// <returns><c>true</c> if the agent is quarantined; otherwise <c>false</c>.</returns>
     public bool IsQuarantined(string agentId)
     {
         return _profiles.TryGetValue(agentId, out var profile) && profile.IsQuarantined;
     }
 
-    /// <summary>
-    ///     Releases an agent from quarantine, allowing it to resume operations.
-    ///     Typically called after human review.
-    /// </summary>
-    /// <param name="agentId">The agent identifier to release.</param>
-    /// <returns><c>true</c> if the agent was quarantined and is now released; otherwise <c>false</c>.</returns>
     public bool ReleaseFromQuarantine(string agentId)
     {
         if (!_profiles.TryGetValue(agentId, out var profile) || !profile.IsQuarantined)

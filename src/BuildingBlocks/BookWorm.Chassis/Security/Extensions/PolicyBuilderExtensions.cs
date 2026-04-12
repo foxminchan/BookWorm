@@ -7,6 +7,15 @@ public static class PolicyBuilderExtensions
 {
     extension(AuthorizationPolicyBuilder authorizationPolicyBuilder)
     {
+        /// <summary>
+        ///     Requires that the user contains at least one allowed scope value in the Keycloak scope claim.
+        /// </summary>
+        /// <param name="allowedValues">
+        ///     The allowed scope values.
+        /// </param>
+        /// <returns>
+        ///     The configured authorization policy builder.
+        /// </returns>
         public AuthorizationPolicyBuilder RequireScope(params string[] allowedValues)
         {
             var scopeClaim = authorizationPolicyBuilder.RequireAssertion(context =>

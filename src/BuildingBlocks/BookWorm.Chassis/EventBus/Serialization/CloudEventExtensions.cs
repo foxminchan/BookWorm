@@ -2,11 +2,6 @@ using CloudNative.CloudEvents;
 
 namespace BookWorm.Chassis.EventBus.Serialization;
 
-/// <summary>
-///     CloudEvent extension attributes used to preserve MassTransit envelope metadata
-///     that has no direct mapping to standard CloudEvents context attributes.
-/// </summary>
-/// <see href="https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md#extension-context-attributes" />
 internal static class CloudEventExtensions
 {
     internal static readonly CloudEventAttribute CorrelationId =

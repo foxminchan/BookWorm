@@ -1,4 +1,5 @@
 using BookWorm.Chassis.AI.Governance;
+using BookWorm.Chassis.AI.Governance.IdentityProvider;
 using BookWorm.Chassis.AI.Middlewares;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;

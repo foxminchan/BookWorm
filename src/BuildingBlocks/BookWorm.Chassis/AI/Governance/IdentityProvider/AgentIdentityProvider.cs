@@ -3,7 +3,7 @@ using AgentGovernance;
 using AgentGovernance.Trust;
 using Microsoft.Extensions.Logging;
 
-namespace BookWorm.Chassis.AI.Governance;
+namespace BookWorm.Chassis.AI.Governance.IdentityProvider;
 
 internal sealed class AgentIdentityProvider(
     GovernanceKernel kernel,

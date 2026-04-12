@@ -64,6 +64,13 @@ public static class KeycloakClaimsTransformationExtensions
 {
     extension(IHostApplicationBuilder builder)
     {
+        /// <summary>
+        ///     Registers the Keycloak claims transformation that maps Keycloak realm and resource roles to
+        ///     <see cref="ClaimTypes.Role" /> claims.
+        /// </summary>
+        /// <returns>
+        ///     The current <see cref="IHostApplicationBuilder" /> instance for fluent chaining.
+        /// </returns>
         public IHostApplicationBuilder WithKeycloakClaimsTransformation()
         {
             builder.Services.AddTransient<

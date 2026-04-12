@@ -9,6 +9,13 @@ public static class RegisterEndpointExtensions
 {
     extension(IServiceCollection services)
     {
+        /// <summary>
+        ///     Scans the assembly that contains the specified type and registers all concrete
+        ///     implementations of <see cref="IEndpoint" /> into the dependency injection container.
+        /// </summary>
+        /// <param name="type">
+        ///     A marker type used to locate the target assembly for endpoint discovery.
+        /// </param>
         public void AddEndpoints(Type type)
         {
             services.Scan(scan =>
@@ -30,6 +37,16 @@ public static class RegisterEndpointExtensions
 
     extension(WebApplication app)
     {
+        /// <summary>
+        ///     Maps all discovered <see cref="IEndpoint" /> implementations into a versioned API route group.
+        /// </summary>
+        /// <param name="apiVersionSet">
+        ///     The API version set applied to the mapped endpoint group.
+        /// </param>
+        /// <param name="resourceName">
+        ///     An optional resource segment appended to the base route.
+        ///     When <see langword="null" /> or empty, only the versioned base path is used.
+        /// </param>
         public void MapEndpoints(ApiVersionSet apiVersionSet, string? resourceName = null)
         {
             using var scope = app.Services.CreateScope();

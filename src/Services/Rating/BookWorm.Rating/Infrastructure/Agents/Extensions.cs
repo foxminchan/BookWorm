@@ -1,6 +1,7 @@
 ﻿using BookWorm.Chassis.AI.Agents;
 using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.AI.Governance;
+using BookWorm.Chassis.AI.Governance.IdentityProvider;
 using BookWorm.Chassis.AI.Middlewares;
 using BookWorm.Chassis.AI.Presidio;
 using BookWorm.Chassis.Utilities;

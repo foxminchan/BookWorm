@@ -6,15 +6,6 @@ using MassTransit;
 
 namespace BookWorm.Chassis.EventBus.Serialization;
 
-/// <summary>
-///     A <see cref="MessageBody" /> that serializes the MassTransit message payload
-///     inside a CloudEvents structured-content JSON envelope.
-/// </summary>
-/// <remarks>
-///     The message is passed directly as <see cref="CloudEvent.Data" /> and serialized
-///     by the <see cref="JsonEventFormatter" /> using MassTransit's configured
-///     <c>JsonSerializerOptions</c>, avoiding an intermediate <c>JsonElement</c> allocation.
-/// </remarks>
 internal sealed class CloudEventMessageBody<T>(SendContext<T> context, JsonEventFormatter formatter)
     : MessageBody
     where T : class
